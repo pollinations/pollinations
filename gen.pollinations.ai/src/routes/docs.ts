@@ -58,7 +58,7 @@ const DOC_TAGS = {
     quickStart: "Quick Start",
     authentication: "Authentication",
     byop: "BYOP",
-    communityModel: "Community Model",
+    publishModel: "Publish a Model",
     communityModels: "Community Models",
     cli: "CLI",
     mcpServer: "MCP Server",
@@ -118,7 +118,7 @@ const DOC_TAG_ICON_HTML: Record<string, string> = {
     [DOC_TAGS.communityModels]: docsIcon(
         '<path d="M9 3h6" /><path d="M10 3v6.5L4.5 18a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L14 9.5V3" /><path d="M7 14h10" />',
     ),
-    [DOC_TAGS.communityModel]: docsIcon(
+    [DOC_TAGS.publishModel]: docsIcon(
         '<path d="M9 3h6" /><path d="M10 3v6.5L4.5 18a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L14 9.5V3" /><path d="M7 14h10" />',
     ),
     [DOC_TAGS.cli]: docsIcon(
@@ -342,7 +342,7 @@ const GEN_API_DOCS = [
 ].join("\n\n");
 
 const BYOP_SECTION = `## BYOP\n\n${BYOP_DOCS}`;
-const COMMUNITY_MODELS_SECTION = `## Community Models\n\n${COMMUNITY_MODELS_DOCS}`;
+const COMMUNITY_MODELS_SECTION = `## Publish a Model\n\n${COMMUNITY_MODELS_DOCS}`;
 const CLI_SECTION = `## CLI\n\n${CLI_DOCS}`;
 const MCP_SECTION = `## MCP Server\n\n${MCP_DOCS}`;
 
@@ -365,8 +365,8 @@ const LLM_DOC_SECTIONS: Record<string, string> = {
 // Scalar tag anchors for the retired /docs/guides/:id pages.
 const GUIDE_REDIRECT_TAGS: Record<string, string> = {
     byop: "byop",
-    models: "community-model",
-    "community-models": "community-model",
+    models: "publish-a-model",
+    "community-models": "publish-a-model",
     cli: "cli",
     mcp: "mcp-server",
 };
@@ -470,7 +470,7 @@ function generationDocumentation(): OpenApiSchema {
                     DOC_TAGS.byop,
                     DOC_TAGS.cli,
                     DOC_TAGS.mcpServer,
-                    DOC_TAGS.communityModel,
+                    DOC_TAGS.publishModel,
                 ],
             },
             {
@@ -513,7 +513,7 @@ function generationDocumentation(): OpenApiSchema {
                 description: BYOP_DOCS,
             },
             {
-                name: DOC_TAGS.communityModel,
+                name: DOC_TAGS.publishModel,
                 description: COMMUNITY_MODELS_DOCS,
             },
             {

@@ -1,8 +1,8 @@
-# Bring Your Own Model
+# Publish a Model
 
-Bring Your Own Model (BYOM) lets you connect an OpenAI-compatible endpoint to Pollinations and call it through `gen.pollinations.ai` under an `owner/model` id. Pollinations handles authentication, Pollen billing, model discovery, and routing; the model continues to run on infrastructure you control.
+Publishing a model—previously called Bring Your Own Model (BYOM)—lets you connect an OpenAI-compatible endpoint to Pollinations and call it through `gen.pollinations.ai` under an `owner/model` id. Pollinations handles authentication, Pollen billing, model discovery, and routing; the model continues to run on infrastructure you control.
 
-BYOM and [Bring Your Own Pollen](./BRING_YOUR_OWN_POLLEN.md) solve different problems. BYOM supplies a model to the Pollinations catalog. BYOP lets users authorize an app to spend their own Pollen. An app can use either or both.
+Model publishing and [connecting user wallets](./BRING_YOUR_OWN_POLLEN.md) solve different problems. Model publishing supplies a model to the Pollinations catalog. The wallet flow lets users authorize an app to spend their own Pollen. An app can use either or both.
 
 ## Supported Models
 
@@ -15,13 +15,13 @@ BYOM and [Bring Your Own Pollen](./BRING_YOUR_OWN_POLLEN.md) solve different pro
 
 Image providers must return `b64_json`. During testing, Pollinations checks whether an image provider supports edits and whether it reports OpenAI image-token usage.
 
-Video, text-to-speech, embeddings, realtime, and 3D endpoints cannot currently be registered through BYOM.
+Video, text-to-speech, embeddings, realtime, and 3D endpoints cannot currently be registered through this workflow.
 
 ## Private and Public Models
 
 Any signed-in user can register and call a private model. Private models are owner-only, do not appear in the public catalog, and are free at the Pollinations layer.
 
-Publishing a model requires account-level community publisher access while BYOM is in alpha. Submit a [publisher access request](https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml); the request enables public publishing for the account but does not register a model for you.
+Publishing a model requires account-level community publisher access while community model publishing is in alpha. Submit a [publisher access request](https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml); the request enables public publishing for the account but does not register a model for you.
 
 Public models appear in the model catalog and can be called by other Pollinations users. Owners set public pricing:
 
@@ -45,7 +45,7 @@ The upstream credential is used by Pollinations to proxy requests to your endpoi
 
 ## Register with the CLI
 
-The CLI currently manages text and image BYOM entries. Sign in, test the endpoint, then create the model:
+The CLI currently manages text and image model registrations. Sign in, test the endpoint, then create the model:
 
 ```bash
 npx @pollinations/cli auth login

@@ -203,12 +203,12 @@ describe("docs routes", () => {
         const resources = schema["x-tagGroups"].find(
             (group) => group.name === "Resources",
         );
-        expect(integrations?.tags).toContain("Community Model");
+        expect(integrations?.tags).toContain("Publish a Model");
         expect(integrations?.tags).not.toContain("Community Models");
         expect(resources?.tags).toContain("Community Models");
-        expect(resources?.tags).not.toContain("Community Model");
+        expect(resources?.tags).not.toContain("Publish a Model");
         expect(schema.tags.map((tag) => tag.name)).toContain("BYOP");
-        expect(schema.tags.map((tag) => tag.name)).toContain("Community Model");
+        expect(schema.tags.map((tag) => tag.name)).toContain("Publish a Model");
         expect(schema.tags.map((tag) => tag.name)).toContain(
             "Community Models",
         );
@@ -371,7 +371,7 @@ describe("docs routes", () => {
         );
         expect(modelsRes.status).toBe(301);
         expect(modelsRes.headers.get("Location")).toBe(
-            "/docs#tag/community-model",
+            "/docs#tag/publish-a-model",
         );
 
         const missingRes = await worker.fetch(
@@ -426,7 +426,7 @@ describe("docs routes", () => {
         );
         expect(modelsRes.status).toBe(200);
         const modelsBody = await modelsRes.text();
-        expect(modelsBody).toContain("## Community Models");
+        expect(modelsBody).toContain("## Publish a Model");
         expect(modelsBody).toContain("/account/my-models");
 
         const badRes = await worker.fetch(

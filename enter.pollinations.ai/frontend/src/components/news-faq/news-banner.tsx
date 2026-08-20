@@ -275,7 +275,7 @@ const CanonicalModelSlugAnnouncement: FC = () => (
                 </li>
                 <li className="flex items-start gap-2">
                     <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-intent-free-text" />
-                    <InlineLink href="/model-slugs" showIcon={false}>
+                    <InlineLink href="https://github.com/pollinations/pollinations/blob/main/MODEL_SLUGS.md">
                         View the complete slug list
                     </InlineLink>
                 </li>

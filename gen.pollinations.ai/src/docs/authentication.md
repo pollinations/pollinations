@@ -15,4 +15,4 @@ Two ways to authenticate generation requests:
 - Header: `Authorization: Bearer YOUR_API_KEY`
 - Query param: `?key=YOUR_API_KEY`
 
-For detailed integration guides on user-pays authorization, including OAuth discovery and token exchange, refer to the [Bring Your Own Pollen (BYOP) guide](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md).
+For detailed integration guidance on user-pays authorization, including OAuth discovery and token exchange, see [Connect User Wallets](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md).

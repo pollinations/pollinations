@@ -8,6 +8,8 @@ import {
     COMMUNITY_ENDPOINT_VISIBILITIES,
     COMMUNITY_PROVIDER_NAME_MAX_LENGTH,
     COMMUNITY_PROVIDER_URL_MAX_LENGTH,
+    type CommunityEndpointAdvertised,
+    CommunityEndpointAdvertisedSchema,
     type CommunityEndpointImagePricing,
     type CommunityEndpointModality,
     type CommunityEndpointPriceKey,
@@ -19,6 +21,7 @@ import {
     communityEndpointTitle,
     communityModelId,
     isCommunityEndpointOwnerAllowed,
+    isCommunityFallbackBalanceAllowed,
     isCommunityFallbackPricingAllowed,
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
@@ -27,6 +30,7 @@ import {
     MAX_FALLBACK_TARGETS,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
+    normalizeCommunityEndpointAdvertised,
     normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
     normalizeCommunityEndpointInputModalities,
@@ -77,6 +81,10 @@ const InputModalitiesSchema = z
     .describe(
         "Input types accepted by the model. Select every supported modality so the model catalog can advertise them accurately.",
     );
+const AdvertisedSchema = z
+    .object(CommunityEndpointAdvertisedSchema.shape)
+    .strict()
+    .describe("Owner-declared catalog metadata for text models.");
 const PriceSchema = z
     .number()
     .finite()
@@ -141,6 +149,24 @@ function enforceCommunityEndpointInputModalities(
     });
 }
 
+function hasAdvertisedClaim(
+    advertised: CommunityEndpointAdvertised | undefined,
+): boolean {
+    return Object.values(advertised ?? {}).some((value) =>
+        Array.isArray(value) ? value.length > 0 : value != null,
+    );
+}
+
+function enforceCommunityEndpointAdvertised(
+    modality: CommunityEndpointModality,
+    advertised: CommunityEndpointAdvertised | undefined,
+): void {
+    if (modality === "text" || !hasAdvertisedClaim(advertised)) return;
+    throw new HTTPException(400, {
+        message: "advertised metadata is only supported for text models",
+    });
+}
+
 // Community fallback targets are restricted to public community models or
 // private models owned by the same developer.
 // Pointing a community model at a Pollinations-operated model is deliberately
@@ -160,6 +186,7 @@ type FallbackPrimary = {
     ownerUserId: string;
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
+    paidOnly: boolean;
     prices: CommunityEndpointPrices;
     inputModalities?: readonly ModelInputModality[] | null;
 };
@@ -244,6 +271,9 @@ function fallbackTargetRejection(
         return `Fallback target ${modelId} does not support image edits`;
     }
     const targetPrices = payload.prices;
+    if (!isCommunityFallbackBalanceAllowed(primary, payload)) {
+        return `Fallback target ${modelId} accepts only Paid Pollen, which this model does not require`;
+    }
     if (!isCommunityFallbackPricingAllowed(primary.prices, targetPrices)) {
         const excesses = COMMUNITY_ENDPOINT_PRICE_FIELDS.filter(
             (field) => targetPrices[field.key] > primary.prices[field.key],
@@ -328,6 +358,11 @@ const VisibilitySchema = z
     .describe(
         '"private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account.',
     );
+const PaidOnlySchema = z
+    .boolean()
+    .describe(
+        "Restrict callers to spending Paid Pollen on this model. Use it when the upstream bills per use, so Quest Pollen cannot cover the price and leave you paying the inference cost.",
+    );
 const PerUserRpmSchema = z
     .number()
     .finite()
@@ -385,7 +420,9 @@ const ProxyCreateSchema = z
         // No blanket default: what an omitted set means depends on the
         // modality, so it is resolved in the handler once modality is known.
         inputModalities: InputModalitiesSchema.optional(),
+        advertised: AdvertisedSchema.optional(),
         perUserRpm: PerUserRpmSchema.optional(),
+        paidOnly: PaidOnlySchema.optional().default(false),
         fallbacks: FallbacksSchema.optional(),
         ...UpdatePriceFieldsSchema,
     })
@@ -405,8 +442,10 @@ const ProxyUpdateSchema = z
         upstreamModel: EndpointFieldsSchema.upstreamModel,
         bearerToken: EndpointFieldsSchema.bearerToken.optional(),
         perUserRpm: PerUserRpmSchema.optional(),
+        paidOnly: PaidOnlySchema.optional(),
         imagePricing: ImagePricingSchema.optional(),
         inputModalities: InputModalitiesSchema.optional(),
+        advertised: AdvertisedSchema.optional(),
         fallbacks: FallbacksSchema.optional(),
         ...UpdatePriceFieldsSchema,
     })
@@ -434,8 +473,10 @@ const UpdateEndpointSchema = z
         upstreamModel: EndpointFieldsSchema.upstreamModel,
         bearerToken: EndpointFieldsSchema.bearerToken.optional(),
         perUserRpm: PerUserRpmSchema.optional(),
+        paidOnly: PaidOnlySchema.optional(),
         imagePricing: ImagePricingSchema.optional(),
         inputModalities: InputModalitiesSchema.optional(),
+        advertised: AdvertisedSchema.optional(),
         fallbacks: FallbacksSchema.optional(),
         ...UpdatePriceFieldsSchema,
     })
@@ -496,7 +537,9 @@ const ProxyEndpointResponseSchema = z
         modality: ModalitySchema,
         imagePricing: ImagePricingSchema,
         inputModalities: z.array(InputModalitySchema),
+        advertised: AdvertisedSchema,
         perUserRpm: PerUserRpmSchema,
+        paidOnly: z.boolean(),
         fallbacks: z.array(z.string()),
         ...ResponsePriceFieldsSchema,
     })
@@ -687,6 +730,10 @@ function toResponse(
         ...common,
         type: row.type,
         ...proxy,
+        advertised: normalizeCommunityEndpointAdvertised(
+            payload.advertised,
+            payload.modality,
+        ),
         ...prices,
     });
 }
@@ -942,6 +989,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 ownerUserId: user.id,
                 modality: endpointPayload.modality,
                 imagePricing: endpointPayload.imagePricing,
+                paidOnly: endpointPayload.paidOnly,
                 prices: endpointPayload.prices,
                 inputModalities: endpointPayload.inputModalities,
             };
@@ -1015,6 +1063,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 input.inputModalities ??
                 normalizeCommunityEndpointInputModalities(undefined, modality);
             enforceCommunityEndpointInputModalities(modality, inputModalities);
+            enforceCommunityEndpointAdvertised(modality, input.advertised);
             const prices =
                 input.visibility === "public"
                     ? communityEndpointPricesForModality(
@@ -1023,11 +1072,14 @@ export const communityEndpointsRoutes = new Hono<Env>()
                           imagePricing,
                       )
                     : communityEndpointPrices({});
+            const paidOnly =
+                input.visibility === "public" ? input.paidOnly : false;
             enforceCommunityEndpointPriceLimits(prices, modality, imagePricing);
             const payload: ProxyListingPayload = {
                 modality,
                 imagePricing,
                 inputModalities,
+                paidOnly,
                 bearerTokenCiphertext: await encryptSecret(
                     normalizeInputBearerToken(input.bearerToken),
                     c.env.BETTER_AUTH_SECRET,
@@ -1042,10 +1094,14 @@ export const communityEndpointsRoutes = new Hono<Env>()
                           ownerUserId: user.id,
                           modality,
                           imagePricing,
+                          paidOnly,
                           prices,
                           inputModalities,
                       })
                     : [],
+                ...(hasAdvertisedClaim(input.advertised)
+                    ? { advertised: input.advertised }
+                    : {}),
                 prices,
             };
             await enforcePublishingAccess(db, user.id, input.visibility);
@@ -1272,6 +1328,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     modality,
                     inputModalities,
                 );
+                enforceCommunityEndpointAdvertised(modality, input.advertised);
                 const imagePricing =
                     modality === "image" && input.imagePricing !== undefined
                         ? input.imagePricing
@@ -1295,6 +1352,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
                               modality,
                               imagePricing,
                           );
+                const paidOnly =
+                    effectiveVisibility === "public"
+                        ? (input.paidOnly ?? stored.paidOnly)
+                        : false;
                 enforceCommunityEndpointPriceLimits(
                     prices,
                     modality,
@@ -1311,6 +1372,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                               ownerUserId: user.id,
                               modality,
                               imagePricing,
+                              paidOnly,
                               prices,
                               inputModalities,
                           });
@@ -1324,8 +1386,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     input.bearerToken,
                     input.visibility,
                     input.perUserRpm,
+                    input.paidOnly,
                     input.imagePricing,
                     input.inputModalities,
+                    input.advertised,
                     input.fallbacks,
                     ...COMMUNITY_ENDPOINT_PRICE_FIELDS.map(
                         ({ key }) => input[key],
@@ -1345,11 +1409,18 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         modality,
                         imagePricing,
                         inputModalities,
+                        paidOnly,
                         perUserRpm:
                             input.perUserRpm === undefined
                                 ? stored.perUserRpm
                                 : input.perUserRpm,
                         fallbacks,
+                        advertised:
+                            input.advertised === undefined
+                                ? stored.advertised
+                                : hasAdvertisedClaim(input.advertised)
+                                  ? input.advertised
+                                  : undefined,
                         prices,
                     };
                     update.payload = JSON.stringify(payload);

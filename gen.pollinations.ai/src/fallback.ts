@@ -1,5 +1,6 @@
 import {
     type CommunityEndpointRuntime,
+    isCommunityFallbackBalanceAllowed,
     isCommunityFallbackPricingAllowed,
     MAX_FALLBACK_TARGETS,
     usesAgentRunToken,
@@ -248,6 +249,7 @@ function isUsableCommunityFallback(
     if (!primary || !candidate) return false;
     if (usesAgentRunToken(candidate)) return false;
     if (primary.imagePricing !== candidate.imagePricing) return false;
+    if (!isCommunityFallbackBalanceAllowed(primary, candidate)) return false;
     if (
         !from.supportedEndpoints.every((endpoint) =>
             target.supportedEndpoints.includes(endpoint),

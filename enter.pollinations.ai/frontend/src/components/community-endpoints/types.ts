@@ -1,5 +1,7 @@
 import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
+    type CommunityEndpointAdvertised,
+    type CommunityEndpointCapability,
     type CommunityEndpointImagePricing,
     type CommunityEndpointModality,
     type CommunityEndpointPriceField,
@@ -11,6 +13,7 @@ import {
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MAX_COMMUNITY_PRICE_PER_SECOND,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+    normalizeCommunityEndpointAdvertised,
     normalizeCommunityEndpointInputModalities,
 } from "@shared/community-endpoints.ts";
 import type { ModelInputModality, Usage } from "@shared/registry/registry.ts";
@@ -69,7 +72,9 @@ export type ProxyCommunityEndpoint = CommunityEndpointBase &
         modality: CommunityEndpointModality;
         imagePricing: CommunityEndpointImagePricing;
         inputModalities: ModelInputModality[];
+        advertised: CommunityEndpointAdvertised;
         perUserRpm: number | null;
+        paidOnly: boolean;
         fallbacks: string[];
     };
 
@@ -131,6 +136,8 @@ export function publicCommunityFallbackOptions(
 
 export type ModelListingFormState = {
     inputModalities: ModelInputModality[];
+    capabilities: CommunityEndpointCapability[];
+    contextLength: string;
     name: string;
     title: string;
     description: string;
@@ -148,12 +155,15 @@ export type EndpointFormState = ModelListingFormState & {
     baseUrl: string;
     upstreamModel: string;
     bearerToken: string;
+    // Callers may only spend Paid Pollen. Useful for pay-as-you-go upstreams.
+    paidOnly: boolean;
     // Public community model ids, tried in the order listed.
     fallbacks: string[];
 } & EndpointFormPrices;
 
 type ModelListingPayload = {
     inputModalities: ModelInputModality[];
+    advertised: CommunityEndpointAdvertised;
     name: string;
     title: string;
     description: string;
@@ -166,6 +176,7 @@ export type EndpointPayload = ModelListingPayload & {
     imagePricing: CommunityEndpointImagePricing;
     baseUrl: string;
     upstreamModel: string;
+    paidOnly: boolean;
     fallbacks: string[];
 } & CommunityEndpointPrices;
 
@@ -200,6 +211,8 @@ const emptyPriceForm = Object.fromEntries(
 
 const emptyListingForm: ModelListingFormState = {
     inputModalities: ["text"],
+    capabilities: [],
+    contextLength: "",
     name: "",
     title: "",
     description: "",
@@ -214,6 +227,7 @@ export const emptyForm: EndpointFormState = {
     baseUrl: "",
     upstreamModel: "",
     bearerToken: "",
+    paidOnly: false,
     fallbacks: [],
     ...emptyPriceForm,
 };
@@ -314,6 +328,8 @@ export function endpointToForm(endpoint: EditableEndpoint): EndpointFormState {
         modality: endpoint.modality,
         imagePricing: endpoint.imagePricing,
         inputModalities: endpoint.inputModalities,
+        capabilities: endpoint.advertised.capabilities ?? [],
+        contextLength: endpoint.advertised.contextLength?.toString() ?? "",
         name: endpoint.name,
         title: endpoint.title,
         description: endpoint.description ?? "",
@@ -322,6 +338,7 @@ export function endpointToForm(endpoint: EditableEndpoint): EndpointFormState {
         baseUrl: endpoint.baseUrl,
         upstreamModel: endpoint.upstreamModel,
         bearerToken: "",
+        paidOnly: endpoint.paidOnly,
         fallbacks: endpoint.fallbacks ?? [],
         ...(Object.fromEntries(
             COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => {
@@ -346,6 +363,8 @@ export function agentListingToForm(
     return endpoint
         ? {
               inputModalities: ["text"],
+              capabilities: [],
+              contextLength: "",
               name: endpoint.name,
               title: endpoint.title,
               description: endpoint.description ?? "",
@@ -462,8 +481,18 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
         ...listingFieldsToPayload(form),
         modality,
         imagePricing,
+        advertised: normalizeCommunityEndpointAdvertised(
+            {
+                capabilities: form.capabilities,
+                contextLength: form.contextLength.trim()
+                    ? Number(form.contextLength)
+                    : undefined,
+            },
+            modality,
+        ),
         baseUrl: form.baseUrl.trim(),
         upstreamModel: form.upstreamModel.trim() || form.name.trim(),
+        paidOnly: form.visibility === "public" ? form.paidOnly : false,
         // Private models carry no public pricing, so their fallbacks cannot be
         // validated against a quoted price.
         fallbacks: form.visibility === "public" ? form.fallbacks : [],
@@ -511,6 +540,8 @@ export function nextFormState(
             ),
             // Targets must match the modality; the old choices no longer can.
             fallbacks: [],
+            capabilities: modality === "text" ? current.capabilities : [],
+            contextLength: modality === "text" ? current.contextLength : "",
         };
     }
     const next = { ...current, [key]: value };

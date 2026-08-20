@@ -443,6 +443,12 @@ export function CommunityEndpointDialog({
                                 inputModalities,
                             }))
                         }
+                        onCapabilitiesChange={(capabilities) =>
+                            setForm((current) => ({
+                                ...current,
+                                capabilities,
+                            }))
+                        }
                     />
 
                     <div className="grid gap-4 sm:grid-cols-2">
@@ -612,6 +618,52 @@ export function CommunityEndpointDialog({
                             visiblePriceKeys={visiblePriceKeys}
                             onChange={updateForm}
                         />
+                    )}
+                    {isShared && (
+                        <FieldStack
+                            label="Balance"
+                            helper={
+                                form.paidOnly
+                                    ? "Paid only: callers must spend Paid Pollen. Use this when your upstream bills per use, so free Quest Pollen cannot cover the price."
+                                    : "Any Pollen: callers can pay with Quest or Paid Pollen."
+                            }
+                            alignLabelRow
+                        >
+                            <ButtonGroup aria-label="Accepted balance">
+                                <TabButton
+                                    active={!form.paidOnly}
+                                    onClick={() =>
+                                        setForm((current) => ({
+                                            ...current,
+                                            paidOnly: false,
+                                        }))
+                                    }
+                                    size="sm"
+                                    className="min-w-24 gap-1.5"
+                                >
+                                    {!form.paidOnly && (
+                                        <CheckIcon className="h-3.5 w-3.5" />
+                                    )}
+                                    Any Pollen
+                                </TabButton>
+                                <TabButton
+                                    active={form.paidOnly}
+                                    onClick={() =>
+                                        setForm((current) => ({
+                                            ...current,
+                                            paidOnly: true,
+                                        }))
+                                    }
+                                    size="sm"
+                                    className="min-w-24 gap-1.5"
+                                >
+                                    {form.paidOnly && (
+                                        <CheckIcon className="h-3.5 w-3.5" />
+                                    )}
+                                    Paid only
+                                </TabButton>
+                            </ButtonGroup>
+                        </FieldStack>
                     )}
                     {isShared && (
                         <FieldStack

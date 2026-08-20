@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { isCommunityModelAllowedGithubId } from "./auth/github-id-list.ts";
 import { HttpError } from "./http-error.ts";
+import type { ModelCapability } from "./registry/model-info.ts";
 import {
     MODEL_INPUT_MODALITIES,
     type ModelDefinition,
@@ -72,6 +73,51 @@ export const COMMUNITY_ENDPOINT_INPUT_MODALITIES = {
     CommunityEndpointModality,
     readonly ModelInputModality[]
 >;
+
+export const MAX_COMMUNITY_CONTEXT_LENGTH = 10_000_000;
+
+export const COMMUNITY_ENDPOINT_CAPABILITIES = [
+    "tool_calling",
+    "reasoning",
+] as const satisfies readonly ModelCapability[];
+
+export type CommunityEndpointCapability =
+    (typeof COMMUNITY_ENDPOINT_CAPABILITIES)[number];
+
+export const CommunityEndpointAdvertisedSchema = z
+    .object({
+        capabilities: z
+            .array(z.enum(COMMUNITY_ENDPOINT_CAPABILITIES))
+            .optional(),
+        contextLength: z
+            .number()
+            .int()
+            .positive()
+            .max(MAX_COMMUNITY_CONTEXT_LENGTH)
+            .optional(),
+    })
+    .strict();
+
+export type CommunityEndpointAdvertised = z.infer<
+    typeof CommunityEndpointAdvertisedSchema
+>;
+
+export function normalizeCommunityEndpointAdvertised(
+    value: CommunityEndpointAdvertised | null | undefined,
+    modality: CommunityEndpointModality,
+): CommunityEndpointAdvertised {
+    if (!value || modality !== "text") return {};
+    const advertised: CommunityEndpointAdvertised = {};
+    if (value.capabilities?.length) {
+        const declared = new Set<string>(value.capabilities);
+        const capabilities = COMMUNITY_ENDPOINT_CAPABILITIES.filter(
+            (capability) => declared.has(capability),
+        );
+        if (capabilities.length) advertised.capabilities = capabilities;
+    }
+    if (value.contextLength) advertised.contextLength = value.contextLength;
+    return advertised;
+}
 
 export type CommunityEndpointImagePricing =
     (typeof COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES)[number];
@@ -294,6 +340,17 @@ export function isCommunityFallbackPricingAllowed(
     );
 }
 
+/**
+ * A fallback cannot require a balance bucket the caller was never required to
+ * have for the primary model. A paid-only primary may fall back to either kind.
+ */
+export function isCommunityFallbackBalanceAllowed(
+    primary: { paidOnly: boolean },
+    target: { paidOnly: boolean },
+): boolean {
+    return !target.paidOnly || primary.paidOnly;
+}
+
 export function normalizeCommunityEndpointModality(
     value: string | null | undefined,
 ): CommunityEndpointModality {
@@ -367,11 +424,14 @@ export type ListingType = (typeof LISTING_TYPES)[number];
  */
 export type ProxyListingPayload = {
     bearerTokenCiphertext: string;
+    // Owner-set: callers may only spend Paid Pollen on this model.
+    paidOnly: boolean;
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
     inputModalities: ModelInputModality[];
     perUserRpm: number | null;
     fallbacks: string[];
+    advertised?: CommunityEndpointAdvertised;
     prices: CommunityEndpointPrices;
 };
 
@@ -449,6 +509,7 @@ export function parseListingPayload<K extends ListingType>(
     );
     return {
         bearerTokenCiphertext,
+        paidOnly: source.paidOnly === true,
         modality,
         imagePricing: normalizeCommunityEndpointImagePricing(
             typeof source.imagePricing === "string"
@@ -468,6 +529,10 @@ export function parseListingPayload<K extends ListingType>(
                   (id): id is string => typeof id === "string",
               )
             : [],
+        advertised: normalizeCommunityEndpointAdvertised(
+            CommunityEndpointAdvertisedSchema.safeParse(source.advertised).data,
+            modality,
+        ),
         prices: communityEndpointPrices(
             (typeof source.prices === "object" && source.prices !== null
                 ? source.prices
@@ -496,6 +561,7 @@ type CommunityEndpointRuntimeBase = {
     baseUrl: string;
     upstreamModel: string;
     visibility: CommunityEndpointVisibility;
+    paidOnly: boolean;
     // Exact gateway-side cap per Pollinations user. Null delegates capacity
     // limits to the upstream, whose 429 then remains a model failure.
     perUserRpm: number | null;
@@ -510,6 +576,7 @@ type CommunityEndpointRuntimeBase = {
 export type ProxyCommunityEndpointRuntime = CommunityEndpointRuntimeBase & {
     type: "proxy";
     bearerTokenCiphertext: string;
+    advertised?: CommunityEndpointAdvertised;
 };
 
 /** An agent Enter runs on its own runtime, named by its listing id. */
@@ -552,7 +619,9 @@ export type CommunityModelDefinitionInput = {
     imagePricing?: CommunityEndpointImagePricing;
     inputModalities?: ModelInputModality[] | null;
     fallbacks?: string[];
+    advertised?: CommunityEndpointAdvertised | null;
     hidden?: boolean;
+    paidOnly?: boolean;
 } & CommunityEndpointPrices;
 
 export type CommunityProviderProfile = {
@@ -895,6 +964,8 @@ export function communityModelDefinition(
     );
     const providerName = endpoint.providerName?.trim();
     const providerUrl = endpoint.providerUrl?.trim();
+    const { capabilities = [], ...advertised } =
+        normalizeCommunityEndpointAdvertised(endpoint.advertised, modality);
     return {
         aliases,
         provider: "community",
@@ -915,12 +986,15 @@ export function communityModelDefinition(
         ...(isTranscription
             ? { supportedEndpoints: ["/v1/audio/transcriptions"] }
             : {}),
-        paidOnly: false,
+        paidOnly: endpoint.paidOnly ?? false,
         alpha: true,
         // Explicit false (not omitted) for token-priced image endpoints: the
         // catalog only renders per-1M prices when flat_rate === false or a
         // prompt token price is set.
         ...(isImage ? { flatRate: isFlatRateImage } : {}),
+        ...(capabilities.includes("tool_calling") ? { tools: true } : {}),
+        ...(capabilities.includes("reasoning") ? { reasoning: true } : {}),
+        ...advertised,
     };
 }
 

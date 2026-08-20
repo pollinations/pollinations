@@ -119,6 +119,7 @@ export async function getCommunityModelRegistryEntries(
             modality: "text" as const,
             imagePricing: "request" as const,
             inputModalities: null,
+            paidOnly: false,
             perUserRpm: null,
             fallbacks: [],
             ...communityEndpointPrices({}),
@@ -168,11 +169,13 @@ export async function getCommunityModelRegistryEntries(
                     ...identity,
                     type: "proxy",
                     bearerTokenCiphertext: payload.bearerTokenCiphertext,
+                    paidOnly: payload.paidOnly,
                     modality: payload.modality,
                     imagePricing: payload.imagePricing,
                     inputModalities: payload.inputModalities,
                     perUserRpm: payload.perUserRpm,
                     fallbacks: payload.fallbacks,
+                    advertised: payload.advertised,
                     ...payload.prices,
                 };
             }

@@ -146,6 +146,8 @@ export type BillingAdjustment = {
 export type ModelDefinition = {
     aliases: string[];
     provider: string;
+    /** Exact gateway-side request cap per Pollinations user. Null/unset means uncapped. */
+    perUserRpm?: number | null;
     /** Ordered model ids to try when this model's upstream fails. */
     fallbacks?: string[];
     /** Override the shared fallback status list for this model. Network failures always retry. */

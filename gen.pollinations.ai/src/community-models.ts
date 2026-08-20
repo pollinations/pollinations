@@ -177,7 +177,6 @@ export async function getCommunityModelRegistryEntries(
                 info: modelInfoFromDefinition(modelId, definition, {
                     community: true,
                     agent: isDelegatingEndpoint(communityEndpoint),
-                    perUserRpm: communityEndpoint.perUserRpm,
                 }),
                 definition,
                 communityEndpoint,

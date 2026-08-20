@@ -128,7 +128,6 @@ function getCapabilities(service: ModelDefinition): ModelCapability[] {
 type ModelInfoOptions = {
     community?: boolean;
     agent?: boolean;
-    perUserRpm?: number | null;
 };
 
 function pricingInfoFromDefinition(
@@ -176,7 +175,7 @@ export function modelInfoFromDefinition(
         brand_url: service.brandUrl,
         community: options.community || undefined,
         agent: options.agent || undefined,
-        per_user_rpm: options.perUserRpm,
+        per_user_rpm: service.perUserRpm,
         pricing: pricingInfoFromDefinition(getPriceDefinitionForModel(service)),
         pricing_variants:
             service.costVariants && service.costVariantMetadata

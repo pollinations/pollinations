@@ -371,11 +371,13 @@ export async function withModelFallbackResponse(
     model: PrimaryModel,
     attempt: (candidate: FallbackCandidate) => Promise<Response>,
     failures?: FailedCall[],
+    beforeAttempt?: (candidate: FallbackCandidate) => Promise<void>,
 ): Promise<{ response: Response; servedEntry?: GenerationModelEntry }> {
     const { result, candidate, index } = await withModelFallback(
         fallbackCandidates(model),
         attempt,
         failures,
+        beforeAttempt,
     );
     if (index > 0) {
         result.headers.set(FALLBACK_TARGET_HEADER, `config.targets[${index}]`);

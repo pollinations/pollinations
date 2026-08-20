@@ -1,3 +1,9 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="packages/ui/src/brand/lockup-horizontal-white.svg" />
+  <source media="(prefers-color-scheme: light)" srcset="packages/ui/src/brand/lockup-horizontal-black.svg" />
+  <img src="packages/ui/src/brand/lockup-horizontal-black.svg" alt="Pollinations.ai" width="280" />
+</picture>
+
 # Canonical model slugs
 
 Starting **September 1, 2026 at 14:00 UTC**, Pollinations model slugs will use the canonical `publisher/model[:variant]` format.

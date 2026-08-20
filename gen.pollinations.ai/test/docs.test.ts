@@ -128,6 +128,7 @@ describe("docs routes", () => {
             info: { description: string };
             paths: Record<string, unknown>;
             servers: { url: string }[];
+            "x-tagGroups": { name: string; tags: string[] }[];
             tags: { name: string; description?: string }[];
             components: { schemas: Record<string, unknown> };
         };
@@ -196,9 +197,20 @@ describe("docs routes", () => {
         expect(schema.paths["/{id}/metadata"]).toBeDefined();
         expect(schema.paths["/media"]).toBeDefined();
         expect(schema.paths["/media/{id}"]).toBeDefined();
-        // Contribution guides are plain tags in the Integrations group;
-        // the drawer icons are presentation, not part of the OpenAPI names.
+        const integrations = schema["x-tagGroups"].find(
+            (group) => group.name === "Integrations",
+        );
+        const resources = schema["x-tagGroups"].find(
+            (group) => group.name === "Resources",
+        );
+        expect(integrations?.tags).toContain("Community Models Guide");
+        expect(integrations?.tags).not.toContain("Community Models");
+        expect(resources?.tags).toContain("Community Models");
+        expect(resources?.tags).not.toContain("Community Models Guide");
         expect(schema.tags.map((tag) => tag.name)).toContain("BYOP");
+        expect(schema.tags.map((tag) => tag.name)).toContain(
+            "Community Models Guide",
+        );
         expect(schema.tags.map((tag) => tag.name)).toContain(
             "Community Models",
         );
@@ -262,6 +274,7 @@ describe("docs routes", () => {
             schema.paths["/account/my-models"] as Record<string, unknown>
         )?.get as Record<string, unknown> | undefined;
         expect(myModelsGet?.description).toContain("account:keys");
+        expect(myModelsGet?.tags).toEqual(["Community Models"]);
 
         // The catalog is unauthenticated → marked public (security: []).
         const questsCatalogGet = (
@@ -360,7 +373,7 @@ describe("docs routes", () => {
         );
         expect(modelsRes.status).toBe(301);
         expect(modelsRes.headers.get("Location")).toBe(
-            "/docs#tag/community-models",
+            "/docs#tag/community-models-guide",
         );
 
         const missingRes = await worker.fetch(

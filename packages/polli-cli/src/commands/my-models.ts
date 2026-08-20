@@ -57,6 +57,7 @@ interface MyModelBase {
 
 interface ProxyMyModel extends MyModelBase {
     type: "proxy";
+    paidOnly: boolean;
     modality: "text" | "image" | "transcription";
     imagePricing: "request" | "tokens";
     completionImagePrice: number;
@@ -110,6 +111,7 @@ export function modelBody(
         ["baseUrl", "baseUrl"],
         ["upstreamModel", "upstreamModel"],
         ["bearerToken", "bearerToken"],
+        ["paidOnly", "paidOnly"],
     ] as const;
 
     for (const [optionKey, bodyKey] of fields) {
@@ -196,7 +198,10 @@ function printModels(models: MyModel[]) {
                 model.type === "proxy"
                     ? model.inputModalities?.join(", ") || "-"
                     : "-",
-            visibility: model.visibility,
+            visibility:
+                model.type === "proxy" && model.paidOnly
+                    ? `${model.visibility} (paid only)`
+                    : model.visibility,
             upstream: model.upstreamModel,
             base_url: model.baseUrl,
             fallbacks:
@@ -250,6 +255,11 @@ const create = addPriceOptions(
             "Model visibility: private (default) or public",
         )
         .option(
+            "--paid-only",
+            "Only accept Paid Pollen, for a pay-as-you-go upstream whose cost free Quest Pollen would not cover",
+        )
+        .option("--no-paid-only", "Accept Quest or Paid Pollen (default)")
+        .option(
             "--fallbacks <ids>",
             "Comma-separated community model ids tried in order when this model's upstream fails; empty string clears them",
         )
@@ -297,6 +307,11 @@ const update = addPriceOptions(
             "--visibility <visibility>",
             "Model visibility: private or public",
         )
+        .option(
+            "--paid-only",
+            "Only accept Paid Pollen, for a pay-as-you-go upstream whose cost free Quest Pollen would not cover",
+        )
+        .option("--no-paid-only", "Accept Quest or Paid Pollen")
         .option(
             "--fallbacks <ids>",
             "Comma-separated community model ids tried in order when this model's upstream fails; empty string clears them",

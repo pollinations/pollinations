@@ -70,6 +70,7 @@ export type ProxyCommunityEndpoint = CommunityEndpointBase &
         imagePricing: CommunityEndpointImagePricing;
         inputModalities: ModelInputModality[];
         perUserRpm: number | null;
+        paidOnly: boolean;
         fallbacks: string[];
     };
 
@@ -148,6 +149,8 @@ export type EndpointFormState = ModelListingFormState & {
     baseUrl: string;
     upstreamModel: string;
     bearerToken: string;
+    // Callers may only spend Paid Pollen. Useful for pay-as-you-go upstreams.
+    paidOnly: boolean;
     // Public community model ids, tried in the order listed.
     fallbacks: string[];
 } & EndpointFormPrices;
@@ -166,6 +169,7 @@ export type EndpointPayload = ModelListingPayload & {
     imagePricing: CommunityEndpointImagePricing;
     baseUrl: string;
     upstreamModel: string;
+    paidOnly: boolean;
     fallbacks: string[];
 } & CommunityEndpointPrices;
 
@@ -214,6 +218,7 @@ export const emptyForm: EndpointFormState = {
     baseUrl: "",
     upstreamModel: "",
     bearerToken: "",
+    paidOnly: false,
     fallbacks: [],
     ...emptyPriceForm,
 };
@@ -322,6 +327,7 @@ export function endpointToForm(endpoint: EditableEndpoint): EndpointFormState {
         baseUrl: endpoint.baseUrl,
         upstreamModel: endpoint.upstreamModel,
         bearerToken: "",
+        paidOnly: endpoint.paidOnly,
         fallbacks: endpoint.fallbacks ?? [],
         ...(Object.fromEntries(
             COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => {
@@ -464,6 +470,7 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
         imagePricing,
         baseUrl: form.baseUrl.trim(),
         upstreamModel: form.upstreamModel.trim() || form.name.trim(),
+        paidOnly: form.visibility === "public" ? form.paidOnly : false,
         // Private models carry no public pricing, so their fallbacks cannot be
         // validated against a quoted price.
         fallbacks: form.visibility === "public" ? form.fallbacks : [],

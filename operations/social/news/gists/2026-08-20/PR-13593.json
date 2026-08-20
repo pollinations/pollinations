@@ -1,0 +1,34 @@
+{
+  "pr_number": 13593,
+  "title": "fix(econ): stop booking community sale price as provider cost",
+  "author": "iotserver24",
+  "url": "https://github.com/pollinations/pollinations/pull/13593",
+  "merged_at": "2026-08-20T13:34:40Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #12895\n\nCommunity models record `total_cost` = the sale price, but Pollinations never pays an upstream provider. The only outflow is the 75% owner reward (`model_paid`). The economics reader then subtracted that payout from revenue **and** treated the sale price as provider cost, so a 1.0 Pollen generation showed margin **−0.75** instead of **+0.25**.\n\n## Changes\n\n1. **`op_pollen_populate.pipe`** — `cost_paid` / `cost_quests` skip `provider = community`. Price, requests, and `model_paid` are unchanged.\n2. **Economics reader** — ignore community pollen cost when computing `trueCostPaidUsd` / margin, so already-materialized rows with the old meter do not stay underwater.\n3. **Community connector** — do not mirror `cost_paid` into `op_cloud`. The payout is eco, not a cloud invoice.\n\nWorked example in `insights.test.ts`: `price_paid=1`, `cost_paid=1`, `model_paid=0.75` → retained **0.25**, margin **+0.25**, not underwater.\n\n`npx vitest run src/lib/insights.test.ts` — 55 passed.\n\nThe pipe change needs a Tinybird `deployment create` (staging then prod) before `op_pollen` itself stores zeros. The reader fix is live as soon as this ships.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The ledger stopped double-dipping",
+    "blurb": "Community-model pollen now lands in the right jar. The hive’s accounting bees have learned that an owner reward is not also a mysterious provider invoice.",
+    "summary": "Fixed community-model economics so the sale price is no longer counted as upstream provider cost alongside the 75% model-owner payout, restoring a 1.0 Pollen generation to its correct retained 0.25 Pollen margin.",
+    "impact": "Internal economics dashboards now report community-model margins accurately, including for previously materialized rows, while payouts and customer pricing remain unchanged.",
+    "keywords": [
+      "economics",
+      "community-models",
+      "pollen",
+      "margins",
+      "observability",
+      "accounting"
+    ],
+    "visual_concept": "A cozy garden ledger scene: Polli, wearing tiny accountant glasses, corrects a chalkboard showing one Pollen coin split into a 0.75 owner-reward pouch and a 0.25 retained hive jar. A friendly CRT monitor robot holds the corrected report while code-plants grow around the desk, representing accurate community-model accounting rather than a duplicate cloud-cost bill.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, black antennae and oval eyes, pink rectangular cheek blushes, a happy smile, light blue translucent wings, and tiny accountant glasses, carefully sorting a lime green (#ecf874) Pollen coin between a labeled 75% owner-reward pouch and a 25% hive jar; a cheerful chunky CRT monitor robot holds a corrected ledger beside flowering code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley, subtle CRT glow, pixel-font text: \"0.25 RETAINED\", nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-20/PR-13593.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, black antennae and oval eyes, pink rectangular cheek blushes, a happy smile, light blue translucent wings, and tiny accountant glasses, carefully sorting a lime green (#ecf874) Pollen coin between a labeled 75% owner-reward pouch and a 25% hive jar; a cheerful chunky CRT monitor robot holds a corrected ledger beside flowering code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley, subtle CRT glow, pixel-font text: \"0.25 RETAINED\", nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-08-20T13:35:34.616260+00:00"
+}

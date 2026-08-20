@@ -53,7 +53,7 @@ Returns the current API key's validity, type, and permissions.
 
 Create and manage an agent's system prompt, base model, and optional built-in Pollinations tools. Creating an agent here does not make it callable by itself; register its returned ID through `/account/my-models` to assign an `owner/name` model ID. The dashboard performs both steps together. Managed-agent registrations are text-only and free, with no owner-set prices, fallbacks, or per-user request limit. Calls still consume Pollen for the base model and any tool generations. API keys require `account:keys`.
 
-See [Build Your Own Agent](https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md) for dashboard, CLI, and API examples.
+See the [Community Agents guide](https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md) for dashboard, CLI, and API examples.
 
 ### /account/my-models
 

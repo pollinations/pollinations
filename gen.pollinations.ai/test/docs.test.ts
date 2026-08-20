@@ -67,6 +67,7 @@ describe("docs routes", () => {
             info: { title: "Enter", version: "0.0.0" },
             tags: [
                 { name: "👤 Account" },
+                { name: "🤖 Community Agents" },
                 { name: "✨ Quests" },
                 { name: "Customer" },
             ],
@@ -94,6 +95,16 @@ describe("docs routes", () => {
                 },
                 "/api/account/my-models/{id}/update": {
                     post: { tags: ["👤 Account"] },
+                },
+                "/api/account/agents": {
+                    get: {
+                        tags: ["🤖 Community Agents"],
+                        description:
+                            "List managed agents. API keys require `account:keys`.",
+                    },
+                },
+                "/api/account/agents/{id}": {
+                    patch: { tags: ["🤖 Community Agents"] },
                 },
                 "/api/quests/catalog": {
                     get: { tags: ["✨ Quests"], security: [] },
@@ -172,11 +183,14 @@ describe("docs routes", () => {
         expect(schema.paths["/account/quests"]).toBeDefined();
         expect(schema.paths["/account/my-models"]).toBeDefined();
         expect(schema.paths["/account/my-models/{id}/update"]).toBeDefined();
+        expect(schema.paths["/account/agents"]).toBeDefined();
+        expect(schema.paths["/account/agents/{id}"]).toBeDefined();
         expect(schema.paths["/quests/catalog"]).toBeDefined();
         expect(schema.paths["/api/account/key"]).toBeUndefined();
         expect(schema.paths["/api/account/profile"]).toBeUndefined();
         expect(schema.paths["/api/account/quests"]).toBeUndefined();
         expect(schema.paths["/api/account/my-models"]).toBeUndefined();
+        expect(schema.paths["/api/account/agents"]).toBeUndefined();
         expect(schema.paths["/api/quests/catalog"]).toBeUndefined();
         expect(schema.paths["/quests/check"]).toBeUndefined();
         expect(schema.paths["/quests/rewards"]).toBeUndefined();
@@ -195,10 +209,12 @@ describe("docs routes", () => {
         expect(schema.paths["/{id}/metadata"]).toBeDefined();
         expect(schema.paths["/media"]).toBeDefined();
         expect(schema.paths["/media/{id}"]).toBeDefined();
-        // BYOP, Agents, CLI, and MCP are surfaced as plain integration tags;
+        // Contribution guides are surfaced as plain integration tags;
         // the drawer icons are presentation, not part of the OpenAPI names.
         expect(schema.tags.map((tag) => tag.name)).toContain("BYOP");
-        expect(schema.tags.map((tag) => tag.name)).toContain("Agents");
+        expect(schema.tags.map((tag) => tag.name)).toContain(
+            "Community Agents",
+        );
         expect(schema.tags.map((tag) => tag.name)).toContain("CLI");
         expect(schema.tags.map((tag) => tag.name)).toContain("MCP Server");
         expect(schema.tags.map((tag) => tag.name)).toContain("Quests");
@@ -356,7 +372,9 @@ describe("docs routes", () => {
             ctx,
         );
         expect(agentsRes.status).toBe(301);
-        expect(agentsRes.headers.get("Location")).toBe("/docs#tag/agents");
+        expect(agentsRes.headers.get("Location")).toBe(
+            "/docs#tag/community-agents",
+        );
 
         const missingRes = await worker.fetch(
             new Request("https://gen.pollinations.ai/docs/guides/notexist"),
@@ -403,14 +421,14 @@ describe("docs routes", () => {
 
         const agentsRes = await worker.fetch(
             new Request(
-                "https://gen.pollinations.ai/docs/llm.txt?section=agents",
+                "https://gen.pollinations.ai/docs/llm.txt?section=community-agents",
             ),
             envWithEnterSchema({}),
             ctx,
         );
         expect(agentsRes.status).toBe(200);
         const agentsBody = await agentsRes.text();
-        expect(agentsBody).toContain("## Agents");
+        expect(agentsBody).toContain("## Community Agents");
         expect(agentsBody).toContain("POST /account/agents");
 
         const badRes = await worker.fetch(

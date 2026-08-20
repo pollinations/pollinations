@@ -101,7 +101,7 @@ Build a reusable text agent without hosting an agent server. Choose a system pro
 - **Normal model API** — call a registered agent by its `owner/agent-name` model ID.
 - **Dashboard, CLI, or API** — manage agents in [My Agents & Models](https://enter.pollinations.ai/my-models), with `polli agents`, or through `/account/agents`.
 
-See [Build Your Own Agent](./BUILD_YOUR_OWN_AGENT.md) for the complete setup and billing behavior.
+See the [Community Agents guide](./BUILD_YOUR_OWN_AGENT.md) for the complete setup and billing behavior.
 
 ## 🧩 Community Models
 

@@ -58,7 +58,7 @@ const DOC_TAGS = {
     quickStart: "Quick Start",
     authentication: "Authentication",
     byop: "BYOP",
-    agents: "Agents",
+    communityAgents: "Community Agents",
     cli: "CLI",
     mcpServer: "MCP Server",
     errors: "Errors",
@@ -81,7 +81,7 @@ const LEGACY_DOC_TAGS: Record<string, string> = {
     "🚀 Quick Start": DOC_TAGS.quickStart,
     "🔐 Authentication": DOC_TAGS.authentication,
     "🌸 BYOP": DOC_TAGS.byop,
-    "🤖 Agents": DOC_TAGS.agents,
+    "🤖 Community Agents": DOC_TAGS.communityAgents,
     "🖥 CLI": DOC_TAGS.cli,
     "🔌 MCP Server": DOC_TAGS.mcpServer,
     "❌ Errors": DOC_TAGS.errors,
@@ -114,7 +114,7 @@ const DOC_TAG_ICON_HTML: Record<string, string> = {
     [DOC_TAGS.byop]: docsIcon(
         '<path d="M3 7a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2v2H5a2 2 0 0 0-2 2V7Z" /><path d="M3 11a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6Z" /><circle cx="17" cy="14" r="1.25" fill="currentColor" />',
     ),
-    [DOC_TAGS.agents]: docsIcon(
+    [DOC_TAGS.communityAgents]: docsIcon(
         '<rect x="4" y="7" width="16" height="13" rx="2" /><path d="M9 3h6" /><path d="M12 3v4" /><circle cx="9" cy="13" r="1" fill="currentColor" /><circle cx="15" cy="13" r="1" fill="currentColor" /><path d="M9 17h6" />',
     ),
     [DOC_TAGS.cli]: docsIcon(
@@ -175,7 +175,7 @@ const DOC_TAG_NAV_ICON_HTML: Record<string, string> = Object.fromEntries(
 
 const BYOP_DOCS = BYOP_MD.trim();
 
-const AGENTS_DOCS = AGENTS_MD.replace(/^# .*\n+/, "").trim();
+const COMMUNITY_AGENTS_DOCS = AGENTS_MD.replace(/^# .*\n+/, "").trim();
 
 const CLI_DOCS = CLI_README.replace(/^# .*\n+/, "").trim();
 
@@ -335,14 +335,14 @@ const GEN_API_DOCS = [
 ].join("\n\n");
 
 const BYOP_SECTION = `## BYOP\n\n${BYOP_DOCS}`;
-const AGENTS_SECTION = `## Agents\n\n${AGENTS_DOCS}`;
+const COMMUNITY_AGENTS_SECTION = `## Community Agents\n\n${COMMUNITY_AGENTS_DOCS}`;
 const CLI_SECTION = `## CLI\n\n${CLI_DOCS}`;
 const MCP_SECTION = `## MCP Server\n\n${MCP_DOCS}`;
 
 const LLM_DOC_TEXT = [
     GEN_API_DOCS,
     BYOP_SECTION,
-    AGENTS_SECTION,
+    COMMUNITY_AGENTS_SECTION,
     CLI_SECTION,
     MCP_SECTION,
 ].join("\n\n");
@@ -350,7 +350,7 @@ const LLM_DOC_TEXT = [
 const LLM_DOC_SECTIONS: Record<string, string> = {
     api: GEN_API_DOCS,
     byop: BYOP_SECTION,
-    agents: AGENTS_SECTION,
+    "community-agents": COMMUNITY_AGENTS_SECTION,
     cli: CLI_SECTION,
     mcp: MCP_SECTION,
 };
@@ -358,7 +358,8 @@ const LLM_DOC_SECTIONS: Record<string, string> = {
 // Scalar tag anchors for the retired /docs/guides/:id pages.
 const GUIDE_REDIRECT_TAGS: Record<string, string> = {
     byop: "byop",
-    agents: "agents",
+    agents: "community-agents",
+    "community-agents": "community-agents",
     cli: "cli",
     mcp: "mcp-server",
 };
@@ -460,7 +461,7 @@ function generationDocumentation(): OpenApiSchema {
                 name: "Integrations",
                 tags: [
                     DOC_TAGS.byop,
-                    DOC_TAGS.agents,
+                    DOC_TAGS.communityAgents,
                     DOC_TAGS.cli,
                     DOC_TAGS.mcpServer,
                 ],
@@ -504,8 +505,8 @@ function generationDocumentation(): OpenApiSchema {
                 description: BYOP_DOCS,
             },
             {
-                name: DOC_TAGS.agents,
-                description: AGENTS_DOCS,
+                name: DOC_TAGS.communityAgents,
+                description: COMMUNITY_AGENTS_DOCS,
             },
             {
                 name: DOC_TAGS.cli,

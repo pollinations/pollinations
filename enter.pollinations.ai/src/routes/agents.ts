@@ -63,7 +63,7 @@ export const agentsRoutes = new Hono<Env>()
     .get(
         "/",
         describeRoute({
-            tags: ["👤 Account"],
+            tags: ["🤖 Community Agents"],
             summary: "List Agents",
             description:
                 "List prompt agents owned by the authenticated account. API keys require `account:keys`.",
@@ -94,7 +94,7 @@ export const agentsRoutes = new Hono<Env>()
     .get(
         "/:id",
         describeRoute({
-            tags: ["👤 Account"],
+            tags: ["🤖 Community Agents"],
             summary: "Get Agent",
             description:
                 "Get an agent owned by the authenticated account. API keys require `account:keys`.",
@@ -126,7 +126,7 @@ export const agentsRoutes = new Hono<Env>()
     .post(
         "/",
         describeRoute({
-            tags: ["👤 Account"],
+            tags: ["🤖 Community Agents"],
             summary: "Create Agent",
             description:
                 "Create an editable prompt agent with optional access to Pollinations tools. The agent can later be registered separately as a community model. API keys require `account:keys`.",
@@ -167,7 +167,7 @@ export const agentsRoutes = new Hono<Env>()
     .patch(
         "/:id",
         describeRoute({
-            tags: ["👤 Account"],
+            tags: ["🤖 Community Agents"],
             summary: "Update Agent",
             description:
                 "Replace an agent configuration. Existing community model registration is unchanged. API keys require `account:keys`.",
@@ -213,7 +213,7 @@ export const agentsRoutes = new Hono<Env>()
     .delete(
         "/:id",
         describeRoute({
-            tags: ["👤 Account"],
+            tags: ["🤖 Community Agents"],
             summary: "Delete Agent",
             description:
                 "Delete an agent and its community model registration. API keys require `account:keys`.",

@@ -122,7 +122,7 @@ Creating the configuration returns an agent ID. Register that ID to assign a cal
 polli my-models create --agent-id <agent-id> --name research-assistant --title "Research Assistant"
 ```
 
-See [Build Your Own Agent](../../BUILD_YOUR_OWN_AGENT.md) for visibility, billing, and lifecycle details.
+See the [Community Agents guide](../../BUILD_YOUR_OWN_AGENT.md) for visibility, billing, and lifecycle details.
 
 `polli auth login` creates a key with all account permissions Polli needs: `profile`, `usage`, and `keys`. Use `account:usage` for narrow read-only account state like usage and quests. Use `account:keys` to manage keys and, where invite-only My Models access is enabled, my-models. Quest claiming remains in the dashboard.
 

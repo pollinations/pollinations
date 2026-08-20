@@ -187,7 +187,7 @@ polli agents delete <id>
 ```
 The config file is sent directly to the agent API. It contains `systemPrompt`, `baseModel`, and optional `mcpServers`. The only supported server ID is currently `"pollinations"`. Updates replace the complete agent configuration.
 
-Creating the configuration does not make the agent callable. Register its returned ID with `polli my-models create --agent-id <id> --name <name> --title <title>`. Managed-agent registrations are text-only and free, with no fallbacks or per-user RPM. Deleting the agent also deletes its model registration. See [Build Your Own Agent](../../BUILD_YOUR_OWN_AGENT.md).
+Creating the configuration does not make the agent callable. Register its returned ID with `polli my-models create --agent-id <id> --name <name> --title <title>`. Managed-agent registrations are text-only and free, with no fallbacks or per-user RPM. Deleting the agent also deletes its model registration. See the [Community Agents guide](../../BUILD_YOUR_OWN_AGENT.md).
 
 ### Manage API keys
 ```bash

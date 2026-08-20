@@ -44,7 +44,7 @@ export function createAwsChunkedDecoderStream(): TransformStream<
                         : headerLine;
                 const chunkSize = parseInt(hexSizeStr.trim(), 16);
 
-                if (isNaN(chunkSize)) {
+                if (Number.isNaN(chunkSize)) {
                     // Invalid chunk size line
                     controller.error(new Error("Invalid aws-chunked encoding"));
                     return;

@@ -1385,7 +1385,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 update.inputModalities = input.inputModalities;
             }
             if (input.advertised !== undefined) {
-                update.advertised = input.advertised;
+                update.advertised = hasAdvertisedClaim(input.advertised)
+                    ? input.advertised
+                    : null;
             }
             if (input.hidden !== undefined) {
                 update.hiddenAt = input.hidden ? new Date() : null;

@@ -4637,6 +4637,17 @@ fixtureTest(
             advertised: { contextLength: 64000 },
         });
 
+        const clearedAll = await update({ advertised: {} });
+        expect(clearedAll.status).toBe(200);
+        await expect(clearedAll.json()).resolves.toMatchObject({
+            advertised: {},
+        });
+        const [stored] = await db
+            .select({ advertised: communityEndpointTable.advertised })
+            .from(communityEndpointTable)
+            .where(eq(communityEndpointTable.id, createdBody.id));
+        expect(stored?.advertised).toBeNull();
+
         const onImageModel = await register({
             modality: "image",
             advertised: { capabilities: ["tool_calling"] },

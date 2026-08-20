@@ -1,0 +1,34 @@
+{
+  "pr_number": 13625,
+  "title": "fix: execute detached generations at most once",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13625",
+  "merged_at": "2026-08-20T12:35:21Z",
+  "labels": [],
+  "pr_body_excerpt": "- Claims a detached job before calling the provider\n- Fails and clears an interrupted alarm instead of executing the generation again\n- Adds coordinator regression coverage for alarm redelivery\n\nAlternative root-cause fix to #13622: this prevents duplicate provider execution while keeping alarms for their independent timeout.\n\nTests:\n- 11 focused coordinator and generation-deduplication tests\n- Gen TypeScript check\n- Biome and diff checks",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "One job, one bloom",
+    "blurb": "Detached generations now get claimed before they visit a provider. If an old alarm wakes up late, it tidies itself away instead of asking for the same flowers twice.",
+    "summary": "GenerationCoordinator now claims detached jobs before provider execution and clears interrupted redelivered alarms, ensuring each detached generation runs at most once while alarms retain their independent timeout role.",
+    "impact": "Users get more reliable detached generations: an alarm redelivery will no longer trigger a duplicate provider call for work that has already been claimed.",
+    "keywords": [
+      "generations",
+      "durable-objects",
+      "deduplication",
+      "alarms",
+      "reliability",
+      "providers"
+    ],
+    "visual_concept": "Depict Polli as a careful garden coordinator placing a single claim tag on one glowing code-seed before it is delivered to a retro provider terminal. A sleepy alarm clock tries to ring again in the background, but Polli gently clears it while a single healthy code-flower blooms, representing exactly-once detached generation execution.",
+    "image_prompt": "A cozy pixel art garden workshop where the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny coordinator clipboard and attaches one \"CLAIMED\" pixel tag to a glowing code-seed beside a retro terminal, while a sleepy alarm clock is gently switched off and one code-flower blooms. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-20/PR-13625.jpg",
+    "prompt": "A cozy pixel art garden workshop where the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny coordinator clipboard and attaches one \"CLAIMED\" pixel tag to a glowing code-seed beside a retro terminal, while a sleepy alarm clock is gently switched off and one code-flower blooms. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-20T12:36:25.634607+00:00"
+}

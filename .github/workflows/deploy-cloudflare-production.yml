@@ -51,6 +51,15 @@ jobs:
         if: github.event_name == 'push'
         uses: dorny/paths-filter@v3
         with:
+          # Required for long-lived branches. Without `base`, the action falls
+          # back to the repository default branch and diffs
+          # merge-base(main, production)..production. A main -> production
+          # promotion makes that diff empty, so every filter reports false and
+          # all three deploy jobs skip while `migrate` still applies the
+          # schema. Pointing `base` at the pushed ref makes the action compare
+          # against the push's `before` SHA — the same semantics the previous
+          # top-level `on.push.paths` filters had.
+          base: ${{ github.ref }}
           filters: |
             enter:
               - 'enter.pollinations.ai/**'

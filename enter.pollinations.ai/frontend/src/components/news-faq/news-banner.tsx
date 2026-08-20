@@ -3,6 +3,7 @@ import {
     CheckIcon,
     Chip,
     cn,
+    InlineLink,
     Surface,
     WarningIcon,
 } from "@pollinations/ui";
@@ -274,7 +275,9 @@ const CanonicalModelSlugAnnouncement: FC = () => (
                 </li>
                 <li className="flex items-start gap-2">
                     <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-intent-free-text" />
-                    <span>Complete slug list coming soon.</span>
+                    <InlineLink href="/model-slugs" showIcon={false}>
+                        View the complete slug list
+                    </InlineLink>
                 </li>
             </ul>
         </div>

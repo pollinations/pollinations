@@ -23,6 +23,7 @@ import { Route as DashboardPollenRouteImport } from './routes/_dashboard.pollen'
 import { Route as DashboardNewsRouteImport } from './routes/_dashboard.news'
 import { Route as DashboardMyModelsRouteImport } from './routes/_dashboard.my-models'
 import { Route as DashboardModelsRouteImport } from './routes/_dashboard.models'
+import { Route as DashboardModelSlugsRouteImport } from './routes/_dashboard.model-slugs'
 import { Route as DashboardKeysRouteImport } from './routes/_dashboard.keys'
 import { Route as DashboardActivityRouteImport } from './routes/_dashboard.activity'
 import { Route as DashboardAccountRouteImport } from './routes/_dashboard.account'
@@ -96,6 +97,11 @@ const DashboardModelsRoute = DashboardModelsRouteImport.update({
   path: '/models',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardModelSlugsRoute = DashboardModelSlugsRouteImport.update({
+  id: '/model-slugs',
+  path: '/model-slugs',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardKeysRoute = DashboardKeysRouteImport.update({
   id: '/keys',
   path: '/keys',
@@ -124,6 +130,7 @@ export interface FileRoutesByFullPath {
   '/account': typeof DashboardAccountRoute
   '/activity': typeof DashboardActivityRoute
   '/keys': typeof DashboardKeysRoute
+  '/model-slugs': typeof DashboardModelSlugsRoute
   '/models': typeof DashboardModelsRoute
   '/my-models': typeof DashboardMyModelsRoute
   '/news': typeof DashboardNewsRoute
@@ -142,6 +149,7 @@ export interface FileRoutesByTo {
   '/account': typeof DashboardAccountRoute
   '/activity': typeof DashboardActivityRoute
   '/keys': typeof DashboardKeysRoute
+  '/model-slugs': typeof DashboardModelSlugsRoute
   '/models': typeof DashboardModelsRoute
   '/my-models': typeof DashboardMyModelsRoute
   '/news': typeof DashboardNewsRoute
@@ -162,6 +170,7 @@ export interface FileRoutesById {
   '/_dashboard/account': typeof DashboardAccountRoute
   '/_dashboard/activity': typeof DashboardActivityRoute
   '/_dashboard/keys': typeof DashboardKeysRoute
+  '/_dashboard/model-slugs': typeof DashboardModelSlugsRoute
   '/_dashboard/models': typeof DashboardModelsRoute
   '/_dashboard/my-models': typeof DashboardMyModelsRoute
   '/_dashboard/news': typeof DashboardNewsRoute
@@ -182,6 +191,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/activity'
     | '/keys'
+    | '/model-slugs'
     | '/models'
     | '/my-models'
     | '/news'
@@ -200,6 +210,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/activity'
     | '/keys'
+    | '/model-slugs'
     | '/models'
     | '/my-models'
     | '/news'
@@ -219,6 +230,7 @@ export interface FileRouteTypes {
     | '/_dashboard/account'
     | '/_dashboard/activity'
     | '/_dashboard/keys'
+    | '/_dashboard/model-slugs'
     | '/_dashboard/models'
     | '/_dashboard/my-models'
     | '/_dashboard/news'
@@ -338,6 +350,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardModelsRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/_dashboard/model-slugs': {
+      id: '/_dashboard/model-slugs'
+      path: '/model-slugs'
+      fullPath: '/model-slugs'
+      preLoaderRoute: typeof DashboardModelSlugsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/_dashboard/keys': {
       id: '/_dashboard/keys'
       path: '/keys'
@@ -366,6 +385,7 @@ interface DashboardRouteChildren {
   DashboardAccountRoute: typeof DashboardAccountRoute
   DashboardActivityRoute: typeof DashboardActivityRoute
   DashboardKeysRoute: typeof DashboardKeysRoute
+  DashboardModelSlugsRoute: typeof DashboardModelSlugsRoute
   DashboardModelsRoute: typeof DashboardModelsRoute
   DashboardMyModelsRoute: typeof DashboardMyModelsRoute
   DashboardNewsRoute: typeof DashboardNewsRoute
@@ -377,6 +397,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardAccountRoute: DashboardAccountRoute,
   DashboardActivityRoute: DashboardActivityRoute,
   DashboardKeysRoute: DashboardKeysRoute,
+  DashboardModelSlugsRoute: DashboardModelSlugsRoute,
   DashboardModelsRoute: DashboardModelsRoute,
   DashboardMyModelsRoute: DashboardMyModelsRoute,
   DashboardNewsRoute: DashboardNewsRoute,

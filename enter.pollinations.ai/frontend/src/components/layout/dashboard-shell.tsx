@@ -139,6 +139,11 @@ const accountMenuLinks: readonly AccountMenuLink[] = [
     },
 ];
 
+const standalonePageLabels: Readonly<Record<string, string>> = {
+    "/account": "Account",
+    "/model-slugs": "Model slugs",
+};
+
 export const DashboardShell: FC<DashboardShellProps> = ({
     navItems = DASHBOARD_NAV_ITEMS,
     githubUsername,
@@ -158,9 +163,9 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     );
     const activePage = activeNavItem?.id;
     const activePageLabel =
-        location.pathname === "/account"
-            ? "Account"
-            : (activeNavItem?.label ?? "Dashboard");
+        activeNavItem?.label ??
+        standalonePageLabels[location.pathname] ??
+        "Dashboard";
 
     useDashboardShellBodyClass();
     useScrollLock(isDrawerOpen);

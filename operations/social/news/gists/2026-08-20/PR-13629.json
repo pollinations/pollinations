@@ -1,0 +1,34 @@
+{
+  "pr_number": 13629,
+  "title": "fix: keep approved app PRs open through merge delays",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13629",
+  "merged_at": "2026-08-20T13:55:10Z",
+  "labels": [],
+  "pr_body_excerpt": "- Updates the GitHub actions to Node 24-based releases while keeping app scripts on Node 22\n- Retries a catalog merge once after the normal auto-merge window\n- Leaves a healthy catalog PR open when GitHub auto-merge is delayed\n- Prevents transient GitHub failures from sending approved apps back to review",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The garden gate stays open",
+    "blurb": "Approved app submissions now get a little more patience from the hive. If GitHub lingers during auto-merge, the healthy catalog PR stays open instead of being sent back through review.",
+    "summary": "The app-publishing workflow now retries a delayed catalog merge once and keeps healthy approved catalog PRs open through transient GitHub auto-merge failures, while updating GitHub Actions to Node 24 and retaining Node 22 for app scripts.",
+    "impact": "App contributors will see approved submissions survive temporary GitHub merge delays instead of unnecessarily returning to review.",
+    "keywords": [
+      "app-submissions",
+      "github-actions",
+      "catalog",
+      "auto-merge",
+      "reliability",
+      "node-24"
+    ],
+    "visual_concept": "Depict Polli as a careful garden keeper holding open a cozy lime-green garden gate for an approved app seedling, while a friendly CRT monitor robot watches a delayed merge timer settle into a green check mark. The open gate represents preserving an approved PR through GitHub's occasional hesitation, with code-plants and small catalog cards growing safely inside.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot with a tiny gardener hat holding open a lime green (#ecf874) garden gate for a healthy code-seedling labeled \"APP APPROVED,\" while a chunky CRT monitor robot happily watches a small delayed merge clock turn into a green check mark; code-plants and pastel flowers grow behind the gate. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, dark purple (#110518) outlines, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-20/PR-13629.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot with a tiny gardener hat holding open a lime green (#ecf874) garden gate for a healthy code-seedling labeled \"APP APPROVED,\" while a chunky CRT monitor robot happily watches a small delayed merge clock turn into a green check mark; code-plants and pastel flowers grow behind the gate. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, dark purple (#110518) outlines, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-08-20T13:56:19.482673+00:00"
+}

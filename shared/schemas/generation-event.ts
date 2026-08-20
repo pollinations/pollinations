@@ -7,8 +7,9 @@ export type EventType =
     | "generate.image"
     | "generate.audio"
     | "generate.embedding"
-    | "generate.realtime"
-    | "tool.media";
+    | "generate.realtime";
+
+export type TinybirdEventType = EventType | "tool.media";
 
 // Plain TypeScript type for Tinybird events (no D1 table - events sent directly to Tinybird)
 export type TinybirdEvent = {
@@ -22,7 +23,7 @@ export type TinybirdEvent = {
     responseTime?: number;
     responseStatus?: number;
     environment?: string;
-    eventType: EventType;
+    eventType: TinybirdEventType;
 
     // Cache identity is emitted only for requests that reached cache-backed
     // generation handling. The key is SHA-256 hashed before ingestion.

@@ -35,9 +35,6 @@ interface CloudflareBindings {
     LOG_FORMAT?: "text" | "json";
     TINYBIRD_INGEST_URL: string;
     IMAGES?: ImagesBinding;
-    FFMPEG?: DurableObjectNamespace<
-        import("./src/durable-objects/FfmpegContainer.ts").FfmpegContainer
-    >;
     PORTKEY_GATEWAY_URL: string;
     AI_GATEWAY_API_KEY?: string;
     AWS_ACCESS_KEY_ID: string;

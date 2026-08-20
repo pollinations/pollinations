@@ -11,6 +11,8 @@ import { logger } from "./middleware/logger.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
 import { wellKnownRoutes } from "./routes/well-known.ts";
 
+export { FfmpegBilling } from "./services/ffmpeg-billing.ts";
+
 function stripTrailingSlash(path: string): string {
     return path.length > 1 ? path.replace(/\/+$/, "") : path;
 }

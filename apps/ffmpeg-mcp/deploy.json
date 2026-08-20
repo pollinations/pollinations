@@ -1,0 +1,12 @@
+{
+  "target": "worker",
+  "credentials": "myceli",
+  "docker": true,
+  "install": "npm ci",
+  "build": "npm test",
+  "deploy": "npm run deploy",
+  "verify": [
+    "https://ffmpeg.myceli.ai/health",
+    "https://ffmpeg.pollinations.ai/health"
+  ]
+}

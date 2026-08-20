@@ -1,0 +1,76 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "pollinations-ffmpeg-mcp",
+  "main": "entrypoint.js",
+  "compatibility_date": "2026-08-20",
+  "compatibility_flags": ["nodejs_compat"],
+  "containers": [
+    {
+      "class_name": "FfmpegContainer",
+      "image": "./Dockerfile",
+      "max_instances": 100,
+      "instance_type": "basic"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [{ "name": "FFMPEG", "class_name": "FfmpegContainer" }]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["FfmpegContainer"] }
+  ],
+  "services": [
+    { "binding": "BILLING", "service": "pollinations-enter-production", "entrypoint": "FfmpegBilling" },
+    { "binding": "MEDIA", "service": "pollinations-media-prod", "entrypoint": "MediaUpload" }
+  ],
+  "routes": [
+    {
+      "pattern": "ffmpeg.myceli.ai",
+      "zone_name": "myceli.ai",
+      "custom_domain": true
+    },
+    {
+      "pattern": "ffmpeg.pollinations.ai",
+      "zone_name": "pollinations.ai",
+      "custom_domain": true
+    }
+  ],
+  "observability": { "enabled": true },
+  "env": {
+    "staging": {
+      "name": "pollinations-ffmpeg-mcp-staging",
+      "containers": [
+        {
+          "class_name": "FfmpegContainer",
+          "image": "./Dockerfile",
+          "max_instances": 10,
+          "instance_type": "basic"
+        }
+      ],
+      "durable_objects": {
+        "bindings": [
+          { "name": "FFMPEG", "class_name": "FfmpegContainer" }
+        ]
+      },
+      "migrations": [
+        { "tag": "v1", "new_sqlite_classes": ["FfmpegContainer"] }
+      ],
+      "services": [
+        { "binding": "BILLING", "service": "pollinations-enter-staging", "entrypoint": "FfmpegBilling" },
+        { "binding": "MEDIA", "service": "pollinations-media-staging", "entrypoint": "MediaUpload" }
+      ],
+      "routes": [
+        {
+          "pattern": "staging.ffmpeg.myceli.ai",
+          "zone_name": "myceli.ai",
+          "custom_domain": true
+        },
+        {
+          "pattern": "staging.ffmpeg.pollinations.ai",
+          "zone_name": "pollinations.ai",
+          "custom_domain": true
+        }
+      ],
+      "observability": { "enabled": true }
+    }
+  }
+}

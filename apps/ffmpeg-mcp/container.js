@@ -1,46 +1,10 @@
 import { Container } from "@cloudflare/containers";
+import { FFMPEG_MAX_MEDIA_BYTES } from "../../shared/ffmpeg.ts";
 
 const WORK_DIR = "/work";
 const MAX_ERROR_LENGTH = 8_000;
-const MAX_OUTPUT_BYTES = 100 * 1024 * 1024;
 
-type ExecOutput = {
-    stdout: ArrayBuffer;
-    stderr: ArrayBuffer;
-    exitCode: number;
-};
-
-type ExecProcess = {
-    stdout: ReadableStream<Uint8Array> | null;
-    stderr: ReadableStream<Uint8Array> | null;
-    exitCode: Promise<number>;
-    output(): Promise<ExecOutput>;
-    kill(signal?: number): void;
-};
-
-type ContainerRuntime = {
-    running: boolean;
-    exec(
-        command: string[],
-        options?: {
-            stdin?: ReadableStream<Uint8Array>;
-            stdout?: "ignore" | "pipe";
-        },
-    ): Promise<ExecProcess>;
-};
-
-export type FfmpegResult =
-    | {
-          ok: true;
-          output: ReadableStream<Uint8Array>;
-          bytes: number;
-          stderr: string;
-      }
-    | { ok: false; stderr: string };
-
-async function decodeStream(
-    stream: ReadableStream<Uint8Array> | null,
-): Promise<string> {
+async function decodeStream(stream) {
     if (!stream) return "";
     const reader = stream.getReader();
     const decoder = new TextDecoder();
@@ -59,14 +23,8 @@ export class FfmpegContainer extends Container {
     sleepAfter = "10s";
     enableInternet = false;
 
-    async run(
-        input: ReadableStream<Uint8Array>,
-        args: string[],
-        outputExtension: string,
-        deadlineMs: number,
-    ): Promise<FfmpegResult> {
-        const runtime = this.ctx.container as ContainerRuntime | undefined;
-        if (!runtime) throw new Error("Container runtime is unavailable");
+    async run(input, args, outputExtension, deadlineMs) {
+        const runtime = this.ctx.container;
         if (!runtime.running) {
             await this.start({ enableInternet: false });
         }
@@ -114,7 +72,7 @@ export class FfmpegContainer extends Container {
         if (sizeOutput.exitCode !== 0 || !Number.isFinite(bytes)) {
             return { ok: false, stderr: "FFmpeg produced no output file" };
         }
-        if (bytes > MAX_OUTPUT_BYTES) {
+        if (bytes > FFMPEG_MAX_MEDIA_BYTES) {
             return { ok: false, stderr: "FFmpeg output exceeds 100 MB" };
         }
 

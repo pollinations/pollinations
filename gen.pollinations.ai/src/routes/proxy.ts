@@ -59,7 +59,6 @@ import {
     CreateEmbeddingRequestSchema,
     CreateEmbeddingResponseSchema,
 } from "@/schemas/embeddings.ts";
-import { FfmpegRequestSchema } from "@/schemas/ffmpeg.ts";
 import {
     GenerateImageRequestQueryParamsSchema,
     GenerateVideoRequestQueryParamsSchema,
@@ -80,7 +79,6 @@ import {
     getGenerationModelRegistry,
 } from "../model-registry.ts";
 import { handleSimpleAudio } from "./audio.ts";
-import { ffmpegAccess, resolveFfmpeg, runFfmpeg } from "./ffmpeg.ts";
 import {
     generateChatCompletion,
     generateEmbeddingsResponse,
@@ -545,34 +543,6 @@ export const proxyRoutes = new Hono<Env>()
     .use(auth())
     .use(frontendKeyRateLimit)
     .use(balance)
-    .post(
-        "/v1/media/ffmpeg",
-        describeRoute({
-            tags: ["🎞️ Media"],
-            summary: "Run FFmpeg",
-            description:
-                "Run FFmpeg arguments against a media.pollinations.ai input. Omit the executable, -i, and output path; Pollinations supplies them.",
-            responses: {
-                200: { description: "FFmpeg output bytes" },
-                413: { description: "Source media is too large" },
-                ...errorResponseDescriptions(
-                    400,
-                    401,
-                    402,
-                    422,
-                    429,
-                    500,
-                    502,
-                    503,
-                ),
-            },
-        }),
-        validator("json", FfmpegRequestSchema),
-        resolveFfmpeg,
-        track("tool.media"),
-        ffmpegAccess,
-        runFfmpeg,
-    )
     .get(
         "/realtime",
         describeRealtimeWebSocket("/realtime"),

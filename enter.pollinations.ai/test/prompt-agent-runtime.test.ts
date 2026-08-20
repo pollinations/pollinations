@@ -9,6 +9,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
     agentRuntimeRoutes,
+    FFMPEG_MCP_URL,
     POLLINATIONS_MCP_URL,
 } from "../src/routes/agent-runtime.ts";
 import {
@@ -32,6 +33,7 @@ const BASE_RUNTIME: PromptAgentRuntime = {
     apiKey: "sk_test",
     genBaseUrl: "https://gen.test.example",
     pollinationsMcpUrl: "https://mcp.pollinations.test/",
+    ffmpegMcpUrl: "https://ffmpeg.pollinations.test/",
 };
 
 describe("built-in Pollinations MCP endpoint", () => {
@@ -40,8 +42,46 @@ describe("built-in Pollinations MCP endpoint", () => {
     it("points at the root transport URL", () => {
         expect(POLLINATIONS_MCP_URL).toBe("https://mcp.pollinations.ai");
         expect(new URL(POLLINATIONS_MCP_URL).pathname).toBe("/");
+        expect(FFMPEG_MCP_URL).toBe("https://ffmpeg.pollinations.ai");
+        expect(new URL(FFMPEG_MCP_URL).pathname).toBe("/");
     });
 });
+
+async function ffmpegMcpResponse(request: Request): Promise<Response> {
+    if (request.method === "GET") {
+        return new Response(null, { status: 405 });
+    }
+    if (request.method === "DELETE") {
+        return new Response(null, { status: 200 });
+    }
+    const body = (await request.json()) as { id?: string; method: string };
+    if (body.method === "initialize") {
+        return Response.json({
+            jsonrpc: "2.0",
+            id: body.id,
+            result: {
+                protocolVersion: "2025-06-18",
+                capabilities: { tools: {} },
+                serverInfo: { name: "ffmpeg", version: "1.0.0" },
+            },
+        });
+    }
+    if (body.method === "notifications/initialized") {
+        return new Response(null, { status: 202 });
+    }
+    return Response.json({
+        jsonrpc: "2.0",
+        id: body.id,
+        result: {
+            tools: [
+                {
+                    name: "runFfmpeg",
+                    inputSchema: { type: "object" },
+                },
+            ],
+        },
+    });
+}
 
 async function agentRunToken(parentApiKeyId: string, managedAgentId: string) {
     return signAgentRunToken({
@@ -264,6 +304,9 @@ describe("prompt-agent runtime", () => {
             async (input: RequestInfo | URL, init?: RequestInit) => {
                 const request = new Request(input, init);
                 const url = new URL(request.url);
+                if (request.url === BASE_RUNTIME.ffmpegMcpUrl) {
+                    return await ffmpegMcpResponse(request);
+                }
                 if (request.url === BASE_RUNTIME.pollinationsMcpUrl) {
                     mcpRequests.push(request.clone());
                     if (request.method === "GET") {
@@ -426,6 +469,9 @@ describe("prompt-agent runtime", () => {
             "fetch",
             vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
                 const request = new Request(input, init);
+                if (request.url === BASE_RUNTIME.ffmpegMcpUrl) {
+                    return await ffmpegMcpResponse(request);
+                }
                 if (request.url === BASE_RUNTIME.pollinationsMcpUrl) {
                     if (request.method === "DELETE") {
                         return new Response(null, { status: 200 });
@@ -531,6 +577,9 @@ describe("prompt-agent runtime", () => {
             "fetch",
             vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
                 const request = new Request(input, init);
+                if (request.url === BASE_RUNTIME.ffmpegMcpUrl) {
+                    return await ffmpegMcpResponse(request);
+                }
                 if (request.url === BASE_RUNTIME.pollinationsMcpUrl) {
                     return new Response("Method Not Allowed", { status: 405 });
                 }
@@ -566,7 +615,7 @@ describe("prompt-agent runtime", () => {
         expect(JSON.parse(text).choices[0].message.content).toBe("still here");
     });
 
-    it("passes the caller token only to the built-in Pollinations MCP", async () => {
+    it("passes the caller token and exposes the Pollinations MCP tools", async () => {
         const mcpRequests: Request[] = [];
         vi.stubGlobal(
             "fetch",
@@ -576,6 +625,11 @@ describe("prompt-agent runtime", () => {
                 init?: RequestInit,
             ) {
                 const request = new Request(input, init);
+                if (request.url === BASE_RUNTIME.ffmpegMcpUrl) {
+                    expect(this).toBe(globalThis);
+                    mcpRequests.push(request.clone());
+                    return await ffmpegMcpResponse(request);
+                }
                 if (request.url === BASE_RUNTIME.pollinationsMcpUrl) {
                     expect(this).toBe(globalThis);
                     mcpRequests.push(request.clone());
@@ -610,10 +664,6 @@ describe("prompt-agent runtime", () => {
                                     inputSchema: { type: "object" },
                                 },
                                 {
-                                    name: "runFfmpeg",
-                                    inputSchema: { type: "object" },
-                                },
-                                {
                                     name: "getBalance",
                                     inputSchema: { type: "object" },
                                 },
@@ -631,7 +681,9 @@ describe("prompt-agent runtime", () => {
                 };
                 expect(body.tools.map((tool) => tool.function.name)).toEqual([
                     "mcp__pollinations__generateImage",
-                    "mcp__pollinations__runFfmpeg",
+                    "mcp__pollinations__getBalance",
+                    "mcp__pollinations__getUsage",
+                    "mcp__ffmpeg__runFfmpeg",
                 ]);
                 return Response.json({
                     choices: [
@@ -714,6 +766,9 @@ describe("prompt-agent runtime", () => {
             "fetch",
             vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
                 const request = new Request(input, init);
+                if (request.url === BASE_RUNTIME.ffmpegMcpUrl) {
+                    return await ffmpegMcpResponse(request);
+                }
                 if (request.url === BASE_RUNTIME.pollinationsMcpUrl) {
                     if (request.method === "GET") {
                         return new Response(null, { status: 405 });
@@ -983,6 +1038,9 @@ describe("prompt-agent runtime", () => {
         const fetchMock = vi.fn(
             async (input: RequestInfo | URL, init?: RequestInit) => {
                 const request = new Request(input, init);
+                if (request.url === BASE_RUNTIME.ffmpegMcpUrl) {
+                    return await ffmpegMcpResponse(request);
+                }
                 if (request.url === BASE_RUNTIME.pollinationsMcpUrl) {
                     if (request.method === "GET") {
                         return new Response(null, { status: 405 });

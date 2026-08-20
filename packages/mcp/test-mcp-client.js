@@ -54,7 +54,6 @@ const EXPECTED_TOOLS = [
     "getKeyInfo",
     "getModelStatus",
     "listModels",
-    "runFfmpeg",
     "setApiKey",
 ];
 

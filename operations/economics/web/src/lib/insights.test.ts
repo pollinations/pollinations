@@ -792,14 +792,14 @@ describe("providerEconomics", () => {
         expect(summary.marginPct).toBeNull();
     });
 
-    it("does not treat community sale-price cost as a provider bill", () => {
+    it("uses the owner payout as the only community cost", () => {
         const data = emptyData({
             opPollen: [
                 opPollen({
                     month: "2026-06",
                     vendor: "community",
                     model: "vendouple/zimage",
-                    cost_paid: 1,
+                    cost_paid: 0,
                     price_paid: 1,
                     model_paid: 0.75,
                 }),

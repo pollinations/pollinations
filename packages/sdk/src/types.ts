@@ -585,7 +585,20 @@ export interface AccountProfile {
 
 /** Account balance */
 export interface AccountBalance {
+    /**
+     * Pollen remaining for this caller. Budgeted API keys see the key budget
+     * here, not the account total.
+     */
     balance: number;
+    /**
+     * Full account balances. Present only when the caller can view account
+     * usage (session or `account:usage`).
+     */
+    accountBalance?: {
+        total: number;
+        tier: number;
+        paid: number;
+    };
 }
 
 /** Usage record */

@@ -1,6 +1,5 @@
 import { createBalanceCheckResult } from "@shared/billing/balance.ts";
 import { canCoverEstimatedCharge } from "@shared/billing/bucket-selection.ts";
-import { isFreeCommunityEndpoint } from "@shared/community-endpoints.ts";
 import { getModelStats } from "@shared/utils/model-stats.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
@@ -23,27 +22,19 @@ type GenerationAccessEnv = {
 export async function checkBalance(
     vars: GenerationAccessVariables,
     env: CloudflareBindings,
-    exactPrice?: number,
 ): Promise<void> {
     const { auth, balance, model, log } = vars;
     if (!auth.user?.id) return;
 
     const isPaidOnly = model.definition.paidOnly ?? false;
-    const estimatedCost =
-        exactPrice ??
-        getEstimatedPrice(await getModelStats(env.KV, log), model.resolved);
-    const communityEndpoint = model.communityEndpoint;
-    const isFreeCommunityModel =
-        communityEndpoint !== undefined &&
-        isFreeCommunityEndpoint(communityEndpoint);
-
+    const estimatedCost = getEstimatedPrice(
+        await getModelStats(env.KV, log),
+        model.resolved,
+        model.definition,
+    );
     const apiKeyBudget = auth.apiKey?.pollenBalance;
     const requiredBudget = Math.max(0, estimatedCost);
-    if (
-        !isFreeCommunityModel &&
-        typeof apiKeyBudget === "number" &&
-        apiKeyBudget <= requiredBudget
-    ) {
+    if (typeof apiKeyBudget === "number" && apiKeyBudget < requiredBudget) {
         throw new HTTPException(402, {
             message: `API key budget too low. This request costs ~${estimatedCost.toFixed(4)} pollen, but this key has ${Math.max(0, apiKeyBudget).toFixed(4)}.`,
         });
@@ -51,10 +42,7 @@ export async function checkBalance(
 
     const userBalance = await balance.getBalance(auth.user.id);
 
-    if (
-        !isFreeCommunityModel &&
-        !canCoverEstimatedCharge(userBalance, estimatedCost, isPaidOnly)
-    ) {
+    if (!canCoverEstimatedCharge(userBalance, estimatedCost, isPaidOnly)) {
         const available = isPaidOnly
             ? userBalance.packBalance
             : Math.max(userBalance.tierBalance, userBalance.packBalance);

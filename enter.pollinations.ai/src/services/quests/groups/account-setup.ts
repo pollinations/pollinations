@@ -2,10 +2,11 @@ import { sql } from "drizzle-orm";
 import { type QuestDefinition, rewardableQuests } from "../definitions.ts";
 import {
     type QuestCard,
+    type QuestEvaluation,
     type QuestEvaluationContext,
     type QuestUser,
     questToCard,
-    type RewardProposal,
+    toQuestProgress,
 } from "../types.ts";
 
 /**
@@ -100,7 +101,7 @@ const topUpSinceLaunchQuest: QuestDefinition = {
     balanceBucket: "tier",
 };
 
-const overHundredPollenSinceLaunchQuest: QuestDefinition = {
+const overHundredPollenSinceLaunchQuest = {
     id: "top_up_100_since_launch",
     title: "Top up 100 Pollen",
     description: `You have [topped up](/pollen#buy-pollen) 100 Pollen or more. _(from ${QUEST_REWARDS_LAUNCH_DATE_LABEL})_`,
@@ -108,7 +109,8 @@ const overHundredPollenSinceLaunchQuest: QuestDefinition = {
     scope: "perUser",
     rewardAmount: 50,
     balanceBucket: "tier",
-};
+    goal: { target: 100, unit: "pollen" },
+} satisfies QuestDefinition;
 
 const QUESTS = [
     firstApiKeyQuest,
@@ -134,10 +136,10 @@ export async function listQuestCards(
     return QUESTS.map((quest) => questToCard(quest));
 }
 
-export async function findRewardProposalsForUser(
+export async function evaluateUser(
     { db }: QuestEvaluationContext,
     user: QuestUser,
-): Promise<RewardProposal[]> {
+): Promise<QuestEvaluation> {
     const rewardableQuestIds = new Set(
         rewardableQuests(EVALUATED_QUESTS).map((quest) => quest.id),
     );
@@ -188,7 +190,8 @@ export async function findRewardProposalsForUser(
                 : [],
         ]);
 
-    return [
+    const totalPollen = topUpSummaryRows[0]?.totalPollen ?? 0;
+    const proposals = [
         ...apiKeyRows.map((row) => ({
             quest: firstApiKeyQuest,
             userId: row.userId,
@@ -211,7 +214,7 @@ export async function findRewardProposalsForUser(
               ]
             : []),
         ...(rewardableQuestIds.has(overHundredPollenSinceLaunchQuest.id) &&
-        (topUpSummaryRows[0]?.totalPollen ?? 0) >= 100
+        totalPollen >= overHundredPollenSinceLaunchQuest.goal.target
             ? [
                   {
                       quest: overHundredPollenSinceLaunchQuest,
@@ -220,4 +223,11 @@ export async function findRewardProposalsForUser(
               ]
             : []),
     ];
+
+    return {
+        proposals,
+        progress: [
+            toQuestProgress(overHundredPollenSinceLaunchQuest, totalPollen),
+        ],
+    };
 }

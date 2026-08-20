@@ -74,18 +74,33 @@ const SORT_OPTIONS: Array<{
     accessibleLabel: string;
 }> = [
     { value: "newest", label: "Newest", accessibleLabel: "Newest" },
+    { value: "oldest", label: "Oldest", accessibleLabel: "Oldest" },
     {
         value: "price-low",
-        label: "Price ↑",
-        accessibleLabel: "Price: Low to high",
+        label: "Price: Low",
+        accessibleLabel: "Lowest price first",
     },
     {
         value: "price-high",
-        label: "Price ↓",
-        accessibleLabel: "Price: High to low",
+        label: "Price: High",
+        accessibleLabel: "Highest price first",
     },
-    { value: "title", label: "Title", accessibleLabel: "Title: A to Z" },
-    { value: "brand", label: "Brand", accessibleLabel: "Brand: A to Z" },
+    { value: "title", label: "Name: A–Z", accessibleLabel: "Name: A to Z" },
+    {
+        value: "title-desc",
+        label: "Name: Z–A",
+        accessibleLabel: "Name: Z to A",
+    },
+    {
+        value: "brand",
+        label: "Publisher: A–Z",
+        accessibleLabel: "Publisher: A to Z",
+    },
+    {
+        value: "brand-desc",
+        label: "Publisher: Z–A",
+        accessibleLabel: "Publisher: Z to A",
+    },
 ];
 
 const SEARCH_LABELS: Record<SectionType, string> = {
@@ -378,7 +393,7 @@ export const Models: FC = () => {
                                         <span className="inline-flex items-center gap-1.5">
                                             {sectionLabels[section]}
                                             {showAgentsNew && (
-                                                <Chip intent="news" size="sm">
+                                                <Chip intent="new" size="sm">
                                                     New
                                                 </Chip>
                                             )}
@@ -413,8 +428,9 @@ export const Models: FC = () => {
                             trigger={(open) => (
                                 <Button
                                     type="button"
+                                    size="md"
                                     aria-label={`Sort models by ${activeSortAccessibleLabel}`}
-                                    className="h-[42px] shrink-0 justify-end gap-2 px-3 text-sm"
+                                    className="shrink-0 justify-end gap-2"
                                 >
                                     <span className="text-right">
                                         {activeSortLabel}
@@ -487,13 +503,11 @@ export const Models: FC = () => {
                 <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
                     {activeTab === "agent" && (
                         <p className="flex items-start gap-1.5">
-                            <BotIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-theme-text-soft" />
+                            <BotIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
-                                <strong className="text-theme-text-soft">
-                                    agent pricing
-                                </strong>{" "}
-                                — agents may make multiple model calls. Each is
-                                billed at that model&apos;s listed price.
+                                <strong>agent pricing</strong> — listed rates
+                                are for the agent&apos;s base model running its
+                                saved instructions.
                             </span>
                         </p>
                     )}
@@ -521,9 +535,8 @@ export const Models: FC = () => {
                     <p className="flex items-start gap-1.5">
                         <UsageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
-                            <strong>gen /pollen</strong> — how many generations
-                            you can make with 1 Pollen, estimated from average
-                            usage over the last 7 days.
+                            <strong>requests /pollen</strong> — estimated from
+                            average usage over the last 7 days.
                         </span>
                     </p>
                 </div>

@@ -22,6 +22,7 @@ import {
     isCommunityFallbackPricingAllowed,
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+    MAX_COMMUNITY_PRICE_PER_SECOND,
     MAX_COMMUNITY_PRICE_PER_TOKEN,
     MAX_FALLBACK_TARGETS,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
@@ -36,7 +37,10 @@ import {
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import { MODEL_INPUT_MODALITIES } from "@shared/registry/registry.ts";
+import {
+    MODEL_INPUT_MODALITIES,
+    type ModelInputModality,
+} from "@shared/registry/registry.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import { and, desc, eq, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -51,6 +55,7 @@ import {
     listCommunityEndpointModels,
     testCommunityEndpoint,
     testCommunityImageEndpoint,
+    testCommunityTranscriptionEndpoint,
 } from "../services/community-endpoint-openai.ts";
 import { agentRuntimeBaseUrl } from "../services/prompt-agent.ts";
 import { requireAccountPermission } from "./account-permissions.ts";
@@ -58,7 +63,7 @@ import { requireAccountPermission } from "./account-permissions.ts";
 const ModalitySchema = z
     .enum(COMMUNITY_ENDPOINT_MODALITIES)
     .describe(
-        'Upstream API family. "text" uses `/v1/chat/completions`; "image" uses `/v1/images/generations` and optionally `/v1/images/edits` when the endpoint test succeeds.',
+        'Upstream API family. "text" uses `/v1/chat/completions`; "image" uses `/v1/images/generations` and optionally `/v1/images/edits` when the endpoint test succeeds; "transcription" uses `/v1/audio/transcriptions`.',
     );
 const ImagePricingSchema = z
     .enum(COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES)
@@ -113,13 +118,17 @@ function enforceCommunityEndpointPriceLimits(
         const maxPrice =
             field.priceUnit === "image"
                 ? MAX_COMMUNITY_PRICE_PER_IMAGE
-                : MAX_COMMUNITY_PRICE_PER_TOKEN;
+                : field.priceUnit === "second"
+                  ? MAX_COMMUNITY_PRICE_PER_SECOND
+                  : MAX_COMMUNITY_PRICE_PER_TOKEN;
         if (price === undefined || price <= maxPrice) continue;
 
         const limit =
             field.priceUnit === "image"
                 ? `${MAX_COMMUNITY_PRICE_PER_IMAGE} Pollen per image`
-                : `${MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS} Pollen per 1M tokens`;
+                : field.priceUnit === "second"
+                  ? `${MAX_COMMUNITY_PRICE_PER_SECOND} Pollen per second`
+                  : `${MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS} Pollen per 1M tokens`;
         throw new HTTPException(400, {
             message: `${field.label} price must not exceed ${limit}`,
         });
@@ -160,7 +169,35 @@ type FallbackPrimary = {
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
     prices: CommunityEndpointPrices;
+    inputModalities?: readonly ModelInputModality[] | null;
 };
+
+function fallbackTargetMissingMessage(modelId: string): string {
+    return `Fallback target ${modelId} does not exist`;
+}
+
+/**
+ * Private or deactivated rows owned by someone else must look identical to a
+ * missing row. Distinct 400s were an existence oracle.
+ */
+function shouldConcealFallbackTarget(
+    primary: FallbackPrimary,
+    target: CommunityEndpointRow,
+): boolean {
+    if (target.ownerUserId === primary.ownerUserId) return false;
+    return target.visibility === "private" || target.disabledAt !== null;
+}
+
+/**
+ * Whether a stored row generates through something else — always for an agent,
+ * and for an external endpoint that was granted delegation.
+ */
+function rowDelegatesGeneration(row: {
+    agentId: string | null;
+    delegatesGeneration: boolean;
+}): boolean {
+    return row.agentId !== null || row.delegatesGeneration;
+}
 
 /**
  * Why `target` may not serve as a fallback for `primary`, or null when it may.
@@ -178,10 +215,13 @@ function fallbackTargetRejection(
     // public rows scanned. The write path checks this earlier, before any
     // lookup, because a model being created has no row to find.
     if (modelId === primary.modelId) return SELF_FALLBACK_MESSAGE;
+    if (shouldConcealFallbackTarget(primary, target)) {
+        return fallbackTargetMissingMessage(modelId);
+    }
     if (target.disabledAt !== null) {
         return `Fallback target ${modelId} must be active`;
     }
-    if (target.agentId !== null || target.delegatesGeneration) {
+    if (rowDelegatesGeneration(target)) {
         return `Fallback target ${modelId} cannot delegate generation`;
     }
     if (
@@ -204,6 +244,21 @@ function fallbackTargetRejection(
         targetImagePricing !== primary.imagePricing
     ) {
         return `Fallback target ${modelId} bills images per ${targetImagePricing}, not per ${primary.imagePricing}`;
+    }
+    const primaryInputs = normalizeCommunityEndpointInputModalities(
+        primary.inputModalities,
+        primary.modality,
+    );
+    const targetInputs = normalizeCommunityEndpointInputModalities(
+        target.inputModalities,
+        targetModality,
+    );
+    if (
+        primary.modality === "image" &&
+        primaryInputs.includes("image") &&
+        !targetInputs.includes("image")
+    ) {
+        return `Fallback target ${modelId} does not support image edits`;
     }
     const targetPrices = communityEndpointPrices(target);
     if (!isCommunityFallbackPricingAllowed(primary.prices, targetPrices)) {
@@ -252,9 +307,9 @@ async function resolveFallbackModelId(
               ),
           })
         : undefined;
-    if (!target) {
+    if (!target || shouldConcealFallbackTarget(primary, target)) {
         throw new HTTPException(400, {
-            message: `Fallback target ${fallbackModelId} does not exist`,
+            message: fallbackTargetMissingMessage(fallbackModelId),
         });
     }
     const rejection = fallbackTargetRejection(primary, fallbackModelId, target);
@@ -339,7 +394,9 @@ const CreateEndpointSchema = z
         bearerToken: EndpointFieldsSchema.bearerToken.optional(),
         modality: ModalitySchema.optional().default("text"),
         imagePricing: ImagePricingSchema.optional().default("request"),
-        inputModalities: InputModalitiesSchema.optional().default(["text"]),
+        // No blanket default: what an omitted set means depends on the
+        // modality, so it is resolved in the handler once modality is known.
+        inputModalities: InputModalitiesSchema.optional(),
         visibility: VisibilitySchema.optional().default("private"),
         perUserRpm: PerUserRpmSchema.optional(),
         fallbackModelIds: FallbackModelIdsSchema.optional(),
@@ -444,6 +501,9 @@ const CommunityEndpointResponseSchema = z.object({
     inputModalities: z.array(InputModalitySchema),
     baseUrl: z.string(),
     agentId: z.string().nullable(),
+    // Derived, not the stored column: true for every agent as well. Clients get
+    // the answer rather than the two columns it is computed from.
+    delegatesGeneration: z.boolean(),
     upstreamModel: z.string(),
     visibility: VisibilitySchema,
     perUserRpm: PerUserRpmSchema,
@@ -540,8 +600,8 @@ function normalizeInputProviderUrl(value: string): string {
     }
 }
 
-// Anyone may register private endpoints for their own use. Publishing and raw
-// upstream probes require an allowlisted account.
+// Anyone may register private endpoints for their own use and probe their own
+// upstream. Publishing requires an allowlisted account.
 async function requireCommunityEndpointPublishAccess(
     db: Db,
     userId: string,
@@ -554,7 +614,7 @@ async function requireCommunityEndpointPublishAccess(
     if (!isCommunityEndpointOwnerAllowed(user)) {
         throw new HTTPException(403, {
             message:
-                "Community model publishing tools require approval. Models can stay private for your own use.",
+                "Community model publishing requires approval. Models can stay private for your own use.",
         });
     }
 }
@@ -600,6 +660,7 @@ function toResponse(
         ),
         baseUrl,
         agentId: row.agentId,
+        delegatesGeneration: rowDelegatesGeneration(row),
         upstreamModel: row.upstreamModel,
         visibility: row.visibility,
         perUserRpm: row.perUserRpm,
@@ -880,6 +941,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     endpoint.imagePricing,
                 ),
                 prices: communityEndpointPrices(endpoint),
+                inputModalities: endpoint.inputModalities,
             };
             const candidates = await db
                 .select({
@@ -956,10 +1018,13 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const modality = agent ? "text" : input.modality;
             const imagePricing =
                 modality === "image" ? input.imagePricing : "request";
-            enforceCommunityEndpointInputModalities(
-                modality,
-                input.inputModalities,
-            );
+            // An omitted set follows the modality — audio for transcription,
+            // text otherwise. An explicit set is validated rather than
+            // silently rewritten, so a wrong declaration still gets a 400.
+            const inputModalities =
+                input.inputModalities ??
+                normalizeCommunityEndpointInputModalities(undefined, modality);
+            enforceCommunityEndpointInputModalities(modality, inputModalities);
             const prices =
                 agent || input.visibility !== "public"
                     ? communityEndpointPrices({})
@@ -979,6 +1044,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                       modality,
                       imagePricing,
                       prices,
+                      inputModalities: input.inputModalities,
                   })
                 : [];
             await enforcePublishingAccess(db, user.id, input.visibility);
@@ -993,7 +1059,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     description: input.description || null,
                     modality,
                     imagePricing,
-                    inputModalities: input.inputModalities,
+                    inputModalities,
                     baseUrl: agent
                         ? null
                         : normalizeInputBaseUrl(input.baseUrl ?? ""),
@@ -1024,7 +1090,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "List Upstream Models",
             description:
-                "Fetch OpenAI-compatible upstream model IDs before publishing a My Models endpoint. Requires community model publishing approval; API keys also require `account:keys`.",
+                "Fetch OpenAI-compatible upstream model IDs from a provider before registering a My Models endpoint. Limited to one probe every 30 seconds per account. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Upstream model IDs",
@@ -1046,9 +1112,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
-            const db = drizzle(c.env.DB, { schema });
             requireAccountPermission(c.var.auth.apiKey, "keys");
-            await requireCommunityEndpointPublishAccess(db, user.id);
             const throttled = await enforceEndpointProbeThrottle(
                 c,
                 user.id,
@@ -1069,7 +1133,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Test My Model Endpoint",
             description:
-                "Test an OpenAI-compatible upstream model before publishing it. Image tests detect token pricing and probe the derived `/images/edits` endpoint. Requires community model publishing approval; API keys also require `account:keys`.",
+                "Test an OpenAI-compatible upstream model before registering it. Image tests detect the image pricing mode and probe the derived `/images/edits` endpoint. Limited to one probe every 30 seconds per account. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Endpoint test result",
@@ -1091,9 +1155,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
-            const db = drizzle(c.env.DB, { schema });
             requireAccountPermission(c.var.auth.apiKey, "keys");
-            await requireCommunityEndpointPublishAccess(db, user.id);
             const throttled = await enforceEndpointProbeThrottle(
                 c,
                 user.id,
@@ -1104,7 +1166,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 const result =
                     input.modality === "image"
                         ? await testCommunityImageEndpoint(input)
-                        : await testCommunityEndpoint(input);
+                        : input.modality === "transcription"
+                          ? await testCommunityTranscriptionEndpoint(input)
+                          : await testCommunityEndpoint(input);
                 return c.json({
                     ok: true,
                     message:
@@ -1112,7 +1176,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
                             ? result.inputModalities?.includes("image")
                                 ? "Generation and editing endpoints responded with image data"
                                 : "Generation endpoint responded; editing is not supported"
-                            : "Endpoint responded with usage",
+                            : input.modality === "transcription"
+                              ? "Endpoint responded with transcription text"
+                              : "Endpoint responded with usage",
                     ...result,
                 });
             } catch (error) {
@@ -1222,9 +1288,6 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     c.env.BETTER_AUTH_SECRET,
                 );
             }
-            if (input.visibility !== undefined) {
-                update.visibility = input.visibility;
-            }
             if (endpoint.agentId !== null) {
                 update.perUserRpm = null;
             } else if (input.perUserRpm !== undefined) {
@@ -1294,6 +1357,8 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         modality,
                         imagePricing: effectiveImagePricing,
                         prices: effectivePrices,
+                        inputModalities:
+                            input.inputModalities ?? endpoint.inputModalities,
                     },
                 );
             }

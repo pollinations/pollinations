@@ -1,8 +1,10 @@
 import { communityEndpointPrices } from "@shared/community-endpoints.ts";
+import { HttpError } from "@shared/http-error.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import { describe, expect, it, vi } from "vitest";
 import {
+    attachFallbackTarget,
     type FailedCall,
     type FallbackCandidate,
     fallbackCandidates,
@@ -11,7 +13,6 @@ import {
     withModelFallback,
     withModelFallbackResponse,
 } from "../src/fallback.ts";
-import { HttpError } from "../src/image/httpError.ts";
 import type { GenerationModelEntry } from "../src/model-registry.ts";
 
 function registryEntry(
@@ -142,6 +143,75 @@ describe("registry fallback linking", () => {
         expect(
             registryPrimary.fallbackEntries?.map((entry) => entry.id),
         ).toEqual(["public", "owner/private", "owner/disabled"]);
+    });
+
+    it("does not link an edits-capable image model to a generations-only target", () => {
+        const primary = communityEntry(
+            "owner/edit",
+            "owner",
+            "public",
+            null,
+            ["owner/gen-only"],
+            0.02,
+        );
+        primary.eventType = "generate.image";
+        primary.supportedEndpoints = [
+            "/v1/images/generations",
+            "/v1/images/edits",
+            "/image/{prompt}",
+        ];
+        primary.communityEndpoint = {
+            ...primary.communityEndpoint,
+            modality: "image",
+            imagePricing: "request",
+            ...communityEndpointPrices({ completionImagePrice: 0.02 }),
+        } as GenerationModelEntry["communityEndpoint"];
+
+        const genOnly = communityEntry("owner/gen-only", "owner", "public");
+        genOnly.eventType = "generate.image";
+        genOnly.supportedEndpoints = [
+            "/v1/images/generations",
+            "/image/{prompt}",
+        ];
+        genOnly.communityEndpoint = {
+            ...genOnly.communityEndpoint,
+            modality: "image",
+            imagePricing: "request",
+            ...communityEndpointPrices({ completionImagePrice: 0.01 }),
+        } as GenerationModelEntry["communityEndpoint"];
+
+        const entries = [primary, genOnly];
+        linkFallbackEntries(
+            entries,
+            new Map(entries.map((entry) => [entry.id, entry])),
+        );
+
+        expect(primary.fallbackEntries).toBeUndefined();
+    });
+});
+
+describe("attachFallbackTarget", () => {
+    it("stores the Portkey-shaped marker without making it enumerable", () => {
+        const completion = { id: "chatcmpl_test", model: "openai" };
+        attachFallbackTarget(completion, 1);
+        expect((completion as { fallbackTarget?: string }).fallbackTarget).toBe(
+            "config.targets[1]",
+        );
+        expect(
+            Object.prototype.propertyIsEnumerable.call(
+                completion,
+                "fallbackTarget",
+            ),
+        ).toBe(false);
+        expect(JSON.stringify({ ...completion })).not.toContain(
+            "fallbackTarget",
+        );
+    });
+
+    it("leaves the primary response untouched", () => {
+        const completion = { id: "chatcmpl_test" };
+        attachFallbackTarget(completion, 0);
+        expect(completion).not.toHaveProperty("fallbackTarget");
     });
 });
 

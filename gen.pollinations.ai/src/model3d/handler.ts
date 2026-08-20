@@ -1,10 +1,10 @@
 import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { HttpError } from "@shared/http-error.ts";
 import { buildUsageHeaders } from "@shared/registry/usage-headers.ts";
 import type { Context } from "hono";
 import type { Env } from "@/env.ts";
 import { withModelFallbackResponse } from "../fallback.ts";
-import { HttpError } from "../image/httpError.ts";
 import { bufferToUint8Array } from "../image/utils/imageDownload.ts";
 import {
     createAndReturnModel3d,

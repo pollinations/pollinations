@@ -1,4 +1,8 @@
-import { MAX_REWARD_AMOUNT, recordRewards } from "@shared/billing/rewards.ts";
+import {
+    MAX_REWARD_AMOUNT,
+    recordRewards,
+    rewardKey,
+} from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { inArray, sql } from "drizzle-orm";
@@ -19,6 +23,8 @@ const grantRewardsSchema = z.object({
         .regex(/^[a-z0-9][a-z0-9_-]{0,99}$/),
     title: z.string().trim().min(1).max(200),
     pollenAmount: z.number().positive().max(MAX_REWARD_AMOUNT),
+    // "pack" grants paid pollen, the only bucket paid-only requests can spend.
+    balanceBucket: z.enum(["tier", "pack"]).default("tier"),
     sourceUrl: z
         .url()
         .refine((value) =>
@@ -41,6 +47,7 @@ export const questGrantAdminRoutes = new Hono<Env>().post(
         const users = await db
             .select({
                 id: schema.user.id,
+                githubId: schema.user.githubId,
                 githubUsername: schema.user.githubUsername,
             })
             .from(schema.user)
@@ -65,10 +72,10 @@ export const questGrantAdminRoutes = new Hono<Env>().post(
         const result = await recordRewards(
             db,
             matched.map((user) => ({
-                idempotencyKey: `quest:${questId}:user:${user.id}`,
+                idempotencyKey: rewardKey(questId, user.githubId),
                 userId: user.id,
                 amount: input.pollenAmount,
-                bucket: "tier",
+                bucket: input.balanceBucket,
                 questId,
                 title: input.title,
                 url: input.sourceUrl,
@@ -77,6 +84,7 @@ export const questGrantAdminRoutes = new Hono<Env>().post(
 
         return c.json({
             campaignId: input.campaignId,
+            balanceBucket: input.balanceBucket,
             matched: matched.length,
             recorded: result.recorded,
             missing: requested.filter((login) => !usersByLogin.has(login)),

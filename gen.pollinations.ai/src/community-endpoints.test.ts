@@ -6,10 +6,12 @@ import {
 } from "cloudflare:test";
 import type { Logger } from "@logtape/logtape";
 import { verifyAgentRunToken } from "@shared/auth/agent-run-token.ts";
+import { COMMUNITY_MODEL_ALLOWED_GITHUB_IDS } from "@shared/auth/github-id-list.ts";
 import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     type CommunityEndpointModality,
     type CommunityEndpointRuntime,
+    communityAudioTranscriptionsUrl,
     communityChatCompletionsUrl,
     communityEndpointPriceFieldsForModality,
     communityEndpointPrices,
@@ -26,6 +28,7 @@ import {
     legacyCommunityModelId,
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+    MAX_COMMUNITY_PRICE_PER_SECOND,
     MAX_COMMUNITY_PRICE_PER_TOKEN,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
@@ -52,7 +55,11 @@ import {
     getRegistryModelDefinition,
 } from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
-import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
+import {
+    FALLBACK_TARGET_HEADER,
+    MODEL_USED_HEADER,
+    USAGE_TYPE_HEADERS,
+} from "@shared/registry/usage-headers.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import {
     createTestApiKey,
@@ -65,8 +72,10 @@ import { Hono } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
 import { withInlineGenerationCoordinator } from "../test/helpers/inline-generation-coordinator.ts";
+import { callCommunityTranscriptionEndpoint } from "./audio/communityEndpoint.ts";
 import {
     communityImageSupportedEndpoints,
+    communityTranscriptionSupportedEndpoints,
     getCommunityModelRegistryEntries,
 } from "./community-models.ts";
 import { callCommunityImageEndpoint } from "./image/communityEndpoint.ts";
@@ -80,6 +89,16 @@ import { communityEndpointGatewayContext } from "./text/communityEndpoint.ts";
 const db = drizzle(env.DB);
 const testLog = { getChild: () => testLog } as unknown as Logger;
 const COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID = 36901823;
+// user.github_id is unique, so every test owner needs its own id. Rotate
+// through the allowlist to keep each one both distinct and allowed.
+let allowedGithubIdCursor = 0;
+function nextAllowedGithubId(): number {
+    const ids = COMMUNITY_MODEL_ALLOWED_GITHUB_IDS;
+    const id = ids[allowedGithubIdCursor % ids.length];
+    allowedGithubIdCursor += 1;
+    if (id === undefined) throw new Error("empty community model allowlist");
+    return id;
+}
 const COMMUNITY_ENDPOINT_DENIED_TEST_GITHUB_ID = 999_999_999;
 const TEST_PNG_BASE64 = "iVBORw0KGgo=";
 const TEST_PNG_BYTES = [137, 80, 78, 71, 13, 10, 26, 10];
@@ -272,11 +291,11 @@ async function createCommunityFallbackPair({
     const primaryOwner = `${prefix}-primary-${suffix}`;
     const fallbackOwner = `${prefix}-fallback-${suffix}`;
     const primaryUserId = await createTestUser({
-        githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+        githubId: nextAllowedGithubId(),
         githubUsername: primaryOwner,
     });
     const fallbackUserId = await createTestUser({
-        githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+        githubId: nextAllowedGithubId(),
         githubUsername: fallbackOwner,
     });
     const primaryModelId = communityModelId(primaryOwner, primaryName);
@@ -475,6 +494,23 @@ describe("community endpoint helpers", () => {
         expect(() =>
             normalizeCommunityEndpointBaseUrl("https://localhost/v1"),
         ).toThrow("Endpoint URL cannot target a private host");
+    });
+
+    it("derives the OpenAI-compatible audio transcription URL", () => {
+        expect(
+            communityAudioTranscriptionsUrl("https://api.example.com/v1"),
+        ).toBe("https://api.example.com/v1/audio/transcriptions");
+        expect(
+            communityAudioTranscriptionsUrl(
+                "https://api.example.com/v1/audio/transcriptions",
+            ),
+        ).toBe("https://api.example.com/v1/audio/transcriptions");
+    });
+
+    it("restricts community transcription models to the transcription endpoint", () => {
+        expect(communityTranscriptionSupportedEndpoints()).toEqual([
+            "/v1/audio/transcriptions",
+        ]);
     });
 
     it("normalizes public community provider URLs", () => {
@@ -683,6 +719,55 @@ describe("community endpoint helpers", () => {
         });
 
         expect(definition.inputModalities).toEqual(["text"]);
+    });
+
+    it("builds community transcription models billed per audio second", () => {
+        const modelId = "voodoohop/whisper";
+        const definition = communityModelDefinition({
+            modelId,
+            description: "Community transcription model",
+            modality: "transcription",
+            ...communityEndpointPrices({ promptAudioPrice: 0.0000445 }),
+        });
+
+        expect(definition).toMatchObject({
+            category: "audio",
+            inputModalities: ["audio"],
+            outputModalities: ["text"],
+            supportedEndpoints: ["/v1/audio/transcriptions"],
+            cost: { promptAudioSeconds: 0.0000445 },
+        });
+        expect(definition).not.toHaveProperty("flatRate");
+        expect(definition.cost).not.toHaveProperty("promptTextTokens");
+        expect(
+            calculateUsageBilling({
+                model: modelId,
+                usage: { promptAudioSeconds: 60 },
+                servedBy: definition,
+            }).price.totalPrice,
+        ).toBeCloseTo(0.0000445 * 60, 10);
+    });
+
+    it("keeps the transcription price as the only billed bucket for its modality", () => {
+        const definition = communityPriceDefinition(
+            communityEndpointPrices({ promptAudioPrice: 0.00002 }),
+            "transcription",
+        );
+        expect(definition).toEqual({ promptAudioSeconds: 0.00002 });
+    });
+
+    it("prices transcription audio in per-second units, not per 1M", () => {
+        const [field] =
+            communityEndpointPriceFieldsForModality("transcription");
+        expect(field).toMatchObject({
+            key: "promptAudioPrice",
+            usageType: "promptAudioSeconds",
+            priceUnit: "second",
+        });
+        expect(MAX_COMMUNITY_PRICE_PER_SECOND).toBeGreaterThan(0);
+        expect(MAX_COMMUNITY_PRICE_PER_SECOND).toBeLessThan(
+            MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+        );
     });
 
     describe("fallback target pricing", () => {
@@ -933,6 +1018,368 @@ describe("community endpoint helpers", () => {
         });
     });
 
+    describe("community transcription endpoint billing", () => {
+        afterEach(() => {
+            vi.unstubAllGlobals();
+        });
+
+        const secret = "test-secret";
+
+        async function transcriptionEndpoint(): Promise<CommunityEndpointRuntime> {
+            return {
+                kind: "external",
+                id: "community-endpoint-id",
+                ownerUserId: "owner-id",
+                modelId: "voodoohop/whisper",
+                name: "whisper",
+                title: "Whisper",
+                description: null,
+                delegatesGeneration: false,
+                modality: "transcription",
+                imagePricing: "request",
+                inputModalities: ["audio"],
+                baseUrl: "https://api.example.com/v1",
+                upstreamModel: "whisper-1",
+                visibility: "public",
+                perUserRpm: null,
+                fallbackModelIds: [],
+                disabledAt: null,
+                disabledReason: null,
+                bearerTokenCiphertext: await encryptSecret(
+                    "sk_saved_token",
+                    secret,
+                ),
+                ...communityEndpointPrices({ promptAudioPrice: 0.0000445 }),
+            };
+        }
+
+        const audioFile = new File([new Uint8Array([1, 2, 3])], "sample.wav", {
+            type: "audio/wav",
+        });
+        const transcriptionOptions = {
+            file: audioFile,
+            language: "en",
+            responseFormat: "json",
+        };
+
+        it("forwards the file and bills the upstream-reported audio seconds", async () => {
+            const fetchMock = vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                expect(request.url).toBe(
+                    "https://api.example.com/v1/audio/transcriptions",
+                );
+                expect(request.headers.get("authorization")).toBe(
+                    "Bearer sk_saved_token",
+                );
+                expect(request.headers.get("content-type")).toContain(
+                    "multipart/form-data",
+                );
+                const formData = await request.formData();
+                expect(formData.get("model")).toBe("whisper-1");
+                expect(formData.get("file")).toBeInstanceOf(File);
+                expect(formData.get("language")).toBe("en");
+                expect(formData.get("response_format")).toBe("verbose_json");
+
+                return Response.json({
+                    text: "Hello world",
+                    usage: { duration: 12.5 },
+                });
+            });
+            vi.stubGlobal("fetch", fetchMock);
+
+            const response = await callCommunityTranscriptionEndpoint(
+                await transcriptionEndpoint(),
+                transcriptionOptions,
+                secret,
+            );
+
+            expect(response.status).toBe(200);
+            // The shared formatter re-emits the OpenAI json shape: the
+            // upstream's usage block is normalized to usage.seconds.
+            expect(await response.json()).toEqual({
+                text: "Hello world",
+                usage: { type: "duration", seconds: 12.5 },
+            });
+            expect(response.headers.get(MODEL_USED_HEADER)).toBe(
+                "voodoohop/whisper",
+            );
+            expect(
+                response.headers.get(USAGE_TYPE_HEADERS.promptAudioSeconds),
+            ).toBe("12.5");
+        });
+
+        it("accepts whisper-style usage.seconds", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({
+                        text: "Hello",
+                        usage: { seconds: 3 },
+                    }),
+                ),
+            );
+
+            const response = await callCommunityTranscriptionEndpoint(
+                await transcriptionEndpoint(),
+                { file: audioFile },
+                secret,
+            );
+            expect(
+                response.headers.get(USAGE_TYPE_HEADERS.promptAudioSeconds),
+            ).toBe("3");
+        });
+
+        it("accepts a top-level duration, which is where whisper verbose_json puts it", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({ text: "Hello", duration: 8.25 }),
+                ),
+            );
+
+            const response = await callCommunityTranscriptionEndpoint(
+                await transcriptionEndpoint(),
+                { file: audioFile },
+                secret,
+            );
+            expect(
+                response.headers.get(USAGE_TYPE_HEADERS.promptAudioSeconds),
+            ).toBe("8.25");
+        });
+
+        it("explains the verbose_json requirement when the endpoint rejects it", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json(
+                        { error: { message: "unsupported response_format" } },
+                        { status: 400 },
+                    ),
+                ),
+            );
+
+            const call = callCommunityTranscriptionEndpoint(
+                await transcriptionEndpoint(),
+                { file: audioFile },
+                secret,
+            );
+            await expect(call).rejects.toThrow("response_format=verbose_json");
+            await expect(call).rejects.toMatchObject({ status: 502 });
+        });
+
+        it("fails rather than billing zero when the upstream reports no duration", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () => Response.json({ text: "Hello" })),
+            );
+
+            await expect(
+                callCommunityTranscriptionEndpoint(
+                    await transcriptionEndpoint(),
+                    { file: audioFile },
+                    secret,
+                ),
+            ).rejects.toMatchObject({ status: 502 });
+        });
+
+        it("asks upstream for verbose_json even when the caller wants text, then formats down", async () => {
+            const fetchMock = vi.fn(async (input, init) => {
+                const formData = await new Request(input, init).formData();
+                // text carries no usage object, so requesting it upstream would
+                // make the request unbillable. verbose_json is what the probe
+                // verified, and where whisper reports the duration.
+                expect(formData.get("response_format")).toBe("verbose_json");
+                return Response.json({
+                    text: "Hello world",
+                    usage: { seconds: 4 },
+                });
+            });
+            vi.stubGlobal("fetch", fetchMock);
+
+            const response = await callCommunityTranscriptionEndpoint(
+                await transcriptionEndpoint(),
+                { file: audioFile, responseFormat: "text" },
+                secret,
+            );
+
+            expect(response.headers.get("content-type")).toContain(
+                "text/plain",
+            );
+            expect(await response.text()).toBe("Hello world");
+            expect(
+                response.headers.get(USAGE_TYPE_HEADERS.promptAudioSeconds),
+            ).toBe("4");
+        });
+
+        it("serves verbose_json from the metered upstream body", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({
+                        text: "Hello world",
+                        language: "en",
+                        usage: { seconds: 6 },
+                    }),
+                ),
+            );
+
+            const response = await callCommunityTranscriptionEndpoint(
+                await transcriptionEndpoint(),
+                { file: audioFile, responseFormat: "verbose_json" },
+                secret,
+            );
+
+            expect(await response.json()).toMatchObject({
+                text: "Hello world",
+                task: "transcribe",
+                language: "en",
+                duration: 6,
+            });
+        });
+
+        it("serves the endpoint's own segments and words, not an invented one", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({
+                        text: "Hello world. Goodbye.",
+                        language: "en",
+                        duration: 6,
+                        segments: [
+                            { id: 0, start: 0, end: 2.5, text: "Hello world." },
+                            { id: 1, start: 3, end: 5.5, text: "Goodbye." },
+                        ],
+                        words: [
+                            { word: "Hello", start: 0, end: 0.6 },
+                            { word: "world.", start: 0.6, end: 2.5 },
+                        ],
+                    }),
+                ),
+            );
+
+            const response = await callCommunityTranscriptionEndpoint(
+                await transcriptionEndpoint(),
+                { file: audioFile, responseFormat: "verbose_json" },
+                secret,
+            );
+
+            expect(await response.json()).toMatchObject({
+                segments: [
+                    { id: 0, start: 0, end: 2.5, text: "Hello world." },
+                    { id: 1, start: 3, end: 5.5, text: "Goodbye." },
+                ],
+                words: [
+                    { word: "Hello", start: 0, end: 0.6 },
+                    { word: "world.", start: 0.6, end: 2.5 },
+                ],
+            });
+        });
+
+        it("falls back to one file-spanning segment when the endpoint reports none", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({ text: "Hello world", duration: 6 }),
+                ),
+            );
+
+            const response = await callCommunityTranscriptionEndpoint(
+                await transcriptionEndpoint(),
+                { file: audioFile, responseFormat: "verbose_json" },
+                secret,
+            );
+
+            expect(await response.json()).toMatchObject({
+                segments: [{ id: 0, start: 0, end: 6, text: "Hello world" }],
+                words: [],
+            });
+        });
+
+        it("skips upstream segments that are not fully timed", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({
+                        text: "Hello world",
+                        duration: 6,
+                        segments: [
+                            { start: 0, end: 2, text: "Hello" },
+                            { start: 2, text: "world" },
+                            { start: 4, end: 6 },
+                        ],
+                    }),
+                ),
+            );
+
+            const response = await callCommunityTranscriptionEndpoint(
+                await transcriptionEndpoint(),
+                { file: audioFile, responseFormat: "verbose_json" },
+                secret,
+            );
+
+            expect(await response.json()).toMatchObject({
+                segments: [{ id: 0, start: 0, end: 2, text: "Hello" }],
+            });
+        });
+
+        it("rejects diarized_json rather than answering with empty segments", async () => {
+            const fetchMock = vi.fn(async () =>
+                Response.json({ text: "Hello", usage: { seconds: 1 } }),
+            );
+            vi.stubGlobal("fetch", fetchMock);
+
+            await expect(
+                callCommunityTranscriptionEndpoint(
+                    await transcriptionEndpoint(),
+                    { file: audioFile, responseFormat: "diarized_json" },
+                    secret,
+                ),
+            ).rejects.toMatchObject({ status: 400 });
+            expect(fetchMock).not.toHaveBeenCalled();
+        });
+
+        it("asks upstream for verbose_json, the shape the probe verified", async () => {
+            const fetchMock = vi.fn(async (input, init) => {
+                const formData = await new Request(input, init).formData();
+                expect(formData.get("response_format")).toBe("verbose_json");
+                return Response.json({ text: "Hello", usage: { seconds: 2 } });
+            });
+            vi.stubGlobal("fetch", fetchMock);
+
+            const response = await callCommunityTranscriptionEndpoint(
+                await transcriptionEndpoint(),
+                { file: audioFile },
+                secret,
+            );
+            expect(
+                response.headers.get(USAGE_TYPE_HEADERS.promptAudioSeconds),
+            ).toBe("2");
+        });
+
+        it("propagates upstream transcription failures", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json(
+                        { error: { message: "Audio file too long" } },
+                        { status: 413 },
+                    ),
+                ),
+            );
+
+            await expect(
+                callCommunityTranscriptionEndpoint(
+                    await transcriptionEndpoint(),
+                    transcriptionOptions,
+                    secret,
+                ),
+            ).rejects.toMatchObject({
+                status: 413,
+                message: expect.stringContaining("Audio file too long"),
+            });
+        });
+    });
+
     it("builds Portkey gateway context with the saved token", async () => {
         const secret = "test-secret";
         const endpoint: CommunityEndpointRuntime = {
@@ -1113,7 +1560,7 @@ fixtureTest(
         const modelName = `openai-${crypto.randomUUID().slice(0, 8)}`;
         const modelId = communityModelId(ownerGithubUsername, modelName);
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         await db.insert(communityEndpointTable).values({
@@ -1247,7 +1694,7 @@ fixtureTest(
         const modelId = communityModelId(ownerGithubUsername, modelName);
         const endpointId = `endpoint-${crypto.randomUUID()}`;
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
             // Owner-only private models have no Pollinations charge and remain
             // callable without a Pollinations balance.
@@ -1395,7 +1842,7 @@ fixtureTest(
         const modelName = `stream-${crypto.randomUUID().slice(0, 8)}`;
         const modelId = communityModelId(ownerGithubUsername, modelName);
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         await db.insert(communityEndpointTable).values({
@@ -1494,7 +1941,7 @@ fixtureTest(
         const modelName = `simple-${crypto.randomUUID().slice(0, 8)}`;
         const modelId = communityModelId(ownerGithubUsername, modelName);
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         await db.insert(communityEndpointTable).values({
@@ -1593,7 +2040,7 @@ fixtureTest(
         const modelName = `catalog-${crypto.randomUUID().slice(0, 8)}`;
         const modelId = communityModelId(ownerGithubUsername, modelName);
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         await db.insert(communityEndpointTable).values({
@@ -1693,7 +2140,7 @@ fixtureTest(
     async ({ restrictedApiKey }) => {
         const ownerGithubUsername = `order-${crypto.randomUUID().slice(0, 8)}`;
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         const newestDate = new Date("2100-01-02T00:00:00Z");
@@ -1847,7 +2294,7 @@ fixtureTest(
         const modelName = `disabled-${crypto.randomUUID().slice(0, 8)}`;
         const modelId = communityModelId(ownerGithubUsername, modelName);
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         await db.insert(communityEndpointTable).values({
@@ -1910,11 +2357,11 @@ fixtureTest(
         const imageModelId = communityModelId(imageOwner, imageName);
 
         const textUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: textOwner,
         });
         const imageUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: imageOwner,
         });
 
@@ -2089,7 +2536,7 @@ fixtureTest(
             modelName,
         );
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         await db.insert(communityEndpointTable).values({
@@ -2141,7 +2588,7 @@ fixtureTest(
 );
 
 fixtureTest(
-    "lets a non-allowlisted user register a private model but blocks publishing tools",
+    "lets a non-allowlisted user probe an upstream and register a private model but blocks publishing",
     async ({ apiKey }) => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `denied-${crypto.randomUUID().slice(0, 8)}`;
@@ -2162,6 +2609,40 @@ fixtureTest(
         });
 
         const enterApi = await createEnterCommunityApi();
+        // The probes are open to every account, so they reach the upstream
+        // instead of being refused: stub it and assert on what comes back.
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+                const request = new Request(input, init);
+                if (request.url === "https://api.example.com/v1/models") {
+                    return Response.json({
+                        data: [{ id: "gpt-4.1-mini" }, { id: "gpt-4o" }],
+                    });
+                }
+                if (
+                    request.url ===
+                    "https://api.example.com/v1/chat/completions"
+                ) {
+                    return Response.json({
+                        id: "chatcmpl_probe",
+                        choices: [
+                            {
+                                index: 0,
+                                message: { role: "assistant", content: "OK" },
+                                finish_reason: "stop",
+                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 3,
+                            completion_tokens: 1,
+                            total_tokens: 4,
+                        },
+                    });
+                }
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }),
+        );
         for (const probe of [
             {
                 path: "models",
@@ -2193,8 +2674,18 @@ fixtureTest(
                     },
                 ),
             );
-            expect(probeResponse.status).toBe(403);
+            expect(probeResponse.status).toBe(200);
+            const probeBody = (await probeResponse.json()) as {
+                data?: string[];
+                ok?: boolean;
+            };
+            if (probe.path === "models") {
+                expect(probeBody.data).toEqual(["gpt-4.1-mini", "gpt-4o"]);
+            } else {
+                expect(probeBody.ok).toBe(true);
+            }
         }
+        vi.unstubAllGlobals();
 
         const directPublishResponse = await fetchEnterApi(
             enterApi,
@@ -2369,7 +2860,7 @@ fixtureTest(
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `pollinations-${crypto.randomUUID().slice(0, 8)}`;
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         const sessionToken = `session-${crypto.randomUUID()}`;
@@ -2575,7 +3066,7 @@ fixtureTest(
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `image-${crypto.randomUUID().slice(0, 8)}`;
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         const sessionToken = `session-${crypto.randomUUID()}`;
@@ -3059,6 +3550,233 @@ fixtureTest(
 );
 
 fixtureTest(
+    "registers an OpenAI-compatible transcription endpoint and bills it through transcription APIs",
+    async ({ apiKey }) => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `stt-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerUserId = await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: ownerGithubUsername,
+        });
+        const sessionToken = `session-${crypto.randomUUID()}`;
+        await db.insert(sessionTable).values({
+            id: `session-${crypto.randomUUID()}`,
+            token: sessionToken,
+            userId: ownerUserId,
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const enterApi = await createEnterCommunityApi();
+        const transcriptionUrl =
+            "https://api.example.com/v1/audio/transcriptions";
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            if (request.url === transcriptionUrl) {
+                expect(request.headers.get("authorization")).toBe(
+                    "Bearer sk_transcription_upstream",
+                );
+                const formData = await request.formData();
+                expect(formData.get("model")).toBe("whisper-1");
+                expect(formData.get("file")).toBeInstanceOf(File);
+                return Response.json({
+                    text: "ok",
+                    usage: { duration: 0.5 },
+                });
+            }
+            if (isBillingFetch(request)) {
+                return Response.json({ data: [] });
+            }
+            throw new Error(`Unexpected fetch: ${request.url}`);
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const registrationPayload = {
+            name: modelName,
+            title: "Community Transcription Endpoint",
+            description: "OpenAI-compatible speech-to-text endpoint",
+            modality: "transcription",
+            inputModalities: ["audio"],
+            visibility: "public",
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "whisper-1",
+            bearerToken: "Bearer sk_transcription_upstream",
+            promptAudioPrice: 0.0000445,
+        };
+        const unsupportedInputResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: await signedSessionCookie(sessionToken),
+                },
+                body: JSON.stringify({
+                    ...registrationPayload,
+                    name: `${modelName}-invalid`,
+                    inputModalities: ["text"],
+                }),
+            }),
+        );
+        expect(unsupportedInputResponse.status).toBe(400);
+
+        // Omitting inputModalities must follow the modality, not fall back to
+        // text — a text default would make transcription endpoints impossible
+        // to register without naming "audio" explicitly.
+        const defaultedInputResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: await signedSessionCookie(sessionToken),
+                },
+                body: JSON.stringify({
+                    ...registrationPayload,
+                    name: `${modelName}-defaulted`,
+                    inputModalities: undefined,
+                }),
+            }),
+        );
+        expect(defaultedInputResponse.status).toBe(200);
+        expect(await defaultedInputResponse.json()).toMatchObject({
+            modality: "transcription",
+            inputModalities: ["audio"],
+        });
+
+        const registerResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: await signedSessionCookie(sessionToken),
+                },
+                body: JSON.stringify(registrationPayload),
+            }),
+        );
+        expect(registerResponse.status).toBe(200);
+        const registered = (await registerResponse.json()) as {
+            id: string;
+            modelId: string;
+            modality: string;
+            inputModalities: string[];
+            baseUrl: string;
+            upstreamModel: string;
+            promptAudioPrice: number;
+        };
+        expect(registered).toMatchObject({
+            modelId: communityModelId(ownerGithubUsername, modelName),
+            modality: "transcription",
+            inputModalities: ["audio"],
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "whisper-1",
+            promptAudioPrice: 0.0000445,
+        });
+
+        const testResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints/test", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: await signedSessionCookie(sessionToken),
+                },
+                body: JSON.stringify({
+                    baseUrl: registered.baseUrl,
+                    bearerToken: "Bearer sk_transcription_upstream",
+                    model: registered.upstreamModel,
+                    modality: "transcription",
+                }),
+            }),
+        );
+        expect(testResponse.status).toBe(200);
+        await expect(testResponse.json()).resolves.toMatchObject({
+            message: "Endpoint responded with transcription text",
+            usage: { duration: 0.5 },
+            billableUsage: { promptAudioSeconds: 0.5 },
+        });
+
+        const transcriptionFormData = new FormData();
+        transcriptionFormData.append("model", registered.modelId);
+        transcriptionFormData.append("response_format", "json");
+        transcriptionFormData.append(
+            "file",
+            new Blob([new Uint8Array([1, 2, 3])], { type: "audio/wav" }),
+            "sample.wav",
+        );
+        const transcriptionResponse = await fetchGen(
+            new Request("https://gen.pollinations.ai/v1/audio/transcriptions", {
+                method: "POST",
+                headers: { Authorization: `Bearer ${apiKey}` },
+                body: transcriptionFormData,
+            }),
+        );
+        expect(transcriptionResponse.status).toBe(200);
+        await expect(transcriptionResponse.json()).resolves.toMatchObject({
+            text: "ok",
+        });
+        expect(transcriptionResponse.headers.get("x-model-used")).toBe(
+            registered.modelId,
+        );
+        expect(
+            transcriptionResponse.headers.get("x-usage-prompt-audio-seconds"),
+        ).toBe("0.5");
+
+        const openaiModelsResponse = await fetchGen(
+            "https://gen.pollinations.ai/v1/models",
+        );
+        expect(openaiModelsResponse.status).toBe(200);
+        const openaiModels = (await openaiModelsResponse.json()) as {
+            data: {
+                id: string;
+                input_modalities?: string[];
+                supported_endpoints?: string[];
+            }[];
+        };
+        const listedModel = openaiModels.data.find(
+            (model) => model.id === registered.modelId,
+        );
+        expect(listedModel?.input_modalities).toEqual(["audio"]);
+        expect(listedModel?.supported_endpoints).toEqual(
+            expect.arrayContaining(["/v1/audio/transcriptions"]),
+        );
+
+        const audioModelsResponse = await fetchGen(
+            "https://gen.pollinations.ai/audio/models",
+        );
+        expect(audioModelsResponse.status).toBe(200);
+        const audioModels = (await audioModelsResponse.json()) as {
+            name: string;
+            category?: string;
+            community?: boolean;
+            input_modalities?: string[];
+            supported_endpoints?: string[];
+            pricing?: Record<string, string>;
+        }[];
+        const listedAudioModel = audioModels.find(
+            (model) => model.name === registered.modelId,
+        );
+        expect(listedAudioModel).toMatchObject({
+            name: registered.modelId,
+            category: "audio",
+            community: true,
+            input_modalities: ["audio"],
+            pricing: { promptAudioSeconds: "0.0000445" },
+        });
+        expect(listedAudioModel?.supported_endpoints).toEqual(
+            expect.arrayContaining(["/v1/audio/transcriptions"]),
+        );
+        expect(
+            fetchMock.mock.calls.filter(
+                ([input]) => new Request(input).url === transcriptionUrl,
+            ),
+        ).toHaveLength(2);
+    },
+);
+
+fixtureTest(
     "manages my-models through account API with a key that has account keys permission",
     async () => {
         const ownerGithubUsername = `pk-${crypto.randomUUID().slice(0, 8)}`;
@@ -3066,13 +3784,13 @@ fixtureTest(
             type: "publishable",
             accountPermissions: ["keys"],
             user: {
-                githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+                githubId: nextAllowedGithubId(),
                 githubUsername: ownerGithubUsername,
             },
         });
         const denied = await createTestApiKey({
             user: {
-                githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+                githubId: nextAllowedGithubId(),
                 githubUsername: `denied-${crypto.randomUUID().slice(0, 8)}`,
             },
         });
@@ -3457,7 +4175,7 @@ fixtureTest(
     async () => {
         const ownerGithubUsername = `price-${crypto.randomUUID().slice(0, 8)}`;
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         const sessionToken = `session-${crypto.randomUUID()}`;
@@ -3558,7 +4276,7 @@ fixtureTest(
         // Use an approved publisher so the request reaches the outbound probe;
         // non-allowlisted accounts are rejected before any fetch occurs.
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: `redir-${crypto.randomUUID().slice(0, 8)}`,
         });
         const sessionToken = `session-${crypto.randomUUID()}`;
@@ -3615,7 +4333,7 @@ fixtureTest(
 fixtureTest("rejects unsafe community model names", async () => {
     const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
     const ownerUserId = await createTestUser({
-        githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+        githubId: nextAllowedGithubId(),
         githubUsername: ownerGithubUsername,
     });
     const sessionToken = `session-${crypto.randomUUID()}`;
@@ -3663,7 +4381,7 @@ fixtureTest(
     async () => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         const sessionToken = `session-${crypto.randomUUID()}`;
@@ -3713,7 +4431,7 @@ fixtureTest(
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `model-${crypto.randomUUID().slice(0, 8)}`;
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         const sessionToken = `session-${crypto.randomUUID()}`;
@@ -4088,12 +4806,12 @@ fixtureTest(
 fixtureTest("validates community fallback targets on write", async () => {
     const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
     const ownerUserId = await createTestUser({
-        githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+        githubId: nextAllowedGithubId(),
         githubUsername: ownerGithubUsername,
     });
     const otherOwnerGithubUsername = `other-${crypto.randomUUID().slice(0, 8)}`;
     const otherOwnerUserId = await createTestUser({
-        githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+        githubId: nextAllowedGithubId(),
         githubUsername: otherOwnerGithubUsername,
     });
     const sessionToken = `session-${crypto.randomUUID()}`;
@@ -4114,6 +4832,7 @@ fixtureTest("validates community fallback targets on write", async () => {
         cheap: `cheap-${crypto.randomUUID().slice(0, 8)}`,
         priv: `private-${crypto.randomUUID().slice(0, 8)}`,
         otherPrivate: `other-private-${crypto.randomUUID().slice(0, 8)}`,
+        otherDisabled: `other-disabled-${crypto.randomUUID().slice(0, 8)}`,
         disabled: `disabled-${crypto.randomUUID().slice(0, 8)}`,
         delegating: `delegating-${crypto.randomUUID().slice(0, 8)}`,
         image: `image-${crypto.randomUUID().slice(0, 8)}`,
@@ -4143,6 +4862,20 @@ fixtureTest("validates community fallback targets on write", async () => {
             bearerTokenCiphertext,
             promptTextPrice: 0,
             completionTextPrice: 0,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        },
+        {
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId: otherOwnerUserId,
+            visibility: "public",
+            name: targetNames.otherDisabled,
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "other-disabled-upstream",
+            bearerTokenCiphertext,
+            promptTextPrice: 0,
+            completionTextPrice: 0,
+            disabledAt: new Date(),
             createdAt: new Date(),
             updatedAt: new Date(),
         },
@@ -4279,9 +5012,14 @@ fixtureTest("validates community fallback targets on write", async () => {
         communityModelId(otherOwnerGithubUsername, targetNames.otherPrivate),
     );
     expect(otherPrivateTarget.status).toBe(400);
-    expect(await otherPrivateTarget.text()).toContain(
-        "must be public or owned by you",
+    expect(await otherPrivateTarget.text()).toContain("does not exist");
+
+    const otherDisabledTarget = await createWithFallback(
+        `${primaryName}-other-disabled`,
+        communityModelId(otherOwnerGithubUsername, targetNames.otherDisabled),
     );
+    expect(otherDisabledTarget.status).toBe(400);
+    expect(await otherDisabledTarget.text()).toContain("does not exist");
 
     const disabledTarget = await createWithFallback(
         `${primaryName}-disabled`,
@@ -4401,7 +5139,7 @@ fixtureTest(
     async () => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         const bearerTokenCiphertext = await encryptSecret(
@@ -4606,7 +5344,7 @@ fixtureTest(
         const suffix = crypto.randomUUID().slice(0, 8);
         const ownerGithubUsername = `transform-owner-${suffix}`;
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         const fallbackModelId = communityModelId(
@@ -4998,7 +5736,7 @@ fixtureTest(
         for (const owner of owners) {
             userIds.push(
                 await createTestUser({
-                    githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+                    githubId: nextAllowedGithubId(),
                     githubUsername: owner,
                 }),
             );

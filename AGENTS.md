@@ -110,7 +110,7 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 
 **CRITICAL — production Cloudflare deployments must always run through GitHub Actions:**
 
-- Use the service's production deployment workflow, such as `Deploy / gen.pollinations.ai`; use `workflow_dispatch` when path filters do not trigger it.
+- Use the production deployment workflow `Deploy / Cloudflare production`; use `workflow_dispatch` (and its `service` input to target one worker) when path filters do not trigger it.
 - Dispatch production workflows only from the `production` branch. Select a secret-synchronization input only after the Secret Mutation Safety approval gate.
 - Never run `wrangler deploy --env production`, a production deployment npm script, or a direct production Worker upload from a local machine or agent session.
 - If CI credentials lack a required permission, follow the Secret Mutation Safety approval gate before updating the scoped GitHub Actions secret and rerunning the workflow. Never bypass CI with a local Cloudflare OAuth session.

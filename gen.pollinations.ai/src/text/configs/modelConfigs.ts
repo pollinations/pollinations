@@ -149,10 +149,14 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
+    // GLM-5.3 is a mandatory-reasoning model (see registry entry), making it
+    // just as exposed to the blank-answer/billed-tokens bug as the Qwen
+    // models above if z-ai/fp8's own max_tokens default is ever too low.
     "z-ai/glm-5.3": () =>
         createOpenRouterModelConfig({
             model: "z-ai/glm-5.3",
             defaultOptions: {
+                max_tokens: 16384,
                 provider: {
                     only: ["z-ai/fp8"],
                     allow_fallbacks: false,
@@ -169,20 +173,30 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "xiaomi/mimo-v2.5-pro",
             defaultOptions: { provider: { sort: "price" } },
         }),
+    // Reasoning models: explicit max_tokens default below. Without one, the
+    // upstream provider's own default applies (Chutes AI defaults to 1024),
+    // which reasoning models can burn entirely on their internal thinking
+    // trace before emitting any visible text — a blank, still-billed answer.
+    // `sort: "price"` means routing can move to a low-default provider at
+    // any time, so this isn't just a Chutes-pinned-model problem.
     "qwen/qwen3.7-plus": () =>
         createOpenRouterModelConfig({
             model: "qwen/qwen3.7-plus",
-            defaultOptions: { provider: { sort: "price" } },
+            defaultOptions: { max_tokens: 16384, provider: { sort: "price" } },
         }),
     "qwen/qwen3.7-max": () =>
         createOpenRouterModelConfig({
             model: "qwen/qwen3.7-max",
-            defaultOptions: { provider: { sort: "price" } },
+            defaultOptions: { max_tokens: 16384, provider: { sort: "price" } },
         }),
+    // Confirmed bug: pinned only to Chutes, whose max_tokens default (1024)
+    // is entirely consumed by the reasoning trace on non-trivial prompts,
+    // producing a blank visible response that still bills completion tokens.
     "qwen/qwen3.8-27b": () =>
         createOpenRouterModelConfig({
             model: "qwen/qwen3.8-27b",
             defaultOptions: {
+                max_tokens: 16384,
                 provider: {
                     only: ["Chutes"],
                     allow_fallbacks: false,
@@ -193,6 +207,7 @@ export const portkeyConfig: PortkeyConfigMap = {
         createOpenRouterModelConfig({
             model: "qwen/qwen3.8-max",
             defaultOptions: {
+                max_tokens: 16384,
                 provider: {
                     only: ["Alibaba"],
                     allow_fallbacks: false,
@@ -203,6 +218,7 @@ export const portkeyConfig: PortkeyConfigMap = {
         createOpenRouterModelConfig({
             model: "qwen/qwen3.7-flash",
             defaultOptions: {
+                max_tokens: 8192,
                 provider: {
                     only: ["Alibaba"],
                     allow_fallbacks: false,
@@ -310,9 +326,13 @@ export const portkeyConfig: PortkeyConfigMap = {
         createOpenRouterModelConfig({
             model: "mistralai/mistral-small-3.2-24b-instruct",
         }),
+    // No provider pin (no `only`/`sort`) — the widest-risk case for the
+    // blank-answer/billed-tokens bug, since OpenRouter can route this to any
+    // provider at any time, including ones with a low max_tokens default.
     "mistral-small-2603": () =>
         createOpenRouterModelConfig({
             model: "mistralai/mistral-small-2603",
+            defaultOptions: { max_tokens: 8192 },
         }),
 
     // -- Azure (Myceli Prod — eastus, Mistral Large) -------------------------

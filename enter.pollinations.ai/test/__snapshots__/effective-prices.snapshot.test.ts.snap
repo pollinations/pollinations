@@ -541,6 +541,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000375,
     },
   },
+  "gpt-live-transcribe": {
+    "cost": {
+      "promptAudioSeconds": 0.000283333333333333,
+    },
+    "price": {
+      "promptAudioSeconds": 0.0002125,
+    },
+  },
   "gpt-oss": {
     "cost": {
       "completionTextTokens": 0.00000018,
@@ -603,6 +611,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptCachedTokens": 0.000000045,
       "promptImageTokens": 0.0000006,
       "promptTextTokens": 0.00000045,
+    },
+  },
+  "gpt-transcribe": {
+    "cost": {
+      "promptAudioSeconds": 0.000075,
+    },
+    "price": {
+      "promptAudioSeconds": 0.00005625,
     },
   },
   "gptimage": {

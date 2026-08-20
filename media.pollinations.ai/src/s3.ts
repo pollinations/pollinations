@@ -14,7 +14,11 @@ interface S3AuthContext {
 export const s3App = new Hono<{ Bindings: { MEDIA_BUCKET: R2Bucket } }>();
 
 // Helper to construct XML responses
-function xmlResponse(xml: string, status = 200, headers?: Record<string, string>): Response {
+function xmlResponse(
+    xml: string,
+    status = 200,
+    headers?: Record<string, string>,
+): Response {
     return new Response(xml, {
         status,
         headers: {
@@ -35,7 +39,9 @@ function s3ErrorXml(code: string, message: string, resource = ""): string {
 }
 
 // Authenticate incoming request via SigV4 or Bearer
-async function authenticateS3Request(req: Request): Promise<S3AuthContext | null> {
+async function authenticateS3Request(
+    req: Request,
+): Promise<S3AuthContext | null> {
     const url = new URL(req.url);
 
     // 1. Check SigV4 (Authorization header or Presigned query params)
@@ -70,7 +76,8 @@ async function authenticateS3Request(req: Request): Promise<S3AuthContext | null
     }
 
     // 2. Check Bearer token or ?key=
-    const bearer = authHeader?.match(/^Bearer (.+)$/)?.[1] || url.searchParams.get("key");
+    const bearer =
+        authHeader?.match(/^Bearer (.+)$/)?.[1] || url.searchParams.get("key");
     if (bearer) {
         try {
             const res = await fetch("https://gen.pollinations.ai/account/key", {
@@ -100,13 +107,19 @@ async function authenticateS3Request(req: Request): Promise<S3AuthContext | null
 }
 
 // Map path to user-prefixed R2 object key
-function resolveObjectKey(path: string, userId: string): { key: string; isPublic: boolean; rawPath: string } | null {
+function resolveObjectKey(
+    path: string,
+    userId: string,
+): { key: string; isPublic: boolean; rawPath: string } | null {
     // Path example: /media/{userId}/public/foo.png or /{userId}/public/foo.png or /public/foo.png
     let cleanPath = path.replace(/^\/+/, "");
 
     // Strip bucket name if first path segment matches standard bucket names (e.g. "media" or "pollinations")
     const segments = cleanPath.split("/");
-    if (segments.length > 0 && (segments[0] === "media" || segments[0] === "pollinations")) {
+    if (
+        segments.length > 0 &&
+        (segments[0] === "media" || segments[0] === "pollinations")
+    ) {
         segments.shift();
         cleanPath = segments.join("/");
     }
@@ -117,9 +130,17 @@ function resolveObjectKey(path: string, userId: string): { key: string; isPublic
     }
 
     if (cleanPath.startsWith("public/")) {
-        return { key: `${userId}/${cleanPath}`, isPublic: true, rawPath: cleanPath };
+        return {
+            key: `${userId}/${cleanPath}`,
+            isPublic: true,
+            rawPath: cleanPath,
+        };
     } else if (cleanPath.startsWith("private/")) {
-        return { key: `${userId}/${cleanPath}`, isPublic: false, rawPath: cleanPath };
+        return {
+            key: `${userId}/${cleanPath}`,
+            isPublic: false,
+            rawPath: cleanPath,
+        };
     }
 
     return null;
@@ -175,13 +196,18 @@ async function handleListObjects(c: any): Promise<Response> {
     const prefixParam = url.searchParams.get("prefix") || "";
     const delimiter = url.searchParams.get("delimiter") || undefined;
     const maxKeys = parseInt(url.searchParams.get("max-keys") || "1000", 10);
-    const cursor = url.searchParams.get(isV2 ? "continuation-token" : "marker") || undefined;
+    const cursor =
+        url.searchParams.get(isV2 ? "continuation-token" : "marker") ||
+        undefined;
 
     // Resolve user-scoped prefix
     let r2Prefix = `${auth.userId}/`;
     if (prefixParam) {
         let cleanPrefix = prefixParam.replace(/^\/+/, "");
-        if (cleanPrefix.startsWith("media/") || cleanPrefix.startsWith("pollinations/")) {
+        if (
+            cleanPrefix.startsWith("media/") ||
+            cleanPrefix.startsWith("pollinations/")
+        ) {
             cleanPrefix = cleanPrefix.replace(/^(media|pollinations)\//, "");
         }
         if (cleanPrefix.startsWith(`${auth.userId}/`)) {
@@ -252,7 +278,10 @@ s3App.on(["GET", "HEAD", "PUT", "DELETE", "POST"], "/*", async (c) => {
     const method = req.method;
 
     // Check if ListObjects on bucket path (e.g. GET /media?list-type=2)
-    if (method === "GET" && (url.searchParams.has("list-type") || url.searchParams.has("prefix"))) {
+    if (
+        method === "GET" &&
+        (url.searchParams.has("list-type") || url.searchParams.has("prefix"))
+    ) {
         return handleListObjects(c);
     }
 
@@ -289,7 +318,10 @@ s3App.on(["GET", "HEAD", "PUT", "DELETE", "POST"], "/*", async (c) => {
         }
 
         if (!targetKey) {
-            return xmlResponse(s3ErrorXml("AccessDenied", "Access Denied"), 403);
+            return xmlResponse(
+                s3ErrorXml("AccessDenied", "Access Denied"),
+                403,
+            );
         }
 
         // Handle GET / HEAD
@@ -299,7 +331,10 @@ s3App.on(["GET", "HEAD", "PUT", "DELETE", "POST"], "/*", async (c) => {
                 return new Response(null, { status: 404 });
             }
             const headers = new Headers();
-            headers.set("Content-Type", object.httpMetadata?.contentType || "application/octet-stream");
+            headers.set(
+                "Content-Type",
+                object.httpMetadata?.contentType || "application/octet-stream",
+            );
             headers.set("Content-Length", object.size.toString());
             headers.set("ETag", `"${object.httpEtag || object.etag}"`);
             headers.set("Last-Modified", object.uploaded.toUTCString());
@@ -313,22 +348,41 @@ s3App.on(["GET", "HEAD", "PUT", "DELETE", "POST"], "/*", async (c) => {
             });
 
             if (!object) {
-                return xmlResponse(s3ErrorXml("NoSuchKey", "The specified key does not exist.", targetKey), 404);
+                return xmlResponse(
+                    s3ErrorXml(
+                        "NoSuchKey",
+                        "The specified key does not exist.",
+                        targetKey,
+                    ),
+                    404,
+                );
             }
 
             const headers = new Headers();
-            headers.set("Content-Type", object.httpMetadata?.contentType || "application/octet-stream");
+            headers.set(
+                "Content-Type",
+                object.httpMetadata?.contentType || "application/octet-stream",
+            );
             headers.set("ETag", `"${object.httpEtag || object.etag}"`);
             headers.set("Last-Modified", object.uploaded.toUTCString());
 
             if ("range" in object && object.range) {
-                headers.set("Content-Range", `bytes ${object.range.offset}-${object.range.offset + object.range.length - 1}/${object.size}`);
+                headers.set(
+                    "Content-Range",
+                    `bytes ${object.range.offset}-${object.range.offset + object.range.length - 1}/${object.size}`,
+                );
                 headers.set("Content-Length", object.range.length.toString());
-                return new Response((object as R2ObjectBody).body, { status: 206, headers });
+                return new Response((object as R2ObjectBody).body, {
+                    status: 206,
+                    headers,
+                });
             }
 
             headers.set("Content-Length", object.size.toString());
-            return new Response((object as R2ObjectBody).body, { status: 200, headers });
+            return new Response((object as R2ObjectBody).body, {
+                status: 200,
+                headers,
+            });
         }
     }
 
@@ -338,12 +392,24 @@ s3App.on(["GET", "HEAD", "PUT", "DELETE", "POST"], "/*", async (c) => {
     }
 
     if (auth.keyType !== "secret") {
-        return xmlResponse(s3ErrorXml("AccessDenied", "Write operations require a secret (sk_) API key"), 403);
+        return xmlResponse(
+            s3ErrorXml(
+                "AccessDenied",
+                "Write operations require a secret (sk_) API key",
+            ),
+            403,
+        );
     }
 
     const resolved = resolveObjectKey(path, auth.userId);
     if (!resolved) {
-        return xmlResponse(s3ErrorXml("InvalidRequest", "Invalid key path prefix. Must be public/ or private/"), 400);
+        return xmlResponse(
+            s3ErrorXml(
+                "InvalidRequest",
+                "Invalid key path prefix. Must be public/ or private/",
+            ),
+            400,
+        );
     }
 
     const targetKey = resolved.key;
@@ -353,7 +419,10 @@ s3App.on(["GET", "HEAD", "PUT", "DELETE", "POST"], "/*", async (c) => {
         const uploadId = url.searchParams.get("uploadId");
         if (uploadId) {
             // AbortMultipartUpload
-            const multipart = c.env.MEDIA_BUCKET.resumeMultipartUpload(targetKey, uploadId);
+            const multipart = c.env.MEDIA_BUCKET.resumeMultipartUpload(
+                targetKey,
+                uploadId,
+            );
             await multipart.abort();
             return new Response(null, { status: 204 });
         }
@@ -366,10 +435,14 @@ s3App.on(["GET", "HEAD", "PUT", "DELETE", "POST"], "/*", async (c) => {
     if (method === "POST") {
         if (url.searchParams.has("uploads")) {
             // CreateMultipartUpload
-            const contentType = req.headers.get("content-type") || "application/octet-stream";
-            const multipart = await c.env.MEDIA_BUCKET.createMultipartUpload(targetKey, {
-                httpMetadata: { contentType },
-            });
+            const contentType =
+                req.headers.get("content-type") || "application/octet-stream";
+            const multipart = await c.env.MEDIA_BUCKET.createMultipartUpload(
+                targetKey,
+                {
+                    httpMetadata: { contentType },
+                },
+            );
 
             const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <InitiateMultipartUploadResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
@@ -384,13 +457,20 @@ s3App.on(["GET", "HEAD", "PUT", "DELETE", "POST"], "/*", async (c) => {
         if (uploadId) {
             // CompleteMultipartUpload
             const bodyText = await req.text();
-            const partMatches = Array.from(bodyText.matchAll(/<Part>\s*<PartNumber>(\d+)<\/PartNumber>\s*<ETag>([^<]+)<\/ETag>\s*<\/Part>/g));
+            const partMatches = Array.from(
+                bodyText.matchAll(
+                    /<Part>\s*<PartNumber>(\d+)<\/PartNumber>\s*<ETag>([^<]+)<\/ETag>\s*<\/Part>/g,
+                ),
+            );
             const parts: R2UploadedPart[] = partMatches.map((m) => ({
                 partNumber: parseInt(m[1], 10),
                 etag: m[2].replace(/"/g, ""),
             }));
 
-            const multipart = c.env.MEDIA_BUCKET.resumeMultipartUpload(targetKey, uploadId);
+            const multipart = c.env.MEDIA_BUCKET.resumeMultipartUpload(
+                targetKey,
+                uploadId,
+            );
             const object = await multipart.complete(parts);
 
             const xml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -411,7 +491,10 @@ s3App.on(["GET", "HEAD", "PUT", "DELETE", "POST"], "/*", async (c) => {
 
         let bodyStream = req.body;
         if (!bodyStream) {
-            return xmlResponse(s3ErrorXml("InvalidRequest", "Missing request body"), 400);
+            return xmlResponse(
+                s3ErrorXml("InvalidRequest", "Missing request body"),
+                400,
+            );
         }
 
         // Check if stream is aws-chunked framed
@@ -423,7 +506,10 @@ s3App.on(["GET", "HEAD", "PUT", "DELETE", "POST"], "/*", async (c) => {
         if (uploadId && partNumberStr) {
             // UploadPart
             const partNumber = parseInt(partNumberStr, 10);
-            const multipart = c.env.MEDIA_BUCKET.resumeMultipartUpload(targetKey, uploadId);
+            const multipart = c.env.MEDIA_BUCKET.resumeMultipartUpload(
+                targetKey,
+                uploadId,
+            );
             const part = await multipart.uploadPart(partNumber, bodyStream);
 
             return new Response(null, {
@@ -434,7 +520,8 @@ s3App.on(["GET", "HEAD", "PUT", "DELETE", "POST"], "/*", async (c) => {
             });
         } else {
             // PutObject
-            const contentType = req.headers.get("content-type") || "application/octet-stream";
+            const contentType =
+                req.headers.get("content-type") || "application/octet-stream";
             const object = await c.env.MEDIA_BUCKET.put(targetKey, bodyStream, {
                 httpMetadata: {
                     contentType,
@@ -455,5 +542,8 @@ s3App.on(["GET", "HEAD", "PUT", "DELETE", "POST"], "/*", async (c) => {
         }
     }
 
-    return xmlResponse(s3ErrorXml("MethodNotAllowed", "Method Not Allowed"), 405);
+    return xmlResponse(
+        s3ErrorXml("MethodNotAllowed", "Method Not Allowed"),
+        405,
+    );
 });

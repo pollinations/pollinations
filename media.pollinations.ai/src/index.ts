@@ -1,4 +1,3 @@
-import { s3App } from "./s3.ts";
 import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -23,6 +22,7 @@ import {
     TagError,
     tagsForItems,
 } from "./catalog.ts";
+import { s3App } from "./s3.ts";
 
 const DOMAIN = "media.pollinations.ai";
 // gen.pollinations.ai proxies /account/* to enter — using the public path
@@ -878,8 +878,15 @@ app.use("*", async (c, next) => {
     const req = c.req.raw;
     const url = new URL(req.url);
     const authHeader = req.headers.get("authorization") || "";
-    const isSigV4 = authHeader.startsWith("AWS4-HMAC-SHA256") || url.searchParams.has("X-Amz-Signature");
-    const isS3Path = url.pathname.includes("/public/") || url.pathname.includes("/private/") || url.searchParams.has("list-type") || url.searchParams.has("uploads") || url.searchParams.has("uploadId");
+    const isSigV4 =
+        authHeader.startsWith("AWS4-HMAC-SHA256") ||
+        url.searchParams.has("X-Amz-Signature");
+    const isS3Path =
+        url.pathname.includes("/public/") ||
+        url.pathname.includes("/private/") ||
+        url.searchParams.has("list-type") ||
+        url.searchParams.has("uploads") ||
+        url.searchParams.has("uploadId");
 
     if (isSigV4 || isS3Path) {
         return s3App.fetch(req, c.env, c.executionCtx);

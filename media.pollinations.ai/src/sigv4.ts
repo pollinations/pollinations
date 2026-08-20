@@ -11,9 +11,13 @@ export interface KeyDetails {
 
 const KEY_BY_ID_URL = "https://gen.pollinations.ai/account/key-by-id/";
 
-export async function lookupKeyById(accessKeyId: string): Promise<KeyDetails | null> {
+export async function lookupKeyById(
+    accessKeyId: string,
+): Promise<KeyDetails | null> {
     try {
-        const res = await fetch(`${KEY_BY_ID_URL}${encodeURIComponent(accessKeyId)}`);
+        const res = await fetch(
+            `${KEY_BY_ID_URL}${encodeURIComponent(accessKeyId)}`,
+        );
         if (!res.ok) return null;
         const data = await res.json<KeyDetails & { valid: boolean }>();
         if (!data || !data.valid) return null;
@@ -29,7 +33,7 @@ export async function verifySigV4(
     options?: {
         region?: string;
         service?: string;
-    }
+    },
 ): Promise<boolean> {
     const url = new URL(req.url);
     const region = options?.region || "auto";
@@ -45,7 +49,9 @@ export async function verifySigV4(
 
     // Workaround for Cloudflare Workers Accept-Encoding header modification
     const headers = new Headers(req.headers);
-    const cfClientAcceptEncoding = (req as unknown as { cf?: { clientAcceptEncoding?: string } }).cf?.clientAcceptEncoding;
+    const cfClientAcceptEncoding = (
+        req as unknown as { cf?: { clientAcceptEncoding?: string } }
+    ).cf?.clientAcceptEncoding;
     if (cfClientAcceptEncoding) {
         headers.set("accept-encoding", cfClientAcceptEncoding);
     }
@@ -85,10 +91,15 @@ export async function verifySigV4(
             const actualAuth = req.headers.get("authorization");
             if (!expectedAuth || !actualAuth) return false;
             // Compare Signature parts
-            const expectedSigMatch = expectedAuth.match(/Signature=([a-f0-9]+)/i);
+            const expectedSigMatch = expectedAuth.match(
+                /Signature=([a-f0-9]+)/i,
+            );
             const actualSigMatch = actualAuth.match(/Signature=([a-f0-9]+)/i);
             if (!expectedSigMatch || !actualSigMatch) return false;
-            return expectedSigMatch[1].toLowerCase() === actualSigMatch[1].toLowerCase();
+            return (
+                expectedSigMatch[1].toLowerCase() ===
+                actualSigMatch[1].toLowerCase()
+            );
         }
     } catch (e) {
         console.error("SigV4 verification failed:", e);

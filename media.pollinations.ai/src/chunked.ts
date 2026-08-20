@@ -3,7 +3,10 @@
  * Chunk format: `<hex-size>;chunk-signature=<sig>\r\n<data>\r\n`
  * Terminal chunk: `0;chunk-signature=<sig>\r\n[headers\r\n]\r\n`
  */
-export function createAwsChunkedDecoderStream(): TransformStream<Uint8Array, Uint8Array> {
+export function createAwsChunkedDecoderStream(): TransformStream<
+    Uint8Array,
+    Uint8Array
+> {
     let buffer = new Uint8Array(0);
 
     function concat(a: Uint8Array, b: Uint8Array): Uint8Array {
@@ -31,9 +34,14 @@ export function createAwsChunkedDecoderStream(): TransformStream<Uint8Array, Uin
                 if (crlfIndex === -1) break;
 
                 // Header line: e.g. "10000;chunk-signature=..."
-                const headerLine = new TextDecoder().decode(buffer.subarray(0, crlfIndex));
+                const headerLine = new TextDecoder().decode(
+                    buffer.subarray(0, crlfIndex),
+                );
                 const semicolonIndex = headerLine.indexOf(";");
-                const hexSizeStr = semicolonIndex !== -1 ? headerLine.substring(0, semicolonIndex) : headerLine;
+                const hexSizeStr =
+                    semicolonIndex !== -1
+                        ? headerLine.substring(0, semicolonIndex)
+                        : headerLine;
                 const chunkSize = parseInt(hexSizeStr.trim(), 16);
 
                 if (isNaN(chunkSize)) {
@@ -60,7 +68,10 @@ export function createAwsChunkedDecoderStream(): TransformStream<Uint8Array, Uin
                 }
 
                 // Extract data
-                const data = buffer.subarray(crlfIndex + 2, crlfIndex + 2 + chunkSize);
+                const data = buffer.subarray(
+                    crlfIndex + 2,
+                    crlfIndex + 2 + chunkSize,
+                );
                 controller.enqueue(new Uint8Array(data));
 
                 // Advance buffer past chunk data + trailing CRLF
@@ -70,6 +81,8 @@ export function createAwsChunkedDecoderStream(): TransformStream<Uint8Array, Uin
     });
 }
 
-export function decodeAwsChunkedBody(body: ReadableStream<Uint8Array>): ReadableStream<Uint8Array> {
+export function decodeAwsChunkedBody(
+    body: ReadableStream<Uint8Array>,
+): ReadableStream<Uint8Array> {
     return body.pipeThrough(createAwsChunkedDecoderStream());
 }

@@ -1,0 +1,34 @@
+{
+  "pr_number": 13599,
+  "title": "feat: add Azure GPT transcription models",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13599",
+  "merged_at": "2026-08-20T09:58:33Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `gpt-transcribe` to `/v1/audio/transcriptions` through the Sweden Central Azure deployment.\n- Adds `gpt-live-transcribe` to `/realtime` and `/v1/realtime`, preserving the public model ID while mapping Azure's internal deployment name.\n- Makes both models Quest-Pollen-accessible with the confirmed `0.75` Azure multiplier and provisional OpenAI list costs of `$0.0045/min` and `$0.017/min`.\n- Bills Azure's duration usage exactly and fails closed when batch or realtime duration metering is missing.\n\nValidation:\n- Direct Azure batch probe: 60 seconds, HTTP 200, exact `gpt-transcribe-2026-07-28`, duration usage present.\n- Direct Azure realtime probe: 3 seconds, completed transcript, duration usage present.\n- `npx vitest run test/azure-transcription.test.ts test/realtime.test.ts test/index.test.ts` (103 passed).\n- `npm run typecheck`.\n\nKnown launch constraint: each Azure deployment currently permits 1 request per minute. Azure's exact cost meters are still pending, so registry costs intentionally use the approved OpenAI prices and can be adjusted later.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive has ears",
+    "blurb": "Two new transcription workers joined the garden: one for recorded audio, one for live conversation. They count every second properly, because bees are surprisingly strict accountants.",
+    "summary": "Added Azure Sweden Central-backed `gpt-transcribe` to `/v1/audio/transcriptions` and `gpt-live-transcribe` to `/realtime` and `/v1/realtime`, with duration-based billing at provisional OpenAI list prices of $0.0045/min and $0.017/min.",
+    "impact": "Developers can now transcribe uploaded audio or live sessions through the existing public model IDs, while Azure-reported batch and realtime durations are metered exactly for Quest-Pollen access.",
+    "keywords": [
+      "azure",
+      "transcription",
+      "realtime",
+      "audio",
+      "gpt-transcribe",
+      "quest-pollen"
+    ],
+    "visual_concept": "Polli acts as a tiny sound engineer in a cozy garden recording booth, listening through headphones as two friendly retro terminals turn sound waves into neat transcript pages: one represents recorded audio and the other a live microphone. Lime-green waveform vines and code-plants show the audio flowing through the new Azure transcription routes, with a small clock emphasizing precise duration metering.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light-blue wings, and oversized little sound-engineer headphones, tending a lime green (#ecf874) waveform garden beside two retro CRT terminals: one receives an audio cassette and prints a transcript, the other listens to a live microphone with scrolling captions. A tiny pixel clock and flowering code-plants suggest exact per-second metering; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, with simple pixel text: \"TRANSCRIBE\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-20/PR-13599.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light-blue wings, and oversized little sound-engineer headphones, tending a lime green (#ecf874) waveform garden beside two retro CRT terminals: one receives an audio cassette and prints a transcript, the other listens to a live microphone with scrolling captions. A tiny pixel clock and flowering code-plants suggest exact per-second metering; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, with simple pixel text: \"TRANSCRIBE\"."
+  },
+  "generated_at": "2026-08-20T09:59:39.325485+00:00"
+}

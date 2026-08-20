@@ -180,7 +180,7 @@ function buildServer(token, env, dependencies) {
     server.registerTool(
         "runFfmpeg",
         {
-            description: `Run native FFmpeg arguments against a media.pollinations.ai URL and return an unlisted hosted resource link. Omit ffmpeg, -i, and the output path. Maximum input/output size is 100 MB and runtime is ${FFMPEG_MAX_RUN_MS / 1000} seconds. Billed at ${FFMPEG_COST_PER_SECOND} Pollen per active second.`,
+            description: `Run native FFmpeg arguments against a media.pollinations.ai URL and return an unlisted hosted resource link. Omit ffmpeg, -i, and the output path. Maximum input/output size is 100 MB and runtime is ${FFMPEG_MAX_RUN_MS / 1000} seconds. Billed at ${FFMPEG_COST_PER_SECOND.toFixed(8)} Pollen per active second.`,
             inputSchema: z.object({
                 source: z.url().refine((value) => {
                     const url = new URL(value);

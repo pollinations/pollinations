@@ -1,6 +1,6 @@
 import { getLogger } from "@logtape/logtape";
 import { and, eq, gt, isNull, or } from "drizzle-orm";
-import type { DrizzleD1Database } from "drizzle-orm/d1";
+import { type DrizzleD1Database, drizzle } from "drizzle-orm/d1";
 import { parseMetadata } from "../auth/api-key-metadata.ts";
 import { apikey as apikeyTable } from "../db/better-auth.ts";
 import {
@@ -38,7 +38,7 @@ export type CommunityModelRewardInput = {
     basePrice?: number;
 };
 
-interface DeductionParams {
+export interface DeductionParams {
     db: DrizzleD1Database;
     isBilledUsage: boolean;
     totalPrice?: number;
@@ -49,6 +49,18 @@ interface DeductionParams {
     modelPaidOnly?: boolean;
     communityModelReward?: CommunityModelRewardInput | null;
 }
+
+export type DeductionResult = {
+    markup: MarkupResolution | null;
+    communityModelReward: CommunityModelRewardResolution | null;
+    payerBucket: Bucket | null;
+    postDeductionPackBalance: number | null;
+    billedPrice: number;
+};
+
+export type IdempotentDeductionResult = DeductionResult & {
+    committed: boolean;
+};
 
 export async function resolveDevMarkup(
     db: DrizzleD1Database,
@@ -119,13 +131,9 @@ export function resolveCommunityModelReward(
  * (`totalPrice + devCredit`, snapped to `POLLEN_BILLING_PRECISION`). Callers
  * should use this for analytics/event totals so they match the ledger.
  */
-export async function handleBalanceDeduction(params: DeductionParams): Promise<{
-    markup: MarkupResolution | null;
-    communityModelReward: CommunityModelRewardResolution | null;
-    payerBucket: Bucket | null;
-    postDeductionPackBalance: number | null;
-    billedPrice: number;
-}> {
+export async function handleBalanceDeduction(
+    params: DeductionParams,
+): Promise<DeductionResult> {
     const {
         db,
         isBilledUsage,
@@ -297,6 +305,358 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
         payerBucket,
         postDeductionPackBalance,
         billedPrice,
+    };
+}
+
+type StoredSettlement = {
+    settlementId: string;
+    payerUserId: string;
+    apiKeyId: string | null;
+    basePrice: number;
+    billedPrice: number;
+    payerBucket: Bucket | null;
+    markupJson: string | null;
+    communityModelRewardJson: string | null;
+    postDeductionPackBalance: number | null;
+};
+
+type IdempotentDeductionParams = Omit<DeductionParams, "db"> & {
+    d1: D1Database;
+    settlementId: string;
+};
+
+/**
+ * Atomically settles a billable request once. Durable Object alarms are
+ * at-least-once, so every update is gated by the server-owned settlement id.
+ */
+export async function handleBalanceDeductionOnce(
+    params: IdempotentDeductionParams,
+): Promise<IdempotentDeductionResult> {
+    const {
+        d1,
+        settlementId,
+        isBilledUsage,
+        totalPrice: rawTotalPrice,
+        userId,
+        apiKeyId,
+        apiKeyPollenBalance,
+        byopClientKeyId,
+        modelPaidOnly = false,
+        communityModelReward: communityModelRewardInput,
+    } = params;
+
+    if (!isBilledUsage) {
+        return { ...emptyDeduction(), committed: true };
+    }
+    if (!userId) {
+        throw new Error("Billed generation requires a payer user");
+    }
+
+    const db = drizzle(d1);
+    const basePrice = roundPollenLedgerAmount(rawTotalPrice ?? 0);
+    const markup = await resolveDevMarkup(
+        db,
+        byopClientKeyId,
+        basePrice,
+        userId,
+    );
+    const communityModelReward = resolveCommunityModelReward(
+        communityModelRewardInput,
+        basePrice,
+        userId,
+    );
+    const billedPrice = roundPollenLedgerAmount(
+        basePrice + (markup?.devCredit ?? 0),
+    );
+    const markupJson = markup ? JSON.stringify(markup) : null;
+    const communityModelRewardJson = communityModelReward
+        ? JSON.stringify(communityModelReward)
+        : null;
+
+    if (billedPrice === 0) {
+        const result = await d1
+            .prepare(
+                `INSERT OR IGNORE INTO generation_settlement (
+                    settlement_id,
+                    payer_user_id,
+                    api_key_id,
+                    base_price,
+                    billed_price,
+                    payer_bucket,
+                    markup_json,
+                    community_model_reward_json,
+                    post_deduction_pack_balance,
+                    created_at
+                ) VALUES (?, ?, ?, 0, 0, NULL, NULL, NULL, NULL, ?)`,
+            )
+            .bind(settlementId, userId, apiKeyId ?? null, Date.now())
+            .run();
+        const stored = await requireSettlement(d1, settlementId);
+        assertSamePayer(stored, userId, apiKeyId);
+        return storedDeduction(stored, (result.meta.changes ?? 0) === 1);
+    }
+
+    const hasFiniteApiKeyBudget =
+        Boolean(apiKeyId) && typeof apiKeyPollenBalance === "number";
+    const dependencyChecks = [
+        ...(hasFiniteApiKeyBudget
+            ? [
+                  "AND EXISTS (SELECT 1 FROM apikey WHERE id = ? AND pollen_balance IS NOT NULL)",
+              ]
+            : []),
+        ...(markup ? ["AND EXISTS (SELECT 1 FROM user WHERE id = ?)"] : []),
+        ...(communityModelReward
+            ? ["AND EXISTS (SELECT 1 FROM user WHERE id = ?)"]
+            : []),
+    ].join("\n");
+    const dependencyBindings = [
+        ...(hasFiniteApiKeyBudget ? [apiKeyId] : []),
+        ...(markup ? [markup.devUserId] : []),
+        ...(communityModelReward ? [communityModelReward.userId] : []),
+    ];
+
+    const statements: D1PreparedStatement[] = [
+        d1
+            .prepare(
+                `INSERT OR IGNORE INTO generation_settlement (
+                    settlement_id,
+                    payer_user_id,
+                    api_key_id,
+                    base_price,
+                    billed_price,
+                    payer_bucket,
+                    markup_json,
+                    community_model_reward_json,
+                    post_deduction_pack_balance,
+                    created_at
+                )
+                SELECT
+                    ?,
+                    payer.id,
+                    ?,
+                    ?,
+                    ?,
+                    CASE
+                        WHEN ? = 1 THEN 'pack'
+                        WHEN COALESCE(payer.tier_balance, 0) >= ? THEN 'tier'
+                        WHEN COALESCE(payer.pack_balance, 0) > 0 THEN 'pack'
+                        ELSE 'tier'
+                    END,
+                    ?,
+                    ?,
+                    NULL,
+                    ?
+                FROM user AS payer
+                WHERE payer.id = ?
+                ${dependencyChecks}`,
+            )
+            .bind(
+                settlementId,
+                apiKeyId ?? null,
+                basePrice,
+                billedPrice,
+                modelPaidOnly ? 1 : 0,
+                billedPrice,
+                markupJson,
+                communityModelRewardJson,
+                Date.now(),
+                userId,
+                ...dependencyBindings,
+            ),
+        d1
+            .prepare(
+                `UPDATE user
+                SET
+                    tier_balance = CASE
+                        WHEN (SELECT payer_bucket FROM generation_settlement WHERE settlement_id = ?) = 'tier'
+                            THEN COALESCE(tier_balance, 0) - ?
+                        ELSE tier_balance
+                    END,
+                    pack_balance = CASE
+                        WHEN (SELECT payer_bucket FROM generation_settlement WHERE settlement_id = ?) = 'pack'
+                            THEN COALESCE(pack_balance, 0) - ?
+                        ELSE pack_balance
+                    END
+                WHERE id = ? AND changes() = 1`,
+            )
+            .bind(settlementId, billedPrice, settlementId, billedPrice, userId),
+        d1
+            .prepare(
+                `UPDATE generation_settlement
+                SET post_deduction_pack_balance = (
+                    SELECT pack_balance FROM user WHERE id = payer_user_id
+                )
+                WHERE settlement_id = ? AND changes() = 1`,
+            )
+            .bind(settlementId),
+    ];
+
+    if (hasFiniteApiKeyBudget) {
+        statements.push(
+            d1
+                .prepare(
+                    `UPDATE apikey
+                    SET pollen_balance = pollen_balance - ?
+                    WHERE id = ?
+                      AND pollen_balance IS NOT NULL
+                      AND changes() = 1`,
+                )
+                .bind(billedPrice, apiKeyId),
+        );
+    }
+
+    if (markup) {
+        statements.push(
+            creditStatement(
+                d1,
+                settlementId,
+                markup.devUserId,
+                markup.devCredit,
+            ),
+        );
+    }
+    if (communityModelReward) {
+        statements.push(
+            creditStatement(
+                d1,
+                settlementId,
+                communityModelReward.userId,
+                communityModelReward.credit,
+            ),
+        );
+    }
+
+    const results = await d1.batch(statements);
+    const committed = (results[0]?.meta.changes ?? 0) === 1;
+    if (
+        committed &&
+        results.slice(1).some((result) => result.meta.changes !== 1)
+    ) {
+        throw new Error(`Generation settlement incomplete for ${settlementId}`);
+    }
+
+    const stored = await requireSettlement(d1, settlementId);
+    assertSamePayer(stored, userId, apiKeyId);
+    if (committed) {
+        log.debug(
+            "Settled generation {settlementId}: charged {billedPrice} to {userId} from {payerBucket}",
+            {
+                settlementId,
+                billedPrice: stored.billedPrice,
+                userId,
+                payerBucket: stored.payerBucket,
+            },
+        );
+    }
+    return storedDeduction(stored, committed);
+}
+
+function creditStatement(
+    d1: D1Database,
+    settlementId: string,
+    userId: string,
+    amount: number,
+): D1PreparedStatement {
+    return d1
+        .prepare(
+            `UPDATE user
+            SET
+                tier_balance = CASE
+                    WHEN (SELECT payer_bucket FROM generation_settlement WHERE settlement_id = ?) = 'tier'
+                        THEN COALESCE(tier_balance, 0) + ?
+                    ELSE tier_balance
+                END,
+                pack_balance = CASE
+                    WHEN (SELECT payer_bucket FROM generation_settlement WHERE settlement_id = ?) = 'pack'
+                        THEN COALESCE(pack_balance, 0) + ?
+                    ELSE pack_balance
+                END
+            WHERE id = ? AND changes() = 1`,
+        )
+        .bind(settlementId, amount, settlementId, amount, userId);
+}
+
+async function loadSettlement(
+    d1: D1Database,
+    settlementId: string,
+): Promise<StoredSettlement | null> {
+    return d1
+        .prepare(
+            `SELECT
+                settlement_id AS settlementId,
+                payer_user_id AS payerUserId,
+                api_key_id AS apiKeyId,
+                base_price AS basePrice,
+                billed_price AS billedPrice,
+                payer_bucket AS payerBucket,
+                markup_json AS markupJson,
+                community_model_reward_json AS communityModelRewardJson,
+                post_deduction_pack_balance AS postDeductionPackBalance
+            FROM generation_settlement
+            WHERE settlement_id = ?`,
+        )
+        .bind(settlementId)
+        .first<StoredSettlement>();
+}
+
+async function requireSettlement(
+    d1: D1Database,
+    settlementId: string,
+): Promise<StoredSettlement> {
+    const stored = await loadSettlement(d1, settlementId);
+    if (!stored) {
+        throw new Error(
+            `Generation settlement dependencies missing for ${settlementId}`,
+        );
+    }
+    return stored;
+}
+
+function assertSamePayer(
+    stored: StoredSettlement,
+    userId: string,
+    apiKeyId: string | undefined,
+): void {
+    if (
+        stored.payerUserId !== userId ||
+        stored.apiKeyId !== (apiKeyId ?? null)
+    ) {
+        throw new Error(
+            `Settlement ${stored.settlementId} belongs to a different payer`,
+        );
+    }
+}
+
+function storedDeduction(
+    stored: StoredSettlement,
+    committed: boolean,
+): IdempotentDeductionResult {
+    return {
+        markup: stored.markupJson
+            ? (JSON.parse(stored.markupJson) as MarkupResolution)
+            : null,
+        communityModelReward: stored.communityModelRewardJson
+            ? (JSON.parse(
+                  stored.communityModelRewardJson,
+              ) as CommunityModelRewardResolution)
+            : null,
+        payerBucket: stored.payerBucket,
+        postDeductionPackBalance:
+            stored.payerBucket === "pack"
+                ? stored.postDeductionPackBalance
+                : null,
+        billedPrice: stored.billedPrice,
+        committed,
+    };
+}
+
+function emptyDeduction(): DeductionResult {
+    return {
+        markup: null,
+        communityModelReward: null,
+        payerBucket: null,
+        postDeductionPackBalance: null,
+        billedPrice: 0,
     };
 }
 

@@ -4,6 +4,7 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import type { AuthUser } from "@shared/auth/api-key.ts";
+import { getUserBalance } from "@shared/billing/balance.ts";
 import {
     COMMUNITY_MODEL_REWARD_RATE,
     type CommunityEndpointRuntime,
@@ -471,6 +472,71 @@ describe("tracking observability", () => {
         expect(event).not.toHaveProperty("cacheKey");
         expect(consumePollen).toHaveBeenCalledWith(expect.any(Number));
         expect(consumePollen.mock.calls[0]?.[0]).toBeGreaterThan(0);
+    });
+
+    it("charges and emits one billed event when a server request is retried", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+        const app = createTestApp(consumePollen);
+        const requestId = crypto.randomUUID();
+        const request = () =>
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    "x-request-id": requestId,
+                },
+                body: JSON.stringify({
+                    model: "openai",
+                    stream: false,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            });
+        const contexts = [createExecutionContext(), createExecutionContext()];
+        const before = await getUserBalance(drizzle(env.DB), trackingUser.id);
+
+        const responses = await Promise.all(
+            contexts.map((ctx) =>
+                app.fetch(
+                    request(),
+                    {
+                        DB: env.DB,
+                        ENVIRONMENT: "test",
+                        LOG_LEVEL: "debug",
+                        LOG_FORMAT: "text",
+                        BETTER_AUTH_SECRET: "test_secret",
+                        TINYBIRD_INGEST_URL:
+                            "https://tinybird.test/v0/events?name=generation_event_v2",
+                        TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+                    } as CloudflareBindings,
+                    ctx,
+                ),
+            ),
+        );
+        await Promise.all(contexts.map(waitOnExecutionContext));
+
+        expect(responses.every((response) => response.status === 200)).toBe(
+            true,
+        );
+        expect(tinybirdRequests).toHaveLength(1);
+        const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
+        expect(event.requestId).toBe(requestId);
+        expect(event.totalPrice).toBeGreaterThan(0);
+        expect(consumePollen).toHaveBeenCalledTimes(1);
+        const after = await getUserBalance(drizzle(env.DB), trackingUser.id);
+        expect(after.tierBalance).toBeCloseTo(
+            before.tierBalance - event.totalPrice,
+            10,
+        );
+        expect(after.packBalance).toBe(before.packBalance);
     });
 
     it("tracks provider work but not coalesced cache hits", async () => {

@@ -1,9 +1,16 @@
 import { env } from "cloudflare:test";
 import { getUserBalance } from "@shared/billing/balance.ts";
 import { atomicDeductUserBalance } from "@shared/billing/deduction.ts";
-import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
-import { user as userTable } from "@shared/db/better-auth.ts";
+import {
+    handleBalanceDeduction,
+    handleBalanceDeductionOnce,
+} from "@shared/billing/track-helpers.ts";
+import {
+    apikey as apiKeyTable,
+    user as userTable,
+} from "@shared/db/better-auth.ts";
 import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect, it } from "vitest";
 
@@ -109,6 +116,49 @@ describe("billing deduction", () => {
             tierBalance: 0,
             packBalance: 10,
         });
+    });
+
+    it("settles concurrent retries with the same server id only once", async () => {
+        const userId = await createUser({ tierBalance: 10, packBalance: 10 });
+        const apiKeyId = `billing-key-${crypto.randomUUID()}`;
+        await db.insert(apiKeyTable).values({
+            id: apiKeyId,
+            userId,
+            key: `hashed-${apiKeyId}`,
+            prefix: "sk",
+            pollenBalance: 1,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+        const settlementId = `generate.image:${crypto.randomUUID()}`;
+
+        const results = await Promise.all(
+            Array.from({ length: 3 }, () =>
+                handleBalanceDeductionOnce({
+                    d1: env.DB,
+                    settlementId,
+                    isBilledUsage: true,
+                    totalPrice: 0.004,
+                    userId,
+                    apiKeyId,
+                    apiKeyPollenBalance: 1,
+                }),
+            ),
+        );
+
+        expect(results.filter((result) => result.committed)).toHaveLength(1);
+        expect(results.every((result) => result.billedPrice === 0.004)).toBe(
+            true,
+        );
+        expect(await getUserBalance(db, userId)).toEqual({
+            tierBalance: 9.996,
+            packBalance: 10,
+        });
+        const [apiKey] = await db
+            .select({ pollenBalance: apiKeyTable.pollenBalance })
+            .from(apiKeyTable)
+            .where(eq(apiKeyTable.id, apiKeyId));
+        expect(apiKey?.pollenBalance).toBe(0.996);
     });
 
     it("deducts an Azure paid-only model only from pack balance", async () => {

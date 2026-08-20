@@ -5,6 +5,7 @@ import { computeDevCredit, MARKUP_PCT } from "@shared/billing/markup.ts";
 import { roundPollenLedgerAmount } from "@shared/billing/precision.ts";
 import {
     handleBalanceDeduction,
+    handleBalanceDeductionOnce,
     resolveDevMarkup,
 } from "@shared/billing/track-helpers.ts";
 import {
@@ -170,6 +171,44 @@ describe("BYOP markup", () => {
         const creatorBalances = await getUserBalance(db, devId);
         expect(creatorBalances.tierBalance).toBeCloseTo(MARKUP_PCT, 10);
         expect(creatorBalances.packBalance).toBe(0);
+    });
+
+    it("settles creator and community rewards only once on retry", async () => {
+        const { payerId, devId, pkId } = await setupPayerAndDev();
+        const ownerId = await createBalanceUser("community-owner");
+        const settlementId = `generate.text:${crypto.randomUUID()}`;
+        const settle = () =>
+            handleBalanceDeductionOnce({
+                d1: env.DB,
+                settlementId,
+                isBilledUsage: true,
+                totalPrice: 1,
+                userId: payerId,
+                byopClientKeyId: pkId,
+                communityModelReward: {
+                    userId: ownerId,
+                    rewardRate: COMMUNITY_MODEL_REWARD_RATE,
+                    basePrice: 0.5,
+                },
+            });
+
+        const first = await settle();
+        const retry = await settle();
+
+        expect(first.committed).toBe(true);
+        expect(retry.committed).toBe(false);
+        expect((await getUserBalance(db, payerId)).tierBalance).toBeCloseTo(
+            2 - 1 - MARKUP_PCT,
+            10,
+        );
+        expect((await getUserBalance(db, devId)).tierBalance).toBeCloseTo(
+            MARKUP_PCT,
+            10,
+        );
+        expect((await getUserBalance(db, ownerId)).tierBalance).toBeCloseTo(
+            0.5 * COMMUNITY_MODEL_REWARD_RATE,
+            10,
+        );
     });
 
     it("credits creator pack balance when payer spends pack balance", async () => {

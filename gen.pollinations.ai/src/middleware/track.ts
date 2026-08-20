@@ -4,7 +4,7 @@ import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
 import { payerBucketToMeter } from "@shared/billing/balance.ts";
 import {
     type CommunityModelRewardResolution,
-    handleBalanceDeduction,
+    handleBalanceDeductionOnce,
     type MarkupResolution,
 } from "@shared/billing/track-helpers.ts";
 import {
@@ -352,54 +352,64 @@ export const track = (eventType: EventType) =>
 
                 // Deduct payer + credit dev before emitting the event so billing
                 // telemetry reflects the committed ledger state.
-                const balanceDb = db as unknown as Parameters<
-                    typeof handleBalanceDeduction
-                >[0]["db"];
                 let markup: MarkupResolution | null = null;
                 let payerBucket: Awaited<
-                    ReturnType<typeof handleBalanceDeduction>
+                    ReturnType<typeof handleBalanceDeductionOnce>
                 >["payerBucket"] = null;
                 let communityModelReward: CommunityModelRewardResolution | null =
                     null;
                 let billedPrice = 0;
+                let postDeductionPackBalance: number | null = null;
                 let shouldRunAutoTopUp = false;
+                let duplicateSettlement = false;
                 try {
                     const communityEndpoint = servedEntry
                         ? servedEntry.communityEndpoint
                         : c.var.model?.communityEndpoint;
-                    const deduction = await handleBalanceDeduction({
-                        db: balanceDb,
-                        isBilledUsage: responseTracking.isBilledUsage,
-                        totalPrice: responseTracking.price?.totalPrice,
-                        userId,
-                        apiKeyId: c.var.auth?.apiKey?.id,
-                        apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
-                        byopClientKeyId: c.var.auth?.apiKey?.byopClientKeyId,
-                        modelPaidOnly: c.var.model?.definition.paidOnly,
-                        // Only public endpoints pay their owner a reward: a
-                        // private endpoint is owner-called (base cost billed to
-                        // the owner, no markup, no self-credit).
-                        communityModelReward:
-                            communityEndpoint?.visibility === "public"
-                                ? {
-                                      userId: communityEndpoint.ownerUserId,
-                                      rewardRate: COMMUNITY_MODEL_REWARD_RATE,
-                                      // Their own listing, not the one the
-                                      // caller bought — see basePrice.
-                                      basePrice: responseTracking.servedPrice,
-                                  }
-                                : null,
-                    });
-                    markup = deduction.markup;
-                    communityModelReward = deduction.communityModelReward;
-                    payerBucket = deduction.payerBucket;
-                    billedPrice = deduction.billedPrice;
+                    if (responseTracking.isBilledUsage) {
+                        const deduction = await handleBalanceDeductionOnce({
+                            d1: c.env.DB,
+                            settlementId: `${eventType}:${c.get("requestId")}`,
+                            isBilledUsage: true,
+                            totalPrice: responseTracking.price?.totalPrice,
+                            userId,
+                            apiKeyId: c.var.auth?.apiKey?.id,
+                            apiKeyPollenBalance:
+                                c.var.auth?.apiKey?.pollenBalance,
+                            byopClientKeyId:
+                                c.var.auth?.apiKey?.byopClientKeyId,
+                            modelPaidOnly: c.var.model?.definition.paidOnly,
+                            // Only public endpoints pay their owner a reward: a
+                            // private endpoint is owner-called (base cost billed to
+                            // the owner, no markup, no self-credit).
+                            communityModelReward:
+                                communityEndpoint?.visibility === "public"
+                                    ? {
+                                          userId: communityEndpoint.ownerUserId,
+                                          rewardRate:
+                                              COMMUNITY_MODEL_REWARD_RATE,
+                                          // Their own listing, not the one the
+                                          // caller bought — see basePrice.
+                                          basePrice:
+                                              responseTracking.servedPrice,
+                                      }
+                                    : null,
+                        });
+                        duplicateSettlement = !deduction.committed;
+                        markup = deduction.markup;
+                        communityModelReward = deduction.communityModelReward;
+                        payerBucket = deduction.payerBucket;
+                        billedPrice = deduction.billedPrice;
+                        postDeductionPackBalance =
+                            deduction.postDeductionPackBalance;
+                    }
                     const totalPrice = responseTracking.price?.totalPrice ?? 0;
                     if (
+                        !duplicateSettlement &&
                         totalPrice > 0 &&
                         payerBucket === "pack" &&
-                        deduction.postDeductionPackBalance != null &&
-                        deduction.postDeductionPackBalance <=
+                        postDeductionPackBalance != null &&
+                        postDeductionPackBalance <=
                             AUTO_TOP_UP_THRESHOLD_POLLEN &&
                         (await isAutoTopUpConfigured(db, userId))
                     ) {
@@ -415,6 +425,13 @@ export const track = (eventType: EventType) =>
                                     : String(error),
                         },
                     );
+                }
+                if (duplicateSettlement) {
+                    log.warn(
+                        "Skipped duplicate generation settlement for request {requestId}",
+                        { requestId: c.get("requestId") },
+                    );
+                    return;
                 }
                 const committedBalanceTracking = payerBucket
                     ? {

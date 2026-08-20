@@ -197,6 +197,23 @@ export const stripeCardFingerprintAttempt = sqliteTable("stripe_card_fingerprint
   ),
 ]);
 
+// One row per billable request. The server-generated settlement id gates every
+// wallet, key-budget, and reward update so durable retries cannot charge twice.
+export const generationSettlement = sqliteTable("generation_settlement", {
+  settlementId: text("settlement_id").primaryKey(),
+  payerUserId: text("payer_user_id").notNull(),
+  apiKeyId: text("api_key_id"),
+  basePrice: real("base_price").notNull(),
+  billedPrice: real("billed_price").notNull(),
+  payerBucket: text("payer_bucket"),
+  markupJson: text("markup_json"),
+  communityModelRewardJson: text("community_model_reward_json"),
+  postDeductionPackBalance: real("post_deduction_pack_balance"),
+  createdAt: integer("created_at", { mode: "timestamp_ms" })
+    .defaultNow()
+    .notNull(),
+});
+
 export const agent = sqliteTable("agent", {
   id: text("id").primaryKey(),
   ownerUserId: text("owner_user_id")

@@ -30,6 +30,7 @@ export async function checkBalance(
     const estimatedCost = getEstimatedPrice(
         await getModelStats(env.KV, log),
         model.resolved,
+        model.definition,
     );
     const apiKeyBudget = auth.apiKey?.pollenBalance;
     const requiredBudget = Math.max(0, estimatedCost);

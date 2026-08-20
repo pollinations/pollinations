@@ -7,7 +7,7 @@ export type InputProps = React.ComponentPropsWithoutRef<"input"> & {
 };
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-    ({ className, error, hideNumberSteppers, onWheel, ...props }, ref) => (
+    ({ className, error, hideNumberSteppers, ...props }, ref) => (
         <input
             ref={ref}
             data-error={error ? "true" : undefined}
@@ -19,15 +19,6 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                 hideNumberSteppers && "polli-input-number-clean",
                 className,
             )}
-            onWheel={(event) => {
-                // A focused number input scrubs its value on wheel and eats the
-                // scroll, so a wheel over one inside a dialog silently edits the
-                // number and the dialog looks frozen. Drop focus first: by the
-                // time the default action runs the input is no longer focused,
-                // so the value is left alone and the scroll passes through.
-                if (props.type === "number") event.currentTarget.blur();
-                onWheel?.(event);
-            }}
             {...props}
         />
     ),

@@ -41,7 +41,10 @@ import {
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import { MODEL_INPUT_MODALITIES } from "@shared/registry/registry.ts";
+import {
+    MODEL_INPUT_MODALITIES,
+    type ModelInputModality,
+} from "@shared/registry/registry.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import { and, desc, eq, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -204,7 +207,7 @@ const FallbackModelIdsSchema = z
     .array(z.string().trim().min(1))
     .max(MAX_FALLBACK_TARGETS)
     .describe(
-        'Community model ids ("<owner>/<name>") tried in order when this model\'s upstream fails, or an empty array to clear them. Each must be another active community model of the same modality, public or owned by you, and priced at or below this model on every price field.',
+        'Community model ids ("<owner>/<name>") tried in order when this model\'s upstream fails, or an empty array to clear them. Each must be another listed community model of the same modality, public or owned by you, and priced at or below this model on every price field.',
     );
 
 const SELF_FALLBACK_MESSAGE = "Fallback target cannot be the model itself";
@@ -215,7 +218,24 @@ type FallbackPrimary = {
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
     prices: CommunityEndpointPrices;
+    inputModalities?: readonly ModelInputModality[] | null;
 };
+
+function fallbackTargetMissingMessage(modelId: string): string {
+    return `Fallback target ${modelId} does not exist`;
+}
+
+/**
+ * Private or hidden rows owned by someone else must look identical to a
+ * missing row. Distinct 400s were an existence oracle.
+ */
+function shouldConcealFallbackTarget(
+    primary: FallbackPrimary,
+    target: CommunityEndpointRow,
+): boolean {
+    if (target.ownerUserId === primary.ownerUserId) return false;
+    return target.visibility === "private" || target.hiddenAt !== null;
+}
 
 /**
  * Whether a stored row generates through something else — always for an agent,
@@ -244,8 +264,11 @@ function fallbackTargetRejection(
     // public rows scanned. The write path checks this earlier, before any
     // lookup, because a model being created has no row to find.
     if (modelId === primary.modelId) return SELF_FALLBACK_MESSAGE;
-    if (target.disabledAt !== null) {
-        return `Fallback target ${modelId} must be active`;
+    if (shouldConcealFallbackTarget(primary, target)) {
+        return fallbackTargetMissingMessage(modelId);
+    }
+    if (target.hiddenAt !== null) {
+        return `Fallback target ${modelId} must be listed`;
     }
     if (rowDelegatesGeneration(target)) {
         return `Fallback target ${modelId} cannot delegate generation`;
@@ -270,6 +293,21 @@ function fallbackTargetRejection(
         targetImagePricing !== primary.imagePricing
     ) {
         return `Fallback target ${modelId} bills images per ${targetImagePricing}, not per ${primary.imagePricing}`;
+    }
+    const primaryInputs = normalizeCommunityEndpointInputModalities(
+        primary.inputModalities,
+        primary.modality,
+    );
+    const targetInputs = normalizeCommunityEndpointInputModalities(
+        target.inputModalities,
+        targetModality,
+    );
+    if (
+        primary.modality === "image" &&
+        primaryInputs.includes("image") &&
+        !targetInputs.includes("image")
+    ) {
+        return `Fallback target ${modelId} does not support image edits`;
     }
     const targetPrices = communityEndpointPrices(target);
     if (!isCommunityFallbackPricingAllowed(primary.prices, targetPrices)) {
@@ -318,9 +356,9 @@ async function resolveFallbackModelId(
               ),
           })
         : undefined;
-    if (!target) {
+    if (!target || shouldConcealFallbackTarget(primary, target)) {
         throw new HTTPException(400, {
-            message: `Fallback target ${fallbackModelId} does not exist`,
+            message: fallbackTargetMissingMessage(fallbackModelId),
         });
     }
     const rejection = fallbackTargetRejection(primary, fallbackModelId, target);
@@ -330,7 +368,7 @@ async function resolveFallbackModelId(
 
 // Resolves the whole declared list.
 //
-// A target can later be deleted, deactivated, or repriced above the primary.
+// A target can later be deleted, hidden, or repriced above the primary.
 // There is no reconciliation job: the generation registry re-checks these same
 // rules when it links entries, so this is a UX guard, not an invariant.
 async function resolveFallbackModelIds(
@@ -496,7 +534,7 @@ const UpdateEndpointSchema = z.object({
     // clears that claim and omitting `advertised` leaves every claim alone.
     advertised: AdvertisedSchema.optional(),
     fallbackModelIds: FallbackModelIdsSchema.optional(),
-    active: z.boolean().optional(),
+    hidden: z.boolean().optional(),
     ...UpdatePriceFieldsSchema,
 });
 const FallbackCandidatesResponseSchema = z.object({
@@ -535,9 +573,9 @@ const CommunityEndpointResponseSchema = z.object({
     perUserRpm: PerUserRpmSchema,
     fallbackModelIds: z.array(z.string()),
     ...ResponsePriceFieldsSchema,
-    disabled: z.boolean(),
-    disabledReason: z.string().nullable(),
-    disabledAt: z.string().nullable(),
+    hidden: z.boolean(),
+    hiddenReason: z.string().nullable(),
+    hiddenAt: z.string().nullable(),
     createdAt: z.string(),
     updatedAt: z.string(),
 });
@@ -698,9 +736,9 @@ function toResponse(
         perUserRpm: row.perUserRpm,
         fallbackModelIds: row.fallbackModelIds ?? [],
         ...communityEndpointPrices(row),
-        disabled: row.disabledAt !== null,
-        disabledReason: row.disabledReason,
-        disabledAt: row.disabledAt,
+        hidden: row.hiddenAt !== null,
+        hiddenReason: row.hiddenReason,
+        hiddenAt: row.hiddenAt,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
     };
@@ -932,7 +970,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "List Fallback Candidates",
             description:
-                "Community models this model may declare as fallbacks: active, public or owned by you, same modality, and priced at or below it on every price field. Computed with the same rule the update endpoint validates against, so every id listed here is accepted. Eligibility is re-checked when a request is routed, so a target repriced above this model afterwards stops serving without changing the stored list.",
+                "Community models this model may declare as fallbacks: listed, public or owned by you, same modality, and priced at or below it on every price field. Computed with the same rule the update endpoint validates against, so every id listed here is accepted. Eligibility is re-checked when a request is routed, so a target repriced above this model afterwards stops serving without changing the stored list.",
             responses: {
                 200: {
                     description: "Eligible fallback model ids",
@@ -973,6 +1011,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     endpoint.imagePricing,
                 ),
                 prices: communityEndpointPrices(endpoint),
+                inputModalities: endpoint.inputModalities,
             };
             const candidates = await db
                 .select({
@@ -1076,6 +1115,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                       modality,
                       imagePricing,
                       prices,
+                      inputModalities: input.inputModalities,
                   })
                 : [];
             await enforcePublishingAccess(db, user.id, input.visibility);
@@ -1095,7 +1135,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     // row that declares nothing reads the same as every row
                     // that predates the column. Agents are rejected above
                     // rather than defaulted, so nothing strips them here.
-                    advertised: input.advertised,
+                    advertised: hasAdvertisedClaim(input.advertised)
+                        ? input.advertised
+                        : null,
                     baseUrl: agent
                         ? null
                         : normalizeInputBaseUrl(input.baseUrl ?? ""),
@@ -1345,12 +1387,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
             if (input.advertised !== undefined) {
                 update.advertised = input.advertised;
             }
-            if (input.active !== undefined) {
-                update.disabledAt = input.active ? null : new Date();
-                update.disabledReason = input.active
-                    ? null
-                    : "Deactivated by owner";
-                update.disabledBy = input.active ? null : "owner";
+            if (input.hidden !== undefined) {
+                update.hiddenAt = input.hidden ? new Date() : null;
+                update.hiddenReason = input.hidden ? "Hidden by owner" : null;
+                update.hiddenBy = input.hidden ? "owner" : null;
             }
             const storedImagePricing = normalizeCommunityEndpointImagePricing(
                 endpoint.imagePricing,
@@ -1406,6 +1446,8 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         modality,
                         imagePricing: effectiveImagePricing,
                         prices: effectivePrices,
+                        inputModalities:
+                            input.inputModalities ?? endpoint.inputModalities,
                     },
                 );
             }

@@ -428,8 +428,8 @@ type CommunityEndpointRuntimeBase = {
     // Community model ids tried in order when this endpoint's upstream fails.
     // A target's own list is never followed: the owner declares the full order.
     fallbackModelIds: string[];
-    disabledAt: number | null;
-    disabledReason: string | null;
+    hiddenAt: number | null;
+    hiddenReason: string | null;
 } & CommunityEndpointPrices;
 
 /** A third-party OpenAI-compatible server the owner registered. */
@@ -475,6 +475,7 @@ export type CommunityModelDefinitionInput = {
     imagePricing?: CommunityEndpointImagePricing;
     inputModalities?: ModelInputModality[] | null;
     advertised?: CommunityEndpointAdvertised | null;
+    hidden?: boolean;
 } & CommunityEndpointPrices;
 
 export type CommunityProviderProfile = {
@@ -832,6 +833,7 @@ export function communityModelDefinition(
         description: description || undefined,
         inputModalities,
         outputModalities: isImage ? ["image"] : ["text"],
+        hidden: endpoint.hidden,
         ...(isTranscription
             ? { supportedEndpoints: ["/v1/audio/transcriptions"] }
             : {}),

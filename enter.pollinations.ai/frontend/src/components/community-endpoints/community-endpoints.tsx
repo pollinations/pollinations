@@ -270,7 +270,7 @@ export function CommunityEndpoints({
                 ":id"
             ].update.$post({
                 param: { id: endpoint.id },
-                json: { active: endpoint.disabled },
+                json: { hidden: !endpoint.hidden },
             });
             if (!response.ok) throw new Error(await readError(response));
             const updated = (await response.json()) as CommunityEndpoint;

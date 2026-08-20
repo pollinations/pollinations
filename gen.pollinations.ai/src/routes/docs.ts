@@ -58,7 +58,7 @@ const DOC_TAGS = {
     quickStart: "Quick Start",
     authentication: "Authentication",
     byop: "BYOP",
-    communityAgentsGuide: "Community Agents Guide",
+    communityAgent: "Community Agent",
     communityAgents: "Community Agents",
     cli: "CLI",
     mcpServer: "MCP Server",
@@ -118,8 +118,8 @@ const DOC_TAG_ICON_HTML: Record<string, string> = {
     [DOC_TAGS.communityAgents]: docsIcon(
         '<rect x="4" y="7" width="16" height="13" rx="2" /><path d="M9 3h6" /><path d="M12 3v4" /><circle cx="9" cy="13" r="1" fill="currentColor" /><circle cx="15" cy="13" r="1" fill="currentColor" /><path d="M9 17h6" />',
     ),
-    [DOC_TAGS.communityAgentsGuide]: docsIcon(
-        '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" />',
+    [DOC_TAGS.communityAgent]: docsIcon(
+        '<rect x="4" y="7" width="16" height="13" rx="2" /><path d="M9 3h6" /><path d="M12 3v4" /><circle cx="9" cy="13" r="1" fill="currentColor" /><circle cx="15" cy="13" r="1" fill="currentColor" /><path d="M9 17h6" />',
     ),
     [DOC_TAGS.cli]: docsIcon(
         '<polyline points="4 8 8 12 4 16" /><line x1="12" y1="20" x2="20" y2="20" />',
@@ -362,8 +362,8 @@ const LLM_DOC_SECTIONS: Record<string, string> = {
 // Scalar tag anchors for the retired /docs/guides/:id pages.
 const GUIDE_REDIRECT_TAGS: Record<string, string> = {
     byop: "byop",
-    agents: "community-agents-guide",
-    "community-agents": "community-agents-guide",
+    agents: "community-agent",
+    "community-agents": "community-agent",
     cli: "cli",
     mcp: "mcp-server",
 };
@@ -467,7 +467,7 @@ function generationDocumentation(): OpenApiSchema {
                     DOC_TAGS.byop,
                     DOC_TAGS.cli,
                     DOC_TAGS.mcpServer,
-                    DOC_TAGS.communityAgentsGuide,
+                    DOC_TAGS.communityAgent,
                 ],
             },
             {
@@ -510,7 +510,7 @@ function generationDocumentation(): OpenApiSchema {
                 description: BYOP_DOCS,
             },
             {
-                name: DOC_TAGS.communityAgentsGuide,
+                name: DOC_TAGS.communityAgent,
                 description: COMMUNITY_AGENTS_DOCS,
             },
             {

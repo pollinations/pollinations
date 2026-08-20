@@ -216,14 +216,12 @@ describe("docs routes", () => {
         const resources = schema["x-tagGroups"].find(
             (group) => group.name === "Resources",
         );
-        expect(integrations?.tags).toContain("Community Agents Guide");
+        expect(integrations?.tags).toContain("Community Agent");
         expect(integrations?.tags).not.toContain("Community Agents");
         expect(resources?.tags).toContain("Community Agents");
-        expect(resources?.tags).not.toContain("Community Agents Guide");
+        expect(resources?.tags).not.toContain("Community Agent");
         expect(schema.tags.map((tag) => tag.name)).toContain("BYOP");
-        expect(schema.tags.map((tag) => tag.name)).toContain(
-            "Community Agents Guide",
-        );
+        expect(schema.tags.map((tag) => tag.name)).toContain("Community Agent");
         expect(schema.tags.map((tag) => tag.name)).toContain(
             "Community Agents",
         );
@@ -390,7 +388,7 @@ describe("docs routes", () => {
         );
         expect(agentsRes.status).toBe(301);
         expect(agentsRes.headers.get("Location")).toBe(
-            "/docs#tag/community-agents-guide",
+            "/docs#tag/community-agent",
         );
 
         const missingRes = await worker.fetch(

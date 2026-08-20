@@ -90,6 +90,14 @@ jobs:
   # of them deploys. `d1 migrations apply` is idempotent.
   migrate:
     needs: changes
+    # Never move the schema unless at least one worker is going to deploy on
+    # top of it. Without this the job runs whenever the workflow fires, so any
+    # filter that wrongly reports false leaves migrations applied with every
+    # worker still on the old code — strictly worse than not deploying at all.
+    if: >-
+      needs.changes.outputs.enter == 'true' ||
+      needs.changes.outputs.gen == 'true' ||
+      needs.changes.outputs.media == 'true'
     runs-on: ubuntu-latest
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}

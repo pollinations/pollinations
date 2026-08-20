@@ -276,9 +276,9 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   fallbackModelIds: text("fallback_model_ids", { mode: "json" }).$type<
     string[]
   >(),
-  disabledAt: integer("disabled_at", { mode: "timestamp" }),
-  disabledReason: text("disabled_reason"),
-  disabledBy: text("disabled_by"),
+  hiddenAt: integer("hidden_at", { mode: "timestamp" }),
+  hiddenReason: text("hidden_reason"),
+  hiddenBy: text("hidden_by"),
   createdAt: integer("created_at", { mode: "timestamp" })
     .defaultNow()
     .notNull(),

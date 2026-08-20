@@ -140,6 +140,43 @@ POLLINATIONS_API_KEY=sk_… npm run test
 
 Without an API key, this runs an offline smoke test of the stdio connection, tool registration, and unauthenticated model listing through a local registry stub. With `POLLINATIONS_API_KEY`, it also exercises a small live slice (models, auth, chat, image URL, balance).
 
+## Deployment (Hosted Worker)
+
+The hosted MCP server at `mcp.pollinations.ai` is a Cloudflare Worker
+defined in [`apps/mcp/`](../../apps/mcp/). It is deployed automatically
+by the
+[`Deploy / Applications`](../../.github/workflows/deploy-applications.yml)
+workflow.
+
+**How it works:**
+
+1. A push to the `production` branch touching `apps/**` or
+   `packages/mcp/**` triggers the workflow.
+2. [`operations/deployment/discover.cjs`](../../operations/deployment/discover.cjs)
+   scans for `apps/*/deploy.json` manifests and matches changed files
+   against each app's path and `watch` globs.
+3. [`apps/mcp/deploy.json`](../../apps/mcp/deploy.json) declares
+   `"watch": ["packages/mcp/**"]`, so changes to the SDK source in
+   `packages/mcp/` are detected even though the worker entry point
+   lives in `apps/mcp/`.
+4. [`operations/deployment/deploy.sh`](../../operations/deployment/deploy.sh)
+   reads the manifest and runs `npm ci`, the test suite
+   (`node --test worker.test.js`), and `wrangler deploy`.
+5. [`apps/mcp/wrangler.jsonc`](../../apps/mcp/wrangler.jsonc) routes
+   traffic to `mcp.pollinations.ai` and `mcp.myceli.ai`.
+
+**Production gating:** the workflow only runs on `production`, and
+[`guard-production-source.yml`](../../.github/workflows/guard-production-source.yml)
+prevents PRs to `production` from branches other than `main`.
+
+**Staging:** there is no separate staging deploy for the MCP worker.
+Because the worker is a thin proxy to `gen.pollinations.ai`, staging
+is handled at the gateway level (see `deploy-gen-cloudflare.yml`), not
+at the MCP layer.
+
+**Manual deploy:** use `workflow_dispatch` on the Actions tab to
+redeploy without a code change (select `mcp` or `all`).
+
 ## System Requirements
 
 - Node.js 20.0.0 or higher

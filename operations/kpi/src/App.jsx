@@ -24,6 +24,7 @@ const EXPORT_COLUMNS = [
     ["registrations", "Registrations"],
     ["activations", "Activations"],
     ["wau", "WAU"],
+    ["wauAll", "WAU incl. rejected"],
     ["tokens", "Tokens"],
     ["revenue", "Revenue"],
     ["packPurchases", "Pack purchases"],

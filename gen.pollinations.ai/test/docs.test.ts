@@ -20,6 +20,20 @@ function envWithEnterSchema(schema: unknown): CloudflareBindings {
     } as CloudflareBindings;
 }
 
+function envWithFailedEnterSchema(): CloudflareBindings {
+    return {
+        ENTER: {
+            fetch: async () => new Response("unavailable", { status: 503 }),
+        } as unknown as Fetcher,
+        ENVIRONMENT: "test",
+        LOG_LEVEL: "debug",
+        LOG_FORMAT: "text",
+        TINYBIRD_INGEST_URL:
+            "https://tinybird.test/v0/events?name=request_event",
+        TINYBIRD_INGEST_TOKEN: "test-token",
+    } as CloudflareBindings;
+}
+
 describe("docs routes", () => {
     afterEach(() => {
         vi.restoreAllMocks();
@@ -264,6 +278,26 @@ describe("docs routes", () => {
             schema.paths["/quests/catalog"] as Record<string, unknown>
         )?.get as Record<string, unknown> | undefined;
         expect(questsCatalogGet?.security).toEqual([]);
+    });
+
+    it("does not publish a partial schema when the account schema fails", async () => {
+        const ctx = createExecutionContext();
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(JSON.stringify({ paths: {}, components: {} }), {
+                headers: { "Content-Type": "application/json" },
+            }),
+        );
+
+        const response = await worker.fetch(
+            new Request(
+                "https://gen.pollinations.ai/docs/open-api/generate-schema",
+            ),
+            envWithFailedEnterSchema(),
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(500);
     });
 
     it("does not add noindex to docs responses at the worker boundary", async () => {

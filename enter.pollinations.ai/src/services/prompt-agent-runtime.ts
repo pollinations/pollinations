@@ -15,7 +15,9 @@ const log = getLogger(["enter", "prompt-agent-runtime"]);
 
 export const PromptAgentRequestSchema = z
     .object({
-        messages: z.array(z.custom<ModelMessage>()).optional().default([]),
+        // z.custom() accepts the same inputs, but cannot be represented in the
+        // OpenAPI JSON Schema generated for the account service.
+        messages: z.array(z.unknown()).optional().default([]),
         stream: z.boolean().optional().default(false),
     })
     .passthrough();
@@ -583,7 +585,9 @@ export async function handlePromptAgentRequest(
     signal: AbortSignal,
     runtime: PromptAgentRuntime,
 ): Promise<Response> {
-    const messages = Array.isArray(body.messages) ? body.messages : [];
+    const messages = (
+        Array.isArray(body.messages) ? body.messages : []
+    ) as ModelMessage[];
     const id = `chatcmpl-${crypto.randomUUID()}`;
     const created = Math.floor(Date.now() / 1000);
     try {

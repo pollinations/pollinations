@@ -423,11 +423,22 @@ const EndpointAgentUpdateSchema = z
         upstreamModel: EndpointFieldsSchema.upstreamModel,
     })
     .strict();
-const UpdateEndpointSchema = z.union([
-    ProxyUpdateSchema,
-    PromptAgentUpdateSchema,
-    EndpointAgentUpdateSchema,
-]);
+// The public contract lists every updateable field without requiring clients to
+// echo the row's immutable type. Once the row is loaded, its exact strict schema
+// performs the authoritative parse and rejects fields from another listing kind.
+const UpdateEndpointSchema = z
+    .object({
+        ...CommonUpdateFieldsSchema,
+        baseUrl: EndpointFieldsSchema.baseUrl.optional(),
+        upstreamModel: EndpointFieldsSchema.upstreamModel,
+        bearerToken: EndpointFieldsSchema.bearerToken.optional(),
+        perUserRpm: PerUserRpmSchema.optional(),
+        imagePricing: ImagePricingSchema.optional(),
+        inputModalities: InputModalitiesSchema.optional(),
+        fallbacks: FallbacksSchema.optional(),
+        ...UpdatePriceFieldsSchema,
+    })
+    .strict();
 
 function assertValidUpdate(
     type: "proxy" | "prompt_agent" | "endpoint_agent",
@@ -1229,45 +1240,40 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 // Prompt configuration is edited through /account/agents.
                 // This route only updates shared listing state such as hidden.
             } else if (endpoint.type === "endpoint_agent") {
-                const endpointInput = EndpointAgentUpdateSchema.parse(input);
                 if (!parseListingPayload("endpoint_agent", endpoint.payload)) {
                     throw new Error(
                         `Invalid endpoint_agent payload for ${endpoint.id}`,
                     );
                 }
-                if (endpointInput.baseUrl !== undefined) {
-                    update.baseUrl = normalizeInputBaseUrl(
-                        endpointInput.baseUrl,
-                    );
+                if (input.baseUrl !== undefined) {
+                    update.baseUrl = normalizeInputBaseUrl(input.baseUrl);
                 }
-                if (endpointInput.upstreamModel !== undefined) {
-                    update.upstreamModel = endpointInput.upstreamModel;
+                if (input.upstreamModel !== undefined) {
+                    update.upstreamModel = input.upstreamModel;
                 }
             } else {
-                const proxyInput = ProxyUpdateSchema.parse(input);
                 const stored = parseListingPayload("proxy", endpoint.payload);
                 if (!stored) {
                     throw new Error(`Invalid proxy payload for ${endpoint.id}`);
                 }
                 const modality = stored.modality;
                 const inputModalities =
-                    proxyInput.inputModalities ?? stored.inputModalities;
+                    input.inputModalities ?? stored.inputModalities;
                 enforceCommunityEndpointInputModalities(
                     modality,
                     inputModalities,
                 );
                 const imagePricing =
-                    modality === "image" &&
-                    proxyInput.imagePricing !== undefined
-                        ? proxyInput.imagePricing
+                    modality === "image" && input.imagePricing !== undefined
+                        ? input.imagePricing
                         : stored.imagePricing;
-                const priceSource = { ...stored.prices, ...proxyInput };
+                const priceSource = { ...stored.prices, ...input };
                 if (imagePricing !== stored.imagePricing) {
                     for (const field of communityEndpointPriceFieldsForModality(
                         modality,
                         imagePricing,
                     )) {
-                        if (proxyInput[field.key] === undefined) {
+                        if (input[field.key] === undefined) {
                             priceSource[field.key] = 0;
                         }
                     }
@@ -1286,9 +1292,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     imagePricing,
                 );
                 const fallbacks =
-                    proxyInput.fallbacks === undefined
+                    input.fallbacks === undefined
                         ? stored.fallbacks
-                        : await resolveFallbacks(db, proxyInput.fallbacks, {
+                        : await resolveFallbacks(db, input.fallbacks, {
                               modelId: communityModelId(
                                   ownerGithubUsername,
                                   input.name ?? endpoint.name,
@@ -1301,29 +1307,27 @@ export const communityEndpointsRoutes = new Hono<Env>()
                           });
                 const payload: ProxyListingPayload = {
                     bearerTokenCiphertext:
-                        proxyInput.bearerToken === undefined
+                        input.bearerToken === undefined
                             ? stored.bearerTokenCiphertext
                             : await encryptSecret(
-                                  normalizeInputBearerToken(
-                                      proxyInput.bearerToken,
-                                  ),
+                                  normalizeInputBearerToken(input.bearerToken),
                                   c.env.BETTER_AUTH_SECRET,
                               ),
                     modality,
                     imagePricing,
                     inputModalities,
                     perUserRpm:
-                        proxyInput.perUserRpm === undefined
+                        input.perUserRpm === undefined
                             ? stored.perUserRpm
-                            : proxyInput.perUserRpm,
+                            : input.perUserRpm,
                     fallbacks,
                     prices,
                 };
-                if (proxyInput.baseUrl !== undefined) {
-                    update.baseUrl = normalizeInputBaseUrl(proxyInput.baseUrl);
+                if (input.baseUrl !== undefined) {
+                    update.baseUrl = normalizeInputBaseUrl(input.baseUrl);
                 }
-                if (proxyInput.upstreamModel !== undefined) {
-                    update.upstreamModel = proxyInput.upstreamModel;
+                if (input.upstreamModel !== undefined) {
+                    update.upstreamModel = input.upstreamModel;
                 }
                 update.payload = JSON.stringify(payload);
             }

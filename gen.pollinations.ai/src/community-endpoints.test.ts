@@ -4097,6 +4097,7 @@ fixtureTest(
                         Authorization: `Bearer ${key}`,
                         "Content-Type": "application/json",
                     },
+                    body: JSON.stringify({ hidden: false }),
                 },
             ),
         );
@@ -4117,6 +4118,7 @@ fixtureTest(
                         Authorization: `Bearer ${key}`,
                         "Content-Type": "application/json",
                     },
+                    body: JSON.stringify({ hidden: true }),
                 },
             ),
         );
@@ -4599,8 +4601,6 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
                 ...promptAgent,
                 name: modelName,
                 title: "Managed SQL Tutor",
-                description: "",
-                visibility: "public",
             }),
         }),
         enterEnv,
@@ -4622,6 +4622,8 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     expect(agent).not.toHaveProperty("bearerTokenCiphertext");
     expect(agent).toMatchObject({
         name: modelName,
+        description: null,
+        visibility: "private",
         baseUrl: env.AGENT_RUNTIME_BASE_URL,
         upstreamModel: agent.id,
     });

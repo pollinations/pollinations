@@ -47,7 +47,12 @@ const ListingFieldsSchema = z.object({
 const AgentWriteSchema = PromptAgentInputSchema.extend(
     ListingFieldsSchema.shape,
 ).strict();
-const CreateAgentSchema = AgentWriteSchema;
+const CreateAgentSchema = AgentWriteSchema.extend({
+    description: ListingFieldsSchema.shape.description.optional().default(""),
+    visibility: ListingFieldsSchema.shape.visibility
+        .optional()
+        .default("private"),
+}).strict();
 const UpdateAgentSchema = PromptAgentInputSchema.extend({
     name: ListingFieldsSchema.shape.name.optional(),
     title: ListingFieldsSchema.shape.title.optional(),

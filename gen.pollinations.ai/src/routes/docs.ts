@@ -58,7 +58,7 @@ const DOC_TAGS = {
     quickStart: "Quick Start",
     authentication: "Authentication",
     byop: "BYOP",
-    communityModelsGuide: "Community Models Guide",
+    communityModel: "Community Model",
     communityModels: "Community Models",
     cli: "CLI",
     mcpServer: "MCP Server",
@@ -118,8 +118,8 @@ const DOC_TAG_ICON_HTML: Record<string, string> = {
     [DOC_TAGS.communityModels]: docsIcon(
         '<path d="M9 3h6" /><path d="M10 3v6.5L4.5 18a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L14 9.5V3" /><path d="M7 14h10" />',
     ),
-    [DOC_TAGS.communityModelsGuide]: docsIcon(
-        '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" />',
+    [DOC_TAGS.communityModel]: docsIcon(
+        '<path d="M9 3h6" /><path d="M10 3v6.5L4.5 18a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L14 9.5V3" /><path d="M7 14h10" />',
     ),
     [DOC_TAGS.cli]: docsIcon(
         '<polyline points="4 8 8 12 4 16" /><line x1="12" y1="20" x2="20" y2="20" />',
@@ -365,8 +365,8 @@ const LLM_DOC_SECTIONS: Record<string, string> = {
 // Scalar tag anchors for the retired /docs/guides/:id pages.
 const GUIDE_REDIRECT_TAGS: Record<string, string> = {
     byop: "byop",
-    models: "community-models-guide",
-    "community-models": "community-models-guide",
+    models: "community-model",
+    "community-models": "community-model",
     cli: "cli",
     mcp: "mcp-server",
 };
@@ -470,7 +470,7 @@ function generationDocumentation(): OpenApiSchema {
                     DOC_TAGS.byop,
                     DOC_TAGS.cli,
                     DOC_TAGS.mcpServer,
-                    DOC_TAGS.communityModelsGuide,
+                    DOC_TAGS.communityModel,
                 ],
             },
             {
@@ -513,7 +513,7 @@ function generationDocumentation(): OpenApiSchema {
                 description: BYOP_DOCS,
             },
             {
-                name: DOC_TAGS.communityModelsGuide,
+                name: DOC_TAGS.communityModel,
                 description: COMMUNITY_MODELS_DOCS,
             },
             {

@@ -203,14 +203,12 @@ describe("docs routes", () => {
         const resources = schema["x-tagGroups"].find(
             (group) => group.name === "Resources",
         );
-        expect(integrations?.tags).toContain("Community Models Guide");
+        expect(integrations?.tags).toContain("Community Model");
         expect(integrations?.tags).not.toContain("Community Models");
         expect(resources?.tags).toContain("Community Models");
-        expect(resources?.tags).not.toContain("Community Models Guide");
+        expect(resources?.tags).not.toContain("Community Model");
         expect(schema.tags.map((tag) => tag.name)).toContain("BYOP");
-        expect(schema.tags.map((tag) => tag.name)).toContain(
-            "Community Models Guide",
-        );
+        expect(schema.tags.map((tag) => tag.name)).toContain("Community Model");
         expect(schema.tags.map((tag) => tag.name)).toContain(
             "Community Models",
         );
@@ -373,7 +371,7 @@ describe("docs routes", () => {
         );
         expect(modelsRes.status).toBe(301);
         expect(modelsRes.headers.get("Location")).toBe(
-            "/docs#tag/community-models-guide",
+            "/docs#tag/community-model",
         );
 
         const missingRes = await worker.fetch(

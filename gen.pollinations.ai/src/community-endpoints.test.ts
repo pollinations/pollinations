@@ -148,7 +148,7 @@ function insertCommunityEndpoints(
                       mcpServers: [],
                   })
                 : type === "endpoint_agent"
-                  ? {}
+                  ? { perUserRpm: perUserRpm ?? null }
                   : {
                         bearerTokenCiphertext:
                             bearerTokenCiphertext ?? "test-ciphertext",
@@ -4829,6 +4829,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
                 body: JSON.stringify({
                     baseUrl: "https://updated-agent.example.com/v1",
                     upstreamModel: "updated-endpoint-agent",
+                    perUserRpm: 7,
                 }),
             },
         ),
@@ -4841,6 +4842,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         type: "endpoint_agent",
         baseUrl: "https://updated-agent.example.com/v1",
         upstreamModel: "updated-endpoint-agent",
+        perUserRpm: 7,
     });
     expect(endpointAgentResponse).not.toHaveProperty("agentId");
     expect(endpointAgentResponse).not.toHaveProperty("modality");
@@ -4862,6 +4864,18 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         enterEnv,
     );
     expect(invalidEndpointAgentUpdateResponse.status).toBe(400);
+    const endpointAgentRegistryEntry = (
+        await getCommunityModelRegistryEntries(env)
+    ).find((entry) => entry.communityEndpoint.id === endpointAgentId);
+    expect(endpointAgentRegistryEntry?.communityEndpoint).toMatchObject({
+        type: "endpoint_agent",
+        baseUrl: "https://updated-agent.example.com/v1",
+        upstreamModel: "updated-endpoint-agent",
+        perUserRpm: 7,
+    });
+    expect(endpointAgentRegistryEntry?.communityEndpoint).not.toHaveProperty(
+        "bearerTokenCiphertext",
+    );
 
     const [modelsResponse, openaiModelsResponse] = await Promise.all([
         fetchGen("https://gen.pollinations.ai/models"),
@@ -5283,7 +5297,6 @@ fixtureTest(
             "sk_saved_token",
             env.BETTER_AUTH_SECRET,
         );
-        const managedAgentId = crypto.randomUUID();
         const suffix = crypto.randomUUID().slice(0, 8);
         const name = (label: string) => `${label}-${suffix}`;
         const id = (label: string) =>
@@ -5339,15 +5352,6 @@ fixtureTest(
             }),
             endpoint("delegating-target", {
                 type: "endpoint_agent",
-            }),
-            endpoint("managed-primary", {
-                id: managedAgentId,
-                type: "prompt_agent",
-                agentConfig: {
-                    systemPrompt: "Use the available tools.",
-                    baseModel: "openai",
-                    mcpServers: [],
-                },
             }),
             endpoint("second-target", {
                 promptTextPrice: 0.1 / 1_000_000,
@@ -5431,7 +5435,6 @@ fixtureTest(
         expect(fallbackIds(id("deleted-primary"))).toBeUndefined();
         expect(fallbackIds(id("repriced-primary"))).toBeUndefined();
         expect(fallbackIds(id("delegating-primary"))).toBeUndefined();
-        expect(fallbackIds(id("managed-primary"))).toBeUndefined();
 
         // Same image pricing mode on both sides: the price columns mean the
         // same thing, so the link stands.

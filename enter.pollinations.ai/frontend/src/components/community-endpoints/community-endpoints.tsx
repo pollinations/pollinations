@@ -174,6 +174,7 @@ export function CommunityEndpoints({
         bearerToken: string,
     ): Promise<void> {
         if (!editing) return;
+        const { modality: _modality, ...proxyUpdate } = payload;
         const update =
             editing.type === "endpoint_agent"
                 ? {
@@ -183,10 +184,11 @@ export function CommunityEndpoints({
                       visibility: payload.visibility,
                       baseUrl: payload.baseUrl,
                       upstreamModel: payload.upstreamModel,
+                      perUserRpm: payload.perUserRpm,
                   }
                 : bearerToken
-                  ? { ...payload, bearerToken }
-                  : payload;
+                  ? { ...proxyUpdate, bearerToken }
+                  : proxyUpdate;
         const response = await apiClient.account["my-models"][
             ":id"
         ].update.$post({

@@ -246,9 +246,7 @@ function isUsableCommunityFallback(
     const primary = from.communityEndpoint;
     const candidate = target.communityEndpoint;
     if (!primary || !candidate) return false;
-    if (usesAgentRunToken(primary) || usesAgentRunToken(candidate)) {
-        return false;
-    }
+    if (usesAgentRunToken(candidate)) return false;
     if (primary.imagePricing !== candidate.imagePricing) return false;
     if (
         !from.supportedEndpoints.every((endpoint) =>
@@ -266,10 +264,10 @@ export function linkFallbackEntries(
     byIdOrAlias: Map<string, GenerationModelEntry>,
 ): void {
     for (const entry of entries) {
-        const declared = (entry.definition.fallbacks ?? []).slice(
-            0,
-            MAX_FALLBACK_TARGETS,
-        );
+        const configured = entry.definition.fallbacks ?? [];
+        const declared = entry.communityEndpoint
+            ? configured.slice(0, MAX_FALLBACK_TARGETS)
+            : configured;
         const targets: GenerationModelEntry[] = [];
 
         for (const targetId of declared) {

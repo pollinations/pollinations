@@ -137,6 +137,7 @@ export function AgentDialog({
                         modality="text"
                         canPublish={canPublish}
                         isAgent
+                        allowPerUserRpm={false}
                         required
                         onChange={(key, value) =>
                             setForm((current) => ({

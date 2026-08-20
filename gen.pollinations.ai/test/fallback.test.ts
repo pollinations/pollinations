@@ -99,6 +99,22 @@ describe("registry fallback linking", () => {
             }).map((candidate) => candidate.id),
         ).toEqual(["primary", "target"]);
     });
+
+    it("does not apply the community fallback cap to registry declarations", () => {
+        const targetIds = ["one", "two", "three", "four"];
+        const primary = registryEntry("primary", targetIds);
+        const targets = targetIds.map((id) => registryEntry(id));
+        const entries = [primary, ...targets];
+
+        linkFallbackEntries(
+            entries,
+            new Map(entries.map((entry) => [entry.id, entry])),
+        );
+
+        expect(primary.fallbackEntries?.map((entry) => entry.id)).toEqual(
+            targetIds,
+        );
+    });
     it("guards community declarations but trusts registry declarations", () => {
         const ownPrimary = communityEntry(
             "owner/primary",

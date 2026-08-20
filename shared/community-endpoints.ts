@@ -391,9 +391,17 @@ export type PromptAgentListingPayload = z.infer<typeof PromptAgentConfigSchema>;
 
 /**
  * An agent on the owner's own server. It is sent a run token rather than a
- * credential, so it stores a target and nothing else.
+ * credential. The rate limit remains gateway policy, not an upstream secret.
  */
-export type EndpointAgentListingPayload = Record<string, never>;
+export const EndpointAgentListingPayloadSchema = z
+    .object({
+        perUserRpm: z.number().finite().positive().nullable().default(null),
+    })
+    .strict();
+
+export type EndpointAgentListingPayload = z.infer<
+    typeof EndpointAgentListingPayloadSchema
+>;
 
 export type ListingPayloadByType = {
     proxy: ProxyListingPayload;
@@ -423,7 +431,8 @@ export function parseListingPayload<K extends ListingType>(
     const source = parsed as Record<string, unknown>;
 
     if (type === "endpoint_agent") {
-        return {} as ListingPayloadByType[K];
+        const result = EndpointAgentListingPayloadSchema.safeParse(source);
+        return result.success ? (result.data as ListingPayloadByType[K]) : null;
     }
     if (type === "prompt_agent") {
         const result = PromptAgentConfigSchema.safeParse(source);

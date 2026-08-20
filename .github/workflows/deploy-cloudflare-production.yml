@@ -85,19 +85,45 @@ jobs:
               - 'enter.pollinations.ai/drizzle/**'
               - '.github/workflows/deploy-cloudflare-production.yml'
 
+  # Keep slow validation outside the migration-to-deploy cutover window.
+  preflight-gen:
+    needs: changes
+    if: needs.changes.outputs.gen == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test
+        run: npm test --workspace pollinations-gen
+
+      - name: Typecheck
+        run: npm run typecheck --workspace pollinations-gen
+
   # One migration for all three workers: they share
   # production-pollinations-enter-db, so the schema must move once, before any
   # of them deploys. `d1 migrations apply` is idempotent.
   migrate:
-    needs: changes
+    needs: [changes, preflight-gen]
     # Never move the schema unless at least one worker is going to deploy on
     # top of it. Without this the job runs whenever the workflow fires, so any
     # filter that wrongly reports false leaves migrations applied with every
     # worker still on the old code — strictly worse than not deploying at all.
     if: >-
-      needs.changes.outputs.enter == 'true' ||
-      needs.changes.outputs.gen == 'true' ||
-      needs.changes.outputs.media == 'true'
+      always() &&
+      needs.changes.result == 'success' &&
+      (needs.preflight-gen.result == 'success' || needs.preflight-gen.result == 'skipped') &&
+      (needs.changes.outputs.enter == 'true' ||
+       needs.changes.outputs.gen == 'true' ||
+       needs.changes.outputs.media == 'true')
     runs-on: ubuntu-latest
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
@@ -158,12 +184,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Test
-        run: npm test --workspace pollinations-gen
-
-      - name: Typecheck
-        run: npm run typecheck --workspace pollinations-gen
 
       - name: Setup SOPS
         uses: nhedger/setup-sops@v2

@@ -421,6 +421,7 @@ const EndpointAgentUpdateSchema = z
         ...CommonUpdateFieldsSchema,
         baseUrl: EndpointFieldsSchema.baseUrl.optional(),
         upstreamModel: EndpointFieldsSchema.upstreamModel,
+        perUserRpm: PerUserRpmSchema.optional(),
     })
     .strict();
 // The public contract lists every updateable field without requiring clients to
@@ -510,6 +511,7 @@ const EndpointAgentEndpointResponseSchema = z
     .object({
         ...CommunityEndpointResponseFieldsSchema,
         type: z.literal("endpoint_agent"),
+        perUserRpm: PerUserRpmSchema,
     })
     .strict();
 const CommunityEndpointResponseSchema = z.discriminatedUnion("type", [
@@ -668,12 +670,14 @@ function toResponse(
         });
     }
     if (row.type === "endpoint_agent") {
-        if (!parseListingPayload("endpoint_agent", row.payload)) {
+        const payload = parseListingPayload("endpoint_agent", row.payload);
+        if (!payload) {
             throw new Error(`Invalid endpoint_agent payload for ${row.id}`);
         }
         return CommunityEndpointResponseSchema.parse({
             ...common,
             type: row.type,
+            perUserRpm: payload.perUserRpm,
         });
     }
     const payload = parseListingPayload("proxy", row.payload);
@@ -975,7 +979,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Create My Model",
             description:
-                "Register a private or public community text or image model. Private is the default. Public models require an allowlisted account and may be free or priced. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
+                "Register a private or public community text, image, or transcription model. Private is the default. Public models require an allowlisted account and may be free or priced. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
             responses: {
                 200: {
                     description: "Created community model",
@@ -1251,6 +1255,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 if (input.upstreamModel !== undefined) {
                     update.upstreamModel = input.upstreamModel;
                 }
+                if (input.perUserRpm !== undefined) {
+                    update.payload = JSON.stringify({
+                        perUserRpm: input.perUserRpm,
+                    });
+                }
             } else {
                 const stored = parseListingPayload("proxy", endpoint.payload);
                 if (!stored) {
@@ -1305,31 +1314,46 @@ export const communityEndpointsRoutes = new Hono<Env>()
                               prices,
                               inputModalities,
                           });
-                const payload: ProxyListingPayload = {
-                    bearerTokenCiphertext:
-                        input.bearerToken === undefined
-                            ? stored.bearerTokenCiphertext
-                            : await encryptSecret(
-                                  normalizeInputBearerToken(input.bearerToken),
-                                  c.env.BETTER_AUTH_SECRET,
-                              ),
-                    modality,
-                    imagePricing,
-                    inputModalities,
-                    perUserRpm:
-                        input.perUserRpm === undefined
-                            ? stored.perUserRpm
-                            : input.perUserRpm,
-                    fallbacks,
-                    prices,
-                };
                 if (input.baseUrl !== undefined) {
                     update.baseUrl = normalizeInputBaseUrl(input.baseUrl);
                 }
                 if (input.upstreamModel !== undefined) {
                     update.upstreamModel = input.upstreamModel;
                 }
-                update.payload = JSON.stringify(payload);
+                const changesPayload = [
+                    input.bearerToken,
+                    input.visibility,
+                    input.perUserRpm,
+                    input.imagePricing,
+                    input.inputModalities,
+                    input.fallbacks,
+                    ...COMMUNITY_ENDPOINT_PRICE_FIELDS.map(
+                        ({ key }) => input[key],
+                    ),
+                ].some((value) => value !== undefined);
+                if (changesPayload) {
+                    const payload: ProxyListingPayload = {
+                        bearerTokenCiphertext:
+                            input.bearerToken === undefined
+                                ? stored.bearerTokenCiphertext
+                                : await encryptSecret(
+                                      normalizeInputBearerToken(
+                                          input.bearerToken,
+                                      ),
+                                      c.env.BETTER_AUTH_SECRET,
+                                  ),
+                        modality,
+                        imagePricing,
+                        inputModalities,
+                        perUserRpm:
+                            input.perUserRpm === undefined
+                                ? stored.perUserRpm
+                                : input.perUserRpm,
+                        fallbacks,
+                        prices,
+                    };
+                    update.payload = JSON.stringify(payload);
+                }
             }
             const [row] = await db
                 .update(schema.communityEndpoint)

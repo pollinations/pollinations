@@ -1,4 +1,5 @@
 import { env } from "cloudflare:test";
+import { createTestUser } from "@shared/test/fixtures/index.ts";
 import { describe, expect, it } from "vitest";
 import migrationSql from "../drizzle/0053_listing_envelope.sql?raw";
 
@@ -18,6 +19,7 @@ type Row = {
  */
 describe("community endpoint envelope migration", () => {
     it("types every row and packs only that type's fields", async () => {
+        await createTestUser({ id: "owner" });
         await env.DB.prepare(`
             CREATE TABLE migration_agent (
                 id TEXT PRIMARY KEY,
@@ -78,7 +80,7 @@ describe("community endpoint envelope migration", () => {
                  NULL, NULL, 'tutor', NULL, NULL, NULL, 0, 0, 0),
                 ('delegating-text', 'weaver', NULL, 'text', 'request',
                  NULL, 'https://agent.example.com/v1', 'weaver', 'cipher',
-                 NULL, NULL, 1, 0, 0),
+                 30, NULL, 1, 0, 0),
                 ('delegating-image', 'painter', NULL, 'image', 'request',
                  NULL, 'https://api.example.com/v1', 'sdxl', 'cipher',
                  NULL, NULL, 1, 0, 0),
@@ -173,7 +175,7 @@ describe("community endpoint envelope migration", () => {
             type: "endpoint_agent",
             baseUrl: "https://agent.example.com/v1",
             upstreamModel: "weaver",
-            payload: {},
+            payload: { perUserRpm: 30 },
         });
         // Excluded on purpose: run tokens are only minted on the text path, so
         // the flag was inert here and promoting the row would start rejecting

@@ -141,13 +141,15 @@ export function CommunityEndpointCard({
                         copyLabel="Copy endpoint"
                     />
                 )}
-                {endpoint.type === "proxy" && (
+                {endpoint.type !== "prompt_agent" && (
                     <>
-                        <CommunityDetailRow
-                            icon={<TerminalIcon className="h-3.5 w-3.5" />}
-                            label="Modality"
-                            value={endpoint.modality}
-                        />
+                        {endpoint.type === "proxy" && (
+                            <CommunityDetailRow
+                                icon={<TerminalIcon className="h-3.5 w-3.5" />}
+                                label="Modality"
+                                value={endpoint.modality}
+                            />
+                        )}
                         <CommunityDetailRow
                             icon={<TerminalIcon className="h-3.5 w-3.5" />}
                             label="Upstream model"

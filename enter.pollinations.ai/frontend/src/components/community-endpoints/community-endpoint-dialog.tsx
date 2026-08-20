@@ -435,6 +435,7 @@ export function CommunityEndpointDialog({
                         modality={form.modality}
                         canPublish={canPublish}
                         isAgent={isEndpointAgent}
+                        allowPerUserRpm
                         onChange={(key, value) => updateForm(key, value)}
                         onInputModalitiesChange={(inputModalities) =>
                             setForm((current) => ({

@@ -79,6 +79,7 @@ export type PromptAgentCommunityEndpoint = CommunityEndpointBase & {
 
 export type EndpointAgentCommunityEndpoint = CommunityEndpointBase & {
     type: "endpoint_agent";
+    perUserRpm: number | null;
 };
 
 export type CommunityEndpoint =
@@ -298,6 +299,7 @@ export function endpointToForm(endpoint: EditableEndpoint): EndpointFormState {
             title: endpoint.title,
             description: endpoint.description ?? "",
             visibility: endpoint.visibility,
+            perUserRpm: endpoint.perUserRpm?.toString() ?? "",
             baseUrl: endpoint.baseUrl,
             upstreamModel: endpoint.upstreamModel,
         };

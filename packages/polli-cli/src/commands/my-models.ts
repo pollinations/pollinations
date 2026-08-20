@@ -65,11 +65,16 @@ interface ProxyMyModel extends MyModelBase {
     fallbacks: string[];
 }
 
-interface AgentMyModel extends MyModelBase {
-    type: "prompt_agent" | "endpoint_agent";
+interface PromptAgentMyModel extends MyModelBase {
+    type: "prompt_agent";
 }
 
-type MyModel = ProxyMyModel | AgentMyModel;
+interface EndpointAgentMyModel extends MyModelBase {
+    type: "endpoint_agent";
+    perUserRpm: number | null;
+}
+
+type MyModel = ProxyMyModel | PromptAgentMyModel | EndpointAgentMyModel;
 
 function addPriceOptions(command: Command): Command {
     for (const [flag, description] of PRICE_FLAGS) {
@@ -419,7 +424,9 @@ const test = new Command("test")
     });
 
 export const myModelsCommand = new Command("my-models")
-    .description("Manage private and published community text and image models")
+    .description(
+        "Manage private and published community text, image, and transcription models",
+    )
     .addCommand(list)
     .addCommand(create)
     .addCommand(update)

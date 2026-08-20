@@ -1,4 +1,13 @@
 PRAGMA foreign_keys=OFF;--> statement-breakpoint
+CREATE TABLE `__listing_envelope_owner_guard` (
+	`mismatches` integer NOT NULL CHECK (`mismatches` = 0)
+);--> statement-breakpoint
+INSERT INTO `__listing_envelope_owner_guard` (`mismatches`)
+SELECT count(*)
+FROM `community_endpoint`
+INNER JOIN `agent` ON `agent`.`id` = `community_endpoint`.`agent_id`
+WHERE `community_endpoint`.`owner_user_id` != `agent`.`owner_user_id`;--> statement-breakpoint
+DROP TABLE `__listing_envelope_owner_guard`;--> statement-breakpoint
 CREATE TABLE `__new_community_endpoint` (
 	`id` text PRIMARY KEY NOT NULL,
 	`owner_user_id` text NOT NULL,
@@ -44,7 +53,9 @@ SELECT
 			(SELECT "config" FROM "agent" WHERE "agent"."id" = "community_endpoint"."agent_id"),
 			'{}'
 		)
-		WHEN "delegates_generation" = 1 AND "modality" = 'text' THEN '{}'
+		WHEN "delegates_generation" = 1 AND "modality" = 'text' THEN json_object(
+			'perUserRpm', "per_user_rpm"
+		)
 		ELSE json_object(
 			'bearerTokenCiphertext', coalesce("bearer_token_ciphertext", ''),
 			'modality', "modality",

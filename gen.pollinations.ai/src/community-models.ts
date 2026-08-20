@@ -112,9 +112,9 @@ export async function getCommunityModelRegistryEntries(
             hiddenReason: row.hiddenReason,
         };
         // An agent charges nothing of its own and fans out to nothing: the
-        // caller pays for whatever it consumes downstream. Only a proxy has
-        // the fields that describe a purchase, so the agent kinds supply the
-        // empty values once, here, instead of storing nine zeroes each.
+        // caller pays for whatever it consumes downstream. Both agent kinds
+        // share empty purchase fields; endpoint agents may override only the
+        // gateway's per-user rate limit from their payload.
         const agentDefaults = {
             modality: "text" as const,
             imagePricing: "request" as const,
@@ -156,6 +156,7 @@ export async function getCommunityModelRegistryEntries(
                 communityEndpoint = {
                     ...identity,
                     ...agentDefaults,
+                    perUserRpm: payload.perUserRpm,
                     type: "endpoint_agent",
                 };
                 break;

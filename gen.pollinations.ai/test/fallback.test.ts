@@ -46,16 +46,17 @@ function communityEntry(
     id: string,
     ownerUserId: string,
     visibility: "private" | "public" = "public",
-    disabledAt: number | null = null,
+    hiddenAt: number | null = null,
     fallbackModelIds: string[] = [],
     rate = 10,
 ): GenerationModelEntry {
     const entry = registryEntry(id, [], rate);
-    entry.visible = visibility === "public" && disabledAt === null;
+    entry.visible = visibility === "public" && hiddenAt === null;
+    entry.definition.hidden = hiddenAt !== null;
     entry.communityEndpoint = {
         ownerUserId,
         visibility,
-        disabledAt,
+        hiddenAt,
         imagePricing: "request",
         fallbackModelIds,
         ...communityEndpointPrices({

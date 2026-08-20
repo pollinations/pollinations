@@ -136,8 +136,8 @@ function createCommunityEndpoint(
         visibility: "public",
         perUserRpm: null,
         fallbackModelIds: [],
-        disabledAt: null,
-        disabledReason: null,
+        hiddenAt: null,
+        hiddenReason: null,
         ...communityEndpointPrices({
             promptTextPrice: 0.0001,
             completionTextPrice: 0.0002,

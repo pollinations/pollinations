@@ -158,7 +158,7 @@ const FallbackModelIdsSchema = z
     .array(z.string().trim().min(1))
     .max(MAX_FALLBACK_TARGETS)
     .describe(
-        'Community model ids ("<owner>/<name>") tried in order when this model\'s upstream fails, or an empty array to clear them. Each must be another active community model of the same modality, public or owned by you, and priced at or below this model on every price field.',
+        'Community model ids ("<owner>/<name>") tried in order when this model\'s upstream fails, or an empty array to clear them. Each must be another listed community model of the same modality, public or owned by you, and priced at or below this model on every price field.',
     );
 
 const SELF_FALLBACK_MESSAGE = "Fallback target cannot be the model itself";
@@ -177,7 +177,7 @@ function fallbackTargetMissingMessage(modelId: string): string {
 }
 
 /**
- * Private or deactivated rows owned by someone else must look identical to a
+ * Private or hidden rows owned by someone else must look identical to a
  * missing row. Distinct 400s were an existence oracle.
  */
 function shouldConcealFallbackTarget(
@@ -185,7 +185,7 @@ function shouldConcealFallbackTarget(
     target: CommunityEndpointRow,
 ): boolean {
     if (target.ownerUserId === primary.ownerUserId) return false;
-    return target.visibility === "private" || target.disabledAt !== null;
+    return target.visibility === "private" || target.hiddenAt !== null;
 }
 
 /**
@@ -218,8 +218,8 @@ function fallbackTargetRejection(
     if (shouldConcealFallbackTarget(primary, target)) {
         return fallbackTargetMissingMessage(modelId);
     }
-    if (target.disabledAt !== null) {
-        return `Fallback target ${modelId} must be active`;
+    if (target.hiddenAt !== null) {
+        return `Fallback target ${modelId} must be listed`;
     }
     if (rowDelegatesGeneration(target)) {
         return `Fallback target ${modelId} cannot delegate generation`;
@@ -319,7 +319,7 @@ async function resolveFallbackModelId(
 
 // Resolves the whole declared list.
 //
-// A target can later be deleted, deactivated, or repriced above the primary.
+// A target can later be deleted, hidden, or repriced above the primary.
 // There is no reconciliation job: the generation registry re-checks these same
 // rules when it links entries, so this is a UX guard, not an invariant.
 async function resolveFallbackModelIds(
@@ -471,7 +471,7 @@ const UpdateEndpointSchema = z.object({
     imagePricing: ImagePricingSchema.optional(),
     inputModalities: InputModalitiesSchema.optional(),
     fallbackModelIds: FallbackModelIdsSchema.optional(),
-    active: z.boolean().optional(),
+    hidden: z.boolean().optional(),
     ...UpdatePriceFieldsSchema,
 });
 const FallbackCandidatesResponseSchema = z.object({
@@ -509,9 +509,9 @@ const CommunityEndpointResponseSchema = z.object({
     perUserRpm: PerUserRpmSchema,
     fallbackModelIds: z.array(z.string()),
     ...ResponsePriceFieldsSchema,
-    disabled: z.boolean(),
-    disabledReason: z.string().nullable(),
-    disabledAt: z.string().nullable(),
+    hidden: z.boolean(),
+    hiddenReason: z.string().nullable(),
+    hiddenAt: z.string().nullable(),
     createdAt: z.string(),
     updatedAt: z.string(),
 });
@@ -666,9 +666,9 @@ function toResponse(
         perUserRpm: row.perUserRpm,
         fallbackModelIds: row.fallbackModelIds ?? [],
         ...communityEndpointPrices(row),
-        disabled: row.disabledAt !== null,
-        disabledReason: row.disabledReason,
-        disabledAt: row.disabledAt,
+        hidden: row.hiddenAt !== null,
+        hiddenReason: row.hiddenReason,
+        hiddenAt: row.hiddenAt,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
     };
@@ -900,7 +900,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "List Fallback Candidates",
             description:
-                "Community models this model may declare as fallbacks: active, public or owned by you, same modality, and priced at or below it on every price field. Computed with the same rule the update endpoint validates against, so every id listed here is accepted. Eligibility is re-checked when a request is routed, so a target repriced above this model afterwards stops serving without changing the stored list.",
+                "Community models this model may declare as fallbacks: listed, public or owned by you, same modality, and priced at or below it on every price field. Computed with the same rule the update endpoint validates against, so every id listed here is accepted. Eligibility is re-checked when a request is routed, so a target repriced above this model afterwards stops serving without changing the stored list.",
             responses: {
                 200: {
                     description: "Eligible fallback model ids",
@@ -1296,10 +1296,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
             if (input.inputModalities !== undefined) {
                 update.inputModalities = input.inputModalities;
             }
-            if (input.active !== undefined) {
-                update.disabledAt = input.active ? null : new Date();
-                update.disabledReason = input.active ? null : "Hidden by owner";
-                update.disabledBy = input.active ? null : "owner";
+            if (input.hidden !== undefined) {
+                update.hiddenAt = input.hidden ? new Date() : null;
+                update.hiddenReason = input.hidden ? "Hidden by owner" : null;
+                update.hiddenBy = input.hidden ? "owner" : null;
             }
             const storedImagePricing = normalizeCommunityEndpointImagePricing(
                 endpoint.imagePricing,

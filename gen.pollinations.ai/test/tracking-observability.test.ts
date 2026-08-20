@@ -604,6 +604,102 @@ describe("tracking observability", () => {
         expect(event.modelUsed).toBe("openai");
         expect(consumePollen).toHaveBeenCalledWith(0);
     });
+
+    it("recovers OpenRouter zero usage before billing and Tinybird settlement", async () => {
+        const tinybirdRequests: Request[] = [];
+        const generationRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                if (request.url.startsWith("https://openrouter.ai/")) {
+                    generationRequests.push(request);
+                    return Response.json({
+                        data: {
+                            tokens_prompt: 12,
+                            tokens_completion: 7,
+                            native_tokens_cached: 2,
+                            native_tokens_reasoning: 3,
+                        },
+                    });
+                }
+                tinybirdRequests.push(request);
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+        const definition = getRegistryModelDefinition("gemini-fast");
+        const ctx = createExecutionContext();
+        const response = await createTestApp(
+            consumePollen,
+            trackingUser,
+            {
+                requested: "gemini-fast",
+                resolved: "gemini-fast",
+                definition,
+            },
+            undefined,
+            {
+                "x-generation-id": "gen-e2e-zero-usage",
+                "x-model-used": "gemini-fast",
+                "x-usage-prompt-text-tokens": "0",
+                "x-usage-completion-text-tokens": "0",
+            },
+        ).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "gemini-fast",
+                    stream: false,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                OPENROUTER_API_KEY: "test_openrouter_key",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(generationRequests).toHaveLength(1);
+        expect(generationRequests[0].url).toBe(
+            "https://openrouter.ai/api/v1/generation?id=gen-e2e-zero-usage",
+        );
+        expect(generationRequests[0].headers.get("authorization")).toBe(
+            "Bearer test_openrouter_key",
+        );
+        expect(tinybirdRequests).toHaveLength(1);
+        const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
+        expect(event).toMatchObject({
+            responseStatus: 200,
+            modelRequested: "gemini-fast",
+            modelUsed: "gemini-fast",
+            modelProviderUsed: "openrouter",
+            isBilledUsage: true,
+            tokenCountPromptText: 10,
+            tokenCountPromptCached: 2,
+            tokenCountCompletionText: 4,
+            tokenCountCompletionReasoning: 3,
+        });
+        expect(event.totalCost).toBeGreaterThan(0);
+        expect(event.totalPrice).toBeGreaterThan(0);
+        expect(event).not.toHaveProperty("errorResponseCode");
+        expect(consumePollen).toHaveBeenCalledWith(expect.any(Number));
+        expect(consumePollen.mock.calls[0]?.[0]).toBeGreaterThan(0);
+    });
+
     it("tracks usage after a malformed SSE event", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(

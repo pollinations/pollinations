@@ -1,0 +1,35 @@
+{
+  "pr_number": 13623,
+  "title": "feat: one typed listing table — type + payload envelope",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13623",
+  "merged_at": "2026-08-20T19:16:52Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n\n- Unifies proxy models, prompt agents, and endpoint agents in one typed `community_endpoint` table.\n- Gives every listing a common `base_url` and `upstream_model`; prompt-agent storage uses a fail-closed `.invalid` runtime placeholder that resolves from the environment at the API/runtime boundary.\n- Uses strict Zod schemas for external writes and kind-specific payloads: only proxies store credentials, pricing, RPM, or fallbacks; only prompt agents store prompt/MCP config.\n- Removes the separate agent table and migrates linked and standalone prompt agents without exposing credentials or prompts.\n- Updates Enter, Gen, dashboard, and `polli` CLI together as a clean API break.\n\n## Related work\n\n- Product direction: #11373; broader runtime research: #10628.\n- Community listing foundations: #11567 (table/routing) and #12333 (visibility), both merged.\n- Early agent-kind and prompt-agent paths: #12253 and #12266, consolidated by #12278.\n- Prompt-agent foundation: #12336 (merged); migration consolidation #13413 was folded into it.\n- Endpoint-agent schema lineage: #13479 → #13529 → this PR.\n- Separate follow-up, intentionally not implemented here: prompt-agent tool pricing #12346.\n\n## Verification\n\n- CLI tests: 4/4.\n- Gen routing, run-token, and fallback tests: 27/27; Gen typecheck clean.\n- SQLite migration validation covers linked and standalone prompt agents, endpoint agents, proxies, constraints, and indexes.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "One garden bed for endpoints",
+    "blurb": "Community proxies, prompt agents, and endpoint agents now grow in one tidy, typed garden bed. The plumbing got stricter, so listings can be more useful without accidentally watering the public with secrets.",
+    "summary": "Unified proxy models, prompt agents, and endpoint agents into one typed community_endpoint listing table with shared base_url and upstream_model fields, kind-specific Zod-validated payloads, and coordinated Enter, Gen, dashboard, and polli CLI API updates.",
+    "impact": "Community endpoint builders can manage every listing type through one consistent API and UI, while credentials, pricing, fallback settings, prompts, and MCP configuration remain available only to the endpoint kinds that support them.",
+    "keywords": [
+      "community endpoints",
+      "prompt agents",
+      "endpoint agents",
+      "proxy models",
+      "typed API",
+      "polli CLI",
+      "Zod"
+    ],
+    "visual_concept": "Depict a cozy community endpoint garden where three distinct plants—proxy model, prompt agent, and endpoint agent—have been replanted into one clearly labeled shared planter with separate, tidy compartments. Polli acts as the careful gardener holding a clipboard and wearing a small tool belt, while a cheerful CRT monitor robot sorts sealed configuration envelopes; small flowers, vines, and a retro terminal represent the unified catalog and protected kind-specific settings.",
+    "image_prompt": "A cozy pixel art garden-workshop where Polli, the cute yellow bee with dark brown stripes, black antennae, oval black eyes, bright pink rectangular cheek blushes, a happy smile, rounded light-blue translucent wings, and a tiny tool belt carefully tends one large lime green (#ecf874) planter labeled in simple pixel text “COMMUNITY ENDPOINTS”; three friendly code-plants in separate compartments represent a proxy, prompt agent, and endpoint agent, while a chunky CRT-monitor robot holds sealed configuration envelopes beside a glowing retro terminal. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, flowers and vines, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-20/PR-13623.jpg",
+    "prompt": "A cozy pixel art garden-workshop where Polli, the cute yellow bee with dark brown stripes, black antennae, oval black eyes, bright pink rectangular cheek blushes, a happy smile, rounded light-blue translucent wings, and a tiny tool belt carefully tends one large lime green (#ecf874) planter labeled in simple pixel text “COMMUNITY ENDPOINTS”; three friendly code-plants in separate compartments represent a proxy, prompt agent, and endpoint agent, while a chunky CRT-monitor robot holds sealed configuration envelopes beside a glowing retro terminal. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, flowers and vines, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-20T19:18:01.654003+00:00"
+}

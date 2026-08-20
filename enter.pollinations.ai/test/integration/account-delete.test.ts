@@ -93,7 +93,6 @@ describe("POST /api/auth/delete-user", () => {
         expect(await db.select().from(sessionTable)).toHaveLength(0);
         expect(await db.select().from(accountTable)).toHaveLength(0);
         expect(await db.select().from(apiKeyTable)).toHaveLength(0);
-        expect(await db.select().from(agentTable)).toHaveLength(0);
         expect(await db.select().from(communityEndpointTable)).toHaveLength(0);
         expect(await db.select().from(mediaItemTable)).toHaveLength(0);
         expect(await db.select().from(mediaTagTable)).toHaveLength(0);

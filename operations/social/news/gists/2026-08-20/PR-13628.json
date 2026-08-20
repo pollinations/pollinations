@@ -1,0 +1,33 @@
+{
+  "pr_number": 13628,
+  "title": "refactor: trust enabled MCP tool discovery",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13628",
+  "merged_at": "2026-08-20T13:48:43Z",
+  "labels": [],
+  "pr_body_excerpt": "- Removes the managed-agent MCP tool-name allowlist\n- Exposes every tool advertised by the enabled Pollinations MCP server\n- Keeps MCP tool names namespaced to prevent collisions\n- Updates runtime coverage for dynamically advertised tools",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The tool gate opens",
+    "blurb": "Managed agents can now discover every tool their enabled Pollinations MCP server advertises. The names stay neatly namespaced, because tool collisions are a deeply unromantic way to spend an afternoon.",
+    "summary": "Removed the managed-agent MCP tool-name allowlist so agents now receive every dynamically advertised tool from their enabled Pollinations MCP server, with namespaced tool names preserved.",
+    "impact": "Developers can add and enable MCP tools without separately updating an agent-side allowlist, while namespacing keeps tools from stepping on each other.",
+    "keywords": [
+      "mcp",
+      "agents",
+      "tool-discovery",
+      "managed-agents",
+      "developer-experience"
+    ],
+    "visual_concept": "Polli, wearing tiny explorer goggles, opens a cozy garden gate labeled \"MCP TOOLS\" as many distinct, neatly labeled code-tool sprouts grow from pots beyond it. A helpful CRT monitor robot holds a namespace map, showing that every new tool has its own tidy path rather than colliding in the garden.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing tiny explorer goggles as she opens a garden gate labeled \"MCP TOOLS\" to reveal many neatly labeled code-plants; a chunky CRT monitor robot holds a tidy namespace map beside her. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle terminal glow and small pixel flowers."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-20/PR-13628.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing tiny explorer goggles as she opens a garden gate labeled \"MCP TOOLS\" to reveal many neatly labeled code-plants; a chunky CRT monitor robot holds a tidy namespace map beside her. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle terminal glow and small pixel flowers."
+  },
+  "generated_at": "2026-08-20T13:49:58.134362+00:00"
+}

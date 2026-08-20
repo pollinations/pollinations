@@ -4,17 +4,17 @@
   <img src="packages/ui/src/brand/lockup-horizontal-black.svg" alt="Pollinations.ai" width="280" />
 </picture>
 
-# Canonical model slugs
+# Model ID changes
 
-Starting **September 1, 2026 at 14:00 UTC**, Pollinations model slugs will use the canonical `publisher/model[:variant]` format.
+On **September 1, 2026 at 14:00 UTC**, Pollinations model IDs will be standardized. Each new ID will include the publisher and use the model's official name.
 
-Use the mappings below to update integrations before the change.
+Existing IDs will remain available as aliases, so current integrations do not need to change. Use the new IDs for new integrations.
 
-> Model behavior and pricing are not changing.
+Only the names are changing. Model behavior and pricing stay the same.
 
 ## Alibaba
 
-| Model | Current slug | New canonical slug |
+| Model | Existing ID | New ID |
 | --- | --- | --- |
 | HappyHorse 1.1 | `happyhorse` | `alibaba/happyhorse-1.1` |
 | Wan 2.2 | `wan2.2` | `alibaba/wan-2.2-fast` |
@@ -26,7 +26,7 @@ Use the mappings below to update integrations before the change.
 
 ## Amazon
 
-| Model | Current slug | New canonical slug |
+| Model | Existing ID | New ID |
 | --- | --- | --- |
 | Nova 2 Lite | `nova-2-lite` | `amazon/nova-2-lite-v1` |
 | Nova Canvas | `amazon-nova-canvas` | `amazon/nova-canvas-v1` |
@@ -35,7 +35,7 @@ Use the mappings below to update integrations before the change.
 
 ## Anthropic
 
-| Model | Current slug | New canonical slug |
+| Model | Existing ID | New ID |
 | --- | --- | --- |
 | Claude Fable 5 | `claude-fable-5` | `anthropic/claude-fable-5` |
 | Claude Haiku 4.5 | `claude-haiku-4.5` | `anthropic/claude-haiku-4.5` |
@@ -47,14 +47,14 @@ Use the mappings below to update integrations before the change.
 
 ## AssemblyAI
 
-| Model | Current slug | New canonical slug |
+| Model | Existing ID | New ID |
 | --- | --- | --- |
 | AssemblyAI Universal-2 | `assemblyai-universal-2` | `assemblyai/universal-2` |
 | AssemblyAI Universal-3.5 Pro | `universal-3-pro` | `assemblyai/universal-3.5-pro` |
 
 ## Black Forest Labs
 
-| Model | Current slug | New canonical slug |
+| Model | Existing ID | New ID |
 | --- | --- | --- |
 | FLUX.1 Kontext Pro | `kontext` | `black-forest-labs/flux.1-kontext-pro` |
 | FLUX.1 Schnell | `flux` | `black-forest-labs/flux.1-schnell` |
@@ -62,7 +62,7 @@ Use the mappings below to update integrations before the change.
 
 ## ByteDance
 
-| Model | Current slug | New canonical slug |
+| Model | Existing ID | New ID |
 | --- | --- | --- |
 | Seedance 1.0 Pro Fast | `seedance-pro` | `bytedance/seedance-1-pro-fast` |
 | Seedance 2.0 | `seedance-2` | `bytedance/seedance-2.0` |
@@ -76,21 +76,21 @@ Use the mappings below to update integrations before the change.
 
 ## Cohere
 
-| Model | Current slug | New canonical slug |
+| Model | Existing ID | New ID |
 | --- | --- | --- |
 | Cohere Command A+ | `cohere-command-a-plus` | `cohere/command-a-plus` |
 | Cohere Embed v4 | `embed-v-4-0` | `cohere/embed-v4.0` |
 
 ## DeepSeek
 
-| Model | Current slug | New canonical slug |
+| Model | Existing ID | New ID |
 | --- | --- | --- |
 | DeepSeek V4 Flash 0731 | `deepseek-v4` | `deepseek/deepseek-v4-flash` |
 | DeepSeek V4 Pro 0813 | `deepseek-v4-pro-0813` | `deepseek/deepseek-v4-pro` |
 
 ## ElevenLabs
 
-| Model | Current slug | New canonical slug |
+| Model | Existing ID | New ID |
 | --- | --- | --- |
 | ElevenLabs Flash v2.5 | `tts-flash` | `elevenlabs/eleven-flash-v2.5` |
 | ElevenLabs Multilingual v2 | `multilingual-v2` | `elevenlabs/eleven-multilingual-v2` |
@@ -105,13 +105,13 @@ Use the mappings below to update integrations before the change.
 
 ## Fish Audio
 
-| Model | Current slug | New canonical slug |
+| Model | Existing ID | New ID |
 | --- | --- | --- |
 | Fish Audio S2.1 Pro | `fish-audio-s2.1-pro` | `fish-audio/s2.1-pro` |
 
 ## Google
 
-| Model | Current slug | New canonical slug |
+| Model | Existing ID | New ID |
 | --- | --- | --- |
 | Gemini 2.5 Flash Lite | `gemini-2.5-flash-lite` | `google/gemini-2.5-flash-lite` |
 | Gemini 3 Flash Preview | `gemini-3-flash-preview` | `google/gemini-3-flash-preview` |
@@ -131,19 +131,19 @@ Use the mappings below to update integrations before the change.
 
 ## Hexgrad
 
-| Model | Current slug | New canonical slug |
+| Model | Existing ID | New ID |
 | --- | --- | --- |
 | Kokoro 82M | `kokoro-82m` | `hexgrad/kokoro-82m` |
 
 ## Hyper3D
 
-| Model | Current slug | New canonical slug |
+| Model | Existing ID | New ID |
 | --- | --- | --- |
 | Hyper3D Rodin 2.5 | `rodin` | `hyper3d/rodin-2.5` |
 
 ## Ideogram
 
-| Model | Current slug | New canonical slug |
+| Model | Existing ID | New ID |
 | --- | --- | --- |
 | Ideogram 4.0 Balanced | `ideogram-v4-balanced` | `ideogram-ai/ideogram-v4-balanced` |
 | Ideogram 4.0 Quality | `ideogram-v4-quality` | `ideogram-ai/ideogram-v4-quality` |
@@ -151,31 +151,31 @@ Use the mappings below to update integrations before the change.
 
 ## Inception
 
-| Model | Current slug | New canonical slug |
+| Model | Existing ID | New ID |
 | --- | --- | --- |
 | Mercury 2 | `mercury-2` | `inception/mercury-2` |
 
 ## Krea
 
-| Model | Current slug | New canonical slug |
+| Model | Existing ID | New ID |
 | --- | --- | --- |
 | Krea 2 Medium | `krea-2` | `krea/krea-2-medium` |
 
 ## Lykon
 
-| Model | Current slug | New canonical slug |
+| Model | Existing ID | New ID |
 | --- | --- | --- |
 | DreamShaper 8 LCM | `sana` | `lykon/dreamshaper-8-lcm` |
 
 ## Meituan
 
-| Model | Current slug | New canonical slug |
+| Model | Existing ID | New ID |
 | --- | --- | --- |
 | LongCat 2.0 | `longcat-2.0` | `meituan/longcat-2.0` |
 
 ## Meta
 
-| Model | Current slug | New canonical slug |
+| Model | Existing ID | New ID |
 | --- | --- | --- |
 | Meta Llama 3.3 70B | `llama-3.3` | `meta-llama/llama-3.3-70b-instruct` |
 | Meta Llama 4 Maverick | `llama-4` | `meta-llama/llama-4-maverick` |
@@ -185,13 +185,13 @@ Use the mappings below to update integrations before the change.
 
 ## Microsoft
 
-| Model | Current slug | New canonical slug |
+| Model | Existing ID | New ID |
 | --- | --- | --- |
 | Trellis 2 | `trellis-2-low` | `microsoft/trellis-2` |
 
 ## MiniMax
 
-| Model | Current slug | New canonical slug |
+| Model | Existing ID | New ID |
 | --- | --- | --- |
 | MiniMax H3 | `minimax-h3` | `minimax/minimax-h3` |
 | MiniMax M2.7 | `minimax-m2p7` | `minimax/minimax-m2.7` |
@@ -199,7 +199,7 @@ Use the mappings below to update integrations before the change.
 
 ## Mistral
 
-| Model | Current slug | New canonical slug |
+| Model | Existing ID | New ID |
 | --- | --- | --- |
 | Mistral Large 3 | `mistral-large-3` | `mistralai/mistral-large-3` |
 | Mistral Small 3.2 | `mistral-small-3.1` | `mistralai/mistral-small-3.2` |
@@ -207,7 +207,7 @@ Use the mappings below to update integrations before the change.
 
 ## Moonshot AI
 
-| Model | Current slug | New canonical slug |
+| Model | Existing ID | New ID |
 | --- | --- | --- |
 | Kimi K3 | `kimi-k3` | `moonshotai/kimi-k3` |
 | Moonshot Kimi K2.6 | `kimi-k2.6` | `moonshotai/kimi-k2.6` |
@@ -215,14 +215,14 @@ Use the mappings below to update integrations before the change.
 
 ## NVIDIA
 
-| Model | Current slug | New canonical slug |
+| Model | Existing ID | New ID |
 | --- | --- | --- |
 | NVIDIA Nemotron 3 Ultra | `nemotron-3-ultra` | `nvidia/nemotron-3-ultra` |
 | NVIDIA Nemotron 3.5 Lightning | `nemotron-3.5-lightning` | `nvidia/nemotron-3.5-lightning` |
 
 ## OpenAI
 
-| Model | Current slug | New canonical slug |
+| Model | Existing ID | New ID |
 | --- | --- | --- |
 | GPT Audio 1.5 | `gpt-audio` | `openai/gpt-audio-1.5` |
 | GPT Audio Mini | `gpt-audio-mini` | `openai/gpt-audio-mini` |
@@ -247,7 +247,7 @@ Use the mappings below to update integrations before the change.
 
 ## Perplexity
 
-| Model | Current slug | New canonical slug |
+| Model | Existing ID | New ID |
 | --- | --- | --- |
 | Perplexity Sonar Fast Search | `sonar` | `perplexity/sonar` |
 | Perplexity Sonar Pro | `sonar-pro` | `perplexity/sonar-pro` |
@@ -255,20 +255,20 @@ Use the mappings below to update integrations before the change.
 
 ## Pollinations
 
-| Model | Current slug | New canonical slug |
+| Model | Existing ID | New ID |
 | --- | --- | --- |
 | MIDIjourney | `midijourney` | `pollinations/midijourney` |
 | MIDIjourney Large | `midijourney-large` | `pollinations/midijourney-large` |
 
 ## Poolside
 
-| Model | Current slug | New canonical slug |
+| Model | Existing ID | New ID |
 | --- | --- | --- |
 | Laguna S 2.1 | `laguna-s-2.1` | `poolside/laguna-s-2.1` |
 
 ## Pruna
 
-| Model | Current slug | New canonical slug |
+| Model | Existing ID | New ID |
 | --- | --- | --- |
 | Pruna p-image | `pruna-image` | `prunaai/p-image` |
 | Pruna p-image-edit | `pruna-edit` | `prunaai/p-image-edit` |
@@ -276,7 +276,7 @@ Use the mappings below to update integrations before the change.
 
 ## Qwen
 
-| Model | Current slug | New canonical slug |
+| Model | Existing ID | New ID |
 | --- | --- | --- |
 | Qwen Image | `qwen-image-plus` | `qwen/qwen-image` |
 | Qwen Image 3 | `qwen-image-3` | `qwen/qwen-image-3` |
@@ -297,39 +297,39 @@ Use the mappings below to update integrations before the change.
 
 ## Recraft
 
-| Model | Current slug | New canonical slug |
+| Model | Existing ID | New ID |
 | --- | --- | --- |
 | Recraft V4.1 Vector | `recraft-vector` | `recraft/recraft-v4.1-vector` |
 
 ## Sesame
 
-| Model | Current slug | New canonical slug |
+| Model | Existing ID | New ID |
 | --- | --- | --- |
 | CSM 1B | `csm` | `sesame/csm-1b` |
 
 ## Stability AI
 
-| Model | Current slug | New canonical slug |
+| Model | Existing ID | New ID |
 | --- | --- | --- |
 | Stable Audio 3 Large | `stable-audio-large` | `stability-ai/stable-audio-3` |
 | Stable Audio 3 Medium | `stable-audio` | `stability-ai/stable-audio-3-medium` |
 
 ## StepFun
 
-| Model | Current slug | New canonical slug |
+| Model | Existing ID | New ID |
 | --- | --- | --- |
 | StepFun Step 3.5 Flash | `stepfun-3.5-flash` | `stepfun/step-3.5-flash` |
 | StepFun Step 3.7 Flash | `stepfun-flash` | `stepfun/step-3.7-flash` |
 
 ## Thinking Machines
 
-| Model | Current slug | New canonical slug |
+| Model | Existing ID | New ID |
 | --- | --- | --- |
 | Inkling Small | `inkling-small` | `thinkingmachines/inkling-small` |
 
 ## xAI
 
-| Model | Current slug | New canonical slug |
+| Model | Existing ID | New ID |
 | --- | --- | --- |
 | Grok 4.20 | `grok-fast` | `x-ai/grok-4.20` |
 | Grok 4.3 | `grok-4.3` | `x-ai/grok-4.3` |
@@ -344,14 +344,14 @@ Use the mappings below to update integrations before the change.
 
 ## Xiaomi
 
-| Model | Current slug | New canonical slug |
+| Model | Existing ID | New ID |
 | --- | --- | --- |
 | MiMo V2.5 | `mimo` | `xiaomi/mimo-v2.5` |
 | MiMo V2.5 Pro | `mimo-pro` | `xiaomi/mimo-v2.5-pro` |
 
 ## Z.ai
 
-| Model | Current slug | New canonical slug |
+| Model | Existing ID | New ID |
 | --- | --- | --- |
 | Z.ai GLM-5.2 | `glm-5.2` | `z-ai/glm-5.2` |
 | Z.ai GLM-5.3 | `glm-5.3` | `z-ai/glm-5.3` |

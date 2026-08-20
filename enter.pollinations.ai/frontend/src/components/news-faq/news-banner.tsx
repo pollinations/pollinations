@@ -182,18 +182,19 @@ const CanonicalModelSlugAnnouncement: FC = () => (
             </div>
             <div className="flex items-baseline gap-2 font-semibold text-ink-900 text-base sm:text-lg">
                 <WarningIcon className="h-[1em] w-[1em] shrink-0 self-center text-intent-danger-text" />
-                <span>Canonical model slugs are changing</span>
+                <span>Model IDs are being standardized</span>
             </div>
             <p className="mt-1 text-sm text-ink-700">
-                At that time, Pollinations will standardize model slugs across
-                APIs, permissions, billing, docs, and dashboards.
+                Starting September 1, each new ID will include the publisher and
+                use the model's official name. Existing IDs will remain
+                available as aliases.
             </p>
         </div>
 
         <div className="p-4 sm:p-5">
             <div>
                 <div className="text-[11px] font-semibold uppercase tracking-wider text-theme-text-muted">
-                    How to read a canonical slug
+                    How to read a model ID
                 </div>
                 <div className="mt-2 flex flex-wrap items-baseline font-mono text-base font-semibold">
                     <span className="text-theme-text-strong">publisher</span>
@@ -209,8 +210,7 @@ const CanonicalModelSlugAnnouncement: FC = () => (
                             Publisher
                         </dt>
                         <dd className="text-theme-text-muted">
-                            The person or organization that released the
-                            model—not necessarily the provider serving it.
+                            Who created the model, not who hosts it.
                         </dd>
                     </div>
                     <div className="grid gap-0.5 min-[480px]:grid-cols-[5.5rem_1fr] min-[480px]:gap-3">
@@ -218,8 +218,7 @@ const CanonicalModelSlugAnnouncement: FC = () => (
                             Model
                         </dt>
                         <dd className="text-theme-text-muted">
-                            The official model name from its publisher, written
-                            in slug form.
+                            The model's official name.
                         </dd>
                     </div>
                     <div className="grid gap-0.5 min-[480px]:grid-cols-[5.5rem_1fr] min-[480px]:gap-3">
@@ -230,9 +229,7 @@ const CanonicalModelSlugAnnouncement: FC = () => (
                             </span>
                         </dt>
                         <dd className="text-theme-text-muted">
-                            A preset with fixed behavior or parameters for that
-                            model, such as <code>:search</code> or{" "}
-                            <code>:dialogue</code>.
+                            An optional mode, such as <code>:search</code>.
                         </dd>
                     </div>
                 </dl>
@@ -240,12 +237,12 @@ const CanonicalModelSlugAnnouncement: FC = () => (
 
             <div className="mt-5">
                 <div className="text-[11px] font-semibold uppercase tracking-wider text-theme-text-muted">
-                    Migration example
+                    Example
                 </div>
                 <div className="mt-2 flex flex-col items-start gap-3 min-[480px]:flex-row min-[480px]:items-end">
                     <div className="flex flex-col items-start gap-1">
                         <div className="mb-1 text-xs font-medium text-theme-text-muted">
-                            Current slug
+                            Existing ID
                         </div>
                         <Chip intent="danger" size="lg" className="font-mono">
                             flux
@@ -254,7 +251,7 @@ const CanonicalModelSlugAnnouncement: FC = () => (
                     <ArrowRightIcon className="h-5 w-5 self-center text-theme-text-strong rotate-90 min-[480px]:mb-1 min-[480px]:self-auto min-[480px]:rotate-0" />
                     <div className="flex min-w-0 flex-col items-start gap-1">
                         <div className="mb-1 text-xs font-medium text-theme-text-muted">
-                            New canonical slug
+                            New ID
                         </div>
                         <Chip
                             size="lg"
@@ -269,14 +266,12 @@ const CanonicalModelSlugAnnouncement: FC = () => (
             <ul className="mt-5 space-y-2 border-t border-divider pt-4 text-sm text-theme-text-muted">
                 <li className="flex items-start gap-2">
                     <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-intent-free-text" />
-                    <span>
-                        Existing aliases continue to work after the transition.
-                    </span>
+                    <span>Existing IDs will keep working.</span>
                 </li>
                 <li className="flex items-start gap-2">
                     <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-intent-free-text" />
                     <InlineLink href="https://github.com/pollinations/pollinations/blob/main/MODEL_SLUGS.md">
-                        View the complete slug list
+                        View all model ID changes
                     </InlineLink>
                 </li>
             </ul>

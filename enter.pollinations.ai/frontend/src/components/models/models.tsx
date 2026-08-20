@@ -353,19 +353,24 @@ export const Models: FC = () => {
             >
                 <Alert
                     intent="warning"
-                    title="Model slugs change Sep 1 · 14:00 UTC"
+                    title="Model IDs are being standardized"
                     className="mb-4"
                 >
-                    New canonical format:{" "}
+                    Each new ID will include the publisher and use the model's
+                    official name—for example,{" "}
                     <code className="font-semibold !text-intent-free-text">
-                        publisher/model[:variant]
+                        flux
                     </code>
-                    . Existing aliases will keep working.
+                    {" → "}
+                    <code className="font-semibold !text-intent-free-text">
+                        black-forest-labs/flux.1-schnell
+                    </code>
+                    . Existing IDs will keep working.
                     <a
                         href={MODEL_SLUG_ANNOUNCEMENT_URL}
                         className="mt-1.5 block w-fit font-semibold underline hover:no-underline"
                     >
-                        Read the full announcement →
+                        View all model ID changes →
                     </a>
                 </Alert>
                 <div className="mb-4 flex flex-col items-start gap-3">

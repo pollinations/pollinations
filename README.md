@@ -15,11 +15,11 @@
 </div>
 
 > [!IMPORTANT]
-> **Model slugs are changing to a clearer canonical format on September 1, 2026 at 14:00 UTC.**
+> **Model IDs are being standardized on September 1**
 >
-> New integrations should use `publisher/model[:variant]`. Existing aliases will keep working after the transition; model behavior and pricing stay the same.
+> Each new ID will include the publisher and use the model's official name—for example, `flux` → `black-forest-labs/flux.1-schnell`. Existing IDs will keep working.
 >
-> [View the complete slug list →](MODEL_SLUGS.md) · [Read the announcement →](https://enter.pollinations.ai/news#canonical-model-slugs)
+> [View all model ID changes →](MODEL_SLUGS.md)
 
 <p align="center"><img src="https://media.pollinations.ai/eb3be88cf66d7491" alt="Pixel art cozy hackerspace — robot at terminal, nomnom creature eating code, bee with glasses" width="800" /></p>
 

@@ -31,6 +31,9 @@ import {
 import { linkFallbackEntries } from "./fallback.ts";
 
 const REGISTRY_TTL_MS = 60_000;
+// A static-only registry is cached briefly so the community models come back
+// seconds after D1 recovers, instead of being missing for a full TTL.
+const DEGRADED_REGISTRY_TTL_MS = 5_000;
 const TEXT_MODEL_ENDPOINTS = [
     "/v1/chat/completions",
     "/text",
@@ -227,11 +230,27 @@ function buildRegistry(
 
 async function loadGenerationModelRegistry(
     env: CommunityModelEnv,
-): Promise<GenerationModelRegistry> {
-    const communityEntries = (await getCommunityModelRegistryEntries(env)).map(
-        communityEntryToGenerationEntry,
-    );
-    return buildRegistry([...STATIC_ENTRIES, ...communityEntries]);
+): Promise<{ registry: GenerationModelRegistry; degraded: boolean }> {
+    let communityEntries: GenerationModelEntry[] = [];
+    let degraded = false;
+    try {
+        communityEntries = (await getCommunityModelRegistryEntries(env)).map(
+            communityEntryToGenerationEntry,
+        );
+    } catch (error) {
+        // Community models are additive: every request that resolves a model
+        // goes through this registry, so letting a D1 failure escape turns a
+        // community-catalog problem into a total gen outage. The realistic
+        // trigger is schema skew — a migration lands before the Worker that
+        // understands it — which is exactly when the static models are still
+        // perfectly servable.
+        degraded = true;
+        console.error("Community model registry unavailable", error);
+    }
+    return {
+        registry: buildRegistry([...STATIC_ENTRIES, ...communityEntries]),
+        degraded,
+    };
 }
 
 export async function getGenerationModelRegistry(
@@ -250,10 +269,12 @@ export async function getGenerationModelRegistry(
     // cancelled the promise can never settle, wedging the isolate for good.
     // Racing a few cheap SELECTs on cache expiry is the better trade.
     const dbBinding = env.DB;
-    const registry = await loadGenerationModelRegistry(env);
+    const { registry, degraded } = await loadGenerationModelRegistry(env);
     cachedRegistry = {
         dbBinding,
-        expiresAt: Date.now() + REGISTRY_TTL_MS,
+        expiresAt:
+            Date.now() +
+            (degraded ? DEGRADED_REGISTRY_TTL_MS : REGISTRY_TTL_MS),
         registry,
     };
     return registry;

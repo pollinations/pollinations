@@ -102,22 +102,30 @@ export function useKpiData() {
             mergeInto(weekMap, raw.registrations, (row) => ({
                 registrations: row.registrations,
             }));
+            // WAU counts users we actually served. A 402 is an out-of-Pollen
+            // rejection — no provider ran, nothing was billed — so counting it
+            // as an active user overstated WAU by roughly half and hid the
+            // served base shrinking. The raw figure stays as wauAll, and
+            // wauAll − wau is the number of people turned away.
             mergeInto(weekMap, raw.wau, (row) => ({
-                wau: row.active_users,
+                wau: row.served_users,
+                wauAll: row.active_users,
                 payingUsers: row.paying_users,
-                totalRequests: row.total_requests,
+                totalRequests: row.served_requests,
+                totalRequestsAll: row.total_requests,
             }));
             mergeInto(weekMap, raw.usage, (row) => ({
                 tokens: row.total_tokens,
                 tokensPerUser: row.tokens_per_user,
-                textRequests: row.text_requests,
-                imageRequests: row.image_requests,
+                textRequests: row.served_text_requests,
+                imageRequests: row.served_image_requests,
                 costUsd: row.cost_usd,
                 // Pollen actually spent, in USD. Unlike Stripe cash this is
                 // matched to the week's traffic, so it is the revenue side of
                 // gross margin.
                 pollenRevenue: row.revenue_usd,
-                communityUserPct: row.community_user_pct,
+                communityUserPct: row.served_community_user_pct,
+                communityUserPctAll: row.community_user_pct,
                 communityRequestPct: row.community_request_pct,
                 communityAvailability: row.community_availability,
             }));
@@ -136,7 +144,8 @@ export function useKpiData() {
                 byopPollen: row.byop_pollen,
                 otherUsers: row.other_users,
                 otherPollen: row.other_pollen,
-                byopUserPct: row.byop_user_pct,
+                byopUserPct: row.byop_served_user_pct,
+                byopUserPctAll: row.byop_user_pct,
                 byopPollenPct: row.byop_pollen_pct,
             }));
             mergeInto(weekMap, raw.appSubmissions, (row) => ({

@@ -609,8 +609,8 @@ export const ModelPricingLedger: FC<{
             className={cn(
                 "grid w-full min-w-0 max-w-full gap-x-2",
                 align === "left"
-                    ? "grid-cols-[6.5rem_10ch_6.5rem]"
-                    : "grid-cols-[1fr_6.5rem_10ch_6.5rem]",
+                    ? "grid-cols-[6.5rem_10ch_max-content]"
+                    : "grid-cols-[1fr_6.5rem_10ch_max-content]",
                 className,
             )}
         >

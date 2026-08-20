@@ -8,7 +8,7 @@ import {
     firstCommunityImageBytes,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
-import { HttpError } from "@shared/http-error.ts";
+import { UpstreamError } from "@shared/error.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 import {
@@ -16,6 +16,7 @@ import {
     openaiImageUsageToUsage,
 } from "@shared/registry/usage-headers.ts";
 import { decryptSecret } from "@shared/secret-encryption.ts";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { ImageGenerationResult } from "./createAndReturnImages.ts";
 import type { ImageParams } from "./params.ts";
 import {
@@ -65,10 +66,10 @@ export async function callCommunityImageEndpoint(
 
     const bytes = await firstCommunityImageBytes(body, endpoint.baseUrl);
     if (!bytes || !detectImageMimeType(bytes)) {
-        throw new HttpError(
-            "Community image endpoint did not return a supported image",
-            502,
-        );
+        throw new UpstreamError(502 as ContentfulStatusCode, {
+            message:
+                "Community image endpoint did not return a supported image",
+        });
     }
     return {
         buffer: Buffer.from(bytes),
@@ -129,17 +130,17 @@ function communityImageUsage(
     }
     const openaiUsage = getOpenAIImageUsage(body);
     if (!openaiUsage) {
-        throw new HttpError(
-            "Community image endpoint did not return OpenAI image token usage",
-            502,
-        );
+        throw new UpstreamError(502 as ContentfulStatusCode, {
+            message:
+                "Community image endpoint did not return OpenAI image token usage",
+        });
     }
     const usage = openaiImageUsageToUsage(openaiUsage);
     if ((usage.completionImageTokens ?? 0) <= 0) {
-        throw new HttpError(
-            "Community image endpoint did not return billable image output tokens",
-            502,
-        );
+        throw new UpstreamError(502 as ContentfulStatusCode, {
+            message:
+                "Community image endpoint did not return billable image output tokens",
+        });
     }
     return usage;
 }
@@ -165,12 +166,11 @@ async function fetchCommunityImageJson(
     const parsed = parseJson(text);
 
     if (!response.ok) {
-        throw new HttpError(
-            endpointErrorMessage(response.status, parsed),
-            response.status,
-            { body: text },
-            url,
-        );
+        throw new UpstreamError(response.status as ContentfulStatusCode, {
+            message: endpointErrorMessage(response.status, parsed),
+            responseBody: text,
+            requestUrl: new URL(url),
+        });
     }
     return parsed;
 }
@@ -186,12 +186,11 @@ async function fetchWithTimeout(
             signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
         });
     } catch (error) {
-        throw new HttpError(
-            "Community image endpoint timed out or could not connect",
-            502,
-            { error: error instanceof Error ? error.message : String(error) },
-            input,
-        );
+        throw new UpstreamError(502 as ContentfulStatusCode, {
+            message: "Community image endpoint timed out or could not connect",
+            requestUrl: new URL(input),
+            cause: error,
+        });
     }
 }
 

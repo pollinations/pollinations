@@ -1,39 +1,49 @@
+import type { ContentfulStatusCode } from "hono/utils/http-status";
+import { UpstreamError } from "./error.ts";
+
+function safeUrl(url?: string): URL | undefined {
+    if (!url) return undefined;
+    try {
+        return new URL(url);
+    } catch {
+        return undefined;
+    }
+}
+
 /**
- * Custom HTTP error class with status code.
+ * @deprecated Use `UpstreamError` directly instead.
  *
- * Adds a status code and optional details/upstream URL to Error for passing
- * HTTP status codes through the error chain. `upstreamUrl` is the URL of the
- * upstream backend that produced the error (e.g. a provider enqueue endpoint),
- * threaded through to UpstreamError.requestUrl in the error envelope so
- * `upstreamHost` reflects the actual backend rather than the gen.pollinations.ai
- * request URL. Callers must not pass URLs that include credentials in query
- * strings; this codebase auths via headers, not query strings.
- *
- * `errorCode` is an optional stable, machine-readable code (mirrors
- * `UpstreamError.errorCode`) that the error funnels propagate into the response
- * envelope so callers can branch on a code instead of matching message prose.
+ * Custom HTTP error class adapted to extend `UpstreamError`.
  */
-export class HttpError extends Error {
-    status: number;
-    details?: any;
-    upstreamUrl?: string;
-    errorCode?: string;
+export class HttpError extends UpstreamError {
+    public override readonly name = "UpstreamError" as const;
+    public readonly details?: unknown;
+    public readonly upstreamUrl?: string;
 
     constructor(
         message: string,
         status: number = 500,
-        details?: any,
+        details?: unknown,
         upstreamUrl?: string,
         errorCode?: string,
     ) {
-        super(message);
-        this.name = "HttpError";
-        this.status = status;
+        const responseBody =
+            typeof details === "object" &&
+            details !== null &&
+            "body" in details &&
+            typeof (details as { body?: unknown }).body === "string"
+                ? (details as { body: string }).body
+                : typeof details === "string"
+                  ? details
+                  : undefined;
+        super(status as ContentfulStatusCode, {
+            message,
+            requestUrl: safeUrl(upstreamUrl),
+            upstreamStatus: status,
+            responseBody,
+            errorCode,
+        });
         this.details = details;
         this.upstreamUrl = upstreamUrl;
-        this.errorCode = errorCode;
-
-        // Maintains proper stack trace for where our error was thrown (only available on V8)
-        Error.captureStackTrace(this, HttpError);
     }
 }

@@ -1,5 +1,6 @@
+import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { isCommunityModelAllowedGithubId } from "./auth/github-id-list.ts";
-import { HttpError } from "./http-error.ts";
+import { UpstreamError } from "./error.ts";
 import {
     MODEL_INPUT_MODALITIES,
     type ModelDefinition,
@@ -577,7 +578,9 @@ async function fetchCommunityImageBytes(
     try {
         url = normalizeCommunityAssetUrl(value, endpointBaseUrl);
     } catch {
-        throw new HttpError("Endpoint returned an unsafe image URL", 502);
+        throw new UpstreamError(502 as ContentfulStatusCode, {
+            message: "Endpoint returned an unsafe image URL",
+        });
     }
     let response: Response;
     try {
@@ -589,25 +592,25 @@ async function fetchCommunityImageBytes(
             signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
         });
     } catch (error) {
-        throw new HttpError(
-            "Endpoint image URL timed out or could not connect",
-            502,
-            { error: error instanceof Error ? error.message : String(error) },
-            url,
-        );
+        throw new UpstreamError(502 as ContentfulStatusCode, {
+            message: "Endpoint image URL timed out or could not connect",
+            requestUrl: new URL(url),
+            cause: error,
+        });
     }
     if (!response.ok) {
-        throw new HttpError(
-            `Endpoint image URL responded ${response.status}`,
-            502,
-            undefined,
-            url,
-        );
+        throw new UpstreamError(502 as ContentfulStatusCode, {
+            message: `Endpoint image URL responded ${response.status}`,
+            requestUrl: new URL(url),
+        });
     }
     return readResponseBytes(
         response,
         MAX_COMMUNITY_IMAGE_BYTES,
-        () => new HttpError("Endpoint image is larger than 20 MB", 502),
+        () =>
+            new UpstreamError(502 as ContentfulStatusCode, {
+                message: "Endpoint image is larger than 20 MB",
+            }),
     );
 }
 

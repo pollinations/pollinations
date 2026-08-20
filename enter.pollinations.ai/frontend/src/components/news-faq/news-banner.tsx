@@ -192,74 +192,29 @@ const CanonicalModelSlugAnnouncement: FC = () => (
         </div>
 
         <div className="p-4 sm:p-5">
-            <div>
-                <div className="text-[11px] font-semibold uppercase tracking-wider text-theme-text-muted">
-                    How to read a model ID
-                </div>
-                <div className="mt-2 flex flex-wrap items-baseline font-mono text-base font-semibold">
-                    <span className="text-theme-text-strong">publisher</span>
-                    <span className="text-theme-text-muted">/</span>
-                    <span className="text-theme-text-strong">model</span>
-                    <span className="text-theme-text-muted">[:</span>
-                    <span className="text-theme-text-strong">variant</span>
-                    <span className="text-theme-text-muted">]</span>
-                </div>
-                <dl className="mt-3 space-y-2 text-sm">
-                    <div className="grid gap-0.5 min-[480px]:grid-cols-[5.5rem_1fr] min-[480px]:gap-3">
-                        <dt className="font-semibold text-theme-text-strong">
-                            Publisher
-                        </dt>
-                        <dd className="text-theme-text-muted">
-                            Who created the model, not who hosts it.
-                        </dd>
-                    </div>
-                    <div className="grid gap-0.5 min-[480px]:grid-cols-[5.5rem_1fr] min-[480px]:gap-3">
-                        <dt className="font-semibold text-theme-text-strong">
-                            Model
-                        </dt>
-                        <dd className="text-theme-text-muted">
-                            The model's official name.
-                        </dd>
-                    </div>
-                    <div className="grid gap-0.5 min-[480px]:grid-cols-[5.5rem_1fr] min-[480px]:gap-3">
-                        <dt className="font-semibold text-theme-text-strong">
-                            Variant{" "}
-                            <span className="font-normal text-theme-text-muted">
-                                (optional)
-                            </span>
-                        </dt>
-                        <dd className="text-theme-text-muted">
-                            An optional mode, such as <code>:search</code>.
-                        </dd>
-                    </div>
-                </dl>
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-theme-text-muted">
+                Example
             </div>
-
-            <div className="mt-5">
-                <div className="text-[11px] font-semibold uppercase tracking-wider text-theme-text-muted">
-                    Example
+            <div className="mt-2 flex flex-col items-start gap-3 min-[480px]:flex-row min-[480px]:items-end">
+                <div className="flex flex-col items-start gap-1">
+                    <div className="mb-1 text-xs font-medium text-theme-text-muted">
+                        Existing ID
+                    </div>
+                    <Chip intent="danger" size="lg" className="font-mono">
+                        flux
+                    </Chip>
                 </div>
-                <div className="mt-2 flex flex-col items-start gap-3 min-[480px]:flex-row min-[480px]:items-end">
-                    <div className="flex flex-col items-start gap-1">
-                        <div className="mb-1 text-xs font-medium text-theme-text-muted">
-                            Existing ID
-                        </div>
-                        <Chip intent="danger" size="lg" className="font-mono">
-                            flux
-                        </Chip>
+                <ArrowRightIcon className="h-5 w-5 self-center text-theme-text-strong rotate-90 min-[480px]:mb-1 min-[480px]:self-auto min-[480px]:rotate-0" />
+                <div className="flex min-w-0 flex-col items-start gap-1">
+                    <div className="mb-1 text-xs font-medium text-theme-text-muted">
+                        New ID
                     </div>
-                    <ArrowRightIcon className="h-5 w-5 self-center text-theme-text-strong rotate-90 min-[480px]:mb-1 min-[480px]:self-auto min-[480px]:rotate-0" />
-                    <div className="flex min-w-0 flex-col items-start gap-1">
-                        <div className="mb-1 text-xs font-medium text-theme-text-muted">
-                            New ID
-                        </div>
-                        <Chip
-                            size="lg"
-                            className="max-w-full font-mono !bg-intent-success-bg-bright !text-intent-success-text-on-bright"
-                        >
-                            black-forest-labs/flux.1-schnell
-                        </Chip>
-                    </div>
+                    <Chip
+                        size="lg"
+                        className="max-w-full font-mono !bg-intent-success-bg-bright !text-intent-success-text-on-bright"
+                    >
+                        black-forest-labs/flux.1-schnell
+                    </Chip>
                 </div>
             </div>
 

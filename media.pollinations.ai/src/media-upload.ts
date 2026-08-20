@@ -36,18 +36,26 @@ export async function uploadUnlistedMedia(
 
     const id = crypto.randomUUID();
     const contentType = input.contentType || "application/octet-stream";
-    await env.MEDIA_BUCKET.put(id, body, {
-        httpMetadata: {
-            contentType,
-            cacheControl: IMMUTABLE_CACHE_CONTROL,
-        },
-        customMetadata: {
-            uploadedAt: new Date().toISOString(),
-            originalName: input.fileName?.slice(0, 253) || "",
-            uploadedBy: "pollinations-service",
-            keyType: "service",
-        },
-    });
+    const upload = new FixedLengthStream(input.size);
+    body.pipeTo(upload.writable).catch(() => undefined);
+    try {
+        await env.MEDIA_BUCKET.put(id, upload.readable, {
+            httpMetadata: {
+                contentType,
+                cacheControl: IMMUTABLE_CACHE_CONTROL,
+            },
+            customMetadata: {
+                uploadedAt: new Date().toISOString(),
+                originalName: input.fileName?.slice(0, 253) || "",
+                uploadedBy: "pollinations-service",
+                keyType: "service",
+            },
+        });
+    } catch (error) {
+        throw new Error(
+            `R2 upload failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+        );
+    }
 
     return {
         id,

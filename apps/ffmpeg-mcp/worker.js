@@ -52,22 +52,7 @@ function unauthorizedResponse() {
     );
 }
 
-function boundedStream(stream) {
-    let bytes = 0;
-    return stream.pipeThrough(
-        new TransformStream({
-            transform(chunk, controller) {
-                bytes += chunk.byteLength;
-                if (bytes > FFMPEG_MAX_MEDIA_BYTES) {
-                    throw new ToolFailure(413, "Source media exceeds 100 MB");
-                }
-                controller.enqueue(chunk);
-            },
-        }),
-    );
-}
-
-async function fetchSource(source, fetchImpl) {
+async function fetchSource(source, fetchImpl, createFixedLengthStream) {
     const response = await fetchImpl(source, { redirect: "manual" });
     if (response.status >= 300 && response.status < 400) {
         throw new ToolFailure(400, "Source redirects are not supported");
@@ -79,16 +64,18 @@ async function fetchSource(source, fetchImpl) {
         );
     }
     const contentLength = Number(response.headers.get("content-length"));
-    if (
-        Number.isFinite(contentLength) &&
-        contentLength > FFMPEG_MAX_MEDIA_BYTES
-    ) {
+    if (!Number.isFinite(contentLength) || contentLength < 0) {
+        throw new ToolFailure(502, "Source media size is unavailable");
+    }
+    if (contentLength > FFMPEG_MAX_MEDIA_BYTES) {
         throw new ToolFailure(413, "Source media exceeds 100 MB");
     }
     if (!response.body) {
         throw new ToolFailure(400, "Source returned no media");
     }
-    return boundedStream(response.body);
+    const input = createFixedLengthStream(contentLength);
+    response.body.pipeTo(input.writable).catch(() => undefined);
+    return input.readable;
 }
 
 async function runTool(params, token, env, dependencies) {
@@ -97,7 +84,11 @@ async function runTool(params, token, env, dependencies) {
         throw new ToolFailure(authorization.status, authorization.message);
     }
 
-    const input = await fetchSource(params.source, dependencies.fetchImpl);
+    const input = await fetchSource(
+        params.source,
+        dependencies.fetchImpl,
+        dependencies.createFixedLengthStreamImpl,
+    );
     const requestId = crypto.randomUUID();
     const startedAt = Date.now();
     const container = dependencies.getContainerImpl(
@@ -109,21 +100,40 @@ async function runTool(params, token, env, dependencies) {
     let output;
 
     try {
-        const result = await container.run(
-            input,
-            params.args,
-            params.outputExtension,
-            startedAt + FFMPEG_MAX_RUN_MS,
-        );
+        let result;
+        try {
+            result = await container.run(
+                input,
+                params.args,
+                params.outputExtension,
+                startedAt + FFMPEG_MAX_RUN_MS,
+            );
+        } catch (error) {
+            throw new ToolFailure(
+                502,
+                `FFmpeg container failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+            );
+        }
         if (!result.ok) {
             throw new ToolFailure(422, result.stderr || "FFmpeg failed");
         }
         const contentType = MIME_TYPES[params.outputExtension];
-        output = await env.MEDIA.upload(result.output, {
-            contentType,
-            fileName: `ffmpeg.${params.outputExtension}`,
-            size: result.bytes,
-        });
+        const mediaBody = dependencies.createFixedLengthStreamImpl(
+            result.bytes,
+        );
+        result.output.pipeTo(mediaBody.writable).catch(() => undefined);
+        try {
+            output = await env.MEDIA.upload(mediaBody.readable, {
+                contentType,
+                fileName: `ffmpeg.${params.outputExtension}`,
+                size: result.bytes,
+            });
+        } catch (error) {
+            throw new ToolFailure(
+                502,
+                `Media upload failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+            );
+        }
     } catch (error) {
         responseStatus = error instanceof ToolFailure ? error.status : 502;
         errorMessage = error instanceof Error ? error.message : "FFmpeg failed";
@@ -206,8 +216,16 @@ function buildServer(token, env, dependencies) {
     return server;
 }
 
-export function createWorker({ fetchImpl, getContainerImpl }) {
-    const dependencies = { fetchImpl, getContainerImpl };
+export function createWorker({
+    fetchImpl,
+    getContainerImpl,
+    createFixedLengthStreamImpl,
+}) {
+    const dependencies = {
+        fetchImpl,
+        getContainerImpl,
+        createFixedLengthStreamImpl,
+    };
     return {
         async fetch(request, env) {
             const url = new URL(request.url);

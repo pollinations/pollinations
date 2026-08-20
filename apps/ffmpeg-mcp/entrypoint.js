@@ -7,4 +7,5 @@ export { FfmpegContainer };
 export default createWorker({
     fetchImpl: (input, init) => globalThis.fetch(input, init),
     getContainerImpl: getContainer,
+    createFixedLengthStreamImpl: (length) => new FixedLengthStream(length),
 });

@@ -80,6 +80,8 @@ export class FfmpegContainer extends Container {
         if (!read.stdout) {
             return { ok: false, stderr: "FFmpeg output could not be read" };
         }
-        return { ok: true, output: read.stdout, bytes, stderr };
+        const output = new FixedLengthStream(bytes);
+        this.ctx.waitUntil(read.stdout.pipeTo(output.writable));
+        return { ok: true, output: output.readable, bytes, stderr };
     }
 }

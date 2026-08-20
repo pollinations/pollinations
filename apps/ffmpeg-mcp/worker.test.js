@@ -70,6 +70,7 @@ function createHarness(options = {}) {
     };
     const worker = createWorker({
         getContainerImpl: () => container,
+        createFixedLengthStreamImpl: () => new TransformStream(),
         fetchImpl: async (url, init) => {
             assert.equal(url, SOURCE);
             assert.equal(init.redirect, "manual");
@@ -175,7 +176,7 @@ test("runs FFmpeg, stores its stream, settles billing, and returns a resource li
 
 test("does not start a container when billing authorization fails", async () => {
     const { calls, env, worker } = createHarness({
-        authorization: { ok: false, status: 402, message: "No Pollen" },
+        authorization: { ok: false, status: 401, message: "Invalid key" },
     });
     const client = await connect(worker, env);
     const result = await client.callTool({
@@ -187,7 +188,7 @@ test("does not start a container when billing authorization fails", async () => 
         },
     });
     assert.equal(result.isError, true);
-    assert.match(result.content[0].text, /No Pollen/);
+    assert.match(result.content[0].text, /Invalid key/);
     assert.equal(calls.run.length, 0);
     assert.equal(calls.settle.length, 0);
     await client.close();

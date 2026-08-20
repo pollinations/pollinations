@@ -1,0 +1,33 @@
+{
+  "pr_number": 13603,
+  "title": "chore: update app metrics 2026-08-20",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13603",
+  "merged_at": "2026-08-20T04:18:24Z",
+  "labels": [],
+  "pr_body_excerpt": "Daily automated update of app request and repository metrics",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The garden counted itself",
+    "blurb": "The app directory took its daily headcount. A small census of requests, repos, and the many things growing in public.",
+    "summary": "Automated daily metrics in operations/app-management/app.json were refreshed for 2026-08-20, updating recorded app request and repository statistics.",
+    "impact": "The app-management data stays current for maintainers tracking activity across the Pollinations app ecosystem.",
+    "keywords": [
+      "app-metrics",
+      "automation",
+      "repository",
+      "requests",
+      "app-management"
+    ],
+    "visual_concept": "Depict Polli as a careful garden keeper updating a glowing metrics ledger beside tiny code-plants, while a friendly CRT monitor robot counts sprouts and request icons. This is an internal daily census rather than a new user-facing capability.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny accountant visor, updating a glowing lime green (#ecf874) garden ledger while a chunky CRT monitor robot counts little code-plants and request-token flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text: 'DAILY METRICS'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-20/PR-13603.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny accountant visor, updating a glowing lime green (#ecf874) garden ledger while a chunky CRT monitor robot counts little code-plants and request-token flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text: 'DAILY METRICS'."
+  },
+  "generated_at": "2026-08-20T04:19:30.716781+00:00"
+}

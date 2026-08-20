@@ -138,6 +138,7 @@ describe("docs routes", () => {
             info: { description: string };
             paths: Record<string, unknown>;
             servers: { url: string }[];
+            "x-tagGroups": { name: string; tags: string[] }[];
             tags: { name: string; description?: string }[];
             components: { schemas: Record<string, unknown> };
         };
@@ -209,9 +210,20 @@ describe("docs routes", () => {
         expect(schema.paths["/{id}/metadata"]).toBeDefined();
         expect(schema.paths["/media"]).toBeDefined();
         expect(schema.paths["/media/{id}"]).toBeDefined();
-        // Contribution guides are surfaced as plain integration tags;
-        // the drawer icons are presentation, not part of the OpenAPI names.
+        const integrations = schema["x-tagGroups"].find(
+            (group) => group.name === "Integrations",
+        );
+        const resources = schema["x-tagGroups"].find(
+            (group) => group.name === "Resources",
+        );
+        expect(integrations?.tags).toContain("Community Agents Guide");
+        expect(integrations?.tags).not.toContain("Community Agents");
+        expect(resources?.tags).toContain("Community Agents");
+        expect(resources?.tags).not.toContain("Community Agents Guide");
         expect(schema.tags.map((tag) => tag.name)).toContain("BYOP");
+        expect(schema.tags.map((tag) => tag.name)).toContain(
+            "Community Agents Guide",
+        );
         expect(schema.tags.map((tag) => tag.name)).toContain(
             "Community Agents",
         );
@@ -275,6 +287,11 @@ describe("docs routes", () => {
             schema.paths["/account/my-models"] as Record<string, unknown>
         )?.get as Record<string, unknown> | undefined;
         expect(myModelsGet?.description).toContain("account:keys");
+
+        const agentsGet = (
+            schema.paths["/account/agents"] as Record<string, unknown>
+        )?.get as Record<string, unknown> | undefined;
+        expect(agentsGet?.tags).toEqual(["Community Agents"]);
 
         // The catalog is unauthenticated → marked public (security: []).
         const questsCatalogGet = (
@@ -373,7 +390,7 @@ describe("docs routes", () => {
         );
         expect(agentsRes.status).toBe(301);
         expect(agentsRes.headers.get("Location")).toBe(
-            "/docs#tag/community-agents",
+            "/docs#tag/community-agents-guide",
         );
 
         const missingRes = await worker.fetch(

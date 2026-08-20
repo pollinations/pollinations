@@ -2,11 +2,11 @@
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 
-// One probe sweep across active community text and image models via
+// One probe sweep across listed community text and image models via
 // gen.pollinations.ai. Text probes are cost-weighted and run every cycle;
 // image probes run once per model every four hours and are always capped at
 // one generation. This keeps coverage current without spending or generating
-// media every 15 minutes.
+// media every 30 minutes.
 // Actual spend is reconciled from real `usage` tokens and fed back into
 // state.json so next cycle's budget self-corrects (overspend -> undershoot).
 // Writes /home/ubuntu/monitor/probe-results.json and prints a summary table.
@@ -42,6 +42,17 @@ const modelArgIndex = process.argv.indexOf("--model");
 const onlyModel = modelArgIndex === -1 ? null : process.argv[modelArgIndex + 1];
 if (modelArgIndex !== -1 && !onlyModel) {
     console.error("--model requires an owner/model id");
+    process.exit(1);
+}
+const categoryArgIndex = process.argv.indexOf("--category");
+const onlyCategory =
+    categoryArgIndex === -1 ? null : process.argv[categoryArgIndex + 1];
+if (
+    categoryArgIndex !== -1 &&
+    onlyCategory !== "text" &&
+    onlyCategory !== "image"
+) {
+    console.error("--category must be text or image");
     process.exit(1);
 }
 
@@ -166,7 +177,7 @@ function planRequestCounts(models, budget) {
 }
 
 // Basic billing-integrity sanity checks on a single probe response. These are
-// NOT health/deactivation signals (CYCLE.md's 5xx/timeout rules own that) --
+// NOT health/hide signals (CYCLE.md's 5xx/timeout rules own that) --
 // they flag "the numbers we're about to pay this owner on look implausible
 // for a short, cache-busted prompt", for a human to investigate. Thresholds are
 // deliberately loose (calibrated against real tokenizer variance seen across
@@ -406,8 +417,18 @@ function actualCost(result, priceByModel) {
 
 const models = await fetchCommunityModels();
 if (onlyModel && !models.some((model) => model.name === onlyModel)) {
-    console.error(`active community model not found: ${onlyModel}`);
-    process.exit(1);
+    if (!onlyCategory) {
+        console.error(
+            `listed community model not found: ${onlyModel}; pass --category to probe a hidden exact ID`,
+        );
+        process.exit(1);
+    }
+    models.push({
+        name: onlyModel,
+        category: onlyCategory,
+        pricing: {},
+        flat_rate: false,
+    });
 }
 const priceByModel = new Map(
     models.map((m) => [

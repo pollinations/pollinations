@@ -42,7 +42,7 @@ export async function getVisibleModelIdsForUser(
         )
         .where(
             and(
-                isNull(schema.communityEndpoint.disabledAt),
+                isNull(schema.communityEndpoint.hiddenAt),
                 isNotNull(schema.user.githubUsername),
                 or(
                     eq(schema.communityEndpoint.visibility, "public"),

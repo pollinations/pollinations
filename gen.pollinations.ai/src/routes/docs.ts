@@ -35,6 +35,7 @@ const FAVICON_DATA_URI =
 import BYOP_MD from "../../../BRING_YOUR_OWN_POLLEN.md?raw";
 import MCP_README from "../../../packages/mcp/README.md?raw";
 import CLI_README from "../../../packages/polli-cli/README.md?raw";
+import SDK_README from "../../../packages/sdk/README.md?raw";
 import MODEL3D_GENERATION_MD from "../docs/3d-generation.md?raw";
 import ACCOUNT_MD from "../docs/account.md?raw";
 import AUDIO_GENERATION_MD from "../docs/audio-generation.md?raw";
@@ -57,6 +58,7 @@ const DOC_TAGS = {
     quickStart: "Quick Start",
     authentication: "Authentication",
     byop: "BYOP",
+    sdk: "SDK",
     cli: "CLI",
     mcpServer: "MCP Server",
     errors: "Errors",
@@ -110,6 +112,9 @@ const DOC_TAG_ICON_HTML: Record<string, string> = {
     ),
     [DOC_TAGS.byop]: docsIcon(
         '<path d="M3 7a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2v2H5a2 2 0 0 0-2 2V7Z" /><path d="M3 11a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6Z" /><circle cx="17" cy="14" r="1.25" fill="currentColor" />',
+    ),
+    [DOC_TAGS.sdk]: docsIcon(
+        '<path d="m16 18 6-6-6-6" /><path d="m8 6-6 6 6 6" /><path d="m14.5 4-5 16" />',
     ),
     [DOC_TAGS.cli]: docsIcon(
         '<polyline points="4 8 8 12 4 16" /><line x1="12" y1="20" x2="20" y2="20" />',
@@ -168,6 +173,8 @@ const DOC_TAG_NAV_ICON_HTML: Record<string, string> = Object.fromEntries(
 );
 
 const BYOP_DOCS = BYOP_MD.trim();
+
+const SDK_DOCS = SDK_README.replace(/^# .*\n+/, "").trim();
 
 const CLI_DOCS = CLI_README.replace(/^# .*\n+/, "").trim();
 
@@ -327,12 +334,14 @@ const GEN_API_DOCS = [
 ].join("\n\n");
 
 const BYOP_SECTION = `## BYOP\n\n${BYOP_DOCS}`;
+const SDK_SECTION = `## SDK\n\n${SDK_DOCS}`;
 const CLI_SECTION = `## CLI\n\n${CLI_DOCS}`;
 const MCP_SECTION = `## MCP Server\n\n${MCP_DOCS}`;
 
 const LLM_DOC_TEXT = [
     GEN_API_DOCS,
     BYOP_SECTION,
+    SDK_SECTION,
     CLI_SECTION,
     MCP_SECTION,
 ].join("\n\n");
@@ -340,6 +349,7 @@ const LLM_DOC_TEXT = [
 const LLM_DOC_SECTIONS: Record<string, string> = {
     api: GEN_API_DOCS,
     byop: BYOP_SECTION,
+    sdk: SDK_SECTION,
     cli: CLI_SECTION,
     mcp: MCP_SECTION,
 };
@@ -347,6 +357,7 @@ const LLM_DOC_SECTIONS: Record<string, string> = {
 // Scalar tag anchors for the retired /docs/guides/:id pages.
 const GUIDE_REDIRECT_TAGS: Record<string, string> = {
     byop: "byop",
+    sdk: "sdk",
     cli: "cli",
     mcp: "mcp-server",
 };
@@ -446,7 +457,12 @@ function generationDocumentation(): OpenApiSchema {
             },
             {
                 name: "Integrations",
-                tags: [DOC_TAGS.byop, DOC_TAGS.cli, DOC_TAGS.mcpServer],
+                tags: [
+                    DOC_TAGS.byop,
+                    DOC_TAGS.sdk,
+                    DOC_TAGS.mcpServer,
+                    DOC_TAGS.cli,
+                ],
             },
             {
                 name: "Generation",
@@ -485,6 +501,10 @@ function generationDocumentation(): OpenApiSchema {
             {
                 name: DOC_TAGS.byop,
                 description: BYOP_DOCS,
+            },
+            {
+                name: DOC_TAGS.sdk,
+                description: SDK_DOCS,
             },
             {
                 name: DOC_TAGS.cli,

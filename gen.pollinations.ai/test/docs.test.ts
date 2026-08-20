@@ -127,6 +127,7 @@ describe("docs routes", () => {
             info: { description: string };
             paths: Record<string, unknown>;
             servers: { url: string }[];
+            "x-tagGroups": { name: string; tags: string[] }[];
             tags: { name: string; description?: string }[];
             components: { schemas: Record<string, unknown> };
         };
@@ -195,9 +196,16 @@ describe("docs routes", () => {
         expect(schema.paths["/{id}/metadata"]).toBeDefined();
         expect(schema.paths["/media"]).toBeDefined();
         expect(schema.paths["/media/{id}"]).toBeDefined();
-        // BYOP, CLI, MCP are surfaced as plain tags in the Integrations group;
-        // the drawer icons are presentation, not part of the OpenAPI names.
+        const integrations = schema["x-tagGroups"].find(
+            (group) => group.name === "Integrations",
+        );
+        const resources = schema["x-tagGroups"].find(
+            (group) => group.name === "Resources",
+        );
+        expect(integrations?.tags).toContain("SDK");
+        expect(resources?.tags).not.toContain("SDK");
         expect(schema.tags.map((tag) => tag.name)).toContain("BYOP");
+        expect(schema.tags.map((tag) => tag.name)).toContain("SDK");
         expect(schema.tags.map((tag) => tag.name)).toContain("CLI");
         expect(schema.tags.map((tag) => tag.name)).toContain("MCP Server");
         expect(schema.tags.map((tag) => tag.name)).toContain("Quests");
@@ -347,6 +355,16 @@ describe("docs routes", () => {
         expect(mcpRes.status).toBe(301);
         expect(mcpRes.headers.get("Location")).toBe("/docs#tag/mcp-server");
 
+        const sdkRes = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs/guides/sdk", {
+                redirect: "manual",
+            }),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        expect(sdkRes.status).toBe(301);
+        expect(sdkRes.headers.get("Location")).toBe("/docs#tag/sdk");
+
         const missingRes = await worker.fetch(
             new Request("https://gen.pollinations.ai/docs/guides/notexist"),
             envWithEnterSchema({}),
@@ -389,6 +407,16 @@ describe("docs routes", () => {
         );
         expect(byopRes.status).toBe(200);
         expect(await byopRes.text()).toContain("## BYOP");
+
+        const sdkRes = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs/llm.txt?section=sdk"),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        expect(sdkRes.status).toBe(200);
+        const sdkBody = await sdkRes.text();
+        expect(sdkBody).toContain("## SDK");
+        expect(sdkBody).toContain("npm install @pollinations/sdk");
 
         const badRes = await worker.fetch(
             new Request("https://gen.pollinations.ai/docs/llm.txt?section=bad"),

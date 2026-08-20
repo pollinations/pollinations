@@ -35,6 +35,7 @@ export function useOwnCommunityModels(enabled = true): ApiModelInfo[] {
                             name: model.modelId,
                             title: model.title,
                             category:
+                                model.type === "proxy" &&
                                 model.modality === "image"
                                     ? ("image" as const)
                                     : ("text" as const),

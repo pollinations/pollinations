@@ -1,8 +1,8 @@
 import {
     type CommunityEndpointRuntime,
     isCommunityFallbackPricingAllowed,
-    isDelegatingEndpoint,
     MAX_FALLBACK_TARGETS,
+    usesAgentRunToken,
 } from "@shared/community-endpoints.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
@@ -246,7 +246,7 @@ function isUsableCommunityFallback(
     const primary = from.communityEndpoint;
     const candidate = target.communityEndpoint;
     if (!primary || !candidate) return false;
-    if (isDelegatingEndpoint(primary) || isDelegatingEndpoint(candidate)) {
+    if (usesAgentRunToken(primary) || usesAgentRunToken(candidate)) {
         return false;
     }
     if (primary.imagePricing !== candidate.imagePricing) return false;
@@ -266,12 +266,10 @@ export function linkFallbackEntries(
     byIdOrAlias: Map<string, GenerationModelEntry>,
 ): void {
     for (const entry of entries) {
-        const declared = entry.communityEndpoint
-            ? entry.communityEndpoint.fallbackModelIds.slice(
-                  0,
-                  MAX_FALLBACK_TARGETS,
-              )
-            : (entry.definition.fallbacks ?? []);
+        const declared = (entry.definition.fallbacks ?? []).slice(
+            0,
+            MAX_FALLBACK_TARGETS,
+        );
         const targets: GenerationModelEntry[] = [];
 
         for (const targetId of declared) {

@@ -53,9 +53,9 @@ describe("community endpoint per-user RPM input", () => {
         ).toEqual([{ modelId: "owner/model", modality: "text" }]);
     });
 
-    // Exhaustive on purpose: an agent listing is identity and nothing else, so
-    // anything the form still carries — a typed RPM here — has nowhere to go.
-    it("serializes agent listings as identity only", () => {
+    // Create adds the type and agent id at the API call site; the reusable
+    // listing form only emits fields that are also valid for updates.
+    it("serializes agent listing details only", () => {
         const payload = toAgentListingPayload({
             ...agentListingToForm(),
             name: "researcher",
@@ -64,7 +64,6 @@ describe("community endpoint per-user RPM input", () => {
             perUserRpm: "12",
         });
         expect(payload).toEqual({
-            type: "prompt_agent",
             name: "researcher",
             title: "Researcher",
             description: "",

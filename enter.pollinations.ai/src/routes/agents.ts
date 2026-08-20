@@ -1,3 +1,10 @@
+import {
+    COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
+    COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH,
+    COMMUNITY_ENDPOINT_VISIBILITIES,
+    isCommunityEndpointOwnerAllowed,
+    PROMPT_AGENT_BASE_URL_PLACEHOLDER,
+} from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { and, eq } from "drizzle-orm";
@@ -9,6 +16,7 @@ import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import {
+    agentRuntimeBaseUrl,
     BuiltinMcpServerIdSchema,
     PromptAgentInputSchema,
     parsePromptAgentConfig,
@@ -16,10 +24,44 @@ import {
 } from "../services/prompt-agent.ts";
 import { requireAccountPermission } from "./account-permissions.ts";
 
-const CreateAgentSchema = PromptAgentInputSchema;
-const UpdateAgentSchema = PromptAgentInputSchema;
+const ListingFieldsSchema = z.object({
+    name: z
+        .string()
+        .trim()
+        .min(1)
+        .max(120)
+        .regex(
+            /^[A-Za-z0-9._:-]+$/,
+            "Model name may only contain letters, numbers, periods, underscores, colons, and hyphens",
+        ),
+    title: z.string().trim().min(1).max(COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH),
+    description: z
+        .string()
+        .trim()
+        .max(COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH),
+    visibility: z.enum(COMMUNITY_ENDPOINT_VISIBILITIES),
+});
+
+// Agent writes are one operation: prompt configuration and catalog identity
+// live in the same community_endpoint row and cannot get out of sync.
+const AgentWriteSchema = PromptAgentInputSchema.extend(
+    ListingFieldsSchema.shape,
+).strict();
+const CreateAgentSchema = AgentWriteSchema;
+const UpdateAgentSchema = PromptAgentInputSchema.extend({
+    name: ListingFieldsSchema.shape.name.optional(),
+    title: ListingFieldsSchema.shape.title.optional(),
+    description: ListingFieldsSchema.shape.description.optional(),
+    visibility: ListingFieldsSchema.shape.visibility.optional(),
+}).strict();
 const AgentResponseSchema = z.object({
     id: z.string(),
+    name: z.string(),
+    title: z.string(),
+    description: z.string().nullable(),
+    visibility: z.enum(COMMUNITY_ENDPOINT_VISIBILITIES),
+    baseUrl: z.string().url(),
+    upstreamModel: z.string(),
     systemPrompt: z.string(),
     baseModel: z.string(),
     mcpServers: z.array(BuiltinMcpServerIdSchema),
@@ -32,13 +74,19 @@ const AgentListResponseSchema = z.object({
 const AgentDeleteResponseSchema = z.object({ id: z.string() });
 
 type Db = ReturnType<typeof drizzle<typeof schema>>;
-type AgentRow = typeof schema.agent.$inferSelect;
+type AgentRow = typeof schema.communityEndpoint.$inferSelect;
 
-function toResponse(row: AgentRow) {
-    const config = parsePromptAgentConfig(row.config);
+function toResponse(row: AgentRow, baseUrl: string) {
+    const config = parsePromptAgentConfig(row.payload);
     if (!config) throw new Error(`Agent ${row.id} has invalid configuration`);
     return {
         id: row.id,
+        name: row.name,
+        title: row.title ?? row.name,
+        description: row.description,
+        visibility: row.visibility,
+        baseUrl,
+        upstreamModel: row.upstreamModel,
         ...config,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
@@ -46,16 +94,55 @@ function toResponse(row: AgentRow) {
 }
 
 async function requireOwnedAgent(db: Db, id: string, ownerUserId: string) {
-    const row = await db.query.agent.findFirst({
+    const row = await db.query.communityEndpoint.findFirst({
         where: and(
-            eq(schema.agent.id, id),
-            eq(schema.agent.ownerUserId, ownerUserId),
+            eq(schema.communityEndpoint.id, id),
+            eq(schema.communityEndpoint.ownerUserId, ownerUserId),
+            eq(schema.communityEndpoint.type, "prompt_agent"),
         ),
     });
-    if (!row) {
-        throw new HTTPException(404, { message: "Agent not found" });
-    }
+    if (!row) throw new HTTPException(404, { message: "Agent not found" });
     return row;
+}
+
+async function requireAgentWriteAccess(
+    db: Db,
+    ownerUserId: string,
+    name: string,
+    visibility: "private" | "public",
+    currentId?: string,
+) {
+    const owner = await db.query.user.findFirst({
+        columns: { githubId: true, githubUsername: true },
+        where: eq(schema.user.id, ownerUserId),
+    });
+    // Old standalone agents could exist before an owner linked GitHub. Keep
+    // those preserved private rows editable after migration; creating a new
+    // callable listing or publishing still requires a stable owner slug.
+    if (!owner?.githubUsername && (!currentId || visibility === "public")) {
+        throw new HTTPException(400, {
+            message:
+                "A GitHub username is required to create or publish an agent",
+        });
+    }
+    if (visibility === "public" && !isCommunityEndpointOwnerAllowed(owner)) {
+        throw new HTTPException(403, {
+            message:
+                "Community model publishing requires approval. Agents can stay private for your own use.",
+        });
+    }
+    const existing = await db.query.communityEndpoint.findFirst({
+        columns: { id: true },
+        where: and(
+            eq(schema.communityEndpoint.ownerUserId, ownerUserId),
+            eq(schema.communityEndpoint.name, name),
+        ),
+    });
+    if (existing && existing.id !== currentId) {
+        throw new HTTPException(400, {
+            message: "Community model name is already registered",
+        });
+    }
 }
 
 export const agentsRoutes = new Hono<Env>()
@@ -84,11 +171,18 @@ export const agentsRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             requireAccountPermission(c.var.auth.apiKey, "keys");
             const db = drizzle(c.env.DB, { schema });
-            const rows = await db.query.agent.findMany({
-                where: eq(schema.agent.ownerUserId, user.id),
-                orderBy: (agent, { desc }) => [desc(agent.createdAt)],
+            const rows = await db.query.communityEndpoint.findMany({
+                where: and(
+                    eq(schema.communityEndpoint.ownerUserId, user.id),
+                    eq(schema.communityEndpoint.type, "prompt_agent"),
+                ),
+                orderBy: (endpoint, { desc }) => [desc(endpoint.createdAt)],
             });
-            return c.json({ data: rows.map(toResponse) });
+            return c.json({
+                data: rows.map((row) =>
+                    toResponse(row, agentRuntimeBaseUrl(c.env)),
+                ),
+            });
         },
     )
     .get(
@@ -119,6 +213,7 @@ export const agentsRoutes = new Hono<Env>()
             return c.json(
                 toResponse(
                     await requireOwnedAgent(db, c.req.param("id"), user.id),
+                    agentRuntimeBaseUrl(c.env),
                 ),
             );
         },
@@ -129,7 +224,7 @@ export const agentsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Create Agent",
             description:
-                "Create an editable prompt agent with optional access to Pollinations tools. The agent can later be registered separately as a community model. API keys require `account:keys`.",
+                "Create and list a prompt agent in one operation. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Created agent",
@@ -150,18 +245,31 @@ export const agentsRoutes = new Hono<Env>()
             const input = c.req.valid("json");
             requireAccountPermission(c.var.auth.apiKey, "keys");
             const db = drizzle(c.env.DB, { schema });
+            await requireAgentWriteAccess(
+                db,
+                user.id,
+                input.name,
+                input.visibility,
+            );
             const id = crypto.randomUUID();
             const [row] = await db
-                .insert(schema.agent)
+                .insert(schema.communityEndpoint)
                 .values({
                     id,
                     ownerUserId: user.id,
-                    config: serializePromptAgentConfig(input),
+                    name: input.name,
+                    title: input.title,
+                    description: input.description || null,
+                    type: "prompt_agent",
+                    baseUrl: PROMPT_AGENT_BASE_URL_PLACEHOLDER,
+                    upstreamModel: id,
+                    payload: serializePromptAgentConfig(input),
+                    visibility: input.visibility,
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 })
                 .returning();
-            return c.json(toResponse(row));
+            return c.json(toResponse(row, agentRuntimeBaseUrl(c.env)));
         },
     )
     .patch(
@@ -170,7 +278,7 @@ export const agentsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Update Agent",
             description:
-                "Replace an agent configuration. Existing community model registration is unchanged. API keys require `account:keys`.",
+                "Replace an agent configuration and listing in one operation. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Updated agent",
@@ -193,21 +301,32 @@ export const agentsRoutes = new Hono<Env>()
             requireAccountPermission(c.var.auth.apiKey, "keys");
             const db = drizzle(c.env.DB, { schema });
             const id = c.req.param("id");
-            await requireOwnedAgent(db, id, user.id);
+            const stored = await requireOwnedAgent(db, id, user.id);
+            const name = input.name ?? stored.name;
+            const visibility = input.visibility ?? stored.visibility;
+            await requireAgentWriteAccess(db, user.id, name, visibility, id);
             const [row] = await db
-                .update(schema.agent)
+                .update(schema.communityEndpoint)
                 .set({
-                    config: serializePromptAgentConfig(input),
+                    name,
+                    title: input.title ?? stored.title,
+                    description:
+                        input.description === undefined
+                            ? stored.description
+                            : input.description || null,
+                    visibility,
+                    payload: serializePromptAgentConfig(input),
                     updatedAt: new Date(),
                 })
                 .where(
                     and(
-                        eq(schema.agent.id, id),
-                        eq(schema.agent.ownerUserId, user.id),
+                        eq(schema.communityEndpoint.id, id),
+                        eq(schema.communityEndpoint.ownerUserId, user.id),
+                        eq(schema.communityEndpoint.type, "prompt_agent"),
                     ),
                 )
                 .returning();
-            return c.json(toResponse(row));
+            return c.json(toResponse(row, agentRuntimeBaseUrl(c.env)));
         },
     )
     .delete(
@@ -216,7 +335,7 @@ export const agentsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Delete Agent",
             description:
-                "Delete an agent and its community model registration. API keys require `account:keys`.",
+                "Delete an agent and its model listing. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Deleted agent",
@@ -237,24 +356,15 @@ export const agentsRoutes = new Hono<Env>()
             const db = drizzle(c.env.DB, { schema });
             const id = c.req.param("id");
             await requireOwnedAgent(db, id, user.id);
-            await db.batch([
-                db
-                    .delete(schema.communityEndpoint)
-                    .where(
-                        and(
-                            eq(schema.communityEndpoint.agentId, id),
-                            eq(schema.communityEndpoint.ownerUserId, user.id),
-                        ),
+            await db
+                .delete(schema.communityEndpoint)
+                .where(
+                    and(
+                        eq(schema.communityEndpoint.id, id),
+                        eq(schema.communityEndpoint.ownerUserId, user.id),
+                        eq(schema.communityEndpoint.type, "prompt_agent"),
                     ),
-                db
-                    .delete(schema.agent)
-                    .where(
-                        and(
-                            eq(schema.agent.id, id),
-                            eq(schema.agent.ownerUserId, user.id),
-                        ),
-                    ),
-            ]);
+                );
             return c.json({ id });
         },
     );

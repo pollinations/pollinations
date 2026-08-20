@@ -22,6 +22,7 @@ import { PriceBadge, type PriceBadgeConfig } from "../models/price-badge.tsx";
 import type { PriceKind } from "../models/types.ts";
 import {
     type CommunityEndpoint,
+    type ProxyCommunityEndpoint,
     storedPriceToFormValue,
     VISIBILITY_LABELS,
 } from "./types.ts";
@@ -42,10 +43,9 @@ export function CommunityEndpointCard({
     onDelete,
 }: CommunityEndpointCardProps) {
     const isPublic = endpoint.visibility === "public";
-    // Agent listings have no endpoint, upstream model, or rate limit of their
-    // own to show — the fields do not exist rather than being hidden.
     const isAgent = endpoint.type !== "proxy";
-    const priceGroups = communityPriceGroups(endpoint);
+    const priceGroups =
+        endpoint.type === "proxy" ? communityPriceGroups(endpoint) : [];
 
     return (
         <Surface
@@ -133,7 +133,7 @@ export function CommunityEndpointCard({
                     value={endpoint.modelId}
                     copyLabel="Copy model id"
                 />
-                {!isAgent && (
+                {endpoint.type !== "prompt_agent" && (
                     <CommunityDetailRow
                         icon={<ExternalLinkIcon className="h-3.5 w-3.5" />}
                         label="Endpoint"
@@ -141,24 +141,26 @@ export function CommunityEndpointCard({
                         copyLabel="Copy endpoint"
                     />
                 )}
-                <CommunityDetailRow
-                    icon={<TerminalIcon className="h-3.5 w-3.5" />}
-                    label="Modality"
-                    value={endpoint.modality}
-                />
-                {!isAgent && (
-                    <CommunityDetailRow
-                        icon={<TerminalIcon className="h-3.5 w-3.5" />}
-                        label="Upstream model"
-                        value={endpoint.upstreamModel}
-                    />
-                )}
-                {!isAgent && endpoint.perUserRpm !== null && (
-                    <CommunityDetailRow
-                        icon={<TerminalIcon className="h-3.5 w-3.5" />}
-                        label="Per-user limit"
-                        value={`${endpoint.perUserRpm} RPM/user`}
-                    />
+                {endpoint.type === "proxy" && (
+                    <>
+                        <CommunityDetailRow
+                            icon={<TerminalIcon className="h-3.5 w-3.5" />}
+                            label="Modality"
+                            value={endpoint.modality}
+                        />
+                        <CommunityDetailRow
+                            icon={<TerminalIcon className="h-3.5 w-3.5" />}
+                            label="Upstream model"
+                            value={endpoint.upstreamModel}
+                        />
+                        {endpoint.perUserRpm !== null && (
+                            <CommunityDetailRow
+                                icon={<TerminalIcon className="h-3.5 w-3.5" />}
+                                label="Per-user limit"
+                                value={`${endpoint.perUserRpm} RPM/user`}
+                            />
+                        )}
+                    </>
                 )}
                 {priceGroups.map((group) => (
                     <CommunityDetailRow
@@ -247,7 +249,7 @@ type CommunityPriceBadge = {
 };
 
 function communityPriceGroups(
-    endpoint: CommunityEndpoint,
+    endpoint: ProxyCommunityEndpoint,
 ): CommunityPriceGroup[] {
     const groups: Record<CommunityPriceGroup["key"], CommunityPriceBadge[]> = {
         input: [],

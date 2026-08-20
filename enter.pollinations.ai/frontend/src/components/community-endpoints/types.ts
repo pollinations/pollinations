@@ -7,7 +7,6 @@ import {
     type CommunityEndpointPrices,
     type CommunityEndpointVisibility,
     communityEndpointPriceFieldsForModality,
-    type ListingType,
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MAX_COMMUNITY_PRICE_PER_SECOND,
@@ -20,6 +19,12 @@ type EndpointFormPrices = Record<CommunityEndpointPriceKey, string>;
 
 export type ManagedAgent = {
     id: string;
+    name: string;
+    title: string;
+    description: string | null;
+    visibility: CommunityEndpointVisibility;
+    baseUrl: string;
+    upstreamModel: string;
     systemPrompt: string;
     baseModel: string;
     mcpServers: "pollinations"[];
@@ -41,32 +46,49 @@ export type CommunityProviderProfile = {
     url: string | null;
 };
 
-export type CommunityEndpoint = {
+type CommunityEndpointBase = {
     id: string;
     modelId: string;
     name: string;
     // Always populated by the API, which falls back for un-backfilled rows.
     title: string;
     description: string | null;
-    modality: CommunityEndpointModality;
-    imagePricing: CommunityEndpointImagePricing;
-    inputModalities: ModelInputModality[];
     baseUrl: string;
     upstreamModel: string;
-    // What the listing is. Agent listings have no endpoint, upstream model,
-    // rate limit, or price of their own; agentId is only how one is routed.
-    type: ListingType;
-    agentId: string | null;
     // private → owner-only, shown only to the owner, no owner-set price;
     // public → globally listed + billed to callers.
     visibility: CommunityEndpointVisibility;
-    perUserRpm: number | null;
-    // Public community models tried, in order, when this model's upstream fails.
-    fallbackModelIds: string[];
     hidden: boolean;
     hiddenReason: string | null;
     hiddenAt: string | null;
-} & CommunityEndpointPrices;
+};
+
+export type ProxyCommunityEndpoint = CommunityEndpointBase &
+    CommunityEndpointPrices & {
+        type: "proxy";
+        modality: CommunityEndpointModality;
+        imagePricing: CommunityEndpointImagePricing;
+        inputModalities: ModelInputModality[];
+        perUserRpm: number | null;
+        fallbacks: string[];
+    };
+
+export type PromptAgentCommunityEndpoint = CommunityEndpointBase & {
+    type: "prompt_agent";
+};
+
+export type EndpointAgentCommunityEndpoint = CommunityEndpointBase & {
+    type: "endpoint_agent";
+};
+
+export type CommunityEndpoint =
+    | ProxyCommunityEndpoint
+    | PromptAgentCommunityEndpoint
+    | EndpointAgentCommunityEndpoint;
+
+export type EditableEndpoint =
+    | ProxyCommunityEndpoint
+    | EndpointAgentCommunityEndpoint;
 
 export type FallbackModelOption = {
     modelId: string;
@@ -126,7 +148,7 @@ export type EndpointFormState = ModelListingFormState & {
     upstreamModel: string;
     bearerToken: string;
     // Public community model ids, tried in the order listed.
-    fallbackModelIds: string[];
+    fallbacks: string[];
 } & EndpointFormPrices;
 
 type ModelListingPayload = {
@@ -143,21 +165,15 @@ export type EndpointPayload = ModelListingPayload & {
     imagePricing: CommunityEndpointImagePricing;
     baseUrl: string;
     upstreamModel: string;
-    fallbackModelIds: string[];
+    fallbacks: string[];
 } & CommunityEndpointPrices;
 
-// An agent listing is identity and nothing else: everything a caller sees is
-// inherited from the agent's base model, so there is nothing else to send.
-export type AgentListingPayload = {
-    type: "prompt_agent";
+export type AgentListingDetailsPayload = {
     name: string;
     title: string;
     description: string;
     visibility: CommunityEndpointVisibility;
-    agentId: string;
 };
-
-export type AgentListingDetailsPayload = Omit<AgentListingPayload, "agentId">;
 
 export type CommunityEndpointUsage = Record<string, unknown>;
 
@@ -197,7 +213,7 @@ export const emptyForm: EndpointFormState = {
     baseUrl: "",
     upstreamModel: "",
     bearerToken: "",
-    fallbackModelIds: [],
+    fallbacks: [],
     ...emptyPriceForm,
 };
 
@@ -274,7 +290,18 @@ export function isValidPriceInput(
     );
 }
 
-export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
+export function endpointToForm(endpoint: EditableEndpoint): EndpointFormState {
+    if (endpoint.type === "endpoint_agent") {
+        return {
+            ...emptyForm,
+            name: endpoint.name,
+            title: endpoint.title,
+            description: endpoint.description ?? "",
+            visibility: endpoint.visibility,
+            baseUrl: endpoint.baseUrl,
+            upstreamModel: endpoint.upstreamModel,
+        };
+    }
     const fields = new Map(
         communityEndpointPriceFieldsForModality(
             endpoint.modality,
@@ -293,7 +320,7 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
         baseUrl: endpoint.baseUrl,
         upstreamModel: endpoint.upstreamModel,
         bearerToken: "",
-        fallbackModelIds: endpoint.fallbackModelIds ?? [],
+        fallbacks: endpoint.fallbacks ?? [],
         ...(Object.fromEntries(
             COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => {
                 const modalityField = fields.get(field.key);
@@ -312,7 +339,7 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
 }
 
 export function agentListingToForm(
-    endpoint?: CommunityEndpoint,
+    endpoint?: PromptAgentCommunityEndpoint,
 ): ModelListingFormState {
     return endpoint
         ? {
@@ -437,8 +464,7 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
         upstreamModel: form.upstreamModel.trim() || form.name.trim(),
         // Private models carry no public pricing, so their fallbacks cannot be
         // validated against a quoted price.
-        fallbackModelIds:
-            form.visibility === "public" ? form.fallbackModelIds : [],
+        fallbacks: form.visibility === "public" ? form.fallbacks : [],
         ...formPricesToPayload(form, modality, imagePricing),
     };
 }
@@ -447,7 +473,6 @@ export function toAgentListingPayload(
     form: ModelListingFormState,
 ): AgentListingDetailsPayload {
     return {
-        type: "prompt_agent",
         name: form.name.trim(),
         title: form.title.trim(),
         description: form.description.trim(),
@@ -483,7 +508,7 @@ export function nextFormState(
                 modality,
             ),
             // Targets must match the modality; the old choices no longer can.
-            fallbackModelIds: [],
+            fallbacks: [],
         };
     }
     const next = { ...current, [key]: value };

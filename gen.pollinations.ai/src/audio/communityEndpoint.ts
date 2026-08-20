@@ -34,7 +34,7 @@ export async function callCommunityTranscriptionEndpoint(
     secret: string,
 ): Promise<Response> {
     // Managed agents are text-only, so a transcription endpoint is always external.
-    if (endpoint.kind !== "proxy") {
+    if (endpoint.type !== "proxy") {
         throw new Error(
             `Community transcription endpoint '${endpoint.modelId}' is a managed agent`,
         );

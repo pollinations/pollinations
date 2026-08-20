@@ -30,7 +30,7 @@ const authProbe = new Hono<AuthEnv>().use("*", auth()).get("/", (c) =>
     }),
 );
 
-function communityProbe(kind: CommunityEndpointRuntime["kind"] = "proxy") {
+function communityProbe(type: CommunityEndpointRuntime["type"] = "proxy") {
     return new Hono<AuthEnv>()
         .use("*", auth())
         .use("*", async (c, next) => {
@@ -38,9 +38,9 @@ function communityProbe(kind: CommunityEndpointRuntime["kind"] = "proxy") {
                 requested: "Itachi-1824/polli",
                 resolved: "Itachi-1824/polli",
                 communityEndpoint: {
+                    id: "managed-agent-id",
                     modelId: "Itachi-1824/polli",
-                    kind,
-                    agentId: "managed-agent-id",
+                    type,
                 } as unknown as CommunityEndpointRuntime,
             });
             await next();
@@ -133,7 +133,7 @@ test("agent run tokens can call community models but cannot recurse into agent m
     expect(agentResponse.status).toBe(403);
 
     const delegatedAgentResponse = await probe(
-        communityProbe("hosted_agent"),
+        communityProbe("endpoint_agent"),
         "https://gen.pollinations.ai/",
         token,
     );

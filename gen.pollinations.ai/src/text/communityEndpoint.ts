@@ -2,9 +2,9 @@ import { signAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import {
     type CommunityEndpointRuntime,
     communityOpenAIBaseUrl,
-    isDelegatingEndpoint,
     isFreeCommunityEndpoint,
     normalizeCommunityEndpointBearerToken,
+    usesAgentRunToken,
 } from "@shared/community-endpoints.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { decryptSecret } from "@shared/secret-encryption.ts";
@@ -37,7 +37,7 @@ async function mintDelegatedToken(
     parentApiKeyId: string | undefined,
     secret: string,
 ): Promise<string | undefined> {
-    if (!isDelegatingEndpoint(endpoint)) return undefined;
+    if (!usesAgentRunToken(endpoint)) return undefined;
     if (!isFreeCommunityEndpoint(endpoint)) {
         throw new Error(
             `Community endpoint '${endpoint.modelId}' delegates generation but is not free`,
@@ -52,10 +52,10 @@ async function mintDelegatedToken(
         secret,
         parentApiKeyId,
         runId: crypto.randomUUID(),
-        // Only an agent Enter runs names one. An agent on the owner's own
-        // server gets a token that authorizes spending and nothing else.
+        // The managed runtime uses the listing id (also its upstream model) to
+        // select the prompt config. An external agent only needs spend scope.
         managedAgentId:
-            endpoint.kind === "prompt_agent" ? endpoint.agentId : undefined,
+            endpoint.type === "prompt_agent" ? endpoint.id : undefined,
     });
 }
 
@@ -70,13 +70,12 @@ export async function communityEndpointGatewayContext(
 ): Promise<TransformOptions> {
     const { messages: _messages, ...requestDataWithoutMessages } = requestData;
     const runToken = await mintDelegatedToken(endpoint, parentApiKeyId, secret);
-    // Only a proxy stores a credential, and only a proxy is sent one. Either
-    // agent kind is sent the run token instead, so neither can ever receive a
-    // key it could spend on the owner's account. mintDelegatedToken always
-    // returns a token for an agent, so a missing one means the caller had no
-    // key to bill.
+    // Only a proxy stores and receives its registered upstream bearer secret.
+    // Neither agent kind receives a Pollinations API key: each gets a
+    // short-lived run token instead. mintDelegatedToken always returns one for
+    // an agent, so a missing token means the caller had no key to bill.
     const authKey =
-        endpoint.kind === "proxy"
+        endpoint.type === "proxy"
             ? normalizeCommunityEndpointBearerToken(
                   await decryptSecret(endpoint.bearerTokenCiphertext, secret),
               )

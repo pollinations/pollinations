@@ -2,7 +2,6 @@ import { env, SELF } from "cloudflare:test";
 import { recordRewards } from "@shared/billing/rewards.ts";
 import {
     account as accountTable,
-    agent as agentTable,
     apikey as apiKeyTable,
     communityEndpoint as communityEndpointTable,
     rewards as rewardsTable,
@@ -43,19 +42,14 @@ describe("POST /api/auth/delete-user", () => {
             itemId: "test-media-item",
             tag: "test",
         });
-        await db.insert(agentTable).values({
-            id: "test-agent",
-            ownerUserId: user.id,
-            config: JSON.stringify({ instructions: "Test" }),
-        });
         await db.insert(communityEndpointTable).values({
             id: "test-community-model",
             ownerUserId: user.id,
             name: "test-model",
-            agentId: "test-agent",
+            type: "endpoint_agent",
+            baseUrl: "https://agent.example.com/v1",
             upstreamModel: "openai-fast",
-            promptTextPrice: 0,
-            completionTextPrice: 0,
+            payload: "{}",
         });
         await db.insert(rewardsTable).values({
             id: "test-reward",

@@ -125,7 +125,7 @@ function createCommunityEndpoint(
         name: "test-model",
         title: "Test Model",
         description: null,
-        kind: "proxy",
+        type: "proxy",
 
         modality: "text",
         imagePricing: "request",
@@ -135,7 +135,7 @@ function createCommunityEndpoint(
         bearerTokenCiphertext: "encrypted",
         visibility: "public",
         perUserRpm: null,
-        fallbackModelIds: [],
+        fallbacks: [],
         hiddenAt: null,
         hiddenReason: null,
         ...communityEndpointPrices({

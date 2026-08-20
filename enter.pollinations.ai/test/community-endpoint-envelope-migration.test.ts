@@ -1,8 +1,14 @@
 import { env } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
-import migrationSql from "../drizzle/0052_shiny_jamie_braddock.sql?raw";
+import migrationSql from "../drizzle/0053_listing_envelope.sql?raw";
 
-type Row = { id: string; type: string; payload: string };
+type Row = {
+    id: string;
+    type: string;
+    base_url: string;
+    upstream_model: string;
+    payload: string;
+};
 
 /**
  * The backfill decides what each existing row IS, and then keeps only the
@@ -13,9 +19,27 @@ type Row = { id: string; type: string; payload: string };
 describe("community endpoint envelope migration", () => {
     it("types every row and packs only that type's fields", async () => {
         await env.DB.prepare(`
+            CREATE TABLE migration_agent (
+                id TEXT PRIMARY KEY,
+                owner_user_id TEXT NOT NULL DEFAULT 'owner',
+                config TEXT NOT NULL,
+                created_at INTEGER NOT NULL DEFAULT 0,
+                updated_at INTEGER NOT NULL DEFAULT 0
+            )
+        `).run();
+        await env.DB.prepare(`
+            INSERT INTO migration_agent (id, config)
+            VALUES
+                ('agent-row-id', '{"systemPrompt":"Teach clearly.","baseModel":"openai-fast","mcpServers":[]}'),
+                ('standalone-agent', '{"systemPrompt":"Work alone.","baseModel":"openai","mcpServers":[]}')
+        `).run();
+        await env.DB.prepare(`
             CREATE TABLE migration_community_endpoint (
                 id TEXT PRIMARY KEY,
+                owner_user_id TEXT NOT NULL DEFAULT 'owner',
                 name TEXT NOT NULL,
+                title TEXT,
+                description TEXT,
                 agent_id TEXT,
                 modality TEXT NOT NULL DEFAULT 'text',
                 image_pricing TEXT NOT NULL DEFAULT 'request',
@@ -34,7 +58,13 @@ describe("community endpoint envelope migration", () => {
                 completion_text_price REAL NOT NULL DEFAULT 0,
                 completion_reasoning_price REAL NOT NULL DEFAULT 0,
                 completion_audio_price REAL NOT NULL DEFAULT 0,
-                completion_image_price REAL NOT NULL DEFAULT 0
+                completion_image_price REAL NOT NULL DEFAULT 0,
+                visibility TEXT NOT NULL DEFAULT 'private',
+                hidden_at INTEGER,
+                hidden_reason TEXT,
+                hidden_by TEXT,
+                created_at INTEGER NOT NULL DEFAULT 0,
+                updated_at INTEGER NOT NULL DEFAULT 0
             )
         `).run();
         await env.DB.prepare(`
@@ -64,34 +94,86 @@ describe("community endpoint envelope migration", () => {
             "--> statement-breakpoint",
         )) {
             await env.DB.prepare(
-                statement.replace(
-                    /`community_endpoint`/g,
-                    "migration_community_endpoint",
-                ),
+                statement
+                    .replaceAll(
+                        "community_endpoint",
+                        "migration_community_endpoint",
+                    )
+                    .replaceAll("`agent`", "`migration_agent`")
+                    .replaceAll('"agent"', '"migration_agent"'),
             ).run();
         }
 
+        const columns = await env.DB.prepare(
+            "PRAGMA table_info(migration_community_endpoint)",
+        ).all<{ name: string }>();
+        expect(columns.results.map(({ name }) => name)).toEqual([
+            "id",
+            "owner_user_id",
+            "name",
+            "title",
+            "description",
+            "type",
+            "base_url",
+            "upstream_model",
+            "payload",
+            "visibility",
+            "hidden_at",
+            "hidden_reason",
+            "hidden_by",
+            "created_at",
+            "updated_at",
+        ]);
+
         const rows = await env.DB.prepare(
-            "SELECT id, type, payload FROM migration_community_endpoint ORDER BY id",
+            "SELECT id, type, base_url, upstream_model, payload FROM migration_community_endpoint ORDER BY id",
         ).all<Row>();
+        expect(rows.results).toHaveLength(6);
         const byId = Object.fromEntries(
             rows.results.map((row) => [
                 row.id,
-                { type: row.type, payload: JSON.parse(row.payload) },
+                {
+                    type: row.type,
+                    baseUrl: row.base_url,
+                    upstreamModel: row.upstream_model,
+                    payload: JSON.parse(row.payload),
+                },
             ]),
         );
 
-        // An agent Enter runs. Its target is the runtime and its catalog entry
-        // comes from the agent's base model, so there is nothing to carry.
-        expect(byId["prompt-agent"]).toEqual({
+        // An agent Enter runs. Its existing agent id is preserved as the row
+        // id/model sent to the shared runtime, while the old listing identity
+        // and config move into that row.
+        expect(byId["agent-row-id"]).toEqual({
             type: "prompt_agent",
-            payload: {},
+            baseUrl: "https://agent-runtime.invalid/api/agent-runtime/v1",
+            upstreamModel: "agent-row-id",
+            payload: {
+                systemPrompt: "Teach clearly.",
+                baseModel: "openai-fast",
+                mcpServers: [],
+            },
+        });
+        expect(byId["prompt-agent"]).toBeUndefined();
+        // Standalone agents were valid in the old API. They become private
+        // rows with non-prompt metadata so the migration never deletes them.
+        expect(byId["standalone-agent"]).toEqual({
+            type: "prompt_agent",
+            baseUrl: "https://agent-runtime.invalid/api/agent-runtime/v1",
+            upstreamModel: "standalone-agent",
+            payload: {
+                systemPrompt: "Work alone.",
+                baseModel: "openai",
+                mcpServers: [],
+            },
         });
         // An agent on the owner's own server keeps a target and nothing else —
         // notably not the credential it used to store, which it is never sent.
         expect(byId["delegating-text"]).toEqual({
-            type: "hosted_agent",
-            payload: { baseUrl: "https://agent.example.com/v1" },
+            type: "endpoint_agent",
+            baseUrl: "https://agent.example.com/v1",
+            upstreamModel: "weaver",
+            payload: {},
         });
         // Excluded on purpose: run tokens are only minted on the text path, so
         // the flag was inert here and promoting the row would start rejecting
@@ -99,15 +181,15 @@ describe("community endpoint envelope migration", () => {
         expect(byId["delegating-image"].type).toBe("proxy");
         expect(byId["priced-proxy"]).toEqual({
             type: "proxy",
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "gpt-4.1",
             payload: {
-                baseUrl: "https://api.example.com/v1",
-                upstreamModel: "gpt-4.1",
                 bearerTokenCiphertext: "cipher",
                 modality: "text",
                 imagePricing: "request",
                 inputModalities: ["text", "image"],
                 perUserRpm: 12,
-                fallbackModelIds: ["owner/backup"],
+                fallbacks: ["owner/backup"],
                 prices: {
                     promptTextPrice: 0.5,
                     promptCachedPrice: 0,
@@ -123,12 +205,46 @@ describe("community endpoint envelope migration", () => {
         });
         // Nullable JSON columns become the shapes the reader expects rather
         // than a literal null it would have to re-normalize.
-        expect(byId["bare-proxy"].payload).toMatchObject({
-            modality: "image",
-            imagePricing: "tokens",
-            inputModalities: null,
-            perUserRpm: null,
-            fallbackModelIds: [],
+        expect(byId["bare-proxy"]).toMatchObject({
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "flux",
+            payload: {
+                modality: "image",
+                imagePricing: "tokens",
+                inputModalities: ["text"],
+                perUserRpm: null,
+                fallbacks: [],
+            },
         });
+
+        await expect(
+            env.DB.prepare(
+                "SELECT name, title, visibility FROM migration_community_endpoint WHERE id = 'standalone-agent'",
+            ).first(),
+        ).resolves.toEqual({
+            name: "__migrated_agent__standalone-agent",
+            title: "Agent standalo",
+            visibility: "private",
+        });
+        await expect(
+            env.DB.prepare(
+                "SELECT count(*) AS count FROM sqlite_master WHERE type = 'table' AND name = 'migration_agent'",
+            ).first(),
+        ).resolves.toEqual({ count: 0 });
+
+        const indexes = await env.DB.prepare(
+            "PRAGMA index_list(migration_community_endpoint)",
+        ).all<{ name: string }>();
+        expect(indexes.results.map(({ name }) => name)).toEqual(
+            expect.arrayContaining([
+                "idx_migration_community_endpoint_owner_name",
+                "idx_migration_community_endpoint_owner_user_id",
+            ]),
+        );
+        const table = await env.DB.prepare(
+            "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'migration_community_endpoint'",
+        ).first<{ sql: string }>();
+        expect(table?.sql).toContain("community_endpoint_base_url");
+        expect(table?.sql).toContain("community_endpoint_prompt_agent_model");
     });
 });

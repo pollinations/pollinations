@@ -14,10 +14,10 @@ import {
     type AgentListingDetailsPayload,
     type AgentPayload,
     agentListingToForm,
-    type CommunityEndpoint,
     emptyAgentForm,
     type ManagedAgent,
     type ModelListingFormState,
+    type PromptAgentCommunityEndpoint,
     toAgentListingPayload,
     toAgentPayload,
 } from "./types.ts";
@@ -26,7 +26,7 @@ type AgentDialogFormState = AgentFormState & ModelListingFormState;
 
 type AgentDialogProps = {
     agent?: ManagedAgent;
-    endpoint?: CommunityEndpoint;
+    endpoint?: PromptAgentCommunityEndpoint;
     canPublish: boolean;
     open: boolean;
     onOpenChange: (open: boolean) => void;

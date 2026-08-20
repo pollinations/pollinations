@@ -226,6 +226,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptAudioSeconds": 0.0025,
     },
   },
+  "fish-audio-s2.1-pro": {
+    "cost": {
+      "completionAudioTokens": 0.000015,
+    },
+    "price": {
+      "completionAudioTokens": 0.000015,
+    },
+  },
   "flux": {
     "cost": {
       "completionImageTokens": 0.002,
@@ -410,6 +418,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000014,
     },
   },
+  "glm-5.3": {
+    "cost": {
+      "completionTextTokens": 0.0000044,
+      "promptCachedTokens": 0.00000026,
+      "promptTextTokens": 0.0000014,
+    },
+    "price": {
+      "completionTextTokens": 0.0000044,
+      "promptCachedTokens": 0.00000026,
+      "promptTextTokens": 0.0000014,
+    },
+  },
   "gpt-5.4": {
     "cost": {
       "completionTextTokens": 0.000015,
@@ -521,6 +541,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000375,
     },
   },
+  "gpt-live-transcribe": {
+    "cost": {
+      "promptAudioSeconds": 0.000283333333333333,
+    },
+    "price": {
+      "promptAudioSeconds": 0.0002125,
+    },
+  },
   "gpt-oss": {
     "cost": {
       "completionTextTokens": 0.00000018,
@@ -583,6 +611,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptCachedTokens": 0.000000045,
       "promptImageTokens": 0.0000006,
       "promptTextTokens": 0.00000045,
+    },
+  },
+  "gpt-transcribe": {
+    "cost": {
+      "promptAudioSeconds": 0.000075,
+    },
+    "price": {
+      "promptAudioSeconds": 0.00005625,
     },
   },
   "gptimage": {
@@ -730,6 +766,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
     "price": {
       "promptAudioSeconds": 0.0000277777777777778,
+    },
+  },
+  "grok-tts": {
+    "cost": {
+      "completionAudioTokens": 0.000015,
+    },
+    "price": {
+      "completionAudioTokens": 0.000015,
     },
   },
   "grok-video-pro": {
@@ -1157,6 +1201,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000005,
     },
   },
+  "nemotron-3.5-lightning": {
+    "cost": {
+      "completionTextTokens": 0.0000002,
+      "promptCachedTokens": 0.00000001,
+      "promptTextTokens": 0.00000005,
+    },
+    "price": {
+      "completionTextTokens": 0.0000002,
+      "promptCachedTokens": 0.00000001,
+      "promptTextTokens": 0.00000005,
+    },
+  },
   "nova": {
     "cost": {
       "completionTextTokens": 0.00000275,
@@ -1534,6 +1590,22 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionTextTokens": 0.000006,
       "promptCachedTokens": 0.00000025,
       "promptTextTokens": 0.000002,
+    },
+  },
+  "qwen3.8-27b": {
+    "cost": {
+      "completionTextTokens": 0.000003,
+      "promptCachedTokens": 0.00000004,
+      "promptImageTokens": 0.0000004,
+      "promptTextTokens": 0.0000004,
+      "promptVideoTokens": 0.0000004,
+    },
+    "price": {
+      "completionTextTokens": 0.000003,
+      "promptCachedTokens": 0.00000004,
+      "promptImageTokens": 0.0000004,
+      "promptTextTokens": 0.0000004,
+      "promptVideoTokens": 0.0000004,
     },
   },
   "qwen3.8-max": {

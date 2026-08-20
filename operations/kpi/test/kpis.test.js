@@ -136,3 +136,44 @@ describe("cash coverage row", () => {
         expect(kpiValue(coverage, { revenue: 100, costUsd: 0 })).toBeNull();
     });
 });
+
+const wau = KPIS.find((row) => row.key === "wau");
+const turnedAway = KPIS.find((row) => row.key === "turnedAway");
+const byop = KPIS.find((row) => row.key === "byopUserPct");
+
+// Week of 2026-08-10 as the pipes now report it.
+const rejectionWeek = {
+    week: "2026-08-10",
+    wau: 3352,
+    wauAll: 6859,
+    byopUserPct: 11.1,
+    byopUserPctAll: 15.0,
+};
+
+describe("402 rejections", () => {
+    it("defaults WAU to served users, not everyone who knocked", () => {
+        expect(kpiValue(kpiView(wau, 0), rejectionWeek)).toBe(3352);
+    });
+
+    it("cycles to the raw figure the dashboard used to show", () => {
+        const view = kpiView(wau, 1);
+        expect(view.name).toBe("WAU · incl. rejected");
+        expect(kpiValue(view, rejectionWeek)).toBe(6859);
+    });
+
+    it("reports the gap as its own row", () => {
+        expect(kpiValue(turnedAway, rejectionWeek)).toBe(3507);
+    });
+
+    it("cycles BYOP share between served and raw", () => {
+        expect(kpiValue(kpiView(byop, 0), rejectionWeek)).toBe(11.1);
+        expect(kpiValue(kpiView(byop, 1), rejectionWeek)).toBe(15.0);
+    });
+
+    it("offers both WAU variants in the explorer", () => {
+        const names = KPI_VIEWS.filter((v) => v.id.startsWith("wau:")).map(
+            (v) => v.name,
+        );
+        expect(names).toEqual(["WAU", "WAU · incl. rejected"]);
+    });
+});

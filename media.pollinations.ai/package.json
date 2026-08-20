@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@hono/standard-validator": "^0.2.2",
+    "aws4fetch": "^1.0.20",
     "drizzle-orm": "^0.44.7",
     "hono": "^4.6.0",
     "hono-openapi": "^1.2.0",

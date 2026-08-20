@@ -146,7 +146,7 @@ function communityEntryToGenerationEntry(
         // Public endpoints appear for everyone. Private endpoints are added
         // back for their owner by visibleEntries().
         visible:
-            entry.communityEndpoint.disabledAt === null &&
+            entry.definition.hidden !== true &&
             entry.communityEndpoint.visibility === "public",
     };
 }
@@ -210,21 +210,14 @@ function buildRegistry(
     entries.sort(compareModelEntries);
 
     return {
-        resolve: (model) => {
-            const entry = byIdOrAlias.get(model) ?? null;
-            // Deactivated community models don't exist as far as callers are
-            // concerned — unlike static `hidden` models (intentionally
-            // unlisted but still callable), a disabled community endpoint is
-            // broken and must be unreachable everywhere, not just unlisted.
-            if (entry?.communityEndpoint?.disabledAt) return null;
-            return entry;
-        },
+        resolve: (model) => byIdOrAlias.get(model) ?? null,
         visibleEntries: (callerUserId) =>
             entries.filter((entry) => {
                 if (entry.visible) return true;
                 const endpoint = entry.communityEndpoint;
                 return (
-                    endpoint?.disabledAt === null &&
+                    entry.definition.hidden !== true &&
+                    endpoint !== undefined &&
                     endpoint.visibility === "private" &&
                     endpoint.ownerUserId === callerUserId
                 );

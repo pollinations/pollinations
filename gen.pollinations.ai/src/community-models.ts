@@ -101,8 +101,8 @@ export async function getCommunityModelRegistryEntries(
             completionAudioPrice: schema.communityEndpoint.completionAudioPrice,
             completionImagePrice: schema.communityEndpoint.completionImagePrice,
             fallbackModelIds: schema.communityEndpoint.fallbackModelIds,
-            disabledAt: schema.communityEndpoint.disabledAt,
-            disabledReason: schema.communityEndpoint.disabledReason,
+            hiddenAt: schema.communityEndpoint.hiddenAt,
+            hiddenReason: schema.communityEndpoint.hiddenReason,
             createdAt: schema.communityEndpoint.createdAt,
         })
         .from(schema.communityEndpoint)
@@ -137,8 +137,8 @@ export async function getCommunityModelRegistryEntries(
             visibility: row.visibility,
             perUserRpm: row.perUserRpm,
             fallbackModelIds: row.fallbackModelIds ?? [],
-            disabledAt: row.disabledAt ? row.disabledAt.getTime() : null,
-            disabledReason: row.disabledReason,
+            hiddenAt: row.hiddenAt ? row.hiddenAt.getTime() : null,
+            hiddenReason: row.hiddenReason,
             ...communityEndpointPrices(row),
         };
         // A row is one kind or the other: an agent resolves its target from the
@@ -171,6 +171,7 @@ export async function getCommunityModelRegistryEntries(
         const definition = communityModelDefinition({
             ...communityEndpoint,
             addedDate: row.createdAt.getTime(),
+            hidden: communityEndpoint.hiddenAt !== null,
         });
         return [
             {

@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "2302eb27-bc04-498d-964b-52020e41ab0c",
-  "prevId": "411bf138-2ff3-453f-8f49-894c58d4c069",
+  "id": "4e1c1a02-4381-4412-9a48-3097941ddc95",
+  "prevId": "2302eb27-bc04-498d-964b-52020e41ab0c",
   "tables": {
     "account": {
       "name": "account",
@@ -480,6 +480,13 @@
         },
         "input_modalities": {
           "name": "input_modalities",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "advertised": {
+          "name": "advertised",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -1813,11 +1820,7 @@
   "_meta": {
     "schemas": {},
     "tables": {},
-    "columns": {
-      "\"community_endpoint\".\"disabled_at\"": "\"community_endpoint\".\"hidden_at\"",
-      "\"community_endpoint\".\"disabled_reason\"": "\"community_endpoint\".\"hidden_reason\"",
-      "\"community_endpoint\".\"disabled_by\"": "\"community_endpoint\".\"hidden_by\""
-    }
+    "columns": {}
   },
   "internal": {
     "indexes": {}

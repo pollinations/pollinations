@@ -1944,6 +1944,17 @@ describe("trackResponse missing usage", () => {
             headers: { "content-type": "text/event-stream" },
         });
 
+    const openRouterGeneration = (overrides = {}) =>
+        Response.json({
+            data: {
+                tokens_prompt: 12,
+                tokens_completion: 7,
+                native_tokens_cached: 2,
+                native_tokens_reasoning: 3,
+                ...overrides,
+            },
+        });
+
     it("marks a text response that carried no billable usage at all", async () => {
         const tracking = await trackResponse(
             "generate.text",
@@ -1966,6 +1977,149 @@ describe("trackResponse missing usage", () => {
         );
         expect(tracking.isBilledUsage).toBe(true);
         expect(tracking.errorTracking).toBeUndefined();
+    });
+
+    it("recovers paid OpenRouter usage from generation metadata", async () => {
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValue(openRouterGeneration());
+        const response = Response.json(
+            { id: "gen-recovery-test", choices: [] },
+            { headers: { "x-model-used": "gemini-fast" } },
+        );
+
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(false, "gemini-fast"),
+            response,
+            undefined,
+            undefined,
+            undefined,
+            "test-openrouter-key",
+        );
+
+        expect(fetchSpy).toHaveBeenCalledOnce();
+        const [input, init] = fetchSpy.mock.calls[0];
+        expect(String(input)).toBe(
+            "https://openrouter.ai/api/v1/generation?id=gen-recovery-test",
+        );
+        expect(new Headers(init?.headers).get("authorization")).toBe(
+            "Bearer test-openrouter-key",
+        );
+        expect(tracking.isBilledUsage).toBe(true);
+        expect(tracking.errorTracking).toBeUndefined();
+        expect(tracking.usage).toEqual({
+            promptTextTokens: 10,
+            promptCachedTokens: 2,
+            completionTextTokens: 4,
+            completionReasoningTokens: 3,
+        });
+        expect(tracking.cost?.totalCost).toBeGreaterThan(0);
+        expect(tracking.price?.totalPrice).toBeGreaterThan(0);
+    });
+
+    it("recovers a streamed OpenRouter generation by its event id", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            openRouterGeneration({
+                native_tokens_cached: 0,
+                native_tokens_reasoning: 0,
+            }),
+        );
+        const response = new Response(
+            [
+                `data: ${JSON.stringify({ id: "gen-stream-recovery-test", model: "google/gemini", choices: [] })}`,
+                "data: [DONE]",
+                "",
+            ].join("\n\n"),
+            {
+                headers: {
+                    "content-type": "text/event-stream",
+                    "x-model-used": "gemini-fast",
+                },
+            },
+        );
+
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(true, "gemini-fast"),
+            response,
+            undefined,
+            undefined,
+            undefined,
+            "test-openrouter-key",
+        );
+
+        expect(tracking.usage).toEqual({
+            promptTextTokens: 12,
+            completionTextTokens: 7,
+        });
+        expect(tracking.errorTracking).toBeUndefined();
+    });
+
+    it("does not classify a genuinely free community model as missing usage", async () => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+        const paidDefinition = getRegistryModelDefinition("gemini-fast");
+        const freeDefinition = {
+            ...paidDefinition,
+            provider: "community",
+            cost: {},
+            priceMultiplier: 1,
+        };
+        const response = Response.json(
+            { id: "community-response", choices: [] },
+            { headers: { "x-model-used": "owner/free-model" } },
+        );
+
+        const tracking = await trackResponse(
+            "generate.text",
+            {
+                ...requestTrackingFixture(false, "gemini-fast"),
+                modelRequested: "owner/free-model",
+                resolvedModelRequested: "owner/free-model",
+                modelProvider: "community",
+                modelDefinition: freeDefinition,
+                modelCostDefinition: {},
+                modelPriceDefinition: {},
+            },
+            response,
+            freeDefinition,
+            "owner/free-model",
+            undefined,
+            "test-openrouter-key",
+        );
+
+        expect(fetchSpy).not.toHaveBeenCalled();
+        expect(tracking.errorTracking).toBeUndefined();
+        expect(tracking.cost?.totalCost).toBe(0);
+        expect(tracking.price?.totalPrice).toBe(0);
+    });
+
+    it("marks unrecoverable paid OpenRouter zero usage as missing", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            Response.json(
+                { error: { message: "Unauthorized" } },
+                { status: 401 },
+            ),
+        );
+        const response = Response.json(
+            { id: "gen-unavailable-test", choices: [] },
+            { headers: { "x-model-used": "gemini-fast" } },
+        );
+
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(false, "gemini-fast"),
+            response,
+            undefined,
+            undefined,
+            undefined,
+            "test-openrouter-key",
+        );
+
+        expect(tracking.isBilledUsage).toBe(false);
+        expect(tracking.errorTracking).toMatchObject({
+            errorResponseCode: "usage_missing",
+        });
     });
 });
 

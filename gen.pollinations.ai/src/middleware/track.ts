@@ -128,6 +128,11 @@ type ResponseTrackingData = {
     errorTracking?: ErrorData;
 };
 
+const OPENROUTER_GENERATION_ENDPOINT =
+    "https://openrouter.ai/api/v1/generation";
+const OPENROUTER_USAGE_RECOVERY_DELAYS_MS = [0, 5_000, 10_000] as const;
+const OPENROUTER_GENERATION_LOOKUP_TIMEOUT_MS = 5_000;
+
 export type TrackVariables = {
     track: {
         modelRequested: string | null;
@@ -339,6 +344,7 @@ export const track = (eventType: EventType) =>
                         terminalAttempt?.candidate.definition,
                     terminalAttemptModel ?? servedEntry?.id,
                     pricingInput,
+                    c.env.OPENROUTER_API_KEY,
                 );
                 if (responseTracking.cacheHit) {
                     await c.var.frontendKeyRateLimit?.consumePollen(0);
@@ -584,6 +590,7 @@ export async function trackResponse(
     servedModelDefinition?: ModelDefinition,
     terminalAttemptModel?: string,
     pricingInput?: PricingInput,
+    openRouterApiKey?: string,
 ): Promise<ResponseTrackingData> {
     const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
@@ -649,12 +656,47 @@ export async function trackResponse(
         return notBilled({ modelUsed: resolvedModelRequested });
     }
 
-    const { modelUsage, output, contentFilterResults } =
+    let { modelUsage, output, contentFilterResults } =
         await extractUsageAndContentFilterResults(
             eventType,
             requestTracking,
             response,
         );
+
+    const servedCostDefinition =
+        servedModelDefinition?.cost ?? requestTracking.modelCostDefinition;
+    const needsOpenRouterUsageRecovery =
+        eventType === "generate.text" &&
+        modelProviderUsed === "openrouter" &&
+        hasPositiveRate(servedCostDefinition) &&
+        !hasPositiveUsage(modelUsage?.usage);
+
+    if (needsOpenRouterUsageRecovery) {
+        const generationId =
+            response.headers.get("x-generation-id") ??
+            findOpenRouterGenerationId(output);
+        const recoveredUsage =
+            generationId && openRouterApiKey
+                ? await recoverOpenRouterUsage(generationId, openRouterApiKey)
+                : null;
+
+        if (recoveredUsage) {
+            modelUsage = {
+                model: modelCalled,
+                usage: recoveredUsage,
+                output,
+            };
+            log.info(
+                "Recovered missing OpenRouter usage for model {model} from generation metadata",
+                { model: modelCalled },
+            );
+        } else {
+            // An all-zero object is not usable billing evidence for a paid
+            // OpenRouter request. Treat it like absent usage so the request is
+            // never silently recorded as successfully billed at zero.
+            modelUsage = null;
+        }
+    }
     if (!modelUsage) {
         log.error("Failed to extract model usage for model {model}", {
             model: resolvedModelRequested,
@@ -732,6 +774,107 @@ export async function trackResponse(
         usage: modelUsage.usage,
         contentFilterResults,
     };
+}
+
+function hasPositiveRate(definition: CostDefinition): boolean {
+    return Object.values(definition).some(
+        (rate) => typeof rate === "number" && rate > 0,
+    );
+}
+
+function hasPositiveUsage(usage?: Usage): boolean {
+    return Object.values(usage ?? {}).some(
+        (value) => typeof value === "number" && value > 0,
+    );
+}
+
+function findOpenRouterGenerationId(output: unknown): string | null {
+    if (!output || typeof output !== "object") return null;
+
+    const directId = (output as { id?: unknown }).id;
+    if (isOpenRouterGenerationId(directId)) return directId;
+
+    const streamEvents = (output as { streamEvents?: unknown }).streamEvents;
+    if (!Array.isArray(streamEvents)) return null;
+    for (const event of streamEvents) {
+        if (!event || typeof event !== "object") continue;
+        const eventId = (event as { id?: unknown }).id;
+        if (isOpenRouterGenerationId(eventId)) return eventId;
+    }
+    return null;
+}
+
+function isOpenRouterGenerationId(value: unknown): value is string {
+    return (
+        typeof value === "string" &&
+        value.startsWith("gen-") &&
+        value.length <= 255
+    );
+}
+
+const OpenRouterGenerationSchema = z.object({
+    data: z.object({
+        tokens_prompt: z.number().int().nonnegative(),
+        tokens_completion: z.number().int().nonnegative(),
+        native_tokens_cached: z.number().int().nonnegative().nullish(),
+        native_tokens_reasoning: z.number().int().nonnegative().nullish(),
+    }),
+});
+
+async function recoverOpenRouterUsage(
+    generationId: string,
+    apiKey: string,
+): Promise<Usage | null> {
+    const url = new URL(OPENROUTER_GENERATION_ENDPOINT);
+    url.searchParams.set("id", generationId);
+
+    for (const delayMs of OPENROUTER_USAGE_RECOVERY_DELAYS_MS) {
+        if (delayMs > 0) {
+            await new Promise((resolve) => setTimeout(resolve, delayMs));
+        }
+
+        try {
+            const response = await fetch(url, {
+                headers: { Authorization: `Bearer ${apiKey}` },
+                signal: AbortSignal.timeout(
+                    OPENROUTER_GENERATION_LOOKUP_TIMEOUT_MS,
+                ),
+            });
+            if (response.status === 401 || response.status === 403) return null;
+            if (!response.ok) continue;
+
+            const parsed = OpenRouterGenerationSchema.safeParse(
+                await response.json(),
+            );
+            if (!parsed.success) continue;
+
+            const promptTokens = parsed.data.data.tokens_prompt;
+            const completionTokens = parsed.data.data.tokens_completion;
+            if (promptTokens + completionTokens === 0) continue;
+
+            const cachedTokens = Math.min(
+                parsed.data.data.native_tokens_cached ?? 0,
+                promptTokens,
+            );
+            const reasoningTokens = Math.min(
+                parsed.data.data.native_tokens_reasoning ?? 0,
+                completionTokens,
+            );
+            return {
+                promptTextTokens: promptTokens - cachedTokens,
+                ...(cachedTokens > 0
+                    ? { promptCachedTokens: cachedTokens }
+                    : {}),
+                completionTextTokens: completionTokens - reasoningTokens,
+                ...(reasoningTokens > 0
+                    ? { completionReasoningTokens: reasoningTokens }
+                    : {}),
+            };
+        } catch {
+            // A recovery lookup must never fail the successful generation.
+        }
+    }
+    return null;
 }
 
 // Portkey reports the served target as "config.targets[N]" via the

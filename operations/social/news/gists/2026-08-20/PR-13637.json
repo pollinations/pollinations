@@ -1,0 +1,35 @@
+{
+  "pr_number": 13637,
+  "title": "ci: one production deploy workflow, one migration step",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13637",
+  "merged_at": "2026-08-20T17:26:03Z",
+  "labels": [],
+  "pr_body_excerpt": "- Three workflows (`deploy-enter-cloudflare`, `deploy-gen-cloudflare`, `deploy-media-cloudflare`) shared the `pollinations-cloudflare-production` concurrency group, so they serialized in arbitrary order. Each independently ran `wrangler d1 migrations apply` against the same `production-pollinations-enter-db`.\n- Measured skew: 2-6 min between the schema moving and the last worker's code going live, ~3 min of it pure concurrency-release latency between separate workflow runs.\n- Now one workflow: a single `migrate` job gates `deploy-enter`, `deploy-gen`, `deploy-media` running in parallel. Order is deterministic and the gap drops to roughly the deploy step itself.\n- Per-service path filtering preserved via `dorny/paths-filter@v3`, pinned with `base: ${{ github.ref }}`. That is required on long-lived branches: without it the action diffs `merge-base(main, production)..production`, which is empty after a promotion, so every filter reports false and the deploy jobs skip while `migrate` still applies the schema.\n- `workflow_dispatch` gains a `service` selector: `all` (default), `enter`, `gen`, `media`.\n- `docs-regenerate-api-reference.yml` now watches `Deploy / Cloudflare production`, with a `gate` job that regenerates only when the run's `deploy-gen` job succeeded — the run-level conclusion does not track gen.\n- Runbooks updated: `operations/deployment/README.md`, `AGENTS.md`, `enter.pollinations.ai/AGENTS.md`, `packages/mcp/README.md`.\n- Trade-off, stated plainly: the migration no longer runs after gen's `Test` step. Previously it did only when gen happened to be dequeued first (1 of 3 orderings) — when enter or media went first the migration was already applied untested. So this makes behaviour uniform, not strictly safer. Gating `migrate` on gen's tests is a possible follow-up.\n\nCI cannot exercise the production push topology; the `base` behaviour is reasoned from the action's source.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "One migration, three wings",
+    "blurb": "Production deploys now move like a small flock instead of three bees waiting politely at one tiny door. The database migrates once, then enter, gen, and media ship together.",
+    "summary": "Unified the three Cloudflare production workflows into one pipeline where a single migration job gates parallel enter, gen, and media deploys, preserving per-service path filters and adding manual service selection.",
+    "impact": "Production schema changes and worker code now reach users with a deterministic, much smaller gap—roughly the deploy step rather than the previous 2–6 minute staggered rollout.",
+    "keywords": [
+      "cloudflare",
+      "production",
+      "deployments",
+      "migrations",
+      "d1",
+      "ci",
+      "reliability"
+    ],
+    "visual_concept": "A cozy garden-shed deployment station: Polli directs one glowing seed-shaped database migration into three parallel garden paths leading to tiny retro terminals labeled enter, gen, and media. The monitor robot eagerly watches all three screens light up together, with code-plants and flowers showing coordinated growth.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny conductor hat, guiding one glowing lime green (#ecf874) database seed through a garden splitter into three retro CRT terminals labeled “ENTER”, “GEN”, and “MEDIA”; a chunky monitor robot watches the three screens bloom together beside code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-20/PR-13637.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny conductor hat, guiding one glowing lime green (#ecf874) database seed through a garden splitter into three retro CRT terminals labeled “ENTER”, “GEN”, and “MEDIA”; a chunky monitor robot watches the three screens bloom together beside code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-20T17:27:17.439009+00:00"
+}

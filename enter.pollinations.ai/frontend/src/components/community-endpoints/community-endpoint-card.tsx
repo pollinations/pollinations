@@ -47,7 +47,7 @@ export function CommunityEndpointCard({
     return (
         <Surface
             className={`transition-colors hover:bg-surface-opaque/90 ${
-                endpoint.disabled ? "opacity-60" : ""
+                endpoint.hidden ? "opacity-60" : ""
             }`}
         >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -80,15 +80,15 @@ export function CommunityEndpointCard({
                     <Button
                         type="button"
                         size="sm"
-                        intent={endpoint.disabled ? "info" : "danger"}
+                        intent={endpoint.hidden ? "info" : "danger"}
                         disabled={isToggling}
                         onClick={onToggle}
                     >
                         {isToggling
                             ? "Saving…"
-                            : endpoint.disabled
-                              ? "Reactivate"
-                              : "Deactivate"}
+                            : endpoint.hidden
+                              ? "Relist"
+                              : "Hide"}
                     </Button>
                     <IconButton
                         intent="info"
@@ -111,13 +111,13 @@ export function CommunityEndpointCard({
                 </div>
             </div>
 
-            {endpoint.disabled && (
+            {endpoint.hidden && (
                 <Alert intent="danger" className="mt-3">
                     <div className="flex flex-col gap-1">
-                        <span className="font-semibold">Model deactivated</span>
+                        <span className="font-semibold">Model hidden</span>
                         <span className="text-sm">
-                            {endpoint.disabledReason ??
-                                "Deactivated due to repeated failures."}
+                            {endpoint.hiddenReason ??
+                                "Hidden due to repeated failures."}
                         </span>
                     </div>
                 </Alert>

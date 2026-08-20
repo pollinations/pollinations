@@ -45,7 +45,7 @@ const TABLES = [
                        prompt_audio_price, prompt_image_price, completion_text_price,
                        completion_reasoning_price, completion_audio_price,
                        completion_image_price,
-                       disabled_at, disabled_reason, disabled_by,
+                       hidden_at, hidden_reason, hidden_by,
                        created_at, updated_at
                 FROM community_endpoint
                 WHERE id > ?

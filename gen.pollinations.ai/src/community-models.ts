@@ -175,6 +175,7 @@ export async function getCommunityModelRegistryEntries(
                     inputModalities: payload.inputModalities,
                     perUserRpm: payload.perUserRpm,
                     fallbacks: payload.fallbacks,
+                    advertised: payload.advertised,
                     ...payload.prices,
                 };
             }

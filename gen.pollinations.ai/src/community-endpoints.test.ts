@@ -820,6 +820,41 @@ describe("community endpoint helpers", () => {
         expect(definition.inputModalities).toEqual(["image", "video"]);
     });
 
+    it("maps owner-declared catalog metadata onto text models", () => {
+        const definition = communityModelDefinition({
+            modelId: "voodoohop/openai",
+            description: "OpenAI via community endpoint",
+            advertised: {
+                capabilities: ["tool_calling", "reasoning"],
+                contextLength: 128000,
+            },
+            ...communityEndpointPrices({}),
+        });
+
+        expect(definition).toMatchObject({
+            tools: true,
+            reasoning: true,
+            contextLength: 128000,
+        });
+    });
+
+    it("does not advertise text metadata after a model changes modality", () => {
+        const definition = communityModelDefinition({
+            modelId: "voodoohop/gptimage",
+            description: "Image model",
+            modality: "image",
+            advertised: {
+                capabilities: ["tool_calling", "reasoning"],
+                contextLength: 128000,
+            },
+            ...communityEndpointPrices({}),
+        });
+
+        expect(definition.tools).toBeUndefined();
+        expect(definition.reasoning).toBeUndefined();
+        expect(definition.contextLength).toBeUndefined();
+    });
+
     it("filters inputs that image endpoints cannot accept", () => {
         const definition = communityModelDefinition({
             modelId: "voodoohop/gptimage",

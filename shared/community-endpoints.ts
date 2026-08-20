@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { isCommunityModelAllowedGithubId } from "./auth/github-id-list.ts";
 import { HttpError } from "./http-error.ts";
+import type { ModelCapability } from "./registry/model-info.ts";
 import {
     MODEL_INPUT_MODALITIES,
     type ModelDefinition,
@@ -72,6 +73,51 @@ export const COMMUNITY_ENDPOINT_INPUT_MODALITIES = {
     CommunityEndpointModality,
     readonly ModelInputModality[]
 >;
+
+export const MAX_COMMUNITY_CONTEXT_LENGTH = 10_000_000;
+
+export const COMMUNITY_ENDPOINT_CAPABILITIES = [
+    "tool_calling",
+    "reasoning",
+] as const satisfies readonly ModelCapability[];
+
+export type CommunityEndpointCapability =
+    (typeof COMMUNITY_ENDPOINT_CAPABILITIES)[number];
+
+export const CommunityEndpointAdvertisedSchema = z
+    .object({
+        capabilities: z
+            .array(z.enum(COMMUNITY_ENDPOINT_CAPABILITIES))
+            .optional(),
+        contextLength: z
+            .number()
+            .int()
+            .positive()
+            .max(MAX_COMMUNITY_CONTEXT_LENGTH)
+            .optional(),
+    })
+    .strict();
+
+export type CommunityEndpointAdvertised = z.infer<
+    typeof CommunityEndpointAdvertisedSchema
+>;
+
+export function normalizeCommunityEndpointAdvertised(
+    value: CommunityEndpointAdvertised | null | undefined,
+    modality: CommunityEndpointModality,
+): CommunityEndpointAdvertised {
+    if (!value || modality !== "text") return {};
+    const advertised: CommunityEndpointAdvertised = {};
+    if (value.capabilities?.length) {
+        const declared = new Set<string>(value.capabilities);
+        const capabilities = COMMUNITY_ENDPOINT_CAPABILITIES.filter(
+            (capability) => declared.has(capability),
+        );
+        if (capabilities.length) advertised.capabilities = capabilities;
+    }
+    if (value.contextLength) advertised.contextLength = value.contextLength;
+    return advertised;
+}
 
 export type CommunityEndpointImagePricing =
     (typeof COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES)[number];
@@ -385,6 +431,7 @@ export type ProxyListingPayload = {
     inputModalities: ModelInputModality[];
     perUserRpm: number | null;
     fallbacks: string[];
+    advertised?: CommunityEndpointAdvertised;
     prices: CommunityEndpointPrices;
 };
 
@@ -482,6 +529,10 @@ export function parseListingPayload<K extends ListingType>(
                   (id): id is string => typeof id === "string",
               )
             : [],
+        advertised: normalizeCommunityEndpointAdvertised(
+            CommunityEndpointAdvertisedSchema.safeParse(source.advertised).data,
+            modality,
+        ),
         prices: communityEndpointPrices(
             (typeof source.prices === "object" && source.prices !== null
                 ? source.prices
@@ -525,6 +576,7 @@ type CommunityEndpointRuntimeBase = {
 export type ProxyCommunityEndpointRuntime = CommunityEndpointRuntimeBase & {
     type: "proxy";
     bearerTokenCiphertext: string;
+    advertised?: CommunityEndpointAdvertised;
 };
 
 /** An agent Enter runs on its own runtime, named by its listing id. */
@@ -567,6 +619,7 @@ export type CommunityModelDefinitionInput = {
     imagePricing?: CommunityEndpointImagePricing;
     inputModalities?: ModelInputModality[] | null;
     fallbacks?: string[];
+    advertised?: CommunityEndpointAdvertised | null;
     hidden?: boolean;
     paidOnly?: boolean;
 } & CommunityEndpointPrices;
@@ -911,6 +964,8 @@ export function communityModelDefinition(
     );
     const providerName = endpoint.providerName?.trim();
     const providerUrl = endpoint.providerUrl?.trim();
+    const { capabilities = [], ...advertised } =
+        normalizeCommunityEndpointAdvertised(endpoint.advertised, modality);
     return {
         aliases,
         provider: "community",
@@ -937,6 +992,9 @@ export function communityModelDefinition(
         // catalog only renders per-1M prices when flat_rate === false or a
         // prompt token price is set.
         ...(isImage ? { flatRate: isFlatRateImage } : {}),
+        ...(capabilities.includes("tool_calling") ? { tools: true } : {}),
+        ...(capabilities.includes("reasoning") ? { reasoning: true } : {}),
+        ...advertised,
     };
 }
 

@@ -443,6 +443,12 @@ export function CommunityEndpointDialog({
                                 inputModalities,
                             }))
                         }
+                        onCapabilitiesChange={(capabilities) =>
+                            setForm((current) => ({
+                                ...current,
+                                capabilities,
+                            }))
+                        }
                     />
 
                     <div className="grid gap-4 sm:grid-cols-2">

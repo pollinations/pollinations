@@ -8,6 +8,8 @@ import {
     COMMUNITY_ENDPOINT_VISIBILITIES,
     COMMUNITY_PROVIDER_NAME_MAX_LENGTH,
     COMMUNITY_PROVIDER_URL_MAX_LENGTH,
+    type CommunityEndpointAdvertised,
+    CommunityEndpointAdvertisedSchema,
     type CommunityEndpointImagePricing,
     type CommunityEndpointModality,
     type CommunityEndpointPriceKey,
@@ -28,6 +30,7 @@ import {
     MAX_FALLBACK_TARGETS,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
+    normalizeCommunityEndpointAdvertised,
     normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
     normalizeCommunityEndpointInputModalities,
@@ -78,6 +81,10 @@ const InputModalitiesSchema = z
     .describe(
         "Input types accepted by the model. Select every supported modality so the model catalog can advertise them accurately.",
     );
+const AdvertisedSchema = z
+    .object(CommunityEndpointAdvertisedSchema.shape)
+    .strict()
+    .describe("Owner-declared catalog metadata for text models.");
 const PriceSchema = z
     .number()
     .finite()
@@ -139,6 +146,24 @@ function enforceCommunityEndpointInputModalities(
     if (!unsupported) return;
     throw new HTTPException(400, {
         message: `${unsupported} input is not supported for ${modality} models`,
+    });
+}
+
+function hasAdvertisedClaim(
+    advertised: CommunityEndpointAdvertised | undefined,
+): boolean {
+    return Object.values(advertised ?? {}).some((value) =>
+        Array.isArray(value) ? value.length > 0 : value != null,
+    );
+}
+
+function enforceCommunityEndpointAdvertised(
+    modality: CommunityEndpointModality,
+    advertised: CommunityEndpointAdvertised | undefined,
+): void {
+    if (modality === "text" || !hasAdvertisedClaim(advertised)) return;
+    throw new HTTPException(400, {
+        message: "advertised metadata is only supported for text models",
     });
 }
 
@@ -395,6 +420,7 @@ const ProxyCreateSchema = z
         // No blanket default: what an omitted set means depends on the
         // modality, so it is resolved in the handler once modality is known.
         inputModalities: InputModalitiesSchema.optional(),
+        advertised: AdvertisedSchema.optional(),
         perUserRpm: PerUserRpmSchema.optional(),
         paidOnly: PaidOnlySchema.optional().default(false),
         fallbacks: FallbacksSchema.optional(),
@@ -419,6 +445,7 @@ const ProxyUpdateSchema = z
         paidOnly: PaidOnlySchema.optional(),
         imagePricing: ImagePricingSchema.optional(),
         inputModalities: InputModalitiesSchema.optional(),
+        advertised: AdvertisedSchema.optional(),
         fallbacks: FallbacksSchema.optional(),
         ...UpdatePriceFieldsSchema,
     })
@@ -449,6 +476,7 @@ const UpdateEndpointSchema = z
         paidOnly: PaidOnlySchema.optional(),
         imagePricing: ImagePricingSchema.optional(),
         inputModalities: InputModalitiesSchema.optional(),
+        advertised: AdvertisedSchema.optional(),
         fallbacks: FallbacksSchema.optional(),
         ...UpdatePriceFieldsSchema,
     })
@@ -509,6 +537,7 @@ const ProxyEndpointResponseSchema = z
         modality: ModalitySchema,
         imagePricing: ImagePricingSchema,
         inputModalities: z.array(InputModalitySchema),
+        advertised: AdvertisedSchema,
         perUserRpm: PerUserRpmSchema,
         paidOnly: z.boolean(),
         fallbacks: z.array(z.string()),
@@ -701,6 +730,10 @@ function toResponse(
         ...common,
         type: row.type,
         ...proxy,
+        advertised: normalizeCommunityEndpointAdvertised(
+            payload.advertised,
+            payload.modality,
+        ),
         ...prices,
     });
 }
@@ -1030,6 +1063,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 input.inputModalities ??
                 normalizeCommunityEndpointInputModalities(undefined, modality);
             enforceCommunityEndpointInputModalities(modality, inputModalities);
+            enforceCommunityEndpointAdvertised(modality, input.advertised);
             const prices =
                 input.visibility === "public"
                     ? communityEndpointPricesForModality(
@@ -1065,6 +1099,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
                           inputModalities,
                       })
                     : [],
+                ...(hasAdvertisedClaim(input.advertised)
+                    ? { advertised: input.advertised }
+                    : {}),
                 prices,
             };
             await enforcePublishingAccess(db, user.id, input.visibility);
@@ -1291,6 +1328,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     modality,
                     inputModalities,
                 );
+                enforceCommunityEndpointAdvertised(modality, input.advertised);
                 const imagePricing =
                     modality === "image" && input.imagePricing !== undefined
                         ? input.imagePricing
@@ -1351,6 +1389,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     input.paidOnly,
                     input.imagePricing,
                     input.inputModalities,
+                    input.advertised,
                     input.fallbacks,
                     ...COMMUNITY_ENDPOINT_PRICE_FIELDS.map(
                         ({ key }) => input[key],
@@ -1376,6 +1415,12 @@ export const communityEndpointsRoutes = new Hono<Env>()
                                 ? stored.perUserRpm
                                 : input.perUserRpm,
                         fallbacks,
+                        advertised:
+                            input.advertised === undefined
+                                ? stored.advertised
+                                : hasAdvertisedClaim(input.advertised)
+                                  ? input.advertised
+                                  : undefined,
                         prices,
                     };
                     update.payload = JSON.stringify(payload);

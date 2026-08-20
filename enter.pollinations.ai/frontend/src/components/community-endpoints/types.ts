@@ -1,5 +1,7 @@
 import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
+    type CommunityEndpointAdvertised,
+    type CommunityEndpointCapability,
     type CommunityEndpointImagePricing,
     type CommunityEndpointModality,
     type CommunityEndpointPriceField,
@@ -11,6 +13,7 @@ import {
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MAX_COMMUNITY_PRICE_PER_SECOND,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+    normalizeCommunityEndpointAdvertised,
     normalizeCommunityEndpointInputModalities,
 } from "@shared/community-endpoints.ts";
 import type { ModelInputModality, Usage } from "@shared/registry/registry.ts";
@@ -69,6 +72,7 @@ export type ProxyCommunityEndpoint = CommunityEndpointBase &
         modality: CommunityEndpointModality;
         imagePricing: CommunityEndpointImagePricing;
         inputModalities: ModelInputModality[];
+        advertised: CommunityEndpointAdvertised;
         perUserRpm: number | null;
         paidOnly: boolean;
         fallbacks: string[];
@@ -132,6 +136,8 @@ export function publicCommunityFallbackOptions(
 
 export type ModelListingFormState = {
     inputModalities: ModelInputModality[];
+    capabilities: CommunityEndpointCapability[];
+    contextLength: string;
     name: string;
     title: string;
     description: string;
@@ -157,6 +163,7 @@ export type EndpointFormState = ModelListingFormState & {
 
 type ModelListingPayload = {
     inputModalities: ModelInputModality[];
+    advertised: CommunityEndpointAdvertised;
     name: string;
     title: string;
     description: string;
@@ -204,6 +211,8 @@ const emptyPriceForm = Object.fromEntries(
 
 const emptyListingForm: ModelListingFormState = {
     inputModalities: ["text"],
+    capabilities: [],
+    contextLength: "",
     name: "",
     title: "",
     description: "",
@@ -319,6 +328,8 @@ export function endpointToForm(endpoint: EditableEndpoint): EndpointFormState {
         modality: endpoint.modality,
         imagePricing: endpoint.imagePricing,
         inputModalities: endpoint.inputModalities,
+        capabilities: endpoint.advertised.capabilities ?? [],
+        contextLength: endpoint.advertised.contextLength?.toString() ?? "",
         name: endpoint.name,
         title: endpoint.title,
         description: endpoint.description ?? "",
@@ -352,6 +363,8 @@ export function agentListingToForm(
     return endpoint
         ? {
               inputModalities: ["text"],
+              capabilities: [],
+              contextLength: "",
               name: endpoint.name,
               title: endpoint.title,
               description: endpoint.description ?? "",
@@ -468,6 +481,15 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
         ...listingFieldsToPayload(form),
         modality,
         imagePricing,
+        advertised: normalizeCommunityEndpointAdvertised(
+            {
+                capabilities: form.capabilities,
+                contextLength: form.contextLength.trim()
+                    ? Number(form.contextLength)
+                    : undefined,
+            },
+            modality,
+        ),
         baseUrl: form.baseUrl.trim(),
         upstreamModel: form.upstreamModel.trim() || form.name.trim(),
         paidOnly: form.visibility === "public" ? form.paidOnly : false,
@@ -518,6 +540,8 @@ export function nextFormState(
             ),
             // Targets must match the modality; the old choices no longer can.
             fallbacks: [],
+            capabilities: modality === "text" ? current.capabilities : [],
+            contextLength: modality === "text" ? current.contextLength : "",
         };
     }
     const next = { ...current, [key]: value };

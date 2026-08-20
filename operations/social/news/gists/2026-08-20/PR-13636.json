@@ -1,0 +1,33 @@
+{
+  "pr_number": 13636,
+  "title": "fix: allow probe output after reasoning",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13636",
+  "merged_at": "2026-08-20T16:18:45Z",
+  "labels": [],
+  "pr_body_excerpt": "- Raises the short text-probe output cap from 10 to 64 tokens\n- Prevents reasoning tokens from consuming the entire allowance and producing false empty-response failures\n- Keeps one request per model and all existing timeouts unchanged\n\nChecks:\n- Biome\n- `node --check operations/community-monitor/probe.mjs`\n- Controlled production probe: capped model returned valid text with 41 completion tokens at the new limit",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Room for the answer",
+    "blurb": "The community monitor now leaves enough space for models to finish a sentence after doing their internal thinking. Tiny token budget, fewer imaginary empty replies.",
+    "summary": "Raised the community-monitor short probe output cap from 10 to 64 tokens so reasoning tokens no longer consume the full allowance and trigger false empty-response failures.",
+    "impact": "Model probes can now return valid completion text after reasoning while keeping the existing one-request-per-model behavior and timeouts.",
+    "keywords": [
+      "community-monitor",
+      "probe",
+      "reasoning",
+      "token-limit",
+      "reliability"
+    ],
+    "visual_concept": "A cozy monitoring garden where Polli checks a retro terminal's small response jar, now enlarged enough for a thoughtful model response to emerge after a swirl of tiny reasoning pixels. The scene represents a probe receiving a real answer rather than mistaking an exhausted token budget for silence.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny inspector cap, watching a retro terminal in a flowering code-garden as a larger lime green (#ecf874) response jar releases a neat text scroll after gentle swirling reasoning pixels. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, subtle pixel-font text: '64 TOKENS', nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-20/PR-13636.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny inspector cap, watching a retro terminal in a flowering code-garden as a larger lime green (#ecf874) response jar releases a neat text scroll after gentle swirling reasoning pixels. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, subtle pixel-font text: '64 TOKENS', nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-20T16:20:13.543886+00:00"
+}

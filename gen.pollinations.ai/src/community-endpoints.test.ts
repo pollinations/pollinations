@@ -635,6 +635,27 @@ describe("community endpoint helpers", () => {
         );
     });
 
+    it("carries the owner's paid-only choice onto the model definition", () => {
+        const prices = communityEndpointPrices({ promptTextPrice: 0.1 });
+
+        expect(
+            communityModelDefinition({
+                modelId: "voodoohop/openai",
+                description: null,
+                ...prices,
+            }).paidOnly,
+        ).toBe(false);
+
+        expect(
+            communityModelDefinition({
+                modelId: "voodoohop/openai",
+                description: null,
+                paidOnly: true,
+                ...prices,
+            }).paidOnly,
+        ).toBe(true);
+    });
+
     it("prefers a stored title over the description", () => {
         const modelDefinition = communityModelDefinition({
             modelId: "voodoohop/openai",
@@ -973,6 +994,7 @@ describe("community endpoint helpers", () => {
                 baseUrl: "https://api.example.com/v1",
                 upstreamModel: "gpt-image-1",
                 visibility: "public",
+                paidOnly: false,
                 perUserRpm: null,
                 fallbacks: [],
                 hiddenAt: null,
@@ -1167,6 +1189,7 @@ describe("community endpoint helpers", () => {
                 baseUrl: "https://api.example.com/v1",
                 upstreamModel: "whisper-1",
                 visibility: "public",
+                paidOnly: false,
                 perUserRpm: null,
                 fallbacks: [],
                 hiddenAt: null,
@@ -1522,6 +1545,7 @@ describe("community endpoint helpers", () => {
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
             visibility: "public",
+            paidOnly: false,
             perUserRpm: null,
             fallbacks: [],
             hiddenAt: null,
@@ -1585,6 +1609,7 @@ describe("community endpoint helpers", () => {
                 baseUrl: "https://agent.example.com/v1",
                 upstreamModel: "agent",
                 visibility: "public",
+                paidOnly: false,
                 perUserRpm: null,
                 hiddenAt: null,
                 hiddenReason: null,
@@ -4071,6 +4096,7 @@ fixtureTest(
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
             visibility: "private",
+            paidOnly: false,
             perUserRpm: 0.5,
             promptTextPrice: 0,
             completionTextPrice: 0,
@@ -4105,6 +4131,7 @@ fixtureTest(
                         title: "Updated Model Title",
                         description: "Updated description",
                         visibility: "public",
+                        paidOnly: true,
                         promptTextPrice: 0.00001,
                         completionTextPrice: 0.00002,
                     }),
@@ -4116,6 +4143,7 @@ fixtureTest(
             title: "Updated Model Title",
             description: "Updated description",
             visibility: "public",
+            paidOnly: true,
             promptTextPrice: 0.00001,
             completionTextPrice: 0.00002,
             hidden: true,
@@ -4225,11 +4253,14 @@ fixtureTest(
         expect(priceOnlyResponse.status).toBe(200);
         await expect(priceOnlyResponse.json()).resolves.toMatchObject({
             visibility: "public",
+            paidOnly: true,
             promptTextPrice: 0.00003,
             completionTextPrice: 0.00002,
         });
 
-        // Making the model private clears all owner-set prices.
+        // Making the model private clears all owner-set prices, and with them
+        // the paid-only choice: a free listing that still demanded paid balance
+        // would only gate the owner out of their own model.
         const privatizeResponse = await fetchEnterApi(
             enterApi,
             new Request(
@@ -4249,6 +4280,7 @@ fixtureTest(
         expect(privatizeResponse.status).toBe(200);
         await expect(privatizeResponse.json()).resolves.toMatchObject({
             visibility: "private",
+            paidOnly: false,
             promptTextPrice: 0,
             completionTextPrice: 0,
         });

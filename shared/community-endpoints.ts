@@ -340,6 +340,17 @@ export function isCommunityFallbackPricingAllowed(
     );
 }
 
+/**
+ * A fallback cannot require a balance bucket the caller was never required to
+ * have for the primary model. A paid-only primary may fall back to either kind.
+ */
+export function isCommunityFallbackBalanceAllowed(
+    primary: { paidOnly: boolean },
+    target: { paidOnly: boolean },
+): boolean {
+    return !target.paidOnly || primary.paidOnly;
+}
+
 export function normalizeCommunityEndpointModality(
     value: string | null | undefined,
 ): CommunityEndpointModality {
@@ -413,6 +424,8 @@ export type ListingType = (typeof LISTING_TYPES)[number];
  */
 export type ProxyListingPayload = {
     bearerTokenCiphertext: string;
+    // Owner-set: callers may only spend Paid Pollen on this model.
+    paidOnly: boolean;
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
     inputModalities: ModelInputModality[];
@@ -496,6 +509,7 @@ export function parseListingPayload<K extends ListingType>(
     );
     return {
         bearerTokenCiphertext,
+        paidOnly: source.paidOnly === true,
         modality,
         imagePricing: normalizeCommunityEndpointImagePricing(
             typeof source.imagePricing === "string"
@@ -547,6 +561,7 @@ type CommunityEndpointRuntimeBase = {
     baseUrl: string;
     upstreamModel: string;
     visibility: CommunityEndpointVisibility;
+    paidOnly: boolean;
     // Exact gateway-side cap per Pollinations user. Null delegates capacity
     // limits to the upstream, whose 429 then remains a model failure.
     perUserRpm: number | null;
@@ -606,6 +621,7 @@ export type CommunityModelDefinitionInput = {
     fallbacks?: string[];
     advertised?: CommunityEndpointAdvertised | null;
     hidden?: boolean;
+    paidOnly?: boolean;
 } & CommunityEndpointPrices;
 
 export type CommunityProviderProfile = {
@@ -970,7 +986,7 @@ export function communityModelDefinition(
         ...(isTranscription
             ? { supportedEndpoints: ["/v1/audio/transcriptions"] }
             : {}),
-        paidOnly: false,
+        paidOnly: endpoint.paidOnly ?? false,
         alpha: true,
         // Explicit false (not omitted) for token-priced image endpoints: the
         // catalog only renders per-1M prices when flat_rate === false or a

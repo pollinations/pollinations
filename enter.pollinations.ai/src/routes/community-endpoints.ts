@@ -21,6 +21,7 @@ import {
     communityEndpointTitle,
     communityModelId,
     isCommunityEndpointOwnerAllowed,
+    isCommunityFallbackBalanceAllowed,
     isCommunityFallbackPricingAllowed,
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
@@ -185,6 +186,7 @@ type FallbackPrimary = {
     ownerUserId: string;
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
+    paidOnly: boolean;
     prices: CommunityEndpointPrices;
     inputModalities?: readonly ModelInputModality[] | null;
 };
@@ -269,6 +271,9 @@ function fallbackTargetRejection(
         return `Fallback target ${modelId} does not support image edits`;
     }
     const targetPrices = payload.prices;
+    if (!isCommunityFallbackBalanceAllowed(primary, payload)) {
+        return `Fallback target ${modelId} accepts only Paid Pollen, which this model does not require`;
+    }
     if (!isCommunityFallbackPricingAllowed(primary.prices, targetPrices)) {
         const excesses = COMMUNITY_ENDPOINT_PRICE_FIELDS.filter(
             (field) => targetPrices[field.key] > primary.prices[field.key],
@@ -353,6 +358,11 @@ const VisibilitySchema = z
     .describe(
         '"private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account.',
     );
+const PaidOnlySchema = z
+    .boolean()
+    .describe(
+        "Restrict callers to spending Paid Pollen on this model. Use it when the upstream bills per use, so Quest Pollen cannot cover the price and leave you paying the inference cost.",
+    );
 const PerUserRpmSchema = z
     .number()
     .finite()
@@ -412,6 +422,7 @@ const ProxyCreateSchema = z
         inputModalities: InputModalitiesSchema.optional(),
         advertised: AdvertisedSchema.optional(),
         perUserRpm: PerUserRpmSchema.optional(),
+        paidOnly: PaidOnlySchema.optional().default(false),
         fallbacks: FallbacksSchema.optional(),
         ...UpdatePriceFieldsSchema,
     })
@@ -431,6 +442,7 @@ const ProxyUpdateSchema = z
         upstreamModel: EndpointFieldsSchema.upstreamModel,
         bearerToken: EndpointFieldsSchema.bearerToken.optional(),
         perUserRpm: PerUserRpmSchema.optional(),
+        paidOnly: PaidOnlySchema.optional(),
         imagePricing: ImagePricingSchema.optional(),
         inputModalities: InputModalitiesSchema.optional(),
         advertised: AdvertisedSchema.optional(),
@@ -461,6 +473,7 @@ const UpdateEndpointSchema = z
         upstreamModel: EndpointFieldsSchema.upstreamModel,
         bearerToken: EndpointFieldsSchema.bearerToken.optional(),
         perUserRpm: PerUserRpmSchema.optional(),
+        paidOnly: PaidOnlySchema.optional(),
         imagePricing: ImagePricingSchema.optional(),
         inputModalities: InputModalitiesSchema.optional(),
         advertised: AdvertisedSchema.optional(),
@@ -526,6 +539,7 @@ const ProxyEndpointResponseSchema = z
         inputModalities: z.array(InputModalitySchema),
         advertised: AdvertisedSchema,
         perUserRpm: PerUserRpmSchema,
+        paidOnly: z.boolean(),
         fallbacks: z.array(z.string()),
         ...ResponsePriceFieldsSchema,
     })
@@ -975,6 +989,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 ownerUserId: user.id,
                 modality: endpointPayload.modality,
                 imagePricing: endpointPayload.imagePricing,
+                paidOnly: endpointPayload.paidOnly,
                 prices: endpointPayload.prices,
                 inputModalities: endpointPayload.inputModalities,
             };
@@ -1057,11 +1072,14 @@ export const communityEndpointsRoutes = new Hono<Env>()
                           imagePricing,
                       )
                     : communityEndpointPrices({});
+            const paidOnly =
+                input.visibility === "public" ? input.paidOnly : false;
             enforceCommunityEndpointPriceLimits(prices, modality, imagePricing);
             const payload: ProxyListingPayload = {
                 modality,
                 imagePricing,
                 inputModalities,
+                paidOnly,
                 bearerTokenCiphertext: await encryptSecret(
                     normalizeInputBearerToken(input.bearerToken),
                     c.env.BETTER_AUTH_SECRET,
@@ -1076,6 +1094,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                           ownerUserId: user.id,
                           modality,
                           imagePricing,
+                          paidOnly,
                           prices,
                           inputModalities,
                       })
@@ -1333,6 +1352,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
                               modality,
                               imagePricing,
                           );
+                const paidOnly =
+                    effectiveVisibility === "public"
+                        ? (input.paidOnly ?? stored.paidOnly)
+                        : false;
                 enforceCommunityEndpointPriceLimits(
                     prices,
                     modality,
@@ -1349,6 +1372,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                               ownerUserId: user.id,
                               modality,
                               imagePricing,
+                              paidOnly,
                               prices,
                               inputModalities,
                           });
@@ -1362,6 +1386,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     input.bearerToken,
                     input.visibility,
                     input.perUserRpm,
+                    input.paidOnly,
                     input.imagePricing,
                     input.inputModalities,
                     input.advertised,
@@ -1384,6 +1409,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         modality,
                         imagePricing,
                         inputModalities,
+                        paidOnly,
                         perUserRpm:
                             input.perUserRpm === undefined
                                 ? stored.perUserRpm

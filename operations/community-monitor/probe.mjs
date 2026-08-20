@@ -44,6 +44,17 @@ if (modelArgIndex !== -1 && !onlyModel) {
     console.error("--model requires an owner/model id");
     process.exit(1);
 }
+const categoryArgIndex = process.argv.indexOf("--category");
+const onlyCategory =
+    categoryArgIndex === -1 ? null : process.argv[categoryArgIndex + 1];
+if (
+    categoryArgIndex !== -1 &&
+    onlyCategory !== "text" &&
+    onlyCategory !== "image"
+) {
+    console.error("--category must be text or image");
+    process.exit(1);
+}
 
 function readState() {
     try {
@@ -406,8 +417,18 @@ function actualCost(result, priceByModel) {
 
 const models = await fetchCommunityModels();
 if (onlyModel && !models.some((model) => model.name === onlyModel)) {
-    console.error(`listed community model not found: ${onlyModel}`);
-    process.exit(1);
+    if (!onlyCategory) {
+        console.error(
+            `listed community model not found: ${onlyModel}; pass --category to probe a hidden exact ID`,
+        );
+        process.exit(1);
+    }
+    models.push({
+        name: onlyModel,
+        category: onlyCategory,
+        pricing: {},
+        flat_rate: false,
+    });
 }
 const priceByModel = new Map(
     models.map((m) => [

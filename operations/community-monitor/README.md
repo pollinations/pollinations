@@ -156,8 +156,8 @@ monitor offline.
 
 The monitor may hide a listed community model through one of three paths:
 
-- complete outage: 0% success across at least 20 attributable requests in the
-  last hour, confirmed by a fresh provider-failing probe;
+- complete outage: 0% success across at least 5 attributable requests in the
+  last 30 minutes, confirmed by a fresh provider-failing probe;
 - sustained severe failure: below 50% across at least 100 requests for two
   consecutive 30-minute cycles;
 - rolling floor: below 70% final user-visible success across at least 20
@@ -166,6 +166,8 @@ The monitor may hide a listed community model through one of three paths:
 Successful fallback rescues count as successes. Hiding writes the
 `hidden_at`, `hidden_reason`, and `hidden_by` audit fields, removes the model
 from catalogs and fallback selection, and keeps exact-ID calls working. The
-monitor never relists a model; the owner or a maintainer uses **Relist** in
-Models → My Models after verifying the fix. Discord posts are limited to
-actual hide actions rather than advance warnings or routine recovery chatter.
+monitor relists only its own hides after at least 90% success across ten
+post-hide requests in one hour plus a passing probe, or after a passing probe
+requested by the owner. Owners and maintainers retain full manual control.
+Discord posts are limited to actual hide and relist actions rather than advance
+warnings or routine recovery chatter.

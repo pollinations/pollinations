@@ -195,9 +195,10 @@ describe("docs routes", () => {
         expect(schema.paths["/{id}/metadata"]).toBeDefined();
         expect(schema.paths["/media"]).toBeDefined();
         expect(schema.paths["/media/{id}"]).toBeDefined();
-        // BYOP, CLI, MCP are surfaced as plain tags in the Integrations group;
+        // BYOP, Agents, CLI, and MCP are surfaced as plain integration tags;
         // the drawer icons are presentation, not part of the OpenAPI names.
         expect(schema.tags.map((tag) => tag.name)).toContain("BYOP");
+        expect(schema.tags.map((tag) => tag.name)).toContain("Agents");
         expect(schema.tags.map((tag) => tag.name)).toContain("CLI");
         expect(schema.tags.map((tag) => tag.name)).toContain("MCP Server");
         expect(schema.tags.map((tag) => tag.name)).toContain("Quests");
@@ -347,6 +348,16 @@ describe("docs routes", () => {
         expect(mcpRes.status).toBe(301);
         expect(mcpRes.headers.get("Location")).toBe("/docs#tag/mcp-server");
 
+        const agentsRes = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs/guides/agents", {
+                redirect: "manual",
+            }),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        expect(agentsRes.status).toBe(301);
+        expect(agentsRes.headers.get("Location")).toBe("/docs#tag/agents");
+
         const missingRes = await worker.fetch(
             new Request("https://gen.pollinations.ai/docs/guides/notexist"),
             envWithEnterSchema({}),
@@ -389,6 +400,18 @@ describe("docs routes", () => {
         );
         expect(byopRes.status).toBe(200);
         expect(await byopRes.text()).toContain("## BYOP");
+
+        const agentsRes = await worker.fetch(
+            new Request(
+                "https://gen.pollinations.ai/docs/llm.txt?section=agents",
+            ),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        expect(agentsRes.status).toBe(200);
+        const agentsBody = await agentsRes.text();
+        expect(agentsBody).toContain("## Agents");
+        expect(agentsBody).toContain("POST /account/agents");
 
         const badRes = await worker.fetch(
             new Request("https://gen.pollinations.ai/docs/llm.txt?section=bad"),

@@ -1,0 +1,34 @@
+{
+  "pr_number": 13615,
+  "title": "fix: explicit max_tokens defaults for OpenRouter reasoning models",
+  "author": "gggff123",
+  "url": "https://github.com/pollinations/pollinations/pull/13615",
+  "merged_at": "2026-08-20T11:31:16Z",
+  "labels": [],
+  "pr_body_excerpt": "- Sets a 64,000-token default ceiling for seven OpenRouter reasoning models.\n- Prevents low provider defaults from consuming the response budget on reasoning before visible output.\n- Keeps caller-provided `max_tokens` authoritative.\n- Mirrors the existing explicit-default pattern used by Claude/Bedrock models.\n\nCloses #13594",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Reasoning gets room to bloom",
+    "blurb": "Seven OpenRouter reasoning models now get a 64,000-token ceiling by default. They can finish thinking without eating the entire reply before it reaches the garden gate.",
+    "summary": "Set an explicit 64,000-token default max_tokens ceiling for seven OpenRouter reasoning models, while preserving caller-supplied max_tokens values, so provider reasoning defaults leave room for visible output.",
+    "impact": "Users of these OpenRouter reasoning models get more complete visible responses by default, with custom max_tokens settings remaining fully authoritative.",
+    "keywords": [
+      "OpenRouter",
+      "reasoning-models",
+      "max_tokens",
+      "text-api",
+      "model-config",
+      "response-output"
+    ],
+    "visual_concept": "Polli tends seven labeled code-plants in a cozy model garden, each growing from a lime-green pot marked “64K.” A retro terminal shows a long reasoning vine curling neatly into a bright visible-response flower, representing reserved output room; Polli wears a tiny gardener hat and checks a max_tokens dial.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, watering seven code-plants in prominent lime green (#ecf874) pots labeled “64K,” while a retro terminal grows a reasoning vine into a bright visible-response flower. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle garden flowers and dark purple (#110518) pixel text reading “MAX TOKENS.”"
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-20/PR-13615.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, watering seven code-plants in prominent lime green (#ecf874) pots labeled “64K,” while a retro terminal grows a reasoning vine into a bright visible-response flower. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle garden flowers and dark purple (#110518) pixel text reading “MAX TOKENS.”"
+  },
+  "generated_at": "2026-08-20T11:32:11.786755+00:00"
+}

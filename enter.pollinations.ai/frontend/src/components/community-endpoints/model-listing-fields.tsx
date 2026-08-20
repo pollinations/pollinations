@@ -34,6 +34,7 @@ export function ModelListingFields({
     modality,
     canPublish,
     isAgent,
+    allowPerUserRpm,
     required = true,
     onChange,
     onInputModalitiesChange,
@@ -43,6 +44,7 @@ export function ModelListingFields({
     modality: CommunityEndpointModality;
     canPublish: boolean;
     isAgent: boolean;
+    allowPerUserRpm: boolean;
     required?: boolean;
     onChange: (key: ListingTextField, value: string) => void;
     onInputModalitiesChange?: (value: ModelInputModality[]) => void;
@@ -71,8 +73,6 @@ export function ModelListingFields({
     }
 
     const isPublic = form.visibility === "public";
-    // Advertised metadata is text-only, matching what the API accepts, so the
-    // form never offers a field whose value the server would refuse.
     const canAdvertise = modality === "text";
 
     return (
@@ -212,7 +212,7 @@ export function ModelListingFields({
             {!isAgent && canAdvertise && (
                 <FieldStack
                     label="Capabilities"
-                    helper="Optional. What the catalog advertises about this model. These describe the upstream — requests are forwarded unchanged either way, so only claim what it really does."
+                    helper="Optional catalog claims about the upstream model."
                     alignLabelRow
                 >
                     <ButtonGroup aria-label="Advertised capabilities">
@@ -258,7 +258,7 @@ export function ModelListingFields({
                 </FieldStack>
             )}
 
-            {!isAgent && (
+            {allowPerUserRpm && (
                 <FieldStack
                     label="Per-user RPM"
                     helper="Optional. Maximum requests each Pollinations user can send per minute. Decimals are supported (0.5 = one request every 2 minutes). Leave blank for no Pollinations-side limit."

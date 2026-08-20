@@ -260,14 +260,15 @@ Get your API key at [enter.pollinations.ai](https://enter.pollinations.ai/keys)
 
 ### Key Types
 
-| Key             | Prefix | Use Case                       | Rate Limits              | Status  |
-| --------------- | ------ | ------------------------------ | ------------------------ | ------- |
-| **App Key** | `pk_`  | Browsers, mobile apps, public clients | Budget & permissions set at creation | Stable |
-| **Secret**      | `sk_`  | Server-side only               | No rate limits           | Stable  |
+| Key | Prefix | Use Case | Limits |
+| --- | --- | --- | --- |
+| **Personal Secret Key** | `sk_` | Trusted servers spending your Pollen | Configurable budget, expiry, models, and account permissions |
+| **App Key (BYOP)** | `pk_` | Publishable OAuth client identifier for browser, mobile, and headless apps | Does not spend Pollen itself; users approve a scoped `sk_` |
+| **Raw publishable key** | `pk_` without an app binding | Legacy direct generation only | 1 Pollen per IP per hour; do not use for new integrations |
 
-> ⚠️ **Never expose `sk_` keys** in client-side code, git repos, or public URLs
+> ⚠️ **Never expose a personal `sk_` key** in client-side code, git repos, or public URLs. BYOP-issued `sk_` keys are temporary and user-scoped; keep them in memory or session storage.
 
-> 💡 **Building an app?** Use [Bring Your Own Pollen](./BRING_YOUR_OWN_POLLEN.md) — users pay for their own usage, you pay $0
+> 💡 **Building a client app?** Use [Bring Your Own Pollen](./BRING_YOUR_OWN_POLLEN.md) so users authorize and pay for their own usage. The App Key is the `client_id`, not the generation credential.
 
 ### Model Restrictions
 

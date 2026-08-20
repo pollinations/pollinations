@@ -97,6 +97,26 @@ export const REALTIME_SERVICES = {
         outputModalities: ["text"],
         supportedEndpoints: ["/realtime", "/v1/realtime"],
     },
+    "gpt-live-transcribe": {
+        aliases: [],
+        provider: "azure",
+        brand: "OpenAI",
+        category: "realtime",
+        addedDate: new Date("2026-08-19").getTime(),
+        paidOnly: false,
+        priceMultiplier: 0.75,
+        cost: {
+            // Provisional OpenAI list price: $0.017 per streamed input minute.
+            // Azure's exact meter was not yet visible when this route launched.
+            promptAudioSeconds: 0.017 / 60,
+        },
+        title: "GPT Live Transcribe",
+        description:
+            "Low-latency streaming speech recognition through the OpenAI Realtime protocol",
+        inputModalities: ["audio"],
+        outputModalities: ["text"],
+        supportedEndpoints: ["/realtime", "/v1/realtime"],
+    },
 } satisfies Record<string, ModelDefinition>;
 
 export const REALTIME_MODEL_NAMES = Object.keys(

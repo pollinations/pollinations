@@ -9,9 +9,12 @@ import {
     communityEndpointPriceFieldsForModality,
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+    MAX_COMMUNITY_PRICE_PER_REQUEST,
     MAX_COMMUNITY_PRICE_PER_SECOND,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+    MIN_COMMUNITY_PRICE_PER_UNIT,
     normalizeCommunityEndpointInputModalities,
+    normalizeCommunityEndpointModality,
 } from "@shared/community-endpoints.ts";
 import type { ModelInputModality, Usage } from "@shared/registry/registry.ts";
 
@@ -89,6 +92,7 @@ export function publicCommunityFallbackOptions(
                 !model.agent &&
                 (model.type === "text" ||
                     model.type === "image" ||
+                    model.type === "embedding" ||
                     model.type === "audio"),
         )
         .map((model) => ({
@@ -96,9 +100,11 @@ export function publicCommunityFallbackOptions(
             modality:
                 model.type === "image"
                     ? "image"
-                    : model.type === "audio"
-                      ? "transcription"
-                      : "text",
+                    : model.type === "embedding"
+                      ? "embedding"
+                      : model.type === "audio"
+                        ? "transcription"
+                        : "text",
         }));
 }
 
@@ -251,16 +257,24 @@ export function isValidPriceInput(
     const maximum =
         priceUnit === "image"
             ? MAX_COMMUNITY_PRICE_PER_IMAGE
-            : priceUnit === "second"
-              ? MAX_COMMUNITY_PRICE_PER_SECOND
-              : MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS;
+            : priceUnit === "request"
+              ? MAX_COMMUNITY_PRICE_PER_REQUEST
+              : priceUnit === "second"
+                ? MAX_COMMUNITY_PRICE_PER_SECOND
+                : MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS;
+    const minimum =
+        priceUnit === "million"
+            ? MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS
+            : MIN_COMMUNITY_PRICE_PER_UNIT;
     return (
         Number.isFinite(parsed) &&
         parsed >= 0 &&
         parsed <= maximum &&
-        (priceUnit !== "million" ||
+        (priceUnit === "image" ||
+            priceUnit === "request" ||
+            priceUnit === "second" ||
             parsed === 0 ||
-            parsed >= MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS)
+            parsed >= minimum)
     );
 }
 
@@ -462,12 +476,7 @@ export function nextFormState(
     value: string,
 ): EndpointFormState {
     if (key === "modality") {
-        const modality =
-            value === "image"
-                ? "image"
-                : value === "transcription"
-                  ? "transcription"
-                  : "text";
+        const modality = normalizeCommunityEndpointModality(value);
         return {
             ...current,
             modality,

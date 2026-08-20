@@ -14,7 +14,11 @@ import {
     ScrollArea,
     TabButton,
 } from "@pollinations/ui";
-import { MAX_FALLBACK_TARGETS } from "@shared/community-endpoints.ts";
+import {
+    COMMUNITY_ENDPOINT_INPUT_MODALITIES,
+    COMMUNITY_ENDPOINT_MODALITIES,
+    MAX_FALLBACK_TARGETS,
+} from "@shared/community-endpoints.ts";
 import type { ModelInputModality } from "@shared/registry/registry.ts";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
@@ -393,25 +397,64 @@ export function CommunityEndpointDialog({
                         alignLabelRow
                     >
                         <ButtonGroup aria-label="Modality">
-                            {(["text", "image", "transcription"] as const).map(
-                                (modality) => (
+                            {COMMUNITY_ENDPOINT_MODALITIES.map((modality) => (
+                                <TabButton
+                                    key={modality}
+                                    active={form.modality === modality}
+                                    disabled={isEdit}
+                                    onClick={() =>
+                                        updateForm("modality", modality)
+                                    }
+                                    size="sm"
+                                    className="min-w-20 gap-1.5 capitalize"
+                                >
+                                    {form.modality === modality && (
+                                        <CheckIcon className="h-3.5 w-3.5" />
+                                    )}
+                                    {modality}
+                                </TabButton>
+                            ))}
+                        </ButtonGroup>
+                    </FieldStack>
+
+                    <FieldStack
+                        label="Accepted inputs"
+                        helper="Select every input type supported by this model. At least one is required."
+                        alignLabelRow
+                    >
+                        <ButtonGroup aria-label="Accepted input modalities">
+                            {COMMUNITY_ENDPOINT_INPUT_MODALITIES[
+                                form.modality
+                            ].map((modality) => {
+                                const selected =
+                                    form.inputModalities.includes(modality);
+                                return (
                                     <TabButton
                                         key={modality}
-                                        active={form.modality === modality}
-                                        disabled={isEdit}
+                                        active={selected}
                                         onClick={() =>
-                                            updateForm("modality", modality)
+                                            setForm((current) => ({
+                                                ...current,
+                                                inputModalities: selected
+                                                    ? current.inputModalities.filter(
+                                                          (m) => m !== modality,
+                                                      )
+                                                    : [
+                                                          ...current.inputModalities,
+                                                          modality,
+                                                      ],
+                                            }))
                                         }
                                         size="sm"
                                         className="min-w-20 gap-1.5 capitalize"
                                     >
-                                        {form.modality === modality && (
+                                        {selected && (
                                             <CheckIcon className="h-3.5 w-3.5" />
                                         )}
                                         {modality}
                                     </TabButton>
-                                ),
-                            )}
+                                );
+                            })}
                         </ButtonGroup>
                     </FieldStack>
 
@@ -483,9 +526,11 @@ export function CommunityEndpointDialog({
                                 placeholder={
                                     form.modality === "image"
                                         ? "gpt-image-2"
-                                        : form.modality === "transcription"
-                                          ? "whisper-1"
-                                          : "gpt-4o-mini"
+                                        : form.modality === "embedding"
+                                          ? "text-embedding-3-small"
+                                          : form.modality === "transcription"
+                                            ? "whisper-1"
+                                            : "gpt-4o-mini"
                                 }
                                 align="end"
                                 open={providerModelMenuOpen}

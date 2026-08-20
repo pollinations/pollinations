@@ -23,6 +23,7 @@ import {
 import {
     type CommunityModelEnv,
     type CommunityModelRegistryEntry,
+    communityEmbeddingSupportedEndpoints,
     communityImageSupportedEndpoints,
     communityTextSupportedEndpoints,
     communityTranscriptionSupportedEndpoints,
@@ -136,9 +137,11 @@ function communityEntryToGenerationEntry(
                 ? communityImageSupportedEndpoints(
                       entry.definition.inputModalities,
                   )
-                : eventType === "generate.audio"
-                  ? communityTranscriptionSupportedEndpoints()
-                  : communityTextSupportedEndpoints(),
+                : eventType === "generate.embedding"
+                  ? communityEmbeddingSupportedEndpoints()
+                  : eventType === "generate.audio"
+                    ? communityTranscriptionSupportedEndpoints()
+                    : communityTextSupportedEndpoints(),
         definition: entry.definition,
         info: entry.info,
         communityEndpoint: entry.communityEndpoint,

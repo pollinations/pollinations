@@ -22,11 +22,13 @@ import {
     isCommunityFallbackPricingAllowed,
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+    MAX_COMMUNITY_PRICE_PER_REQUEST,
     MAX_COMMUNITY_PRICE_PER_SECOND,
     MAX_COMMUNITY_PRICE_PER_TOKEN,
     MAX_FALLBACK_TARGETS,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
+    MIN_COMMUNITY_PRICE_PER_UNIT,
     normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
     normalizeCommunityEndpointImagePricing,
@@ -53,6 +55,7 @@ import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import {
     listCommunityEndpointModels,
+    testCommunityEmbeddingEndpoint,
     testCommunityEndpoint,
     testCommunityImageEndpoint,
     testCommunityTranscriptionEndpoint,
@@ -63,7 +66,7 @@ import { requireAccountPermission } from "./account-permissions.ts";
 const ModalitySchema = z
     .enum(COMMUNITY_ENDPOINT_MODALITIES)
     .describe(
-        'Upstream API family. "text" uses `/v1/chat/completions`; "image" uses `/v1/images/generations` and optionally `/v1/images/edits` when the endpoint test succeeds; "transcription" uses `/v1/audio/transcriptions`.',
+        'Upstream API family. "text" uses `/v1/chat/completions`; "image" uses `/v1/images/generations` and optionally `/v1/images/edits` when the endpoint test succeeds; "embedding" uses `/v1/embeddings`; "transcription" uses `/v1/audio/transcriptions`.',
     );
 const ImagePricingSchema = z
     .enum(COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES)
@@ -85,7 +88,7 @@ const PriceSchema = z
         message: `Price must be 0 (free) or at least ${MIN_COMMUNITY_PRICE_PER_TOKEN} per token (${MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS} per 1M tokens)`,
     })
     .describe(
-        'Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request".',
+        'Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request"; `completionTextPrice` is per request for "embedding" models.',
     );
 const UpdatePriceFieldsSchema = Object.fromEntries(
     COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
@@ -118,19 +121,62 @@ function enforceCommunityEndpointPriceLimits(
         const maxPrice =
             field.priceUnit === "image"
                 ? MAX_COMMUNITY_PRICE_PER_IMAGE
-                : field.priceUnit === "second"
-                  ? MAX_COMMUNITY_PRICE_PER_SECOND
-                  : MAX_COMMUNITY_PRICE_PER_TOKEN;
+                : field.priceUnit === "request"
+                  ? MAX_COMMUNITY_PRICE_PER_REQUEST
+                  : field.priceUnit === "second"
+                    ? MAX_COMMUNITY_PRICE_PER_SECOND
+                    : MAX_COMMUNITY_PRICE_PER_TOKEN;
         if (price === undefined || price <= maxPrice) continue;
 
         const limit =
             field.priceUnit === "image"
                 ? `${MAX_COMMUNITY_PRICE_PER_IMAGE} Pollen per image`
-                : field.priceUnit === "second"
-                  ? `${MAX_COMMUNITY_PRICE_PER_SECOND} Pollen per second`
-                  : `${MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS} Pollen per 1M tokens`;
+                : field.priceUnit === "request"
+                  ? `${MAX_COMMUNITY_PRICE_PER_REQUEST} Pollen per request`
+                  : field.priceUnit === "second"
+                    ? `${MAX_COMMUNITY_PRICE_PER_SECOND} Pollen per second`
+                    : `${MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS} Pollen per 1M tokens`;
         throw new HTTPException(400, {
             message: `${field.label} price must not exceed ${limit}`,
+        });
+    }
+}
+
+// Fixed per-request prices floor at the smallest billable pollen unit. Token
+// rates already get the per-token minimum from PriceSchema.
+function enforceCommunityEndpointMinimumPrice(
+    source: Partial<Record<CommunityEndpointPriceKey, number>>,
+    modality: CommunityEndpointModality,
+    imagePricing: CommunityEndpointImagePricing,
+): void {
+    for (const field of communityEndpointPriceFieldsForModality(
+        modality,
+        imagePricing,
+    )) {
+        if (field.priceUnit !== "request") continue;
+        const price = source[field.key];
+        if (price === undefined || price === 0) continue;
+        if (price < MIN_COMMUNITY_PRICE_PER_UNIT) {
+            throw new HTTPException(400, {
+                message: `${field.label} price must be 0 (free) or at least ${MIN_COMMUNITY_PRICE_PER_UNIT} Pollen per request`,
+            });
+        }
+    }
+}
+
+// Token pricing and a fixed per-request price are mutually exclusive: the
+// request handler bills one or the other depending on the stored price, so an
+// endpoint declaring both would be ambiguous.
+function validatePricingMode(
+    prices: Partial<Record<CommunityEndpointPriceKey, number | undefined>>,
+    modality: CommunityEndpointModality,
+): void {
+    if (modality !== "embedding") return;
+    const fixedPrice = prices.completionTextPrice ?? 0;
+    const hasTokenPrice = Boolean(prices.promptTextPrice);
+    if (fixedPrice > 0 && hasTokenPrice) {
+        throw new HTTPException(400, {
+            message: "Choose either token pricing or one fixed request price",
         });
     }
 }
@@ -977,7 +1023,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Create My Model",
             description:
-                "Register a private or public community text or image model. Private is the default. Public models require an allowlisted account and may be free or priced. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
+                "Register a private or public community text, image, or embedding model. Private is the default. Public models require an allowlisted account and may be free or priced. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
             responses: {
                 200: {
                     description: "Created community model",
@@ -1166,9 +1212,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 const result =
                     input.modality === "image"
                         ? await testCommunityImageEndpoint(input)
-                        : input.modality === "transcription"
-                          ? await testCommunityTranscriptionEndpoint(input)
-                          : await testCommunityEndpoint(input);
+                        : input.modality === "embedding"
+                          ? await testCommunityEmbeddingEndpoint(input)
+                          : input.modality === "transcription"
+                            ? await testCommunityTranscriptionEndpoint(input)
+                            : await testCommunityEndpoint(input);
                 return c.json({
                     ok: true,
                     message:
@@ -1176,9 +1224,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
                             ? result.inputModalities?.includes("image")
                                 ? "Generation and editing endpoints responded with image data"
                                 : "Generation endpoint responded; editing is not supported"
-                            : input.modality === "transcription"
-                              ? "Endpoint responded with transcription text"
-                              : "Endpoint responded with usage",
+                            : input.modality === "embedding"
+                              ? "Endpoint responded with embedding data"
+                              : input.modality === "transcription"
+                                ? "Endpoint responded with transcription text"
+                                : "Endpoint responded with usage",
                     ...result,
                 });
             } catch (error) {
@@ -1340,6 +1390,12 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 modality,
                 effectiveImagePricing,
             );
+            enforceCommunityEndpointMinimumPrice(
+                effectivePrices,
+                modality,
+                effectiveImagePricing,
+            );
+            validatePricingMode(effectivePrices, modality);
             // Validate against the prices this update actually persists, not
             // the stored ones. An unsent field keeps the stored targets: if a
             // later price change makes one too expensive, the generation

@@ -16,6 +16,7 @@ import {
     communityEndpointPriceFieldsForModality,
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+    MAX_COMMUNITY_PRICE_PER_REQUEST,
     MAX_COMMUNITY_PRICE_PER_SECOND,
 } from "@shared/community-endpoints.ts";
 import { PRICE_ICON } from "../models/model-icons.tsx";
@@ -186,15 +187,19 @@ function PriceInputCell({
     const unitLabel =
         field.priceUnit === "image"
             ? "/image"
-            : field.priceUnit === "second"
-              ? "/sec"
-              : "/1M";
+            : field.priceUnit === "request"
+              ? "/request"
+              : field.priceUnit === "second"
+                ? "/sec"
+                : "/1M";
     const maximum =
         field.priceUnit === "image"
             ? MAX_COMMUNITY_PRICE_PER_IMAGE
-            : field.priceUnit === "second"
-              ? MAX_COMMUNITY_PRICE_PER_SECOND
-              : MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS;
+            : field.priceUnit === "request"
+              ? MAX_COMMUNITY_PRICE_PER_REQUEST
+              : field.priceUnit === "second"
+                ? MAX_COMMUNITY_PRICE_PER_SECOND
+                : MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS;
 
     return (
         <TableCell align="right" className="w-40 align-top">

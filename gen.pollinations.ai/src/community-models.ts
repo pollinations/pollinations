@@ -34,6 +34,10 @@ export function communityTextSupportedEndpoints(): string[] {
     return COMMUNITY_TEXT_ENDPOINTS;
 }
 
+export function communityEmbeddingSupportedEndpoints(): string[] {
+    return ["/v1/embeddings"];
+}
+
 export function communityTranscriptionSupportedEndpoints(): string[] {
     return ["/v1/audio/transcriptions"];
 }

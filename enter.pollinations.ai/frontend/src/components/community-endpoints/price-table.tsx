@@ -308,7 +308,7 @@ export function savedEndpointPriceKeys(
     endpoint: CommunityEndpoint | undefined,
 ): Set<PriceFieldKey> {
     return new Set(
-        endpoint
+        endpoint?.type === "proxy"
             ? communityEndpointPriceFieldsForModality(
                   endpoint.modality,
                   endpoint.imagePricing,

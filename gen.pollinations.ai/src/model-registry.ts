@@ -31,6 +31,9 @@ import {
 import { linkFallbackEntries } from "./fallback.ts";
 
 const REGISTRY_TTL_MS = 60_000;
+// A static-only registry is cached briefly so the community models come back
+// seconds after D1 recovers, instead of being missing for a full TTL.
+const DEGRADED_REGISTRY_TTL_MS = 5_000;
 const TEXT_MODEL_ENDPOINTS = [
     "/v1/chat/completions",
     "/text",
@@ -146,7 +149,7 @@ function communityEntryToGenerationEntry(
         // Public endpoints appear for everyone. Private endpoints are added
         // back for their owner by visibleEntries().
         visible:
-            entry.communityEndpoint.disabledAt === null &&
+            entry.definition.hidden !== true &&
             entry.communityEndpoint.visibility === "public",
     };
 }
@@ -210,21 +213,14 @@ function buildRegistry(
     entries.sort(compareModelEntries);
 
     return {
-        resolve: (model) => {
-            const entry = byIdOrAlias.get(model) ?? null;
-            // Deactivated community models don't exist as far as callers are
-            // concerned — unlike static `hidden` models (intentionally
-            // unlisted but still callable), a disabled community endpoint is
-            // broken and must be unreachable everywhere, not just unlisted.
-            if (entry?.communityEndpoint?.disabledAt) return null;
-            return entry;
-        },
+        resolve: (model) => byIdOrAlias.get(model) ?? null,
         visibleEntries: (callerUserId) =>
             entries.filter((entry) => {
                 if (entry.visible) return true;
                 const endpoint = entry.communityEndpoint;
                 return (
-                    endpoint?.disabledAt === null &&
+                    entry.definition.hidden !== true &&
+                    endpoint !== undefined &&
                     endpoint.visibility === "private" &&
                     endpoint.ownerUserId === callerUserId
                 );
@@ -234,11 +230,27 @@ function buildRegistry(
 
 async function loadGenerationModelRegistry(
     env: CommunityModelEnv,
-): Promise<GenerationModelRegistry> {
-    const communityEntries = (await getCommunityModelRegistryEntries(env)).map(
-        communityEntryToGenerationEntry,
-    );
-    return buildRegistry([...STATIC_ENTRIES, ...communityEntries]);
+): Promise<{ registry: GenerationModelRegistry; degraded: boolean }> {
+    let communityEntries: GenerationModelEntry[] = [];
+    let degraded = false;
+    try {
+        communityEntries = (await getCommunityModelRegistryEntries(env)).map(
+            communityEntryToGenerationEntry,
+        );
+    } catch (error) {
+        // Community models are additive: every request that resolves a model
+        // goes through this registry, so letting a D1 failure escape turns a
+        // community-catalog problem into a total gen outage. The realistic
+        // trigger is schema skew — a migration lands before the Worker that
+        // understands it — which is exactly when the static models are still
+        // perfectly servable.
+        degraded = true;
+        console.error("Community model registry unavailable", error);
+    }
+    return {
+        registry: buildRegistry([...STATIC_ENTRIES, ...communityEntries]),
+        degraded,
+    };
 }
 
 export async function getGenerationModelRegistry(
@@ -257,10 +269,12 @@ export async function getGenerationModelRegistry(
     // cancelled the promise can never settle, wedging the isolate for good.
     // Racing a few cheap SELECTs on cache expiry is the better trade.
     const dbBinding = env.DB;
-    const registry = await loadGenerationModelRegistry(env);
+    const { registry, degraded } = await loadGenerationModelRegistry(env);
     cachedRegistry = {
         dbBinding,
-        expiresAt: Date.now() + REGISTRY_TTL_MS,
+        expiresAt:
+            Date.now() +
+            (degraded ? DEGRADED_REGISTRY_TTL_MS : REGISTRY_TTL_MS),
         registry,
     };
     return registry;

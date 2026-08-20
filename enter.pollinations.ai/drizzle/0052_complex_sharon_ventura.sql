@@ -1,1 +1,0 @@
-ALTER TABLE `community_endpoint` ADD `paid_only` integer DEFAULT false NOT NULL;

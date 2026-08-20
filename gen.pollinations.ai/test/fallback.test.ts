@@ -46,20 +46,22 @@ function communityEntry(
     id: string,
     ownerUserId: string,
     visibility: "private" | "public" = "public",
-    disabledAt: number | null = null,
-    fallbackModelIds: string[] = [],
+    hiddenAt: number | null = null,
+    fallbacks: string[] = [],
     rate = 10,
     paidOnly = false,
 ): GenerationModelEntry {
-    const entry = registryEntry(id, [], rate);
-    entry.visible = visibility === "public" && disabledAt === null;
+    const entry = registryEntry(id, fallbacks, rate);
+    entry.visible = visibility === "public" && hiddenAt === null;
+    entry.definition.hidden = hiddenAt !== null;
     entry.communityEndpoint = {
+        type: "proxy",
         ownerUserId,
         visibility,
-        disabledAt,
+        hiddenAt,
         paidOnly,
         imagePricing: "request",
-        fallbackModelIds,
+        fallbacks,
         ...communityEndpointPrices({
             promptTextPrice: rate,
             completionTextPrice: rate,
@@ -98,6 +100,22 @@ describe("registry fallback linking", () => {
                 fallbackEntries: primary.fallbackEntries,
             }).map((candidate) => candidate.id),
         ).toEqual(["primary", "target"]);
+    });
+
+    it("does not apply the community fallback cap to registry declarations", () => {
+        const targetIds = ["one", "two", "three", "four"];
+        const primary = registryEntry("primary", targetIds);
+        const targets = targetIds.map((id) => registryEntry(id));
+        const entries = [primary, ...targets];
+
+        linkFallbackEntries(
+            entries,
+            new Map(entries.map((entry) => [entry.id, entry])),
+        );
+
+        expect(primary.fallbackEntries?.map((entry) => entry.id)).toEqual(
+            targetIds,
+        );
     });
     it("guards community declarations but trusts registry declarations", () => {
         const ownPrimary = communityEntry(
@@ -146,10 +164,8 @@ describe("registry fallback linking", () => {
             registryPrimary.fallbackEntries?.map((entry) => entry.id),
         ).toEqual(["public", "owner/private", "owner/disabled"]);
     });
+
     it("keeps a paid-only target off a primary that takes Quest Pollen", () => {
-        // The payer bucket follows the model the caller asked for, so serving a
-        // paid-only target behind a Quest-accepting primary would spend free
-        // Pollen on its owner's pay-as-you-go upstream.
         const anyPollen = communityEntry("owner/any", "owner", "public", null, [
             "other/paid",
             "other/free",
@@ -180,8 +196,6 @@ describe("registry fallback linking", () => {
         expect(anyPollen.fallbackEntries?.map((entry) => entry.id)).toEqual([
             "other/free",
         ]);
-        // A paid-only primary already forces the pack bucket, so either kind of
-        // target is safe behind it.
         expect(paidPrimary.fallbackEntries?.map((entry) => entry.id)).toEqual([
             "other/paid",
             "other/free",

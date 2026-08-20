@@ -19,6 +19,12 @@ type EndpointFormPrices = Record<CommunityEndpointPriceKey, string>;
 
 export type ManagedAgent = {
     id: string;
+    name: string;
+    title: string;
+    description: string | null;
+    visibility: CommunityEndpointVisibility;
+    baseUrl: string;
+    upstreamModel: string;
     systemPrompt: string;
     baseModel: string;
     mcpServers: "pollinations"[];
@@ -40,31 +46,51 @@ export type CommunityProviderProfile = {
     url: string | null;
 };
 
-export type CommunityEndpoint = {
+type CommunityEndpointBase = {
     id: string;
     modelId: string;
     name: string;
     // Always populated by the API, which falls back for un-backfilled rows.
     title: string;
     description: string | null;
-    modality: CommunityEndpointModality;
-    imagePricing: CommunityEndpointImagePricing;
-    inputModalities: ModelInputModality[];
     baseUrl: string;
     upstreamModel: string;
-    agentId: string | null;
     // private → owner-only, shown only to the owner, no owner-set price;
     // public → globally listed + billed to callers.
     visibility: CommunityEndpointVisibility;
-    // Owner-set: callers may only spend Paid Pollen on this model.
-    paidOnly: boolean;
+    hidden: boolean;
+    hiddenReason: string | null;
+    hiddenAt: string | null;
+};
+
+export type ProxyCommunityEndpoint = CommunityEndpointBase &
+    CommunityEndpointPrices & {
+        type: "proxy";
+        modality: CommunityEndpointModality;
+        imagePricing: CommunityEndpointImagePricing;
+        inputModalities: ModelInputModality[];
+        perUserRpm: number | null;
+        paidOnly: boolean;
+        fallbacks: string[];
+    };
+
+export type PromptAgentCommunityEndpoint = CommunityEndpointBase & {
+    type: "prompt_agent";
+};
+
+export type EndpointAgentCommunityEndpoint = CommunityEndpointBase & {
+    type: "endpoint_agent";
     perUserRpm: number | null;
-    // Public community models tried, in order, when this model's upstream fails.
-    fallbackModelIds: string[];
-    disabled: boolean;
-    disabledReason: string | null;
-    disabledAt: string | null;
-} & CommunityEndpointPrices;
+};
+
+export type CommunityEndpoint =
+    | ProxyCommunityEndpoint
+    | PromptAgentCommunityEndpoint
+    | EndpointAgentCommunityEndpoint;
+
+export type EditableEndpoint =
+    | ProxyCommunityEndpoint
+    | EndpointAgentCommunityEndpoint;
 
 export type FallbackModelOption = {
     modelId: string;
@@ -73,7 +99,7 @@ export type FallbackModelOption = {
 
 /**
  * Public community models from the model catalog, in dialog option form. The
- * catalog already excludes private and deactivated models, and the server
+ * catalog already excludes private and hidden models, and the server
  * re-validates modality and pricing on write.
  */
 export function publicCommunityFallbackOptions(
@@ -123,11 +149,10 @@ export type EndpointFormState = ModelListingFormState & {
     baseUrl: string;
     upstreamModel: string;
     bearerToken: string;
-    // Callers may only spend Paid Pollen. For pay-as-you-go upstreams, where
-    // Quest Pollen covering the price leaves the owner paying for inference.
+    // Callers may only spend Paid Pollen. Useful for pay-as-you-go upstreams.
     paidOnly: boolean;
     // Public community model ids, tried in the order listed.
-    fallbackModelIds: string[];
+    fallbacks: string[];
 } & EndpointFormPrices;
 
 type ModelListingPayload = {
@@ -145,15 +170,15 @@ export type EndpointPayload = ModelListingPayload & {
     baseUrl: string;
     upstreamModel: string;
     paidOnly: boolean;
-    fallbackModelIds: string[];
+    fallbacks: string[];
 } & CommunityEndpointPrices;
 
-export type AgentListingPayload = ModelListingPayload & {
-    agentId: string;
-    modality: "text";
+export type AgentListingDetailsPayload = {
+    name: string;
+    title: string;
+    description: string;
+    visibility: CommunityEndpointVisibility;
 };
-
-export type AgentListingDetailsPayload = Omit<AgentListingPayload, "agentId">;
 
 export type CommunityEndpointUsage = Record<string, unknown>;
 
@@ -194,7 +219,7 @@ export const emptyForm: EndpointFormState = {
     upstreamModel: "",
     bearerToken: "",
     paidOnly: false,
-    fallbackModelIds: [],
+    fallbacks: [],
     ...emptyPriceForm,
 };
 
@@ -271,7 +296,19 @@ export function isValidPriceInput(
     );
 }
 
-export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
+export function endpointToForm(endpoint: EditableEndpoint): EndpointFormState {
+    if (endpoint.type === "endpoint_agent") {
+        return {
+            ...emptyForm,
+            name: endpoint.name,
+            title: endpoint.title,
+            description: endpoint.description ?? "",
+            visibility: endpoint.visibility,
+            perUserRpm: endpoint.perUserRpm?.toString() ?? "",
+            baseUrl: endpoint.baseUrl,
+            upstreamModel: endpoint.upstreamModel,
+        };
+    }
     const fields = new Map(
         communityEndpointPriceFieldsForModality(
             endpoint.modality,
@@ -291,7 +328,7 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
         upstreamModel: endpoint.upstreamModel,
         bearerToken: "",
         paidOnly: endpoint.paidOnly,
-        fallbackModelIds: endpoint.fallbackModelIds ?? [],
+        fallbacks: endpoint.fallbacks ?? [],
         ...(Object.fromEntries(
             COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => {
                 const modalityField = fields.get(field.key);
@@ -310,7 +347,7 @@ export function endpointToForm(endpoint: CommunityEndpoint): EndpointFormState {
 }
 
 export function agentListingToForm(
-    endpoint?: CommunityEndpoint,
+    endpoint?: PromptAgentCommunityEndpoint,
 ): ModelListingFormState {
     return endpoint
         ? {
@@ -433,27 +470,22 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
         imagePricing,
         baseUrl: form.baseUrl.trim(),
         upstreamModel: form.upstreamModel.trim() || form.name.trim(),
-        paidOnly: form.paidOnly,
+        paidOnly: form.visibility === "public" ? form.paidOnly : false,
         // Private models carry no public pricing, so their fallbacks cannot be
         // validated against a quoted price.
-        fallbackModelIds:
-            form.visibility === "public" ? form.fallbackModelIds : [],
+        fallbacks: form.visibility === "public" ? form.fallbacks : [],
         ...formPricesToPayload(form, modality, imagePricing),
     };
 }
 
 export function toAgentListingPayload(
     form: ModelListingFormState,
-    inputModalities: ModelInputModality[],
 ): AgentListingDetailsPayload {
     return {
-        inputModalities,
         name: form.name.trim(),
         title: form.title.trim(),
         description: form.description.trim(),
         visibility: form.visibility,
-        perUserRpm: null,
-        modality: "text",
     };
 }
 
@@ -485,7 +517,7 @@ export function nextFormState(
                 modality,
             ),
             // Targets must match the modality; the old choices no longer can.
-            fallbackModelIds: [],
+            fallbacks: [],
         };
     }
     const next = { ...current, [key]: value };

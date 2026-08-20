@@ -29,18 +29,18 @@ export function useOwnCommunityModels(enabled = true): ApiModelInfo[] {
                     data
                         .filter(
                             (model) =>
-                                !model.disabled &&
-                                model.visibility !== "public",
+                                !model.hidden && model.visibility !== "public",
                         )
                         .map((model) => ({
                             name: model.modelId,
                             title: model.title,
                             category:
+                                model.type === "proxy" &&
                                 model.modality === "image"
                                     ? ("image" as const)
                                     : ("text" as const),
                             community: true,
-                            agent: model.delegatesGeneration,
+                            agent: model.type !== "proxy",
                         })),
                 );
             } catch {

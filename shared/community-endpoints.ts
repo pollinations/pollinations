@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { isCommunityModelAllowedGithubId } from "./auth/github-id-list.ts";
 import { HttpError } from "./http-error.ts";
 import {
@@ -331,6 +332,150 @@ export const COMMUNITY_ENDPOINT_VISIBILITIES = ["private", "public"] as const;
 export type CommunityEndpointVisibility =
     (typeof COMMUNITY_ENDPOINT_VISIBILITIES)[number];
 
+/* -------------------------------------------------------------------------
+ * Listing storage
+ *
+ * A row carries what every listing has — who owns it, what it is called,
+ * whether it is published — plus one `payload` whose shape `type` selects.
+ * A field that belongs to one kind of listing exists only in that kind's
+ * payload, so a listing cannot store a price it never charges or a credential
+ * it never sends. The invariants that used to be checked field by field on
+ * write are now the absence of somewhere to put the value.
+ * ---------------------------------------------------------------------- */
+
+export const LISTING_TYPES = [
+    "proxy",
+    "prompt_agent",
+    "endpoint_agent",
+] as const;
+
+// Prompt agents all share one deployment-specific worker. Store this safe,
+// environment-neutral URL in the common target column, then replace it with
+// AGENT_RUNTIME_BASE_URL when a row crosses the API/runtime boundary. The
+// reserved .invalid host guarantees a missed replacement cannot call another
+// environment by accident.
+export const PROMPT_AGENT_BASE_URL_PLACEHOLDER =
+    "https://agent-runtime.invalid/api/agent-runtime/v1";
+
+export type ListingType = (typeof LISTING_TYPES)[number];
+
+/**
+ * The owner's own OpenAI-compatible server, reached with the upstream bearer
+ * secret registered for that server. This is never the owner's or caller's
+ * Pollinations credential. The only kind that names a price, because it is the
+ * only kind whose caller is buying something from the owner.
+ */
+export type ProxyListingPayload = {
+    bearerTokenCiphertext: string;
+    modality: CommunityEndpointModality;
+    imagePricing: CommunityEndpointImagePricing;
+    inputModalities: ModelInputModality[];
+    perUserRpm: number | null;
+    fallbacks: string[];
+    prices: CommunityEndpointPrices;
+};
+
+/**
+ * An agent Enter runs itself. Its row id is also the model sent to the shared
+ * runtime, which loads this configuration from the same row.
+ */
+export const BuiltinMcpServerIdSchema = z.literal("pollinations");
+export const PromptAgentConfigSchema = z.object({
+    systemPrompt: z.string().trim().min(1).max(8000),
+    baseModel: z.string().trim().min(1).max(253),
+    mcpServers: z.array(BuiltinMcpServerIdSchema).max(1).optional().default([]),
+});
+export const PromptAgentInputSchema = PromptAgentConfigSchema.strict();
+
+export type PromptAgentListingPayload = z.infer<typeof PromptAgentConfigSchema>;
+
+/**
+ * An agent on the owner's own server. It is sent a run token rather than a
+ * credential. The rate limit remains gateway policy, not an upstream secret.
+ */
+export const EndpointAgentListingPayloadSchema = z
+    .object({
+        perUserRpm: z.number().finite().positive().nullable().default(null),
+    })
+    .strict();
+
+export type EndpointAgentListingPayload = z.infer<
+    typeof EndpointAgentListingPayloadSchema
+>;
+
+export type ListingPayloadByType = {
+    proxy: ProxyListingPayload;
+    prompt_agent: PromptAgentListingPayload;
+    endpoint_agent: EndpointAgentListingPayload;
+};
+
+/**
+ * Read a stored payload back into its typed shape.
+ *
+ * Storage is the only place a payload arrives untyped, so it is normalized
+ * once here and every reader downstream gets a complete value. A payload
+ * missing what its type requires returns null, which leaves the listing out of
+ * the catalog rather than in it half-populated.
+ */
+export function parseListingPayload<K extends ListingType>(
+    type: K,
+    raw: string | null,
+): ListingPayloadByType[K] | null {
+    let parsed: unknown;
+    try {
+        parsed = raw === null ? null : JSON.parse(raw);
+    } catch {
+        return null;
+    }
+    if (parsed === null || typeof parsed !== "object") return null;
+    const source = parsed as Record<string, unknown>;
+
+    if (type === "endpoint_agent") {
+        const result = EndpointAgentListingPayloadSchema.safeParse(source);
+        return result.success ? (result.data as ListingPayloadByType[K]) : null;
+    }
+    if (type === "prompt_agent") {
+        const result = PromptAgentConfigSchema.safeParse(source);
+        return result.success ? (result.data as ListingPayloadByType[K]) : null;
+    }
+
+    const bearerTokenCiphertext =
+        typeof source.bearerTokenCiphertext === "string"
+            ? source.bearerTokenCiphertext
+            : "";
+    if (!bearerTokenCiphertext) return null;
+    const modality = normalizeCommunityEndpointModality(
+        typeof source.modality === "string" ? source.modality : null,
+    );
+    return {
+        bearerTokenCiphertext,
+        modality,
+        imagePricing: normalizeCommunityEndpointImagePricing(
+            typeof source.imagePricing === "string"
+                ? source.imagePricing
+                : null,
+        ),
+        inputModalities: normalizeCommunityEndpointInputModalities(
+            Array.isArray(source.inputModalities)
+                ? (source.inputModalities as ModelInputModality[])
+                : undefined,
+            modality,
+        ),
+        perUserRpm:
+            typeof source.perUserRpm === "number" ? source.perUserRpm : null,
+        fallbacks: Array.isArray(source.fallbacks)
+            ? source.fallbacks.filter(
+                  (id): id is string => typeof id === "string",
+              )
+            : [],
+        prices: communityEndpointPrices(
+            (typeof source.prices === "object" && source.prices !== null
+                ? source.prices
+                : {}) as Partial<CommunityEndpointPrices>,
+        ),
+    } as ListingPayloadByType[K];
+}
+
 type CommunityEndpointRuntimeBase = {
     id: string;
     ownerUserId: string;
@@ -346,7 +491,7 @@ type CommunityEndpointRuntimeBase = {
     imagePricing: CommunityEndpointImagePricing;
     inputModalities: ModelInputModality[] | null;
     // Where the gateway sends the request, and the model name it asks for.
-    // Both variants resolve these when the row is read, so routing never has
+    // All variants resolve these when the row is read, so routing never has
     // to know which kind it is holding.
     baseUrl: string;
     upstreamModel: string;
@@ -356,41 +501,44 @@ type CommunityEndpointRuntimeBase = {
     perUserRpm: number | null;
     // Community model ids tried in order when this endpoint's upstream fails.
     // A target's own list is never followed: the owner declares the full order.
-    fallbackModelIds: string[];
+    fallbacks: string[];
     hiddenAt: number | null;
     hiddenReason: string | null;
 } & CommunityEndpointPrices;
 
-/** A third-party OpenAI-compatible server the owner registered. */
-export type ExternalCommunityEndpointRuntime = CommunityEndpointRuntimeBase & {
-    kind: "external";
+/** A third-party server, reached with its registered upstream bearer secret. */
+export type ProxyCommunityEndpointRuntime = CommunityEndpointRuntimeBase & {
+    type: "proxy";
     bearerTokenCiphertext: string;
-    /** Admin-granted: may spend an agent run token on the caller's behalf. */
-    delegatesGeneration: boolean;
 };
 
-/** A managed prompt agent, run by Enter's own agent runtime. */
-export type AgentCommunityEndpointRuntime = CommunityEndpointRuntimeBase & {
-    kind: "agent";
-    agentId: string;
-};
+/** An agent Enter runs on its own runtime, named by its listing id. */
+export type PromptAgentCommunityEndpointRuntime =
+    CommunityEndpointRuntimeBase & {
+        type: "prompt_agent";
+    };
+
+/** An agent on the owner's own server, sent a run token instead of a key. */
+export type EndpointAgentCommunityEndpointRuntime =
+    CommunityEndpointRuntimeBase & {
+        type: "endpoint_agent";
+    };
 
 export type CommunityEndpointRuntime =
-    | ExternalCommunityEndpointRuntime
-    | AgentCommunityEndpointRuntime;
+    | ProxyCommunityEndpointRuntime
+    | PromptAgentCommunityEndpointRuntime
+    | EndpointAgentCommunityEndpointRuntime;
 
 /**
  * Whether calls to this endpoint spend the caller's balance downstream.
  *
- * Managed agents always do: they call their base model and tools on the
- * caller's behalf. External endpoints only do so when an admin granted it.
- * Both are barred from the same places — fallback targets, and being called
- * by another run token — so the two cases share one name.
+ * Both agent kinds do — one runs here, one on the owner's server, and either
+ * way the work is charged to whoever called. A proxy never does: its owner
+ * pays their own upstream and charges the caller a declared price. This is the
+ * fact that decides which credential goes on the wire, so it has one name.
  */
-export function isDelegatingEndpoint(
-    endpoint: CommunityEndpointRuntime,
-): boolean {
-    return endpoint.kind === "agent" || endpoint.delegatesGeneration;
+export function usesAgentRunToken(endpoint: CommunityEndpointRuntime): boolean {
+    return endpoint.type !== "proxy";
 }
 
 export type CommunityModelDefinitionInput = {
@@ -403,6 +551,7 @@ export type CommunityModelDefinitionInput = {
     modality?: CommunityEndpointModality;
     imagePricing?: CommunityEndpointImagePricing;
     inputModalities?: ModelInputModality[] | null;
+    fallbacks?: string[];
     hidden?: boolean;
 } & CommunityEndpointPrices;
 
@@ -760,6 +909,9 @@ export function communityModelDefinition(
         inputModalities,
         outputModalities: isImage ? ["image"] : ["text"],
         hidden: endpoint.hidden,
+        ...(endpoint.fallbacks?.length
+            ? { fallbacks: endpoint.fallbacks }
+            : {}),
         ...(isTranscription
             ? { supportedEndpoints: ["/v1/audio/transcriptions"] }
             : {}),

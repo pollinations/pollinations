@@ -1,0 +1,35 @@
+{
+  "pr_number": 13630,
+  "title": "Add Cursor Maker to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13630",
+  "merged_at": "2026-08-20T13:58:44Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Cursor Maker](https://hk.1r.gs) to image\n- Cursor Maker (光标工坊) is an AI-powered Windows cursor generator. Type a one-line description (e.g. \"glowing blue crystal arrow\") and it generates a custom cursor design using the Pollinations image API \n\nFixes #13598",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Pointers grow on trees",
+    "blurb": "Cursor Maker joined the garden. Describe a cursor in one line, and Pollinations image generation helps turn it into a tiny piece of desktop personality.",
+    "summary": "Added Cursor Maker (光标工坊), an AI-powered Windows cursor generator that uses the Pollinations image API to create custom cursor designs from one-line prompts.",
+    "impact": "People can now discover Cursor Maker in the app directory and generate Windows cursor artwork from ideas like “glowing blue crystal arrow.”",
+    "keywords": [
+      "community",
+      "Cursor Maker",
+      "Windows cursors",
+      "image API",
+      "AI art"
+    ],
+    "visual_concept": "Depict Cursor Maker as a cozy desktop craft station: a large pixel cursor arrow is being painted into a magical custom design on a CRT monitor. Polli, wearing a tiny maker apron and holding a paintbrush, adds detail to the cursor while small code-plants and flowers grow around the workstation; the cursor represents turning a short description into usable Windows cursor art.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, black oval eyes, pink rectangular blush cheeks, light blue rounded wings, and a tiny maker apron, carefully painting a large custom pixel cursor arrow on a glowing CRT monitor; the cursor shifts from a simple arrow into a crystal-and-pastel design while code-plants sprout from flower pots nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, warm lighting, chunky retro sprites, subtle scanlines, retro gaming vibes; pixel-font text: “CURSOR MAKER”. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-20/PR-13630.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, black oval eyes, pink rectangular blush cheeks, light blue rounded wings, and a tiny maker apron, carefully painting a large custom pixel cursor arrow on a glowing CRT monitor; the cursor shifts from a simple arrow into a crystal-and-pastel design while code-plants sprout from flower pots nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, warm lighting, chunky retro sprites, subtle scanlines, retro gaming vibes; pixel-font text: “CURSOR MAKER”. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-20T13:59:48.603608+00:00",
+  "app_name": "Cursor Maker",
+  "app_url": "https://hk.1r.gs"
+}

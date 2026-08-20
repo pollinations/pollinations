@@ -25,7 +25,10 @@ const STATE_PATH =
 const RESULTS_PATH =
     process.env.MONITOR_RESULTS_PATH ??
     "/home/ubuntu/monitor/probe-results.json";
-const MAX_TOKENS = 10;
+// Reasoning tokens count against this limit. Ten tokens left many healthy
+// reasoning models with no final text, so allow enough room for the short
+// marker after their internal reasoning.
+const MAX_TOKENS = 64;
 // Rough estimate for planning only -- actual spend is reconciled from real
 // `usage` in each response, not from these constants.
 const EST_PROMPT_TOKENS = 20;

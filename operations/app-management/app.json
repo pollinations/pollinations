@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "💬",
+    "name": "The Mita (Roblox AI)",
+    "url": "https://www.roblox.com/games/98105867888961/The-Mita",
+    "description": "This AI powers a game character named Mita from MiSide. It runs on a Flask server and connects to the Roblox game via HTTP. The AI receives the player’s spoken lines, along with conversation history a",
+    "language": "en",
+    "category": "chat",
+    "platform": "web",
+    "githubUsername": "MoronDe",
+    "githubUserId": "112860827",
+    "repositoryUrl": "https://github.com/MoronDe/AI-Roblox-Mita",
+    "repositoryStars": null,
+    "discordUsername": "justmorde",
+    "other": null,
+    "submittedDate": "2026-08-18",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/13559",
+    "approvedDate": "2026-08-20",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🖼️",
     "name": "Kokoro Roto — Anime Art Generator",
     "url": "https://geneberna.github.io/kokoro-roto-anime",

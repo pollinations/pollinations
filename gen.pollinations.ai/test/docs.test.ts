@@ -67,6 +67,7 @@ describe("docs routes", () => {
             info: { title: "Enter", version: "0.0.0" },
             tags: [
                 { name: "👤 Account" },
+                { name: "🧩 Community Models" },
                 { name: "✨ Quests" },
                 { name: "Customer" },
             ],
@@ -87,13 +88,13 @@ describe("docs routes", () => {
                 },
                 "/api/account/my-models": {
                     get: {
-                        tags: ["👤 Account"],
+                        tags: ["🧩 Community Models"],
                         description:
                             "List invite-only community text models. API keys require `account:keys`.",
                     },
                 },
                 "/api/account/my-models/{id}/update": {
-                    post: { tags: ["👤 Account"] },
+                    post: { tags: ["🧩 Community Models"] },
                 },
                 "/api/quests/catalog": {
                     get: { tags: ["✨ Quests"], security: [] },
@@ -195,9 +196,12 @@ describe("docs routes", () => {
         expect(schema.paths["/{id}/metadata"]).toBeDefined();
         expect(schema.paths["/media"]).toBeDefined();
         expect(schema.paths["/media/{id}"]).toBeDefined();
-        // BYOP, CLI, MCP are surfaced as plain tags in the Integrations group;
+        // Contribution guides are plain tags in the Integrations group;
         // the drawer icons are presentation, not part of the OpenAPI names.
         expect(schema.tags.map((tag) => tag.name)).toContain("BYOP");
+        expect(schema.tags.map((tag) => tag.name)).toContain(
+            "Community Models",
+        );
         expect(schema.tags.map((tag) => tag.name)).toContain("CLI");
         expect(schema.tags.map((tag) => tag.name)).toContain("MCP Server");
         expect(schema.tags.map((tag) => tag.name)).toContain("Quests");
@@ -347,6 +351,18 @@ describe("docs routes", () => {
         expect(mcpRes.status).toBe(301);
         expect(mcpRes.headers.get("Location")).toBe("/docs#tag/mcp-server");
 
+        const modelsRes = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs/guides/models", {
+                redirect: "manual",
+            }),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        expect(modelsRes.status).toBe(301);
+        expect(modelsRes.headers.get("Location")).toBe(
+            "/docs#tag/community-models",
+        );
+
         const missingRes = await worker.fetch(
             new Request("https://gen.pollinations.ai/docs/guides/notexist"),
             envWithEnterSchema({}),
@@ -389,6 +405,18 @@ describe("docs routes", () => {
         );
         expect(byopRes.status).toBe(200);
         expect(await byopRes.text()).toContain("## BYOP");
+
+        const modelsRes = await worker.fetch(
+            new Request(
+                "https://gen.pollinations.ai/docs/llm.txt?section=community-models",
+            ),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        expect(modelsRes.status).toBe(200);
+        const modelsBody = await modelsRes.text();
+        expect(modelsBody).toContain("## Community Models");
+        expect(modelsBody).toContain("/account/my-models");
 
         const badRes = await worker.fetch(
             new Request("https://gen.pollinations.ai/docs/llm.txt?section=bad"),

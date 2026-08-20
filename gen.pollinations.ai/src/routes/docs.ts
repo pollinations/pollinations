@@ -32,6 +32,7 @@ import { injectDocsSocialHead, SEO_TITLE } from "./seo.ts";
 const FAVICON_DATA_URI =
     "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAPoAAAD6AG1e1JrAAAEs0lEQVR4nM1Xa2hcVRBeH9Va37ZWxUfVKrWivyqCjx+KxHeLiFURoSo2pjkzmyY1FEWMtkqVoKL1WSvoD0H9U/FR8Fm1PqJGYpO9M7uJJTaCVqXU+raWfnLmnGx29+7GJGuLBy6cvefcM3Nmvu+b2UymjgFxZ0H5pnrOmPBAnk6A8PdQ+ht5vnj3Gu9pOQRCAuU1ULodQtug7vTdY3xdx94QfhPCn6O7cYq9U3oaSl8j13zkrndA6QEobSo1hu7GSVB6D0IfeQd3oXE+23JeoDNTa73ZI6C0GUKtdRqhzVBGxfMbxK2Hcg5Cz9T+1t0CoR+h/BaUtlY5B/+aJtgt2KGw+ET080xodg7UnQehR8Ih1AVxU1Pf5ZoPgNLrtkfoZYhrCN/aMws5PnXsDihflXqfZC+A0l+WZ+EvvMEyDAi9C6UeCPdC+LbU90Ot+9XngLrroDyEjY0HRwquHFnjuwyY4qZCeBWEH/7vHcjT9RAaDPPsuVDebmny4BP6HcJzbU34CSg9VD1FNRxAd+MUr2YQXgqlXyH8EhK+GYWW2SURmAfhn0oc7YLwnVDX4iNSfC+81kek+DvJngxtvhHKDwZ88L0QuqyYQgg/aUaVf4Hyx3FegPJARG4O6prstuEGJ8XvlkJ4HYRe8YcWRUppC/I0H0ILIbQhAtfT87M47zHlFP4DSs/6/K22jVFAoPwalFfYvEDHeEBB6AdzSuhPCC+PDswNEswFJHRNeOcuj05/F2l4v68ZIW18ta8dNsf8vUy4EvdiBrnscZZDdfPCIZSFUl85LtoPDLk1im1DsvgoCF9Y5LY3HG7fXULDMqoaOBN+PuLpHBM04dOG83m3oTjfNg0DTdMtPOIa0gB1TRDeGSjnLio6kKdLINQZQ3wHkNkjrZImZg0RjANQerQUhJMsn+rex+CCyXaYUB4FOijlhHBbNJSUKNyaePPO1H507GkR8eqY69gHSm9Yyr9csn/5Rn97z++EP0TfomMNNF5+823T0pGIBksfXyErb24G+TlPX1NDq6I06M+vPNMGcq2HQfkDazQCJT8JAKR2X+/Nyd5Fh9rc53DE+A6oO8PWvBjl6ZTAAlYIbQyMoUFT0ELr0ZnRBqy08q0Q+hlCX1nuqhWVsT4JfROFajkKtO+oxksH+vnw6PmnZbcN+d9SEf6dkaql73ZY0+JpPNA0PVPPgOWy5XgkzTOMkh7pJlzUHYuTF5V2S4EXLL9vcMHkuowODw+swFtmExafR288yV4K5Reg/JivHUFLDDP3WDn3HXMFKMc9YJrg1gddMCl9FcrLhlEcHAh8ti5ZeYUpadi7HcLveGBP3AGht+1WNUpojMDKqmtBYTd4DZiY8ULLbANXP8+suWcUB8J6do6dUYv3tUZUr8djGK+tnR5f7airlgEkdEVgCK8aHwXVo9x9G7sbn/8rUw4q9QVAUpdpe4UBKJ9v1TP8Z9hUTaZrO+DlWLgtHmRIT+XXRKZ5Rmi1vE5kZ5XtCWxYGy90g+8rxvvnoz/2elv9AWXrvvR6hQvOrfadUmmTOtIbWHOzzKKl9NTYHRiyW90XOiS3pBqffS2PVW5NtT8qMQoLY/XrrHTwfzP+AT7xZOU9QGoaAAAAAElFTkSuQmCC";
 
+import COMMUNITY_MODELS_MD from "../../../BRING_YOUR_OWN_MODEL.md?raw";
 import BYOP_MD from "../../../BRING_YOUR_OWN_POLLEN.md?raw";
 import MCP_README from "../../../packages/mcp/README.md?raw";
 import CLI_README from "../../../packages/polli-cli/README.md?raw";
@@ -57,6 +58,7 @@ const DOC_TAGS = {
     quickStart: "Quick Start",
     authentication: "Authentication",
     byop: "BYOP",
+    communityModels: "Community Models",
     cli: "CLI",
     mcpServer: "MCP Server",
     errors: "Errors",
@@ -79,6 +81,7 @@ const LEGACY_DOC_TAGS: Record<string, string> = {
     "🚀 Quick Start": DOC_TAGS.quickStart,
     "🔐 Authentication": DOC_TAGS.authentication,
     "🌸 BYOP": DOC_TAGS.byop,
+    "🧩 Community Models": DOC_TAGS.communityModels,
     "🖥 CLI": DOC_TAGS.cli,
     "🔌 MCP Server": DOC_TAGS.mcpServer,
     "❌ Errors": DOC_TAGS.errors,
@@ -110,6 +113,9 @@ const DOC_TAG_ICON_HTML: Record<string, string> = {
     ),
     [DOC_TAGS.byop]: docsIcon(
         '<path d="M3 7a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2v2H5a2 2 0 0 0-2 2V7Z" /><path d="M3 11a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6Z" /><circle cx="17" cy="14" r="1.25" fill="currentColor" />',
+    ),
+    [DOC_TAGS.communityModels]: docsIcon(
+        '<path d="M9 3h6" /><path d="M10 3v6.5L4.5 18a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L14 9.5V3" /><path d="M7 14h10" />',
     ),
     [DOC_TAGS.cli]: docsIcon(
         '<polyline points="4 8 8 12 4 16" /><line x1="12" y1="20" x2="20" y2="20" />',
@@ -168,6 +174,11 @@ const DOC_TAG_NAV_ICON_HTML: Record<string, string> = Object.fromEntries(
 );
 
 const BYOP_DOCS = BYOP_MD.trim();
+
+const COMMUNITY_MODELS_DOCS = COMMUNITY_MODELS_MD.replace(
+    /^# .*\n+/,
+    "",
+).trim();
 
 const CLI_DOCS = CLI_README.replace(/^# .*\n+/, "").trim();
 
@@ -327,12 +338,14 @@ const GEN_API_DOCS = [
 ].join("\n\n");
 
 const BYOP_SECTION = `## BYOP\n\n${BYOP_DOCS}`;
+const COMMUNITY_MODELS_SECTION = `## Community Models\n\n${COMMUNITY_MODELS_DOCS}`;
 const CLI_SECTION = `## CLI\n\n${CLI_DOCS}`;
 const MCP_SECTION = `## MCP Server\n\n${MCP_DOCS}`;
 
 const LLM_DOC_TEXT = [
     GEN_API_DOCS,
     BYOP_SECTION,
+    COMMUNITY_MODELS_SECTION,
     CLI_SECTION,
     MCP_SECTION,
 ].join("\n\n");
@@ -340,6 +353,7 @@ const LLM_DOC_TEXT = [
 const LLM_DOC_SECTIONS: Record<string, string> = {
     api: GEN_API_DOCS,
     byop: BYOP_SECTION,
+    "community-models": COMMUNITY_MODELS_SECTION,
     cli: CLI_SECTION,
     mcp: MCP_SECTION,
 };
@@ -347,6 +361,8 @@ const LLM_DOC_SECTIONS: Record<string, string> = {
 // Scalar tag anchors for the retired /docs/guides/:id pages.
 const GUIDE_REDIRECT_TAGS: Record<string, string> = {
     byop: "byop",
+    models: "community-models",
+    "community-models": "community-models",
     cli: "cli",
     mcp: "mcp-server",
 };
@@ -446,7 +462,12 @@ function generationDocumentation(): OpenApiSchema {
             },
             {
                 name: "Integrations",
-                tags: [DOC_TAGS.byop, DOC_TAGS.cli, DOC_TAGS.mcpServer],
+                tags: [
+                    DOC_TAGS.byop,
+                    DOC_TAGS.communityModels,
+                    DOC_TAGS.cli,
+                    DOC_TAGS.mcpServer,
+                ],
             },
             {
                 name: "Generation",
@@ -485,6 +506,10 @@ function generationDocumentation(): OpenApiSchema {
             {
                 name: DOC_TAGS.byop,
                 description: BYOP_DOCS,
+            },
+            {
+                name: DOC_TAGS.communityModels,
+                description: COMMUNITY_MODELS_DOCS,
             },
             {
                 name: DOC_TAGS.cli,

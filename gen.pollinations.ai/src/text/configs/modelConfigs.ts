@@ -156,7 +156,7 @@ export const portkeyConfig: PortkeyConfigMap = {
         createOpenRouterModelConfig({
             model: "z-ai/glm-5.3",
             defaultOptions: {
-                max_tokens: 16384,
+                max_tokens: 64000,
                 provider: {
                     only: ["z-ai/fp8"],
                     allow_fallbacks: false,
@@ -182,12 +182,12 @@ export const portkeyConfig: PortkeyConfigMap = {
     "qwen/qwen3.7-plus": () =>
         createOpenRouterModelConfig({
             model: "qwen/qwen3.7-plus",
-            defaultOptions: { max_tokens: 16384, provider: { sort: "price" } },
+            defaultOptions: { max_tokens: 64000, provider: { sort: "price" } },
         }),
     "qwen/qwen3.7-max": () =>
         createOpenRouterModelConfig({
             model: "qwen/qwen3.7-max",
-            defaultOptions: { max_tokens: 16384, provider: { sort: "price" } },
+            defaultOptions: { max_tokens: 64000, provider: { sort: "price" } },
         }),
     // Confirmed bug: pinned only to Chutes, whose max_tokens default (1024)
     // is entirely consumed by the reasoning trace on non-trivial prompts,
@@ -196,7 +196,7 @@ export const portkeyConfig: PortkeyConfigMap = {
         createOpenRouterModelConfig({
             model: "qwen/qwen3.8-27b",
             defaultOptions: {
-                max_tokens: 16384,
+                max_tokens: 64000,
                 provider: {
                     only: ["Chutes"],
                     allow_fallbacks: false,
@@ -207,7 +207,7 @@ export const portkeyConfig: PortkeyConfigMap = {
         createOpenRouterModelConfig({
             model: "qwen/qwen3.8-max",
             defaultOptions: {
-                max_tokens: 16384,
+                max_tokens: 64000,
                 provider: {
                     only: ["Alibaba"],
                     allow_fallbacks: false,
@@ -218,7 +218,7 @@ export const portkeyConfig: PortkeyConfigMap = {
         createOpenRouterModelConfig({
             model: "qwen/qwen3.7-flash",
             defaultOptions: {
-                max_tokens: 8192,
+                max_tokens: 64000,
                 provider: {
                     only: ["Alibaba"],
                     allow_fallbacks: false,
@@ -332,7 +332,7 @@ export const portkeyConfig: PortkeyConfigMap = {
     "mistral-small-2603": () =>
         createOpenRouterModelConfig({
             model: "mistralai/mistral-small-2603",
-            defaultOptions: { max_tokens: 8192 },
+            defaultOptions: { max_tokens: 64000 },
         }),
 
     // -- Azure (Myceli Prod — eastus, Mistral Large) -------------------------

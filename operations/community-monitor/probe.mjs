@@ -3,12 +3,11 @@ import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 
 // One probe sweep across listed community text and image models via
-// gen.pollinations.ai. Text probes are cost-weighted and run every cycle;
-// image probes run once per model every four hours and are always capped at
-// one generation. This keeps coverage current without spending or generating
-// media every 30 minutes.
-// Actual spend is reconciled from real `usage` tokens and fed back into
-// state.json so next cycle's budget self-corrects (overspend -> undershoot).
+// gen.pollinations.ai. Text models get one request every cycle; image models
+// get one request every four hours. This keeps full-catalog coverage current
+// without letting routine probes consume a provider's quota or the whole
+// monitor cycle.
+// Actual spend is reconciled from real `usage` tokens and recorded in state.
 // Writes /home/ubuntu/monitor/probe-results.json and prints a summary table.
 
 const TOKEN = process.env.POLLI_TOKEN;
@@ -26,11 +25,6 @@ const STATE_PATH =
 const RESULTS_PATH =
     process.env.MONITOR_RESULTS_PATH ??
     "/home/ubuntu/monitor/probe-results.json";
-const TARGET_POLLEN = 0.5;
-// Keep next cycle's budget within a sane band around the target so one wild
-// cycle (e.g. a model timing out after burning tokens) can't spiral.
-const MIN_BUDGET = TARGET_POLLEN * 0.4;
-const MAX_BUDGET = TARGET_POLLEN * 1.6;
 const MAX_TOKENS = 10;
 // Rough estimate for planning only -- actual spend is reconciled from real
 // `usage` in each response, not from these constants.
@@ -83,97 +77,6 @@ function estimateCost(model) {
             : p * EST_PROMPT_TOKENS + image * EST_IMAGE_OUTPUT_TOKENS;
     }
     return p * EST_PROMPT_TOKENS + c * EST_COMPLETION_TOKENS;
-}
-
-// Baseline rank-based targets, cheapest quartile first. Ranking (not raw
-// cost) drives this, so "test expensive models less" holds even if the whole
-// catalog happens to be cheap or expensive that week -- it's always relative.
-// Keep synthetic traffic light: production data showed that larger sweeps can
-// consume a meaningful share of low-capacity community-provider quotas.
-const TIER_TARGETS = [4, 3, 2, 1];
-// Hard per-model ceiling, regardless of price or budget -- this is a health
-// probe, not a load test, and upstream owners may have their own rate limits.
-// Free models in particular must never be used to "soak up" leftover budget.
-const MAX_REQUESTS_PER_MODEL = 4;
-
-// Every model gets a rank-based baseline (cheapest quartile: most requests,
-// priciest quartile: floor of 1). If that overshoots budget, trim extras from
-// the most expensive models first (never below 1). If it undershoots -- the
-// common case, since most models are fractions of a cent per request -- top
-// up extra requests on the MOST EXPENSIVE models first (not cheap ones) up to
-// MAX_REQUESTS_PER_MODEL, since those are what actually moves total spend
-// toward the target; cheap models are already capped and can't absorb more
-// budget usefully. Every model's count is capped at MAX_REQUESTS_PER_MODEL in
-// all cases, so no single model -- expensive or free -- ever gets hammered.
-function planRequestCounts(models, budget) {
-    const perModelCost = new Map(models.map((m) => [m.name, estimateCost(m)]));
-    const textByCostAsc = models
-        .filter((m) => m.category === "text")
-        .sort((a, b) => perModelCost.get(a.name) - perModelCost.get(b.name));
-
-    const counts = new Map();
-    const tierSize = Math.max(
-        1,
-        Math.ceil(textByCostAsc.length / TIER_TARGETS.length),
-    );
-    textByCostAsc.forEach((m, i) => {
-        const tier = Math.min(
-            Math.floor(i / tierSize),
-            TIER_TARGETS.length - 1,
-        );
-        counts.set(
-            m.name,
-            Math.min(TIER_TARGETS[tier], MAX_REQUESTS_PER_MODEL),
-        );
-    });
-    for (const model of models) {
-        if (model.category === "image") counts.set(model.name, 1);
-    }
-
-    let spent = models.reduce(
-        (sum, m) => sum + perModelCost.get(m.name) * counts.get(m.name),
-        0,
-    );
-
-    const textByCostDesc = [...textByCostAsc].reverse();
-
-    if (spent > budget) {
-        // Trim extras (never below 1) from the most expensive models first,
-        // since those are the ones we most want to under-test vs. cheap ones.
-        let i = 0;
-        while (spent > budget && i < textByCostDesc.length) {
-            const m = textByCostDesc[i];
-            const n = counts.get(m.name);
-            const cost = perModelCost.get(m.name);
-            if (n > 1) {
-                counts.set(m.name, n - 1);
-                spent -= cost;
-            } else {
-                i++;
-            }
-        }
-    } else {
-        // Top up toward budget using the MOST expensive payable models first
-        // -- each request there moves spend further per request than another
-        // cheap-model request would, and every model is still capped.
-        const payable = textByCostDesc.filter(
-            (m) => perModelCost.get(m.name) > 0,
-        );
-        let progressed = payable.length > 0;
-        while (spent < budget && progressed) {
-            progressed = false;
-            for (const m of payable) {
-                if (counts.get(m.name) >= MAX_REQUESTS_PER_MODEL) continue;
-                const cost = perModelCost.get(m.name);
-                if (spent + cost > budget) continue;
-                counts.set(m.name, counts.get(m.name) + 1);
-                spent += cost;
-                progressed = true;
-            }
-        }
-    }
-
-    return { counts, estimatedSpend: spent };
 }
 
 // Basic billing-integrity sanity checks on a single probe response. These are
@@ -465,29 +368,11 @@ const skippedImageModels = onlyModel
               (model) => model.category === "image" && !imageProbeDue(model),
           )
           .map((model) => model.name);
-const lastSpend = state.spend?.lastActualPollen;
-// Mean-reversion: if we overspent last cycle, aim lower this cycle, and vice
-// versa. First run (no history) just uses the flat target.
-const budget =
-    typeof lastSpend === "number"
-        ? Math.min(
-              MAX_BUDGET,
-              Math.max(MIN_BUDGET, TARGET_POLLEN * 2 - lastSpend),
-          )
-        : TARGET_POLLEN;
-
-const { counts, estimatedSpend } = onlyModel
-    ? {
-          counts: new Map([[onlyModel, 1]]),
-          estimatedSpend: estimateCost(modelsToProbe[0]),
-      }
-    : planRequestCounts(modelsToProbe, budget);
-
-const jobs = [];
-for (const model of modelsToProbe) {
-    const n = counts.get(model.name) ?? 1;
-    for (let i = 0; i < n; i++) jobs.push(model);
-}
+const estimatedSpend = modelsToProbe.reduce(
+    (sum, model) => sum + estimateCost(model),
+    0,
+);
+const jobs = modelsToProbe;
 
 // Worker pool, not batched Promise.all: one slow request must not
 // head-of-line-block the other CONCURRENCY-1 slots for up to its timeout.
@@ -507,8 +392,8 @@ const actualSpend = results.reduce(
     0,
 );
 
-// Persist spend history for next cycle's adaptive budget. probe.mjs owns only
-// the `spend` key in state.json -- CYCLE.md/the agent owns everything else and
+// Persist spend history. probe.mjs owns only the `spend` key in state.json --
+// CYCLE.md/the agent owns everything else and
 // read-modify-writes this file, so merge rather than clobber. Re-read the
 // file NOW rather than reusing the startup snapshot: the sweep takes minutes
 // and the agent rewrites state.json in the meantime -- merging into the old
@@ -518,7 +403,7 @@ const nextState = {
     ...currentState,
     spend: {
         ...currentState.spend,
-        lastCycleBudget: budget,
+        lastCycleBudget: undefined,
         lastEstimatedPollen: estimatedSpend,
         lastActualPollen: actualSpend,
         lastRequestCount: jobs.length,
@@ -550,7 +435,6 @@ for (const r of results) {
 
 const out = {
     ts: new Date().toISOString(),
-    budget,
     actualSpend,
     imageProbeIntervalHours: IMAGE_PROBE_INTERVAL_MS / 3_600_000,
     skippedImageModels,
@@ -559,7 +443,7 @@ const out = {
 };
 if (onlyModel) {
     // Targeted freshness checks return their result without replacing the
-    // latest complete sweep or influencing the next sweep's budget/cadence.
+    // latest complete sweep or influencing the next sweep's cadence state.
     console.log(JSON.stringify(out));
     process.exit(0);
 }
@@ -591,7 +475,7 @@ if (skippedImageModels.length) {
     );
 }
 console.log(
-    `budget ${budget.toFixed(4)} pollen -> estimated ${estimatedSpend.toFixed(4)}, actual ${actualSpend.toFixed(4)}`,
+    `estimated ${estimatedSpend.toFixed(4)} pollen, actual ${actualSpend.toFixed(4)}`,
 );
 const flaggedModels = Object.keys(billingFlagsByModel);
 if (flaggedModels.length) {

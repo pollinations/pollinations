@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-08-19",
+  "period_start": "2026-08-19",
+  "period_end": "2026-08-19",
+  "generated_at": "2026-08-20T06:15:29.917144+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-08-19/images/reddit.jpg"
+    }
+  ],
+  "title": "Five models and quieter infrastructure fixes",
+  "text": "19 PRs merged today.\n\nThe visible part is five more models: Qwen3.8 27B, GLM-5.3, Fish Audio S2.1 Pro, Grok TTS, and Nemotron 3.5 Lightning. They span reasoning, general text, and speech, with providers split between OpenRouter and Fireworks rather than pretending one backend is immortal.\n\nEnter also gained account settings, exposes BYOP app details through `GET /account/key`, and got a less confusing model-pricing layout. Quest rewards are now keyed to GitHub user ID, which is less ambiguous than hoping usernames remain permanent artifacts of the internet.\n\nThe less visible work matters too: SSE tracking survives malformed chunks, Tinybird cost estimation uses a median so flat-rate preflight requests do not get incorrectly 402'd, fallback responses no longer expose private-target oracle details, and Pollen balance mutations now round to ledger precision.\n\nOn images, DreamShaper Vast deployment was hardened and Kontext now routes through Azure East US. The README, API docs, and previously dead demo/skill links were refreshed so the documentation points at things that still exist.\n\nCode: https://github.com/pollinations/pollinations\nAPI docs: https://github.com/pollinations/pollinations/blob/main/APIDOCS.md\nMerged PRs: https://github.com/pollinations/pollinations/pulls?q=is%3Apr+is%3Aclosed"
+}

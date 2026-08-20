@@ -83,4 +83,4 @@ npx @pollinations/cli agents delete <agent-id>
 
 Deleting an agent also deletes its model registration. Updating an agent changes its prompt, base model, and tools without changing the registered model name.
 
-The Account API exposes the same operations under `/account/agents`. API keys need the `account:keys` permission. See the [API reference](https://gen.pollinations.ai/docs#tag/account) for request and response schemas.
+The Account API exposes the same operations under `/account/agents`. API keys need the `account:keys` permission. See the [Community Agents API reference](https://gen.pollinations.ai/docs#tag/community-agents) for request and response schemas.

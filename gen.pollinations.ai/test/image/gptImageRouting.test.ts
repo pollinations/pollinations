@@ -1,4 +1,3 @@
-import type { HttpError } from "@shared/http-error.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
     type AuthResult,
@@ -90,7 +89,9 @@ describe("gpt-image-2 Azure routing", () => {
 
             await expect(
                 callGPTImage("test", params, userInfo, "gpt-image-2"),
-            ).rejects.toMatchObject({ status } satisfies Partial<HttpError>);
+            ).rejects.toMatchObject({ status } satisfies Partial<{
+                status: number;
+            }>);
             expect(fetchMock).toHaveBeenCalledOnce();
         });
     }

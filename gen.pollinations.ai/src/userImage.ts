@@ -1,7 +1,8 @@
 import type { ImageInputErrorCode } from "@shared/error.ts";
-import { HttpError } from "@shared/http-error.ts";
+import { UpstreamError } from "@shared/error.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
 import { readResponseBytes } from "@shared/response-bytes.ts";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { validateUserMediaUrl } from "./utils/user-media-url.ts";
 
 /**
@@ -15,7 +16,9 @@ import { validateUserMediaUrl } from "./utils/user-media-url.ts";
  * Extends HttpError so the image and 3d funnels catch it by the check they
  * already make, while the text funnel reads it structurally as a ServiceError.
  */
-export class UserImageError extends HttpError {
+export class UserImageError extends UpstreamError {
+    public override readonly name = "UpstreamError" as const;
+    public readonly details: Record<string, unknown>;
     readonly errorCode: ImageInputErrorCode;
     upstreamStatus?: number;
     requestUrl?: URL;
@@ -26,8 +29,13 @@ export class UserImageError extends HttpError {
         requestUrl?: URL,
         upstreamStatus?: number,
     ) {
-        super(message, 400, { validation: true }, undefined, errorCode);
-        this.name = "UserImageError";
+        super(400 as ContentfulStatusCode, {
+            message,
+            errorCode,
+            requestUrl,
+            upstreamStatus,
+        });
+        this.details = { validation: true };
         this.errorCode = errorCode;
         this.requestUrl = requestUrl;
         this.upstreamStatus = upstreamStatus;

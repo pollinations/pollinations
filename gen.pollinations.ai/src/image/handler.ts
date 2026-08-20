@@ -191,58 +191,48 @@ function mediaHeaders(
     return headers;
 }
 
-function safeUpstreamUrl(value: string | undefined): URL | undefined {
-    if (!value) return undefined;
-    try {
-        return new URL(value);
-    } catch {
-        return undefined;
-    }
-}
-
 function throwImageError(error: unknown): never {
-    if (error instanceof UpstreamError) throw error;
-
-    // Content-policy rejections from any provider (DashScope green-net, Replicate
-    // moderation, Vertex safety, Azure content safety) are client errors, not
-    // backend failures. Catch them here — the single funnel for image/video
-    // errors — so they surface as 422 with a stable, detectable code instead of
-    // a 500 that pollutes model-health stats.
     const candidateMessages =
-        error instanceof HttpError
+        error instanceof UpstreamError
             ? [parseUpstreamErrorBody(error).text, error.message]
             : [error instanceof Error ? error.message : String(error)];
     const moderationMessage = firstContentPolicyMessage(candidateMessages);
     if (moderationMessage) {
+        const upstreamUrl =
+            error instanceof UpstreamError ? error.requestUrl : undefined;
+        const upstreamStatus =
+            error instanceof UpstreamError
+                ? (error.upstreamStatus ?? error.status)
+                : undefined;
+        const responseBody =
+            error instanceof UpstreamError ? error.responseBody : undefined;
+
         throw new UpstreamError(CONTENT_POLICY_STATUS, {
             message: contentPolicyMessage(moderationMessage),
             errorCode: CONTENT_POLICY_ERROR_CODE,
-            requestUrl:
-                error instanceof HttpError
-                    ? safeUpstreamUrl(error.upstreamUrl)
-                    : undefined,
-            upstreamStatus:
-                error instanceof HttpError ? error.status : undefined,
-            responseBody:
-                error instanceof HttpError
-                    ? imageResponseBody(error)
-                    : undefined,
+            requestUrl: upstreamUrl,
+            upstreamStatus,
+            responseBody,
             cause: error,
         });
     }
 
-    if (error instanceof HttpError) {
-        const { status, message } = classifyImageHttpError(error);
+    if (error instanceof UpstreamError) {
+        const { status, message } = classifyImageError(error);
+        const upstreamUrl = error.requestUrl;
+        const upstreamStatus = error.upstreamStatus ?? error.status;
+        const responseBody = error.responseBody;
+
         throw new UpstreamError(status, {
             message,
-            // Propagate only — the code is decided at the throw site.
             errorCode: error.errorCode,
-            requestUrl: safeUpstreamUrl(error.upstreamUrl),
-            upstreamStatus: error.status,
-            responseBody: imageResponseBody(error),
+            requestUrl: upstreamUrl,
+            upstreamStatus,
+            responseBody,
             cause: error,
         });
     }
+
     const message = error instanceof Error ? error.message : String(error);
     throw new UpstreamError(500, {
         message: message || "Image generation failed",
@@ -255,33 +245,14 @@ type ParsedUpstreamBody = {
     text: string | null;
 };
 
-/**
- * Build the responseBody to thread through UpstreamError so clients see a real
- * error message instead of `"{}"`. Prefer the upstream provider's raw body
- * (already in details.body), then the HttpError message, then a JSON-encoded
- * details bag as last resort.
- */
-function imageResponseBody(error: HttpError): string {
-    const detailsBody = error.details?.body;
-    if (typeof detailsBody === "string" && detailsBody.length > 0) {
-        return detailsBody;
-    }
-    if (error.message) {
-        return JSON.stringify({ message: error.message });
-    }
-    return JSON.stringify(error.details || {});
-}
-
-function classifyImageHttpError(error: HttpError): {
+function classifyImageError(error: UpstreamError): {
     status: ContentfulStatusCode;
     message: string;
 } {
     const parsed = parseUpstreamErrorBody(error);
     const isValidation =
         error.status === 422 ||
-        (error.status === 400 &&
-            (error.details?.validation === true ||
-                parsed.kind === "validation"));
+        (error.status === 400 && parsed.kind === "validation");
 
     if (isValidation) {
         const text = parsed.text || error.message;
@@ -316,9 +287,8 @@ function classifyImageHttpError(error: HttpError): {
     };
 }
 
-function parseUpstreamErrorBody(error: HttpError): ParsedUpstreamBody {
-    const body =
-        typeof error.details?.body === "string" ? error.details.body : "";
+function parseUpstreamErrorBody(error: UpstreamError): ParsedUpstreamBody {
+    const body = error instanceof UpstreamError ? error.responseBody || "" : "";
     if (!body) return { kind: "none", text: null };
 
     let parsed: {

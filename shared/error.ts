@@ -50,6 +50,15 @@ type UpstreamErrorOptions = {
     errorCode?: string;
 };
 
+/**
+ * UNIFIED ERROR THROWING RULE across gen.pollinations.ai and shared packages:
+ *
+ * 1. Throw `UpstreamError` (or domain-specific error classes extending `UpstreamError`,
+ *    e.g. `UserImageError`) for all HTTP or upstream service integration failures.
+ * 2. Do NOT throw bare `Error` or legacy `HttpError` in request handling paths.
+ * 3. Use options (`requestUrl`, `upstreamStatus`, `responseBody`, `upstreamHeaders`,
+ *    `errorCode`, `cause`) to attach diagnostic context without losing details.
+ */
 export class UpstreamError extends HTTPException {
     public readonly name = "UpstreamError" as const;
     public readonly requestUrl?: URL;

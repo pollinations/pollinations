@@ -1,0 +1,34 @@
+{
+  "pr_number": 13524,
+  "title": "feat: let community model owners advertise model metadata",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/13524",
+  "merged_at": "2026-08-20T19:50:37Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n\n- Adds optional advertised metadata for text community proxies: tool calling, reasoning, and context length\n- Stores declarations in the existing typed proxy payload; empty declarations are omitted and no migration is needed\n- Exposes declarations through the model catalog without changing request forwarding\n- Rejects declarations for non-text proxies; agent listings continue to inherit metadata from their base model\n- Adds My Models controls and focused catalog coverage\n\n## Verification\n\n- Pull request checks, Gen tests/typecheck, and CodeQL pass\n- Branch includes the latest `main` listing-envelope refactor",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Model labels, but useful",
+    "blurb": "Community model owners can now put the useful facts on the jar: tool calling, reasoning, and context length. Less guessing which model brought the right tiny wrench.",
+    "summary": "Text community proxy owners can now advertise tool-calling support, reasoning support, and context length in their typed proxy payloads, with those declarations surfaced in the model catalog.",
+    "impact": "People browsing community text models can see capability metadata before choosing one, while agent listings still inherit the metadata of their base models.",
+    "keywords": [
+      "community models",
+      "model catalog",
+      "tool calling",
+      "reasoning",
+      "context length",
+      "metadata"
+    ],
+    "visual_concept": "A cozy community-model garden where Polli carefully attaches clear capability tags to blooming code-plants: a tiny wrench for tool calling, a glowing thought bubble for reasoning, and a long measuring tape for context length. A friendly CRT monitor robot reads the tidy model catalog labels while flowers and vines grow around the terminal.",
+    "image_prompt": "Cozy pixel art scene of the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses as she labels blooming code-plants with pixel tags for a wrench, a thought bubble, and a long context measuring tape; a cute CRT monitor robot eagerly reads the organized catalog. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm cream garden shed, chunky retro sprites, warm lighting, retro gaming vibes, subtle text in pixel font: \"MODEL FACTS\", nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-20/PR-13524.jpg",
+    "prompt": "Cozy pixel art scene of the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses as she labels blooming code-plants with pixel tags for a wrench, a thought bubble, and a long context measuring tape; a cute CRT monitor robot eagerly reads the organized catalog. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm cream garden shed, chunky retro sprites, warm lighting, retro gaming vibes, subtle text in pixel font: \"MODEL FACTS\", nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-08-20T19:52:06.577367+00:00"
+}

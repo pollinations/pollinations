@@ -15,7 +15,15 @@ const log = getLogger(["enter", "prompt-agent-runtime"]);
 
 export const PromptAgentRequestSchema = z
     .object({
-        messages: z.array(z.record(z.string(), z.unknown()) as unknown as z.ZodType<ModelMessage>).optional().default([]),
+        messages: z
+            .array(
+                z.record(
+                    z.string(),
+                    z.unknown(),
+                ) as unknown as z.ZodType<ModelMessage>,
+            )
+            .optional()
+            .default([]),
         stream: z.boolean().optional().default(false),
     })
     .passthrough();

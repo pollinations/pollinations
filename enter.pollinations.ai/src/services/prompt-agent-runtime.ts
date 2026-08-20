@@ -13,72 +13,11 @@ import type { PromptAgentConfig } from "./prompt-agent.ts";
 
 const log = getLogger(["enter", "prompt-agent-runtime"]);
 
-// Zod schemas for ModelMessage parts that can be represented in JSON Schema
-const TextPartSchema = z.object({
-    type: z.literal("text"),
-    text: z.string(),
-});
-
-const ImagePartSchema = z.object({
-    type: z.literal("image"),
-    image: z.union([z.string(), z.instanceof(URL)]),
-    mimeType: z.string().optional(),
-});
-
-const FilePartSchema = z.object({
-    type: z.literal("file"),
-    data: z.union([z.string(), z.instanceof(URL)]),
-    mimeType: z.string(),
-    title: z.string().optional(),
-});
-
-const ToolCallPartSchema = z.object({
-    type: z.literal("tool-call"),
-    toolCallId: z.string(),
-    toolName: z.string(),
-    args: z.record(z.unknown()),
-});
-
-const ToolResultPartSchema = z.object({
-    type: z.literal("tool-result"),
-    toolCallId: z.string(),
-    toolName: z.string().optional(),
-    result: z.unknown(),
-});
-
-const MessageContentSchema = z.union([
-    z.string(),
-    z.array(z.union([TextPartSchema, ImagePartSchema, FilePartSchema])),
-]);
-
-const ToolCallContentSchema = z.array(ToolCallPartSchema);
-const ToolResultContentSchema = z.array(ToolResultPartSchema);
-
-// Main ModelMessage schema - covers all OpenAI-compatible message roles
-const ModelMessageSchema = z.discriminatedUnion("role", [
-    z.object({
-        role: z.literal("system"),
-        content: z.union([z.string(), z.array(TextPartSchema)]),
-    }),
-    z.object({
-        role: z.literal("user"),
-        content: MessageContentSchema,
-    }),
-    z.object({
-        role: z.literal("assistant"),
-        content: MessageContentSchema.optional(),
-        toolCalls: ToolCallContentSchema.optional(),
-    }),
-    z.object({
-        role: z.literal("tool"),
-        content: ToolResultContentSchema,
-        toolCallId: z.string(),
-    }),
-]);
-
+// Use z.any() for messages instead of z.custom() to allow JSON Schema generation.
+// Actual runtime validation is handled by the ai package internally.
 export const PromptAgentRequestSchema = z
     .object({
-        messages: z.array(ModelMessageSchema).optional().default([]),
+        messages: z.array(z.any()).optional().default([]),
         stream: z.boolean().optional().default(false),
     })
     .passthrough();

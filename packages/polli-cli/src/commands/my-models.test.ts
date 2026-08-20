@@ -13,6 +13,7 @@ describe("modelBody", () => {
                     modality: "image",
                     imagePricing: "request",
                     inputModalities: "text,image",
+                    fallbacks: "owner/backup, owner/secondary",
                     completionImagePrice: "0.01",
                 },
                 true,
@@ -25,6 +26,7 @@ describe("modelBody", () => {
             modality: "image",
             imagePricing: "request",
             inputModalities: ["text", "image"],
+            fallbacks: ["owner/backup", "owner/secondary"],
             completionImagePrice: 0.01,
         });
     });
@@ -45,5 +47,20 @@ describe("modelBody", () => {
             promptImagePrice: 0.000001,
             completionImagePrice: 0.02,
         });
+    });
+
+    it("supports transcription model registration", () => {
+        expect(
+            modelBody(
+                {
+                    name: "speech-provider",
+                    title: "Speech Provider",
+                    baseUrl: "https://example.com/v1",
+                    bearerToken: "upstream-token",
+                    modality: "transcription",
+                },
+                true,
+            ),
+        ).toMatchObject({ modality: "transcription" });
     });
 });

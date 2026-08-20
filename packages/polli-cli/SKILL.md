@@ -161,7 +161,7 @@ polli my-models create --name my-image --title "My Image" --modality image --ima
 polli my-models update <id> --description "Updated description"
 polli my-models delete <id>
 ```
-`my-models` manages owned community text and image models for invite-only accounts. It requires `communityEndpointsAllowed: true` plus a key with `account:keys`, or an authenticated dashboard session through the API. Use `account:usage` for narrow read-only usage and `polli quests`; use both permissions when a client needs both read-only account state and admin operations. Quest claiming is dashboard-only; `polli quests` is read-only and account-aware.
+`my-models` manages owned community text, image, and transcription models for invite-only accounts. It requires `communityEndpointsAllowed: true` plus a key with `account:keys`, or an authenticated dashboard session through the API. Use `account:usage` for narrow read-only usage and `polli quests`; use both permissions when a client needs both read-only account state and admin operations. Quest claiming is dashboard-only; `polli quests` is read-only and account-aware.
 
 ### Register an image my-model
 ```bash
@@ -181,11 +181,11 @@ Prices only apply to `--visibility public` models. A private model is owner-only
 ```bash
 polli agents list
 polli agents get <id>
-polli agents create --config agent.json
+polli agents create --config agent.json --name my-agent --title "My Agent"
 polli agents update <id> --config agent.json
 polli agents delete <id>
 ```
-The config file is sent directly to the agent API. It contains `systemPrompt`, `baseModel`, and optional `mcpServers`. The only supported server ID is currently `"pollinations"`. Updates replace the complete agent configuration.
+The config file contains `systemPrompt`, `baseModel`, and optional `mcpServers`; create also requires `--name` and `--title` for the callable model listing. The only supported server ID is currently `"pollinations"`. Updates replace the complete agent configuration.
 
 ### Manage API keys
 ```bash

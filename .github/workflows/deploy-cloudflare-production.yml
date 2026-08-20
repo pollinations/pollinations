@@ -85,8 +85,15 @@ jobs:
               - 'enter.pollinations.ai/drizzle/**'
               - '.github/workflows/deploy-cloudflare-production.yml'
 
-  # Keep slow validation outside the migration-to-deploy cutover window.
-  preflight-gen:
+  # Gen's suite runs BEFORE the migration, not inside deploy-gen after it. Two
+  # reasons. It keeps a red gen test from letting a schema change reach
+  # production. And it takes ~2.5 min of work out from between `migrate` and
+  # gen actually deploying: the deployed gen reads the old schema, and
+  # loadGenerationModelRegistry has no try/catch, so a column it no longer
+  # recognises takes the whole model registry down — static models included,
+  # not just community ones. Shrinking that gap below the 60s registry cache
+  # is what keeps a column-dropping migration invisible to callers.
+  test-gen:
     needs: changes
     if: needs.changes.outputs.gen == 'true'
     runs-on: ubuntu-latest
@@ -111,16 +118,19 @@ jobs:
   # One migration for all three workers: they share
   # production-pollinations-enter-db, so the schema must move once, before any
   # of them deploys. `d1 migrations apply` is idempotent.
+  #
+  # `!cancelled()` is required: without a status function here, a skipped
+  # test-gen (gen not deploying) would skip migrate too, and with it every
+  # deploy job.
   migrate:
-    needs: [changes, preflight-gen]
+    needs: [changes, test-gen]
     # Never move the schema unless at least one worker is going to deploy on
     # top of it. Without this the job runs whenever the workflow fires, so any
     # filter that wrongly reports false leaves migrations applied with every
     # worker still on the old code — strictly worse than not deploying at all.
     if: >-
-      always() &&
-      needs.changes.result == 'success' &&
-      (needs.preflight-gen.result == 'success' || needs.preflight-gen.result == 'skipped') &&
+      !cancelled() &&
+      needs.test-gen.result != 'failure' &&
       (needs.changes.outputs.enter == 'true' ||
        needs.changes.outputs.gen == 'true' ||
        needs.changes.outputs.media == 'true')
@@ -177,10 +187,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Only this job sits on the post-migration critical path, so it is the
+      # one place the npm cache is worth having: every second between `migrate`
+      # finishing and gen deploying is a second the live worker queries a schema
+      # its code predates.
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '24'
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci

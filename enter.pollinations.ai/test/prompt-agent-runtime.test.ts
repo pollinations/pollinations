@@ -566,7 +566,7 @@ describe("prompt-agent runtime", () => {
         expect(JSON.parse(text).choices[0].message.content).toBe("still here");
     });
 
-    it("passes the caller token only to the built-in Pollinations MCP", async () => {
+    it("passes the caller token and exposes the Pollinations MCP tools", async () => {
         const mcpRequests: Request[] = [];
         vi.stubGlobal(
             "fetch",
@@ -627,6 +627,8 @@ describe("prompt-agent runtime", () => {
                 };
                 expect(body.tools.map((tool) => tool.function.name)).toEqual([
                     "mcp__pollinations__generateImage",
+                    "mcp__pollinations__getBalance",
+                    "mcp__pollinations__getUsage",
                 ]);
                 return Response.json({
                     choices: [

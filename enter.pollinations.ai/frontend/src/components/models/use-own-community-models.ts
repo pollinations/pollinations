@@ -29,8 +29,7 @@ export function useOwnCommunityModels(enabled = true): ApiModelInfo[] {
                     data
                         .filter(
                             (model) =>
-                                !model.disabled &&
-                                model.visibility !== "public",
+                                !model.hidden && model.visibility !== "public",
                         )
                         .map((model) => ({
                             name: model.modelId,

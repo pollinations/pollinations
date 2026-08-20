@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "cf23e657-fa01-491f-8b1a-aba7fb7b8c29",
+  "id": "2302eb27-bc04-498d-964b-52020e41ab0c",
   "prevId": "411bf138-2ff3-453f-8f49-894c58d4c069",
   "tables": {
     "account": {
@@ -454,22 +454,6 @@
           "notNull": false,
           "autoincrement": false
         },
-        "type": {
-          "name": "type",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'proxy'"
-        },
-        "payload": {
-          "name": "payload",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'{}'"
-        },
         "modality": {
           "name": "modality",
           "type": "text",
@@ -629,22 +613,22 @@
           "notNull": false,
           "autoincrement": false
         },
-        "disabled_at": {
-          "name": "disabled_at",
+        "hidden_at": {
+          "name": "hidden_at",
           "type": "integer",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "disabled_reason": {
-          "name": "disabled_reason",
+        "hidden_reason": {
+          "name": "hidden_reason",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "disabled_by": {
-          "name": "disabled_by",
+        "hidden_by": {
+          "name": "hidden_by",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -1829,7 +1813,11 @@
   "_meta": {
     "schemas": {},
     "tables": {},
-    "columns": {}
+    "columns": {
+      "\"community_endpoint\".\"disabled_at\"": "\"community_endpoint\".\"hidden_at\"",
+      "\"community_endpoint\".\"disabled_reason\"": "\"community_endpoint\".\"hidden_reason\"",
+      "\"community_endpoint\".\"disabled_by\"": "\"community_endpoint\".\"hidden_by\""
+    }
   },
   "internal": {
     "indexes": {}

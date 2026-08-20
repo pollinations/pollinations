@@ -880,8 +880,8 @@ describe("community endpoint helpers", () => {
                 visibility: "public",
                 perUserRpm: null,
                 fallbackModelIds: [],
-                disabledAt: null,
-                disabledReason: null,
+                hiddenAt: null,
+                hiddenReason: null,
                 bearerTokenCiphertext: await encryptSecret(
                     "sk_saved_token",
                     secret,
@@ -1074,8 +1074,8 @@ describe("community endpoint helpers", () => {
                 visibility: "public",
                 perUserRpm: null,
                 fallbackModelIds: [],
-                disabledAt: null,
-                disabledReason: null,
+                hiddenAt: null,
+                hiddenReason: null,
                 bearerTokenCiphertext: await encryptSecret(
                     "sk_saved_token",
                     secret,
@@ -1429,8 +1429,8 @@ describe("community endpoint helpers", () => {
             visibility: "public",
             perUserRpm: null,
             fallbackModelIds: [],
-            disabledAt: null,
-            disabledReason: null,
+            hiddenAt: null,
+            hiddenReason: null,
             bearerTokenCiphertext: await encryptSecret(
                 "sk_saved_token",
                 secret,
@@ -1491,8 +1491,8 @@ describe("community endpoint helpers", () => {
                 upstreamModel: "agent",
                 visibility: "public",
                 perUserRpm: null,
-                disabledAt: null,
-                disabledReason: null,
+                hiddenAt: null,
+                hiddenReason: null,
                 fallbackModelIds: [],
                 ...communityEndpointPrices({}),
                 ...overrides,
@@ -2312,7 +2312,7 @@ fixtureTest(
 );
 
 fixtureTest(
-    "excludes a deactivated community model from public model catalogs",
+    "excludes a hidden community model from public model catalogs",
     async () => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `disabled-${crypto.randomUUID().slice(0, 8)}`;
@@ -2326,7 +2326,7 @@ fixtureTest(
             ownerUserId,
             visibility: "public",
             name: modelName,
-            description: "Deactivated community model",
+            description: "Hidden community model",
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
             bearerTokenCiphertext: await encryptSecret(
@@ -2335,9 +2335,9 @@ fixtureTest(
             ),
             promptTextPrice: 0.1 / 1_000_000,
             completionTextPrice: 0.2 / 1_000_000,
-            disabledAt: new Date(),
-            disabledReason: "repeated upstream 500s",
-            disabledBy: "monitor",
+            hiddenAt: new Date(),
+            hiddenReason: "repeated upstream 500s",
+            hiddenBy: "monitor",
             createdAt: new Date(),
             updatedAt: new Date(),
         });
@@ -2550,7 +2550,7 @@ fixtureTest(
 );
 
 fixtureTest(
-    "rejects a direct chat completion against a deactivated community model",
+    "routes direct calls to a hidden community model",
     async ({ apiKey }) => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `disabled-call-${crypto.randomUUID().slice(0, 8)}`;
@@ -2568,7 +2568,7 @@ fixtureTest(
             ownerUserId,
             visibility: "public",
             name: modelName,
-            description: "Deactivated community model",
+            description: "Hidden community model",
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
             bearerTokenCiphertext: await encryptSecret(
@@ -2577,12 +2577,43 @@ fixtureTest(
             ),
             promptTextPrice: 0.1 / 1_000_000,
             completionTextPrice: 0.2 / 1_000_000,
-            disabledAt: new Date(),
-            disabledReason: "repeated upstream 500s",
-            disabledBy: "monitor",
+            hiddenAt: new Date(),
+            hiddenReason: "repeated upstream 500s",
+            hiddenBy: "monitor",
             createdAt: new Date(),
             updatedAt: new Date(),
         });
+
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+
+            if (isPortkeyChatCompletionsRequest(request)) {
+                return Response.json({
+                    id: "chatcmpl_hidden",
+                    object: "chat.completion",
+                    model: "gpt-4.1-mini",
+                    choices: [
+                        {
+                            index: 0,
+                            message: { role: "assistant", content: "ok" },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    usage: {
+                        prompt_tokens: 2,
+                        completion_tokens: 1,
+                        total_tokens: 3,
+                    },
+                });
+            }
+
+            if (isBillingFetch(request)) {
+                return Response.json({ data: [] });
+            }
+
+            throw new Error(`Unexpected fetch: ${request.url}`);
+        });
+        vi.stubGlobal("fetch", fetchMock);
 
         for (const requestedModel of [modelId, legacyModelId]) {
             const response = await fetchGen(
@@ -2601,13 +2632,16 @@ fixtureTest(
                 },
             );
 
-            expect(response.status).toBe(400);
-            const body = (await response.json()) as {
-                error?: { message?: string };
-            };
-            expect(body.error?.message).toContain("Invalid model or alias");
-            expect(body.error?.message).not.toContain("repeated upstream 500s");
+            expect(response.status).toBe(200);
+            await expect(response.json()).resolves.toMatchObject({
+                choices: [{ message: { content: "ok" } }],
+            });
         }
+
+        const upstreamCalls = fetchMock.mock.calls.filter(([input, init]) =>
+            isPortkeyChatCompletionsRequest(new Request(input, init)),
+        );
+        expect(upstreamCalls).toHaveLength(2);
     },
 );
 
@@ -3945,9 +3979,9 @@ fixtureTest(
             perUserRpm: 0.5,
             promptTextPrice: 0,
             completionTextPrice: 0,
-            disabled: false,
-            disabledReason: null,
-            disabledAt: null,
+            hidden: false,
+            hiddenReason: null,
+            hiddenAt: null,
         });
         expect(created).not.toHaveProperty("bearerToken");
         expect(created).not.toHaveProperty("bearerTokenCiphertext");
@@ -3956,9 +3990,9 @@ fixtureTest(
         await db
             .update(communityEndpointTable)
             .set({
-                disabledAt: new Date(),
-                disabledReason: "was failing",
-                disabledBy: "monitor",
+                hiddenAt: new Date(),
+                hiddenReason: "was failing",
+                hiddenBy: "monitor",
             })
             .where(eq(communityEndpointTable.id, createdId));
 
@@ -3989,11 +4023,11 @@ fixtureTest(
             visibility: "public",
             promptTextPrice: 0.00001,
             completionTextPrice: 0.00002,
-            disabled: true,
-            disabledReason: "was failing",
+            hidden: true,
+            hiddenReason: "was failing",
         });
 
-        const reactivateResponse = await fetchEnterApi(
+        const relistResponse = await fetchEnterApi(
             enterApi,
             new Request(
                 `http://localhost:3000/api/account/my-models/${createdId}/update`,
@@ -4003,18 +4037,18 @@ fixtureTest(
                         Authorization: `Bearer ${key}`,
                         "Content-Type": "application/json",
                     },
-                    body: JSON.stringify({ active: true }),
+                    body: JSON.stringify({ hidden: false }),
                 },
             ),
         );
-        expect(reactivateResponse.status).toBe(200);
-        await expect(reactivateResponse.json()).resolves.toMatchObject({
-            disabled: false,
-            disabledReason: null,
-            disabledAt: null,
+        expect(relistResponse.status).toBe(200);
+        await expect(relistResponse.json()).resolves.toMatchObject({
+            hidden: false,
+            hiddenReason: null,
+            hiddenAt: null,
         });
 
-        const deactivateResponse = await fetchEnterApi(
+        const hideResponse = await fetchEnterApi(
             enterApi,
             new Request(
                 `http://localhost:3000/api/account/my-models/${createdId}/update`,
@@ -4024,14 +4058,14 @@ fixtureTest(
                         Authorization: `Bearer ${key}`,
                         "Content-Type": "application/json",
                     },
-                    body: JSON.stringify({ active: false }),
+                    body: JSON.stringify({ hidden: true }),
                 },
             ),
         );
-        expect(deactivateResponse.status).toBe(200);
-        await expect(deactivateResponse.json()).resolves.toMatchObject({
-            disabled: true,
-            disabledReason: "Deactivated by owner",
+        expect(hideResponse.status).toBe(200);
+        await expect(hideResponse.json()).resolves.toMatchObject({
+            hidden: true,
+            hiddenReason: "Hidden by owner",
         });
 
         // Minimum-price policy is independent of visibility: any non-negative
@@ -4902,7 +4936,7 @@ fixtureTest("validates community fallback targets on write", async () => {
             bearerTokenCiphertext,
             promptTextPrice: 0,
             completionTextPrice: 0,
-            disabledAt: new Date(),
+            hiddenAt: new Date(),
             createdAt: new Date(),
             updatedAt: new Date(),
         },
@@ -4916,7 +4950,7 @@ fixtureTest("validates community fallback targets on write", async () => {
             bearerTokenCiphertext,
             promptTextPrice: 0,
             completionTextPrice: 0,
-            disabledAt: new Date(),
+            hiddenAt: new Date(),
             createdAt: new Date(),
             updatedAt: new Date(),
         },
@@ -5053,7 +5087,7 @@ fixtureTest("validates community fallback targets on write", async () => {
         communityModelId(ownerGithubUsername, targetNames.disabled),
     );
     expect(disabledTarget.status).toBe(400);
-    expect(await disabledTarget.text()).toContain("must be active");
+    expect(await disabledTarget.text()).toContain("must be listed");
 
     const delegatingTarget = await createWithFallback(
         `${primaryName}-delegating`,
@@ -5222,8 +5256,8 @@ fixtureTest(
                 fallbackModelIds: [id("disabled-target")],
             }),
             endpoint("disabled-target", {
-                disabledAt: new Date(),
-                disabledReason: "repeated upstream 500s",
+                hiddenAt: new Date(),
+                hiddenReason: "repeated upstream 500s",
             }),
             endpoint("deleted-primary", {
                 fallbackModelIds: [

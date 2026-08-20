@@ -81,8 +81,8 @@ export async function getCommunityModelRegistryEntries(
             agentId: schema.communityEndpoint.agentId,
             agentConfig: schema.agent.config,
             visibility: schema.communityEndpoint.visibility,
-            disabledAt: schema.communityEndpoint.disabledAt,
-            disabledReason: schema.communityEndpoint.disabledReason,
+            hiddenAt: schema.communityEndpoint.hiddenAt,
+            hiddenReason: schema.communityEndpoint.hiddenReason,
             createdAt: schema.communityEndpoint.createdAt,
         })
         .from(schema.communityEndpoint)
@@ -110,8 +110,8 @@ export async function getCommunityModelRegistryEntries(
             providerName: row.providerName,
             providerUrl: row.providerUrl,
             visibility: row.visibility,
-            disabledAt: row.disabledAt ? row.disabledAt.getTime() : null,
-            disabledReason: row.disabledReason,
+            hiddenAt: row.hiddenAt ? row.hiddenAt.getTime() : null,
+            hiddenReason: row.hiddenReason,
         };
         // An agent charges nothing of its own and fans out to nothing: the
         // caller pays for whatever it consumes downstream. Only a proxy has
@@ -179,6 +179,7 @@ export async function getCommunityModelRegistryEntries(
         const definition = communityModelDefinition({
             ...communityEndpoint,
             addedDate: row.createdAt.getTime(),
+            hidden: communityEndpoint.hiddenAt !== null,
         });
         return [
             {

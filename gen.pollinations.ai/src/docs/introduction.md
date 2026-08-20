@@ -4,4 +4,4 @@
 
 **Get your API key:** [enter.pollinations.ai](https://enter.pollinations.ai/keys)
 
-**Integrations:** [BYOP](/docs#tag/byop) · [CLI](/docs#tag/cli) · [MCP Server](/docs#tag/mcp-server)
+**Integrations:** [BYOP](/docs#tag/byop) · [Community Models](/docs#tag/community-models) · [CLI](/docs#tag/cli) · [MCP Server](/docs#tag/mcp-server)

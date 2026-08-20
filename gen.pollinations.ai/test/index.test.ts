@@ -13,6 +13,7 @@ import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coo
 
 const TRANSCRIPTION_MODEL_IDS = [
     "whisper",
+    "gpt-transcribe",
     "scribe",
     "universal-2",
     "universal-3.5-pro",
@@ -2444,5 +2445,81 @@ fixtureTest(
                     'Model "elevenlabs" cannot be used on /v1/audio/transcriptions. Supported endpoints: /audio/{text}, /v1/audio/speech, /v1/audio/speech/with-timestamps.',
             },
         });
+    },
+);
+
+fixtureTest(
+    "routes GPT Transcribe through Azure with duration usage",
+    async ({ apiKey }) => {
+        const endpoint =
+            "https://myceli-prod-swedencentral.openai.azure.com/openai/deployments/test-gpt-transcribe/audio/transcriptions?api-version=2025-04-01-preview";
+        const calls: string[] = [];
+
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                calls.push(request.url);
+                if (request.url === endpoint) {
+                    expect(request.headers.get("api-key")).toBe(
+                        "test-azure-key",
+                    );
+                    const form = await request.formData();
+                    expect(form.get("model")).toBe("gpt-transcribe");
+                    expect(form.get("language")).toBe("en");
+                    expect(form.get("prompt")).toBe("Pollinations");
+                    expect(form.get("file")).toBeInstanceOf(File);
+                    return Response.json({
+                        text: "hello from Azure",
+                        usage: { type: "duration", seconds: 4 },
+                    });
+                }
+                if (
+                    request.url.startsWith(
+                        "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json",
+                    ) ||
+                    request.url.startsWith("http://localhost:7181/")
+                ) {
+                    return Response.json({ data: [] });
+                }
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            },
+        );
+
+        const form = new FormData();
+        form.set("model", "gpt-transcribe");
+        form.set("language", "en");
+        form.set("prompt", "Pollinations");
+        form.set(
+            "file",
+            new File(["route-test-audio"], "route-test.wav", {
+                type: "audio/wav",
+            }),
+        );
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(
+                "https://staging.gen.pollinations.ai/v1/audio/transcriptions",
+                {
+                    method: "POST",
+                    headers: { Authorization: `Bearer ${apiKey}` },
+                    body: form,
+                },
+            ),
+            withInlineGenerationCoordinator({
+                ...env,
+                AZURE_MYCELI_PROD_SWEDEN_API_KEY: "test-azure-key",
+            } as unknown as CloudflareBindings),
+            ctx,
+        );
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("x-model-used")).toBe("gpt-transcribe");
+        expect(response.headers.get("x-usage-prompt-audio-seconds")).toBe("4");
+        await expect(response.json()).resolves.toEqual({
+            text: "hello from Azure",
+            usage: { type: "duration", seconds: 4 },
+        });
+        await waitOnExecutionContext(ctx);
+        expect(calls).toContain(endpoint);
     },
 );

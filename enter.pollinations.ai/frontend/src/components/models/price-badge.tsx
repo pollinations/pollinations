@@ -8,9 +8,10 @@ import {
     DropdownItem,
     McpIcon,
     SearchIcon,
+    TokensIcon,
     Tooltip,
 } from "@pollinations/ui";
-import { type FC, useState } from "react";
+import { type FC, type ReactNode, useState } from "react";
 import { formatDisplayPrice } from "./formatters.ts";
 import { PRICE_ICON } from "./model-icons.tsx";
 import type {
@@ -281,14 +282,17 @@ export const ModelPricingControls: FC<{
                         trigger={(open) => (
                             <Button
                                 type="button"
-                                size="sm"
+                                size="xs"
                                 aria-label={`Pricing option for ${model.displayName ?? model.name}`}
-                                className="max-w-52 justify-between gap-2 text-xs tabular-nums"
+                                className="max-w-44 justify-between gap-1 tabular-nums"
                             >
                                 <span className="truncate">
                                     {selected?.label}
                                 </span>
-                                <ChevronIcon expanded={open} />
+                                <ChevronIcon
+                                    expanded={open}
+                                    className="h-2.5 w-2.5"
+                                />
                             </Button>
                         )}
                     >
@@ -329,7 +333,7 @@ const LedgerPriceValue: FC<{ value: string }> = ({ value }) => {
     const [whole, fraction] = value.split(".", 2);
 
     return (
-        <span className="grid w-[9ch] shrink-0 grid-cols-[minmax(2ch,1fr)_auto_6ch] text-sm font-semibold tabular-nums text-theme-text-strong">
+        <span className="grid w-[10ch] shrink-0 grid-cols-[minmax(3ch,1fr)_auto_6ch] text-sm font-semibold tabular-nums text-theme-text-strong">
             <span className="sr-only">{value}</span>
             <span aria-hidden="true" className="text-right">
                 {whole}
@@ -417,8 +421,20 @@ export const ModelPricingLedger: FC<{
     className?: string;
     align?: "left" | "right";
     hasTools?: boolean;
-}> = ({ pricing, className, align = "right", hasTools = false }) => {
-    if (!pricing.prices.length && !pricing.adjustments.length && !hasTools) {
+    requestEstimate?: ReactNode;
+}> = ({
+    pricing,
+    className,
+    align = "right",
+    hasTools = false,
+    requestEstimate,
+}) => {
+    if (
+        !pricing.prices.length &&
+        !pricing.adjustments.length &&
+        !hasTools &&
+        !requestEstimate
+    ) {
         return null;
     }
 
@@ -591,13 +607,32 @@ export const ModelPricingLedger: FC<{
     return (
         <div
             className={cn(
-                "grid w-full min-w-0 max-w-full gap-x-1.5",
+                "grid w-full min-w-0 max-w-full gap-x-2",
                 align === "left"
-                    ? "grid-cols-[6.5rem_9ch_max-content]"
-                    : "grid-cols-[1fr_6.5rem_9ch_max-content]",
+                    ? "grid-cols-[6.5rem_10ch_max-content]"
+                    : "grid-cols-[1fr_6.5rem_10ch_max-content]",
                 className,
             )}
         >
+            {requestEstimate && (
+                <div
+                    className={cn(
+                        "mb-1 grid grid-cols-subgrid items-baseline border-b border-divider pb-1",
+                        align === "right"
+                            ? "col-start-2 col-end-[-1]"
+                            : "col-span-full",
+                    )}
+                >
+                    <span className="flex items-center gap-1.5 whitespace-nowrap text-xs text-theme-text-muted">
+                        <TokensIcon className="h-3.5 w-3.5 shrink-0" />
+                        Requests
+                    </span>
+                    {requestEstimate}
+                    <span className="whitespace-nowrap text-xs font-normal text-theme-text-muted">
+                        /pollen
+                    </span>
+                </div>
+            )}
             {inputRateRows.length > 0 && (
                 <div className="grid col-span-full grid-cols-subgrid">
                     {renderRateRows(inputRateRows)}

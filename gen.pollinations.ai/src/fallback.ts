@@ -19,6 +19,24 @@ import type { GenerationModelEntry } from "./model-registry.ts";
  * the primary's credentials or upstream model are broken, which the fallback may
  * survive.
  */
+/**
+ * Internal-only marker: which declared target served. Must stay
+ * non-enumerable so JSON bodies and R2 cache snapshots never leak it.
+ */
+export function attachFallbackTarget<T extends object>(
+    value: T,
+    index: number,
+): T {
+    if (index <= 0) return value;
+    Object.defineProperty(value, "fallbackTarget", {
+        value: `config.targets[${index}]`,
+        enumerable: false,
+        configurable: true,
+        writable: true,
+    });
+    return value;
+}
+
 export const FALLBACK_ON_STATUS_CODES = [
     401, 402, 403, 404, 408, 429, 500, 502, 503, 504,
 ];
@@ -234,6 +252,13 @@ function isUsableCommunityFallback(
     }
     if (primary.imagePricing !== candidate.imagePricing) return false;
     if (!isCommunityFallbackBalanceAllowed(primary, candidate)) return false;
+    if (
+        !from.supportedEndpoints.every((endpoint) =>
+            target.supportedEndpoints.includes(endpoint),
+        )
+    ) {
+        return false;
+    }
     return isCommunityFallbackPricingAllowed(primary, candidate);
 }
 

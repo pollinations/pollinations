@@ -1,0 +1,87 @@
+{
+  "date": "2026-08-19",
+  "period_start": "2026-08-19",
+  "period_end": "2026-08-19",
+  "title": "Five more models, spanning reasoning and speech",
+  "summary": "A busy day of new reasoning and speech models, sturdier image routes, better account controls, and fewer places for metadata or float residue to hide.\n\nThe model roster grew in several useful directions: Qwen3.8 27B and GLM-5.3 bring multimodal, reasoning, tool-use, streaming, and structured-output options; Nemotron 3.5 Lightning adds a Quest-accessible reasoning model; and Grok TTS plus Fish Audio S2.1 Pro add new voices through the existing audio endpoints. Same calls, more strange machines behind them.\n\nEnter now has self-service account settings, including profile details, a copyable Pollinations ID, sign-out, and a fresh-session-protected account deletion flow. Quest rewards are now durably tied to GitHub identities, while the model catalog makes capabilities, publishers, sorting, and estimated Pollen usage easier to compare on desktop and mobile. Checkout received a small responsive cleanup too.\n\nKontext image generation and editing now point at the working Azure East US deployment, while DreamShaper's production deployment gained a cleaner restart path and passed sustained-load validation. Image preflight estimates are also less likely to reject ordinary flat-rate community-model requests because one stale analytics number had developed ambitious opinions.",
+  "pr_count": 19,
+  "prs": [
+    {
+      "number": 13297,
+      "date": "2026-08-19"
+    },
+    {
+      "number": 13418,
+      "date": "2026-08-19"
+    },
+    {
+      "number": 13471,
+      "date": "2026-08-19"
+    },
+    {
+      "number": 13520,
+      "date": "2026-08-19"
+    },
+    {
+      "number": 13522,
+      "date": "2026-08-19"
+    },
+    {
+      "number": 13523,
+      "date": "2026-08-19"
+    },
+    {
+      "number": 13531,
+      "date": "2026-08-19"
+    },
+    {
+      "number": 13540,
+      "date": "2026-08-19"
+    },
+    {
+      "number": 13562,
+      "date": "2026-08-19"
+    },
+    {
+      "number": 13564,
+      "date": "2026-08-19"
+    },
+    {
+      "number": 13569,
+      "date": "2026-08-19"
+    },
+    {
+      "number": 13571,
+      "date": "2026-08-19"
+    },
+    {
+      "number": 13572,
+      "date": "2026-08-19"
+    },
+    {
+      "number": 13574,
+      "date": "2026-08-19"
+    },
+    {
+      "number": 13577,
+      "date": "2026-08-19"
+    },
+    {
+      "number": 13581,
+      "date": "2026-08-19"
+    },
+    {
+      "number": 13586,
+      "date": "2026-08-19"
+    },
+    {
+      "number": 13591,
+      "date": "2026-08-19"
+    },
+    {
+      "number": 13595,
+      "date": "2026-08-19"
+    }
+  ],
+  "generated_at": "2026-08-20T06:15:29.917144+00:00"
+}

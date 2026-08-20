@@ -362,6 +362,26 @@ export const AUDIO_SERVICES = {
         outputModalities: ["text"],
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
+    "gpt-transcribe": {
+        aliases: [],
+        provider: "azure",
+        brand: "OpenAI",
+        category: "audio",
+        addedDate: new Date("2026-08-19").getTime(),
+        paidOnly: false,
+        priceMultiplier: 0.75,
+        cost: {
+            // Provisional OpenAI list price: $0.0045 per input minute. Azure's
+            // exact meter was not yet visible when this route launched.
+            promptAudioSeconds: 0.0045 / 60,
+        },
+        title: "GPT Transcribe",
+        description:
+            "Fast multilingual speech recognition with optional language and prompt context",
+        inputModalities: ["audio"],
+        outputModalities: ["text"],
+        supportedEndpoints: ["/v1/audio/transcriptions"],
+    },
     scribe: {
         aliases: ["scribe_v2", "scribe-v2"],
         provider: "elevenlabs",

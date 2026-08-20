@@ -806,7 +806,14 @@ async function* extractResponseStream(
 
     for await (const event of asyncIteratorStream(eventStream)) {
         if (event.data === "[DONE]") return;
-        yield JSON.parse(event.data);
+
+        let data: unknown;
+        try {
+            data = JSON.parse(event.data);
+        } catch {
+            continue;
+        }
+        yield data;
     }
 }
 

@@ -11,6 +11,7 @@ import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
 import {
+    attachFallbackTarget,
     type FallbackCandidate,
     fallbackCandidates,
     withModelFallback,
@@ -410,11 +411,10 @@ async function generateTextResponse(
         );
         c.set("upstreamRequestUrl", completion.upstreamRequestUrl);
         completion.id = completion.id || generatePollinationsId();
-        if (index > 0) {
-            // Same "config.targets[N]" shape a Portkey strategy would report, so
-            // the response header and tracking's parsing cover both.
-            completion.fallbackTarget = `config.targets[${index}]`;
-        }
+        // Same "config.targets[N]" shape a Portkey strategy would report, so
+        // the response header and tracking's parsing cover both. Non-enumerable
+        // so JSON.stringify / R2 cache snapshots never leak the field.
+        attachFallbackTarget(completion, index);
 
         // Cost and the owner reward follow what actually served, so record the
         // serving entry before the response (streaming included) leaves the

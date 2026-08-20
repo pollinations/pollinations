@@ -201,7 +201,9 @@ function safeUpstreamUrl(value: string | undefined): URL | undefined {
 }
 
 function throwImageError(error: unknown): never {
-    if (error instanceof UpstreamError) throw error;
+    if (error instanceof UpstreamError && !(error instanceof HttpError)) {
+        throw error;
+    }
 
     // Content-policy rejections from any provider (DashScope green-net, Replicate
     // moderation, Vertex safety, Azure content safety) are client errors, not

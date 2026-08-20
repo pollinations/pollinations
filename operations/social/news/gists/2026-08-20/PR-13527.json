@@ -1,0 +1,34 @@
+{
+  "pr_number": 13527,
+  "title": "fix: hide failing community models without disabling them",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13527",
+  "merged_at": "2026-08-20T13:30:15Z",
+  "labels": [],
+  "pr_body_excerpt": "- Renames the community endpoint state and audit fields from disabled to hidden while preserving existing data\n- Keeps hidden models callable by exact ID but removes them from catalogs and community fallback targets\n- Updates the owner dashboard and Account API to use hide and relist semantics\n- Updates the EC2 monitor policy, SQL, cadence, and prompts to hide unhealthy models without auto-relisting\n- Codifies the 300k Claude context window and repo-managed monitor updates\n\nChecks:\n- Full Gen test suite and typecheck\n- Enter changed-file typecheck and billing registry tests\n- Monitor JavaScript and shell syntax\n- Biome and CodeQL",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The catalog stopped recommending wilted flowers",
+    "blurb": "Community models that need a quiet recovery now step out of the public catalog without being uprooted. Their exact IDs still work; the fallback garden simply stops sending visitors toward the droopy leaves.",
+    "summary": "Renamed community-model disabling to hiding, so unhealthy models are removed from catalogs and fallback targets while remaining callable by exact ID, with owner-dashboard, Account API, database, and monitor support for hide/relist semantics.",
+    "impact": "Users get cleaner model catalogs and more reliable community fallbacks, while model owners can relist recovered endpoints without losing their existing model IDs or data.",
+    "keywords": [
+      "community models",
+      "model catalog",
+      "fallback",
+      "endpoint health",
+      "account API",
+      "reliability"
+    ],
+    "visual_concept": "A cozy community-model garden where Polli acts as a thoughtful gardener, gently drawing a curtain around a wilted code-flower rather than removing it. A retro catalog terminal and cheerful healthy code-plants show that the public path and fallback garden stay tidy, while a small exact-ID key tag remains attached to the hidden plant to show it is still reachable directly.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wearing a tiny gardener hat as she gently places a soft lavender privacy curtain around one wilted code-flower in a garden of healthy glowing code-plants; its little tag reads \"EXACT ID,\" while a nearby retro CRT catalog terminal glows prominently lime green (#ecf874) and shows only blooming plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, warm cream background, subtle scanlines, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-20/PR-13527.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wearing a tiny gardener hat as she gently places a soft lavender privacy curtain around one wilted code-flower in a garden of healthy glowing code-plants; its little tag reads \"EXACT ID,\" while a nearby retro CRT catalog terminal glows prominently lime green (#ecf874) and shows only blooming plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, warm cream background, subtle scanlines, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-08-20T13:31:33.310466+00:00"
+}

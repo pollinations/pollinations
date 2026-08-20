@@ -507,6 +507,125 @@ test("routes the mini model through the working East US 2 deployment", async ({
     await waitOnExecutionContext(ctx);
 });
 
+test("serves GPT Live Transcribe through Azure and bills streamed duration", async () => {
+    const { key, userId } = await createTestApiKey({
+        name: "gpt-live-transcribe-quest-key",
+        pollenBudget: 1,
+        user: { tierBalance: 1, packBalance: 0 },
+    });
+    const upstream = mockRealtimeProvider();
+    const { response, ctx } = await fetchWorkerWithContext(
+        "/v1/realtime?model=gpt-live-transcribe",
+        {
+            headers: {
+                Authorization: `Bearer ${key}`,
+                Upgrade: "websocket",
+            },
+        },
+    );
+
+    expect(response.status).toBe(101);
+    expect(upstream.request.url).toBe(
+        "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/realtime?intent=transcription",
+    );
+    expect(upstream.request.headers.get("api-key")).toBeTruthy();
+
+    const client = response.webSocket;
+    if (!client) throw new Error("Expected downstream WebSocket");
+    client.accept();
+    upstream.server.accept();
+
+    const forwardedUpdate = nextMessage(upstream.server);
+    const sessionUpdate = JSON.stringify({
+        type: "session.update",
+        session: {
+            type: "transcription",
+            audio: {
+                input: {
+                    transcription: { model: "gpt-live-transcribe" },
+                },
+            },
+        },
+    });
+    client.send(sessionUpdate);
+    await expect(forwardedUpdate).resolves.toBe(
+        JSON.stringify({
+            type: "session.update",
+            session: {
+                type: "transcription",
+                audio: {
+                    input: {
+                        transcription: {
+                            model: "test-gpt-live-transcribe",
+                        },
+                    },
+                },
+            },
+        }),
+    );
+
+    const updated = nextJsonMessage(client);
+    upstream.server.send(
+        JSON.stringify({
+            type: "session.updated",
+            session: {
+                type: "transcription",
+                audio: {
+                    input: {
+                        transcription: {
+                            model: "test-gpt-live-transcribe",
+                        },
+                    },
+                },
+            },
+        }),
+    );
+    await expect(updated).resolves.toMatchObject({
+        type: "session.updated",
+        session: {
+            audio: {
+                input: {
+                    transcription: { model: "gpt-live-transcribe" },
+                },
+            },
+        },
+    });
+
+    const completed = nextJsonMessage(client);
+    upstream.server.send(
+        JSON.stringify({
+            type: "conversation.item.input_audio_transcription.completed",
+            item_id: "item_1",
+            content_index: 0,
+            transcript: "hello",
+            usage: { type: "duration", seconds: 60 },
+        }),
+    );
+    await expect(completed).resolves.toMatchObject({
+        type: "conversation.item.input_audio_transcription.completed",
+        transcript: "hello",
+    });
+
+    client.close();
+    upstream.server.close();
+    await waitOnExecutionContext(ctx);
+    await waitForTinybirdRequests(upstream);
+    expect(upstream.tinybirdRequests).toHaveLength(1);
+    const telemetry = JSON.parse(
+        await upstream.tinybirdRequests[0].text(),
+    ) as Record<string, unknown>;
+    const balances = await getUserBalances(userId);
+    const expectedCost = 0.017;
+    const expectedPrice = roundPollenLedgerAmount(expectedCost * 0.75);
+    expect(balances?.tierBalance).toBeCloseTo(1 - expectedPrice, 8);
+    expect(balances?.packBalance).toBe(0);
+    expect(telemetry.resolvedModelRequested).toBe("gpt-live-transcribe");
+    expect(telemetry.modelProviderUsed).toBe("azure");
+    expect(telemetry.tokenCountPromptAudioSeconds).toBe(60);
+    expect(telemetry.totalCost).toBeCloseTo(expectedCost, 12);
+    expect(telemetry.totalPrice).toBeCloseTo(expectedPrice, 12);
+});
+
 test("accepts publishable keys through the query string for thin clients", async () => {
     const { key } = await createTestApiKey({
         name: "paid-publishable-realtime-key",
@@ -1435,9 +1554,10 @@ test("includes realtime model in OpenAI-compatible model discovery", async ({
             "gpt-realtime-2",
             "gpt-realtime-2.1",
             "gpt-realtime-2.1-mini",
+            "gpt-live-transcribe",
         ].includes(model.id),
     );
-    expect(realtimeModels).toHaveLength(3);
+    expect(realtimeModels).toHaveLength(4);
     for (const model of realtimeModels) {
         expect(model.supported_endpoints).toContain("/v1/realtime");
     }
@@ -1479,6 +1599,25 @@ test("includes realtime model in OpenAI-compatible model discovery", async ({
     });
     expect(scribeRealtime?.description?.toLowerCase()).not.toContain(
         scribeRealtime?.title?.toLowerCase(),
+    );
+    const gptLiveTranscribe = richModels.find(
+        (model) => model.name === "gpt-live-transcribe",
+    );
+    expect(gptLiveTranscribe).toMatchObject({
+        aliases: [],
+        brand: "OpenAI",
+        title: "GPT Live Transcribe",
+        input_modalities: ["audio"],
+        output_modalities: ["text"],
+        supported_endpoints: ["/realtime", "/v1/realtime"],
+        paid_only: false,
+        pricing: {
+            currency: "pollen",
+            promptAudioSeconds: "0.0002125",
+        },
+    });
+    expect(gptLiveTranscribe?.description?.toLowerCase()).not.toContain(
+        gptLiveTranscribe?.title?.toLowerCase(),
     );
 
     const restrictedResponse = await fetchWorker("/v1/models", {

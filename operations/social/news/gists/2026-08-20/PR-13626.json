@@ -1,0 +1,36 @@
+{
+  "pr_number": 13626,
+  "title": "Add The Mita (Roblox AI) to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13626",
+  "merged_at": "2026-08-20T12:19:44Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [The Mita (Roblox AI)](https://www.roblox.com/games/98105867888961/The-Mita) to chat\n- This AI powers a game character named Mita from MiSide. It runs on a Flask server and connects to the Roblox game via HTTP. The AI receives the player’s spoken lines, along with conversation history a\n\nFixes #13559",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Mita joins the conversation",
+    "blurb": "A new resident moved into the hive: The Mita, a Roblox character AI that listens, remembers the thread, and talks back. Polli brought flowers; Mita brought a Flask server.",
+    "summary": "Added The Mita, a Roblox AI powering the Mita character from MiSide, to the chat app registry, with a Flask-and-HTTP setup that receives player speech and conversation history.",
+    "impact": "People can now discover The Mita through Pollinations chat, connecting spoken Roblox roleplay with a character that keeps the conversation context.",
+    "keywords": [
+      "community",
+      "roblox",
+      "chat",
+      "character-ai",
+      "mita",
+      "apps"
+    ],
+    "visual_concept": "Depict The Mita as a friendly pixel-game character appearing through a cozy retro terminal connected by a dotted HTTP line to a small Roblox-like game window. Polli, wearing a tiny gaming headset, offers her a flower-shaped microphone beside code-plants, representing spoken dialogue and remembered conversation.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gaming headset as she offers a flower-shaped microphone to a friendly pixel game character named Mita emerging from a retro CRT terminal; a dotted HTTP line connects the terminal to a small game window, with conversation bubbles, code-plants, and flowers nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-20/PR-13626.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gaming headset as she offers a flower-shaped microphone to a friendly pixel game character named Mita emerging from a retro CRT terminal; a dotted HTTP line connects the terminal to a small game window, with conversation bubbles, code-plants, and flowers nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-20T12:20:59.234362+00:00",
+  "app_name": "The Mita (Roblox AI)",
+  "app_url": "https://www.roblox.com/games/98105867888961/The-Mita"
+}

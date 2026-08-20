@@ -163,9 +163,9 @@ The monitor may hide a listed community model through one of three paths:
 - rolling floor: below 70% final user-visible success across at least 20
   requests over seven days, unless fresh 24h/48h health vetoes the action.
 
-Successful fallback rescues count as successes. Hiding uses the existing
-`disabled_*` storage fields, removes the model from catalogs and fallback
-selection, and keeps exact-ID calls working. The monitor never relists a model;
-the owner or a maintainer uses **Relist** in Models → My Models after verifying
-the fix. Discord posts are limited to actual hide actions rather than advance
-warnings or routine recovery chatter.
+Successful fallback rescues count as successes. Hiding writes the
+`hidden_at`, `hidden_reason`, and `hidden_by` audit fields, removes the model
+from catalogs and fallback selection, and keeps exact-ID calls working. The
+monitor never relists a model; the owner or a maintainer uses **Relist** in
+Models → My Models after verifying the fix. Discord posts are limited to
+actual hide actions rather than advance warnings or routine recovery chatter.

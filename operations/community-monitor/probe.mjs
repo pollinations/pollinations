@@ -2,7 +2,7 @@
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 
-// One probe sweep across active community text and image models via
+// One probe sweep across listed community text and image models via
 // gen.pollinations.ai. Text probes are cost-weighted and run every cycle;
 // image probes run once per model every four hours and are always capped at
 // one generation. This keeps coverage current without spending or generating
@@ -406,7 +406,7 @@ function actualCost(result, priceByModel) {
 
 const models = await fetchCommunityModels();
 if (onlyModel && !models.some((model) => model.name === onlyModel)) {
-    console.error(`active community model not found: ${onlyModel}`);
+    console.error(`listed community model not found: ${onlyModel}`);
     process.exit(1);
 }
 const priceByModel = new Map(

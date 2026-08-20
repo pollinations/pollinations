@@ -1,6 +1,26 @@
 [
   {
     "emoji": "🖼️",
+    "name": "Cursor Maker",
+    "url": "https://hk.1r.gs",
+    "description": "Cursor Maker (光标工坊) is an AI-powered Windows cursor generator. Type a one-line description (e.g. \"glowing blue crystal arrow\") and it generates a custom cursor design using the Pollinations image API ",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "momokula123",
+    "githubUserId": "227260546",
+    "repositoryUrl": "https://github.com/momokula123/cursor-maker",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-08-19",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/13598",
+    "approvedDate": "2026-08-20",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
+    "emoji": "🖼️",
     "name": "Kokoro Roto — Anime Art Generator",
     "url": "https://geneberna.github.io/kokoro-roto-anime",
     "description": "A free, no-signup web app to generate anime-style art with AI. Type an idea, pick a mood (dramatic, sad, epic, portrait), choose a format, and instantly create anime characters and scenes. Powered by ",

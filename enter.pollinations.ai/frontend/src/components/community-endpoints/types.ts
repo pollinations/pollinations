@@ -59,9 +59,9 @@ export type CommunityEndpoint = {
     perUserRpm: number | null;
     // Public community models tried, in order, when this model's upstream fails.
     fallbackModelIds: string[];
-    disabled: boolean;
-    disabledReason: string | null;
-    disabledAt: string | null;
+    hidden: boolean;
+    hiddenReason: string | null;
+    hiddenAt: string | null;
 } & CommunityEndpointPrices;
 
 export type FallbackModelOption = {
@@ -71,7 +71,7 @@ export type FallbackModelOption = {
 
 /**
  * Public community models from the model catalog, in dialog option form. The
- * catalog already excludes private and deactivated models, and the server
+ * catalog already excludes private and hidden models, and the server
  * re-validates modality and pricing on write.
  */
 export function publicCommunityFallbackOptions(

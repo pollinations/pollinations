@@ -1,8 +1,8 @@
-# Community Agents
+# Publish an Agent
 
-Community agents are managed agents that turn a system prompt, a Pollinations base model, and optional Pollinations tools into a reusable text model. Pollinations runs the agent for you, so you do not need to host an agent server.
+Publishing an agent creates a managed agent that turns a system prompt, a Pollinations base model, and optional Pollinations tools into a reusable text model. Pollinations runs the agent for you, so you do not need to host an agent server.
 
-This is different from hosting your own OpenAI-compatible model endpoint. It is also different from [Bring Your Own Pollen](./BRING_YOUR_OWN_POLLEN.md), which lets an app ask its users to pay for their own generations.
+This is different from hosting your own OpenAI-compatible model endpoint. It is also different from [connecting user wallets](./BRING_YOUR_OWN_POLLEN.md), which lets an app ask its users to pay for their own generations.
 
 ## Create an agent in the dashboard
 

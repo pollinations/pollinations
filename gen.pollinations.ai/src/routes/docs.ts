@@ -58,7 +58,7 @@ const DOC_TAGS = {
     quickStart: "Quick Start",
     authentication: "Authentication",
     byop: "BYOP",
-    communityAgent: "Community Agent",
+    publishAgent: "Publish an Agent",
     communityAgents: "Community Agents",
     cli: "CLI",
     mcpServer: "MCP Server",
@@ -118,7 +118,7 @@ const DOC_TAG_ICON_HTML: Record<string, string> = {
     [DOC_TAGS.communityAgents]: docsIcon(
         '<rect x="4" y="7" width="16" height="13" rx="2" /><path d="M9 3h6" /><path d="M12 3v4" /><circle cx="9" cy="13" r="1" fill="currentColor" /><circle cx="15" cy="13" r="1" fill="currentColor" /><path d="M9 17h6" />',
     ),
-    [DOC_TAGS.communityAgent]: docsIcon(
+    [DOC_TAGS.publishAgent]: docsIcon(
         '<rect x="4" y="7" width="16" height="13" rx="2" /><path d="M9 3h6" /><path d="M12 3v4" /><circle cx="9" cy="13" r="1" fill="currentColor" /><circle cx="15" cy="13" r="1" fill="currentColor" /><path d="M9 17h6" />',
     ),
     [DOC_TAGS.cli]: docsIcon(
@@ -339,7 +339,7 @@ const GEN_API_DOCS = [
 ].join("\n\n");
 
 const BYOP_SECTION = `## BYOP\n\n${BYOP_DOCS}`;
-const COMMUNITY_AGENTS_SECTION = `## Community Agents\n\n${COMMUNITY_AGENTS_DOCS}`;
+const COMMUNITY_AGENTS_SECTION = `## Publish an Agent\n\n${COMMUNITY_AGENTS_DOCS}`;
 const CLI_SECTION = `## CLI\n\n${CLI_DOCS}`;
 const MCP_SECTION = `## MCP Server\n\n${MCP_DOCS}`;
 
@@ -362,8 +362,8 @@ const LLM_DOC_SECTIONS: Record<string, string> = {
 // Scalar tag anchors for the retired /docs/guides/:id pages.
 const GUIDE_REDIRECT_TAGS: Record<string, string> = {
     byop: "byop",
-    agents: "community-agent",
-    "community-agents": "community-agent",
+    agents: "publish-an-agent",
+    "community-agents": "publish-an-agent",
     cli: "cli",
     mcp: "mcp-server",
 };
@@ -467,7 +467,7 @@ function generationDocumentation(): OpenApiSchema {
                     DOC_TAGS.byop,
                     DOC_TAGS.cli,
                     DOC_TAGS.mcpServer,
-                    DOC_TAGS.communityAgent,
+                    DOC_TAGS.publishAgent,
                 ],
             },
             {
@@ -510,7 +510,7 @@ function generationDocumentation(): OpenApiSchema {
                 description: BYOP_DOCS,
             },
             {
-                name: DOC_TAGS.communityAgent,
+                name: DOC_TAGS.publishAgent,
                 description: COMMUNITY_AGENTS_DOCS,
             },
             {

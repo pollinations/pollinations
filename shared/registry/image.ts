@@ -414,6 +414,10 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
+        minDuration: 4,
+        maxDuration: 8,
+        defaultDuration: 4,
+        allowedDurations: [4, 6, 8],
     },
     "seedance-pro": {
         aliases: [],
@@ -459,6 +463,9 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
+        minDuration: 2,
+        maxDuration: 10,
+        defaultDuration: 5,
     },
     "seedance-2.0": {
         aliases: ["seedance-2"],
@@ -479,6 +486,9 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
+        minDuration: 4,
+        maxDuration: 15,
+        defaultDuration: 5,
     },
     "seedance-2.0-mini": {
         aliases: [],
@@ -516,6 +526,9 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
+        minDuration: 4,
+        maxDuration: 10,
+        defaultDuration: 5,
     },
     "seedance-2.0-fast": {
         aliases: [],
@@ -537,6 +550,9 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
+        minDuration: 4,
+        maxDuration: 5,
+        defaultDuration: 5,
     },
     "wan": {
         aliases: ["wan2.6", "wan-i2v"],
@@ -558,6 +574,10 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "audio_output"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
+        minDuration: 5,
+        maxDuration: 15,
+        defaultDuration: 5,
+        allowedDurations: [5, 10, 15],
     },
     "wan-fast": {
         aliases: ["wan2.2", "wan-2.2"],
@@ -579,6 +599,9 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "end_frame"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
+        minDuration: 5,
+        maxDuration: 5,
+        defaultDuration: 5,
     },
     "wan-pro": {
         aliases: [
@@ -634,6 +657,9 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
+        minDuration: 2,
+        maxDuration: 15,
+        defaultDuration: 5,
     },
     "wan-image": {
         aliases: ["wan2.7-image", "wan-img"],
@@ -890,6 +916,9 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
+        minDuration: 1,
+        maxDuration: 15,
+        defaultDuration: 5,
     },
     "grok-imagine-video-1.5": {
         aliases: [],
@@ -935,6 +964,9 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "audio_output"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
+        minDuration: 1,
+        maxDuration: 15,
+        defaultDuration: 5,
     },
     "seedance-2.5": {
         aliases: [],
@@ -971,6 +1003,9 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
+        minDuration: 4,
+        maxDuration: 4,
+        defaultDuration: 4,
     },
     "happyhorse-1.1": {
         aliases: ["happyhorse", "happy-horse-1.1"],
@@ -989,6 +1024,9 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1,
+        minDuration: 3,
+        maxDuration: 15,
+        defaultDuration: 5,
     },
     "minimax-h3": {
         aliases: [],
@@ -1028,6 +1066,9 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["video", "audio"],
         videoCapabilities: ["audio_output"],
+        minDuration: 5,
+        maxDuration: 5,
+        defaultDuration: 5,
     },
     "klein": {
         aliases: ["flux-klein"],
@@ -1119,6 +1160,9 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
+        minDuration: 1,
+        maxDuration: 10,
+        defaultDuration: 5,
     },
     "nova-canvas": {
         aliases: ["amazon-nova-canvas"],
@@ -1153,6 +1197,10 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
+        minDuration: 6,
+        maxDuration: 120,
+        defaultDuration: 6,
+        durationStep: 6,
     },
 } as const satisfies Record<string, ModelDefinition>;
 

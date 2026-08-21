@@ -1,13 +1,14 @@
 ## Authentication
 
-All generation requests require an API key from [enter.pollinations.ai](https://enter.pollinations.ai). Model listing endpoints work without authentication.
+All generation requests require an API key from [enter.pollinations.ai](https://enter.pollinations.ai/keys). Model listing endpoints work without authentication.
 
 | Type | Prefix | Use case | Rate limits | Description |
 |------|--------|----------|-------------|-------------|
 | Secret | `sk_` | Server-side apps | None | Personal developer key. Never expose in client-side code. |
-| App Key (BYOP) | `pk_` | Client-side & Frontend apps | None | Publishable key used in the **BYOP (Bring Your Own Pollen)** flow to authorize users' balances. |
+| App Key (BYOP) | `pk_` with redirect URIs | Client apps via OAuth / device flow | None on the App Key itself | Publishable App Key used as the BYOP `client_id`. Users authorize; your app receives a scoped `sk_`. |
+| Raw publishable | `pk_` with no app binding | Legacy direct spend | 1 pollen / IP / hour | Retained for existing integrations. Do not mint new ones. |
 
-> **Note:** Publishable Keys (`pk_`) for direct client-side requests have been replaced by the **BYOP (Bring Your Own Pollen)** auth flow. Frontend applications should use the OAuth authorization-code flow with PKCE to obtain a temporary user-authorized secret key (`sk_`). The legacy fragment redirect and device flow remain supported.
+> **Note:** Raw publishable keys (`pk_` used as a generation key in browsers) are **legacy**, not beta. New frontend and mobile apps should use the **BYOP (Bring Your Own Pollen)** flow: register an App Key at [enter.pollinations.ai/keys](https://enter.pollinations.ai/keys), then run the OAuth authorization-code flow with PKCE (or the device flow) to obtain a temporary user-authorized secret key (`sk_`). The legacy fragment redirect and device flow remain supported.
 
 Two ways to authenticate generation requests:
 

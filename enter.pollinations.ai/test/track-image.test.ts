@@ -181,6 +181,21 @@ test("nanobanana models calculate reasoning token costs", () => {
     );
 });
 
+test("nanobanana image models carry current input and text output rates", () => {
+    expect(requiredCostRate("nanobanana", "completionTextTokens")).toBeCloseTo(
+        0.0000025,
+        12,
+    );
+    expect(requiredCostRate("nanobanana-pro", "promptTextTokens")).toBeCloseTo(
+        0.000002,
+        12,
+    );
+    expect(requiredCostRate("nanobanana-pro", "promptImageTokens")).toBeCloseTo(
+        0.000002,
+        12,
+    );
+});
+
 test("nanobanana reasoning token event prices use text output rates", () => {
     const flashPrice = getPriceDefinition("nanobanana-2");
     const flashEventPrices = priceToEventParams(flashPrice);
@@ -193,4 +208,14 @@ test("nanobanana reasoning token event prices use text output rates", () => {
     expect(proEventPrices.tokenPriceCompletionReasoning).toBe(
         proPrice?.completionTextTokens,
     );
+});
+
+test("audio-second event prices are preserved", () => {
+    const eventPrices = priceToEventParams({
+        promptAudioSeconds: 0.001,
+        completionAudioSeconds: 0.002,
+    });
+
+    expect(eventPrices.tokenPricePromptAudioSeconds).toBe(0.001);
+    expect(eventPrices.tokenPriceCompletionAudioSeconds).toBe(0.002);
 });

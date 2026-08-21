@@ -83,6 +83,14 @@ describe("/openapi.json", () => {
         expect(schema.paths["/v1/chat/completions"]).toBeDefined();
         expect(schema.paths["/image/{prompt}"]).toBeDefined();
         expect(schema.paths["/account/key"]).toBeDefined();
+        expect(schema.paths["/v1/audio/music/upload"]).toBeUndefined();
+
+        const speechRequestPropertySets = collectPropertySets(schema).filter(
+            (properties) =>
+                "reference_audio" in properties &&
+                "composition_plan" in properties,
+        );
+        expect(speechRequestPropertySets.length).toBeGreaterThan(0);
 
         const chatRequestPropertySets = collectPropertySets(schema).filter(
             (properties) => "reasoning_effort" in properties,
@@ -91,6 +99,18 @@ describe("/openapi.json", () => {
         for (const properties of chatRequestPropertySets) {
             expect(properties.thinking).toBeUndefined();
             expect(properties.thinking_budget).toBeUndefined();
+        }
+
+        const embeddingRequestPropertySets = collectPropertySets(schema).filter(
+            (properties) =>
+                "input_type" in properties && "task_type" in properties,
+        );
+        expect(embeddingRequestPropertySets.length).toBeGreaterThan(0);
+        for (const properties of embeddingRequestPropertySets) {
+            const inputType = properties.input_type as {
+                enum?: string[];
+            };
+            expect(inputType.enum).toEqual(["query", "document"]);
         }
     });
 

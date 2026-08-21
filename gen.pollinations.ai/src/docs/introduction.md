@@ -2,6 +2,6 @@
 
 **Base URL:** `https://gen.pollinations.ai`
 
-**Get your API key:** [enter.pollinations.ai](https://enter.pollinations.ai)
+**Get your API key:** [enter.pollinations.ai](https://enter.pollinations.ai/keys)
 
-**Integration guides:** [BYOP, CLI, MCP Server](/docs/guides)
+**Integrations:** [BYOP](/docs#tag/byop) · [CLI](/docs#tag/cli) · [MCP Server](/docs#tag/mcp-server)

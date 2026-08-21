@@ -140,7 +140,7 @@ export const PollenExamples: FC = () => {
     return (
         <div className="mt-4 bg-surface-opaque/80 rounded-xl p-4 space-y-4">
             <div className="text-sm text-theme-text-muted mb-3">
-                <strong>$1 ≈ 1 Pollen</strong> — here's what you can create:
+                <strong>$1 ≈ 1 pollen</strong> — here's what you can create:
             </div>
 
             <CategorySection

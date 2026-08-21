@@ -1,6 +1,6 @@
+import { HttpError } from "@shared/http-error.ts";
 import debug from "debug";
 import { getImageEnv } from "../env.ts";
-import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import { base64ToBuffer, downloadUserImage } from "../utils/imageDownload.ts";
 
@@ -73,11 +73,7 @@ export async function callNovaCanvasAPI(
     );
 
     // Check if image input is provided for editing mode
-    const rawImageUrl = safeParams.image
-        ? Array.isArray(safeParams.image)
-            ? safeParams.image[0]
-            : safeParams.image
-        : undefined;
+    const rawImageUrl = safeParams.image?.[0];
     const mode = rawImageUrl ? "IMAGE_VARIATION" : "TEXT_IMAGE";
 
     logOps(`Calling Nova Canvas API (${mode}):`, {

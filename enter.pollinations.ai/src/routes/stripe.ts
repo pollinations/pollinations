@@ -69,10 +69,12 @@ export const stripeRoutes = new Hono<Env>()
         // Create Stripe client
         const stripe = createStripeClient(c.env);
 
-        // Determine success URL based on environment
-        const successUrl =
+        // Return checkout sessions to the Pollen page for this environment.
+        const baseUrl =
             c.env.STRIPE_SUCCESS_URL || PUBLIC_URLS.enter.production;
-        const cancelUrl = successUrl;
+        const pollenUrl = new URL("/pollen", baseUrl);
+        pollenUrl.searchParams.set("pack", pack.packKey);
+        const pollenReturnUrl = pollenUrl.toString();
 
         // Resolve cohort from buyer IP for analytics. Checkout stays USD-native
         // and does not call FX at runtime.
@@ -169,8 +171,8 @@ export const stripeRoutes = new Hono<Env>()
                     },
                 },
                 metadata: packMetadata,
-                success_url: `${successUrl}?stripe_success=true&session_id={CHECKOUT_SESSION_ID}`,
-                cancel_url: `${cancelUrl}?stripe_canceled=true`,
+                success_url: `${pollenReturnUrl}&stripe_success=true&session_id={CHECKOUT_SESSION_ID}`,
+                cancel_url: `${pollenReturnUrl}&stripe_canceled=true`,
             });
 
             // Redirect to Stripe Checkout (will use checkout.pollinations.ai custom domain)

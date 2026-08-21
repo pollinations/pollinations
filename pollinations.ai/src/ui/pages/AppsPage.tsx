@@ -388,18 +388,6 @@ export default function AppsPage() {
                         </div>
                     </div>
 
-                    {/* Search */}
-                    <div className="flex justify-center mb-4">
-                        <input
-                            type="search"
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
-                            placeholder={pageCopy.searchPlaceholder}
-                            aria-label={pageCopy.searchPlaceholder}
-                            className="w-full max-w-md px-4 py-2 text-sm font-body bg-white text-dark border-2 border-dark border-r-4 border-b-4 rounded-tag placeholder:text-muted focus:outline-none focus:border-primary-strong"
-                        />
-                    </div>
-
                     {/* Filters */}
                     <div
                         id="filters"
@@ -419,6 +407,18 @@ export default function AppsPage() {
                                 {f.label}
                             </Button>
                         ))}
+                    </div>
+
+                    {/* Search */}
+                    <div className="flex justify-center mb-4">
+                        <input
+                            type="search"
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            placeholder={pageCopy.searchPlaceholder}
+                            aria-label={pageCopy.searchPlaceholder}
+                            className="w-full max-w-md px-4 py-2 text-sm font-body bg-white text-dark border-2 border-dark border-r-4 border-b-4 rounded-tag placeholder:text-muted focus:outline-none focus:border-primary-strong"
+                        />
                     </div>
 
                     {/* Sort + Legend */}

@@ -1,6 +1,7 @@
 import { getLogger } from "@logtape/logtape";
 import { and, eq, gt, isNull, or } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
+import { parseMetadata } from "../auth/api-key-metadata.ts";
 import { apikey as apikeyTable } from "../db/better-auth.ts";
 import {
     atomicCreditUserBalance,
@@ -28,6 +29,13 @@ export type CommunityModelRewardResolution = {
 export type CommunityModelRewardInput = {
     userId: string;
     rewardRate: number;
+    /**
+     * What to pay the reward on, when that is not what the caller was charged.
+     * A fallback owner is paid on their own listing: the caller bought the
+     * model they asked for, so rewarding a share of that price would pay the
+     * rescuer more than they charge for the same work.
+     */
+    basePrice?: number;
 };
 
 interface DeductionParams {
@@ -40,20 +48,6 @@ interface DeductionParams {
     byopClientKeyId?: string | null;
     modelPaidOnly?: boolean;
     communityModelReward?: CommunityModelRewardInput | null;
-}
-
-function parseMetadata(
-    raw: string | null | undefined,
-): Record<string, unknown> {
-    if (!raw) return {};
-    try {
-        const parsed = JSON.parse(raw);
-        return parsed && typeof parsed === "object" && !Array.isArray(parsed)
-            ? parsed
-            : {};
-    } catch {
-        return {};
-    }
 }
 
 export async function resolveDevMarkup(
@@ -100,9 +94,15 @@ export function resolveCommunityModelReward(
     payerUserId: string | undefined,
 ): CommunityModelRewardResolution | null {
     if (!reward || !payerUserId) return null;
-    if (baselinePrice <= 0 || reward.rewardRate <= 0) return null;
+    // Never above what was charged: a target repriced between resolving the
+    // fallback and settling the request must not pay out more than we took.
+    const rewardBase = Math.min(
+        reward.basePrice ?? baselinePrice,
+        baselinePrice,
+    );
+    if (rewardBase <= 0 || reward.rewardRate <= 0) return null;
 
-    const credit = roundPollenLedgerAmount(baselinePrice * reward.rewardRate);
+    const credit = roundPollenLedgerAmount(rewardBase * reward.rewardRate);
     if (credit <= 0) return null;
 
     return {
@@ -358,7 +358,7 @@ async function deductUserBalance(
         };
 
         log.debug(
-            "Decremented {price} pollen from user {userId} (tier: -{fromTier}, pack: -{fromPack})",
+            "Decremented {price} pollen from user {userId} (quest: -{fromTier}, pack: -{fromPack})",
             {
                 price: amount,
                 userId,

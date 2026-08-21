@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+    type BillingAdjustmentRule,
     getPriceDefinitionForModel,
     getRegistryModelDefinition,
     getVisibleAudioModels,
@@ -18,6 +19,7 @@ export const ModelCapabilitySchema = z.enum([
     "reasoning",
     "web_search",
     "code_execution",
+    "pollinations_models",
 ]);
 
 export type ModelCapability = z.infer<typeof ModelCapabilitySchema>;
@@ -40,15 +42,61 @@ export const ModelInfoSchema = z.object({
         "realtime",
     ]),
     brand: z.string(),
+    brand_url: z.string().url().optional(),
     community: z.boolean().optional(),
+    agent: z.boolean().optional(),
+    base_model: z.string().optional(),
+    per_user_rpm: z.number().positive().nullable().optional(),
     pricing: z
         .record(z.string(), z.string())
         .and(z.object({ currency: z.literal("pollen") })),
+    pricing_variants: z
+        .array(
+            z.object({
+                name: z.string(),
+                label: z.string(),
+                description: z.string(),
+                pricing: z
+                    .record(z.string(), z.string())
+                    .and(z.object({ currency: z.literal("pollen") })),
+            }),
+        )
+        .optional(),
+    pricing_default_label: z.string().optional(),
+    pricing_adjustments: z
+        .array(
+            z.object({
+                name: z.string(),
+                label: z.string(),
+                kind: z.string(),
+                price: z.string(),
+                currency: z.literal("pollen"),
+                quantity: z.number().positive(),
+                unit: z.string(),
+                suffix: z.string().optional(),
+                option: z
+                    .object({
+                        group: z.string(),
+                        value: z.string(),
+                        label: z.string(),
+                        default: z.boolean().optional(),
+                    })
+                    .optional(),
+            }),
+        )
+        .optional(),
+    resolutions: z.array(z.string()).optional(),
     title: z.string(),
     description: z.string().optional(),
     input_modalities: z.array(z.string()).optional(),
     output_modalities: z.array(z.string()).optional(),
+    supported_endpoints: z.array(z.string()).optional(),
     video_capabilities: z.array(z.string()).optional(),
+    min_duration: z.number().positive().optional(),
+    max_duration: z.number().positive().optional(),
+    default_duration: z.number().positive().optional(),
+    allowed_durations: z.array(z.number().positive()).optional(),
+    duration_step: z.number().positive().optional(),
     max_reference_images: z.number().int().positive().optional(),
     max_reference_videos: z.number().int().positive().optional(),
     capabilities: z.array(ModelCapabilitySchema),
@@ -73,7 +121,7 @@ function toFixedPoint(n: number): string {
     return n.toFixed(12).replace(/\.?0+$/, "");
 }
 
-function getCapabilities(service: ModelDefinition<string>): ModelCapability[] {
+function getCapabilities(service: ModelDefinition): ModelCapability[] {
     const capabilities: ModelCapability[] = [];
     if (service.tools) capabilities.push("tool_calling");
     if (service.reasoning) capabilities.push("reasoning");
@@ -84,6 +132,8 @@ function getCapabilities(service: ModelDefinition<string>): ModelCapability[] {
 
 type ModelInfoOptions = {
     community?: boolean;
+    agent?: boolean;
+    perUserRpm?: number | null;
 };
 
 function pricingInfoFromDefinition(
@@ -100,9 +150,27 @@ function pricingInfoFromDefinition(
     return pricing;
 }
 
+function pricingAdjustmentInfoFromRule(
+    rule: BillingAdjustmentRule,
+    service: ModelDefinition,
+) {
+    const { label, quantity, unit, suffix, option } = rule.publicPricing;
+    return {
+        name: rule.id,
+        label,
+        kind: rule.kind,
+        price: toFixedPoint(rule.unitCost * quantity * service.priceMultiplier),
+        currency: "pollen" as const,
+        quantity,
+        unit,
+        suffix,
+        option,
+    };
+}
+
 export function modelInfoFromDefinition(
     name: string,
-    service: ModelDefinition<string>,
+    service: ModelDefinition,
     options: ModelInfoOptions = {},
 ): ModelInfo {
     return {
@@ -110,14 +178,52 @@ export function modelInfoFromDefinition(
         aliases: service.aliases,
         category: service.category,
         brand: service.brand,
+        brand_url: service.brandUrl,
         community: options.community || undefined,
+        agent: options.agent || undefined,
+        per_user_rpm: options.perUserRpm,
         pricing: pricingInfoFromDefinition(getPriceDefinitionForModel(service)),
+        pricing_variants:
+            service.costVariants && service.costVariantMetadata
+                ? Object.entries(service.costVariants).map(
+                      ([name, variantCost]) => {
+                          const metadata = service.costVariantMetadata?.[name];
+                          return {
+                              name,
+                              label: metadata?.label ?? name,
+                              description: metadata?.description ?? name,
+                              pricing: pricingInfoFromDefinition(
+                                  getPriceDefinitionForModel({
+                                      ...service,
+                                      cost: {
+                                          ...service.cost,
+                                          ...variantCost,
+                                      },
+                                  }),
+                              ),
+                          };
+                      },
+                  )
+                : undefined,
+        pricing_default_label: service.defaultCostVariantLabel,
+        pricing_adjustments: service.billing?.adjustments?.map((rule) =>
+            pricingAdjustmentInfoFromRule(rule, service),
+        ),
+        resolutions: service.resolutions ? [...service.resolutions] : undefined,
         // User-facing metadata from service definition
         title: service.title,
         description: service.description,
         input_modalities: service.inputModalities,
         output_modalities: service.outputModalities,
+        supported_endpoints: service.supportedEndpoints,
         video_capabilities: service.videoCapabilities,
+        min_duration: service.minDuration,
+        max_duration: service.maxDuration,
+        default_duration: service.defaultDuration,
+        allowed_durations: service.allowedDurations
+            ? [...service.allowedDurations]
+            : undefined,
+        duration_step: service.durationStep,
         max_reference_images: service.maxReferenceImages,
         max_reference_videos: service.maxReferenceVideos,
         capabilities: getCapabilities(service),
@@ -128,7 +234,11 @@ export function modelInfoFromDefinition(
         is_specialized: service.isSpecialized,
         paid_only: service.paidOnly,
         alpha: service.alpha,
-        flat_rate: service.flatRate,
+        flat_rate:
+            service.flatRate ??
+            (service.category === "image"
+                ? service.cost.promptTextTokens === undefined
+                : undefined),
         added_date: service.addedDate,
     };
 }

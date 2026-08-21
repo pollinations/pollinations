@@ -14,18 +14,27 @@ SQL >
         uniqExact(user_id) AS active_users,
         uniqExactIf(user_id, total_price > 0) AS paying_users,
         count() AS total_requests,
+        -- 402 means the caller was out of Pollen: the request was rejected at
+        -- the balance check, before any provider ran. It carries no price, no
+        -- cost and no tokens, but it does carry a user_id, so counting it
+        -- inflates WAU. Served counts leave it out; the raw ones stay for the
+        -- rows that want to show demand including the people turned away.
+        uniqExactIf(user_id, response_status != 402) AS served_users,
+        countIf(response_status != 402) AS served_requests,
         sum(token_count_prompt_text + token_count_completion_text) AS total_tokens,
         sum(total_price) AS total_revenue
-    FROM generation_event
+    FROM generation_event_v2
     WHERE
+        -- One row per request: a fallback attempt is part of a request, not
+        -- another one, and it carries no user, price or tokens of its own.
+        is_final
+        AND
         {% if defined(start_date) %}
         start_time >= toDate({{ String(start_date) }})
         AND start_time < toDate({{ String(start_date) }}) + INTERVAL 7 DAY
         {% else %}
         start_time >= now() - INTERVAL {{Int32(weeks_back, 12)}} WEEK
         {% end %}
-    AND user_id != 'undefined'
-    AND user_id != ''
     GROUP BY week_start
     ORDER BY week_start ASC
 

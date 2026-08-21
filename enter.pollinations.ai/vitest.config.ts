@@ -32,7 +32,7 @@ export default defineWorkersConfig(async ({ mode }) => {
                 "./test/setup/apply-migrations.ts",
                 "./test/setup/rejection-handler.ts",
             ],
-            exclude: [...configDefaults.exclude, "test/e2e/**"],
+            exclude: [...configDefaults.exclude, "test/e2e/**", "scripts/**"],
             reporters: ["default"],
             teardownTimeout: 5000,
             poolOptions: {

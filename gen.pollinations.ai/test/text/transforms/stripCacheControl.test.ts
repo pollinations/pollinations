@@ -45,12 +45,14 @@ describe("stripCacheControl", () => {
 });
 
 describe("stripCacheControl model wiring", () => {
-    // Azure-deployed Grok rejects cache_control like its sibling Azure/strict
-    // OpenAI-compatible models; all grok entries must carry the transform so
-    // multi-turn history isn't dropped (see issue #10722).
-    it("wires cache_control stripping onto grok", async () => {
-        const transform = findModelByName("grok")?.transform;
-        if (!transform) throw new Error("grok transform missing");
+    // Strict OpenAI-compatible providers reject Anthropic-style cache_control
+    // annotations, so affected models must strip them without dropping history.
+    it.each([
+        "grok",
+        "nemotron-3.5-lightning",
+    ])("wires cache_control stripping onto %s", async (modelName) => {
+        const transform = findModelByName(modelName)?.transform;
+        if (!transform) throw new Error(`${modelName} transform missing`);
 
         const { messages: result } = await transform(
             [
@@ -87,7 +89,7 @@ describe("cache_control passthrough (vertex explicit caching)", () => {
     it.each([
         "gemini-3-flash",
         "gemini",
-        "gemini-flash-lite-3.1",
+        "gemini-flash-lite-3.5",
         "gemini-fast",
         "gemini-large",
     ])("%s transform preserves content-block cache_control markers", async (modelName) => {

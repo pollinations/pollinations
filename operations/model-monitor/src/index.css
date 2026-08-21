@@ -1,0 +1,7 @@
+@import "@pollinations/ui/app.css";
+
+@media (min-width: 640px) {
+    .polli-model-monitor-title {
+        font-size: 3rem;
+    }
+}

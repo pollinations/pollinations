@@ -1,6 +1,3 @@
-import { user as userTable } from "@shared/db/better-auth.ts";
-import { eq } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { describeRoute } from "hono-openapi";
@@ -24,7 +21,7 @@ type EarningsTodayResponse = {
     tierWeek: number;
 };
 
-// Short TTL: the pipe scans 7 days of `generation_event` filtered to one dev
+// Short TTL: the pipe scans 7 days of `generation_event_v2` filtered to one dev
 // (no index on `api_key_created_for_user_id`), so it's expensive and was
 // uncached — unlike the sibling /usage and /earnings endpoints. 60s keeps the
 // "this week so far" number near-live while collapsing per-dashboard-load
@@ -43,7 +40,7 @@ export const customerRoutes = new Hono<Env>()
         describeRoute({
             tags: ["👤 Account"],
             description:
-                "Get detailed balance breakdown for the current user (tier, pack).",
+                "Get detailed balance breakdown for the current user (Quest Pollen, paid).",
             hide: ({ c }) => c?.env.ENVIRONMENT === "production", // Internal endpoint
         }),
         async (c) => {
@@ -51,20 +48,10 @@ export const customerRoutes = new Hono<Env>()
             const { tierBalance, packBalance } = await c.var.balance.getBalance(
                 user.id,
             );
-            const db = drizzle(c.env.DB);
-            const users = await db
-                .select({
-                    lastTierGrant: userTable.lastTierGrant,
-                })
-                .from(userTable)
-                .where(eq(userTable.id, user.id))
-                .limit(1);
-            const lastTierGrant = users[0]?.lastTierGrant ?? null;
 
             return c.json({
                 tierBalance,
                 packBalance,
-                lastTierGrant,
             });
         },
     )

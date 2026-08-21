@@ -63,16 +63,27 @@ export function processParameters(
         delete updatedOptions.max_completion_tokens;
     }
 
-    // Reasoning models (o1, o3, o4) and GPT-5 series only support temperature=1
+    // Reasoning models (o1, o3, o4) and GPT-5 series only support
+    // temperature=1 and reject other sampling parameters.
     const model = updatedOptions.model || "";
     if (/^(o[134](-mini|-preview)?|gpt-5)/i.test(model)) {
         log(`Forcing temperature=1 for reasoning/GPT-5 model: ${model}`);
         updatedOptions.temperature = 1;
+        for (const param of [
+            "top_p",
+            "frequency_penalty",
+            "presence_penalty",
+        ] as const) {
+            if (updatedOptions[param] !== undefined) {
+                log(`Stripping unsupported ${param} for ${model}`);
+                delete updatedOptions[param];
+            }
+        }
     }
 
-    // Claude Opus 4.7/4.8 and Fable 5 reject non-default sampling params.
+    // Claude Opus 4.7+, and Fable 5 reject non-default sampling params.
     // Strip them entirely.
-    if (/claude-(opus-4-[78]|fable-5)/i.test(model)) {
+    if (/claude-(opus-(4-[78]|5)|fable-5)/i.test(model)) {
         for (const param of ["temperature", "top_p", "top_k"] as const) {
             if (updatedOptions[param] !== undefined) {
                 log(`Stripping ${param} for ${model}`);

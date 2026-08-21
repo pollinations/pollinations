@@ -6,6 +6,7 @@ import {
     EXAMPLE_PROMPTS,
     extractApiKeyFromFragment,
     fetchBalance,
+    fetchCommunityMemes,
     fetchProfile,
     generateCatReply,
     generateImageURL,
@@ -13,6 +14,7 @@ import {
     getStoredApiKey,
     handleImageUpload,
     pickModel,
+    publishMemeToGallery,
     storeApiKey,
 } from "./ai.js";
 
@@ -75,6 +77,7 @@ const dom = {
     shareBtn: $("shareBtn"),
     examplesGrid: $("examplesGrid"),
     yourMemesGrid: $("yourMemesGrid"),
+    communityMemesGrid: $("communityMemesGrid"),
     imageUpload: $("imageUpload"),
     imageUploadContainer: $("imageUploadContainer"),
     imageThumbnailContainer: $("imageThumbnailContainer"),
@@ -367,6 +370,67 @@ function loadExamples() {
     });
 }
 
+function renderCommunityMessage(message) {
+    dom.communityMemesGrid.innerHTML = "";
+    const p = document.createElement("p");
+    p.className = "gallery-message";
+    p.textContent = message;
+    dom.communityMemesGrid.appendChild(p);
+}
+
+function createCommunityCard(item, index) {
+    if (!item.contentType?.startsWith("image/")) return null;
+    const safeUrl = sanitizeUrl(item.url);
+    if (!safeUrl) return null;
+
+    const card = document.createElement("a");
+    card.className = "example-card community-card";
+    card.style.animationDelay = `${index * 0.1}s`;
+    card.href = safeUrl;
+    card.target = "_blank";
+    card.rel = "noopener";
+
+    const img = document.createElement("img");
+    img.src = safeUrl;
+    img.alt = "Community CatGPT meme";
+    img.loading = "lazy";
+    img.addEventListener("error", () => {
+        card.remove();
+        if (!dom.communityMemesGrid.querySelector(".community-card")) {
+            renderCommunityMessage("No public memes are available right now.");
+        }
+    });
+    card.appendChild(img);
+
+    const p = document.createElement("p");
+    p.textContent = "Shared by the CatGPT community";
+    card.appendChild(p);
+    return card;
+}
+
+async function loadCommunityMemes() {
+    renderCommunityMessage("Loading public memes...");
+    try {
+        const { items } = await fetchCommunityMemes();
+        dom.communityMemesGrid.innerHTML = "";
+        for (const item of items) {
+            const card = createCommunityCard(
+                item,
+                dom.communityMemesGrid.children.length,
+            );
+            if (card) dom.communityMemesGrid.appendChild(card);
+        }
+        if (!dom.communityMemesGrid.children.length) {
+            renderCommunityMessage(
+                "No public memes yet. Generate the first one! 🐱",
+            );
+        }
+    } catch (error) {
+        console.error("Community gallery error:", error);
+        renderCommunityMessage("The community gallery is taking a catnap.");
+    }
+}
+
 // ── Generator ────────────────────────────────────────────────────────────────
 
 async function generateMeme() {
@@ -411,16 +475,30 @@ async function generateMeme() {
             throw new Error(text.slice(0, 200) || `Error ${response.status}`);
         }
 
-        // Use the pollinations URL directly (shareable, cacheable)
+        // Archive the generated output publicly; uploaded references remain untagged.
         await response.blob(); // ensure the image is fully loaded
         if (cancelled) return;
-        dom.generatedMeme.src = imageUrl;
+
+        let resultUrl = imageUrl;
+        try {
+            const published = await publishMemeToGallery(imageUrl);
+            resultUrl = published.url;
+            loadCommunityMemes();
+        } catch (error) {
+            console.error("Community publish error:", error);
+            notify(
+                "Meme generated, but the community gallery missed this one.",
+                "warning",
+            );
+        }
+
+        dom.generatedMeme.src = resultUrl;
 
         resetButton();
         show(dom.resultSection);
         scrollToGenerator();
         celebrate();
-        saveGeneratedMeme(question, imageUrl);
+        saveGeneratedMeme(question, resultUrl);
         loadUserMemes();
     } catch (error) {
         if (cancelled) return;
@@ -619,6 +697,7 @@ document.addEventListener("DOMContentLoaded", () => {
     updateAuthUI({ skipModelPick: !!model });
     loadUserMemes();
     loadExamples();
+    loadCommunityMemes();
     addFloatingEmojis();
     if (image) {
         const safe = sanitizeUrl(image);

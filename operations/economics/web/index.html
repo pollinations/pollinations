@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en" class="polli-ui-root">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <script>
+            (() => {
+                try {
+                    let mode = localStorage.getItem("polli-color-mode");
+                    if (mode !== "light" && mode !== "dark") {
+                        mode = matchMedia("(prefers-color-scheme: dark)").matches
+                            ? "dark"
+                            : "light";
+                    }
+                    if (mode === "dark") document.documentElement.classList.add("dark");
+                } catch {
+                    /* ignore storage / matchMedia failures */
+                }
+            })();
+        </script>
+        <meta name="description" content="Economics operations dashboard for Pollinations economics insights, raw spend, revenue, Pollen, and provider usage data." />
+        <meta name="robots" content="noindex" />
+        <title>Economics | pollinations.ai</title>
+
+        <link rel="icon" type="image/x-icon" href="/favicon.ico?v=dark" />
+    </head>
+    <body class="polli-ui-shell">
+        <div id="root"></div>
+        <script type="module" src="/src/main.tsx"></script>
+    </body>
+</html>

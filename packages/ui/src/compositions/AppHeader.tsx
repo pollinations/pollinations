@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode, RefObject } from "react";
 import { useEffect, useState } from "react";
-import logoWordmarkUrl from "../assets/logo-wordmark.svg";
+import logoWordmarkUrl from "../brand/lockup-horizontal.svg";
 import { cn } from "../lib/cn.ts";
 
 type ScrollTargetRef = RefObject<HTMLElement | null>;

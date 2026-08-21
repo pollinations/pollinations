@@ -1,17 +1,15 @@
 export interface PollinationsConfig {
-    /** API key for authentication (get one at https://enter.pollinations.ai) */
+    /** API key for authentication (get one at https://enter.pollinations.ai/keys) */
     apiKey?: string;
     /** Base URL for the API (defaults to https://gen.pollinations.ai) */
     baseUrl?: string;
-    /** Maximum number of retry attempts (default: 3) */
-    maxRetries?: number;
     /** Default timeout in ms for all requests (default: 300000 = 5min) */
     timeout?: number;
     /** Timeout in ms for text requests (default: 300000 = 5min) */
     textTimeout?: number;
     /** Timeout in ms for image requests (default: 600000 = 10min) */
     imageTimeout?: number;
-    /** Timeout in ms for video requests (default: 600000 = 10min) */
+    /** Timeout in ms for video requests (default: 1200000 = 20min) */
     videoTimeout?: number;
 }
 
@@ -39,7 +37,7 @@ export type ImageReasoningMode = "fast" | "balanced" | "pro";
 
 /** Options for image generation */
 export interface ImageGenerateOptions extends RequestOptions {
-    /** Image model to use (default: 'zimage') */
+    /** Image model to use (server default: 'zimage') */
     model?: ImageModel;
     /** Image width in pixels (default: 1024) */
     width?: number;
@@ -67,7 +65,7 @@ export interface ImageGenerateOptions extends RequestOptions {
 
 /** Options for image editing (POST /v1/images/edits) */
 export interface ImageEditOptions extends RequestOptions {
-    /** Image model to use (default: 'flux') */
+    /** Image model to use (server default: 'flux') */
     model?: ImageModel;
     /** Source image URL(s) for editing */
     image?: string | string[];
@@ -89,9 +87,9 @@ export interface ImageResponse {
 
 /** Options for video generation */
 export interface VideoGenerateOptions extends RequestOptions {
-    /** Video model to use (default: 'veo') */
+    /** Video model to use (server default: 'veo') */
     model?: VideoModel;
-    /** Duration in seconds (1-30, varies by model) */
+    /** Duration in seconds (supported range varies by model) */
     duration?: number;
     /** Aspect ratio (e.g., '16:9', '9:16', '1:1') */
     aspectRatio?: string;
@@ -200,7 +198,7 @@ export interface Message {
 
 /** Options for simple text generation */
 export interface TextGenerateOptions extends RequestOptions {
-    /** Text model to use (default: 'openai') */
+    /** Text model to use (server default: 'openai') */
     model?: TextModel;
     /** System prompt to set context */
     systemPrompt?: string;
@@ -258,7 +256,7 @@ export type BuiltInToolType =
 
 /** Options for chat completions (POST endpoint) */
 export interface ChatOptions extends RequestOptions {
-    /** Text model to use (default: 'openai') */
+    /** Text model to use (server default: 'openai') */
     model?: TextModel;
     /** Temperature 0-2 (default: 1) */
     temperature?: number;
@@ -431,15 +429,15 @@ export type AudioVoice = string;
 export type AudioFormat = "wav" | "mp3" | "flac" | "opus" | "pcm16";
 
 /** Dedicated audio/music model */
-export type AudioModel = "elevenlabs" | "elevenmusic" | "acestep" | string;
+export type AudioModel = "elevenlabs" | "elevenmusic" | string;
 
 /** Options for text-to-speech generation (GET /audio/{text} or POST /v1/audio/speech) */
 export interface AudioGenerateOptions extends RequestOptions {
-    /** Voice to use (default: 'alloy') */
+    /** Voice to use (server default: 'alloy') */
     voice?: AudioVoice;
-    /** Audio model to use (default: 'elevenlabs') */
+    /** Audio model to use (server default: 'elevenlabs') */
     model?: AudioModel;
-    /** Duration in seconds (for music models like elevenmusic, acestep) */
+    /** Duration in seconds (for music models like elevenmusic) */
     duration?: number;
     /** Seed for reproducibility */
     seed?: number;
@@ -475,6 +473,7 @@ export type TranscriptionModel =
     | "whisper-1"
     | "scribe"
     | "universal-2"
+    | "universal-3.5-pro"
     | "universal-3-pro"
     | string;
 
@@ -488,7 +487,7 @@ export type TranscriptionResponseFormat =
 
 /** Options for speech-to-text transcription */
 export interface TranscribeOptions extends RequestOptions {
-    /** Model to use (default: 'whisper-large-v3') */
+    /** Model to use (server default: 'whisper-large-v3') */
     model?: TranscriptionModel;
     /** Language code (ISO-639-1, e.g. 'en', 'fr') */
     language?: string;
@@ -525,11 +524,13 @@ export interface UploadOptions extends RequestOptions {
     name?: string;
     /** Content type (auto-detected if omitted) */
     contentType?: string;
+    /** Tags that publish the upload to public tag galleries */
+    tags?: string[];
 }
 
 /** Response from media upload */
 export interface UploadResponse {
-    /** Content-addressed hash ID */
+    /** Unique media id (also the retrieval id) */
     id: string;
     /** Public URL for the uploaded media */
     url: string;
@@ -537,8 +538,8 @@ export interface UploadResponse {
     contentType: string;
     /** File size in bytes */
     size: number;
-    /** Whether the file was already uploaded (dedup) */
-    duplicate: boolean;
+    /** Tags the upload was published with; present only when tagged */
+    tags?: string[];
 }
 
 // ============================================================================
@@ -576,10 +577,6 @@ export interface AuthorizeOptions {
 export interface AccountProfile {
     githubUsername: string | null;
     image: string | null;
-    /** Current tier level (e.g. `"spore"`, `"seed"`, `"flower"`, `"nectar"`). */
-    tier: string;
-    /** ISO 8601 timestamp of the next pollen refill. `null` for tiers with no refill. */
-    nextResetAt: string | null;
     /** Only returned when the API key has the `profile` permission */
     name?: string | null;
     /** Only returned when the API key has the `profile` permission */
@@ -588,7 +585,20 @@ export interface AccountProfile {
 
 /** Account balance */
 export interface AccountBalance {
+    /**
+     * Pollen remaining for this caller. Budgeted API keys see the key budget
+     * here, not the account total.
+     */
     balance: number;
+    /**
+     * Full account balances. Present only when the caller can view account
+     * usage (session or `account:usage`).
+     */
+    accountBalance?: {
+        total: number;
+        tier: number;
+        paid: number;
+    };
 }
 
 /** Usage record */
@@ -695,7 +705,6 @@ export interface AccountKey {
     expiresAt: string | null;
     lastRequest: string | null;
     permissions: {
-        tier?: string[];
         models?: string[];
         account?: string[];
     } | null;
@@ -763,8 +772,6 @@ export interface CreatedKey {
 // Model Information
 // ============================================================================
 
-/** Model tier levels */
-export type ModelTier = "anonymous" | "seed" | "flower" | "nectar";
 /** Known model categories, in catalog display order. The canonical enum lives
  * in shared/registry (ModelInfoSchema); categories the SDK doesn't know yet
  * pass through the model catalog unfiltered and sort last. */
@@ -792,10 +799,13 @@ export type ModelCapability =
     | "tool_calling"
     | "reasoning"
     | "web_search"
-    | "code_execution";
+    | "code_execution"
+    | "pollinations_models";
 
 /** Model information */
 export interface ModelInfo {
+    /** Fields added by the model registry pass through without an SDK release. */
+    [key: string]: unknown;
     id?: string;
     name: string;
     /** Display name. Present on registry endpoints (/models, /text/models, …); absent on OpenAI-compatible /v1/models. */
@@ -804,11 +814,17 @@ export interface ModelInfo {
     brand?: string;
     description?: string;
     aliases?: string[];
-    tier?: ModelTier;
     community?: boolean;
+    agent?: boolean;
+    base_model?: string;
     input_modalities?: string[];
     output_modalities?: string[];
     video_capabilities?: VideoCapability[];
+    min_duration?: number;
+    max_duration?: number;
+    default_duration?: number;
+    allowed_durations?: number[];
+    duration_step?: number;
     max_reference_images?: number;
     max_reference_videos?: number;
     capabilities?: ModelCapability[];
@@ -875,8 +891,9 @@ export interface UserInfo {
     sub?: string;
     name?: string;
     email?: string;
+    picture?: string;
+    preferred_username?: string;
     githubUsername?: string;
-    tier?: string;
     [key: string]: unknown;
 }
 
@@ -886,7 +903,7 @@ export interface UserInfo {
 
 /** Options for POST /v1/images/generations */
 export interface ImageGenerateV1Options extends RequestOptions {
-    /** Image model to use (default: 'zimage') */
+    /** Image model to use (server default: 'flux') */
     model?: ImageModel;
     /** Size string like "1024x1024". Alternative to width + height. */
     size?: string;
@@ -931,7 +948,7 @@ export class PollinationsError extends Error {
     status: number;
     details?: Record<string, unknown>;
     requestId?: string;
-    /** Retry-After value in seconds (for 429 rate limit errors) */
+    /** Retry-After header value in seconds */
     retryAfter?: number;
 
     constructor(

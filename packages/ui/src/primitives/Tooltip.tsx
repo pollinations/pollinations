@@ -1,8 +1,11 @@
 import {
     type CSSProperties,
     type FC,
+    type KeyboardEvent,
     type MouseEvent,
     type ReactNode,
+    useEffect,
+    useId,
     useRef,
     useState,
 } from "react";
@@ -19,8 +22,11 @@ type TooltipProps = {
     ariaLabel?: string;
     clampToViewport?: boolean;
     className?: string;
+    maxWidth?: number;
     onClick?: () => void;
+    stopClickPropagation?: boolean;
     style?: CSSProperties;
+    tapEnabled?: boolean;
     triggerAs?: "button" | "span";
     /**
      * When true, the inner cursor wrapper uses display:contents so the
@@ -37,8 +43,11 @@ export const Tooltip: FC<TooltipProps> = ({
     ariaLabel,
     clampToViewport = true,
     className,
+    maxWidth = TOOLTIP_MAX_WIDTH,
     onClick,
+    stopClickPropagation = true,
     style,
+    tapEnabled = false,
     triggerAs = "button",
     displayContents = false,
 }) => {
@@ -51,15 +60,55 @@ export const Tooltip: FC<TooltipProps> = ({
     }>({
         top: 0,
         left: 0,
-        maxWidth: TOOLTIP_MAX_WIDTH,
+        maxWidth,
     });
     const triggerRef = useRef<HTMLElement | null>(null);
+    const tapPinnedRef = useRef(false);
+    const tooltipId = useId();
+
+    const closeTooltip = () => {
+        tapPinnedRef.current = false;
+        setShowTooltip(false);
+    };
+
+    useEffect(() => {
+        if (!showTooltip) return;
+
+        const dismissOnOutsideTap = (event: PointerEvent) => {
+            if (triggerRef.current?.contains(event.target as Node)) return;
+            tapPinnedRef.current = false;
+            setShowTooltip(false);
+        };
+        const dismissOnEscape = (event: globalThis.KeyboardEvent) => {
+            if (event.key !== "Escape") return;
+            tapPinnedRef.current = false;
+            setShowTooltip(false);
+        };
+        const dismissOnViewportChange = () => {
+            tapPinnedRef.current = false;
+            setShowTooltip(false);
+        };
+
+        document.addEventListener("pointerdown", dismissOnOutsideTap);
+        document.addEventListener("keydown", dismissOnEscape);
+        window.addEventListener("scroll", dismissOnViewportChange, {
+            capture: true,
+            passive: true,
+        });
+        window.addEventListener("resize", dismissOnViewportChange);
+        return () => {
+            document.removeEventListener("pointerdown", dismissOnOutsideTap);
+            document.removeEventListener("keydown", dismissOnEscape);
+            window.removeEventListener("scroll", dismissOnViewportChange, true);
+            window.removeEventListener("resize", dismissOnViewportChange);
+        };
+    }, [showTooltip]);
 
     const updateTooltipPosition = () => {
         if (triggerRef.current) {
             const rect = triggerRef.current.getBoundingClientRect();
-            const maxWidth = Math.min(
-                TOOLTIP_MAX_WIDTH,
+            const availableMaxWidth = Math.min(
+                maxWidth,
                 window.innerWidth - TOOLTIP_VIEWPORT_MARGIN * 2,
             );
             let left =
@@ -71,7 +120,9 @@ export const Tooltip: FC<TooltipProps> = ({
                     Math.max(rect.left, TOOLTIP_VIEWPORT_MARGIN),
                     Math.max(
                         TOOLTIP_VIEWPORT_MARGIN,
-                        window.innerWidth - maxWidth - TOOLTIP_VIEWPORT_MARGIN,
+                        window.innerWidth -
+                            availableMaxWidth -
+                            TOOLTIP_VIEWPORT_MARGIN,
                     ),
                 );
                 transform = undefined;
@@ -79,7 +130,7 @@ export const Tooltip: FC<TooltipProps> = ({
             setTooltipPosition({
                 top: rect.bottom + 4,
                 left,
-                maxWidth,
+                maxWidth: availableMaxWidth,
                 transform,
             });
         }
@@ -104,6 +155,9 @@ export const Tooltip: FC<TooltipProps> = ({
 
     const popupNode = content ? (
         <span
+            id={tooltipId}
+            role="tooltip"
+            aria-hidden={!showTooltip}
             style={{
                 top: tooltipPosition.top,
                 left: tooltipPosition.left,
@@ -132,33 +186,63 @@ export const Tooltip: FC<TooltipProps> = ({
 
     const sharedProps = {
         "aria-label": ariaLabel,
+        "aria-describedby": content && showTooltip ? tooltipId : undefined,
         className: triggerClassName,
         onMouseEnter: () => {
             updateTooltipPosition();
             setShowTooltip(true);
         },
-        onMouseLeave: () => setShowTooltip(false),
+        onMouseLeave: () => {
+            if (!tapPinnedRef.current) setShowTooltip(false);
+        },
         onClick: (e: MouseEvent) => {
-            e.stopPropagation();
+            if (stopClickPropagation) e.stopPropagation();
             if (onClick) {
                 onClick();
             }
-            if (triggerAs === "span") {
+            if (!tapEnabled || !content) return;
+            updateTooltipPosition();
+            if (tapPinnedRef.current) {
+                closeTooltip();
                 return;
             }
-            updateTooltipPosition();
-            setShowTooltip((prev) => !prev);
+            tapPinnedRef.current = true;
+            setShowTooltip(true);
         },
+        onFocus: () => {
+            updateTooltipPosition();
+            setShowTooltip(true);
+        },
+        onBlur: closeTooltip,
         style,
     };
 
     if (triggerAs === "span") {
+        const handleKeyDown = (event: KeyboardEvent<HTMLSpanElement>) => {
+            if (!tapEnabled || !content) return;
+            if (event.key !== "Enter" && event.key !== " ") return;
+            event.preventDefault();
+            updateTooltipPosition();
+            if (tapPinnedRef.current) {
+                closeTooltip();
+                return;
+            }
+            tapPinnedRef.current = true;
+            setShowTooltip(true);
+        };
+        const spanInteractionProps = {
+            ...sharedProps,
+            role: tapEnabled && content ? "button" : undefined,
+            tabIndex: tapEnabled && content ? 0 : undefined,
+            onKeyDown: tapEnabled && content ? handleKeyDown : undefined,
+        };
+
         return (
             <span
                 ref={(node) => {
                     triggerRef.current = node;
                 }}
-                {...sharedProps}
+                {...spanInteractionProps}
             >
                 {contentNode}
             </span>
@@ -172,10 +256,13 @@ export const Tooltip: FC<TooltipProps> = ({
             }}
             type="button"
             aria-label={ariaLabel}
+            aria-describedby={content && showTooltip ? tooltipId : undefined}
             className={triggerClassName}
             onMouseEnter={sharedProps.onMouseEnter}
             onMouseLeave={sharedProps.onMouseLeave}
             onClick={sharedProps.onClick}
+            onFocus={sharedProps.onFocus}
+            onBlur={sharedProps.onBlur}
             style={style}
         >
             {contentNode}

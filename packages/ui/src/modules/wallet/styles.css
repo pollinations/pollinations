@@ -12,7 +12,7 @@
 }
 
 /* Dark twin: deep gold/bronze chip, light gold/bronze text — keeps the
-   paid/tier identity while staying legible (the :root values are tuned for
+   paid/Quest identity while staying legible (the :root values are tuned for
    light surfaces only). */
 .dark {
     --polli-color-paid-pale: oklch(0.33 0.055 92);

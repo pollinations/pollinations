@@ -5,16 +5,11 @@ GITHUB_CLIENT_SECRET=your_github_client_secret
 # Auth
 BETTER_AUTH_SECRET=your_better_auth_secret_at_least_32_chars
 
-# Polar (subscription/billing) - get from sandbox.polar.sh for dev
-POLAR_ACCESS_TOKEN=your_polar_sandbox_access_token
-POLAR_WEBHOOK_SECRET=your_polar_webhook_secret
-
 # Tinybird (analytics) — use staging workspace tokens for local dev.
 # The pre-populated values in secrets/dev.vars.json point at the
 # `pollinations_enter_staging` workspace; do not paste prod tokens here.
 TINYBIRD_INGEST_TOKEN=your_staging_workspace_ingest_token
 TINYBIRD_READ_TOKEN=your_staging_workspace_read_token
-TINYBIRD_SYNC_TOKEN=your_tinybird_sync_token
 
 # Testing
 PLN_ENTER_TOKEN=optional_pln_enter_token

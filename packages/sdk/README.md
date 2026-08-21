@@ -7,7 +7,7 @@ Official SDK for [pollinations.ai](https://pollinations.ai) - Generate images, t
 
 > [!WARNING]
 > **The `alpha` release line (`5.1.0-alpha.x`) is unstable and breakage-prone.**
-> It ships the in-progress rebuild (model-catalog helper, `./client` subpath, provider changes) and its API may change between alpha versions without notice. The stable `latest` line is `5.0.0`. Opt into the alpha only deliberately, and pin an exact version.
+> It ships the in-progress rebuild (model-catalog helper and provider changes) and its API may change between alpha versions without notice. The stable `latest` line is `5.0.0`. Opt into the alpha only deliberately, and pin an exact version.
 
 ## Installation
 
@@ -21,7 +21,7 @@ Alpha (in-progress rebuild — pin an exact version):
 
 ```bash
 npm install @pollinations/sdk@alpha
-# or pin exactly: npm install @pollinations/sdk@5.1.0-alpha.0
+# or pin exactly: npm install @pollinations/sdk@5.1.0-alpha.5
 ```
 
 ### CDN / `<script>` tag
@@ -44,7 +44,7 @@ app already has a build step.
 
 ## Quick Start
 
-First, get your API key at **https://enter.pollinations.ai** and set it:
+First, get your API key at **https://enter.pollinations.ai/keys** and set it:
 
 ```bash
 export POLLINATIONS_API_KEY=your_api_key
@@ -122,7 +122,7 @@ node my-first-ai.mjs
 
 ## API Key
 
-An API key is required. Get one for free at **https://enter.pollinations.ai**
+An API key is required. Get one for free at **https://enter.pollinations.ai/keys**
 
 ```javascript
 import { configure } from '@pollinations/sdk';
@@ -149,7 +149,7 @@ const accessToken = await auth.poll(); // blocks until user approves
 configure({ apiKey: accessToken });
 
 const me = await userInfo();
-console.log(`Logged in as ${me.name} (${me.tier})`);
+console.log(`Logged in as ${me.name} (${me.preferred_username})`);
 ```
 
 `authorizeDevice()` does NOT require an API key — it's how you get one.
@@ -264,15 +264,13 @@ await image.saveToFile('robot.png');
 const base64 = image.toBase64();
 const dataUrl = image.toDataURL();
 
-// Generate multiple images
-const images = await generateImage('abstract art', { n: 4 });
-images.forEach((img, i) => img.saveToFile(`art-${i}.png`));
-
 // Just get the URL (no download)
 const url = await imageUrl('a sunset');
 ```
 
 ### Options
+
+Defaults are applied by the API; the SDK sends only options you provide.
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
@@ -286,7 +284,6 @@ const url = await imageUrl('a sunset');
 | `transparent` | boolean | `false` | Transparent background (PNG) |
 | `guidanceScale` | number | - | Prompt strictness (1-20) |
 | `reasoning` | boolean \| `'fast'` \| `'balanced'` \| `'pro'` | `'balanced'` | Reasoning mode for nanobanana models. Booleans are accepted for backward compatibility. |
-| `n` | number | `1` | Number of images |
 
 ## Image Editing
 
@@ -340,9 +337,6 @@ const story = await generateText('explain gravity', {
   systemPrompt: 'You are a physics teacher',
 });
 
-// Multiple responses
-const facts = await generateText('give me a random fact', { n: 3 });
-
 // Streaming
 for await (const chunk of generateTextStream('tell me a story')) {
   process.stdout.write(chunk);
@@ -368,7 +362,6 @@ console.log(result.actualModel); // actual model used
 | `seed` | number | random | Reproducible results |
 | `json` | boolean | `false` | JSON output mode |
 | `private` | boolean | `false` | Keep generation private |
-| `n` | number | `1` | Number of responses |
 | `raw` | boolean | `false` | Return full response |
 
 ## Chat
@@ -410,22 +403,19 @@ const video = await generateVideo('a timelapse of clouds', {
 });
 await video.saveToFile('clouds.mp4');
 
-// Multiple videos
-const videos = await generateVideo('ocean waves', { n: 2, duration: 4 });
 ```
 
 ### Options
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `model` | string | `'veo'` | `'veo'`, `'seedance'`, `'wan'`, `'ltx-2'`, etc. |
-| `duration` | number | - | Duration in seconds (1-30, varies by model) |
+| `model` | string | `'veo'` | `'veo'`, `'seedance'`, `'wan'`, etc. |
+| `duration` | number | - | Duration in seconds (supported range varies by model) |
 | `aspectRatio` | string | - | e.g. `'16:9'`, `'9:16'`, `'1:1'` |
 | `seed` | number | random | Reproducible results |
 | `audio` | boolean | `false` | Include audio (`wan` always has audio) |
 | `referenceImage` | string | - | URL for image-to-video |
 | `safe` | boolean | `false` | Safety filter |
-| `n` | number | `1` | Number of videos |
 
 ## Audio (Text-to-Speech & Music)
 
@@ -457,10 +447,9 @@ audioEl.play();
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `voice` | string | `'alloy'` | Voice to use (see voices below) |
-| `model` | string | `'elevenlabs'` | `'elevenlabs'`, `'elevenmusic'`, `'acestep'` |
+| `model` | string | `'elevenlabs'` | `'elevenlabs'`, `'elevenmusic'` |
 | `duration` | number | - | Duration in seconds (for music models) |
 | `seed` | number | random | Reproducible results |
-| `n` | number | `1` | Number of outputs |
 
 ### Available Voices
 
@@ -491,6 +480,23 @@ const textModels = await getTextModels();
 const imageModels = await getImageModels();
 
 console.log(textModels.map(m => m.name));
+```
+
+## Media Upload
+
+Uploads use multipart form data, accept up to 100MB of file bytes, and return a
+public URL. Adding tags publishes the upload to those public tag galleries.
+
+```javascript
+import { upload } from '@pollinations/sdk';
+
+const media = await upload(imageBuffer, {
+  name: 'cat.png',
+  contentType: 'image/png',
+  tags: ['cats', 'gallery'],
+});
+
+console.log(media.url);
 ```
 
 ## Error Handling
@@ -542,7 +548,7 @@ import type {
 
 | Function | Description |
 |----------|-------------|
-| `generateImage(prompt, options?)` | Generate image(s) |
+| `generateImage(prompt, options?)` | Generate an image |
 | `editImage(prompt, options?)` | Edit image with prompt |
 | `imageUrl(prompt, options?)` | Get image URL |
 | `generateText(prompt, options?)` | Generate text |
@@ -550,11 +556,11 @@ import type {
 | `chat(messages, options?)` | Chat completion |
 | `chatStream(messages, options?)` | Stream chat |
 | `conversation(options?)` | Create conversation |
-| `generateVideo(prompt, options?)` | Generate video(s) |
+| `generateVideo(prompt, options?)` | Generate a video |
 | `videoUrl(prompt, options?)` | Get video URL |
 | `generateAudio(text, options?)` | Text-to-speech / music |
 | `transcribe(audio, options?)` | Speech-to-text |
-| `upload(data, options?)` | Upload media |
+| `upload(data, options?)` | Upload media, optionally publishing it with `tags` |
 | `getTextModels()` | List text models |
 | `getImageModels()` | List image models |
 | `getModels()` | List all models |
@@ -574,7 +580,7 @@ const base64 = image.toBase64();    // Raw base64 string
 
 ### Request Timeout
 
-Default timeouts: text/chat 5min, images 10min, videos 10min. For custom timeouts:
+Default timeouts: text/chat 5min, images 10min, videos 20min. For custom timeouts:
 
 ```javascript
 import { Pollinations } from '@pollinations/sdk';
@@ -583,7 +589,7 @@ const client = new Pollinations({
   timeout: 600000,       // 10 minutes for all requests
   textTimeout: 300000,   // 5 minutes for text
   imageTimeout: 600000,  // 10 minutes for images
-  videoTimeout: 900000,  // 15 minutes for videos
+  videoTimeout: 1200000, // 20 minutes for videos
 });
 ```
 
@@ -593,21 +599,16 @@ Publishable keys (`pk_`) have rate limits. Use a secret key (`sk_`) for unlimite
 
 ### Network Errors
 
-The SDK automatically retries failed requests up to 3 times. To customize:
-
-```javascript
-import { Pollinations } from '@pollinations/sdk';
-
-const client = new Pollinations({
-  maxRetries: 5,  // Retry up to 5 times
-});
-```
+The SDK returns network and API errors directly and does not retry requests
+automatically. A timed-out generation may still complete and incur usage.
+Callers can inspect `PollinationsError.retryAfter` when deciding how to handle
+rate limits.
 
 ## Links
 
 - [Pollinations.AI](https://pollinations.ai)
 - [API Documentation](https://gen.pollinations.ai/docs) - Full API reference
-- [Get API Key](https://enter.pollinations.ai)
+- [Get API Key](https://enter.pollinations.ai/keys)
 - [Discord](https://discord.gg/pollinations-ai-885844321461485618)
 - [GitHub](https://github.com/pollinations/pollinations)
 

@@ -3,7 +3,7 @@ import { describe, expect } from "vitest";
 import { test } from "../fixtures.ts";
 
 describe("GET /api/account/profile", () => {
-    test("session auth returns githubUsername, image, tier, nextResetAt, name, email", async ({
+    test("session auth returns githubUsername, image, name, email", async ({
         sessionToken,
     }) => {
         const response = await SELF.fetch(
@@ -19,14 +19,14 @@ describe("GET /api/account/profile", () => {
         const data = (await response.json()) as Record<string, unknown>;
         expect(data).toHaveProperty("githubUsername");
         expect(data).toHaveProperty("image");
-        expect(data).toHaveProperty("tier");
-        expect(data).toHaveProperty("nextResetAt");
+        expect(data).not.toHaveProperty("tier");
+        expect(data).not.toHaveProperty("nextResetAt");
         expect(data.communityEndpointsAllowed).toBe(false);
         expect(data).toHaveProperty("name");
         expect(data).toHaveProperty("email");
     });
 
-    test("api key without profile scope returns githubUsername, image, tier, nextResetAt (no name/email)", async ({
+    test("api key without profile scope returns githubUsername and image (no name/email)", async ({
         apiKey,
     }) => {
         const response = await SELF.fetch(
@@ -38,8 +38,8 @@ describe("GET /api/account/profile", () => {
         const data = (await response.json()) as Record<string, unknown>;
         expect(data).toHaveProperty("githubUsername");
         expect(data).toHaveProperty("image");
-        expect(data).toHaveProperty("tier");
-        expect(data).toHaveProperty("nextResetAt");
+        expect(data).not.toHaveProperty("tier");
+        expect(data).not.toHaveProperty("nextResetAt");
         expect(data.communityEndpointsAllowed).toBe(false);
         expect(data).not.toHaveProperty("name");
         expect(data).not.toHaveProperty("email");
@@ -82,8 +82,8 @@ describe("GET /api/account/profile", () => {
         const data = (await response.json()) as Record<string, unknown>;
         expect(data).toHaveProperty("githubUsername");
         expect(data).toHaveProperty("image");
-        expect(data).toHaveProperty("tier");
-        expect(data).toHaveProperty("nextResetAt");
+        expect(data).not.toHaveProperty("tier");
+        expect(data).not.toHaveProperty("nextResetAt");
         expect(data.communityEndpointsAllowed).toBe(false);
         expect(data).toHaveProperty("name");
         expect(data).toHaveProperty("email");

@@ -1,5 +1,7 @@
 interface CloudflareBindings {
     ENTER: Fetcher;
+    PORTKEY?: Fetcher;
+    KLEIN_VPC?: Fetcher;
     BETTER_AUTH_SECRET: string;
     TINYBIRD_INGEST_TOKEN: string;
     ELEVENLABS_API_KEY: string;
@@ -7,14 +9,17 @@ interface CloudflareBindings {
     OVHCLOUD_API_KEY: string;
     PLN_ENTER_TOKEN: string;
     PLN_GPU_TOKEN: string;
-    MUSIC_SERVICE_URL: string;
     DASHSCOPE_API_KEY: string;
+    DEEPINFRA_API_KEY: string;
     FAL_KEY: string;
     INFERENCEPORT_API_KEY?: string;
     STABILITY_API_KEY?: string;
     KV: KVNamespace;
     IMAGE_BUCKET: R2Bucket;
     TEXT_BUCKET: R2Bucket;
+    GENERATION_COORDINATOR: DurableObjectNamespace<
+        import("./src/durable-objects/GenerationCoordinator.ts").GenerationCoordinator
+    >;
     DB: D1Database;
     ENVIRONMENT:
         | "local"
@@ -23,14 +28,15 @@ interface CloudflareBindings {
         | "dev"
         | "test"
         | "development";
+    AGENT_RUNTIME_BASE_URL: string;
     STAGING_ALLOWED_GITHUB_IDS?: string;
     STAGING_ALLOWED_EMAILS?: string;
     LOG_LEVEL?: "trace" | "debug";
     LOG_FORMAT?: "text" | "json";
     TINYBIRD_INGEST_URL: string;
-    TINYBIRD_TIER_INGEST_URL?: string;
     IMAGES?: ImagesBinding;
     PORTKEY_GATEWAY_URL: string;
+    AI_GATEWAY_API_KEY?: string;
     AWS_ACCESS_KEY_ID: string;
     AWS_SECRET_ACCESS_KEY: string;
     AWS_REGION: string;
@@ -41,8 +47,16 @@ interface CloudflareBindings {
     BEDROCK_GUARDRAIL_VERSION?: string;
     AZURE_MYCELI_PROD_API_KEY: string;
     AZURE_MYCELI_PROD_EASTUS2_API_KEY: string;
-    AZURE_MYCELI_PROD_IMG_WESTUS3_API_KEY: string;
+    AZURE_MYCELI_PROD_IMG_15_SWEDEN_API_KEY: string;
+    AZURE_MYCELI_PROD_IMG_15_WESTUS3_API_KEY: string;
+    AZURE_MYCELI_PROD_IMG_2_EASTUS2_API_KEY: string;
+    AZURE_MYCELI_PROD_IMG_2_SWEDEN_API_KEY: string;
+    AZURE_MYCELI_PROD_IMG_MINI_SWEDEN_API_KEY: string;
+    AZURE_MYCELI_PROD_IMG_MINI_WESTUS3_API_KEY: string;
+    AZURE_MYCELI_PROD_POLANDCENTRAL_API_KEY: string;
     AZURE_MYCELI_PROD_SWEDEN_API_KEY: string;
+    AZURE_MYCELI_PROD_UAENORTH_API_KEY: string;
+    AZURE_MYCELI_PROD_WESTUS3_API_KEY: string;
     AZURE_CONTENT_SAFETY_API_KEY: string;
     AZURE_CONTENT_SAFETY_ENDPOINT: string;
     FIREWORKS_API_KEY: string;
@@ -51,9 +65,7 @@ interface CloudflareBindings {
     GOOGLE_PRIVATE_KEY: string;
     GOOGLE_PRIVATE_KEY_ID: string;
     GOOGLE_PROJECT_ID: string;
-    INCEPTION_API_KEY: string;
     KLEIN_URL: string;
-    LTX2_BASE_URL: string;
     NOVA_REEL_S3_BUCKET: string;
     OPENAI_API_KEY: string;
     OPENROUTER_API_KEY: string;
@@ -62,6 +74,7 @@ interface CloudflareBindings {
     XAI_API_KEY: string;
     POLLEN_REFILL_PER_HOUR?: number;
     POLLEN_RATE_LIMITER?: DurableObjectNamespace;
+    COMMUNITY_MODEL_RATE_LIMITER: DurableObjectNamespace;
     EDGE_RATE_LIMITER?: RateLimit;
 }
 

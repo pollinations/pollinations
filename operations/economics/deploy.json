@@ -1,0 +1,18 @@
+{
+  "target": "script",
+  "credentials": "myceli",
+  "sops": "economics",
+  "install": "npm ci --prefix ../..",
+  "build": "npm run build --prefix web",
+  "deploy": "cd web && sops exec-file --no-fifo ../secrets/web.json 'npx wrangler deploy --secrets-file {}'",
+  "verify": [
+    "https://economics.myceli.ai/api/auth/session",
+    "https://economics.pollinations.ai/api/auth/session"
+  ],
+  "watch": [
+    "packages/ui/",
+    "packages/sdk/",
+    "package.json",
+    "package-lock.json"
+  ]
+}

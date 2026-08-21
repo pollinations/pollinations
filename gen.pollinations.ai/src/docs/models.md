@@ -8,8 +8,24 @@ Discover available models with pricing, capabilities, and metadata. No authentic
 | `GET /v1/models` | All models in OpenAI-compatible format (`{object: "list", data: [...]}`) |
 | `GET /text/models` | Text models with pricing, context window, tool support |
 | `GET /image/models` | Image & video models with capabilities and pricing |
+| `GET /video/models` | Video models with capabilities and pricing |
 | `GET /audio/models` | Audio models with supported voices |
 | `GET /embeddings/models` | Embedding models with supported modalities |
+| `GET /3d/models` | 3D Generation models with supported modalities |
+
+### Query Parameters
+
+All model discovery endpoints accept an optional `community` query parameter:
+
+| Parameter | Values | Behaviour |
+|-----------|--------|-----------|
+| *(omitted)* | | Returns all models (default, backward-compatible) |
+| `community=false` | `false`, `0` | Excludes community models — returns official models only |
+| `community=true` | `true`, `1` | Returns community models only |
+
+Any other value (e.g. `tru`, `yes`, `2`) returns **400 Bad Request**.
+
+Example: `GET /models?community=false`
 
 Rich model endpoints include `capabilities` for agentic/model traits:
 `tool_calling`, `reasoning`, `web_search`, and `code_execution`.
@@ -18,11 +34,17 @@ structured fields.
 
 ## Community Models (Alpha)
 
-Community models are user-owned, OpenAI-compatible text endpoints proxied through `gen.pollinations.ai` under an `owner/model` id (e.g. `Spit-fires/LFM2.5-230M`). Registration is currently invite-only while the program is in alpha — rules below will likely get stricter before general availability.
+Community models are user-owned, OpenAI-compatible text or image-generation endpoints proxied through `gen.pollinations.ai` under an `owner/model` id (e.g. `Spit-fires/LFM2.5-230M`). Text providers serve `/v1/chat/completions`; image providers serve `/v1/images/generations`. Any signed-in user can register a private, owner-only model. Publishing it in the public model catalog requires allowlist approval while the program is in alpha.
 
 **Alpha stage**
 - Inclusion is fairly permissive for now; expect that to tighten before official launch.
-- Text models only for now — image, audio, and other modalities are planned next.
+- Text and image generation models are supported now; audio and other modalities are planned next.
+- Community image models are exposed through `/image/{prompt}` and `/v1/images/generations`. The registration test adds image input and `/v1/images/edits` metadata when the registrant's edit endpoint succeeds. OpenAI-compatible responses use `b64_json`.
+
+**Pricing**
+- Owners set prices when publishing; blank or zero means free.
+- Text models are priced per token (entered per 1M tokens) for each usage bucket the endpoint reports.
+- Image models bill in one of two modes, detected when the endpoint is tested at registration: endpoints that return OpenAI image token usage are priced per 1M tokens; all others charge a fixed price per generated image.
 
 **Payouts**
 - Owners currently earn 75% of the pollen spent on their model.
@@ -38,8 +60,8 @@ Community models are user-owned, OpenAI-compatible text endpoints proxied throug
 - Models can be pulled (and repeat offenders potentially blocked) for instability or suspected abuse — e.g. silently changing prices or serving a different model than advertised.
 
 **Automated health monitoring**
-- An automated monitor checks each community model's error rate and latency. Models with sustained failures get deactivated automatically — no human involvement needed for that direction.
-- Reactivating a deactivated model is manual and owner-only, from the dashboard. There's no auto-reactivation, so if your model was turned off, fix the underlying issue before reactivating it, or it may just fail again.
+- An automated monitor checks community models for error rate and latency. Models with sustained failures are hidden from model listings but remain callable by their exact model ID.
+- Owners can relist a hidden model from the dashboard. Fix the underlying issue before relisting it, or the monitor may hide it again.
 - Check your model's live health — request counts, success rate, errors, and latency — at [model-monitor.pollinations.ai/debug](https://model-monitor.pollinations.ai/debug).
 
-Registration and management ("My Models") are documented under the Account section of this reference, or via the [CLI](/docs/guides/cli) (`polli my-models`).
+To request account-level permission to publish community models, submit a [publisher allowlist request](https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml). The form does not register individual models. Private models can be registered and called without approval under **Models → My Models** at [enter.pollinations.ai](https://enter.pollinations.ai), as are fetching upstream models and testing the upstream endpoint; only public listing requires approval. Registration and management are also documented under the Account section of this reference. The dashboard and Account API support text and image models; the [CLI](/docs#tag/cli) (`polli my-models`) currently supports text models only.

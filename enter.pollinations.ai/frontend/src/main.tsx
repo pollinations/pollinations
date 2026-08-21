@@ -1,7 +1,13 @@
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { type FC, type PropsWithChildren, StrictMode } from "react";
 import ReactDOM from "react-dom/client";
+import { config } from "./config";
 import { routeTree } from "./routeTree.gen";
+
+const ref = new URLSearchParams(window.location.search).get("ref");
+if (ref === "image") {
+    navigator.sendBeacon(`${config.apiBaseUrl}/referral?ref=${ref}`);
+}
 
 // Register the router instance for type safety
 declare module "@tanstack/react-router" {

@@ -21,7 +21,10 @@
         
         // For IDE support and go-to-definition
         "declaration": true,
-        "declarationMap": true
+        "declarationMap": true,
+        
+        // Base path for imports
+        "baseUrl": "."
     },
     "include": ["**/*.js", "**/*.ts"],
     "exclude": ["node_modules", "dist"]

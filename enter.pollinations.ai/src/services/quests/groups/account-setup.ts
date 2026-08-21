@@ -2,17 +2,18 @@ import { sql } from "drizzle-orm";
 import { type QuestDefinition, rewardableQuests } from "../definitions.ts";
 import {
     type QuestCard,
+    type QuestEvaluation,
     type QuestEvaluationContext,
     type QuestUser,
     questToCard,
-    type RewardProposal,
+    toQuestProgress,
 } from "../types.ts";
 
 /**
  * D1 setup group: account-setup quests sourced from D1 source tables.
  *   - first_api_key  -> apikey                    (one key per user)
  *   - use_app        -> apikey.byop_client_key_id (one BYOP login per user)
- *   - early_adopter  -> user.created_at           (registered 6+ months ago)
+ *   - early_adopter  -> user.created_at           (registered 9+ months ago)
  *   - top_up_since_launch -> stripe_checkout_credits (one launch-era checkout)
  *   - top_up_100_since_launch -> stripe_checkout_credits (>=100 launch-era Pollen)
  *
@@ -38,7 +39,7 @@ const TIMESTAMP_MILLIS_THRESHOLD = 100_000_000_000;
 const firstApiKeyQuest: QuestDefinition = {
     id: "first_api_key",
     title: "Create your first API key",
-    description: "Create an API [key](#keys).",
+    description: "Create an API [key](/keys).",
     category: "setup",
     scope: "perUser",
     rewardAmount: 0.25,
@@ -54,26 +55,23 @@ const byopLoginQuest: QuestDefinition = {
     scope: "perUser",
     rewardAmount: 0.25,
     balanceBucket: "tier",
-    // Built but not launched — hidden from the UI, not grantable.
-    state: "coming_soon",
 };
 
-const sixMonthAccountQuest: QuestDefinition = {
+const earlyAdopterQuest: QuestDefinition = {
     id: "early_adopter",
-    title: "Early Pollinations adopter",
-    description: "Your Pollinations account is older than six months.",
+    title: "Early adopter",
+    description: "Your Pollinations account is at least nine months old.",
     category: "grow",
     scope: "perUser",
-    rewardAmount: 1,
+    rewardAmount: 2,
     balanceBucket: "tier",
-    // Built but not launched — hidden from the UI, not grantable.
     state: "coming_soon",
 };
 
 const legacyFirstTopUpQuest: QuestDefinition = {
     id: "first_top_up",
     title: "First Pollen top up",
-    description: "[Top up](#buy-pollen) Pollen.",
+    description: "[Top up](/pollen#buy-pollen) Pollen.",
     category: "grow",
     scope: "perUser",
     rewardAmount: 10,
@@ -85,7 +83,7 @@ const legacyOverHundredPollenQuest: QuestDefinition = {
     id: "top_up_100",
     title: "Top up 100 Pollen",
     description:
-        "You have [topped up](#buy-pollen) 100 Pollen or more in total.",
+        "You have [topped up](/pollen#buy-pollen) 100 Pollen or more in total.",
     category: "grow",
     scope: "perUser",
     rewardAmount: 50,
@@ -96,27 +94,28 @@ const legacyOverHundredPollenQuest: QuestDefinition = {
 const topUpSinceLaunchQuest: QuestDefinition = {
     id: "top_up_since_launch",
     title: "Top up Pollen",
-    description: `[Top up](#buy-pollen) Pollen. _(from ${QUEST_REWARDS_LAUNCH_DATE_LABEL})_`,
+    description: `[Top up](/pollen#buy-pollen) Pollen. _(from ${QUEST_REWARDS_LAUNCH_DATE_LABEL})_`,
     category: "grow",
     scope: "perUser",
     rewardAmount: 5,
     balanceBucket: "tier",
 };
 
-const overHundredPollenSinceLaunchQuest: QuestDefinition = {
+const overHundredPollenSinceLaunchQuest = {
     id: "top_up_100_since_launch",
     title: "Top up 100 Pollen",
-    description: `You have [topped up](#buy-pollen) 100 Pollen or more. _(from ${QUEST_REWARDS_LAUNCH_DATE_LABEL})_`,
+    description: `You have [topped up](/pollen#buy-pollen) 100 Pollen or more. _(from ${QUEST_REWARDS_LAUNCH_DATE_LABEL})_`,
     category: "grow",
     scope: "perUser",
     rewardAmount: 50,
     balanceBucket: "tier",
-};
+    goal: { target: 100, unit: "pollen" },
+} satisfies QuestDefinition;
 
 const QUESTS = [
     firstApiKeyQuest,
     byopLoginQuest,
-    sixMonthAccountQuest,
+    earlyAdopterQuest,
     legacyFirstTopUpQuest,
     legacyOverHundredPollenQuest,
     topUpSinceLaunchQuest,
@@ -126,7 +125,7 @@ const QUESTS = [
 const EVALUATED_QUESTS = [
     firstApiKeyQuest,
     byopLoginQuest,
-    sixMonthAccountQuest,
+    earlyAdopterQuest,
     topUpSinceLaunchQuest,
     overHundredPollenSinceLaunchQuest,
 ];
@@ -137,14 +136,14 @@ export async function listQuestCards(
     return QUESTS.map((quest) => questToCard(quest));
 }
 
-export async function findRewardProposalsForUser(
+export async function evaluateUser(
     { db }: QuestEvaluationContext,
     user: QuestUser,
-): Promise<RewardProposal[]> {
+): Promise<QuestEvaluation> {
     const rewardableQuestIds = new Set(
         rewardableQuests(EVALUATED_QUESTS).map((quest) => quest.id),
     );
-    const [apiKeyRows, topUpSummaryRows, byopLoginRows, sixMonthAccountRows] =
+    const [apiKeyRows, topUpSummaryRows, byopLoginRows, earlyAdopterRows] =
         await Promise.all([
             rewardableQuestIds.has(firstApiKeyQuest.id)
                 ? db.all<SetupQuestRow>(sql`
@@ -181,17 +180,18 @@ export async function findRewardProposalsForUser(
           AND apikey.byop_client_key_id IS NOT NULL
         LIMIT 1`)
                 : [],
-            rewardableQuestIds.has(sixMonthAccountQuest.id)
+            rewardableQuestIds.has(earlyAdopterQuest.id)
                 ? db.all<SetupQuestRow>(sql`
         SELECT "user".id AS userId
         FROM "user"
         WHERE "user".id = ${user.id}
-          AND "user".created_at <= CAST(strftime('%s', 'now', '-6 months') AS integer)
+          AND "user".created_at <= CAST(strftime('%s', 'now', '-9 months') AS integer)
         LIMIT 1`)
                 : [],
         ]);
 
-    return [
+    const totalPollen = topUpSummaryRows[0]?.totalPollen ?? 0;
+    const proposals = [
         ...apiKeyRows.map((row) => ({
             quest: firstApiKeyQuest,
             userId: row.userId,
@@ -200,8 +200,8 @@ export async function findRewardProposalsForUser(
             quest: byopLoginQuest,
             userId: row.userId,
         })),
-        ...sixMonthAccountRows.map((row) => ({
-            quest: sixMonthAccountQuest,
+        ...earlyAdopterRows.map((row) => ({
+            quest: earlyAdopterQuest,
             userId: row.userId,
         })),
         ...(rewardableQuestIds.has(topUpSinceLaunchQuest.id) &&
@@ -214,7 +214,7 @@ export async function findRewardProposalsForUser(
               ]
             : []),
         ...(rewardableQuestIds.has(overHundredPollenSinceLaunchQuest.id) &&
-        (topUpSummaryRows[0]?.totalPollen ?? 0) >= 100
+        totalPollen >= overHundredPollenSinceLaunchQuest.goal.target
             ? [
                   {
                       quest: overHundredPollenSinceLaunchQuest,
@@ -223,4 +223,11 @@ export async function findRewardProposalsForUser(
               ]
             : []),
     ];
+
+    return {
+        proposals,
+        progress: [
+            toQuestProgress(overHundredPollenSinceLaunchQuest, totalPollen),
+        ],
+    };
 }

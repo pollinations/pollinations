@@ -4,8 +4,12 @@ import {
     CONTENT_POLICY_STATUS,
     contentPolicyMessage,
     firstContentPolicyMessage,
+    isAccountLevelBlock,
     isContentPolicyViolation,
 } from "../../src/image/utils/contentModeration.ts";
+
+const AZURE_RESOURCE_BLOCK =
+    '{"error":{"code":"Forbidden","message":"Your resource has been temporarily blocked because we detected behavior that may violate our content policy. For more details on Azure OpenAI service content policy, please visit https://aka.ms/aoaicodeofconduct"}}';
 
 // Real upstream rejection messages observed in production (Tinybird
 // recent_server_errors, 2026-06). Every one of these must classify as a
@@ -49,6 +53,12 @@ const NON_MODERATION_MESSAGES = [
     // matcher swallowing outages (and against re-adding a space-separated form).
     "moderation service unavailable",
     "Content moderation service temporarily unavailable",
+    // Azure blocks the whole RESOURCE (our deployment), not this user's prompt.
+    // The wording mentions "content policy", but the request never reached
+    // moderation — every prompt fails identically until Azure unblocks the
+    // resource. Telling the caller to "adjust your input" is wrong and hides a
+    // real outage from model-health stats. Must stay 5xx. (Issue #12446)
+    AZURE_RESOURCE_BLOCK,
 ];
 
 describe("isContentPolicyViolation", () => {
@@ -75,6 +85,32 @@ describe("isContentPolicyViolation", () => {
         expect(isContentPolicyViolation("content FLAGGED for: sexual")).toBe(
             true,
         );
+    });
+});
+
+describe("isAccountLevelBlock", () => {
+    // Drives GPT Image endpoint failover: the block is per-resource, so a
+    // blocked region must fail over to a healthy sibling instead of failing
+    // the caller. (Issue #12446)
+    it("flags the Azure resource block", () => {
+        expect(isAccountLevelBlock(AZURE_RESOURCE_BLOCK)).toBe(true);
+    });
+
+    it("does NOT flag a genuine content rejection", () => {
+        // Critical: retrying these in another region would be refused there too
+        // — it only burns a second upstream call and delays the user's error.
+        for (const message of REAL_MODERATION_MESSAGES) {
+            expect(isAccountLevelBlock(message)).toBe(false);
+        }
+    });
+
+    it("does NOT flag ordinary backend failures", () => {
+        expect(isAccountLevelBlock("Request timed out after 120000ms")).toBe(
+            false,
+        );
+        expect(isAccountLevelBlock("")).toBe(false);
+        expect(isAccountLevelBlock(null)).toBe(false);
+        expect(isAccountLevelBlock(undefined)).toBe(false);
     });
 });
 

@@ -174,24 +174,7 @@ export const track = (eventType: EventType) =>
             rawIp !== "unknown" ? stripIPv4MappedPrefix(rawIp) : undefined;
         const ipSubnet = truncateIpToSubnet(clientIp);
 
-        const apiKeyMetadata = c.var.auth.apiKey?.metadata as
-            | Record<string, unknown>
-            | undefined;
-        const byopClientKeyId = c.var.auth.apiKey?.byopClientKeyId;
-        const userTracking: UserData = {
-            userId: c.var.auth.user?.id,
-            userTier: c.var.auth.user?.tier,
-            apiKeyId: c.var.auth.apiKey?.id,
-            apiKeyType: apiKeyMetadata?.keyType as ApiKeyType,
-            apiKeyName: c.var.auth.apiKey?.name,
-            apiKeyCreatedVia: byopClientKeyId
-                ? "redirect-auth"
-                : (apiKeyMetadata?.createdVia as string | undefined),
-            apiKeyClientId: byopClientKeyId ?? undefined,
-            apiKeyCreatedForApp: c.var.auth.apiKey?.byopClientName ?? undefined,
-            apiKeyCreatedForUserId:
-                c.var.auth.apiKey?.byopClientUserId ?? undefined,
-        } satisfies UserData;
+        const userTracking = requestIdentity(c.var.auth);
 
         let responseOverride: Response | null = null;
         let pricingInput: PricingInput | undefined;
@@ -391,7 +374,7 @@ export const track = (eventType: EventType) =>
                         userId,
                         apiKeyId: c.var.auth?.apiKey?.id,
                         apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
-                        byopClientKeyId,
+                        byopClientKeyId: c.var.auth?.apiKey?.byopClientKeyId,
                         modelPaidOnly: c.var.model?.definition.paidOnly,
                         // Only public endpoints pay their owner a reward: a
                         // private endpoint is owner-called (base cost billed to
@@ -823,7 +806,14 @@ async function* extractResponseStream(
 
     for await (const event of asyncIteratorStream(eventStream)) {
         if (event.data === "[DONE]") return;
-        yield JSON.parse(event.data);
+
+        let data: unknown;
+        try {
+            data = JSON.parse(event.data);
+        } catch {
+            continue;
+        }
+        yield data;
     }
 }
 
@@ -842,7 +832,15 @@ async function* asyncIteratorStream<T>(
     }
 }
 
-type UserData = {
+/**
+ * Who made the request, in the shape the event carries it.
+ *
+ * Every path that emits a generation row builds this the same way, so a new
+ * identity column is added here once rather than in each emitter. Realtime
+ * settles from a socket rather than a response and so keeps its own event
+ * builder; it spreads this verbatim.
+ */
+export type UserData = {
     userId?: string;
     userTier?: string;
     apiKeyId?: string;
@@ -853,6 +851,28 @@ type UserData = {
     apiKeyCreatedForUserId?: string;
     apiKeyClientId?: string;
 };
+
+export function requestIdentity(auth: AuthVariables["auth"]): UserData {
+    const apiKeyMetadata = auth.apiKey?.metadata as
+        | Record<string, unknown>
+        | undefined;
+    const byopClientKeyId = auth.apiKey?.byopClientKeyId;
+    return {
+        userId: auth.user?.id,
+        userTier: auth.user?.tier,
+        apiKeyId: auth.apiKey?.id,
+        apiKeyType: apiKeyMetadata?.keyType as ApiKeyType,
+        apiKeyName: auth.apiKey?.name,
+        // A BYOP key is created by the redirect flow, whatever its metadata
+        // says it was created via.
+        apiKeyCreatedVia: byopClientKeyId
+            ? "redirect-auth"
+            : (apiKeyMetadata?.createdVia as string | undefined),
+        apiKeyClientId: byopClientKeyId ?? undefined,
+        apiKeyCreatedForApp: auth.apiKey?.byopClientName ?? undefined,
+        apiKeyCreatedForUserId: auth.apiKey?.byopClientUserId ?? undefined,
+    };
+}
 
 type BalanceData = {
     selectedMeterId?: string;

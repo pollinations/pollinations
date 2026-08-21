@@ -5,14 +5,8 @@ import {
     DialogTitle,
     ScrollArea,
 } from "@pollinations/ui";
-import type { ModelInputModality } from "@shared/registry/registry.ts";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
-import {
-    fetchModelCatalog,
-    getModelPricesFromCatalog,
-} from "../models/model-catalog.ts";
-import { getModelInputModalities } from "../models/model-info.ts";
 import { ModelListingFields } from "./model-listing-fields.tsx";
 import { PromptAgentFields } from "./prompt-agent-fields.tsx";
 import {
@@ -20,10 +14,10 @@ import {
     type AgentListingDetailsPayload,
     type AgentPayload,
     agentListingToForm,
-    type CommunityEndpoint,
     emptyAgentForm,
     type ManagedAgent,
     type ModelListingFormState,
+    type PromptAgentCommunityEndpoint,
     toAgentListingPayload,
     toAgentPayload,
 } from "./types.ts";
@@ -32,7 +26,7 @@ type AgentDialogFormState = AgentFormState & ModelListingFormState;
 
 type AgentDialogProps = {
     agent?: ManagedAgent;
-    endpoint?: CommunityEndpoint;
+    endpoint?: PromptAgentCommunityEndpoint;
     canPublish: boolean;
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -86,13 +80,7 @@ export function AgentDialog({
         setIsSubmitting(true);
         setError(null);
         try {
-            const inputModalities = await inheritedInputModalities(
-                form.baseModel,
-            );
-            await onSubmit(
-                toAgentPayload(form),
-                toAgentListingPayload(form, inputModalities),
-            );
+            await onSubmit(toAgentPayload(form), toAgentListingPayload(form));
             onOpenChange(false);
         } catch (thrown) {
             setError(
@@ -149,6 +137,7 @@ export function AgentDialog({
                         modality="text"
                         canPublish={canPublish}
                         isAgent
+                        allowPerUserRpm={false}
                         required
                         onChange={(key, value) =>
                             setForm((current) => ({
@@ -181,18 +170,4 @@ export function AgentDialog({
             </form>
         </Dialog>
     );
-}
-
-async function inheritedInputModalities(
-    baseModelId: string,
-): Promise<ModelInputModality[]> {
-    try {
-        const models = getModelPricesFromCatalog(await fetchModelCatalog());
-        const baseModel = models.find(
-            (model) => model.name === baseModelId.trim(),
-        );
-        return baseModel ? getModelInputModalities(baseModel) : ["text"];
-    } catch {
-        return ["text"];
-    }
 }

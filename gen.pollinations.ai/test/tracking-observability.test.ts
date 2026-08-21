@@ -9,7 +9,7 @@ import {
     type CommunityEndpointRuntime,
     communityEndpointPrices,
     communityModelDefinition,
-    type ExternalCommunityEndpointRuntime,
+    type ProxyCommunityEndpointRuntime,
 } from "@shared/community-endpoints.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
 import { modelInfoFromDefinition } from "@shared/registry/model-info.ts";
@@ -116,8 +116,8 @@ function createTestApp(
 
 function createCommunityEndpoint(
     ownerUserId: string,
-    overrides: Partial<ExternalCommunityEndpointRuntime> = {},
-): ExternalCommunityEndpointRuntime {
+    overrides: Partial<ProxyCommunityEndpointRuntime> = {},
+): ProxyCommunityEndpointRuntime {
     return {
         id: "community-endpoint-test",
         ownerUserId,
@@ -125,8 +125,8 @@ function createCommunityEndpoint(
         name: "test-model",
         title: "Test Model",
         description: null,
-        kind: "external",
-        delegatesGeneration: false,
+        type: "proxy",
+
         modality: "text",
         imagePricing: "request",
         inputModalities: null,
@@ -134,10 +134,11 @@ function createCommunityEndpoint(
         upstreamModel: "upstream-test-model",
         bearerTokenCiphertext: "encrypted",
         visibility: "public",
+        paidOnly: false,
         perUserRpm: null,
-        fallbackModelIds: [],
-        disabledAt: null,
-        disabledReason: null,
+        fallbacks: [],
+        hiddenAt: null,
+        hiddenReason: null,
         ...communityEndpointPrices({
             promptTextPrice: 0.0001,
             completionTextPrice: 0.0002,
@@ -604,7 +605,72 @@ describe("tracking observability", () => {
         expect(event.modelUsed).toBe("openai");
         expect(consumePollen).toHaveBeenCalledWith(0);
     });
+    it("tracks usage after a malformed SSE event", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+        const upstream = new Response(
+            [
+                'data: {"model":"gpt-5-nano","choices":[{"delta":{"content":"hi"}}]}',
+                "",
+                "data: {invalid json",
+                "",
+                'data: {"model":"gpt-5-nano","choices":[],"usage":{"prompt_tokens":10,"completion_tokens":5,"total_tokens":15}}',
+                "",
+                "data: [DONE]",
+                "",
+            ].join("\n"),
+            { headers: { "content-type": "text/event-stream" } },
+        );
 
+        const ctx = createExecutionContext();
+        const response = await createWrongContentTypeApp(
+            consumePollen,
+            "generate.text",
+            upstream,
+        ).fetch(
+            new Request("https://gen.pollinations.ai/upstream", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai",
+                    stream: true,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(1);
+        await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
+            eventType: "generate.text",
+            responseStatus: 200,
+            isBilledUsage: true,
+            tokenCountPromptText: 10,
+            tokenCountCompletionText: 5,
+        });
+        expect(consumePollen).toHaveBeenCalledWith(expect.any(Number));
+    });
     it("still bills a flat request fee when token usage is missing", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(

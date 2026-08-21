@@ -1,4 +1,5 @@
 import { getLogger } from "@logtape/logtape";
+import { rewardKey } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import {
     getInstallationToken,
@@ -182,7 +183,7 @@ const establishedGitHubAccountQuest = {
     description:
         "Sign in with a GitHub account that is at least two years old.",
     category: "contribute",
-    scope: "perSubject",
+    scope: "perUser",
     rewardAmount: 3,
     balanceBucket: "tier",
     goal: { target: 730, unit: "days" },
@@ -202,10 +203,6 @@ const publicRepoStarsQuest: QuestDefinition = {
 };
 
 const QUESTS = [establishedGitHubAccountQuest, publicRepoStarsQuest];
-
-function establishedAccountRewardKey(githubId: number): string {
-    return `quest:${establishedGitHubAccountQuest.id}:github:${githubId}`;
-}
 
 export async function listQuestCards(
     _ctx: QuestEvaluationContext,
@@ -245,7 +242,7 @@ export async function evaluateUser(
             .where(
                 eq(
                     schema.rewards.idempotencyKey,
-                    establishedAccountRewardKey(user.githubId),
+                    rewardKey(establishedGitHubAccountQuest.id, user.githubId),
                 ),
             )
             .limit(1);
@@ -296,7 +293,6 @@ export async function evaluateUser(
             proposals.push({
                 quest: establishedGitHubAccountQuest,
                 userId: user.id,
-                idempotencySubject: `github:${user.githubId}`,
             });
         }
     }

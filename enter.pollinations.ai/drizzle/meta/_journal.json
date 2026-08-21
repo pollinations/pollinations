@@ -355,8 +355,36 @@
     {
       "idx": 50,
       "version": "6",
+      "when": 1787093800020,
+      "tag": "0050_rekey_rewards_to_github_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "6",
+      "when": 1787093808467,
+      "tag": "0051_drop_rewards_github_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "6",
+      "when": 1787225959768,
+      "tag": "0052_redundant_silver_sable",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "6",
+      "when": 1787239130592,
+      "tag": "0053_listing_envelope",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "6",
       "when": 1786980259903,
-      "tag": "0050_canonicalize_midijourney_permission",
+      "tag": "0054_canonicalize_midijourney_permission",
       "breakpoints": true
     }
   ]

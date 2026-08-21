@@ -1,6 +1,6 @@
 import { env } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
-import migrationSql from "../drizzle/0050_canonicalize_midijourney_permission.sql?raw";
+import migrationSql from "../drizzle/0054_canonicalize_midijourney_permission.sql?raw";
 
 describe("canonicalize MIDIjourney permission migration", () => {
     it("adds the canonical ID, preserves existing values, and is idempotent", async () => {

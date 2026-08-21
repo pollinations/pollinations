@@ -1,4 +1,4 @@
--- MIDIjourney Large will become an alias of the canonical MIDIjourney agent.
+-- MIDIjourney Large will be retired in favor of the canonical MIDIjourney agent.
 -- Keep both IDs during the cross-worker rollout so restricted keys work before
 -- the Gen change, after it, and if Gen is rolled back. A later cleanup migration
 -- can remove the legacy ID after the new resolver is established in production.

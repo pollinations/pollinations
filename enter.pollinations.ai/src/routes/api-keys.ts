@@ -192,25 +192,12 @@ const CreateApiKeySchema = z.object({
  * Schema for updating metadata on an API key.
  * Only caller-owned fields are accepted. Server-controlled fields like
  * keyType, createdVia, and plaintextKey cannot be modified after creation.
+ * redirectUris stay plain strings here; the handler calls
+ * validateRedirectUriFormat so the precise error message is returned.
  */
-const UrlWithSchemeSchema = z.string().refine(
-    (val) => {
-        try {
-            validateRedirectUriFormat(val);
-            return true;
-        } catch {
-            return false;
-        }
-    },
-    {
-        message:
-            "Must be an https:// redirect URI with no fragment, or http:// on a loopback host",
-    },
-);
-
 const UpdateMetadataSchema = z.object({
     description: z.string().optional(),
-    redirectUris: z.array(UrlWithSchemeSchema).optional(),
+    redirectUris: z.array(z.string()).optional(),
     earningsEnabled: z.boolean().optional(),
 });
 

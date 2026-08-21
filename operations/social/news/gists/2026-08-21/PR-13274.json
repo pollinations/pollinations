@@ -1,0 +1,35 @@
+{
+  "pr_number": 13274,
+  "title": "fix: distinguish fallback spillover from degradation",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13274",
+  "merged_at": "2026-08-21T13:39:06Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `primary_5xx`, `primary_retried_503s`, and `fallback_rescues` to `model_health`.\n- Keeps DEGRADED based only on final user-visible outcomes.\n- Reports non-final primary 503 pressure separately as SPILLOVER.\n- Preserves the current hide/relist monitor workflow and community rate-limit exclusions.\n\nRoot cause: the image-specific monitor query counted non-final Z-Image Vast 503 attempts even when Fal handled the final response.\n\nChecks:\n- `git diff --check`\n- Proposed Tinybird SQL executed against live data: final 5xx remained zero while retried primary 503s were reported separately\n\nTinybird has not been deployed. Rollout: validate/deploy staging, merge, deploy production, then verify the monitor auto-refreshes from `main` on its next cycle.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Spillover is not a wilted flower",
+    "blurb": "The monitor learned the difference between a rough first landing and a failed delivery. When Fal rescues an image request after a primary 503, the hive now records the detour without declaring the whole flowerbed degraded.",
+    "summary": "Updated the model-health Tinybird query to track `primary_5xx`, `primary_retried_503s`, and `fallback_rescues`, keeping DEGRADED status tied only to final user-visible failures while exposing retried primary 503 pressure as SPILLOVER.",
+    "impact": "Models whose Z-Image Vast requests receive a non-final 503 before Fal returns a successful final image can remain correctly listed as healthy, while operators still see the underlying primary-provider spillover separately.",
+    "keywords": [
+      "model-health",
+      "observability",
+      "fallbacks",
+      "503",
+      "Tinybird",
+      "image-generation",
+      "reliability"
+    ],
+    "visual_concept": "Depict a cozy garden delivery route: a primary watering pipe briefly sputters with a small pixel “503” sign, while a friendly backup pipe successfully waters the code-plant. Polli calmly checks a health clipboard showing separate HEALTHY and SPILLOVER indicators, emphasizing that a rescued request is not the same as a failed one.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener visor and checking a clipboard beside a code-flower garden: one watering pipe has a small pixel sign reading “503,” while a backup pipe waters the plant successfully under a “SPILLOVER” marker. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with dark purple (#110518) pixel details and a gentle CRT monitor glow."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-21/PR-13274.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener visor and checking a clipboard beside a code-flower garden: one watering pipe has a small pixel sign reading “503,” while a backup pipe waters the plant successfully under a “SPILLOVER” marker. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with dark purple (#110518) pixel details and a gentle CRT monitor glow."
+  },
+  "generated_at": "2026-08-21T13:40:10.453538+00:00"
+}

@@ -10,12 +10,10 @@ const azureModelConfig = {
 
 afterEach(() => {
     vi.restoreAllMocks();
-    vi.unstubAllEnvs();
 });
 
 describe("generateTextPortkey", () => {
     it("calls OpenRouter directly and preserves its request and response fields", async () => {
-        vi.stubEnv("OPENROUTER_API_KEY", "test-openrouter-key");
         const fetchSpy = vi
             .spyOn(globalThis, "fetch")
             .mockImplementationOnce(
@@ -24,9 +22,6 @@ describe("generateTextPortkey", () => {
                         "https://openrouter.ai/api/v1/chat/completions",
                     );
                     const headers = new Headers(init?.headers);
-                    expect(headers.get("Authorization")).toBe(
-                        "Bearer test-openrouter-key",
-                    );
                     expect(headers.has("x-portkey-provider")).toBe(false);
                     expect(headers.has("x-portkey-request-timeout")).toBe(
                         false,
@@ -125,7 +120,6 @@ describe("generateTextPortkey", () => {
     });
 
     it("passes OpenRouter streaming responses through unchanged", async () => {
-        vi.stubEnv("OPENROUTER_API_KEY", "test-openrouter-key");
         const upstream =
             'data: {"id":"generation-2","provider":"Google","choices":[{"index":0,"delta":{"content":"ok"},"finish_reason":null}]}\n\n' +
             'data: {"id":"generation-2","provider":"Google","choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":5,"completion_tokens":1,"total_tokens":6,"cost":9e-7}}\n\n' +

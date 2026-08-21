@@ -1,0 +1,33 @@
+{
+  "pr_number": 13600,
+  "title": "fix: replace z.custom() with proper zod schema for OpenAPI generation",
+  "author": "rekty",
+  "url": "https://github.com/pollinations/pollinations/pull/13600",
+  "merged_at": "2026-08-21T10:17:17Z",
+  "labels": [],
+  "pr_body_excerpt": "- Replaces the non-serializable `z.custom<ModelMessage>()` field with a JSON Schema-compatible permissive schema.\n- Restores `/api/docs/open-api/generate-schema` without changing runtime validation behavior.\n- Unblocks generated API reference updates.\n\nFixes #13558",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The schema blooms again",
+    "blurb": "A tiny Zod knot was keeping the API reference garden from growing. The docs generator is back to producing healthy OpenAPI schema leaves.",
+    "summary": "Replaced the non-serializable z.custom<ModelMessage>() field in the prompt-agent runtime with a permissive JSON Schema-compatible Zod schema, restoring /api/docs/open-api/generate-schema without changing runtime validation.",
+    "impact": "Developers can again generate OpenAPI schemas and update API references, while prompt-agent message validation keeps behaving the same way.",
+    "keywords": [
+      "openapi",
+      "zod",
+      "api-docs",
+      "schema-generation",
+      "prompt-agent"
+    ],
+    "visual_concept": "Depict API schema generation as a cozy code-garden: a blocked or tangled schema vine has been replaced by a neat, flowering JSON-schema plant feeding a retro documentation terminal. Polli, wearing tiny librarian glasses, carefully tends the plant while the monitor robot happily reads the newly generated API reference.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, black antennae, oval eyes, pink rectangular blush, a happy smile, and rounded light-blue translucent wings, wearing tiny librarian glasses as she prunes a tangled code-vine into a blooming JSON Schema plant beside a retro terminal displaying simple pixel text: 'OPENAPI OK'; a cheerful CRT monitor robot holds fresh documentation pages, with flowers and seedlings around them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-cream gradients, chunky retro sprites, warm lighting, subtle CRT glow, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-21/PR-13600.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, black antennae, oval eyes, pink rectangular blush, a happy smile, and rounded light-blue translucent wings, wearing tiny librarian glasses as she prunes a tangled code-vine into a blooming JSON Schema plant beside a retro terminal displaying simple pixel text: 'OPENAPI OK'; a cheerful CRT monitor robot holds fresh documentation pages, with flowers and seedlings around them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-cream gradients, chunky retro sprites, warm lighting, subtle CRT glow, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-21T10:18:14.868064+00:00"
+}

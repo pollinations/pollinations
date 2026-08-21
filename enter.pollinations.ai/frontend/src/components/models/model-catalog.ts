@@ -58,7 +58,6 @@ export type ApiModelInfo = {
     reasoning?: boolean;
     context_length?: number;
     voices?: string[];
-    is_specialized?: boolean;
     paid_only?: boolean;
     alpha?: boolean;
     flat_rate?: boolean;
@@ -227,24 +226,20 @@ const priceLines = (...lines: PriceLineInput[]): ModelPriceLine[] =>
         price ? [{ direction, kind, price, unit }] : [],
     );
 
-export function getCatalogCategory(model: ApiModelInfo): ModelCategory {
-    if (model.category) return model.category;
-    const outputModalities = model.output_modalities ?? [];
-    if (outputModalities.includes("video")) return "video";
-    if (outputModalities.includes("image")) return "image";
-    if (outputModalities.includes("audio")) return "audio";
-    return "text";
-}
+export const getCatalogCategory = (
+    model: ApiModelInfo,
+): ModelCategory | undefined => model.category;
 
 function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
     const name = getCatalogModelId(model);
-    if (!name) return null;
+    const type = getCatalogCategory(model);
+    if (!name || (!model.agent && !type)) return null;
     const inputSortPrice = priceSum(model.pricing, INPUT_PRICE_FIELDS);
     const outputSortPrice = priceSum(model.pricing, OUTPUT_PRICE_FIELDS);
 
     return {
         name,
-        type: getCatalogCategory(model),
+        type,
         community: model.community,
         agent: model.agent,
         baseModel: model.base_model,

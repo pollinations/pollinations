@@ -193,7 +193,8 @@ export type ModelDefinition = {
     codeExecution?: boolean;
     contextLength?: number;
     voices?: string[];
-    isSpecialized?: boolean;
+    agent?: boolean; // Pollinations-owned prompt agent served as a built-in model
+    baseModel?: string; // Public base model metadata for built-in agents
     paidOnly?: boolean; // Models that require paid balance only
     alpha?: boolean; // Experimental models with potential instability
     // Flat per-generation pricing (one fee per request, independent of output

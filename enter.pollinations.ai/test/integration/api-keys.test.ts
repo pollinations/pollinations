@@ -901,12 +901,17 @@ describe("API Key Management", () => {
             expect(response.headers.get("pragma")).toBe("no-cache");
         });
 
-        test("should canonicalize model aliases while preserving unknown permissions", async ({
+        test("should canonicalize known aliases while preserving unknown permissions", async ({
             sessionToken,
         }) => {
             const created = await createApiKeyViaApi(sessionToken, {
                 name: "key-with-alias-and-unknown-model",
-                allowedModels: ["flux", "nanobanana2", "retired-model"],
+                allowedModels: [
+                    "flux",
+                    "nanobanana2",
+                    "midijourney-large",
+                    "retired-model",
+                ],
             });
 
             const response = await SELF.fetch(
@@ -933,6 +938,7 @@ describe("API Key Management", () => {
             expect(JSON.parse(stored?.permissions ?? "{}").models).toEqual([
                 "flux",
                 "nanobanana-2",
+                "midijourney-large",
                 "retired-model",
             ]);
         });

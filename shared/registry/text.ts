@@ -1,3 +1,4 @@
+import { AGENT_SERVICES } from "./agents";
 import {
     defineCostVariants,
     longContextAbove,
@@ -9,6 +10,7 @@ import {
     openRouterGeminiBilling,
     withVertexCacheStorage,
 } from "./gemini-billing";
+import { GPT_5_6_SOL_SERVICE } from "./openai-models";
 import {
     PERPLEXITY_PRO_BILLING,
     PERPLEXITY_REASONING_BILLING,
@@ -58,7 +60,6 @@ export const TEXT_SERVICES = {
         maxReferenceImages: 10, // Azure OpenAI vision limit: 10 images/chat request (provider cap).
         tools: true,
         contextLength: 400000,
-        isSpecialized: false,
     },
     "openai-fast": {
         aliases: ["gpt-5-nano", "gpt-5-nano-2025-08-07"],
@@ -80,7 +81,6 @@ export const TEXT_SERVICES = {
         maxReferenceImages: 10, // Azure OpenAI vision limit: 10 images/chat request (provider cap).
         tools: true,
         contextLength: 400000,
-        isSpecialized: false,
     },
     "gpt-oss": {
         aliases: ["gpt-oss-20b", "ovh-reasoning"],
@@ -101,7 +101,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 131072,
-        isSpecialized: false,
     },
     "gpt-5.4": {
         aliases: ["gpt-5.4-reasoning", "gpt-5.2", "gpt-5.2-reasoning"],
@@ -146,7 +145,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 1050000,
-        isSpecialized: false,
     },
     "gpt-5.4-mini": {
         aliases: ["gpt-5-mini", "openai-mini"],
@@ -168,7 +166,6 @@ export const TEXT_SERVICES = {
         maxReferenceImages: 10, // Azure OpenAI vision limit: 10 images/chat request (provider cap).
         tools: true,
         contextLength: 400000,
-        isSpecialized: false,
     },
     "openai-large": {
         aliases: ["gpt-5.5", "gpt-5.5-reasoning", "openai-reasoning"],
@@ -211,50 +208,8 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 1050000,
-        isSpecialized: false,
     },
-    "gpt-5.6-sol": {
-        aliases: ["chatgpt-sol", "chatgpt-5.6-sol"],
-        provider: "azure",
-        brand: "OpenAI",
-        category: "text",
-        addedDate: new Date("2026-07-10").getTime(),
-        priceMultiplier: 0.5,
-        cost: {
-            promptTextTokens: perMillion(5.0),
-            promptCachedTokens: perMillion(0.5),
-            promptCacheWriteTokens: perMillion(6.25),
-            completionTextTokens: perMillion(30.0),
-        },
-        ...defineCostVariants(
-            {
-                long_context: {
-                    promptTextTokens: perMillion(10.0),
-                    promptCachedTokens: perMillion(1.0),
-                    promptCacheWriteTokens: perMillion(12.5),
-                    completionTextTokens: perMillion(45.0),
-                },
-            },
-            longContextAbove(272_000),
-            {
-                long_context: {
-                    label: "Long context (>272K)",
-                    description:
-                        "More than 272,000 prompt tokens; the higher rates apply to the full request.",
-                },
-            },
-            "≤272K context",
-        ),
-        title: "GPT-5.6 Sol",
-        description: "Frontier reasoning for complex multimodal tasks",
-        inputModalities: ["text", "image"],
-        outputModalities: ["text"],
-        maxReferenceImages: 10,
-        tools: true,
-        reasoning: true,
-        contextLength: 1050000,
-        isSpecialized: false,
-    },
+    "gpt-5.6-sol": GPT_5_6_SOL_SERVICE,
     "gpt-5.6-terra": {
         aliases: ["chatgpt-terra", "chatgpt-5.6-terra"],
         provider: "azure",
@@ -295,7 +250,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 1050000,
-        isSpecialized: false,
     },
     "gpt-5.6-luna": {
         aliases: ["chatgpt-luna", "chatgpt-5.6-luna"],
@@ -337,7 +291,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 1050000,
-        isSpecialized: false,
     },
     "mercury": {
         aliases: ["mercury-2", "inception", "inception-mercury"],
@@ -359,7 +312,6 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         tools: true,
         contextLength: 128000,
-        isSpecialized: false,
     },
     "command-a-plus": {
         aliases: [
@@ -384,7 +336,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 128000,
-        isSpecialized: false,
     },
     "qwen-coder": {
         aliases: ["qwen3-coder", "qwen3-coder-30b-a3b-instruct"],
@@ -404,7 +355,6 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         tools: true,
         contextLength: 262144,
-        isSpecialized: false,
     },
     "mistral-small-3.2": {
         aliases: [
@@ -430,7 +380,6 @@ export const TEXT_SERVICES = {
         maxReferenceImages: 10, // OpenRouter/Mistral image count varies by provider/model; Pollinations cap.
         tools: true,
         contextLength: 128000,
-        isSpecialized: false,
     },
     "mistral": {
         aliases: [
@@ -459,7 +408,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 262144,
-        isSpecialized: false,
     },
     "openai-audio": {
         aliases: [
@@ -487,7 +435,6 @@ export const TEXT_SERVICES = {
         outputModalities: ["audio", "text"],
         tools: true,
         contextLength: 128000,
-        isSpecialized: false,
     },
     "openai-audio-large": {
         aliases: ["gpt-audio", "gpt-audio-1.5", "gpt-audio-2025-12-15"],
@@ -510,7 +457,6 @@ export const TEXT_SERVICES = {
         outputModalities: ["audio", "text"],
         tools: true,
         contextLength: 128000,
-        isSpecialized: false,
     },
     "gemini-3-flash": {
         aliases: ["gemini-3-flash-preview"],
@@ -543,7 +489,6 @@ export const TEXT_SERVICES = {
         tools: true,
         search: true,
         contextLength: 1048576,
-        isSpecialized: false,
     },
     "gemini": {
         aliases: ["gemini-3.6-flash", "gemini-3.5-flash"],
@@ -578,7 +523,6 @@ export const TEXT_SERVICES = {
         tools: true,
         search: true,
         contextLength: 1048576,
-        isSpecialized: false,
     },
     "gemini-flash-lite-3.5": {
         aliases: [
@@ -617,7 +561,6 @@ export const TEXT_SERVICES = {
         tools: true,
         search: true,
         contextLength: 1048576,
-        isSpecialized: false,
     },
     "gemini-fast": {
         aliases: ["gemini-2.5-flash-lite"],
@@ -650,7 +593,6 @@ export const TEXT_SERVICES = {
         tools: true,
         search: true,
         contextLength: 1048576,
-        isSpecialized: false,
     },
     "deepseek": {
         aliases: [
@@ -677,7 +619,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 1048576,
-        isSpecialized: false,
     },
     "gemma": {
         aliases: [
@@ -707,7 +648,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 262144,
-        isSpecialized: false,
     },
     "gemma-4-31b": {
         aliases: ["gemma-large", "gemma-4-31b-it"],
@@ -729,7 +669,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 262144,
-        isSpecialized: false,
     },
     "deepseek-pro": {
         aliases: ["deepseek-v4-pro"],
@@ -750,7 +689,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 1048576,
-        isSpecialized: false,
     },
     "grok": {
         aliases: [
@@ -785,7 +723,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 262144,
-        isSpecialized: false,
     },
     "grok-large": {
         aliases: ["grok-4.3", "grok-4-3", "grok-reasoning"],
@@ -811,7 +748,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 1048576, // xAI Grok 4.3 context window.
-        isSpecialized: false,
     },
     "grok-4.6": {
         aliases: ["grok-4.5", "grok-4-5"],
@@ -854,7 +790,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 500000,
-        isSpecialized: false,
     },
     "gemini-search": {
         aliases: [
@@ -894,66 +829,8 @@ export const TEXT_SERVICES = {
         tools: false,
         search: true,
         contextLength: 1048576,
-        isSpecialized: false,
     },
-    "midijourney": {
-        aliases: [],
-        provider: "azure",
-        brand: "Pollinations",
-        category: "text",
-        addedDate: new Date("2025-10-07").getTime(),
-        priceMultiplier: 0.75,
-        cost: {
-            promptTextTokens: perMillion(0.75),
-            promptCachedTokens: perMillion(0.075),
-            completionTextTokens: perMillion(4.5),
-        },
-        title: "MIDIjourney",
-        description: "Turns your musical ideas into playable MIDI notation",
-        inputModalities: ["text"],
-        outputModalities: ["text"],
-        tools: true,
-        isSpecialized: true,
-    },
-    "midijourney-large": {
-        aliases: [],
-        provider: "azure",
-        brand: "Pollinations",
-        category: "text",
-        addedDate: new Date("2026-03-23").getTime(),
-        priceMultiplier: 1,
-        cost: {
-            promptTextTokens: perMillion(5.0),
-            promptCachedTokens: perMillion(0.5),
-            completionTextTokens: perMillion(30.0),
-        },
-        // Uses the same Azure GPT-5.5 deployment as openai-large.
-        ...defineCostVariants(
-            {
-                long_context: {
-                    promptTextTokens: perMillion(10.0),
-                    promptCachedTokens: perMillion(1.0),
-                    completionTextTokens: perMillion(45.0),
-                },
-            },
-            longContextAbove(272_000),
-            {
-                long_context: {
-                    label: "Long context (>272K)",
-                    description:
-                        "More than 272,000 prompt tokens; the higher rates apply to the whole request.",
-                },
-            },
-            "≤272K context",
-        ),
-        title: "MIDIjourney Large",
-        description:
-            "Composes richer, more detailed MIDI arrangements; costs more per piece",
-        inputModalities: ["text"],
-        outputModalities: ["text"],
-        tools: true,
-        isSpecialized: true,
-    },
+    ...AGENT_SERVICES,
     "claude-fast": {
         aliases: ["claude-haiku-4.5", "claude-haiku"],
         provider: "bedrock",
@@ -977,7 +854,6 @@ export const TEXT_SERVICES = {
         maxReferenceImages: 20, // Bedrock Converse image limit.
         tools: true,
         contextLength: 200000,
-        isSpecialized: false,
     },
     "claude": {
         aliases: ["claude-sonnet-4.6", "claude-sonnet"],
@@ -1002,7 +878,6 @@ export const TEXT_SERVICES = {
         maxReferenceImages: 20, // Bedrock Converse image limit.
         tools: true,
         contextLength: 1000000, // Bedrock global Claude Sonnet 4.6 context window.
-        isSpecialized: false,
     },
     "claude-sonnet-5": {
         aliases: ["sonnet-5"],
@@ -1027,7 +902,6 @@ export const TEXT_SERVICES = {
         maxReferenceImages: 20, // Bedrock Converse image limit.
         tools: true,
         contextLength: 1000000, // Bedrock Claude Sonnet 5 context window.
-        isSpecialized: false,
     },
     "claude-opus-4.6": {
         aliases: ["claude-opus-4.5"],
@@ -1052,7 +926,6 @@ export const TEXT_SERVICES = {
         maxReferenceImages: 20, // Bedrock Converse image limit.
         tools: true,
         contextLength: 1000000, // Bedrock global Claude Opus 4.6 context window.
-        isSpecialized: false,
     },
     "claude-opus-4.7": {
         aliases: [],
@@ -1077,7 +950,6 @@ export const TEXT_SERVICES = {
         maxReferenceImages: 20, // Bedrock Converse image limit.
         tools: true,
         contextLength: 1000000, // Bedrock global Claude Opus 4.7 context window.
-        isSpecialized: false,
     },
     "claude-large": {
         aliases: ["claude-opus-5", "claude-opus-4.8", "claude-opus"],
@@ -1102,7 +974,6 @@ export const TEXT_SERVICES = {
         maxReferenceImages: 20, // Bedrock Converse image limit.
         tools: true,
         contextLength: 1000000,
-        isSpecialized: false,
     },
     "claude-fable-5": {
         aliases: [],
@@ -1127,7 +998,6 @@ export const TEXT_SERVICES = {
         maxReferenceImages: 20, // Bedrock Converse image limit.
         tools: true,
         contextLength: 1000000,
-        isSpecialized: false,
     },
     "perplexity-fast": {
         aliases: ["sonar", "perplexity-high", "perplexity-deep", "sonar-deep"],
@@ -1151,7 +1021,6 @@ export const TEXT_SERVICES = {
         search: true,
         searchContextSizes: ["low", "high"],
         contextLength: 128000,
-        isSpecialized: false,
     },
     "perplexity": {
         aliases: ["sonar-pro", "perplexity-pro"],
@@ -1174,7 +1043,6 @@ export const TEXT_SERVICES = {
         search: true,
         searchContextSizes: ["high"],
         contextLength: 200000,
-        isSpecialized: false,
     },
     "perplexity-reasoning": {
         aliases: ["sonar-reasoning", "sonar-reasoning-pro"],
@@ -1198,7 +1066,6 @@ export const TEXT_SERVICES = {
         search: true,
         searchContextSizes: ["high"],
         contextLength: 128000,
-        isSpecialized: false,
     },
     "kimi": {
         aliases: [
@@ -1227,7 +1094,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 262000,
-        isSpecialized: false,
     },
     "kimi-code": {
         aliases: ["kimi-k2.7-code", "kimi-k2.7", "kimi-k2p7"],
@@ -1252,7 +1118,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 262144,
-        isSpecialized: false,
     },
     "kimi-k3": {
         aliases: [],
@@ -1276,7 +1141,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 1048576,
-        isSpecialized: false,
     },
     "laguna": {
         aliases: ["laguna-s-2.1", "laguna-s2.1", "poolside-laguna-s-2.1"],
@@ -1300,7 +1164,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 1048576,
-        isSpecialized: false,
     },
     "longcat": {
         aliases: ["longcat-2.0", "longcat-2"],
@@ -1324,7 +1187,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 1048576,
-        isSpecialized: false,
     },
     "inkling": {
         aliases: ["inkling-small", "inkling-small-20260730"],
@@ -1350,7 +1212,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 524288,
-        isSpecialized: false,
     },
     "nemotron": {
         aliases: [
@@ -1379,7 +1240,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 262144,
-        isSpecialized: false,
     },
     "nemotron-3.5-lightning": {
         aliases: [],
@@ -1403,7 +1263,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 262144,
-        isSpecialized: false,
     },
     "mimo-v2.5": {
         aliases: ["mimo", "mimo-2.5"],
@@ -1426,7 +1285,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 1048576,
-        isSpecialized: false,
     },
     "mimo-v2.5-pro": {
         aliases: ["mimo-pro", "mimo-2.5-pro"],
@@ -1448,7 +1306,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 1048576,
-        isSpecialized: false,
     },
     "gemini-large": {
         aliases: ["gemini-3.1-pro", "gemini-2.5-pro"],
@@ -1509,7 +1366,6 @@ export const TEXT_SERVICES = {
         reasoning: true,
         search: true,
         contextLength: 1048576,
-        isSpecialized: false,
     },
     "nova-fast": {
         aliases: ["amazon-nova-micro", "nova-micro"],
@@ -1533,7 +1389,6 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         tools: true,
         contextLength: 128000,
-        isSpecialized: false,
     },
     "nova": {
         aliases: ["nova-2-lite", "amazon-nova-2-lite", "nova-2"],
@@ -1559,7 +1414,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 1048576,
-        isSpecialized: false,
     },
     "glm": {
         aliases: ["glm-5.2", "glm-5p2"],
@@ -1581,7 +1435,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 1048576,
-        isSpecialized: false,
     },
     "glm-5.3": {
         aliases: [],
@@ -1604,7 +1457,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 1048576,
-        isSpecialized: false,
     },
     "llama": {
         aliases: ["llama-3.3", "llama-3.3-70b", "llama-v3p3-70b-instruct"],
@@ -1624,7 +1476,6 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         tools: true,
         contextLength: 131072,
-        isSpecialized: false,
     },
     "llama-maverick": {
         aliases: [
@@ -1650,7 +1501,6 @@ export const TEXT_SERVICES = {
         maxReferenceImages: 10, // Azure-hosted Llama vision route has no public fixed image count; Pollinations cap.
         tools: true,
         contextLength: 1048576,
-        isSpecialized: false,
         paidOnly: true,
     },
     "llama-scout": {
@@ -1677,7 +1527,6 @@ export const TEXT_SERVICES = {
         maxReferenceImages: 10, // OpenRouter image count varies by provider/model; Pollinations cap.
         tools: true,
         contextLength: 327680,
-        isSpecialized: false,
     },
     "minimax-m2.7": {
         aliases: ["minimax-m2p7", "minimax-m2.5", "minimax-m2p5"],
@@ -1698,7 +1547,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 200000,
-        isSpecialized: false,
     },
     "minimax": {
         aliases: ["minimax-m3", "minimax3", "minimax-3"],
@@ -1723,7 +1571,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 524288,
-        isSpecialized: false,
     },
     "muse-glimmer": {
         aliases: [],
@@ -1747,7 +1594,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 131072,
-        isSpecialized: false,
     },
     "muse-spark-1.2": {
         aliases: ["muse-spark-1.1", "muse-spark", "spark", "spark-1.1"],
@@ -1770,7 +1616,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 1048576,
-        isSpecialized: false,
     },
     "mistral-large": {
         aliases: ["mistral-large-3"],
@@ -1793,7 +1638,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 256000,
-        isSpecialized: false,
     },
     "qwen-coder-large": {
         aliases: ["qwen3-coder-next"],
@@ -1817,7 +1661,6 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         tools: true,
         contextLength: 262144,
-        isSpecialized: false,
     },
     "qwen-large": {
         aliases: [
@@ -1869,7 +1712,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 1000000,
-        isSpecialized: false,
     },
     "qwen3.7-max": {
         aliases: ["qwen-max", "qwen3p7-max"],
@@ -1893,7 +1735,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 1000000,
-        isSpecialized: false,
     },
     "qwen3.8-2.4t-a95b": {
         aliases: [],
@@ -1917,7 +1758,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 262144,
-        isSpecialized: false,
     },
     "qwen3.8-27b": {
         aliases: [],
@@ -1945,7 +1785,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 262144,
-        isSpecialized: false,
     },
     "qwen3.8-max": {
         aliases: [],
@@ -1973,7 +1812,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 1000000,
-        isSpecialized: false,
     },
     "qwen3.7-flash": {
         aliases: [],
@@ -2042,7 +1880,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 1000000,
-        isSpecialized: false,
     },
     "qwen-vision": {
         aliases: [
@@ -2071,7 +1908,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: false,
         contextLength: 131072,
-        isSpecialized: false,
     },
     "qwen-vision-pro": {
         aliases: [
@@ -2099,7 +1935,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 262144,
-        isSpecialized: false,
     },
     "step-flash": {
         aliases: ["stepfun-flash", "step-3.7-flash", "step-flash-3.7"],
@@ -2127,7 +1962,6 @@ export const TEXT_SERVICES = {
         // tokens are billed within completion_tokens at the completionText rate.
         reasoning: true,
         contextLength: 256000,
-        isSpecialized: false,
     },
     "step-3.5-flash": {
         aliases: ["stepfun-3.5-flash", "step-flash-3.5"],
@@ -2150,7 +1984,6 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 262144,
-        isSpecialized: false,
     },
     "qwen-safety": {
         aliases: ["qwen3guard-gen-8b"],
@@ -2168,6 +2001,5 @@ export const TEXT_SERVICES = {
             "Flags unsafe content — a moderation filter, not a chat companion",
         inputModalities: ["text"],
         outputModalities: ["text"],
-        isSpecialized: true,
     },
 } as const satisfies Record<string, ModelDefinition>;

@@ -838,7 +838,6 @@ export interface ModelInfo {
     context_length?: number;
     supported_endpoints?: string[];
     supportsSystemMessages?: boolean;
-    is_specialized?: boolean;
     paid_only?: boolean;
     pricing?: Record<string, string> & { currency: "pollen" };
 }

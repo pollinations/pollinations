@@ -32,15 +32,17 @@ export type ModelCapability = z.infer<typeof ModelCapabilitySchema>;
 export const ModelInfoSchema = z.object({
     name: z.string(),
     aliases: z.array(z.string()),
-    category: z.enum([
-        "text",
-        "image",
-        "audio",
-        "video",
-        "3d",
-        "embedding",
-        "realtime",
-    ]),
+    category: z
+        .enum([
+            "text",
+            "image",
+            "audio",
+            "video",
+            "3d",
+            "embedding",
+            "realtime",
+        ])
+        .optional(),
     brand: z.string(),
     brand_url: z.string().url().optional(),
     community: z.boolean().optional(),
@@ -104,7 +106,6 @@ export const ModelInfoSchema = z.object({
     reasoning: z.boolean().optional(),
     context_length: z.number().optional(),
     voices: z.array(z.string()).optional(),
-    is_specialized: z.boolean().optional(),
     paid_only: z.boolean().optional(),
     alpha: z.boolean().optional(),
     flat_rate: z.boolean().optional(),
@@ -173,14 +174,16 @@ export function modelInfoFromDefinition(
     service: ModelDefinition,
     options: ModelInfoOptions = {},
 ): ModelInfo {
+    const agent = service.agent || options.agent || undefined;
     return {
         name,
         aliases: service.aliases,
-        category: service.category,
+        ...(!agent && { category: service.category }),
         brand: service.brand,
         brand_url: service.brandUrl,
         community: options.community || undefined,
-        agent: options.agent || undefined,
+        agent,
+        base_model: service.baseModel,
         per_user_rpm: options.perUserRpm,
         pricing: pricingInfoFromDefinition(getPriceDefinitionForModel(service)),
         pricing_variants:
@@ -231,7 +234,6 @@ export function modelInfoFromDefinition(
         reasoning: service.reasoning,
         context_length: service.contextLength,
         voices: service.voices,
-        is_specialized: service.isSpecialized,
         paid_only: service.paidOnly,
         alpha: service.alpha,
         flat_rate:

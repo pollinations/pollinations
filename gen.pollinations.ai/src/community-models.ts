@@ -3,9 +3,8 @@ import {
     communityEndpointPrices,
     communityModelDefinition,
     communityModelId,
-    isDelegatingEndpoint,
-    normalizeCommunityEndpointImagePricing,
-    normalizeCommunityEndpointModality,
+    parseListingPayload,
+    usesAgentRunToken,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import {
@@ -18,12 +17,7 @@ import type {
 } from "@shared/registry/registry.ts";
 import { eq, isNotNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import {
-    type AgentCatalogConfig,
-    type AgentCatalogEnv,
-    agentRuntimeBaseUrl,
-    parseAgentCatalogConfig,
-} from "./agent-catalog.ts";
+import type { AgentCatalogConfig } from "./agent-catalog.ts";
 
 const COMMUNITY_TEXT_ENDPOINTS = [
     "/v1/chat/completions",
@@ -57,8 +51,10 @@ export type CommunityModelRegistryEntry = {
     agentConfig?: AgentCatalogConfig;
 };
 
-export type CommunityModelEnv = Pick<CloudflareBindings, "DB"> &
-    AgentCatalogEnv;
+export type CommunityModelEnv = Pick<
+    CloudflareBindings,
+    "DB" | "AGENT_RUNTIME_BASE_URL"
+>;
 
 export async function getCommunityModelRegistryEntries(
     env: CommunityModelEnv,
@@ -76,32 +72,13 @@ export async function getCommunityModelRegistryEntries(
             name: schema.communityEndpoint.name,
             title: schema.communityEndpoint.title,
             description: schema.communityEndpoint.description,
-            modality: schema.communityEndpoint.modality,
-            imagePricing: schema.communityEndpoint.imagePricing,
-            inputModalities: schema.communityEndpoint.inputModalities,
-            agentId: schema.communityEndpoint.agentId,
-            agentConfig: schema.agent.config,
-            endpointBaseUrl: schema.communityEndpoint.baseUrl,
+            type: schema.communityEndpoint.type,
+            baseUrl: schema.communityEndpoint.baseUrl,
             upstreamModel: schema.communityEndpoint.upstreamModel,
-            endpointBearerTokenCiphertext:
-                schema.communityEndpoint.bearerTokenCiphertext,
+            payload: schema.communityEndpoint.payload,
             visibility: schema.communityEndpoint.visibility,
-            perUserRpm: schema.communityEndpoint.perUserRpm,
-            delegatesGeneration: schema.communityEndpoint.delegatesGeneration,
-            promptTextPrice: schema.communityEndpoint.promptTextPrice,
-            promptCachedPrice: schema.communityEndpoint.promptCachedPrice,
-            promptCacheWritePrice:
-                schema.communityEndpoint.promptCacheWritePrice,
-            promptAudioPrice: schema.communityEndpoint.promptAudioPrice,
-            promptImagePrice: schema.communityEndpoint.promptImagePrice,
-            completionTextPrice: schema.communityEndpoint.completionTextPrice,
-            completionReasoningPrice:
-                schema.communityEndpoint.completionReasoningPrice,
-            completionAudioPrice: schema.communityEndpoint.completionAudioPrice,
-            completionImagePrice: schema.communityEndpoint.completionImagePrice,
-            fallbackModelIds: schema.communityEndpoint.fallbackModelIds,
-            disabledAt: schema.communityEndpoint.disabledAt,
-            disabledReason: schema.communityEndpoint.disabledReason,
+            hiddenAt: schema.communityEndpoint.hiddenAt,
+            hiddenReason: schema.communityEndpoint.hiddenReason,
             createdAt: schema.communityEndpoint.createdAt,
         })
         .from(schema.communityEndpoint)
@@ -109,16 +86,17 @@ export async function getCommunityModelRegistryEntries(
             schema.user,
             eq(schema.communityEndpoint.ownerUserId, schema.user.id),
         )
-        .leftJoin(
-            schema.agent,
-            eq(schema.communityEndpoint.agentId, schema.agent.id),
-        )
         .where(isNotNull(schema.user.githubUsername));
 
     return rows.flatMap((row): CommunityModelRegistryEntry[] => {
         if (!row.ownerGithubUsername) return [];
+        const baseUrl =
+            row.type === "prompt_agent"
+                ? env.AGENT_RUNTIME_BASE_URL
+                : row.baseUrl;
+        if (!baseUrl || !row.upstreamModel) return [];
         const modelId = communityModelId(row.ownerGithubUsername, row.name);
-        const shared = {
+        const identity = {
             id: row.id,
             ownerUserId: row.ownerUserId,
             modelId,
@@ -127,48 +105,85 @@ export async function getCommunityModelRegistryEntries(
             description: row.description,
             providerName: row.providerName,
             providerUrl: row.providerUrl,
-            modality: normalizeCommunityEndpointModality(row.modality),
-            imagePricing: normalizeCommunityEndpointImagePricing(
-                row.imagePricing,
-            ),
-            inputModalities: row.inputModalities,
+            baseUrl,
+            upstreamModel: row.upstreamModel,
             visibility: row.visibility,
-            perUserRpm: row.perUserRpm,
-            fallbackModelIds: row.fallbackModelIds ?? [],
-            disabledAt: row.disabledAt ? row.disabledAt.getTime() : null,
-            disabledReason: row.disabledReason,
-            ...communityEndpointPrices(row),
+            hiddenAt: row.hiddenAt ? row.hiddenAt.getTime() : null,
+            hiddenReason: row.hiddenReason,
         };
-        // A row is one kind or the other: an agent resolves its target from the
-        // agent runtime, an external endpoint from its own stored target and
-        // credential. Anything missing the fields its kind requires is not
-        // routable, so it is dropped from the catalog rather than carried as a
-        // half-populated entry.
+        // An agent charges nothing of its own and fans out to nothing: the
+        // caller pays for whatever it consumes downstream. Both agent kinds
+        // share empty purchase fields; endpoint agents may override only the
+        // gateway's per-user rate limit from their payload.
+        const agentDefaults = {
+            modality: "text" as const,
+            imagePricing: "request" as const,
+            inputModalities: null,
+            paidOnly: false,
+            perUserRpm: null,
+            fallbacks: [],
+            ...communityEndpointPrices({}),
+        };
+        // Each arm parses its own payload, so the shape is narrowed to the one
+        // its type declares. A payload that cannot be read leaves the listing
+        // out of the catalog rather than in it half-populated: an entry
+        // missing its target would fail at call time, not registration time.
         let communityEndpoint: CommunityEndpointRuntime;
-        if (row.agentId !== null) {
-            communityEndpoint = {
-                ...shared,
-                kind: "agent",
-                baseUrl: agentRuntimeBaseUrl(env),
-                upstreamModel: row.agentId,
-                agentId: row.agentId,
-            };
-        } else {
-            if (!row.endpointBaseUrl || !row.endpointBearerTokenCiphertext) {
-                return [];
+        let agentConfig: AgentCatalogConfig | undefined;
+        switch (row.type) {
+            case "prompt_agent": {
+                const payload = parseListingPayload(
+                    "prompt_agent",
+                    row.payload,
+                );
+                if (!payload) return [];
+                agentConfig = {
+                    baseModel: payload.baseModel,
+                    mcpServers: payload.mcpServers,
+                };
+                communityEndpoint = {
+                    ...identity,
+                    ...agentDefaults,
+                    type: "prompt_agent",
+                };
+                break;
             }
-            communityEndpoint = {
-                ...shared,
-                kind: "external",
-                baseUrl: row.endpointBaseUrl,
-                upstreamModel: row.upstreamModel,
-                bearerTokenCiphertext: row.endpointBearerTokenCiphertext,
-                delegatesGeneration: row.delegatesGeneration,
-            };
+            case "endpoint_agent": {
+                const payload = parseListingPayload(
+                    "endpoint_agent",
+                    row.payload,
+                );
+                if (!payload) return [];
+                communityEndpoint = {
+                    ...identity,
+                    ...agentDefaults,
+                    perUserRpm: payload.perUserRpm,
+                    type: "endpoint_agent",
+                };
+                break;
+            }
+            case "proxy": {
+                const payload = parseListingPayload("proxy", row.payload);
+                if (!payload) return [];
+                communityEndpoint = {
+                    ...identity,
+                    type: "proxy",
+                    bearerTokenCiphertext: payload.bearerTokenCiphertext,
+                    paidOnly: payload.paidOnly,
+                    modality: payload.modality,
+                    imagePricing: payload.imagePricing,
+                    inputModalities: payload.inputModalities,
+                    perUserRpm: payload.perUserRpm,
+                    fallbacks: payload.fallbacks,
+                    advertised: payload.advertised,
+                    ...payload.prices,
+                };
+            }
         }
         const definition = communityModelDefinition({
             ...communityEndpoint,
             addedDate: row.createdAt.getTime(),
+            hidden: communityEndpoint.hiddenAt !== null,
         });
         return [
             {
@@ -176,16 +191,12 @@ export async function getCommunityModelRegistryEntries(
                 aliases: definition.aliases,
                 info: modelInfoFromDefinition(modelId, definition, {
                     community: true,
-                    agent: isDelegatingEndpoint(communityEndpoint),
+                    agent: usesAgentRunToken(communityEndpoint),
                     perUserRpm: communityEndpoint.perUserRpm,
                 }),
                 definition,
                 communityEndpoint,
-                agentConfig:
-                    communityEndpoint.kind === "agent"
-                        ? (parseAgentCatalogConfig(row.agentConfig) ??
-                          undefined)
-                        : undefined,
+                agentConfig,
             },
         ];
     });

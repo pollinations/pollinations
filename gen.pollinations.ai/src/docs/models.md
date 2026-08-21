@@ -60,8 +60,8 @@ Community models are user-owned, OpenAI-compatible text or image-generation endp
 - Models can be pulled (and repeat offenders potentially blocked) for instability or suspected abuse — e.g. silently changing prices or serving a different model than advertised.
 
 **Automated health monitoring**
-- An automated monitor currently checks community text models for error rate and latency. Models with sustained failures get deactivated automatically — no human involvement needed for that direction. Community image models are not monitored yet.
-- Reactivating a deactivated model is manual and owner-only, from the dashboard. There's no auto-reactivation, so if your model was turned off, fix the underlying issue before reactivating it, or it may just fail again.
+- An automated monitor checks community models for error rate and latency. Models with sustained failures are hidden from model listings but remain callable by their exact model ID.
+- Owners can relist a hidden model from the dashboard. Fix the underlying issue before relisting it, or the monitor may hide it again.
 - Check your model's live health — request counts, success rate, errors, and latency — at [model-monitor.pollinations.ai/debug](https://model-monitor.pollinations.ai/debug).
 
 To request account-level permission to publish community models, submit a [publisher allowlist request](https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml). The form does not register individual models. Private models can be registered and called without approval under **Models → My Models** at [enter.pollinations.ai](https://enter.pollinations.ai), as are fetching upstream models and testing the upstream endpoint; only public listing requires approval. Registration and management are also documented under the Account section of this reference. The dashboard and Account API support text and image models; the [CLI](/docs#tag/cli) (`polli my-models`) currently supports text models only.

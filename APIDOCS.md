@@ -733,6 +733,7 @@ Transcribe audio files to text. Compatible with the OpenAI Whisper API.
 **Models:**
 - `whisper-large-v3` (default) — OpenAI Whisper via OVHcloud
 - `whisper-1` — Alias for whisper-large-v3
+- `gpt-transcribe` — Fast multilingual speech recognition with prompt context
 - `scribe` — ElevenLabs Scribe (90+ languages, word-level timestamps)
 - `grok-transcribe` — xAI speech recognition with word timestamps, speaker labels, and text formatting
 - `universal-2` — AssemblyAI Universal-2 (99 languages)
@@ -743,7 +744,7 @@ Transcribe audio files to text. Compatible with the OpenAI Whisper API.
 | Field | Type | Description |
 |---|---|---|
 | `file` * | `string · binary` | The audio file to transcribe. Supported formats: mp3, mp4, mpeg, mpga, m4a, wav, webm. |
-| `model` | `string` | The model to use. Options: `whisper-large-v3`, `whisper-1`, `scribe`, `grok-transcribe`, `universal-2`, `universal-3.5-pro`. · default: `"whisper-large-v3"` |
+| `model` | `string` | The model to use. Options: `whisper-large-v3`, `whisper-1`, `gpt-transcribe`, `scribe`, `grok-transcribe`, `universal-2`, `universal-3.5-pro`. · default: `"whisper-large-v3"` |
 | `language` | `string` | Language of the audio in ISO-639-1 format (e.g. `en`, `fr`). Improves accuracy. |
 | `prompt` | `string` | Optional text to guide the model's style or continue a previous segment. |
 | `response_format` | enum (6) — `"json"`, `"text"`, `"srt"`, … | The format of the transcript output. Support is model-dependent: `srt` and `vtt` require a model that renders subtitles, and `diarized_json` a diarization-capable one. Unsupported combinations return 400 naming the formats that model accepts. · default: `"json"` |
@@ -832,7 +833,7 @@ OpenAI-compatible Realtime WebSocket for voice, multimodal, and transcription se
 Connect with `wss://gen.pollinations.ai/realtime?model=gpt-realtime-2.1` and send/receive OpenAI Realtime JSON events over the socket. Selecting `scribe-realtime` creates a transcription session automatically.
 Server clients can authenticate with `Authorization: Bearer <key>`. Browser WebSocket clients can use `?key=pk_...` because they cannot set custom authorization headers.
 
-**Models:** `gpt-realtime-2.1`, `gpt-realtime-2.1-mini`, `gpt-realtime-2`, `scribe-realtime`.
+**Models:** `gpt-realtime-2.1`, `gpt-realtime-2.1-mini`, `gpt-realtime-2`, `scribe-realtime`, `gpt-live-transcribe`.
 
 **Billing:** requires a positive balance and settles one session total when the socket closes.
 
@@ -840,7 +841,7 @@ Server clients can authenticate with `Authorization: Bearer <key>`. Browser WebS
 
 | Param | In | Type | Description |
 |---|---|---|---|
-| `model` | `query` | `"gpt-realtime-2.1"` \| `"gpt-realtime-2.1-mini"` \| `"gpt-realtime-2"` \| `"scribe-realtime"` | Realtime model to use. Supported models: gpt-realtime-2.1, gpt-realtime-2.1-mini, gpt-realtime-2, scribe-realtime. · default: `"gpt-realtime-2.1"` |
+| `model` | `query` | `"gpt-realtime-2.1"` \| `"gpt-realtime-2.1-mini"` \| `"gpt-realtime-2"` \| `"scribe-realtime"` \| `"gpt-live-transcribe"` | Realtime model to use. Supported models: gpt-realtime-2.1, gpt-realtime-2.1-mini, gpt-realtime-2, scribe-realtime, gpt-live-transcribe. · default: `"gpt-realtime-2.1"` |
 | `key` | `query` | `string` | Pollinations API key. Useful for browser WebSocket clients that cannot set custom Authorization headers. |
 
 <sub>`*` = required parameter</sub>
@@ -861,7 +862,7 @@ OpenAI-compatible Realtime WebSocket for voice, multimodal, and transcription se
 Connect with `wss://gen.pollinations.ai/v1/realtime?model=gpt-realtime-2.1` and send/receive OpenAI Realtime JSON events over the socket. Selecting `scribe-realtime` creates a transcription session automatically.
 Server clients can authenticate with `Authorization: Bearer <key>`. Browser WebSocket clients can use `?key=pk_...` because they cannot set custom authorization headers.
 
-**Models:** `gpt-realtime-2.1`, `gpt-realtime-2.1-mini`, `gpt-realtime-2`, `scribe-realtime`.
+**Models:** `gpt-realtime-2.1`, `gpt-realtime-2.1-mini`, `gpt-realtime-2`, `scribe-realtime`, `gpt-live-transcribe`.
 
 **Billing:** requires a positive balance and settles one session total when the socket closes.
 
@@ -869,7 +870,7 @@ Server clients can authenticate with `Authorization: Bearer <key>`. Browser WebS
 
 | Param | In | Type | Description |
 |---|---|---|---|
-| `model` | `query` | `"gpt-realtime-2.1"` \| `"gpt-realtime-2.1-mini"` \| `"gpt-realtime-2"` \| `"scribe-realtime"` | Realtime model to use. Supported models: gpt-realtime-2.1, gpt-realtime-2.1-mini, gpt-realtime-2, scribe-realtime. · default: `"gpt-realtime-2.1"` |
+| `model` | `query` | `"gpt-realtime-2.1"` \| `"gpt-realtime-2.1-mini"` \| `"gpt-realtime-2"` \| `"scribe-realtime"` \| `"gpt-live-transcribe"` | Realtime model to use. Supported models: gpt-realtime-2.1, gpt-realtime-2.1-mini, gpt-realtime-2, scribe-realtime, gpt-live-transcribe. · default: `"gpt-realtime-2.1"` |
 | `key` | `query` | `string` | Pollinations API key. Useful for browser WebSocket clients that cannot set custom Authorization headers. |
 
 <sub>`*` = required parameter</sub>

@@ -127,7 +127,7 @@ jobs:
         working-directory: enter.pollinations.ai
         run: |
           mkdir -p dist/client
-          npx vitest run test/cost-variants.test.ts test/effective-prices.snapshot.test.ts test/pricing-data.test.ts
+          npx vitest run test/cost-variants.test.ts test/effective-prices.snapshot.test.ts test/pricing-data.test.ts test/community-endpoint-envelope-migration.test.ts test/d1-tinybird-sync.test.ts
 
       - name: Get changed files that affect gen.pollinations.ai
         id: gen-files

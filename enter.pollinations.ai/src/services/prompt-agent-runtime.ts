@@ -61,16 +61,6 @@ type AgentOutput = {
 const MAX_STEPS = 8;
 const MAX_TOOL_CALLS = 16;
 const MCP_INITIALIZATION_TIMEOUT_MS = 15_000;
-const POLLINATIONS_AGENT_TOOLS = [
-    "generateImage",
-    "generateVideo",
-    "generate3D",
-    "generateText",
-    "createEmbeddings",
-    "generateAudio",
-    "listModels",
-    "getModelStatus",
-];
 const STEP_LIMIT_MESSAGE =
     "The agent reached its maximum number of tool-use steps without a final answer.";
 
@@ -129,7 +119,6 @@ async function loadPollinationsTools(
             },
         });
         for (const [name, definition] of Object.entries(await client.tools())) {
-            if (!POLLINATIONS_AGENT_TOOLS.includes(name)) continue;
             tools[`mcp__pollinations__${name}`] = definition;
         }
         log.info("MCP_SERVER_LOADED: name={name} url={url} tools={tools}", {

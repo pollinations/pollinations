@@ -1,0 +1,79 @@
+{
+  "date": "2026-08-20",
+  "period_start": "2026-08-20",
+  "period_end": "2026-08-20",
+  "title": "Community models got clearer, healthier catalogs",
+  "summary": "A buzzing day for community endpoints: clearer catalogs, sturdier generation paths, transcription, and some extremely niche apps in the garden.\n\nCommunity model listings now show access requirements plus useful text-model metadata such as tool calling, reasoning support, and context length. Unhealthy endpoints are hidden from catalogs and fallback routing rather than erased, can still be called by exact ID, and return once recovery is proven. If the community catalog briefly cannot load, static models keep resolving instead of the API falling over.\n\nProxy models, prompt agents, and endpoint agents now share one typed community-endpoint system across the dashboard, APIs, Enter, Gen, and polli CLI. Managed agents also trust the tools advertised by their enabled MCP servers, so adding a namespaced tool no longer requires updating a second allowlist somewhere else. Software briefly remembers what dynamic means.\n\nGPT transcription is now available for uploaded audio and live sessions through the existing audio and realtime APIs. The app directory also picked up The Mita, a context-aware Roblox character chat, and Cursor Maker, which turns a one-line idea into Windows cursor art.",
+  "pr_count": 17,
+  "prs": [
+    {
+      "number": 13514,
+      "date": "2026-08-20"
+    },
+    {
+      "number": 13524,
+      "date": "2026-08-20"
+    },
+    {
+      "number": 13527,
+      "date": "2026-08-20"
+    },
+    {
+      "number": 13599,
+      "date": "2026-08-20"
+    },
+    {
+      "number": 13604,
+      "date": "2026-08-20"
+    },
+    {
+      "number": 13607,
+      "date": "2026-08-20"
+    },
+    {
+      "number": 13615,
+      "date": "2026-08-20"
+    },
+    {
+      "number": 13623,
+      "date": "2026-08-20"
+    },
+    {
+      "number": 13625,
+      "date": "2026-08-20"
+    },
+    {
+      "number": 13626,
+      "date": "2026-08-20"
+    },
+    {
+      "number": 13628,
+      "date": "2026-08-20"
+    },
+    {
+      "number": 13629,
+      "date": "2026-08-20"
+    },
+    {
+      "number": 13630,
+      "date": "2026-08-20"
+    },
+    {
+      "number": 13631,
+      "date": "2026-08-20"
+    },
+    {
+      "number": 13634,
+      "date": "2026-08-20"
+    },
+    {
+      "number": 13637,
+      "date": "2026-08-20"
+    },
+    {
+      "number": 13643,
+      "date": "2026-08-20"
+    }
+  ],
+  "generated_at": "2026-08-21T06:15:50.710568+00:00"
+}

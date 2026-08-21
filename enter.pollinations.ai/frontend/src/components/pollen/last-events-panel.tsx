@@ -66,8 +66,8 @@ function timestampMs(value: string): number {
 }
 
 function formatTimestamp(value: string): string {
+    // No `timeZone` override — renders in the browser's local timezone.
     return parseTimestamp(value).toLocaleString(undefined, {
-        timeZone: "UTC",
         year: "numeric",
         month: "short",
         day: "numeric",
@@ -262,7 +262,7 @@ export const LastEventsPanel: FC = () => {
                             </div>
                             <div className="flex items-center justify-between gap-2 text-xs">
                                 <span className="text-ink-600 tabular-nums">
-                                    {formatTimestamp(event.timestamp)} UTC
+                                    {formatTimestamp(event.timestamp)}
                                 </span>
                                 <EventKindChip kind={event.kind} />
                             </div>
@@ -283,7 +283,7 @@ export const LastEventsPanel: FC = () => {
                                 <TableHeaderCell
                                     className={TABLE_HEADER_CELL_CLASS}
                                 >
-                                    Time (UTC)
+                                    Time
                                 </TableHeaderCell>
                                 <TableHeaderCell
                                     align="center"

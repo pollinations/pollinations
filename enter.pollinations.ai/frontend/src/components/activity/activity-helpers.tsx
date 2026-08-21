@@ -88,21 +88,21 @@ export function formatActivityChartDate(
     date: Date,
     isHourly: boolean,
 ): { label: string; fullDate: string } {
+    // No `timeZone` override on any of these — each bucket boundary is a
+    // fixed instant in time, and formatting it without a timezone renders
+    // it in the browser's local timezone.
     return {
         label: isHourly
             ? date.toLocaleTimeString("en-US", {
-                  timeZone: "UTC",
                   hour: "2-digit",
                   minute: "2-digit",
                   hour12: false,
               })
             : date.toLocaleDateString("en-US", {
-                  timeZone: "UTC",
                   month: "short",
                   day: "numeric",
               }),
         fullDate: date.toLocaleDateString("en-US", {
-            timeZone: "UTC",
             weekday: "short",
             year: "numeric",
             month: "short",

@@ -1,0 +1,36 @@
+{
+  "pr_number": 13652,
+  "title": "Add REKTY GENERATOR to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13652",
+  "merged_at": "2026-08-21T11:47:06Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [REKTY GENERATOR](https://visualaiartwork.pages.dev) to image\n- REKTY GENERATOR is a free, open-source AI image generator web app that supports multiple providers in one interface. It uses **Pollinations AI** for: - **Image generation** via Pollinations API (57+ m\n\nFixes #13602",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "One garden, many brushes",
+    "blurb": "REKTY GENERATOR has landed in the app garden. It gathers a small forest of image providers into one open-source canvas, with Pollinations handling the pixels.",
+    "summary": "Added REKTY GENERATOR to the app directory, a free open-source AI image generator that uses the Pollinations API for image generation alongside 57+ models in a unified interface.",
+    "impact": "People exploring Pollinations-powered apps can now find REKTY GENERATOR and create images through its multi-provider interface.",
+    "keywords": [
+      "community-app",
+      "image-generation",
+      "open-source",
+      "REKTY-GENERATOR",
+      "API",
+      "models"
+    ],
+    "visual_concept": "Depict REKTY GENERATOR as a cozy shared art studio: Polli helps a friendly creator paint several tiny framed AI landscapes from one retro workstation, while different provider brushes and palettes sit together on the desk. Code-plants, flowers, and an app-directory sign make it clear this is a new community app joining the garden.",
+    "image_prompt": "A cozy pixel art community art studio where the cute Pollinations bee mascot—with a yellow body, dark brown horizontal stripes, black antennae, black oval eyes, bright pink rectangular cheek blush, happy smile, and rounded light-blue translucent wings—wears a tiny painter’s beret and helps a retro computer create several small framed AI images from one canvas; code-plants and flowers grow around a prominently lime green (#ecf874) REKTY GENERATOR sign. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, simple pixel-font text: “REKTY GENERATOR”, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-21/PR-13652.jpg",
+    "prompt": "A cozy pixel art community art studio where the cute Pollinations bee mascot—with a yellow body, dark brown horizontal stripes, black antennae, black oval eyes, bright pink rectangular cheek blush, happy smile, and rounded light-blue translucent wings—wears a tiny painter’s beret and helps a retro computer create several small framed AI images from one canvas; code-plants and flowers grow around a prominently lime green (#ecf874) REKTY GENERATOR sign. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, simple pixel-font text: “REKTY GENERATOR”, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-08-21T11:48:08.930709+00:00",
+  "app_name": "REKTY GENERATOR",
+  "app_url": "https://visualaiartwork.pages.dev"
+}

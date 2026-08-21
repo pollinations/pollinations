@@ -6,8 +6,7 @@ import {
 } from "./cost-variants";
 import {
     GEMINI_25_GROUNDING_BILLING,
-    OPENROUTER_GEMINI_SEARCH_BILLING,
-    withOpenRouterGeminiCacheStorage,
+    openRouterGeminiBilling,
     withVertexCacheStorage,
 } from "./gemini-billing";
 import {
@@ -530,10 +529,10 @@ export const TEXT_SERVICES = {
             promptVideoTokens: perMillion(0.5),
             completionTextTokens: perMillion(3.0),
         },
-        billing: withOpenRouterGeminiCacheStorage(
-            OPENROUTER_GEMINI_SEARCH_BILLING,
-            1.0,
-        ),
+        billing: openRouterGeminiBilling({
+            searchCostPerThousandRequests: 14,
+            storageCostPerMillionTokenHours: 1.0,
+        }),
         title: "Gemini 3 Flash Preview",
         description:
             "Pro-grade reasoning at high speed, with web search and a huge context window",
@@ -554,22 +553,22 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-05-19").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // Rates per https://ai.google.dev/gemini-api/docs/pricing (global region).
-        // Non-global regions add ~10%; we route through global.
+        // OpenRouter promotional rates through 2026-08-27 for the pinned
+        // google-vertex/global route.
         cost: {
-            promptTextTokens: perMillion(1.5),
-            promptCachedTokens: perMillion(0.15),
-            promptCacheWriteTokens: perMillion(1.5),
-            promptAudioTokens: perMillion(1.5), // Audio billed at same rate as text
-            promptImageTokens: perMillion(1.5),
-            promptVideoTokens: perMillion(1.5),
-            completionTextTokens: perMillion(7.5),
+            promptTextTokens: perMillion(0.375),
+            promptCachedTokens: perMillion(0.0375),
+            promptCacheWriteTokens: perMillion(0.375),
+            promptAudioTokens: perMillion(0.375),
+            promptImageTokens: perMillion(0.375),
+            promptVideoTokens: perMillion(0.375),
+            completionTextTokens: perMillion(1.875),
         },
-        billing: withOpenRouterGeminiCacheStorage(
-            OPENROUTER_GEMINI_SEARCH_BILLING,
-            1.0,
-        ),
-        title: "Gemini 3.6 Flash",
+        billing: openRouterGeminiBilling({
+            searchCostPerThousandRequests: 7,
+            storageCostPerMillionTokenHours: 0.25,
+        }),
+        title: "Gemini 3.7 Flash",
         description:
             "Sharp, fast reasoning over text, images, audio and video, plus web search",
         inputModalities: ["text", "image", "audio", "video"],
@@ -604,10 +603,10 @@ export const TEXT_SERVICES = {
             promptVideoTokens: perMillion(0.3),
             completionTextTokens: perMillion(2.5),
         },
-        billing: withOpenRouterGeminiCacheStorage(
-            OPENROUTER_GEMINI_SEARCH_BILLING,
-            1.0,
-        ),
+        billing: openRouterGeminiBilling({
+            searchCostPerThousandRequests: 14,
+            storageCostPerMillionTokenHours: 1.0,
+        }),
         title: "Gemini 3.5 Flash Lite",
         description:
             "Fast multimodal reasoning for high-throughput agents and data processing",
@@ -637,10 +636,10 @@ export const TEXT_SERVICES = {
             promptVideoTokens: perMillion(0.1), // per 1M tokens
             completionTextTokens: perMillion(0.4), // per 1M tokens
         },
-        billing: withOpenRouterGeminiCacheStorage(
-            OPENROUTER_GEMINI_SEARCH_BILLING,
-            1.0,
-        ),
+        billing: openRouterGeminiBilling({
+            searchCostPerThousandRequests: 14,
+            storageCostPerMillionTokenHours: 1.0,
+        }),
         title: "Gemini 2.5 Flash Lite",
         description:
             "Cheapest way to handle everyday multimodal tasks; trades depth for speed",
@@ -740,11 +739,11 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-04-24").getTime(),
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(1.74),
-            promptCachedTokens: perMillion(0.145),
-            completionTextTokens: perMillion(3.48),
+            promptTextTokens: perMillion(1.32),
+            promptCachedTokens: perMillion(0.044),
+            completionTextTokens: perMillion(3.96),
         },
-        title: "DeepSeek V4 Pro",
+        title: "DeepSeek V4 Pro 0813",
         description: "Deep reasoning and strong coding for demanding problems",
         inputModalities: ["text"],
         outputModalities: ["text"],
@@ -814,8 +813,8 @@ export const TEXT_SERVICES = {
         contextLength: 1048576, // xAI Grok 4.3 context window.
         isSpecialized: false,
     },
-    "grok-4.5": {
-        aliases: ["grok-4-5"],
+    "grok-4.6": {
+        aliases: ["grok-4.5", "grok-4-5"],
         provider: "openrouter",
         brand: "xAI",
         category: "text",
@@ -826,14 +825,14 @@ export const TEXT_SERVICES = {
         // prompt tokens.
         cost: {
             promptTextTokens: perMillion(2),
-            promptCachedTokens: perMillion(0.3),
+            promptCachedTokens: perMillion(0.5),
             completionTextTokens: perMillion(6),
         },
         ...defineCostVariants(
             {
                 long_context: {
                     promptTextTokens: perMillion(4),
-                    promptCachedTokens: perMillion(0.6),
+                    promptCachedTokens: perMillion(1),
                     completionTextTokens: perMillion(12),
                 },
             },
@@ -847,7 +846,7 @@ export const TEXT_SERVICES = {
             },
             "<200K context",
         ),
-        title: "Grok 4.5",
+        title: "Grok 4.6",
         description: "Frontier reasoning for coding and knowledge work",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
@@ -1382,6 +1381,30 @@ export const TEXT_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
+    "nemotron-3.5-lightning": {
+        aliases: [],
+        provider: "fireworks",
+        brand: "NVIDIA",
+        category: "text",
+        addedDate: new Date("2026-08-19").getTime(),
+        paidOnly: false,
+        priceMultiplier: 1,
+        cost: {
+            // Fireworks, verified 2026-08-19: $0.05/$0.01/$0.20 per million.
+            promptTextTokens: perMillion(0.05),
+            promptCachedTokens: perMillion(0.01),
+            completionTextTokens: perMillion(0.2),
+        },
+        title: "NVIDIA Nemotron 3.5 Lightning",
+        description:
+            "Fast open-weight reasoning for high-volume agent tasks, tool use and structured output",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 262144,
+        isSpecialized: false,
+    },
     "mimo-v2.5": {
         aliases: ["mimo", "mimo-2.5"],
         provider: "openrouter",
@@ -1471,10 +1494,10 @@ export const TEXT_SERVICES = {
             },
             "<200K context",
         ),
-        billing: withOpenRouterGeminiCacheStorage(
-            OPENROUTER_GEMINI_SEARCH_BILLING,
-            4.5,
-        ),
+        billing: openRouterGeminiBilling({
+            searchCostPerThousandRequests: 14,
+            storageCostPerMillionTokenHours: 4.5,
+        }),
         title: "Gemini 3.1 Pro Preview",
         description:
             "Top-tier multimodal reasoning over huge documents, images and video",
@@ -1553,6 +1576,29 @@ export const TEXT_SERVICES = {
         title: "Z.ai GLM-5.2",
         description:
             "Massive open-weight model for long-context reasoning and agent workflows",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "glm-5.3": {
+        aliases: [],
+        provider: "openrouter",
+        brand: "Z.ai",
+        category: "text",
+        addedDate: new Date("2026-08-19").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(1.4),
+            promptCachedTokens: perMillion(0.26),
+            completionTextTokens: perMillion(4.4),
+        },
+        title: "Z.ai GLM-5.3",
+        description:
+            "Mandatory-reasoning model for complex software engineering and long-horizon agent workflows",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: true,
@@ -1679,12 +1725,36 @@ export const TEXT_SERVICES = {
         contextLength: 524288,
         isSpecialized: false,
     },
-    "muse-spark-1.1": {
-        aliases: ["muse-spark", "spark", "spark-1.1"],
+    "muse-glimmer": {
+        aliases: [],
+        provider: "fireworks",
+        brand: "Meta",
+        category: "text",
+        addedDate: new Date("2026-08-14").getTime(),
+        paidOnly: false,
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(0.35),
+            promptCachedTokens: perMillion(0.04),
+            completionTextTokens: perMillion(1.5),
+        },
+        title: "Muse Glimmer 30B",
+        description:
+            "Compact multimodal agent for reasoning, tool use and failure recovery",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 30,
+        tools: true,
+        reasoning: true,
+        contextLength: 131072,
+        isSpecialized: false,
+    },
+    "muse-spark-1.2": {
+        aliases: ["muse-spark-1.1", "muse-spark", "spark", "spark-1.1"],
         provider: "vercel",
         brand: "Meta",
         category: "text",
-        addedDate: new Date("2026-07-12").getTime(),
+        addedDate: new Date("2026-08-14").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
@@ -1692,7 +1762,7 @@ export const TEXT_SERVICES = {
             promptCachedTokens: perMillion(0.15),
             completionTextTokens: perMillion(4.25),
         },
-        title: "Muse Spark 1.1",
+        title: "Muse Spark 1.2",
         description: "Agentic coding and tool-use model with 1M context",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
@@ -1823,6 +1893,58 @@ export const TEXT_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 1000000,
+        isSpecialized: false,
+    },
+    "qwen3.8-2.4t-a95b": {
+        aliases: [],
+        provider: "fireworks",
+        brand: "Qwen",
+        category: "text",
+        addedDate: new Date("2026-08-14").getTime(),
+        paidOnly: false,
+        priceMultiplier: 1,
+        cost: {
+            // Fireworks accounts/fireworks/models/qwen3p8-2p4t-a95b rates (2026-08-14).
+            promptTextTokens: perMillion(2),
+            promptCachedTokens: perMillion(0.25),
+            completionTextTokens: perMillion(6),
+        },
+        title: "Qwen3.8 2.4T A95B",
+        description:
+            "Open-weight sparse frontier reasoning for long-horizon coding and autonomous agents",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 262144,
+        isSpecialized: false,
+    },
+    "qwen3.8-27b": {
+        aliases: [],
+        provider: "openrouter",
+        brand: "Qwen",
+        category: "text",
+        addedDate: new Date("2026-08-18").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter Chutes FP8 route rates (2026-08-18).
+            promptTextTokens: perMillion(0.4),
+            promptCachedTokens: perMillion(0.04),
+            promptImageTokens: perMillion(0.4),
+            promptVideoTokens: perMillion(0.4),
+            completionTextTokens: perMillion(3),
+        },
+        title: "Qwen3.8 27B",
+        description:
+            "Dense multimodal reasoning for coding, tool use, and structured generation",
+        inputModalities: ["text", "image", "video"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10,
+        maxReferenceVideos: 10,
+        tools: true,
+        reasoning: true,
+        contextLength: 262144,
         isSpecialized: false,
     },
     "qwen3.8-max": {

@@ -33,10 +33,14 @@ SQL >
         -- id on a failed one (`voodoohop/anyvm-deepseek-chat`), so that
         -- comparison is false for 97% of successful community calls and would
         -- read as a permanently dead model.
-        countIf(NOT fallback_used) as own_calls,
-        countIf(NOT fallback_used AND response_status >= 200 AND response_status < 300) as own_calls_ok,
+        -- A gateway-enforced per-user cap says nothing about whether the
+        -- upstream works. Keep the 429 visible without depressing its health.
+        countIf(NOT fallback_used AND error_response_code != 'community_model_rate_limit') as own_calls,
+        countIf(NOT fallback_used AND error_response_code != 'community_model_rate_limit' AND response_status >= 200 AND response_status < 300) as own_calls_ok,
         countIf(NOT fallback_used AND response_status >= 500) as primary_5xx,
-        countIf(NOT fallback_used AND response_status = 503) as primary_503s,
+        -- A non-final primary 503 was retried elsewhere. Keep it visible as
+        -- capacity pressure without treating it as a caller-visible failure.
+        countIf(NOT is_final AND NOT fallback_used AND response_status = 503) as primary_retried_503s,
         countIf(
             is_final AND fallback_used
             AND response_status >= 200 AND response_status < 300

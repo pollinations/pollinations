@@ -35,6 +35,8 @@ interface ModelDefinition {
     name: string;
     config: (options?: TransformOptions) => Record<string, unknown>;
     transform?: TransformFn;
+    /** Route through the Azure Responses API instead of Chat Completions. */
+    useResponsesApi?: boolean;
 }
 
 function usesGrokReasoning(options: TransformOptions): boolean {
@@ -77,14 +79,17 @@ const models: ModelDefinition[] = [
     {
         name: "gpt-5.6-sol",
         config: portkeyConfig["gpt-5.6-sol"],
+        useResponsesApi: true,
     },
     {
         name: "gpt-5.6-terra",
         config: portkeyConfig["gpt-5.6-terra"],
+        useResponsesApi: true,
     },
     {
         name: "gpt-5.6-luna",
         config: portkeyConfig["gpt-5.6-luna"],
+        useResponsesApi: true,
     },
     {
         name: "mercury",
@@ -117,6 +122,16 @@ const models: ModelDefinition[] = [
     {
         name: "qwen3.7-max",
         config: portkeyConfig["qwen/qwen3.7-max"],
+    },
+    {
+        name: "qwen3.8-2.4t-a95b",
+        config: portkeyConfig["accounts/fireworks/models/qwen3p8-2p4t-a95b"],
+        transform: pipe(stripCacheControl, fireworksThinking),
+    },
+    {
+        name: "qwen3.8-27b",
+        config: portkeyConfig["qwen/qwen3.8-27b"],
+        transform: createReasoningEffortTransform("toggle"),
     },
     {
         name: "qwen3.8-max",
@@ -177,7 +192,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "deepseek-pro",
-        config: portkeyConfig["accounts/fireworks/models/deepseek-v4-pro"],
+        config: portkeyConfig["accounts/fireworks/models/deepseek-v4-pro-0813"],
         transform: fireworksThinking,
     },
     {
@@ -194,8 +209,8 @@ const models: ModelDefinition[] = [
         transform: stripCacheControl,
     },
     {
-        name: "grok-4.5",
-        config: portkeyConfig["x-ai/grok-4.5"],
+        name: "grok-4.6",
+        config: portkeyConfig["x-ai/grok-4.6"],
         transform: stripCacheControl,
     },
     {
@@ -257,12 +272,12 @@ const models: ModelDefinition[] = [
     },
     {
         name: "gemini",
-        config: portkeyConfig["google/gemini-3.6-flash"],
+        config: portkeyConfig["google/gemini-3.7-flash"],
         transform: pipe(
             sanitizeToolSchemas,
             adaptGoogleSearchToolForOpenRouter,
             removeToolsForJsonResponse,
-            // Gemini 3.6 requires reasoning; map `none` to its lowest level.
+            // Gemini 3.7 requires reasoning; map `none` to its lowest level.
             createGeminiThinkingTransform("v3-pro"),
         ),
     },
@@ -358,6 +373,13 @@ const models: ModelDefinition[] = [
         transform: createReasoningEffortTransform("toggle"),
     },
     {
+        name: "nemotron-3.5-lightning",
+        config: portkeyConfig[
+            "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b"
+        ],
+        transform: pipe(stripCacheControl, fireworksThinking),
+    },
+    {
         name: "mimo-v2.5",
         config: portkeyConfig["xiaomi/mimo-v2.5"],
         transform: stripCacheControl,
@@ -393,6 +415,12 @@ const models: ModelDefinition[] = [
         transform: pipe(stripCacheControl, fireworksThinking),
     },
     {
+        name: "glm-5.3",
+        config: portkeyConfig["z-ai/glm-5.3"],
+        // Reasoning is mandatory; off requests keep the upstream default.
+        transform: mandatoryReasoning,
+    },
+    {
         name: "minimax-m2.7",
         config: portkeyConfig["accounts/fireworks/models/minimax-m2p7"],
         // Reasoning mandatory: rejects "none"/"minimal", accepts low/medium/high.
@@ -404,8 +432,13 @@ const models: ModelDefinition[] = [
         transform: fireworksThinking,
     },
     {
-        name: "muse-spark-1.1",
-        config: portkeyConfig["meta/muse-spark-1.1"],
+        name: "muse-glimmer",
+        config: portkeyConfig["accounts/fireworks/models/muse-glimmer-30b"],
+        transform: fireworksThinking,
+    },
+    {
+        name: "muse-spark-1.2",
+        config: portkeyConfig["meta/muse-spark-1.2"],
     },
     {
         name: "llama",

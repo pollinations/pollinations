@@ -2,13 +2,13 @@
 
 ## App Submission Handling
 
-Two-phase review via `apps-review-submissions.yml` (AI evidence + human decision). Source of truth: `apps/catalog.json`.
+Two-phase review via `apps-review-submissions.yml` (AI evidence + human decision). Source of truth: `operations/app-management/app.json`.
 
-Flow: user opens an `APP-SUBMISSION` issue → AI checks the live app and optional repository → `APP-NEEDS-INFO` or `APP-REVIEW` → maintainer adds `APP-APPROVED` → `apps-publish-submissions.yml` validates the issue again, prepends the app to `apps/catalog.json`, and opens an auto-merge PR that closes the issue via `Fixes #NNN`.
+Flow: user opens an `APP-SUBMISSION` issue → AI checks the live app and optional repository → `APP-NEEDS-INFO` or `APP-REVIEW` → maintainer adds `APP-APPROVED` → `apps-publish-submissions.yml` validates the issue again, prepends the app to `operations/app-management/app.json`, and opens an auto-merge PR that closes the issue via `Fixes #NNN`.
 
 `APP-SUBMISSION` is the persistent type label. `APP-NEEDS-INFO`, `APP-REVIEW`, and `APP-APPROVED` describe review state. Quest rewards are detected separately from the merged catalog and are not announced by the submission workflows.
 
-Manual edits: edit `apps/catalog.json`, run `node apps/app-management/generate-catalog-outputs.js`.
+Manual edits: edit `operations/app-management/app.json`, then run `node operations/app-management/app.js validate`.
 
 Catalog fields: `emoji`, `name`, `url`, `description`, `language` (ISO code), `category`, `platform`, `githubUsername` (without `@`), `githubUserId` (string), `repositoryUrl`, `repositoryStars` (number or null), `discordUsername`, `other`, `submittedDate`, `issueUrl`, `approvedDate`, `byop` (boolean), `requests24h` (number).
 
@@ -29,9 +29,10 @@ Guild ID `885844321461485618` (https://discord.gg/pollinations-ai-88584432146148
 - `packages/sdk/` — `@pollinations/sdk` (client + React hooks)
 - `packages/mcp/` — `@pollinations/mcp` (MCP server; see `packages/mcp/AGENTS.md`)
 - `shared/` — auth, registry, IP queue; `shared/registry/` holds model registries
-- `apps/` — Community apps + `catalog.json`
+- `apps/` — Applications maintained in this repository
+- `operations/app-management/` — Community app catalog and automation
 - `operations/` — Internal dashboards, monitoring, economics, and infrastructure
-- `social/` — Discord/Reddit/GitHub automation
+- `operations/social/` — Discord/Reddit/GitHub automation
 
 ## API Gateway
 
@@ -68,6 +69,16 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - Models: `/image/models`, `/v1/models`
 - See `./APIDOCS.md`, `.claude/skills/enter-services/SKILL.md`
 
+## Durable Media Requests
+
+- Media generation uses the durable generation coordinator and supports request
+  lifetimes up to 300 seconds. Do not reject a route solely because it exceeds
+  120 seconds or polls an asynchronous provider internally.
+- Prove identical-request disconnect/rejoin, one upstream execution, completed
+  R2 cache retrieval, one wallet debit, and one billed Tinybird event.
+- Test behavior just below, at, and above 300 seconds. A route expected to exceed
+  300 seconds requires a separately approved asynchronous public contract.
+
 ## ⚠️ YAGNI — You Aren't Gonna Need It (CRITICAL)
 
 **Follow YAGNI religiously:**
@@ -99,7 +110,7 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 
 **CRITICAL — production Cloudflare deployments must always run through GitHub Actions:**
 
-- Use the service's production deployment workflow, such as `Deploy / gen.pollinations.ai`; use `workflow_dispatch` when path filters do not trigger it.
+- Use the production deployment workflow `Deploy / Cloudflare production`; use `workflow_dispatch` (and its `service` input to target one worker) when path filters do not trigger it.
 - Dispatch production workflows only from the `production` branch. Select a secret-synchronization input only after the Secret Mutation Safety approval gate.
 - Never run `wrangler deploy --env production`, a production deployment npm script, or a direct production Worker upload from a local machine or agent session.
 - If CI credentials lack a required permission, follow the Secret Mutation Safety approval gate before updating the scoped GitHub Actions secret and rerunning the workflow. Never bypass CI with a local Cloudflare OAuth session.
@@ -201,6 +212,7 @@ Preserve during compaction: modified files + line numbers, all code/diffs/impl d
 
 ## Git Workflow
 
+- Feature branches target `main`. Promote `main` to `production` only through a separate promotion PR; never target `production` directly with feature or fix work.
 - "send to git" = git status, diff, branch, commit all, push, PR description.
 - Verify branch: `git branch --show-current` and confirm if unsure (branch mix-ups are a recurring mistake).
 - Avoid force pushes (`--force`, `--force-with-lease`) — prefer follow-up commits.
@@ -210,6 +222,12 @@ Preserve during compaction: modified files + line numbers, all code/diffs/impl d
 ## Communication Style
 
 Be concise. PRs/comments/issues: bullets, <200 words, no fluff.
+
+### Pollinations identity
+
+- Pollinations.ai is the product brand. Use `hello@pollinations.ai` for public support, privacy, legal, and general customer contact, and `billing@pollinations.ai` for billing contact.
+- Myceli.AI OÜ is the registered legal entity and data controller. Preserve its legal name, copyright and ownership attribution, contributor identities, provider-account identities, infrastructure hostnames, and entity-specific operational contacts.
+- Never replace Myceli entity or infrastructure references merely because they differ from the Pollinations product brand. Change them only as part of an explicitly requested legal-entity or infrastructure migration.
 
 - PRs: "- Adds X", "- Fix Y"; 3-5 bullets; titles "fix:"/"feat:"/"Add"; no marketing.
 - Issue comments: bullets only; facts not opinions; link code; be direct (no "I think"/"maybe").
@@ -231,3 +249,4 @@ Fixes #issue
 
 - Use "Fixes #issue" or "Addresses #issue" in PRs.
 - Email: `{username} <{user_id}+{username}@users.noreply.github.com>` (user_id from issue API).
+- For publisher-allowlist PRs prompted by an access-request issue, add the requester as a `Co-authored-by` contributor using their numeric GitHub ID.

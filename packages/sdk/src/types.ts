@@ -585,7 +585,20 @@ export interface AccountProfile {
 
 /** Account balance */
 export interface AccountBalance {
+    /**
+     * Pollen remaining for this caller. Budgeted API keys see the key budget
+     * here, not the account total.
+     */
     balance: number;
+    /**
+     * Full account balances. Present only when the caller can view account
+     * usage (session or `account:usage`).
+     */
+    accountBalance?: {
+        total: number;
+        tier: number;
+        paid: number;
+    };
 }
 
 /** Usage record */
@@ -786,7 +799,8 @@ export type ModelCapability =
     | "tool_calling"
     | "reasoning"
     | "web_search"
-    | "code_execution";
+    | "code_execution"
+    | "pollinations_models";
 
 /** Model information */
 export interface ModelInfo {
@@ -801,9 +815,16 @@ export interface ModelInfo {
     description?: string;
     aliases?: string[];
     community?: boolean;
+    agent?: boolean;
+    base_model?: string;
     input_modalities?: string[];
     output_modalities?: string[];
     video_capabilities?: VideoCapability[];
+    min_duration?: number;
+    max_duration?: number;
+    default_duration?: number;
+    allowed_durations?: number[];
+    duration_step?: number;
     max_reference_images?: number;
     max_reference_videos?: number;
     capabilities?: ModelCapability[];

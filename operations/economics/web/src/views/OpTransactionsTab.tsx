@@ -1,4 +1,5 @@
 import {
+    Button,
     Chip,
     TableBody,
     TableCell,
@@ -6,7 +7,8 @@ import {
     TableHeaderCell,
     TableRow,
 } from "@pollinations/ui";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import {
     DataTable,
     GROUP_BORDER,
@@ -16,6 +18,7 @@ import {
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
+import { type DriveDocumentLink, driveDocumentLink } from "../lib/documents";
 import { fmtNumber } from "../lib/format";
 import {
     type MonthFilterValue,
@@ -24,6 +27,119 @@ import {
     type ValueFilter,
 } from "../lib/months";
 import type { Data, OpTransactionRow } from "../types";
+
+function DocumentPreview({
+    documentLink,
+    onClose,
+}: {
+    documentLink: DriveDocumentLink;
+    onClose: () => void;
+}) {
+    useEffect(() => {
+        function handleKeyDown(event: KeyboardEvent) {
+            if (event.key === "Escape") onClose();
+        }
+
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [onClose]);
+
+    if (!documentLink.previewHref) return null;
+
+    return createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6">
+            <button
+                type="button"
+                className="absolute inset-0 bg-black/60"
+                aria-label="Close document preview"
+                onClick={onClose}
+            />
+            <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="document-preview-title"
+                className="relative flex h-[min(90vh,64rem)] w-[min(94vw,72rem)] flex-col overflow-hidden rounded-2xl bg-surface-opaque shadow-2xl"
+            >
+                <div className="flex shrink-0 items-center justify-between gap-3 border-b border-theme-text-strong/10 px-4 py-3">
+                    <h2
+                        id="document-preview-title"
+                        className="font-semibold text-theme-text-strong"
+                    >
+                        Document preview
+                    </h2>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            as="a"
+                            href={documentLink.href}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            intent="info"
+                            size="sm"
+                        >
+                            Open in Drive
+                        </Button>
+                        <Button
+                            type="button"
+                            size="sm"
+                            onClick={onClose}
+                            autoFocus
+                        >
+                            Close
+                        </Button>
+                    </div>
+                </div>
+                <iframe
+                    src={documentLink.previewHref}
+                    title="Google Drive document preview"
+                    className="min-h-0 w-full flex-1 bg-white"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                />
+            </div>
+        </div>,
+        document.body,
+    );
+}
+
+function TransactionDocument({
+    evidence,
+    onPreview,
+}: {
+    evidence: string;
+    onPreview: (document: DriveDocumentLink) => void;
+}) {
+    const document = driveDocumentLink(evidence);
+
+    if (!document) {
+        return (
+            <Chip intent="warning" size="sm">
+                Missing
+            </Chip>
+        );
+    }
+
+    if (document.previewHref) {
+        return (
+            <button
+                type="button"
+                onClick={() => onPreview(document)}
+                className="font-medium text-theme-text underline underline-offset-4 hover:text-theme-text-soft"
+            >
+                Preview
+            </button>
+        );
+    }
+
+    return (
+        <a
+            href={document.href}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="font-medium text-theme-text underline underline-offset-4 hover:text-theme-text-soft"
+        >
+            {document.label}
+        </a>
+    );
+}
 
 export function OpTransactionsTab({
     category = [],
@@ -36,6 +152,8 @@ export function OpTransactionsTab({
     month?: MonthFilterValue;
     vendor?: ValueFilter;
 }) {
+    const [previewDocument, setPreviewDocument] =
+        useState<DriveDocumentLink | null>(null);
     const baseRows = useMemo(() => {
         return (data.opTransactions ?? []).filter(
             (row) =>
@@ -52,7 +170,10 @@ export function OpTransactionsTab({
             { key: "amount", value: (row) => row.amount },
             { key: "currency", value: (row) => row.currency },
             { key: "description", value: (row) => row.description },
-            { key: "evidence", value: (row) => row.evidence },
+            {
+                key: "evidence",
+                value: (row) => driveDocumentLink(row.evidence)?.label ?? "",
+            },
         ],
         [],
     );
@@ -120,7 +241,7 @@ export function OpTransactionsTab({
                             Description
                         </TableHeaderCell>
                         <TableHeaderCell {...headerProps("evidence")}>
-                            Evidence
+                            Document
                         </TableHeaderCell>
                     </TableRow>
                 </TableHead>
@@ -147,12 +268,23 @@ export function OpTransactionsTab({
                                 <TableCell className={GROUP_BORDER}>
                                     {row.description}
                                 </TableCell>
-                                <TableCell>{row.evidence}</TableCell>
+                                <TableCell>
+                                    <TransactionDocument
+                                        evidence={row.evidence}
+                                        onPreview={setPreviewDocument}
+                                    />
+                                </TableCell>
                             </TableRow>
                         ),
                     )}
                 </TableBody>
             </DataTable>
+            {previewDocument?.previewHref && (
+                <DocumentPreview
+                    documentLink={previewDocument}
+                    onClose={() => setPreviewDocument(null)}
+                />
+            )}
         </TableScroller>
     );
 }

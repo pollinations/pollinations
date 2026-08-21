@@ -39,15 +39,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           TINYBIRD_READ_TOKEN: ${{ secrets.TINYBIRD_READ_TOKEN }}
-        run: node apps/app-management/performance/update-metrics.js --verbose
-
-      - name: Regenerate catalog outputs
-        run: node apps/app-management/generate-catalog-outputs.js
+        run: node operations/app-management/performance/update-metrics.js --verbose
 
       - name: Check for changes
         id: changes
         run: |
-          if git diff --quiet apps/catalog.json apps/GREENHOUSE.md README.md; then
+          if git diff --quiet operations/app-management/app.json; then
             echo "changed=false" >> $GITHUB_OUTPUT
           else
             echo "changed=true" >> $GITHUB_OUTPUT
@@ -58,8 +55,8 @@ jobs:
         run: |
           BRANCH="auto/app-metrics-$(date -u +%Y-%m-%d)"
           git checkout -b "$BRANCH"
-          git add apps/catalog.json apps/GREENHOUSE.md README.md
-          git commit -m "chore: update app metrics, health, and greenhouse"
+          git add operations/app-management/app.json
+          git commit -m "chore: update app metrics"
           git push -f origin "$BRANCH"
 
       - name: Create or update PR
@@ -76,7 +73,7 @@ jobs:
           else
             PR_URL=$(gh pr create \
               --title "chore: update app metrics $(date -u +%Y-%m-%d)" \
-              --body "Daily automated update of app metrics, health checks, and greenhouse")
+              --body "Daily automated update of app request and repository metrics")
             echo "Created PR: $PR_URL"
           fi
 

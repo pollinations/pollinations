@@ -78,6 +78,45 @@ export const REALTIME_SERVICES = {
         description: "Live voice conversations with instant, reasoned replies",
         contextLength: 128000,
     },
+    "scribe-realtime": {
+        aliases: [],
+        provider: "elevenlabs",
+        brand: "ElevenLabs",
+        category: "realtime",
+        addedDate: new Date("2026-08-13").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // ElevenLabs Scribe v2 Realtime: $0.39 per streamed audio hour.
+            promptAudioSeconds: 0.39 / 3600,
+        },
+        title: "Scribe v2 Realtime",
+        description:
+            "Live transcription in 90+ languages with incremental and final results",
+        inputModalities: ["audio"],
+        outputModalities: ["text"],
+        supportedEndpoints: ["/realtime", "/v1/realtime"],
+    },
+    "gpt-live-transcribe": {
+        aliases: [],
+        provider: "azure",
+        brand: "OpenAI",
+        category: "realtime",
+        addedDate: new Date("2026-08-19").getTime(),
+        paidOnly: false,
+        priceMultiplier: 0.75,
+        cost: {
+            // Provisional OpenAI list price: $0.017 per streamed input minute.
+            // Azure's exact meter was not yet visible when this route launched.
+            promptAudioSeconds: 0.017 / 60,
+        },
+        title: "GPT Live Transcribe",
+        description:
+            "Low-latency streaming speech recognition through the OpenAI Realtime protocol",
+        inputModalities: ["audio"],
+        outputModalities: ["text"],
+        supportedEndpoints: ["/realtime", "/v1/realtime"],
+    },
 } satisfies Record<string, ModelDefinition>;
 
 export const REALTIME_MODEL_NAMES = Object.keys(

@@ -10,13 +10,15 @@ export type ModelCategory =
 export type ModelDisplayCategory =
     | ModelCategory
     | "community-text"
-    | "community-image";
+    | "community-image"
+    | "community-agent";
 
 export type ModelCapability =
     | "tool_calling"
     | "reasoning"
     | "web_search"
-    | "code_execution";
+    | "code_execution"
+    | "pollinations_models";
 
 export type PriceKind =
     | "text"
@@ -67,6 +69,9 @@ export type ModelPrice = {
     name: string;
     type: ModelCategory;
     community?: boolean;
+    agent?: boolean;
+    baseModel?: string;
+    perUserRpm?: number | null;
     displayName?: string;
     description?: string;
     brand?: string;

@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { HTTPException } from "hono/http-exception";
 import * as schema from "../db/better-auth.ts";
+import { canonicalizeModelPermissionIds } from "../registry/visible-model-ids.ts";
 import { getRedirectUris, parseMetadata } from "./api-key-metadata.ts";
 import { sanitizeAuthorizeAccountPermissions } from "./authorize-config.ts";
 import {
@@ -225,6 +226,12 @@ export async function createApiKeyForUser({
     );
 
     const isPublishable = type === "publishable";
+    if (isPublishable && pollenBudget != null && pollenBudget !== 0) {
+        throw new HTTPException(400, {
+            message: "Publishable keys must have a pollen budget of 0",
+        });
+    }
+    const effectivePollenBudget = isPublishable ? 0 : pollenBudget;
     const callerMetadata = pickCallerMetadata(metadata, isPublishable);
     if (Array.isArray(callerMetadata.redirectUris)) {
         for (const uri of callerMetadata.redirectUris as string[]) {
@@ -239,7 +246,9 @@ export async function createApiKeyForUser({
         : (sanitizedAccountPerms?.filter((p) => p !== "keys") ?? null);
 
     const permissions: Record<string, string[]> = {};
-    if (allowedModels) permissions.models = allowedModels;
+    if (allowedModels) {
+        permissions.models = canonicalizeModelPermissionIds(allowedModels);
+    }
     if (safeAccountPerms && safeAccountPerms.length > 0) {
         permissions.account = safeAccountPerms;
     }
@@ -277,7 +286,9 @@ export async function createApiKeyForUser({
     const d1Updates: Partial<typeof schema.apikey.$inferInsert> = {
         metadata: JSON.stringify(finalMetadata),
     };
-    if (pollenBudget != null) d1Updates.pollenBalance = pollenBudget;
+    if (effectivePollenBudget != null) {
+        d1Updates.pollenBalance = effectivePollenBudget;
+    }
     if (!isPublishable && attribution) {
         d1Updates.byopClientKeyId = attribution.clientId;
     }
@@ -297,7 +308,7 @@ export async function createApiKeyForUser({
         expiresAt: created.expiresAt,
         expiresIn,
         permissions: Object.keys(permissions).length > 0 ? permissions : null,
-        pollenBudget: pollenBudget ?? null,
+        pollenBudget: effectivePollenBudget ?? null,
         byopClientKeyId:
             !isPublishable && attribution ? attribution.clientId : null,
         metadata: finalMetadata,

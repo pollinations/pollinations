@@ -1,6 +1,6 @@
 # GPU Instances
 
-Last updated: 2026-08-11
+Last updated: 2026-08-19
 
 ## Capacity Summary
 
@@ -9,14 +9,14 @@ Last updated: 2026-08-11
 | Flux (FP4) | 2 | 2x RTX PRO 4000 Blackwell | Vast.ai | $0.460000/hr all-in | **ACTIVE — two production, Vast-only** |
 | Z-Image | 1 | RTX 5090 | Vast.ai | $0.351111/hr all-in | **ACTIVE — one production with Fal spillover** |
 | Klein 4B | 1 | RTX 3090 | Vast.ai | $0.150000/hr all-in | **ACTIVE — Vast production** |
-| DreamShaper 8 LCM (`dreamshaper`, alias `sana`) | 2 | 2x RTX 3090 | Vast.ai | $0.303333/hr all-in | **ACTIVE — production** |
+| DreamShaper 8 LCM (`dreamshaper`, alias `sana`) | 2 | 2x RTX 4070 | Vast.ai | $0.196889/hr all-in | **ACTIVE — production** |
 | LTX-2 + ACE-Step | 0 active routes | GH200 (historical) | Lambda Labs | Verify provider account | **RETIRED from production** |
 
-At capture time, the six running Vast instances cost **$1.264444/hr** in total
-(**$910.40 per 30-day month**).
+At capture time, the six running Vast instances cost **$1.158000/hr** in total
+(**$833.76 per 30-day month**).
 All six are production workers; there is no isolated canary left running.
 
-Live verification on 2026-08-11 confirmed that all six instances are in both
+Live verification on 2026-08-19 confirmed that all six instances are in both
 `actual_status=running` and `intended_status=running`, every model server and
 named tunnel is healthy, and the registry contains both Flux hostnames, the
 shared Z-Image hostname, and both DreamShaper hostnames. Klein is not in the
@@ -28,7 +28,7 @@ instance is the production Z-Image worker, not a spare canary. Vast labels do
 not control routing; instance IDs, registered hostnames, and the Klein VPC
 tunnel are authoritative.
 
-## Provider: Vast.ai — DreamShaper 8 LCM (RTX 3090)
+## Provider: Vast.ai — DreamShaper 8 LCM
 
 Replaced SANA-Sprint on the GH200 (PR #12900). Model slug is `dreamshaper` with
 `sana` kept as an alias; the **registry pool key is still `sana`** because
@@ -37,13 +37,13 @@ exists after the routing change deploys.
 
 | Worker | Vast instance | Machine / region | GPU | All-in rate | Status |
 |--------|---------------|------------------|-----|-------------|--------|
-| dreamshaper-vast-01 | 46607014 | 4749 / Oregon, US | RTX 3090 | $0.150000/hr | ACTIVE — named tunnel `dreamshaper-canary-46600159.myceli.ai` |
-| dreamshaper-vast-02 | 46387155 | 123712 / California, US | RTX 3090 | $0.153333/hr | ACTIVE — named tunnel `dreamshaper-vast-02.pollinations.ai` |
+| dreamshaper-vast-01 | 48108043 | 94288 / New Zealand | RTX 4070 | $0.103000/hr | ACTIVE — named tunnel `dreamshaper-canary-46600159.myceli.ai` |
+| dreamshaper-vast-02 | 47789794 | 100803 / Romania, RO | RTX 4070 | $0.093889/hr | ACTIVE — named tunnel `dreamshaper-canary-47789794.myceli.ai` |
 
 Config: `Lykon/dreamshaper-8` + fused `lcm-lora-sdv1-5`, `LCMScheduler`, TAESD
 tiny decoder, guidance 0.0, 3 steps, 512x512, `WORKERS=3`. Code in
-`dreamshaper/`; Vast runs `/root/onstart.sh` after container start to
-restore the worker and named tunnel.
+`operations/infrastructure/gpu/dreamshaper/`; Vast runs `/root/onstart.sh`
+after container start to restore the worker and named tunnel.
 
 Each Uvicorn process admits one running and one waiting request
 (`QUEUE_LIMIT=2`). Once that bounded queue is full, the worker returns 503 and
@@ -51,36 +51,40 @@ gen retries the other registered DreamShaper hostname. With three processes,
 each GPU admits at most six in-flight requests instead of accumulating an
 unbounded local backlog.
 
-Instance `46607014` replaced `46307858` on 2026-08-02 and reduced the slot from
-`$0.175556/hr` to `$0.150000/hr`, saving **$0.025556/hr** or about
-**$18.40 per 30-day month**. The Oregon host has Vast reliability `0.9977` and
-preserves regional and machine diversity from the California replica.
+Instance `48108043` replaced `46607014` on 2026-08-19 and reduced the slot from
+`$0.150000/hr` to `$0.103000/hr`, saving **$0.047000/hr** or **$33.84 per
+30-day month** in Vast credits. The New Zealand host had Vast reliability
+`0.9977049` when rented and preserves machine and regional diversity from the
+Romania replica.
 
-Qualification passed authentication, fixed-seed byte parity, caller-step
-override protection, 512x512 and clamped dimension limits, public tunnel
-parity, and a genuine Vast stop/start. A 20.69-second concurrency-8 run served
-210 images with zero errors at **10.15 img/s** and **1.54s p95**. After
-promotion the host served 358 attributed production generations with zero
-5xx, OOM, CUDA, worker, or tunnel failures before the old instance was
-destroyed.
+Qualification passed authentication, fixed-seed byte parity, 512x512 and
+clamped dimension limits, output quality, queue shedding, and restart
+recovery. At 200 RPM the RTX 4070 served 60/60 requests after restart. At 300
+RPM it served 60/60 before restart and 29/30 in a later short probe, shedding
+the remaining request for cross-worker retry. In the final post-cutover window
+it served 58 production requests with zero backend errors at **0.23s mean**
+and **0.40s p95** generation time; five queue-full responses were retried on
+the other DreamShaper worker.
 
-The canary also exposed a reusable restart failure: quitting the `screen`
-session can leave Uvicorn child workers holding port 8766. `setup-vast.sh` now
-uses `fuser` to terminate the existing listener before relaunching, preventing
-an `Address already in use` restart loop.
+The canary exposed two reusable deployment requirements. Prefer the smaller
+`nvidia/cuda:12.8.1-cudnn-runtime-ubuntu24.04` image; the previous Vast
+development image repeatedly stalled before container creation. Also, killing
+only the port listener is insufficient for multi-worker Uvicorn: detached
+supervisors, spawned workers, and the resource tracker can survive and race the
+replacement process. `setup-vast.sh` now terminates the dedicated supervisor
+and every Python process in the DreamShaper venv before port cleanup.
 
 **Run several uvicorn workers per card.** A single process plateaued at
 **~4.3 img/s with the GPU only 26-45% busy** — the ceiling is the Python path
 (global lock, JPEG + base64 per response), not the GPU or the step count.
-Dropping 3 steps to 2 changed nothing, which proved it. With `WORKERS=3` each
-3090 sustains **~8 img/s** at concurrency 8 (GPU still only ~36%, so there is
-more left). The model is ~2.5 GB, so three copies fit easily in 24 GB.
+Dropping 3 steps to 2 changed nothing, which proved it. With `WORKERS=3`, the
+validated RTX 4070 sustained the expected 200 RPM per-worker load with zero
+errors. The model is small enough for three copies on its 12 GB card.
 
-Measured capacity is ~16 img/s across both cards against a 5.72 img/s peak, so
-either card can carry production alone. **Never size this from a single-client
-benchmark** — the first rollout did, sized one card at 6.18 img/s, and produced
-a latency climb to 57s in production before the GH200 was put back in the pool
-as emergency capacity.
+The two-card pool covers the measured 5.72 img/s peak and uses cross-worker 503
+retry for short bursts. **Never size this from a single-client benchmark** —
+the first rollout did, sized one card at 6.18 img/s, and produced a latency
+climb to 57s in production before emergency capacity was restored.
 
 Two traps that fail silently:
 
@@ -385,9 +389,12 @@ healthy connections with zero request errors. A host that briefly registers
 four connections after a failed UDP precheck is still disqualified.
 
 **Health and restart:** Vast runs `/root/onstart.sh` on container startup. It
-supervises `klein` and `cloudflared` screen sessions with restart loops. Tokens
-are mode-600 files and cloudflared uses `--token-file`, keeping its token out of
-process listings.
+supervises `klein` and `cloudflared` screen sessions with restart loops. A
+watchdog also restarts a live-but-degraded connector if fewer than two HA
+connections remain for 30 seconds; otherwise one surviving connection can keep
+the process alive while the missing replicas never recover. Tokens are mode-600
+files and cloudflared uses `--token-file`, keeping its token out of process
+listings.
 
 ```bash
 vastai show instance 47353224 --raw
@@ -416,6 +423,13 @@ curl -s http://127.0.0.1:8000/health
 - During the comparison, retired host `47259457` logged 90 additional tunnel
   dial or termination failures while its local model remained healthy. It was
   destroyed immediately after the human-approved cutover.
+
+**Tunnel recovery incident (2026-08-11):** instance `47353224` lost all four
+QUIC connections during a transient Vast network failure while the local model
+remained healthy. One connection eventually returned, but `cloudflared` stayed
+alive and did not restore the other replicas, causing ten gateway 502s. A clean
+connector restart restored the supported QUIC path and production traffic. The
+runtime watchdog now restarts this live-but-degraded state automatically.
 
 **Previous replacement qualification (2026-08-09):**
 

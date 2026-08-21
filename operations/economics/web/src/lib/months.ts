@@ -51,6 +51,20 @@ export function collectMonths(data: Data): string[] {
         .sort((a, b) => a.localeCompare(b));
 }
 
+// Prefer the latest closed month so live month-to-date Pollen rows do not make
+// the dashboard open on a deliberately incomplete reconciliation period.
+export function latestClosedMonth(
+    months: string[],
+    now = new Date(),
+): string | null {
+    if (months.length === 0) return null;
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    for (let index = months.length - 1; index >= 0; index -= 1) {
+        if (months[index] < currentMonth) return months[index];
+    }
+    return months.at(-1) ?? null;
+}
+
 export function yearsOf(months: string[]): string[] {
     return [...new Set(months.map((month) => month.slice(0, 4)))].sort((a, b) =>
         a.localeCompare(b),

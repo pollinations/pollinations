@@ -1,7 +1,9 @@
 import {
     type CommunityEndpointRuntime,
+    isCommunityFallbackBalanceAllowed,
     isCommunityFallbackPricingAllowed,
     MAX_FALLBACK_TARGETS,
+    usesAgentRunToken,
 } from "@shared/community-endpoints.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
@@ -17,6 +19,24 @@ import type { GenerationModelEntry } from "./model-registry.ts";
  * the primary's credentials or upstream model are broken, which the fallback may
  * survive.
  */
+/**
+ * Internal-only marker: which declared target served. Must stay
+ * non-enumerable so JSON bodies and R2 cache snapshots never leak it.
+ */
+export function attachFallbackTarget<T extends object>(
+    value: T,
+    index: number,
+): T {
+    if (index <= 0) return value;
+    Object.defineProperty(value, "fallbackTarget", {
+        value: `config.targets[${index}]`,
+        enumerable: false,
+        configurable: true,
+        writable: true,
+    });
+    return value;
+}
+
 export const FALLBACK_ON_STATUS_CODES = [
     401, 402, 403, 404, 408, 429, 500, 502, 503, 504,
 ];
@@ -227,7 +247,16 @@ function isUsableCommunityFallback(
     const primary = from.communityEndpoint;
     const candidate = target.communityEndpoint;
     if (!primary || !candidate) return false;
+    if (usesAgentRunToken(candidate)) return false;
     if (primary.imagePricing !== candidate.imagePricing) return false;
+    if (!isCommunityFallbackBalanceAllowed(primary, candidate)) return false;
+    if (
+        !from.supportedEndpoints.every((endpoint) =>
+            target.supportedEndpoints.includes(endpoint),
+        )
+    ) {
+        return false;
+    }
     return isCommunityFallbackPricingAllowed(primary, candidate);
 }
 
@@ -237,12 +266,10 @@ export function linkFallbackEntries(
     byIdOrAlias: Map<string, GenerationModelEntry>,
 ): void {
     for (const entry of entries) {
+        const configured = entry.definition.fallbacks ?? [];
         const declared = entry.communityEndpoint
-            ? entry.communityEndpoint.fallbackModelIds.slice(
-                  0,
-                  MAX_FALLBACK_TARGETS,
-              )
-            : (entry.definition.fallbacks ?? []);
+            ? configured.slice(0, MAX_FALLBACK_TARGETS)
+            : configured;
         const targets: GenerationModelEntry[] = [];
 
         for (const targetId of declared) {
@@ -250,7 +277,7 @@ export function linkFallbackEntries(
             if (!target || target === entry) continue;
             if (entry.communityEndpoint) {
                 const targetEndpoint = target.communityEndpoint;
-                if (targetEndpoint?.disabledAt != null) continue;
+                if (targetEndpoint?.hiddenAt != null) continue;
                 if (
                     targetEndpoint?.visibility === "private" &&
                     entry.communityEndpoint.ownerUserId !==
@@ -287,10 +314,11 @@ export type FailedCall = {
  * Runs `attempt` against each candidate until one succeeds.
  *
  * Placed around the upstream call itself rather than around the request, so
- * authentication, balance, rate limiting and moderation run exactly once no
- * matter how many models are tried. Every candidate is tried at most once: the
- * dominant failure is an exhausted quota, and asking the same endpoint again
- * would only spend more of a budget that is already gone.
+ * authentication, balance and moderation run exactly once no matter how many
+ * models are tried. A local per-candidate guard may run immediately before an
+ * attempt. Every candidate is tried at most once: the dominant failure is an
+ * exhausted quota, and asking the same endpoint again would only spend more of
+ * a budget that is already gone.
  *
  * Every failed call is appended to `failures`, including the one that ends the
  * request. Recording is not the same as retrying: this loop decides only which
@@ -304,9 +332,13 @@ export async function withModelFallback<T>(
     candidates: FallbackCandidate[],
     attempt: (candidate: FallbackCandidate) => Promise<T>,
     failures?: FailedCall[],
+    beforeAttempt?: (candidate: FallbackCandidate) => Promise<void>,
 ): Promise<{ result: T; candidate: FallbackCandidate; index: number }> {
     const allowedStatusCodes = candidates[0]?.definition?.fallbackOnStatusCodes;
     for (const [index, candidate] of candidates.entries()) {
+        // Local gates are not upstream failures and must not trigger or be
+        // attributed to another fallback candidate.
+        await beforeAttempt?.(candidate);
         // Timed from this attempt's own start. Measured from the request's, a
         // second attempt would report the first one's timeout as part of its
         // own latency.

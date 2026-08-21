@@ -9,6 +9,7 @@ import {
     type CommunityEndpointRuntime,
     communityEndpointPrices,
     communityModelDefinition,
+    type ProxyCommunityEndpointRuntime,
 } from "@shared/community-endpoints.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
 import { modelInfoFromDefinition } from "@shared/registry/model-info.ts";
@@ -26,6 +27,10 @@ import { Hono } from "hono";
 import { requestId } from "hono/request-id";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
+import type {
+    GenerationCacheAdapter,
+    GenerationCacheVariables,
+} from "@/middleware/generation-cache.ts";
 import { logger } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import {
@@ -51,6 +56,7 @@ function createTestApp(
     },
     servedModelEntry?: ModelVariables["servedModelEntry"],
     responseHeaders: Record<string, string> = {},
+    generationCache?: GenerationCacheVariables["generationCache"],
 ) {
     const app = new Hono<Env>();
 
@@ -59,7 +65,6 @@ function createTestApp(
     app.use("*", async (c, next) => {
         c.set("auth", {
             user,
-            requireAuthorization: async () => {},
             requireUser: () => {
                 if (user) return user;
                 throw new Error("user should not be required in this test");
@@ -75,6 +80,7 @@ function createTestApp(
         c.set("frontendKeyRateLimit", { consumePollen });
         c.set("model", model);
         if (servedModelEntry) c.set("servedModelEntry", servedModelEntry);
+        if (generationCache) c.set("generationCache", generationCache);
         await next();
     });
     app.post(
@@ -110,8 +116,8 @@ function createTestApp(
 
 function createCommunityEndpoint(
     ownerUserId: string,
-    overrides: Partial<CommunityEndpointRuntime> = {},
-): CommunityEndpointRuntime {
+    overrides: Partial<ProxyCommunityEndpointRuntime> = {},
+): ProxyCommunityEndpointRuntime {
     return {
         id: "community-endpoint-test",
         ownerUserId,
@@ -119,7 +125,8 @@ function createCommunityEndpoint(
         name: "test-model",
         title: "Test Model",
         description: null,
-        delegatesGeneration: false,
+        type: "proxy",
+
         modality: "text",
         imagePricing: "request",
         inputModalities: null,
@@ -127,9 +134,11 @@ function createCommunityEndpoint(
         upstreamModel: "upstream-test-model",
         bearerTokenCiphertext: "encrypted",
         visibility: "public",
-        fallbackModelIds: [],
-        disabledAt: null,
-        disabledReason: null,
+        paidOnly: false,
+        perUserRpm: null,
+        fallbacks: [],
+        hiddenAt: null,
+        hiddenReason: null,
         ...communityEndpointPrices({
             promptTextPrice: 0.0001,
             completionTextPrice: 0.0002,
@@ -171,7 +180,6 @@ function createWrongContentTypeApp(
     app.use("*", async (c, next) => {
         c.set("auth", {
             user: trackingUser,
-            requireAuthorization: async () => {},
             requireUser: () => trackingUser,
             requireModelAccess: () => {},
         });
@@ -211,7 +219,6 @@ function createSseStreamApp(
     app.use("*", async (c, next) => {
         c.set("auth", {
             user,
-            requireAuthorization: async () => {},
             requireUser: () => user,
             requireModelAccess: () => {},
         });
@@ -285,7 +292,6 @@ function createHeaderApp(
     app.use("*", async (c, next) => {
         c.set("auth", {
             user: user ?? undefined,
-            requireAuthorization: async () => {},
             requireUser: () => {
                 if (user) return user;
                 throw new Error("user should not be required in this test");
@@ -468,6 +474,81 @@ describe("tracking observability", () => {
         expect(consumePollen.mock.calls[0]?.[0]).toBeGreaterThan(0);
     });
 
+    it("tracks provider work but not coalesced cache hits", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const providerConsume = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+        const joinerConsume = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+        const generationCache = {
+            adapter: { storage: "text" } as GenerationCacheAdapter,
+            key: "same-request",
+        };
+        const bindings = {
+            DB: env.DB,
+            ENVIRONMENT: "test",
+            LOG_LEVEL: "debug",
+            LOG_FORMAT: "text",
+            BETTER_AUTH_SECRET: "test_secret",
+            TINYBIRD_INGEST_URL:
+                "https://tinybird.test/v0/events?name=generation_event_v2",
+            TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+        } as CloudflareBindings;
+        const request = () =>
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai",
+                    stream: false,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            });
+
+        const providerCtx = createExecutionContext();
+        await createTestApp(
+            providerConsume,
+            trackingUser,
+            undefined,
+            undefined,
+            { "x-cache": "MISS" },
+            generationCache,
+        ).fetch(request(), bindings, providerCtx);
+        await waitOnExecutionContext(providerCtx);
+
+        const joinerCtx = createExecutionContext();
+        await createTestApp(
+            joinerConsume,
+            trackingUser,
+            undefined,
+            undefined,
+            { "x-cache": "HIT" },
+            generationCache,
+        ).fetch(request(), bindings, joinerCtx);
+        await waitOnExecutionContext(joinerCtx);
+
+        expect(tinybirdRequests).toHaveLength(1);
+        const providerEvent =
+            (await tinybirdRequests[0].json()) as TinybirdEvent;
+        expect(providerEvent).toMatchObject({
+            cacheHit: false,
+            cacheType: "MISS",
+            isBilledUsage: true,
+        });
+        expect(providerEvent.cacheKey).toMatch(/^[a-f0-9]{64}$/);
+        expect(providerEvent.cacheKey).not.toContain("same-request");
+        expect(providerConsume.mock.calls[0]?.[0]).toBeGreaterThan(0);
+        expect(joinerConsume).toHaveBeenCalledWith(0);
+    });
+
     it("does not bill a successful text response when upstream usage is missing", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
@@ -524,7 +605,72 @@ describe("tracking observability", () => {
         expect(event.modelUsed).toBe("openai");
         expect(consumePollen).toHaveBeenCalledWith(0);
     });
+    it("tracks usage after a malformed SSE event", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+        const upstream = new Response(
+            [
+                'data: {"model":"gpt-5-nano","choices":[{"delta":{"content":"hi"}}]}',
+                "",
+                "data: {invalid json",
+                "",
+                'data: {"model":"gpt-5-nano","choices":[],"usage":{"prompt_tokens":10,"completion_tokens":5,"total_tokens":15}}',
+                "",
+                "data: [DONE]",
+                "",
+            ].join("\n"),
+            { headers: { "content-type": "text/event-stream" } },
+        );
 
+        const ctx = createExecutionContext();
+        const response = await createWrongContentTypeApp(
+            consumePollen,
+            "generate.text",
+            upstream,
+        ).fetch(
+            new Request("https://gen.pollinations.ai/upstream", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai",
+                    stream: true,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(1);
+        await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
+            eventType: "generate.text",
+            responseStatus: 200,
+            isBilledUsage: true,
+            tokenCountPromptText: 10,
+            tokenCountCompletionText: 5,
+        });
+        expect(consumePollen).toHaveBeenCalledWith(expect.any(Number));
+    });
     it("still bills a flat request fee when token usage is missing", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(

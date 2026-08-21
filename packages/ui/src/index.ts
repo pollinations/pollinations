@@ -10,6 +10,10 @@ export {
     type CopyButtonProps,
 } from "./compositions/CopyButton.tsx";
 export {
+    EditableCombobox,
+    type EditableComboboxProps,
+} from "./compositions/EditableCombobox.tsx";
+export {
     ExternalLinkButton,
     type ExternalLinkButtonProps,
 } from "./compositions/ExternalLinkButton.tsx";

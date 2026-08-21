@@ -18,7 +18,8 @@ const opTransactions: OpTransactionRow[] = [
         amount: 1_000,
         currency: "EUR",
         description: "Example Stripe settlement",
-        evidence: "",
+        evidence:
+            "https://drive.google.com/drive/folders/example-stripe-folder",
         recorded_at: "2026-07-09 00:00:00.000",
     },
     {
@@ -30,7 +31,7 @@ const opTransactions: OpTransactionRow[] = [
         amount: -150,
         currency: "EUR",
         description: "Example Alibaba Cloud charge",
-        evidence: "",
+        evidence: "https://drive.google.com/file/d/example-invoice/view",
         recorded_at: "2026-07-09 00:00:00.000",
     },
     {

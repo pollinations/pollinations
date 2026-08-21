@@ -95,7 +95,8 @@ function ActivityPage() {
                         minDate={ACTIVITY_MIN_DATE}
                     />
                     <p className="text-micro text-theme-text-muted">
-                        Usage refreshes hourly. Times are shown in UTC.
+                        Usage refreshes hourly. Times are shown in your local
+                        timezone.
                     </p>
                 </div>
                 <UsageSection

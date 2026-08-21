@@ -1411,7 +1411,7 @@ export const TEXT_SERVICES = {
         brand: "Xiaomi",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
-        paidOnly: true,
+        paidOnly: false,
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.14),

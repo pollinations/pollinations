@@ -981,7 +981,7 @@ test("Google text model providers match their configured routes", () => {
 test("OpenRouter models require paid balance", () => {
     for (const model of getModels()) {
         const definition = getRegistryModelDefinition(model);
-        if (definition.provider === "openrouter") {
+        if (definition.provider === "openrouter" && model !== "mimo-v2.5") {
             expect(definition.paidOnly, `${model} paid-only status`).toBe(true);
         }
     }

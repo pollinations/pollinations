@@ -1,0 +1,36 @@
+{
+  "pr_number": 11145,
+  "title": "Feat/registry video duration fields",
+  "author": "fisventurous",
+  "url": "https://github.com/pollinations/pollinations/pull/11145",
+  "merged_at": "2026-08-21T12:16:01Z",
+  "labels": [
+    "DEV-FEATURE"
+  ],
+  "pr_body_excerpt": "- Adds minimum, maximum, and default duration metadata for all video models.\n- Represents discrete durations for Veo and Wan and stepped durations for Nova Reel.\n- Exposes the fields through `/models`, `/image/models`, `/video/models`, and SDK types.\n- Adds focused registry coverage for video and non-video models.\n\nFixes #13655",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Videos learn to count",
+    "blurb": "The video garden got little duration markers. Models can now say how long their movies like to be, before anyone starts rendering clouds for 47 seconds by accident.",
+    "summary": "Added minimum, maximum, and default duration metadata for every video model, including discrete duration options for Veo and Wan and stepped durations for Nova Reel, exposed through the model endpoints and SDK types.",
+    "impact": "Apps and developers can now read supported video lengths from `/models`, `/image/models`, and `/video/models` to present valid duration controls and select sensible defaults.",
+    "keywords": [
+      "video",
+      "models",
+      "duration",
+      "registry",
+      "sdk",
+      "api"
+    ],
+    "visual_concept": "Depict a cozy video-model garden where duration settings grow as labeled timeline flowers: separate stepping stones for Veo and Wan's discrete choices, plus a gently graduated ruler-vine for Nova Reel's stepped durations. Polli, wearing a tiny film director beret and holding a clipboard, checks the timeline plants beside a friendly CRT monitor robot displaying a short pixel film strip.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny film director beret and checking a clipboard in a garden of video-duration timeline flowers; discrete stepping stones labeled for Veo and Wan sit beside a graduated ruler-vine for Nova Reel, while a cute CRT monitor robot shows a tiny film strip. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle pixel-font text: \"VIDEO DURATION\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-21/PR-11145.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny film director beret and checking a clipboard in a garden of video-duration timeline flowers; discrete stepping stones labeled for Veo and Wan sit beside a graduated ruler-vine for Nova Reel, while a cute CRT monitor robot shows a tiny film strip. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle pixel-font text: \"VIDEO DURATION\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-21T12:17:36.651890+00:00"
+}

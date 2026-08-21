@@ -557,6 +557,9 @@ describe("withModelFallbackResponse", () => {
         const primary = registryEntry("primary", ["target"]);
         const target = registryEntry("target");
         primary.fallbackEntries = [target];
+        const beforeAttempt = vi.fn(
+            async (_candidate: FallbackCandidate) => {},
+        );
 
         const { response, servedEntry } = await withModelFallbackResponse(
             {
@@ -572,9 +575,14 @@ describe("withModelFallbackResponse", () => {
                 }
                 return Response.json({ model: candidate.id });
             },
+            undefined,
+            beforeAttempt,
         );
 
         expect(servedEntry?.id).toBe("target");
+        expect(
+            beforeAttempt.mock.calls.map(([candidate]) => candidate.id),
+        ).toEqual(["primary", "target"]);
         expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBe(
             "config.targets[1]",
         );

@@ -42,6 +42,7 @@ import {
 import { RealtimeUsageSchema } from "@/schemas/realtime.ts";
 import { generateRandomId } from "@/util.ts";
 import { checkBalance } from "@/utils/generation-access.ts";
+import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 
 type AzureRealtimeApiKey =
     | "AZURE_MYCELI_PROD_EASTUS2_API_KEY"
@@ -1411,6 +1412,11 @@ export async function handleRealtimeWebSocket(
         return new Response("Expected Upgrade: websocket", { status: 426 });
     }
     const userId = await authorizeRealtimeSession(c);
+    await enforceModelRateLimit(c, {
+        id: c.var.model.resolved,
+        definition: c.var.model.definition,
+        communityEndpoint: c.var.model.communityEndpoint,
+    });
     const tracking = await createRealtimeBillingContext(c);
     if (c.var.model.resolved === "scribe-realtime") {
         if (!c.env.ELEVENLABS_API_KEY) {

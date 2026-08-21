@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-08-20",
+  "period_start": "2026-08-20",
+  "period_end": "2026-08-20",
+  "generated_at": "2026-08-21T06:15:50.710568+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-08-20/images/reddit.jpg"
+    }
+  ],
+  "title": "Community model catalog and generation fixes landed",
+  "text": "17 PRs merged today, mostly around making the community catalog behave less like a haunted dropdown.\\n\\nCommunity model owners can now require Paid Pollen (#13514) and advertise model metadata (#13524). Failed or offline community models are hidden faster without being disabled (#13527, #13631), and the service falls back to static models if the catalog query fails (#13643). The catalog being temporarily unavailable should no longer mean the model picker becomes an archaeological site.\\n\\nWe also consolidated listings into one typed table with a type + payload envelope (#13623). MCP tool discovery now trusts enabled tools (#13628), which should make available tools show up more consistently.\\n\\nOn the model/runtime side: Azure GPT transcription models were added (#13599); OpenRouter reasoning models now get explicit `max_tokens` defaults (#13615); detached generations are guarded to execute at most once (#13625).\\n\\nTwo community additions landed: The Mita (Roblox AI) for chat (#13626) and Cursor Maker for image (#13630). There is also mobile/model-card polish, a single production deploy workflow with one migration step, regenerated API docs, and a fix for app PRs getting lost during merge delays.\\n\\nCode and docs: https://github.com/pollinations/pollinations and https://github.com/pollinations/pollinations/blob/master/APIDOCS.md"
+}

@@ -1,0 +1,36 @@
+{
+  "pr_number": 13653,
+  "title": "Add ArtScape Studio to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13653",
+  "merged_at": "2026-08-21T10:29:19Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [ArtScape Studio](https://creatneworld.github.io/artscape-studio) to image\n- A free bilingual (Chinese/English) AI art studio. Type an idea, pick an aspect ratio, style model and seed, then instantly generate a unique artwork using the Pollinations image API. Includes quick st\n\nFixes #13640",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A new canvas blooms",
+    "blurb": "ArtScape Studio has joined the garden: a free bilingual AI art studio for turning a small idea into a fresh image. Pick a style, ratio, and seed; the pixels do the rest.",
+    "summary": "Added ArtScape Studio to the Pollinations image app directory, a free Chinese/English AI art studio that lets people choose an idea, aspect ratio, style model, and seed before generating with the Pollinations image API.",
+    "impact": "Chinese- and English-speaking creators can now discover ArtScape Studio as a quick, configurable way to make unique Pollinations-powered artwork.",
+    "keywords": [
+      "community-app",
+      "image-api",
+      "ai-art",
+      "bilingual",
+      "ArtScape Studio",
+      "creative-tools"
+    ],
+    "visual_concept": "Depict ArtScape Studio as a cozy bilingual artist workstation: Polli in a painter's beret helps compose a glowing canvas beside a retro terminal with simple Chinese and English idea notes, aspect-ratio frames, style swatches, and seed packets. Include blooming pixel flowers and code-plants to connect image generation with the Pollinations garden.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny painter's beret, collaborating at an ArtScape Studio desk with a retro CRT screen showing a beautiful generated landscape, small Chinese and English idea notes, aspect-ratio frames, style swatches, and seed packets. Lime green (#ecf874) glows prominently among warm cream, mint, lavender, and peach code-plants and pixel flowers; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-21/PR-13653.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny painter's beret, collaborating at an ArtScape Studio desk with a retro CRT screen showing a beautiful generated landscape, small Chinese and English idea notes, aspect-ratio frames, style swatches, and seed packets. Lime green (#ecf874) glows prominently among warm cream, mint, lavender, and peach code-plants and pixel flowers; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-21T10:30:12.776930+00:00",
+  "app_name": "ArtScape Studio",
+  "app_url": "https://creatneworld.github.io/artscape-studio"
+}

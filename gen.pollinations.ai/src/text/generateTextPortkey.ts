@@ -65,6 +65,8 @@ export async function generateTextPortkey(
     }
 
     const directEndpoint = state.options.modelConfig?.directEndpoint;
+    // Read before the delete below: the endpoint thunk runs after it.
+    const portkeyGatewayUrl = state.options.portkeyGatewayUrl;
     const additionalHeaders = (state.options.additionalHeaders || {}) as Record<
         string,
         string
@@ -78,8 +80,7 @@ export async function generateTextPortkey(
               }
             : {
                   ...clientConfig,
-                  endpoint: () =>
-                      buildEndpoint(state.options.portkeyGatewayUrl),
+                  endpoint: () => buildEndpoint(portkeyGatewayUrl),
                   additionalHeaders: {
                       "x-portkey-request-timeout": String(
                           PORTKEY_REQUEST_TIMEOUT_MS,

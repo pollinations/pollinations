@@ -13,9 +13,11 @@ import type { PromptAgentConfig } from "./prompt-agent.ts";
 
 const log = getLogger(["enter", "prompt-agent-runtime"]);
 
+// Use z.any() for messages instead of z.custom() to allow JSON Schema generation.
+// Actual runtime validation is handled by the ai package internally.
 export const PromptAgentRequestSchema = z
     .object({
-        messages: z.array(z.custom<ModelMessage>()).optional().default([]),
+        messages: z.array(z.any()).optional().default([]),
         stream: z.boolean().optional().default(false),
     })
     .passthrough();

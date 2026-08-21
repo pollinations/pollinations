@@ -10,8 +10,8 @@ this repo's CI.
 
 Committed (source of truth — edit here, then deploy):
 - `CYCLE.md` — the agent's full rulebook, re-read fresh every cycle.
-- `probe.mjs` — one probe sweep across all community models, cost-weighted
-  (see "Probe spend" below).
+- `probe.mjs` — one low-load probe sweep across all community models (see
+  "Probe load" below).
 - `seven-day-health.mjs` — deterministic daily 7-day effective-success audit.
   Final request outcomes count successful fallback rescues; image-provider 4xx
   count as failures while ordinary client 4xx remain excluded. Models at 80%
@@ -100,37 +100,25 @@ ssh community-monitor "sudo install -m 0644 /tmp/community-monitor.service \
   sudo systemctl restart community-monitor"
 ```
 
-## Probe spend
+## Probe load
 
 `probe.mjs` fetches live pricing and modality metadata from the public,
 unauthenticated `GET https://gen.pollinations.ai/models` catalog (no
-D1/wrangler access needed on the box) and allocates probe requests per model:
+D1/wrangler access needed on the box):
 
-- Every model gets a rank-based baseline by price quartile (cheapest: 4
-  requests, priciest: 1), then extra requests top up toward a ~0.5-pollen
-  spend ceiling — added to the *most expensive* payable models first, since
-  those move total spend the most per request.
-- **Every model is hard-capped at 4 requests/cycle regardless of price** —
-  this is a health probe, not a load test, and a free/near-free model must
-  never get hammered just because the budget "allows" more. This cap is
-  almost always the binding constraint in practice, not the 0.5-pollen
-  budget. The low cap is deliberate: production data showed that larger
-  synthetic sweeps can consume a meaningful share of low-capacity community
-  providers' quotas. Coverage matters more than reaching the spend target.
+- Every listed community text model gets exactly one cache-busted chat request
+  per cycle. Coverage matters more than synthetic volume; additional requests
+  can consume a meaningful share of low-capacity provider quotas and make a
+  sweep outlive the monitor cycle.
 - Community image models use a separate low-load schedule: exactly one
   `POST /v1/images/generations` probe per model every four hours, with a
   cache-busted prompt, the model's default image dimensions, and `b64_json`
   validation. A newly listed model is tested immediately. Use
   `node probe.mjs --model '<owner/name>'` for an explicit freshness check; this
   bypasses the cadence but still sends only one request. Targeted checks print
-  JSON without replacing the latest full sweep or changing its budget/cadence
-  state.
+  JSON without replacing the latest full sweep or changing its cadence state.
 - Actual spend is reconciled from each response's real `usage` tokens (not
-  the pre-flight estimate) and written to `state.json`'s `spend` key. Next
-  cycle's budget mean-reverts off last cycle's actual spend (overspend ->
-  aim lower next time, underspend -> aim higher), clamped to [0.2, 0.8]
-  pollen — though again, the per-model cap is what actually governs in
-  practice, not this budget number.
+  the pre-flight estimate) and written to `state.json`'s `spend` key.
 
 ## Model/effort
 
@@ -156,8 +144,8 @@ monitor offline.
 
 The monitor may hide a listed community model through one of three paths:
 
-- complete outage: 0% success across at least 20 attributable requests in the
-  last hour, confirmed by a fresh provider-failing probe;
+- complete outage: 0% success across at least 5 attributable requests in the
+  last 30 minutes, confirmed by a fresh provider-failing probe;
 - sustained severe failure: below 50% across at least 100 requests for two
   consecutive 30-minute cycles;
 - rolling floor: below 70% final user-visible success across at least 20
@@ -166,6 +154,8 @@ The monitor may hide a listed community model through one of three paths:
 Successful fallback rescues count as successes. Hiding writes the
 `hidden_at`, `hidden_reason`, and `hidden_by` audit fields, removes the model
 from catalogs and fallback selection, and keeps exact-ID calls working. The
-monitor never relists a model; the owner or a maintainer uses **Relist** in
-Models → My Models after verifying the fix. Discord posts are limited to
-actual hide actions rather than advance warnings or routine recovery chatter.
+monitor relists only its own hides after at least 90% success across ten
+post-hide requests in one hour plus a passing probe, or after a passing probe
+requested by the owner. Owners and maintainers retain full manual control.
+Discord posts are limited to actual hide and relist actions rather than advance
+warnings or routine recovery chatter.

@@ -12,6 +12,12 @@ import {
 
 type Agent = {
     id: string;
+    name: string;
+    title: string;
+    description: string | null;
+    visibility: "private" | "public";
+    baseUrl: string;
+    upstreamModel: string;
     systemPrompt: string;
     baseModel: string;
     mcpServers: string[];
@@ -19,15 +25,44 @@ type Agent = {
     updatedAt: string;
 };
 
-function readConfig(path: string): unknown {
+function readConfig(path: string): Record<string, unknown> {
     try {
-        return JSON.parse(readFileSync(path, "utf8"));
+        const parsed: unknown = JSON.parse(readFileSync(path, "utf8"));
+        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+            throw new Error("config must be a JSON object");
+        }
+        return parsed as Record<string, unknown>;
     } catch (error) {
         printError(
             `Failed to read agent config: ${error instanceof Error ? error.message : "unknown"}`,
         );
         process.exit(1);
     }
+}
+
+export function agentBody(
+    configPath: string,
+    opts: Record<string, unknown>,
+): Record<string, unknown> {
+    if (
+        opts.visibility !== undefined &&
+        opts.visibility !== "private" &&
+        opts.visibility !== "public"
+    ) {
+        printError("--visibility must be 'private' or 'public'");
+        process.exit(1);
+    }
+    return {
+        ...readConfig(configPath),
+        ...(opts.name !== undefined && { name: opts.name }),
+        ...(opts.title !== undefined && { title: opts.title }),
+        ...(opts.description !== undefined && {
+            description: opts.description,
+        }),
+        ...(opts.visibility !== undefined && {
+            visibility: opts.visibility,
+        }),
+    };
 }
 
 function printAgents(agents: Agent[]): void {
@@ -38,12 +73,14 @@ function printAgents(agents: Agent[]): void {
     printTable(
         agents.map((agent) => ({
             id: chalk.dim(agent.id),
-            model: agent.baseModel,
+            name: agent.name,
+            base_model: agent.baseModel,
+            visibility: agent.visibility,
             pollinations_tools: agent.mcpServers.includes("pollinations")
                 ? "yes"
                 : "no",
         })),
-        ["id", "model", "pollinations_tools"],
+        ["id", "name", "base_model", "visibility", "pollinations_tools"],
     );
 }
 
@@ -90,13 +127,21 @@ const create = new Command("create")
         "--config <file>",
         "JSON agent config file sent directly to the API",
     )
+    .requiredOption("--name <name>", "Callable model name")
+    .requiredOption("--title <title>", "Display title shown in the catalog")
+    .option("--description <text>", "Agent description", "")
+    .option(
+        "--visibility <visibility>",
+        "Agent visibility: private (default) or public",
+        "private",
+    )
     .action(async (opts) => {
         const key = requireKey();
         try {
             const agent = await gen<Agent>("/account/agents", {
                 apiKey: key,
                 method: "POST",
-                body: readConfig(opts.config),
+                body: agentBody(opts.config, opts),
             });
             if (getOutputMode() === "json") printResult(agent);
             else {
@@ -118,6 +163,10 @@ const update = new Command("update")
         "--config <file>",
         "JSON agent config file sent directly to the API",
     )
+    .option("--name <name>", "Callable model name")
+    .option("--title <title>", "Display title shown in the catalog")
+    .option("--description <text>", "Agent description; empty clears it")
+    .option("--visibility <visibility>", "Agent visibility: private or public")
     .action(async (id, opts) => {
         const key = requireKey();
         try {
@@ -126,7 +175,7 @@ const update = new Command("update")
                 {
                     apiKey: key,
                     method: "PATCH",
-                    body: readConfig(opts.config),
+                    body: agentBody(opts.config, opts),
                 },
             );
             if (getOutputMode() === "json") printResult(agent);

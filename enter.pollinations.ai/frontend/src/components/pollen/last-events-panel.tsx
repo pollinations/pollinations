@@ -262,7 +262,7 @@ export const LastEventsPanel: FC = () => {
                             </div>
                             <div className="flex items-center justify-between gap-2 text-xs">
                                 <span className="text-ink-600 tabular-nums">
-                                    {formatTimestamp(event.timestamp)}
+                                    {formatTimestamp(event.timestamp)} UTC
                                 </span>
                                 <EventKindChip kind={event.kind} />
                             </div>
@@ -283,7 +283,7 @@ export const LastEventsPanel: FC = () => {
                                 <TableHeaderCell
                                     className={TABLE_HEADER_CELL_CLASS}
                                 >
-                                    Time
+                                    Time (UTC)
                                 </TableHeaderCell>
                                 <TableHeaderCell
                                     align="center"

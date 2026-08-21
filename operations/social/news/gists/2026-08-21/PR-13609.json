@@ -1,0 +1,34 @@
+{
+  "pr_number": 13609,
+  "title": "fix: keep generated API docs complete",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13609",
+  "merged_at": "2026-08-21T17:16:18Z",
+  "labels": [],
+  "pr_body_excerpt": "- Fix the custom managed-agent request schema that crashes Enter OpenAPI generation\n- Fail the merged docs schema when the required account schema is unavailable\n- Require account, community-model, and agent paths before generating APIDOCS.md\n- Include OpenAPI tag prose in generated Markdown and clarify App Key usage\n- Add regression coverage for agent routes and partial-schema failures\n\nTests:\n- enter.pollinations.ai: docs redirect + prompt agent runtime (22 passed)\n- gen.pollinations.ai: docs routes (7 passed)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The docs grew their missing limbs",
+    "blurb": "The API garden is producing complete field guides again. Agent routes, account schemas, and the useful prose between endpoints now make it into the generated docs.",
+    "summary": "Fixed OpenAPI-to-APIDOCS generation by repairing the managed-agent request schema, failing safely when the required account schema is missing, requiring account/community-model/agent paths, and carrying OpenAPI tag descriptions into Markdown.",
+    "impact": "Developers now get complete generated API docs for account, community-model, and agent routes instead of quietly receiving partial documentation when a required schema is unavailable.",
+    "keywords": [
+      "openapi",
+      "api-docs",
+      "apidocs",
+      "agent-routes",
+      "schemas",
+      "developer-experience"
+    ],
+    "visual_concept": "Polli tends a cozy documentation garden where complete API pages grow as sturdy code-plants; a CRT monitor robot carefully assembles labeled route cards for Account, Community Models, and Agents, while a previously incomplete page is repaired with missing puzzle pieces. The scene represents schema validation preventing partial docs and richer tag prose becoming readable guides.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and tiny librarian glasses, tending a lime green (#ecf874) documentation garden where code-plants grow complete route cards labeled \"ACCOUNT\", \"MODELS\", and \"AGENTS\" beside a helpful CRT monitor robot. Warm cream, mint, lavender, and peach pastel gradients, soft monitor glow and subtle scanlines, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-21/PR-13609.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and tiny librarian glasses, tending a lime green (#ecf874) documentation garden where code-plants grow complete route cards labeled \"ACCOUNT\", \"MODELS\", and \"AGENTS\" beside a helpful CRT monitor robot. Warm cream, mint, lavender, and peach pastel gradients, soft monitor glow and subtle scanlines, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-08-21T17:17:12.751073+00:00"
+}

@@ -1,0 +1,5 @@
+Contact: mailto:hello@pollinations.ai
+Contact: https://github.com/pollinations/pollinations/security/advisories/new
+Expires: 2027-08-01T00:00:00Z
+Preferred-Languages: en
+Canonical: https://pollinations.ai/.well-known/security.txt

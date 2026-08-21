@@ -1,5 +1,5 @@
+import { HttpError } from "@shared/http-error.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { HttpError } from "../../src/image/httpError.ts";
 import { fetchUpstream } from "../../src/image/utils/fetchUpstream.ts";
 
 afterEach(() => {
@@ -50,6 +50,22 @@ describe("fetchUpstream", () => {
             status: 502,
             upstreamUrl: url,
             message: "Foo failed: backend exploded",
+        });
+    });
+
+    it("throws HttpError with upstreamUrl when fetch itself rejects", async () => {
+        vi.spyOn(globalThis, "fetch").mockRejectedValue(
+            new TypeError("Network connection lost"),
+        );
+
+        const url = "https://replicate.delivery/x/image.png";
+        await expect(
+            fetchUpstream(url, { errorLabel: "Failed to download output" }),
+        ).rejects.toMatchObject({
+            name: "HttpError",
+            status: 502,
+            upstreamUrl: url,
+            message: "Failed to download output: Network connection lost",
         });
     });
 

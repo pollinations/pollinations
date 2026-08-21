@@ -1,8 +1,14 @@
 import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { HttpError } from "@shared/http-error.ts";
+import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
+import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
+import { fallbackCandidates, withModelFallback } from "../fallback.ts";
+import type { GenerationModelEntry } from "../model-registry.ts";
+import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 import {
     getRegisteredServers,
     isValidType,
@@ -11,6 +17,7 @@ import {
     setServerRegistryBinding,
     VALID_TYPES,
 } from "./availableServers.ts";
+import { callCommunityImageEndpoint } from "./communityEndpoint.ts";
 import {
     type AuthResult,
     createAndReturnImageCached,
@@ -22,7 +29,6 @@ import {
     type VideoGenerationResult,
 } from "./createAndReturnVideos.ts";
 import { getImageEnv, syncImageEnv } from "./env.ts";
-import { HttpError } from "./httpError.ts";
 import { setKleinVpcBinding } from "./models/fluxKleinModel.ts";
 import { type ImageParams, ImageParamsSchema } from "./params.ts";
 import { sanitizeString, sleep } from "./util.ts";
@@ -32,11 +38,21 @@ import {
     contentPolicyMessage,
     firstContentPolicyMessage,
 } from "./utils/contentModeration.ts";
-import { bufferToUint8Array, detectMimeType } from "./utils/imageDownload.ts";
+import {
+    bufferToUint8Array,
+    detectMimeType,
+    downloadUserImage,
+    readImageDimensions,
+} from "./utils/imageDownload.ts";
 import { setImagesBinding } from "./utils/imageTransform.ts";
 import { buildTrackingHeaders } from "./utils/trackingHeaders.ts";
 
 type ImageContext = Context<Env>;
+type RuntimeImageParams = Omit<ImageParams, "model"> & { model: string };
+
+const EDIT_IMAGE_PROBE_TIMEOUT_MS = 10_000;
+const EDIT_DIMENSION_STEP = 16;
+const MIN_EDIT_DIMENSION = 256;
 
 const IMAGE_ENV_KEYS = [
     "AWS_ACCESS_KEY_ID",
@@ -52,14 +68,15 @@ const IMAGE_ENV_KEYS = [
     "AZURE_MYCELI_PROD_IMG_MINI_WESTUS3_API_KEY",
     "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
     "DASHSCOPE_API_KEY",
-    "FIREWORKS_API_KEY",
+    "DEEPINFRA_API_KEY",
     "GOOGLE_CLIENT_EMAIL",
     "GOOGLE_PRIVATE_KEY",
     "GOOGLE_PRIVATE_KEY_ID",
     "GOOGLE_PROJECT_ID",
+    "FAL_KEY",
     "KLEIN_URL",
-    "LTX2_BASE_URL",
     "NOVA_REEL_S3_BUCKET",
+    "OPENROUTER_API_KEY",
     "PLN_GPU_TOKEN",
     "REPLICATE_API_TOKEN",
     "XAI_API_KEY",
@@ -77,7 +94,6 @@ function createAuthResult(c: ImageContext): AuthResult {
     return {
         tokenAuth: Boolean(c.var.auth?.apiKey),
         userId: c.var.auth?.user?.id || null,
-        username: c.var.auth?.user?.githubUsername || null,
     };
 }
 
@@ -103,12 +119,15 @@ function decodePrompt(rawPrompt: string): string {
 function parseImageParams(
     c: ImageContext,
     body: Record<string, unknown>,
-): ImageParams {
+): RuntimeImageParams {
     const queryParams = Object.fromEntries(new URL(c.req.url).searchParams);
+    const resolvedModel = c.var.model.resolved;
     const mergedParams = {
         ...queryParams,
         ...body,
-        model: c.var.model.resolved,
+        model: c.var.model.communityEndpoint
+            ? DEFAULT_IMAGE_MODEL
+            : resolvedModel,
     };
     delete (mergedParams as Record<string, unknown>).prompt;
     delete (mergedParams as Record<string, unknown>).key;
@@ -120,7 +139,10 @@ function parseImageParams(
             cause: parseResult.error.issues,
         });
     }
-    return parseResult.data;
+    return {
+        ...parseResult.data,
+        model: resolvedModel,
+    };
 }
 
 function contentDisposition(prompt: string, extension: string): string {
@@ -136,7 +158,7 @@ function contentDisposition(prompt: string, extension: string): string {
 
 function mediaHeaders(
     prompt: string,
-    safeParams: ImageParams,
+    safeParams: RuntimeImageParams,
     result: ImageGenerationResult | VideoGenerationResult,
     contentType: string,
 ): Headers {
@@ -146,8 +168,17 @@ function mediaHeaders(
     });
     const extension = contentType.includes("video")
         ? "mp4"
-        : contentType.split("/")[1] || "jpg";
+        : contentType === "image/svg+xml"
+          ? "svg"
+          : contentType.split("/")[1] || "jpg";
     headers.set("Content-Disposition", contentDisposition(prompt, extension));
+    if (contentType === "image/svg+xml") {
+        headers.set(
+            "Content-Security-Policy",
+            "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+        );
+        headers.set("X-Content-Type-Options", "nosniff");
+    }
 
     const trackingHeaders = buildTrackingHeaders(
         safeParams.model,
@@ -204,6 +235,8 @@ function throwImageError(error: unknown): never {
         const { status, message } = classifyImageHttpError(error);
         throw new UpstreamError(status, {
             message,
+            // Propagate only — the code is decided at the throw site.
+            errorCode: error.errorCode,
             requestUrl: safeUpstreamUrl(error.upstreamUrl),
             upstreamStatus: error.status,
             responseBody: imageResponseBody(error),
@@ -356,13 +389,13 @@ function assertNonEmptyMedia(buffer: Buffer, label: string): void {
 async function generateImageResult(
     c: ImageContext,
     originalPrompt: string,
-    safeParams: ImageParams,
+    safeParams: RuntimeImageParams,
 ): Promise<ImageGenerationResult> {
     const prompt = sanitizeString(String(originalPrompt));
 
     const result = await createAndReturnImageCached(
         prompt,
-        safeParams,
+        safeParams as ImageParams,
         originalPrompt,
         createAuthResult(c),
     );
@@ -374,14 +407,104 @@ async function generateImageResult(
     return result;
 }
 
+/** Tries the requested model and its fallbacks through one modality-neutral loop. */
+async function generateMediaWithFallback(
+    c: ImageContext,
+    prompt: string,
+    safeParams: RuntimeImageParams,
+): Promise<{
+    result: ImageGenerationResult | VideoGenerationResult;
+    params: RuntimeImageParams;
+    servedEntry?: GenerationModelEntry;
+    servedIndex: number;
+}> {
+    const { result, candidate, index } = await withModelFallback(
+        fallbackCandidates(c.var.model),
+        async (attempt) => {
+            const params = { ...safeParams, model: attempt.id };
+            if (attempt.communityEndpoint) {
+                const generated = await callCommunityImageEndpoint(
+                    attempt.communityEndpoint,
+                    prompt,
+                    params,
+                    c.env.BETTER_AUTH_SECRET,
+                );
+                assertNonEmptyMedia(
+                    generated.buffer,
+                    "Community image endpoint",
+                );
+                return { result: generated, params };
+            }
+            if (isVideoModel(params.model)) {
+                const generated = await generateVideoResult(c, prompt, params);
+                assertNonEmptyMedia(generated.buffer, "Video provider");
+                return { result: generated, params };
+            }
+            const generated = await generateImageResult(c, prompt, params);
+            assertNonEmptyMedia(generated.buffer, "Image provider");
+            return { result: generated, params };
+        },
+        c.var.track?.failedCalls,
+        (attempt) => enforceModelRateLimit(c, attempt),
+    );
+    return {
+        ...result,
+        servedEntry: candidate.entry,
+        servedIndex: index,
+    };
+}
+
 async function generateVideoResult(
     c: ImageContext,
     originalPrompt: string,
-    safeParams: ImageParams,
+    safeParams: RuntimeImageParams,
 ): Promise<VideoGenerationResult> {
-    return createAndReturnVideo(originalPrompt, safeParams, c.get("requestId"));
+    return createAndReturnVideo(
+        originalPrompt,
+        safeParams as ImageParams,
+        c.get("requestId"),
+    );
 }
 
+/**
+ * Edit requests that omit `size` should preserve the source image's aspect
+ * ratio instead of silently defaulting to the model's square default (e.g.
+ * 1024x1024). Downloads the first reference image, reads its actual
+ * dimensions, and overrides the params. Explicit size requests and video
+ * models are untouched; any failure falls back to the model default.
+ */
+export async function resolveEditDimensionsForImage(
+    safeParams: RuntimeImageParams,
+): Promise<RuntimeImageParams> {
+    if (safeParams.dimensionsExplicit) return safeParams;
+    const imageUrls = safeParams.image;
+    if (!imageUrls?.length) return safeParams;
+    try {
+        const { buffer, mimeType } = await downloadUserImage(
+            imageUrls[0],
+            AbortSignal.timeout(EDIT_IMAGE_PROBE_TIMEOUT_MS),
+        );
+        const source = readImageDimensions(buffer, mimeType);
+        if (!source) return safeParams;
+
+        const targetLongEdge = Math.max(safeParams.width, safeParams.height);
+        const scale = targetLongEdge / Math.max(source.width, source.height);
+        const normalizeSide = (side: number) =>
+            Math.max(
+                MIN_EDIT_DIMENSION,
+                Math.round((side * scale) / EDIT_DIMENSION_STEP) *
+                    EDIT_DIMENSION_STEP,
+            );
+        return {
+            ...safeParams,
+            width: normalizeSide(source.width),
+            height: normalizeSide(source.height),
+        };
+    } catch {
+        // Keep the model default if the source image cannot be read.
+        return safeParams;
+    }
+}
 export async function generateImageOrVideoResponse(
     c: ImageContext,
     prompt: string,
@@ -389,36 +512,38 @@ export async function generateImageOrVideoResponse(
 ): Promise<Response> {
     syncImageEnvironment(c.env);
     const originalPrompt = decodePrompt(prompt || "random_prompt");
-    const safeParams = parseImageParams(c, body);
+    const parsedParams = parseImageParams(c, body);
+    const definition = c.var.model.definition;
+    const safeParams =
+        definition.category === "image" &&
+        definition.inputModalities?.includes("image")
+            ? await resolveEditDimensionsForImage(parsedParams)
+            : parsedParams;
+    c.var.track.setPricingInput({
+        resolution: safeParams.resolution,
+        quality: safeParams.quality,
+        hasImage: (safeParams.image?.length ?? 0) > 0,
+        megapixels: (safeParams.width * safeParams.height) / 1_000_000,
+    });
 
     try {
-        if (isVideoModel(safeParams.model)) {
-            const result = await generateVideoResult(
-                c,
-                originalPrompt,
-                safeParams,
+        const { result, params, servedEntry, servedIndex } =
+            await generateMediaWithFallback(c, originalPrompt, safeParams);
+        const headers = mediaHeaders(
+            originalPrompt,
+            params,
+            result,
+            result.mimeType || detectMimeType(result.buffer),
+        );
+        if (servedEntry) c.set("servedModelEntry", servedEntry);
+        if (servedIndex > 0) {
+            // Same shape text emits, so tracking has one fallback marker.
+            headers.set(
+                FALLBACK_TARGET_HEADER,
+                `config.targets[${servedIndex}]`,
             );
-            assertNonEmptyMedia(result.buffer, "Video provider");
-            return new Response(bufferToUint8Array(result.buffer), {
-                headers: mediaHeaders(
-                    originalPrompt,
-                    safeParams,
-                    result,
-                    result.mimeType || "video/mp4",
-                ),
-            });
         }
-
-        const result = await generateImageResult(c, originalPrompt, safeParams);
-        assertNonEmptyMedia(result.buffer, "Image provider");
-        return new Response(bufferToUint8Array(result.buffer), {
-            headers: mediaHeaders(
-                originalPrompt,
-                safeParams,
-                result,
-                detectMimeType(result.buffer),
-            ),
-        });
+        return new Response(bufferToUint8Array(result.buffer), { headers });
     } catch (error) {
         throwImageError(error);
     }

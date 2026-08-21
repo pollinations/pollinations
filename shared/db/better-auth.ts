@@ -5,8 +5,10 @@
 // released, we should consider updating to the latest version of better-auth
 // and re-generating the schema including the indexes.
 
+import { LISTING_TYPES } from "../community-endpoints.ts";
 import { relations, sql } from "drizzle-orm";
 import {
+  check,
   sqliteTable,
   text,
   integer,
@@ -36,6 +38,9 @@ export const user = sqliteTable("user", {
   banExpires: integer("ban_expires", { mode: "timestamp" }),
   githubId: integer("github_id"),
   githubUsername: text("github_username"),
+  // Public branding shared by every community model owned by this account.
+  communityProviderName: text("community_provider_name"),
+  communityProviderUrl: text("community_provider_url"),
   tier: text("tier").default("spore").notNull(),
   tierBalance: real("tier_balance"),
   packBalance: real("pack_balance"),
@@ -49,7 +54,7 @@ export const user = sqliteTable("user", {
   index("idx_user_email").on(table.email),
   index("idx_user_auto_top_up_enabled").on(table.autoTopUpEnabled),
   // GitHub profile lookup for quest checks and account display.
-  index("idx_user_github_id").on(table.githubId),
+  uniqueIndex("user_github_id_unique").on(table.githubId),
 ]);
 
 export const session = sqliteTable("session", {
@@ -199,21 +204,34 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
+  // Nullable: rows predating titles fall back to communityEndpointTitle().
+  // Required on create, so only the pre-existing backlog is null.
+  title: text("title"),
   description: text("description"),
+  // What this listing IS to callers, and the only thing deciding whether a
+  // call is sent a run token that spends the caller's balance.
+  //   proxy         → the owner's server, called with its upstream secret
+  //   prompt_agent  → an agent Enter runs, named by this row's id
+  //   endpoint_agent → an agent on the owner's own server
+  type: text("type", { enum: LISTING_TYPES }).default("proxy").notNull(),
+  // Every listing stores an OpenAI-compatible target. Prompt agents use an
+  // environment-neutral placeholder which readers replace with this
+  // deployment's AGENT_RUNTIME_BASE_URL.
   baseUrl: text("base_url").notNull(),
   upstreamModel: text("upstream_model").notNull(),
-  bearerTokenCiphertext: text("bearer_token_ciphertext").notNull(),
-  promptTextPrice: real("prompt_text_price").notNull(),
-  promptCachedPrice: real("prompt_cached_price").default(0).notNull(),
-  promptCacheWritePrice: real("prompt_cache_write_price").default(0).notNull(),
-  promptAudioPrice: real("prompt_audio_price").default(0).notNull(),
-  promptImagePrice: real("prompt_image_price").default(0).notNull(),
-  completionTextPrice: real("completion_text_price").notNull(),
-  completionReasoningPrice: real("completion_reasoning_price").default(0).notNull(),
-  completionAudioPrice: real("completion_audio_price").default(0).notNull(),
-  disabledAt: integer("disabled_at", { mode: "timestamp" }),
-  disabledReason: text("disabled_reason"),
-  disabledBy: text("disabled_by"),
+  // Everything that belongs to one kind of listing rather than all of them.
+  // Shape is selected by `type`; read it with parseListingPayload. Fields a
+  // kind does not have simply have nowhere to live, which is what replaced the
+  // per-field rejections the write path used to carry.
+  payload: text("payload").notNull().default("{}"),
+  // Models default to private (owner-only and free). Public visibility is
+  // allowlist-gated and may be free or owner-priced.
+  visibility: text("visibility", { enum: ["private", "public"] })
+    .default("private")
+    .notNull(),
+  hiddenAt: integer("hidden_at", { mode: "timestamp" }),
+  hiddenReason: text("hidden_reason"),
+  hiddenBy: text("hidden_by"),
   createdAt: integer("created_at", { mode: "timestamp" })
     .defaultNow()
     .notNull(),
@@ -226,6 +244,18 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   uniqueIndex("idx_community_endpoint_owner_name").on(
     table.ownerUserId,
     table.name,
+  ),
+  check(
+    "community_endpoint_type",
+    sql`type IN ('proxy', 'prompt_agent', 'endpoint_agent')`,
+  ),
+  check(
+    "community_endpoint_prompt_agent_model",
+    sql`type != 'prompt_agent' OR upstream_model = id`,
+  ),
+  check(
+    "community_endpoint_base_url",
+    sql`type != 'prompt_agent' OR base_url = 'https://agent-runtime.invalid/api/agent-runtime/v1'`,
   ),
 ]);
 
@@ -350,11 +380,11 @@ export const polarCheckoutCredits = sqliteTable("polar_checkout_credits", {
 export const rewards = sqliteTable("rewards", {
   id: text("id").primaryKey(),
   // Idempotency guard. Encodes the quest's completion scope, e.g.
-  // "quest:{issue}" or "quest:{questId}:user:{userId}".
+  // "quest:{issue}" or "quest:{questId}:github:{githubId}". The GitHub id in
+  // the key is what stops a replacement account re-earning the same reward.
   idempotencyKey: text("idempotency_key").notNull().unique(),
   userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
+    .references(() => user.id, { onDelete: "set null" }),
   // Catalog id of the quest that was earned; null for one-off rewards.
   questId: text("quest_id"),
   // Quest title snapshotted when earned, so history renders it directly.

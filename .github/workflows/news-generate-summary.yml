@@ -47,7 +47,7 @@ jobs:
         run: pip install requests PyYAML Jinja2
 
       - name: Overlay news branch data
-        run: git fetch origin news && git checkout origin/news -- social/news/ || echo "No news branch data yet"
+        run: git fetch origin news && git checkout origin/news -- operations/social/news/ || echo "No news branch data yet"
 
       - name: Determine mode (daily vs weekly)
         id: mode
@@ -73,7 +73,7 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           TARGET_DATE: ${{ github.event.inputs.target_date || '' }}
           PR_LABELS: 'NEWS'
-        run: python social/scripts/generate_daily.py
+        run: python operations/social/scripts/generate_daily.py
 
       - name: Stage daily posts to Buffer
         if: steps.mode.outputs.mode == 'daily'
@@ -83,7 +83,7 @@ jobs:
           BUFFER_ACCESS_TOKEN: ${{ secrets.BUFFER_ACCESS_TOKEN }}
           PUBLISH_MODE: buffer
           TARGET_DATE: ${{ github.event.inputs.target_date || '' }}
-        run: python social/scripts/publish_daily.py
+        run: python operations/social/scripts/publish_daily.py
 
       # ── Weekly: generate + stage to Buffer ─────────────────────────
       - name: Generate weekly digest
@@ -93,7 +93,7 @@ jobs:
           POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_NEWS_KEY }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           WEEK_START_DATE: ${{ github.event.inputs.target_date || '' }}
-        run: python social/scripts/generate_weekly.py
+        run: python operations/social/scripts/generate_weekly.py
 
       - name: Stage weekly posts to Buffer
         if: steps.mode.outputs.mode == 'weekly'
@@ -103,4 +103,4 @@ jobs:
           BUFFER_ACCESS_TOKEN: ${{ secrets.BUFFER_ACCESS_TOKEN }}
           PUBLISH_MODE: buffer
           WEEK_START_DATE: ${{ github.event.inputs.target_date || '' }}
-        run: python social/scripts/publish_weekly.py
+        run: python operations/social/scripts/publish_weekly.py

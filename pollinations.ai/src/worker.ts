@@ -58,7 +58,7 @@ const ROUTE_META: Record<string, { title: string; description: string }> = {
     "/night": {
         title: "Pollinations AI Night | 16 July 2026, Block1 Berlin",
         description:
-            "An evening for people who don't know AI yet. Show & tell, real or fake? game, robot DJ. Thu 16 July 2026, 17:30-22:00, Block1, Gaswerksiedlung, Berlin.",
+            "A free evening for anyone curious about AI. Show & tell, real or fake? songs, images and news, and a robot DJ. Thu 16 July 2026, 17:30-22:00, Block1, Gaswerksiedlung, Berlin.",
     },
 };
 

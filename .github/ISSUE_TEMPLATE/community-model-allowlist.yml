@@ -1,0 +1,88 @@
+name: Community Publisher Access
+description: Request access to publish public community models, managed agents, or both
+title: "[Community Publisher Access]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form to request account-level access to publish community models, managed agents, or both in the Pollinations model catalog. It does **not** register or submit a specific model or agent. Private deployments can be registered without approval.
+
+        Submit this form from the same GitHub account you use to sign in at [enter.pollinations.ai](https://enter.pollinations.ai).
+
+        This issue is public. **Never include API keys, bearer tokens, or other credentials.**
+
+  - type: dropdown
+    id: publishing-access
+    attributes:
+      label: What do you want to publish?
+      description: Select one or both.
+      multiple: true
+      options:
+        - Public community models
+        - Public managed agents
+    validations:
+      required: true
+
+  - type: dropdown
+    id: model-types
+    attributes:
+      label: Community model types (if applicable)
+      description: If you are requesting model publishing access, select every model type you plan to add.
+      multiple: true
+      options:
+        - Text or chat
+        - Image generation or editing
+        - Embeddings
+        - Speech or text-to-speech
+        - Transcription or speech-to-text
+
+  - type: textarea
+    id: publishing-plans
+    attributes:
+      label: Publishing plans
+      description: Describe the models and/or managed agents you plan to publish and why they would be useful in the public catalog.
+      placeholder: |
+        Models, agents, or providers:
+        Main capabilities and intended use:
+        Why they are a good fit for the public catalog:
+    validations:
+      required: true
+
+  - type: input
+    id: relevant-links
+    attributes:
+      label: Relevant links
+      description: Optional links to model cards, provider or tool documentation, repositories, demos, or prior work. Do not include credentials.
+      placeholder: "https://..."
+
+  - type: input
+    id: discord-username
+    attributes:
+      label: Discord username
+      description: Optional. If you're in the Pollinations Discord server, share your username so we can assign you the Community Provider role and tag you about your deployments.
+      placeholder: "your-discord-username"
+
+  - type: textarea
+    id: availability
+    attributes:
+      label: Technical setup and limits
+      description: For models, include endpoint hosting, capacity, rate limits, and uptime constraints. For agents, include the base model, tools, and expected request patterns or limits.
+      placeholder: "Hosted on ..., uses ..., approximately ... concurrent requests, ... rate limit"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: I am submitting from the same GitHub account I use to sign in to Pollinations.
+          required: true
+        - label: If I publish community models, their upstream endpoints will be OpenAI compatible.
+          required: true
+        - label: If I publish managed agents, callers will use their own Pollinations balance and API-key permissions.
+          required: true
+        - label: I have not included API keys, bearer tokens, or other credentials in this issue.
+          required: true
+        - label: I understand that public deployments are monitored and may be deactivated for sustained failures or abuse.
+          required: true

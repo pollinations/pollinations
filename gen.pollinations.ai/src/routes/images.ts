@@ -7,32 +7,88 @@
 import { UpstreamError } from "@shared/error.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
 import {
+    buildUsageHeaders,
+    FALLBACK_TARGET_HEADER,
+    type OpenAIImageUsage,
+    parseUsageHeaders,
+    usageToOpenAIImageUsage,
+} from "@shared/registry/usage-headers.ts";
+import {
     type CreateImageEditRequest,
     CreateImageEditRequestSchema,
     type CreateImageRequest,
 } from "@shared/schemas/openai.ts";
-import { normalizeSafeValue, type SafeValue } from "@shared/schemas/safety.ts";
+import {
+    normalizeSafeValue,
+    SAFETY_HEADER_NAME,
+    type SafeValue,
+} from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
+import { createMiddleware } from "hono/factory";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
 import { generateImageOrVideoResponse } from "@/image/handler.ts";
 import { applySafety, withSafetyHeaders } from "@/middleware/safety.ts";
 import { arrayBufferToBase64 } from "@/util.ts";
-import { requireGenerationAccess } from "@/utils/generation-access.ts";
 
 // --- Helpers ---
 
 const QUALITY_MAP: Record<string, string> = { standard: "medium", hd: "high" };
 const PASSTHROUGH_PARAMS = ["safe", "transparent", "guidance_scale"] as const;
+const CACHE_PARAMS = [
+    "image",
+    "transparent",
+    "guidance_scale",
+    "reasoning",
+    "duration",
+    "fps",
+    "resolution",
+    "aspectRatio",
+    "audio",
+] as const;
 
 function imageResponse(
-    data: { url?: string; b64_json?: string },
+    data: { url?: string; b64_json?: string; media_type?: string },
     prompt: string,
+    usage: OpenAIImageUsage,
 ) {
     return {
         created: Math.floor(Date.now() / 1000),
         data: [{ ...data, revised_prompt: prompt }],
+        usage,
     };
+}
+
+function responseImageUsage(
+    c: Context<Env>,
+    response: Response,
+): OpenAIImageUsage {
+    const usage = parseUsageHeaders(response.headers);
+    // Objects cached before usage metadata was introduced have no model
+    // header. The route already resolved the model before the cache lookup.
+    const modelUsed =
+        response.headers.get("x-model-used") ?? c.var.model.resolved;
+    c.header("x-model-used", modelUsed);
+
+    for (const [name, value] of Object.entries(
+        buildUsageHeaders(modelUsed, usage),
+    )) {
+        c.header(name, value);
+    }
+    // Tracking reads this off the final response, and these routes replace the
+    // generated response with JSON — so without carrying it over, a rescue on
+    // /v1/images/* records fallback_used = false.
+    const fallbackTarget = response.headers.get(FALLBACK_TARGET_HEADER);
+    if (fallbackTarget) c.header(FALLBACK_TARGET_HEADER, fallbackTarget);
+    return usageToOpenAIImageUsage(usage);
+}
+
+function setUrlParam(url: URL, name: string, value: unknown): void {
+    if (value === undefined || value === null) return;
+    url.searchParams.set(
+        name,
+        Array.isArray(value) ? value.join("|") : String(value),
+    );
 }
 
 /** Resolve OpenAI params to Pollinations equivalents. */
@@ -130,6 +186,9 @@ async function parseEditInput(c: Context): Promise<{
                 ...(formData.has("safe")
                     ? { safe: formData.get("safe") as string }
                     : {}),
+                ...(formData.has("resolution")
+                    ? { resolution: formData.get("resolution") as string }
+                    : {}),
             },
         };
     }
@@ -152,7 +211,7 @@ async function parseEditInput(c: Context): Promise<{
             message: "Missing required field: image",
         });
 
-    const extra = collectPassthrough(body, "seed");
+    const extra = collectPassthrough(body, "seed", "resolution");
     const { seed, ...passthrough } = extra as { seed?: number } & Record<
         string,
         unknown
@@ -170,59 +229,110 @@ async function parseEditInput(c: Context): Promise<{
 
 // --- Exported handlers ---
 
-export async function handleImageGeneration(c: Context<Env>) {
-    await requireGenerationAccess(c.var, c.env);
+/** Resolve the POST body to the equivalent public media URL used for caching. */
+export const prepareOpenAIImageGeneration = createMiddleware<Env>(
+    async (c, next) => {
+        const body = c.req.valid("json" as never) as CreateImageRequest &
+            Record<string, unknown>;
+        const model = c.var.model.resolved;
 
+        const resolved = resolveParams(body);
+        const safePrompt = await applySafety(
+            c,
+            body.prompt,
+            body.safe as SafeValue,
+        );
+        Object.assign(body, resolved, { model, prompt: safePrompt });
+        c.set("generationRequestBody", JSON.stringify(body));
+
+        const imageUrl = new URL(
+            `/image/${encodeURIComponent(body.prompt)}`,
+            getPublicOrigin(c),
+        );
+        for (const [name, value] of Object.entries({
+            model,
+            ...resolved,
+            ...collectPassthrough(body, ...CACHE_PARAMS),
+        })) {
+            setUrlParam(imageUrl, name, value);
+        }
+        const safeValue = normalizeSafeValue(
+            (body.safe ?? c.req.header(SAFETY_HEADER_NAME)) as SafeValue,
+        );
+        if (safeValue) imageUrl.searchParams.set("safe", safeValue);
+        c.set("generationCacheUrl", imageUrl);
+
+        await next();
+    },
+);
+
+/** Convert the cached binary media response to the OpenAI Images shape. */
+export const formatOpenAIImageGeneration = createMiddleware<Env>(
+    async (c, next) => {
+        await next();
+        const response = c.res;
+        if (!response.ok) return;
+
+        const mediaType = response.headers.get("content-type") || undefined;
+        if (
+            !mediaType?.startsWith("image/") &&
+            !mediaType?.startsWith("video/")
+        ) {
+            return;
+        }
+
+        const body = c.req.valid("json" as never) as CreateImageRequest;
+        const usage = responseImageUsage(c, response);
+        const mediaData =
+            mediaType === "image/svg+xml" ? { media_type: mediaType } : {};
+
+        if (body.response_format === "url") {
+            await response.arrayBuffer();
+            c.res = withSafetyHeaders(
+                c,
+                c.json(
+                    imageResponse(
+                        {
+                            url: c.var.generationCacheUrl?.toString(),
+                            ...mediaData,
+                        },
+                        body.prompt,
+                        usage,
+                    ),
+                ),
+            );
+            return;
+        }
+
+        const base64 = arrayBufferToBase64(await response.arrayBuffer());
+        c.res = withSafetyHeaders(
+            c,
+            c.json(
+                imageResponse(
+                    { b64_json: base64, ...mediaData },
+                    body.prompt,
+                    usage,
+                ),
+            ),
+        );
+    },
+);
+
+export async function handleImageGeneration(c: Context<Env>) {
     const body = c.req.valid("json" as never) as CreateImageRequest &
         Record<string, unknown>;
     const model = c.var.model.resolved;
-    const resolved = resolveParams(body);
-    const safePrompt = await applySafety(
-        c,
-        body.prompt,
-        body.safe as SafeValue,
-    );
 
-    const response = await generateImageOrVideoResponse(c, safePrompt, {
+    const response = await generateImageOrVideoResponse(c, body.prompt, {
         ...body,
-        prompt: safePrompt,
         ...collectPassthrough(body, "image"),
-        ...resolved,
         model,
     });
     c.var.track.overrideResponseTracking(response.clone());
-
-    if (body.response_format === "url") {
-        const origin = getPublicOrigin(c);
-        const imageUrl = new URL(
-            `${origin}/image/${encodeURIComponent(safePrompt)}`,
-        );
-        for (const [key, value] of Object.entries({
-            model,
-            ...resolved,
-        }))
-            imageUrl.searchParams.set(key, String(value));
-        const safeValue = normalizeSafeValue(body.safe as SafeValue);
-        if (safeValue) {
-            imageUrl.searchParams.set("safe", safeValue);
-        }
-        await response.arrayBuffer();
-        return withSafetyHeaders(
-            c,
-            c.json(imageResponse({ url: imageUrl.toString() }, safePrompt)),
-        );
-    }
-
-    const base64 = arrayBufferToBase64(await response.arrayBuffer());
-    return withSafetyHeaders(
-        c,
-        c.json(imageResponse({ b64_json: base64 }, safePrompt)),
-    );
+    return withSafetyHeaders(c, response);
 }
 
 export async function handleImageEdit(c: Context<Env>) {
-    await requireGenerationAccess(c.var, c.env);
-
     const { prompt, imageUrls, size, quality, seed, safe, extra } =
         await parseEditInput(c);
     const safePrompt = await applySafety(c, prompt, safe);
@@ -236,10 +346,23 @@ export async function handleImageEdit(c: Context<Env>) {
         model: c.var.model.resolved,
     });
     c.var.track.overrideResponseTracking(response.clone());
+    const usage = responseImageUsage(c, response);
+    const mediaType = response.headers.get("content-type") || undefined;
 
     const base64 = arrayBufferToBase64(await response.arrayBuffer());
     return withSafetyHeaders(
         c,
-        c.json(imageResponse({ b64_json: base64 }, safePrompt)),
+        c.json(
+            imageResponse(
+                {
+                    b64_json: base64,
+                    ...(mediaType === "image/svg+xml"
+                        ? { media_type: mediaType }
+                        : {}),
+                },
+                safePrompt,
+                usage,
+            ),
+        ),
     );
 }

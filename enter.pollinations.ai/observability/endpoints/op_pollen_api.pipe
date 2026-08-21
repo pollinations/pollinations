@@ -1,8 +1,9 @@
 DESCRIPTION >
     op_pollen: product usage in Pollen with paid/quest splits, computed directly
-    from generation_event. Reads the pre-aggregated op_pollen (cost/price/
+    from generation_event_v2. Reads the pre-aggregated op_pollen (cost/price/
     requests and byop/model payouts, per month/provider/model) instead of
-    scanning raw event history.
+    scanning raw event history. Community cost is normalized to zero because
+    the owner payout is recorded separately in model_paid/model_quests.
 
 TOKEN "operations_read" READ
 
@@ -13,8 +14,8 @@ SQL >
         provider AS vendor,
         model,
         'USD' AS currency,
-        sumMerge(cost_paid) AS cost_paid,
-        sumMerge(cost_quests) AS cost_quests,
+        if(provider = 'community', 0, sumMerge(cost_paid)) AS cost_paid,
+        if(provider = 'community', 0, sumMerge(cost_quests)) AS cost_quests,
         sumMerge(price_paid) AS price_paid,
         sumMerge(price_quests) AS price_quests,
         sumMerge(byop_paid) AS byop_paid,

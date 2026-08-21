@@ -1,0 +1,13 @@
+TOKEN tinybird_ingest APPEND
+TOKEN tinybird_read READ
+
+DESCRIPTION >
+Visits to enter.pollinations.ai from tracked referral links.
+
+SCHEMA >
+`timestamp` DateTime               `json:$.timestamp`,
+`ref`       LowCardinality(String) `json:$.ref`
+
+ENGINE "MergeTree"
+ENGINE_SORTING_KEY "timestamp, ref"
+ENGINE_PRIMARY_KEY "timestamp"

@@ -13,7 +13,7 @@ SQL >
     SELECT
         selected_meter_slug,
         total_price - dev_price AS earned
-    FROM generation_event
+    FROM generation_event_v2
     WHERE api_key_created_for_user_id = {{String(dev_user_id, '')}}
       AND markup_rate > 0
       AND total_price > dev_price
@@ -25,7 +25,7 @@ SQL >
     SELECT
         selected_meter_slug,
         community_model_reward_amount AS earned
-    FROM generation_event
+    FROM generation_event_v2
     WHERE community_model_reward_user_id = {{String(dev_user_id, '')}}
       AND community_model_reward_amount > 0
       AND start_time >= now() - INTERVAL 7 DAY

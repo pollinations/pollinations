@@ -313,9 +313,17 @@ export const CreateChatCompletionRequestSchema = z
         stream_options: ChatCompletionStreamOptionsSchema,
         safe: SafeSchema,
         reasoning_effort: z
-            .enum(["none", "minimal", "low", "medium", "high", "xhigh"])
+            .enum(["none", "minimal", "low", "medium", "high", "xhigh", "max"])
             .describe(
                 'Requests reasoning depth for models that support adjustable reasoning. "none" requests no reasoning.',
+            )
+            .optional(),
+        web_search_options: z
+            .object({
+                search_context_size: z.enum(["low", "medium", "high"]),
+            })
+            .describe(
+                "Controls Perplexity Sonar search context. Pollinations currently supports low and high.",
             )
             .optional(),
         temperature: z.number().min(0).max(2).nullable().optional(),
@@ -514,9 +522,14 @@ const OpenAIModelSchema = z
         input_modalities: z.array(z.string()).optional(),
         output_modalities: z.array(z.string()).optional(),
         supported_endpoints: z.array(z.string()).optional(),
+        agent: z.boolean().optional(),
+        base_model: z.string().optional(),
+        pricing: z.record(z.string(), z.string()).optional(),
+        capabilities: z.array(z.string()).optional(),
         tools: z.boolean().optional(),
         reasoning: z.boolean().optional(),
         context_length: z.number().optional(),
+        per_user_rpm: z.number().positive().nullable().optional(),
     })
     .meta({
         description: "OpenAI-compatible model object with capability metadata",
@@ -545,9 +558,15 @@ const imageNField = z
     .optional()
     .default(1)
     .meta({ description: "Number of images to generate (currently max 1)" });
-const imageSizeField = z.string().optional().default("1024x1024").meta({
+const imageSizeMeta = {
     description: "Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512)",
-});
+};
+const imageSizeField = z
+    .string()
+    .optional()
+    .default("1024x1024")
+    .meta(imageSizeMeta);
+const imageEditSizeField = z.string().optional().meta(imageSizeMeta);
 const imageQualityField = z
     .enum(["standard", "hd", "low", "medium", "high"])
     .optional()
@@ -555,6 +574,13 @@ const imageQualityField = z
     .meta({
         description:
             "Image quality. OpenAI 'standard'/'hd' mapped to Pollinations equivalents",
+    });
+const imageResolutionField = z
+    .enum(["1k", "2k", "480p", "720p", "768p", "1080p"])
+    .optional()
+    .meta({
+        description:
+            "Output resolution for resolution-priced image and video models (Pollinations extension)",
     });
 
 export const CreateImageRequestSchema = z
@@ -584,6 +610,7 @@ export const CreateImageRequestSchema = z
                 description:
                     "Reference image URL(s) for image-to-image generation (Pollinations extension)",
             }),
+        resolution: imageResolutionField,
         safe: SafeSchema,
     })
     .passthrough() // Allow Pollinations extensions: seed, safe, etc.
@@ -594,13 +621,27 @@ export type CreateImageRequest = z.infer<typeof CreateImageRequestSchema>;
 const ImageDataSchema = z.object({
     url: z.string().optional(),
     b64_json: z.string().optional(),
+    media_type: z.string().optional().meta({
+        description: "MIME type for non-raster output such as image/svg+xml",
+    }),
     revised_prompt: z.string().optional(),
+});
+
+export const ImageUsageSchema = z.object({
+    input_tokens: z.number().int().nonnegative(),
+    output_tokens: z.number().int().nonnegative(),
+    total_tokens: z.number().int().nonnegative(),
+    input_tokens_details: z.object({
+        text_tokens: z.number().int().nonnegative(),
+        image_tokens: z.number().int().nonnegative(),
+    }),
 });
 
 export const CreateImageResponseSchema = z
     .object({
         created: z.number().int(),
         data: z.array(ImageDataSchema),
+        usage: ImageUsageSchema,
     })
     .meta({ $id: "CreateImageResponse" });
 
@@ -629,8 +670,9 @@ export const CreateImageEditRequestSchema = z
             }),
         model: imageModelField,
         n: imageNField,
-        size: imageSizeField,
+        size: imageEditSizeField,
         quality: imageQualityField,
+        resolution: imageResolutionField,
         safe: SafeSchema,
     })
     .passthrough()

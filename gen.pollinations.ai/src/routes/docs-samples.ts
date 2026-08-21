@@ -175,10 +175,6 @@ curl "https://gen.pollinations.ai/audio/Hello%20world?voice=nova" \\
 
 # Generate music (ElevenLabs)
 curl "https://gen.pollinations.ai/audio/upbeat%20jazz?model=elevenmusic&duration=30" \\
-  -H "Authorization: Bearer YOUR_API_KEY" -o music.mp3
-
-# Generate music (ACE-Step, open-source)
-curl "https://gen.pollinations.ai/audio/brazilian%20berimbau%20instrumental?model=acestep&duration=15" \\
   -H "Authorization: Bearer YOUR_API_KEY" -o music.mp3`,
         },
         {

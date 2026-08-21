@@ -55,16 +55,17 @@ export const SOCIAL_LINKS = {
 // Additional links (not rendered as social icons)
 export const LINKS = {
     enter: "https://enter.pollinations.ai",
+    enterKeys: "https://enter.pollinations.ai/keys",
     enterDocs: "https://gen.pollinations.ai/docs",
     enterApiDocs: "https://gen.pollinations.ai/docs",
-    enterQuestsFaq: "https://enter.pollinations.ai#how-do-quests-work",
-    enterModels: "https://enter.pollinations.ai#models",
+    enterQuestsFaq: "https://enter.pollinations.ai/news#how-do-quests-work",
+    enterModels: "https://enter.pollinations.ai/models",
     apidocsRaw:
         "https://raw.githubusercontent.com/pollinations/pollinations/production/APIDOCS.md",
     discordPollenBeta:
         "https://discord.com/channels/885844321461485618/1432378056126894343",
     githubSubmitApp:
-        "https://github.com/pollinations/pollinations/issues/new?template=tier-app-submission.yml",
+        "https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml",
     byopDocs:
         "https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md",
     githubFork: "https://github.com/pollinations/pollinations/fork",
@@ -78,7 +79,7 @@ export const LINKS = {
     docsAudio: "https://gen.pollinations.ai/docs#tag/-audio",
     docsAuth: "https://gen.pollinations.ai/docs#tag/-authentication",
     highlightsSource:
-        "https://github.com/pollinations/pollinations/blob/news/social/news/highlights.md",
+        "https://github.com/pollinations/pollinations/blob/news/operations/social/news/highlights.md",
     polliCli:
         "https://github.com/pollinations/pollinations/tree/main/packages/polli-cli",
 };

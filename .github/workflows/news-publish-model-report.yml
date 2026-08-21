@@ -16,7 +16,7 @@ on:
         default: false
 
 # Lock the default GITHUB_TOKEN to read-only — all writes to the news branch
-# go through the POLLY_BOT App token created in the first step, which is
+# go through the POLLI_BOT App token created in the first step, which is
 # scoped via the App's installation permissions, not this block.
 permissions:
   contents: read
@@ -48,7 +48,7 @@ jobs:
           fetch-depth: 1
 
       - name: Overlay news branch data
-        run: git fetch origin news && git checkout origin/news -- social/news/ || echo "No news branch data yet"
+        run: git fetch origin news && git checkout origin/news -- operations/social/news/ || echo "No news branch data yet"
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -66,13 +66,13 @@ jobs:
           TARGET_DATE: ${{ github.event.inputs.target_date || '' }}
           DRY_RUN: ${{ github.event.inputs.dry_run == 'true' && '1' || '' }}
           DISCORD_MODELS_ROLE_ID: ${{ secrets.DISCORD_MODELS_ROLE_ID }}
-        run: python social/scripts/generate_models_news.py
+        run: python operations/social/scripts/generate_models_news.py
 
       - name: Refresh news overlay
         if: github.event.inputs.dry_run != 'true'
         # On a true first run the news branch may not exist yet — chain with
         # `||` so the step succeeds and the publisher can create it.
-        run: git fetch origin news && git checkout origin/news -- social/news/ || echo "Nothing on news yet"
+        run: git fetch origin news && git checkout origin/news -- operations/social/news/ || echo "Nothing on news yet"
 
       - name: Publish to Discord
         if: github.event.inputs.dry_run != 'true'
@@ -81,4 +81,4 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           TARGET_DATE: ${{ github.event.inputs.target_date || '' }}
           DISCORD_MODELS_WEBHOOK_URL: ${{ secrets.DISCORD_MODELS_WEBHOOK_URL }}
-        run: python social/scripts/publish_models_news.py
+        run: python operations/social/scripts/publish_models_news.py

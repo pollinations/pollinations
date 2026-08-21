@@ -1,10 +1,10 @@
+import { HttpError } from "@shared/http-error.ts";
 import debug from "debug";
 import type {
     AuthResult,
     ImageGenerationResult,
 } from "../createAndReturnImages.ts";
 import { getImageEnv } from "../env.ts";
-import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import { sanitizeString } from "../util.ts";
 import {
@@ -34,18 +34,18 @@ export async function callAzureFluxKontext(
     safeParams: ImageParams,
     userInfo: AuthResult,
 ): Promise<ImageGenerationResult> {
-    const apiKey = getImageEnv("AZURE_MYCELI_PROD_SWEDEN_API_KEY");
+    const apiKey = getImageEnv("AZURE_MYCELI_PROD_API_KEY");
     const baseUrl =
-        "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/FLUX.1-Kontext-pro";
+        "https://myceli-prod-eastus.services.ai.azure.com/openai/deployments/FLUX.1-Kontext-pro";
 
     if (!apiKey) {
         throw new Error(
-            "AZURE_MYCELI_PROD_SWEDEN_API_KEY not found in environment variables",
+            "AZURE_MYCELI_PROD_API_KEY not found in environment variables",
         );
     }
 
     // Check if we need to use the edits endpoint instead of generations
-    const isEditMode = safeParams.image && safeParams.image.length > 0;
+    const isEditMode = safeParams.image.length > 0;
 
     // Add the appropriate endpoint path and API version
     let endpoint: string;
@@ -68,7 +68,7 @@ export async function callAzureFluxKontext(
         prompt: sanitizeString(prompt),
         size: size,
         n: 1,
-        model: "flux.1-kontext-pro",
+        model: "FLUX.1-Kontext-pro",
     };
 
     logCloudflare("Calling Azure Flux Kontext API with params:", requestBody);
@@ -81,24 +81,12 @@ export async function callAzureFluxKontext(
 
         // Add the prompt
         formData.append("prompt", sanitizeString(prompt));
-        formData.append("model", "flux.1-kontext-pro");
+        formData.append("model", "FLUX.1-Kontext-pro");
 
         // Handle images based on their type
         try {
-            // Convert to array if it's a string (backward compatible)
-            const imageUrls = Array.isArray(safeParams.image)
-                ? safeParams.image
-                : [safeParams.image];
-
-            if (imageUrls.length === 0) {
-                throw new HttpError(
-                    "Image URL is required for Flux Kontext edit mode but was not provided",
-                    400,
-                );
-            }
-
             // Process the first image (Flux Kontext typically uses single image)
-            const imageUrl = imageUrls[0];
+            const imageUrl = safeParams.image[0];
             logCloudflare(`Fetching image from URL: ${imageUrl}`);
 
             const { buffer, mimeType } = await downloadUserImage(imageUrl);

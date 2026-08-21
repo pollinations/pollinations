@@ -30,7 +30,7 @@ SQL >
         token_count_completion_video_seconds AS output_video_seconds,
         total_price AS price_usd,
         response_time AS response_time_ms
-    FROM generation_event
+    FROM generation_event_v2
     WHERE total_price > 0
       AND start_time >= toDateTime('2026-01-01 00:00:00')
 

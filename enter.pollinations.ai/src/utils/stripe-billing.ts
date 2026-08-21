@@ -3,6 +3,7 @@ import {
     AUTO_TOP_UP_PACK_MIN_USD,
     AUTO_TOP_UP_THRESHOLD_POLLEN,
 } from "@shared/billing/auto-top-up.ts";
+import { POLLEN_BILLING_PRECISION } from "@shared/billing/precision.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
 import {
     calculateServiceFeeCents,
@@ -658,7 +659,10 @@ export async function creditAutoTopUpInvoice(
         ),
         env.DB.prepare(
             `UPDATE user
-                SET pack_balance = COALESCE(pack_balance, 0) + ?
+                SET pack_balance = ROUND(
+                    COALESCE(pack_balance, 0) + ?,
+                    ${POLLEN_BILLING_PRECISION}
+                )
                 WHERE id = ?
                     AND EXISTS (
                         SELECT 1
@@ -1310,7 +1314,7 @@ function createAutoTopUpIdempotencyKey(attemptId: string): string {
 
 function getBillingReturnUrl(env: CloudflareBindings): string {
     const baseUrl = env.STRIPE_SUCCESS_URL || PUBLIC_URLS.enter.production;
-    const url = new URL(baseUrl);
+    const url = new URL("/pollen", baseUrl);
     url.searchParams.set("stripe_billing_return", "true");
     return url.toString();
 }

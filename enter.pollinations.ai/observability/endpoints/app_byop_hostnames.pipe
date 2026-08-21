@@ -18,7 +18,7 @@ NODE app_byop_hostnames_node
 SQL >
     SELECT DISTINCT
         coalesce(nullIf(la.app_name, ''), ge.api_key_name) AS hostname
-    FROM generation_event ge
+    FROM generation_event_v2 ge
     LEFT JOIN latest_apps la
         ON ge.api_key_client_id = la.app_key_id
     WHERE ge.start_time > now() - INTERVAL 90 DAY

@@ -1,7 +1,7 @@
+import { HttpError } from "@shared/http-error.ts";
 import debug from "debug";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { getImageEnv } from "../env.ts";
-import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import { closestAspectRatio } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
@@ -53,6 +53,10 @@ export async function callXaiImageAPI(
         n: 1,
         response_format: "url",
     };
+
+    if (modelId === "grok-imagine-image") {
+        requestBody.resolution = "2k";
+    }
 
     if (isEditMode && referenceImage) {
         requestBody.image = { url: referenceImage, detail: "auto" };

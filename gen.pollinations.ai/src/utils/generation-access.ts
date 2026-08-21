@@ -30,11 +30,11 @@ export async function checkBalance(
     const estimatedCost = getEstimatedPrice(
         await getModelStats(env.KV, log),
         model.resolved,
+        model.definition,
     );
-
     const apiKeyBudget = auth.apiKey?.pollenBalance;
     const requiredBudget = Math.max(0, estimatedCost);
-    if (typeof apiKeyBudget === "number" && apiKeyBudget <= requiredBudget) {
+    if (typeof apiKeyBudget === "number" && apiKeyBudget < requiredBudget) {
         throw new HTTPException(402, {
             message: `API key budget too low. This request costs ~${estimatedCost.toFixed(4)} pollen, but this key has ${Math.max(0, apiKeyBudget).toFixed(4)}.`,
         });
@@ -61,7 +61,7 @@ export async function requireGenerationAccess(
     vars: GenerationAccessVariables,
     env: CloudflareBindings,
 ): Promise<void> {
-    await vars.auth.requireAuthorization();
+    vars.auth.requireUser();
     vars.auth.requireModelAccess();
     await checkBalance(vars, env);
 }

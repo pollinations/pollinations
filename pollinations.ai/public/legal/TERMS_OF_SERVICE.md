@@ -1,21 +1,26 @@
 # Terms of Service
 
-**Updated: 2026-07-02**
+**Updated: 2026-08-17**
 
 _2026-07-02 — Pollen purchases now include a service fee shown before payment, and prices are shown exclusive of tax; applicable VAT or similar taxes are added at checkout._
 
 _2026-05-11 — Wallet now expires after 12 months of account inactivity. Effective 2026-06-01; the inactivity clock starts on that date for all existing balances._
 
-## What Myceli.AI Is
+## About Pollinations
 
-We operate commercial, hosted services (dashboard & APIs) built on the open-source pollinations.ai codebase. We handle billing and support; the OSS remains under its repository licences.
+Pollinations.ai ("Pollinations", "we", "us") is a service operated by Myceli.AI OÜ, the legal service provider and contracting party. We operate commercial, hosted services (dashboard & APIs) built on the open-source Pollinations codebase. We handle billing and support; the open-source software remains under its repository licences.
 
-**Company identity:**  
-Myceli.AI OÜ  
-Registry code: 17186693  
-VAT number: EE102877908  
-Registered address: Harju maakond, Tallinn, Kesklinna linnaosa, Tornimäe tn 5, 10145, Estonia  
-Email: hello@myceli.ai
+By accessing or using the Service, you agree to these Terms. If you do not agree, do not use the Service.
+
+**Legal operator:**
+
+- Myceli.AI OÜ
+- Registered in: Estonian Commercial Register
+- Registry code: 17186693
+- VAT number: EE102877908
+- Registered address: Harju maakond, Tallinn, Kesklinna linnaosa, Tornimäe tn 5, 10145, Estonia
+- General contact: hello@pollinations.ai
+- Billing contact: billing@pollinations.ai
 
 ---
 
@@ -24,6 +29,8 @@ Email: hello@myceli.ai
 Provide accurate registration/billing details and keep credentials secure. Secret API keys are for server-side use. Publishable App Keys identify apps on Pollinations consent screens and may be used in client-side authorization flows.
 
 When you authorize an app, you allow that app to use your Pollinations account through the approved API key, scopes, model restrictions, expiry, and Pollen spending cap. Only authorize apps you trust. You can revoke app access or adjust app spending caps in the dashboard.
+
+When you delete your account, we permanently revoke its access and remove or de-identify its profile, credentials, balances, connected-app access, and user-owned resources as described in the Privacy Policy. We retain the linked GitHub user ID with reward ledger records to prevent duplicate quest payouts. If you later create a new account with the same GitHub identity, rewards already issued to that identity cannot be claimed again.
 
 Third-party app developers are responsible for their own apps, claims, user interfaces, and end-user relationships. Unless we say otherwise, third-party apps are not operated by us. Betas/experiments are provided "as is".
 
@@ -69,7 +76,7 @@ Fees are per plan/order/invoice; currency is by default USD. Pollen purchases, i
 
 **Request billing.** Pollen is consumed when API requests run. Regular models draw from Quest Pollen first; paid-only models draw from Paid Pollen only. We may refuse requests when the available balance can't cover them. If actual usage exceeds our estimate, the balance that paid for the request may briefly go negative and clears through later credits to that balance or top-ups.
 
-**Rewards.** We may offer quests, contribution rewards, promotional credits, referral credits, or manual credits. Eligibility may be verified from your Pollinations account activity, API usage metadata, billing events, app-directory records, linked GitHub profile/activity, and public GitHub issue/PR status. Rewards are credited only when our systems or maintainers verify completion. We may withhold, reverse, or adjust rewards for duplicate claims, mistaken payouts, abuse, fraud, failure to follow quest instructions, or other billing corrections. Rewards are Pollen and have no cash value.
+**Rewards.** We may offer quests, contribution rewards, promotional credits, referral credits, or manual credits. Eligibility may be verified from your Pollinations account activity, API usage metadata, billing events, app-directory records, linked GitHub profile/activity, and public GitHub issue/PR status. Rewards are credited only when our systems or maintainers verify completion. We retain minimized identity and reward records after account deletion to prevent a reward from being claimed again through a replacement account. We may withhold, reverse, or adjust rewards for duplicate claims, mistaken payouts, abuse, fraud, failure to follow quest instructions, or other billing corrections. Rewards are Pollen and have no cash value.
 
 **Developer earnings.** App developers may enable developer earnings on their Publishable App Keys, in which case authorized requests include a markup that goes to the developer. The current rate and the user's share are shown before authorization.
 

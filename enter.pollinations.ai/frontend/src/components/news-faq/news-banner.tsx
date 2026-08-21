@@ -2,9 +2,9 @@ import { cn, Surface } from "@pollinations/ui";
 import { type FC, type ReactNode, useEffect, useState } from "react";
 
 const HIGHLIGHTS_RAW_URL =
-    "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/highlights.md";
+    "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/news/operations/social/news/highlights.md";
 export const HIGHLIGHTS_GITHUB_URL =
-    "https://github.com/pollinations/pollinations/blob/news/social/news/highlights.md";
+    "https://github.com/pollinations/pollinations/blob/news/operations/social/news/highlights.md";
 
 const DYNAMIC_NEWS_COUNT = 6;
 
@@ -25,6 +25,43 @@ interface Highlight {
  */
 const PINNED_NEWS: Highlight[] = [
     {
+        date: "2026-08-15",
+        dateLabel: "New quests",
+        emoji: "🌱",
+        title: "More ways for developers to earn Pollen",
+        description:
+            "Earn Quest Pollen when people use your apps or through your GitHub history.",
+        details: [
+            "Earn 15 Pollen for your first external Paid Pollen request and 15 Pollen when your apps reach ten external users.",
+            "GitHub accounts that are at least two years old can earn 3 Pollen.",
+            "Visit the [Quests tab](/quests) to see the new rewards and upcoming quests.",
+        ],
+    },
+    {
+        date: "2026-08-15",
+        dateLabel: "Alpha",
+        emoji: "🤖",
+        title: "Build your own agents",
+        description:
+            "Create managed prompt agents and call them through the Pollinations API like any other model.",
+        details: [
+            "Choose a base model, add instructions, and optionally enable Pollinations tools.",
+            "Create an agent from [My Agents & Models](/my-models).",
+        ],
+    },
+    {
+        date: "2026-07-15",
+        dateLabel: "Limited time",
+        emoji: "☀️",
+        title: "GPT-5.6 launch promotion",
+        description:
+            "Try GPT-5.6 Sol, Terra, and Luna at half the provider price for a limited time.",
+        details: [
+            "Per 1M input/output tokens: Sol 2.50/15 Pollen, Terra 1.25/7.50 Pollen, Luna 0.50/3 Pollen.",
+            "Choose a GPT-5.6 model from the [Models tab](/models) and start building.",
+        ],
+    },
+    {
         date: "2026-06-30",
         dateLabel: "Now live",
         emoji: "🎯",
@@ -32,7 +69,7 @@ const PINNED_NEWS: Highlight[] = [
         description: "Earn Quest Pollen by completing dashboard quests.",
         details: [
             "New quests are available for onboarding, app growth, community, and GitHub contributions.",
-            "Open the [Quests tab](#quests) to see available rewards and claim completed quests.",
+            "Open the [Quests tab](/quests) to see available rewards and claim completed quests.",
             "Tiers have stopped; previous Tier Pollen is now Quest Pollen and balances stay unchanged.",
         ],
     },
@@ -44,7 +81,7 @@ const PINNED_NEWS: Highlight[] = [
         description:
             "Community models are now available on Pollinations in alpha.",
         details: [
-            "Try community-hosted models from the [Models tab](#models), with attractive pricing.",
+            "Try community-hosted models from the [Models tab](/models), with attractive pricing.",
             "The catalog is early and will expand as more models are approved.",
             "Want to deploy your own model? Access is allowlist-only for now; contact us in the [Discord community](https://discord.gg/pollinations-ai-885844321461485618).",
         ],

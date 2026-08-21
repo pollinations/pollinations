@@ -23,7 +23,7 @@ SQL >
         total_price AS price_usd,
         total_price - dev_price AS pollen_earned,
         markup_rate AS reward_rate
-    FROM generation_event
+    FROM generation_event_v2
     WHERE api_key_created_for_user_id != 'undefined'
       AND total_price > dev_price
       AND start_time >= toDateTime('2026-01-01 00:00:00')

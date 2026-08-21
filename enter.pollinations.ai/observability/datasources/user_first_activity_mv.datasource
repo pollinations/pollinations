@@ -1,7 +1,7 @@
 DESCRIPTION >
     Per-user first API activity time, maintained incrementally from
-    generation_event. Used by kpi_activations so the endpoint does not compute
-    min(start_time) across the raw generation_event table on every dashboard
+    generation_event_v2. Used by kpi_activations so the endpoint does not compute
+    min(start_time) across the raw generation_event_v2 table on every dashboard
     request.
 
 TOKEN "tinybird_read" READ

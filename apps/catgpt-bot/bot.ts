@@ -15,6 +15,7 @@ const TOKEN = process.env.BOT_TOKEN_CATGPT;
 const API_KEY = process.env.TEXT_POLLINATIONS_TOKEN;
 const TEXT_API = "https://gen.pollinations.ai/v1/chat/completions";
 const IMAGE_API = "https://gen.pollinations.ai/image";
+const MEDIA_API = "https://media.pollinations.ai/upload";
 const AUTH = API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {};
 
 const ORIGINAL_CATGPT =
@@ -105,6 +106,30 @@ async function fetchImage(url: string): Promise<Buffer> {
     return Buffer.from(res.data);
 }
 
+async function publishImage(image: Buffer): Promise<void> {
+    if (!API_KEY) return;
+    try {
+        const form = new FormData();
+        form.append(
+            "file",
+            new Blob([new Uint8Array(image)], { type: "image/png" }),
+            "catgpt.png",
+        );
+        form.append("tags", "catgpt,catgpt-bot");
+        const response = await fetch(MEDIA_API, {
+            method: "POST",
+            headers: AUTH,
+            body: form,
+            signal: AbortSignal.timeout(30_000),
+        });
+        if (!response.ok) {
+            logError(`Media publish failed: ${response.status}`);
+        }
+    } catch (error) {
+        logError(`Media publish failed: ${String(error)}`);
+    }
+}
+
 const processing = new Set<string>();
 
 async function handleMessage(msg: Message, client: Client): Promise<void> {
@@ -143,6 +168,7 @@ async function handleMessage(msg: Message, client: Client): Promise<void> {
                 name: "catgpt.png",
             });
             await msg.reply({ files: [attachment] });
+            await publishImage(imageBuffer);
             log(`Reply sent for "${question}"`);
             return;
         } catch (err: any) {

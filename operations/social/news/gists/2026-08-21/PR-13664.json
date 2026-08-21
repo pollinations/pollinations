@@ -1,0 +1,35 @@
+{
+  "pr_number": 13664,
+  "title": "fix: bypass Portkey for OpenRouter models",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13664",
+  "merged_at": "2026-08-21T17:25:36Z",
+  "labels": [],
+  "pr_body_excerpt": "- Sends OpenRouter-backed chat requests directly to the OpenRouter OpenAI-compatible endpoint.\n- Preserves OpenRouter provider constraints and raw usage/cost fields.\n- Keeps the existing Portkey path and timeout header unchanged for other providers.\n- Adds direct non-streaming and streaming transport coverage; 87 focused tests pass.\n\nAlternative fix for #13620.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "OpenRouter takes the direct path",
+    "blurb": "The OpenRouter bees now fly straight to their flower instead of taking the Portkey hedge maze. Provider preferences and the useful little cost-and-usage receipts arrive intact.",
+    "summary": "OpenRouter-backed chat requests now go directly to OpenRouter’s OpenAI-compatible endpoint in both streaming and non-streaming modes, while preserving provider constraints plus raw usage and cost fields.",
+    "impact": "Apps using OpenRouter models retain their requested provider routing and receive OpenRouter’s original usage and cost data, while every other provider continues through the existing Portkey path with its timeout handling unchanged.",
+    "keywords": [
+      "OpenRouter",
+      "chat API",
+      "streaming",
+      "Portkey",
+      "provider routing",
+      "usage data",
+      "cost tracking"
+    ],
+    "visual_concept": "A cozy garden crossroads represents provider routing: Polli follows a clearly marked OpenRouter path directly to a warm retro terminal, while a separate Portkey path remains calmly available in the background. Tiny pixel receipts showing usage and cost emerge intact from the OpenRouter terminal, with code-vines and flowers emphasizing that routing constraints were preserved.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with pink rectangular blush, light blue wings, and a tiny navigator cap, flying along a signposted direct path labeled \"OPENROUTER\" toward a glowing retro terminal; the terminal prints small pixel receipts labeled \"USAGE\" and \"COST\" beside flowering code-plants, while a separate peaceful path marked \"PORTKEY\" stays open behind her. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-21/PR-13664.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with pink rectangular blush, light blue wings, and a tiny navigator cap, flying along a signposted direct path labeled \"OPENROUTER\" toward a glowing retro terminal; the terminal prints small pixel receipts labeled \"USAGE\" and \"COST\" beside flowering code-plants, while a separate peaceful path marked \"PORTKEY\" stays open behind her. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-21T17:26:33.579411+00:00"
+}

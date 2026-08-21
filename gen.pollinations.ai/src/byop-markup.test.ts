@@ -12,7 +12,11 @@ import {
     handleBalanceDeduction,
     resolveDevMarkup,
 } from "@shared/billing/track-helpers.ts";
-import { COMMUNITY_MODEL_REWARD_RATE } from "@shared/community-endpoints.ts";
+import {
+    COMMUNITY_MODEL_REWARD_RATE,
+    communityEndpointPrices,
+    communityModelDefinition,
+} from "@shared/community-endpoints.ts";
 import {
     apikey as apikeyTable,
     user as userTable,
@@ -25,6 +29,10 @@ import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect, it } from "vitest";
 import { checkBalance } from "@/utils/generation-access.ts";
+import {
+    getDefinedRequestEstimate,
+    getEstimatedPrice,
+} from "@/utils/model-stats.ts";
 
 const db = drizzle(env.DB);
 
@@ -546,6 +554,106 @@ describe("BYOP markup", () => {
                 },
             } as unknown as D1Database,
         } as CloudflareBindings);
+    });
+
+    it("discards a Tinybird average that is wildly above the defined per-request price", async () => {
+        const definition = communityModelDefinition({
+            modelId: "vendouple/zimage",
+            description: null,
+            modality: "image",
+            imagePricing: "request",
+            ...communityEndpointPrices({ completionImagePrice: 0.01 }),
+        });
+        expect(getDefinedRequestEstimate(definition)).toBe(0.01);
+        expect(
+            getEstimatedPrice(
+                {
+                    data: [
+                        { model: "vendouple/zimage", avg_cost_usd: 33.3433 },
+                    ],
+                },
+                "vendouple/zimage",
+                definition,
+            ),
+        ).toBe(0.01);
+        // Plausible Tinybird (within 10× of the defined rate) is trusted.
+        expect(
+            getEstimatedPrice(
+                {
+                    data: [{ model: "vendouple/zimage", avg_cost_usd: 0.012 }],
+                },
+                "vendouple/zimage",
+                definition,
+            ),
+        ).toBe(0.012);
+
+        const vars = {
+            auth: {
+                user: { id: "preflight-payer" },
+                apiKey: { id: "sk-test", pollenBalance: 5 },
+            },
+            balance: {
+                getBalance: async () => ({
+                    tierBalance: 5,
+                    packBalance: 0,
+                }),
+            },
+            model: {
+                requested: "vendouple/zimage",
+                resolved: "vendouple/zimage",
+                definition,
+            },
+            log: fakeLog(),
+        } as unknown as Parameters<typeof checkBalance>[0];
+
+        await checkBalance(vars, fakeStatsEnv(33.3433, "vendouple/zimage"));
+    });
+
+    it("402s community flat-rate preflight against the defined price, not Tinybird", async () => {
+        const definition = communityModelDefinition({
+            modelId: "vendouple/zimage",
+            description: null,
+            modality: "image",
+            imagePricing: "request",
+            ...communityEndpointPrices({ completionImagePrice: 0.01 }),
+        });
+        const vars = {
+            auth: {
+                user: { id: "preflight-payer" },
+                apiKey: { id: "sk-test", pollenBalance: 0.005 },
+            },
+            balance: {
+                getBalance: async () => ({
+                    tierBalance: 0.005,
+                    packBalance: 0,
+                }),
+            },
+            model: {
+                requested: "vendouple/zimage",
+                resolved: "vendouple/zimage",
+                definition,
+            },
+            log: fakeLog(),
+        } as unknown as Parameters<typeof checkBalance>[0];
+
+        await expect(
+            checkBalance(vars, fakeStatsEnv(33.3433, "vendouple/zimage")),
+        ).rejects.toMatchObject({
+            status: 402,
+            message: expect.stringContaining("~0.0100"),
+        });
+    });
+
+    it("keeps Tinybird estimates for token-priced models", async () => {
+        const definition = getRegistryModelDefinition("openai");
+        expect(getDefinedRequestEstimate(definition)).toBeNull();
+        expect(
+            getEstimatedPrice(
+                { data: [{ model: "openai", avg_cost_usd: 1.25 }] },
+                "openai",
+                definition,
+            ),
+        ).toBe(1.25);
     });
 
     it("does not credit or deduct for unbilled requests", async () => {

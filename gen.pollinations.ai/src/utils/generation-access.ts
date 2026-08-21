@@ -29,7 +29,11 @@ export async function checkBalance(
 
     const isPaidOnly = model.definition.paidOnly ?? false;
     const estimatedCost = withByopMarkup(
-        getEstimatedPrice(await getModelStats(env.KV, log), model.resolved),
+        getEstimatedPrice(
+            await getModelStats(env.KV, log),
+            model.resolved,
+            model.definition,
+        ),
         Boolean(auth.apiKey?.byopMarkupApplies),
     );
     const apiKeyBudget = auth.apiKey?.pollenBalance;

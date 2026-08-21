@@ -40,7 +40,7 @@ function buildEndpoint(gatewayUrl: unknown): string {
 export async function generateTextPortkey(
     messages: ChatMessage[],
     options: TransformOptions = {},
-    fetcher?: OpenAIClientConfig["fetcher"],
+    portkeyFetcher?: OpenAIClientConfig["fetcher"],
 ): Promise<ChatCompletion> {
     let state: TransformResult = { messages, options: { ...options } };
     const modelDef = state.options.model
@@ -64,19 +64,31 @@ export async function generateTextPortkey(
         state = await processParameters(state.messages, state.options);
     }
 
+    const directEndpoint = state.options.modelConfig?.directEndpoint;
+    // Read before the delete below: the endpoint thunk runs after it.
     const portkeyGatewayUrl = state.options.portkeyGatewayUrl;
-    const requestConfig = {
-        ...clientConfig,
-        endpoint: () => buildEndpoint(portkeyGatewayUrl),
-        additionalHeaders: {
-            "x-portkey-request-timeout": String(PORTKEY_REQUEST_TIMEOUT_MS),
-            ...((state.options.additionalHeaders || {}) as Record<
-                string,
-                string
-            >),
-        },
-        fetcher,
-    };
+    const additionalHeaders = (state.options.additionalHeaders || {}) as Record<
+        string,
+        string
+    >;
+    const requestConfig =
+        typeof directEndpoint === "string"
+            ? {
+                  ...clientConfig,
+                  endpoint: directEndpoint,
+                  additionalHeaders,
+              }
+            : {
+                  ...clientConfig,
+                  endpoint: () => buildEndpoint(portkeyGatewayUrl),
+                  additionalHeaders: {
+                      "x-portkey-request-timeout": String(
+                          PORTKEY_REQUEST_TIMEOUT_MS,
+                      ),
+                      ...additionalHeaders,
+                  },
+                  fetcher: portkeyFetcher,
+              };
 
     delete state.options.additionalHeaders;
     delete state.options.portkeyGatewayUrl;

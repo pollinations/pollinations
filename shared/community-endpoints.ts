@@ -611,6 +611,7 @@ export function usesAgentRunToken(endpoint: CommunityEndpointRuntime): boolean {
 export type CommunityModelDefinitionInput = {
     modelId: string;
     addedDate?: number;
+    perUserRpm?: number | null;
     title?: string | null;
     description: string | null;
     providerName?: string | null;
@@ -969,6 +970,7 @@ export function communityModelDefinition(
     return {
         aliases,
         provider: "community",
+        perUserRpm: endpoint.perUserRpm,
         brand: providerName || "Community",
         brandUrl: providerName && providerUrl ? providerUrl : undefined,
         category: isImage ? "image" : isTranscription ? "audio" : "text",

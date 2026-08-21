@@ -1,0 +1,36 @@
+{
+  "pr_number": 12279,
+  "title": "[FEAT]: Added a ? query parameters to the /apps route of the pollinations ecosystem",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/12279",
+  "merged_at": "2026-08-21T18:02:34Z",
+  "labels": [
+    "DEV-UI-UX"
+  ],
+  "pr_body_excerpt": "## Changes Made:- \r\n\r\nAdds an \"All\" genre (default), a ?query-synced search bar (name/description/author), centers the category + sort rows, moves the badge legend beneath the sort tags, and adds a third top \"Docs\" card while removing the inline docs link.\r\n\r\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The app garden got a map",
+    "blurb": "The ecosystem page can now remember what you were looking for. Search apps by name, description, or author, then share the exact trail through the garden.",
+    "summary": "The /apps page now syncs its name, description, and author search to a ?query URL parameter, adds an All genre as the default filter, centers category and sort controls, and promotes Docs into a third top card.",
+    "impact": "People can link directly to a filtered app search and browse the ecosystem with a clearer default view, reorganized controls, and faster access to documentation.",
+    "keywords": [
+      "apps",
+      "search",
+      "query-parameters",
+      "ecosystem",
+      "ui",
+      "docs"
+    ],
+    "visual_concept": "Polli acts as a tiny garden librarian, using a magnifying glass over a lush app garden while a retro terminal displays a URL search query. Three welcoming signpost cards represent Apps, Community, and Docs; labeled flower beds represent genres, with the All bed centered at the entrance.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel bee mascot with a tiny librarian hat and magnifying glass, searching a blooming code-garden of app cards while a retro CRT monitor shows a simple URL with '?query=' in chunky pixel text. Three friendly signpost cards, including a prominent 'DOCS' card, stand among centered genre flower beds; lime green (#ecf874) appears prominently with warm cream, mint, lavender, and peach pastel gradients, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-21/PR-12279.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel bee mascot with a tiny librarian hat and magnifying glass, searching a blooming code-garden of app cards while a retro CRT monitor shows a simple URL with '?query=' in chunky pixel text. Three friendly signpost cards, including a prominent 'DOCS' card, stand among centered genre flower beds; lime green (#ecf874) appears prominently with warm cream, mint, lavender, and peach pastel gradients, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-08-21T18:03:32.776977+00:00"
+}

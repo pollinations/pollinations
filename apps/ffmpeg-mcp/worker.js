@@ -8,8 +8,9 @@ import {
     FFMPEG_OUTPUT_EXTENSIONS,
 } from "../../shared/ffmpeg.ts";
 import { MCP_USAGE_HEADERS } from "../../shared/registry/mcp.ts";
+import { validateUserMediaUrl } from "../../shared/user-media-url.ts";
 
-const MEDIA_HOST = "media.pollinations.ai";
+const MAX_SOURCE_REDIRECTS = 5;
 const ADJUSTMENT_ID = "cloudflare.container.basic_runtime.v1";
 const MIME_TYPES = {
     mp4: "video/mp4",
@@ -33,10 +34,30 @@ class ToolFailure extends Error {
     }
 }
 
+function validateSourceUrl(value) {
+    const validation = validateUserMediaUrl(value);
+    if (!validation.ok || validation.url.protocol !== "https:") {
+        throw new ToolFailure(400, "Source must be a public HTTPS URL");
+    }
+    return validation.url;
+}
+
 async function fetchSource(source, fetchImpl, createFixedLengthStream) {
-    const response = await fetchImpl(source, { redirect: "manual" });
-    if (response.status >= 300 && response.status < 400) {
-        throw new ToolFailure(400, "Source redirects are not supported");
+    let url = validateSourceUrl(source);
+    let response;
+    for (let redirects = 0; ; redirects += 1) {
+        response = await fetchImpl(url, { redirect: "manual" });
+        if (response.status < 300 || response.status >= 400) break;
+
+        const location = response.headers.get("location");
+        if (!location) {
+            throw new ToolFailure(400, "Source redirect has no location");
+        }
+        if (redirects >= MAX_SOURCE_REDIRECTS) {
+            throw new ToolFailure(400, "Source has too many redirects");
+        }
+        await response.body?.cancel();
+        url = validateSourceUrl(new URL(location, url).toString());
     }
     if (!response.ok) {
         throw new ToolFailure(
@@ -159,24 +180,21 @@ function buildServer(env, dependencies, reportUsage) {
         { name: "pollinations-ffmpeg-mcp", version: "0.1.0" },
         {
             instructions:
-                "Run native FFmpeg commands against media.pollinations.ai inputs. Pollinations supplies the input and hosted output; provide only arguments between them.",
+                "Run native FFmpeg commands against public HTTPS media. Pollinations supplies the input and hosted output; provide only arguments between them.",
             capabilities: { tools: {} },
         },
     );
     server.registerTool(
         "runFfmpeg",
         {
-            description: `Run native FFmpeg arguments against a media.pollinations.ai URL and return an unlisted hosted resource link. Omit ffmpeg, -i, and the output path. Maximum input/output size is 100 MB and runtime is ${FFMPEG_MAX_RUN_MS / 1000} seconds. Billed at ${FFMPEG_COST_PER_SECOND.toFixed(8)} Pollen per active second.`,
+            description: `Run native FFmpeg arguments against a public HTTPS media URL and return an unlisted hosted resource link. Omit ffmpeg, -i, and the output path. Maximum input/output size is 100 MB and runtime is ${FFMPEG_MAX_RUN_MS / 1000} seconds. Billed at ${FFMPEG_COST_PER_SECOND.toFixed(8)} Pollen per active second.`,
             inputSchema: z.object({
                 source: z.url().refine((value) => {
-                    const url = new URL(value);
+                    const validation = validateUserMediaUrl(value);
                     return (
-                        url.protocol === "https:" &&
-                        url.hostname === MEDIA_HOST &&
-                        !url.username &&
-                        !url.password
+                        validation.ok && validation.url.protocol === "https:"
                     );
-                }, "source must be an HTTPS media.pollinations.ai URL without credentials"),
+                }, "source must be a public HTTPS URL without credentials"),
                 args: z
                     .array(z.string().min(1).max(1024))
                     .max(64)

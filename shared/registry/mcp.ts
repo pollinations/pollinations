@@ -22,7 +22,7 @@ export const MCP_SERVERS = [
         id: "ffmpeg",
         name: "FFmpeg",
         description:
-            "Run FFmpeg against media.pollinations.ai inputs and return hosted outputs.",
+            "Run FFmpeg against public HTTPS media and return hosted outputs.",
         provider: "cloudflare",
         eventType: "tool.media",
     },

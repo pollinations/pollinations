@@ -15,6 +15,7 @@ function createHarness(options = {}) {
         upload: [],
         destroy: 0,
         responses: [],
+        sourceFetches: [],
     };
     const container = {
         async run(input, args, outputExtension, deadlineMs) {
@@ -61,8 +62,10 @@ function createHarness(options = {}) {
         getContainerImpl: () => container,
         createFixedLengthStreamImpl: () => new TransformStream(),
         fetchImpl: async (url, init) => {
-            assert.equal(url, SOURCE);
+            calls.sourceFetches.push(url.toString());
             assert.equal(init.redirect, "manual");
+            if (options.fetchImpl) return options.fetchImpl(url, init);
+            assert.equal(url.toString(), options.expectedSource ?? SOURCE);
             return (
                 options.sourceResponse ??
                 new Response(new Uint8Array([1, 2, 3]), {
@@ -153,24 +156,102 @@ test("runs FFmpeg, uploads the output, and reports trusted usage", async () => {
     await client.close();
 });
 
-test("accepts only Pollinations media and a single supplied input", async () => {
-    const { calls, env, worker } = createHarness();
+test("accepts public HTTPS media and a single supplied input", async () => {
+    const publicSource = "https://cdn.example.com/source.mp4";
+    const { calls, env, worker } = createHarness({
+        expectedSource: publicSource,
+    });
     const client = await connect(worker, env, calls);
-    for (const arguments_ of [
-        {
-            source: "https://example.com/source.mp4",
+    const success = await client.callTool({
+        name: "runFfmpeg",
+        arguments: {
+            source: publicSource,
             args: [],
             outputExtension: "mp4",
         },
-        {
-            source: SOURCE,
+    });
+    assert.equal(success.isError, undefined);
+
+    const extraInput = await client.callTool({
+        name: "runFfmpeg",
+        arguments: {
+            source: publicSource,
             args: ["-i", "https://example.com/other.mp4"],
             outputExtension: "mp4",
         },
+    });
+    assert.equal(extraInput.isError, true);
+    assert.equal(calls.run.length, 1);
+    await client.close();
+});
+
+test("revalidates public HTTPS redirects", async () => {
+    const redirectedSource = "https://cdn.example.com/source.mp4";
+    const { calls, env, worker } = createHarness({
+        expectedSource: undefined,
+        fetchImpl: async (url) => {
+            if (url.toString() === SOURCE) {
+                return new Response(null, {
+                    status: 302,
+                    headers: { Location: redirectedSource },
+                });
+            }
+            assert.equal(url.toString(), redirectedSource);
+            return new Response(new Uint8Array([1, 2, 3]), {
+                headers: { "Content-Length": "3" },
+            });
+        },
+    });
+    const client = await connect(worker, env, calls);
+    const result = await client.callTool({
+        name: "runFfmpeg",
+        arguments: {
+            source: SOURCE,
+            args: [],
+            outputExtension: "mp4",
+        },
+    });
+    assert.equal(result.isError, undefined);
+    assert.deepEqual(calls.sourceFetches, [SOURCE, redirectedSource]);
+    await client.close();
+
+    const unsafe = createHarness({
+        fetchImpl: async () =>
+            new Response(null, {
+                status: 302,
+                headers: { Location: "https://localhost/private.mp4" },
+            }),
+    });
+    const unsafeClient = await connect(unsafe.worker, unsafe.env, unsafe.calls);
+    const unsafeResult = await unsafeClient.callTool({
+        name: "runFfmpeg",
+        arguments: {
+            source: SOURCE,
+            args: [],
+            outputExtension: "mp4",
+        },
+    });
+    assert.equal(unsafeResult.isError, true);
+    assert.equal(unsafe.calls.run.length, 0);
+    assert.equal(
+        unsafe.calls.responses.at(-1).headers.has(MCP_USAGE_HEADERS.cost),
+        false,
+    );
+    await unsafeClient.close();
+});
+
+test("rejects unsafe source URLs before execution", async () => {
+    const { calls, env, worker } = createHarness();
+    const client = await connect(worker, env, calls);
+    for (const source of [
+        "http://example.com/source.mp4",
+        "https://localhost/source.mp4",
+        "https://127.0.0.1/source.mp4",
+        "https://user:secret@example.com/source.mp4",
     ]) {
         const result = await client.callTool({
             name: "runFfmpeg",
-            arguments: arguments_,
+            arguments: { source, args: [], outputExtension: "mp4" },
         });
         assert.equal(result.isError, true);
     }

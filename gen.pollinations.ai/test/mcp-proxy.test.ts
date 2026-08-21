@@ -24,7 +24,7 @@ test("lists the MCP servers exposed through Gen", async () => {
                 id: "ffmpeg",
                 name: "FFmpeg",
                 description:
-                    "Run FFmpeg against media.pollinations.ai inputs and return hosted outputs.",
+                    "Run FFmpeg against public HTTPS media and return hosted outputs.",
                 url: "https://gen.pollinations.ai/mcp/ffmpeg",
             },
         ],

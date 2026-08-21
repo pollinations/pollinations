@@ -1,0 +1,34 @@
+{
+  "pr_number": 13617,
+  "title": "feat: support per-user RPM for catalog models",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13617",
+  "merged_at": "2026-08-21T14:48:16Z",
+  "labels": [],
+  "pr_body_excerpt": "- Reuses one `perUserRpm` model field for catalog and community models.\n- Enforces limits across every modality and fallback attempt.\n- Exposes configured limits through model-list endpoints.\n- Leaves models uncapped when the field is unset.\n- Adds focused limiter and fallback coverage.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A fairer queue at the flowerbed",
+    "blurb": "Catalog models can now carry their own per-user request pace, and the limit follows requests through every route and fallback. The garden stays orderly without putting fences around models that do not need them.",
+    "summary": "Added a shared perUserRpm field for catalog and community models, enforcing configured per-user limits across text, image, audio, realtime, 3D, proxy, and fallback requests while exposing those limits in model-list endpoints.",
+    "impact": "Developers can inspect each model's configured per-user RPM before using it, while uncapped models remain unrestricted and fallback attempts follow the same fair-use limit.",
+    "keywords": [
+      "rate-limiting",
+      "catalog-models",
+      "per-user-rpm",
+      "fallbacks",
+      "model-registry",
+      "api"
+    ],
+    "visual_concept": "A cozy shared API garden with several labeled model flowerpots feeding into one gentle traffic gate; Polli acts as a thoughtful garden keeper, checking a small RPM sign while request bees take orderly paths through text, image, audio, and fallback vines. The scene should show that some pots have a limit marker while others remain open, with a retro terminal displaying a model list.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener visor and tending a shared API garden of code-plants labeled text, image, audio, and fallback; a small wooden sign reads “perUserRpm” beside an orderly request path, while open flowerpots bloom freely. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes, subtle CRT terminal glow showing a model list, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-21/PR-13617.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener visor and tending a shared API garden of code-plants labeled text, image, audio, and fallback; a small wooden sign reads “perUserRpm” beside an orderly request path, while open flowerpots bloom freely. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes, subtle CRT terminal glow showing a model list, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-21T14:49:35.170105+00:00"
+}

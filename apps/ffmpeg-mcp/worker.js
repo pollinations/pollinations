@@ -1,9 +1,11 @@
 import { createMcpHandler, McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import {
+    calculateFfmpegCharge,
     FFMPEG_COST_PER_SECOND,
     FFMPEG_MAX_MEDIA_BYTES,
     FFMPEG_MAX_RUN_MS,
+    FFMPEG_MODEL,
     FFMPEG_OUTPUT_EXTENSIONS,
 } from "../../shared/ffmpeg.ts";
 
@@ -141,11 +143,21 @@ async function runTool(params, token, env, dependencies) {
         await container.destroy().catch(() => undefined);
     }
 
-    const settlement = await env.BILLING.settle(token, {
+    const durationMs = Date.now() - startedAt;
+    const settlement = await env.BILLING.charge(token, {
         requestId,
+        mcpId: FFMPEG_MODEL,
+        toolName: "runFfmpeg",
+        provider: "cloudflare",
+        eventType: "tool.media",
         startedAt,
-        runtimeMs: Date.now() - startedAt,
+        durationMs,
         responseStatus,
+        amount: calculateFfmpegCharge(durationMs),
+        adjustment: {
+            id: "cloudflare.container.basic_runtime.v1",
+            units: durationMs / 1000,
+        },
         ...(errorMessage && { errorMessage }),
     });
     if (!settlement.ok && !errorMessage) {

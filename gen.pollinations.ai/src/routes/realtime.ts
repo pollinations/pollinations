@@ -27,6 +27,8 @@ import {
 import {
     priceToEventParams,
     type TinybirdEvent,
+    type UsageEventIdentity,
+    usageEventIdentity,
     usageToEventParams,
 } from "@shared/schemas/generation-event.ts";
 import { getRoutePath } from "@shared/util.ts";
@@ -34,11 +36,7 @@ import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
-import {
-    reduceAdjustmentsToEventFields,
-    requestIdentity,
-    type UserData,
-} from "@/middleware/track.ts";
+import { reduceAdjustmentsToEventFields } from "@/middleware/track.ts";
 import { RealtimeUsageSchema } from "@/schemas/realtime.ts";
 import { generateRandomId } from "@/util.ts";
 import { checkBalance } from "@/utils/generation-access.ts";
@@ -96,9 +94,9 @@ type RealtimeCacheUsage = {
     imageTokens: number;
 };
 type RealtimeBillingContext = {
-    // Spread verbatim into the event, so an identity column added to UserData
+    // Spread verbatim into the event, so an identity column added to the shared
     // reaches a realtime row without touching this file.
-    identity: UserData & { userId: string };
+    identity: UsageEventIdentity & { userId: string };
     apiKeyPollenBalance?: number | null;
     byopClientKeyId?: string | null;
     modelRequested: string;
@@ -1365,7 +1363,7 @@ async function createRealtimeBillingContext(
 
     return {
         // requireUser() above proves the id, which the optional field cannot.
-        identity: { ...requestIdentity(c.var.auth), userId: user.id },
+        identity: { ...usageEventIdentity(c.var.auth), userId: user.id },
         apiKeyPollenBalance: c.var.auth.apiKey?.pollenBalance,
         byopClientKeyId: c.var.auth.apiKey?.byopClientKeyId,
         modelRequested: modelInfo.requested,

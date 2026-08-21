@@ -12,7 +12,7 @@ const SOURCE = "https://media.pollinations.ai/source";
 function createHarness(options = {}) {
     const calls = {
         authorize: [],
-        settle: [],
+        charge: [],
         run: [],
         upload: [],
         destroy: 0,
@@ -45,8 +45,8 @@ function createHarness(options = {}) {
                 calls.authorize.push(token);
                 return options.authorization ?? { ok: true };
             },
-            async settle(token, input) {
-                calls.settle.push({ token, input });
+            async charge(token, input) {
+                calls.charge.push({ token, input });
                 return options.settlement ?? { ok: true, charge: 0.0001 };
             },
         },
@@ -167,10 +167,12 @@ test("runs FFmpeg, stores its stream, settles billing, and returns a resource li
         size: 3,
     });
     assert.equal(calls.destroy, 1);
-    assert.equal(calls.settle.length, 1);
-    assert.equal(calls.settle[0].token, TOKEN);
-    assert.equal(calls.settle[0].input.responseStatus, 200);
-    assert.ok(calls.settle[0].input.runtimeMs >= 0);
+    assert.equal(calls.charge.length, 1);
+    assert.equal(calls.charge[0].token, TOKEN);
+    assert.equal(calls.charge[0].input.mcpId, "ffmpeg");
+    assert.equal(calls.charge[0].input.toolName, "runFfmpeg");
+    assert.equal(calls.charge[0].input.responseStatus, 200);
+    assert.ok(calls.charge[0].input.durationMs >= 0);
     await client.close();
 });
 
@@ -190,7 +192,7 @@ test("does not start a container when billing authorization fails", async () => 
     assert.equal(result.isError, true);
     assert.match(result.content[0].text, /Invalid key/);
     assert.equal(calls.run.length, 0);
-    assert.equal(calls.settle.length, 0);
+    assert.equal(calls.charge.length, 0);
     await client.close();
 });
 
@@ -236,8 +238,8 @@ test("settles executed FFmpeg and media-upload failures", async () => {
             },
         });
         assert.equal(result.isError, true);
-        assert.equal(calls.settle.length, 1);
-        assert.equal(calls.settle[0].input.responseStatus, options.status);
+        assert.equal(calls.charge.length, 1);
+        assert.equal(calls.charge[0].input.responseStatus, options.status);
         assert.equal(calls.destroy, 1);
         await client.close();
     }

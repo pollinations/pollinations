@@ -20,7 +20,7 @@
     { "tag": "v1", "new_sqlite_classes": ["FfmpegContainer"] }
   ],
   "services": [
-    { "binding": "BILLING", "service": "pollinations-enter-production", "entrypoint": "FfmpegBilling" },
+    { "binding": "BILLING", "service": "pollinations-enter-production", "entrypoint": "McpBilling" },
     { "binding": "MEDIA", "service": "pollinations-media-prod", "entrypoint": "MediaUpload" }
   ],
   "routes": [
@@ -56,7 +56,7 @@
         { "tag": "v1", "new_sqlite_classes": ["FfmpegContainer"] }
       ],
       "services": [
-        { "binding": "BILLING", "service": "pollinations-enter-staging", "entrypoint": "FfmpegBilling" },
+        { "binding": "BILLING", "service": "pollinations-enter-staging", "entrypoint": "McpBilling" },
         { "binding": "MEDIA", "service": "pollinations-media-staging", "entrypoint": "MediaUpload" }
       ],
       "routes": [

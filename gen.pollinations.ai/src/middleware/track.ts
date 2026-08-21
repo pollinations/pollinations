@@ -1,5 +1,4 @@
 import { getLogger } from "@logtape/logtape";
-import type { ApiKeyType } from "@shared/auth/api-key-creation.ts";
 import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
 import { payerBucketToMeter } from "@shared/billing/balance.ts";
 import {
@@ -47,10 +46,12 @@ import type {
     EventType,
     GenerationEventContentFilterParams,
     TinybirdEvent as InsertGenerationEvent,
+    UsageEventIdentity,
 } from "@shared/schemas/generation-event.ts";
 import {
     contentFilterResultsToEventParams,
     priceToEventParams,
+    usageEventIdentity,
     usageToEventParams,
 } from "@shared/schemas/generation-event.ts";
 import {
@@ -174,7 +175,7 @@ export const track = (eventType: EventType) =>
             rawIp !== "unknown" ? stripIPv4MappedPrefix(rawIp) : undefined;
         const ipSubnet = truncateIpToSubnet(clientIp);
 
-        const userTracking = requestIdentity(c.var.auth);
+        const userTracking = usageEventIdentity(c.var.auth);
 
         let responseOverride: Response | null = null;
         let pricingInput: PricingInput | undefined;
@@ -832,48 +833,6 @@ async function* asyncIteratorStream<T>(
     }
 }
 
-/**
- * Who made the request, in the shape the event carries it.
- *
- * Every path that emits a generation row builds this the same way, so a new
- * identity column is added here once rather than in each emitter. Realtime
- * settles from a socket rather than a response and so keeps its own event
- * builder; it spreads this verbatim.
- */
-export type UserData = {
-    userId?: string;
-    userTier?: string;
-    apiKeyId?: string;
-    apiKeyType?: ApiKeyType;
-    apiKeyName?: string;
-    apiKeyCreatedVia?: string;
-    apiKeyCreatedForApp?: string;
-    apiKeyCreatedForUserId?: string;
-    apiKeyClientId?: string;
-};
-
-export function requestIdentity(auth: AuthVariables["auth"]): UserData {
-    const apiKeyMetadata = auth.apiKey?.metadata as
-        | Record<string, unknown>
-        | undefined;
-    const byopClientKeyId = auth.apiKey?.byopClientKeyId;
-    return {
-        userId: auth.user?.id,
-        userTier: auth.user?.tier,
-        apiKeyId: auth.apiKey?.id,
-        apiKeyType: apiKeyMetadata?.keyType as ApiKeyType,
-        apiKeyName: auth.apiKey?.name,
-        // A BYOP key is created by the redirect flow, whatever its metadata
-        // says it was created via.
-        apiKeyCreatedVia: byopClientKeyId
-            ? "redirect-auth"
-            : (apiKeyMetadata?.createdVia as string | undefined),
-        apiKeyClientId: byopClientKeyId ?? undefined,
-        apiKeyCreatedForApp: auth.apiKey?.byopClientName ?? undefined,
-        apiKeyCreatedForUserId: auth.apiKey?.byopClientUserId ?? undefined,
-    };
-}
-
 type BalanceData = {
     selectedMeterId?: string;
     selectedMeterSlug?: string;
@@ -891,7 +850,7 @@ type TrackingEventInput = {
     ipSubnet?: string;
     ipHash?: string;
     cacheKey?: string;
-    userTracking: UserData;
+    userTracking: UsageEventIdentity;
     balanceTracking: BalanceData;
     requestTracking: RequestTrackingData;
     responseTracking: ResponseTrackingData;

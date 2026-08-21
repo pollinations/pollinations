@@ -12,12 +12,35 @@ import { createTestApiKey } from "@shared/test/fixtures/index.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
-import { FfmpegBilling } from "../src/services/ffmpeg-billing.ts";
+import { McpBilling } from "../src/services/mcp-billing.ts";
 import { test } from "./fixtures.ts";
 
 function billingService() {
     const ctx = createExecutionContext();
-    return { ctx, service: new FfmpegBilling(ctx, env) };
+    return { ctx, service: new McpBilling(ctx, env) };
+}
+
+function ffmpegCharge(
+    durationMs: number,
+    overrides: Partial<Parameters<McpBilling["charge"]>[1]> = {},
+): Parameters<McpBilling["charge"]>[1] {
+    const amount = calculateFfmpegCharge(durationMs);
+    return {
+        requestId: crypto.randomUUID(),
+        mcpId: "ffmpeg",
+        toolName: "runFfmpeg",
+        provider: "cloudflare",
+        eventType: "tool.media",
+        startedAt: Date.now() - durationMs,
+        durationMs,
+        responseStatus: 200,
+        amount,
+        adjustment: {
+            id: "cloudflare.container.basic_runtime.v1",
+            units: durationMs / 1000,
+        },
+        ...overrides,
+    };
 }
 
 test("FFmpeg authorization does not preflight and settlement may go negative", async ({
@@ -38,12 +61,7 @@ test("FFmpeg authorization does not preflight and settlement may go negative", a
         ok: true,
     });
 
-    const result = await service.settle(exhausted.key, {
-        requestId: crypto.randomUUID(),
-        startedAt: Date.now() - 1_000,
-        runtimeMs: 1_000,
-        responseStatus: 200,
-    });
+    const result = await service.charge(exhausted.key, ffmpegCharge(1_000));
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error(result.message);
     await waitOnExecutionContext(ctx);
@@ -79,12 +97,10 @@ test("FFmpeg billing settles measured Container runtime", async ({ mocks }) => {
     });
 
     const requestId = crypto.randomUUID();
-    const result = await service.settle(budgetedApiKey.key, {
-        requestId,
-        startedAt: Date.now() - 1_000,
-        runtimeMs: 1_000,
-        responseStatus: 200,
-    });
+    const result = await service.charge(
+        budgetedApiKey.key,
+        ffmpegCharge(1_000, { requestId }),
+    );
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error(result.message);
     const charge = result.charge;
@@ -137,13 +153,14 @@ test("FFmpeg billing charges executed failures and records their error", async (
     const { ctx, service } = billingService();
     const requestId = crypto.randomUUID();
 
-    const result = await service.settle(budgetedApiKey.key, {
-        requestId,
-        startedAt: Date.now() - 500,
-        runtimeMs: 500,
-        responseStatus: 422,
-        errorMessage: "bad filter",
-    });
+    const result = await service.charge(
+        budgetedApiKey.key,
+        ffmpegCharge(500, {
+            requestId,
+            responseStatus: 422,
+            errorMessage: "bad filter",
+        }),
+    );
 
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error(result.message);
@@ -154,7 +171,7 @@ test("FFmpeg billing charges executed failures and records their error", async (
             requestId,
             responseStatus: 422,
             errorResponseCode: "422",
-            errorSource: "ffmpeg",
+            errorSource: "ffmpeg.runFfmpeg",
             errorMessage: "bad filter",
             isBilledUsage: true,
         }),

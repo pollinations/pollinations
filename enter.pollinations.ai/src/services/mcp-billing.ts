@@ -13,43 +13,45 @@ import {
 } from "@shared/billing/balance.ts";
 import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
 import { sendToTinybird } from "@shared/events.ts";
-import {
-    calculateFfmpegCharge,
-    FFMPEG_COST_PER_SECOND,
-    FFMPEG_MODEL,
-} from "@shared/ffmpeg.ts";
 import { ensureConfigured } from "@shared/logger.ts";
 import {
     priceToEventParams,
     type TinybirdEvent,
+    type TinybirdEventType,
+    usageEventIdentity,
     usageToEventParams,
 } from "@shared/schemas/generation-event.ts";
 import { drizzle } from "drizzle-orm/d1";
 
-export type FfmpegBillingFailure = {
+export type McpBillingFailure = {
     ok: false;
     status: 401 | 403 | 503;
     message: string;
 };
 
-export type FfmpegAuthorizationResult = { ok: true } | FfmpegBillingFailure;
+export type McpAuthorizationResult = { ok: true } | McpBillingFailure;
 
-export type FfmpegSettlementResult =
-    | { ok: true; charge: number }
-    | FfmpegBillingFailure;
+export type McpChargeResult = { ok: true; charge: number } | McpBillingFailure;
 
-export type FfmpegSettlement = {
+export type McpCharge = {
     requestId: string;
+    mcpId: string;
+    toolName: string;
+    provider?: string;
+    eventType: TinybirdEventType;
     startedAt: number;
-    runtimeMs: number;
+    durationMs: number;
     responseStatus: number;
+    amount: number;
+    adjustment?: {
+        id: string;
+        units: number;
+    };
     errorMessage?: string;
 };
 
-const ADJUSTMENT_ID = "cloudflare.container.basic_runtime.v1";
-
 function bearerRequest(token: string): Request {
-    return new Request("https://ffmpeg.pollinations.ai", {
+    return new Request("https://mcp.pollinations.ai", {
         headers: { Authorization: `Bearer ${token}` },
     });
 }
@@ -66,7 +68,7 @@ async function authenticate(
     });
 }
 
-function authFailure(error: unknown): FfmpegBillingFailure {
+function authFailure(error: unknown): McpBillingFailure {
     if (
         error instanceof BannedAccountError ||
         error instanceof StagingAccessDeniedError
@@ -80,7 +82,7 @@ function authFailure(error: unknown): FfmpegBillingFailure {
     };
 }
 
-function invalidKey(): FfmpegBillingFailure {
+function invalidKey(): McpBillingFailure {
     return {
         ok: false,
         status: 401,
@@ -89,26 +91,16 @@ function invalidKey(): FfmpegBillingFailure {
     };
 }
 
-function keyIdentity(auth: ApiKeyAuthResult) {
-    const metadata = auth.apiKey.metadata;
-    const byopClientKeyId = auth.apiKey.byopClientKeyId;
+function invalidCharge(): McpBillingFailure {
     return {
-        userId: auth.user?.id,
-        userTier: auth.user?.tier,
-        apiKeyId: auth.apiKey.id,
-        apiKeyType: metadata?.keyType as "secret" | "publishable" | undefined,
-        apiKeyName: auth.apiKey.name,
-        apiKeyCreatedVia: byopClientKeyId
-            ? "redirect-auth"
-            : (metadata?.createdVia as string | undefined),
-        apiKeyClientId: byopClientKeyId ?? undefined,
-        apiKeyCreatedForApp: auth.apiKey.byopClientName ?? undefined,
-        apiKeyCreatedForUserId: auth.apiKey.byopClientUserId ?? undefined,
+        ok: false,
+        status: 503,
+        message: "Unable to settle MCP billing.",
     };
 }
 
-export class FfmpegBilling extends WorkerEntrypoint<CloudflareBindings> {
-    async authorize(token: string): Promise<FfmpegAuthorizationResult> {
+export class McpBilling extends WorkerEntrypoint<CloudflareBindings> {
+    async authorize(token: string): Promise<McpAuthorizationResult> {
         let auth: ApiKeyAuthResult | null;
         try {
             auth = await authenticate(token, this.env, this.ctx);
@@ -119,10 +111,11 @@ export class FfmpegBilling extends WorkerEntrypoint<CloudflareBindings> {
         return { ok: true };
     }
 
-    async settle(
-        token: string,
-        settlement: FfmpegSettlement,
-    ): Promise<FfmpegSettlementResult> {
+    async charge(token: string, input: McpCharge): Promise<McpChargeResult> {
+        if (!Number.isFinite(input.amount) || input.amount < 0) {
+            return invalidCharge();
+        }
+
         let auth: ApiKeyAuthResult | null;
         try {
             auth = await authenticate(token, this.env, this.ctx);
@@ -131,14 +124,13 @@ export class FfmpegBilling extends WorkerEntrypoint<CloudflareBindings> {
         }
         if (!auth?.user?.id) return invalidKey();
 
-        const runtimeMs = Math.max(1, Math.round(settlement.runtimeMs));
-        const charge = calculateFfmpegCharge(runtimeMs);
+        const durationMs = Math.max(1, Math.round(input.durationMs));
         const db = drizzle(this.env.DB);
         await ensureConfigured({
             level: this.env.LOG_LEVEL || "debug",
             format: this.env.LOG_FORMAT || "text",
         });
-        const log = getLogger(["ffmpeg", "billing"]);
+        const log = getLogger(["mcp", "billing"]);
         let balances: Awaited<ReturnType<typeof getUserBalance>>;
         let deduction: Awaited<ReturnType<typeof handleBalanceDeduction>>;
         try {
@@ -146,7 +138,7 @@ export class FfmpegBilling extends WorkerEntrypoint<CloudflareBindings> {
             deduction = await handleBalanceDeduction({
                 db,
                 isBilledUsage: true,
-                totalPrice: charge,
+                totalPrice: input.amount,
                 userId: auth.user.id,
                 apiKeyId: auth.apiKey.id,
                 apiKeyPollenBalance: auth.apiKey.pollenBalance,
@@ -154,63 +146,67 @@ export class FfmpegBilling extends WorkerEntrypoint<CloudflareBindings> {
                 modelPaidOnly: false,
             });
         } catch (error) {
-            log.error("FFmpeg billing settlement failed: {error}", {
+            log.error("MCP billing settlement failed: {error}", {
                 error: error instanceof Error ? error.message : String(error),
             });
-            return {
-                ok: false,
-                status: 503,
-                message: "Unable to settle FFmpeg billing.",
-            };
+            return invalidCharge();
         }
 
         const startedAt = new Date(
-            Math.min(Date.now(), Math.max(0, settlement.startedAt)),
+            Math.min(Date.now(), Math.max(0, input.startedAt)),
         );
-        const endedAt = new Date(startedAt.getTime() + runtimeMs);
+        const endedAt = new Date(startedAt.getTime() + durationMs);
         const balanceTracking = deduction.payerBucket
             ? payerBucketToMeter(deduction.payerBucket)
             : createBalanceCheckResult(balances);
+        const adjustmentCosts = input.adjustment
+            ? { [input.adjustment.id]: input.amount }
+            : undefined;
+        const adjustmentUnits = input.adjustment
+            ? { [input.adjustment.id]: input.adjustment.units }
+            : undefined;
         const event: TinybirdEvent = {
             id: crypto.randomUUID(),
-            requestId: settlement.requestId,
-            requestPath: "/",
+            requestId: input.requestId,
+            requestPath: `/mcp/${input.mcpId}/tools/${input.toolName}`,
             startTime: startedAt,
             endTime: endedAt,
-            responseTime: runtimeMs,
-            responseStatus: settlement.responseStatus,
+            responseTime: durationMs,
+            responseStatus: input.responseStatus,
             environment: this.env.ENVIRONMENT,
-            eventType: "tool.media",
-            ...keyIdentity(auth),
+            eventType: input.eventType,
+            ...usageEventIdentity(auth),
             ...balanceTracking,
             balances: {
                 "v1:meter:tier": balances.tierBalance,
                 "v1:meter:pack": balances.packBalance,
             },
-            modelRequested: FFMPEG_MODEL,
-            resolvedModelRequested: FFMPEG_MODEL,
-            modelUsed: FFMPEG_MODEL,
-            modelProviderUsed: "cloudflare",
+            modelRequested: input.mcpId,
+            resolvedModelRequested: input.mcpId,
+            modelUsed: input.mcpId,
+            modelProviderUsed: input.provider,
             fallbackUsed: false,
             isFinal: true,
-            isBilledUsage: true,
-            adjustmentCosts: { [ADJUSTMENT_ID]: charge },
-            adjustmentUnits: { [ADJUSTMENT_ID]: runtimeMs / 1000 },
+            isBilledUsage: input.amount > 0,
+            adjustmentCosts,
+            adjustmentUnits,
             ...priceToEventParams(),
             ...usageToEventParams(),
-            totalCost: charge,
+            totalCost: input.amount,
             totalPrice: deduction.billedPrice,
-            devPrice: charge,
+            devPrice: input.amount,
             markupRate: deduction.markup?.markupRate ?? 0,
             errorResponseCode:
-                settlement.responseStatus >= 400
-                    ? String(settlement.responseStatus)
+                input.responseStatus >= 400
+                    ? String(input.responseStatus)
                     : undefined,
             errorSource:
-                settlement.responseStatus >= 400 ? "ffmpeg" : undefined,
+                input.responseStatus >= 400
+                    ? `${input.mcpId}.${input.toolName}`
+                    : undefined,
             errorMessage:
-                settlement.responseStatus >= 400
-                    ? settlement.errorMessage?.slice(0, 1000)
+                input.responseStatus >= 400
+                    ? input.errorMessage?.slice(0, 1000)
                     : undefined,
         };
         this.ctx.waitUntil(
@@ -225,5 +221,3 @@ export class FfmpegBilling extends WorkerEntrypoint<CloudflareBindings> {
         return { ok: true, charge: deduction.billedPrice };
     }
 }
-
-export { FFMPEG_COST_PER_SECOND };

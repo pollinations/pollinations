@@ -16,16 +16,16 @@ export function CommunityEndpointToggleConfirmation({
         <Dialog
             open={!!endpoint}
             onOpenChange={(open) => !open && onCancel()}
-            title={endpoint?.disabled ? "Reactivate Model" : "Deactivate Model"}
+            title={endpoint?.hidden ? "Relist Model" : "Hide Model"}
             size="sm"
             contentClassName="p-6"
         >
             <p className="mb-6 mt-4">
-                {endpoint?.disabled ? "Reactivate" : "Deactivate"}{" "}
-                <span className="font-mono text-sm">{endpoint?.modelId}</span>?
-                {endpoint?.disabled
-                    ? "It will be callable by users again."
-                    : "It will stop responding but stays configured."}
+                {endpoint?.hidden ? "Relist" : "Hide"}{" "}
+                <span className="font-mono text-sm">{endpoint?.modelId}</span>?{" "}
+                {endpoint?.hidden
+                    ? "It will appear in model listings again."
+                    : "It will be removed from model listings but remain callable by its exact model ID."}
             </p>
             <div className="flex justify-end gap-2">
                 <Button type="button" onClick={onCancel}>
@@ -33,10 +33,10 @@ export function CommunityEndpointToggleConfirmation({
                 </Button>
                 <Button
                     type="button"
-                    intent={endpoint?.disabled ? "info" : "danger"}
+                    intent={endpoint?.hidden ? "info" : "danger"}
                     onClick={onConfirm}
                 >
-                    {endpoint?.disabled ? "Reactivate" : "Deactivate"}
+                    {endpoint?.hidden ? "Relist" : "Hide"}
                 </Button>
             </div>
         </Dialog>

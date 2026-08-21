@@ -1,5 +1,5 @@
 import { Buffer } from "node:buffer";
-import { HttpError } from "../image/httpError.ts";
+import { HttpError } from "@shared/http-error.ts";
 import { FalError } from "./models/falClient.ts";
 import { InferenceportError } from "./models/inferenceportClient.ts";
 import type { Model3dParams } from "./params.ts";

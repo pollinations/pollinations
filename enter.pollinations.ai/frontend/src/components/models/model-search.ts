@@ -17,10 +17,13 @@ export type ModelScope = (typeof MODEL_SCOPES)[number];
 
 export const MODEL_SORTS = [
     "newest",
+    "oldest",
     "price-low",
     "price-high",
     "title",
+    "title-desc",
     "brand",
+    "brand-desc",
 ] as const;
 export type ModelSort = (typeof MODEL_SORTS)[number];
 

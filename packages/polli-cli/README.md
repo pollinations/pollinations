@@ -94,14 +94,15 @@ polli usage --history        # recent requests
 polli usage --daily          # daily spend
 polli quests mine --completed # completed and earned quests
 polli agents list            # managed prompt agents
-polli my-models list         # invite-only community text models
+polli my-models list         # invite-only community text, image, and transcription models
 ```
 
-Manage agents with API-shaped JSON config files:
+Manage agents with API-shaped JSON config files plus their callable model name
+and catalog title:
 
 ```bash
 polli agents get <id>
-polli agents create --config agent.json
+polli agents create --config agent.json --name my-agent --title "My Agent"
 polli agents update <id> --config agent.json
 polli agents delete <id>
 ```

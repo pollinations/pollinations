@@ -3,7 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { validator } from "hono-openapi";
+import { describeRoute, validator } from "hono-openapi";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { parsePromptAgentConfig } from "../services/prompt-agent.ts";
@@ -33,6 +33,9 @@ export const agentRuntimeRoutes = new Hono<Env>()
     .use("*", auth({ allowSessionCookie: false, allowApiKey: true }))
     .post(
         "/v1/chat/completions",
+        describeRoute({
+            hide: true,
+        }),
         validator("json", PromptAgentRuntimeRequestSchema, (result) => {
             if (!result.success) {
                 throw new Error("Managed agent request contract is invalid", {

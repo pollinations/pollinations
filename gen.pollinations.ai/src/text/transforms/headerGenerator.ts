@@ -8,6 +8,19 @@ import type {
 
 const log = debug("pollinations:transforms:headers");
 
+async function generateDirectHeaders(
+    config: Record<string, unknown>,
+): Promise<Record<string, string>> {
+    const authKey = config.authKey;
+    if (!authKey) return {};
+
+    const token =
+        typeof authKey === "function"
+            ? await (authKey as () => string | Promise<string>)()
+            : String(authKey);
+    return { Authorization: `Bearer ${token}` };
+}
+
 /**
  * Transform that generates provider-specific headers for the request.
  */
@@ -19,10 +32,10 @@ export async function generateHeaders(
         return { messages, options };
     }
 
-    const additionalHeaders = await generatePortkeyHeaders(
-        options.modelConfig,
-        options,
-    );
+    const additionalHeaders =
+        typeof options.modelConfig.directEndpoint === "string"
+            ? await generateDirectHeaders(options.modelConfig)
+            : await generatePortkeyHeaders(options.modelConfig, options);
 
     log("Generated header keys:", Object.keys(additionalHeaders));
 

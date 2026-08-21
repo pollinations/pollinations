@@ -14,6 +14,7 @@ const BODY_CHUNK_BYTES = 1_000_000;
 type PersistedJob = Omit<GenerationJob, "request"> & {
     request: Omit<GenerationRequestSnapshot, "body">;
     bodyChunks: number;
+    started: boolean;
 };
 
 function bodyChunkKeys(count: number): string[] {
@@ -77,7 +78,31 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
     }
 
     async alarm(): Promise<void> {
-        const stored = await this.ctx.storage.get<PersistedJob>(JOB_KEY);
+        let stored: PersistedJob | undefined;
+        let interrupted: PersistedJob | undefined;
+
+        await this.ctx.blockConcurrencyWhile(async () => {
+            const job = await this.ctx.storage.get<PersistedJob>(JOB_KEY);
+            if (!job) return;
+
+            // The alarm provides an independent timeout, not retry semantics.
+            // Claim before the provider call so a restarted alarm fails closed.
+            if (job.started) {
+                interrupted = job;
+                return;
+            }
+
+            stored = { ...job, started: true };
+            await this.ctx.storage.put(JOB_KEY, stored);
+        });
+
+        if (interrupted) {
+            await this.finish(
+                unavailable("Detached generation was interrupted"),
+                interrupted.bodyChunks,
+            );
+            return;
+        }
         if (!stored) return;
 
         let settlement: Promise<void> | undefined;
@@ -135,6 +160,7 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
             balanceCheckResult: job.balanceCheckResult,
             request,
             bodyChunks: chunks.length,
+            started: false,
         };
         const entries: Record<string, unknown> = { [JOB_KEY]: stored };
         for (const [index, chunk] of chunks.entries()) {

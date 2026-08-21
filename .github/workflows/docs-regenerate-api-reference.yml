@@ -6,7 +6,7 @@ name: Docs / Regenerate API reference
 # deploys from the `production` branch, not `main`).
 on:
   workflow_run:
-    workflows: ["Deploy / gen.pollinations.ai"]
+    workflows: ["Deploy / Cloudflare production"]
     types:
       - completed
     branches:
@@ -27,10 +27,45 @@ on:
       - regenerate-apidocs
 
 jobs:
-  regenerate-docs:
+  # The production workflow deploys enter, gen and media in a single run, so its
+  # aggregate conclusion says nothing about gen specifically: an enter-only run
+  # succeeds without ever touching gen, and an enter failure marks the whole run
+  # failed even when gen deployed cleanly. Ask the jobs API what `deploy-gen`
+  # actually did instead of trusting the run-level conclusion.
+  gate:
     runs-on: ubuntu-latest
-    # Skip if the deploy workflow failed
-    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    permissions:
+      actions: read
+    outputs:
+      gen_deployed: ${{ steps.check.outputs.gen_deployed }}
+    steps:
+      - name: Check whether gen deployed
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" != "workflow_run" ]; then
+            echo "Triggered by $EVENT_NAME - regenerating unconditionally."
+            echo "gen_deployed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          conclusion=$(gh api "/repos/$REPO/actions/runs/$RUN_ID/jobs" --paginate \
+            --jq '.jobs[] | select(.name == "deploy-gen") | .conclusion')
+          echo "deploy-gen conclusion: ${conclusion:-<absent>}"
+          if [ "$conclusion" = "success" ]; then
+            echo "gen_deployed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "gen_deployed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  regenerate-docs:
+    needs: gate
+    if: needs.gate.outputs.gen_deployed == 'true'
+    runs-on: ubuntu-latest
     # Serialize runs so two back-to-back production deploys (or manual dispatches)
     # cannot race on the `docs/apidocs-sync` branch tip. The second run waits
     # for the first to finish rather than being cancelled, so the final state

@@ -8,7 +8,7 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
 import { fallbackCandidates, withModelFallback } from "../fallback.ts";
 import type { GenerationModelEntry } from "../model-registry.ts";
-import { enforceCommunityModelRateLimit } from "../utils/community-model-rate-limit.ts";
+import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 import {
     getRegisteredServers,
     isValidType,
@@ -445,8 +445,7 @@ async function generateMediaWithFallback(
             return { result: generated, params };
         },
         c.var.track?.failedCalls,
-        (attempt) =>
-            enforceCommunityModelRateLimit(c, attempt.communityEndpoint),
+        (attempt) => enforceModelRateLimit(c, attempt),
     );
     return {
         ...result,

@@ -17,7 +17,7 @@ import {
     withModelFallback,
 } from "../fallback.ts";
 import { fixWavHeader } from "../routes/audio.js";
-import { enforceCommunityModelRateLimit } from "../utils/community-model-rate-limit.ts";
+import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 import { communityEndpointGatewayContext } from "./communityEndpoint.ts";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import { type ExpressLikeRequest, getRequestData } from "./requestUtils.js";
@@ -406,8 +406,7 @@ async function generateTextResponse(
                         : undefined,
                 ),
             c.var.track?.failedCalls,
-            (attempt) =>
-                enforceCommunityModelRateLimit(c, attempt.communityEndpoint),
+            (attempt) => enforceModelRateLimit(c, attempt),
         );
         c.set("upstreamRequestUrl", completion.upstreamRequestUrl);
         completion.id = completion.id || generatePollinationsId();

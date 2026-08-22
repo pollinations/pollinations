@@ -9,6 +9,7 @@ on:
       - "packages/sdk/**"
       - "packages/ui/**"
       - "packages/mcp/**"
+      - "shared/response-bytes.ts"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/deploy-applications.yml"

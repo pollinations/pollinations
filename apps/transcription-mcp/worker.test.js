@@ -135,3 +135,20 @@ test("returns transcription API failures as tool errors", async () => {
     assert.match(result.content[0].text, /provider unavailable/);
     await client.close();
 });
+
+test("rejects oversized audio before buffering it", async () => {
+    const { calls, worker, env } = createHarness({
+        sourceResponse: new Response(new Uint8Array([1]), {
+            headers: { "Content-Length": String(50 * 1024 * 1024 + 1) },
+        }),
+    });
+    const client = await connect(worker, env);
+    const result = await client.callTool({
+        name: "transcribeAudio",
+        arguments: { source: SOURCE },
+    });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /exceeds 50 MB/);
+    assert.equal(calls.length, 1);
+    await client.close();
+});

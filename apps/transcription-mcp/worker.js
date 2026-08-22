@@ -1,5 +1,6 @@
 import { createMcpHandler, McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
+import { readResponseBytes } from "../../shared/response-bytes.ts";
 import { validateUserMediaUrl } from "../../shared/user-media-url.ts";
 
 const MAX_AUDIO_BYTES = 50 * 1024 * 1024;
@@ -33,12 +34,12 @@ async function fetchAudio(source, fetchImpl) {
             `Source returned HTTP ${response.status}`,
         );
     }
-    const declaredSize = Number(response.headers.get("content-length"));
-    if (Number.isFinite(declaredSize) && declaredSize > MAX_AUDIO_BYTES) {
-        throw new TranscriptionFailure("Source exceeds 50 MB");
-    }
-    const bytes = await response.arrayBuffer();
-    if (bytes.byteLength === 0 || bytes.byteLength > MAX_AUDIO_BYTES) {
+    const bytes = await readResponseBytes(
+        response,
+        MAX_AUDIO_BYTES,
+        () => new TranscriptionFailure("Source exceeds 50 MB"),
+    );
+    if (bytes.byteLength === 0) {
         throw new TranscriptionFailure("Source has an invalid size");
     }
     return {

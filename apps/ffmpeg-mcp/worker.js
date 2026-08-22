@@ -271,7 +271,6 @@ export function createWorker({
                         usage = reportedUsage;
                     }),
                 {
-                    legacy: "stateless",
                     onerror: (error) => console.error(error),
                 },
             );

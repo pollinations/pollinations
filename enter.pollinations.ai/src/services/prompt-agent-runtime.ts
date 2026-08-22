@@ -390,7 +390,7 @@ function toolDetailsContent(
     output: string,
     hasContent: boolean,
 ): string {
-    const name = part.toolName.replace(/^mcp__pollinations__/, "");
+    const name = part.toolName.replace(/^mcp__[^_]+__/, "");
     const argumentsJson = JSON.stringify(part.input ?? {});
     return (
         (hasContent ? "\n\n" : "") +

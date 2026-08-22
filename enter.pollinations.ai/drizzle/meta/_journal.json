@@ -393,6 +393,13 @@
       "when": 1787648526176,
       "tag": "0055_rare_doctor_spectrum",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "6",
+      "when": 1787414044263,
+      "tag": "0056_wandering_vermin",
+      "breakpoints": true
     }
   ]
 }

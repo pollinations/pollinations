@@ -946,6 +946,7 @@ async function* asyncIteratorStream<T>(
 export type UserData = {
     userId?: string;
     userTier?: string;
+    parentRequestId?: string;
     apiKeyId?: string;
     apiKeyType?: ApiKeyType;
     apiKeyName?: string;
@@ -963,6 +964,9 @@ export function requestIdentity(auth: AuthVariables["auth"]): UserData {
     return {
         userId: auth.user?.id,
         userTier: auth.user?.tier,
+        // A verified claim, never a header — the run token is the only channel
+        // that crosses the hop.
+        parentRequestId: auth.agentRun?.parentRequestId,
         apiKeyId: auth.apiKey?.id,
         apiKeyType: apiKeyMetadata?.keyType as ApiKeyType,
         apiKeyName: auth.apiKey?.name,

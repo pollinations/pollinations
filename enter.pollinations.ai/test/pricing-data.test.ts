@@ -650,7 +650,7 @@ test("Gemini search cost follows each route's provider metadata", () => {
     // OpenRouter search-capable routes bill per reported web search request.
     expect(gemini3FlashCost.totalCost).toBeCloseTo(3.528, 8);
     expect(geminiSearchFastCost.totalCost).toBeCloseTo(2.828, 8);
-    expect(geminiSearchLargeCost.totalCost).toBeCloseTo(2.264, 8);
+    expect(geminiSearchLargeCost.totalCost).toBeCloseTo(2.278, 8);
     expect(ungroundedGeminiSearchFastCost.totalCost).toBeCloseTo(2.8, 8);
 });
 
@@ -1130,9 +1130,9 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
         kind: "search_request",
         unit: "request",
         units: 1,
-        unitCost: 0.007,
-        cost: 0.007,
-        price: 0.007,
+        unitCost: 0.014,
+        cost: 0.014,
+        price: 0.014,
     });
 
     const streamedSearch = calculateBillingAdjustments(

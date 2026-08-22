@@ -1,0 +1,22 @@
+{
+    "name": "pollinations-mcp-worker",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "wrangler dev --local",
+        "test": "vitest run",
+        "typecheck": "tsc --noEmit"
+    },
+    "dependencies": {
+        "@cloudflare/workers-oauth-provider": "^0.8.2",
+        "@modelcontextprotocol/sdk": "^1.29.0",
+        "zod": "^4.3.5"
+    },
+    "devDependencies": {
+        "@cloudflare/workers-types": "^5.20260721.1",
+        "typescript": "^5.9.3",
+        "vitest": "^3.2.4",
+        "wrangler": "^4.59.1"
+    }
+}

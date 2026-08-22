@@ -1,0 +1,34 @@
+{
+  "pr_number": 13704,
+  "title": "refactor: split Stripe billing module",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13704",
+  "merged_at": "2026-08-22T15:51:36Z",
+  "labels": [],
+  "pr_body_excerpt": "- Splits the 1,326-line Stripe billing utility into focused customer, portal, overview, auto-top-up, verification, constants, and types modules.\n- Preserves the existing export surface through a single directory entry point and updates the two route imports.\n- Keeps billing behavior unchanged, including the latest ledger-precision handling; excludes shared billing changes and lockfile churn.\n\nChecks:\n- Biome check\n- Focused TypeScript compile",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Billing shed gets shelves",
+    "blurb": "The Stripe billing hive was carefully sorted into smaller rooms, with all the same doors still leading where they used to. Less maze, same honey.",
+    "summary": "Refactored the 1,326-line Stripe billing utility into focused customer, portal, billing overview, auto-top-up, invoice verification, constants, and types modules while preserving its existing directory-level exports and billing behavior.",
+    "impact": "Billing routes continue using the same API surface and ledger-precision handling, while future maintenance can target smaller, purpose-built modules.",
+    "keywords": [
+      "stripe",
+      "billing",
+      "refactor",
+      "auto-top-up",
+      "invoice-verification",
+      "ledger-precision"
+    ],
+    "visual_concept": "Depict a cozy billing garden shed being organized into clearly labeled little drawers for customers, portal, overview, auto-top-up, verification, constants, and types. Polli, wearing a tiny librarian visor, sorts glowing receipt and coin-shaped code slips into the drawers while a CRT monitor robot happily keeps the original billing route map intact; small code-plants and flowers show that the system is still growing without changing its behavior.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing a tiny librarian visor as she organizes glowing receipt-shaped code slips into a warm garden-shed cabinet labeled in simple pixel text: 'CUSTOMERS', 'PORTAL', 'OVERVIEW', and 'VERIFY'; a cute CRT monitor robot holds an unchanged route map nearby, surrounded by code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-22/PR-13704.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing a tiny librarian visor as she organizes glowing receipt-shaped code slips into a warm garden-shed cabinet labeled in simple pixel text: 'CUSTOMERS', 'PORTAL', 'OVERVIEW', and 'VERIFY'; a cute CRT monitor robot holds an unchanged route map nearby, surrounded by code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-22T15:52:31.206463+00:00"
+}

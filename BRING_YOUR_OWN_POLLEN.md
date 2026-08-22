@@ -26,8 +26,8 @@ Developer earnings are opt-in per App Key. When enabled, users pay 25% over base
 
 ```text
 Base request cost: 1.00 pollen
-User pays:         1.25 pollen
-You receive:       0.25 pollen
+**User** pays:         1.25 pollen
+**You** receive:       0.25 pollen
 ```
 
 Credits land in the same balance type the user paid from: Quest Pollen when the request used Quest Pollen, Paid Pollen when it used Paid Pollen.

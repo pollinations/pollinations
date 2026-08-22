@@ -1,4 +1,5 @@
 import type { Data, OpCloudRow } from "../types";
+import { cloudCategory } from "./categories";
 import { toUsd } from "./fx";
 import {
     opCloudCreditBurnUsd,
@@ -142,7 +143,9 @@ function providerMonth(
 // A positive credit row records a grant award, not usage in that month. It
 // must not make a grant-only provider-month look like a checked zero bill.
 function isProviderUsageWitness(row: OpCloudRow): boolean {
-    return row.type !== "infra" && !(row.credit > 0 && row.paid === 0);
+    return (
+        cloudCategory(row) === "compute" && !(row.credit > 0 && row.paid === 0)
+    );
 }
 
 function pollenMeterUsd(model: PollenModel): number {

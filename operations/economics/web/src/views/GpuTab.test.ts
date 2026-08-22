@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { Data, OpCloudRow, OpPollenRow } from "../types";
-import { gpuEconomics, gpuSummary, visibleGpuRows } from "./GpuTab";
+import {
+    demandCoveragePct,
+    gpuEconomics,
+    gpuSummary,
+    visibleGpuRows,
+} from "./GpuTab";
 
 const baseData: Data = {
     opTransactions: [],
@@ -81,6 +86,8 @@ describe("gpuEconomics", () => {
             paidUsd: 160,
             questUsd: 40,
             retainedUsd: 130,
+            cashMarginUsd: 40,
+            cashMarginPct: (40 / 130) * 100,
             marginUsd: 30,
             marginPct: (30 / 130) * 100,
             effUsdPerReq: 1,
@@ -166,7 +173,7 @@ describe("gpuEconomics", () => {
         expect(rows[0].flags).toEqual(["missing model"]);
     });
 
-    it("flags no Pollen match when a model exists but nothing matched", () => {
+    it("flags no Pollen demand when a model exists but nothing matched", () => {
         const rows = gpuEconomics(
             {
                 ...baseData,
@@ -175,7 +182,53 @@ describe("gpuEconomics", () => {
             "2026-06",
         );
 
-        expect(rows[0].flags).toEqual(["no Pollen match"]);
+        expect(rows[0].flags).toEqual(["no Pollen demand"]);
+    });
+
+    it("keeps Pollen unallocated for a mixed inference and GPU month", () => {
+        const rows = gpuEconomics(
+            {
+                ...baseData,
+                opCloud: [
+                    cloud({}),
+                    cloud({
+                        entry_id: "inference-test",
+                        type: "inference",
+                        resource_id: "api",
+                    }),
+                ],
+                opPollen: [pollen({})],
+            },
+            "2026-06",
+        );
+
+        expect(rows[0]).toMatchObject({
+            requests: 0,
+            paidUsd: 0,
+            questUsd: 0,
+            flags: ["mixed mode · Pollen unallocated"],
+        });
+    });
+
+    it("ignores community rows even when their source is misclassified as GPU", () => {
+        const rows = gpuEconomics(
+            {
+                ...baseData,
+                opCloud: [cloud({ vendor: "community" })],
+                opPollen: [pollen({ vendor: "community" })],
+            },
+            "2026-06",
+        );
+
+        expect(rows).toEqual([]);
+    });
+});
+
+describe("demandCoveragePct", () => {
+    it("shows demand relative to capacity cost without capping at 100%", () => {
+        expect(demandCoveragePct(200, 100)).toBe(200);
+        expect(demandCoveragePct(50, 100)).toBe(50);
+        expect(demandCoveragePct(50, 0)).toBeNull();
     });
 });
 
@@ -214,11 +267,15 @@ describe("gpuSummary", () => {
             paidUsd: 160,
             questUsd: 40,
             rentUsd: 100,
+            paidRentUsd: 100,
             creditRentUsd: 0,
             retainedUsd: 130,
+            cashMarginUsd: 30,
+            cashMarginPct: (30 / 130) * 100,
             marginUsd: 30,
             marginPct: (30 / 130) * 100,
             flaggedRows: 0,
+            mixedRows: 0,
         });
     });
 });

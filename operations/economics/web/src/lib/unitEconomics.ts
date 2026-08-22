@@ -1,9 +1,11 @@
+import { CALIB_DRIFT_ABS_ALARM_USD, hasCalibDrift } from "./insights";
 import type {
     ModelAllocationRow,
     ModelAllocationStatus,
     ModelReconcileRow,
     ModelReconcileStatus,
 } from "./modelReconcile";
+import { type MeteringBasis, providerMeteringBasis } from "./providerRegistry";
 
 export type UnitEconomicsGrain = "model" | "provider";
 
@@ -29,8 +31,24 @@ export type UnitEconomicsRow = EconomicsValues & {
     month: string;
     vendor: string;
     model: string;
+    economicContributionUsd: number | null;
     sourceStatus: ModelReconcileStatus;
     allocationStatus: ModelAllocationStatus | null;
+};
+
+export type ProviderCostCheckKind =
+    | "healthy"
+    | "review"
+    | "utilization"
+    | "calibration"
+    | "not-applicable"
+    | "missing-source"
+    | "provider-level";
+
+export type ProviderCostCheck = {
+    kind: ProviderCostCheckKind;
+    basis: MeteringBasis;
+    value: number | null;
 };
 
 function economicsValues(
@@ -65,6 +83,69 @@ export function meterMatchPct(
     return (Math.min(pollen, provider) / total) * 100;
 }
 
+// Provider-month is the only authoritative cost-check grain. Model rows inherit
+// an allocation of the provider total, so repeating a pass/fail status on every
+// model would imply independent evidence that does not exist.
+export function providerCostCheck(
+    row: Pick<
+        UnitEconomicsRow,
+        | "grain"
+        | "pollenMeterUsd"
+        | "providerUsageUsd"
+        | "sourceStatus"
+        | "vendor"
+    >,
+): ProviderCostCheck {
+    const basis = providerMeteringBasis(row.vendor);
+    if (row.grain === "model") {
+        return { kind: "provider-level", basis, value: null };
+    }
+    if (
+        row.sourceStatus !== "both sources" ||
+        row.pollenMeterUsd == null ||
+        row.providerUsageUsd == null
+    ) {
+        return { kind: "missing-source", basis, value: null };
+    }
+
+    const meterUsd = Math.max(0, row.pollenMeterUsd);
+    const actualUsd = Math.max(0, row.providerUsageUsd);
+    if (basis === "capacity") {
+        return {
+            kind: "utilization",
+            basis,
+            value: actualUsd > 0 ? (meterUsd / actualUsd) * 100 : null,
+        };
+    }
+    if (basis === "mixed") {
+        return {
+            kind: "calibration",
+            basis,
+            value: meterUsd > 0 ? actualUsd / meterUsd : null,
+        };
+    }
+    if (basis === "internal" || basis === "not_applicable") {
+        return { kind: "not-applicable", basis, value: null };
+    }
+
+    const calibrationX = meterUsd > 0 ? actualUsd / meterUsd : null;
+    const zeroMeterMaterialGap =
+        meterUsd === 0 &&
+        Math.abs(actualUsd - meterUsd) > CALIB_DRIFT_ABS_ALARM_USD;
+    const review =
+        zeroMeterMaterialGap ||
+        hasCalibDrift({
+            calibX: calibrationX,
+            meterCloudUsd: actualUsd,
+            pollenCostUsd: meterUsd,
+        });
+    return {
+        kind: review ? "review" : "healthy",
+        basis,
+        value: meterMatchPct(meterUsd, actualUsd),
+    };
+}
+
 function modelNetCash(
     parent: ModelReconcileRow,
     model: ModelAllocationRow,
@@ -84,6 +165,28 @@ function modelNetCash(
     }
     if (model.retainedPaidUsd == null && model.providerCashUsd != null) {
         return -model.providerCashUsd;
+    }
+    return null;
+}
+
+function modelEconomicContribution(
+    parent: ModelReconcileRow,
+    model: ModelAllocationRow,
+): number | null {
+    if (model.retainedPaidUsd != null && model.providerUsageUsd != null) {
+        return model.retainedPaidUsd - model.providerUsageUsd;
+    }
+    if (parent.status !== "both sources" || model.status !== "unallocated") {
+        return null;
+    }
+
+    // Preserve both known sides when a mixed provider-month cannot allocate
+    // cost by model. The model and explicit unallocated rows remain additive.
+    if (model.retainedPaidUsd != null && model.providerUsageUsd == null) {
+        return model.retainedPaidUsd;
+    }
+    if (model.retainedPaidUsd == null && model.providerUsageUsd != null) {
+        return -model.providerUsageUsd;
     }
     return null;
 }
@@ -117,6 +220,12 @@ export function unitEconomicsRows(
             model: "All models",
             sourceStatus: provider.status,
             allocationStatus: null,
+            economicContributionUsd:
+                provider.status === "both sources" &&
+                provider.retainedPaidUsd != null &&
+                provider.providerUsageUsd != null
+                    ? provider.retainedPaidUsd - provider.providerUsageUsd
+                    : null,
             ...economicsValues(provider),
         }));
     }
@@ -131,6 +240,10 @@ export function unitEconomicsRows(
                 sourceStatus: provider.status,
                 allocationStatus: model.status,
                 ...economicsValues(model),
+                economicContributionUsd: modelEconomicContribution(
+                    provider,
+                    model,
+                ),
                 meterGapUsd: modelMeterGap(provider, model),
                 netCashContributionUsd: modelNetCash(provider, model),
             })),

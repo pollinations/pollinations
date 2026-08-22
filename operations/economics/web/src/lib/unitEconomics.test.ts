@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { Data, OpCloudRow, OpPollenRow } from "../types";
 import { modelReconcileRows } from "./modelReconcile";
-import { meterMatchPct, unitEconomicsRows } from "./unitEconomics";
+import {
+    meterMatchPct,
+    providerCostCheck,
+    type UnitEconomicsRow,
+    unitEconomicsRows,
+} from "./unitEconomics";
 
 const cloud = (over: Partial<OpCloudRow> = {}): OpCloudRow => ({
     entry_id: "cloud-test",
@@ -47,6 +52,32 @@ const data = (over: Partial<Data>): Data => ({
     opCloud: [],
     opPollen: [],
     opRunway: [],
+    ...over,
+});
+
+const economicsRow = (
+    over: Partial<UnitEconomicsRow> = {},
+): UnitEconomicsRow => ({
+    grain: "provider",
+    month: "2026-07",
+    vendor: "openai",
+    model: "All models",
+    sourceStatus: "both sources",
+    allocationStatus: null,
+    economicContributionUsd: 0,
+    paidPollenUsd: 0,
+    questPollenUsd: 0,
+    retainedPaidUsd: 0,
+    pollenMeterUsd: 100,
+    providerCashUsd: 100,
+    providerCreditUsd: 0,
+    providerUsageUsd: 100,
+    paidPollenOnCreditsUsd: 0,
+    questPollenOnCreditsUsd: 0,
+    meterGapUsd: 0,
+    paidContributionUsd: 0,
+    questCashSubsidyUsd: 0,
+    netCashContributionUsd: 0,
     ...over,
 });
 
@@ -116,6 +147,9 @@ describe("unitEconomicsRows", () => {
             expect(
                 sum(models.map((row) => row.netCashContributionUsd)),
             ).toBeCloseTo(provider.netCashContributionUsd ?? 0);
+            expect(
+                sum(models.map((row) => row.economicContributionUsd)),
+            ).toBeCloseTo(provider.economicContributionUsd ?? 0);
         }
     });
 
@@ -155,5 +189,54 @@ describe("unitEconomicsRows", () => {
         expect(
             unitEconomicsRows(providers, "model").map((row) => row.month),
         ).toEqual(["2026-08", "2026-07"]);
+    });
+});
+
+describe("providerCostCheck", () => {
+    it("reviews direct providers only when both drift thresholds are exceeded", () => {
+        expect(
+            providerCostCheck(
+                economicsRow({ providerUsageUsd: 150, meterGapUsd: 50 }),
+            ).kind,
+        ).toBe("healthy");
+        expect(
+            providerCostCheck(
+                economicsRow({ providerUsageUsd: 250, meterGapUsd: 150 }),
+            ).kind,
+        ).toBe("review");
+    });
+
+    it("describes capacity, mixed, and internal bases without false alarms", () => {
+        expect(
+            providerCostCheck(
+                economicsRow({
+                    vendor: "lambda",
+                    pollenMeterUsd: 50,
+                    providerUsageUsd: 200,
+                }),
+            ),
+        ).toMatchObject({ kind: "utilization", value: 25 });
+        expect(
+            providerCostCheck(
+                economicsRow({ vendor: "aws", providerUsageUsd: 120 }),
+            ),
+        ).toMatchObject({ kind: "calibration", value: 1.2 });
+        expect(
+            providerCostCheck(economicsRow({ vendor: "inferenceport" })).kind,
+        ).toBe("not-applicable");
+    });
+
+    it("keeps source holes and model allocations distinct", () => {
+        expect(
+            providerCostCheck(
+                economicsRow({
+                    sourceStatus: "pollen only",
+                    providerUsageUsd: null,
+                }),
+            ).kind,
+        ).toBe("missing-source");
+        expect(providerCostCheck(economicsRow({ grain: "model" })).kind).toBe(
+            "provider-level",
+        );
     });
 });

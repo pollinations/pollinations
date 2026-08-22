@@ -1,15 +1,13 @@
 import {
-    ButtonGroup,
     Chip,
-    cn,
-    TabButton,
     TableBody,
     TableCell,
     TableHead,
     TableHeaderCell,
     TableRow,
+    Tooltip,
 } from "@pollinations/ui";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
     DataTable,
     GROUP_BORDER,
@@ -19,23 +17,30 @@ import {
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
+import {
+    Gauge,
+    type GaugePalette,
+    GaugeSummary,
+} from "../components/EconomicsGauge";
 import { StatCards, type StatItem } from "../components/StatCards";
+import { computeModeIndex, managedInferenceData } from "../lib/computeModes";
 import { fmtUnsignedPct, fmtUsd } from "../lib/format";
 import {
     type ModelAllocationStatus,
-    type ModelReconcileStatus,
     modelReconcileRows,
     modelReconcileSummary,
     visibleModelReconcileRows,
 } from "../lib/modelReconcile";
 import {
     type MonthFilterValue,
+    matchesMonth,
+    matchesValue,
     monthLabel,
     type ValueFilter,
 } from "../lib/months";
-import { signedToneOrSoft, usageMatchTone } from "../lib/tone";
+import { signedToneOrSoft } from "../lib/tone";
 import {
-    meterMatchPct,
+    providerCostCheck,
     type UnitEconomicsGrain,
     type UnitEconomicsRow,
     unitEconomicsRows,
@@ -55,12 +60,36 @@ function fmtCashImpact(value: number | null): string {
     return fmtUsd(0);
 }
 
-function sourceWarning(status: ModelReconcileStatus) {
-    if (status === "both sources") return null;
+function mixShare(left: number | null, right: number | null): number | null {
+    if (left == null || right == null) return null;
+    const total = Math.max(0, left) + Math.max(0, right);
+    return total > 0 ? Math.max(0, left) / total : null;
+}
+
+function MixGauge({
+    left,
+    leftLabel,
+    palette = "wallet",
+    right,
+    rightLabel,
+}: {
+    left: number | null;
+    leftLabel: string;
+    palette?: GaugePalette;
+    right: number | null;
+    rightLabel: string;
+}) {
+    if (left == null || right == null) {
+        return <span className="text-theme-text-soft">–</span>;
+    }
     return (
-        <Chip intent="warning" size="sm">
-            {status}
-        </Chip>
+        <Gauge
+            left={left}
+            leftLabel={leftLabel}
+            palette={palette}
+            right={right}
+            rightLabel={rightLabel}
+        />
     );
 }
 
@@ -73,35 +102,122 @@ function allocationWarning(status: ModelAllocationStatus | null) {
     );
 }
 
+function ProviderCostStatus({ row }: { row: UnitEconomicsRow }) {
+    const check = providerCostCheck(row);
+    const label =
+        check.kind === "provider-level"
+            ? "Provider-level"
+            : check.kind === "missing-source"
+              ? row.sourceStatus === "pollen only"
+                  ? "Missing provider"
+                  : "Missing meter"
+              : check.kind === "not-applicable"
+                ? "Not applicable"
+                : check.kind === "utilization"
+                  ? `Utilization · ${fmtUnsignedPct(check.value)}`
+                  : check.kind === "calibration"
+                    ? `Calibration · ${check.value == null ? "–" : `${check.value.toFixed(2)}×`}`
+                    : `${check.kind === "review" ? "Review" : "Healthy"} · ${fmtUnsignedPct(check.value)}`;
+    const className =
+        check.kind === "review" || check.kind === "missing-source"
+            ? "text-outcome-negative-text"
+            : check.kind === "provider-level" || check.kind === "not-applicable"
+              ? "text-theme-text-soft"
+              : "text-theme-text-strong";
+    const explanation =
+        check.kind === "provider-level"
+            ? "Model costs are allocations. Check the provider row against the provider statement."
+            : check.kind === "missing-source"
+              ? "One side of the provider-month comparison is missing."
+              : check.kind === "not-applicable"
+                ? "This row has no external provider cost to reconcile."
+                : check.kind === "utilization"
+                  ? "Capacity providers compare metered demand with reserved capacity cost."
+                  : check.kind === "calibration"
+                    ? "Mixed providers use this ratio for calibration, not pass/fail reconciliation."
+                    : check.kind === "review"
+                      ? "Direct provider drift exceeds both 25% and $100."
+                      : "Direct provider drift is within the materiality threshold.";
+
+    return (
+        <Tooltip
+            triggerAs="span"
+            content={
+                <span className="block max-w-72">
+                    <strong>Provider cost check</strong>
+                    <span className="block">
+                        Basis: {check.basis.replace("_", " ")}
+                    </span>
+                    <span className="block">
+                        Logged: {fmtUsd(row.pollenMeterUsd)} · Provider:{" "}
+                        {fmtUsd(row.providerUsageUsd)} · Gap:{" "}
+                        {fmtSignedUsd(row.meterGapUsd)}
+                    </span>
+                    <span className="block">{explanation}</span>
+                </span>
+            }
+        >
+            <span className={className}>{label}</span>
+        </Tooltip>
+    );
+}
+
+function ContributionValue({ row }: { row: UnitEconomicsRow }) {
+    return (
+        <Tooltip
+            triggerAs="span"
+            content={
+                <span className="block max-w-72">
+                    <strong>Net cash contribution</strong>
+                    <span className="block">
+                        Paid margin: {fmtSignedUsd(row.paidContributionUsd)}
+                    </span>
+                    <span className="block">
+                        Quest cash cost:{" "}
+                        {fmtCashImpact(row.questCashSubsidyUsd)}
+                    </span>
+                    <span className="block">
+                        Net = paid margin − Quest cash cost
+                    </span>
+                    <span className="block">
+                        After credits:{" "}
+                        {fmtSignedUsd(row.economicContributionUsd)}
+                    </span>
+                </span>
+            }
+        >
+            <span className={signedToneOrSoft(row.netCashContributionUsd)}>
+                {fmtSignedUsd(row.netCashContributionUsd)}
+            </span>
+        </Tooltip>
+    );
+}
+
 const SORT_COLUMNS: readonly SortColumn<UnitEconomicsRow>[] = [
     { key: "month", value: (row) => row.month },
     { key: "vendor", value: (row) => row.vendor },
     { key: "model", value: (row) => row.model },
     { key: "paidPollenUsd", value: (row) => row.paidPollenUsd },
+    {
+        key: "pollenMix",
+        value: (row) => mixShare(row.paidPollenUsd, row.questPollenUsd),
+    },
     { key: "questPollenUsd", value: (row) => row.questPollenUsd },
     { key: "retainedPaidUsd", value: (row) => row.retainedPaidUsd },
-    {
-        key: "paidPollenOnCreditsUsd",
-        value: (row) => row.paidPollenOnCreditsUsd,
-    },
-    {
-        key: "questPollenOnCreditsUsd",
-        value: (row) => row.questPollenOnCreditsUsd,
-    },
     { key: "providerCashUsd", value: (row) => row.providerCashUsd },
+    {
+        key: "providerFundingMix",
+        value: (row) => mixShare(row.providerCashUsd, row.providerCreditUsd),
+    },
     { key: "providerCreditUsd", value: (row) => row.providerCreditUsd },
     { key: "providerUsageUsd", value: (row) => row.providerUsageUsd },
-    { key: "paidContributionUsd", value: (row) => row.paidContributionUsd },
-    { key: "questCashSubsidyUsd", value: (row) => row.questCashSubsidyUsd },
     {
         key: "netCashContributionUsd",
         value: (row) => row.netCashContributionUsd,
     },
-    { key: "pollenMeterUsd", value: (row) => row.pollenMeterUsd },
-    { key: "meterGapUsd", value: (row) => row.meterGapUsd },
     {
-        key: "meterMatchPct",
-        value: (row) => meterMatchPct(row.pollenMeterUsd, row.providerUsageUsd),
+        key: "providerCostCheck",
+        value: (row) => providerCostCheck(row).value,
     },
 ];
 
@@ -110,17 +226,26 @@ const DEFAULT_SORT = {
     direction: "desc",
 } as const;
 
-export function UnitEconomicsTab({
+export function ManagedInferenceTab({
     data,
+    grain,
     month = "",
     vendor = "all",
 }: {
     data: Data;
+    grain: UnitEconomicsGrain;
     month?: MonthFilterValue;
     vendor?: ValueFilter;
 }) {
-    const [grain, setGrain] = useState<UnitEconomicsGrain>("model");
-    const allProviders = useMemo(() => modelReconcileRows(data), [data]);
+    const modeIndex = useMemo(() => computeModeIndex(data), [data]);
+    const inferenceData = useMemo(
+        () => managedInferenceData(data, modeIndex),
+        [data, modeIndex],
+    );
+    const allProviders = useMemo(
+        () => modelReconcileRows(inferenceData),
+        [inferenceData],
+    );
     const providers = useMemo(
         () =>
             visibleModelReconcileRows({
@@ -130,15 +255,14 @@ export function UnitEconomicsTab({
             }),
         [allProviders, month, vendor],
     );
-    const modelRows = useMemo(
-        () => unitEconomicsRows(providers, "model"),
-        [providers],
+    const rows = useMemo(
+        () => unitEconomicsRows(providers, grain),
+        [grain, providers],
     );
-    const providerRows = useMemo(
+    const providerEconomics = useMemo(
         () => unitEconomicsRows(providers, "provider"),
         [providers],
     );
-    const rows = grain === "model" ? modelRows : providerRows;
     const { headerProps, rows: sortedRows } = useSortableRows(
         rows,
         SORT_COLUMNS,
@@ -161,23 +285,53 @@ export function UnitEconomicsTab({
     const unknownFundingPollenUsd =
         summary.paidPollenUnknownFundingUsd +
         summary.questPollenUnknownFundingUsd;
+    const knownEconomicRows = providerEconomics.filter(
+        (row) => row.economicContributionUsd != null,
+    );
+    const economicContributionUsd = knownEconomicRows.reduce(
+        (sum, row) => sum + (row.economicContributionUsd ?? 0),
+        0,
+    );
+    const unknownEconomicProviderMonths =
+        providerEconomics.length - knownEconomicRows.length;
+    const mixedProviderMonths = modeIndex.providerMonths.filter(
+        (row) =>
+            row.mode === "mixed" &&
+            matchesMonth(row.month, month) &&
+            matchesValue(row.provider, vendor),
+    ).length;
 
     const stats = useMemo<StatItem[]>(
         () => [
             {
-                label: "Paid Pollen used",
-                value: fmtUsd(summary.paidPollenUsd),
-                detail: `${fmtUsd(summary.retainedPaidUsd)} retained · cash collected when packs sold`,
+                label: "Pollen used",
+                value: fmtUsd(summary.paidPollenUsd + summary.questPollenUsd),
+                detail: (
+                    <GaugeSummary
+                        left={summary.paidPollenUsd}
+                        leftLabel="Paid"
+                        right={summary.questPollenUsd}
+                        rightLabel="Quest"
+                    />
+                ),
             },
             {
-                label: "Quest Pollen used",
-                value: fmtUsd(summary.questPollenUsd),
-                detail: "free balance · never fiat revenue",
+                label: "Retained Paid",
+                value: fmtUsd(summary.retainedPaidUsd),
+                detail: "after BYOP shares",
             },
             {
                 label: "Provider funding",
                 value: fmtUsd(summary.providerUsageUsd),
-                detail: `cash ${fmtUsd(summary.providerCashUsd)} · credits ${fmtUsd(summary.providerCreditUsd)}`,
+                detail: (
+                    <GaugeSummary
+                        left={summary.providerCashUsd}
+                        leftLabel="cash"
+                        palette="neutral"
+                        right={summary.providerCreditUsd}
+                        rightLabel="credit"
+                    />
+                ),
             },
             {
                 label: "Pollen on credits",
@@ -194,68 +348,78 @@ export function UnitEconomicsTab({
                 tone:
                     summary.netCashContributionUsd == null
                         ? "base"
-                        : summary.netCashContributionUsd >= 0
+                        : summary.netCashContributionUsd > 0
                           ? "pos"
-                          : "neg",
+                          : summary.netCashContributionUsd < 0
+                            ? "neg"
+                            : "base",
                 detail:
                     summary.paidContributionUsd == null ||
                     summary.questCashSubsidyUsd == null
                         ? "paid / Quest split unknown"
                         : `paid ${fmtSignedUsd(summary.paidContributionUsd)} · Quest ${fmtCashImpact(summary.questCashSubsidyUsd)}`,
             },
+            {
+                label: "After credits",
+                value:
+                    knownEconomicRows.length === 0
+                        ? "Unknown"
+                        : `${fmtSignedUsd(economicContributionUsd)}${
+                              unknownEconomicProviderMonths > 0
+                                  ? " + unknown"
+                                  : ""
+                          }`,
+                tone:
+                    knownEconomicRows.length === 0
+                        ? "base"
+                        : economicContributionUsd > 0
+                          ? "pos"
+                          : economicContributionUsd < 0
+                            ? "neg"
+                            : "base",
+                detail: "retained Paid − cash − credits",
+            },
         ],
-        [creditBackedPollenUsd, summary, unknownFundingPollenUsd],
+        [
+            creditBackedPollenUsd,
+            economicContributionUsd,
+            knownEconomicRows.length,
+            summary,
+            unknownEconomicProviderMonths,
+            unknownFundingPollenUsd,
+        ],
     );
-
-    const holeDetail = summary.missingSideProviderMonths
-        ? `${summary.missingSideProviderMonths} provider-months missing one side`
-        : "all provider-months have both sources";
 
     return (
         <div className="flex flex-col gap-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                    <div className="font-semibold">
-                        View the same economics by
-                    </div>
-                    <div className="text-sm text-theme-text-soft">
-                        Cards and column definitions stay identical.
-                    </div>
-                </div>
-                <ButtonGroup aria-label="Unit economics view">
-                    <TabButton
-                        active={grain === "model"}
-                        onClick={() => setGrain("model")}
-                    >
-                        Models · {modelRows.length}
-                    </TabButton>
-                    <TabButton
-                        active={grain === "provider"}
-                        onClick={() => setGrain("provider")}
-                    >
-                        Providers · {providerRows.length}
-                    </TabButton>
-                </ButtonGroup>
-            </div>
-
             <StatCards items={stats} />
 
-            <div className="flex flex-wrap items-center gap-2 rounded-xl border border-theme-border/60 bg-surface-opaque/40 px-4 py-3 text-sm text-theme-text-soft">
-                {includesPartialMonth && (
-                    <Chip intent="warning" size="sm">
-                        partial month
-                    </Chip>
-                )}
-                <span>
-                    {grain === "model"
-                        ? "Provider cash and credits are allocated to models by their Pollen metered-cost share. Anything that cannot be allocated stays in an explicit row."
-                        : "These are the exact same model rows rolled up to provider-month totals."}{" "}
-                    {holeDetail}.
-                </span>
-            </div>
+            {(includesPartialMonth ||
+                summary.missingSideProviderMonths > 0 ||
+                mixedProviderMonths > 0) && (
+                <div className="flex flex-wrap items-center gap-2">
+                    {includesPartialMonth && (
+                        <Chip intent="warning" size="sm">
+                            partial month
+                        </Chip>
+                    )}
+                    {summary.missingSideProviderMonths > 0 && (
+                        <Chip intent="warning" size="sm">
+                            {summary.missingSideProviderMonths} source gap
+                            {summary.missingSideProviderMonths === 1 ? "" : "s"}
+                        </Chip>
+                    )}
+                    {mixedProviderMonths > 0 && (
+                        <Chip intent="neutral" size="sm">
+                            {mixedProviderMonths} mixed month
+                            {mixedProviderMonths === 1 ? "" : "s"} unallocated
+                        </Chip>
+                    )}
+                </div>
+            )}
 
             <TableScroller>
-                <DataTable className="min-w-[1840px]">
+                <DataTable className="min-w-[1380px]">
                     <TableHead>
                         <TableRow>
                             <TableHeaderCell
@@ -277,39 +441,45 @@ export function UnitEconomicsTab({
                                 Model
                             </TableHeaderCell>
                             <TableHeaderCell
-                                colSpan={3}
+                                colSpan={4}
                                 align="center"
                                 className={GROUP_BORDER}
                             >
                                 Pollen
                             </TableHeaderCell>
                             <TableHeaderCell
-                                colSpan={2}
-                                align="center"
-                                className={GROUP_BORDER}
-                            >
-                                On provider credits
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                colSpan={3}
+                                colSpan={4}
                                 align="center"
                                 className={GROUP_BORDER}
                             >
                                 Provider funding
                             </TableHeaderCell>
                             <TableHeaderCell
-                                colSpan={3}
-                                align="center"
+                                rowSpan={2}
+                                align="right"
                                 className={GROUP_BORDER}
+                                {...headerProps("netCashContributionUsd")}
                             >
-                                Cash result
+                                <HeaderHint
+                                    hint={{
+                                        meaning:
+                                            "Cash retained after the provider cash used for Paid and Quest traffic. Hover a value for the split and the result after valuing credits.",
+                                        formula:
+                                            "paid margin − Quest cash cost",
+                                    }}
+                                >
+                                    Contribution
+                                </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell
-                                colSpan={3}
-                                align="center"
+                                rowSpan={2}
+                                align="right"
                                 className={GROUP_BORDER}
+                                {...headerProps("providerCostCheck")}
                             >
-                                Reconciliation
+                                <HeaderHint hint="Whether internal logged cost agrees with provider evidence. Hover a value for logged cost, provider actual, gap, and basis.">
+                                    Cost check
+                                </HeaderHint>
                             </TableHeaderCell>
                         </TableRow>
                         <TableRow>
@@ -320,6 +490,14 @@ export function UnitEconomicsTab({
                             >
                                 <HeaderHint hint="Paid Pollen balance consumed by customers. This is cash-backed usage, not necessarily cash collected in the selected month.">
                                     Paid used
+                                </HeaderHint>
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                align="center"
+                                {...headerProps("pollenMix")}
+                            >
+                                <HeaderHint hint="Usage mix — amber is Paid Pollen and green is Quest Pollen, using the shared wallet colors.">
+                                    Paid / Quest
                                 </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell
@@ -334,25 +512,8 @@ export function UnitEconomicsTab({
                                 align="right"
                                 {...headerProps("retainedPaidUsd")}
                             >
-                                <HeaderHint hint="Paid Pollen retained after BYOP and community model-provider shares.">
+                                <HeaderHint hint="Paid Pollen retained after BYOP shares. Community models are reported separately.">
                                     Retained
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                align="right"
-                                className={GROUP_BORDER}
-                                {...headerProps("paidPollenOnCreditsUsd")}
-                            >
-                                <HeaderHint hint="Paid Pollen attributed to provider usage funded with credits, using the provider-month funding share.">
-                                    Paid
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                align="right"
-                                {...headerProps("questPollenOnCreditsUsd")}
-                            >
-                                <HeaderHint hint="Quest Pollen attributed to provider usage funded with credits, using the provider-month funding share.">
-                                    Quest
                                 </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell
@@ -362,6 +523,14 @@ export function UnitEconomicsTab({
                             >
                                 <HeaderHint hint="Provider usage paid with real cash. Model rows receive an allocation from the provider-month total.">
                                     Cash
+                                </HeaderHint>
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                align="center"
+                                {...headerProps("providerFundingMix")}
+                            >
+                                <HeaderHint hint="Provider funding mix — strong neutral is real cash and muted neutral is consumed provider credit.">
+                                    Cash / Credit
                                 </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell
@@ -383,85 +552,7 @@ export function UnitEconomicsTab({
                                         formula: "cash + credit",
                                     }}
                                 >
-                                    Total
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                align="right"
-                                className={GROUP_BORDER}
-                                {...headerProps("paidContributionUsd")}
-                            >
-                                <HeaderHint
-                                    hint={{
-                                        meaning:
-                                            "Contribution from paid traffic after its allocated provider cash.",
-                                        formula:
-                                            "retained paid Pollen − paid traffic cash",
-                                    }}
-                                >
-                                    Paid margin
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                align="right"
-                                {...headerProps("questCashSubsidyUsd")}
-                            >
-                                <HeaderHint hint="Provider cash spent serving free Quest traffic.">
-                                    Quest cost
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                align="right"
-                                {...headerProps("netCashContributionUsd")}
-                            >
-                                <HeaderHint
-                                    hint={{
-                                        meaning:
-                                            "Net cash contribution after paid and Quest traffic.",
-                                        formula:
-                                            "paid margin − Quest cash cost",
-                                    }}
-                                >
-                                    Net
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                align="right"
-                                className={GROUP_BORDER}
-                                {...headerProps("pollenMeterUsd")}
-                            >
-                                <HeaderHint hint="Internal Pollen cost meter for paid and Quest traffic.">
-                                    Pollen meter
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                align="right"
-                                {...headerProps("meterGapUsd")}
-                            >
-                                <HeaderHint
-                                    hint={{
-                                        meaning:
-                                            "Difference between provider usage and the internal Pollen cost meter.",
-                                        formula:
-                                            "provider total − Pollen meter",
-                                    }}
-                                >
-                                    Gap
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                align="right"
-                                {...headerProps("meterMatchPct")}
-                            >
-                                <HeaderHint
-                                    hint={{
-                                        meaning:
-                                            "How closely the Pollen cost meter matches provider usage.",
-                                        formula:
-                                            "min(meter, provider total) ÷ max(meter, provider total)",
-                                    }}
-                                >
-                                    Match %
+                                    Actual
                                 </HeaderHint>
                             </TableHeaderCell>
                         </TableRow>
@@ -472,10 +563,6 @@ export function UnitEconomicsTab({
                             (row) =>
                                 `${grain}|${row.month}|${row.vendor}|${row.model}`,
                         ).map(({ key, row }) => {
-                            const matchPct = meterMatchPct(
-                                row.pollenMeterUsd,
-                                row.providerUsageUsd,
-                            );
                             return (
                                 <TableRow key={key}>
                                     <TableCell>
@@ -485,8 +572,6 @@ export function UnitEconomicsTab({
                                         <span className="mr-2 font-semibold">
                                             {row.vendor}
                                         </span>
-                                        {grain === "provider" &&
-                                            sourceWarning(row.sourceStatus)}
                                     </TableCell>
                                     <TableCell
                                         className={
@@ -506,18 +591,21 @@ export function UnitEconomicsTab({
                                     <TableCell
                                         align="right"
                                         numeric
-                                        className={cn(
-                                            GROUP_BORDER,
-                                            "text-intent-success-text",
-                                        )}
+                                        className={GROUP_BORDER}
                                     >
                                         {fmtUsd(row.paidPollenUsd)}
                                     </TableCell>
-                                    <TableCell
-                                        align="right"
-                                        numeric
-                                        className="text-intent-warning-text"
-                                    >
+                                    <TableCell>
+                                        <div className="flex justify-center">
+                                            <MixGauge
+                                                left={row.paidPollenUsd}
+                                                leftLabel="paid"
+                                                right={row.questPollenUsd}
+                                                rightLabel="Quest"
+                                            />
+                                        </div>
+                                    </TableCell>
+                                    <TableCell align="right" numeric>
                                         {fmtUsd(row.questPollenUsd)}
                                     </TableCell>
                                     <TableCell align="right" numeric>
@@ -528,27 +616,20 @@ export function UnitEconomicsTab({
                                         numeric
                                         className={GROUP_BORDER}
                                     >
-                                        {fmtUsd(row.paidPollenOnCreditsUsd)}
-                                    </TableCell>
-                                    <TableCell
-                                        align="right"
-                                        numeric
-                                        className="text-intent-warning-text"
-                                    >
-                                        {fmtUsd(row.questPollenOnCreditsUsd)}
-                                    </TableCell>
-                                    <TableCell
-                                        align="right"
-                                        numeric
-                                        className={GROUP_BORDER}
-                                    >
                                         {fmtUsd(row.providerCashUsd)}
                                     </TableCell>
-                                    <TableCell
-                                        align="right"
-                                        numeric
-                                        className="text-intent-warning-text"
-                                    >
+                                    <TableCell>
+                                        <div className="flex justify-center">
+                                            <MixGauge
+                                                left={row.providerCashUsd}
+                                                leftLabel="cash"
+                                                palette="neutral"
+                                                right={row.providerCreditUsd}
+                                                rightLabel="credit"
+                                            />
+                                        </div>
+                                    </TableCell>
+                                    <TableCell align="right" numeric>
                                         {fmtUsd(row.providerCreditUsd)}
                                     </TableCell>
                                     <TableCell align="right" numeric>
@@ -557,59 +638,15 @@ export function UnitEconomicsTab({
                                     <TableCell
                                         align="right"
                                         numeric
-                                        className={cn(
-                                            GROUP_BORDER,
-                                            signedToneOrSoft(
-                                                row.paidContributionUsd,
-                                            ),
-                                        )}
-                                    >
-                                        {fmtSignedUsd(row.paidContributionUsd)}
-                                    </TableCell>
-                                    <TableCell
-                                        align="right"
-                                        numeric
-                                        className={
-                                            row.questCashSubsidyUsd == null
-                                                ? "text-theme-text-soft"
-                                                : row.questCashSubsidyUsd > 0
-                                                  ? "text-intent-danger-text"
-                                                  : "text-theme-text-soft"
-                                        }
-                                    >
-                                        {fmtUsd(row.questCashSubsidyUsd)}
-                                    </TableCell>
-                                    <TableCell
-                                        align="right"
-                                        numeric
-                                        className={signedToneOrSoft(
-                                            row.netCashContributionUsd,
-                                        )}
-                                    >
-                                        {fmtSignedUsd(
-                                            row.netCashContributionUsd,
-                                        )}
-                                    </TableCell>
-                                    <TableCell
-                                        align="right"
-                                        numeric
                                         className={GROUP_BORDER}
                                     >
-                                        {fmtUsd(row.pollenMeterUsd)}
+                                        <ContributionValue row={row} />
                                     </TableCell>
                                     <TableCell
                                         align="right"
-                                        numeric
-                                        className={usageMatchTone(matchPct)}
+                                        className={GROUP_BORDER}
                                     >
-                                        {fmtSignedUsd(row.meterGapUsd)}
-                                    </TableCell>
-                                    <TableCell
-                                        align="right"
-                                        numeric
-                                        className={usageMatchTone(matchPct)}
-                                    >
-                                        {fmtUnsignedPct(matchPct)}
+                                        <ProviderCostStatus row={row} />
                                     </TableCell>
                                 </TableRow>
                             );
@@ -617,7 +654,7 @@ export function UnitEconomicsTab({
                         {sortedRows.length === 0 && (
                             <TableRow>
                                 <TableCell
-                                    colSpan={17}
+                                    colSpan={13}
                                     className="py-8 text-center text-theme-text-soft"
                                 >
                                     No unit economics for this selection.

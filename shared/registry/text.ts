@@ -1288,10 +1288,10 @@ export const TEXT_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Poolside route rates (2026-07-22).
-            promptTextTokens: perMillion(0.1),
-            promptCachedTokens: perMillion(0.01),
-            completionTextTokens: perMillion(0.2),
+            // OpenRouter Poolside route rates (2026-08-22).
+            promptTextTokens: perMillion(0.09),
+            promptCachedTokens: perMillion(0.009),
+            completionTextTokens: perMillion(0.18),
         },
         title: "Laguna S 2.1",
         description:

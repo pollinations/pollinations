@@ -84,34 +84,4 @@ export function downloadFile(url: string): void {
     anchor.remove();
 }
 
-export function formatActivityChartDate(
-    date: Date,
-    isHourly: boolean,
-): { label: string; fullDate: string } {
-    return {
-        label: isHourly
-            ? date.toLocaleTimeString("en-US", {
-                  timeZone: "UTC",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  hour12: false,
-              })
-            : date.toLocaleDateString("en-US", {
-                  timeZone: "UTC",
-                  month: "short",
-                  day: "numeric",
-              }),
-        fullDate: date.toLocaleDateString("en-US", {
-            timeZone: "UTC",
-            weekday: "short",
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-            ...(isHourly && {
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: false,
-            }),
-        }),
-    };
-}
+export { formatActivityChartDate } from "./format-activity-chart-date";

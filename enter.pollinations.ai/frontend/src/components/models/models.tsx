@@ -9,6 +9,7 @@ import {
     DropdownItem,
     ExternalLinkButton,
     GitHubIcon,
+    InlineLink,
     Input,
     SearchIcon,
     Section,
@@ -474,6 +475,26 @@ export const Models: FC = () => {
                         </Dropdown>
                     </div>
                 </div>
+                {activeScope === "community" && (
+                    <Alert
+                        intent="warning"
+                        title="Community model privacy"
+                        className="mb-4"
+                    >
+                        Requests to community models are sent to independent
+                        providers, including configured fallback providers. They
+                        may retain, share, or train on your data under their own
+                        policies. Check the provider information before sending
+                        confidential or sensitive data. See our{" "}
+                        <InlineLink
+                            href="https://pollinations.ai/privacy"
+                            showIcon={false}
+                        >
+                            Privacy Policy
+                        </InlineLink>
+                        .
+                    </Alert>
+                )}
                 {catalogError && (
                     <Alert intent="danger" className="mb-4">
                         {catalogError}

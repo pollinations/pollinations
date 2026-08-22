@@ -1,0 +1,34 @@
+{
+  "pr_number": 13695,
+  "title": "fix: bill AssemblyAI transcription add-ons",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13695",
+  "merged_at": "2026-08-22T12:51:32Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds request-priced AssemblyAI transcription sheets using the official [pricing](https://www.assemblyai.com/pricing): Universal-2 diarization is $0.17/hour.\n- Bills Universal-3.5 Pro at $0.21/hour base, $0.26 with prompting, $0.23 with diarization, and $0.28 with both.\n- Leaves canonical names, aliases, provider routes, access, capabilities, and fallback behavior unchanged.\n- Verified all six combinations directly with AssemblyAI and through local Gen, including catalog prices, exact wallet debits, billing events, and a no-charge cache hit.\n- Tests: cost variants, effective-price snapshot, AssemblyAI transcription, model permissions, Gen/Enter typechecks, Biome.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The transcription tab adds up",
+    "blurb": "AssemblyAI transcription add-ons now get their own neatly labeled pollen cells. Polli checked the receipt six different ways, because audio settings apparently contain multitudes.",
+    "summary": "Added request-priced AssemblyAI transcription cost variants: Universal-2 diarization at $0.17/hour and Universal-3.5 Pro at $0.21/hour base, $0.26 with prompting, $0.23 with diarization, or $0.28 with both.",
+    "impact": "AssemblyAI transcription requests now produce wallet debits and billing events that accurately match the selected Universal-2 or Universal-3.5 Pro add-ons, while cache hits remain free.",
+    "keywords": [
+      "AssemblyAI",
+      "transcription",
+      "audio",
+      "billing",
+      "pricing",
+      "Universal-3.5 Pro"
+    ],
+    "visual_concept": "A cozy audio-billing garden: Polli acts as a careful sound engineer and accountant beside a retro transcription terminal, sorting labeled waveform receipts into four small jars for Universal-3.5 Pro configurations and one diarization jar. Tiny code-plants, flowers, and a softly glowing lime-green ledger make accurate per-hour pricing feel like tending a well-organized hive.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, black oval eyes, pink rectangular cheek blushes, light blue rounded wings, and a tiny accountant visor, carefully sorting glowing audio waveform receipts beside a retro terminal and five little labeled billing jars; code-plants and flowers grow around a prominent lime green (#ecf874) ledger, with simple pixel text reading \"AUDIO RECEIPTS\". Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-22/PR-13695.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, black oval eyes, pink rectangular cheek blushes, light blue rounded wings, and a tiny accountant visor, carefully sorting glowing audio waveform receipts beside a retro terminal and five little labeled billing jars; code-plants and flowers grow around a prominent lime green (#ecf874) ledger, with simple pixel text reading \"AUDIO RECEIPTS\". Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-08-22T12:52:30.768173+00:00"
+}

@@ -553,20 +553,22 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-05-19").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // OpenRouter promotional rates through 2026-08-27 for the pinned
-        // google-vertex/global route.
+        // Standard OpenRouter rates for the pinned google-vertex/global route
+        // after the 50%-off launch promo ended 2026-08-27. These mirror
+        // Google's promotional pricing through 2026-12-31; list rates double
+        // on 2027-01-01 and need another update then.
         cost: {
-            promptTextTokens: perMillion(0.375),
-            promptCachedTokens: perMillion(0.0375),
-            promptCacheWriteTokens: perMillion(0.375),
-            promptAudioTokens: perMillion(0.375),
-            promptImageTokens: perMillion(0.375),
-            promptVideoTokens: perMillion(0.375),
-            completionTextTokens: perMillion(1.875),
+            promptTextTokens: perMillion(0.75),
+            promptCachedTokens: perMillion(0.075),
+            promptCacheWriteTokens: perMillion(0.75),
+            promptAudioTokens: perMillion(0.75),
+            promptImageTokens: perMillion(0.75),
+            promptVideoTokens: perMillion(0.75),
+            completionTextTokens: perMillion(3.75),
         },
         billing: openRouterGeminiBilling({
-            searchCostPerThousandRequests: 7,
-            storageCostPerMillionTokenHours: 0.25,
+            searchCostPerThousandRequests: 14,
+            storageCostPerMillionTokenHours: 0.5,
         }),
         title: "Gemini 3.7 Flash",
         description:

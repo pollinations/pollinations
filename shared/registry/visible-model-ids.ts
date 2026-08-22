@@ -1,5 +1,6 @@
 import { and, eq, isNotNull, isNull, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
+import type { ModelPermissionEntry } from "../auth/api-key.ts";
 import { communityModelId } from "../community-endpoints.ts";
 import * as schema from "../db/better-auth.ts";
 import { getModels, resolveModelName } from "./registry.ts";
@@ -22,6 +23,45 @@ export function canonicalizeModelPermissionIds(
         }
     }
     return canonicalIds;
+}
+
+/**
+ * Canonicalize model permission entries, handling both string and {id, pollenType} formats.
+ */
+export function canonicalizeModelPermissionEntries(
+    entries: readonly ModelPermissionEntry[],
+): ModelPermissionEntry[] {
+    const seen = new Set<string>();
+    const canonical: ModelPermissionEntry[] = [];
+    for (const entry of entries) {
+        if (typeof entry === "string") {
+            let canonicalId = entry;
+            try {
+                canonicalId = resolveModelName(entry);
+            } catch {
+                // Preserve unknown and community model IDs.
+            }
+            if (!seen.has(canonicalId)) {
+                seen.add(canonicalId);
+                canonical.push(canonicalId);
+            }
+        } else {
+            let canonicalId = entry.id;
+            try {
+                canonicalId = resolveModelName(entry.id);
+            } catch {
+                // Preserve unknown and community model IDs.
+            }
+            if (!seen.has(canonicalId)) {
+                seen.add(canonicalId);
+                canonical.push({
+                    id: canonicalId,
+                    pollenType: entry.pollenType,
+                });
+            }
+        }
+    }
+    return canonical;
 }
 
 export async function getVisibleModelIdsForUser(
@@ -63,15 +103,19 @@ export async function getVisibleModelIdsForUser(
 }
 
 export function filterPermissionsToVisibleModels(
-    permissions: Record<string, string[]> | null,
+    permissions: Record<string, string[] | ModelPermissionEntry[]> | null,
     visibleModelIds: ReadonlySet<string>,
-): Record<string, string[]> | null {
-    if (!Array.isArray(permissions?.models)) return permissions;
+): Record<string, string[] | ModelPermissionEntry[]> | null {
+    if (!permissions?.models) return permissions;
+
+    const models = permissions.models;
+    if (!Array.isArray(models)) return permissions;
 
     return {
         ...permissions,
-        models: permissions.models.filter((modelId) =>
-            visibleModelIds.has(modelId),
-        ),
+        models: models.filter((entry) => {
+            const modelId = typeof entry === "string" ? entry : entry.id;
+            return visibleModelIds.has(modelId);
+        }),
     };
 }

@@ -2,7 +2,11 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { HTTPException } from "hono/http-exception";
 import * as schema from "../db/better-auth.ts";
-import { canonicalizeModelPermissionIds } from "../registry/visible-model-ids.ts";
+import {
+    canonicalizeModelPermissionEntries,
+    canonicalizeModelPermissionIds,
+} from "../registry/visible-model-ids.ts";
+import type { ModelPermissionEntry } from "./api-key.ts";
 import { getRedirectUris, parseMetadata } from "./api-key-metadata.ts";
 import { sanitizeAuthorizeAccountPermissions } from "./authorize-config.ts";
 import {
@@ -29,7 +33,7 @@ type CreateApiKeyForUserInput = {
     name: string;
     type: ApiKeyType;
     expiresIn?: number;
-    allowedModels?: string[] | null;
+    allowedModels?: (string | ModelPermissionEntry)[] | null;
     pollenBudget?: number | null;
     pollenType?: "quest" | "paid" | null;
     accountPermissions?: string[] | null;
@@ -247,9 +251,22 @@ export async function createApiKeyForUser({
         ? sanitizedAccountPerms
         : (sanitizedAccountPerms?.filter((p) => p !== "keys") ?? null);
 
-    const permissions: Record<string, string[]> = {};
+    const permissions: Record<string, string[] | ModelPermissionEntry[]> = {};
     if (allowedModels) {
-        permissions.models = canonicalizeModelPermissionIds(allowedModels);
+        // Check if any entries are objects (per-model pollen overrides)
+        const hasObjectEntries = allowedModels.some(
+            (entry) =>
+                typeof entry === "object" && entry !== null && "id" in entry,
+        );
+        if (hasObjectEntries) {
+            permissions.models = canonicalizeModelPermissionEntries(
+                allowedModels as ModelPermissionEntry[],
+            );
+        } else {
+            permissions.models = canonicalizeModelPermissionIds(
+                allowedModels as string[],
+            );
+        }
     }
     if (safeAccountPerms && safeAccountPerms.length > 0) {
         permissions.account = safeAccountPerms;

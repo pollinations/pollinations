@@ -1,3 +1,4 @@
+import type { ModelPermissionEntry } from "@shared/auth/api-key.ts";
 import {
     createApiKeyForUser,
     validateRedirectUriFormat,
@@ -7,6 +8,7 @@ import { sanitizeAuthorizeAccountPermissions } from "@shared/auth/authorize-conf
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import {
+    canonicalizeModelPermissionEntries,
     canonicalizeModelPermissionIds,
     filterPermissionsToVisibleModels,
     getVisibleModelIdsForUser,
@@ -34,27 +36,42 @@ function setPrivateNoStoreHeaders(c: {
  * Returns undefined if no permission fields were provided.
  */
 function buildUpdatedPermissions(
-    existing: Record<string, string[]>,
-    allowedModels?: string[] | null,
+    existing: Record<string, string[] | ModelPermissionEntry[]>,
+    allowedModels?: (string | ModelPermissionEntry)[] | null,
     accountPermissions?: string[] | null,
-): Record<string, string[]> | undefined {
+): Record<string, string[] | ModelPermissionEntry[]> | undefined {
     if (allowedModels === undefined && accountPermissions === undefined) {
         return undefined;
     }
     const updated = { ...existing };
-    applyPermissionField(
-        updated,
-        "models",
-        Array.isArray(allowedModels)
-            ? canonicalizeModelPermissionIds(allowedModels)
-            : allowedModels,
-    );
+    if (allowedModels !== undefined) {
+        if (allowedModels === null) {
+            delete updated.models;
+        } else if (Array.isArray(allowedModels)) {
+            // Check if any entries are objects (per-model pollen overrides)
+            const hasObjectEntries = allowedModels.some(
+                (entry) =>
+                    typeof entry === "object" &&
+                    entry !== null &&
+                    "id" in entry,
+            );
+            if (hasObjectEntries) {
+                updated.models = canonicalizeModelPermissionEntries(
+                    allowedModels as ModelPermissionEntry[],
+                );
+            } else {
+                updated.models = canonicalizeModelPermissionIds(
+                    allowedModels as string[],
+                );
+            }
+        }
+    }
     applyPermissionField(updated, "account", accountPermissions);
     return updated;
 }
 
 function applyPermissionField(
-    target: Record<string, string[]>,
+    target: Record<string, string[] | ModelPermissionEntry[]>,
     key: string,
     value: string[] | null | undefined,
 ): void {
@@ -127,10 +144,20 @@ async function updateKeyMetadata(
 const UpdateApiKeySchema = z.object({
     name: z.string().optional().describe("Name for the API key"),
     allowedModels: z
-        .array(z.string())
+        .array(
+            z.union([
+                z.string(),
+                z.object({
+                    id: z.string(),
+                    pollenType: z.enum(["quest", "paid"]),
+                }),
+            ]),
+        )
         .nullable()
         .optional()
-        .describe("Model IDs this key can access. null = all models allowed"),
+        .describe(
+            "Model IDs or {id, pollenType} objects this key can access. null = all models allowed",
+        ),
     pollenBudget: z
         .number()
         .nullable()
@@ -174,10 +201,20 @@ const CreateApiKeySchema = z.object({
         .optional()
         .describe("Expiry in seconds from now (max 365 days)"),
     allowedModels: z
-        .array(z.string())
+        .array(
+            z.union([
+                z.string(),
+                z.object({
+                    id: z.string(),
+                    pollenType: z.enum(["quest", "paid"]),
+                }),
+            ]),
+        )
         .nullable()
         .optional()
-        .describe("Model IDs this key can access. null = all models allowed"),
+        .describe(
+            "Model IDs or {id, pollenType} objects this key can access. null = all models allowed",
+        ),
     pollenBudget: z
         .number()
         .nullable()

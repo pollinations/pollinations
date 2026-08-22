@@ -1,4 +1,5 @@
 import { getLogger } from "@logtape/logtape";
+import { resolveModelPollenType } from "@shared/auth/api-key.ts";
 import type { ApiKeyType } from "@shared/auth/api-key-creation.ts";
 import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
 import { payerBucketToMeter } from "@shared/billing/balance.ts";
@@ -376,7 +377,11 @@ export const track = (eventType: EventType) =>
                         apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
                         byopClientKeyId: c.var.auth?.apiKey?.byopClientKeyId,
                         modelPaidOnly: c.var.model?.definition.paidOnly,
-                        keyPollenType: c.var.auth?.apiKey?.pollenType,
+                        keyPollenType: resolveModelPollenType(
+                            c.var.auth?.apiKey?.permissions,
+                            c.var.model?.resolved,
+                            c.var.auth?.apiKey?.pollenType,
+                        ),
                         // Only public endpoints pay their owner a reward: a
                         // private endpoint is owner-called (base cost billed to
                         // the owner, no markup, no self-credit).

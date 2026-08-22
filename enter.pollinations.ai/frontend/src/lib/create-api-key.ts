@@ -1,8 +1,9 @@
 import { expiryDaysToExpiresIn } from "@shared/auth/authorize-config.ts";
 import { apiClient } from "../api.ts";
+import type { ModelPermissionEntry } from "../components/keys/types.ts";
 
 type Permissions = {
-    allowedModels?: string[] | null;
+    allowedModels?: (string | ModelPermissionEntry)[] | null;
     pollenBudget?: number | null;
     pollenType?: "quest" | "paid" | null;
     accountPermissions?: string[] | null;

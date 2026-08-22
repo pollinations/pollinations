@@ -7,6 +7,7 @@ import { AccountPermissionsInput } from "./account-permissions-input.tsx";
 import { ExpiryDaysInput } from "./expiry-days-input.tsx";
 import { PollenBudgetInput } from "./pollen-budget-input.tsx";
 import { PollenTypeInput } from "./pollen-type-input.tsx";
+import type { ModelPermissionEntry } from "./types.ts";
 
 export interface KeyPermissions {
     allowedModels: (string | ModelPermissionEntry)[] | null;
@@ -17,9 +18,9 @@ export interface KeyPermissions {
 }
 
 export function useKeyPermissions(initial: Partial<KeyPermissions> = {}) {
-    const [allowedModels, setAllowedModels] = useState(
-        initial.allowedModels ?? null,
-    );
+    const [allowedModels, setAllowedModels] = useState<
+        (string | ModelPermissionEntry)[] | null
+    >(initial.allowedModels ?? null);
     const [pollenBudget, setPollenBudget] = useState(
         initial.pollenBudget ?? null,
     );

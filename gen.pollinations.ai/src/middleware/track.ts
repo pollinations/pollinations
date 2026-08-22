@@ -374,6 +374,7 @@ export const track = (eventType: EventType) =>
                             c.var.balance.apiKeyReservation?.amount,
                         byopClientKeyId: c.var.auth?.apiKey?.byopClientKeyId,
                         modelPaidOnly: c.var.model?.definition.paidOnly,
+                        keyPollenType: c.var.auth?.apiKey?.pollenType,
                         // A private endpoint only earns a reward when it backs
                         // its owner's public listing. Cross-owner private
                         // fallbacks are rejected when the fallback is linked.

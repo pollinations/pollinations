@@ -4,6 +4,7 @@ import { apiClient } from "../api.ts";
 type Permissions = {
     allowedModels?: string[] | null;
     pollenBudget?: number | null;
+    pollenType?: "quest" | "paid" | null;
     accountPermissions?: string[] | null;
 };
 
@@ -42,6 +43,7 @@ export async function createKeyWithPermissions({
         metadata,
         allowedModels: permissions?.allowedModels,
         pollenBudget: permissions?.pollenBudget,
+        pollenType: permissions?.pollenType,
         accountPermissions: permissions?.accountPermissions,
     };
 

@@ -9,6 +9,7 @@ export interface ApiKey {
     permissions: Record<string, string[]> | null;
     metadata: Record<string, unknown> | null;
     pollenBalance?: number | null;
+    pollenType?: "quest" | "paid" | null;
     byopClientKeyId?: string | null;
 }
 
@@ -16,6 +17,7 @@ export interface ApiKeyUpdateParams {
     name?: string;
     allowedModels?: string[] | null;
     pollenBudget?: number | null;
+    pollenType?: "quest" | "paid" | null;
     accountPermissions?: string[] | null;
     expiresAt?: Date | null;
 }
@@ -35,6 +37,8 @@ export type CreateApiKey = {
     allowedModels?: string[] | null;
     /** Pollen budget cap for this key. null = unlimited */
     pollenBudget?: number | null;
+    /** Restrict this key to only use quest or paid pollen. null = unrestricted */
+    pollenType?: "quest" | "paid" | null;
     /** Days until expiry. null = no expiry */
     expiryDays?: number | null;
     /** Account permissions: ["profile", "usage", "keys"]. null = no permissions */

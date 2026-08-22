@@ -403,7 +403,10 @@ export const apiKeysRoutes = new Hono<Env>()
                     body: {
                         keyId: id,
                         userId: user.id,
-                        permissions: updatedPermissions,
+                        permissions: updatedPermissions as Record<
+                            string,
+                            string[]
+                        >,
                     },
                 });
             }

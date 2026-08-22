@@ -51,7 +51,7 @@ type CreateApiKeyAuthClient = {
                 userId: string;
                 expiresIn?: number;
                 metadata?: Record<string, unknown>;
-                permissions?: Record<string, string[]>;
+                permissions?: Record<string, string[] | ModelPermissionEntry[]>;
             };
         }) => Promise<{
             id?: string;

@@ -365,6 +365,14 @@ function pollinationsHeaderHtml(): string {
 </div>
 <script>
 (function () {
+  function normalizeLegacyHash() {
+    if (window.location.hash === '#tag/byop') {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search + '#tag/connect-user-wallets');
+    }
+  }
+  normalizeLegacyHash();
+  window.addEventListener('hashchange', normalizeLegacyHash);
+
   // Copy for LLMs — always copies the full doc (api + integrations).
   var copy = document.querySelector('.ph-fab-copy');
   if (copy) {

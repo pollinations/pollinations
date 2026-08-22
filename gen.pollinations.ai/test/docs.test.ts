@@ -357,6 +357,8 @@ describe("docs routes", () => {
             'property="og:image" content="https://gen.pollinations.ai/og-image.png"',
         );
         expect(html).toContain('rel="manifest" href="/manifest.webmanifest"');
+        expect(html).toContain("window.location.hash === '#tag/byop'");
+        expect(html).toContain("#tag/connect-user-wallets");
     });
 
     it("serves the OpenAPI schema as YAML when ?format=yaml", async () => {

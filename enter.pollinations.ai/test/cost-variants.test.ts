@@ -210,16 +210,17 @@ describe("long-context cost variants", () => {
     });
 
     it.each([
-        ["gpt-5.6-sol", 10, 1, 12.5, 45],
-        ["gpt-5.6-terra", 5, 0.5, 6.25, 22.5],
-        ["gpt-5.6-luna", 2, 0.2, 2.5, 9],
+        ["gpt-5.6-sol", 10, 1, 12.5, 45, 0.5],
+        ["gpt-5.6-terra", 4, 0.4, 5, 18, 0.625],
+        ["gpt-5.6-luna", 0.4, 0.04, 0.5, 1.8, 1],
     ] satisfies [
         ModelName,
         number,
         number,
         number,
         number,
-    ][])("%s applies every Azure long-context meter to the full request", (model, input, cached, cacheWrite, output) => {
+        number,
+    ][])("%s applies every Azure long-context meter to the full request", (model, input, cached, cacheWrite, output, multiplier) => {
         const billing = bill(model, {
             promptTextTokens: 272_001,
             promptCachedTokens: 1_000,
@@ -228,7 +229,6 @@ describe("long-context cost variants", () => {
         });
 
         expect(billing.costVariant).toBe("long_context");
-        const multiplier = model === "gpt-5.6-luna" ? 0.2 : 0.5;
         expect(billing.priceDefinition).toMatchObject({
             promptTextTokens: (input / 1e6) * multiplier,
             promptCachedTokens: (cached / 1e6) * multiplier,

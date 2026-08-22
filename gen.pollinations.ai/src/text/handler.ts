@@ -462,7 +462,7 @@ function normalizeSearchContext(
     if (
         supported.length > 1 &&
         requested !== undefined &&
-        !supported.includes(requested as "low" | "high")
+        !supported.includes(requested)
     ) {
         return {
             errorResponse: c.json(
@@ -481,9 +481,7 @@ function normalizeSearchContext(
     }
 
     const searchContextSize =
-        supported.length > 1 && requested
-            ? (requested as "low" | "high")
-            : supported[0];
+        supported.length > 1 && requested ? requested : supported[0];
     c.var.track.setPricingInput({ searchContextSize });
     return {
         requestData: {

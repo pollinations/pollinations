@@ -213,6 +213,42 @@ describe("callAzureResponses", () => {
         });
     });
 
+    it("always sends the configured Azure web-search tool", async () => {
+        let body: Record<string, unknown> | undefined;
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (_input, init) => {
+                body = JSON.parse(String(init?.body));
+                return Response.json({
+                    id: "resp_search",
+                    model: "gpt-5.4-nano",
+                    status: "completed",
+                    output: [],
+                });
+            },
+        );
+
+        await callAzureResponses([{ role: "user", content: "Latest news" }], {
+            model: "gpt-5.4-nano",
+            modelConfig,
+            azureWebSearch: true,
+            web_search_options: { search_context_size: "high" },
+            tools: [
+                {
+                    type: "function",
+                    function: { name: "ignored", parameters: {} },
+                },
+            ],
+            tool_choice: "none",
+            parallel_tool_calls: true,
+        });
+
+        expect(body).toMatchObject({
+            tools: [{ type: "web_search", search_context_size: "high" }],
+            tool_choice: "required",
+        });
+        expect(body).not.toHaveProperty("parallel_tool_calls");
+    });
+
     it("maps output, tool calls, finish reason, and every billable usage field", async () => {
         mockJson({
             id: "resp_tool",
@@ -226,7 +262,21 @@ describe("callAzureResponses", () => {
                 },
                 {
                     type: "message",
-                    content: [{ type: "output_text", text: "Calling." }],
+                    content: [
+                        {
+                            type: "output_text",
+                            text: "Calling.",
+                            annotations: [
+                                {
+                                    type: "url_citation",
+                                    start_index: 0,
+                                    end_index: 8,
+                                    title: "Weather",
+                                    url: "https://example.com/weather",
+                                },
+                            ],
+                        },
+                    ],
                 },
                 {
                     type: "function_call",
@@ -245,6 +295,7 @@ describe("callAzureResponses", () => {
                 output_tokens_details: { reasoning_tokens: 3 },
                 total_tokens: 15,
             },
+            tool_usage: { web_search: { num_requests: 2 } },
         });
 
         const completion = await callAzureResponses(
@@ -264,6 +315,17 @@ describe("callAzureResponses", () => {
                         content: "Calling.",
                         refusal: null,
                         reasoning_content: "Checked.",
+                        annotations: [
+                            {
+                                type: "url_citation",
+                                url_citation: {
+                                    start_index: 0,
+                                    end_index: 8,
+                                    title: "Weather",
+                                    url: "https://example.com/weather",
+                                },
+                            },
+                        ],
                         tool_calls: [
                             {
                                 id: "call_9",
@@ -285,6 +347,7 @@ describe("callAzureResponses", () => {
                 },
                 completion_tokens: 5,
                 completion_tokens_details: { reasoning_tokens: 3 },
+                server_tool_use_details: { web_search_requests: 2 },
                 total_tokens: 15,
             },
         });
@@ -307,7 +370,8 @@ describe("callAzureResponses", () => {
         mockStream([
             'data: {"type":"response.created","response":{"id":"resp_stream","created_at":1234}}\n\n',
             'data: {"type":"response.output_text.delta","delta":"Hello"}\n\n',
-            'data: {"type":"response.completed","response":{"status":"completed","output":[{"type":"message"}],"usage":{"input_tokens":3,"input_tokens_details":{"cached_tokens":1,"cache_write_tokens":0},"output_tokens":2,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":5}}}\n\n',
+            'data: {"type":"response.output_text.annotation.added","annotation":{"type":"url_citation","start_index":0,"end_index":5,"title":"Hello","url":"https://example.com/hello"}}\n\n',
+            'data: {"type":"response.completed","response":{"status":"completed","output":[{"type":"message"}],"usage":{"input_tokens":3,"input_tokens_details":{"cached_tokens":1,"cache_write_tokens":0},"output_tokens":2,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":5},"tool_usage":{"web_search":{"num_requests":1}}}}\n\n',
         ]);
         const completion = await callAzureResponses(
             [{ role: "user", content: "Hi" }],
@@ -333,8 +397,21 @@ describe("callAzureResponses", () => {
             ],
         });
         expect(output[1].choices[0].delta).toEqual({ content: "Hello" });
-        expect(output[2].choices[0].finish_reason).toBe("stop");
-        expect(output[3]).toMatchObject({
+        expect(output[2].choices[0].delta).toEqual({
+            annotations: [
+                {
+                    type: "url_citation",
+                    url_citation: {
+                        start_index: 0,
+                        end_index: 5,
+                        title: "Hello",
+                        url: "https://example.com/hello",
+                    },
+                },
+            ],
+        });
+        expect(output[3].choices[0].finish_reason).toBe("stop");
+        expect(output[4]).toMatchObject({
             choices: [],
             usage: {
                 prompt_tokens: 3,
@@ -344,10 +421,11 @@ describe("callAzureResponses", () => {
                 },
                 completion_tokens: 2,
                 completion_tokens_details: { reasoning_tokens: 0 },
+                server_tool_use_details: { web_search_requests: 1 },
                 total_tokens: 5,
             },
         });
-        expect(output[4]).toBe("[DONE]");
+        expect(output[5]).toBe("[DONE]");
     });
 
     it("streams reasoning and indexed function-call deltas", async () => {

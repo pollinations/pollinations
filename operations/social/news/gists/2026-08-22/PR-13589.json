@@ -1,0 +1,34 @@
+{
+  "pr_number": 13589,
+  "title": "fix(billing): include BYOP markup in preflight budget checks",
+  "author": "iotserver24",
+  "url": "https://github.com/pollinations/pollinations/pull/13589",
+  "merged_at": "2026-08-22T08:44:37Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #10736\n\nPreflight admitted requests against the **baseline** estimate, then deduction charged **baseline + 25% BYOP markup**. A key budget of `1.10` with estimate `1.00` would pass `checkBalance` and then debit `1.25`, leaving the budget negative.\n\n## Changes\n\n1. **`byopClientAllowsMarkup`** — same eligibility as `resolveDevMarkup` (live `pk_`, earnings on, not self-spend).\n2. **Auth** — join the publishable key’s prefix/enabled/expiry/metadata and set `apiKey.byopMarkupApplies` on the already-loaded row. No extra D1 hit in preflight.\n3. **`checkBalance`** — when markup applies, require `round(baseline + computeDevCredit(baseline))`, same rounding as the ledger.\n\nEarnings-disabled / owner-spend BYOP keys still preflight at baseline.\n\n## Tests\n\n`npx vitest run src/byop-markup.test.ts` — 23 passed.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The budget learned arithmetic",
+    "blurb": "BYOP requests now check the same total they will actually spend. The ledger and the garden gate have finally agreed on what 25% means.",
+    "summary": "Fixed BYOP preflight budget checks so eligible live publishable keys require the rounded baseline estimate plus the 25% developer-credit markup, matching the amount charged by the ledger.",
+    "impact": "A key with a 1.10 budget and a 1.00 baseline estimate will now be checked against the actual 1.25 charge before generation, while earnings-disabled and owner-spend BYOP keys continue to use the baseline estimate.",
+    "keywords": [
+      "billing",
+      "BYOP",
+      "preflight",
+      "budget",
+      "api-keys",
+      "markup"
+    ],
+    "visual_concept": "A cozy garden checkout gate compares a seed packet's baseline cost with its final cost after a small 25% pollen-markup tag, then lets it pass only when the bee's wallet has enough. Polli acts as the careful bookkeeper with an abacus, while a friendly CRT robot displays matching preflight and ledger totals; code-plants and flowers make the accounting feel like healthy garden maintenance.",
+    "image_prompt": "A cozy pixel art garden billing desk where Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings, wears tiny accountant glasses and checks a seed-packet receipt marked \"1.00 + 25% = 1.25\" beside a lime green (#ecf874) wallet; a cute chunky CRT-monitor robot happily shows matching \"PREFLIGHT\" and \"LEDGER\" totals while code-plants bloom around them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-22/PR-13589.jpg",
+    "prompt": "A cozy pixel art garden billing desk where Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings, wears tiny accountant glasses and checks a seed-packet receipt marked \"1.00 + 25% = 1.25\" beside a lime green (#ecf874) wallet; a cute chunky CRT-monitor robot happily shows matching \"PREFLIGHT\" and \"LEDGER\" totals while code-plants bloom around them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-22T08:45:35.771996+00:00"
+}

@@ -1,0 +1,51 @@
+{
+  "date": "2026-08-21",
+  "period_start": "2026-08-21",
+  "period_end": "2026-08-21",
+  "title": "The app garden got easier to explore",
+  "summary": "A community-heavy day: better app discovery, video duration metadata, repaired API docs, and more honest model plumbing.\n\nThe ecosystem directory now supports shareable search URLs, a cleaner all-apps default, reorganized browsing controls, and a more visible Docs card. Two new image tools joined the directory too: REKTY GENERATOR, an open-source multi-model image interface, and ArtScape Studio, a bilingual configurable art studio. The README also received its regular field report on recent apps and project activity.\n\nVideo model endpoints and SDK types now expose minimum, maximum, default, and supported duration values. Apps can build valid duration pickers for models such as Veo, Wan, and Nova Reel instead of treating video length as a small mystery with a dropdown attached.\n\nOpenAPI schema generation now handles prompt-agent messages with a JSON Schema-compatible definition, while the Markdown docs pipeline correctly includes managed-agent, account, community-model, and agent routes. Tag descriptions also make it through to the generated docs, where they belong.",
+  "pr_count": 10,
+  "prs": [
+    {
+      "number": 11145,
+      "date": "2026-08-21"
+    },
+    {
+      "number": 12279,
+      "date": "2026-08-21"
+    },
+    {
+      "number": 13274,
+      "date": "2026-08-21"
+    },
+    {
+      "number": 13600,
+      "date": "2026-08-21"
+    },
+    {
+      "number": 13609,
+      "date": "2026-08-21"
+    },
+    {
+      "number": 13617,
+      "date": "2026-08-21"
+    },
+    {
+      "number": 13650,
+      "date": "2026-08-21"
+    },
+    {
+      "number": 13652,
+      "date": "2026-08-21"
+    },
+    {
+      "number": 13653,
+      "date": "2026-08-21"
+    },
+    {
+      "number": 13664,
+      "date": "2026-08-21"
+    }
+  ],
+  "generated_at": "2026-08-22T06:12:25.001480+00:00"
+}

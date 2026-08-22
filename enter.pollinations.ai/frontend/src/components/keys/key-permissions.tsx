@@ -1,5 +1,6 @@
 import type { FC } from "react";
 import { useState } from "react";
+import type { ModelPermissionEntry } from "./types.ts";
 import { useModelCategories } from "../models/use-model-categories.ts";
 import { useOwnCommunityModels } from "../models/use-own-community-models.ts";
 import { AccountPermissionsInput } from "./account-permissions-input.tsx";
@@ -8,7 +9,7 @@ import { PollenBudgetInput } from "./pollen-budget-input.tsx";
 import { PollenTypeInput } from "./pollen-type-input.tsx";
 
 export interface KeyPermissions {
-    allowedModels: string[] | null;
+    allowedModels: (string | ModelPermissionEntry)[] | null;
     pollenBudget: number | null;
     pollenType: "quest" | "paid" | null;
     expiryDays: number | null;
@@ -101,8 +102,12 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
                 value={permissions.accountPermissions}
                 onChange={setAccountPermissions}
                 disabled={disabled}
-                allowedModels={permissions.allowedModels}
-                onModelsChange={setAllowedModels}
+                allowedModels={
+                    permissions.allowedModels?.map((e) =>
+                        typeof e === "string" ? e : e.id,
+                    ) ?? null
+                }
+                onModelsChange={(models) => setAllowedModels(models)}
                 modelsInitiallyExpanded={modelsInitiallyExpanded}
                 modelCategories={modelCategories}
             />

@@ -20,7 +20,7 @@ export function canCoverEstimatedCharge(
     // model is never free, so no zero-balance caller needs to get through.
     // paidOnly takes precedence over keyPollenType — you can't route a
     // paid-only model through the quest bucket.
-    if (isPaidOnly) return balances.packBalance >= threshold;
+    if (isPaidOnly) return balances.packBalance > threshold;
 
     // Key-level pollen type restriction (only applies to non-paidOnly models).
     if (keyPollenType === "quest") return balances.tierBalance >= threshold;

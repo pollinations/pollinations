@@ -826,7 +826,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
     .get(
         "/",
         describeRoute({
-            tags: ["👤 Account"],
+            tags: ["🧩 Community Models"],
             summary: "List My Models",
             description:
                 "List private and public community models owned by the authenticated account. API keys require `account:keys`.",
@@ -885,7 +885,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
     .post(
         "/provider",
         describeRoute({
-            tags: ["👤 Account"],
+            tags: ["🧩 Community Models"],
             summary: "Update Community Provider Profile",
             description:
                 "Set the public provider name and HTTPS service link shared by all community models owned by the authenticated account. Send both fields empty to clear the profile. Publishing approval and `account:keys` are required.",
@@ -941,7 +941,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
     .get(
         "/:id/fallback-candidates",
         describeRoute({
-            tags: ["👤 Account"],
+            tags: ["🧩 Community Models"],
             summary: "List Fallback Candidates",
             description:
                 "Community models this model may declare as fallbacks: listed, public or owned by you, same modality, and priced at or below it on every price field. Computed with the same rule the update endpoint validates against, so every id listed here is accepted. Eligibility is re-checked when a request is routed, so a target repriced above this model afterwards stops serving without changing the stored list.",
@@ -1024,7 +1024,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
     .post(
         "/",
         describeRoute({
-            tags: ["👤 Account"],
+            tags: ["🧩 Community Models"],
             summary: "Create My Model",
             description:
                 "Register a private or public community text, image, or transcription model. Private is the default. Public models require an allowlisted account and may be free or priced. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
@@ -1134,7 +1134,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
     .post(
         "/models",
         describeRoute({
-            tags: ["👤 Account"],
+            tags: ["🧩 Community Models"],
             summary: "List Upstream Models",
             description:
                 "Fetch OpenAI-compatible upstream model IDs from a provider before registering a My Models endpoint. Limited to one probe every 30 seconds per account. API keys require `account:keys`.",
@@ -1177,7 +1177,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
     .post(
         "/test",
         describeRoute({
-            tags: ["👤 Account"],
+            tags: ["🧩 Community Models"],
             summary: "Test My Model Endpoint",
             description:
                 "Test an OpenAI-compatible upstream model before registering it. Image tests detect the image pricing mode and probe the derived `/images/edits` endpoint. Limited to one probe every 30 seconds per account. API keys require `account:keys`.",
@@ -1236,7 +1236,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
     .post(
         "/:id/update",
         describeRoute({
-            tags: ["👤 Account"],
+            tags: ["🧩 Community Models"],
             summary: "Update My Model",
             description:
                 "Update a community model owned by the authenticated account. Changing visibility to public publishes it and requires an allowlisted account; public models may be free or priced. API keys require `account:keys`.",
@@ -1448,7 +1448,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
     .delete(
         "/:id",
         describeRoute({
-            tags: ["👤 Account"],
+            tags: ["🧩 Community Models"],
             summary: "Delete My Model",
             description:
                 "Delete a community model owned by the authenticated account. API keys require `account:keys`.",

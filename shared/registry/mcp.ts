@@ -13,7 +13,10 @@ type McpServerDefinitionBase = {
     id: string;
     name: string;
     description: string;
+    binding: McpBindingName;
 };
+
+export type McpBindingName = "POLLINATIONS_MCP" | "FFMPEG_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -31,6 +34,7 @@ export const MCP_SERVERS = [
         name: "Pollinations",
         description:
             "Generate text, images, audio, video, embeddings, and 3D assets with Pollinations.",
+        binding: "POLLINATIONS_MCP",
         billing: "downstream",
     },
     {
@@ -38,6 +42,7 @@ export const MCP_SERVERS = [
         name: "FFmpeg",
         description:
             "Run FFmpeg against public HTTPS media and return hosted outputs.",
+        binding: "FFMPEG_MCP",
         billing: "usage_receipt",
         provider: "cloudflare",
         eventType: "tool.media",

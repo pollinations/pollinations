@@ -536,7 +536,7 @@ export const Models: FC = () => {
                         <UsageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
                             <strong>requests /pollen</strong> — estimated from
-                            average usage over the last 7 days.
+                            the median observed cost over the last 7 days.
                         </span>
                     </p>
                 </div>

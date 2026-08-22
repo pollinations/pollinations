@@ -142,7 +142,19 @@ SCHEMA >
 
 -- Network
 `ip_subnet`       LowCardinality(String) `json:$.ipSubnet` DEFAULT 'undefined',
-`ip_hash`         String                 `json:$.ipHash` DEFAULT 'undefined'
+`ip_hash`         String                 `json:$.ipHash` DEFAULT 'undefined',
+
+-- Agent runs: the request_id of the call that minted the run token, grouping
+-- one agent call's model steps and tool calls. The parent row is free, so a
+-- run costs the sum over its children.
+--
+-- Deploy this only once main's byop_app_payer_daily_mv is live. Adding a column
+-- is a metadata-only ALTER, but creating a materialized view on this table in
+-- the same deployment makes Tinybird rebuild the table instead -- a full copy of
+-- every row, which it then refuses to do without a FORWARD_QUERY. Verified on
+-- staging: with that view already deployed, this is "ALTER TABLE, no data
+-- movement required".
+`parent_request_id` String               `json:$.parentRequestId` DEFAULT ''
 
 ENGINE "MergeTree"
 ENGINE_PARTITION_KEY "toYYYYMM(start_time)"

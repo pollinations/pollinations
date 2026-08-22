@@ -1,5 +1,5 @@
 import { Container } from "@cloudflare/containers";
-import { FFMPEG_MAX_MEDIA_BYTES } from "../../shared/ffmpeg.ts";
+import { FFMPEG_MAX_MEDIA_BYTES } from "./ffmpeg.js";
 
 const WORK_DIR = "/work";
 const MAX_ERROR_LENGTH = 8_000;

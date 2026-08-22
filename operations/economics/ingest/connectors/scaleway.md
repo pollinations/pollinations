@@ -2,18 +2,33 @@
 
 Canonical vendor: `scaleway`
 
-## Verified — 2026-07-10
+## Verified — 2026-08-22
 
 - Status: billing API authentication works.
 - Preserve each discount's currency when extracting.
 - Keep the connector for historical invoices and grants; zero consumption is
   a valid API result, not a credential failure.
+- Dashboard login: `elliot@pollinations.ai`.
+- The historical organization is `Pollinations.AI`, organization ID
+  `fad8c43c-762a-4cde-9043-641d6ff37586`.
+- Its Cost optimization page reports zero active vouchers and three expired
+  vouchers. The separate `Pollinations GmbH` organization has no vouchers,
+  payment method, invoices, or 2026 consumption.
 
 Use when:
 
 - collecting Scaleway consumption, invoice, or discount evidence
 - auditing historical Scaleway credit/grant rows
 - reconciling Scaleway infrastructure or inference cost
+
+Primary evidence sources:
+
+- Current credit balance: the active-vouchers table at
+  `https://console.scaleway.com/billing/optimization`, after selecting the
+  `Pollinations.AI` organization.
+- Current and monthly usage: Cost Manager at
+  `https://console.scaleway.com/billing/consumption` or the consumption API.
+- Closed obligations: invoice API and Payment and billing dashboard.
 
 Required credentials:
 

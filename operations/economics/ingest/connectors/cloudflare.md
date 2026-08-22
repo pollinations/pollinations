@@ -13,6 +13,12 @@ Canonical accounts:
   account contexts.
 - Credit consumption still requires dashboard evidence; history rows are
   invoice/payment evidence and are not a complete usage ledger.
+- Dashboard logins are account-specific: `elliot@pollinations.ai` for the
+  legacy Pollinations account and `elliot@myceli.ai` for Myceli. The account
+  title shown by Cloudflare is not the login-email source of truth.
+- The legacy Pollinations account has no credits page. Its invoices page is
+  the authoritative dashboard source and currently shows a USD 1,073.17
+  payable invoice; this is a liability, not prepaid cash or remaining credit.
 - The Billable usage view exposes completed billing periods and product-level
   costs before the consolidated invoice appears. The Aug 2026 period was
   2026-07-22 through 2026-08-21; Cloudflare says the invoice can follow within
@@ -28,6 +34,8 @@ Primary evidence sources:
 
 - Invoice/payment: Cloudflare invoice PDFs and billing history.
 - Dashboard/usage: Cloudflare dashboard billing and credits pages.
+- Legacy Pollinations invoices:
+  `https://dash.cloudflare.com/efdcb0933eaac64f27c0b295039b28f2/billing/invoices`.
 - API: `GET https://api.cloudflare.com/client/v4/user/billing/history?per_page=50`
   - Cloudflare currently documents `/user/billing/history` as deprecated. Use it only for billing-history evidence until a replacement source is chosen.
 - Transaction context: `op_transactions` vendor `cloudflare`.

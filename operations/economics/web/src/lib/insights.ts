@@ -1,4 +1,11 @@
 import type { Data, OpCloudRow, OpTransactionRow } from "../types";
+import {
+    categoryLabel,
+    cloudCategory,
+    EXPENSE_CATEGORY_ORDER,
+    isProviderCategory,
+    transactionCategory,
+} from "./categories";
 import { toUsd } from "./fx";
 import {
     type MonthFilterValue,
@@ -16,13 +23,7 @@ import {
 
 // ---------------------------------------------------------- transactions
 
-export const CATEGORY_ORDER = [
-    "cloud",
-    "saas",
-    "office",
-    "admin",
-    "payroll",
-] as const;
+export const CATEGORY_ORDER = EXPENSE_CATEGORY_ORDER;
 
 const MONTH_KEY_RE = /^\d{4}-\d{2}$/;
 
@@ -58,12 +59,6 @@ export function opCloudCreditBurnUsd(
     return Math.max(0, -toUsd(row.credit, row.currency, row.start));
 }
 
-// Uncategorized spend stays visible as "other" — folding it into a named
-// bucket would silently misstate that bucket.
-function opSpendCategory(row: Pick<OpTransactionRow, "category">): string {
-    return row.category || "other";
-}
-
 type PnlMonth = {
     month: string;
     revenueNetUsd: number | null;
@@ -93,13 +88,13 @@ export function pnlByMonth(data: Data, now: Date): PnlMonth[] {
             for (const row of data.opTransactions ?? []) {
                 if (row.date.slice(0, 7) !== month) continue;
                 const amountUsd = opTransactionUsd(row);
-                if (row.category === "revenue") {
+                const category = transactionCategory(row);
+                if (category === "revenue") {
                     revenue += amountUsd;
                     hasRevenue = true;
                     continue;
                 }
-                const key = opSpendCategory(row);
-                categories[key] = (categories[key] ?? 0) - amountUsd;
+                categories[category] = (categories[category] ?? 0) - amountUsd;
             }
             const hasTransactions = Object.keys(categories).length > 0;
             const spendUsd = hasTransactions
@@ -155,21 +150,6 @@ export type PnlLine = {
     pctOfRevenue: number | null; // on the primary period
     vendors?: PnlVendorLine[]; // category lines only
 };
-
-const CATEGORY_LABELS: Record<string, string> = {
-    cloud: "Cloud",
-    saas: "SaaS",
-    office: "Office",
-    admin: "Admin",
-    payroll: "Payroll",
-};
-
-function categoryLabel(category: string): string {
-    return (
-        CATEGORY_LABELS[category] ??
-        category.charAt(0).toUpperCase() + category.slice(1)
-    );
-}
 
 // net-margin as a percentage: cash P&L ÷ revenue. Null when either side is
 // missing or revenue is zero — a ratio against no revenue is meaningless.
@@ -373,10 +353,10 @@ function pnlVendorLines(
     // category → vendor → month → usd
     const byCategory = new Map<string, Map<string, Map<string, number>>>();
     for (const row of data.opTransactions ?? []) {
-        if (row.category === "revenue") continue;
+        const category = transactionCategory(row);
+        if (category === "revenue") continue;
         const month = row.date.slice(0, 7);
         if (!monthSet.has(month)) continue;
-        const category = opSpendCategory(row);
         const vendors = getOrInit(
             byCategory,
             category,
@@ -674,7 +654,7 @@ export function vendorPlanes(data: Data): VendorPlanes[] {
     const infraCloudKeys = new Set<string>();
     const nonInfraCloudKeys = new Set<string>();
     for (const row of data.opTransactions ?? []) {
-        if (row.category !== "cloud") continue;
+        if (transactionCategory(row) !== "compute") continue;
         const month = row.date.slice(0, 7);
         if (!MONTH_KEY_RE.test(month)) continue;
         const key = `${month}|${row.vendor}`;
@@ -690,10 +670,12 @@ export function vendorPlanes(data: Data): VendorPlanes[] {
         const month = opCloudMonth(row);
         if (!MONTH_KEY_RE.test(month)) continue;
         const key = `${month}|${row.vendor}`;
-        if (row.type === "infra") {
+        const category = cloudCategory(row);
+        if (category === "infrastructure") {
             infraCloudKeys.add(key);
             continue;
         }
+        if (category !== "compute") continue;
         const paidUsd = opCloudPaidBurnUsd(row);
         const creditUsd = opCloudCreditBurnUsd(row);
         const cloudUsd = paidUsd + creditUsd;
@@ -863,7 +845,7 @@ export function insightVendorOptions(
     for (const row of data.opTransactions ?? []) {
         if (
             matchesMonth(row.date, month) &&
-            row.category === "cloud" &&
+            isProviderCategory(transactionCategory(row)) &&
             row.vendor.trim()
         ) {
             vendors.add(row.vendor.trim());
@@ -1025,7 +1007,7 @@ function opEconomics(
         const month = opCloudMonth(row);
         if (!MONTH_KEY_RE.test(month) || month < WINDOW_START) continue;
         if (!matchesMonth(month, monthFilter)) continue;
-        if (row.type === "infra") continue;
+        if (cloudCategory(row) !== "compute") continue;
 
         const paidUsd = opCloudPaidBurnUsd(row);
         const creditUsd = opCloudCreditBurnUsd(row);

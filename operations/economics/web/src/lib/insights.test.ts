@@ -95,6 +95,7 @@ describe("pnlByMonth", () => {
                 }),
                 opTxn({
                     date: "2026-05-25",
+                    vendor: "deel",
                     category: "payroll",
                     amount: -100,
                     currency: "EUR",
@@ -116,7 +117,7 @@ describe("pnlByMonth", () => {
         const [may, june, july] = pnlByMonth(data, now);
 
         expect(may.month).toBe("2026-05");
-        expect(may.categories.cloud).toBe(1000);
+        expect(may.categories.compute).toBe(1000);
         expect(may.categories.payroll).toBeCloseTo(116.73, 2);
         expect(may.spendUsd).toBeCloseTo(1116.73, 2);
         expect(may.revenueNetUsd).toBeCloseTo(1820 * 1.1673, 1);
@@ -182,6 +183,7 @@ describe("categoryColumns", () => {
                 opTransactions: [
                     opTxn({
                         date: "2026-05-01",
+                        vendor: "unmapped-vendor",
                         category: "zulu",
                         amount: -1,
                         currency: "USD",
@@ -196,7 +198,10 @@ describe("categoryColumns", () => {
             }),
             new Date("2026-07-06T12:00:00Z"),
         );
-        expect(categoryColumns(months)).toEqual([...CATEGORY_ORDER, "zulu"]);
+        expect(categoryColumns(months)).toEqual([
+            ...CATEGORY_ORDER,
+            "uncategorized",
+        ]);
     });
 });
 
@@ -213,7 +218,7 @@ describe("vendorPlanes", () => {
                 }),
                 opTxn({
                     date: "2026-06-14",
-                    vendor: "google",
+                    vendor: "google-workspace",
                     category: "saas",
                     amount: -999,
                     currency: "USD",
@@ -241,7 +246,7 @@ describe("vendorPlanes", () => {
 
         expect(row.month).toBe("2026-06");
         expect(row.vendor).toBe("google");
-        expect(row.cashUsd).toBe(5000); // SaaS row excluded - cloud only
+        expect(row.cashUsd).toBe(5000); // Operations row excluded - compute only
         expect(row.cloudPaidUsd).toBeCloseTo(4389.35 * 1.1518, 1);
         expect(row.cloudCreditUsd).toBeCloseTo(100 * 1.1518, 2);
         expect(row.cloudUsd).toBeCloseTo(4489.35 * 1.1518, 1);
@@ -1789,7 +1794,7 @@ describe("pnlStatement", () => {
         expect(result.lines.map((line) => line.key)).toEqual([
             "revenue",
             ...CATEGORY_ORDER,
-            "zulu",
+            "uncategorized",
             "total-spend",
             "cash-pnl",
             "net-margin",
@@ -1797,7 +1802,7 @@ describe("pnlStatement", () => {
         expect(result.lines.map((line) => line.kind)).toEqual([
             "revenue",
             ...CATEGORY_ORDER.map(() => "category"),
-            "category", // zulu
+            "category", // uncategorized
             "total-spend",
             "cash-pnl",
             "net-margin",
@@ -1807,15 +1812,15 @@ describe("pnlStatement", () => {
     it("computes %rev against revenue on the primary period", () => {
         const year = pnlStatement(data, "2026", now);
         const lines = lineByKey(year);
-        // YTD revenue = 1000 + 2000 = 3000; cloud spend = 400 + 600 + 50.
+        // YTD revenue = 1000 + 2000 = 3000; compute spend = 400 + 600 + 50.
         expect(lines.get("revenue")?.values.total).toBe(3000);
         expect(lines.get("revenue")?.pctOfRevenue).toBe(100);
-        expect(lines.get("cloud")?.values.total).toBe(1050);
-        expect(lines.get("cloud")?.pctOfRevenue).toBeCloseTo(
+        expect(lines.get("compute")?.values.total).toBe(1050);
+        expect(lines.get("compute")?.pctOfRevenue).toBeCloseTo(
             (1050 / 3000) * 100,
             6,
         );
-        // total-spend = 1050 cloud + 100 payroll = 1150.
+        // total-spend = 1050 compute + 100 payroll = 1150.
         expect(lines.get("total-spend")?.values.total).toBe(1150);
         expect(lines.get("total-spend")?.pctOfRevenue).toBeCloseTo(
             (1150 / 3000) * 100,
@@ -1844,8 +1849,8 @@ describe("pnlStatement", () => {
         const lines = lineByKey(month);
         // Revenue rose 1000 → 2000.
         expect(lines.get("revenue")?.values.delta).toBe(1000);
-        // Cloud spend rose 400 → 600.
-        expect(lines.get("cloud")?.values.delta).toBe(200);
+        // Compute spend rose 400 → 600.
+        expect(lines.get("compute")?.values.delta).toBe(200);
         // Payroll fell 100 → 0 (present in May, absent in June) → -100.
         expect(lines.get("payroll")?.values["2026-05"]).toBe(100);
         expect(lines.get("payroll")?.values["2026-06"]).toBeNull();
@@ -1859,15 +1864,15 @@ describe("pnlStatement", () => {
 
     it("attaches vendor sub-rows that sum to their category for every period", () => {
         const year = pnlStatement(data, "2026", now);
-        const cloud = lineByKey(year).get("cloud");
-        if (!cloud?.vendors) throw new Error("cloud vendors missing");
-        expect(cloud.vendors.map((v) => v.vendor)).toContain("aws");
-        expect(cloud.vendors.map((v) => v.vendor)).toContain("runpod");
+        const compute = lineByKey(year).get("compute");
+        if (!compute?.vendors) throw new Error("compute vendors missing");
+        expect(compute.vendors.map((v) => v.vendor)).toContain("aws");
+        expect(compute.vendors.map((v) => v.vendor)).toContain("runpod");
 
         for (const period of year.periods) {
             const key = period.key;
-            const categoryValue = cloud.values[key];
-            const vendorSum = cloud.vendors.reduce(
+            const categoryValue = compute.values[key];
+            const vendorSum = compute.vendors.reduce(
                 (total, vendor) => total + (vendor.values[key] ?? 0),
                 0,
             );
@@ -1877,13 +1882,13 @@ describe("pnlStatement", () => {
 
     it("keeps vendor sub-rows aligned to category deltas in month view", () => {
         const month = pnlStatement(data, "2026-06", now);
-        const cloud = lineByKey(month).get("cloud");
-        if (!cloud?.vendors) throw new Error("cloud vendors missing");
-        const vendorDeltaSum = cloud.vendors.reduce(
+        const compute = lineByKey(month).get("compute");
+        if (!compute?.vendors) throw new Error("compute vendors missing");
+        const vendorDeltaSum = compute.vendors.reduce(
             (total, vendor) => total + (vendor.values.delta ?? 0),
             0,
         );
-        expect(vendorDeltaSum).toBeCloseTo(cloud.values.delta ?? 0, 6);
+        expect(vendorDeltaSum).toBeCloseTo(compute.values.delta ?? 0, 6);
     });
 
     it("flags the in-progress month on its period header only", () => {

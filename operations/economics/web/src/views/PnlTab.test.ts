@@ -87,7 +87,7 @@ describe("PnlTab statement shape", () => {
         // the rows never change with the filter.
         expect(lineKeys(year)).toEqual(lineKeys(month));
         expect(lineKeys(year)).toContain("revenue");
-        expect(lineKeys(year)).toContain("cloud");
+        expect(lineKeys(year)).toContain("compute");
         expect(lineKeys(year)).toContain("total-spend");
         expect(lineKeys(year)).toContain("cash-pnl");
         expect(lineKeys(year)).toContain("net-margin");
@@ -165,12 +165,12 @@ describe("monthly P&L", () => {
             monthlyExpenseLines(month.lines, month.primary).map(
                 (line) => line.key,
             ),
-        ).toEqual(["cloud"]);
+        ).toEqual(["compute"]);
     });
 
     it("treats higher expenses as negative and lower expenses as positive", () => {
-        expect(expenseDeltaTone(10)).toBe("text-intent-danger-text");
-        expect(expenseDeltaTone(-10)).toBe("text-intent-success-text");
+        expect(expenseDeltaTone(10)).toBe("text-outcome-negative-text");
+        expect(expenseDeltaTone(-10)).toBe("text-outcome-positive-text");
         expect(expenseDeltaTone(null)).toBe("");
     });
 
@@ -182,30 +182,30 @@ describe("monthly P&L", () => {
 
     it("colors expense and revenue deltas with opposite semantics", () => {
         const month = pnlStatement(data, "2026-06", now);
-        const cloud = month.lines.find((line) => line.key === "cloud");
+        const compute = month.lines.find((line) => line.key === "compute");
         const revenue = month.lines.find((line) => line.key === "revenue");
         const delta = month.periods.find((period) => period.key === "delta");
-        if (!cloud || !revenue || !delta) throw new Error("missing");
-        expect(pnlCellClass(cloud, delta)).toBe("text-intent-danger-text");
-        expect(pnlCellClass(revenue, delta)).toBe("text-intent-success-text");
+        if (!compute || !revenue || !delta) throw new Error("missing");
+        expect(pnlCellClass(compute, delta)).toBe("text-outcome-negative-text");
+        expect(pnlCellClass(revenue, delta)).toBe("text-outcome-positive-text");
     });
 });
 
 describe("PnlTab vendor drill-down", () => {
     it("exposes category vendor sub-rows in the same period columns", () => {
         const year = pnlStatement(data, "2026", now);
-        const cloud = year.lines.find((l) => l.key === "cloud");
-        if (!cloud?.vendors) throw new Error("cloud vendors missing");
-        const vendorNames = cloud.vendors.map((v) => v.vendor);
+        const compute = year.lines.find((l) => l.key === "compute");
+        if (!compute?.vendors) throw new Error("compute vendors missing");
+        const vendorNames = compute.vendors.map((v) => v.vendor);
         expect(vendorNames).toContain("aws");
         expect(vendorNames).toContain("runpod");
         // Sub-rows carry the same period keys as the category row.
         for (const period of year.periods) {
-            const sum = cloud.vendors.reduce(
+            const sum = compute.vendors.reduce(
                 (total, v) => total + (v.values[period.key] ?? 0),
                 0,
             );
-            expect(sum).toBeCloseTo(cloud.values[period.key] ?? 0, 6);
+            expect(sum).toBeCloseTo(compute.values[period.key] ?? 0, 6);
         }
     });
 });
@@ -215,21 +215,21 @@ describe("statSourceFromLines", () => {
         const year = pnlStatement(data, "2026", now);
         const source = statSourceFromLines(year.lines, year.primary);
         expect(source.revenueNetUsd).toBe(3000);
-        // cloud 1050 + payroll 100 = 1150 total spend.
+        // compute 1050 + payroll 100 = 1150 total spend.
         expect(source.spendUsd).toBe(1150);
         // cash-pnl total sums per-month P&Ls where both sides exist: May
         // 1000−500=500, June 2000−600=1400; July is spend-only → excluded.
         expect(source.cashPnlUsd).toBe(1900);
-        expect(source.categories.cloud).toBe(1050);
+        expect(source.categories.compute).toBe(1050);
         expect(source.categories.payroll).toBe(100);
     });
 });
 
 describe("pnlTone", () => {
-    it("greens non-negative, reds negative, blanks null", () => {
-        expect(pnlTone(10)).toBe("text-intent-success-text");
-        expect(pnlTone(0)).toBe("text-intent-success-text");
-        expect(pnlTone(-5)).toBe("text-intent-danger-text");
+    it("uses blue/red outcomes, neutral zero, and blank null", () => {
+        expect(pnlTone(10)).toBe("text-outcome-positive-text");
+        expect(pnlTone(0)).toBe("text-theme-text-strong");
+        expect(pnlTone(-5)).toBe("text-outcome-negative-text");
         expect(pnlTone(null)).toBe("");
     });
 });

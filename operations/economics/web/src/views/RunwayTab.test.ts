@@ -15,8 +15,8 @@ describe("RunwayTab labels", () => {
     });
 
     it("colors cash values without overemphasizing zeroes", () => {
-        expect(runwayValueClass(10)).toBe("text-intent-success-text");
-        expect(runwayValueClass(-10)).toBe("text-intent-danger-text");
+        expect(runwayValueClass(10)).toBe("text-outcome-positive-text");
+        expect(runwayValueClass(-10)).toBe("text-outcome-negative-text");
         expect(runwayValueClass(0)).toBe("text-theme-text-soft");
         expect(runwayValueClass(null)).toBe("text-theme-text-soft");
     });

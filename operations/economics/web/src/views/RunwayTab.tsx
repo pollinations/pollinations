@@ -16,6 +16,7 @@ import {
     TableScroller,
 } from "../components/DataTable";
 import { StatCards, type StatTone } from "../components/StatCards";
+import { categoryLabel } from "../lib/categories";
 import { fmtPeriod, fmtUsd } from "../lib/format";
 import { monthLabel } from "../lib/months";
 import {
@@ -26,22 +27,6 @@ import {
 } from "../lib/runway";
 import { signedTone } from "../lib/tone";
 import type { Data } from "../types";
-
-const CATEGORY_LABELS: Record<string, string> = {
-    revenue: "Revenue",
-    cloud: "Cloud",
-    saas: "SaaS",
-    office: "Office",
-    admin: "Admin",
-    payroll: "Payroll",
-};
-
-function categoryLabel(category: string) {
-    return (
-        CATEGORY_LABELS[category] ??
-        category.charAt(0).toUpperCase() + category.slice(1)
-    );
-}
 
 function valueTone(value: number | null): StatTone {
     if (value == null || value === 0) return "base";
@@ -331,7 +316,7 @@ function RunwayCategoryRows({
                     className={cn(
                         "sticky left-0 z-10 whitespace-nowrap bg-theme-bg-subtle",
                         group.category === "revenue" &&
-                            "text-intent-success-text",
+                            "text-outcome-positive-text",
                     )}
                 >
                     {categoryLabel(group.category)}

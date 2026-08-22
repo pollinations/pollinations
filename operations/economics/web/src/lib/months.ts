@@ -65,6 +65,21 @@ export function latestClosedMonth(
     return months.at(-1) ?? null;
 }
 
+export function completedMonthsInYear(
+    months: string[],
+    year: string,
+    now = new Date(),
+): string[] {
+    const currentYear = String(now.getUTCFullYear());
+    const currentMonth = `${currentYear}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+    return months.filter(
+        (month) =>
+            month.startsWith(year) &&
+            (year < currentYear ||
+                (year === currentYear && month < currentMonth)),
+    );
+}
+
 export function yearsOf(months: string[]): string[] {
     return [...new Set(months.map((month) => month.slice(0, 4)))].sort((a, b) =>
         a.localeCompare(b),

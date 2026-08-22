@@ -3,6 +3,7 @@ import { FIXTURES } from "../fixtures";
 import type { Data } from "../types";
 import {
     collectMonths,
+    completedMonthsInYear,
     latestClosedMonth,
     matchesMonth,
     monthLabel,
@@ -71,6 +72,28 @@ describe("latestClosedMonth", () => {
         expect(
             latestClosedMonth([], new Date("2026-08-03T00:00:00Z")),
         ).toBeNull();
+    });
+});
+
+describe("completedMonthsInYear", () => {
+    it("excludes the current partial month from YTD", () => {
+        expect(
+            completedMonthsInYear(
+                ["2026-06", "2026-07", "2026-08"],
+                "2026",
+                new Date("2026-08-22T00:00:00Z"),
+            ),
+        ).toEqual(["2026-06", "2026-07"]);
+    });
+
+    it("keeps every observed month for a completed year", () => {
+        expect(
+            completedMonthsInYear(
+                ["2025-11", "2025-12", "2026-01"],
+                "2025",
+                new Date("2026-08-22T00:00:00Z"),
+            ),
+        ).toEqual(["2025-11", "2025-12"]);
     });
 });
 

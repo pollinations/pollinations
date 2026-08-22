@@ -13,6 +13,7 @@ import {
     TableScroller,
 } from "../components/DataTable";
 import { StatCards, type StatItem } from "../components/StatCards";
+import { categoryLabel } from "../lib/categories";
 import { fmtPct, fmtUnsignedPct, fmtUsd } from "../lib/format";
 import {
     type PnlLine,
@@ -111,7 +112,7 @@ function pnlStatItems(source: {
             label: "Spend",
             value: fmtUsd(source.spendUsd),
             detail: topCategory
-                ? `${topCategory[0]} ${fmtUsd(topCategory[1])} top`
+                ? `${categoryLabel(topCategory[0])} ${fmtUsd(topCategory[1])} top`
                 : "no cash out",
         },
         {
@@ -120,9 +121,11 @@ function pnlStatItems(source: {
             tone:
                 source.cashPnlUsd == null
                     ? "base"
-                    : source.cashPnlUsd >= 0
+                    : source.cashPnlUsd > 0
                       ? "pos"
-                      : "neg",
+                      : source.cashPnlUsd < 0
+                        ? "neg"
+                        : "base",
             detail: netMargin != null ? `${fmtPct(netMargin)} net margin` : "—",
         },
     ];
@@ -308,7 +311,12 @@ function monthlyPnlStatItems(
         {
             label: "Net result",
             value: fmtUsd(result),
-            tone: result == null ? "base" : result >= 0 ? "pos" : "neg",
+            tone:
+                result == null || result === 0
+                    ? "base"
+                    : result > 0
+                      ? "pos"
+                      : "neg",
             detail: (
                 <>
                     <span className={pnlTone(resultDelta)}>

@@ -59,16 +59,18 @@ describe("latestClosedMonth", () => {
         expect(
             latestClosedMonth(
                 ["2026-06", "2026-07", "2026-08"],
-                new Date(2026, 7, 3),
+                new Date("2026-08-03T00:00:00Z"),
             ),
         ).toBe("2026-07");
     });
 
     it("uses the latest available month when no closed month exists", () => {
-        expect(latestClosedMonth(["2026-08"], new Date(2026, 7, 3))).toBe(
-            "2026-08",
-        );
-        expect(latestClosedMonth([], new Date(2026, 7, 3))).toBeNull();
+        expect(
+            latestClosedMonth(["2026-08"], new Date("2026-08-03T00:00:00Z")),
+        ).toBe("2026-08");
+        expect(
+            latestClosedMonth([], new Date("2026-08-03T00:00:00Z")),
+        ).toBeNull();
     });
 });
 

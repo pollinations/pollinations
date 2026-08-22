@@ -6,6 +6,13 @@ import {
     monthLabel,
     WINDOW_START,
 } from "./months";
+import {
+    type MeteringBasis,
+    meterDriftExplanation,
+    type ProviderReconciliationExplanation,
+    pollenWitnessExplanation,
+    providerMeteringBasis,
+} from "./providerRegistry";
 
 // ---------------------------------------------------------- transactions
 
@@ -263,10 +270,19 @@ export function pnlStatement(
     const cashPnlLine = fill((row) => row.cashPnlUsd);
 
     const netMarginLine: Record<string, number | null> = {};
-    for (const period of periods) {
+    for (const period of periods.filter(
+        (candidate) => candidate.kind !== "delta",
+    )) {
         netMarginLine[period.key] = netMarginPct(
             cashPnlLine[period.key],
             revenueLine[period.key],
+        );
+    }
+    if (isMonth) {
+        const [prior, selected] = monthKeys;
+        netMarginLine.delta = subtract(
+            netMarginLine[selected],
+            netMarginLine[prior],
         );
     }
 
@@ -410,7 +426,13 @@ function pnlVendorLines(
 // Vendors funded by prepaid balance top-ups: cash precedes usage by more
 // than a month, so monthly cash matching is meaningless — coverage holds as
 // long as cumulative cash keeps up with cumulative paid burn.
-const PREPAID_VENDORS = new Set(["vast.ai", "deepinfra", "pruna", "fal"]);
+const PREPAID_VENDORS = new Set([
+    "vast.ai",
+    "deepinfra",
+    "pruna",
+    "fal",
+    "mistral",
+]);
 
 // Pollen activity below this is noise, not a funding question.
 const POLLEN_ACTIVE_USD = 1;
@@ -446,16 +468,19 @@ type MeterCoverage = "complete" | "missing cloud" | "missing pollen" | null;
 
 export type DataQualityStatus =
     | "ok"
+    | "explained"
     | "cash only"
     | "timing"
     | "missing cash"
     | "missing cloud"
     | "missing pollen"
+    | "variance"
     | "drift";
 
 export type VendorPlanes = {
     month: string;
     vendor: string;
+    meteringBasis: MeteringBasis;
     cashUsd: number | null;
     cloudPaidUsd: number | null;
     cloudCreditUsd: number | null;
@@ -467,6 +492,7 @@ export type VendorPlanes = {
     calibX: number | null;
     cashCoverage: CashCoverage;
     meterCoverage: MeterCoverage;
+    reconciliationExplanation: ProviderReconciliationExplanation | null;
     status: DataQualityStatus;
 };
 
@@ -556,6 +582,7 @@ function meterCoverageFor({
     cloudPaidUsd,
     expectsCloudMeter,
     meterCloudUsd,
+    pollenPriced,
     pollenCostUsd,
 }: {
     cashCoverage: CashCoverage;
@@ -564,18 +591,27 @@ function meterCoverageFor({
     cloudPaidUsd: number | null;
     expectsCloudMeter: boolean;
     meterCloudUsd: number | null;
+    pollenPriced: boolean;
     pollenCostUsd: number | null;
 }): MeterCoverage {
     const cashActive = activePositive(cashUsd, PROVIDER_PAID_FLOOR_USD);
     const cloudLedgerActive =
         activePositive(cloudPaidUsd, PROVIDER_PAID_FLOOR_USD) ||
         activePositive(cloudCreditUsd, PROVIDER_PAID_FLOOR_USD);
+    const meterCloudPresent = meterCloudUsd != null;
+    const pollenPresent = pollenCostUsd != null;
     const meterCloudActive = activePositive(meterCloudUsd, POLLEN_ACTIVE_USD);
     const pollenActive = activePositive(pollenCostUsd, POLLEN_ACTIVE_USD);
 
-    if (meterCloudActive && pollenActive) return "complete";
+    // Thresholds suppress one-sided noise; they must not erase a real witness.
+    // If both ledgers contain a non-zero value, coverage is complete even when
+    // one side is below $1 (for example a low-volume model or calibration gap).
+    if (meterCloudPresent && pollenPresent) return "complete";
+    // These providers are intentionally priced from the Pollen ledger itself;
+    // there is no separate external provider bill to witness.
+    if (pollenPriced && pollenPresent) return "complete";
     if (
-        !meterCloudActive &&
+        !meterCloudPresent &&
         (pollenActive ||
             (expectsCloudMeter &&
                 cashActive &&
@@ -583,7 +619,7 @@ function meterCoverageFor({
                 cashCoverage !== "prepaid"))
     )
         return "missing cloud";
-    if (meterCloudActive && !pollenActive) return "missing pollen";
+    if (meterCloudActive && !pollenPresent) return "missing pollen";
     return null;
 }
 
@@ -595,6 +631,7 @@ function dataQualityStatus({
     cloudPaidUsd,
     meterCloudUsd,
     meterCoverage,
+    meteringBasis,
     pollenCostUsd,
 }: {
     calibX: number | null;
@@ -604,12 +641,15 @@ function dataQualityStatus({
     cloudPaidUsd: number | null;
     meterCloudUsd: number | null;
     meterCoverage: MeterCoverage;
+    meteringBasis: MeteringBasis;
     pollenCostUsd: number | null;
 }): DataQualityStatus {
     if (cashCoverage === "missing cash") return "missing cash";
     if (meterCoverage === "missing cloud") return "missing cloud";
     if (meterCoverage === "missing pollen") return "missing pollen";
-    if (hasCalibDrift({ calibX, meterCloudUsd, pollenCostUsd })) return "drift";
+    if (hasCalibDrift({ calibX, meterCloudUsd, pollenCostUsd })) {
+        return meteringBasis === "direct" ? "drift" : "variance";
+    }
     if (cashCoverage === "cash ±1mo" || cashCoverage === "prepaid")
         return "timing";
     if (
@@ -644,6 +684,9 @@ export function vendorPlanes(data: Data): VendorPlanes[] {
 
     const cloud = new Map<string, OpCloudWitness>();
     for (const row of data.opCloud ?? []) {
+        // Community rows are publisher rewards, not an external provider bill.
+        // Their OP Pollen provider cost is deliberately normalized to zero.
+        if (row.vendor === "community") continue;
         const month = opCloudMonth(row);
         if (!MONTH_KEY_RE.test(month)) continue;
         const key = `${month}|${row.vendor}`;
@@ -731,6 +774,7 @@ export function vendorPlanes(data: Data): VendorPlanes[] {
 
     return [...displayKeys].sort().map((key) => {
         const [month, vendor] = key.split("|");
+        const meteringBasis = providerMeteringBasis(vendor);
         const cloudEntry = cloud.get(key);
         const cloudPaidUsd = cloudEntry
             ? nonZeroOrNull(cloudEntry.paidUsd)
@@ -769,12 +813,31 @@ export function vendorPlanes(data: Data): VendorPlanes[] {
             cloudPaidUsd,
             expectsCloudMeter: cloudMeterVendors.has(vendor),
             meterCloudUsd,
+            pollenPriced: meteringBasis === "internal",
             pollenCostUsd,
         });
         const calibX = monthCalib(meterCloudUsd, pollenCostUsd);
+        const rawStatus = dataQualityStatus({
+            calibX,
+            cashCoverage,
+            cashUsd,
+            cloudCreditUsd,
+            cloudPaidUsd,
+            meterCloudUsd,
+            meterCoverage,
+            meteringBasis,
+            pollenCostUsd,
+        });
+        const reconciliationExplanation =
+            rawStatus === "missing pollen"
+                ? (pollenWitnessExplanation(month, vendor) ?? null)
+                : rawStatus === "drift"
+                  ? (meterDriftExplanation(month, vendor) ?? null)
+                  : null;
         return {
             month,
             vendor,
+            meteringBasis,
             cashUsd,
             cloudPaidUsd,
             cloudCreditUsd,
@@ -786,32 +849,35 @@ export function vendorPlanes(data: Data): VendorPlanes[] {
             calibX,
             cashCoverage,
             meterCoverage,
-            status: dataQualityStatus({
-                calibX,
-                cashCoverage,
-                cashUsd,
-                cloudCreditUsd,
-                cloudPaidUsd,
-                meterCloudUsd,
-                meterCoverage,
-                pollenCostUsd,
-            }),
+            reconciliationExplanation,
+            status: reconciliationExplanation ? "explained" : rawStatus,
         };
     });
 }
 
-export function insightVendorOptions(data: Data): string[] {
+export function insightVendorOptions(
+    data: Data,
+    month: MonthFilterValue = "",
+): string[] {
     const vendors = new Set<string>();
     for (const row of data.opTransactions ?? []) {
-        if (row.category === "cloud" && row.vendor.trim()) {
+        if (
+            matchesMonth(row.date, month) &&
+            row.category === "cloud" &&
+            row.vendor.trim()
+        ) {
             vendors.add(row.vendor.trim());
         }
     }
     for (const row of data.opCloud ?? []) {
-        if (row.vendor.trim()) vendors.add(row.vendor.trim());
+        if (matchesMonth(row.start, month) && row.vendor.trim()) {
+            vendors.add(row.vendor.trim());
+        }
     }
     for (const row of data.opPollen ?? []) {
-        if (row.vendor.trim()) vendors.add(row.vendor.trim());
+        if (matchesMonth(row.month, month) && row.vendor.trim()) {
+            vendors.add(row.vendor.trim());
+        }
     }
     return ["all", ...[...vendors].sort((a, b) => a.localeCompare(b))];
 }
@@ -821,17 +887,17 @@ export function insightVendorOptions(data: Data): string[] {
 // Vendors priced from our own pollen records rather than an external bill.
 // Their calib is 1.00 by construction, a definition rather than a measurement.
 // Community has no provider cost; op_pollen_api normalizes its cost fields to 0.
-const POLLEN_PRICED_VENDORS = new Set([
-    "airforce",
-    "community",
-    "inferenceport",
-    "pointsflyer",
-    "seraphyn",
-]);
-
 // |calib − 1| beyond this marks a registry mispricing worth fixing.
 export const CALIB_DRIFT_ALARM = 0.25;
 export const CALIB_DRIFT_ABS_ALARM_USD = 100;
+
+export function providerPollenGapUsd({
+    meterCloudUsd,
+    pollenCostUsd,
+}: Pick<VendorPlanes, "meterCloudUsd" | "pollenCostUsd">): number | null {
+    if (meterCloudUsd == null || pollenCostUsd == null) return null;
+    return meterCloudUsd - pollenCostUsd;
+}
 
 export function hasCalibDrift({
     calibX,
@@ -841,9 +907,11 @@ export function hasCalibDrift({
     if (calibX == null || meterCloudUsd == null || pollenCostUsd == null) {
         return false;
     }
+    const gapUsd = providerPollenGapUsd({ meterCloudUsd, pollenCostUsd });
     return (
         Math.abs(calibX - 1) > CALIB_DRIFT_ALARM &&
-        Math.abs(meterCloudUsd - pollenCostUsd) > CALIB_DRIFT_ABS_ALARM_USD
+        gapUsd != null &&
+        Math.abs(gapUsd) > CALIB_DRIFT_ABS_ALARM_USD
     );
 }
 
@@ -931,7 +999,7 @@ export function trueMarginPct(row: EconRow): number | null {
 // Σ provider actual / Σ our metering over the scope, no pairing or smoothing.
 // A vendor with no provider bill has no calib: its true-cost columns stay
 // null ("–") rather than passing our own meter off as the provider's truth.
-// Month-level witness gaps surface on the Data Quality tab.
+// Month-level witness gaps surface in Provider Close.
 function opEconomics(
     data: Data,
     monthFilter: MonthFilterValue,
@@ -1020,7 +1088,7 @@ function opEconomics(
     const calibs = new Map<string, VendorCalib>();
     for (const [vendor, facts] of vendors) {
         if (!facts.hasPollen) continue;
-        const pollenPriced = POLLEN_PRICED_VENDORS.has(vendor);
+        const pollenPriced = providerMeteringBasis(vendor) === "internal";
         let calib: number | null = null;
         if (pollenPriced) {
             calib = 1;

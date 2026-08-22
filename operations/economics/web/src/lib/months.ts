@@ -58,7 +58,7 @@ export function latestClosedMonth(
     now = new Date(),
 ): string | null {
     if (months.length === 0) return null;
-    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const currentMonth = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
     for (let index = months.length - 1; index >= 0; index -= 1) {
         if (months[index] < currentMonth) return months[index];
     }

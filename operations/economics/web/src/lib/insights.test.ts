@@ -29,6 +29,7 @@ const opTxn = (over: Partial<OpTransactionRow>): OpTransactionRow => ({
 });
 
 const opCloud = (over: Partial<OpCloudRow>): OpCloudRow => ({
+    entry_id: "cloud-test",
     source: "api",
     vendor: "aws",
     type: "inference",
@@ -272,6 +273,36 @@ describe("vendorPlanes", () => {
         expect(row.status).toBe("missing cloud");
     });
 
+    it("does not require an external cloud bill for Pollen-priced providers", () => {
+        const data = emptyData({
+            opPollen: [
+                opPollen({
+                    vendor: "bpai",
+                    model: "klein",
+                    cost_paid: 10,
+                    price_paid: 10,
+                }),
+                opPollen({
+                    vendor: "self-hosted",
+                    model: "acestep",
+                    cost_paid: 5,
+                    price_paid: 5,
+                }),
+            ],
+        });
+
+        expect(
+            vendorPlanes(data).map((row) => ({
+                vendor: row.vendor,
+                coverage: row.meterCoverage,
+                status: row.status,
+            })),
+        ).toEqual([
+            { vendor: "bpai", coverage: "complete", status: "ok" },
+            { vendor: "self-hosted", coverage: "complete", status: "ok" },
+        ]);
+    });
+
     it("skips OP transactions with a malformed month key", () => {
         const data = emptyData({
             opTransactions: [
@@ -374,6 +405,26 @@ describe("vendorPlanes", () => {
                 }),
             ],
         });
+        expect(vendorPlanes(data)).toEqual([]);
+    });
+
+    it("excludes community publisher rewards from provider reconciliation", () => {
+        const data = emptyData({
+            opCloud: [
+                opCloud({
+                    vendor: "community",
+                    credit: -1_000,
+                }),
+            ],
+            opPollen: [
+                opPollen({
+                    vendor: "community",
+                    cost_paid: 0,
+                    cost_quests: 0,
+                }),
+            ],
+        });
+
         expect(vendorPlanes(data)).toEqual([]);
     });
 });
@@ -482,6 +533,46 @@ describe("data quality status", () => {
         expect(row.status).toBe("missing cash");
     });
 
+    it("separates explained historical one-sided rows from unresolved gaps", () => {
+        const explained = emptyData({
+            opTransactions: [
+                opTxn({
+                    date: "2026-02-13",
+                    vendor: "vast.ai",
+                    category: "cloud",
+                    amount: -10,
+                }),
+            ],
+            opCloud: [
+                opCloud({
+                    start: "2026-02-01 00:00:00",
+                    vendor: "vast.ai",
+                    paid: -10,
+                }),
+            ],
+        });
+        const [explainedRow] = vendorPlanes(explained);
+        expect(explainedRow.meterCoverage).toBe("missing pollen");
+        expect(explainedRow.status).toBe("explained");
+        expect(explainedRow.reconciliationExplanation?.reason).toBe(
+            "provider_attribution_transition",
+        );
+
+        const unresolved = emptyData({
+            opCloud: [
+                opCloud({
+                    start: "2026-02-01 00:00:00",
+                    vendor: "pruna",
+                    credit: -2,
+                }),
+            ],
+        });
+        const [unresolvedRow] = vendorPlanes(unresolved);
+        expect(unresolvedRow.meterCoverage).toBe("missing pollen");
+        expect(unresolvedRow.status).toBe("missing pollen");
+        expect(unresolvedRow.reconciliationExplanation).toBeNull();
+    });
+
     it("never alarms on sub-dollar OP Cloud paid amounts", () => {
         const data = emptyData({
             opCloud: [
@@ -529,6 +620,40 @@ describe("data quality status", () => {
         expect(june?.status).toBe("timing");
     });
 
+    it("carries Mistral prepaid top-ups into later usage months", () => {
+        const data = emptyData({
+            opTransactions: [
+                opTxn({
+                    date: "2026-07-26",
+                    vendor: "mistral",
+                    category: "cloud",
+                    amount: -50,
+                    currency: "USD",
+                }),
+            ],
+            opCloud: [
+                opCloud({
+                    start: "2026-09-01 00:00:00",
+                    vendor: "mistral",
+                    paid: -20,
+                }),
+            ],
+            opPollen: [
+                opPollen({
+                    month: "2026-09",
+                    vendor: "mistral",
+                    cost_paid: 20,
+                }),
+            ],
+        });
+
+        const september = vendorPlanes(data).find(
+            (row) => row.month === "2026-09",
+        );
+        expect(september?.cashCoverage).toBe("prepaid");
+        expect(september?.status).toBe("timing");
+    });
+
     it("still alarms when a prepaid balance is overdrawn", () => {
         const data = emptyData({
             opCloud: [
@@ -553,6 +678,39 @@ describe("data quality status", () => {
         const [row] = vendorPlanes(data);
         expect(row.meterCoverage).toBeNull();
         expect(row.status).toBe("ok");
+    });
+
+    it("treats non-zero values on both sides as complete below the noise threshold", () => {
+        const data = emptyData({
+            opCloud: [
+                opCloud({
+                    vendor: "fal",
+                    start: "2026-06-01 00:00:00",
+                    credit: -0.93,
+                }),
+                opCloud({
+                    vendor: "deepinfra",
+                    start: "2026-06-01 00:00:00",
+                    credit: -5.74,
+                }),
+            ],
+            opPollen: [
+                opPollen({ vendor: "fal", cost_paid: 10.88 }),
+                opPollen({ vendor: "deepinfra", cost_paid: 0.92 }),
+            ],
+        });
+        const rows = vendorPlanes(data);
+
+        expect(
+            rows.map((row) => ({
+                vendor: row.vendor,
+                coverage: row.meterCoverage,
+                status: row.status,
+            })),
+        ).toEqual([
+            { vendor: "deepinfra", coverage: "complete", status: "ok" },
+            { vendor: "fal", coverage: "complete", status: "ok" },
+        ]);
     });
 
     it("only flags calibration drift when the dollar gap is material", () => {
@@ -594,7 +752,58 @@ describe("data quality status", () => {
         });
         const [materialRow] = vendorPlanes(material);
         expect(materialRow.calibX).toBe(2.5);
+        expect(materialRow.meteringBasis).toBe("direct");
         expect(materialRow.status).toBe("drift");
+    });
+
+    it("keeps source-backed historical direct drift visible but non-actionable", () => {
+        const historical = emptyData({
+            opCloud: [
+                opCloud({
+                    start: "2026-03-01 00:00:00",
+                    vendor: "anthropic",
+                    credit: -250,
+                }),
+            ],
+            opPollen: [
+                opPollen({
+                    month: "2026-03",
+                    vendor: "anthropic",
+                    cost_paid: 100,
+                }),
+            ],
+        });
+
+        const [row] = vendorPlanes(historical);
+        expect(row.calibX).toBe(2.5);
+        expect(row.status).toBe("explained");
+        expect(row.reconciliationExplanation?.reason).toBe(
+            "historical_tracking_gap",
+        );
+    });
+
+    it("treats material capacity mismatch as utilization variance, not price drift", () => {
+        const data = emptyData({
+            opCloud: [
+                opCloud({
+                    start: "2026-06-01 00:00:00",
+                    vendor: "lambda",
+                    credit: -250,
+                }),
+            ],
+            opPollen: [
+                opPollen({
+                    month: "2026-06",
+                    vendor: "lambda",
+                    cost_paid: 100,
+                }),
+            ],
+        });
+
+        const [row] = vendorPlanes(data);
+        expect(row.meteringBasis).toBe("capacity");
+        expect(row.calibX).toBe(2.5);
+        expect(row.status).toBe("variance");
     });
 
     it("does not display transaction-only tooling vendors", () => {
@@ -648,6 +857,23 @@ describe("insightVendorOptions", () => {
         expect(insightVendorOptions(data)).toEqual([
             "all",
             "azure",
+            "replicate",
+            "runpod",
+        ]);
+    });
+
+    it("limits options to the selected month", () => {
+        const data = emptyData({
+            opTransactions: [
+                opTxn({ vendor: "runpod", date: "2026-05-05" }),
+                opTxn({ vendor: "vast.ai", date: "2026-06-05" }),
+            ],
+            opCloud: [opCloud({ vendor: "replicate", start: "2026-05-01" })],
+            opPollen: [opPollen({ vendor: "azure", month: "2026-06" })],
+        });
+
+        expect(insightVendorOptions(data, "2026-05")).toEqual([
+            "all",
             "replicate",
             "runpod",
         ]);
@@ -1626,6 +1852,9 @@ describe("pnlStatement", () => {
         expect(lines.get("payroll")?.values.delta).toBeNull();
         // Cash P&L rose 500 → 1400.
         expect(lines.get("cash-pnl")?.values.delta).toBe(900);
+        // Margin improved from 50% to 70%: the change is +20 percentage
+        // points, not cash-P&L delta divided by revenue delta.
+        expect(lines.get("net-margin")?.values.delta).toBeCloseTo(20, 6);
     });
 
     it("attaches vendor sub-rows that sum to their category for every period", () => {

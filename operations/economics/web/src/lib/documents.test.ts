@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { driveDocumentLink } from "./documents";
+import { driveDocumentLink, hasArchivedEvidence } from "./documents";
 
 describe("driveDocumentLink", () => {
     it("recognizes Drive folders", () => {
@@ -44,6 +44,18 @@ describe("driveDocumentLink", () => {
             previewHref:
                 "https://drive.google.com/file/d/file-id/preview?resourcekey=key-id",
         });
+    });
+
+    it("extracts a Drive link from an evidence note", () => {
+        const evidence =
+            "Invoice: https://drive.google.com/file/d/file-id/view?usp=drivesdk — fully covered by provider credit";
+
+        expect(driveDocumentLink(evidence)).toEqual({
+            href: "https://drive.google.com/file/d/file-id/view?usp=drivesdk",
+            label: "Open document",
+            previewHref: "https://drive.google.com/file/d/file-id/preview",
+        });
+        expect(hasArchivedEvidence(evidence)).toBe(true);
     });
 
     it("rejects blank, non-Drive, insecure, and deceptive links", () => {

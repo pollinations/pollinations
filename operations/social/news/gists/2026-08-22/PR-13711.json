@@ -1,0 +1,36 @@
+{
+  "pr_number": 13711,
+  "title": "Add Dery Lau AI to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13711",
+  "merged_at": "2026-08-22T17:46:33Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Dery Lau AI](https://derylau.my.id) to image\n- Create collaborative images using the Pollinations image API\n\nFixes #13705",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A new canvas joins",
+    "blurb": "Dery Lau AI has landed in the garden, giving collaborators a shared canvas powered by the Pollinations image API. More people making strange little pictures together: objectively good.",
+    "summary": "Added Dery Lau AI to the app directory, a collaborative image-making app built with the Pollinations image API.",
+    "impact": "People can now discover Dery Lau AI as a shared space for creating collaborative images with Pollinations generation.",
+    "keywords": [
+      "community",
+      "apps",
+      "images",
+      "image-api",
+      "collaboration",
+      "Dery Lau AI"
+    ],
+    "visual_concept": "Depict a cozy collaborative art table where several pixel canvases combine into one blooming image garden. Polli acts as the friendly painter and facilitator, using the Pollinations image API as a little glowing paint terminal; code-plants and flowers show that many contributors can grow one shared creation.",
+    "image_prompt": "A cozy pixel art art studio where Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears a tiny painter's beret and helps arrange several shared pixel canvases into one blooming collaborative image garden beside a lime green (#ecf874) retro API terminal. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with code-plants, flowers, and subtle pixel-font text reading \"CREATE TOGETHER\"; nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-22/PR-13711.jpg",
+    "prompt": "A cozy pixel art art studio where Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears a tiny painter's beret and helps arrange several shared pixel canvases into one blooming collaborative image garden beside a lime green (#ecf874) retro API terminal. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with code-plants, flowers, and subtle pixel-font text reading \"CREATE TOGETHER\"; nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-22T17:47:31.787936+00:00",
+  "app_name": "Dery Lau AI",
+  "app_url": "https://derylau.my.id"
+}

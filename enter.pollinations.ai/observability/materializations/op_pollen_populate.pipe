@@ -5,6 +5,8 @@ DESCRIPTION >
     conditions used by activity_usage_events_mv (usage) and
     activity_earnings_byop_mv / activity_earnings_model_rewards_mv (payouts),
     so op_pollen_api never scans raw event history.
+    Community rows skip total_cost: that field is the sale price, not a
+    provider bill. The owner payout is model_paid.
 
 NODE op_pollen_populate_node
 SQL >
@@ -12,8 +14,8 @@ SQL >
         formatDateTime(toStartOfMonth(start_time), '%Y-%m') AS month,
         model_provider_used AS provider,
         resolved_model_requested AS model,
-        sumState(if(selected_meter_slug = 'v1:meter:pack' AND total_price > 0, total_cost, 0)) AS cost_paid,
-        sumState(if(selected_meter_slug = 'v1:meter:tier' AND total_price > 0, total_cost, 0)) AS cost_quests,
+        sumState(if(selected_meter_slug = 'v1:meter:pack' AND total_price > 0 AND model_provider_used != 'community', total_cost, 0)) AS cost_paid,
+        sumState(if(selected_meter_slug = 'v1:meter:tier' AND total_price > 0 AND model_provider_used != 'community', total_cost, 0)) AS cost_quests,
         sumState(if(selected_meter_slug = 'v1:meter:pack' AND total_price > 0, total_price, 0)) AS price_paid,
         sumState(if(selected_meter_slug = 'v1:meter:tier' AND total_price > 0, total_price, 0)) AS price_quests,
         sumState(toUInt64(selected_meter_slug = 'v1:meter:pack' AND total_price > 0)) AS requests_paid,

@@ -2,9 +2,9 @@ import { signAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import {
     type CommunityEndpointRuntime,
     communityOpenAIBaseUrl,
-    isDelegatingEndpoint,
     isFreeCommunityEndpoint,
     normalizeCommunityEndpointBearerToken,
+    usesAgentRunToken,
 } from "@shared/community-endpoints.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { decryptSecret } from "@shared/secret-encryption.ts";
@@ -24,19 +24,20 @@ import type { RequestData, TransformOptions } from "./types.js";
  * secret it replaces: the endpoint can verify it against `/account/key`, which
  * a shared string cannot do.
  *
- * Managed agents always delegate. External endpoints do so only when their
- * admin flag is set. The other two conditions are invariants, so they throw:
- * endpoint must be free, since charging a wrapper price on top of the
- * generation it bills the caller for is double billing, and the request must
- * carry a key to bill, since falling back to the saved bearer would quietly
- * move the cost of the agent's work onto the endpoint owner.
+ * Both agent kinds delegate and a proxy never does — the listing's type says
+ * so, and no flag can make a proxy delegate. The other two conditions are
+ * invariants, so they throw: the endpoint must be free, since charging a
+ * wrapper price on top of the generation it bills the caller for is double
+ * billing, and the request must carry a key to bill, since falling back to the
+ * saved bearer would quietly move the cost of the agent's work onto the
+ * endpoint owner.
  */
 async function mintDelegatedToken(
     endpoint: CommunityEndpointRuntime,
     parentApiKeyId: string | undefined,
     secret: string,
 ): Promise<string | undefined> {
-    if (!isDelegatingEndpoint(endpoint)) return undefined;
+    if (!usesAgentRunToken(endpoint)) return undefined;
     if (!isFreeCommunityEndpoint(endpoint)) {
         throw new Error(
             `Community endpoint '${endpoint.modelId}' delegates generation but is not free`,
@@ -51,8 +52,10 @@ async function mintDelegatedToken(
         secret,
         parentApiKeyId,
         runId: crypto.randomUUID(),
+        // The managed runtime uses the listing id (also its upstream model) to
+        // select the prompt config. An external agent only needs spend scope.
         managedAgentId:
-            endpoint.kind === "agent" ? endpoint.agentId : undefined,
+            endpoint.type === "prompt_agent" ? endpoint.id : undefined,
     });
 }
 
@@ -67,19 +70,17 @@ export async function communityEndpointGatewayContext(
 ): Promise<TransformOptions> {
     const { messages: _messages, ...requestDataWithoutMessages } = requestData;
     const runToken = await mintDelegatedToken(endpoint, parentApiKeyId, secret);
-    // A delegating endpoint is sent the run token instead of its saved bearer,
-    // so it never receives a credential it could spend on the owner's account.
-    // An agent has no saved bearer at all: mintDelegatedToken always returns a
-    // token for it, so a missing one means the caller had no key to bill.
+    // Only a proxy stores and receives its registered upstream bearer secret.
+    // Neither agent kind receives a Pollinations API key: each gets a
+    // short-lived run token instead. mintDelegatedToken always returns one for
+    // an agent, so a missing token means the caller had no key to bill.
     const authKey =
-        endpoint.kind === "agent"
-            ? runToken
-            : (runToken ??
-              normalizeCommunityEndpointBearerToken(
+        endpoint.type === "proxy"
+            ? normalizeCommunityEndpointBearerToken(
                   await decryptSecret(endpoint.bearerTokenCiphertext, secret),
-              ));
-    if (!authKey)
-        throw new Error("Managed agent request has no agent run token");
+              )
+            : runToken;
+    if (!authKey) throw new Error("Agent request has no agent run token");
 
     return {
         ...requestDataWithoutMessages,

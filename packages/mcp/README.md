@@ -171,7 +171,7 @@ prevents PRs to `production` from branches other than `main`.
 
 **Staging:** there is no separate staging deploy for the MCP worker.
 Because the worker is a thin proxy to `gen.pollinations.ai`, staging
-is handled at the gateway level (see `deploy-gen-cloudflare.yml`), not
+is handled at the gateway level (see `deploy-cloudflare-production.yml`), not
 at the MCP layer.
 
 **Manual deploy:** use `workflow_dispatch` on the Actions tab to

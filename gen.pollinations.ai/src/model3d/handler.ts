@@ -6,6 +6,7 @@ import type { Context } from "hono";
 import type { Env } from "@/env.ts";
 import { withModelFallbackResponse } from "../fallback.ts";
 import { bufferToUint8Array } from "../image/utils/imageDownload.ts";
+import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 import {
     createAndReturnModel3d,
     type Model3dGenerationResult,
@@ -40,6 +41,7 @@ export async function generate3dResponse(
                 });
             },
             c.var.track?.failedCalls,
+            (candidate) => enforceModelRateLimit(c, candidate),
         );
         if (servedEntry) c.set("servedModelEntry", servedEntry);
         return response;

@@ -159,9 +159,10 @@ polli my-models models --base-url https://api.example.com/v1 --bearer-token "$UP
 polli my-models create --name my-model --title "My Model" --base-url https://api.example.com/v1 --bearer-token "$UPSTREAM_KEY" --upstream-model gpt-4.1-mini
 polli my-models create --name my-image --title "My Image" --modality image --image-pricing request --completion-image-price 0.01 --base-url https://api.example.com/v1 --bearer-token "$UPSTREAM_KEY" --upstream-model flux
 polli my-models update <id> --description "Updated description"
+polli my-models update <id> --paid-only            # only accept Paid Pollen; --no-paid-only reverts
 polli my-models delete <id>
 ```
-`my-models` manages owned community text and image models for invite-only accounts. It requires `communityEndpointsAllowed: true` plus a key with `account:keys`, or an authenticated dashboard session through the API. Use `account:usage` for narrow read-only usage and `polli quests`; use both permissions when a client needs both read-only account state and admin operations. Quest claiming is dashboard-only; `polli quests` is read-only and account-aware.
+`my-models` manages owned community text, image, and transcription models. Any account can create private models; `communityEndpointsAllowed: true` is required only to publish them. API keys require `account:keys`. Use `account:usage` for narrow read-only usage and `polli quests`; use both permissions when a client needs both read-only account state and admin operations. Quest claiming is dashboard-only; `polli quests` is read-only and account-aware.
 
 ### Register an image my-model
 ```bash
@@ -181,13 +182,13 @@ Prices only apply to `--visibility public` models. A private model is owner-only
 ```bash
 polli agents list
 polli agents get <id>
-polli agents create --config agent.json
+polli agents create --config agent.json --name my-agent --title "My Agent"
 polli agents update <id> --config agent.json
 polli agents delete <id>
 ```
-The config file is sent directly to the agent API. It contains `systemPrompt`, `baseModel`, and optional `mcpServers`. The only supported server ID is currently `"pollinations"`. Updates replace the complete agent configuration.
+The config file contains `systemPrompt`, `baseModel`, and optional `mcpServers`; create also requires `--name` and `--title` for the callable model listing. The only supported server ID is currently `"pollinations"`. Updates replace the complete agent configuration.
 
-Creating the configuration does not make the agent callable. Register its returned ID with `polli my-models create --agent-id <id> --name <name> --title <title>`. Managed-agent registrations are text-only and free, with no fallbacks or per-user RPM. Deleting the agent also deletes its model registration. See the [Community Agents guide](../../BUILD_YOUR_OWN_AGENT.md).
+Creating an agent also creates its callable model listing. Managed agents are text-only and free, with no fallbacks or per-user RPM. Deleting the agent also deletes its model listing. See [Publish an Agent](https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md).
 
 ### Manage API keys
 ```bash

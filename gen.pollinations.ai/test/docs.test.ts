@@ -20,6 +20,20 @@ function envWithEnterSchema(schema: unknown): CloudflareBindings {
     } as CloudflareBindings;
 }
 
+function envWithFailedEnterSchema(): CloudflareBindings {
+    return {
+        ENTER: {
+            fetch: async () => new Response("unavailable", { status: 503 }),
+        } as unknown as Fetcher,
+        ENVIRONMENT: "test",
+        LOG_LEVEL: "debug",
+        LOG_FORMAT: "text",
+        TINYBIRD_INGEST_URL:
+            "https://tinybird.test/v0/events?name=request_event",
+        TINYBIRD_INGEST_TOKEN: "test-token",
+    } as CloudflareBindings;
+}
+
 describe("docs routes", () => {
     afterEach(() => {
         vi.restoreAllMocks();
@@ -67,6 +81,7 @@ describe("docs routes", () => {
             info: { title: "Enter", version: "0.0.0" },
             tags: [
                 { name: "👤 Account" },
+                { name: "🧩 Community Models" },
                 { name: "🤖 Community Agents" },
                 { name: "✨ Quests" },
                 { name: "Customer" },
@@ -88,13 +103,13 @@ describe("docs routes", () => {
                 },
                 "/api/account/my-models": {
                     get: {
-                        tags: ["👤 Account"],
+                        tags: ["🧩 Community Models"],
                         description:
                             "List invite-only community text models. API keys require `account:keys`.",
                     },
                 },
                 "/api/account/my-models/{id}/update": {
-                    post: { tags: ["👤 Account"] },
+                    post: { tags: ["🧩 Community Models"] },
                 },
                 "/api/account/agents": {
                     get: {
@@ -216,11 +231,21 @@ describe("docs routes", () => {
         const resources = schema["x-tagGroups"].find(
             (group) => group.name === "Resources",
         );
+        expect(integrations?.tags).toContain("Publish a Model");
+        expect(integrations?.tags).not.toContain("Community Models");
+        expect(resources?.tags).toContain("Community Models");
+        expect(resources?.tags).not.toContain("Publish a Model");
         expect(integrations?.tags).toContain("Publish an Agent");
         expect(integrations?.tags).not.toContain("Community Agents");
         expect(resources?.tags).toContain("Community Agents");
         expect(resources?.tags).not.toContain("Publish an Agent");
-        expect(schema.tags.map((tag) => tag.name)).toContain("BYOP");
+        expect(schema.tags.map((tag) => tag.name)).toContain(
+            "Connect User Wallets",
+        );
+        expect(schema.tags.map((tag) => tag.name)).toContain("Publish a Model");
+        expect(schema.tags.map((tag) => tag.name)).toContain(
+            "Community Models",
+        );
         expect(schema.tags.map((tag) => tag.name)).toContain(
             "Publish an Agent",
         );
@@ -233,6 +258,7 @@ describe("docs routes", () => {
         expect(schema.tags.map((tag) => tag.name)).toContain("Media Storage");
         expect(schema.tags.map((tag) => tag.name)).toContain("Account");
         expect(schema.tags.map((tag) => tag.name)).not.toContain("🌸 BYOP");
+        expect(schema.tags.map((tag) => tag.name)).not.toContain("BYOP");
         expect(schema.tags.map((tag) => tag.name)).not.toContain("👤 Account");
         expect(schema.tags.map((tag) => tag.name)).not.toContain("✨ Quests");
         expect(schema.tags.map((tag) => tag.name)).not.toContain("Customer");
@@ -287,10 +313,12 @@ describe("docs routes", () => {
             schema.paths["/account/my-models"] as Record<string, unknown>
         )?.get as Record<string, unknown> | undefined;
         expect(myModelsGet?.description).toContain("account:keys");
+        expect(myModelsGet?.tags).toEqual(["Community Models"]);
 
         const agentsGet = (
             schema.paths["/account/agents"] as Record<string, unknown>
         )?.get as Record<string, unknown> | undefined;
+        expect(agentsGet?.description).toContain("account:keys");
         expect(agentsGet?.tags).toEqual(["Community Agents"]);
 
         // The catalog is unauthenticated → marked public (security: []).
@@ -298,6 +326,26 @@ describe("docs routes", () => {
             schema.paths["/quests/catalog"] as Record<string, unknown>
         )?.get as Record<string, unknown> | undefined;
         expect(questsCatalogGet?.security).toEqual([]);
+    });
+
+    it("does not publish a partial schema when the account schema fails", async () => {
+        const ctx = createExecutionContext();
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(JSON.stringify({ paths: {}, components: {} }), {
+                headers: { "Content-Type": "application/json" },
+            }),
+        );
+
+        const response = await worker.fetch(
+            new Request(
+                "https://gen.pollinations.ai/docs/open-api/generate-schema",
+            ),
+            envWithFailedEnterSchema(),
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(500);
     });
 
     it("does not add noindex to docs responses at the worker boundary", async () => {
@@ -336,6 +384,8 @@ describe("docs routes", () => {
             'property="og:image" content="https://gen.pollinations.ai/og-image.png"',
         );
         expect(html).toContain('rel="manifest" href="/manifest.webmanifest"');
+        expect(html).toContain("window.location.hash === '#tag/byop'");
+        expect(html).toContain("#tag/connect-user-wallets");
     });
 
     it("serves the OpenAPI schema as YAML when ?format=yaml", async () => {
@@ -393,6 +443,30 @@ describe("docs routes", () => {
             "/docs#tag/publish-an-agent",
         );
 
+        const modelsRes = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs/guides/models", {
+                redirect: "manual",
+            }),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        expect(modelsRes.status).toBe(301);
+        expect(modelsRes.headers.get("Location")).toBe(
+            "/docs#tag/publish-a-model",
+        );
+
+        const walletRes = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs/guides/byop", {
+                redirect: "manual",
+            }),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        expect(walletRes.status).toBe(301);
+        expect(walletRes.headers.get("Location")).toBe(
+            "/docs#tag/connect-user-wallets",
+        );
+
         const missingRes = await worker.fetch(
             new Request("https://gen.pollinations.ai/docs/guides/notexist"),
             envWithEnterSchema({}),
@@ -424,7 +498,7 @@ describe("docs routes", () => {
         expect(realtimeSection).toContain("`GET /realtime`");
         expect(realtimeSection).toContain("`GET /v1/realtime`");
         expect(apiBody).not.toContain("/v1/audio/transcriptions/realtime");
-        expect(apiBody).not.toContain("## BYOP");
+        expect(apiBody).not.toContain("## Connect User Wallets");
 
         const byopRes = await worker.fetch(
             new Request(
@@ -434,11 +508,23 @@ describe("docs routes", () => {
             ctx,
         );
         expect(byopRes.status).toBe(200);
-        expect(await byopRes.text()).toContain("## BYOP");
+        expect(await byopRes.text()).toContain("## Connect User Wallets");
+
+        const modelsRes = await worker.fetch(
+            new Request(
+                "https://gen.pollinations.ai/docs/llm.txt?section=publish-a-model",
+            ),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        expect(modelsRes.status).toBe(200);
+        const modelsBody = await modelsRes.text();
+        expect(modelsBody).toContain("## Publish a Model");
+        expect(modelsBody).toContain("/account/my-models");
 
         const agentsRes = await worker.fetch(
             new Request(
-                "https://gen.pollinations.ai/docs/llm.txt?section=community-agents",
+                "https://gen.pollinations.ai/docs/llm.txt?section=publish-an-agent",
             ),
             envWithEnterSchema({}),
             ctx,
@@ -446,7 +532,7 @@ describe("docs routes", () => {
         expect(agentsRes.status).toBe(200);
         const agentsBody = await agentsRes.text();
         expect(agentsBody).toContain("## Publish an Agent");
-        expect(agentsBody).toContain("POST /account/agents");
+        expect(agentsBody).toContain("/account/agents");
 
         const badRes = await worker.fetch(
             new Request("https://gen.pollinations.ai/docs/llm.txt?section=bad"),

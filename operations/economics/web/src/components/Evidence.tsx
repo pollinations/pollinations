@@ -1,5 +1,5 @@
 import { Button, Chip, Tooltip, useScrollLock } from "@pollinations/ui";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { type DriveDocumentLink, driveDocumentLink } from "../lib/documents";
 
@@ -72,12 +72,32 @@ export function EvidencePreview({
     onClose: () => void;
     title?: string;
 }) {
+    const dialogRef = useRef<HTMLDivElement>(null);
     useScrollLock(documentLink != null);
 
     useEffect(() => {
         if (!documentLink) return;
         const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key === "Escape") onClose();
+            if (event.key === "Escape") {
+                onClose();
+                return;
+            }
+            if (event.key !== "Tab") return;
+
+            const focusable = dialogRef.current?.querySelectorAll<HTMLElement>(
+                'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+            );
+            if (!focusable || focusable.length === 0) return;
+
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+            }
         };
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
@@ -91,9 +111,11 @@ export function EvidencePreview({
                 type="button"
                 className="absolute inset-0 bg-black/60"
                 aria-label="Close document preview"
+                tabIndex={-1}
                 onClick={onClose}
             />
             <div
+                ref={dialogRef}
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="document-preview-title"

@@ -2,10 +2,12 @@
 
 Canonical vendor: `google`
 
-## Verified — 2026-07-10
+## Verified — 2026-08-22
 
 - Status: service-account OAuth and bounded BigQuery billing export work.
 - Preserve native EUR.
+- Balance scope: include only credits usable for compute, infrastructure, or
+  model usage. Exclude support-only and other operational-benefit credits.
 
 Use when:
 
@@ -62,6 +64,9 @@ Collection steps:
 
 7. Save raw query output to `data/inbox/google-<period>-billing-export.json`.
 8. Use `agent.system.txt` with `mode: extract` for saved raw evidence.
+9. For the current OP Cloud balance, review Billing → Credits → Issued Credits
+   and record one dated `type: balance` row containing only remaining credits
+   whose usage scope covers compute, infrastructure, or model usage.
 
 Suggested bounded query shape:
 
@@ -114,6 +119,12 @@ Known traps:
 - Cost is kept in native EUR locally.
 - Include `currency` in the raw query output when available. If missing, use `EUR` only when the billing export/account context proves native EUR and explain that in `reconciliation_notes`.
 - Billing export produces gross cost and credit rows. Treat `abs(credits_amount)` as credit/discount usage.
+- A credit can be available but unusable for compute. In particular, do not
+  count `Enhanced Support` or similar support-only credits in the Balances
+  page. Preserve them in evidence notes only.
+- The Myceli billing account's USD 75,000 Scale Y1 and USD 25,000 Ecosystem
+  Partner compute-related lots are fully used. The remaining USD 12,000
+  Enhanced Support credit is excluded from the compute balance.
 - A pure billing export is usage/cost truth, not cash transaction truth.
 - BigQuery queries can be broad; always bound by period.
 - Avoid writing service-account JSON to repo paths. If a temp key file is needed, use a temp directory and delete it after collection.

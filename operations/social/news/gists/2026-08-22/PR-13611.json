@@ -1,0 +1,34 @@
+{
+  "pr_number": 13611,
+  "title": "docs: add Publish an Agent guide",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13611",
+  "merged_at": "2026-08-22T09:28:37Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds the Publish an Agent integration guide\n- Documents the one-step agent and callable-listing flow\n- Keeps Community Agents API operations under Resources\n- Updates account, CLI, README, drawer, and generated-doc source text\n- Leaves `APIDOCS.md` untouched\n\nTests: gen docs routes, 7/7 passed.\n\nMerge after #13624 and #13610.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Agents, Ready to Bloom",
+    "blurb": "A new guide walks builders from an agent idea to a published callable listing without making them excavate the API garden. Community Agent operations remain neatly planted under Resources.",
+    "summary": "Added the Publish an Agent integration guide, documenting the one-step agent and callable-listing flow while linking the updated account, CLI, README, drawer, and generated-doc routes.",
+    "impact": "Builders now have a single practical path for publishing an agent, with Community Agents API operations still easy to find under Resources.",
+    "keywords": [
+      "documentation",
+      "agents",
+      "community-agents",
+      "cli",
+      "api",
+      "integration-guide"
+    ],
+    "visual_concept": "Depict Polli helping a small agent seedling become a labeled, callable garden listing on a cozy retro terminal. Use a clear one-step path from a tiny bot-in-a-pot to a blooming directory sign, with a documentation booklet and code-plants representing the guide; the monitor robot can eagerly point at the published listing.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with black antennae, oval black eyes, bright pink rectangular cheek blush, a happy smile, rounded translucent light-blue wings, and a tiny librarian scarf, placing a small friendly agent bot seedling into a blooming callable-listing garden beside a retro terminal; a cute CRT monitor robot points excitedly at a pixel sign reading “PUBLISH AGENT.” Lime green (#ecf874) is prominent among warm cream, mint, lavender, and peach code-plants and guide pages, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-22/PR-13611.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with black antennae, oval black eyes, bright pink rectangular cheek blush, a happy smile, rounded translucent light-blue wings, and a tiny librarian scarf, placing a small friendly agent bot seedling into a blooming callable-listing garden beside a retro terminal; a cute CRT monitor robot points excitedly at a pixel sign reading “PUBLISH AGENT.” Lime green (#ecf874) is prominent among warm cream, mint, lavender, and peach code-plants and guide pages, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-22T09:29:35.175753+00:00"
+}

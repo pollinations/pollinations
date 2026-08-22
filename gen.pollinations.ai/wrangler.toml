@@ -11,7 +11,8 @@ services = [
     { binding = "FFMPEG_MCP", service = "pollinations-ffmpeg-mcp" },
     { binding = "BROWSER_MCP", service = "pollinations-browser-mcp" },
     { binding = "WEB_SEARCH_MCP", service = "pollinations-web-search-mcp" },
-    { binding = "TRANSCRIPTION_MCP", service = "pollinations-transcription-mcp" }
+    { binding = "TRANSCRIPTION_MCP", service = "pollinations-transcription-mcp" },
+    { binding = "VISION_MCP", service = "pollinations-vision-mcp" }
 ]
 
 [images]
@@ -118,6 +119,10 @@ service = "pollinations-web-search-mcp"
 binding = "TRANSCRIPTION_MCP"
 service = "pollinations-transcription-mcp"
 
+[[env.production.services]]
+binding = "VISION_MCP"
+service = "pollinations-vision-mcp"
+
 [[env.production.vpc_networks]]
 binding = "KLEIN_VPC"
 tunnel_id = "c340d8d9-c1f3-4a13-8115-38b59faac3d5"
@@ -221,6 +226,10 @@ service = "pollinations-web-search-mcp-staging"
 binding = "TRANSCRIPTION_MCP"
 service = "pollinations-transcription-mcp-staging"
 
+[[env.staging.services]]
+binding = "VISION_MCP"
+service = "pollinations-vision-mcp-staging"
+
 [[env.staging.d1_databases]]
 binding = "DB"
 database_name = "staging-pollinations-enter-db"
@@ -309,6 +318,10 @@ service = "pollinations-web-search-mcp"
 [[env.test.services]]
 binding = "TRANSCRIPTION_MCP"
 service = "pollinations-transcription-mcp"
+
+[[env.test.services]]
+binding = "VISION_MCP"
+service = "pollinations-vision-mcp"
 
 [[env.test.d1_databases]]
 binding = "DB"

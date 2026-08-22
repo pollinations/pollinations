@@ -666,9 +666,9 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2025-10-10").getTime(),
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(0.14),
-            promptCachedTokens: perMillion(0.028),
-            completionTextTokens: perMillion(0.28),
+            promptTextTokens: perMillion(0.22),
+            promptCachedTokens: perMillion(0.007),
+            completionTextTokens: perMillion(0.66),
         },
         title: "DeepSeek V4 Flash 0731",
         description: "Fast reasoning and coding at bargain prices",

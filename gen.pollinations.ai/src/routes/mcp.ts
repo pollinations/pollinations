@@ -30,6 +30,7 @@ function getMcpBinding(
     if (id === "pollinations") return env.POLLINATIONS_MCP;
     if (id === "ffmpeg") return env.FFMPEG_MCP;
     if (id === "browser") return env.BROWSER_MCP;
+    if (id === "web-search") return env.WEB_SEARCH_MCP;
     return undefined;
 }
 

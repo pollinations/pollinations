@@ -51,6 +51,12 @@ export const MCP_SERVERS = [
         provider: "cloudflare",
         eventType: "tool.browser",
     },
+    {
+        id: "web-search",
+        name: "Web Search",
+        description: "Search the live web and return answers with citations.",
+        billing: "downstream",
+    },
 ] as const satisfies readonly McpServerDefinition[];
 
 export type McpServerId = (typeof MCP_SERVERS)[number]["id"];

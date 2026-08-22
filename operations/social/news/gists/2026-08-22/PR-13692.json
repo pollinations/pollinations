@@ -1,0 +1,34 @@
+{
+  "pr_number": 13692,
+  "title": "fix: invalidate stale KPI cache entries",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13692",
+  "merged_at": "2026-08-22T11:18:03Z",
+  "labels": [],
+  "pr_body_excerpt": "- Bumps the KPI Tinybird cache key version\n- Invalidates existing six-hour edge entries\n- Makes the new 30-minute TTL effective immediately",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The KPI clock got reset",
+    "blurb": "The dashboard's old six-hour memory has been gently swept out. Fresh KPI data can now settle into its intended 30-minute rhythm.",
+    "summary": "Bumped the KPI Tinybird cache-key version so existing six-hour edge-cache entries are invalidated and the new 30-minute TTL takes effect immediately.",
+    "impact": "Users will see KPI dashboards refresh on the new 30-minute schedule instead of being held by previously cached six-hour responses.",
+    "keywords": [
+      "kpi",
+      "cache",
+      "tinybird",
+      "edge-cache",
+      "dashboard",
+      "ttl"
+    ],
+    "visual_concept": "Depict Polli as a cozy timekeeper in a small garden dashboard, replacing an oversized stale six-hour sandglass with a fresh 30-minute pixel timer beside a glowing KPI monitor. Tiny code-plants and flowers represent metrics becoming current again.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny clockmaker apron, resetting a glowing 30-minute pixel timer beside a retro KPI monitor while an old six-hour sandglass is tucked away; code-plants and small flowers grow around the desk. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, with subtle pixel-font text: '30 MIN'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-22/PR-13692.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny clockmaker apron, resetting a glowing 30-minute pixel timer beside a retro KPI monitor while an old six-hour sandglass is tucked away; code-plants and small flowers grow around the desk. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, with subtle pixel-font text: '30 MIN'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-22T11:19:23.157254+00:00"
+}

@@ -65,6 +65,15 @@ describe("latestClosedMonth", () => {
         ).toBe("2026-07");
     });
 
+    it("uses UTC at a local calendar-month boundary", () => {
+        expect(
+            latestClosedMonth(
+                ["2026-06", "2026-07", "2026-08"],
+                new Date("2026-08-01T00:30:00+02:00"),
+            ),
+        ).toBe("2026-06");
+    });
+
     it("uses the latest available month when no closed month exists", () => {
         expect(
             latestClosedMonth(["2026-08"], new Date("2026-08-03T00:00:00Z")),

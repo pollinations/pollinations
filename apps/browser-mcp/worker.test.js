@@ -189,3 +189,27 @@ test("reports measured usage when output upload fails", async () => {
     assert.ok(response.headers.has(MCP_USAGE_HEADERS.cost));
     await client.close();
 });
+
+test("reports measured usage returned with Browser Run failures", async () => {
+    const { calls, env, worker } = createHarness({
+        quickAction: async () =>
+            new Response("browser unavailable", {
+                status: 503,
+                headers: { "X-Browser-Ms-Used": "1000" },
+            }),
+    });
+    const client = await connect(worker, env, calls);
+    const result = await client.callTool({
+        name: "fetchPage",
+        arguments: { url: SOURCE },
+    });
+    assert.equal(result.isError, true);
+    const response = calls.responses.at(-1);
+    assert.equal(response.headers.get(MCP_USAGE_HEADERS.status), "503");
+    assert.equal(response.headers.get(MCP_USAGE_HEADERS.adjustmentUnits), "1");
+    assert.equal(
+        Number(response.headers.get(MCP_USAGE_HEADERS.cost)),
+        0.09 / 3600,
+    );
+    await client.close();
+});

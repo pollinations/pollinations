@@ -377,11 +377,19 @@ export const track = (eventType: EventType) =>
                         apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
                         byopClientKeyId: c.var.auth?.apiKey?.byopClientKeyId,
                         modelPaidOnly: c.var.model?.definition.paidOnly,
-                        keyPollenType: resolveModelPollenType(
-                            c.var.auth?.apiKey?.permissions,
-                            c.var.model?.resolved,
-                            c.var.auth?.apiKey?.pollenType,
-                        ),
+                        keyPollenType: (() => {
+                            const isPaidOnly =
+                                c.var.model?.definition.paidOnly ?? false;
+                            const questPollenOnly =
+                                c.var.auth?.apiKey?.questPollenOnly ?? false;
+                            if (isPaidOnly) return null;
+                            if (questPollenOnly) return "quest" as const;
+                            return resolveModelPollenType(
+                                c.var.auth?.apiKey?.permissions,
+                                c.var.model?.resolved,
+                                c.var.auth?.apiKey?.pollenType,
+                            );
+                        })(),
                         // Only public endpoints pay their owner a reward: a
                         // private endpoint is owner-called (base cost billed to
                         // the owner, no markup, no self-credit).

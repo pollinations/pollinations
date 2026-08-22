@@ -71,9 +71,12 @@ function KeysPage() {
         id: string,
         updates: {
             name?: string;
-            allowedModels?: string[] | null;
+            allowedModels?:
+                | (string | { id: string; pollenType: "quest" | "paid" })[]
+                | null;
             pollenBudget?: number | null;
             pollenType?: "quest" | "paid" | null;
+            questPollenOnly?: boolean | null;
             accountPermissions?: string[] | null;
             expiresAt?: Date | null;
         },

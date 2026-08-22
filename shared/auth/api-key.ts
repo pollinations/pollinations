@@ -29,6 +29,7 @@ export interface AuthenticatedApiKey {
     metadata?: Record<string, unknown>;
     pollenBalance?: number | null;
     pollenType?: "quest" | "paid" | null;
+    questPollenOnly?: boolean | null;
     byopClientKeyId?: string | null;
     byopClientName?: string | null;
     byopClientUserId?: string | null;
@@ -373,6 +374,7 @@ async function loadActiveApiKeyAuthResult(opts: {
             pollenBalance: row.apiKey.pollenBalance ?? null,
             pollenType:
                 (row.apiKey.pollenType as "quest" | "paid" | null) ?? null,
+            questPollenOnly: row.apiKey.questPollenOnly ?? null,
             byopClientKeyId: row.apiKey.byopClientKeyId ?? null,
             byopClientName: row.byopClientName ?? null,
             byopClientUserId: row.byopClientUserId ?? null,

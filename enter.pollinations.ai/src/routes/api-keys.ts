@@ -170,6 +170,11 @@ const UpdateApiKeySchema = z.object({
         .describe(
             "Restrict this key to only use quest or paid pollen. null = unrestricted",
         ),
+    questPollenOnly: z
+        .boolean()
+        .nullable()
+        .optional()
+        .describe("When true, quest models never use paid pollen for this key"),
     accountPermissions: z
         .array(z.string())
         .nullable()
@@ -229,6 +234,11 @@ const CreateApiKeySchema = z.object({
         .describe(
             "Restrict this key to only use quest or paid pollen. null = unrestricted",
         ),
+    questPollenOnly: z
+        .boolean()
+        .nullable()
+        .optional()
+        .describe("When true, quest models never use paid pollen for this key"),
     accountPermissions: z
         .array(z.string())
         .nullable()
@@ -291,6 +301,7 @@ export const apiKeysRoutes = new Hono<Env>()
                 allowedModels: input.allowedModels,
                 pollenBudget: input.pollenBudget,
                 pollenType: input.pollenType,
+                questPollenOnly: input.questPollenOnly,
                 accountPermissions: input.accountPermissions,
                 metadata: input.metadata,
                 allowAccountKeysPermission: true,
@@ -348,6 +359,7 @@ export const apiKeysRoutes = new Hono<Env>()
                     metadata: key.metadata ? parseMetadata(key.metadata) : null,
                     pollenBalance: key.pollenBalance,
                     pollenType: key.pollenType ?? null,
+                    questPollenOnly: key.questPollenOnly ?? null,
                     byopClientKeyId: key.byopClientKeyId,
                 })),
             });
@@ -374,6 +386,7 @@ export const apiKeysRoutes = new Hono<Env>()
                 allowedModels,
                 pollenBudget,
                 pollenType,
+                questPollenOnly,
                 accountPermissions,
                 expiresAt,
             } = c.req.valid("json");
@@ -416,6 +429,8 @@ export const apiKeysRoutes = new Hono<Env>()
             if (pollenBudget !== undefined)
                 d1Updates.pollenBalance = pollenBudget;
             if (pollenType !== undefined) d1Updates.pollenType = pollenType;
+            if (questPollenOnly !== undefined)
+                d1Updates.questPollenOnly = questPollenOnly ? 1 : 0;
             if (expiresAt !== undefined) d1Updates.expiresAt = expiresAt;
 
             if (Object.keys(d1Updates).length > 0) {
@@ -449,6 +464,7 @@ export const apiKeysRoutes = new Hono<Env>()
                 permissions: responsePermissions,
                 pollenBalance: updated?.pollenBalance ?? null,
                 pollenType: updated?.pollenType ?? null,
+                questPollenOnly: updated?.questPollenOnly ?? null,
                 expiresAt: updated?.expiresAt ?? null,
             });
         },

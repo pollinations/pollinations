@@ -79,6 +79,7 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - 🧊 **3D Generation** — Text-to-3D and image-to-3D
 - 🎙️ **Real-time API** — OpenAI-compatible WebSocket for streaming conversations
 - 🔢 **Embeddings Creation** — Semantic search, retrieval, similarity matching
+- 🤖 **Managed Agents** — Turn a prompt, base model, and optional Pollinations tools into a reusable model
 - 🎣 **_Easy-to-use Packages_** ([Packages](packages/))
 
 <!-- Updated daily by .github/workflows/docs-update-readme-news.yml.
@@ -92,15 +93,25 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
  </picture>
 </a>
 
+## 🤖 Managed Agents
+
+Build a reusable text agent without hosting an agent server. Choose a system prompt and base model, optionally give it Pollinations tools, then call it through the same OpenAI-compatible API as any other model.
+
+- **Private or public** — keep an agent owner-only or publish it after receiving community publisher access.
+- **Normal model API** — call a registered agent by its `owner/agent-name` model ID.
+- **Dashboard, CLI, or API** — manage agents in [My Models](https://enter.pollinations.ai/my-models), with `polli agents`, or through `/account/agents`.
+
+See [Publish an Agent](./BUILD_YOUR_OWN_AGENT.md) for setup and billing behavior.
+
 ## 🧩 Community Models
 
-Community members run their own models on the Pollinations platform — text, image, video, audio, embeddings, and more.
+Community members connect their own OpenAI-compatible text, image, image-editing, and speech-to-text endpoints to Pollinations.
 
-- **Host your own model** — register an upstream endpoint with the [`/account/my-models`](APIDOCS.md) API, then serve it to everyone or keep it private to your account.
+- **Host your own model** — follow [Publish a Model](./BRING_YOUR_OWN_MODEL.md) to test and register an upstream endpoint, then keep it private or publish it to the catalog.
 - **Automatic fallback routing** — nominate up to three compatible backup models so generations keep moving when an upstream model goes down.
 - **Discover and monitor** — browse community models via [gen.pollinations.ai/v1/models](https://gen.pollinations.ai/v1/models) and watch live health and community leaderboards at [model-monitor.pollinations.ai](https://model-monitor.pollinations.ai).
 
-For billing details when building apps on top, see [Bring Your Own Pollen](./BRING_YOUR_OWN_POLLEN.md).
+For billing details when building apps on top, see [Connect User Wallets](./BRING_YOUR_OWN_POLLEN.md).
 
 ## 🚀 Getting Started
 
@@ -267,7 +278,7 @@ Get your API key at [enter.pollinations.ai](https://enter.pollinations.ai/keys)
 
 > ⚠️ **Never expose `sk_` keys** in client-side code, git repos, or public URLs
 
-> 💡 **Building an app?** Use [Bring Your Own Pollen](./BRING_YOUR_OWN_POLLEN.md) — users pay for their own usage, you pay $0
+> 💡 **Building an app?** Use [Connect User Wallets](./BRING_YOUR_OWN_POLLEN.md) — users pay for their own usage, you pay $0
 
 ### Model Restrictions
 

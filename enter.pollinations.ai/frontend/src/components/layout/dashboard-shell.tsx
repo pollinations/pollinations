@@ -243,8 +243,8 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             ),
         },
         {
-            label: "BYOP",
-            href: `${genDocsUrl()}#tag/byop`,
+            label: "Connect User Wallets",
+            href: `${genDocsUrl()}#tag/connect-user-wallets`,
             icon: (
                 <WalletIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />
             ),

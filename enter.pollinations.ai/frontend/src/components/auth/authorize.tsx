@@ -118,7 +118,9 @@ export function Authorize() {
     // them, so the consent screen has to learn them separately.
     const modelCategories = useModelCategories(useOwnCommunityModels(!!user));
     const modalities = computeCategoryModalities(
-        keyPermissions.permissions.allowedModels,
+        keyPermissions.permissions.allowedModels?.map((e) =>
+            typeof e === "string" ? e : e.id,
+        ) ?? null,
         modelCategories,
     );
     // Which optional scopes the caller requested. Stays constant once set —
@@ -771,7 +773,10 @@ export function Authorize() {
                                 }
                                 onChange={keyPermissions.setAccountPermissions}
                                 allowedModels={
-                                    keyPermissions.permissions.allowedModels
+                                    keyPermissions.permissions.allowedModels?.map(
+                                        (e) =>
+                                            typeof e === "string" ? e : e.id,
+                                    ) ?? null
                                 }
                                 onModelsChange={keyPermissions.setAllowedModels}
                                 visiblePermissions={visibleOptionalPermissions}

@@ -1,5 +1,6 @@
 import { and, eq, isNotNull, isNull, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
+import type { ModelPermissionEntry } from "../auth/api-key.ts";
 import { communityModelId } from "../community-endpoints.ts";
 import * as schema from "../db/better-auth.ts";
 import { getModels, resolveModelName } from "./registry.ts";
@@ -22,6 +23,45 @@ export function canonicalizeModelPermissionIds(
         }
     }
     return canonicalIds;
+}
+
+/**
+ * Canonicalize model permission entries, handling both string and {id, pollenType} formats.
+ * When the same model appears as both a string and an object entry, the object
+ * entry (with pollenType override) takes precedence.
+ */
+export function canonicalizeModelPermissionEntries(
+    entries: readonly ModelPermissionEntry[],
+): ModelPermissionEntry[] {
+    // First pass: collect canonical IDs and resolve them.
+    const resolved: { canonicalId: string; entry: ModelPermissionEntry }[] = [];
+    for (const entry of entries) {
+        const rawId = typeof entry === "string" ? entry : entry.id;
+        let canonicalId = rawId;
+        try {
+            canonicalId = resolveModelName(rawId);
+        } catch {
+            // Preserve unknown and community model IDs.
+        }
+        resolved.push({ canonicalId, entry });
+    }
+
+    // Second pass: deduplicate, preferring object entries over strings.
+    const byId = new Map<string, ModelPermissionEntry>();
+    for (const { canonicalId, entry } of resolved) {
+        const existing = byId.get(canonicalId);
+        if (!existing) {
+            byId.set(canonicalId, entry);
+        } else if (typeof entry !== "string") {
+            // Object entry (with pollenType) overrides a plain string.
+            byId.set(canonicalId, entry);
+        }
+        // If both are strings or both are objects, keep the first one.
+    }
+
+    return Array.from(byId.entries()).map(([id, entry]) =>
+        typeof entry === "string" ? id : { id, pollenType: entry.pollenType },
+    );
 }
 
 export async function getVisibleModelIdsForUser(
@@ -63,15 +103,19 @@ export async function getVisibleModelIdsForUser(
 }
 
 export function filterPermissionsToVisibleModels(
-    permissions: Record<string, string[]> | null,
+    permissions: Record<string, string[] | ModelPermissionEntry[]> | null,
     visibleModelIds: ReadonlySet<string>,
-): Record<string, string[]> | null {
-    if (!Array.isArray(permissions?.models)) return permissions;
+): Record<string, string[] | ModelPermissionEntry[]> | null {
+    if (!permissions?.models) return permissions;
+
+    const models = permissions.models;
+    if (!Array.isArray(models)) return permissions;
 
     return {
         ...permissions,
-        models: permissions.models.filter((modelId) =>
-            visibleModelIds.has(modelId),
-        ),
+        models: models.filter((entry) => {
+            const modelId = typeof entry === "string" ? entry : entry.id;
+            return visibleModelIds.has(modelId);
+        }),
     };
 }

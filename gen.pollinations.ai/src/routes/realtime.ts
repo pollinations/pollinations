@@ -1,3 +1,4 @@
+import { extractAllowedModelIds } from "@shared/auth/api-key.ts";
 import { getUserBalance, payerBucketToMeter } from "@shared/billing/balance.ts";
 import {
     handleBalanceDeduction,
@@ -101,6 +102,7 @@ type RealtimeBillingContext = {
     // reaches a realtime row without touching this file.
     identity: UserData & { userId: string };
     apiKeyPollenBalance?: number | null;
+    keyPollenType?: "quest" | "paid" | null;
     byopClientKeyId?: string | null;
     modelRequested: string;
     resolvedModelRequested: string;
@@ -127,8 +129,8 @@ type RealtimeBillingContext = {
 };
 
 function requireAllowedModel(c: Context<Env>, model: string): void {
-    const allowedModels = c.var.auth.apiKey?.permissions?.models;
-    if (allowedModels && !allowedModels.includes(model)) {
+    const allowedIds = extractAllowedModelIds(c.var.auth.apiKey?.permissions);
+    if (allowedIds && !allowedIds.includes(model)) {
         throw new HTTPException(403, {
             message: `Model '${model}' is not allowed for this API key`,
         });
@@ -826,6 +828,7 @@ async function settleRealtimeSession(
             userId: tracking.identity.userId,
             apiKeyId: tracking.identity.apiKeyId,
             apiKeyPollenBalance: tracking.apiKeyPollenBalance,
+            keyPollenType: tracking.keyPollenType,
             byopClientKeyId: tracking.byopClientKeyId,
             modelPaidOnly: tracking.modelDefinition.paidOnly,
         });
@@ -1368,6 +1371,7 @@ async function createRealtimeBillingContext(
         // requireUser() above proves the id, which the optional field cannot.
         identity: { ...requestIdentity(c.var.auth), userId: user.id },
         apiKeyPollenBalance: c.var.auth.apiKey?.pollenBalance,
+        keyPollenType: c.var.auth.apiKey?.pollenType,
         byopClientKeyId: c.var.auth.apiKey?.byopClientKeyId,
         modelRequested: modelInfo.requested,
         resolvedModelRequested: modelInfo.resolved,

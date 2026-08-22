@@ -29,6 +29,7 @@ import {
 const resolver = <T extends Parameters<typeof baseResolver>[0]>(schema: T) =>
     baseResolver(schema, { reused: "ref" });
 
+import { extractAllowedModelIds } from "@shared/auth/api-key.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { AUDIO_VOICES } from "@shared/registry/audio.ts";
 import {
@@ -217,7 +218,9 @@ const modelsListHandler = (
             const { community } = c.req.valid(
                 "query" as never,
             ) as ModelListQueryParams;
-            const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+            const allowedModels =
+                extractAllowedModelIds(c.var.auth?.apiKey?.permissions) ??
+                undefined;
             const paidBalance = hasPaidBalance(c);
             return c.json(
                 filterEntriesByCommunityParam(
@@ -306,7 +309,9 @@ export const proxyRoutes = new Hono<Env>()
             const { community } = c.req.valid(
                 "query" as never,
             ) as ModelListQueryParams;
-            const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+            const allowedModels =
+                extractAllowedModelIds(c.var.auth?.apiKey?.permissions) ??
+                undefined;
             const paidBalance = hasPaidBalance(c);
             const modelEntries = filterEntriesByCommunityParam(
                 filterEntriesByPermissions(

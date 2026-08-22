@@ -1,10 +1,12 @@
 import { createMcpHandler, McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { withMcpUsageHeaders } from "../../shared/mcp-usage.ts";
+import { readResponseBytes } from "../../shared/response-bytes.ts";
 import { validateUserMediaUrl } from "../../shared/user-media-url.ts";
 
 const BROWSER_COST_PER_SECOND = 0.09 / 3600;
 const ADJUSTMENT_ID = "cloudflare.browser_run.duration.v1";
+const MAX_MARKDOWN_BYTES = 1024 * 1024;
 const MAX_OUTPUT_BYTES = 100 * 1024 * 1024;
 
 class ToolFailure extends Error {
@@ -51,13 +53,18 @@ async function runBrowserAction({
 
     try {
         const response = await env.BROWSER.quickAction(action, input);
+        if (response.headers.has("x-browser-ms-used")) {
+            browserMs = browserMilliseconds(response);
+        }
         if (!response.ok) {
             throw new ToolFailure(
                 response.status,
                 await responseError(response),
             );
         }
-        browserMs = browserMilliseconds(response);
+        if (!response.headers.has("x-browser-ms-used")) {
+            browserMs = browserMilliseconds(response);
+        }
         return await readResult(response);
     } catch (error) {
         responseStatus = error instanceof ToolFailure ? error.status : 502;
@@ -77,7 +84,12 @@ async function runBrowserAction({
 }
 
 async function markdownResult(response, url) {
-    const body = await response.json();
+    const bytes = await readResponseBytes(
+        response,
+        MAX_MARKDOWN_BYTES,
+        () => new ToolFailure(502, "Rendered Markdown exceeds 1 MB"),
+    );
+    const body = JSON.parse(new TextDecoder().decode(bytes));
     if (!body?.success || typeof body.result !== "string") {
         throw new ToolFailure(502, "Browser Run returned invalid Markdown");
     }
@@ -87,7 +99,11 @@ async function markdownResult(response, url) {
 }
 
 async function uploadResult(response, env, input) {
-    const bytes = await response.arrayBuffer();
+    const bytes = await readResponseBytes(
+        response,
+        MAX_OUTPUT_BYTES,
+        () => new ToolFailure(502, "Browser output exceeds 100 MB"),
+    );
     if (bytes.byteLength === 0 || bytes.byteLength > MAX_OUTPUT_BYTES) {
         throw new ToolFailure(502, "Browser output has an invalid size");
     }
@@ -219,14 +235,6 @@ export function createWorker() {
     return {
         async fetch(request, env) {
             const url = new URL(request.url);
-            if (url.pathname === "/health" && request.method === "GET") {
-                return Response.json({
-                    name: "pollinations-browser-mcp",
-                    transport: "streamable-http",
-                    endpoint: "/",
-                    stateless: true,
-                });
-            }
             if (url.pathname !== "/") {
                 return new Response("Not found", { status: 404 });
             }
@@ -255,7 +263,6 @@ export function createWorker() {
                         usage = reportedUsage;
                     }),
                 {
-                    legacy: "stateless",
                     onerror: (error) => console.error(error),
                 },
             );

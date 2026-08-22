@@ -376,6 +376,7 @@ export const track = (eventType: EventType) =>
                         apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
                         byopClientKeyId: c.var.auth?.apiKey?.byopClientKeyId,
                         modelPaidOnly: c.var.model?.definition.paidOnly,
+                        keyPollenType: c.var.auth?.apiKey?.pollenType,
                         // Only public endpoints pay their owner a reward: a
                         // private endpoint is owner-called (base cost billed to
                         // the owner, no markup, no self-credit).

@@ -1,7 +1,11 @@
 import { sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { apikey as apiKeyTable, user as userTable } from "../db/better-auth.ts";
-import type { BalanceBucket, UserBalance } from "./bucket-selection.ts";
+import type {
+    BalanceBucket,
+    KeyPollenType,
+    UserBalance,
+} from "./bucket-selection.ts";
 import { POLLEN_BILLING_PRECISION } from "./precision.ts";
 
 export type Bucket = BalanceBucket;
@@ -18,12 +22,17 @@ const BUCKET_COLUMNS = {
  * charge, pack pays when Quest Pollen cannot cover and pack is positive, and
  * regular overage falls back to Quest Pollen when pack is empty.
  * Paid-only requests always deduct from pack and never touch Quest Pollen.
+ *
+ * When keyPollenType is set, it restricts deduction to the specified bucket:
+ * - "quest" → always deduct from tier_balance
+ * - "paid" → always deduct from pack_balance
  */
 export async function atomicDeductUserBalance(
     db: DrizzleD1Database,
     userId: string,
     amount: number,
     isPaidOnly = false,
+    keyPollenType?: KeyPollenType | null,
 ): Promise<{ ok: boolean; bucket: Bucket | null; packBalance: number | null }> {
     if (amount <= 0) return { ok: true, bucket: null, packBalance: null };
 
@@ -33,6 +42,8 @@ export async function atomicDeductUserBalance(
             SELECT
                 id,
                 CASE
+                    WHEN ${keyPollenType === "quest" ? 1 : 0} = 1 THEN 'tier'
+                    WHEN ${keyPollenType === "paid" ? 1 : 0} = 1 THEN 'pack'
                     WHEN ${isPaidOnly ? 1 : 0} = 1 THEN 'pack'
                     WHEN COALESCE(tier_balance, 0) >= ${amount} THEN 'tier'
                     WHEN COALESCE(pack_balance, 0) > 0 THEN 'pack'

@@ -5,10 +5,12 @@ import { useOwnCommunityModels } from "../models/use-own-community-models.ts";
 import { AccountPermissionsInput } from "./account-permissions-input.tsx";
 import { ExpiryDaysInput } from "./expiry-days-input.tsx";
 import { PollenBudgetInput } from "./pollen-budget-input.tsx";
+import { PollenTypeInput } from "./pollen-type-input.tsx";
 
 export interface KeyPermissions {
     allowedModels: string[] | null;
     pollenBudget: number | null;
+    pollenType: "quest" | "paid" | null;
     expiryDays: number | null;
     accountPermissions: string[] | null;
 }
@@ -20,6 +22,9 @@ export function useKeyPermissions(initial: Partial<KeyPermissions> = {}) {
     const [pollenBudget, setPollenBudget] = useState(
         initial.pollenBudget ?? null,
     );
+    const [pollenType, setPollenType] = useState<"quest" | "paid" | null>(
+        initial.pollenType ?? null,
+    );
     const [expiryDays, setExpiryDays] = useState(initial.expiryDays ?? null);
     const [accountPermissions, setAccountPermissions] = useState<
         string[] | null
@@ -29,11 +34,13 @@ export function useKeyPermissions(initial: Partial<KeyPermissions> = {}) {
         permissions: {
             allowedModels,
             pollenBudget,
+            pollenType,
             expiryDays,
             accountPermissions,
         },
         setAllowedModels,
         setPollenBudget,
+        setPollenType,
         setExpiryDays,
         setAccountPermissions,
     };
@@ -59,6 +66,7 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
         permissions,
         setAllowedModels,
         setPollenBudget,
+        setPollenType,
         setExpiryDays,
         setAccountPermissions,
     } = value;
@@ -73,6 +81,12 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
             <PollenBudgetInput
                 value={permissions.pollenBudget}
                 onChange={setPollenBudget}
+                disabled={disabled}
+                inline={inline}
+            />
+            <PollenTypeInput
+                value={permissions.pollenType}
+                onChange={setPollenType}
                 disabled={disabled}
                 inline={inline}
             />

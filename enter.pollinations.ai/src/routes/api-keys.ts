@@ -136,6 +136,13 @@ const UpdateApiKeySchema = z.object({
         .nullable()
         .optional()
         .describe("Pollen budget cap for this key. null = unlimited"),
+    pollenType: z
+        .enum(["quest", "paid"])
+        .nullable()
+        .optional()
+        .describe(
+            "Restrict this key to only use quest or paid pollen. null = unrestricted",
+        ),
     accountPermissions: z
         .array(z.string())
         .nullable()
@@ -177,6 +184,13 @@ const CreateApiKeySchema = z.object({
         .optional()
         .describe(
             "Pollen budget cap. Publishable keys accept only null, omission, or 0 and always use 0; secret keys use null for unlimited",
+        ),
+    pollenType: z
+        .enum(["quest", "paid"])
+        .nullable()
+        .optional()
+        .describe(
+            "Restrict this key to only use quest or paid pollen. null = unrestricted",
         ),
     accountPermissions: z
         .array(z.string())
@@ -239,6 +253,7 @@ export const apiKeysRoutes = new Hono<Env>()
                 expiresIn: input.expiresIn,
                 allowedModels: input.allowedModels,
                 pollenBudget: input.pollenBudget,
+                pollenType: input.pollenType,
                 accountPermissions: input.accountPermissions,
                 metadata: input.metadata,
                 allowAccountKeysPermission: true,
@@ -295,6 +310,7 @@ export const apiKeysRoutes = new Hono<Env>()
                         : parsedPermissions[index],
                     metadata: key.metadata ? parseMetadata(key.metadata) : null,
                     pollenBalance: key.pollenBalance,
+                    pollenType: key.pollenType ?? null,
                     byopClientKeyId: key.byopClientKeyId,
                 })),
             });
@@ -320,6 +336,7 @@ export const apiKeysRoutes = new Hono<Env>()
                 name,
                 allowedModels,
                 pollenBudget,
+                pollenType,
                 accountPermissions,
                 expiresAt,
             } = c.req.valid("json");
@@ -358,6 +375,7 @@ export const apiKeysRoutes = new Hono<Env>()
             if (name !== undefined) d1Updates.name = name;
             if (pollenBudget !== undefined)
                 d1Updates.pollenBalance = pollenBudget;
+            if (pollenType !== undefined) d1Updates.pollenType = pollenType;
             if (expiresAt !== undefined) d1Updates.expiresAt = expiresAt;
 
             if (Object.keys(d1Updates).length > 0) {
@@ -390,6 +408,7 @@ export const apiKeysRoutes = new Hono<Env>()
                 name: updated?.name,
                 permissions: responsePermissions,
                 pollenBalance: updated?.pollenBalance ?? null,
+                pollenType: updated?.pollenType ?? null,
                 expiresAt: updated?.expiresAt ?? null,
             });
         },

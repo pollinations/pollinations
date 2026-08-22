@@ -2,10 +2,12 @@
 
 Canonical vendor: `wise`
 
-## Verified — 2026-07-10
+## Verified — 2026-08-22
 
 - Status: profile, balance, and bounded activity APIs work.
-- The activity response included a pagination cursor.
+- Full-year activity pagination, stable resource IDs, and amount parsing were
+  checked against the effective 2026 bank ledger. Historical card/direct-debit
+  rows reconcile exactly; statement-only splits remain explicit exceptions.
 - No account identifiers or raw bank amounts belong in connector notes or chat.
 
 Use when:
@@ -51,6 +53,23 @@ Collection steps:
 5. Use `agent.system.txt` with `mode: extract` when exported transaction
    evidence needs to become an entry.
 6. For reconciliation, compare against invoice entries and `op_transactions`.
+
+Repeatable monthly pull:
+
+```bash
+sops exec-env ingest/secrets/env.json \
+  'sops exec-env secrets/web.json "node ingest/scripts/wise-ledger-reconcile.mjs \
+  --from=YYYY-MM-01 --until=YYYY-MM-DD \
+  --archive=ingest/data/inbox/wise/wise-activities-YYYY-MM.json \
+  --transactions=ingest/data/reconcile/proposals/wise-YYYY-MM-transactions.ndjson \
+  --runway=ingest/data/reconcile/proposals/wise-YYYY-MM-balance.ndjson"'
+```
+
+`--until` is exclusive. The script follows every activity cursor, skips
+cancelled/card-check activity, reuses classifications already proven by prior
+Wise rows, and stops for genuinely new merchants. It also emits one dated
+`current_balance` fact per STANDARD currency so Runway can show exact spendable
+cash without treating a live snapshot as a historical transaction.
 
 Expected entry:
 

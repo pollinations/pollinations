@@ -356,7 +356,10 @@ Evidence basis:
 Current month:
 
 - MTD is read directly from `op_transactions` and is shown separately as Wise
-  cash actuals. Do not write MTD rows to `op_runway`.
+  cash actuals. Do not write MTD transaction rows to `op_runway`.
+- A dated Wise `current_balance` snapshot may be written to `op_runway` to
+  anchor exact spendable cash now. It supplements the transaction ledger; it
+  never replaces bounded activities or changes the full-month forecast.
 - Write a full-month forecast fact for the current month using the approved
   method and closed-month basis. The forecast is not reduced or replaced by
   Current actuals.

@@ -3011,6 +3011,11 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
         });
     }
 
+    c.var.track.setPricingInput({
+        hasDiarization: responseFormat === "diarized_json",
+        hasPrompt: Boolean(prompt),
+    });
+
     const result = await withAudioFallback(c, async (candidate) => {
         if (candidate.communityEndpoint) {
             return callCommunityTranscriptionEndpoint(

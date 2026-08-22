@@ -655,6 +655,39 @@ export async function trackResponse(
             requestTracking,
             response,
         );
+    const hasFinishReasonError =
+        eventType === "generate.text"
+            ? containsFinishReasonError(output)
+            : false;
+    if (hasFinishReasonError) {
+        // Keep the proxy response untouched; only billing and health reflect
+        // the upstream protocol's explicit terminal failure.
+        const usage = modelUsage?.usage ?? {};
+        return {
+            responseStatus: 502,
+            cacheHit,
+            isBilledUsage: false,
+            fallbackUsed,
+            ...calculateUsageBilling({
+                model: resolvedModelRequested,
+                usage,
+                servedBy:
+                    servedModelDefinition ?? requestTracking.modelDefinition,
+                quotedBy: requestTracking.modelDefinition,
+                output,
+                input: pricingInput,
+            }),
+            modelUsed: modelUsage?.model ?? modelCalled,
+            modelProviderUsed,
+            usage,
+            contentFilterResults,
+            errorTracking: {
+                errorResponseCode: "upstream_finish_reason_error",
+                errorMessage:
+                    "Upstream ended generation with finish_reason=error",
+            },
+        };
+    }
     if (!modelUsage) {
         log.error("Failed to extract model usage for model {model}", {
             model: resolvedModelRequested,
@@ -732,6 +765,24 @@ export async function trackResponse(
         usage: modelUsage.usage,
         contentFilterResults,
     };
+}
+
+function containsFinishReasonError(output: unknown): boolean {
+    if (!output || typeof output !== "object") return false;
+    const streamEvents = (output as { streamEvents?: unknown }).streamEvents;
+    const events = Array.isArray(streamEvents) ? streamEvents : [output];
+    for (const event of events) {
+        if (!event || typeof event !== "object") continue;
+        const choices = (event as { choices?: unknown }).choices;
+        if (!Array.isArray(choices)) continue;
+        for (const choice of choices) {
+            if (!choice || typeof choice !== "object") continue;
+            const finish = choice as { finish_reason?: unknown };
+            if (finish.finish_reason !== "error") continue;
+            return true;
+        }
+    }
+    return false;
 }
 
 // Portkey reports the served target as "config.targets[N]" via the
@@ -843,6 +894,7 @@ async function* asyncIteratorStream<T>(
 export type UserData = {
     userId?: string;
     userTier?: string;
+    parentRequestId?: string;
     apiKeyId?: string;
     apiKeyType?: ApiKeyType;
     apiKeyName?: string;
@@ -860,6 +912,9 @@ export function requestIdentity(auth: AuthVariables["auth"]): UserData {
     return {
         userId: auth.user?.id,
         userTier: auth.user?.tier,
+        // A verified claim, never a header — the run token is the only channel
+        // that crosses the hop.
+        parentRequestId: auth.agentRun?.parentRequestId,
         apiKeyId: auth.apiKey?.id,
         apiKeyType: apiKeyMetadata?.keyType as ApiKeyType,
         apiKeyName: auth.apiKey?.name,

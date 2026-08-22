@@ -122,6 +122,13 @@ export function resolveCommunityModelReward(
 /**
  * Handles balance deduction and developer credits for billable requests.
  *
+ * The pipeline, in order:
+ *
+ *   1. resolve markup eligibility (DB lookup) and the community reward (pure),
+ *   2. compute `billedPrice` (baseline + markup, snapped to ledger precision),
+ *   3. deduct the payer (user balance, then API-key budget),
+ *   4. credit the dev (BYOP markup) and community owner (reward).
+ *
  * Returns `billedPrice` — the rounded amount actually debited from the payer
  * (`totalPrice + devCredit`, snapped to `POLLEN_BILLING_PRECISION`). Callers
  * should use this for analytics/event totals so they match the ledger.
@@ -155,21 +162,25 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
         };
     }
 
-    const resolved = await resolveDevMarkup(
+    // 1. Resolve the two independent "who else gets money" inputs.
+    const markup = await resolveDevMarkup(
         db,
         byopClientKeyId,
         totalPrice,
         userId,
     );
-    const markup: MarkupResolution | null = resolved;
     const communityModelReward = resolveCommunityModelReward(
         communityModelRewardInput,
         totalPrice,
         userId,
     );
-    const billedPrice = roundPollenLedgerAmount(
-        totalPrice + (markup?.devCredit ?? 0),
-    );
+
+    // 2. The payer is charged baseline + markup (the community reward is paid
+    //    out of the baseline, not added on top of what the payer owes).
+    const billedPrice = computeBilledPrice(totalPrice, markup);
+
+    // 3. Deduct the payer. Markup and reward credits go to the same bucket the
+    //    payer drew from, so they are only possible once that bucket is known.
     let payerBucket: Bucket | null = null;
     let postDeductionPackBalance: number | null = null;
 
@@ -191,110 +202,16 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
             await deductApiKeyBalance(db, apiKeyId, billedPrice);
         }
 
+        // 4. Credits. Both require a payer bucket (nothing to net against
+        //    otherwise) and write to it so the flows stay in balance.
         if (markup) {
-            if (!payerBucket) {
-                throw new Error("BYOP markup requires a payer balance bucket");
-            }
-            const creditBucket = payerBucket;
-            const creditAmount = roundPollenLedgerAmount(markup.devCredit);
-            const { ok } = await atomicCreditUserBalance(
-                db,
-                markup.devUserId,
-                creditBucket,
-                creditAmount,
-            );
-            if (!ok) {
-                throw new Error(
-                    `Dev credit UPDATE affected 0 rows for ${markup.devUserId}`,
-                );
-            }
-            log.debug(
-                "Credited {credit} pollen to dev {devUserId} {bucket} balance (markup={pct}%)",
-                {
-                    credit: creditAmount,
-                    devUserId: markup.devUserId,
-                    bucket: creditBucket,
-                    pct: (markup.markupRate * 100).toFixed(0),
-                },
-            );
+            await creditDev(db, markup, payerBucket);
         }
-
         if (communityModelReward) {
-            if (!payerBucket) {
-                throw new Error(
-                    "Community model reward requires a payer balance bucket",
-                );
-            }
-            const creditAmount = communityModelReward.credit;
-            const { ok } = await atomicCreditUserBalance(
-                db,
-                communityModelReward.userId,
-                payerBucket,
-                creditAmount,
-            );
-            if (!ok) {
-                throw new Error(
-                    `Community model reward UPDATE affected 0 rows for ${communityModelReward.userId}`,
-                );
-            }
-            log.debug(
-                "Credited {credit} pollen to community model owner {userId} {bucket} balance (reward={pct}%)",
-                {
-                    credit: creditAmount,
-                    userId: communityModelReward.userId,
-                    bucket: payerBucket,
-                    pct: (communityModelReward.rewardRate * 100).toFixed(0),
-                },
-            );
+            await creditCommunityOwner(db, communityModelReward, payerBucket);
         }
     } catch (error) {
-        if (communityModelReward) {
-            if (
-                error instanceof Error &&
-                error.message.startsWith("Community model reward")
-            ) {
-                log.error(
-                    "Community model reward failed for {userId}: {error}",
-                    {
-                        userId: communityModelReward.userId,
-                        error: error.message,
-                    },
-                );
-            } else {
-                log.error(
-                    "Failed to bill community model request for owner {userId}: {error}",
-                    {
-                        userId: communityModelReward.userId,
-                        error:
-                            error instanceof Error
-                                ? error.message
-                                : String(error),
-                    },
-                );
-            }
-        }
-        if (markup) {
-            if (
-                error instanceof Error &&
-                error.message.startsWith("Dev credit")
-            ) {
-                log.error("Dev credit failed for {devUserId}: {error}", {
-                    devUserId: markup.devUserId,
-                    error: error.message,
-                });
-            } else {
-                log.error(
-                    "Failed to bill BYOP request for dev {devUserId}: {error}",
-                    {
-                        devUserId: markup.devUserId,
-                        error:
-                            error instanceof Error
-                                ? error.message
-                                : String(error),
-                    },
-                );
-            }
-        }
+        logBillingFailure(error, markup, communityModelReward);
         throw error;
     }
 
@@ -305,6 +222,120 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
         postDeductionPackBalance,
         billedPrice,
     };
+}
+
+/** Baseline charge + dev markup, snapped to the shared ledger precision. */
+function computeBilledPrice(
+    totalPrice: number,
+    markup: MarkupResolution | null,
+): number {
+    return roundPollenLedgerAmount(totalPrice + (markup?.devCredit ?? 0));
+}
+
+/** Credit the dev the BYOP markup, into the bucket the payer drew from. */
+async function creditDev(
+    db: DrizzleD1Database,
+    markup: MarkupResolution,
+    payerBucket: Bucket | null,
+): Promise<void> {
+    if (!payerBucket) {
+        throw new Error("BYOP markup requires a payer balance bucket");
+    }
+    const creditAmount = roundPollenLedgerAmount(markup.devCredit);
+    const { ok } = await atomicCreditUserBalance(
+        db,
+        markup.devUserId,
+        payerBucket,
+        creditAmount,
+    );
+    if (!ok) {
+        throw new Error(
+            `Dev credit UPDATE affected 0 rows for ${markup.devUserId}`,
+        );
+    }
+    log.debug(
+        "Credited {credit} pollen to dev {devUserId} {bucket} balance (markup={pct}%)",
+        {
+            credit: creditAmount,
+            devUserId: markup.devUserId,
+            bucket: payerBucket,
+            pct: (markup.markupRate * 100).toFixed(0),
+        },
+    );
+}
+
+/** Credit the community model owner their reward, into the payer's bucket. */
+async function creditCommunityOwner(
+    db: DrizzleD1Database,
+    reward: CommunityModelRewardResolution,
+    payerBucket: Bucket | null,
+): Promise<void> {
+    if (!payerBucket) {
+        throw new Error(
+            "Community model reward requires a payer balance bucket",
+        );
+    }
+    const { ok } = await atomicCreditUserBalance(
+        db,
+        reward.userId,
+        payerBucket,
+        reward.credit,
+    );
+    if (!ok) {
+        throw new Error(
+            `Community model reward UPDATE affected 0 rows for ${reward.userId}`,
+        );
+    }
+    log.debug(
+        "Credited {credit} pollen to community model owner {userId} {bucket} balance (reward={pct}%)",
+        {
+            credit: reward.credit,
+            userId: reward.userId,
+            bucket: payerBucket,
+            pct: (reward.rewardRate * 100).toFixed(0),
+        },
+    );
+}
+
+/** Log a pipeline failure with the same severity and labels as before. */
+function logBillingFailure(
+    error: unknown,
+    markup: MarkupResolution | null,
+    communityModelReward: CommunityModelRewardResolution | null,
+): void {
+    const message = error instanceof Error ? error.message : String(error);
+    const isCommunityCreditFailure =
+        error instanceof Error &&
+        error.message.startsWith("Community model reward");
+    const isDevCreditFailure =
+        error instanceof Error && error.message.startsWith("Dev credit");
+
+    if (communityModelReward) {
+        if (isCommunityCreditFailure) {
+            log.error("Community model reward failed for {userId}: {error}", {
+                userId: communityModelReward.userId,
+                error: message,
+            });
+        } else {
+            log.error(
+                "Failed to bill community model request for owner {userId}: {error}",
+                { userId: communityModelReward.userId, error: message },
+            );
+        }
+    }
+    if (markup) {
+        if (isDevCreditFailure) {
+            log.error("Dev credit failed for {devUserId}: {error}", {
+                devUserId: markup.devUserId,
+                error: message,
+            });
+        } else {
+            log.error(
+                "Failed to bill BYOP request for dev {devUserId}: {error}",
+                { devUserId: markup.devUserId, error: message },
+            );
+        }
+    }
 }
 
 function hasApiKeyBudget(

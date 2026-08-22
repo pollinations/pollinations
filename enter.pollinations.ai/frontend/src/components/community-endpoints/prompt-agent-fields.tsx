@@ -1,4 +1,4 @@
-import { Chip, FieldStack, Switch, Textarea } from "@pollinations/ui";
+import { Alert, Chip, FieldStack, Switch, Textarea } from "@pollinations/ui";
 import { MCP_SERVERS } from "@shared/registry/mcp.ts";
 import { BaseModelInput } from "./base-model-input.tsx";
 import type { AgentFormState } from "./types.ts";
@@ -32,6 +32,11 @@ export function PromptAgentFields({
                     onChange={(e) => onChange("systemPrompt", e.target.value)}
                 />
             </FieldStack>
+
+            <Alert intent="warning" title="Public instructions are not secret">
+                Users may infer or extract these instructions. Do not include
+                credentials, personal data, or confidential information.
+            </Alert>
 
             <FieldStack
                 label="Base model"

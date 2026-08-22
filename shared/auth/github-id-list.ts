@@ -39,6 +39,8 @@ export const COMMUNITY_MODEL_ALLOWED_GITHUB_IDS = [
     228795921, //novastardev
     30191185, // rekty
     145819645, // rodrigookk
+    85689068, // pegalink
+    147928812, // iotserver24
 ] as const;
 
 const COMMUNITY_MODEL_ALLOWED_GITHUB_ID_SET = new Set<number>(

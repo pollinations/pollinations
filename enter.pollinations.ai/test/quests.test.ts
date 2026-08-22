@@ -273,7 +273,7 @@ test("catalog returns quest definitions without ledger stats", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v26");
+    await env.KV.delete("quests:catalog:v27");
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
@@ -341,6 +341,11 @@ test("catalog returns quest definitions without ledger stats", async ({
         rewardAmount: 10,
         balanceBucket: "tier",
     });
+    expectStableCatalogFields("grant:youtube_tutorial", {
+        state: "available",
+        rewardAmount: 10,
+        balanceBucket: "tier",
+    });
     expectStableCatalogFields("use_app", {
         state: "available",
         rewardAmount: 0.25,
@@ -392,7 +397,7 @@ test("catalog includes coming-soon GitHub issue placeholder", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v26");
+    await env.KV.delete("quests:catalog:v27");
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
@@ -430,7 +435,7 @@ test("catalog excludes closed GitHub quest issues without merged PRs", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v26");
+    await env.KV.delete("quests:catalog:v27");
 
     seedQuestIssue(mocks.github.state, {
         issueNumber: 801,
@@ -476,7 +481,7 @@ test("account quests merge earned rewards into completed status", async ({
 }) => {
     const db = drizzle(env.DB, { schema });
     await mocks.enable("github", "tinybird");
-    await env.KV.delete("quests:catalog:v26");
+    await env.KV.delete("quests:catalog:v27");
     const user = await getOnlyUser();
 
     const createKeyResponse = await SELF.fetch(

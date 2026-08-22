@@ -37,6 +37,8 @@ interface ModelDefinition {
     transform?: TransformFn;
     /** Route through the Azure Responses API instead of Chat Completions. */
     useResponsesApi?: boolean;
+    /** Always run Azure Responses web search before answering. */
+    useWebSearch?: boolean;
 }
 
 function usesGrokReasoning(options: TransformOptions): boolean {
@@ -55,6 +57,12 @@ const models: ModelDefinition[] = [
     {
         name: "openai",
         config: portkeyConfig["gpt-5.4-nano"],
+    },
+    {
+        name: "openai-search",
+        config: portkeyConfig["gpt-5.4-nano"],
+        useResponsesApi: true,
+        useWebSearch: true,
     },
     {
         name: "openai-fast",

@@ -1,0 +1,22 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "pollinations-vision-mcp",
+  "account_id": "b6ec751c0862027ba269faf7029b2501",
+  "main": "entrypoint.js",
+  "workers_dev": false,
+  "compatibility_date": "2026-08-20",
+  "vars": {
+    "POLLINATIONS_BASE_URL": "https://gen.pollinations.ai"
+  },
+  "observability": { "enabled": true },
+  "env": {
+    "staging": {
+      "name": "pollinations-vision-mcp-staging",
+      "workers_dev": false,
+      "vars": {
+        "POLLINATIONS_BASE_URL": "https://staging.gen.pollinations.ai"
+      },
+      "observability": { "enabled": true }
+    }
+  }
+}

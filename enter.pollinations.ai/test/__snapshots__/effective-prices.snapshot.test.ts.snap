@@ -1025,14 +1025,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "mimo-v2.5-pro": {
     "cost": {
-      "completionTextTokens": 0.00000096048,
-      "promptCachedTokens": 0.000000003956,
-      "promptTextTokens": 0.00000048024,
+      "completionTextTokens": 0.00000087,
+      "promptCachedTokens": 0.0000000036,
+      "promptTextTokens": 0.000000435,
     },
     "price": {
-      "completionTextTokens": 0.00000096048,
-      "promptCachedTokens": 0.000000003956,
-      "promptTextTokens": 0.00000048024,
+      "completionTextTokens": 0.00000087,
+      "promptCachedTokens": 0.0000000036,
+      "promptTextTokens": 0.000000435,
     },
   },
   "minimax": {

@@ -260,7 +260,7 @@ describe("resolveModelConfig", () => {
         ["gemma", "google/gemma-4-26b-a4b-it", "novita/bf16"],
         ["gemma-4-31b", "google/gemma-4-31b-it", "novita/bf16"],
         ["mimo-v2.5", "xiaomi/mimo-v2.5", "xiaomi/fp8"],
-        ["mimo-v2.5-pro", "xiaomi/mimo-v2.5-pro", "novita"],
+        ["mimo-v2.5-pro", "xiaomi/mimo-v2.5-pro", "xiaomi/fp8"],
     ])("pins %s to %s through %s without fallback", (model, route, provider) => {
         const result = resolveModelConfig(messages, { model });
 

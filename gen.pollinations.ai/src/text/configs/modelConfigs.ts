@@ -21,13 +21,11 @@ type PortkeyConfigMap = Record<string, PortkeyConfigFactory>;
 function createPinnedOpenRouterConfig(
     model: string,
     providerTag: string,
-    maxTokens?: number,
 ): PortkeyConfigFactory {
     return () =>
         createOpenRouterModelConfig({
             model,
             defaultOptions: {
-                ...(maxTokens === undefined ? {} : { max_tokens: maxTokens }),
                 provider: {
                     only: [providerTag],
                     allow_fallbacks: false,
@@ -178,7 +176,7 @@ export const portkeyConfig: PortkeyConfigMap = {
     ),
     "xiaomi/mimo-v2.5-pro": createPinnedOpenRouterConfig(
         "xiaomi/mimo-v2.5-pro",
-        "novita",
+        "xiaomi/fp8",
     ),
     // Reasoning models: explicit max_tokens default below. Without one, the
     // upstream provider's own default applies (Chutes AI defaults to 1024),
@@ -273,6 +271,7 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // -- OpenRouter (Gemma) ---------------------------------------------------
+    // Novita preserves remote image URLs; NextBit rejects that public input form.
     "google/gemma-4-26b-a4b-it": createPinnedOpenRouterConfig(
         "google/gemma-4-26b-a4b-it",
         "novita/bf16",

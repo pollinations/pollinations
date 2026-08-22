@@ -693,7 +693,7 @@ export const TEXT_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Novita BF16 endpoint, verified 2026-08-22.
+            // OpenRouter Novita BF16 preserves remote image URLs; verified 2026-08-22.
             promptTextTokens: perMillion(0.13),
             completionTextTokens: perMillion(0.4),
         },
@@ -1437,10 +1437,10 @@ export const TEXT_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Novita endpoint, verified 2026-08-22.
-            promptTextTokens: perMillion(0.48024),
-            promptCachedTokens: perMillion(0.003956),
-            completionTextTokens: perMillion(0.96048),
+            // OpenRouter Xiaomi FP8 endpoint, verified 2026-08-22.
+            promptTextTokens: perMillion(0.435),
+            promptCachedTokens: perMillion(0.0036),
+            completionTextTokens: perMillion(0.87),
         },
         title: "MiMo V2.5 Pro",
         description: "Long-context reasoning and coding with higher capability",

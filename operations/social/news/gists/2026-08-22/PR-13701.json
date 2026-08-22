@@ -1,0 +1,34 @@
+{
+  "pr_number": 13701,
+  "title": "fix: align Laguna OpenRouter pricing",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13701",
+  "merged_at": "2026-08-22T13:23:15Z",
+  "labels": [],
+  "pr_body_excerpt": "- Updates `laguna` provider cost from $0.10/$0.01/$0.20 to $0.09/$0.009/$0.18 per million uncached input/cached input/output tokens.\n- Matches the exact pinned OpenRouter route `poolside/laguna-s-2.1` on Poolside (`poolside/fp4`), with provider fallback disabled.\n- Verifies a direct pinned request and a full local Gen billing request; 38 uncached + 32 cached + 16 output tokens produced $0.000006588 and a $0.00000659 wallet debit after precision rounding.\n- Leaves the canonical name, aliases, access, multiplier, routing, capabilities, and fallback unchanged.\n- Passes 349 focused registry/pricing tests, both service typechecks, and Biome.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Laguna counts the tiny pollen",
+    "blurb": "Laguna’s token meter now matches its pinned Poolside route down to the millionth-dollar crumbs. The hive’s calculator has been given the right glasses.",
+    "summary": "Aligned the Laguna provider’s billing rates with the pinned OpenRouter route poolside/laguna-s-2.1 on poolside/fp4: $0.09/$0.009/$0.18 per million uncached input, cached input, and output tokens.",
+    "impact": "Laguna requests now receive wallet debits that match the pinned OpenRouter route, including precision-rounded billing such as a $0.00000659 debit for 38 uncached, 32 cached, and 16 output tokens.",
+    "keywords": [
+      "laguna",
+      "openrouter",
+      "poolside",
+      "pricing",
+      "billing",
+      "text-models"
+    ],
+    "visual_concept": "Depict Polli carefully calibrating a tiny retro token scale beside a cozy terminal labeled “Laguna,” with three small jars for uncached input, cached input, and output tokens marked 0.09, 0.009, and 0.18. A code-plant and soft flowers reinforce that accurate accounting helps the garden grow; Polli wears tiny round accountant glasses and looks pleased with the precisely balanced meter.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and tiny round accountant glasses, carefully balancing three glowing token jars beside a retro terminal labeled “LAGUNA”; the jars show pixel-font values “0.09”, “0.009”, and “0.18” while code-plants and small flowers grow around the desk. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel cream-lavender gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-22/PR-13701.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and tiny round accountant glasses, carefully balancing three glowing token jars beside a retro terminal labeled “LAGUNA”; the jars show pixel-font values “0.09”, “0.009”, and “0.18” while code-plants and small flowers grow around the desk. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel cream-lavender gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-22T13:24:35.191686+00:00"
+}

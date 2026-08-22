@@ -18,6 +18,10 @@ const PUBLISHABLE_KEY_PREFIX = "pk";
 
 export type AuthUser = typeof schema.user.$inferSelect;
 
+export type ModelPermissionEntry =
+    | string
+    | { id: string; pollenType: "quest" | "paid" };
+
 export interface AuthenticatedApiKey {
     id: string;
     name?: string;

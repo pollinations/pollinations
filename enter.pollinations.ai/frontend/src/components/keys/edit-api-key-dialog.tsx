@@ -23,7 +23,11 @@ import {
     shouldPostKeyMetadata,
 } from "./key-type.ts";
 import { PublishableKeySettings } from "./publishable-key-settings.tsx";
-import type { ApiKey, ApiKeyUpdateParams } from "./types.ts";
+import type {
+    ApiKey,
+    ApiKeyUpdateParams,
+    ModelPermissionEntry,
+} from "./types.ts";
 
 interface EditApiKeyDialogProps {
     apiKey: ApiKey;
@@ -64,10 +68,12 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
         : null;
 
     const keyPermissions = useKeyPermissions({
-        allowedModels: apiKey.permissions?.models ?? null,
+        allowedModels:
+            (apiKey.permissions?.models as (string | ModelPermissionEntry)[]) ??
+            null,
         pollenBudget: apiKey.pollenBalance ?? null,
         pollenType: (apiKey.pollenType as "quest" | "paid" | null) ?? null,
-        accountPermissions: apiKey.permissions?.account ?? null,
+        accountPermissions: (apiKey.permissions?.account as string[]) ?? null,
         expiryDays,
     });
 
@@ -125,7 +131,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     return (
         <Dialog
             open
-            onOpenChange={(open) => !open && onClose()}
+            onOpenChange={(open: boolean) => !open && onClose()}
             contentClassName="flex max-h-[calc(100dvh-2rem)] flex-col"
         >
             <div className="shrink-0 p-6 pb-4">
@@ -157,7 +163,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                             value={plaintextKey}
                             tooltipClassName="inline-flex min-w-0"
                             aria-label="Copy publishable API key"
-                            className={(copied) =>
+                            className={(copied: boolean) =>
                                 cn(
                                     "font-mono text-sm cursor-pointer transition-all",
                                     copied
@@ -166,7 +172,9 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                                 )
                             }
                         >
-                            {(copied) => (copied ? "Copied!" : plaintextKey)}
+                            {(copied: boolean) =>
+                                copied ? "Copied!" : plaintextKey
+                            }
                         </CopyButton>
                     ) : (
                         <span className="font-mono text-sm text-theme-text-muted">
@@ -191,7 +199,9 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                         <Input
                             type="text"
                             value={name}
-                            onChange={(e) => setName(e.target.value)}
+                            onChange={(
+                                e: React.ChangeEvent<HTMLInputElement>,
+                            ) => setName(e.target.value)}
                             className="w-full"
                             placeholder="Enter API key name"
                             disabled={isSubmitting}

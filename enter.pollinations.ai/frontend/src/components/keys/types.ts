@@ -1,3 +1,7 @@
+export type ModelPermissionEntry =
+    | string
+    | { id: string; pollenType: "quest" | "paid" };
+
 export interface ApiKey {
     id: string;
     name?: string | null;
@@ -6,7 +10,7 @@ export interface ApiKey {
     lastRequest?: string | null;
     expiresAt?: string | null;
     enabled?: boolean;
-    permissions: Record<string, string[]> | null;
+    permissions: Record<string, string[] | ModelPermissionEntry[]> | null;
     metadata: Record<string, unknown> | null;
     pollenBalance?: number | null;
     pollenType?: "quest" | "paid" | null;
@@ -15,7 +19,7 @@ export interface ApiKey {
 
 export interface ApiKeyUpdateParams {
     name?: string;
-    allowedModels?: string[] | null;
+    allowedModels?: (string | ModelPermissionEntry)[] | null;
     pollenBudget?: number | null;
     pollenType?: "quest" | "paid" | null;
     accountPermissions?: string[] | null;
@@ -34,7 +38,7 @@ export type CreateApiKey = {
     description?: string;
     keyType?: "publishable" | "secret";
     /** Model IDs this key can access. null = all models allowed */
-    allowedModels?: string[] | null;
+    allowedModels?: (string | ModelPermissionEntry)[] | null;
     /** Pollen budget cap for this key. null = unlimited */
     pollenBudget?: number | null;
     /** Restrict this key to only use quest or paid pollen. null = unrestricted */

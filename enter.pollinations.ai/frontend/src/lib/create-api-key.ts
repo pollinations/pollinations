@@ -1,8 +1,9 @@
 import { expiryDaysToExpiresIn } from "@shared/auth/authorize-config.ts";
 import { apiClient } from "../api.ts";
+import type { ModelPermissionEntry } from "../components/keys/types.ts";
 
 type Permissions = {
-    allowedModels?: string[] | null;
+    allowedModels?: (string | ModelPermissionEntry)[] | null;
     pollenBudget?: number | null;
     pollenType?: "quest" | "paid" | null;
     accountPermissions?: string[] | null;
@@ -41,7 +42,10 @@ export async function createKeyWithPermissions({
         type: keyType,
         expiresIn,
         metadata,
-        allowedModels: permissions?.allowedModels,
+        allowedModels:
+            permissions?.allowedModels?.map((e) =>
+                typeof e === "string" ? e : e.id,
+            ) ?? null,
         pollenBudget: permissions?.pollenBudget,
         pollenType: permissions?.pollenType,
         accountPermissions: permissions?.accountPermissions,

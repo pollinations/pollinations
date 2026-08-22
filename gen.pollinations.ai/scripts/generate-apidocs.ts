@@ -992,6 +992,18 @@ const CURATED_BODIES: Record<string, Json> = {
     postAccountMyModelsByIdUpdate: {
         description: "Updated model description",
     },
+    postAccountAgents: {
+        name: "my-agent",
+        title: "My Agent",
+        systemPrompt: "You are a helpful assistant.",
+        baseModel: "openai",
+        mcpServers: ["pollinations"],
+    },
+    patchAccountAgentsById: {
+        systemPrompt: "You are a concise assistant.",
+        baseModel: "openai",
+        mcpServers: ["pollinations"],
+    },
     post3dByPrompt: {
         model: "hyper3d-rodin",
     },

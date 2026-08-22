@@ -25,6 +25,10 @@ Collection steps:
 
 1. Query bounded `op_pollen` rows for the requested period.
 2. Ask the operator for dashboard evidence when balance or grant status matters.
+   In the balance snapshot, record only the wallet value still available now:
+   cash/prepaid in `paid`, promotional credit in `credit`, and zero when the
+   wallet is exhausted. The dashboard's historical deposits, spend, or usage
+   totals are not balances.
 3. Save the raw screenshot, export, invoice, or receipt to `data/inbox/`.
 4. Use `agent.system.txt` to extract or reconcile the evidence.
 

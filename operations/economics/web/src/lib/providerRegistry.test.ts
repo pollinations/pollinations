@@ -164,7 +164,7 @@ describe("provider registry", () => {
         expect(providerAuditUrl("bedrock")).toBe(
             providerAuditTargets("aws")[0].url,
         );
-        expect(providerAuditTargets("fireworks")).toHaveLength(4);
+        expect(providerAuditTargets("fireworks")).toHaveLength(5);
         expect(providerAuditTargets("openrouter")).toHaveLength(2);
         expect(providerAuditUrl("pointsflyer")).toBeNull();
     });

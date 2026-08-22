@@ -126,6 +126,28 @@ for (const target of registry.auditTargets ?? []) {
     }
 }
 
+for (const provider of registry.providers) {
+    const targets = (registry.auditTargets ?? []).filter(
+        (target) => target.provider === provider.id,
+    );
+    for (const account of provider.accounts ?? []) {
+        if (!targets.some((target) => target.accountId === account.id)) {
+            errors.push(
+                `Provider ${provider.id} account ${account.id} has no dashboard audit target`,
+            );
+        }
+    }
+}
+
+const auditTargetKeys = new Set();
+for (const target of registry.auditTargets ?? []) {
+    const key = `${target.provider}|${target.accountId ?? ""}|${target.url}`;
+    if (auditTargetKeys.has(key)) {
+        errors.push(`Duplicate dashboard audit target ${key}`);
+    }
+    auditTargetKeys.add(key);
+}
+
 const providerCheckKeys = new Set();
 for (const explanation of reconciliation.providerCheckExplanations ?? []) {
     const key = `${explanation.month}|${explanation.provider}`;

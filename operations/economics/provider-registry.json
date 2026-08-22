@@ -1,5 +1,5 @@
 {
-    "version": 9,
+    "version": 10,
     "auditTargets": [
         { "provider": "alibaba", "accountId": "5314153712077332", "loginEmail": "elliot@myceli.ai", "url": "https://billing-cost.console.alibabacloud.com/fortune/billing-account" },
         { "provider": "anthropic", "loginEmail": "elliot@myceli.ai", "url": "https://platform.claude.com/settings/billing" },
@@ -16,8 +16,9 @@
         { "provider": "elevenlabs", "loginEmail": "elliot@myceli.ai", "url": "https://elevenlabs.io/app/subscription/creative" },
         { "provider": "fal", "loginEmail": "elliot@myceli.ai", "url": "https://fal.ai/dashboard/usage-billing" },
         { "provider": "fireworks", "accountId": "myceli", "loginEmail": "elliot@myceli.ai", "url": "https://app.fireworks.ai/account/billing" },
-        { "provider": "fireworks", "accountId": "pollinations", "loginEmail": "elliot@pollinations.ai", "url": "https://app.fireworks.ai/account/billing", "pending": true },
-        { "provider": "fireworks", "accountId": "neoglyph", "loginEmail": "elliot@neoglyph.ai", "url": "https://app.fireworks.ai/account/billing", "pending": true },
+        { "provider": "fireworks", "accountId": "pollinations", "loginEmail": "elliot@pollinations.ai", "url": "https://app.fireworks.ai/account/billing" },
+        { "provider": "fireworks", "accountId": "pollinations-ai", "loginEmail": "elliot@pollinations.ai", "url": "https://app.fireworks.ai/account/billing" },
+        { "provider": "fireworks", "accountId": "neoglyph", "loginEmail": "elliot@neoglyph.ai", "url": "https://app.fireworks.ai/account/billing" },
         { "provider": "fireworks", "accountId": "pixelmarket", "loginEmail": null, "url": "https://app.fireworks.ai/account/billing", "pending": true },
         { "provider": "github", "loginEmail": "elliot@myceli.ai", "url": "https://github.com/enterprises/myceli-ai/billing" },
         { "provider": "google", "loginEmail": "elliot@myceli.ai", "url": "https://console.cloud.google.com/billing/0180E5-574541-B8F8FD/credits/all" },
@@ -30,7 +31,7 @@
         { "provider": "modal", "accountId": "elliot-4", "loginEmail": "elliot@myceli.ai", "url": "https://modal.com/settings/elliot-4/usage" },
         { "provider": "openai", "loginEmail": "elliot@myceli.ai", "url": "https://platform.openai.com/settings/organization/billing/credit-grants" },
         { "provider": "openrouter", "accountId": "myceli", "loginEmail": "elliot@myceli.ai", "url": "https://openrouter.ai/settings/credits" },
-        { "provider": "openrouter", "accountId": "pollinations", "loginEmail": "elliot@pollinations.ai", "url": "https://openrouter.ai/settings/credits", "pending": true },
+        { "provider": "openrouter", "accountId": "pollinations", "loginEmail": "elliot@pollinations.ai", "url": "https://openrouter.ai/settings/credits" },
         { "provider": "ovhcloud", "loginEmail": "elliot@myceli.ai", "url": "https://manager.eu.ovhcloud.com/#/dedicated/billing/credits" },
         { "provider": "perplexity", "loginEmail": "elliot@myceli.ai", "url": "https://console.perplexity.ai/project/81749045/billing" },
         { "provider": "pruna", "loginEmail": "elliot@myceli.ai", "url": "https://dashboard.pruna.ai/billing" },
@@ -207,6 +208,12 @@
                     "id": "pollinations",
                     "label": "Pollinations",
                     "activeFrom": "2026-03",
+                    "activeTo": null
+                },
+                {
+                    "id": "pollinations-ai",
+                    "label": "Pollinations.AI",
+                    "activeFrom": "2026-07",
                     "activeTo": null
                 },
                 {

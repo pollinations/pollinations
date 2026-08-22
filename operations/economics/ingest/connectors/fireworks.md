@@ -5,13 +5,16 @@ Canonical vendor: `fireworks`
 Canonical accounts:
 
 - `pollinations`
+- `pollinations-ai`
 - `neoglyph`
 - `myceli`
 - `pixelmarket`
 
 ## Verified — 2026-08-20
 
-- Status: all four configured API keys authenticate through `firectl`.
+- Status: four configured API keys authenticate through `firectl`; the
+  `elliot@pollinations.ai` login also contains a separate `pollinations-ai`
+  organization that currently requires a dashboard balance check.
 - Fireworks money values are objects with `currency_code`, `units`, and
   `nanos`; parse them as Money objects, not JavaScript numbers.
 - Invoice evidence remains necessary to split credit-funded and postpaid cost.
@@ -92,7 +95,7 @@ Collection steps:
 
 Expected entry:
 
-- `provider_account_id`: one of the four canonical account IDs above
+- `provider_account_id`: one of the five canonical account IDs above
 - `cost_category`: `model` or `inference_serverless`
 - `op_cloud_type`: `inference`
 - `op_transaction_category`: `cloud` for invoices/top-ups/card charges, `null` for pure usage exports
@@ -102,7 +105,9 @@ Expected entry:
 Known traps:
 
 - Never save API keys in command logs or evidence files.
-- Multiple Fireworks accounts are in use; sum all relevant accounts for provider totals.
+- Five Fireworks organizations are in use. The `elliot@pollinations.ai` login
+  contains both `Pollinations` and `Pollinations.AI`; treat them as separate
+  accounts and sum all five for provider totals.
 - A current account balance does not prove month-to-date usage. Do not recreate
   the retired month-open balance cache or infer a month solely from two snapshots.
 - Postpaid invoice date is not the usage month.

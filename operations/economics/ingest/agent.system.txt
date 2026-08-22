@@ -81,6 +81,12 @@ Source authority:
   consumed and whether it was paid or credit-funded.
 - Invoices and receipts answer the billed obligation and service period. A
   provider balance snapshot answers the balance now, not historical burn.
+- For an OP Cloud `type: balance` snapshot, `paid` is only cash/prepaid value
+  currently remaining and `credit` is only promotional/grant value currently
+  remaining. Never put lifetime deposits, lifetime usage, billed cost, or the
+  original grant amount in these fields. Record zero when a pool is exhausted.
+  Multi-account providers require one same-day row per active registry account;
+  an incomplete account set must remain visibly partial.
 - User-approved `op_runway` facts answer future assumptions and one-off events.
 - When sources disagree, do not silently choose one. Preserve the conflict in
   evidence or reconciliation notes and ask the user when it changes the result.

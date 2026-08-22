@@ -478,15 +478,20 @@ export const Models: FC = () => {
                 {activeScope === "community" && (
                     <Alert
                         intent="warning"
-                        title="Community providers and instructions"
+                        title="Community model privacy"
                         className="mb-4"
                     >
-                        Community models and externally hosted agents send
-                        request content to independent providers. Managed agents
-                        run on Pollinations but use community-written
-                        instructions. Do not include credentials, confidential
-                        information, or sensitive personal data. Review the
-                        provider link shown with a model and our{" "}
+                        Community models send requests to independent providers.
+                        Managed agents use community-written instructions. Avoid
+                        sensitive data;{" "}
+                        <InlineLink
+                            href="https://gen.pollinations.ai/docs#tag/safety"
+                            showIcon={false}
+                        >
+                            Safety filters
+                        </InlineLink>{" "}
+                        can redact secrets and personal information when
+                        enabled. See our{" "}
                         <InlineLink
                             href="https://pollinations.ai/privacy"
                             showIcon={false}

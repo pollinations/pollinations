@@ -1,8 +1,10 @@
-import { memo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { PLAY_PAGE } from "../../../copy/content/play";
 import type { Model } from "../../../hooks/useModelList";
+import { useModelUptime } from "../../../hooks/useModelUptime";
 import { usePageCopy } from "../../../hooks/usePageCopy";
 import { Button } from "../ui/button";
+import { UptimeDots } from "./UptimeDots";
 
 type ModelCategory = "image" | "text" | "audio" | "video";
 
@@ -71,6 +73,15 @@ export const ModelSelector = memo(function ModelSelector({
     const { copy } = usePageCopy(PLAY_PAGE);
     const [activeCategory, setActiveCategory] =
         useState<ModelCategory>("image");
+
+    // Uptime dots only apply to community models, so skip the fetch
+    // entirely when the picker has none loaded (e.g. still loading, or a
+    // deployment with no community providers).
+    const hasCommunityModels = useMemo(
+        () => models.some((m) => m.community),
+        [models],
+    );
+    const { getUptime } = useModelUptime(hasCommunityModels);
 
     const categories: { key: ModelCategory; label: string }[] = [
         { key: "image", label: copy.imageLabel },
@@ -150,6 +161,12 @@ export const ModelSelector = memo(function ModelSelector({
                                       }`}
                                       style={{ borderColor }}
                                   >
+                                      {m.community && (
+                                          <UptimeDots
+                                              status={getUptime(m)}
+                                              className="mr-1.5"
+                                          />
+                                      )}
                                       {m.title}
                                       {isPaidOnly && (
                                           <span className="ml-1 text-[9px] font-black uppercase tracking-wider text-indicator-warning">

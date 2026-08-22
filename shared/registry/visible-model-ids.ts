@@ -27,41 +27,41 @@ export function canonicalizeModelPermissionIds(
 
 /**
  * Canonicalize model permission entries, handling both string and {id, pollenType} formats.
+ * When the same model appears as both a string and an object entry, the object
+ * entry (with pollenType override) takes precedence.
  */
 export function canonicalizeModelPermissionEntries(
     entries: readonly ModelPermissionEntry[],
 ): ModelPermissionEntry[] {
-    const seen = new Set<string>();
-    const canonical: ModelPermissionEntry[] = [];
+    // First pass: collect canonical IDs and resolve them.
+    const resolved: { canonicalId: string; entry: ModelPermissionEntry }[] = [];
     for (const entry of entries) {
-        if (typeof entry === "string") {
-            let canonicalId = entry;
-            try {
-                canonicalId = resolveModelName(entry);
-            } catch {
-                // Preserve unknown and community model IDs.
-            }
-            if (!seen.has(canonicalId)) {
-                seen.add(canonicalId);
-                canonical.push(canonicalId);
-            }
-        } else {
-            let canonicalId = entry.id;
-            try {
-                canonicalId = resolveModelName(entry.id);
-            } catch {
-                // Preserve unknown and community model IDs.
-            }
-            if (!seen.has(canonicalId)) {
-                seen.add(canonicalId);
-                canonical.push({
-                    id: canonicalId,
-                    pollenType: entry.pollenType,
-                });
-            }
+        const rawId = typeof entry === "string" ? entry : entry.id;
+        let canonicalId = rawId;
+        try {
+            canonicalId = resolveModelName(rawId);
+        } catch {
+            // Preserve unknown and community model IDs.
         }
+        resolved.push({ canonicalId, entry });
     }
-    return canonical;
+
+    // Second pass: deduplicate, preferring object entries over strings.
+    const byId = new Map<string, ModelPermissionEntry>();
+    for (const { canonicalId, entry } of resolved) {
+        const existing = byId.get(canonicalId);
+        if (!existing) {
+            byId.set(canonicalId, entry);
+        } else if (typeof entry !== "string") {
+            // Object entry (with pollenType) overrides a plain string.
+            byId.set(canonicalId, entry);
+        }
+        // If both are strings or both are objects, keep the first one.
+    }
+
+    return Array.from(byId.entries()).map(([id, entry]) =>
+        typeof entry === "string" ? id : { id, pollenType: entry.pollenType },
+    );
 }
 
 export async function getVisibleModelIdsForUser(

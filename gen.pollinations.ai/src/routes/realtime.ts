@@ -1,3 +1,4 @@
+import { extractAllowedModelIds } from "@shared/auth/api-key.ts";
 import { getUserBalance, payerBucketToMeter } from "@shared/billing/balance.ts";
 import {
     handleBalanceDeduction,
@@ -128,8 +129,8 @@ type RealtimeBillingContext = {
 };
 
 function requireAllowedModel(c: Context<Env>, model: string): void {
-    const allowedModels = c.var.auth.apiKey?.permissions?.models;
-    if (allowedModels && !allowedModels.includes(model)) {
+    const allowedIds = extractAllowedModelIds(c.var.auth.apiKey?.permissions);
+    if (allowedIds && !allowedIds.includes(model)) {
         throw new HTTPException(403, {
             message: `Model '${model}' is not allowed for this API key`,
         });

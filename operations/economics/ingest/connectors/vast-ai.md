@@ -32,6 +32,22 @@ Collection steps:
 
    Save stdout to `data/inbox/vast-ai-<period>.json`.
 
+   Convert a reviewed month to additive-neutral instance detail with:
+
+   ```bash
+   node scripts/vast-ai-usage-reconcile.mjs \
+     <raw-invoices.json> <YYYY-MM> <drive-evidence-url> \
+     <expected-month-total-usd> <proposal.ndjson> \
+     [effective-op-cloud-snapshot.json]
+   ```
+
+   The proposal supersedes the prior account-total row and replaces it with
+   one row per billed instance and charge kind. Pass a current effective
+   `op_cloud` snapshot when replacing legacy instance rows so every old entry
+   ID is neutralized. Its built-in total check must pass before publication.
+   Verified instance-to-workload mappings come from
+   `vast-ai-workloads.json`; update that registry when the GPU fleet changes.
+
 3. If using dashboard screenshots, save them under `data/inbox/`.
 4. Use `agent.system.txt` with `mode: extract` for saved raw evidence.
 
@@ -39,6 +55,12 @@ Expected entry:
 
 - `cost_category`: `gpu`
 - `op_cloud_type`: `gpu`
+- `resource_id`: Vast.ai instance ID
+- `resource_sku`: `gpu-hours`, `storage-hours`, `download-gb`, or `upload-gb`
+- `resource_count`: the allocated hours or posted network quantity
+- `model`: populated from `vast-ai-workloads.json` when repository fleet
+  records or the historical ledger prove the workload; unknown short-lived
+  instances stay blank instead of being guessed
 - `op_transaction_category`: `cloud` for payment/invoice documents, `null` for pure usage exports
 - `should_match_op_transaction`: true for invoices/transfers, false for pure usage exports
 - `should_match_op_cloud`: true for usage exports and GPU invoices
@@ -50,6 +72,8 @@ Known traps:
 - Vast.ai CLI invoice rows can be posting-time rollups. A charge may cover usage before its posting date.
 - For usage attribution, charge rows with `quantity` hours cover `[timestamp - quantity hours, timestamp]`.
 - When a charge window crosses calendar months, split the amount by overlap across those months. If `quantity` is missing or unusable, fall back to the posting month and explain that caveat.
+- Upload/download quantities are network units, not hours; assign them to the
+  posting month instead of splitting them over time.
 - Always pass explicit `-s` and `-e`; the CLI can otherwise default to too narrow a window.
 
 Reconciliation notes:

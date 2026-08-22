@@ -470,7 +470,7 @@ export const track = (eventType: EventType) =>
                             error_class: "UsageAnomaly",
                             message: errorTracking?.errorMessage,
                             upstream_host: "openrouter.ai",
-                            upstream_status: responseTracking.responseStatus,
+                            upstream_status: response.status,
                             upstream_body: stringifyUsageAnomalyOutput(
                                 responseTracking.usageAnomalyOutput,
                             ),
@@ -716,6 +716,38 @@ export async function trackResponse(
         );
     const recordsOpenRouterUsageAnomaly =
         eventType === "generate.text" && modelProviderUsed === "openrouter";
+    const finishReasonError = recordsOpenRouterUsageAnomaly
+        ? openRouterFinishReasonError(output)
+        : undefined;
+    if (finishReasonError) {
+        // Keep the proxy response untouched; only billing and health reflect
+        // OpenRouter's explicit terminal failure.
+        const usage = modelUsage?.usage ?? {};
+        return {
+            responseStatus: 502,
+            cacheHit,
+            isBilledUsage: false,
+            fallbackUsed,
+            ...calculateUsageBilling({
+                model: resolvedModelRequested,
+                usage,
+                servedBy:
+                    servedModelDefinition ?? requestTracking.modelDefinition,
+                quotedBy: requestTracking.modelDefinition,
+                output,
+                input: pricingInput,
+            }),
+            modelUsed: modelUsage?.model ?? modelCalled,
+            modelProviderUsed,
+            usage,
+            contentFilterResults,
+            errorTracking: {
+                errorResponseCode: "upstream_finish_reason_error",
+                errorMessage: `OpenRouter ended generation with finish_reason=error (native_finish_reason=${finishReasonError})`,
+            },
+            usageAnomalyOutput: output ?? null,
+        };
+    }
     if (!modelUsage) {
         log.error("Failed to extract model usage for model {model}", {
             model: resolvedModelRequested,
@@ -818,6 +850,29 @@ export async function trackResponse(
             ? (output ?? null)
             : undefined,
     };
+}
+
+function openRouterFinishReasonError(output: unknown): string | undefined {
+    if (!output || typeof output !== "object") return undefined;
+    const streamEvents = (output as { streamEvents?: unknown }).streamEvents;
+    const events = Array.isArray(streamEvents) ? streamEvents : [output];
+    for (const event of events) {
+        if (!event || typeof event !== "object") continue;
+        const choices = (event as { choices?: unknown }).choices;
+        if (!Array.isArray(choices)) continue;
+        for (const choice of choices) {
+            if (!choice || typeof choice !== "object") continue;
+            const finish = choice as {
+                finish_reason?: unknown;
+                native_finish_reason?: unknown;
+            };
+            if (finish.finish_reason !== "error") continue;
+            return typeof finish.native_finish_reason === "string"
+                ? finish.native_finish_reason
+                : "unknown";
+        }
+    }
+    return undefined;
 }
 
 function hasPositiveUsage(usage: Usage): boolean {

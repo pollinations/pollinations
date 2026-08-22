@@ -37,9 +37,9 @@ const PROVENANCE_TITLES: Record<ProvenanceCode, string> = {
     ING: "Ingest batch - agent-extracted evidence entry",
     AGT: "Agent-computed row derived from vendor data during reconcile",
     DSH: "Vendor dashboard or console observation",
-    REC: "Reconciled row derived from provider evidence",
+    REC: "Reconciled row derived from vendor evidence",
     COR: "Operator-approved correction",
-    GRT: "Provider grant award evidence",
+    GRT: "Vendor grant award evidence",
     INT: "Pollinations internal usage meter",
 };
 

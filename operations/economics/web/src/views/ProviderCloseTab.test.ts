@@ -55,7 +55,7 @@ describe("ProviderCloseTab", () => {
 
         expect(html).toContain("Action needed");
         expect(html).toContain("1 transaction document missing");
-        expect(html).toContain("Provider source (1)");
+        expect(html).toContain("Vendor source (1)");
         expect(html).toContain("Ledger integrity");
         expect(html).toContain("Missing documents");
         expect(html.indexOf("Ledger integrity")).toBeLessThan(

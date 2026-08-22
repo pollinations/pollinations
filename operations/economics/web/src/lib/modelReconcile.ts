@@ -288,7 +288,7 @@ function allocationRows(entry: ProviderMonth): ModelAllocationRow[] {
             (!canAllocate && Math.abs(providerUsage) > ACTIVE_USD))
     ) {
         models.push({
-            model: "Unallocated provider usage",
+            model: "Unallocated vendor usage",
             status: "unallocated",
             paidPollenUsd: null,
             questPollenUsd: null,

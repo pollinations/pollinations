@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Data, OpCloudRow, OpPollenRow } from "../types";
 import {
     computeModeIndex,
+    directDeliveryData,
     managedInferenceData,
     providerMonthComputeMode,
 } from "./computeModes";
@@ -112,5 +113,23 @@ describe("compute modes", () => {
 
         expect(result.opCloud?.map((row) => row.vendor)).toEqual(["openai"]);
         expect(result.opPollen?.map((row) => row.vendor)).toEqual(["openai"]);
+    });
+
+    it("keeps inference and GPU costs together for vendor economics while excluding infrastructure", () => {
+        const result = directDeliveryData({
+            opCloud: [
+                cloud("modal", "inference"),
+                cloud("modal", "gpu"),
+                cloud("modal", "infra"),
+                cloud("community", "gpu"),
+            ],
+            opPollen: [pollen("modal"), pollen("community")],
+        });
+
+        expect(result.opCloud?.map((row) => row.type)).toEqual([
+            "inference",
+            "gpu",
+        ]);
+        expect(result.opPollen?.map((row) => row.vendor)).toEqual(["modal"]);
     });
 });

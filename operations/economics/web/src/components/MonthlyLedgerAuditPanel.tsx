@@ -59,11 +59,11 @@ function NumberCell({ value }: { value: number }) {
 
 function IssueCountCell({
     value,
-    providers,
+    vendors,
     className,
 }: {
     value: number;
-    providers: string[];
+    vendors: string[];
     className?: string;
 }) {
     return (
@@ -76,10 +76,10 @@ function IssueCountCell({
                     triggerAs="span"
                     content={
                         <span className="block max-w-72">
-                            <strong>Affected providers</strong>
+                            <strong>Affected vendors</strong>
                             <span className="mt-1 block">
-                                {providers.length > 0
-                                    ? providers.join(", ")
+                                {vendors.length > 0
+                                    ? vendors.join(", ")
                                     : "Unknown"}
                             </span>
                         </span>
@@ -133,7 +133,7 @@ export function MonthlyLedgerAuditPanel({
                             align="right"
                             className={GROUP_BORDER}
                         >
-                            <HeaderHint hint="Transactions whose invoice, receipt, statement, or reconciliation reference is not archived in Drive. Hover a non-zero count to see the affected providers.">
+                            <HeaderHint hint="Transactions whose invoice, receipt, statement, or reconciliation reference is not archived in Drive. Hover a non-zero count to see the affected vendors.">
                                 Missing documents
                             </HeaderHint>
                         </TableHeaderCell>
@@ -143,7 +143,7 @@ export function MonthlyLedgerAuditPanel({
                             align="right"
                             className={GROUP_BORDER}
                         >
-                            <HeaderHint hint="Providers in the ledgers that do not resolve to a canonical provider. Hover a non-zero count to see them.">
+                            <HeaderHint hint="Vendors in the ledgers that do not resolve to a canonical vendor. Hover a non-zero count to see them.">
                                 Unmapped
                             </HeaderHint>
                         </TableHeaderCell>
@@ -221,12 +221,12 @@ export function MonthlyLedgerAuditPanel({
                             <NumberCell value={row.pollenRows} />
                             <IssueCountCell
                                 value={row.transactionEvidenceGaps}
-                                providers={row.transactionEvidenceProviders}
+                                vendors={row.transactionEvidenceProviders}
                                 className={GROUP_BORDER}
                             />
                             <IssueCountCell
                                 value={row.missingMappings}
-                                providers={row.missingMappingProviders}
+                                vendors={row.missingMappingProviders}
                                 className={GROUP_BORDER}
                             />
                             <TableCell className={GROUP_BORDER}>
@@ -243,11 +243,11 @@ export function MonthlyLedgerAuditPanel({
                             </TableCell>
                             <IssueCountCell
                                 value={row.invalidRows}
-                                providers={row.invalidProviders}
+                                vendors={row.invalidProviders}
                             />
                             <IssueCountCell
                                 value={row.duplicateRows}
-                                providers={row.duplicateProviders}
+                                vendors={row.duplicateProviders}
                             />
                         </TableRow>
                     ))}

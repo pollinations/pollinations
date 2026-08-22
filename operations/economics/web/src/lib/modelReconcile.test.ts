@@ -220,7 +220,7 @@ describe("modelReconcileRows", () => {
         expect(row.providerUsageUsd).toBe(42);
         expect(row.models).toEqual([
             expect.objectContaining({
-                model: "Unallocated provider usage",
+                model: "Unallocated vendor usage",
                 status: "unallocated",
                 providerCashUsd: 42,
             }),
@@ -257,7 +257,7 @@ describe("modelReconcileRows", () => {
                     status: "unallocated",
                 }),
                 expect.objectContaining({
-                    model: "Unallocated provider usage",
+                    model: "Unallocated vendor usage",
                     providerCashUsd: 20,
                     providerCreditUsd: 80,
                 }),

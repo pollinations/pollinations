@@ -72,7 +72,7 @@ describe("ledgerFacets", () => {
         ]);
     });
 
-    it("uses registry labels for providers and flags unknown values", () => {
+    it("uses registry labels for vendors and flags unknown values", () => {
         const facets = ledgerFacets(
             { opCloud: [cloud("aws", "inference"), cloud("new", "odd")] },
             "op-cloud",
@@ -83,21 +83,14 @@ describe("ledgerFacets", () => {
             { value: "aws", label: "AWS", count: 1 },
             { value: "new", label: "Unmapped · new", count: 1 },
         ]);
-        expect(facets.categories).toEqual([
-            { value: "compute", label: "Compute", count: 1 },
-            {
-                value: "uncategorized",
-                label: "Uncategorized",
-                count: 1,
-            },
-        ]);
+        expect(facets.categories).toEqual([]);
     });
 
     it("keeps a selected zero-result value visible until it is cleared", () => {
         const facets = ledgerFacets(
             { opCloud: [cloud("aws", "inference")] },
             "op-cloud",
-            { ...selection, vendors: ["google"], categories: ["compute"] },
+            { ...selection, vendors: ["google"] },
         );
 
         expect(facets.vendors).toContainEqual({
@@ -105,10 +98,6 @@ describe("ledgerFacets", () => {
             label: "Google Cloud",
             count: 0,
         });
-        expect(facets.categories).toContainEqual({
-            value: "compute",
-            label: "Compute",
-            count: 0,
-        });
+        expect(facets.categories).toEqual([]);
     });
 });

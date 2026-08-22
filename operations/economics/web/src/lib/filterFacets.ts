@@ -1,10 +1,5 @@
 import type { Data } from "../types";
-import {
-    categoryLabel,
-    cloudCategory,
-    pollenCategory,
-    transactionCategory,
-} from "./categories";
+import { categoryLabel, transactionCategory } from "./categories";
 import {
     type MonthFilterValue,
     matchesMonth,
@@ -63,28 +58,8 @@ function countedOptions(
         );
 }
 
-function providerLabel(value: string): string {
+function vendorLabel(value: string): string {
     return resolveProvider(value)?.label ?? `Unmapped · ${value}`;
-}
-
-export function providerOptions(
-    values: readonly string[],
-    selected: ValueFilter = [],
-): FacetOption[] {
-    const options = new Set(
-        [...values, ...selectedValues(selected)]
-            .map((value) => value.trim())
-            .filter(Boolean),
-    );
-    return [...options]
-        .map((value) => ({ value, label: providerLabel(value) }))
-        .sort(
-            (a, b) =>
-                a.label.localeCompare(b.label, undefined, {
-                    numeric: true,
-                    sensitivity: "base",
-                }) || a.value.localeCompare(b.value),
-        );
 }
 
 export function ledgerFacets(
@@ -124,23 +99,13 @@ export function ledgerFacets(
                 row.start.slice(0, 7) >= WINDOW_START &&
                 matchesMonth(row.start, selection.month),
         );
-        const providerRows = rows.filter((row) =>
-            matchesValue(cloudCategory(row), selection.categories),
-        );
-        const categoryRows = rows.filter((row) =>
-            matchesValue(row.vendor, selection.vendors),
-        );
         return {
             vendors: countedOptions(
-                providerRows.map((row) => row.vendor),
+                rows.map((row) => row.vendor),
                 selection.vendors,
-                providerLabel,
+                vendorLabel,
             ),
-            categories: countedOptions(
-                categoryRows.map(cloudCategory),
-                selection.categories,
-                categoryLabel,
-            ),
+            categories: [],
         };
     }
 
@@ -149,22 +114,12 @@ export function ledgerFacets(
             row.month >= WINDOW_START &&
             matchesMonth(row.month, selection.month),
     );
-    const providerRows = rows.filter(() =>
-        matchesValue(pollenCategory(), selection.categories),
-    );
-    const categoryRows = rows.filter((row) =>
-        matchesValue(row.vendor, selection.vendors),
-    );
     return {
         vendors: countedOptions(
-            providerRows.map((row) => row.vendor),
+            rows.map((row) => row.vendor),
             selection.vendors,
-            providerLabel,
+            vendorLabel,
         ),
-        categories: countedOptions(
-            categoryRows.map(pollenCategory),
-            selection.categories,
-            categoryLabel,
-        ),
+        categories: [],
     };
 }

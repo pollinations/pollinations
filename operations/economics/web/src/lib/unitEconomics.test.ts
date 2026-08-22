@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest";
 import type { Data, OpCloudRow, OpPollenRow } from "../types";
 import { modelReconcileRows } from "./modelReconcile";
 import {
+    isCreditSupported,
     meterMatchPct,
     providerCostCheck,
     type UnitEconomicsRow,
     unitEconomicsRows,
+    unitPerformancePct,
 } from "./unitEconomics";
 
 const cloud = (over: Partial<OpCloudRow> = {}): OpCloudRow => ({
@@ -120,7 +122,7 @@ describe("unitEconomicsRows", () => {
         expect(modelRows.map((row) => row.model)).toEqual([
             "claude",
             "llama",
-            "Unallocated provider usage",
+            "Unallocated vendor usage",
         ]);
 
         for (const provider of providerRows) {
@@ -189,6 +191,22 @@ describe("unitEconomicsRows", () => {
         expect(
             unitEconomicsRows(providers, "model").map((row) => row.month),
         ).toEqual(["2026-08", "2026-07"]);
+    });
+});
+
+describe("unit-economics outcomes", () => {
+    it("compares full-cost result with retained Paid", () => {
+        expect(unitPerformancePct(25, 100)).toBe(25);
+        expect(unitPerformancePct(-25, 100)).toBe(-25);
+        expect(unitPerformancePct(-25, 0)).toBeNull();
+        expect(unitPerformancePct(null, 100)).toBeNull();
+    });
+
+    it("flags rows that are profitable only on a cash basis", () => {
+        expect(isCreditSupported(10, -5)).toBe(true);
+        expect(isCreditSupported(-1, -5)).toBe(false);
+        expect(isCreditSupported(10, 5)).toBe(false);
+        expect(isCreditSupported(null, -5)).toBe(false);
     });
 });
 

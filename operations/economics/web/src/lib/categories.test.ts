@@ -3,7 +3,6 @@ import type { OpTransactionRow } from "../types";
 import {
     categoryLabel,
     cloudCategory,
-    pollenCategory,
     transactionCategory,
 } from "./categories";
 
@@ -91,7 +90,6 @@ describe("canonical categories", () => {
         expect(cloudCategory({ type: "gpu" })).toBe("compute");
         expect(cloudCategory({ type: "infra" })).toBe("infrastructure");
         expect(cloudCategory({ type: "mystery" })).toBe("uncategorized");
-        expect(pollenCategory()).toBe("compute");
     });
 
     it("labels only the canonical vocabulary", () => {

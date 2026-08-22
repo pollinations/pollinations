@@ -4,6 +4,7 @@ import {
     TableHead,
     TableHeaderCell,
     TableRow,
+    Tooltip,
 } from "@pollinations/ui";
 import { useMemo } from "react";
 import {
@@ -15,6 +16,7 @@ import {
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
+import { Gauge } from "../components/EconomicsGauge";
 import { StatCards } from "../components/StatCards";
 import {
     type CommunityEconomicsRow,
@@ -22,25 +24,29 @@ import {
     communityEconomicsSummary,
 } from "../lib/communityEconomics";
 import { fmtMarginPct, fmtNumber, fmtUsd } from "../lib/format";
-import { type MonthFilterValue, monthLabel } from "../lib/months";
+import type { MonthFilterValue } from "../lib/months";
 import type { Data } from "../types";
 
 const SORT_COLUMNS: readonly SortColumn<CommunityEconomicsRow>[] = [
-    { key: "month", value: (row) => row.month },
     { key: "model", value: (row) => row.model },
-    { key: "paidPollenUsd", value: (row) => row.paidPollenUsd },
-    { key: "byopPaidShareUsd", value: (row) => row.byopPaidShareUsd },
-    { key: "ownerPaidShareUsd", value: (row) => row.ownerPaidShareUsd },
     { key: "retainedPaidUsd", value: (row) => row.retainedPaidUsd },
     { key: "retainedPct", value: (row) => row.retainedPct },
+    {
+        key: "usageMix",
+        value: (row) => {
+            const total = row.paidPollenUsd + row.questPollenUsd;
+            return total > 0 ? row.paidPollenUsd / total : null;
+        },
+    },
     { key: "questPollenUsd", value: (row) => row.questPollenUsd },
-    { key: "ownerQuestRewardUsd", value: (row) => row.ownerQuestRewardUsd },
-    { key: "paidRequests", value: (row) => row.paidRequests },
-    { key: "questRequests", value: (row) => row.questRequests },
+    {
+        key: "requests",
+        value: (row) => row.paidRequests + row.questRequests,
+    },
 ];
 
 const DEFAULT_SORT = {
-    key: "paidPollenUsd",
+    key: "retainedPaidUsd",
     direction: "desc",
 } as const;
 
@@ -67,38 +73,34 @@ export function CommunityTab({
             <StatCards
                 items={[
                     {
-                        label: "Paid Pollen used",
-                        value: fmtUsd(summary.paidPollenUsd),
-                        detail: "cash-backed value consumed",
-                    },
-                    {
                         label: "Retained Paid",
                         value: fmtUsd(summary.retainedPaidUsd),
-                        detail: `${fmtMarginPct(summary.retainedPct)} of paid usage`,
+                        detail: "after ecosystem payouts",
                     },
                     {
-                        label: "Owner paid share",
-                        value: fmtUsd(summary.ownerPaidShareUsd),
-                        detail: `BYOP share ${fmtUsd(summary.byopPaidShareUsd)}`,
+                        label: "Performance",
+                        value: fmtMarginPct(summary.retainedPct),
+                        detail: "retained Paid ÷ gross Paid used",
                     },
                     {
-                        label: "Quest Pollen used",
+                        label: "Quest used",
                         value: fmtUsd(summary.questPollenUsd),
-                        detail: `owner reward ${fmtUsd(summary.ownerQuestRewardUsd)} · never fiat revenue`,
+                        detail: "free usage · never fiat revenue",
+                    },
+                    {
+                        label: "Requests",
+                        value: fmtNumber(
+                            summary.paidRequests + summary.questRequests,
+                        ),
+                        detail: "Paid plus Quest",
                     },
                 ]}
             />
 
             <TableScroller>
-                <DataTable className="min-w-[1420px]">
+                <DataTable className="min-w-[820px]">
                     <TableHead>
                         <TableRow>
-                            <TableHeaderCell
-                                rowSpan={2}
-                                {...headerProps("month")}
-                            >
-                                Month
-                            </TableHeaderCell>
                             <TableHeaderCell
                                 rowSpan={2}
                                 {...headerProps("model")}
@@ -106,97 +108,70 @@ export function CommunityTab({
                                 Community model
                             </TableHeaderCell>
                             <TableHeaderCell
-                                colSpan={5}
+                                colSpan={3}
                                 align="center"
                                 className={GROUP_BORDER}
                             >
-                                Paid Pollen
+                                Pollen
                             </TableHeaderCell>
                             <TableHeaderCell
-                                colSpan={2}
-                                align="center"
+                                rowSpan={2}
+                                align="right"
                                 className={GROUP_BORDER}
+                                {...headerProps("retainedPct")}
                             >
-                                Quest Pollen
+                                <HeaderHint
+                                    hint={{
+                                        meaning:
+                                            "Share of gross Paid usage retained by Pollinations after ecosystem payouts.",
+                                        formula:
+                                            "retained Paid ÷ gross Paid used",
+                                    }}
+                                >
+                                    Performance
+                                </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell
-                                colSpan={2}
-                                align="center"
+                                rowSpan={2}
+                                align="right"
                                 className={GROUP_BORDER}
+                                {...headerProps("requests")}
                             >
-                                Activity
+                                Requests
                             </TableHeaderCell>
                         </TableRow>
                         <TableRow>
                             <TableHeaderCell
                                 align="right"
                                 className={GROUP_BORDER}
-                                {...headerProps("paidPollenUsd")}
-                            >
-                                <HeaderHint hint="Cash-backed Paid Pollen consumed on this community model; not cash collected in this month.">
-                                    Used
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                align="right"
-                                {...headerProps("byopPaidShareUsd")}
-                            >
-                                BYOP share
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                align="right"
-                                {...headerProps("ownerPaidShareUsd")}
-                            >
-                                Owner share
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                align="right"
                                 {...headerProps("retainedPaidUsd")}
                             >
                                 <HeaderHint
                                     hint={{
                                         meaning:
-                                            "Paid Pollen value retained by Pollinations after ecosystem shares.",
+                                            "Cash-backed Paid Pollen retained by Pollinations after BYOP and model-owner payouts.",
                                         formula:
                                             "Paid used − BYOP share − owner share",
                                     }}
                                 >
-                                    Retained
+                                    Paid retained
+                                </HeaderHint>
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                align="center"
+                                {...headerProps("usageMix")}
+                            >
+                                <HeaderHint hint="Usage mix — amber is gross Paid Pollen and green is Quest Pollen.">
+                                    Usage mix
                                 </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="right"
-                                {...headerProps("retainedPct")}
-                            >
-                                Retained %
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                align="right"
-                                className={GROUP_BORDER}
                                 {...headerProps("questPollenUsd")}
                             >
                                 <HeaderHint hint="Quest Pollen consumed. This is free usage, not revenue.">
-                                    Used
+                                    Quest used
                                 </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                align="right"
-                                {...headerProps("ownerQuestRewardUsd")}
-                            >
-                                Owner reward
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                align="right"
-                                className={GROUP_BORDER}
-                                {...headerProps("paidRequests")}
-                            >
-                                Paid req
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                align="right"
-                                {...headerProps("questRequests")}
-                            >
-                                Quest req
                             </TableHeaderCell>
                         </TableRow>
                     </TableHead>
@@ -206,7 +181,6 @@ export function CommunityTab({
                             (row) => `${row.month}|${row.model}`,
                         ).map(({ key, row }) => (
                             <TableRow key={key}>
-                                <TableCell>{monthLabel(row.month)}</TableCell>
                                 <TableCell className="font-semibold">
                                     {row.model}
                                 </TableCell>
@@ -215,18 +189,50 @@ export function CommunityTab({
                                     numeric
                                     className={GROUP_BORDER}
                                 >
-                                    {fmtUsd(row.paidPollenUsd)}
+                                    <Tooltip
+                                        triggerAs="span"
+                                        content={
+                                            <span className="block max-w-72">
+                                                <span className="block">
+                                                    Gross Paid:{" "}
+                                                    {fmtUsd(row.paidPollenUsd)}
+                                                </span>
+                                                <span className="block">
+                                                    BYOP payout:{" "}
+                                                    {fmtUsd(
+                                                        row.byopPaidShareUsd,
+                                                    )}{" "}
+                                                    · owner payout:{" "}
+                                                    {fmtUsd(
+                                                        row.ownerPaidShareUsd,
+                                                    )}
+                                                </span>
+                                            </span>
+                                        }
+                                    >
+                                        <span>
+                                            {fmtUsd(row.retainedPaidUsd)}
+                                        </span>
+                                    </Tooltip>
+                                </TableCell>
+                                <TableCell>
+                                    <div className="flex justify-center">
+                                        <Gauge
+                                            left={row.paidPollenUsd}
+                                            leftLabel="Paid"
+                                            right={row.questPollenUsd}
+                                            rightLabel="Quest"
+                                        />
+                                    </div>
                                 </TableCell>
                                 <TableCell align="right" numeric>
-                                    {fmtUsd(row.byopPaidShareUsd)}
+                                    {fmtUsd(row.questPollenUsd)}
                                 </TableCell>
-                                <TableCell align="right" numeric>
-                                    {fmtUsd(row.ownerPaidShareUsd)}
-                                </TableCell>
-                                <TableCell align="right" numeric>
-                                    {fmtUsd(row.retainedPaidUsd)}
-                                </TableCell>
-                                <TableCell align="right" numeric>
+                                <TableCell
+                                    align="right"
+                                    numeric
+                                    className={GROUP_BORDER}
+                                >
                                     {fmtMarginPct(row.retainedPct)}
                                 </TableCell>
                                 <TableCell
@@ -234,27 +240,31 @@ export function CommunityTab({
                                     numeric
                                     className={GROUP_BORDER}
                                 >
-                                    {fmtUsd(row.questPollenUsd)}
-                                </TableCell>
-                                <TableCell align="right" numeric>
-                                    {fmtUsd(row.ownerQuestRewardUsd)}
-                                </TableCell>
-                                <TableCell
-                                    align="right"
-                                    numeric
-                                    className={GROUP_BORDER}
-                                >
-                                    {fmtNumber(row.paidRequests)}
-                                </TableCell>
-                                <TableCell align="right" numeric>
-                                    {fmtNumber(row.questRequests)}
+                                    <Tooltip
+                                        triggerAs="span"
+                                        content={
+                                            <span className="block max-w-72">
+                                                Paid{" "}
+                                                {fmtNumber(row.paidRequests)} ·
+                                                Quest{" "}
+                                                {fmtNumber(row.questRequests)}
+                                            </span>
+                                        }
+                                    >
+                                        <span>
+                                            {fmtNumber(
+                                                row.paidRequests +
+                                                    row.questRequests,
+                                            )}
+                                        </span>
+                                    </Tooltip>
                                 </TableCell>
                             </TableRow>
                         ))}
                         {sortedRows.length === 0 && (
                             <TableRow>
                                 <TableCell
-                                    colSpan={11}
+                                    colSpan={6}
                                     className="py-8 text-center text-theme-text-soft"
                                 >
                                     No community model economics for this

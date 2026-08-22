@@ -115,6 +115,25 @@ export function providerMonthComputeMode(
     );
 }
 
+// Vendor unit economics includes every direct AI-delivery cost, regardless of
+// whether the vendor supplied managed inference, GPU capacity, or both. Shared
+// infrastructure stays in the ledger for P&L and operations, but never enters
+// the vendor margin calculation.
+export function directDeliveryData(data: Data): Data {
+    return {
+        ...data,
+        opCloud: (data.opCloud ?? []).filter(
+            (row) =>
+                (row.type.trim().toLowerCase() === "inference" ||
+                    row.type.trim().toLowerCase() === "gpu") &&
+                canonicalVendor(row.vendor) !== "community",
+        ),
+        opPollen: (data.opPollen ?? []).filter(
+            (row) => canonicalVendor(row.vendor) !== "community",
+        ),
+    };
+}
+
 // Managed inference gets only inference provider costs. Pollen stays out of a
 // mixed provider-month so it cannot be counted again in the GPU view; the
 // resulting provider-only row keeps the unresolved cost visible.

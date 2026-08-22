@@ -139,7 +139,7 @@ export function OpTransactionsTab({
                             Description
                         </TableHeaderCell>
                         <TableHeaderCell {...headerProps("evidence")}>
-                            <HeaderHint hint="Supporting document matched to this Wise cash movement. The transaction is the source of truth; Close reuses this same link when verifying provider payments.">
+                            <HeaderHint hint="Supporting document matched to this Wise cash movement. The transaction is the source of truth; Close reuses this same link when verifying vendor payments.">
                                 Document
                             </HeaderHint>
                         </TableHeaderCell>

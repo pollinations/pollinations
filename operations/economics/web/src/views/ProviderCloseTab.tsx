@@ -48,11 +48,11 @@ const CLOSE_LABEL: Record<ProviderCloseRow["closeStatus"], string> = {
 };
 
 const CLOSE_HINT: Record<ProviderCloseRow["closeStatus"], string> = {
-    ready: "Provider source and account coverage checks are complete for this provider-month.",
+    ready: "Vendor source and account coverage checks are complete for this vendor-month.",
     "needs provider check":
-        "The provider statement, dashboard export, or other archived source is missing. No provider cost is inferred.",
+        "The vendor statement, dashboard export, or other archived source is missing. No vendor cost is inferred.",
     "needs account check":
-        "Provider data exists, but the active account coverage is incomplete or the source is not assigned to a known account.",
+        "Vendor data exists, but the active account coverage is incomplete or the source is not assigned to a known account.",
 };
 
 const FUNDING_LABEL: Record<ProviderCloseRow["fundingStatus"], string> = {
@@ -102,16 +102,16 @@ function StatusBadge({ row }: { row: ProviderCloseRow }) {
 function FundingValue({ row }: { row: ProviderCloseRow }) {
     const hint =
         row.fundingStatus === "needs check"
-            ? "Unknown until the provider statement is checked."
+            ? "Unknown until the vendor statement is checked."
             : row.fundingStatus === "unknown"
-              ? "The historical provider funding could not be reconstructed; the gap is documented."
+              ? "The historical vendor funding could not be reconstructed; the gap is documented."
               : row.fundingStatus === "not applicable"
-                ? "Internal usage has no external provider bill."
+                ? "Internal usage has no external vendor bill."
                 : row.fundingStatus === "credit/free"
-                  ? "The checked provider statement creates no cash payable amount."
+                  ? "The checked vendor statement creates no cash payable amount."
                   : row.fundingStatus === "mixed"
-                    ? "This month contains both provider-billed and credit-funded usage."
-                    : "The checked provider statement contains a cash payable amount.";
+                    ? "This month contains both vendor-billed and credit-funded usage."
+                    : "The checked vendor statement contains a cash payable amount.";
     return (
         <Tooltip triggerAs="span" content={hint}>
             <span className="whitespace-nowrap text-sm text-theme-text-soft">
@@ -135,7 +135,7 @@ function EvidenceGroupAction({
             onClick={onBrowse}
             className="whitespace-nowrap text-xs font-medium text-theme-text underline underline-offset-4 hover:text-theme-text-soft"
         >
-            Provider source ({items.length})
+            Vendor source ({items.length})
         </button>
     );
 }
@@ -157,13 +157,13 @@ function EvidenceListDialog({
             onOpenChange={(open) => {
                 if (!open) onClose();
             }}
-            title={`Provider source · ${selection.vendor} · ${monthLabel(selection.month)}`}
+            title={`Vendor source · ${selection.vendor} · ${monthLabel(selection.month)}`}
             size="md"
         >
             <div className="flex max-h-[70vh] flex-col px-6 pb-6 pt-3">
                 <p className="pb-3 text-sm text-theme-text-soft">
                     Statements, invoices, dashboard exports, or usage records
-                    collected from the provider.
+                    collected from the vendor.
                 </p>
                 <ol className="min-h-0 divide-y divide-theme-border/60 overflow-y-auto rounded-lg border border-theme-border/60">
                     {selection.items.map((item, index) => (
@@ -182,13 +182,10 @@ function EvidenceListDialog({
                             <div className="shrink-0 text-sm">
                                 <EvidenceAction
                                     evidence={item.evidence}
-                                    previewLabel="Provider source"
-                                    openDocumentLabel="Provider source"
+                                    previewLabel="Vendor source"
+                                    openDocumentLabel="Vendor source"
                                     onPreview={(documentLink) =>
-                                        onPreview(
-                                            documentLink,
-                                            "Provider source",
-                                        )
+                                        onPreview(documentLink, "Vendor source")
                                     }
                                 />
                             </div>
@@ -270,13 +267,13 @@ export function ProviderCloseTab({
               : providerPeriodStatus;
     const actionDetail = [
         summary.blockers
-            ? `${summary.blockers} provider ${summary.blockers === 1 ? "check" : "checks"}`
+            ? `${summary.blockers} vendor ${summary.blockers === 1 ? "check" : "checks"}`
             : null,
         transactionEvidenceGaps
             ? `${transactionEvidenceGaps} transaction ${transactionEvidenceGaps === 1 ? "document" : "documents"} missing`
             : null,
         missingMappings
-            ? `${missingMappings} provider ${missingMappings === 1 ? "mapping" : "mappings"} missing`
+            ? `${missingMappings} vendor ${missingMappings === 1 ? "mapping" : "mappings"} missing`
             : null,
         invalidRows
             ? `${invalidRows} invalid ${invalidRows === 1 ? "row" : "rows"}`
@@ -304,12 +301,12 @@ export function ProviderCloseTab({
                             : "Ready",
                 detail:
                     periodStatus === "no data"
-                        ? "no provider-months selected"
+                        ? "no vendor-months selected"
                         : periodStatus === "open"
                           ? "current month is still open"
                           : periodStatus === "action needed"
                             ? actionDetail
-                            : `${summary.closeReady} provider-months ready · filing confirmation not tracked`,
+                            : `${summary.closeReady} vendor-months ready · filing confirmation not tracked`,
                 tone:
                     periodStatus === "action needed"
                         ? "warn"
@@ -320,7 +317,7 @@ export function ProviderCloseTab({
             {
                 label: "Cash-funded usage",
                 value: fmtUsd(summary.billedUsd),
-                detail: "from archived provider sources",
+                detail: "from archived vendor sources",
             },
             {
                 label: "Credit / free usage",
@@ -349,30 +346,28 @@ export function ProviderCloseTab({
                         <TableHead>
                             <TableRow>
                                 <TableHeaderCell>
-                                    <HeaderHint hint="One provider-source and account-coverage status. Transaction documents are checked in the month-level result; tax filing confirmation remains separate.">
+                                    <HeaderHint hint="One vendor-source and account-coverage status. Transaction documents are checked in the month-level result; tax filing confirmation remains separate.">
                                         Status
                                     </HeaderHint>
                                 </TableHeaderCell>
                                 <TableHeaderCell>Month</TableHeaderCell>
-                                <TableHeaderCell>Provider</TableHeaderCell>
+                                <TableHeaderCell>Vendor</TableHeaderCell>
                                 <TableHeaderCell>
-                                    <HeaderHint hint="How the archived provider source says this provider-month was funded. Unknown means the historical gap is documented but not reconstructed.">
+                                    <HeaderHint hint="How the archived vendor source says this vendor-month was funded. Unknown means the historical gap is documented but not reconstructed.">
                                         Funding
                                     </HeaderHint>
                                 </TableHeaderCell>
                                 <TableHeaderCell align="right">
-                                    <HeaderHint hint="Provider cost recorded by the archived source as cash-funded. This is usage cost, not an invoice-to-payment match.">
+                                    <HeaderHint hint="Vendor cost recorded by the archived source as cash-funded. This is usage cost, not an invoice-to-payment match.">
                                         Cash-funded
                                     </HeaderHint>
                                 </TableHeaderCell>
                                 <TableHeaderCell align="right">
-                                    <HeaderHint hint="Provider usage covered by credits or explicitly verified as free. This is not a cash cost.">
+                                    <HeaderHint hint="Vendor usage covered by credits or explicitly verified as free. This is not a cash cost.">
                                         Credit / free
                                     </HeaderHint>
                                 </TableHeaderCell>
-                                <TableHeaderCell>
-                                    Provider source
-                                </TableHeaderCell>
+                                <TableHeaderCell>Vendor source</TableHeaderCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>

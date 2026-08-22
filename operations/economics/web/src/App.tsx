@@ -1,13 +1,13 @@
 import {
     Alert,
     Button,
-    ButtonGroup,
     Chip,
     ClockIcon,
     ColorModeToggle,
     cn,
     DatabaseIcon,
     EyeIcon,
+    GlobeIcon,
     Heading,
     InfoTip,
     Input,
@@ -16,7 +16,6 @@ import {
     RocketIcon,
     ScrollArea,
     SproutIcon,
-    TabButton,
     Text,
     UsageIcon,
     useScrollLock,
@@ -43,15 +42,11 @@ import {
     type MonthFilterMode,
 } from "./components/Filters";
 import type { ProvenanceCode } from "./components/Provenance";
-import { managedInferenceData } from "./lib/computeModes";
 import {
     type FacetOption,
     type LedgerTab,
     ledgerFacets,
-    providerOptions,
 } from "./lib/filterFacets";
-import { insightVendorOptions } from "./lib/insights";
-import { modelReconcileProviderOptions } from "./lib/modelReconcile";
 import {
     collectMonths,
     latestClosedMonth,
@@ -59,23 +54,23 @@ import {
     WINDOW_START,
 } from "./lib/months";
 import { fixturesMode, loadAll, TbError } from "./lib/tb";
-import type { UnitEconomicsGrain } from "./lib/unitEconomics";
 import type { Data } from "./types";
 import { CommunityTab } from "./views/CommunityTab";
 import { BalancesTab } from "./views/CreditsTab";
-import { GpuTab, gpuEconomics } from "./views/GpuTab";
+import { GpuTab } from "./views/GpuTab";
 import { OpCloudTab } from "./views/OpCloudTab";
 import { OpPollenTab } from "./views/OpPollenTab";
 import { OpTransactionsTab } from "./views/OpTransactionsTab";
 import { ProviderCloseTab } from "./views/ProviderCloseTab";
 import { RunwayTab } from "./views/RunwayTab";
-import { ManagedInferenceTab } from "./views/UnitEconomicsTab";
+import { ManagedInferenceTab, VendorsTab } from "./views/UnitEconomicsTab";
 
 type Tab = LedgerTab;
 type EconomicsSection = "insights" | "raw";
 type InsightTab =
     | "close"
     | "runway"
+    | "vendors"
     | "inference"
     | "community"
     | "balances"
@@ -108,13 +103,13 @@ const INSIGHT_TABS: {
     {
         id: "close",
         label: "Close",
-        note: "Monthly close readiness from provider sources, account coverage, and ledger quality; tax filing confirmation remains separate.",
+        note: "Monthly close readiness from vendor sources, account coverage, and ledger quality; tax filing confirmation remains separate.",
         icon: EyeIcon,
     },
     {
         id: "balances",
         label: "Balances",
-        note: "Current cash-prepaid and free-credit provider balances, with an expandable monthly roll-forward.",
+        note: "Current cash-prepaid and free-credit vendor balances, with an expandable monthly roll-forward.",
         icon: ClockIcon,
     },
 ] satisfies readonly DrawerItem<InsightTab>[];
@@ -126,21 +121,27 @@ const UNIT_ECONOMICS_TABS: {
     icon: ComponentType<{ className?: string }>;
 }[] = [
     {
+        id: "vendors",
+        label: "Vendors",
+        note: "Direct AI-delivery economics by vendor-month across managed inference and GPU capacity; shared infrastructure is excluded.",
+        icon: GlobeIcon,
+    },
+    {
         id: "inference",
         label: "Inference",
-        note: "Managed inference economics: Paid vs Quest, cash vs credits, cash and after-credit contribution, and provider-month cost checks.",
+        note: "Managed inference model economics: Paid vs Quest, cash vs credits, cash and after-credit contribution, and vendor-month cost checks.",
         icon: UsageIcon,
     },
     {
         id: "gpu",
         label: "GPUs",
-        note: "GPU capacity economics by provider-month: Paid vs Quest, cash vs credits, cash/economic margin, demand coverage, and break-even.",
+        note: "GPU capacity economics with vendor-pool results above and one direct-cost row per GPU resource below.",
         icon: RocketIcon,
     },
     {
         id: "community",
         label: "Community",
-        note: "Community-model economics: cash-backed Paid Pollen, owner and BYOP shares, retained value, Quest rewards, and activity without a Pollinations provider cost.",
+        note: "Community-model economics: cash-backed Paid Pollen, owner and BYOP shares, retained value, Quest rewards, and activity without a Pollinations vendor cost.",
         icon: SproutIcon,
     },
 ] satisfies readonly DrawerItem<InsightTab>[];
@@ -174,17 +175,6 @@ const TABS: {
             ).length,
     },
     {
-        id: "op-pollen",
-        label: "Pollen",
-        codes: ["TB"],
-        pipe: "op_pollen_api",
-        note: "Monthly canonical provider and internal-model usage with Paid/Quest customer price, metered cost, ecosystem shares, and request counts.",
-        icon: DatabaseIcon,
-        rows: (data) =>
-            (data.opPollen ?? []).filter((row) => row.month >= WINDOW_START)
-                .length,
-    },
-    {
         id: "op-cloud",
         label: "Compute & Infra",
         codes: ["API", "CLI", "BQ", "HC", "INV", "EXP", "ING", "AGT"],
@@ -195,6 +185,17 @@ const TABS: {
             (data.opCloud ?? []).filter(
                 (row) => row.start.slice(0, 7) >= WINDOW_START,
             ).length,
+    },
+    {
+        id: "op-pollen",
+        label: "Pollen",
+        codes: ["TB"],
+        pipe: "op_pollen_api",
+        note: "Monthly canonical vendor and internal-model usage with Paid/Quest customer price, metered cost, ecosystem shares, and request counts.",
+        icon: DatabaseIcon,
+        rows: (data) =>
+            (data.opPollen ?? []).filter((row) => row.month >= WINDOW_START)
+                .length,
     },
 ];
 
@@ -534,9 +535,6 @@ function activeViewTitle(
     insightTab: InsightTab,
 ) {
     if (section === "insights") {
-        if (insightTab === "close") return "Close";
-        if (insightTab === "inference") return "Managed Inference";
-        if (insightTab === "community") return "Community Models";
         return (
             ALL_INSIGHT_TABS.find((item) => item.id === insightTab)?.label ?? ""
         );
@@ -567,28 +565,53 @@ function viewInfoContent(
         );
     }
 
+    if (insightTab === "vendors") {
+        return (
+            <span className="block max-w-72">
+                <strong>Vendors</strong>
+                <InfoLine>
+                    One vendor-month across managed inference and GPU capacity.
+                    Shared infrastructure is excluded from unit economics.
+                </InfoLine>
+                <InfoLine>
+                    Paid shows retained cash-backed value; Quest stays separate
+                    as free usage. Gross Paid remains in the usage-mix tooltip.
+                </InfoLine>
+                <InfoLine>
+                    Total vendor economics remain valid when a vendor supplies
+                    both modes. The mode split stays unallocated until Pollen
+                    records delivery mode per request.
+                </InfoLine>
+                <InfoLine>
+                    Result and Performance use full vendor cost, including
+                    consumed credits. Credit-supported rows are cash-positive
+                    only while those credits remain.
+                </InfoLine>
+            </span>
+        );
+    }
     if (insightTab === "inference") {
         return (
             <span className="block max-w-72">
-                <strong>Managed Inference</strong>
+                <strong>Inference</strong>
                 <InfoLine>
-                    Managed-inference provider-months only; current-month rows
+                    Managed-inference vendor-months only; current-month rows
                     remain partial and mixed inference/GPU months stay
                     unallocated.
                 </InfoLine>
                 <InfoLine>
-                    Paid and Quest demand stay separate; provider cash and
-                    consumed credits stay separate.
+                    Paid shows retained cash-backed value; Quest stays separate
+                    as free usage. Gross Paid remains in the usage-mix tooltip.
                 </InfoLine>
                 <InfoLine>
-                    Provider-month totals are authoritative. Model values are
+                    Vendor-month totals are authoritative. Model values are
                     allocations by monthly Pollen metered-cost share, not
-                    independent provider evidence.
+                    independent vendor evidence.
                 </InfoLine>
                 <InfoLine>
-                    Cash contribution uses actual cash cost; After credits
-                    values consumed credits at full provider cost. Direct cost
-                    drift is reviewed only above both 25% and $100.
+                    Result is retained Paid minus cash and consumed credits.
+                    Performance divides that result by retained Paid; cost
+                    checks remain at vendor level.
                 </InfoLine>
             </span>
         );
@@ -603,13 +626,12 @@ function viewInfoContent(
                     usage and never fiat revenue.
                 </InfoLine>
                 <InfoLine>
-                    Owner and BYOP shares stay separate and are removed before
-                    retained value.
+                    Paid shows only the value retained after owner and BYOP
+                    payouts. Hover it for the payout breakdown.
                 </InfoLine>
                 <InfoLine>
-                    Community authors supply the model and provider
-                    infrastructure, so no Pollinations provider cost is
-                    reconciled here.
+                    Community authors supply the model and infrastructure, so no
+                    Pollinations vendor cost is reconciled here.
                 </InfoLine>
             </span>
         );
@@ -619,12 +641,12 @@ function viewInfoContent(
             <span className="block max-w-72">
                 <strong>Close</strong>
                 <InfoLine>
-                    Provider rows check archived source coverage, active
-                    accounts, and whether usage was cash- or credit-funded.
+                    Vendor rows check archived source coverage, active accounts,
+                    and whether usage was cash- or credit-funded.
                 </InfoLine>
                 <InfoLine>
                     The month-level result also includes transaction-document,
-                    provider-mapping, row-integrity, duplicate, and FX checks
+                    vendor-mapping, row-integrity, duplicate, and FX checks
                     shown in the year-wide integrity history below.
                 </InfoLine>
                 <InfoLine>
@@ -640,8 +662,8 @@ function viewInfoContent(
             <span className="block max-w-72">
                 <strong>Balances</strong>
                 <InfoLine>
-                    Current provider balances; the selected period does not
-                    limit this page. Open a provider for its monthly history.
+                    Current vendor balances; the selected period does not limit
+                    this page. Open a vendor for its monthly history.
                 </InfoLine>
                 <InfoLine>
                     Cash prepaid is payments minus cash-funded usage. Free
@@ -649,8 +671,8 @@ function viewInfoContent(
                     expired capacity.
                 </InfoLine>
                 <InfoLine>
-                    Cash prepaid is a ledger estimate, not a live provider
-                    wallet. Individual payments and documents stay in Bank.
+                    Cash prepaid is a ledger estimate, not a live vendor wallet.
+                    Individual payments and documents stay in Bank.
                 </InfoLine>
             </span>
         );
@@ -684,20 +706,22 @@ function viewInfoContent(
             <span className="block max-w-72">
                 <strong>GPU Economics</strong>
                 <InfoLine>
-                    One provider-month per OP Cloud type = GPU capacity cost.
+                    Cards show the selected month at vendor-pool level: retained
+                    Paid, Quest usage, cash, consumed credits, and full-cost
+                    result.
                 </InfoLine>
                 <InfoLine>
-                    Paid versus Quest and provider cash versus credit use the
-                    same visual split as Inference.
+                    The table has one row per verified workload. Expand one to
+                    see every billed GPU resource and its direct usage and cost.
                 </InfoLine>
                 <InfoLine>
-                    Pollen is attributed only when the provider-month is
-                    classified as GPU capacity. Mixed months retain cost but
-                    never receive guessed Pollen attribution.
+                    Result is retained Paid minus the full mapped workload cost.
+                    Efficiency is that result divided by retained Paid.
                 </InfoLine>
                 <InfoLine>
-                    Demand / cost is an economics ratio, not a reconciliation
-                    pass/fail score.
+                    Pollen does not identify the serving replica, so efficiency
+                    stays at workload level. Unknown short-lived resources and
+                    shared overhead remain visible instead of being guessed.
                 </InfoLine>
             </span>
         );
@@ -730,6 +754,7 @@ function activeMonthFilter(selected: readonly string[]): MonthFilterValue {
 
 const MONTH_ONLY_INSIGHT_TABS = new Set<InsightTab>([
     "close",
+    "vendors",
     "inference",
     "community",
     "gpu",
@@ -803,8 +828,6 @@ export default function App() {
     const [selectedMonths, setSelectedMonths] = useState<string[]>([]);
     const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-    const [unitEconomicsGrain, setUnitEconomicsGrain] =
-        useState<UnitEconomicsGrain>("model");
     const [attempt, setAttempt] = useState(0);
     const monthFilterInitialized = useRef(false);
     const ready = fixtures || (sessionChecked && authenticated);
@@ -888,54 +911,15 @@ export default function App() {
                   },
         [data, monthFilter, selectedCategories, selectedVendors, tab],
     );
-    const insightVendorValues = useMemo(() => {
-        if (!data) return [];
-        if (insightTab === "inference") {
-            return modelReconcileProviderOptions(
-                managedInferenceData(data),
-                monthFilter,
-            ).filter((value) => value !== "all");
-        }
-        if (insightTab === "gpu") {
-            return [
-                ...new Set(
-                    gpuEconomics(data, monthFilter).map((row) => row.vendor),
-                ),
-            ];
-        }
-        return insightVendorOptions(data, monthFilter).filter(
-            (value) => value !== "all",
-        );
-    }, [data, insightTab, monthFilter]);
-    const insightVendorFacets = useMemo(
-        () => providerOptions(insightVendorValues, selectedVendors),
-        [insightVendorValues, selectedVendors],
-    );
-    const showVendorFilter =
-        section === "insights"
-            ? insightTab !== "close" &&
-              insightTab !== "runway" &&
-              insightTab !== "balances" &&
-              insightTab !== "community" &&
-              insightVendorFacets.length > 0
-            : rawFacets.vendors.length > 0;
-    const activeVendorOptions =
-        section === "insights" ? insightVendorFacets : rawFacets.vendors;
-    const usesProviderTerms =
-        section === "insights" || tab === "op-cloud" || tab === "op-pollen";
+    const showVendorFilter = section === "raw" && rawFacets.vendors.length > 0;
     const showPeriodFilter =
         (section === "insights" &&
             insightTab !== "balances" &&
             insightTab !== "runway") ||
         section === "raw";
     const showCategoryFilter = section === "raw" && tab === "op-transactions";
-    const showInferenceGrain =
-        section === "insights" && insightTab === "inference";
     const hasFilters =
-        showPeriodFilter ||
-        showVendorFilter ||
-        showCategoryFilter ||
-        showInferenceGrain;
+        showPeriodFilter || showVendorFilter || showCategoryFilter;
     const categoryOptions = rawFacets.categories;
 
     useEffect(() => {
@@ -1018,10 +1002,8 @@ export default function App() {
                     <FilterMultiSelect
                         value={selectedVendors}
                         onChange={setSelectedVendors}
-                        options={activeVendorOptions}
-                        placeholder={
-                            usesProviderTerms ? "All providers" : "All vendors"
-                        }
+                        options={rawFacets.vendors}
+                        placeholder="All vendors"
                     />
                 )}
                 {showCategoryFilter && (
@@ -1031,24 +1013,6 @@ export default function App() {
                         options={categoryOptions}
                         placeholder="All categories"
                     />
-                )}
-                {showInferenceGrain && (
-                    <ButtonGroup aria-label="Inference view">
-                        <TabButton
-                            active={unitEconomicsGrain === "model"}
-                            onClick={() => setUnitEconomicsGrain("model")}
-                            size="sm"
-                        >
-                            Models
-                        </TabButton>
-                        <TabButton
-                            active={unitEconomicsGrain === "provider"}
-                            onClick={() => setUnitEconomicsGrain("provider")}
-                            size="sm"
-                        >
-                            Providers
-                        </TabButton>
-                    </ButtonGroup>
                 )}
             </div>
         </FilterBar>
@@ -1070,7 +1034,7 @@ export default function App() {
             )}
             {!error && !data && <Text tone="soft">Loading pipes...</Text>}
             <ErrorBoundary
-                resetKey={`${section}:${tab}:${insightTab}:${unitEconomicsGrain}:${selectedMonths.join(",")}:${selectedVendors.join(",")}:${selectedCategories.join(",")}`}
+                resetKey={`${section}:${tab}:${insightTab}:${selectedMonths.join(",")}:${selectedVendors.join(",")}:${selectedCategories.join(",")}`}
             >
                 {data && section === "raw" && tab === "op-transactions" && (
                     <OpTransactionsTab
@@ -1082,7 +1046,6 @@ export default function App() {
                 )}
                 {data && section === "raw" && tab === "op-pollen" && (
                     <OpPollenTab
-                        category={selectedCategories}
                         data={data}
                         month={monthFilter}
                         vendor={selectedVendors}
@@ -1090,7 +1053,6 @@ export default function App() {
                 )}
                 {data && section === "raw" && tab === "op-cloud" && (
                     <OpCloudTab
-                        category={selectedCategories}
                         data={data}
                         month={monthFilter}
                         vendor={selectedVendors}
@@ -1102,15 +1064,13 @@ export default function App() {
                 {data && section === "insights" && insightTab === "runway" && (
                     <RunwayTab data={data} />
                 )}
+                {data && section === "insights" && insightTab === "vendors" && (
+                    <VendorsTab data={data} month={monthFilter} />
+                )}
                 {data &&
                     section === "insights" &&
                     insightTab === "inference" && (
-                        <ManagedInferenceTab
-                            data={data}
-                            grain={unitEconomicsGrain}
-                            month={monthFilter}
-                            vendor={selectedVendors}
-                        />
+                        <ManagedInferenceTab data={data} month={monthFilter} />
                     )}
                 {data &&
                     section === "insights" &&
@@ -1121,11 +1081,7 @@ export default function App() {
                         <CommunityTab data={data} month={monthFilter} />
                     )}
                 {data && section === "insights" && insightTab === "gpu" && (
-                    <GpuTab
-                        data={data}
-                        month={monthFilter}
-                        vendor={selectedVendors}
-                    />
+                    <GpuTab data={data} month={monthFilter} />
                 )}
             </ErrorBoundary>
         </>

@@ -110,7 +110,7 @@ export function isCategory(category: string): category is Category {
     return KNOWN_CATEGORIES.has(category);
 }
 
-export function isProviderCategory(category: string): boolean {
+export function isComputeOrInfrastructureCategory(category: string): boolean {
     return category === "compute" || category === "infrastructure";
 }
 
@@ -160,10 +160,6 @@ export function cloudCategory(row: Pick<OpCloudRow, "type">): CategoryValue {
     if (type === "gpu" || type === "inference") return "compute";
     if (type === "infra") return "infrastructure";
     return isCategory(type) ? type : "uncategorized";
-}
-
-export function pollenCategory(): Category {
-    return "compute";
 }
 
 export function runwayCategory(

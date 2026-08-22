@@ -23,27 +23,30 @@ import {
     GaugeSummary,
 } from "../components/EconomicsGauge";
 import { StatCards, type StatItem } from "../components/StatCards";
-import { computeModeIndex, managedInferenceData } from "../lib/computeModes";
-import { fmtUnsignedPct, fmtUsd } from "../lib/format";
+import {
+    type ComputeMode,
+    computeModeIndex,
+    directDeliveryData,
+    managedInferenceData,
+    providerMonthComputeMode,
+} from "../lib/computeModes";
+import { fmtMarginPct, fmtUnsignedPct, fmtUsd } from "../lib/format";
 import {
     type ModelAllocationStatus,
+    type ModelReconcileRow,
     modelReconcileRows,
     modelReconcileSummary,
     visibleModelReconcileRows,
 } from "../lib/modelReconcile";
-import {
-    type MonthFilterValue,
-    matchesMonth,
-    matchesValue,
-    monthLabel,
-    type ValueFilter,
-} from "../lib/months";
+import type { MonthFilterValue } from "../lib/months";
 import { signedToneOrSoft } from "../lib/tone";
 import {
+    isCreditSupported,
     providerCostCheck,
     type UnitEconomicsGrain,
     type UnitEconomicsRow,
     unitEconomicsRows,
+    unitPerformancePct,
 } from "../lib/unitEconomics";
 import type { Data } from "../types";
 
@@ -51,13 +54,6 @@ function fmtSignedUsd(value: number | null): string {
     if (value == null) return "–";
     const formatted = fmtUsd(value);
     return value > 0 ? `+${formatted}` : formatted;
-}
-
-function fmtCashImpact(value: number | null): string {
-    if (value == null) return "–";
-    if (value > 0) return `−${fmtUsd(value)}`;
-    if (value < 0) return `+${fmtUsd(-value)}`;
-    return fmtUsd(0);
 }
 
 function mixShare(left: number | null, right: number | null): number | null {
@@ -97,19 +93,19 @@ function allocationWarning(status: ModelAllocationStatus | null) {
     if (status == null || status === "allocated") return null;
     return (
         <Chip intent="warning" size="sm">
-            {status}
+            {status === "missing provider" ? "missing vendor" : status}
         </Chip>
     );
 }
 
-function ProviderCostStatus({ row }: { row: UnitEconomicsRow }) {
+function VendorCostStatus({ row }: { row: UnitEconomicsRow }) {
     const check = providerCostCheck(row);
     const label =
         check.kind === "provider-level"
-            ? "Provider-level"
+            ? "Vendor-level"
             : check.kind === "missing-source"
               ? row.sourceStatus === "pollen only"
-                  ? "Missing provider"
+                  ? "Missing vendor"
                   : "Missing meter"
               : check.kind === "not-applicable"
                 ? "Not applicable"
@@ -126,30 +122,30 @@ function ProviderCostStatus({ row }: { row: UnitEconomicsRow }) {
               : "text-theme-text-strong";
     const explanation =
         check.kind === "provider-level"
-            ? "Model costs are allocations. Check the provider row against the provider statement."
+            ? "Model costs are allocations. Check the vendor row against the vendor statement."
             : check.kind === "missing-source"
-              ? "One side of the provider-month comparison is missing."
+              ? "One side of the vendor-month comparison is missing."
               : check.kind === "not-applicable"
-                ? "This row has no external provider cost to reconcile."
+                ? "This row has no external vendor cost to reconcile."
                 : check.kind === "utilization"
-                  ? "Capacity providers compare metered demand with reserved capacity cost."
+                  ? "Capacity vendors compare metered demand with reserved capacity cost."
                   : check.kind === "calibration"
-                    ? "Mixed providers use this ratio for calibration, not pass/fail reconciliation."
+                    ? "Mixed vendors use this ratio for calibration, not pass/fail reconciliation."
                     : check.kind === "review"
-                      ? "Direct provider drift exceeds both 25% and $100."
-                      : "Direct provider drift is within the materiality threshold.";
+                      ? "Direct vendor drift exceeds both 25% and $100."
+                      : "Direct vendor drift is within the materiality threshold.";
 
     return (
         <Tooltip
             triggerAs="span"
             content={
                 <span className="block max-w-72">
-                    <strong>Provider cost check</strong>
+                    <strong>Vendor cost check</strong>
                     <span className="block">
                         Basis: {check.basis.replace("_", " ")}
                     </span>
                     <span className="block">
-                        Logged: {fmtUsd(row.pollenMeterUsd)} · Provider:{" "}
+                        Logged: {fmtUsd(row.pollenMeterUsd)} · Vendor:{" "}
                         {fmtUsd(row.providerUsageUsd)} · Gap:{" "}
                         {fmtSignedUsd(row.meterGapUsd)}
                     </span>
@@ -162,58 +158,86 @@ function ProviderCostStatus({ row }: { row: UnitEconomicsRow }) {
     );
 }
 
-function ContributionValue({ row }: { row: UnitEconomicsRow }) {
+function FullCostResult({ row }: { row: UnitEconomicsRow }) {
     return (
         <Tooltip
             triggerAs="span"
             content={
                 <span className="block max-w-72">
-                    <strong>Net cash contribution</strong>
+                    <strong>Full-cost result</strong>
                     <span className="block">
-                        Paid margin: {fmtSignedUsd(row.paidContributionUsd)}
+                        Retained Paid: {fmtUsd(row.retainedPaidUsd)}
                     </span>
                     <span className="block">
-                        Quest cash cost:{" "}
-                        {fmtCashImpact(row.questCashSubsidyUsd)}
+                        Vendor cash: {fmtUsd(row.providerCashUsd)} · credits:{" "}
+                        {fmtUsd(row.providerCreditUsd)}
                     </span>
                     <span className="block">
-                        Net = paid margin − Quest cash cost
+                        Result = retained Paid − cash − credits
                     </span>
                     <span className="block">
-                        After credits:{" "}
-                        {fmtSignedUsd(row.economicContributionUsd)}
+                        Cash-only result:{" "}
+                        {fmtSignedUsd(row.netCashContributionUsd)}
                     </span>
                 </span>
             }
         >
-            <span className={signedToneOrSoft(row.netCashContributionUsd)}>
-                {fmtSignedUsd(row.netCashContributionUsd)}
+            <span className={signedToneOrSoft(row.economicContributionUsd)}>
+                {fmtSignedUsd(row.economicContributionUsd)}
             </span>
         </Tooltip>
     );
 }
 
+function CreditSupportedChip({ row }: { row: UnitEconomicsRow }) {
+    if (
+        !isCreditSupported(
+            row.netCashContributionUsd,
+            row.economicContributionUsd,
+        )
+    ) {
+        return null;
+    }
+    return (
+        <span className="ml-1 inline-flex">
+            <Tooltip
+                triggerAs="span"
+                content="Cash-positive only because vendor credits covered part of the full cost."
+            >
+                <Chip intent="warning" size="sm">
+                    credit-supported
+                </Chip>
+            </Tooltip>
+        </span>
+    );
+}
+
 const SORT_COLUMNS: readonly SortColumn<UnitEconomicsRow>[] = [
-    { key: "month", value: (row) => row.month },
     { key: "vendor", value: (row) => row.vendor },
     { key: "model", value: (row) => row.model },
-    { key: "paidPollenUsd", value: (row) => row.paidPollenUsd },
+    { key: "retainedPaidUsd", value: (row) => row.retainedPaidUsd },
     {
         key: "pollenMix",
         value: (row) => mixShare(row.paidPollenUsd, row.questPollenUsd),
     },
     { key: "questPollenUsd", value: (row) => row.questPollenUsd },
-    { key: "retainedPaidUsd", value: (row) => row.retainedPaidUsd },
     { key: "providerCashUsd", value: (row) => row.providerCashUsd },
     {
         key: "providerFundingMix",
         value: (row) => mixShare(row.providerCashUsd, row.providerCreditUsd),
     },
     { key: "providerCreditUsd", value: (row) => row.providerCreditUsd },
-    { key: "providerUsageUsd", value: (row) => row.providerUsageUsd },
     {
-        key: "netCashContributionUsd",
-        value: (row) => row.netCashContributionUsd,
+        key: "resultUsd",
+        value: (row) => row.economicContributionUsd,
+    },
+    {
+        key: "performancePct",
+        value: (row) =>
+            unitPerformancePct(
+                row.economicContributionUsd,
+                row.retainedPaidUsd,
+            ),
     },
     {
         key: "providerCostCheck",
@@ -222,106 +246,144 @@ const SORT_COLUMNS: readonly SortColumn<UnitEconomicsRow>[] = [
 ];
 
 const DEFAULT_SORT = {
-    key: "paidPollenUsd",
-    direction: "desc",
+    key: "resultUsd",
+    direction: "asc",
 } as const;
 
-export function ManagedInferenceTab({
+type UnitEconomicsView = "vendors" | "inference";
+const ACTIVE_ECONOMICS_USD = 0.0001;
+
+function hasEconomicActivity(row: ModelReconcileRow): boolean {
+    return [
+        row.paidPollenUsd,
+        row.questPollenUsd,
+        row.pollenMeterUsd,
+        row.providerUsageUsd,
+    ].some((value) => value != null && Math.abs(value) > ACTIVE_ECONOMICS_USD);
+}
+
+function computeModeLabel(mode: ComputeMode): string {
+    if (mode === "managed-inference") return "Inference";
+    if (mode === "gpu-capacity") return "GPU";
+    if (mode === "mixed") return "Both";
+    return "Unclassified";
+}
+
+function UnitEconomicsTable({
     data,
-    grain,
     month = "",
-    vendor = "all",
+    view,
 }: {
     data: Data;
-    grain: UnitEconomicsGrain;
     month?: MonthFilterValue;
-    vendor?: ValueFilter;
+    view: UnitEconomicsView;
 }) {
+    const grain: UnitEconomicsGrain = view === "vendors" ? "provider" : "model";
     const modeIndex = useMemo(() => computeModeIndex(data), [data]);
-    const inferenceData = useMemo(
-        () => managedInferenceData(data, modeIndex),
-        [data, modeIndex],
+    const economicsData = useMemo(
+        () =>
+            view === "vendors"
+                ? directDeliveryData(data)
+                : managedInferenceData(data, modeIndex),
+        [data, modeIndex, view],
     );
-    const allProviders = useMemo(
-        () => modelReconcileRows(inferenceData),
-        [inferenceData],
+    const allVendorMonths = useMemo(
+        () => modelReconcileRows(economicsData),
+        [economicsData],
     );
-    const providers = useMemo(
+    const vendorMonths = useMemo(
         () =>
             visibleModelReconcileRows({
-                rows: allProviders,
+                rows: allVendorMonths,
                 month,
-                vendor,
-            }),
-        [allProviders, month, vendor],
+                vendor: "all",
+            }).filter(hasEconomicActivity),
+        [allVendorMonths, month],
     );
     const rows = useMemo(
-        () => unitEconomicsRows(providers, grain),
-        [grain, providers],
+        () => unitEconomicsRows(vendorMonths, grain),
+        [grain, vendorMonths],
     );
-    const providerEconomics = useMemo(
-        () => unitEconomicsRows(providers, "provider"),
-        [providers],
+    const vendorEconomics = useMemo(
+        () => unitEconomicsRows(vendorMonths, "provider"),
+        [vendorMonths],
+    );
+    const sortColumns = useMemo<readonly SortColumn<UnitEconomicsRow>[]>(
+        () =>
+            SORT_COLUMNS.map((column) =>
+                column.key === "model" && view === "vendors"
+                    ? {
+                          key: "model",
+                          value: (row: UnitEconomicsRow) =>
+                              computeModeLabel(
+                                  providerMonthComputeMode(
+                                      modeIndex,
+                                      row.month,
+                                      row.vendor,
+                                  ),
+                              ),
+                      }
+                    : column,
+            ),
+        [modeIndex, view],
     );
     const { headerProps, rows: sortedRows } = useSortableRows(
         rows,
-        SORT_COLUMNS,
+        sortColumns,
         DEFAULT_SORT,
     );
     const summary = useMemo(
-        () => modelReconcileSummary(providers),
-        [providers],
+        () => modelReconcileSummary(vendorMonths),
+        [vendorMonths],
     );
     const currentMonth = new Date().toISOString().slice(0, 7);
-    const includesPartialMonth = providers.some(
+    const includesPartialMonth = vendorMonths.some(
         (row) => row.month >= currentMonth,
     );
-    const creditBackedPollenUsd =
-        summary.paidPollenOnCreditsUsd == null &&
-        summary.questPollenOnCreditsUsd == null
-            ? null
-            : (summary.paidPollenOnCreditsUsd ?? 0) +
-              (summary.questPollenOnCreditsUsd ?? 0);
-    const unknownFundingPollenUsd =
-        summary.paidPollenUnknownFundingUsd +
-        summary.questPollenUnknownFundingUsd;
-    const knownEconomicRows = providerEconomics.filter(
+    const knownEconomicRows = vendorEconomics.filter(
         (row) => row.economicContributionUsd != null,
     );
     const economicContributionUsd = knownEconomicRows.reduce(
         (sum, row) => sum + (row.economicContributionUsd ?? 0),
         0,
     );
-    const unknownEconomicProviderMonths =
-        providerEconomics.length - knownEconomicRows.length;
-    const mixedProviderMonths = modeIndex.providerMonths.filter(
+    const unknownEconomicVendorMonths =
+        vendorEconomics.length - knownEconomicRows.length;
+    const performancePct =
+        unknownEconomicVendorMonths === 0
+            ? unitPerformancePct(
+                  economicContributionUsd,
+                  summary.retainedPaidUsd,
+              )
+            : null;
+    const mixedVendorMonths = vendorMonths.filter(
         (row) =>
-            row.mode === "mixed" &&
-            matchesMonth(row.month, month) &&
-            matchesValue(row.provider, vendor),
+            view === "inference" &&
+            providerMonthComputeMode(modeIndex, row.month, row.vendor) ===
+                "mixed",
     ).length;
 
     const stats = useMemo<StatItem[]>(
         () => [
             {
-                label: "Pollen used",
-                value: fmtUsd(summary.paidPollenUsd + summary.questPollenUsd),
+                label: "Retained Paid",
+                value: fmtUsd(summary.retainedPaidUsd),
                 detail: (
                     <GaugeSummary
                         left={summary.paidPollenUsd}
-                        leftLabel="Paid"
+                        leftLabel="Paid used"
                         right={summary.questPollenUsd}
-                        rightLabel="Quest"
+                        rightLabel="Quest used"
                     />
                 ),
             },
             {
-                label: "Retained Paid",
-                value: fmtUsd(summary.retainedPaidUsd),
-                detail: "after BYOP shares",
+                label: "Quest used",
+                value: fmtUsd(summary.questPollenUsd),
+                detail: "free usage · never fiat revenue",
             },
             {
-                label: "Provider funding",
+                label: "Vendor cost",
                 value: fmtUsd(summary.providerUsageUsd),
                 detail: (
                     <GaugeSummary
@@ -334,38 +396,12 @@ export function ManagedInferenceTab({
                 ),
             },
             {
-                label: "Pollen on credits",
-                value: fmtUsd(creditBackedPollenUsd),
-                detail: `paid ${fmtUsd(summary.paidPollenOnCreditsUsd)} · Quest ${fmtUsd(summary.questPollenOnCreditsUsd)}${
-                    unknownFundingPollenUsd > 0
-                        ? ` · ${fmtUsd(unknownFundingPollenUsd)} unknown`
-                        : ""
-                }`,
-            },
-            {
-                label: "Net cash contribution",
-                value: fmtSignedUsd(summary.netCashContributionUsd),
-                tone:
-                    summary.netCashContributionUsd == null
-                        ? "base"
-                        : summary.netCashContributionUsd > 0
-                          ? "pos"
-                          : summary.netCashContributionUsd < 0
-                            ? "neg"
-                            : "base",
-                detail:
-                    summary.paidContributionUsd == null ||
-                    summary.questCashSubsidyUsd == null
-                        ? "paid / Quest split unknown"
-                        : `paid ${fmtSignedUsd(summary.paidContributionUsd)} · Quest ${fmtCashImpact(summary.questCashSubsidyUsd)}`,
-            },
-            {
-                label: "After credits",
+                label: "Result",
                 value:
                     knownEconomicRows.length === 0
                         ? "Unknown"
                         : `${fmtSignedUsd(economicContributionUsd)}${
-                              unknownEconomicProviderMonths > 0
+                              unknownEconomicVendorMonths > 0
                                   ? " + unknown"
                                   : ""
                           }`,
@@ -377,16 +413,34 @@ export function ManagedInferenceTab({
                           : economicContributionUsd < 0
                             ? "neg"
                             : "base",
-                detail: "retained Paid − cash − credits",
+                detail:
+                    summary.netCashContributionUsd == null
+                        ? "cash-only result unknown"
+                        : `cash-only ${fmtSignedUsd(summary.netCashContributionUsd)}`,
+            },
+            {
+                label: "Performance",
+                value: fmtMarginPct(performancePct),
+                tone:
+                    performancePct == null
+                        ? "base"
+                        : performancePct > 0
+                          ? "pos"
+                          : performancePct < 0
+                            ? "neg"
+                            : "base",
+                detail:
+                    unknownEconomicVendorMonths > 0
+                        ? "full-cost result incomplete"
+                        : "result ÷ retained Paid",
             },
         ],
         [
-            creditBackedPollenUsd,
             economicContributionUsd,
             knownEconomicRows.length,
+            performancePct,
             summary,
-            unknownEconomicProviderMonths,
-            unknownFundingPollenUsd,
+            unknownEconomicVendorMonths,
         ],
     );
 
@@ -396,7 +450,7 @@ export function ManagedInferenceTab({
 
             {(includesPartialMonth ||
                 summary.missingSideProviderMonths > 0 ||
-                mixedProviderMonths > 0) && (
+                mixedVendorMonths > 0) && (
                 <div className="flex flex-wrap items-center gap-2">
                     {includesPartialMonth && (
                         <Chip intent="warning" size="sm">
@@ -409,87 +463,106 @@ export function ManagedInferenceTab({
                             {summary.missingSideProviderMonths === 1 ? "" : "s"}
                         </Chip>
                     )}
-                    {mixedProviderMonths > 0 && (
+                    {mixedVendorMonths > 0 && (
                         <Chip intent="neutral" size="sm">
-                            {mixedProviderMonths} mixed month
-                            {mixedProviderMonths === 1 ? "" : "s"} unallocated
+                            {mixedVendorMonths} mixed month
+                            {mixedVendorMonths === 1 ? "" : "s"} unallocated
                         </Chip>
                     )}
                 </div>
             )}
 
             <TableScroller>
-                <DataTable className="min-w-[1380px]">
+                <DataTable className="min-w-[1180px]">
                     <TableHead>
                         <TableRow>
                             <TableHeaderCell
                                 rowSpan={2}
-                                {...headerProps("month")}
-                            >
-                                Month
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                rowSpan={2}
                                 {...headerProps("vendor")}
                             >
-                                Provider
+                                Vendor
                             </TableHeaderCell>
                             <TableHeaderCell
                                 rowSpan={2}
                                 {...headerProps("model")}
                             >
-                                Model
+                                {view === "vendors" ? "Mode" : "Model"}
                             </TableHeaderCell>
                             <TableHeaderCell
-                                colSpan={4}
+                                colSpan={3}
                                 align="center"
                                 className={GROUP_BORDER}
                             >
                                 Pollen
                             </TableHeaderCell>
                             <TableHeaderCell
-                                colSpan={4}
+                                colSpan={3}
                                 align="center"
                                 className={GROUP_BORDER}
                             >
-                                Provider funding
+                                Vendor cost
                             </TableHeaderCell>
                             <TableHeaderCell
                                 rowSpan={2}
                                 align="right"
                                 className={GROUP_BORDER}
-                                {...headerProps("netCashContributionUsd")}
+                                {...headerProps("resultUsd")}
                             >
                                 <HeaderHint
                                     hint={{
                                         meaning:
-                                            "Cash retained after the provider cash used for Paid and Quest traffic. Hover a value for the split and the result after valuing credits.",
+                                            "Full-cost dollars won or lost after valuing consumed vendor credits.",
                                         formula:
-                                            "paid margin − Quest cash cost",
+                                            "retained Paid − vendor cash − vendor credits",
                                     }}
                                 >
-                                    Contribution
+                                    Result
                                 </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell
                                 rowSpan={2}
                                 align="right"
                                 className={GROUP_BORDER}
-                                {...headerProps("providerCostCheck")}
+                                {...headerProps("performancePct")}
                             >
-                                <HeaderHint hint="Whether internal logged cost agrees with provider evidence. Hover a value for logged cost, provider actual, gap, and basis.">
-                                    Cost check
+                                <HeaderHint
+                                    hint={{
+                                        meaning:
+                                            "Full-cost result as a proportion of retained Paid. Use this to compare efficiency across rows of different sizes.",
+                                        formula: "result ÷ retained Paid",
+                                    }}
+                                >
+                                    Performance
                                 </HeaderHint>
                             </TableHeaderCell>
+                            {view === "vendors" && (
+                                <TableHeaderCell
+                                    rowSpan={2}
+                                    align="right"
+                                    className={GROUP_BORDER}
+                                    {...headerProps("providerCostCheck")}
+                                >
+                                    <HeaderHint hint="Whether internal logged cost agrees with vendor evidence. Hover a value for logged cost, vendor actual, gap, and basis.">
+                                        Cost check
+                                    </HeaderHint>
+                                </TableHeaderCell>
+                            )}
                         </TableRow>
                         <TableRow>
                             <TableHeaderCell
                                 align="right"
                                 className={GROUP_BORDER}
-                                {...headerProps("paidPollenUsd")}
+                                {...headerProps("retainedPaidUsd")}
                             >
-                                <HeaderHint hint="Paid Pollen balance consumed by customers. This is cash-backed usage, not necessarily cash collected in the selected month.">
-                                    Paid used
+                                <HeaderHint
+                                    hint={{
+                                        meaning:
+                                            "Cash-backed Paid Pollen retained after ecosystem shares. Gross Paid usage remains available in the Usage mix tooltip.",
+                                        formula:
+                                            "Paid used − BYOP share − model-owner share",
+                                    }}
+                                >
+                                    Paid retained
                                 </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell
@@ -497,7 +570,7 @@ export function ManagedInferenceTab({
                                 {...headerProps("pollenMix")}
                             >
                                 <HeaderHint hint="Usage mix — amber is Paid Pollen and green is Quest Pollen, using the shared wallet colors.">
-                                    Paid / Quest
+                                    Usage mix
                                 </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell
@@ -510,18 +583,10 @@ export function ManagedInferenceTab({
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="right"
-                                {...headerProps("retainedPaidUsd")}
-                            >
-                                <HeaderHint hint="Paid Pollen retained after BYOP shares. Community models are reported separately.">
-                                    Retained
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                align="right"
                                 className={GROUP_BORDER}
                                 {...headerProps("providerCashUsd")}
                             >
-                                <HeaderHint hint="Provider usage paid with real cash. Model rows receive an allocation from the provider-month total.">
+                                <HeaderHint hint="Vendor usage paid with real cash. Model rows receive an allocation from the vendor-month total.">
                                     Cash
                                 </HeaderHint>
                             </TableHeaderCell>
@@ -529,30 +594,16 @@ export function ManagedInferenceTab({
                                 align="center"
                                 {...headerProps("providerFundingMix")}
                             >
-                                <HeaderHint hint="Provider funding mix — strong neutral is real cash and muted neutral is consumed provider credit.">
-                                    Cash / Credit
+                                <HeaderHint hint="Vendor funding mix — strong neutral is real cash and muted neutral is consumed vendor credit.">
+                                    Funding mix
                                 </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="right"
                                 {...headerProps("providerCreditUsd")}
                             >
-                                <HeaderHint hint="Provider usage funded with consumed provider credits. Model rows receive an allocation from the provider-month total.">
+                                <HeaderHint hint="Vendor usage funded with consumed vendor credits. Model rows receive an allocation from the vendor-month total.">
                                     Credit
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                align="right"
-                                {...headerProps("providerUsageUsd")}
-                            >
-                                <HeaderHint
-                                    hint={{
-                                        meaning:
-                                            "Total provider usage before credits reduce the cash bill.",
-                                        formula: "cash + credit",
-                                    }}
-                                >
-                                    Actual
                                 </HeaderHint>
                             </TableHeaderCell>
                         </TableRow>
@@ -566,34 +617,40 @@ export function ManagedInferenceTab({
                             return (
                                 <TableRow key={key}>
                                     <TableCell>
-                                        {monthLabel(row.month)}
-                                    </TableCell>
-                                    <TableCell>
                                         <span className="mr-2 font-semibold">
                                             {row.vendor}
                                         </span>
                                     </TableCell>
                                     <TableCell
                                         className={
-                                            grain === "provider"
+                                            view === "vendors"
                                                 ? "text-theme-text-soft"
                                                 : undefined
                                         }
                                     >
                                         <span className="mr-2">
-                                            {row.model}
+                                            {view === "vendors"
+                                                ? computeModeLabel(
+                                                      providerMonthComputeMode(
+                                                          modeIndex,
+                                                          row.month,
+                                                          row.vendor,
+                                                      ),
+                                                  )
+                                                : row.model}
                                         </span>
-                                        {grain === "model" &&
+                                        {view === "inference" &&
                                             allocationWarning(
                                                 row.allocationStatus,
                                             )}
+                                        <CreditSupportedChip row={row} />
                                     </TableCell>
                                     <TableCell
                                         align="right"
                                         numeric
                                         className={GROUP_BORDER}
                                     >
-                                        {fmtUsd(row.paidPollenUsd)}
+                                        {fmtUsd(row.retainedPaidUsd)}
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex justify-center">
@@ -607,9 +664,6 @@ export function ManagedInferenceTab({
                                     </TableCell>
                                     <TableCell align="right" numeric>
                                         {fmtUsd(row.questPollenUsd)}
-                                    </TableCell>
-                                    <TableCell align="right" numeric>
-                                        {fmtUsd(row.retainedPaidUsd)}
                                     </TableCell>
                                     <TableCell
                                         align="right"
@@ -632,29 +686,45 @@ export function ManagedInferenceTab({
                                     <TableCell align="right" numeric>
                                         {fmtUsd(row.providerCreditUsd)}
                                     </TableCell>
-                                    <TableCell align="right" numeric>
-                                        {fmtUsd(row.providerUsageUsd)}
-                                    </TableCell>
                                     <TableCell
                                         align="right"
                                         numeric
                                         className={GROUP_BORDER}
                                     >
-                                        <ContributionValue row={row} />
+                                        <FullCostResult row={row} />
                                     </TableCell>
                                     <TableCell
                                         align="right"
-                                        className={GROUP_BORDER}
+                                        numeric
+                                        className={signedToneOrSoft(
+                                            unitPerformancePct(
+                                                row.economicContributionUsd,
+                                                row.retainedPaidUsd,
+                                            ),
+                                        )}
                                     >
-                                        <ProviderCostStatus row={row} />
+                                        {fmtMarginPct(
+                                            unitPerformancePct(
+                                                row.economicContributionUsd,
+                                                row.retainedPaidUsd,
+                                            ),
+                                        )}
                                     </TableCell>
+                                    {view === "vendors" && (
+                                        <TableCell
+                                            align="right"
+                                            className={GROUP_BORDER}
+                                        >
+                                            <VendorCostStatus row={row} />
+                                        </TableCell>
+                                    )}
                                 </TableRow>
                             );
                         })}
                         {sortedRows.length === 0 && (
                             <TableRow>
                                 <TableCell
-                                    colSpan={13}
+                                    colSpan={view === "vendors" ? 11 : 10}
                                     className="py-8 text-center text-theme-text-soft"
                                 >
                                     No unit economics for this selection.
@@ -666,4 +736,24 @@ export function ManagedInferenceTab({
             </TableScroller>
         </div>
     );
+}
+
+export function VendorsTab({
+    data,
+    month = "",
+}: {
+    data: Data;
+    month?: MonthFilterValue;
+}) {
+    return <UnitEconomicsTable data={data} month={month} view="vendors" />;
+}
+
+export function ManagedInferenceTab({
+    data,
+    month = "",
+}: {
+    data: Data;
+    month?: MonthFilterValue;
+}) {
+    return <UnitEconomicsTable data={data} month={month} view="inference" />;
 }

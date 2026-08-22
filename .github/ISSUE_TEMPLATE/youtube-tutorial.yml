@@ -1,0 +1,49 @@
+name: YouTube Tutorial Quest
+description: Submit an original Pollinations tutorial for a 10 Pollen reward
+title: "[YOUTUBE-TUTORIAL]: "
+labels: [".REQUEST"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Publish an original, useful YouTube tutorial showing people how to build or create with Pollinations.
+
+        Approved submissions earn **10 Pollen**. Rewards are based on the tutorial itself, not views, likes, or subscriber counts. One reward is available per GitHub user.
+
+  - type: input
+    id: video
+    attributes:
+      label: YouTube video
+      description: Link to the public video on a channel you control.
+      placeholder: https://www.youtube.com/watch?v=...
+    validations:
+      required: true
+
+  - type: textarea
+    id: tutorial
+    attributes:
+      label: What does the tutorial teach?
+      description: Briefly describe the Pollinations workflow and what viewers will build or learn.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: requirements
+    attributes:
+      label: Requirements
+      options:
+        - label: I created this video and control the YouTube channel that published it.
+          required: true
+        - label: The video is public, original, and demonstrates a useful Pollinations workflow and its result.
+          required: true
+        - label: The video description links to Pollinations and discloses that it is eligible for a Pollinations creator-quest reward.
+          required: true
+        - label: I understand that views, likes, and subscriber counts do not affect approval or the reward.
+          required: true
+        - label: I have not previously claimed this quest.
+          required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        A maintainer will review the video. If approved, a claimable reward will appear on [Enter Quests](https://enter.pollinations.ai/quests).

@@ -1,17 +1,17 @@
 import * as accountSetup from "./groups/account-setup.ts";
 import * as appGrowth from "./groups/app-growth.ts";
+import * as creatorSubmissions from "./groups/creator-submissions.ts";
 import * as githubContributions from "./groups/github-contributions.ts";
 import * as githubProfile from "./groups/github-profile.ts";
 import * as identity from "./groups/identity.ts";
 import * as modelUsage from "./groups/model-usage.ts";
-import * as socialSubmissions from "./groups/social-submissions.ts";
 import type { QuestCard, QuestEvaluationContext, QuestGroup } from "./types.ts";
 
 export const QUEST_GROUPS: QuestGroup[] = [
     { id: "account-setup", ...accountSetup },
     { id: "app-growth", ...appGrowth },
+    { id: "creator-submissions", ...creatorSubmissions },
     { id: "model-usage", ...modelUsage },
-    { id: "social-submissions", ...socialSubmissions },
     { id: "github-profile", ...githubProfile },
     { id: "github-contributions", ...githubContributions },
     { id: "identity", ...identity },

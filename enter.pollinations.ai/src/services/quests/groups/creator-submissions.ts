@@ -7,6 +7,19 @@ import type {
 } from "../types.ts";
 import { questToCard } from "../types.ts";
 
+const youtubeTutorialQuest: QuestDefinition = {
+    // Matches campaignId "youtube_tutorial" in the admin grant endpoint.
+    id: "grant:youtube_tutorial",
+    title: "Publish a YouTube tutorial",
+    description:
+        "Create an original tutorial showing how to build or create with Pollinations, then submit it for review.",
+    category: "community",
+    scope: "perUser",
+    rewardAmount: 10,
+    balanceBucket: "tier",
+    url: "https://github.com/pollinations/pollinations/issues/new?template=youtube-tutorial.yml",
+};
+
 const xShowcaseQuest: QuestDefinition = {
     // Matches campaignId "x_showcase" in the admin grant endpoint.
     id: "grant:x_showcase",
@@ -23,7 +36,7 @@ const xShowcaseQuest: QuestDefinition = {
 export async function listQuestCards(
     _ctx: QuestEvaluationContext,
 ): Promise<QuestCard[]> {
-    return [questToCard(xShowcaseQuest)];
+    return [youtubeTutorialQuest, xShowcaseQuest].map(questToCard);
 }
 
 export async function evaluateUser(

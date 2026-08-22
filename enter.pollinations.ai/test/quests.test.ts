@@ -341,6 +341,11 @@ test("catalog returns quest definitions without ledger stats", async ({
         rewardAmount: 10,
         balanceBucket: "tier",
     });
+    expectStableCatalogFields("grant:youtube_tutorial", {
+        state: "available",
+        rewardAmount: 10,
+        balanceBucket: "tier",
+    });
     expectStableCatalogFields("grant:x_showcase", {
         state: "available",
         rewardAmount: 1,

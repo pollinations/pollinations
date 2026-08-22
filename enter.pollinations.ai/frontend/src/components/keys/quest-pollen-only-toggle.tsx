@@ -32,7 +32,7 @@ export const QuestPollenOnlyToggle: FC<QuestPollenOnlyToggleProps> = ({
             </Field.Label>
             <Switch
                 checked={value ?? false}
-                onCheckedChange={(checked) => onChange(checked)}
+                onChange={(checked) => onChange(checked)}
                 disabled={disabled}
             />
         </Field.Root>

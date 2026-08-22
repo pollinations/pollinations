@@ -112,6 +112,33 @@ test("returns rendered Markdown and reports measured usage", async () => {
     await client.close();
 });
 
+test("rejects rendered Markdown larger than the agent context limit", async () => {
+    const { calls, env, worker } = createHarness({
+        quickAction: async () =>
+            Response.json(
+                { success: true, result: "small fixture" },
+                {
+                    headers: {
+                        "Content-Length": String(1024 * 1024 + 1),
+                        "X-Browser-Ms-Used": "1000",
+                    },
+                },
+            ),
+    });
+    const client = await connect(worker, env, calls);
+    const result = await client.callTool({
+        name: "fetchPage",
+        arguments: { url: SOURCE },
+    });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /exceeds 1 MB/);
+    assert.equal(
+        calls.responses.at(-1).headers.get(MCP_USAGE_HEADERS.status),
+        "502",
+    );
+    await client.close();
+});
+
 test("uploads screenshots and PDFs as MCP resource links", async () => {
     const { calls, env, worker } = createHarness();
     const client = await connect(worker, env, calls);

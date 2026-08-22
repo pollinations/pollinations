@@ -665,12 +665,10 @@ function App() {
                         <p className="m-0 text-xs leading-normal text-theme-text-soft">
                             Data as of:{" "}
                             {lastUpdated?.toLocaleTimeString("en-GB", {
-                                timeZone: "UTC",
                                 hour: "2-digit",
                                 minute: "2-digit",
                                 second: "2-digit",
-                            }) || "-"}{" "}
-                            UTC
+                            }) || "-"}
                         </p>
                     </div>
                 </section>

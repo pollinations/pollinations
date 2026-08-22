@@ -66,8 +66,8 @@ function timestampMs(value: string): number {
 }
 
 function formatTimestamp(value: string): string {
+    // No `timeZone` override — renders in the browser's local timezone.
     return parseTimestamp(value).toLocaleString(undefined, {
-        timeZone: "UTC",
         year: "numeric",
         month: "short",
         day: "numeric",

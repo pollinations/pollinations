@@ -20,7 +20,6 @@ async function decodeStream(stream) {
 }
 
 export class FfmpegContainer extends Container {
-    sleepAfter = "10s";
     enableInternet = false;
 
     async run(input, args, outputExtension, deadlineMs) {

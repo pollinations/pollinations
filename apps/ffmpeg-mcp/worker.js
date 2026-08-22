@@ -243,14 +243,6 @@ export function createWorker({
     return {
         async fetch(request, env) {
             const url = new URL(request.url);
-            if (url.pathname === "/health" && request.method === "GET") {
-                return Response.json({
-                    name: "pollinations-ffmpeg-mcp",
-                    transport: "streamable-http",
-                    endpoint: "/",
-                    stateless: true,
-                });
-            }
             if (url.pathname !== "/") {
                 return new Response("Not found", { status: 404 });
             }

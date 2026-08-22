@@ -1756,6 +1756,118 @@ describe("providerBalanceRows", () => {
         expect(row.cashBalanceUsd).toBeNull();
         expect(row.creditBalanceUsd).toBe(900);
     });
+
+    it("anchors the current roll-forward to an OP Cloud balance snapshot", () => {
+        const now = new Date("2026-08-22T12:00:00Z");
+        const [row] = providerBalanceRows(
+            emptyData({
+                opTransactions: [
+                    opTxn({
+                        entry_id: "vast-topup",
+                        date: "2026-07-01",
+                        vendor: "vast.ai",
+                        amount: -500,
+                    }),
+                ],
+                opCloud: [
+                    opCloud({
+                        entry_id: "vast-usage",
+                        vendor: "vast.ai",
+                        type: "gpu",
+                        start: "2026-07-01 00:00:00",
+                        paid: -200,
+                    }),
+                    opCloud({
+                        entry_id: "vast-balance-2026-08-22",
+                        source: "dashboard",
+                        vendor: "vast.ai",
+                        type: "balance",
+                        start: "2026-08-22 10:00:00",
+                        end: "2027-01-01 00:00:00",
+                        paid: 3_925.11,
+                        credit: 8.95,
+                        resource_sku: "current-balance",
+                    }),
+                ],
+            }),
+            now,
+        );
+
+        expect(row).toMatchObject({
+            vendor: "vast.ai",
+            cashBalanceUsd: 3_925.11,
+            creditBalanceUsd: 8.95,
+            balanceAsOf: "2026-08-22",
+        });
+        expect(row.history.at(-1)).toMatchObject({
+            month: "2026-08",
+            cashClosingUsd: 3_925.11,
+            creditClosingUsd: 8.95,
+        });
+        expect(
+            creditRunway(
+                emptyData({
+                    opCloud: [
+                        opCloud({
+                            vendor: "vast.ai",
+                            type: "balance",
+                            start: "2026-08-22 10:00:00",
+                            paid: 3_925.11,
+                            credit: 8.95,
+                        }),
+                    ],
+                }),
+                now,
+            ),
+        ).toEqual([]);
+    });
+
+    it("requires every active account before anchoring a multi-account vendor", () => {
+        const now = new Date("2026-08-22T12:00:00Z");
+        const base = emptyData({
+            opCloud: [
+                grant({
+                    vendor: "openrouter",
+                    granted: 6_000,
+                    start_date: "2026-05-01",
+                }),
+                opCloud({
+                    entry_id: "openrouter-myceli-balance",
+                    source: "dashboard",
+                    vendor: "openrouter",
+                    account_id: "myceli",
+                    type: "balance",
+                    start: "2026-08-22 10:00:00",
+                    paid: 0,
+                    credit: 16.17,
+                    resource_sku: "current-balance",
+                }),
+            ],
+        });
+
+        expect(providerBalanceRows(base, now)[0]).toMatchObject({
+            creditBalanceUsd: 6_000,
+            balanceAsOf: null,
+        });
+
+        base.opCloud?.push(
+            opCloud({
+                entry_id: "openrouter-pollinations-balance",
+                source: "dashboard",
+                vendor: "openrouter",
+                account_id: "pollinations",
+                type: "balance",
+                start: "2026-08-22 11:00:00",
+                paid: 0,
+                credit: 1_500,
+                resource_sku: "current-balance",
+            }),
+        );
+        expect(providerBalanceRows(base, now)[0]).toMatchObject({
+            creditBalanceUsd: 1_516.17,
+            balanceAsOf: "2026-08-22",
+        });
+    });
 });
 
 describe("pnlStatement", () => {

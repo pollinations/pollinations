@@ -17,7 +17,6 @@ import {
 } from "../components/DataTable";
 import { EvidenceAction, EvidencePreview } from "../components/Evidence";
 import { SourceCell } from "../components/Provenance";
-import { categoryLabel, cloudCategory } from "../lib/categories";
 import type { DriveDocumentLink } from "../lib/documents";
 import { fmtNumber, fmtUtcDateTime } from "../lib/format";
 import {
@@ -40,6 +39,15 @@ function resourceLabel(row: OpCloudRow): string {
     );
 }
 
+function costTypeLabel(type: string): string {
+    const normalized = type.trim().toLowerCase();
+    if (normalized === "inference") return "Inference";
+    if (normalized === "gpu") return "GPU";
+    if (normalized === "infra") return "Infrastructure";
+    if (normalized === "balance") return "Balance";
+    return normalized || "Unclassified";
+}
+
 function DetailItem({ label, value }: { label: string; value: unknown }) {
     const text = String(value ?? "").trim() || "–";
     return (
@@ -55,12 +63,10 @@ function DetailItem({ label, value }: { label: string; value: unknown }) {
 }
 
 export function OpCloudTab({
-    category = [],
     data,
     month = "",
     vendor = "all",
 }: {
-    category?: ValueFilter;
     data: Data;
     month?: MonthFilterValue;
     vendor?: ValueFilter;
@@ -74,16 +80,15 @@ export function OpCloudTab({
                 (row) =>
                     row.start.slice(0, 7) >= WINDOW_START &&
                     matchesMonth(row.start, month) &&
-                    matchesValue(row.vendor, vendor) &&
-                    matchesValue(cloudCategory(row), category),
+                    matchesValue(row.vendor, vendor),
             ),
-        [data.opCloud, month, vendor, category],
+        [data.opCloud, month, vendor],
     );
     const sortColumns = useMemo<SortColumn<OpCloudRow>[]>(
         () => [
             { key: "start", value: (row) => row.start },
             { key: "vendor", value: (row) => row.vendor },
-            { key: "category", value: cloudCategory },
+            { key: "type", value: (row) => costTypeLabel(row.type) },
             { key: "resource", value: resourceLabel },
             { key: "paid", value: (row) => row.paid },
             { key: "credit", value: (row) => row.credit },
@@ -116,13 +121,10 @@ export function OpCloudTab({
                             Month
                         </TableHeaderCell>
                         <TableHeaderCell rowSpan={2} {...headerProps("vendor")}>
-                            Provider
+                            Vendor
                         </TableHeaderCell>
-                        <TableHeaderCell
-                            rowSpan={2}
-                            {...headerProps("category")}
-                        >
-                            Category
+                        <TableHeaderCell rowSpan={2} {...headerProps("type")}>
+                            Type
                         </TableHeaderCell>
                         <TableHeaderCell
                             rowSpan={2}
@@ -135,7 +137,7 @@ export function OpCloudTab({
                             align="center"
                             className={GROUP_BORDER}
                         >
-                            Provider funding
+                            Vendor funding
                         </TableHeaderCell>
                         <TableHeaderCell
                             colSpan={2}
@@ -152,7 +154,7 @@ export function OpCloudTab({
                             className={GROUP_BORDER}
                             {...headerProps("paid")}
                         >
-                            <HeaderHint hint="Signed provider cash amount. Negative is usage or cost; positive is a refund.">
+                            <HeaderHint hint="Usage rows: negative is cash-funded cost and positive is a refund. Balance rows: current cash prepaid.">
                                 Paid
                             </HeaderHint>
                         </TableHeaderCell>
@@ -160,7 +162,7 @@ export function OpCloudTab({
                             align="right"
                             {...headerProps("credit")}
                         >
-                            <HeaderHint hint="Signed provider-credit amount. Negative is credit-funded usage; positive is a grant award.">
+                            <HeaderHint hint="Usage rows: negative is credit-funded cost and positive is a grant. Balance rows: current free credit.">
                                 Credit
                             </HeaderHint>
                         </TableHeaderCell>
@@ -190,7 +192,7 @@ export function OpCloudTab({
                                         </TableCell>
                                         <TableCell>{row.vendor}</TableCell>
                                         <TableCell>
-                                            {categoryLabel(cloudCategory(row))}
+                                            {costTypeLabel(row.type)}
                                         </TableCell>
                                         <TableCell>
                                             {resourceLabel(row)}

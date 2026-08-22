@@ -64,14 +64,16 @@ function invalidTransaction(row: OpTransactionRow): boolean {
 }
 
 function invalidCloud(row: OpCloudRow): boolean {
+    const balance = row.type.trim().toLowerCase() === "balance";
     return (
         !present(row.entry_id) ||
         !isCloudSource(row.source) ||
         !present(row.vendor) ||
-        cloudCategory(row) === "uncategorized" ||
+        (!balance && cloudCategory(row) === "uncategorized") ||
         !MONTH_RE.test(row.start.slice(0, 7)) ||
         !finite(row.credit) ||
         !finite(row.paid) ||
+        (balance && (Number(row.credit) < 0 || Number(row.paid) < 0)) ||
         !CURRENCY_RE.test(row.currency) ||
         !present(row.recorded_at)
     );
@@ -104,7 +106,7 @@ function duplicateExtras<T>(rows: readonly T[], key: (row: T) => string) {
 
 function providerNames(rows: readonly { vendor: string }[]): string[] {
     return [
-        ...new Set(rows.map((row) => row.vendor.trim() || "missing provider")),
+        ...new Set(rows.map((row) => row.vendor.trim() || "missing vendor")),
     ].sort((a, b) => a.localeCompare(b));
 }
 

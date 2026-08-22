@@ -167,7 +167,9 @@ function hasArchivedEvidence(evidence) {
     });
 }
 
-const cloudWitnessRows = cloud.filter((row) => !pureFunding(row));
+const cloudWitnessRows = cloud.filter(
+    (row) => row.type !== "balance" && !pureFunding(row),
+);
 const activePollenRows = pollen.filter(
     (row) =>
         amount(row.cost_paid) +

@@ -19,6 +19,7 @@ import {
 import { StatCards } from "../components/StatCards";
 import { fmtPeriod, fmtUsd } from "../lib/format";
 import { type ProviderBalanceRow, providerBalanceRows } from "../lib/insights";
+import { providerAuditUrl } from "../lib/providerRegistry";
 import type { Data } from "../types";
 
 // Urgency color for a depletion date: red under 30 days, amber under 90.
@@ -149,7 +150,6 @@ export function BalancesTab({ data }: { data: Data }) {
         }
         return { cashBalance, creditBalance };
     }, [rows]);
-
     const sortColumns = useMemo<SortColumn<ProviderBalanceRow>[]>(
         () => [
             { key: "vendor", value: (row) => row.vendor },
@@ -194,7 +194,7 @@ export function BalancesTab({ data }: { data: Data }) {
                                 rowSpan={2}
                                 {...headerProps("vendor")}
                             >
-                                Provider
+                                Vendor
                             </TableHeaderCell>
                             <TableHeaderCell
                                 colSpan={2}
@@ -212,9 +212,10 @@ export function BalancesTab({ data }: { data: Data }) {
                                 <HeaderHint
                                     hint={{
                                         meaning:
-                                            "Cumulative payments to known prepaid providers minus cash-funded provider usage. This is a ledger estimate, not a live wallet snapshot.",
-                                        tables: "op_transactions_api + op_cloud_api",
-                                        formula: "payments − cash usage",
+                                            "Latest complete OP Cloud balance snapshot. Without one, this falls back to cumulative prepaid payments minus cash-funded usage.",
+                                        tables: "op_cloud_api + op_transactions_api",
+                                        formula:
+                                            "snapshot, else payments − cash usage",
                                     }}
                                 >
                                     Cash prepaid
@@ -230,9 +231,10 @@ export function BalancesTab({ data }: { data: Data }) {
                                 <HeaderHint
                                     hint={{
                                         meaning:
-                                            "Unexpired provider grants remaining after credit-funded usage.",
+                                            "Latest complete OP Cloud balance snapshot. Without one, this falls back to unexpired grants minus credit-funded usage.",
                                         tables: "op_cloud_api",
-                                        formula: "grants − used − lapsed",
+                                        formula:
+                                            "snapshot, else grants − used − lapsed",
                                     }}
                                 >
                                     Left
@@ -261,19 +263,46 @@ export function BalancesTab({ data }: { data: Data }) {
                                             }
                                         >
                                             <TableCell>
-                                                <button
-                                                    type="button"
-                                                    aria-expanded={isExpanded}
-                                                    onClick={() =>
-                                                        toggle(row.vendor)
-                                                    }
-                                                    className="inline-flex items-center gap-1.5 text-left hover:text-theme-text"
-                                                >
-                                                    <span className="text-theme-text-soft">
-                                                        {isExpanded ? "▾" : "▸"}
-                                                    </span>
-                                                    {row.vendor}
-                                                </button>
+                                                <div className="flex items-center justify-between gap-3">
+                                                    <button
+                                                        type="button"
+                                                        aria-expanded={
+                                                            isExpanded
+                                                        }
+                                                        title={
+                                                            row.balanceAsOf
+                                                                ? `Balance checked ${fmtPeriod(row.balanceAsOf)}`
+                                                                : "Calculated from ledger activity"
+                                                        }
+                                                        onClick={() =>
+                                                            toggle(row.vendor)
+                                                        }
+                                                        className="inline-flex items-center gap-1.5 text-left hover:text-theme-text"
+                                                    >
+                                                        <span className="text-theme-text-soft">
+                                                            {isExpanded
+                                                                ? "▾"
+                                                                : "▸"}
+                                                        </span>
+                                                        {row.vendor}
+                                                    </button>
+                                                    {providerAuditUrl(
+                                                        row.vendor,
+                                                    ) && (
+                                                        <a
+                                                            href={
+                                                                providerAuditUrl(
+                                                                    row.vendor,
+                                                                ) ?? undefined
+                                                            }
+                                                            target="_blank"
+                                                            rel="noreferrer noopener"
+                                                            className="text-sm text-theme-accent underline decoration-dotted underline-offset-4"
+                                                        >
+                                                            Dashboard
+                                                        </a>
+                                                    )}
+                                                </div>
                                             </TableCell>
                                             <TableCell
                                                 align="right"

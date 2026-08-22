@@ -3,7 +3,7 @@ import {
     categoryLabel,
     cloudCategory,
     EXPENSE_CATEGORY_ORDER,
-    isProviderCategory,
+    isComputeOrInfrastructureCategory,
     transactionCategory,
 } from "./categories";
 import { toUsd } from "./fx";
@@ -14,11 +14,13 @@ import {
     WINDOW_START,
 } from "./months";
 import {
+    activeProviderAccounts,
     type MeteringBasis,
     meterDriftExplanation,
     type ProviderReconciliationExplanation,
     pollenWitnessExplanation,
     providerMeteringBasis,
+    resolveProvider,
 } from "./providerRegistry";
 
 // ---------------------------------------------------------- transactions
@@ -44,18 +46,24 @@ export function opCloudMonth(row: Pick<OpCloudRow, "start">): string {
     return row.start.slice(0, 7);
 }
 
+export function isOpCloudBalanceRow(row: Pick<OpCloudRow, "type">): boolean {
+    return row.type.trim().toLowerCase() === "balance";
+}
+
 // Signed burn: a refund (positive `paid`) reduces the vendor bill instead of
 // being dropped. Every lens — Providers, GPU, credits — must share these two
 // helpers so refund months can never disagree across tabs.
 export function opCloudPaidBurnUsd(
-    row: Pick<OpCloudRow, "currency" | "paid" | "start">,
+    row: Pick<OpCloudRow, "currency" | "paid" | "start" | "type">,
 ): number {
+    if (isOpCloudBalanceRow(row)) return 0;
     return -toUsd(row.paid, row.currency, row.start);
 }
 
 export function opCloudCreditBurnUsd(
-    row: Pick<OpCloudRow, "credit" | "currency" | "start">,
+    row: Pick<OpCloudRow, "credit" | "currency" | "start" | "type">,
 ): number {
+    if (isOpCloudBalanceRow(row)) return 0;
     return Math.max(0, -toUsd(row.credit, row.currency, row.start));
 }
 
@@ -846,7 +854,7 @@ export function insightVendorOptions(
     for (const row of data.opTransactions ?? []) {
         if (
             matchesMonth(row.date, month) &&
-            isProviderCategory(transactionCategory(row)) &&
+            isComputeOrInfrastructureCategory(transactionCategory(row)) &&
             row.vendor.trim()
         ) {
             vendors.add(row.vendor.trim());
@@ -1324,6 +1332,7 @@ export function isPreWindowGrantBurnRow(
 function opCloudGrantStatuses(data: Data): GrantStatus[] {
     const grants: GrantStatus[] = [];
     for (const row of data.opCloud ?? []) {
+        if (isOpCloudBalanceRow(row)) continue;
         const grantedUsd = Math.max(
             0,
             toUsd(row.credit, row.currency, row.start),
@@ -1710,6 +1719,7 @@ export type ProviderBalanceRow = {
     vendor: string;
     cashBalanceUsd: number | null;
     creditBalanceUsd: number | null;
+    balanceAsOf: string | null;
     creditDepletionDate: string | null;
     creditDepletionReason: "burn" | "expiry" | null;
     finished: boolean;
@@ -1748,17 +1758,138 @@ function balanceFlow(
     }));
 }
 
-// One current provider-balance view backed by the two durable money ledgers:
-// free credit comes from OP Cloud grants/burn; cash prepaid is the cumulative
-// provider cash outflow less cash-funded provider usage. The latter is a ledger
-// estimate rather than a live wallet snapshot, so its month-by-month roll-forward
-// stays visible for review.
+type ProviderBalanceAnchor = {
+    cashUsd: number;
+    creditUsd: number;
+    observedOn: string;
+    creditExpiry: string | null;
+};
+
+function providerBalanceAnchors(
+    data: Data,
+    currentMonth: string,
+    today: string,
+): Map<string, ProviderBalanceAnchor> {
+    const rowsByVendorDate = new Map<
+        string,
+        Map<string, Map<string, OpCloudRow>>
+    >();
+    for (const row of data.opCloud ?? []) {
+        if (!isOpCloudBalanceRow(row)) continue;
+        const observedOn = row.start.slice(0, 10);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(observedOn) || observedOn > today) {
+            continue;
+        }
+        const dates = getOrInit(rowsByVendorDate, row.vendor, () => new Map());
+        const accounts = getOrInit(dates, observedOn, () => new Map());
+        const accountId = row.account_id?.trim() || "default";
+        const existing = accounts.get(accountId);
+        if (
+            !existing ||
+            `${row.start}|${row.recorded_at}` >
+                `${existing.start}|${existing.recorded_at}`
+        ) {
+            accounts.set(accountId, row);
+        }
+    }
+
+    const anchors = new Map<string, ProviderBalanceAnchor>();
+    for (const [vendor, dates] of rowsByVendorDate) {
+        const provider = resolveProvider(vendor);
+        const expectedAccounts = provider
+            ? activeProviderAccounts(provider, currentMonth).map(
+                  (account) => account.id,
+              )
+            : [];
+        for (const [observedOn, accounts] of [...dates.entries()].sort((a, b) =>
+            b[0].localeCompare(a[0]),
+        )) {
+            if (
+                expectedAccounts.length > 0 &&
+                expectedAccounts.some((accountId) => !accounts.has(accountId))
+            ) {
+                continue;
+            }
+            const selected =
+                expectedAccounts.length > 0
+                    ? expectedAccounts.map((accountId) =>
+                          accounts.get(accountId),
+                      )
+                    : [...accounts.values()];
+            const rows = selected.filter(
+                (row): row is OpCloudRow => row != null,
+            );
+            if (rows.length === 0) continue;
+            const expiries = rows
+                .filter((row) => Number(row.credit) > 0 && row.end)
+                .map((row) => row.end.slice(0, 10))
+                .filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date))
+                .sort();
+            anchors.set(vendor, {
+                cashUsd: rows.reduce(
+                    (sum, row) =>
+                        sum + toUsd(row.paid, row.currency, row.start),
+                    0,
+                ),
+                creditUsd: rows.reduce(
+                    (sum, row) =>
+                        sum + toUsd(row.credit, row.currency, row.start),
+                    0,
+                ),
+                observedOn,
+                creditExpiry: expiries.at(-1) ?? null,
+            });
+            break;
+        }
+    }
+    return anchors;
+}
+
+function anchoredCreditDepletion(
+    anchor: ProviderBalanceAnchor,
+    credit: RunwayRow | null,
+    now: Date,
+): Pick<ProviderBalanceRow, "creditDepletionDate" | "creditDepletionReason"> {
+    if (anchor.creditUsd <= POOL_EPS_USD) {
+        return { creditDepletionDate: null, creditDepletionReason: null };
+    }
+    const candidates: {
+        date: string;
+        reason: "burn" | "expiry";
+    }[] = [];
+    if (credit?.monthlyRateUsd && credit.monthlyRateUsd > 0) {
+        const days =
+            (anchor.creditUsd / credit.monthlyRateUsd) * AVG_DAYS_PER_MONTH;
+        candidates.push({
+            date: new Date(now.getTime() + days * 86_400_000)
+                .toISOString()
+                .slice(0, 10),
+            reason: "burn",
+        });
+    }
+    if (anchor.creditExpiry) {
+        candidates.push({ date: anchor.creditExpiry, reason: "expiry" });
+    }
+    candidates.sort((a, b) => a.date.localeCompare(b.date));
+    const first = candidates[0];
+    return {
+        creditDepletionDate: first?.date ?? null,
+        creditDepletionReason: first?.reason ?? null,
+    };
+}
+
+// OP Cloud balance snapshots anchor the latest totals. When no complete snapshot
+// exists, free credit comes from grants/burn and cash prepaid is provider cash
+// outflow less cash-funded usage. Multi-account vendors require one same-day
+// snapshot for every active registry account before the aggregate is replaced.
 export function providerBalanceRows(
     data: Data,
     now: Date,
 ): ProviderBalanceRow[] {
-    const currentMonth = now.toISOString().slice(0, 7);
+    const today = now.toISOString().slice(0, 10);
+    const currentMonth = today.slice(0, 7);
     const months = balanceMonths(now);
+    const anchors = providerBalanceAnchors(data, currentMonth, today);
     const creditRows = creditRunway(data, now);
     const creditByVendor = new Map(
         creditRows.map((row) => [row.vendor, row] as const),
@@ -1769,7 +1900,9 @@ export function providerBalanceRows(
 
     for (const row of data.opTransactions ?? []) {
         if (!PREPAID_VENDORS.has(row.vendor)) continue;
-        if (!isProviderCategory(transactionCategory(row))) continue;
+        if (!isComputeOrInfrastructureCategory(transactionCategory(row))) {
+            continue;
+        }
         const month = row.date.slice(0, 7);
         if (!MONTH_KEY_RE.test(month) || month > currentMonth) continue;
         const addedUsd = -opTransactionUsd(row);
@@ -1779,6 +1912,7 @@ export function providerBalanceRows(
     }
 
     for (const row of data.opCloud ?? []) {
+        if (isOpCloudBalanceRow(row)) continue;
         const month = opCloudMonth(row);
         if (!MONTH_KEY_RE.test(month) || month > currentMonth) continue;
         const cashUsedUsd = opCloudPaidBurnUsd(row);
@@ -1810,11 +1944,17 @@ export function providerBalanceRows(
         }
     }
 
-    const vendors = new Set([...creditByVendor.keys(), ...cashVendors]);
+    const vendors = new Set([
+        ...creditByVendor.keys(),
+        ...cashVendors,
+        ...anchors.keys(),
+    ]);
     const rows: ProviderBalanceRow[] = [];
     for (const vendor of vendors) {
         const credit = creditByVendor.get(vendor) ?? null;
-        const hasCash = cashVendors.has(vendor);
+        const anchor = anchors.get(vendor) ?? null;
+        const hasCash = cashVendors.has(vendor) || anchor != null;
+        const hasCredit = credit != null || anchor != null;
         const history = months.map(
             (month): ProviderBalanceMonth => ({
                 month,
@@ -1826,21 +1966,32 @@ export function providerBalanceRows(
                     ? (cashFlows.get(vendor)?.get(month)?.usedUsd ?? 0)
                     : null,
                 cashClosingUsd: hasCash ? 0 : null,
-                creditOpeningUsd: credit ? 0 : null,
-                creditAddedUsd: credit
+                creditOpeningUsd: hasCredit ? 0 : null,
+                creditAddedUsd: hasCredit
                     ? (creditFlows.get(vendor)?.get(month)?.addedUsd ?? 0)
                     : null,
-                creditUsedUsd: credit
+                creditUsedUsd: hasCredit
                     ? (creditFlows.get(vendor)?.get(month)?.usedUsd ?? 0)
                     : null,
-                creditLapsedUsd: credit
+                creditLapsedUsd: hasCredit
                     ? (creditFlows.get(vendor)?.get(month)?.lapsedUsd ?? 0)
                     : null,
-                creditClosingUsd: credit ? 0 : null,
+                creditClosingUsd: hasCredit ? 0 : null,
             }),
         );
 
-        if (hasCash) {
+        if (anchor) {
+            let closing = anchor.cashUsd;
+            for (let index = history.length - 1; index >= 0; index -= 1) {
+                const month = history[index];
+                month.cashClosingUsd = closing;
+                closing =
+                    closing -
+                    (month.cashAddedUsd ?? 0) +
+                    (month.cashUsedUsd ?? 0);
+                month.cashOpeningUsd = closing;
+            }
+        } else if (hasCash) {
             let closing = [...(cashFlows.get(vendor)?.entries() ?? [])]
                 .filter(([month]) => month < WINDOW_START)
                 .reduce(
@@ -1854,8 +2005,8 @@ export function providerBalanceRows(
             }
         }
 
-        if (credit) {
-            let closing = credit.remainingUsd;
+        if (hasCredit) {
+            let closing = anchor?.creditUsd ?? credit?.remainingUsd ?? 0;
             for (let index = history.length - 1; index >= 0; index -= 1) {
                 const month = history[index];
                 month.creditClosingUsd = closing;
@@ -1871,13 +2022,23 @@ export function providerBalanceRows(
         const cashBalanceUsd = hasCash
             ? (history.at(-1)?.cashClosingUsd ?? 0)
             : null;
-        const creditBalanceUsd = credit?.remainingUsd ?? null;
+        const creditBalanceUsd = hasCredit
+            ? (history.at(-1)?.creditClosingUsd ?? 0)
+            : null;
+        const anchoredDepletion = anchor
+            ? anchoredCreditDepletion(anchor, credit, now)
+            : null;
         rows.push({
             vendor,
             cashBalanceUsd,
             creditBalanceUsd,
-            creditDepletionDate: credit?.depletionDate ?? null,
-            creditDepletionReason: credit?.depletionReason ?? null,
+            balanceAsOf: anchor?.observedOn ?? null,
+            creditDepletionDate: anchor
+                ? (anchoredDepletion?.creditDepletionDate ?? null)
+                : (credit?.depletionDate ?? null),
+            creditDepletionReason: anchor
+                ? (anchoredDepletion?.creditDepletionReason ?? null)
+                : (credit?.depletionReason ?? null),
             finished:
                 (cashBalanceUsd == null || cashBalanceUsd <= POOL_EPS_USD) &&
                 (creditBalanceUsd == null || creditBalanceUsd <= POOL_EPS_USD),

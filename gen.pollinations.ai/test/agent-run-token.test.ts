@@ -128,7 +128,7 @@ test("surfaces the parent request id", async () => {
     expect(body).toMatchObject({ agentRun: { parentRequestId: "req-abc" } });
 });
 
-test("agent run tokens can call community models but cannot recurse into agent models", async () => {
+test("agent run tokens can call community models and agents", async () => {
     const parent = await createTestApiKey({ user: { tierBalance: 100 } });
     const token = await runTokenFor(parent.id);
 
@@ -144,14 +144,14 @@ test("agent run tokens can call community models but cannot recurse into agent m
         "https://gen.pollinations.ai/",
         token,
     );
-    expect(agentResponse.status).toBe(403);
+    expect(agentResponse.status).toBe(200);
 
     const delegatedAgentResponse = await probe(
         communityProbe("endpoint_agent"),
         "https://gen.pollinations.ai/",
         token,
     );
-    expect(delegatedAgentResponse.status).toBe(403);
+    expect(delegatedAgentResponse.status).toBe(200);
 });
 
 test("is rejected as a query parameter", async () => {

@@ -48,7 +48,6 @@ describe("ProviderCloseTab", () => {
     it("combines provider readiness with monthly transaction evidence", () => {
         const html = renderToStaticMarkup(
             createElement(ProviderCloseTab, {
-                controls: createElement("div", null, "Date selection"),
                 data,
                 month: "2026-01",
             }),
@@ -61,9 +60,6 @@ describe("ProviderCloseTab", () => {
         expect(html).toContain("Missing documents");
         expect(html.indexOf("Ledger integrity")).toBeLessThan(
             html.indexOf("Monthly close"),
-        );
-        expect(html.indexOf("Monthly close")).toBeLessThan(
-            html.indexOf("Date selection"),
         );
         expect(html).not.toContain("Wise matched");
         expect(html).not.toContain("payment unmatched");

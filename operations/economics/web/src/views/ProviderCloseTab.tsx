@@ -8,7 +8,7 @@ import {
     TableRow,
     Tooltip,
 } from "@pollinations/ui";
-import { type ReactNode, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
     DataTable,
     HeaderHint,
@@ -206,11 +206,9 @@ function EvidenceListDialog({
 }
 
 export function ProviderCloseTab({
-    controls,
     data,
     month = "",
 }: {
-    controls?: ReactNode;
     data: Data;
     month?: MonthFilterValue;
 }) {
@@ -345,7 +343,6 @@ export function ProviderCloseTab({
                 <h3 className="text-lg font-semibold text-theme-text-strong">
                     Monthly close
                 </h3>
-                {controls}
                 <StatCards items={statusStats} />
                 <TableScroller>
                     <DataTable className="min-w-[900px]">

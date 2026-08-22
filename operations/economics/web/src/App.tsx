@@ -15,7 +15,6 @@ import {
     NavItem,
     RocketIcon,
     ScrollArea,
-    Section,
     SproutIcon,
     TabButton,
     Text,
@@ -82,22 +81,6 @@ type InsightTab =
     | "balances"
     | "gpu";
 
-function isCompactInsightView(
-    section: EconomicsSection,
-    insightTab: InsightTab,
-) {
-    return (
-        section === "raw" ||
-        (section === "insights" &&
-            (insightTab === "close" ||
-                insightTab === "runway" ||
-                insightTab === "credits" ||
-                insightTab === "inference" ||
-                insightTab === "community" ||
-                insightTab === "gpu"))
-    );
-}
-
 const logoMask: CSSProperties = {
     WebkitMask: `url(${logoUrl}) center / contain no-repeat`,
     mask: `url(${logoUrl}) center / contain no-repeat`,
@@ -149,16 +132,16 @@ const UNIT_ECONOMICS_TABS: {
         icon: UsageIcon,
     },
     {
-        id: "community",
-        label: "Community",
-        note: "Community-model economics: cash-backed Paid Pollen, owner and BYOP shares, retained value, Quest rewards, and activity without a Pollinations provider cost.",
-        icon: SproutIcon,
-    },
-    {
         id: "gpu",
         label: "GPUs",
         note: "GPU capacity economics by provider-month: Paid vs Quest, cash vs credits, cash/economic margin, demand coverage, and break-even.",
         icon: RocketIcon,
+    },
+    {
+        id: "community",
+        label: "Community",
+        note: "Community-model economics: cash-backed Paid Pollen, owner and BYOP shares, retained value, Quest rewards, and activity without a Pollinations provider cost.",
+        icon: SproutIcon,
     },
 ] satisfies readonly DrawerItem<InsightTab>[];
 
@@ -180,7 +163,7 @@ const TABS: {
 }[] = [
     {
         id: "op-transactions",
-        label: "Transactions",
+        label: "Bank",
         codes: ["WISE"],
         pipe: "op_transactions_api",
         note: "Signed Wise-derived cash entries in native currency: money in is positive, money out is negative, and Drive evidence links to transaction documents.",
@@ -203,10 +186,10 @@ const TABS: {
     },
     {
         id: "op-cloud",
-        label: "Cloud",
+        label: "Compute & Infra",
         codes: ["API", "CLI", "BQ", "HC", "INV", "EXP", "ING", "AGT"],
         pipe: "op_cloud_api",
-        note: "Provider evidence facts for inference, GPU, infrastructure, grants, and credit burn. Paid and burn values are signed; positive credit is a grant award.",
+        note: "Compute and infrastructure usage facts, including inference, GPUs, grants, and credit burn. Paid and burn values are signed; positive credit is a grant award.",
         icon: DatabaseIcon,
         rows: (data) =>
             (data.opCloud ?? []).filter(
@@ -645,9 +628,9 @@ function viewInfoContent(
                     shown in the year-wide integrity history below.
                 </InfoLine>
                 <InfoLine>
-                    Invoices and bank entries remain in Transactions. e-MTA
-                    filing confirmation is not tracked yet, so Ready means the
-                    books are ready to file—not legally filed.
+                    Invoices and bank entries remain in Bank. e-MTA filing
+                    confirmation is not tracked yet, so Ready means the books
+                    are ready to file—not legally filed.
                 </InfoLine>
             </span>
         );
@@ -689,9 +672,9 @@ function viewInfoContent(
                     expand a category to see its vendor detail.
                 </InfoLine>
                 <InfoLine>
-                    Cloud consumption can inform the forecast, but running cash
-                    remains cash-based; missing assumptions stay visible as
-                    flags.
+                    Compute &amp; Infra usage can inform the forecast, but
+                    running cash remains cash-based; missing assumptions stay
+                    visible as flags.
                 </InfoLine>
             </span>
         );
@@ -938,14 +921,14 @@ export default function App() {
             : rawFacets.vendors.length > 0;
     const activeVendorOptions =
         section === "insights" ? insightVendorFacets : rawFacets.vendors;
-    const providerFilterLabel =
+    const usesProviderTerms =
         section === "insights" || tab === "op-cloud" || tab === "op-pollen";
     const showPeriodFilter =
         (section === "insights" &&
             insightTab !== "balances" &&
             insightTab !== "runway") ||
         section === "raw";
-    const showCategoryFilter = section === "raw";
+    const showCategoryFilter = section === "raw" && tab === "op-transactions";
     const showInferenceGrain =
         section === "insights" && insightTab === "inference";
     const hasFilters =
@@ -1020,7 +1003,6 @@ export default function App() {
     );
     const viewTitle = activeViewTitle(section, tab, insightTab);
     const viewInfo = viewInfoContent(section, tab, insightTab);
-    const isCompactInsight = isCompactInsightView(section, insightTab);
     const filters = hasFilters ? (
         <FilterBar>
             {showPeriodFilter && (
@@ -1034,20 +1016,16 @@ export default function App() {
             <div className="flex flex-wrap items-center gap-3">
                 {showVendorFilter && (
                     <FilterMultiSelect
-                        label={providerFilterLabel ? "provider" : "vendor"}
                         value={selectedVendors}
                         onChange={setSelectedVendors}
                         options={activeVendorOptions}
                         placeholder={
-                            providerFilterLabel
-                                ? "All providers"
-                                : "All vendors"
+                            usesProviderTerms ? "All providers" : "All vendors"
                         }
                     />
                 )}
                 {showCategoryFilter && (
                     <FilterMultiSelect
-                        label="category"
                         value={selectedCategories}
                         onChange={setSelectedCategories}
                         options={categoryOptions}
@@ -1075,8 +1053,6 @@ export default function App() {
             </div>
         </FilterBar>
     ) : null;
-    const filtersInHeader =
-        section === "insights" && insightTab === "close" ? null : filters;
     const content = (
         <>
             {error && (
@@ -1121,11 +1097,7 @@ export default function App() {
                     />
                 )}
                 {data && section === "insights" && insightTab === "close" && (
-                    <ProviderCloseTab
-                        controls={filters}
-                        data={data}
-                        month={monthFilter}
-                    />
+                    <ProviderCloseTab data={data} month={monthFilter} />
                 )}
                 {data && section === "insights" && insightTab === "runway" && (
                     <RunwayTab data={data} />
@@ -1186,51 +1158,27 @@ export default function App() {
                 }}
             >
                 <main className="flex w-full flex-col gap-6 px-4 py-14 pb-32 sm:px-6 sm:py-10 sm:pb-32 md:py-8 lg:px-8">
-                    {isCompactInsight ? (
-                        <section className="flex flex-col gap-5">
-                            <header className="shrink-0 px-1">
-                                <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
-                                    <div className="min-w-0 flex-1">
-                                        {filtersInHeader}
-                                    </div>
-                                    <div className="ml-auto flex min-w-0 shrink-0 items-center gap-2">
-                                        <Heading
-                                            as="h2"
-                                            size="section"
-                                            className="truncate text-left"
-                                        >
-                                            {viewTitle}
-                                        </Heading>
-                                        {viewInfo && (
-                                            <InfoTip
-                                                content={viewInfo}
-                                                label={`${viewTitle} info`}
-                                            />
-                                        )}
-                                    </div>
-                                </div>
-                            </header>
-                            <div className="flex flex-col gap-5">{content}</div>
-                        </section>
-                    ) : (
-                        <Section
-                            title={viewTitle}
-                            action={
-                                viewInfo ? (
+                    <section className="flex flex-col gap-5">
+                        <header className="flex shrink-0 justify-end px-1">
+                            <div className="flex min-w-0 items-center gap-2">
+                                <Heading
+                                    as="h2"
+                                    size="section"
+                                    className="truncate text-right"
+                                >
+                                    {viewTitle}
+                                </Heading>
+                                {viewInfo && (
                                     <InfoTip
                                         content={viewInfo}
                                         label={`${viewTitle} info`}
                                     />
-                                ) : null
-                            }
-                            actionClassName="mr-auto"
-                            framed
-                            panelClassName="gap-5"
-                        >
-                            {filters}
-                            {content}
-                        </Section>
-                    )}
+                                )}
+                            </div>
+                        </header>
+                        {filters}
+                        <div className="flex flex-col gap-5">{content}</div>
+                    </section>
                 </main>
             </EconomicsShell>
         </ErrorBoundary>

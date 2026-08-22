@@ -39,7 +39,6 @@ export function MonthFilter({
             className="flex min-w-0 flex-wrap items-center gap-1.5 text-sm text-theme-text-soft"
             aria-label="date filter"
         >
-            <span className="mr-1 font-medium">date</span>
             {yearsOf(months).map((year) => {
                 const completedMonths = completedMonthsInYear(
                     months,
@@ -85,13 +84,11 @@ export function MonthFilter({
 }
 
 export function FilterMultiSelect({
-    label,
     onChange,
     options,
     placeholder,
     value,
 }: {
-    label: string;
     onChange: (value: string[]) => void;
     options: FacetOption[];
     placeholder: string;
@@ -99,7 +96,6 @@ export function FilterMultiSelect({
 }) {
     return (
         <MultiSelect
-            label={label}
             placeholder={placeholder}
             selected={value}
             onChange={onChange}

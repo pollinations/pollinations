@@ -161,13 +161,13 @@ export function MonthlyLedgerAuditPanel({
                             className={GROUP_BORDER}
                             align="right"
                         >
-                            Transactions
+                            Bank
                         </TableHeaderCell>
                         <TableHeaderCell
                             {...headerProps("cloudRows")}
                             align="right"
                         >
-                            Cloud
+                            Compute &amp; Infra
                         </TableHeaderCell>
                         <TableHeaderCell
                             {...headerProps("pollenRows")}

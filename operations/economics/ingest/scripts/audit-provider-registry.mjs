@@ -76,6 +76,53 @@ for (const provider of registry.providers) {
                 `Monthly provider ${provider.id} has no connector procedure`,
             );
         }
+        if (
+            provider.meteringBasis !== "internal" &&
+            !(registry.auditTargets ?? []).some(
+                (target) => target.provider === provider.id,
+            )
+        ) {
+            errors.push(
+                `Monthly provider ${provider.id} has no dashboard audit URL`,
+            );
+        }
+    }
+}
+
+for (const target of registry.auditTargets ?? []) {
+    const providerId = target.provider;
+    if (providerByName.get(providerId)?.id !== providerId) {
+        errors.push(`Dashboard audit URL ${providerId} is not canonical`);
+    }
+    try {
+        if (new URL(target.url).protocol !== "https:") {
+            errors.push(`Dashboard audit URL ${providerId} is not HTTPS`);
+        }
+    } catch {
+        errors.push(`Dashboard audit URL ${providerId} is invalid`);
+    }
+    if (target.loginEmail == null && !target.pending) {
+        errors.push(`Dashboard audit target ${providerId} has no login email`);
+    }
+    if (
+        target.loginEmail != null &&
+        !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(target.loginEmail)
+    ) {
+        errors.push(
+            `Dashboard audit target ${providerId} has an invalid login email`,
+        );
+    }
+    if (target.accountId != null) {
+        const accountIds = new Set(
+            (providerByName.get(providerId)?.accounts ?? []).map(
+                (account) => account.id,
+            ),
+        );
+        if (!accountIds.has(target.accountId)) {
+            errors.push(
+                `Dashboard audit target ${providerId} has unknown account ${target.accountId}`,
+            );
+        }
     }
 }
 
@@ -162,6 +209,10 @@ const result = {
         (sum, provider) => sum + (provider.accounts ?? []).length,
         0,
     ),
+    dashboard_audit_targets: (registry.auditTargets ?? []).length,
+    dashboard_audit_urls: new Set(
+        (registry.auditTargets ?? []).map((target) => target.url),
+    ).size,
     reviewed_provider_gaps: providerCheckKeys.size,
     explained_meter_drifts: meterDriftKeys.size,
     metering_bases: Object.fromEntries(

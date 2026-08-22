@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import tempfile
 import time
 from pathlib import Path
 
@@ -32,6 +33,7 @@ FIELDS = [
     "resource_id",
     "resource_name",
 ]
+OPTIONAL_FIELDS = {"account_id", "account_name"}
 
 
 def arguments():
@@ -67,12 +69,36 @@ def client_for(workspace_name, *, append=False):
     return TinyB(token=token, host=HOST)
 
 
-def effective_rows(client):
+def datasource_fields(client):
     query = """
+        SELECT name
+        FROM system.columns
+        WHERE table = 'op_cloud'
+        FORMAT JSON
+    """
+    fields = {row["name"] for row in client.query(query)["data"]}
+    missing = set(FIELDS) - OPTIONAL_FIELDS - fields
+    if missing:
+        raise RuntimeError(f"op_cloud is missing required fields: {sorted(missing)}")
+    return fields
+
+
+def account_selects(fields):
+    outer = ""
+    inner = ""
+    for field in ("account_id", "account_name"):
+        if field not in fields:
+            continue
+        outer += f",\n            ifNull({field}, '') AS {field}"
+        inner += f",\n                argMax({field}, recorded_at) AS {field}"
+    return outer, inner
+
+
+def effective_rows(client, fields):
+    account_outer, account_inner = account_selects(fields)
+    query = f"""
         SELECT
-            entry_id, source, start, end, vendor,
-            ifNull(account_id, '') AS account_id,
-            ifNull(account_name, '') AS account_name,
+            entry_id, source, start, end, vendor{account_outer},
             type, model, credit, paid, currency, evidence,
             formatDateTime(latest_recorded_at, '%F %T') AS recorded_at,
             resource_sku, resource_count, resource_id, resource_name
@@ -83,9 +109,7 @@ def effective_rows(client):
                 argMax(source, recorded_at) AS source,
                 argMax(start, recorded_at) AS start,
                 argMax(end, recorded_at) AS end,
-                argMax(vendor, recorded_at) AS vendor,
-                argMax(account_id, recorded_at) AS account_id,
-                argMax(account_name, recorded_at) AS account_name,
+                argMax(vendor, recorded_at) AS vendor{account_inner},
                 argMax(type, recorded_at) AS type,
                 argMax(model, recorded_at) AS model,
                 argMax(credit, recorded_at) AS credit,
@@ -110,17 +134,20 @@ def effective_rows(client):
     return client.query(query)["data"]
 
 
-def latest_rows(client, entry_ids):
+def latest_rows(client, entry_ids, fields):
     quoted = ",".join("'" + value.replace("'", "''") + "'" for value in entry_ids)
+    account_fields = "".join(
+        f",\n            ifNull(argMax({field}, recorded_at), '') AS {field}"
+        for field in ("account_id", "account_name")
+        if field in fields
+    )
     query = f"""
         SELECT
             entry_id,
             argMax(source, recorded_at) AS source,
             argMax(start, recorded_at) AS start,
             argMax(end, recorded_at) AS end,
-            argMax(vendor, recorded_at) AS vendor,
-            ifNull(argMax(account_id, recorded_at), '') AS account_id,
-            ifNull(argMax(account_name, recorded_at), '') AS account_name,
+            argMax(vendor, recorded_at) AS vendor{account_fields},
             argMax(type, recorded_at) AS type,
             argMax(model, recorded_at) AS model,
             argMax(credit, recorded_at) AS credit,
@@ -147,7 +174,7 @@ def equal_value(expected, actual):
     )
 
 
-def verify(expected_rows, actual_rows):
+def verify(expected_rows, actual_rows, fields):
     actual_by_id = {row["entry_id"]: row for row in actual_rows}
     errors = []
     for expected in expected_rows:
@@ -156,6 +183,8 @@ def verify(expected_rows, actual_rows):
             errors.append(f"missing {expected['entry_id']}")
             continue
         for field in FIELDS:
+            if field not in fields:
+                continue
             if not equal_value(expected.get(field, ""), actual.get(field, "")):
                 errors.append(f"{expected['entry_id']} differs in {field}")
     if errors:
@@ -167,36 +196,53 @@ def write_snapshot(path, rows):
     path.write_text(json.dumps({"data": rows}, indent=2) + "\n")
 
 
+def append_input_path(rows, fields, temporary_directory):
+    path = Path(temporary_directory) / "op-cloud.ndjson"
+    path.write_text(
+        "".join(
+            json.dumps({key: value for key, value in row.items() if key in fields})
+            + "\n"
+            for row in rows
+        )
+    )
+    return path
+
+
 def main():
     args = arguments()
     input_path = args.input.resolve()
     expected = read_ndjson(input_path)
     workspace_name = WORKSPACES[args.environment]
     admin = client_for(workspace_name)
+    fields = datasource_fields(admin)
 
-    before = effective_rows(admin)
+    before = effective_rows(admin, fields)
     write_snapshot(args.before_snapshot.resolve(), before)
 
     result = {}
     if not args.verify_only:
         append = client_for(workspace_name, append=True)
-        result = append.datasource_append_data(
-            "op_cloud", input_path, mode="append", format="ndjson"
-        )
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            append_path = append_input_path(expected, fields, temporary_directory)
+            result = append.datasource_append_data(
+                "op_cloud", append_path, mode="append", format="ndjson"
+            )
         if result.get("error"):
             raise RuntimeError(f"Tinybird append failed: {result['error']}")
 
     actual = []
     for attempt in range(6):
-        actual = latest_rows(admin, [row["entry_id"] for row in expected])
+        actual = latest_rows(
+            admin, [row["entry_id"] for row in expected], fields
+        )
         try:
-            verify(expected, actual)
+            verify(expected, actual, fields)
             break
         except RuntimeError:
             if attempt == 5:
                 raise
             time.sleep(1)
-    after = effective_rows(admin)
+    after = effective_rows(admin, fields)
     write_snapshot(args.after_snapshot.resolve(), after)
     print(
         json.dumps(

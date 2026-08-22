@@ -1,0 +1,33 @@
+{
+  "pr_number": 13696,
+  "title": "feat: add Pollen spent KPI view",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13696",
+  "merged_at": "2026-08-22T12:11:14Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds Pollen spent as a switchable Revenue KPI view\n- Reuses the existing weekly usage revenue field\n- Keeps Stripe revenue and ARPA in the same cycling row\n- Adds focused view and value coverage",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The KPI garden gets pollen",
+    "blurb": "The internal dashboard can now look at Pollen spent alongside Stripe revenue and ARPA. Same weekly usage nectar, one more useful lens.",
+    "summary": "Added a switchable Pollen spent view to the internal Revenue KPI cycle, using the existing weekly usage revenue field while retaining Stripe revenue and ARPA views.",
+    "impact": "Operators can now inspect Pollen spending directly in the KPI dashboard without changing the underlying weekly usage revenue data.",
+    "keywords": [
+      "kpi",
+      "pollen",
+      "revenue",
+      "analytics",
+      "dashboard"
+    ],
+    "visual_concept": "A cozy internal analytics garden where Polli, wearing tiny analyst glasses, rotates a three-panel CRT KPI display between Stripe revenue, ARPA, and a prominently glowing Pollen spent panel; small code-plants and flowers grow around the dashboard to represent weekly usage data.",
+    "image_prompt": "Cozy pixel art scene of Polli the cute yellow-and-brown striped bee mascot wearing tiny analyst glasses, turning a chunky retro CRT KPI dashboard with three friendly panels labeled 'STRIPE', 'ARPA', and 'POLLEN SPENT'; the Pollen spent panel glows lime green (#ecf874) while weekly data sprouts as tiny code-plants and pastel flowers around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-22/PR-13696.jpg",
+    "prompt": "Cozy pixel art scene of Polli the cute yellow-and-brown striped bee mascot wearing tiny analyst glasses, turning a chunky retro CRT KPI dashboard with three friendly panels labeled 'STRIPE', 'ARPA', and 'POLLEN SPENT'; the Pollen spent panel glows lime green (#ecf874) while weekly data sprouts as tiny code-plants and pastel flowers around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-22T12:12:05.375207+00:00"
+}

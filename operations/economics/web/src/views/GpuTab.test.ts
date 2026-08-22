@@ -10,6 +10,7 @@ const baseData: Data = {
 
 function cloud(overrides: Partial<OpCloudRow>): OpCloudRow {
     return {
+        entry_id: "cloud-test",
         source: "api",
         vendor: "runpod",
         type: "gpu",

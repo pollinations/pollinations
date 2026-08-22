@@ -1,5 +1,6 @@
 import { MultiSelect, TabButton } from "@pollinations/ui";
 import type { ReactNode } from "react";
+import type { FacetOption } from "../lib/filterFacets";
 import { monthLabel, yearsOf } from "../lib/months";
 
 // Date uses visible month tabs; other filters use dropdown multi-selects.
@@ -28,7 +29,8 @@ export function MonthFilter({
         const next = value.includes(month)
             ? value.filter((item) => item !== month)
             : [...value, month];
-        onChange(months.filter((item) => next.includes(item)));
+        const selected = months.filter((item) => next.includes(item));
+        onChange(selected.length ? selected : months);
     };
 
     return (
@@ -43,8 +45,16 @@ export function MonthFilter({
                     className="inline-flex flex-wrap items-center gap-1.5"
                 >
                     <TabButton
-                        active={value.length === 0}
-                        onClick={() => onChange([])}
+                        active={months
+                            .filter((month) => month.startsWith(year))
+                            .every((month) => value.includes(month))}
+                        onClick={() =>
+                            onChange(
+                                months.filter((month) =>
+                                    month.startsWith(year),
+                                ),
+                            )
+                        }
                         size="md"
                         variant="soft"
                     >
@@ -78,7 +88,7 @@ export function FilterMultiSelect({
 }: {
     label: string;
     onChange: (value: string[]) => void;
-    options: string[];
+    options: FacetOption[];
     placeholder: string;
     value: string[];
 }) {
@@ -89,8 +99,10 @@ export function FilterMultiSelect({
             selected={value}
             onChange={onChange}
             options={options.map((option) => ({
-                value: option,
-                label: option || "(blank)",
+                value: option.value,
+                label: `${option.label || "(blank)"}${
+                    option.count == null ? "" : ` · ${option.count}`
+                }`,
             }))}
         />
     );

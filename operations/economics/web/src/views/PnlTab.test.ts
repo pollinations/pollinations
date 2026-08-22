@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { pnlStatement } from "../lib/insights";
 import type { Data, OpTransactionRow } from "../types";
-import { pnlCellText, pnlTone, statSourceFromLines } from "./PnlTab";
+import {
+    expenseDeltaTone,
+    monthlyExpenseLines,
+    pctChange,
+    pnlCellClass,
+    pnlCellText,
+    pnlTone,
+    statSourceFromLines,
+} from "./PnlTab";
 
 const now = new Date("2026-07-06T12:00:00Z");
 
@@ -139,6 +147,47 @@ describe("PnlTab cell rendering", () => {
         // Revenue rose 1000 → 2000, Δ = +1000.
         expect(revenueLine.values.delta).toBe(1000);
         expect(pnlCellText(revenueLine, delta)).toBe("$1,000");
+    });
+
+    it("renders margin change as percentage points", () => {
+        const month = pnlStatement(data, "2026-06", now);
+        const margin = month.lines.find((line) => line.key === "net-margin");
+        const delta = month.periods.find((period) => period.key === "delta");
+        if (!margin || !delta) throw new Error("missing");
+        expect(pnlCellText(margin, delta)).toBe("+20pp");
+    });
+});
+
+describe("monthly P&L", () => {
+    it("shows only categories with spend in the selected month", () => {
+        const month = pnlStatement(data, "2026-06", now);
+        expect(
+            monthlyExpenseLines(month.lines, month.primary).map(
+                (line) => line.key,
+            ),
+        ).toEqual(["cloud"]);
+    });
+
+    it("treats higher expenses as negative and lower expenses as positive", () => {
+        expect(expenseDeltaTone(10)).toBe("text-intent-danger-text");
+        expect(expenseDeltaTone(-10)).toBe("text-intent-success-text");
+        expect(expenseDeltaTone(null)).toBe("");
+    });
+
+    it("calculates ordinary month-over-month percentage change", () => {
+        expect(pctChange(120, 100)).toBe(20);
+        expect(pctChange(80, 100)).toBe(-20);
+        expect(pctChange(100, 0)).toBeNull();
+    });
+
+    it("colors expense and revenue deltas with opposite semantics", () => {
+        const month = pnlStatement(data, "2026-06", now);
+        const cloud = month.lines.find((line) => line.key === "cloud");
+        const revenue = month.lines.find((line) => line.key === "revenue");
+        const delta = month.periods.find((period) => period.key === "delta");
+        if (!cloud || !revenue || !delta) throw new Error("missing");
+        expect(pnlCellClass(cloud, delta)).toBe("text-intent-danger-text");
+        expect(pnlCellClass(revenue, delta)).toBe("text-intent-success-text");
     });
 });
 

@@ -1,5 +1,4 @@
 import {
-    Button,
     Chip,
     TableBody,
     TableCell,
@@ -7,8 +6,7 @@ import {
     TableHeaderCell,
     TableRow,
 } from "@pollinations/ui";
-import { useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
+import { Fragment, useMemo, useState } from "react";
 import {
     DataTable,
     GROUP_BORDER,
@@ -18,128 +16,18 @@ import {
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
-import { type DriveDocumentLink, driveDocumentLink } from "../lib/documents";
-import { fmtNumber } from "../lib/format";
+import { EvidenceAction, EvidencePreview } from "../components/Evidence";
+import { SourceCell } from "../components/Provenance";
+import type { DriveDocumentLink } from "../lib/documents";
+import { fmtNumber, fmtUtcDateTime } from "../lib/format";
 import {
     type MonthFilterValue,
     matchesMonth,
     matchesValue,
     type ValueFilter,
+    WINDOW_START,
 } from "../lib/months";
 import type { Data, OpTransactionRow } from "../types";
-
-function DocumentPreview({
-    documentLink,
-    onClose,
-}: {
-    documentLink: DriveDocumentLink;
-    onClose: () => void;
-}) {
-    useEffect(() => {
-        function handleKeyDown(event: KeyboardEvent) {
-            if (event.key === "Escape") onClose();
-        }
-
-        window.addEventListener("keydown", handleKeyDown);
-        return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [onClose]);
-
-    if (!documentLink.previewHref) return null;
-
-    return createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6">
-            <button
-                type="button"
-                className="absolute inset-0 bg-black/60"
-                aria-label="Close document preview"
-                onClick={onClose}
-            />
-            <div
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="document-preview-title"
-                className="relative flex h-[min(90vh,64rem)] w-[min(94vw,72rem)] flex-col overflow-hidden rounded-2xl bg-surface-opaque shadow-2xl"
-            >
-                <div className="flex shrink-0 items-center justify-between gap-3 border-b border-theme-text-strong/10 px-4 py-3">
-                    <h2
-                        id="document-preview-title"
-                        className="font-semibold text-theme-text-strong"
-                    >
-                        Document preview
-                    </h2>
-                    <div className="flex items-center gap-2">
-                        <Button
-                            as="a"
-                            href={documentLink.href}
-                            target="_blank"
-                            rel="noreferrer noopener"
-                            intent="info"
-                            size="sm"
-                        >
-                            Open in Drive
-                        </Button>
-                        <Button
-                            type="button"
-                            size="sm"
-                            onClick={onClose}
-                            autoFocus
-                        >
-                            Close
-                        </Button>
-                    </div>
-                </div>
-                <iframe
-                    src={documentLink.previewHref}
-                    title="Google Drive document preview"
-                    className="min-h-0 w-full flex-1 bg-white"
-                    referrerPolicy="strict-origin-when-cross-origin"
-                />
-            </div>
-        </div>,
-        document.body,
-    );
-}
-
-function TransactionDocument({
-    evidence,
-    onPreview,
-}: {
-    evidence: string;
-    onPreview: (document: DriveDocumentLink) => void;
-}) {
-    const document = driveDocumentLink(evidence);
-
-    if (!document) {
-        return (
-            <Chip intent="warning" size="sm">
-                Missing
-            </Chip>
-        );
-    }
-
-    if (document.previewHref) {
-        return (
-            <button
-                type="button"
-                onClick={() => onPreview(document)}
-                className="font-medium text-theme-text underline underline-offset-4 hover:text-theme-text-soft"
-            >
-                Preview
-            </button>
-        );
-    }
-
-    return (
-        <a
-            href={document.href}
-            target="_blank"
-            rel="noreferrer noopener"
-            className="font-medium text-theme-text underline underline-offset-4 hover:text-theme-text-soft"
-        >
-            {document.label}
-        </a>
-    );
-}
 
 export function OpTransactionsTab({
     category = [],
@@ -154,9 +42,11 @@ export function OpTransactionsTab({
 }) {
     const [previewDocument, setPreviewDocument] =
         useState<DriveDocumentLink | null>(null);
+    const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
     const baseRows = useMemo(() => {
         return (data.opTransactions ?? []).filter(
             (row) =>
+                row.date.slice(0, 7) >= WINDOW_START &&
                 matchesMonth(row.date, month) &&
                 matchesValue(row.vendor, vendor) &&
                 matchesValue(row.category, category),
@@ -170,10 +60,7 @@ export function OpTransactionsTab({
             { key: "amount", value: (row) => row.amount },
             { key: "currency", value: (row) => row.currency },
             { key: "description", value: (row) => row.description },
-            {
-                key: "evidence",
-                value: (row) => driveDocumentLink(row.evidence)?.label ?? "",
-            },
+            { key: "evidence", value: (row) => row.evidence },
         ],
         [],
     );
@@ -181,6 +68,15 @@ export function OpTransactionsTab({
         key: "date",
         direction: "desc",
     });
+
+    const toggle = (key: string) => {
+        setExpanded((current) => {
+            const next = new Set(current);
+            if (next.has(key)) next.delete(key);
+            else next.add(key);
+            return next;
+        });
+    };
 
     return (
         <TableScroller>
@@ -204,6 +100,7 @@ export function OpTransactionsTab({
                         >
                             Evidence
                         </TableHeaderCell>
+                        <TableHeaderCell rowSpan={2}>Details</TableHeaderCell>
                     </TableRow>
                     <TableRow>
                         <TableHeaderCell {...headerProps("date")}>
@@ -247,44 +144,101 @@ export function OpTransactionsTab({
                 </TableHead>
                 <TableBody>
                     {withUniqueRowKeys(rows, (row) => row.entry_id).map(
-                        ({ key, row }) => (
-                            <TableRow key={key}>
-                                <TableCell>{row.date}</TableCell>
-                                <TableCell>
-                                    {row.vendor || (
-                                        <Chip intent="warning" size="sm">
-                                            unmatched
-                                        </Chip>
-                                    )}
-                                </TableCell>
-                                <TableCell>{row.category}</TableCell>
-                                <TableCell
-                                    align="right"
-                                    className={GROUP_BORDER}
-                                >
-                                    {fmtNumber(row.amount)}
-                                </TableCell>
-                                <TableCell>{row.currency}</TableCell>
-                                <TableCell className={GROUP_BORDER}>
-                                    {row.description}
-                                </TableCell>
-                                <TableCell>
-                                    <TransactionDocument
-                                        evidence={row.evidence}
-                                        onPreview={setPreviewDocument}
-                                    />
-                                </TableCell>
-                            </TableRow>
-                        ),
+                        ({ key, row }) => {
+                            const isExpanded = expanded.has(key);
+                            return (
+                                <Fragment key={key}>
+                                    <TableRow>
+                                        <TableCell>{row.date}</TableCell>
+                                        <TableCell>
+                                            {row.vendor || (
+                                                <Chip
+                                                    intent="warning"
+                                                    size="sm"
+                                                >
+                                                    unmatched
+                                                </Chip>
+                                            )}
+                                        </TableCell>
+                                        <TableCell>{row.category}</TableCell>
+                                        <TableCell
+                                            align="right"
+                                            className={GROUP_BORDER}
+                                        >
+                                            {fmtNumber(row.amount)}
+                                        </TableCell>
+                                        <TableCell>{row.currency}</TableCell>
+                                        <TableCell className={GROUP_BORDER}>
+                                            {row.description}
+                                        </TableCell>
+                                        <TableCell>
+                                            <EvidenceAction
+                                                evidence={row.evidence}
+                                                onPreview={setPreviewDocument}
+                                            />
+                                        </TableCell>
+                                        <TableCell>
+                                            <button
+                                                type="button"
+                                                onClick={() => toggle(key)}
+                                                className="font-medium text-theme-text underline underline-offset-4 hover:text-theme-text-soft"
+                                                aria-expanded={isExpanded}
+                                            >
+                                                {isExpanded ? "Hide" : "Show"}
+                                            </button>
+                                        </TableCell>
+                                    </TableRow>
+                                    {isExpanded ? (
+                                        <TableRow>
+                                            <TableCell
+                                                colSpan={8}
+                                                className="bg-theme-bg-active/40"
+                                            >
+                                                <dl className="grid gap-4 p-2 sm:grid-cols-3">
+                                                    <div>
+                                                        <dt className="text-xs font-medium uppercase tracking-wide text-theme-text-soft">
+                                                            Source
+                                                        </dt>
+                                                        <dd className="mt-1">
+                                                            <SourceCell
+                                                                sources={[
+                                                                    row.source,
+                                                                ]}
+                                                            />
+                                                        </dd>
+                                                    </div>
+                                                    <div>
+                                                        <dt className="text-xs font-medium uppercase tracking-wide text-theme-text-soft">
+                                                            Recorded
+                                                        </dt>
+                                                        <dd className="font-mono text-sm text-theme-text-strong">
+                                                            {fmtUtcDateTime(
+                                                                row.recorded_at,
+                                                            )}
+                                                        </dd>
+                                                    </div>
+                                                    <div>
+                                                        <dt className="text-xs font-medium uppercase tracking-wide text-theme-text-soft">
+                                                            Entry ID
+                                                        </dt>
+                                                        <dd className="break-all font-mono text-sm text-theme-text-strong">
+                                                            {row.entry_id}
+                                                        </dd>
+                                                    </div>
+                                                </dl>
+                                            </TableCell>
+                                        </TableRow>
+                                    ) : null}
+                                </Fragment>
+                            );
+                        },
                     )}
                 </TableBody>
             </DataTable>
-            {previewDocument?.previewHref && (
-                <DocumentPreview
-                    documentLink={previewDocument}
-                    onClose={() => setPreviewDocument(null)}
-                />
-            )}
+            <EvidencePreview
+                documentLink={previewDocument}
+                onClose={() => setPreviewDocument(null)}
+            />
         </TableScroller>
     );
 }

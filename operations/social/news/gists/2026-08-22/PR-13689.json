@@ -1,0 +1,33 @@
+{
+  "pr_number": 13689,
+  "title": "fix: refresh KPI data every 30 minutes",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13689",
+  "merged_at": "2026-08-22T11:07:18Z",
+  "labels": [],
+  "pr_body_excerpt": "- Reduces the Tinybird edge-cache TTL from 6 hours to 30 minutes\n- Keeps the existing lazy refresh behavior\n- Leaves frontend loading behavior unchanged",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Fresher numbers in the hive",
+    "blurb": "The KPI garden gets watered every 30 minutes now, instead of waiting half a day. Same lazy refresh, less vintage telemetry.",
+    "summary": "Reduced the Tinybird KPI worker edge-cache TTL from 6 hours to 30 minutes while retaining lazy refresh and the existing frontend loading behavior.",
+    "impact": "Dashboard KPI data can now reflect changes within roughly 30 minutes without adding new loading states or changing how the frontend fetches it.",
+    "keywords": [
+      "kpi",
+      "tinybird",
+      "cache",
+      "analytics",
+      "edge-worker"
+    ],
+    "visual_concept": "Depict Polli as a tiny gardener with a watering can tending a dashboard-shaped garden: a retro CRT shows gently rising KPI charts, while a small pixel clock reads 30 MIN. Freshly watered code-plants and flowers represent more current cached analytics; Polli's gardening accessory makes the refresh cadence clear.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing a tiny gardener hat and watering code-plants growing around a retro CRT dashboard with fresh KPI charts and a small pixel clock reading \"30 MIN\". Prominent lime green (#ecf874) glow, warm cream and lavender pastel garden, soft lighting, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-22/PR-13689.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing a tiny gardener hat and watering code-plants growing around a retro CRT dashboard with fresh KPI charts and a small pixel clock reading \"30 MIN\". Prominent lime green (#ecf874) glow, warm cream and lavender pastel garden, soft lighting, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-08-22T11:08:23.782560+00:00"
+}

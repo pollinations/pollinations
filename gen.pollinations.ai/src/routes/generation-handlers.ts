@@ -28,6 +28,7 @@ import {
     handleTextContentLocal,
 } from "@/text/handler.ts";
 import { withModelFallbackResponse } from "../fallback.ts";
+import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 
 export const textBodyLimit = bodyLimit({
     maxSize: 20 * 1024 * 1024,
@@ -159,6 +160,7 @@ export async function generateEmbeddingsResponse(
                 candidate.id,
             ),
         c.var.track?.failedCalls,
+        (candidate) => enforceModelRateLimit(c, candidate),
     );
     if (servedEntry) c.set("servedModelEntry", servedEntry);
     return response;

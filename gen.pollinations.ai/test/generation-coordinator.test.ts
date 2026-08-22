@@ -77,6 +77,36 @@ describe("GenerationCoordinator", () => {
         );
     });
 
+    it("does not execute a generation again after an alarm interruption", async () => {
+        vi.spyOn(Date, "now").mockReturnValue(Date.now() + 60_000);
+        const stub = env.GENERATION_COORDINATOR.getByName(
+            `test-${crypto.randomUUID()}`,
+        );
+        const key = `interrupted-${crypto.randomUUID()}`;
+
+        const result = await runInDurableObject(
+            stub,
+            async (coordinator, state) => {
+                const pending = coordinator.startAndWait(testJob(key));
+                await waitForAlarm(state);
+                const job =
+                    await state.storage.get<Record<string, unknown>>("job");
+                await state.storage.put("job", { ...job, started: true });
+
+                await coordinator.alarm();
+                await state.storage.deleteAlarm();
+                return pending;
+            },
+        );
+
+        expect(result.status).toBe("failed");
+        if (result.status !== "failed") return;
+        expect(new TextDecoder().decode(result.error.body)).toBe(
+            "Detached generation was interrupted",
+        );
+        expect(await env.TEXT_BUCKET.head(key)).toBeNull();
+    });
+
     it("persists request bodies larger than one storage value", async () => {
         vi.spyOn(Date, "now").mockReturnValue(Date.now() + 60_000);
         const stub = env.GENERATION_COORDINATOR.getByName(

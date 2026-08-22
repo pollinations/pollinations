@@ -129,8 +129,8 @@ describe("resolveModelConfig", () => {
 
         expect(result.options.model).toBe("qwen/qwen3.7-flash");
         expect(result.options.modelConfig).toMatchObject({
-            provider: "openai",
-            "custom-host": "https://openrouter.ai/api/v1",
+            provider: "openrouter",
+            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
         });
         expect(result.options.provider).toEqual({
             only: ["Alibaba"],
@@ -143,8 +143,8 @@ describe("resolveModelConfig", () => {
 
         expect(result.options.model).toBe("qwen/qwen3.8-max");
         expect(result.options.modelConfig).toMatchObject({
-            provider: "openai",
-            "custom-host": "https://openrouter.ai/api/v1",
+            provider: "openrouter",
+            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
         });
         expect(result.options.provider).toEqual({
             only: ["Alibaba"],
@@ -174,8 +174,8 @@ describe("resolveModelConfig", () => {
 
         expect(result.options.model).toBe("qwen/qwen3.8-27b");
         expect(result.options.modelConfig).toMatchObject({
-            provider: "openai",
-            "custom-host": "https://openrouter.ai/api/v1",
+            provider: "openrouter",
+            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
         });
         expect(result.options.provider).toEqual({
             only: ["Chutes"],
@@ -225,8 +225,8 @@ describe("resolveModelConfig", () => {
 
         expect(result.options.model).toBe("x-ai/grok-4.6");
         expect(result.options.modelConfig).toMatchObject({
-            provider: "openai",
-            "custom-host": "https://openrouter.ai/api/v1",
+            provider: "openrouter",
+            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
         });
         expect(result.options.provider).toEqual({
             only: ["xai/zdr"],
@@ -239,8 +239,8 @@ describe("resolveModelConfig", () => {
 
         expect(result.options.model).toBe("z-ai/glm-5.3");
         expect(result.options.modelConfig).toMatchObject({
-            provider: "openai",
-            "custom-host": "https://openrouter.ai/api/v1",
+            provider: "openrouter",
+            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
         });
         expect(result.options.provider).toEqual({
             only: ["z-ai/fp8"],

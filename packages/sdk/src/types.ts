@@ -820,6 +820,11 @@ export interface ModelInfo {
     input_modalities?: string[];
     output_modalities?: string[];
     video_capabilities?: VideoCapability[];
+    min_duration?: number;
+    max_duration?: number;
+    default_duration?: number;
+    allowed_durations?: number[];
+    duration_step?: number;
     max_reference_images?: number;
     max_reference_videos?: number;
     capabilities?: ModelCapability[];

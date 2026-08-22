@@ -21,6 +21,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🖼️ Pollen Image Studio](https://image.lanprint.com) | Pollen Image Studio is an online AI image generator powered by the Pollinations image API. --- --- What it is An online AI image generator using the Pollinations image API How to use Type a prompt or | [@dokirong](https://github.com/dokirong) |
 | [🖼️ REKTY GENERATOR](https://visualaiartwork.pages.dev) | REKTY GENERATOR is a free, open-source AI image generator web app that supports multiple providers in one interface. It uses **Pollinations AI** for: - **Image generation** via Pollinations API (57+ m | [@rekty](https://github.com/rekty) |
 | [🖼️ ArtScape Studio](https://creatneworld.github.io/artscape-studio) | A free bilingual (Chinese/English) AI art studio. Type an idea, pick an aspect ratio, style model and seed, then instantly generate a unique artwork using the Pollinations image API. Includes quick st | [@Creatneworld](https://github.com/Creatneworld) |
 | [🖼️ Cursor Maker](https://hk.1r.gs) | Cursor Maker (光标工坊) is an AI-powered Windows cursor generator. Type a one-line description (e.g. "glowing blue crystal arrow") and it generates a custom cursor design using the Pollinations image API | [@momokula123](https://github.com/momokula123) |
@@ -30,7 +31,6 @@
 | [📚 Intelligent Diagnostic Assessment](https://proyectodescartes.org/IATools/182_Prueba_Diagn%c3%b3stica) | # 📊 Intelligent Diagnostic Assessment A revolutionary AI-powered tool to transform diagnostic educational assessment [![Powered by Pollinations.ai](https://img.shields.io/badge/Powered%20by-Pollinati | [@Juanrivera126](https://github.com/Juanrivera126) |
 | [🖼️ DiddyDiffusion](https://raw.githack.com/umm-dev/DiddyDiffusion/main/index.html) | DiddyDiffusion is a tiny browser-based image playground powered by Pollinations. Visitors connect their own Pollinations account through BYOP, authorize a small short-lived budget, and generate images | [@umm-dev](https://github.com/umm-dev) |
 | [💬 Meadows](https://meadowy.roboticrobot.xyz) | Use pollinations API to test text, image, video and audio related models in one simple playground. User can choose the model and chat with it, or with image, video and audio models, select the model a | [@pegalink](https://github.com/pegalink) |
-| [🖼️ NeuralCanvas](https://play.google.com/store/apps/details?id=com.proApps.aiimagegenerator) | NeuralCanvas is a native Android app (Kotlin + Jetpack Compose) that turns a text prompt into an AI-generated image, built entirely on the Pollinations image API. How it uses Pollinations: every gener | [@greysonmiller67-lang](https://github.com/greysonmiller67-lang) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

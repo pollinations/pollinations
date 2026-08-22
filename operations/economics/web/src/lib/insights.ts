@@ -412,6 +412,7 @@ const PREPAID_VENDORS = new Set([
     "pruna",
     "fal",
     "mistral",
+    "runpod",
 ]);
 
 // Pollen activity below this is noise, not a funding question.
@@ -1688,4 +1689,208 @@ export function creditRunway(data: Data, now: Date): RunwayRow[] {
             a.remainingUsd - b.remainingUsd
         );
     });
+}
+
+// ----------------------------------------------------- provider balances
+
+export type ProviderBalanceMonth = {
+    month: string;
+    cashOpeningUsd: number | null;
+    cashAddedUsd: number | null;
+    cashUsedUsd: number | null;
+    cashClosingUsd: number | null;
+    creditOpeningUsd: number | null;
+    creditAddedUsd: number | null;
+    creditUsedUsd: number | null;
+    creditLapsedUsd: number | null;
+    creditClosingUsd: number | null;
+};
+
+export type ProviderBalanceRow = {
+    vendor: string;
+    cashBalanceUsd: number | null;
+    creditBalanceUsd: number | null;
+    creditDepletionDate: string | null;
+    creditDepletionReason: "burn" | "expiry" | null;
+    finished: boolean;
+    history: ProviderBalanceMonth[];
+};
+
+type BalanceFlow = {
+    addedUsd: number;
+    usedUsd: number;
+    lapsedUsd: number;
+};
+
+function balanceMonths(now: Date): string[] {
+    const end = now.toISOString().slice(0, 7);
+    const months: string[] = [];
+    for (
+        let month = WINDOW_START;
+        month <= end && months.length < 120;
+        month = monthShift(month, 1)
+    ) {
+        months.push(month);
+    }
+    return months;
+}
+
+function balanceFlow(
+    flows: Map<string, Map<string, BalanceFlow>>,
+    vendor: string,
+    month: string,
+): BalanceFlow {
+    const months = getOrInit(flows, vendor, () => new Map());
+    return getOrInit(months, month, () => ({
+        addedUsd: 0,
+        usedUsd: 0,
+        lapsedUsd: 0,
+    }));
+}
+
+// One current provider-balance view backed by the two durable money ledgers:
+// free credit comes from OP Cloud grants/burn; cash prepaid is the cumulative
+// provider cash outflow less cash-funded provider usage. The latter is a ledger
+// estimate rather than a live wallet snapshot, so its month-by-month roll-forward
+// stays visible for review.
+export function providerBalanceRows(
+    data: Data,
+    now: Date,
+): ProviderBalanceRow[] {
+    const currentMonth = now.toISOString().slice(0, 7);
+    const months = balanceMonths(now);
+    const creditRows = creditRunway(data, now);
+    const creditByVendor = new Map(
+        creditRows.map((row) => [row.vendor, row] as const),
+    );
+    const cashFlows = new Map<string, Map<string, BalanceFlow>>();
+    const creditFlows = new Map<string, Map<string, BalanceFlow>>();
+    const cashVendors = new Set<string>();
+
+    for (const row of data.opTransactions ?? []) {
+        if (!PREPAID_VENDORS.has(row.vendor)) continue;
+        if (!isProviderCategory(transactionCategory(row))) continue;
+        const month = row.date.slice(0, 7);
+        if (!MONTH_KEY_RE.test(month) || month > currentMonth) continue;
+        const addedUsd = -opTransactionUsd(row);
+        if (Math.abs(addedUsd) <= 0.005) continue;
+        balanceFlow(cashFlows, row.vendor, month).addedUsd += addedUsd;
+        cashVendors.add(row.vendor);
+    }
+
+    for (const row of data.opCloud ?? []) {
+        const month = opCloudMonth(row);
+        if (!MONTH_KEY_RE.test(month) || month > currentMonth) continue;
+        const cashUsedUsd = opCloudPaidBurnUsd(row);
+        if (PREPAID_VENDORS.has(row.vendor) && Math.abs(cashUsedUsd) > 0.005) {
+            balanceFlow(cashFlows, row.vendor, month).usedUsd += cashUsedUsd;
+            cashVendors.add(row.vendor);
+        }
+        const creditUsedUsd = opCloudCreditBurnUsd(row);
+        if (creditUsedUsd > 0.005) {
+            balanceFlow(creditFlows, row.vendor, month).usedUsd +=
+                creditUsedUsd;
+        }
+    }
+
+    for (const credit of creditRows) {
+        for (const grant of credit.grants) {
+            balanceFlow(
+                creditFlows,
+                credit.vendor,
+                grant.startDate.slice(0, 7),
+            ).addedUsd += grant.grantedUsd;
+            if (grant.lapsedUsd > 0.005 && grant.expires) {
+                balanceFlow(
+                    creditFlows,
+                    credit.vendor,
+                    grant.expires.slice(0, 7),
+                ).lapsedUsd += grant.lapsedUsd;
+            }
+        }
+    }
+
+    const vendors = new Set([...creditByVendor.keys(), ...cashVendors]);
+    const rows: ProviderBalanceRow[] = [];
+    for (const vendor of vendors) {
+        const credit = creditByVendor.get(vendor) ?? null;
+        const hasCash = cashVendors.has(vendor);
+        const history = months.map(
+            (month): ProviderBalanceMonth => ({
+                month,
+                cashOpeningUsd: hasCash ? 0 : null,
+                cashAddedUsd: hasCash
+                    ? (cashFlows.get(vendor)?.get(month)?.addedUsd ?? 0)
+                    : null,
+                cashUsedUsd: hasCash
+                    ? (cashFlows.get(vendor)?.get(month)?.usedUsd ?? 0)
+                    : null,
+                cashClosingUsd: hasCash ? 0 : null,
+                creditOpeningUsd: credit ? 0 : null,
+                creditAddedUsd: credit
+                    ? (creditFlows.get(vendor)?.get(month)?.addedUsd ?? 0)
+                    : null,
+                creditUsedUsd: credit
+                    ? (creditFlows.get(vendor)?.get(month)?.usedUsd ?? 0)
+                    : null,
+                creditLapsedUsd: credit
+                    ? (creditFlows.get(vendor)?.get(month)?.lapsedUsd ?? 0)
+                    : null,
+                creditClosingUsd: credit ? 0 : null,
+            }),
+        );
+
+        if (hasCash) {
+            let closing = [...(cashFlows.get(vendor)?.entries() ?? [])]
+                .filter(([month]) => month < WINDOW_START)
+                .reduce(
+                    (total, [, flow]) => total + flow.addedUsd - flow.usedUsd,
+                    0,
+                );
+            for (const month of history) {
+                month.cashOpeningUsd = closing;
+                closing += (month.cashAddedUsd ?? 0) - (month.cashUsedUsd ?? 0);
+                month.cashClosingUsd = closing;
+            }
+        }
+
+        if (credit) {
+            let closing = credit.remainingUsd;
+            for (let index = history.length - 1; index >= 0; index -= 1) {
+                const month = history[index];
+                month.creditClosingUsd = closing;
+                closing =
+                    closing -
+                    (month.creditAddedUsd ?? 0) +
+                    (month.creditUsedUsd ?? 0) +
+                    (month.creditLapsedUsd ?? 0);
+                month.creditOpeningUsd = closing;
+            }
+        }
+
+        const cashBalanceUsd = hasCash
+            ? (history.at(-1)?.cashClosingUsd ?? 0)
+            : null;
+        const creditBalanceUsd = credit?.remainingUsd ?? null;
+        rows.push({
+            vendor,
+            cashBalanceUsd,
+            creditBalanceUsd,
+            creditDepletionDate: credit?.depletionDate ?? null,
+            creditDepletionReason: credit?.depletionReason ?? null,
+            finished:
+                (cashBalanceUsd == null || cashBalanceUsd <= POOL_EPS_USD) &&
+                (creditBalanceUsd == null || creditBalanceUsd <= POOL_EPS_USD),
+            history,
+        });
+    }
+
+    return rows.sort(
+        (a, b) =>
+            Number(a.finished) - Number(b.finished) ||
+            (a.creditDepletionDate ?? "9999").localeCompare(
+                b.creditDepletionDate ?? "9999",
+            ) ||
+            a.vendor.localeCompare(b.vendor),
+    );
 }

@@ -5,9 +5,8 @@ import {
     TableHead,
     TableHeaderCell,
     TableRow,
-    Tooltip,
 } from "@pollinations/ui";
-import { useMemo } from "react";
+import { Fragment, useMemo, useState } from "react";
 import {
     DataTable,
     GROUP_BORDER,
@@ -18,13 +17,9 @@ import {
     withUniqueRowKeys,
 } from "../components/DataTable";
 import { StatCards } from "../components/StatCards";
-import { fmtPeriod, fmtUnsignedPct, fmtUsd } from "../lib/format";
-import { creditRunway, type RunwayRow } from "../lib/insights";
+import { fmtPeriod, fmtUsd } from "../lib/format";
+import { type ProviderBalanceRow, providerBalanceRows } from "../lib/insights";
 import type { Data } from "../types";
-
-export function visibleRunwayRows(rows: RunwayRow[], vendor: string) {
-    return rows.filter((row) => vendor === "all" || row.vendor === vendor);
-}
 
 // Urgency color for a depletion date: red under 30 days, amber under 90.
 export function depletionTone(date: string | null, now: Date): string {
@@ -35,174 +30,159 @@ export function depletionTone(date: string | null, now: Date): string {
     return "text-theme-text-soft";
 }
 
-// Same 30/90-day urgency, mapped to a stat-card tone.
-function depletionStatTone(
-    date: string,
-    now: Date,
-): "base" | "pos" | "neg" | "warn" {
-    const days = (Date.parse(date) - now.getTime()) / 86_400_000;
-    if (days < 30) return "neg";
-    if (days < 90) return "warn";
-    return "base";
-}
-
-function remainingTone(value: number) {
-    return value < 0 ? "text-intent-danger-text" : "";
-}
-
-function optionalBurn(value: number) {
-    return value > 0.005 ? fmtUsd(value) : "–";
-}
-
-export function burnedPct(row: Pick<RunwayRow, "burnedUsd" | "grantedUsd">) {
-    if (row.grantedUsd <= 0) return null;
-    return (row.burnedUsd / row.grantedUsd) * 100;
-}
-
-export function isActiveCreditRow(row: Pick<RunwayRow, "finished">) {
+export function isActiveBalanceRow(row: Pick<ProviderBalanceRow, "finished">) {
     return !row.finished;
 }
 
-function ActiveDot({ active }: { active: boolean }) {
-    return (
-        <span
-            role="img"
-            aria-label={active ? "active" : "inactive"}
-            title={active ? "active" : "inactive"}
-            className={`inline-block h-2.5 w-2.5 rounded-full ${
-                active ? "bg-intent-success-text" : "bg-intent-danger-text"
-            }`}
-        />
-    );
+function balanceTone(value: number | null) {
+    return value != null && value < -0.005 ? "text-intent-danger-text" : "";
 }
 
-function GrantsHint({ row }: { row: RunwayRow }) {
+function optionalUsd(value: number | null) {
+    return value == null ? "–" : fmtUsd(value);
+}
+
+function BalanceHistory({ row }: { row: ProviderBalanceRow }) {
     return (
-        <Tooltip
-            triggerAs="span"
-            content={
-                <span className="block max-w-72">
-                    {row.grants.map((grant) => (
-                        <span
-                            className="block"
-                            key={`${grant.label}|${grant.startDate}`}
+        <div className="overflow-x-auto p-2">
+            <DataTable className="text-sm">
+                <TableHead>
+                    <TableRow>
+                        <TableHeaderCell rowSpan={2}>Month</TableHeaderCell>
+                        <TableHeaderCell
+                            colSpan={5}
+                            align="center"
+                            className={GROUP_BORDER}
                         >
-                            {grant.label || "unlabeled"} ·{" "}
-                            {fmtUsd(grant.grantedUsd)} · from{" "}
-                            {fmtPeriod(grant.startDate)}
-                            {grant.expires
-                                ? ` · expires ${fmtPeriod(grant.expires)}`
-                                : ""}
-                        </span>
+                            Free credit
+                        </TableHeaderCell>
+                        <TableHeaderCell
+                            colSpan={4}
+                            align="center"
+                            className={GROUP_BORDER}
+                        >
+                            Cash prepaid
+                        </TableHeaderCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableHeaderCell align="right" className={GROUP_BORDER}>
+                            Opening
+                        </TableHeaderCell>
+                        <TableHeaderCell align="right">Added</TableHeaderCell>
+                        <TableHeaderCell align="right">Used</TableHeaderCell>
+                        <TableHeaderCell align="right">Lapsed</TableHeaderCell>
+                        <TableHeaderCell align="right">Closing</TableHeaderCell>
+                        <TableHeaderCell align="right" className={GROUP_BORDER}>
+                            Opening
+                        </TableHeaderCell>
+                        <TableHeaderCell align="right">Added</TableHeaderCell>
+                        <TableHeaderCell align="right">Used</TableHeaderCell>
+                        <TableHeaderCell align="right">Closing</TableHeaderCell>
+                    </TableRow>
+                </TableHead>
+                <TableBody>
+                    {row.history.map((month) => (
+                        <TableRow key={month.month}>
+                            <TableCell className="whitespace-nowrap">
+                                {fmtPeriod(month.month)}
+                            </TableCell>
+                            <TableCell
+                                align="right"
+                                numeric
+                                className={GROUP_BORDER}
+                            >
+                                {optionalUsd(month.creditOpeningUsd)}
+                            </TableCell>
+                            <TableCell align="right" numeric>
+                                {optionalUsd(month.creditAddedUsd)}
+                            </TableCell>
+                            <TableCell align="right" numeric>
+                                {optionalUsd(month.creditUsedUsd)}
+                            </TableCell>
+                            <TableCell align="right" numeric>
+                                {optionalUsd(month.creditLapsedUsd)}
+                            </TableCell>
+                            <TableCell align="right" numeric>
+                                {optionalUsd(month.creditClosingUsd)}
+                            </TableCell>
+                            <TableCell
+                                align="right"
+                                numeric
+                                className={cn(
+                                    GROUP_BORDER,
+                                    balanceTone(month.cashOpeningUsd),
+                                )}
+                            >
+                                {optionalUsd(month.cashOpeningUsd)}
+                            </TableCell>
+                            <TableCell align="right" numeric>
+                                {optionalUsd(month.cashAddedUsd)}
+                            </TableCell>
+                            <TableCell align="right" numeric>
+                                {optionalUsd(month.cashUsedUsd)}
+                            </TableCell>
+                            <TableCell
+                                align="right"
+                                numeric
+                                className={balanceTone(month.cashClosingUsd)}
+                            >
+                                {optionalUsd(month.cashClosingUsd)}
+                            </TableCell>
+                        </TableRow>
                     ))}
-                </span>
-            }
-        >
-            <span>{row.vendor}</span>
-        </Tooltip>
+                </TableBody>
+            </DataTable>
+        </div>
     );
 }
 
-export function CreditsTab({
-    data,
-    vendor = "all",
-}: {
-    data: Data;
-    vendor?: string;
-}) {
+export function BalancesTab({ data }: { data: Data }) {
     const now = useMemo(() => new Date(), []);
-    const allRows = useMemo(() => creditRunway(data, now), [data, now]);
-    const rows = useMemo(
-        () => visibleRunwayRows(allRows, vendor),
-        [allRows, vendor],
-    );
+    const rows = useMemo(() => providerBalanceRows(data, now), [data, now]);
+    const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
     const totals = useMemo(() => {
-        let granted = 0;
-        let burned = 0;
-        let remaining = 0;
-        let vendors = 0;
-        let next: {
-            vendor: string;
-            date: string;
-            reason: string | null;
-        } | null = null;
+        let cashBalance = 0;
+        let creditBalance = 0;
         for (const row of rows) {
-            granted += row.grantedUsd;
-            burned += row.burnedUsd;
-            remaining += row.remainingUsd;
-            vendors += 1;
-            if (
-                !row.finished &&
-                row.depletionDate != null &&
-                (next == null || row.depletionDate < next.date)
-            ) {
-                next = {
-                    vendor: row.vendor,
-                    date: row.depletionDate,
-                    reason: row.depletionReason,
-                };
-            }
+            cashBalance += Math.max(row.cashBalanceUsd ?? 0, 0);
+            creditBalance += Math.max(row.creditBalanceUsd ?? 0, 0);
         }
-        return { granted, burned, remaining, vendors, next };
+        return { cashBalance, creditBalance };
     }, [rows]);
-    const burnedPctTotal =
-        totals.granted > 0 ? (totals.burned / totals.granted) * 100 : null;
 
-    const sortColumns = useMemo<SortColumn<RunwayRow>[]>(
+    const sortColumns = useMemo<SortColumn<ProviderBalanceRow>[]>(
         () => [
-            { key: "active", value: (row) => isActiveCreditRow(row) },
             { key: "vendor", value: (row) => row.vendor },
-            { key: "grantedUsd", value: (row) => row.grantedUsd },
-            { key: "burnedPct", value: (row) => burnedPct(row) },
-            { key: "preWindowBurnUsd", value: (row) => row.preWindowBurnUsd },
-            { key: "remainingUsd", value: (row) => row.remainingUsd },
+            { key: "creditBalanceUsd", value: (row) => row.creditBalanceUsd },
             {
-                key: "currentMonthBurnUsd",
-                value: (row) => row.currentMonthBurnUsd,
+                key: "creditDepletionDate",
+                value: (row) => row.creditDepletionDate,
             },
-            { key: "lastMonthBurnUsd", value: (row) => row.lastMonthBurnUsd },
-            { key: "depletionDate", value: (row) => row.depletionDate },
+            { key: "cashBalanceUsd", value: (row) => row.cashBalanceUsd },
         ],
         [],
     );
     const { headerProps, rows: sorted } = useSortableRows(rows, sortColumns);
+    const toggle = (vendor: string) => {
+        setExpanded((current) => {
+            const next = new Set(current);
+            if (next.has(vendor)) next.delete(vendor);
+            else next.add(vendor);
+            return next;
+        });
+    };
 
     return (
         <div className="flex flex-col gap-4">
             <StatCards
                 items={[
                     {
-                        label: "Credit",
-                        value: fmtUsd(totals.granted),
-                        detail: `${totals.vendors} vendor${totals.vendors === 1 ? "" : "s"}`,
+                        label: "Free credit",
+                        value: fmtUsd(totals.creditBalance),
                     },
                     {
-                        label: "Burned",
-                        value: fmtUnsignedPct(burnedPctTotal),
-                        detail: fmtUsd(totals.burned),
-                    },
-                    {
-                        label: "Remaining",
-                        value: fmtUsd(totals.remaining),
-                        detail: "naive upper bound",
-                    },
-                    {
-                        label: "Next runs out",
-                        value: (
-                            <span className="text-xl leading-tight">
-                                {totals.next
-                                    ? `${totals.next.vendor} · ${fmtPeriod(totals.next.date)}`
-                                    : "–"}
-                            </span>
-                        ),
-                        tone: totals.next
-                            ? depletionStatTone(totals.next.date, now)
-                            : "base",
-                        detail: totals.next
-                            ? totals.next.reason === "expiry"
-                                ? "credit expiry"
-                                : "at current rate"
-                            : "no runway risk",
+                        label: "Cash prepaid",
+                        value: fmtUsd(totals.cashBalance),
                     },
                 ]}
             />
@@ -211,189 +191,139 @@ export function CreditsTab({
                     <TableHead>
                         <TableRow>
                             <TableHeaderCell
-                                {...headerProps("active")}
+                                rowSpan={2}
+                                {...headerProps("vendor")}
+                            >
+                                Provider
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                colSpan={2}
                                 align="center"
-                            >
-                                <HeaderHint hint="green = credit remains in the pool. red = the pool is finished; rows are muted but kept in the same table for context.">
-                                    active
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell {...headerProps("vendor")}>
-                                vendor
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                {...headerProps("grantedUsd")}
-                                align="right"
                                 className={GROUP_BORDER}
                             >
-                                <HeaderHint
-                                    hint={{
-                                        meaning:
-                                            "Total credit for the vendor (hover the vendor for the per-credit split). EUR converted at the credit's start month.",
-                                        tables: "op_cloud_api",
-                                        sources: "API, CLI, BQ, HC",
-                                    }}
-                                >
-                                    Credit
-                                </HeaderHint>
+                                Free credit
                             </TableHeaderCell>
                             <TableHeaderCell
-                                {...headerProps("burnedPct")}
-                                align="right"
-                            >
-                                <HeaderHint
-                                    hint={{
-                                        meaning:
-                                            "Credit used as a share of total credit.",
-                                        tables: "op_cloud_api",
-                                        formula: "burned ÷ credit",
-                                    }}
-                                >
-                                    Burned %
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                {...headerProps("preWindowBurnUsd")}
-                                align="right"
-                            >
-                                <HeaderHint
-                                    hint={{
-                                        meaning:
-                                            "Opening credit burn before the 2026 window. Hidden from the Cloud OP raw table.",
-                                        tables: "op_cloud_api",
-                                        formula: "-credit",
-                                    }}
-                                >
-                                    2025
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                {...headerProps("remainingUsd")}
-                                align="right"
-                            >
-                                <HeaderHint
-                                    hint={{
-                                        meaning:
-                                            "Credit balance minus credit used. Includes 2025 opening burn when that balance is recorded.",
-                                        formula: "credit − burned",
-                                    }}
-                                >
-                                    Remaining
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                {...headerProps("currentMonthBurnUsd")}
+                                rowSpan={2}
                                 align="right"
                                 className={GROUP_BORDER}
+                                {...headerProps("cashBalanceUsd")}
                             >
                                 <HeaderHint
                                     hint={{
                                         meaning:
-                                            "Credit burn so far in the running month.",
-                                        tables: "op_cloud_api",
+                                            "Cumulative payments to known prepaid providers minus cash-funded provider usage. This is a ledger estimate, not a live wallet snapshot.",
+                                        tables: "op_transactions_api + op_cloud_api",
+                                        formula: "payments − cash usage",
                                     }}
                                 >
-                                    This Month
+                                    Cash prepaid
                                 </HeaderHint>
                             </TableHeaderCell>
+                        </TableRow>
+                        <TableRow>
                             <TableHeaderCell
-                                {...headerProps("lastMonthBurnUsd")}
                                 align="right"
+                                className={GROUP_BORDER}
+                                {...headerProps("creditBalanceUsd")}
                             >
                                 <HeaderHint
                                     hint={{
                                         meaning:
-                                            "Credit burn in the last complete month.",
+                                            "Unexpired provider grants remaining after credit-funded usage.",
                                         tables: "op_cloud_api",
+                                        formula: "grants − used − lapsed",
                                     }}
                                 >
-                                    Last Month
+                                    Left
                                 </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell
-                                {...headerProps("depletionDate")}
-                                className={GROUP_BORDER}
+                                {...headerProps("creditDepletionDate")}
                             >
-                                <HeaderHint
-                                    hint={{
-                                        meaning:
-                                            "Estimated date the credit runs out at the recent burn rate, or the credit expiry — whichever is sooner. Red under 30 days, amber under 90.",
-                                    }}
-                                >
-                                    Runs Out
+                                <HeaderHint hint="Estimated credit depletion date, or the expiry date when unused credit expires first.">
+                                    Runs out
                                 </HeaderHint>
                             </TableHeaderCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {withUniqueRowKeys(sorted, (row) => row.vendor).map(
-                            ({ key, row }) => (
-                                <TableRow
-                                    key={key}
-                                    className={
-                                        row.finished ? "opacity-60" : undefined
-                                    }
-                                >
-                                    <TableCell className="text-center">
-                                        <ActiveDot
-                                            active={isActiveCreditRow(row)}
-                                        />
-                                    </TableCell>
-                                    <TableCell>
-                                        <GrantsHint row={row} />
-                                    </TableCell>
-                                    <TableCell
-                                        className={cn(
-                                            GROUP_BORDER,
-                                            "text-right",
+                            ({ key, row }) => {
+                                const isExpanded = expanded.has(row.vendor);
+                                return (
+                                    <Fragment key={key}>
+                                        <TableRow
+                                            className={
+                                                !isActiveBalanceRow(row)
+                                                    ? "opacity-60"
+                                                    : undefined
+                                            }
+                                        >
+                                            <TableCell>
+                                                <button
+                                                    type="button"
+                                                    aria-expanded={isExpanded}
+                                                    onClick={() =>
+                                                        toggle(row.vendor)
+                                                    }
+                                                    className="inline-flex items-center gap-1.5 text-left hover:text-theme-text"
+                                                >
+                                                    <span className="text-theme-text-soft">
+                                                        {isExpanded ? "▾" : "▸"}
+                                                    </span>
+                                                    {row.vendor}
+                                                </button>
+                                            </TableCell>
+                                            <TableCell
+                                                align="right"
+                                                numeric
+                                                className={GROUP_BORDER}
+                                            >
+                                                {optionalUsd(
+                                                    row.creditBalanceUsd,
+                                                )}
+                                            </TableCell>
+                                            <TableCell
+                                                className={depletionTone(
+                                                    row.creditDepletionDate,
+                                                    now,
+                                                )}
+                                            >
+                                                {row.creditDepletionDate
+                                                    ? fmtPeriod(
+                                                          row.creditDepletionDate,
+                                                      )
+                                                    : "–"}
+                                            </TableCell>
+                                            <TableCell
+                                                align="right"
+                                                numeric
+                                                className={cn(
+                                                    GROUP_BORDER,
+                                                    balanceTone(
+                                                        row.cashBalanceUsd,
+                                                    ),
+                                                )}
+                                            >
+                                                {optionalUsd(
+                                                    row.cashBalanceUsd,
+                                                )}
+                                            </TableCell>
+                                        </TableRow>
+                                        {isExpanded && (
+                                            <TableRow>
+                                                <TableCell
+                                                    colSpan={4}
+                                                    className="bg-theme-bg-active/40"
+                                                >
+                                                    <BalanceHistory row={row} />
+                                                </TableCell>
+                                            </TableRow>
                                         )}
-                                    >
-                                        {fmtUsd(row.grantedUsd)}
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        {fmtUnsignedPct(burnedPct(row))}
-                                    </TableCell>
-                                    <TableCell className="text-right text-theme-text-soft">
-                                        {optionalBurn(row.preWindowBurnUsd)}
-                                    </TableCell>
-                                    <TableCell
-                                        className={cn(
-                                            "text-right",
-                                            remainingTone(row.remainingUsd),
-                                        )}
-                                    >
-                                        {fmtUsd(row.remainingUsd)}
-                                    </TableCell>
-                                    <TableCell
-                                        className={cn(
-                                            GROUP_BORDER,
-                                            "text-right text-theme-text-soft",
-                                        )}
-                                    >
-                                        {fmtUsd(row.currentMonthBurnUsd)}
-                                    </TableCell>
-                                    <TableCell className="text-right text-theme-text-soft">
-                                        {fmtUsd(row.lastMonthBurnUsd)}
-                                    </TableCell>
-                                    <TableCell
-                                        className={cn(
-                                            GROUP_BORDER,
-                                            depletionTone(
-                                                row.depletionDate,
-                                                now,
-                                            ),
-                                        )}
-                                    >
-                                        {row.finished
-                                            ? row.finishedDate
-                                                ? fmtPeriod(row.finishedDate)
-                                                : "–"
-                                            : row.depletionDate
-                                              ? `${fmtPeriod(row.depletionDate)}${row.depletionReason === "expiry" ? " (expiry)" : ""}`
-                                              : "–"}
-                                    </TableCell>
-                                </TableRow>
-                            ),
+                                    </Fragment>
+                                );
+                            },
                         )}
                     </TableBody>
                 </DataTable>

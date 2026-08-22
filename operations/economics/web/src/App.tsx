@@ -63,7 +63,7 @@ import { fixturesMode, loadAll, TbError } from "./lib/tb";
 import type { UnitEconomicsGrain } from "./lib/unitEconomics";
 import type { Data } from "./types";
 import { CommunityTab } from "./views/CommunityTab";
-import { CreditsTab } from "./views/CreditsTab";
+import { BalancesTab } from "./views/CreditsTab";
 import { GpuTab, gpuEconomics } from "./views/GpuTab";
 import { OpCloudTab } from "./views/OpCloudTab";
 import { OpPollenTab } from "./views/OpPollenTab";
@@ -79,7 +79,7 @@ type InsightTab =
     | "runway"
     | "inference"
     | "community"
-    | "credits"
+    | "balances"
     | "gpu";
 
 function isCompactInsightView(
@@ -129,9 +129,9 @@ const INSIGHT_TABS: {
         icon: EyeIcon,
     },
     {
-        id: "credits",
-        label: "Credit",
-        note: "Current provider credit pools from recorded grants and witnessed burn, with exhaustion/expiry estimates and visible caveats.",
+        id: "balances",
+        label: "Balances",
+        note: "Current cash-prepaid and free-credit provider balances, with an expandable monthly roll-forward.",
         icon: ClockIcon,
     },
 ] satisfies readonly DrawerItem<InsightTab>[];
@@ -652,21 +652,22 @@ function viewInfoContent(
             </span>
         );
     }
-    if (insightTab === "credits") {
+    if (insightTab === "balances") {
         return (
             <span className="block max-w-72">
-                <strong>Credit</strong>
+                <strong>Balances</strong>
                 <InfoLine>
-                    Current provider credit pools; the selected period does not
-                    limit this page.
+                    Current provider balances; the selected period does not
+                    limit this page. Open a provider for its monthly history.
                 </InfoLine>
                 <InfoLine>
-                    Recorded grants are allocated against witnessed OP Cloud
-                    credit burn; expired unused capacity lapses.
+                    Cash prepaid is payments minus cash-funded usage. Free
+                    credit is recorded grants minus credit-funded usage and
+                    expired capacity.
                 </InfoLine>
                 <InfoLine>
-                    Depletion uses current, last, or flagged stale burn and the
-                    earlier of burn-out or the final applicable expiry.
+                    Cash prepaid is a ledger estimate, not a live provider
+                    wallet. Individual payments and documents stay in Bank.
                 </InfoLine>
             </span>
         );
@@ -931,7 +932,7 @@ export default function App() {
         section === "insights"
             ? insightTab !== "close" &&
               insightTab !== "runway" &&
-              insightTab !== "credits" &&
+              insightTab !== "balances" &&
               insightTab !== "community" &&
               insightVendorFacets.length > 0
             : rawFacets.vendors.length > 0;
@@ -941,7 +942,7 @@ export default function App() {
         section === "insights" || tab === "op-cloud" || tab === "op-pollen";
     const showPeriodFilter =
         (section === "insights" &&
-            insightTab !== "credits" &&
+            insightTab !== "balances" &&
             insightTab !== "runway") ||
         section === "raw";
     const showCategoryFilter = section === "raw";
@@ -1139,9 +1140,9 @@ export default function App() {
                             vendor={selectedVendors}
                         />
                     )}
-                {data && section === "insights" && insightTab === "credits" && (
-                    <CreditsTab data={data} />
-                )}
+                {data &&
+                    section === "insights" &&
+                    insightTab === "balances" && <BalancesTab data={data} />}
                 {data &&
                     section === "insights" &&
                     insightTab === "community" && (

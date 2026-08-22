@@ -10,6 +10,7 @@ import {
     modelEconomics,
     pnlByMonth,
     pnlStatement,
+    providerBalanceRows,
     providerEconomics,
     vendorPlanes,
 } from "./insights";
@@ -1669,6 +1670,91 @@ describe("creditRunway", () => {
         expect(row.burnedUsd).toBe(100);
         expect(row.remainingUsd).toBe(0);
         expect(row.finished).toBe(true);
+    });
+});
+
+describe("providerBalanceRows", () => {
+    const NOW = new Date("2026-03-15T12:00:00Z");
+
+    it("carries prepaid cash and free credit through monthly history", () => {
+        const data = emptyData({
+            opTransactions: [
+                opTxn({
+                    entry_id: "vast-opening",
+                    date: "2025-12-10",
+                    vendor: "vast.ai",
+                    amount: -100,
+                }),
+                opTxn({
+                    entry_id: "vast-january-topup",
+                    date: "2026-01-10",
+                    vendor: "vast.ai",
+                    amount: -400,
+                }),
+            ],
+            opCloud: [
+                grant({
+                    vendor: "vast.ai",
+                    granted: 1000,
+                    start_date: "2026-01-01",
+                }),
+                opCreditBurn({
+                    month: "2026-01",
+                    vendor: "vast.ai",
+                    paid: 200,
+                    credit: 100,
+                }),
+                opCreditBurn({
+                    month: "2026-02",
+                    vendor: "vast.ai",
+                    paid: 50,
+                    credit: 200,
+                }),
+            ],
+        });
+
+        const [row] = providerBalanceRows(data, NOW);
+        expect(row.vendor).toBe("vast.ai");
+        expect(row.cashBalanceUsd).toBe(250);
+        expect(row.creditBalanceUsd).toBe(700);
+
+        const january = row.history.find((month) => month.month === "2026-01");
+        const february = row.history.find((month) => month.month === "2026-02");
+        expect(january).toMatchObject({
+            cashOpeningUsd: 100,
+            cashAddedUsd: 400,
+            cashUsedUsd: 200,
+            cashClosingUsd: 300,
+            creditOpeningUsd: 0,
+            creditAddedUsd: 1000,
+            creditUsedUsd: 100,
+            creditClosingUsd: 900,
+        });
+        expect(february).toMatchObject({
+            cashOpeningUsd: 300,
+            cashUsedUsd: 50,
+            cashClosingUsd: 250,
+            creditOpeningUsd: 900,
+            creditUsedUsd: 200,
+            creditClosingUsd: 700,
+        });
+    });
+
+    it("does not invent a prepaid balance for an ordinary billed provider", () => {
+        const [row] = providerBalanceRows(
+            emptyData({
+                opTransactions: [opTxn({ vendor: "aws", amount: -500 })],
+                opCloud: [
+                    grant({ vendor: "aws", granted: 1000 }),
+                    opCreditBurn({ vendor: "aws", credit: 100 }),
+                ],
+            }),
+            NOW,
+        );
+
+        expect(row.vendor).toBe("aws");
+        expect(row.cashBalanceUsd).toBeNull();
+        expect(row.creditBalanceUsd).toBe(900);
     });
 });
 

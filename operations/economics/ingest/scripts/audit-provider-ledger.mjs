@@ -167,6 +167,19 @@ function hasArchivedEvidence(evidence) {
     });
 }
 
+function hasSourceLink(evidence) {
+    const candidates =
+        String(evidence ?? "").match(/https?:\/\/[^\s<>"']+/giu) ?? [];
+    return candidates.some((candidate) => {
+        try {
+            new URL(candidate.replace(/[),.;\]}]+$/u, ""));
+            return true;
+        } catch {
+            return false;
+        }
+    });
+}
+
 const cloudWitnessRows = cloud.filter(
     (row) => row.type !== "balance" && !pureFunding(row),
 );
@@ -196,7 +209,7 @@ const modelCloudKeys = new Set(
 
 const observedRawNames = [
     ...cloud.map((row) => row.vendor),
-    ...pollen.map((row) => row.vendor),
+    ...activePollenRows.map((row) => row.vendor),
     ...transactions
         .filter((row) => row.category === "cloud")
         .map((row) => row.vendor),
@@ -211,7 +224,7 @@ const aliasesObserved = rawProviderValues
 
 const sourceEvidenceGaps = [...providerCloudRows]
     .filter(
-        ([, rows]) => !rows.some((row) => hasArchivedEvidence(row.evidence)),
+        ([, rows]) => !rows.some((row) => String(row.evidence ?? "").trim()),
     )
     .map(([key, rows]) => ({
         ...splitProviderMonth(key),
@@ -225,6 +238,11 @@ const sourceEvidenceGaps = [...providerCloudRows]
             a.month.localeCompare(b.month) ||
             a.provider.localeCompare(b.provider),
     );
+const sourceLinkedProviderMonths = [...providerCloudRows].filter(
+    ([, rows]) =>
+        !rows.some((row) => hasArchivedEvidence(row.evidence)) &&
+        rows.some((row) => hasSourceLink(row.evidence)),
+).length;
 
 const knownExternalProviders = new Set([
     ...registry.providers
@@ -303,11 +321,18 @@ for (const provider of registry.providers) {
             ) {
                 continue;
             }
+            const activeAccounts = (provider.accounts ?? []).filter(
+                (candidate) =>
+                    month >= candidate.activeFrom &&
+                    (candidate.activeTo == null || month <= candidate.activeTo),
+            );
             const rows = allCloud.filter(
                 (row) =>
                     canonical(row.vendor) === provider.id &&
                     overlapsMonth(row, month) &&
-                    normalize(row.account_id) === account.id,
+                    (normalize(row.account_id) === account.id ||
+                        (!normalize(row.account_id) &&
+                            activeAccounts.length === 1)),
             );
             accountChecks.push({
                 month,
@@ -315,15 +340,17 @@ for (const provider of registry.providers) {
                 account_id: account.id,
                 status: rows.some((row) => hasArchivedEvidence(row.evidence))
                     ? "archived"
-                    : rows.length > 0
-                      ? "local only"
-                      : "absent",
+                    : rows.some((row) => hasSourceLink(row.evidence))
+                      ? "source linked"
+                      : rows.some((row) => String(row.evidence ?? "").trim())
+                        ? "noted"
+                        : "absent",
             });
         }
     }
 }
 const missingAccountChecks = accountChecks.filter(
-    (check) => check.status !== "archived",
+    (check) => check.status === "absent",
 );
 const accountProviders = new Set(
     registry.providers
@@ -335,6 +362,12 @@ const unassignedAccountRows = cloudWitnessRows
         (row) =>
             accountProviders.has(canonical(row.vendor)) &&
             !normalize(row.account_id) &&
+            (definitionFor(row.vendor)?.accounts ?? []).filter(
+                (account) =>
+                    String(row.start).slice(0, 7) >= account.activeFrom &&
+                    (account.activeTo == null ||
+                        String(row.start).slice(0, 7) <= account.activeTo),
+            ).length > 1 &&
             (financialActivity(row) || String(row.evidence ?? "").trim()),
     )
     .map((row) => ({
@@ -384,6 +417,7 @@ const report = {
         missing_mappings: missingMappings.length,
         observed_provider_months: providerMonths.size,
         archived_provider_months: archivedProviderMonths,
+        source_linked_provider_months: sourceLinkedProviderMonths,
         provider_month_evidence_gaps: sourceEvidenceGaps.length,
         missing_cloud_witnesses: missingCloudWitnesses.length,
         missing_pollen_witnesses: missingPollenWitnesses.length,
@@ -392,8 +426,15 @@ const report = {
         stale_pollen_witness_explanations:
             stalePollenWitnessExplanations.length,
         account_checks_expected: accountChecks.length,
-        account_checks_archived:
-            accountChecks.length - missingAccountChecks.length,
+        account_checks_archived: accountChecks.filter(
+            (check) => check.status === "archived",
+        ).length,
+        account_checks_source_linked: accountChecks.filter(
+            (check) => check.status === "source linked",
+        ).length,
+        account_checks_noted: accountChecks.filter(
+            (check) => check.status === "noted",
+        ).length,
         account_checks_missing: missingAccountChecks.length,
         unassigned_account_rows: unassignedAccountRows.length,
         model_rows_without_identity: modelRowsWithoutIdentity.length,

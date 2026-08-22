@@ -272,6 +272,15 @@
         },
         {
             "month": "2026-02",
+            "provider": "pruna",
+            "reason": "unverifiable_history",
+            "explanation": "The reconstructed Pruna prepaid-burn row is intentionally provider-only because the portal and archived statements cannot recover product-level Pollen attribution for this legacy period.",
+            "evidence": [
+                "https://drive.google.com/file/d/1W6EOgMIpvKE7WlAbhZGgpTdUpuykOVQy/view?usp=drivesdk"
+            ]
+        },
+        {
+            "month": "2026-02",
             "provider": "vast.ai",
             "reason": "provider_attribution_transition",
             "explanation": "Vast.ai became the physical Flux/Z-Image backend on 2026-02-02 while historical OP Pollen retained the io.net provider label until the registry cutover on 2026-03-05. The monthly history cannot be split safely at that daily cutover, so both original ledgers are preserved.",

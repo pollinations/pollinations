@@ -1,0 +1,33 @@
+{
+  "pr_number": 13679,
+  "title": "fix: add agent request bodies to generated API docs",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13679",
+  "merged_at": "2026-08-22T09:12:17Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds runnable request bodies for agent creation and updates\n- Fixes `docs:validate` failures for `/account/agents`\n- Keeps `APIDOCS.md` generated and untouched\n\nFollow-up to #13609.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Agents get their forms",
+    "blurb": "The agent docs now bring the actual paperwork. Creation and update examples come with runnable request bodies, as nature intended.",
+    "summary": "Updated the API documentation generator to include runnable request bodies for creating and updating agents at `/account/agents`, while keeping `APIDOCS.md` generated from source.",
+    "impact": "Developers can now copy complete payload examples for agent creation and updates instead of assembling request bodies from context.",
+    "keywords": [
+      "api-docs",
+      "agents",
+      "account",
+      "request-bodies",
+      "developer-experience"
+    ],
+    "visual_concept": "Polli acts as a careful API gardener, placing neatly labeled request-body seed packets into two pots marked CREATE and UPDATE beside a cozy terminal showing `/account/agents`. Small code-plants and documentation pages make the newly complete examples feel immediately usable.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing tiny librarian glasses as she files two glowing API request-body papers into flower pots labeled CREATE and UPDATE beside a retro terminal showing `/account/agents`; runnable code-plants sprout from the pots. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel cream-lavender gradient background, warm lighting, subtle CRT glow, pixel-font text: \"REQUEST BODY\", retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-22/PR-13679.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing tiny librarian glasses as she files two glowing API request-body papers into flower pots labeled CREATE and UPDATE beside a retro terminal showing `/account/agents`; runnable code-plants sprout from the pots. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel cream-lavender gradient background, warm lighting, subtle CRT glow, pixel-font text: \"REQUEST BODY\", retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-22T09:13:20.571570+00:00"
+}

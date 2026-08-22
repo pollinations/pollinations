@@ -163,7 +163,7 @@ export const ModelSelector = memo(function ModelSelector({
                                   >
                                       {m.community && (
                                           <UptimeDots
-                                              statuses={getUptime(m)}
+                                              status={getUptime(m)}
                                               className="mr-1.5"
                                           />
                                       )}

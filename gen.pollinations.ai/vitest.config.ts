@@ -78,6 +78,10 @@ const baseConfig = defineConfig({
                 replacement: `${genSrc}model3d/$1`,
             },
             {
+                find: /^@\/ocr\/(.*)$/,
+                replacement: `${genSrc}ocr/$1`,
+            },
+            {
                 find: /^@shared\/(.*)$/,
                 replacement: `${sharedSrc}$1`,
             },

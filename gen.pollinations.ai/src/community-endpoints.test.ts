@@ -55,6 +55,7 @@ import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
 import { DEFAULT_EMBEDDING_MODEL } from "@shared/registry/embeddings.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
 import { DEFAULT_3D_MODEL } from "@shared/registry/model3d.ts";
+import { DEFAULT_OCR_MODEL } from "@shared/registry/ocr.ts";
 import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
 import {
     calculateUsageBilling,
@@ -2367,6 +2368,7 @@ fixtureTest(
             "audio",
             "realtime",
             "embedding",
+            "ocr",
         ];
         expect([
             ...new Set(officialModels.map((model) => model.category)),
@@ -2383,6 +2385,7 @@ fixtureTest(
             audio: DEFAULT_AUDIO_MODEL,
             realtime: DEFAULT_REALTIME_MODEL,
             embedding: DEFAULT_EMBEDDING_MODEL,
+            ocr: DEFAULT_OCR_MODEL,
         };
         for (const category of categoryOrder) {
             const models = officialModels.filter(

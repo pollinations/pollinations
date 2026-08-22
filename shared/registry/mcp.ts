@@ -57,6 +57,12 @@ export const MCP_SERVERS = [
         description: "Search the live web and return answers with citations.",
         billing: "downstream",
     },
+    {
+        id: "transcription",
+        name: "Transcription",
+        description: "Transcribe spoken audio from public HTTPS media.",
+        billing: "downstream",
+    },
 ] as const satisfies readonly McpServerDefinition[];
 
 export type McpServerId = (typeof MCP_SERVERS)[number]["id"];

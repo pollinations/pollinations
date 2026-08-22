@@ -31,6 +31,7 @@ function getMcpBinding(
     if (id === "ffmpeg") return env.FFMPEG_MCP;
     if (id === "browser") return env.BROWSER_MCP;
     if (id === "web-search") return env.WEB_SEARCH_MCP;
+    if (id === "transcription") return env.TRANSCRIPTION_MCP;
     return undefined;
 }
 

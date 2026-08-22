@@ -16,7 +16,10 @@ type McpServerDefinitionBase = {
     binding: McpBindingName;
 };
 
-export type McpBindingName = "POLLINATIONS_MCP" | "FFMPEG_MCP";
+export type McpBindingName =
+    | "POLLINATIONS_MCP"
+    | "FFMPEG_MCP"
+    | "PYTHON_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -46,6 +49,16 @@ export const MCP_SERVERS = [
         billing: "usage_receipt",
         provider: "cloudflare",
         eventType: "tool.media",
+    },
+    {
+        id: "python",
+        name: "Python",
+        description:
+            "Run short Python calculations in an ephemeral network-disabled container.",
+        binding: "PYTHON_MCP",
+        billing: "usage_receipt",
+        provider: "cloudflare",
+        eventType: "tool.code",
     },
 ] as const satisfies readonly McpServerDefinition[];
 

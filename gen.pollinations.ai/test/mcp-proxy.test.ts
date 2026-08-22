@@ -41,6 +41,13 @@ test("lists the MCP servers exposed through Gen", async () => {
                     "Run short Python calculations in an ephemeral network-disabled container.",
                 url: "https://gen.pollinations.ai/mcp/python",
             },
+            {
+                id: "browser",
+                name: "Browser",
+                description:
+                    "Fetch rendered web pages as Markdown, screenshots, or PDFs.",
+                url: "https://gen.pollinations.ai/mcp/browser",
+            },
         ],
     });
 });
@@ -197,4 +204,33 @@ test("does not bill protocol negotiation without usage metadata", async () => {
         tierBalance: 1,
         packBalance: 0,
     });
+});
+
+test("routes Browser MCP and bills its measured runtime", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1 },
+    });
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/browser",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(MCP_REQUEST),
+        },
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+        jsonrpc: "2.0",
+        id: 1,
+        result: {
+            content: [{ type: "text", text: "browser proxied" }],
+        },
+    });
+    const balance = await getUserBalance(drizzle(env.DB), userId);
+    expect(balance.tierBalance).toBeCloseTo(1 - 0.000025);
+    expect(balance.packBalance).toBe(0);
 });

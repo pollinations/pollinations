@@ -19,7 +19,8 @@ type McpServerDefinitionBase = {
 export type McpBindingName =
     | "POLLINATIONS_MCP"
     | "FFMPEG_MCP"
-    | "PYTHON_MCP";
+    | "PYTHON_MCP"
+    | "BROWSER_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -59,6 +60,16 @@ export const MCP_SERVERS = [
         billing: "usage_receipt",
         provider: "cloudflare",
         eventType: "tool.code",
+    },
+    {
+        id: "browser",
+        name: "Browser",
+        description:
+            "Fetch rendered web pages as Markdown, screenshots, or PDFs.",
+        binding: "BROWSER_MCP",
+        billing: "usage_receipt",
+        provider: "cloudflare",
+        eventType: "tool.browser",
     },
 ] as const satisfies readonly McpServerDefinition[];
 

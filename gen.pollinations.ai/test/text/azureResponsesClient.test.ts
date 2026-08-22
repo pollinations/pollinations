@@ -524,21 +524,18 @@ describe("callAzureResponses", () => {
         ["logit bias", { logit_bias: { "1": 1 } }, "logit_bias"],
         ["logprobs", { logprobs: true }, "logprobs are not supported"],
         ["top logprobs", { top_logprobs: 2 }, "logprobs are not supported"],
-    ])(
-        "returns a client error for unsupported %s",
-        async (_name, extra, message) => {
-            const fetchSpy = vi.spyOn(globalThis, "fetch");
-            await expect(
-                callAzureResponses([{ role: "user", content: "Hi" }], {
-                    model: "gpt-5.6-sol",
-                    modelConfig,
-                    ...extra,
-                }),
-            ).rejects.toMatchObject({
-                status: 400,
-                message: expect.stringContaining(message),
-            });
-            expect(fetchSpy).not.toHaveBeenCalled();
-        },
-    );
+    ])("returns a client error for unsupported %s", async (_name, extra, message) => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+        await expect(
+            callAzureResponses([{ role: "user", content: "Hi" }], {
+                model: "gpt-5.6-sol",
+                modelConfig,
+                ...extra,
+            }),
+        ).rejects.toMatchObject({
+            status: 400,
+            message: expect.stringContaining(message),
+        });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
 });

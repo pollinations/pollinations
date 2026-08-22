@@ -20,7 +20,8 @@ export type McpBindingName =
     | "POLLINATIONS_MCP"
     | "FFMPEG_MCP"
     | "WEB_SEARCH_MCP"
-    | "TRANSCRIPTION_MCP";
+    | "TRANSCRIPTION_MCP"
+    | "VISION_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -63,6 +64,14 @@ export const MCP_SERVERS = [
         name: "Transcription",
         description: "Transcribe spoken audio from public HTTPS media.",
         binding: "TRANSCRIPTION_MCP",
+        billing: "downstream",
+    },
+    {
+        id: "vision",
+        name: "Vision",
+        description:
+            "Analyze images, answer visual questions, and extract text.",
+        binding: "VISION_MCP",
         billing: "downstream",
     },
 ] as const satisfies readonly McpServerDefinition[];

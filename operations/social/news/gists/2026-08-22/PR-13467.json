@@ -1,0 +1,34 @@
+{
+  "pr_number": 13467,
+  "title": "feat: group an agent call's generations",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13467",
+  "merged_at": "2026-08-22T12:35:19Z",
+  "labels": [],
+  "pr_body_excerpt": "An agent call fans out into model steps and tool calls under a derived `ag_` token. Previously those child requests could not be attributed to the outer call, so the agent appeared free.\n\n- Signs the outer `parentRequestId` into each run token as a verified claim (#12889)\n- Records it as `parent_request_id` on every generation paid through that token\n- Derives the rolling 7-day median agent cost by summing successful child prices onto the outer agent row\n- Uses measured cost in balance preflight, price sorting, and requests-per-Pollen estimates even though the agent wrapper itself is free\n- Keeps ordinary model calls unchanged and preserves a unique JWT `jti` per delegated token\n\nRollout:\n\n1. Validate and deploy the Tinybird datasource/pipe to staging, then production.\n2. Deploy Gen and Enter through the normal production workflow.\n\nExisting events default to an empty parent ID, so grouping starts after deployment. The datasource column was validated in staging as a metadata-only ALTER with no row copy. The query remains runtime-only; a 14-day production probe scanned 15.3M rows in 0.36s.\n\nAddresses #12889",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Agent runs found their receipts",
+    "blurb": "Agent calls now gather their model steps and tool calls beneath one little `ag_` umbrella. The wrapper may be free, but Polli can finally see the whole picnic basket.",
+    "summary": "Agent-run tokens now carry a verified parent request ID, letting successful child generations be grouped onto their outer agent call and supplying a rolling 7-day median measured cost for balance preflight, model sorting, and requests-per-Pollen estimates.",
+    "impact": "Users can now see agent calls represented with realistic measured costs and more useful affordability and request estimates, while ordinary model calls keep their existing behavior.",
+    "keywords": [
+      "agents",
+      "generation tracking",
+      "cost estimates",
+      "agent tokens",
+      "model sorting",
+      "observability"
+    ],
+    "visual_concept": "Depict an outer agent call as a cozy lime-green garden umbrella sheltering several small model and tool-call sprouts, with glowing price-tag pollen gathering back into one parent ledger. Polli, wearing a tiny accountant visor, gently connects each sprout to the umbrella with golden thread while the eager CRT Monitor Robot totals the grouped receipts; this represents verified parent IDs and measured aggregate agent costs.",
+    "image_prompt": "A cozy pixel-art garden desk where the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings wears a tiny accountant visor and ties several glowing model-and-tool code sprouts beneath one lime green (#ecf874) umbrella labeled \"AGENT RUN\"; a chunky CRT-monitor robot happily adds their tiny receipts while flowers and vines grow around the ledger. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-22/PR-13467.jpg",
+    "prompt": "A cozy pixel-art garden desk where the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings wears a tiny accountant visor and ties several glowing model-and-tool code sprouts beneath one lime green (#ecf874) umbrella labeled \"AGENT RUN\"; a chunky CRT-monitor robot happily adds their tiny receipts while flowers and vines grow around the ledger. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-22T12:36:16.290721+00:00"
+}

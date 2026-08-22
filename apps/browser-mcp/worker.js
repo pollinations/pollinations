@@ -1,6 +1,7 @@
 import { createMcpHandler, McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { withMcpUsageHeaders } from "../../shared/mcp-usage.ts";
+import { readResponseBytes } from "../../shared/response-bytes.ts";
 import { validateUserMediaUrl } from "../../shared/user-media-url.ts";
 
 const BROWSER_COST_PER_SECOND = 0.09 / 3600;
@@ -51,13 +52,18 @@ async function runBrowserAction({
 
     try {
         const response = await env.BROWSER.quickAction(action, input);
+        if (response.headers.has("x-browser-ms-used")) {
+            browserMs = browserMilliseconds(response);
+        }
         if (!response.ok) {
             throw new ToolFailure(
                 response.status,
                 await responseError(response),
             );
         }
-        browserMs = browserMilliseconds(response);
+        if (!response.headers.has("x-browser-ms-used")) {
+            browserMs = browserMilliseconds(response);
+        }
         return await readResult(response);
     } catch (error) {
         responseStatus = error instanceof ToolFailure ? error.status : 502;
@@ -87,7 +93,11 @@ async function markdownResult(response, url) {
 }
 
 async function uploadResult(response, env, input) {
-    const bytes = await response.arrayBuffer();
+    const bytes = await readResponseBytes(
+        response,
+        MAX_OUTPUT_BYTES,
+        () => new ToolFailure(502, "Browser output exceeds 100 MB"),
+    );
     if (bytes.byteLength === 0 || bytes.byteLength > MAX_OUTPUT_BYTES) {
         throw new ToolFailure(502, "Browser output has an invalid size");
     }

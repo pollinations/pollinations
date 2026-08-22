@@ -1,0 +1,34 @@
+{
+  "pr_number": 13624,
+  "title": "docs: rename BYOP guide to Connect User Wallets",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13624",
+  "merged_at": "2026-08-22T09:17:01Z",
+  "labels": [],
+  "pr_body_excerpt": "- Renames the guide and drawer item to Connect User Wallets\n- Updates repository-owned `#tag/byop` links\n- Preserves old fragment and guide URLs\n- Uses BYOP only as alternate terminology\n- Leaves `APIDOCS.md` untouched\n\nTests: gen docs routes, 7/7 passed.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Wallets, plainly labeled",
+    "blurb": "BYOP has grown a more self-explanatory name: Connect User Wallets. The old paths still lead home, because URLs deserve a long and quiet life.",
+    "summary": "Renamed the Bring Your Own Pollen guide and dashboard drawer item to “Connect User Wallets,” updated repository-owned #tag/byop links, and preserved the previous guide and fragment URLs through docs-route compatibility handling.",
+    "impact": "Developers now get a clearer label for connecting user wallets while existing BYOP bookmarks, links, and alternate terminology continue to work.",
+    "keywords": [
+      "documentation",
+      "wallets",
+      "pollen",
+      "BYOP",
+      "routing",
+      "developer-experience"
+    ],
+    "visual_concept": "Polli acts as a friendly guide in a cozy documentation garden, carrying a tiny wallet toward a clearly labeled signpost reading “CONNECT USER WALLETS,” while an older “BYOP” trail marker remains visible as a well-kept side path. Small code-plants and a retro terminal represent preserved links and route compatibility.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny librarian scarf, guiding a little glowing wallet along a garden path to a chunky sign reading “CONNECT USER WALLETS,” with a smaller preserved “BYOP” signpost pointing along the same path; code-plants and a retro terminal glow nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle CRT glow, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-22/PR-13624.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny librarian scarf, guiding a little glowing wallet along a garden path to a chunky sign reading “CONNECT USER WALLETS,” with a smaller preserved “BYOP” signpost pointing along the same path; code-plants and a retro terminal glow nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle CRT glow, emotionally warm."
+  },
+  "generated_at": "2026-08-22T09:17:54.415337+00:00"
+}

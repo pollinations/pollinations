@@ -248,6 +248,29 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it.each([
+        ["qwen-coder-large", "qwen/qwen3-coder-next", "parasail/bf16"],
+        ["qwen-vision", "qwen/qwen3-vl-30b-a3b-instruct", "alibaba"],
+        ["qwen-vision-pro", "qwen/qwen3-vl-235b-a22b-thinking", "alibaba"],
+        [
+            "mistral-small-3.2",
+            "mistralai/mistral-small-3.2-24b-instruct",
+            "deepinfra/fp8",
+        ],
+        ["gemma", "google/gemma-4-26b-a4b-it", "novita/bf16"],
+        ["gemma-4-31b", "google/gemma-4-31b-it", "novita/bf16"],
+        ["mimo-v2.5", "xiaomi/mimo-v2.5", "xiaomi/fp8"],
+        ["mimo-v2.5-pro", "xiaomi/mimo-v2.5-pro", "novita"],
+    ])("pins %s to %s through %s without fallback", (model, route, provider) => {
+        const result = resolveModelConfig(messages, { model });
+
+        expect(result.options.model).toBe(route);
+        expect(result.options.provider).toEqual({
+            only: [provider],
+            allow_fallbacks: false,
+        });
+    });
+
     it("routes DeepSeek to the exact Fireworks 0731 checkpoint", () => {
         const result = resolveModelConfig(messages, { model: "deepseek" });
 

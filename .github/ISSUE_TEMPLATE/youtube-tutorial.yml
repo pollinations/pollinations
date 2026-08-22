@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Publish an original, useful YouTube tutorial showing people how to build or create with Pollinations.
+        Publish an original, useful YouTube tutorial showing people how to build or create with Pollinations. Include `POLLEN-YOUR_GITHUB_USERNAME` in the video description so maintainers can verify that you control it.
 
         Approved submissions earn **10 Pollen**. Rewards are based on the tutorial itself, not views, likes, or subscriber counts. One reward is available per GitHub user.
 
@@ -36,7 +36,7 @@ body:
           required: true
         - label: The video is public, original, and demonstrates a useful Pollinations workflow and its result.
           required: true
-        - label: The video description links to Pollinations and discloses that it is eligible for a Pollinations creator-quest reward.
+        - label: The video description includes `POLLEN-` followed by my GitHub username, links to Pollinations, and discloses that it is eligible for a creator-quest reward.
           required: true
         - label: I understand that views, likes, and subscriber counts do not affect approval or the reward.
           required: true

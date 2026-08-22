@@ -1,12 +1,12 @@
 import type { FC } from "react";
 import { useState } from "react";
-import type { ModelPermissionEntry } from "./types.ts";
 import { useModelCategories } from "../models/use-model-categories.ts";
 import { useOwnCommunityModels } from "../models/use-own-community-models.ts";
 import { AccountPermissionsInput } from "./account-permissions-input.tsx";
 import { ExpiryDaysInput } from "./expiry-days-input.tsx";
 import { PollenBudgetInput } from "./pollen-budget-input.tsx";
 import { PollenTypeInput } from "./pollen-type-input.tsx";
+import type { ModelPermissionEntry } from "./types.ts";
 
 export interface KeyPermissions {
     allowedModels: (string | ModelPermissionEntry)[] | null;

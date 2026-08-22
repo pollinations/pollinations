@@ -1,5 +1,5 @@
-import { HTTPException } from "hono/http-exception";
 import type { ModelPermissionEntry } from "@shared/auth/api-key.ts";
+import { HTTPException } from "hono/http-exception";
 
 export type AccountPermission = "profile" | "usage" | "keys";
 

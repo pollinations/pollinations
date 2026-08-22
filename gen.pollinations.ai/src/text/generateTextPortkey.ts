@@ -101,7 +101,8 @@ export async function generateTextPortkey(
     // forwarded to Azure — the Responses client sets its own headers/timeout.
     const needsResponsesApi =
         modelDef?.useResponsesApi &&
-        (state.options.seed === undefined ||
+        (modelDef.useWebSearch ||
+            state.options.seed === undefined ||
             state.options.reasoning_effort !== undefined ||
             (Array.isArray(state.options.tools) &&
                 state.options.tools.length > 0));
@@ -112,10 +113,13 @@ export async function generateTextPortkey(
     if (needsResponsesApi) {
         if (state.options.seed !== undefined) {
             log(
-                "Ignoring seed because Azure Responses is required for tools/reasoning",
+                "Ignoring seed because Azure Responses is required for tools/reasoning/search",
             );
         }
-        return callAzureResponses(state.messages, state.options);
+        return callAzureResponses(state.messages, {
+            ...state.options,
+            azureWebSearch: modelDef?.useWebSearch === true,
+        });
     }
 
     // Only the Responses adapter owns this parameter. Keep generic provider

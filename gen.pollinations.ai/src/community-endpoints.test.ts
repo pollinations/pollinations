@@ -211,6 +211,17 @@ function isCommunityImageEditsRequest(request: Request): boolean {
     return new URL(request.url).pathname.endsWith("/images/edits");
 }
 
+function isBedrockGuardrailCall(input: RequestInfo | URL): boolean {
+    const url =
+        input instanceof Request ? new URL(input.url) : new URL(String(input));
+    return (
+        url.hostname.startsWith("bedrock-runtime.") &&
+        url.pathname.includes("/guardrail/")
+    );
+}
+
+const GUARDRAIL_NO_INTERVENTION = { action: "NONE", assessments: [] };
+
 beforeEach(() => {
     resetGenerationModelRegistryCache();
 });
@@ -1085,6 +1096,9 @@ describe("community endpoint helpers", () => {
 
         it("forwards edits as multipart and bills provider image-token usage", async () => {
             const fetchMock = vi.fn(async (input, init) => {
+                if (isBedrockGuardrailCall(input)) {
+                    return Response.json(GUARDRAIL_NO_INTERVENTION);
+                }
                 const request = new Request(input, init);
                 if (request.url === TEST_INPUT_IMAGE_URL) {
                     return new Response(new Uint8Array(TEST_PNG_BYTES));
@@ -1140,6 +1154,9 @@ describe("community endpoint helpers", () => {
             vi.stubGlobal(
                 "fetch",
                 vi.fn(async (input, init) => {
+                    if (isBedrockGuardrailCall(input)) {
+                        return Response.json(GUARDRAIL_NO_INTERVENTION);
+                    }
                     const request = new Request(input, init);
                     if (request.url === TEST_INPUT_IMAGE_URL) {
                         return new Response(new Uint8Array(TEST_PNG_BYTES));
@@ -1726,6 +1743,9 @@ fixtureTest(
         });
 
         const fetchMock = vi.fn(async (input, init) => {
+            if (isBedrockGuardrailCall(input)) {
+                return Response.json(GUARDRAIL_NO_INTERVENTION);
+            }
             const request = new Request(input, init);
 
             if (isPortkeyChatCompletionsRequest(request)) {
@@ -1823,8 +1843,10 @@ fixtureTest(
             choices: [{ message: { content: "ok" } }],
         });
 
-        const upstreamCalls = fetchMock.mock.calls.filter(([input, init]) =>
-            isPortkeyChatCompletionsRequest(new Request(input, init)),
+        const upstreamCalls = fetchMock.mock.calls.filter(
+            ([input, init]) =>
+                !(input instanceof Request) &&
+                isPortkeyChatCompletionsRequest(new Request(input, init)),
         );
         expect(upstreamCalls).toHaveLength(2);
     },
@@ -1869,6 +1891,9 @@ fixtureTest(
         });
 
         const fetchMock = vi.fn(async (input, init) => {
+            if (isBedrockGuardrailCall(input)) {
+                return Response.json(GUARDRAIL_NO_INTERVENTION);
+            }
             const request = new Request(input, init);
             if (isPortkeyChatCompletionsRequest(request)) {
                 return Response.json({
@@ -2010,6 +2035,9 @@ fixtureTest(
         vi.stubGlobal(
             "fetch",
             vi.fn(async (input, init) => {
+                if (isBedrockGuardrailCall(input)) {
+                    return Response.json(GUARDRAIL_NO_INTERVENTION);
+                }
                 const request = new Request(input, init);
 
                 if (isPortkeyChatCompletionsRequest(request)) {
@@ -2109,6 +2137,9 @@ fixtureTest(
         vi.stubGlobal(
             "fetch",
             vi.fn(async (input, init) => {
+                if (isBedrockGuardrailCall(input)) {
+                    return Response.json(GUARDRAIL_NO_INTERVENTION);
+                }
                 const request = new Request(input, init);
 
                 if (isPortkeyChatCompletionsRequest(request)) {
@@ -2961,6 +2992,9 @@ fixtureTest(
         });
 
         const fetchMock = vi.fn(async (input, init) => {
+            if (isBedrockGuardrailCall(input)) {
+                return Response.json(GUARDRAIL_NO_INTERVENTION);
+            }
             const request = new Request(input, init);
 
             if (isPortkeyChatCompletionsRequest(request)) {
@@ -3053,6 +3087,9 @@ fixtureTest(
 
         const enterApi = await createEnterCommunityApi();
         const fetchMock = vi.fn(async (input, init) => {
+            if (isBedrockGuardrailCall(input)) {
+                return Response.json(GUARDRAIL_NO_INTERVENTION);
+            }
             const request = new Request(input, init);
 
             if (isPortkeyChatCompletionsRequest(request)) {
@@ -3231,8 +3268,10 @@ fixtureTest(
             choices: [{ message: { content: "ok" } }],
         });
         expect(
-            fetchMock.mock.calls.filter(([input, init]) =>
-                isPortkeyChatCompletionsRequest(new Request(input, init)),
+            fetchMock.mock.calls.filter(
+                ([input, init]) =>
+                    !(input instanceof Request) &&
+                    isPortkeyChatCompletionsRequest(new Request(input, init)),
             ),
         ).toHaveLength(2);
     },
@@ -3259,6 +3298,9 @@ fixtureTest(
 
         const enterApi = await createEnterCommunityApi();
         const fetchMock = vi.fn(async (input, init) => {
+            if (isBedrockGuardrailCall(input)) {
+                return Response.json(GUARDRAIL_NO_INTERVENTION);
+            }
             const request = new Request(input, init);
 
             if (
@@ -3672,18 +3714,25 @@ fixtureTest(
             ]),
         );
         expect(
-            fetchMock.mock.calls.filter(([input, init]) =>
-                isCommunityImageGenerationsRequest(new Request(input, init)),
+            fetchMock.mock.calls.filter(
+                ([input, init]) =>
+                    !(input instanceof Request) &&
+                    isCommunityImageGenerationsRequest(
+                        new Request(input, init),
+                    ),
             ),
         ).toHaveLength(5);
         expect(
-            fetchMock.mock.calls.filter(([input, init]) =>
-                isCommunityImageEditsRequest(new Request(input, init)),
+            fetchMock.mock.calls.filter(
+                ([input, init]) =>
+                    !(input instanceof Request) &&
+                    isCommunityImageEditsRequest(new Request(input, init)),
             ),
         ).toHaveLength(3);
         expect(
             fetchMock.mock.calls.filter(
                 ([input, init]) =>
+                    !(input instanceof Request) &&
                     new Request(input, init).url === TEST_COMMUNITY_IMAGE_URL,
             ),
         ).toHaveLength(4);
@@ -4490,6 +4539,9 @@ fixtureTest(
 
         const enterApi = await createEnterCommunityApi();
         const fetchMock = vi.fn(async (input, init) => {
+            if (isBedrockGuardrailCall(input)) {
+                return Response.json(GUARDRAIL_NO_INTERVENTION);
+            }
             const request = new Request(input, init);
             if (
                 request.url ===
@@ -5572,6 +5624,9 @@ fixtureTest(
             vi.stubGlobal(
                 "fetch",
                 vi.fn(async (input, init) => {
+                    if (isBedrockGuardrailCall(input)) {
+                        return Response.json(GUARDRAIL_NO_INTERVENTION);
+                    }
                     const request = new Request(input, init);
                     if (isPortkeyChatCompletionsRequest(request)) {
                         const body = (await request.json()) as {
@@ -5665,6 +5720,9 @@ fixtureTest(
         }[] = [];
         const ingestedEvents: Record<string, unknown>[] = [];
         const fetchMock = vi.fn(async (input, init) => {
+            if (isBedrockGuardrailCall(input)) {
+                return Response.json(GUARDRAIL_NO_INTERVENTION);
+            }
             const request = new Request(input, init);
             if (isPortkeyChatCompletionsRequest(request)) {
                 const customHost = request.headers.get("x-portkey-custom-host");
@@ -5795,6 +5853,9 @@ fixtureTest(
 
         const ingestedEvents: Record<string, unknown>[] = [];
         const fetchMock = vi.fn(async (input, init) => {
+            if (isBedrockGuardrailCall(input)) {
+                return Response.json(GUARDRAIL_NO_INTERVENTION);
+            }
             const request = new Request(input, init);
             if (isPortkeyChatCompletionsRequest(request)) {
                 // Nothing rescues this request: every endpoint is rate limited.
@@ -5876,6 +5937,9 @@ fixtureTest(
 
         const upstreamHosts: string[] = [];
         const fetchMock = vi.fn(async (input, init) => {
+            if (isBedrockGuardrailCall(input)) {
+                return Response.json(GUARDRAIL_NO_INTERVENTION);
+            }
             const request = new Request(input, init);
             if (isCommunityImageGenerationsRequest(request)) {
                 const host = new URL(request.url).host;
@@ -5971,6 +6035,9 @@ fixtureTest(
         vi.stubGlobal(
             "fetch",
             vi.fn(async (input, init) => {
+                if (isBedrockGuardrailCall(input)) {
+                    return Response.json(GUARDRAIL_NO_INTERVENTION);
+                }
                 const request = new Request(input, init);
                 if (isCommunityImageGenerationsRequest(request)) {
                     const host = new URL(request.url).host;
@@ -6054,6 +6121,9 @@ fixtureTest(
             body: { error: { message: "size must be at most 1536x1536" } },
         };
         const fetchMock = vi.fn(async (input, init) => {
+            if (isBedrockGuardrailCall(input)) {
+                return Response.json(GUARDRAIL_NO_INTERVENTION);
+            }
             const request = new Request(input, init);
             if (isCommunityImageGenerationsRequest(request)) {
                 const host = new URL(request.url).host;
@@ -6126,6 +6196,9 @@ fixtureTest(
             customHost: string | null;
         }[] = [];
         const fetchMock = vi.fn(async (input, init) => {
+            if (isBedrockGuardrailCall(input)) {
+                return Response.json(GUARDRAIL_NO_INTERVENTION);
+            }
             const request = new Request(input, init);
             if (isPortkeyChatCompletionsRequest(request)) {
                 gatewayCalls.push({

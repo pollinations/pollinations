@@ -1,4 +1,10 @@
-import { ButtonGroup, Field, InfoTip } from "@pollinations/ui";
+import {
+    ButtonGroup,
+    CheckIcon,
+    Field,
+    InfoTip,
+    TabButton,
+} from "@pollinations/ui";
 import type { FC } from "react";
 
 type PollenTypeInputProps = {
@@ -32,27 +38,36 @@ export const PollenTypeInput: FC<PollenTypeInputProps> = ({
                 />
             </Field.Label>
             <ButtonGroup aria-label="Pollen type restriction">
-                <ButtonGroup.Item
-                    pressed={value === null}
+                <TabButton
+                    active={value === null}
                     onClick={() => onChange(null)}
                     disabled={disabled}
+                    size="sm"
+                    className="min-w-20 gap-1.5"
                 >
+                    {value === null && <CheckIcon className="h-3.5 w-3.5" />}
                     Any
-                </ButtonGroup.Item>
-                <ButtonGroup.Item
-                    pressed={value === "quest"}
+                </TabButton>
+                <TabButton
+                    active={value === "quest"}
                     onClick={() => onChange("quest")}
                     disabled={disabled}
+                    size="sm"
+                    className="min-w-20 gap-1.5"
                 >
+                    {value === "quest" && <CheckIcon className="h-3.5 w-3.5" />}
                     Quest only
-                </ButtonGroup.Item>
-                <ButtonGroup.Item
-                    pressed={value === "paid"}
+                </TabButton>
+                <TabButton
+                    active={value === "paid"}
                     onClick={() => onChange("paid")}
                     disabled={disabled}
+                    size="sm"
+                    className="min-w-20 gap-1.5"
                 >
+                    {value === "paid" && <CheckIcon className="h-3.5 w-3.5" />}
                     Paid only
-                </ButtonGroup.Item>
+                </TabButton>
             </ButtonGroup>
         </Field.Root>
     );

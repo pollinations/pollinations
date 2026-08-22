@@ -121,6 +121,22 @@ test("serves stateless MCP without caller credentials", async () => {
     await client.close();
 });
 
+test("rejects JSON-RPC batches before running tools", async () => {
+    const { calls, env, worker } = createHarness();
+    const response = await worker.fetch(
+        new Request("https://ffmpeg.internal", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify([
+                { jsonrpc: "2.0", id: 1, method: "tools/list" },
+            ]),
+        }),
+        env,
+    );
+    assert.equal(response.status, 400);
+    assert.equal(calls.run.length, 0);
+});
+
 test("runs FFmpeg, uploads the output, and reports trusted usage", async () => {
     const { calls, env, worker } = createHarness();
     const client = await connect(worker, env, calls);

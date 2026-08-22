@@ -21,6 +21,13 @@ test("lists the MCP servers exposed through Gen", async () => {
     expect(await response.json()).toEqual({
         data: [
             {
+                id: "pollinations",
+                name: "Pollinations",
+                description:
+                    "Generate text, images, audio, video, embeddings, and 3D assets with Pollinations.",
+                url: "https://gen.pollinations.ai/mcp/pollinations",
+            },
+            {
                 id: "ffmpeg",
                 name: "FFmpeg",
                 description:
@@ -28,6 +35,37 @@ test("lists the MCP servers exposed through Gen", async () => {
                 url: "https://gen.pollinations.ai/mcp/ffmpeg",
             },
         ],
+    });
+});
+
+test("routes Pollinations MCP with caller authorization for downstream billing", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1 },
+    });
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/pollinations",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                Cookie: "session=private",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(MCP_REQUEST),
+        },
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+        jsonrpc: "2.0",
+        id: 1,
+        result: {
+            content: [{ type: "text", text: "pollinations proxied" }],
+        },
+    });
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 1,
+        packBalance: 0,
     });
 });
 

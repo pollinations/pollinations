@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { isCommunityModelAllowedGithubId } from "./auth/github-id-list.ts";
 import { HttpError } from "./http-error.ts";
+import { MCP_SERVER_IDS } from "./registry/mcp.ts";
 import type { ModelCapability } from "./registry/model-info.ts";
 import {
     MODEL_INPUT_MODALITIES,
@@ -439,11 +440,15 @@ export type ProxyListingPayload = {
  * An agent Enter runs itself. Its row id is also the model sent to the shared
  * runtime, which loads this configuration from the same row.
  */
-export const BuiltinMcpServerIdSchema = z.literal("pollinations");
+export const BuiltinMcpServerIdSchema = z.enum(MCP_SERVER_IDS);
 export const PromptAgentConfigSchema = z.object({
     systemPrompt: z.string().trim().min(1).max(8000),
     baseModel: z.string().trim().min(1).max(253),
-    mcpServers: z.array(BuiltinMcpServerIdSchema).max(1).optional().default([]),
+    mcpServers: z
+        .array(BuiltinMcpServerIdSchema)
+        .max(MCP_SERVER_IDS.length)
+        .optional()
+        .default([]),
 });
 export const PromptAgentInputSchema = PromptAgentConfigSchema.strict();
 

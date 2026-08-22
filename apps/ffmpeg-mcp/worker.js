@@ -254,6 +254,23 @@ export function createWorker({
             if (url.pathname !== "/") {
                 return new Response("Not found", { status: 404 });
             }
+            if (
+                request.method === "POST" &&
+                Array.isArray(
+                    await request
+                        .clone()
+                        .json()
+                        .catch(() => null),
+                )
+            ) {
+                return Response.json(
+                    {
+                        error: "invalid_request",
+                        message: "Batch requests are not supported.",
+                    },
+                    { status: 400 },
+                );
+            }
 
             let usage;
             const handler = createMcpHandler(

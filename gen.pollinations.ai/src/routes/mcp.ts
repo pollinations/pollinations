@@ -35,6 +35,7 @@ function getMcpBinding(
     env: CloudflareBindings,
     id: string,
 ): Fetcher | undefined {
+    if (id === "pollinations") return env.POLLINATIONS_MCP;
     if (id === "ffmpeg") return env.FFMPEG_MCP;
     return undefined;
 }
@@ -73,9 +74,11 @@ function parseUsage(headers: Headers): McpUsage | undefined {
     };
 }
 
-function requestForMcp(request: Request): Request {
+function requestForMcp(request: Request, server: McpServerDefinition): Request {
     const headers = new Headers(request.headers);
-    headers.delete("authorization");
+    if (server.billing === "usage_receipt") {
+        headers.delete("authorization");
+    }
     headers.delete("cookie");
     for (const header of Object.values(MCP_USAGE_HEADERS)) {
         headers.delete(header);
@@ -105,7 +108,7 @@ function responseForCaller(response: Response): Response {
 
 async function settleUsage(
     c: Context<Env>,
-    server: McpServerDefinition,
+    server: Extract<McpServerDefinition, { billing: "usage_receipt" }>,
     usage: McpUsage,
     startedAt: Date,
 ): Promise<void> {
@@ -196,16 +199,20 @@ export const mcpRoutes = new Hono<Env>()
         }
 
         const startedAt = new Date();
-        const response = await binding.fetch(requestForMcp(c.req.raw));
-        const usage = parseUsage(response.headers);
-        if (usage) {
-            try {
-                await settleUsage(c, server, usage, startedAt);
-            } catch (error) {
-                c.var.log.error("MCP billing failed: {error}", {
-                    error:
-                        error instanceof Error ? error.message : String(error),
-                });
+        const response = await binding.fetch(requestForMcp(c.req.raw, server));
+        if (server.billing === "usage_receipt") {
+            const usage = parseUsage(response.headers);
+            if (usage) {
+                try {
+                    await settleUsage(c, server, usage, startedAt);
+                } catch (error) {
+                    c.var.log.error("MCP billing failed: {error}", {
+                        error:
+                            error instanceof Error
+                                ? error.message
+                                : String(error),
+                    });
+                }
             }
         }
         return responseForCaller(response);

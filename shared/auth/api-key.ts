@@ -4,6 +4,7 @@ import { apiKey } from "better-auth/plugins";
 import { eq, getTableColumns } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { alias } from "drizzle-orm/sqlite-core";
+import { byopClientAllowsMarkup } from "../billing/markup.ts";
 import * as schema from "../db/better-auth.ts";
 import {
     AGENT_RUN_TOKEN_PREFIX,
@@ -26,6 +27,8 @@ export interface AuthenticatedApiKey {
     byopClientKeyId?: string | null;
     byopClientName?: string | null;
     byopClientUserId?: string | null;
+    /** True when deduction will add BYOP markup. Set at auth so preflight matches. */
+    byopMarkupApplies?: boolean;
     rawKey?: string;
 }
 
@@ -292,6 +295,10 @@ async function loadActiveApiKeyAuthResult(opts: {
             user: getTableColumns(schema.user),
             byopClientName: byopClientKey.name,
             byopClientUserId: byopClientKey.userId,
+            byopClientPrefix: byopClientKey.prefix,
+            byopClientEnabled: byopClientKey.enabled,
+            byopClientExpiresAt: byopClientKey.expiresAt,
+            byopClientMetadata: byopClientKey.metadata,
         })
         .from(schema.apikey)
         .innerJoin(schema.user, eq(schema.user.id, schema.apikey.userId))
@@ -326,6 +333,16 @@ async function loadActiveApiKeyAuthResult(opts: {
             byopClientKeyId: row.apiKey.byopClientKeyId ?? null,
             byopClientName: row.byopClientName ?? null,
             byopClientUserId: row.byopClientUserId ?? null,
+            byopMarkupApplies: byopClientAllowsMarkup(
+                {
+                    userId: row.byopClientUserId,
+                    prefix: row.byopClientPrefix,
+                    enabled: row.byopClientEnabled,
+                    expiresAt: row.byopClientExpiresAt,
+                    metadata: row.byopClientMetadata,
+                },
+                row.user.id,
+            ),
             rawKey: opts.rawApiKey,
         },
         rawApiKey: opts.rawApiKey,

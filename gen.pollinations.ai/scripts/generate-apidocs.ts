@@ -771,7 +771,7 @@ curl ${BASE_URL}/v1/models \\
 
 **3. Pick an endpoint** from the [${sectionHeading(SECTIONS.contents)}](#${sectionAnchor(SECTIONS.contents)}) below.
 
-**Integration guides:** [BYOP](https://gen.pollinations.ai/docs#tag/byop) · [CLI](https://gen.pollinations.ai/docs#tag/cli) · [MCP Server](https://gen.pollinations.ai/docs#tag/mcp-server)`;
+**Integration guides:** [Connect User Wallets](https://gen.pollinations.ai/docs#tag/connect-user-wallets) · [Publish a Model](https://gen.pollinations.ai/docs#tag/publish-a-model) · [Publish an Agent](https://gen.pollinations.ai/docs#tag/publish-an-agent) · [MCP Server](https://gen.pollinations.ai/docs#tag/mcp-server) · [CLI](https://gen.pollinations.ai/docs#tag/cli)`;
 }
 
 function renderTableOfContents(
@@ -992,6 +992,18 @@ const CURATED_BODIES: Record<string, Json> = {
     postAccountMyModelsByIdUpdate: {
         description: "Updated model description",
     },
+    postAccountAgents: {
+        name: "my-agent",
+        title: "My Agent",
+        systemPrompt: "You are a helpful assistant.",
+        baseModel: "openai",
+        mcpServers: ["pollinations"],
+    },
+    patchAccountAgentsById: {
+        systemPrompt: "You are a concise assistant.",
+        baseModel: "openai",
+        mcpServers: ["pollinations"],
+    },
     post3dByPrompt: {
         model: "hyper3d-rodin",
     },
@@ -1070,6 +1082,8 @@ const TAG_ORDER = [
     "Realtime",
     "Embeddings",
     "Models",
+    "Community Models",
+    "Community Agents",
     "Media Storage",
     "Account",
 ];

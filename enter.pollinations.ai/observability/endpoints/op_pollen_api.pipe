@@ -3,7 +3,11 @@ DESCRIPTION >
     from generation_event_v2. Reads the pre-aggregated op_pollen (cost/price/
     requests and byop/model payouts, per month/provider/model) instead of
     scanning raw event history. Community cost is normalized to zero because
-    the owner payout is recorded separately in model_paid/model_quests.
+    the owner payout is recorded separately in model_paid/model_quests. The
+    March 2026 flux/zimage io.net label is
+    normalized to vast.ai because it changed exactly at the registry deployment
+    cutover while io.net billing had already ended; archived evidence:
+    https://drive.google.com/file/d/1Qfy7u2glbstdNe3gPQcoYL_bN5PjjOuB/view?usp=drivesdk
 
 TOKEN "operations_read" READ
 
@@ -11,21 +15,98 @@ NODE endpoint
 SQL >
     SELECT
         month,
-        provider AS vendor,
+        vendor,
         model,
         'USD' AS currency,
-        if(provider = 'community', 0, sumMerge(cost_paid)) AS cost_paid,
-        if(provider = 'community', 0, sumMerge(cost_quests)) AS cost_quests,
-        sumMerge(price_paid) AS price_paid,
-        sumMerge(price_quests) AS price_quests,
-        sumMerge(byop_paid) AS byop_paid,
-        sumMerge(byop_quests) AS byop_quests,
-        sumMerge(model_paid) AS model_paid,
-        sumMerge(model_quests) AS model_quests,
-        sumMerge(requests_paid) AS requests_paid,
-        sumMerge(requests_quests) AS requests_quests
-    FROM op_pollen
-    GROUP BY month, provider, model
+        if(vendor = 'community', 0, sum(cost_paid)) AS cost_paid,
+        if(vendor = 'community', 0, sum(cost_quests)) AS cost_quests,
+        sum(price_paid) AS price_paid,
+        sum(price_quests) AS price_quests,
+        sum(byop_paid) AS byop_paid,
+        sum(byop_quests) AS byop_quests,
+        sum(model_paid) AS model_paid,
+        sum(model_quests) AS model_quests,
+        sum(requests_paid) AS requests_paid,
+        sum(requests_quests) AS requests_quests
+    FROM
+    (
+        SELECT
+            month,
+            if(
+                month = '2026-03'
+                AND provider = 'io.net'
+                AND model IN ('flux', 'zimage'),
+                'vast.ai',
+                provider
+            ) AS vendor,
+            model,
+            sumMerge(cost_paid) AS cost_paid,
+            sumMerge(cost_quests) AS cost_quests,
+            sumMerge(price_paid) AS price_paid,
+            sumMerge(price_quests) AS price_quests,
+            sumMerge(byop_paid) AS byop_paid,
+            sumMerge(byop_quests) AS byop_quests,
+            sumMerge(model_paid) AS model_paid,
+            sumMerge(model_quests) AS model_quests,
+            sumMerge(requests_paid) AS requests_paid,
+            sumMerge(requests_quests) AS requests_quests
+        FROM op_pollen
+        GROUP BY month, provider, model
+
+        UNION ALL
+
+        SELECT
+            month,
+            if(
+                month = '2026-03'
+                AND provider = 'io.net'
+                AND model IN ('flux', 'zimage'),
+                'vast.ai',
+                provider
+            ) AS vendor,
+            model,
+            cost_paid,
+            cost_quests,
+            price_paid,
+            price_quests,
+            byop_paid,
+            byop_quests,
+            model_paid,
+            model_quests,
+            requests_paid,
+            requests_quests
+        FROM
+        (
+            SELECT
+                entry_id,
+                argMax(month, recorded_at) AS month,
+                argMax(provider, recorded_at) AS provider,
+                argMax(model, recorded_at) AS model,
+                argMax(cost_paid, recorded_at) AS cost_paid,
+                argMax(cost_quests, recorded_at) AS cost_quests,
+                argMax(price_paid, recorded_at) AS price_paid,
+                argMax(price_quests, recorded_at) AS price_quests,
+                argMax(byop_paid, recorded_at) AS byop_paid,
+                argMax(byop_quests, recorded_at) AS byop_quests,
+                argMax(model_paid, recorded_at) AS model_paid,
+                argMax(model_quests, recorded_at) AS model_quests,
+                argMax(requests_paid, recorded_at) AS requests_paid,
+                argMax(requests_quests, recorded_at) AS requests_quests,
+                argMax(evidence, recorded_at) AS evidence
+            FROM op_pollen_history
+            GROUP BY entry_id
+        )
+        WHERE NOT (
+            cost_paid = 0
+            AND cost_quests = 0
+            AND price_paid = 0
+            AND price_quests = 0
+            AND requests_paid = 0
+            AND requests_quests = 0
+            AND positionCaseInsensitive(evidence, 'superseded') > 0
+        )
+    )
+    GROUP BY month, vendor, model
     ORDER BY month DESC, vendor, model
 
 TYPE ENDPOINT

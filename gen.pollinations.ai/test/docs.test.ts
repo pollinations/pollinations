@@ -222,15 +222,18 @@ describe("docs routes", () => {
         expect(schema.paths["/{id}/metadata"]).toBeDefined();
         expect(schema.paths["/media"]).toBeDefined();
         expect(schema.paths["/media/{id}"]).toBeDefined();
-        // BYOP, CLI, MCP are surfaced as plain tags in the Integrations group;
+        // Wallets, CLI, and MCP are plain tags in the Integrations group;
         // the drawer icons are presentation, not part of the OpenAPI names.
-        expect(schema.tags.map((tag) => tag.name)).toContain("BYOP");
+        expect(schema.tags.map((tag) => tag.name)).toContain(
+            "Connect User Wallets",
+        );
         expect(schema.tags.map((tag) => tag.name)).toContain("CLI");
         expect(schema.tags.map((tag) => tag.name)).toContain("MCP Server");
         expect(schema.tags.map((tag) => tag.name)).toContain("Quests");
         expect(schema.tags.map((tag) => tag.name)).toContain("Media Storage");
         expect(schema.tags.map((tag) => tag.name)).toContain("Account");
         expect(schema.tags.map((tag) => tag.name)).not.toContain("🌸 BYOP");
+        expect(schema.tags.map((tag) => tag.name)).not.toContain("BYOP");
         expect(schema.tags.map((tag) => tag.name)).not.toContain("👤 Account");
         expect(schema.tags.map((tag) => tag.name)).not.toContain("✨ Quests");
         expect(schema.tags.map((tag) => tag.name)).not.toContain("Customer");
@@ -354,6 +357,8 @@ describe("docs routes", () => {
             'property="og:image" content="https://gen.pollinations.ai/og-image.png"',
         );
         expect(html).toContain('rel="manifest" href="/manifest.webmanifest"');
+        expect(html).toContain("window.location.hash === '#tag/byop'");
+        expect(html).toContain("#tag/connect-user-wallets");
     });
 
     it("serves the OpenAPI schema as YAML when ?format=yaml", async () => {
@@ -399,6 +404,18 @@ describe("docs routes", () => {
         expect(mcpRes.status).toBe(301);
         expect(mcpRes.headers.get("Location")).toBe("/docs#tag/mcp-server");
 
+        const walletRes = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs/guides/byop", {
+                redirect: "manual",
+            }),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        expect(walletRes.status).toBe(301);
+        expect(walletRes.headers.get("Location")).toBe(
+            "/docs#tag/connect-user-wallets",
+        );
+
         const missingRes = await worker.fetch(
             new Request("https://gen.pollinations.ai/docs/guides/notexist"),
             envWithEnterSchema({}),
@@ -430,7 +447,7 @@ describe("docs routes", () => {
         expect(realtimeSection).toContain("`GET /realtime`");
         expect(realtimeSection).toContain("`GET /v1/realtime`");
         expect(apiBody).not.toContain("/v1/audio/transcriptions/realtime");
-        expect(apiBody).not.toContain("## BYOP");
+        expect(apiBody).not.toContain("## Connect User Wallets");
 
         const byopRes = await worker.fetch(
             new Request(
@@ -440,7 +457,7 @@ describe("docs routes", () => {
             ctx,
         );
         expect(byopRes.status).toBe(200);
-        expect(await byopRes.text()).toContain("## BYOP");
+        expect(await byopRes.text()).toContain("## Connect User Wallets");
 
         const badRes = await worker.fetch(
             new Request("https://gen.pollinations.ai/docs/llm.txt?section=bad"),

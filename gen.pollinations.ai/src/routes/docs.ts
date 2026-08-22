@@ -56,7 +56,7 @@ type OpenApiSchema = Record<string, unknown>;
 const DOC_TAGS = {
     quickStart: "Quick Start",
     authentication: "Authentication",
-    byop: "BYOP",
+    userWallets: "Connect User Wallets",
     cli: "CLI",
     mcpServer: "MCP Server",
     errors: "Errors",
@@ -78,7 +78,7 @@ const DOC_TAGS = {
 const LEGACY_DOC_TAGS: Record<string, string> = {
     "🚀 Quick Start": DOC_TAGS.quickStart,
     "🔐 Authentication": DOC_TAGS.authentication,
-    "🌸 BYOP": DOC_TAGS.byop,
+    "🌸 BYOP": DOC_TAGS.userWallets,
     "🖥 CLI": DOC_TAGS.cli,
     "🔌 MCP Server": DOC_TAGS.mcpServer,
     "❌ Errors": DOC_TAGS.errors,
@@ -108,7 +108,7 @@ const DOC_TAG_ICON_HTML: Record<string, string> = {
     [DOC_TAGS.authentication]: docsIcon(
         '<rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />',
     ),
-    [DOC_TAGS.byop]: docsIcon(
+    [DOC_TAGS.userWallets]: docsIcon(
         '<path d="M3 7a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2v2H5a2 2 0 0 0-2 2V7Z" /><path d="M3 11a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6Z" /><circle cx="17" cy="14" r="1.25" fill="currentColor" />',
     ),
     [DOC_TAGS.cli]: docsIcon(
@@ -167,8 +167,6 @@ const DOC_TAG_NAV_ICON_HTML: Record<string, string> = Object.fromEntries(
     ]),
 );
 
-const BYOP_DOCS = BYOP_MD.trim();
-
 const CLI_DOCS = CLI_README.replace(/^# .*\n+/, "").trim();
 
 const MCP_DOCS = MCP_README.replace(/^# .*\n+/, "").trim();
@@ -177,6 +175,8 @@ const MCP_DOCS = MCP_README.replace(/^# .*\n+/, "").trim();
 // a Scalar tag (which already renders its own title) without double headings.
 const stripLeadingHeading = (md: string) =>
     md.replace(/^#{1,2}\s.*\n+/, "").trim();
+
+const USER_WALLETS_DOCS = stripLeadingHeading(BYOP_MD.trim());
 
 // Dynamic registry values get injected into the markdown via {{PLACEHOLDER}}
 // substitution. The placeholders live in the .md files so the prose stays in
@@ -306,7 +306,7 @@ const EMBEDDINGS_DOCS = interpolate(EMBEDDINGS_MD.trim(), MODEL_VARS);
 
 // Composition: the "api" section copy mirrors the Scalar API Reference page
 // — intro + quick start + auth + all generation modalities + models + media
-// storage + account + safety + errors. BYOP, CLI, MCP are separate sections.
+// storage + account + safety + errors. Wallets, CLI, and MCP are separate sections.
 const GEN_API_DOCS = [
     INTRODUCTION_DOCS,
     QUICK_START_DOCS,
@@ -326,27 +326,27 @@ const GEN_API_DOCS = [
     PUBLIC_STATS_DOCS,
 ].join("\n\n");
 
-const BYOP_SECTION = `## BYOP\n\n${BYOP_DOCS}`;
+const USER_WALLETS_SECTION = `## Connect User Wallets\n\n${USER_WALLETS_DOCS}`;
 const CLI_SECTION = `## CLI\n\n${CLI_DOCS}`;
 const MCP_SECTION = `## MCP Server\n\n${MCP_DOCS}`;
 
 const LLM_DOC_TEXT = [
     GEN_API_DOCS,
-    BYOP_SECTION,
+    USER_WALLETS_SECTION,
     CLI_SECTION,
     MCP_SECTION,
 ].join("\n\n");
 
 const LLM_DOC_SECTIONS: Record<string, string> = {
     api: GEN_API_DOCS,
-    byop: BYOP_SECTION,
+    byop: USER_WALLETS_SECTION,
     cli: CLI_SECTION,
     mcp: MCP_SECTION,
 };
 
 // Scalar tag anchors for the retired /docs/guides/:id pages.
 const GUIDE_REDIRECT_TAGS: Record<string, string> = {
-    byop: "byop",
+    byop: "connect-user-wallets",
     cli: "cli",
     mcp: "mcp-server",
 };
@@ -365,6 +365,14 @@ function pollinationsHeaderHtml(): string {
 </div>
 <script>
 (function () {
+  function normalizeLegacyHash() {
+    if (window.location.hash === '#tag/byop') {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search + '#tag/connect-user-wallets');
+    }
+  }
+  normalizeLegacyHash();
+  window.addEventListener('hashchange', normalizeLegacyHash);
+
   // Copy for LLMs — always copies the full doc (api + integrations).
   var copy = document.querySelector('.ph-fab-copy');
   if (copy) {
@@ -446,7 +454,7 @@ function generationDocumentation(): OpenApiSchema {
             },
             {
                 name: "Integrations",
-                tags: [DOC_TAGS.byop, DOC_TAGS.cli, DOC_TAGS.mcpServer],
+                tags: [DOC_TAGS.userWallets, DOC_TAGS.cli, DOC_TAGS.mcpServer],
             },
             {
                 name: "Generation",
@@ -483,8 +491,8 @@ function generationDocumentation(): OpenApiSchema {
                 description: stripLeadingHeading(AUTHENTICATION_DOCS),
             },
             {
-                name: DOC_TAGS.byop,
-                description: BYOP_DOCS,
+                name: DOC_TAGS.userWallets,
+                description: USER_WALLETS_DOCS,
             },
             {
                 name: DOC_TAGS.cli,

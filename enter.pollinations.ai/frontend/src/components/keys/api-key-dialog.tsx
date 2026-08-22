@@ -213,7 +213,11 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                             <li>
                                 Use that key for API requests paid with the
                                 user&apos;s Pollen.{" "}
-                                <InlineLink href={genDocsUrl("#tag/byop")}>
+                                <InlineLink
+                                    href={genDocsUrl(
+                                        "#tag/connect-user-wallets",
+                                    )}
+                                >
                                     Read the guide
                                 </InlineLink>
                             </li>
@@ -269,8 +273,10 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                             Raw publishable keys (<code>pk_</code>) are legacy.
                             For browsers, create an App Key on this dashboard
                             and use{" "}
-                            <InlineLink href={genDocsUrl("#tag/byop")}>
-                                BYOP
+                            <InlineLink
+                                href={genDocsUrl("#tag/connect-user-wallets")}
+                            >
+                                Connect User Wallets
                             </InlineLink>
                             — do not mint a raw <code>pk_</code> via the CLI.
                         </p>

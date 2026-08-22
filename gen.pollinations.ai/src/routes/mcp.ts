@@ -1,5 +1,5 @@
 import { getLogger } from "@logtape/logtape";
-import { getUserBalance, payerBucketToMeter } from "@shared/billing/balance.ts";
+import { payerBucketToMeter } from "@shared/billing/balance.ts";
 import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
 import { sendToTinybird } from "@shared/events.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
@@ -30,15 +30,6 @@ type McpUsage = {
     adjustmentUnits: number;
     error?: string;
 };
-
-function getMcpBinding(
-    env: CloudflareBindings,
-    id: string,
-): Fetcher | undefined {
-    if (id === "pollinations") return env.POLLINATIONS_MCP;
-    if (id === "ffmpeg") return env.FFMPEG_MCP;
-    return undefined;
-}
 
 function parseUsage(headers: Headers): McpUsage | undefined {
     const costHeader = headers.get(MCP_USAGE_HEADERS.cost);
@@ -114,7 +105,6 @@ async function settleUsage(
 ): Promise<void> {
     const user = c.var.auth.requireUser();
     const db = drizzle(c.env.DB);
-    const balances = await getUserBalance(db, user.id);
     const deduction = await handleBalanceDeduction({
         db: db as unknown as Parameters<typeof handleBalanceDeduction>[0]["db"],
         isBilledUsage: usage.cost > 0,
@@ -140,10 +130,6 @@ async function settleUsage(
         ...(deduction.payerBucket
             ? payerBucketToMeter(deduction.payerBucket)
             : {}),
-        balances: {
-            "v1:meter:tier": balances.tierBalance,
-            "v1:meter:pack": balances.packBalance,
-        },
         modelRequested: server.id,
         resolvedModelRequested: server.id,
         modelUsed: server.id,
@@ -193,10 +179,10 @@ export const mcpRoutes = new Hono<Env>()
         c.var.auth.requireUser();
         const serverId = c.req.param("serverId");
         const server = getMcpServerDefinition(serverId);
-        const binding = getMcpBinding(c.env, serverId);
-        if (!server || !binding) {
+        if (!server) {
             throw new HTTPException(404, { message: "MCP server not found" });
         }
+        const binding = c.env[server.binding] as Fetcher;
 
         const startedAt = new Date();
         const response = await binding.fetch(requestForMcp(c.req.raw, server));

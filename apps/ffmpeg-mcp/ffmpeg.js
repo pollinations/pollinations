@@ -18,8 +18,8 @@ export const FFMPEG_OUTPUT_EXTENSIONS = [
     "jpg",
     "jpeg",
     "png",
-] as const;
+];
 
-export function calculateFfmpegCharge(runtimeMs: number): number {
+export function calculateFfmpegCharge(runtimeMs) {
     return (Math.max(0, runtimeMs) / 1000) * FFMPEG_COST_PER_SECOND;
 }

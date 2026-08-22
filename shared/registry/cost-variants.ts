@@ -20,7 +20,7 @@ export type PricingInput = {
     quality?: string;
     hasImage?: boolean;
     megapixels?: number;
-    searchContextSize?: "low" | "high";
+    searchContextSize?: "low" | "medium" | "high";
     hasDiarization?: boolean;
     hasPrompt?: boolean;
 };

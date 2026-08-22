@@ -19,7 +19,6 @@ import {
     SproutIcon,
     TabButton,
     Text,
-    TrendUpIcon,
     UsageIcon,
     useScrollLock,
     WalletIcon,
@@ -69,7 +68,6 @@ import { GpuTab, gpuEconomics } from "./views/GpuTab";
 import { OpCloudTab } from "./views/OpCloudTab";
 import { OpPollenTab } from "./views/OpPollenTab";
 import { OpTransactionsTab } from "./views/OpTransactionsTab";
-import { PnlTab } from "./views/PnlTab";
 import { ProviderCloseTab } from "./views/ProviderCloseTab";
 import { RunwayTab } from "./views/RunwayTab";
 import { ManagedInferenceTab } from "./views/UnitEconomicsTab";
@@ -77,7 +75,6 @@ import { ManagedInferenceTab } from "./views/UnitEconomicsTab";
 type Tab = LedgerTab;
 type EconomicsSection = "insights" | "raw";
 type InsightTab =
-    | "pnl"
     | "close"
     | "runway"
     | "inference"
@@ -92,8 +89,7 @@ function isCompactInsightView(
     return (
         section === "raw" ||
         (section === "insights" &&
-            (insightTab === "pnl" ||
-                insightTab === "close" ||
+            (insightTab === "close" ||
                 insightTab === "runway" ||
                 insightTab === "credits" ||
                 insightTab === "inference" ||
@@ -121,22 +117,16 @@ const INSIGHT_TABS: {
     icon: ComponentType<{ className?: string }>;
 }[] = [
     {
-        id: "pnl",
-        label: "P&L",
-        note: "Cash P&L from signed Wise-derived transactions: revenue cash movements minus non-revenue cash movements by transaction month.",
-        icon: TrendUpIcon,
+        id: "runway",
+        label: "Runway",
+        note: "Cash runway from signed Wise-derived actuals plus explicit OP Runway forecast facts and visible assumption flags.",
+        icon: WalletIcon,
     },
     {
         id: "close",
         label: "Close",
         note: "Monthly close readiness from provider sources, account coverage, and ledger quality; tax filing confirmation remains separate.",
         icon: EyeIcon,
-    },
-    {
-        id: "runway",
-        label: "Runway",
-        note: "Cash runway from signed Wise-derived actuals plus explicit OP Runway forecast facts and visible assumption flags.",
-        icon: WalletIcon,
     },
     {
         id: "credits",
@@ -681,26 +671,6 @@ function viewInfoContent(
             </span>
         );
     }
-    if (insightTab === "pnl") {
-        return (
-            <span className="block max-w-72">
-                <strong>P&amp;L</strong>
-                <InfoLine>
-                    Signed Wise-derived OP Transactions grouped by transaction
-                    month and converted to USD using the transaction date.
-                </InfoLine>
-                <InfoLine>
-                    Revenue is category = revenue; spend is the opposite sign of
-                    every non-revenue cash movement. Cash P&amp;L is revenue
-                    minus spend.
-                </InfoLine>
-                <InfoLine>
-                    Provider usage not paid through Wise is intentionally
-                    absent.
-                </InfoLine>
-            </span>
-        );
-    }
     if (insightTab === "runway") {
         return (
             <span className="block max-w-72">
@@ -712,6 +682,10 @@ function viewInfoContent(
                 <InfoLine>
                     The current month keeps Current Wise actuals and the
                     authored full-month Forecast in separate columns.
+                </InfoLine>
+                <InfoLine>
+                    Revenue and expense-category rows are cash P&amp;L totals;
+                    expand a category to see its vendor detail.
                 </InfoLine>
                 <InfoLine>
                     Cloud consumption can inform the forecast, but running cash
@@ -841,7 +815,7 @@ export default function App() {
     const [data, setData] = useState<Data | null>(null);
     const [tab, setTab] = useState<Tab>("op-transactions");
     const [section, setSection] = useState<EconomicsSection>("insights");
-    const [insightTab, setInsightTab] = useState<InsightTab>("pnl");
+    const [insightTab, setInsightTab] = useState<InsightTab>("runway");
     const [selectedMonths, setSelectedMonths] = useState<string[]>([]);
     const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -955,8 +929,7 @@ export default function App() {
     );
     const showVendorFilter =
         section === "insights"
-            ? insightTab !== "pnl" &&
-              insightTab !== "close" &&
+            ? insightTab !== "close" &&
               insightTab !== "runway" &&
               insightTab !== "credits" &&
               insightTab !== "community" &&
@@ -1145,9 +1118,6 @@ export default function App() {
                         month={monthFilter}
                         vendor={selectedVendors}
                     />
-                )}
-                {data && section === "insights" && insightTab === "pnl" && (
-                    <PnlTab data={data} month={monthFilter} />
                 )}
                 {data && section === "insights" && insightTab === "close" && (
                     <ProviderCloseTab

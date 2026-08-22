@@ -1,11 +1,15 @@
 import type { OpRunwayRow, OpTransactionRow } from "../types";
-import { runwayCategory, transactionCategory } from "./categories";
+import {
+    EXPENSE_CATEGORY_ORDER,
+    runwayCategory,
+    transactionCategory,
+} from "./categories";
 import { toUsd } from "./fx";
-import { CATEGORY_ORDER, monthShift } from "./insights";
+import { monthShift } from "./insights";
 import { WINDOW_START } from "./months";
 
 const MONTH_RE = /^\d{4}-\d{2}$/;
-const RUNWAY_CATEGORY_ORDER = ["revenue", ...CATEGORY_ORDER];
+const RUNWAY_CATEGORY_ORDER = ["revenue", ...EXPENSE_CATEGORY_ORDER];
 
 export type RunwayAssumption = OpRunwayRow & {
     amountUsd: number;

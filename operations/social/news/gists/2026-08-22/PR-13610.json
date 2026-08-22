@@ -1,0 +1,34 @@
+{
+  "pr_number": 13610,
+  "title": "docs: add Publish a Model guide",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13610",
+  "merged_at": "2026-08-22T09:22:45Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds the Publish a Model integration guide\n- Keeps Community Models API operations under Resources\n- Covers current modalities, publishing controls, pricing, fallbacks, and health behavior\n- Updates model, account, CLI, README, drawer, and generated-doc source text\n- Leaves `APIDOCS.md` untouched\n\nTests: gen docs routes, 7/7 passed.\n\nMerge after #13624.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Bring Your Own Nectar",
+    "blurb": "A new guide maps out how to publish a Community Model, from modalities and pricing to fallbacks and health checks. The garden has room for more pollinators.",
+    "summary": "Added a Publish a Model guide covering Community Model modalities, publishing controls, pricing, fallbacks, and health behavior, while keeping Community Models API operations under Resources.",
+    "impact": "Model providers now have a clear, current path for bringing text, image, audio, or video models to pollinations.ai and understanding how their published models behave.",
+    "keywords": [
+      "documentation",
+      "community-models",
+      "publish-model",
+      "api",
+      "providers",
+      "guides"
+    ],
+    "visual_concept": "Depict Polli as a friendly model gardener publishing labeled seed packets into a shared community greenhouse, where different code-plants represent text, image, audio, and video modalities. A CRT monitor robot can eagerly hold an open guide titled \"PUBLISH A MODEL,\" while healthy plants, fallback watering pipes, and small Pollen price tags make the guide's controls, health behavior, and pricing legible.",
+    "image_prompt": "Cozy pixel art scene in a warm community greenhouse where the cute pixel art bee mascot has a yellow body with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings; she wears a tiny gardener hat while placing a glowing model seed packet into a lime green (#ecf874) planter. A cute chunky CRT-monitor robot holds an open pixel guide reading \"PUBLISH A MODEL,\" surrounded by code-plants for text, images, music, and video, with gentle watering pipes and tiny Pollen price tags; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-22/PR-13610.jpg",
+    "prompt": "Cozy pixel art scene in a warm community greenhouse where the cute pixel art bee mascot has a yellow body with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings; she wears a tiny gardener hat while placing a glowing model seed packet into a lime green (#ecf874) planter. A cute chunky CRT-monitor robot holds an open pixel guide reading \"PUBLISH A MODEL,\" surrounded by code-plants for text, images, music, and video, with gentle watering pipes and tiny Pollen price tags; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-22T09:23:37.143638+00:00"
+}

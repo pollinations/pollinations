@@ -1,0 +1,34 @@
+{
+  "pr_number": 13702,
+  "title": "fix: align MiniMax H3 768p pricing",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13702",
+  "merged_at": "2026-08-22T13:35:41Z",
+  "labels": [],
+  "pr_body_excerpt": "- Changes only the `minimax-h3` 768p rate from $0.08/second to fal's exact $0.06/second sheet; 480p and 2K remain unchanged and 4K remains excluded.\n- Updates the required effective-prices snapshot without changing routing, aliases, access, multiplier, capabilities, GPU status, or fallback.\n- Verifies a direct 5-second 768p fal request: 6 weighted billable base units × $0.05 = $0.30.\n- Verifies full local Gen billing: one cache miss returned MP4 and debited exactly $0.30; the identical cache hit returned in 0.1s with no second debit.\n- Passes 364 focused tests, both service typechecks, and Biome.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The 768p meter settles down",
+    "blurb": "MiniMax H3 at 768p now bills at fal’s exact $0.06 per second rate. Polli checked the five-second receipt twice; the cached replay remained politely free.",
+    "summary": "Corrected the MiniMax H3 768p video rate from $0.08/second to fal’s published $0.06/second rate, while leaving 480p, 2K, routing, access, and fallback behavior unchanged.",
+    "impact": "A 5-second 768p MiniMax H3 generation now debits $0.30 for six weighted billable units, and an identical cached request returns without a second debit.",
+    "keywords": [
+      "MiniMax H3",
+      "video generation",
+      "768p",
+      "pricing",
+      "billing",
+      "cache"
+    ],
+    "visual_concept": "A cozy video-rendering garden represents MiniMax H3 768p billing: Polli, wearing a tiny accountant visor, compares a glowing 768p MP4 film reel with a clearly correct $0.06/s receipt while a small CRT monitor robot confirms the total. A second, already-blooming cache flower signals that replaying the same render costs no additional Pollen.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-hackerspace: Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears a tiny accountant visor while holding a receipt beside a glowing 768p MP4 film reel labeled \"$0.06/s\"; a cute CRT-monitor robot points happily at a blooming cache flower, with lime green (#ecf874) code-plants and pastel flowers around them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle scanlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-22/PR-13702.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-hackerspace: Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears a tiny accountant visor while holding a receipt beside a glowing 768p MP4 film reel labeled \"$0.06/s\"; a cute CRT-monitor robot points happily at a blooming cache flower, with lime green (#ecf874) code-plants and pastel flowers around them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle scanlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-22T13:36:39.188968+00:00"
+}

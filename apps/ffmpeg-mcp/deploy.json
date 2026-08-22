@@ -6,7 +6,6 @@
   "build": "npm test",
   "deploy": "npm run deploy",
   "watch": [
-    "shared/ffmpeg.ts",
     "shared/registry/mcp.ts",
     "shared/user-media-url.ts"
   ]

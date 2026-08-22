@@ -211,9 +211,11 @@ export function RunwayTab({ data }: { data: Data }) {
                             runway.mtdCashUsd != null && runway.mtdCashUsd < 0
                                 ? "neg"
                                 : "base",
-                        detail: runway.openingBalanceDate
-                            ? `opening + ${fmtUsd(currentMtd?.netUsd)} Current Wise · ${fmtPeriod(runway.openingBalanceDate)}`
-                            : "opening balance missing",
+                        detail: runway.currentBalanceDate
+                            ? `Wise STANDARD balances · ${fmtPeriod(runway.currentBalanceDate)}`
+                            : runway.openingBalanceDate
+                              ? `opening + ${fmtUsd(currentMtd?.netUsd)} Current Wise · ${fmtPeriod(runway.openingBalanceDate)}`
+                              : "opening balance missing",
                     },
                     {
                         label: "Month-end forecast",

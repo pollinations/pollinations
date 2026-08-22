@@ -114,6 +114,7 @@ describe("buildRunway", () => {
         expect(stripe?.values["2026-07:forecast"]).toBe(2_000);
         expect(aws?.values["2026-08:forecast"]).toBe(-1_000);
         expect(result.mtdCashUsd).toBe(9_500);
+        expect(result.currentBalanceDate).toBeNull();
         expect(result.projectedMonthEndCashUsd).toBe(11_000);
         expect(
             result.columns.find((column) => column.id === "2026-08:forecast"),
@@ -122,6 +123,80 @@ describe("buildRunway", () => {
             netUsd: 1_000,
             runningCashUsd: 12_000,
         });
+    });
+
+    it("uses the latest Wise balance snapshot for current cash only", () => {
+        const result = buildRunway(
+            [transaction({ amount: -500 })],
+            [
+                opening(),
+                fact({ entry_id: "jul", amount: -1_000 }),
+                fact({
+                    entry_id: "wise-current-balance-usd",
+                    kind: "current_balance",
+                    date: "2026-07-10",
+                    vendor: "wise",
+                    category: "cash",
+                    amount: 8_750,
+                    source: "wise",
+                }),
+                fact({
+                    entry_id: "wise-current-balance-eur",
+                    kind: "current_balance",
+                    date: "2026-07-10",
+                    vendor: "wise",
+                    category: "cash",
+                    amount: 100,
+                    currency: "EUR",
+                    source: "wise",
+                }),
+            ],
+            NOW,
+        );
+
+        expect(result.currentBalanceDate).toBe("2026-07-10");
+        expect(result.mtdCashUsd).toBeCloseTo(8_864.11, 2);
+        expect(result.projectedMonthEndCashUsd).toBe(9_000);
+    });
+
+    it("ignores older currencies and accepts zero unsupported balances", () => {
+        const result = buildRunway(
+            [],
+            [
+                opening(),
+                fact({
+                    entry_id: "old-usd",
+                    kind: "current_balance",
+                    date: "2026-07-09",
+                    vendor: "wise",
+                    category: "cash",
+                    amount: 99_000,
+                    source: "wise",
+                }),
+                fact({
+                    entry_id: "current-usd",
+                    kind: "current_balance",
+                    date: "2026-07-10",
+                    vendor: "wise",
+                    category: "cash",
+                    amount: 1_000,
+                    source: "wise",
+                }),
+                fact({
+                    entry_id: "current-gbp",
+                    kind: "current_balance",
+                    date: "2026-07-10",
+                    vendor: "wise",
+                    category: "cash",
+                    amount: 0,
+                    currency: "GBP",
+                    source: "wise",
+                }),
+            ],
+            NOW,
+        );
+
+        expect(result.mtdCashUsd).toBe(1_000);
     });
 
     it("counts positive displayed months until cash reaches zero", () => {

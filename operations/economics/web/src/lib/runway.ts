@@ -42,6 +42,7 @@ export type RunwayResult = {
     assumptions: RunwayAssumption[];
     openingBalanceDate: string | null;
     openingBalanceUsd: number | null;
+    currentBalanceDate: string | null;
     mtdCashUsd: number | null;
     projectedMonthEndCashUsd: number | null;
     runwayMonths: number | null;
@@ -91,6 +92,28 @@ function latestOpeningBalance(facts: OpRunwayRow[]) {
                 b.recorded_at.localeCompare(a.recorded_at) ||
                 b.entry_id.localeCompare(a.entry_id),
         )[0];
+}
+
+function latestCurrentBalance(facts: OpRunwayRow[]) {
+    const balances = facts.filter((fact) => fact.kind === "current_balance");
+    const date = balances
+        .map((fact) => fact.date)
+        .sort()
+        .at(-1);
+    if (!date) return null;
+    return {
+        date,
+        amountUsd: balances
+            .filter((fact) => fact.date === date)
+            .reduce(
+                (sum, fact) =>
+                    sum +
+                    (Number(fact.amount) === 0
+                        ? 0
+                        : toUsd(fact.amount, fact.currency, fact.date)),
+                0,
+            ),
+    };
 }
 
 export function buildRunway(
@@ -149,6 +172,7 @@ export function buildRunway(
         (fact) => fact.kind === "opening_balance",
     );
     const opening = latestOpeningBalance(facts);
+    const currentBalance = latestCurrentBalance(facts);
     if (!opening) {
         flags.push(
             "No opening balance fact; running cash and runway are unavailable.",
@@ -287,7 +311,8 @@ export function buildRunway(
         let runningCashUsd: number | null = null;
         if (runningStarted && plannedRunningCashUsd != null) {
             if (column.kind === "current") {
-                runningCashUsd = plannedRunningCashUsd + netUsd;
+                runningCashUsd =
+                    currentBalance?.amountUsd ?? plannedRunningCashUsd + netUsd;
             } else {
                 plannedRunningCashUsd += netUsd;
                 runningCashUsd = plannedRunningCashUsd;
@@ -335,6 +360,7 @@ export function buildRunway(
         assumptions,
         openingBalanceDate,
         openingBalanceUsd,
+        currentBalanceDate: currentBalance?.date ?? null,
         mtdCashUsd,
         projectedMonthEndCashUsd,
         runwayMonths,

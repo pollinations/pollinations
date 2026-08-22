@@ -38,6 +38,15 @@ describe("canonical categories", () => {
         expect(transactionCategory(transaction("github", "cloud"))).toBe(
             "development",
         );
+        expect(transactionCategory(transaction("lambda", "cloud"))).toBe(
+            "compute",
+        );
+        expect(transactionCategory(transaction("openrouter", "cloud"))).toBe(
+            "compute",
+        );
+        expect(transactionCategory(transaction("perplexity", "cloud"))).toBe(
+            "compute",
+        );
     });
 
     it("separates human subscriptions from provider usage", () => {

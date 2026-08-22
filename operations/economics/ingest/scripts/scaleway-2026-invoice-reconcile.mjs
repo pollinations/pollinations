@@ -222,16 +222,19 @@ const legacyEntryIds = [
     "manual:scaleway:inference:2026-01-01 00:00:00:overdue invoice discount:",
 ];
 const rowsById = new Map(snapshotRows.map((row) => [row.entry_id, row]));
-const tombstones = legacyEntryIds.map((entryId) => {
+const tombstones = legacyEntryIds.flatMap((entryId) => {
     const row = rowsById.get(entryId);
-    if (!row) throw new Error(`Missing legacy Scaleway row ${entryId}`);
-    return {
-        ...row,
-        credit: 0,
-        paid: 0,
-        evidence: `${INVOICE_LIST_EVIDENCE} · superseded by exact 2026 invoice and consumption rows; the two issued invoices were not waived`,
-        recorded_at: recordedAt,
-    };
+    return row
+        ? [
+              {
+                  ...row,
+                  credit: 0,
+                  paid: 0,
+                  evidence: `${INVOICE_LIST_EVIDENCE} · superseded by exact 2026 invoice and consumption rows; the two issued invoices were not waived`,
+                  recorded_at: recordedAt,
+              },
+          ]
+        : [];
 });
 
 const grantEntryId =
@@ -246,7 +249,30 @@ const grantUpdate = {
     recorded_at: recordedAt,
 };
 
-const updates = [...tombstones, grantUpdate, ...detailedRows];
+const quietPeriodCheck = {
+    entry_id:
+        "api:scaleway:balance:2026-03-01 00:00:00:pollinations-ai:verified-zero",
+    source: "api",
+    start: "2026-03-01 00:00:00",
+    end: "2026-08-01 00:00:00",
+    vendor: "scaleway",
+    account_id: ORGANIZATION_ID,
+    account_name: ORGANIZATION_NAME,
+    type: "balance",
+    model: "",
+    credit: 0,
+    paid: 0,
+    currency: "EUR",
+    evidence: `${INVOICE_LIST_EVIDENCE} · expired vouchers ${DISCOUNT_EVIDENCE}`,
+    recorded_at: recordedAt,
+    resource_sku: "account-check",
+    resource_count: 1,
+    resource_id: ORGANIZATION_ID,
+    resource_name:
+        "No invoices from March through July; no active vouchers on 2026-08-21",
+};
+
+const updates = [...tombstones, grantUpdate, quietPeriodCheck, ...detailedRows];
 const duplicateEntryIds =
     updates.length - new Set(updates.map((row) => row.entry_id)).size;
 if (duplicateEntryIds !== 0) {

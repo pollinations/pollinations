@@ -1,6 +1,6 @@
 name: X Showcase Quest
 description: Submit an original Pollinations showcase post for a 1 Pollen reward
-title: "[X-SHOWCASE]: "
+title: "[CREATOR-QUEST][X-SHOWCASE]: "
 labels: [".REQUEST"]
 body:
   - type: markdown

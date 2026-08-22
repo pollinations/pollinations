@@ -16,7 +16,10 @@ type McpServerDefinitionBase = {
     binding: McpBindingName;
 };
 
-export type McpBindingName = "POLLINATIONS_MCP" | "FFMPEG_MCP";
+export type McpBindingName =
+    | "POLLINATIONS_MCP"
+    | "FFMPEG_MCP"
+    | "WEB_SEARCH_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -46,6 +49,13 @@ export const MCP_SERVERS = [
         billing: "usage_receipt",
         provider: "cloudflare",
         eventType: "tool.media",
+    },
+    {
+        id: "web-search",
+        name: "Web Search",
+        description: "Search the live web and return answers with citations.",
+        binding: "WEB_SEARCH_MCP",
+        billing: "downstream",
     },
 ] as const satisfies readonly McpServerDefinition[];
 

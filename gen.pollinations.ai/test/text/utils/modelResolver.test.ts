@@ -47,6 +47,20 @@ describe("resolveModelConfig", () => {
         expect(result.options.max_tokens).toBeUndefined();
     });
 
+    it("routes openai-search through Azure Responses web search", () => {
+        const model = findModelByName("openai-search");
+
+        expect(model).toMatchObject({
+            useResponsesApi: true,
+            useWebSearch: true,
+        });
+        expect(model?.config()).toMatchObject({
+            provider: "azure-openai",
+            "azure-resource-name": "myceli-prod-eastus",
+            "azure-deployment-id": "gpt-5.4-nano",
+        });
+    });
+
     it("resolves nova-fast to us.amazon.nova-micro-v1:0", () => {
         const result = resolveModelConfig(messages, { model: "nova-fast" });
 

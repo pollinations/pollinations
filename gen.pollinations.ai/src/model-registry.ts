@@ -36,6 +36,7 @@ const REGISTRY_TTL_MS = 60_000;
 const DEGRADED_REGISTRY_TTL_MS = 5_000;
 const TEXT_MODEL_ENDPOINTS = [
     "/v1/chat/completions",
+    "/v1/responses",
     "/text",
     "/text/{prompt}",
 ];
@@ -99,7 +100,9 @@ function eventTypeForCategory(category: Category): EventType {
 }
 
 function supportedEndpointsForEventType(eventType: EventType): string[] {
-    if (eventType === "generate.text") return TEXT_MODEL_ENDPOINTS;
+    if (eventType === "generate.text") {
+        return TEXT_MODEL_ENDPOINTS;
+    }
     if (eventType === "generate.audio") {
         return ["/audio/{text}", "/v1/audio/speech"];
     }

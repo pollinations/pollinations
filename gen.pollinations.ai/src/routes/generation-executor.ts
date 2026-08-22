@@ -3,6 +3,7 @@ import { DEFAULT_3D_MODEL } from "@shared/registry/model3d.ts";
 import {
     CreateChatCompletionRequestSchema,
     CreateImageRequestSchema,
+    CreateResponseRequestSchema,
 } from "@shared/schemas/openai.ts";
 import { SafeSchema } from "@shared/schemas/safety.ts";
 import { Hono } from "hono";
@@ -38,6 +39,7 @@ import {
 } from "./audio.ts";
 import {
     generateChatCompletion,
+    generateCreateResponse,
     generateEmbeddingsResponse,
     generateImageVideo,
     generateModel3d,
@@ -78,6 +80,16 @@ generationExecutorRoutes.post(
     track("generate.text"),
     textExecutionCache,
     generateChatCompletion,
+);
+
+generationExecutorRoutes.post(
+    "/v1/responses",
+    textBodyLimit,
+    validator("json", CreateResponseRequestSchema),
+    resolveModel("generate.text"),
+    track("generate.text"),
+    textExecutionCache,
+    generateCreateResponse,
 );
 
 generationExecutorRoutes.post(

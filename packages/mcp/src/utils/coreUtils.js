@@ -149,6 +149,26 @@ export async function fetchAndUploadMedia(url, options = {}, context) {
     const response = await fetchResponseWithAuth(url, options, context);
     const contentType =
         response.headers.get("content-type") || "application/octet-stream";
+
+    const cacheKey = response.headers.get("x-cache-key");
+    if (cacheKey) {
+        // Prevent leaking the unread stream (where supported)
+        response.body?.cancel?.().catch(() => {});
+
+        const upload = await fetchResponseWithAuth(
+            MEDIA_UPLOAD_URL,
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ genCacheKey: cacheKey, contentType }),
+            },
+            context,
+        );
+        const result = await upload.json();
+        if (!result?.url) throw new Error("Media upload returned no URL");
+        return { contentType, mediaUrl: result.url };
+    }
+
     const form = new FormData();
     form.append(
         "file",

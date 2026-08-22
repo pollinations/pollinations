@@ -66,6 +66,7 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
             );
             c.header("Cache-Control", IMMUTABLE_CACHE_CONTROL);
             c.header("X-Cache", "HIT");
+            c.header("X-Cache-Key", cacheKey);
             return c.body(
                 refreshR2ObjectTtl(
                     c.env.IMAGE_BUCKET,
@@ -90,14 +91,26 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
             );
         },
         capture(c, cacheKey, response) {
+            // Clone the pristine upstream response for the cache writer
+            // This prevents Miniflare/workerd stream teeing locks caused by cloning a custom Response
+            const responseForCache = response.clone();
+
+            const newHeaders = new Headers(response.headers);
+            newHeaders.set("X-Cache-Key", cacheKey);
+            const mutableResponse = new Response(response.body, {
+                status: response.status,
+                statusText: response.statusText,
+                headers: newHeaders,
+            });
+
             return {
-                response,
+                response: mutableResponse,
                 write: putMediaResponse(
                     c.env.IMAGE_BUCKET,
                     cacheKey,
                     c,
                     config.defaultContentType,
-                    response,
+                    responseForCache,
                 ),
             };
         },

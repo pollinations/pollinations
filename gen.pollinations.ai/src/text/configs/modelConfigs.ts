@@ -21,11 +21,13 @@ type PortkeyConfigMap = Record<string, PortkeyConfigFactory>;
 function createPinnedOpenRouterConfig(
     model: string,
     providerTag: string,
+    maxTokens?: number,
 ): PortkeyConfigFactory {
     return () =>
         createOpenRouterModelConfig({
             model,
             defaultOptions: {
+                ...(maxTokens === undefined ? {} : { max_tokens: maxTokens }),
                 provider: {
                     only: [providerTag],
                     allow_fallbacks: false,
@@ -329,14 +331,11 @@ export const portkeyConfig: PortkeyConfigMap = {
         "mistralai/mistral-small-3.2-24b-instruct",
         "deepinfra/fp8",
     ),
-    // No provider pin (no `only`/`sort`) — the widest-risk case for the
-    // blank-answer/billed-tokens bug, since OpenRouter can route this to any
-    // provider at any time, including ones with a low max_tokens default.
-    "mistral-small-2603": () =>
-        createOpenRouterModelConfig({
-            model: "mistralai/mistral-small-2603",
-            defaultOptions: { max_tokens: 64000 },
-        }),
+    "mistral-small-2603": createPinnedOpenRouterConfig(
+        "mistralai/mistral-small-2603",
+        "mistral",
+        64000,
+    ),
 
     // -- Azure (Myceli Prod — eastus, Mistral Large) -------------------------
     "Mistral-Large-3": () =>
@@ -473,10 +472,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         ),
     // Llama 4 Scout is Marketplace SaaS pass-through on Azure (not
     // credit-eligible). OpenRouter is the cheapest provider with the same SKU.
-    "Llama-4-Scout-17B-16E-Instruct": () =>
-        createOpenRouterModelConfig({
-            model: "meta-llama/llama-4-scout",
-        }),
+    "Llama-4-Scout-17B-16E-Instruct": createPinnedOpenRouterConfig(
+        "meta-llama/llama-4-scout",
+        "deepinfra/fp8",
+    ),
 
     // -- OpenRouter (Qwen Coder, Qwen VL) -------------------------------------
     // Exact provider pins keep OpenRouter routing and billing deterministic.

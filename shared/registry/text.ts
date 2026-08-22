@@ -446,6 +446,7 @@ export const TEXT_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
+            // OpenRouter Mistral endpoint, verified 2026-08-22.
             promptTextTokens: perMillion(0.15),
             promptCachedTokens: perMillion(0.015),
             completionTextTokens: perMillion(0.6),
@@ -455,7 +456,7 @@ export const TEXT_SERVICES = {
             "Compact all-rounder that combines reasoning with image understanding",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 10, // Mistral image count varies by model/token budget; Pollinations cap.
+        maxReferenceImages: 8, // Exact OpenRouter Mistral route limit.
         tools: true,
         reasoning: true,
         contextLength: 262144,
@@ -1667,6 +1668,7 @@ export const TEXT_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
+            // OpenRouter DeepInfra FP8 endpoint, verified 2026-08-22.
             promptTextTokens: perMillion(0.1),
             completionTextTokens: perMillion(0.3),
         },
@@ -1675,7 +1677,7 @@ export const TEXT_SERVICES = {
             "Open-source long-context specialist for digging through big documents",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 10, // OpenRouter image count varies by provider/model; Pollinations cap.
+        maxReferenceImages: 10, // Verified on the pinned DeepInfra FP8 route; Pollinations cap.
         tools: true,
         contextLength: 327680,
         isSpecialized: false,

@@ -55,6 +55,17 @@ export function wiseEntryId(activity) {
     return type && id ? `${type}-${id}` : null;
 }
 
+export function coveredWiseEntryIds(transactions) {
+    const covered = new Set(transactions.map((row) => row.entry_id));
+    for (const row of transactions) {
+        const split = String(row.entry_id).match(
+            /^((?:TRANSFER|CARD_TRANSACTION|DIRECT_DEBIT_TRANSACTION)-\d+)-(?:\d+|EUR|USD|GBP|CAD)$/,
+        );
+        if (split) covered.add(split[1]);
+    }
+    return covered;
+}
+
 function candidateAmount(activity, field) {
     return parseDisplayAmount(
         field === "primary" ? activity.primaryAmount : activity.secondaryAmount,
@@ -268,7 +279,7 @@ async function main() {
             tinybirdRows("op_transactions_api", tinybirdToken),
         ]);
 
-    const existingIds = new Set(transactions.map((row) => row.entry_id));
+    const existingIds = coveredWiseEntryIds(transactions);
     const history = buildMerchantHistory(
         historyActivities.activities,
         transactions,
@@ -289,11 +300,6 @@ async function main() {
         if (proposal.row) proposals.push(proposal.row);
         if (proposal.review) review.push(proposal.review);
     }
-    if (review.length) {
-        console.error(JSON.stringify({ review }, null, 2));
-        throw new Error("Wise activities require manual classification");
-    }
-
     const archive = {
         collected_at: new Date().toISOString(),
         interval: { since, until },
@@ -301,6 +307,14 @@ async function main() {
         activities: period.activities,
         balances,
     };
+    await writeFile(archivePath, `${JSON.stringify(archive, null, 2)}\n`);
+    if (review.length) {
+        console.error(JSON.stringify({ review }, null, 2));
+        throw new Error(
+            `Wise activities require manual classification; raw archive saved to ${archivePath}`,
+        );
+    }
+
     const balanceRows = currentBalanceRows(
         balances,
         snapshotDate,
@@ -308,7 +322,6 @@ async function main() {
         evidence,
     );
     await Promise.all([
-        writeFile(archivePath, `${JSON.stringify(archive, null, 2)}\n`),
         writeFile(resolve(values.transactions), ndjson(proposals)),
         writeFile(resolve(values.runway), ndjson(balanceRows)),
     ]);

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
     buildMerchantHistory,
+    coveredWiseEntryIds,
     defaultSettledAmount,
     parseDisplayAmount,
     transactionProposal,
@@ -32,6 +33,16 @@ test("uses the EUR settled amount for a foreign-currency card payment", () => {
         amount: -8.6,
         currency: "EUR",
     });
+});
+
+test("treats a split reimbursement as coverage of its parent Wise transfer", () => {
+    const covered = coveredWiseEntryIds([
+        { entry_id: "TRANSFER-2179898016-1" },
+        { entry_id: "TRANSFER-2179898016-2" },
+        { entry_id: "CARD_TRANSACTION-123" },
+    ]);
+    assert.equal(covered.has("TRANSFER-2179898016"), true);
+    assert.equal(covered.has("CARD_TRANSACTION"), false);
 });
 
 test("reuses a ledger-proven merchant classification and amount field", () => {

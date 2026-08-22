@@ -1,0 +1,12 @@
+{
+  "target": "worker",
+  "credentials": "myceli",
+  "docker": true,
+  "install": "npm ci",
+  "build": "npm test",
+  "deploy": "npm run deploy",
+  "watch": [
+    "shared/registry/mcp.ts",
+    "shared/user-media-url.ts"
+  ]
+}

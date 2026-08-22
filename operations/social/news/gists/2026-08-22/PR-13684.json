@@ -1,0 +1,34 @@
+{
+  "pr_number": 13684,
+  "title": "fix: pin Mistral and Llama Scout routes",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13684",
+  "merged_at": "2026-08-22T10:43:30Z",
+  "labels": [],
+  "pr_body_excerpt": "- Pins `mistral` to OpenRouter Mistral with provider fallback disabled.\n- Pins `llama-scout` to OpenRouter DeepInfra FP8 with provider fallback disabled.\n- Reduces Mistral’s declared reference-image limit from 10 to the exact route’s limit of 8.\n- Preserves canonical names, aliases, capabilities, paid-only access, and verified price sheets.\n\nTests: gen typecheck; model resolver 41/41; Enter pricing/registry invariants 381/381; local E2E 35/35.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Models, stay on route",
+    "blurb": "Mistral and Llama Scout have been given their own well-marked garden paths. Fewer surprise detours, and Mistral now brings exactly eight reference images to the picnic.",
+    "summary": "Pinned `mistral` to OpenRouter Mistral and `llama-scout` to OpenRouter DeepInfra FP8 with provider fallback disabled, while aligning Mistral’s reference-image limit from 10 to 8.",
+    "impact": "Requests for these canonical models now resolve to their verified routes with predictable capabilities, pricing, and an accurate eight-image Mistral limit.",
+    "keywords": [
+      "mistral",
+      "llama-scout",
+      "openrouter",
+      "deepinfra",
+      "model-routing",
+      "image-inputs"
+    ],
+    "visual_concept": "Polli acts as a tiny railway conductor in a cozy code-garden, guiding two labeled model trains onto clearly marked routes: Mistral toward an OpenRouter station and Llama Scout toward a DeepInfra FP8 station. Eight small reference-image tiles sit neatly beside the Mistral platform, while a CRT monitor robot happily verifies the route map among flowers and code-plants.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny conductor hat, guiding two small model trains onto tidy garden railway tracks labeled \"MISTRAL\" and \"LLAMA SCOUT\"; a friendly CRT monitor robot checks a route map beside exactly eight little image tiles, with flowers and code-plants around the stations. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-22/PR-13684.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny conductor hat, guiding two small model trains onto tidy garden railway tracks labeled \"MISTRAL\" and \"LLAMA SCOUT\"; a friendly CRT monitor robot checks a route map beside exactly eight little image tiles, with flowers and code-plants around the stations. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-22T10:44:28.693738+00:00"
+}

@@ -2,6 +2,7 @@ import { jwtVerify, SignJWT } from "jose";
 
 export const AGENT_RUN_TOKEN_PREFIX = "ag_";
 export const AGENT_RUN_TOKEN_TTL_SECONDS = 1800;
+export const MAX_AGENT_RUN_DEPTH = 3;
 
 const AGENT_RUN_TOKEN_ISSUER = "gen.pollinations.ai";
 const AGENT_RUN_TOKEN_AUDIENCE = "pollinations-api";
@@ -16,6 +17,7 @@ export type AgentRunClaims = {
     // same id would be a value the agent gets to choose.
     parentRequestId: string;
     managedAgentId?: string;
+    agentDepth: number;
     issuedAt: number;
     expiresAt: number;
 };
@@ -31,18 +33,28 @@ export async function signAgentRunToken(opts: {
     parentApiKeyId: string;
     parentRequestId: string;
     managedAgentId?: string;
+    agentDepth?: number;
     expiresIn?: number;
     now?: number;
 }): Promise<string> {
     const issuedAt = opts.now ?? Math.floor(Date.now() / 1000);
     const expiresIn = opts.expiresIn ?? AGENT_RUN_TOKEN_TTL_SECONDS;
+    const agentDepth = opts.agentDepth ?? 1;
     if (expiresIn < 1 || expiresIn > AGENT_RUN_TOKEN_TTL_SECONDS) {
         throw new Error("Invalid agent run token lifetime");
+    }
+    if (
+        !Number.isInteger(agentDepth) ||
+        agentDepth < 1 ||
+        agentDepth > MAX_AGENT_RUN_DEPTH
+    ) {
+        throw new Error(`Agent delegation exceeds ${MAX_AGENT_RUN_DEPTH} hops`);
     }
 
     const token = await new SignJWT({
         version: 1,
         parentRequestId: opts.parentRequestId,
+        agentDepth,
         ...(opts.managedAgentId ? { managedAgentId: opts.managedAgentId } : {}),
     })
         .setProtectedHeader({ alg: "HS256", typ: "JWT" })
@@ -91,6 +103,10 @@ export async function verifyAgentRunToken(
         typeof payload.exp !== "number" ||
         typeof payload.parentRequestId !== "string" ||
         !payload.parentRequestId ||
+        typeof payload.agentDepth !== "number" ||
+        !Number.isInteger(payload.agentDepth) ||
+        payload.agentDepth < 1 ||
+        payload.agentDepth > MAX_AGENT_RUN_DEPTH ||
         (payload.managedAgentId !== undefined &&
             (typeof payload.managedAgentId !== "string" ||
                 !payload.managedAgentId))
@@ -101,6 +117,7 @@ export async function verifyAgentRunToken(
     return {
         parentApiKeyId: payload.sub,
         parentRequestId: payload.parentRequestId,
+        agentDepth: payload.agentDepth,
         ...(typeof payload.managedAgentId === "string"
             ? { managedAgentId: payload.managedAgentId }
             : {}),

@@ -93,7 +93,7 @@ test("resolves to the parent key, without its account scope", async () => {
         // Model access is inherited; every other scope the parent may hold is
         // dropped, so the token cannot manage the owner's account.
         permissions: { models: [RESTRICTED_TEXT_TEST_MODEL] },
-        agentRun: { parentApiKeyId: parent.id },
+        agentRun: { parentApiKeyId: parent.id, agentDepth: 1 },
     });
 });
 
@@ -257,10 +257,22 @@ test("rejects tampered, expired and malformed agent run tokens", async () => {
             expiresIn: AGENT_RUN_TOKEN_TTL_SECONDS + 1,
         }),
     ).rejects.toThrow("Invalid agent run token lifetime");
+    await expect(
+        signAgentRunToken({
+            secret: env.BETTER_AUTH_SECRET,
+            parentApiKeyId: "parent-key-id",
+            parentRequestId: "parent-request-id",
+            agentDepth: 4,
+        }),
+    ).rejects.toThrow("Agent delegation exceeds 3 hops");
 
     // Correctly signed but missing the subject: the signature proves origin, it
     // does not prove the payload has the shape the auth layer reads.
-    const malformedJwt = await new SignJWT({ version: 1 })
+    const malformedJwt = await new SignJWT({
+        version: 1,
+        parentRequestId: "parent-request-id",
+        agentDepth: 1,
+    })
         .setProtectedHeader({ alg: "HS256", typ: "JWT" })
         .setIssuer("gen.pollinations.ai")
         .setAudience("pollinations-api")
@@ -283,8 +295,8 @@ test("rejects tampered, expired and malformed agent run tokens", async () => {
     // The parent request id is what groups a run's generations, so a token
     // that cannot be attributed is rejected rather than billed untagged.
     for (const payload of [
-        { version: 1 },
-        { version: 1, parentRequestId: "" },
+        { version: 1, agentDepth: 1 },
+        { version: 1, parentRequestId: "", agentDepth: 1 },
     ]) {
         const untagged = await new SignJWT(payload)
             .setProtectedHeader({ alg: "HS256", typ: "JWT" })

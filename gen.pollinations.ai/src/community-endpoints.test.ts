@@ -1624,6 +1624,7 @@ describe("community endpoint helpers", () => {
             endpoint: CommunityEndpointRuntime,
             parentApiKeyId?: string,
             parentRequestId = "parent-request-id",
+            agentDepth = 0,
         ) {
             return communityEndpointGatewayContext({
                 endpoint,
@@ -1636,6 +1637,7 @@ describe("community endpoint helpers", () => {
                 userApiKey: "sk_user_key",
                 parentRequestId,
                 parentApiKeyId,
+                agentDepth,
             });
         }
 
@@ -1648,7 +1650,26 @@ describe("community endpoint helpers", () => {
             expect(token).not.toContain("sk_user_key");
 
             const claims = await verifyAgentRunToken(token, secret);
-            expect(claims).toMatchObject({ parentApiKeyId: "parent-key-id" });
+            expect(claims).toMatchObject({
+                parentApiKeyId: "parent-key-id",
+                agentDepth: 1,
+            });
+        });
+
+        it("increments agent depth when delegating to another agent", async () => {
+            const endpoint = endpointAgent();
+            const context = await contextFor(
+                endpoint,
+                "parent-key-id",
+                "parent-request-id",
+                1,
+            );
+            await expect(
+                verifyAgentRunToken(
+                    String(context.modelConfig?.authKey),
+                    secret,
+                ),
+            ).resolves.toMatchObject({ agentDepth: 2 });
         });
 
         it("carries the parent request id so a run's generations can be grouped", async () => {

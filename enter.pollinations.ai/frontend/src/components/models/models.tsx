@@ -33,6 +33,7 @@ import {
     fetchModelCatalog,
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
+import { useModelHealth } from "./model-health.tsx";
 import { getModelDisplayName } from "./model-info.ts";
 import type { ModelScope, ModelSort } from "./model-search.ts";
 import { sortModels } from "./model-sort.ts";
@@ -85,6 +86,7 @@ const SORT_OPTIONS: Array<{
         label: "Price: High",
         accessibleLabel: "Highest price first",
     },
+    { value: "speed", label: "Speed", accessibleLabel: "Fastest first" },
     { value: "title", label: "Name: A–Z", accessibleLabel: "Name: A to Z" },
     {
         value: "title-desc",
@@ -186,9 +188,14 @@ export const Models: FC = () => {
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
     const [catalogError, setCatalogError] = useState<string | null>(null);
     const { stats } = useModelStats();
+    const healthByModel = useModelHealth();
     const allModels = useMemo(
-        () => getModelPricesFromCatalog(catalogModels, stats),
-        [catalogModels, stats],
+        () =>
+            getModelPricesFromCatalog(catalogModels, stats).map((model) => ({
+                ...model,
+                health: healthByModel[model.name],
+            })),
+        [catalogModels, healthByModel, stats],
     );
     const query = search.trim().toLowerCase();
     const scopedModels = useMemo(

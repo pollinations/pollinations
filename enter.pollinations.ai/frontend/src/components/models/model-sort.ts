@@ -1,3 +1,4 @@
+import { MIN_HEALTH_REQUESTS } from "./model-health.tsx";
 import type { ModelSort } from "./model-search.ts";
 import type { ModelPrice } from "./types.ts";
 
@@ -19,6 +20,13 @@ const getAverageCost = (model: ModelPrice): number | undefined => {
 };
 
 const getTitle = (model: ModelPrice): string => model.displayName ?? model.name;
+
+const getSpeed = (model: ModelPrice): number | undefined => {
+    if (!model.health || model.health.eligibleRequests < MIN_HEALTH_REQUESTS) {
+        return undefined;
+    }
+    return model.health.tokensPerSecond ?? undefined;
+};
 
 const compareText = (a: string, b: string): number =>
     a.localeCompare(b, undefined, { sensitivity: "base" });
@@ -59,6 +67,8 @@ export function sortModels(
                     getAverageCost(b),
                     "desc",
                 );
+            case "speed":
+                return compareKnownValues(getSpeed(a), getSpeed(b), "desc");
             case "title":
                 return compareText(getTitle(a), getTitle(b));
             case "title-desc":

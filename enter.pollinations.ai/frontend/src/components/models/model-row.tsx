@@ -9,6 +9,7 @@ import {
 } from "@pollinations/ui";
 import type { FC, ReactNode } from "react";
 import { calculatePerPollen } from "./calculations.ts";
+import { ModelHealthSummary } from "./model-health.tsx";
 import {
     CAPABILITY_ICON,
     getCommunityModelIcon,
@@ -286,6 +287,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             {model.brand}
                         </a>
                     )}
+                    <ModelHealthSummary health={model.health} />
                     <div className="flex min-w-0 flex-col gap-0.5">
                         {(inputModalities.length > 0 ||
                             capabilities.length > 0 ||

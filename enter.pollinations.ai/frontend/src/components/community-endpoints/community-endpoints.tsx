@@ -17,6 +17,7 @@ import {
 } from "@shared/community-endpoints.ts";
 import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
+import { useModelHealth } from "../models/model-health.tsx";
 import { AgentDeleteConfirmation } from "./agent-delete-confirmation.tsx";
 import { AgentDialog } from "./agent-dialog.tsx";
 import { CommunityEndpointCard } from "./community-endpoint-card.tsx";
@@ -53,6 +54,7 @@ export function CommunityEndpoints({
     canPublish,
     fallbackOptions,
 }: CommunityEndpointsProps) {
+    const healthByModel = useModelHealth();
     const [endpoints, setEndpoints] = useState<CommunityEndpoint[]>([]);
     const [agents, setAgents] = useState<ManagedAgent[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -327,6 +329,7 @@ export function CommunityEndpoints({
             <CommunityEndpointCard
                 key={endpoint.id}
                 endpoint={endpoint}
+                health={healthByModel[endpoint.modelId]}
                 isToggling={togglingId === endpoint.id}
                 onToggle={() => setToggling(endpoint)}
                 onEdit={() => {

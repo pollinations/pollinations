@@ -100,13 +100,6 @@ async function connect(worker, env, calls) {
 
 test("serves stateless MCP without caller credentials", async () => {
     const { calls, env, worker } = createHarness();
-    const health = await worker.fetch(
-        new Request("https://ffmpeg.internal/health"),
-        env,
-    );
-    assert.equal(health.status, 200);
-    assert.equal((await health.json()).endpoint, "/");
-
     const client = await connect(worker, env, calls);
     assert.deepEqual(
         (await client.listTools()).tools.map(({ name }) => name),

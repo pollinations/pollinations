@@ -1,0 +1,34 @@
+{
+  "pr_number": 13680,
+  "title": "fix: disclose community model data handling",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13680",
+  "merged_at": "2026-08-22T13:38:01Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds Privacy Policy disclosures for external community endpoints and Pollinations-hosted prompt agents.\n- Adds Terms obligations for community providers and public agent creators.\n- Shows warnings in the Community catalog and public publishing forms, and clarifies the provider profile link.\n- Verifies Enter with `npm run build:frontend`, `npm run typecheck`, and live local frontend/API health checks.\n- Public-site `npm run build` remains blocked by existing missing `react-router-dom` and React type conflicts unrelated to these Markdown changes.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Know Where Prompts Pollinate",
+    "blurb": "Community endpoints and public prompt agents now come with clearer signposts about who handles the data. The garden is still open; the labels are simply easier to read.",
+    "summary": "Added Privacy Policy and Terms disclosures for external community endpoints and Pollinations-hosted prompt agents, plus in-product warnings in the Community catalog and public publishing forms.",
+    "impact": "Users can now see clearer data-handling context before using a community provider or publishing a public agent, while providers and creators have explicit platform obligations.",
+    "keywords": [
+      "privacy",
+      "community-models",
+      "prompt-agents",
+      "community-catalog",
+      "terms",
+      "data-handling"
+    ],
+    "visual_concept": "Polli acts as a thoughtful garden guide, placing clear little information signs beside community-powered code-plants and public-agent seed packets. A friendly CRT monitor robot reads a provider profile card, while soft privacy-shield icons and labeled pathways make the shared garden feel transparent and welcoming.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny librarian scarf, placing clear privacy information signs beside a community garden of code-plants and public-agent seed packets; a cute CRT monitor robot studies a provider profile card nearby. Soft lime green (#ecf874) appears prominently among warm cream, mint, lavender, and peach pastel gradients, with pixel flowers and subtle shield icons; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with small pixel-font text: 'KNOW THE PATH'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-22/PR-13680.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny librarian scarf, placing clear privacy information signs beside a community garden of code-plants and public-agent seed packets; a cute CRT monitor robot studies a provider profile card nearby. Soft lime green (#ecf874) appears prominently among warm cream, mint, lavender, and peach pastel gradients, with pixel flowers and subtle shield icons; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with small pixel-font text: 'KNOW THE PATH'."
+  },
+  "generated_at": "2026-08-22T13:38:56.779885+00:00"
+}

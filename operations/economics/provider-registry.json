@@ -1,11 +1,13 @@
 {
-    "version": 6,
+    "version": 7,
     "auditTargets": [
         { "provider": "alibaba", "accountId": "5314153712077332", "loginEmail": "elliot@myceli.ai", "url": "https://billing-cost.console.alibabacloud.com/fortune/billing-account" },
         { "provider": "anthropic", "loginEmail": "elliot@myceli.ai", "url": "https://platform.claude.com/settings/billing" },
         { "provider": "assemblyai", "loginEmail": "elliot@myceli.ai", "url": "https://www.assemblyai.com/dashboard/settings/billing" },
-        { "provider": "aws", "loginEmail": null, "url": "https://app.anodot.com/", "pending": true },
-        { "provider": "azure", "loginEmail": null, "url": "https://portal.azure.com/#view/Microsoft_Azure_Billing/ModernBillingMenuBlade/~/BillingAccounts", "pending": true },
+        { "provider": "aws", "loginEmail": "elliot@myceli.ai", "url": "https://us-east-1.console.aws.amazon.com/costmanagement/home#/credits" },
+        { "provider": "aws", "loginEmail": "elliot@myceli.ai", "url": "https://glass.automat-it.com/myceliai-aws/dashboard" },
+        { "provider": "aws", "loginEmail": "elliot@myceli.ai", "url": "https://umbrellacost.io/cost-usage/cost-usage-explorer" },
+        { "provider": "azure", "loginEmail": "thomas@myceli.ai", "url": "https://portal.azure.com/#view/Microsoft_Azure_Billing/ModernBillingMenuBlade/~/BillingAccounts" },
         { "provider": "bytedance", "accountId": "3000852661", "loginEmail": "elliot@myceli.ai", "url": "https://console.byteplus.com/finance/overview" },
         { "provider": "cloudflare", "accountId": "myceli", "loginEmail": "elliot@myceli.ai", "url": "https://dash.cloudflare.com/b6ec751c0862027ba269faf7029b2501/billing/credits" },
         { "provider": "cloudflare", "accountId": "pollinations", "loginEmail": "elliot@pollinations.ai", "url": "https://dash.cloudflare.com/?to=/:account/billing/credits", "pending": true },

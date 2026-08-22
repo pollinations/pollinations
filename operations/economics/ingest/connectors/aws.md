@@ -2,9 +2,10 @@
 
 Canonical vendor: `aws`
 
-## Verified — 2026-08-20
+## Verified — 2026-08-22
 
-- Status: Umbrella authentication and the account-scoped data plane both work.
+- Status: AWS Credits, Automat-it Glass, Umbrella UI, and the account-scoped
+  Umbrella data plane all work under `elliot@myceli.ai`.
 - Service grouping is the best current ledger grain: Umbrella exposes named
   Bedrock models such as `Claude Opus 5 [Amazon Bedrock Edition]` as services.
 - Keep the accounts separate in raw evidence before summing, because service
@@ -16,25 +17,40 @@ Use when:
 - separating Bedrock/model usage from infrastructure usage
 - reconciling AWS invoices, credits, and cloud usage rows
 
-Primary evidence sources:
+Primary evidence sources, in order by purpose:
 
-- Invoice/payment: AWS reseller/AIT/Umbrella invoices and Wise/card transactions.
-- Dashboard/usage: Umbrella Cost cost-and-usage views; AWS console only when direct account evidence is needed.
-- API: Umbrella Cost API, not AWS Cost Explorer for the current reseller-billed accounts.
+- Live grant balance and expiry: AWS Billing and Cost Management → Credits.
+  Use `Total estimated amount remaining` for the current OP Cloud balance
+  snapshot. The non-estimated amount only updates after invoices finalize.
+- Closed-month payable and funding split: Automat-it Glass. Use its monthly
+  `Total Usage`, `Savings Plan Discount`, `Reserved Instance Discount`,
+  `Credits`, and `You Pay (excl. tax)` values. Archive the Glass invoice when
+  one exists.
+- Detailed service/model usage: Umbrella Cost API and Cost & Usage Explorer.
+  Use `costType=cost` and `groupBy=service`; reconcile the closed-month total to
+  Glass.
+- Optimization only: Umbrella recommendations and potential savings. Never
+  book these as actual usage, discounts, credits, or liabilities.
+- Invoice/payment evidence: Glass invoices and Wise/card transactions.
 - Transaction context: `op_transactions` vendor `aws` when a cash invoice is paid.
 
 Collection steps:
 
 1. For invoices, place PDFs/receipts in `data/inbox/`.
-2. For usage evidence, query Umbrella Cost for the requested period only.
-3. Required credentials:
+2. For the current balance, record one dated `type: balance` OP Cloud snapshot
+   from AWS Credits using `Total estimated amount remaining`. Preserve each
+   active grant's remaining amount and expiry in the evidence notes.
+3. For a closed month, archive the Glass settlement/invoice and use `You Pay`
+   as the cash obligation after credits and reseller discounts.
+4. For usage evidence, query Umbrella Cost for the requested period only.
+5. Required credentials:
    - `UMBRELLA_USERNAME`
    - `UMBRELLA_PASSWORD`
-4. Authentication flow:
+6. Authentication flow:
    - `POST https://api.umbrellacost.io/api/v1/authentication/token/generate`
    - `GET https://api.umbrellacost.io/api/v1/users`
    - `GET https://api.umbrellacost.io/api/v2/invoices/cost-and-usage`
-5. Safe bounded command shape:
+7. Safe bounded command shape:
 
    ```bash
    test -n "${UMBRELLA_USERNAME:-}" || { echo "UMBRELLA_USERNAME missing"; exit 1; }
@@ -63,7 +79,7 @@ Collection steps:
 
    Do not print `auth_token`, `user_apikey`, `userkey`, passwords, or full unredacted account metadata in chat.
 
-6. For each target `accountKey`, query both `cost` and `discount` cost types:
+8. For each target `accountKey`, query both `cost` and `discount` cost types:
 
    ```bash
    account_key="<accountKey>"
@@ -76,8 +92,8 @@ Collection steps:
      -H "accept: application/json"
    ```
 
-7. Save raw API JSON to `data/inbox/aws-umbrella-<period>-cost-and-usage.json`.
-8. Use `agent.system.txt` with `mode: extract` for saved raw evidence.
+9. Save raw API JSON to `data/inbox/aws-umbrella-<period>-cost-and-usage.json`.
+10. Use `agent.system.txt` with `mode: extract` for saved raw evidence.
 
 For the detailed provider ledger, use `groupBy=service`. Preserve the AWS
 account ID in `resource_id`, classify `Amazon Bedrock` and services ending in
@@ -94,7 +110,12 @@ Expected entry:
 
 Known traps:
 
-- Current source of truth is Umbrella Cost because AWS is reseller-billed through Automat-it/AIT.
+- No single AWS surface is authoritative for everything: AWS owns live credit
+  balances, Glass owns the closed reseller settlement, and Umbrella owns the
+  detailed usage breakdown.
+- Do not replace AWS's live estimated credit balance with Glass's remaining
+  credit figure. Glass is tied to its latest finalized settlement and can lag
+  current unbilled usage.
 - The authorization header from Umbrella is the raw token, with no `Bearer` prefix.
 - Auth response fields:
   - `.Authorization` is the raw authorization token.

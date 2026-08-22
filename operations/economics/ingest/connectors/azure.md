@@ -2,9 +2,11 @@
 
 Canonical vendor: `azure`
 
-## Verified — 2026-08-20
+## Verified — 2026-08-22
 
 - Status: client-credential authentication and the invoices API work.
+- Dashboard login: `thomas@myceli.ai`. In Azure Portal, open Cost Management +
+  Billing → Benefits → Azure credits.
 - The subscription Cost Management query also works. A 2026 year-to-date
   `ActualCost` query grouped by `ServiceName` and `Meter` returned exact model,
   SKU, infrastructure, usage-quantity, and month detail, including August MTD.
@@ -20,23 +22,30 @@ Use when:
 Primary evidence sources:
 
 - Invoice/payment: monthly Azure/Microsoft invoice, usually issued around day 9 for the previous calendar month.
-- Dashboard/usage: Azure billing profile and sponsorship/credit pages.
+- Live credit balance and expiry: Azure Portal → Cost Management + Billing →
+  Benefits → Azure credits. Use the latest USD transaction balance after
+  unbilled eligible charges for the OP Cloud balance snapshot. The prominent
+  EUR balance is an estimated display translated at a monthly benchmark rate.
 - API: Microsoft Billing invoices API through ARM.
-- Detailed usage: Azure cost/usage CSV or dashboard export when service, SKU, or
+- Detailed usage: subscription Cost Management API, or Azure cost/usage CSV,
+  when service, SKU, or
   model/inference classification matters.
 - Transaction context: `op_transactions` vendor `azure`.
 
 Collection steps:
 
 1. For invoices, place PDFs/receipts in `data/inbox/`.
-2. For API evidence, query the billing profile invoices endpoint for the requested period only.
-3. Required credentials:
+2. For the current balance, record one dated `type: balance` OP Cloud snapshot
+   from the latest USD balance in the Azure credit-transactions table. Do not
+   convert the displayed EUR estimate back to USD.
+3. For API evidence, query the billing profile invoices endpoint for the requested period only.
+4. Required credentials:
    - `AZURE_TENANT_ID`
    - `AZURE_CLIENT_ID`
    - `AZURE_CLIENT_SECRET`
    - `AZURE_BILLING_ACCOUNT`
    - `AZURE_BILLING_PROFILE`
-4. Token flow:
+5. Token flow:
 
    ```bash
    for v in AZURE_TENANT_ID AZURE_CLIENT_ID AZURE_CLIENT_SECRET AZURE_BILLING_ACCOUNT AZURE_BILLING_PROFILE; do
@@ -54,7 +63,7 @@ Collection steps:
    )"
    ```
 
-5. Invoice endpoint:
+6. Invoice endpoint:
 
    Microsoft documents `periodStartDate` and `periodEndDate` as `MM-DD-YYYY`.
 
@@ -65,12 +74,12 @@ Collection steps:
      > "data/inbox/azure-<YYYY-MM>-billing-invoices.json"
    ```
 
-6. Save raw API JSON to `data/inbox/azure-<period>-billing-invoices.json`.
-7. For provider detail, query the subscription Cost Management endpoint with
+7. Save raw API JSON to `data/inbox/azure-<period>-billing-invoices.json`.
+8. For provider detail, query the subscription Cost Management endpoint with
    monthly granularity and group by `ServiceName` and `Meter`. Preserve the raw
    values; for closed months, allocate the final invoice total and funding split
    across meter rows so the detailed ledger still ties exactly to the invoice.
-8. Use `agent.system.txt` with `mode: extract` for saved raw evidence.
+9. Use `agent.system.txt` with `mode: extract` for saved raw evidence.
 
 Expected entry:
 
@@ -95,7 +104,13 @@ Known traps:
   `reconciliation_notes` because Azure may still show
   `freeAzureCreditApplied.value == 0` and `azurePrepaymentApplied.value == 0`.
 - The running month has no full invoice until the next invoice is issued.
-- Local historical note: startup lot runs 2026-04-06 to 2028-04-06; Jan-Mar 2026 invoices had no sponsorship credit and were card-charged in full.
+- Local historical note: the first USD 100,000 startup lot is fully used. The
+  active USD 250,036 lot runs 2026-04-06 to 2028-04-06. Jan-Mar 2026 invoices
+  had no sponsorship credit and were card-charged in full.
+- Credit-transactions rows include finalized invoice balances and a gray,
+  unbilled month-to-date row. For a current balance snapshot, use the balance
+  after that unbilled row. For a closed-month reconciliation, use the finalized
+  invoice row instead.
 - Currency is usually EUR in the local billing profile.
 - Dry-run mode: do not write the API dump. Verify command shape, env presence, period bounds, and intended `source_file` path only. Set `source_file` to the intended `data/inbox` path and mention dry-run paths in `reconciliation_notes`.
 

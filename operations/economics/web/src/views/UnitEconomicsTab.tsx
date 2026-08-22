@@ -189,6 +189,37 @@ function FullCostResult({ row }: { row: UnitEconomicsRow }) {
     );
 }
 
+function CurrentResult({ row }: { row: UnitEconomicsRow }) {
+    return (
+        <Tooltip
+            triggerAs="span"
+            content={
+                <span className="block max-w-72">
+                    <strong>Current result · with credits</strong>
+                    <span className="block">
+                        Retained Paid: {fmtUsd(row.retainedPaidUsd)}
+                    </span>
+                    <span className="block">
+                        Vendor cash: {fmtUsd(row.providerCashUsd)} · consumed
+                        credits: {fmtUsd(row.providerCreditUsd)}
+                    </span>
+                    <span className="block">
+                        Result = retained Paid − vendor cash
+                    </span>
+                    <span className="block">
+                        Full-cost result:{" "}
+                        {fmtSignedUsd(row.economicContributionUsd)}
+                    </span>
+                </span>
+            }
+        >
+            <span className={signedToneOrSoft(row.netCashContributionUsd)}>
+                {fmtSignedUsd(row.netCashContributionUsd)}
+            </span>
+        </Tooltip>
+    );
+}
+
 function CreditSupportedChip({ row }: { row: UnitEconomicsRow }) {
     if (
         !isCreditSupported(
@@ -227,12 +258,15 @@ const SORT_COLUMNS: readonly SortColumn<UnitEconomicsRow>[] = [
         value: (row) => mixShare(row.providerCashUsd, row.providerCreditUsd),
     },
     { key: "providerCreditUsd", value: (row) => row.providerCreditUsd },
+    { key: "currentResultUsd", value: (row) => row.netCashContributionUsd },
     {
-        key: "resultUsd",
-        value: (row) => row.economicContributionUsd,
+        key: "currentPerformancePct",
+        value: (row) =>
+            unitPerformancePct(row.netCashContributionUsd, row.retainedPaidUsd),
     },
+    { key: "fullCostResultUsd", value: (row) => row.economicContributionUsd },
     {
-        key: "performancePct",
+        key: "fullCostPerformancePct",
         value: (row) =>
             unitPerformancePct(
                 row.economicContributionUsd,
@@ -246,7 +280,7 @@ const SORT_COLUMNS: readonly SortColumn<UnitEconomicsRow>[] = [
 ];
 
 const DEFAULT_SORT = {
-    key: "resultUsd",
+    key: "fullCostResultUsd",
     direction: "asc",
 } as const;
 
@@ -340,21 +374,31 @@ function UnitEconomicsTable({
     const includesPartialMonth = vendorMonths.some(
         (row) => row.month >= currentMonth,
     );
-    const knownEconomicRows = vendorEconomics.filter(
+    const knownCurrentRows = vendorEconomics.filter(
+        (row) => row.netCashContributionUsd != null,
+    );
+    const currentResultUsd = knownCurrentRows.reduce(
+        (sum, row) => sum + (row.netCashContributionUsd ?? 0),
+        0,
+    );
+    const unknownCurrentVendorMonths =
+        vendorEconomics.length - knownCurrentRows.length;
+    const currentPerformancePct =
+        unknownCurrentVendorMonths === 0
+            ? unitPerformancePct(currentResultUsd, summary.retainedPaidUsd)
+            : null;
+    const knownFullCostRows = vendorEconomics.filter(
         (row) => row.economicContributionUsd != null,
     );
-    const economicContributionUsd = knownEconomicRows.reduce(
+    const fullCostResultUsd = knownFullCostRows.reduce(
         (sum, row) => sum + (row.economicContributionUsd ?? 0),
         0,
     );
-    const unknownEconomicVendorMonths =
-        vendorEconomics.length - knownEconomicRows.length;
-    const performancePct =
-        unknownEconomicVendorMonths === 0
-            ? unitPerformancePct(
-                  economicContributionUsd,
-                  summary.retainedPaidUsd,
-              )
+    const unknownFullCostVendorMonths =
+        vendorEconomics.length - knownFullCostRows.length;
+    const fullCostPerformancePct =
+        unknownFullCostVendorMonths === 0
+            ? unitPerformancePct(fullCostResultUsd, summary.retainedPaidUsd)
             : null;
     const mixedVendorMonths = vendorMonths.filter(
         (row) =>
@@ -396,51 +440,60 @@ function UnitEconomicsTable({
                 ),
             },
             {
-                label: "Result",
+                label: "Current result",
                 value:
-                    knownEconomicRows.length === 0
+                    knownCurrentRows.length === 0
                         ? "Unknown"
-                        : `${fmtSignedUsd(economicContributionUsd)}${
-                              unknownEconomicVendorMonths > 0
+                        : `${fmtSignedUsd(currentResultUsd)}${
+                              unknownCurrentVendorMonths > 0 ? " + unknown" : ""
+                          }`,
+                tone:
+                    knownCurrentRows.length === 0
+                        ? "base"
+                        : currentResultUsd > 0
+                          ? "pos"
+                          : currentResultUsd < 0
+                            ? "neg"
+                            : "base",
+                detail:
+                    unknownCurrentVendorMonths > 0
+                        ? "with credits · performance incomplete"
+                        : `with credits · ${fmtMarginPct(currentPerformancePct)}`,
+            },
+            {
+                label: "Full-cost result",
+                value:
+                    knownFullCostRows.length === 0
+                        ? "Unknown"
+                        : `${fmtSignedUsd(fullCostResultUsd)}${
+                              unknownFullCostVendorMonths > 0
                                   ? " + unknown"
                                   : ""
                           }`,
                 tone:
-                    knownEconomicRows.length === 0
+                    knownFullCostRows.length === 0
                         ? "base"
-                        : economicContributionUsd > 0
+                        : fullCostResultUsd > 0
                           ? "pos"
-                          : economicContributionUsd < 0
+                          : fullCostResultUsd < 0
                             ? "neg"
                             : "base",
                 detail:
-                    summary.netCashContributionUsd == null
-                        ? "cash-only result unknown"
-                        : `cash-only ${fmtSignedUsd(summary.netCashContributionUsd)}`,
-            },
-            {
-                label: "Performance",
-                value: fmtMarginPct(performancePct),
-                tone:
-                    performancePct == null
-                        ? "base"
-                        : performancePct > 0
-                          ? "pos"
-                          : performancePct < 0
-                            ? "neg"
-                            : "base",
-                detail:
-                    unknownEconomicVendorMonths > 0
-                        ? "full-cost result incomplete"
-                        : "result ÷ retained Paid",
+                    unknownFullCostVendorMonths > 0
+                        ? "without credits · performance incomplete"
+                        : `without credits · ${fmtMarginPct(fullCostPerformancePct)}`,
             },
         ],
         [
-            economicContributionUsd,
-            knownEconomicRows.length,
-            performancePct,
+            currentPerformancePct,
+            currentResultUsd,
+            fullCostPerformancePct,
+            fullCostResultUsd,
+            knownCurrentRows.length,
+            knownFullCostRows.length,
             summary,
-            unknownEconomicVendorMonths,
+            unknownCurrentVendorMonths,
+            unknownFullCostVendorMonths,
         ],
     );
 
@@ -473,7 +526,7 @@ function UnitEconomicsTable({
             )}
 
             <TableScroller>
-                <DataTable className="min-w-[1180px]">
+                <DataTable className="min-w-[1420px]">
                     <TableHead>
                         <TableRow>
                             <TableHeaderCell
@@ -503,36 +556,34 @@ function UnitEconomicsTable({
                                 Vendor cost
                             </TableHeaderCell>
                             <TableHeaderCell
-                                rowSpan={2}
-                                align="right"
+                                colSpan={2}
+                                align="center"
                                 className={GROUP_BORDER}
-                                {...headerProps("resultUsd")}
                             >
                                 <HeaderHint
                                     hint={{
                                         meaning:
-                                            "Full-cost dollars won or lost after valuing consumed vendor credits.",
+                                            "Actual cash outcome while consumed vendor credits cover part of usage.",
+                                        formula: "retained Paid − vendor cash",
+                                    }}
+                                >
+                                    Current · with credits
+                                </HeaderHint>
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                colSpan={2}
+                                align="center"
+                                className={GROUP_BORDER}
+                            >
+                                <HeaderHint
+                                    hint={{
+                                        meaning:
+                                            "Underlying outcome after valuing consumed vendor credits as costs that may later require cash.",
                                         formula:
                                             "retained Paid − vendor cash − vendor credits",
                                     }}
                                 >
-                                    Result
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                rowSpan={2}
-                                align="right"
-                                className={GROUP_BORDER}
-                                {...headerProps("performancePct")}
-                            >
-                                <HeaderHint
-                                    hint={{
-                                        meaning:
-                                            "Full-cost result as a proportion of retained Paid. Use this to compare efficiency across rows of different sizes.",
-                                        formula: "result ÷ retained Paid",
-                                    }}
-                                >
-                                    Performance
+                                    Full cost · without credits
                                 </HeaderHint>
                             </TableHeaderCell>
                             {view === "vendors" && (
@@ -604,6 +655,36 @@ function UnitEconomicsTable({
                             >
                                 <HeaderHint hint="Vendor usage funded with consumed vendor credits. Model rows receive an allocation from the vendor-month total.">
                                     Credit
+                                </HeaderHint>
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                align="right"
+                                className={GROUP_BORDER}
+                                {...headerProps("currentResultUsd")}
+                            >
+                                Result
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                align="right"
+                                {...headerProps("currentPerformancePct")}
+                            >
+                                <HeaderHint hint="Current result divided by retained Paid Pollen.">
+                                    Performance
+                                </HeaderHint>
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                align="right"
+                                className={GROUP_BORDER}
+                                {...headerProps("fullCostResultUsd")}
+                            >
+                                Result
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                align="right"
+                                {...headerProps("fullCostPerformancePct")}
+                            >
+                                <HeaderHint hint="Full-cost result divided by retained Paid Pollen.">
+                                    Performance
                                 </HeaderHint>
                             </TableHeaderCell>
                         </TableRow>
@@ -691,6 +772,30 @@ function UnitEconomicsTable({
                                         numeric
                                         className={GROUP_BORDER}
                                     >
+                                        <CurrentResult row={row} />
+                                    </TableCell>
+                                    <TableCell
+                                        align="right"
+                                        numeric
+                                        className={signedToneOrSoft(
+                                            unitPerformancePct(
+                                                row.netCashContributionUsd,
+                                                row.retainedPaidUsd,
+                                            ),
+                                        )}
+                                    >
+                                        {fmtMarginPct(
+                                            unitPerformancePct(
+                                                row.netCashContributionUsd,
+                                                row.retainedPaidUsd,
+                                            ),
+                                        )}
+                                    </TableCell>
+                                    <TableCell
+                                        align="right"
+                                        numeric
+                                        className={GROUP_BORDER}
+                                    >
                                         <FullCostResult row={row} />
                                     </TableCell>
                                     <TableCell
@@ -724,7 +829,7 @@ function UnitEconomicsTable({
                         {sortedRows.length === 0 && (
                             <TableRow>
                                 <TableCell
-                                    colSpan={view === "vendors" ? 11 : 10}
+                                    colSpan={view === "vendors" ? 13 : 12}
                                     className="py-8 text-center text-theme-text-soft"
                                 >
                                     No unit economics for this selection.

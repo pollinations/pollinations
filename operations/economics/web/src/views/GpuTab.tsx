@@ -39,6 +39,7 @@ import {
 } from "../lib/months";
 import { canonicalVendor } from "../lib/tb";
 import { signedToneOrSoft } from "../lib/tone";
+import { isCreditSupported } from "../lib/unitEconomics";
 import type { Data, OpCloudRow } from "../types";
 
 const REGISTRY_UNIT_PRICES: Record<string, { price: number; unit: string }> = {
@@ -113,8 +114,10 @@ export type GpuWorkloadRow = {
     paidCostUsd: number;
     creditCostUsd: number;
     totalCostUsd: number;
-    resultUsd: number | null;
-    performancePct: number | null;
+    currentResultUsd: number | null;
+    currentPerformancePct: number | null;
+    fullCostResultUsd: number | null;
+    fullCostPerformancePct: number | null;
     resources: GpuResourceRow[];
     flags: string[];
 };
@@ -707,7 +710,13 @@ export function gpuWorkloadRows(
 
     return [...groups.values()].map((group): GpuWorkloadRow => {
         const totalCostUsd = group.paidCostUsd + group.creditCostUsd;
-        const resultUsd =
+        const currentResultUsd =
+            group.kind === "overhead"
+                ? -group.paidCostUsd
+                : group.kind === "workload" && group.hasPollen && group.hasCost
+                  ? group.retainedUsd - group.paidCostUsd
+                  : null;
+        const fullCostResultUsd =
             group.kind === "overhead"
                 ? -totalCostUsd
                 : group.kind === "workload" && group.hasPollen && group.hasCost
@@ -720,6 +729,9 @@ export function gpuWorkloadRows(
         }
         if (group.kind === "workload" && !group.hasCost) {
             flags.push("missing GPU cost");
+        }
+        if (isCreditSupported(currentResultUsd, fullCostResultUsd)) {
+            flags.push("credit-supported");
         }
         const vendors = new Set([...group.costVendors, ...group.pollenVendors]);
         return {
@@ -738,10 +750,15 @@ export function gpuWorkloadRows(
             paidCostUsd: group.paidCostUsd,
             creditCostUsd: group.creditCostUsd,
             totalCostUsd,
-            resultUsd,
-            performancePct:
-                resultUsd != null && group.retainedUsd > 0
-                    ? (resultUsd / group.retainedUsd) * 100
+            currentResultUsd,
+            currentPerformancePct:
+                currentResultUsd != null && group.retainedUsd > 0
+                    ? (currentResultUsd / group.retainedUsd) * 100
+                    : null,
+            fullCostResultUsd,
+            fullCostPerformancePct:
+                fullCostResultUsd != null && group.retainedUsd > 0
+                    ? (fullCostResultUsd / group.retainedUsd) * 100
                     : null,
             resources: group.resources.sort(
                 (left, right) =>
@@ -1030,13 +1047,24 @@ export function GpuTab({
             { key: "paidCostUsd", value: (row) => row.paidCostUsd },
             { key: "creditCostUsd", value: (row) => row.creditCostUsd },
             { key: "totalCostUsd", value: (row) => row.totalCostUsd },
-            { key: "resultUsd", value: (row) => row.resultUsd },
-            { key: "performancePct", value: (row) => row.performancePct },
+            { key: "currentResultUsd", value: (row) => row.currentResultUsd },
+            {
+                key: "currentPerformancePct",
+                value: (row) => row.currentPerformancePct,
+            },
+            {
+                key: "fullCostResultUsd",
+                value: (row) => row.fullCostResultUsd,
+            },
+            {
+                key: "fullCostPerformancePct",
+                value: (row) => row.fullCostPerformancePct,
+            },
         ],
         [],
     );
     const { headerProps, rows: sorted } = useSortableRows(rows, sortColumns, {
-        key: "resultUsd",
+        key: "fullCostResultUsd",
         direction: "asc",
     });
     const toggle = (key: string) => {
@@ -1088,23 +1116,16 @@ export function GpuTab({
                         ),
                     },
                     {
-                        label: "Result",
-                        value: fmtSignedUsd(stats.marginUsd),
-                        tone: marginTone(stats.marginUsd),
-                        detail: (
-                            <span>
-                                cash-only {fmtSignedUsd(stats.cashMarginUsd)}
-                            </span>
-                        ),
+                        label: "Current result",
+                        value: fmtSignedUsd(stats.cashMarginUsd),
+                        tone: marginTone(stats.cashMarginUsd),
+                        detail: `with credits · ${fmtMarginPct(stats.cashMarginPct)}`,
                     },
                     {
-                        label: "Performance",
-                        value: fmtMarginPct(stats.marginPct),
-                        tone:
-                            stats.marginPct == null
-                                ? "base"
-                                : marginTone(stats.marginPct),
-                        detail: "result ÷ retained Paid",
+                        label: "Full-cost result",
+                        value: fmtSignedUsd(stats.marginUsd),
+                        tone: marginTone(stats.marginUsd),
+                        detail: `without credits · ${fmtMarginPct(stats.marginPct)}`,
                     },
                 ]}
             />
@@ -1117,7 +1138,7 @@ export function GpuTab({
                 </div>
             )}
             <TableScroller>
-                <DataTable className="min-w-[1120px]">
+                <DataTable className="min-w-[1360px]">
                     <TableHead>
                         <TableRow>
                             <TableHeaderCell
@@ -1154,35 +1175,34 @@ export function GpuTab({
                                 Cost
                             </TableHeaderCell>
                             <TableHeaderCell
-                                rowSpan={2}
-                                align="right"
+                                colSpan={2}
+                                align="center"
                                 className={GROUP_BORDER}
-                                {...headerProps("resultUsd")}
                             >
                                 <HeaderHint
                                     hint={{
                                         meaning:
-                                            "Retained Paid Pollen minus the full directly mapped GPU workload cost.",
+                                            "Actual cash outcome while consumed vendor credits cover part of GPU usage.",
+                                        formula: "retained Paid − cash",
+                                    }}
+                                >
+                                    Current · with credits
+                                </HeaderHint>
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                colSpan={2}
+                                align="center"
+                                className={GROUP_BORDER}
+                            >
+                                <HeaderHint
+                                    hint={{
+                                        meaning:
+                                            "Underlying GPU outcome after valuing consumed vendor credits as costs that may later require cash.",
                                         formula:
                                             "retained Paid − cash − consumed credit",
                                     }}
                                 >
-                                    Result
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                rowSpan={2}
-                                align="right"
-                                {...headerProps("performancePct")}
-                            >
-                                <HeaderHint
-                                    hint={{
-                                        meaning:
-                                            "Workload result relative to retained Paid Pollen.",
-                                        formula: "result ÷ retained Paid",
-                                    }}
-                                >
-                                    Efficiency
+                                    Full cost · without credits
                                 </HeaderHint>
                             </TableHeaderCell>
                         </TableRow>
@@ -1235,6 +1255,36 @@ export function GpuTab({
                                     }}
                                 >
                                     Total
+                                </HeaderHint>
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                align="right"
+                                className={GROUP_BORDER}
+                                {...headerProps("currentResultUsd")}
+                            >
+                                Result
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                align="right"
+                                {...headerProps("currentPerformancePct")}
+                            >
+                                <HeaderHint hint="Current result divided by retained Paid Pollen.">
+                                    Performance
+                                </HeaderHint>
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                align="right"
+                                className={GROUP_BORDER}
+                                {...headerProps("fullCostResultUsd")}
+                            >
+                                Result
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                align="right"
+                                {...headerProps("fullCostPerformancePct")}
+                            >
+                                <HeaderHint hint="Full-cost result divided by retained Paid Pollen.">
+                                    Performance
                                 </HeaderHint>
                             </TableHeaderCell>
                         </TableRow>
@@ -1316,21 +1366,48 @@ export function GpuTab({
                                                 className={cn(
                                                     GROUP_BORDER,
                                                     signedToneOrSoft(
-                                                        row.resultUsd,
+                                                        row.currentResultUsd,
                                                     ),
                                                 )}
                                             >
-                                                {fmtSignedUsd(row.resultUsd)}
+                                                {fmtSignedUsd(
+                                                    row.currentResultUsd,
+                                                )}
                                             </TableCell>
                                             <TableCell
                                                 align="right"
                                                 numeric
                                                 className={signedToneOrSoft(
-                                                    row.performancePct,
+                                                    row.currentPerformancePct,
                                                 )}
                                             >
                                                 {fmtMarginPct(
-                                                    row.performancePct,
+                                                    row.currentPerformancePct,
+                                                )}
+                                            </TableCell>
+                                            <TableCell
+                                                align="right"
+                                                numeric
+                                                className={cn(
+                                                    GROUP_BORDER,
+                                                    signedToneOrSoft(
+                                                        row.fullCostResultUsd,
+                                                    ),
+                                                )}
+                                            >
+                                                {fmtSignedUsd(
+                                                    row.fullCostResultUsd,
+                                                )}
+                                            </TableCell>
+                                            <TableCell
+                                                align="right"
+                                                numeric
+                                                className={signedToneOrSoft(
+                                                    row.fullCostPerformancePct,
+                                                )}
+                                            >
+                                                {fmtMarginPct(
+                                                    row.fullCostPerformancePct,
                                                 )}
                                             </TableCell>
                                         </TableRow>
@@ -1338,7 +1415,7 @@ export function GpuTab({
                                             row.resources.length > 0 && (
                                                 <TableRow>
                                                     <TableCell
-                                                        colSpan={10}
+                                                        colSpan={12}
                                                         className="bg-theme-bg-active/40"
                                                     >
                                                         <GpuInstanceTable
@@ -1354,7 +1431,7 @@ export function GpuTab({
                         {sorted.length === 0 && (
                             <TableRow>
                                 <TableCell
-                                    colSpan={10}
+                                    colSpan={12}
                                     className="py-8 text-center text-theme-text-soft"
                                 >
                                     No GPU workloads for this selection.

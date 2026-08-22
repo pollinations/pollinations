@@ -152,6 +152,10 @@ describe("unitEconomicsRows", () => {
             expect(
                 sum(models.map((row) => row.economicContributionUsd)),
             ).toBeCloseTo(provider.economicContributionUsd ?? 0);
+            expect(
+                (provider.netCashContributionUsd ?? 0) -
+                    (provider.economicContributionUsd ?? 0),
+            ).toBeCloseTo(provider.providerCreditUsd ?? 0);
         }
     });
 

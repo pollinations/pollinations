@@ -444,7 +444,8 @@ describe("gpuWorkloadRows", () => {
                         vendor: "runpod",
                         resource_id: "runpod-zimage",
                         model: "zimage",
-                        paid: -40,
+                        paid: -30,
+                        credit: -10,
                     }),
                     cloud({
                         vendor: "vast.ai",
@@ -486,10 +487,13 @@ describe("gpuWorkloadRows", () => {
             paidUsd: 200,
             questUsd: 50,
             retainedUsd: 160,
-            paidCostUsd: 100,
+            paidCostUsd: 90,
+            creditCostUsd: 10,
             totalCostUsd: 100,
-            resultUsd: 60,
-            performancePct: 37.5,
+            currentResultUsd: 70,
+            currentPerformancePct: 43.75,
+            fullCostResultUsd: 60,
+            fullCostPerformancePct: 37.5,
             flags: [],
         });
         expect(rows[0].resources).toHaveLength(2);
@@ -532,7 +536,10 @@ describe("gpuWorkloadRows", () => {
             questUsd: 50,
             retainedUsd: 140,
             totalCostUsd: 100,
-            resultUsd: 40,
+            currentResultUsd: 40,
+            currentPerformancePct: (40 / 140) * 100,
+            fullCostResultUsd: 40,
+            fullCostPerformancePct: (40 / 140) * 100,
         });
     });
 
@@ -561,10 +568,35 @@ describe("gpuWorkloadRows", () => {
             gpuCount: 1,
             totalCostUsd: 0.08,
             retainedUsd: null,
-            resultUsd: null,
-            performancePct: null,
+            currentResultUsd: null,
+            currentPerformancePct: null,
+            fullCostResultUsd: null,
+            fullCostPerformancePct: null,
             flags: ["unmapped"],
         });
+    });
+
+    it("flags workloads that are profitable only while credits are available", () => {
+        const rows = gpuWorkloadRows(
+            {
+                ...baseData,
+                opCloud: [cloud({ paid: -50, credit: -100 })],
+                opPollen: [pollen({})],
+            },
+            "2026-06",
+        );
+
+        expect(rows[0]).toMatchObject({
+            retainedUsd: 130,
+            paidCostUsd: 50,
+            creditCostUsd: 100,
+            currentResultUsd: 80,
+            fullCostResultUsd: -20,
+            flags: ["credit-supported"],
+        });
+        expect(
+            (rows[0].currentResultUsd ?? 0) - (rows[0].fullCostResultUsd ?? 0),
+        ).toBe(rows[0].creditCostUsd);
     });
 });
 

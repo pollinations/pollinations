@@ -1,8 +1,11 @@
 DESCRIPTION >
     Public model usage statistics for the last 7 days including today.
-    Returns aggregated stats per model including request counts, average costs, and response times.
-    Only includes models with at least 3 successful priced requests from at least 2 distinct
-    callers, for reliable averages and to keep owner-only models off a public endpoint.
+    Returns aggregated stats per model including request counts, typical costs, and response times.
+    Cost is the median of successful priced requests (not the mean): a few
+    misbilled rows — e.g. a flat per-image rate multiplied by OpenAI
+    output_tokens — used to pull avg_cost_usd thousands of times too high and
+    402 callers. Only includes models with at least 3 successful priced requests
+    from at least 2 distinct callers, which also keeps owner-only models private.
 
 TOKEN tinybird_read_public READ
 
@@ -41,15 +44,15 @@ SQL >
     SELECT
         model,
         count() as request_count,
-        round(avgIf(price, response_status >= 200 AND response_status < 300 AND price > 0), 6) as avg_cost_usd,
+        round(medianIf(price, response_status >= 200 AND response_status < 300 AND price > 0), 6) as avg_cost_usd,
         round(avgIf(response_time, response_status >= 200 AND response_status < 300), 0) as avg_response_ms,
         countIf(response_status >= 200 AND response_status < 300) as success_count,
         countIf(response_status >= 200 AND response_status < 300 AND price > 0) as priced_success_count,
         countIf(response_status >= 400) as error_count
     FROM priced_calls
     GROUP BY model
-    -- Two callers, not just three calls: an average over one person is not a
-    -- reliable average, and a private community model is owner-only callable
+    -- Two callers, not just three calls: a median over one person is not a
+    -- reliable public estimate, and a private community model is owner-only callable
     -- (gen middleware/model.ts), so it can never reach two. That keeps a
     -- model nobody published off a public endpoint without this table having
     -- to carry a visibility column. It does not retract a model that was

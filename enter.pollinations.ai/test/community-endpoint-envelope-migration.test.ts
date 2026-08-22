@@ -1,0 +1,252 @@
+import { env } from "cloudflare:test";
+import { createTestUser } from "@shared/test/fixtures/index.ts";
+import { describe, expect, it } from "vitest";
+import migrationSql from "../drizzle/0053_listing_envelope.sql?raw";
+
+type Row = {
+    id: string;
+    type: string;
+    base_url: string;
+    upstream_model: string;
+    payload: string;
+};
+
+/**
+ * The backfill decides what each existing row IS, and then keeps only the
+ * fields that kind has. Both halves are asserted: a wrong `type` routes the
+ * listing to the wrong credential, and a payload missing what its type
+ * requires drops the listing out of the catalog entirely.
+ */
+describe("community endpoint envelope migration", () => {
+    it("types every row and packs only that type's fields", async () => {
+        await createTestUser({ id: "owner" });
+        await env.DB.prepare(`
+            CREATE TABLE migration_agent (
+                id TEXT PRIMARY KEY,
+                owner_user_id TEXT NOT NULL DEFAULT 'owner',
+                config TEXT NOT NULL,
+                created_at INTEGER NOT NULL DEFAULT 0,
+                updated_at INTEGER NOT NULL DEFAULT 0
+            )
+        `).run();
+        await env.DB.prepare(`
+            INSERT INTO migration_agent (id, config)
+            VALUES
+                ('agent-row-id', '{"systemPrompt":"Teach clearly.","baseModel":"openai-fast","mcpServers":[]}'),
+                ('standalone-agent', '{"systemPrompt":"Work alone.","baseModel":"openai","mcpServers":[]}')
+        `).run();
+        await env.DB.prepare(`
+            CREATE TABLE migration_community_endpoint (
+                id TEXT PRIMARY KEY,
+                owner_user_id TEXT NOT NULL DEFAULT 'owner',
+                name TEXT NOT NULL,
+                title TEXT,
+                description TEXT,
+                agent_id TEXT,
+                modality TEXT NOT NULL DEFAULT 'text',
+                image_pricing TEXT NOT NULL DEFAULT 'request',
+                input_modalities TEXT,
+                base_url TEXT,
+                upstream_model TEXT NOT NULL,
+                bearer_token_ciphertext TEXT,
+                per_user_rpm REAL,
+                fallback_model_ids TEXT,
+                delegates_generation INTEGER NOT NULL DEFAULT 0,
+                prompt_text_price REAL NOT NULL DEFAULT 0,
+                prompt_cached_price REAL NOT NULL DEFAULT 0,
+                prompt_cache_write_price REAL NOT NULL DEFAULT 0,
+                prompt_audio_price REAL NOT NULL DEFAULT 0,
+                prompt_image_price REAL NOT NULL DEFAULT 0,
+                completion_text_price REAL NOT NULL DEFAULT 0,
+                completion_reasoning_price REAL NOT NULL DEFAULT 0,
+                completion_audio_price REAL NOT NULL DEFAULT 0,
+                completion_image_price REAL NOT NULL DEFAULT 0,
+                visibility TEXT NOT NULL DEFAULT 'private',
+                hidden_at INTEGER,
+                hidden_reason TEXT,
+                hidden_by TEXT,
+                created_at INTEGER NOT NULL DEFAULT 0,
+                updated_at INTEGER NOT NULL DEFAULT 0
+            )
+        `).run();
+        await env.DB.prepare(`
+            INSERT INTO migration_community_endpoint
+                (id, name, agent_id, modality, image_pricing, input_modalities,
+                 base_url, upstream_model, bearer_token_ciphertext,
+                 per_user_rpm, fallback_model_ids, delegates_generation,
+                 prompt_text_price, completion_text_price)
+            VALUES
+                ('prompt-agent', 'tutor', 'agent-row-id', 'text', 'request',
+                 NULL, NULL, 'tutor', NULL, NULL, NULL, 0, 0, 0),
+                ('delegating-text', 'weaver', NULL, 'text', 'request',
+                 NULL, 'https://agent.example.com/v1', 'weaver', 'cipher',
+                 30, NULL, 1, 0, 0),
+                ('delegating-image', 'painter', NULL, 'image', 'request',
+                 NULL, 'https://api.example.com/v1', 'sdxl', 'cipher',
+                 NULL, NULL, 1, 0, 0),
+                ('priced-proxy', 'openai', NULL, 'text', 'request',
+                 '["text","image"]', 'https://api.example.com/v1', 'gpt-4.1',
+                 'cipher', 12, '["owner/backup"]', 0, 0.5, 1.5),
+                ('bare-proxy', 'flux', NULL, 'image', 'tokens',
+                 NULL, 'https://api.example.com/v1', 'flux', 'cipher',
+                 NULL, NULL, 0, 0, 0)
+        `).run();
+
+        for (const statement of migrationSql.split(
+            "--> statement-breakpoint",
+        )) {
+            await env.DB.prepare(
+                statement
+                    .replaceAll(
+                        "community_endpoint",
+                        "migration_community_endpoint",
+                    )
+                    .replaceAll("`agent`", "`migration_agent`")
+                    .replaceAll('"agent"', '"migration_agent"'),
+            ).run();
+        }
+
+        const columns = await env.DB.prepare(
+            "PRAGMA table_info(migration_community_endpoint)",
+        ).all<{ name: string }>();
+        expect(columns.results.map(({ name }) => name)).toEqual([
+            "id",
+            "owner_user_id",
+            "name",
+            "title",
+            "description",
+            "type",
+            "base_url",
+            "upstream_model",
+            "payload",
+            "visibility",
+            "hidden_at",
+            "hidden_reason",
+            "hidden_by",
+            "created_at",
+            "updated_at",
+        ]);
+
+        const rows = await env.DB.prepare(
+            "SELECT id, type, base_url, upstream_model, payload FROM migration_community_endpoint ORDER BY id",
+        ).all<Row>();
+        expect(rows.results).toHaveLength(6);
+        const byId = Object.fromEntries(
+            rows.results.map((row) => [
+                row.id,
+                {
+                    type: row.type,
+                    baseUrl: row.base_url,
+                    upstreamModel: row.upstream_model,
+                    payload: JSON.parse(row.payload),
+                },
+            ]),
+        );
+
+        // An agent Enter runs. Its existing agent id is preserved as the row
+        // id/model sent to the shared runtime, while the old listing identity
+        // and config move into that row.
+        expect(byId["agent-row-id"]).toEqual({
+            type: "prompt_agent",
+            baseUrl: "https://agent-runtime.invalid/api/agent-runtime/v1",
+            upstreamModel: "agent-row-id",
+            payload: {
+                systemPrompt: "Teach clearly.",
+                baseModel: "openai-fast",
+                mcpServers: [],
+            },
+        });
+        expect(byId["prompt-agent"]).toBeUndefined();
+        // Standalone agents were valid in the old API. They become private
+        // rows with non-prompt metadata so the migration never deletes them.
+        expect(byId["standalone-agent"]).toEqual({
+            type: "prompt_agent",
+            baseUrl: "https://agent-runtime.invalid/api/agent-runtime/v1",
+            upstreamModel: "standalone-agent",
+            payload: {
+                systemPrompt: "Work alone.",
+                baseModel: "openai",
+                mcpServers: [],
+            },
+        });
+        // An agent on the owner's own server keeps a target and nothing else —
+        // notably not the credential it used to store, which it is never sent.
+        expect(byId["delegating-text"]).toEqual({
+            type: "endpoint_agent",
+            baseUrl: "https://agent.example.com/v1",
+            upstreamModel: "weaver",
+            payload: { perUserRpm: 30 },
+        });
+        // Excluded on purpose: run tokens are only minted on the text path, so
+        // the flag was inert here and promoting the row would start rejecting
+        // a live endpoint.
+        expect(byId["delegating-image"].type).toBe("proxy");
+        expect(byId["priced-proxy"]).toEqual({
+            type: "proxy",
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "gpt-4.1",
+            payload: {
+                bearerTokenCiphertext: "cipher",
+                modality: "text",
+                imagePricing: "request",
+                inputModalities: ["text", "image"],
+                perUserRpm: 12,
+                fallbacks: ["owner/backup"],
+                prices: {
+                    promptTextPrice: 0.5,
+                    promptCachedPrice: 0,
+                    promptCacheWritePrice: 0,
+                    promptAudioPrice: 0,
+                    promptImagePrice: 0,
+                    completionTextPrice: 1.5,
+                    completionReasoningPrice: 0,
+                    completionAudioPrice: 0,
+                    completionImagePrice: 0,
+                },
+            },
+        });
+        // Nullable JSON columns become the shapes the reader expects rather
+        // than a literal null it would have to re-normalize.
+        expect(byId["bare-proxy"]).toMatchObject({
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "flux",
+            payload: {
+                modality: "image",
+                imagePricing: "tokens",
+                inputModalities: ["text"],
+                perUserRpm: null,
+                fallbacks: [],
+            },
+        });
+
+        await expect(
+            env.DB.prepare(
+                "SELECT name, title, visibility FROM migration_community_endpoint WHERE id = 'standalone-agent'",
+            ).first(),
+        ).resolves.toEqual({
+            name: "__migrated_agent__standalone-agent",
+            title: "Agent standalo",
+            visibility: "private",
+        });
+        await expect(
+            env.DB.prepare(
+                "SELECT count(*) AS count FROM sqlite_master WHERE type = 'table' AND name = 'migration_agent'",
+            ).first(),
+        ).resolves.toEqual({ count: 0 });
+
+        const indexes = await env.DB.prepare(
+            "PRAGMA index_list(migration_community_endpoint)",
+        ).all<{ name: string }>();
+        expect(indexes.results.map(({ name }) => name)).toEqual(
+            expect.arrayContaining([
+                "idx_migration_community_endpoint_owner_name",
+                "idx_migration_community_endpoint_owner_user_id",
+            ]),
+        );
+        const table = await env.DB.prepare(
+            "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'migration_community_endpoint'",
+        ).first<{ sql: string }>();
+        expect(table?.sql).toContain("community_endpoint_base_url");
+        expect(table?.sql).toContain("community_endpoint_prompt_agent_model");
+    });
+});

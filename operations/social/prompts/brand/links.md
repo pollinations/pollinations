@@ -19,7 +19,7 @@
 - **API Docs (Swagger):** https://gen.pollinations.ai/docs
 - **Contributor Guide:** https://github.com/pollinations/pollinations/blob/master/CONTRIBUTING.md
 - **React SDK & UI:** https://react.pollinations.ai
-- **BYOP (Bring Your Own Pollen):** https://gen.pollinations.ai/docs#tag/byop
+- **Connect User Wallets:** https://gen.pollinations.ai/docs#tag/connect-user-wallets
 - **MCP Server Docs:** https://gen.pollinations.ai/docs#tag/mcp-server
 - **MCP Protocol (contribute):** https://mcp.sequa.ai/v1/pollinations/contribute
 

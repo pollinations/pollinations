@@ -9,9 +9,9 @@ Canonical vendor: `community`
 
 Use when:
 
-- mirroring community model payouts/costs from our own pollen ledger
-- explaining community provider rows that have no external invoice
-- reconciling creator-deployed model costs against `op_pollen`
+- explaining community rows that have no external invoice
+- reconciling creator payouts (`model_paid` / `model_quests`) against `op_pollen`
+- **not** booking `cost_paid` as a provider bill — community `total_cost` is the sale price, not cash we pay an upstream
 
 Primary evidence sources:
 
@@ -29,13 +29,14 @@ Live validation:
 
 Collection steps:
 
-1. Query community pollen cost for the requested period:
+1. Query community pollen settlement for the requested period:
 
    ```sql
    SELECT
      month,
+     round(sum(price_paid), 4) AS price_paid,
+     round(sum(model_paid), 4) AS model_paid,
      round(sum(cost_paid), 4) AS cost_paid,
-     round(sum(cost_quests), 4) AS cost_quests,
      count() AS rows
    FROM op_pollen
    WHERE vendor = 'community'
@@ -45,26 +46,27 @@ Collection steps:
 
    Save raw query output to `data/inbox/community-<period>-op-pollen.json` or `.tsv`.
 
-2. Treat `cost_paid + cost_quests` as the community provider cost witness.
-3. Book this as credit/internal settlement, not external cash.
+2. Treat `model_paid` as the owner payout (already netted out of revenue as eco). Do **not** treat `cost_paid + cost_quests` as a provider cost — that meter copied the sale price and double-counts the payout.
+3. Do **not** book community into `op_cloud`. There is no upstream invoice.
 4. Use `agent.system.txt` with `mode: extract` for saved raw evidence.
 
 Expected entry:
 
 - `cost_category`: `model`
-- `op_cloud_type`: `inference`
+- `op_cloud_type`: `null`
 - `op_transaction_category`: `null`
 - `should_match_op_transaction`: false
-- `should_match_op_cloud`: true
+- `should_match_op_cloud`: false
 
 Known traps:
 
 - There is no external provider invoice for `community`; our pollen ledger is the source of truth.
 - Do not use Wise/card matching for community rows.
 - The legacy Forager connector reads `pollen_monthly`; Economics uses `op_pollen`.
-- Zero rows or zero cost in early months can be valid if no community model cost was booked.
+- Historical raw `cost_paid` on community rows is the sale price, not a provider bill. `op_pollen_api` normalizes it to 0, and `op_pollen_populate` stores 0 for new rows.
+- Zero rows in early months can be valid if no community models were used.
 
 Reconciliation notes:
 
 - Community rows are pollen-priced/internal by construction.
-- If community appears in `op_pollen` but not `op_cloud`, mirror the cost into `op_cloud` as reviewed internal provider evidence.
+- Do not mirror community `cost_paid` into `op_cloud`. The 75% owner reward is `model_paid`, already subtracted from revenue.

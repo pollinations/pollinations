@@ -23,26 +23,10 @@ import { ApiKeyDialog } from "./api-key-dialog.tsx";
 import { EditApiKeyDialog } from "./edit-api-key-dialog.tsx";
 import { DeleteConfirmation } from "./key-delete-confirmation.tsx";
 import { KeyDisplay } from "./key-display.tsx";
+import { isAppKey, isPublishableKey, readRedirectUris } from "./key-type.ts";
 import { LimitsBadge, shortLocale } from "./limits-badge.tsx";
 import { ModelsBadge } from "./models-badge.tsx";
 import type { ApiKey, ApiKeyManagerProps } from "./types.ts";
-
-function isPublishableKey(apiKey: ApiKey): boolean {
-    return apiKey.metadata?.keyType === "publishable";
-}
-
-function isAppKey(apiKey: ApiKey): boolean {
-    if (!isPublishableKey(apiKey)) return false;
-
-    const redirectUris = apiKey.metadata?.redirectUris;
-    const hasRedirectUris =
-        Array.isArray(redirectUris) &&
-        redirectUris.some(
-            (uri) => typeof uri === "string" && uri.trim().length > 0,
-        );
-
-    return hasRedirectUris || apiKey.metadata?.earningsEnabled === true;
-}
 
 export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     apiKeys,
@@ -88,9 +72,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
         const plaintextKey = apiKey.metadata?.plaintextKey as
             | string
             | undefined;
-        const redirectUrisMeta = Array.isArray(apiKey.metadata?.redirectUris)
-            ? (apiKey.metadata?.redirectUris as string[])
-            : [];
+        const redirectUrisMeta = readRedirectUris(apiKey.metadata);
         const primaryRedirectUri = redirectUrisMeta[0] || "";
         const extraRedirectUriCount = Math.max(0, redirectUrisMeta.length - 1);
         const earningsEnabled = apiKey.metadata?.earningsEnabled === true;
@@ -284,15 +266,16 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 {protectedAppKeys
                                     .map((key) => key.name || "Unnamed key")
                                     .join(", ")}
-                                . Pollinations Auth (BYOP) remains available.
+                                . Connect User Wallets remains available.
                             </p>
                         )}
                         <p className="mt-1 text-sm">
-                            Publishable keys (<code>pk_</code>) are deprecated
-                            for direct API requests. Use Pollinations Auth
-                            (BYOP), where users sign in and spend their own
-                            Pollen.{" "}
-                            <InlineLink href={genDocsUrl("#tag/byop")}>
+                            Raw publishable keys (<code>pk_</code>) are legacy
+                            for direct API requests. Use Connect User Wallets,
+                            where users sign in and spend their own Pollen.{" "}
+                            <InlineLink
+                                href={genDocsUrl("#tag/connect-user-wallets")}
+                            >
                                 Read the migration guide
                             </InlineLink>
                             .
@@ -383,7 +366,11 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             <span>
                                 Turn on earnings to receive a share of pollen
                                 users spend in your app.{" "}
-                                <InlineLink href={genDocsUrl("#tag/byop")}>
+                                <InlineLink
+                                    href={genDocsUrl(
+                                        "#tag/connect-user-wallets",
+                                    )}
+                                >
                                     Read the guide
                                 </InlineLink>
                             </span>

@@ -1,5 +1,6 @@
 import {
     CheckIcon,
+    Chip,
     ClipboardIcon,
     CopyButton,
     cn,
@@ -103,15 +104,17 @@ export const ModelId: FC<ModelIdProps> = ({ name, showCopyIcon = false }) => (
 
 export const PerPollenEstimate: FC<{
     model: ModelPrice;
-}> = ({ model }) => {
+    ledger?: boolean;
+}> = ({ model, ledger = false }) => {
     const value = calculatePerPollen(model);
     const isFree = value === "∞";
     const isUnavailable = value === "—";
+    const requestLabel = value === "1" ? "request" : "requests";
     const tooltipLabel = isFree
         ? "This model is free to use."
         : isUnavailable
-          ? "Recent usage data is unavailable, so this estimate cannot be calculated."
-          : `About ${value} generations per pollen. Estimated from recent usage.`;
+          ? "Usage data from the last 7 days is unavailable, so this estimate cannot be calculated."
+          : `About ${value} ${requestLabel} per pollen. Estimated from the median observed cost over the last 7 days.`;
     const tooltip = isFree ? (
         <span>
             This model is{" "}
@@ -123,17 +126,17 @@ export const PerPollenEstimate: FC<{
     ) : isUnavailable ? (
         <span>
             <strong className="font-semibold text-theme-text-strong">
-                Recent usage data is unavailable
+                Usage data from the last 7 days is unavailable
             </strong>
             , so this estimate cannot be calculated.
         </span>
     ) : (
         <span className="flex flex-col gap-0.5">
             <strong className="font-semibold text-theme-text-strong">
-                About {value} generations per pollen
+                About {value} {requestLabel} per pollen
             </strong>
             <span className="text-theme-text-muted">
-                Estimated from recent usage.
+                Estimated from the median observed cost over the last 7 days.
             </span>
         </span>
     );
@@ -146,7 +149,20 @@ export const PerPollenEstimate: FC<{
             tapEnabled
             displayContents
         >
-            <ModelRateValue value={value} unit="gen /pollen" />
+            {ledger ? (
+                <Chip
+                    intent="neutral"
+                    size="sm"
+                    className="justify-self-center tabular-nums"
+                >
+                    {!isFree && !isUnavailable && (
+                        <span aria-hidden="true">≈</span>
+                    )}
+                    <span>{value}</span>
+                </Chip>
+            ) : (
+                <ModelRateValue value={value} unit="req /pollen" />
+            )}
         </Tooltip>
     );
 };
@@ -234,11 +250,11 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
             <div
                 className={
                     brandLogoPath || CommunityModelIcon
-                        ? "flex-1 min-w-0"
-                        : "flex-1 min-w-0 pl-[25px]"
+                        ? "flex-1 min-w-0 self-stretch py-3"
+                        : "flex-1 min-w-0 self-stretch py-3 pl-[25px]"
                 }
             >
-                <div className="flex min-w-0 flex-col gap-1.5">
+                <div className="flex h-full min-w-0 flex-col justify-center gap-1.5">
                     <div className="flex min-w-0 items-center gap-2">
                         {titleTooltip ? (
                             <Tooltip
@@ -258,10 +274,6 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                 {publicModelName}
                             </span>
                         )}
-                        <ModelStatusChips
-                            showNew={showNew}
-                            showAlpha={showAlpha}
-                        />
                     </div>
                     <ModelId name={model.name} />
                     {model.brandUrl && model.brand && (
@@ -276,83 +288,101 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                     )}
                     <div className="flex min-w-0 flex-col gap-0.5">
                         {(inputModalities.length > 0 ||
-                            capabilities.length > 0) && (
+                            capabilities.length > 0 ||
+                            pricing.dropdowns.length > 0) && (
                             <div className="flex min-w-0 flex-wrap items-center gap-2">
-                                <div className="inline-flex items-center gap-2.5 text-theme-text-muted">
-                                    {inputModalities.length > 0 && (
-                                        <Tooltip
-                                            content={
-                                                <span>
-                                                    <strong className="font-semibold text-theme-text-strong">
-                                                        Input:
-                                                    </strong>{" "}
-                                                    {inputModalities.join(", ")}
+                                {(inputModalities.length > 0 ||
+                                    capabilities.length > 0) && (
+                                    <div className="inline-flex items-center gap-2.5 text-theme-text-muted">
+                                        {inputModalities.length > 0 && (
+                                            <Tooltip
+                                                content={
+                                                    <span>
+                                                        <strong className="font-semibold text-theme-text-strong">
+                                                            Input:
+                                                        </strong>{" "}
+                                                        {inputModalities.join(
+                                                            ", ",
+                                                        )}
+                                                    </span>
+                                                }
+                                                ariaLabel={modalityLabel}
+                                                tapEnabled
+                                                displayContents
+                                            >
+                                                <span className="inline-flex items-center gap-2">
+                                                    {inputModalities.map(
+                                                        (key) => {
+                                                            const Icon =
+                                                                MODALITY_ICON[
+                                                                    key
+                                                                ];
+                                                            return (
+                                                                <Icon
+                                                                    key={key}
+                                                                    className="h-4 w-4"
+                                                                />
+                                                            );
+                                                        },
+                                                    )}
                                                 </span>
-                                            }
-                                            ariaLabel={modalityLabel}
-                                            tapEnabled
-                                            displayContents
-                                        >
-                                            <span className="inline-flex items-center gap-2">
-                                                {inputModalities.map((key) => {
-                                                    const Icon =
-                                                        MODALITY_ICON[key];
-                                                    return (
-                                                        <Icon
-                                                            key={key}
-                                                            className="h-4 w-4"
-                                                        />
-                                                    );
-                                                })}
-                                            </span>
-                                        </Tooltip>
-                                    )}
-                                    {inputModalities.length > 0 &&
-                                        capabilities.length > 0 && (
-                                            <span className="h-3.5 w-px bg-current opacity-30" />
+                                            </Tooltip>
                                         )}
-                                    {capabilities.length > 0 && (
-                                        <Tooltip
-                                            content={
-                                                <strong className="font-semibold text-theme-text-strong">
-                                                    {capabilityLabel}
-                                                </strong>
-                                            }
-                                            ariaLabel={capabilityLabel}
-                                            tapEnabled
-                                            displayContents
-                                        >
-                                            <span className="inline-flex items-center gap-2 text-theme-text-soft">
-                                                {capabilities.map((key) => {
-                                                    const Icon =
-                                                        CAPABILITY_ICON[key];
-                                                    return (
-                                                        <Icon
-                                                            key={key}
-                                                            className="h-4 w-4"
-                                                        />
-                                                    );
-                                                })}
-                                            </span>
-                                        </Tooltip>
-                                    )}
-                                </div>
+                                        {inputModalities.length > 0 &&
+                                            capabilities.length > 0 && (
+                                                <span className="h-3.5 w-px bg-current opacity-30" />
+                                            )}
+                                        {capabilities.length > 0 && (
+                                            <Tooltip
+                                                content={
+                                                    <strong className="font-semibold text-theme-text-strong">
+                                                        {capabilityLabel}
+                                                    </strong>
+                                                }
+                                                ariaLabel={capabilityLabel}
+                                                tapEnabled
+                                                displayContents
+                                            >
+                                                <span className="inline-flex items-center gap-2 text-theme-text-soft">
+                                                    {capabilities.map((key) => {
+                                                        const Icon =
+                                                            CAPABILITY_ICON[
+                                                                key
+                                                            ];
+                                                        return (
+                                                            <Icon
+                                                                key={key}
+                                                                className="h-4 w-4"
+                                                            />
+                                                        );
+                                                    })}
+                                                </span>
+                                            </Tooltip>
+                                        )}
+                                    </div>
+                                )}
+                                <ModelPricingControls
+                                    model={model}
+                                    pricing={pricing}
+                                />
                             </div>
                         )}
-                        <div className="flex min-w-0 flex-nowrap items-center gap-2">
-                            <PerPollenEstimate model={model} />
-                            <BalanceAccessChip
-                                access={balanceAccess}
-                                className="whitespace-nowrap"
-                            />
-                        </div>
                         {model.perUserRpm != null && (
                             <div className="flex min-w-0 items-center">
                                 <PerUserRateLimit value={model.perUserRpm} />
                             </div>
                         )}
                     </div>
-                    <ModelPricingControls model={model} pricing={pricing} />
+                    <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5">
+                        <ModelStatusChips
+                            showNew={showNew}
+                            showAlpha={showAlpha}
+                        />
+                        <BalanceAccessChip
+                            access={balanceAccess}
+                            className="whitespace-nowrap"
+                        />
+                    </div>
                 </div>
             </div>
 
@@ -360,6 +390,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                 <ModelPricingLedger
                     pricing={pricing}
                     hasTools={pollinationsTools}
+                    requestEstimate={<PerPollenEstimate model={model} ledger />}
                 />
             </div>
         </Surface>

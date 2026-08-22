@@ -2,7 +2,7 @@
  * Pollen calculation utilities
  *
  * Uses explicit free pricing or real usage data from Tinybird (rolling 7-day
- * average). Returns "—" when no data is available—no theoretical estimates.
+ * median). Returns "—" when no data is available—no theoretical estimates.
  */
 
 import type { ModelPrice } from "./types.ts";
@@ -22,7 +22,7 @@ function compact(num: number): string {
     return num.toString();
 }
 
-/** Format number as coarse estimate (not precise - it's an average) */
+/** Format a rolling median-derived estimate as a coarse count. */
 function formatCount(num: number): string {
     if (num < 1) return "1";
     if (num < 10) return Math.round(num).toString();

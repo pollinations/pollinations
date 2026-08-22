@@ -37,6 +37,12 @@ describe("model sorting", () => {
             "free-but-measured",
             "unknown",
         ]);
+        expect(sortModels(models, "oldest").map(({ name }) => name)).toEqual([
+            "free-but-measured",
+            "expensive",
+            "cheap",
+            "unknown",
+        ]);
 
         const tiedModels = [
             model("first", { addedDate: 10 }),
@@ -47,7 +53,7 @@ describe("model sorting", () => {
         ).toEqual(["first", "second"]);
     });
 
-    it("sorts free and observed average generation costs", () => {
+    it("sorts free and observed generation costs", () => {
         expect(sortModels(models, "price-low").map(({ name }) => name)).toEqual(
             ["cheap", "expensive", "free-but-measured", "unknown"],
         );
@@ -68,7 +74,13 @@ describe("model sorting", () => {
             sortModels(namedModels, "title").map(({ name }) => name),
         ).toEqual(["alpha", "beta", "orphan", "zeta"]);
         expect(
+            sortModels(namedModels, "title-desc").map(({ name }) => name),
+        ).toEqual(["zeta", "orphan", "beta", "alpha"]);
+        expect(
             sortModels(namedModels, "brand").map(({ name }) => name),
         ).toEqual(["beta", "alpha", "zeta", "orphan"]);
+        expect(
+            sortModels(namedModels, "brand-desc").map(({ name }) => name),
+        ).toEqual(["alpha", "zeta", "beta", "orphan"]);
     });
 });

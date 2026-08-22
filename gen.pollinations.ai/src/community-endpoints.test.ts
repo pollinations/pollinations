@@ -6,10 +6,14 @@ import {
 } from "cloudflare:test";
 import type { Logger } from "@logtape/logtape";
 import { verifyAgentRunToken } from "@shared/auth/agent-run-token.ts";
+import { COMMUNITY_MODEL_ALLOWED_GITHUB_IDS } from "@shared/auth/github-id-list.ts";
 import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
+    type CommunityEndpointImagePricing,
     type CommunityEndpointModality,
+    type CommunityEndpointPrices,
     type CommunityEndpointRuntime,
+    communityAudioTranscriptionsUrl,
     communityChatCompletionsUrl,
     communityEndpointPriceFieldsForModality,
     communityEndpointPrices,
@@ -20,23 +24,28 @@ import {
     communityModelId,
     communityOpenAIBaseUrl,
     communityPriceDefinition,
-    type ExternalCommunityEndpointRuntime,
+    type EndpointAgentCommunityEndpointRuntime,
     isCommunityEndpointOwnerAllowed,
     isCommunityFallbackPricingAllowed,
     legacyCommunityModelId,
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+    MAX_COMMUNITY_PRICE_PER_SECOND,
     MAX_COMMUNITY_PRICE_PER_TOKEN,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
     normalizeCommunityAssetUrl,
     normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
+    normalizeCommunityEndpointImagePricing,
+    normalizeCommunityEndpointInputModalities,
+    normalizeCommunityEndpointModality,
     normalizeCommunityProviderUrl,
+    PROMPT_AGENT_BASE_URL_PLACEHOLDER,
+    type PromptAgentListingPayload,
     parseCommunityModelId,
 } from "@shared/community-endpoints.ts";
 import {
-    agent as agentTable,
     communityEndpoint as communityEndpointTable,
     session as sessionTable,
 } from "@shared/db/better-auth.ts";
@@ -50,9 +59,14 @@ import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
 import {
     calculateUsageBilling,
     getRegistryModelDefinition,
+    type ModelInputModality,
 } from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
-import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
+import {
+    FALLBACK_TARGET_HEADER,
+    MODEL_USED_HEADER,
+    USAGE_TYPE_HEADERS,
+} from "@shared/registry/usage-headers.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import {
     createTestApiKey,
@@ -65,8 +79,10 @@ import { Hono } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
 import { withInlineGenerationCoordinator } from "../test/helpers/inline-generation-coordinator.ts";
+import { callCommunityTranscriptionEndpoint } from "./audio/communityEndpoint.ts";
 import {
     communityImageSupportedEndpoints,
+    communityTranscriptionSupportedEndpoints,
     getCommunityModelRegistryEntries,
 } from "./community-models.ts";
 import { callCommunityImageEndpoint } from "./image/communityEndpoint.ts";
@@ -78,8 +94,104 @@ import {
 import { communityEndpointGatewayContext } from "./text/communityEndpoint.ts";
 
 const db = drizzle(env.DB);
+
+type CommunityEndpointInsert = typeof communityEndpointTable.$inferInsert;
+type CommunityEndpointFixture = CommunityEndpointInsert &
+    Partial<CommunityEndpointPrices> & {
+        modality?: CommunityEndpointModality;
+        imagePricing?: CommunityEndpointImagePricing;
+        inputModalities?: ModelInputModality[] | null;
+        baseUrl?: string | null;
+        upstreamModel?: string;
+        agentConfig?: PromptAgentListingPayload;
+        bearerTokenCiphertext?: string | null;
+        perUserRpm?: number | null;
+        fallbacks?: string[] | null;
+    };
+
+/**
+ * Insert rows the way Enter writes them. Tests can keep their readable flat
+ * fixtures while this helper packs the variant fields into `payload`.
+ */
+function insertCommunityEndpoints(
+    values: CommunityEndpointFixture | CommunityEndpointFixture[],
+) {
+    const rows = (Array.isArray(values) ? values : [values]).map((row) => {
+        const type = row.type ?? "proxy";
+        const {
+            modality: rawModality,
+            imagePricing: rawImagePricing,
+            inputModalities: rawInputModalities,
+            baseUrl,
+            upstreamModel,
+            agentConfig,
+            bearerTokenCiphertext,
+            perUserRpm,
+            fallbacks,
+            promptTextPrice: _promptTextPrice,
+            promptCachedPrice: _promptCachedPrice,
+            promptCacheWritePrice: _promptCacheWritePrice,
+            promptAudioPrice: _promptAudioPrice,
+            promptImagePrice: _promptImagePrice,
+            completionTextPrice: _completionTextPrice,
+            completionReasoningPrice: _completionReasoningPrice,
+            completionAudioPrice: _completionAudioPrice,
+            completionImagePrice: _completionImagePrice,
+            ...listing
+        } = row;
+        const modality = normalizeCommunityEndpointModality(rawModality);
+        const payload =
+            type === "prompt_agent"
+                ? (agentConfig ?? {
+                      systemPrompt: "Test prompt agent.",
+                      baseModel: "openai",
+                      mcpServers: [],
+                  })
+                : type === "endpoint_agent"
+                  ? { perUserRpm: perUserRpm ?? null }
+                  : {
+                        bearerTokenCiphertext:
+                            bearerTokenCiphertext ?? "test-ciphertext",
+                        modality,
+                        imagePricing:
+                            normalizeCommunityEndpointImagePricing(
+                                rawImagePricing,
+                            ),
+                        inputModalities:
+                            normalizeCommunityEndpointInputModalities(
+                                rawInputModalities ?? undefined,
+                                modality,
+                            ),
+                        perUserRpm: perUserRpm ?? null,
+                        fallbacks: fallbacks ?? [],
+                        prices: communityEndpointPrices(row),
+                    };
+        return {
+            ...listing,
+            type,
+            baseUrl:
+                type === "prompt_agent"
+                    ? PROMPT_AGENT_BASE_URL_PLACEHOLDER
+                    : (baseUrl ?? ""),
+            upstreamModel:
+                type === "prompt_agent" ? row.id : (upstreamModel ?? row.name),
+            payload: JSON.stringify(payload),
+        };
+    });
+    return db.insert(communityEndpointTable).values(rows);
+}
 const testLog = { getChild: () => testLog } as unknown as Logger;
 const COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID = 36901823;
+// user.github_id is unique, so every test owner needs its own id. Rotate
+// through the allowlist to keep each one both distinct and allowed.
+let allowedGithubIdCursor = 0;
+function nextAllowedGithubId(): number {
+    const ids = COMMUNITY_MODEL_ALLOWED_GITHUB_IDS;
+    const id = ids[allowedGithubIdCursor % ids.length];
+    allowedGithubIdCursor += 1;
+    if (id === undefined) throw new Error("empty community model allowlist");
+    return id;
+}
 const COMMUNITY_ENDPOINT_DENIED_TEST_GITHUB_ID = 999_999_999;
 const TEST_PNG_BASE64 = "iVBORw0KGgo=";
 const TEST_PNG_BYTES = [137, 80, 78, 71, 13, 10, 26, 10];
@@ -272,11 +384,11 @@ async function createCommunityFallbackPair({
     const primaryOwner = `${prefix}-primary-${suffix}`;
     const fallbackOwner = `${prefix}-fallback-${suffix}`;
     const primaryUserId = await createTestUser({
-        githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+        githubId: nextAllowedGithubId(),
         githubUsername: primaryOwner,
     });
     const fallbackUserId = await createTestUser({
-        githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+        githubId: nextAllowedGithubId(),
         githubUsername: fallbackOwner,
     });
     const primaryModelId = communityModelId(primaryOwner, primaryName);
@@ -300,7 +412,7 @@ async function createCommunityFallbackPair({
             ? [0.02, 0.01]
             : [0.2 / 1_000_000, 0.1 / 1_000_000];
 
-    await db.insert(communityEndpointTable).values([
+    await insertCommunityEndpoints([
         {
             id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId: primaryUserId,
@@ -315,7 +427,7 @@ async function createCommunityFallbackPair({
                 env.BETTER_AUTH_SECRET,
             ),
             ...priceFields(primaryPrice),
-            fallbackModelIds: [fallbackModelId],
+            fallbacks: [fallbackModelId],
             createdAt: new Date(),
             updatedAt: new Date(),
         },
@@ -477,6 +589,23 @@ describe("community endpoint helpers", () => {
         ).toThrow("Endpoint URL cannot target a private host");
     });
 
+    it("derives the OpenAI-compatible audio transcription URL", () => {
+        expect(
+            communityAudioTranscriptionsUrl("https://api.example.com/v1"),
+        ).toBe("https://api.example.com/v1/audio/transcriptions");
+        expect(
+            communityAudioTranscriptionsUrl(
+                "https://api.example.com/v1/audio/transcriptions",
+            ),
+        ).toBe("https://api.example.com/v1/audio/transcriptions");
+    });
+
+    it("restricts community transcription models to the transcription endpoint", () => {
+        expect(communityTranscriptionSupportedEndpoints()).toEqual([
+            "/v1/audio/transcriptions",
+        ]);
+    });
+
     it("normalizes public community provider URLs", () => {
         expect(
             normalizeCommunityProviderUrl(" https://example.com/models#top "),
@@ -504,6 +633,27 @@ describe("community endpoint helpers", () => {
         expect(modelDefinition.description).toBe(
             "OpenAI via community endpoint",
         );
+    });
+
+    it("carries the owner's paid-only choice onto the model definition", () => {
+        const prices = communityEndpointPrices({ promptTextPrice: 0.1 });
+
+        expect(
+            communityModelDefinition({
+                modelId: "voodoohop/openai",
+                description: null,
+                ...prices,
+            }).paidOnly,
+        ).toBe(false);
+
+        expect(
+            communityModelDefinition({
+                modelId: "voodoohop/openai",
+                description: null,
+                paidOnly: true,
+                ...prices,
+            }).paidOnly,
+        ).toBe(true);
     });
 
     it("prefers a stored title over the description", () => {
@@ -670,6 +820,41 @@ describe("community endpoint helpers", () => {
         expect(definition.inputModalities).toEqual(["image", "video"]);
     });
 
+    it("maps owner-declared catalog metadata onto text models", () => {
+        const definition = communityModelDefinition({
+            modelId: "voodoohop/openai",
+            description: "OpenAI via community endpoint",
+            advertised: {
+                capabilities: ["tool_calling", "reasoning"],
+                contextLength: 128000,
+            },
+            ...communityEndpointPrices({}),
+        });
+
+        expect(definition).toMatchObject({
+            tools: true,
+            reasoning: true,
+            contextLength: 128000,
+        });
+    });
+
+    it("does not advertise text metadata after a model changes modality", () => {
+        const definition = communityModelDefinition({
+            modelId: "voodoohop/gptimage",
+            description: "Image model",
+            modality: "image",
+            advertised: {
+                capabilities: ["tool_calling", "reasoning"],
+                contextLength: 128000,
+            },
+            ...communityEndpointPrices({}),
+        });
+
+        expect(definition.tools).toBeUndefined();
+        expect(definition.reasoning).toBeUndefined();
+        expect(definition.contextLength).toBeUndefined();
+    });
+
     it("filters inputs that image endpoints cannot accept", () => {
         const definition = communityModelDefinition({
             modelId: "voodoohop/gptimage",
@@ -683,6 +868,55 @@ describe("community endpoint helpers", () => {
         });
 
         expect(definition.inputModalities).toEqual(["text"]);
+    });
+
+    it("builds community transcription models billed per audio second", () => {
+        const modelId = "voodoohop/whisper";
+        const definition = communityModelDefinition({
+            modelId,
+            description: "Community transcription model",
+            modality: "transcription",
+            ...communityEndpointPrices({ promptAudioPrice: 0.0000445 }),
+        });
+
+        expect(definition).toMatchObject({
+            category: "audio",
+            inputModalities: ["audio"],
+            outputModalities: ["text"],
+            supportedEndpoints: ["/v1/audio/transcriptions"],
+            cost: { promptAudioSeconds: 0.0000445 },
+        });
+        expect(definition).not.toHaveProperty("flatRate");
+        expect(definition.cost).not.toHaveProperty("promptTextTokens");
+        expect(
+            calculateUsageBilling({
+                model: modelId,
+                usage: { promptAudioSeconds: 60 },
+                servedBy: definition,
+            }).price.totalPrice,
+        ).toBeCloseTo(0.0000445 * 60, 10);
+    });
+
+    it("keeps the transcription price as the only billed bucket for its modality", () => {
+        const definition = communityPriceDefinition(
+            communityEndpointPrices({ promptAudioPrice: 0.00002 }),
+            "transcription",
+        );
+        expect(definition).toEqual({ promptAudioSeconds: 0.00002 });
+    });
+
+    it("prices transcription audio in per-second units, not per 1M", () => {
+        const [field] =
+            communityEndpointPriceFieldsForModality("transcription");
+        expect(field).toMatchObject({
+            key: "promptAudioPrice",
+            usageType: "promptAudioSeconds",
+            priceUnit: "second",
+        });
+        expect(MAX_COMMUNITY_PRICE_PER_SECOND).toBeGreaterThan(0);
+        expect(MAX_COMMUNITY_PRICE_PER_SECOND).toBeLessThan(
+            MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+        );
     });
 
     describe("fallback target pricing", () => {
@@ -747,24 +981,24 @@ describe("community endpoint helpers", () => {
             imagePricing: CommunityEndpointRuntime["imagePricing"],
         ): Promise<CommunityEndpointRuntime> {
             return {
-                kind: "external",
+                type: "proxy",
                 id: "community-endpoint-id",
                 ownerUserId: "owner-id",
                 modelId: "voodoohop/gptimage",
                 name: "gptimage",
                 title: "GPT Image",
                 description: null,
-                delegatesGeneration: false,
                 modality: "image",
                 imagePricing,
                 inputModalities: null,
                 baseUrl: "https://api.example.com/v1",
                 upstreamModel: "gpt-image-1",
                 visibility: "public",
+                paidOnly: false,
                 perUserRpm: null,
-                fallbackModelIds: [],
-                disabledAt: null,
-                disabledReason: null,
+                fallbacks: [],
+                hiddenAt: null,
+                hiddenReason: null,
                 bearerTokenCiphertext: await encryptSecret(
                     "sk_saved_token",
                     secret,
@@ -933,10 +1167,372 @@ describe("community endpoint helpers", () => {
         });
     });
 
+    describe("community transcription endpoint billing", () => {
+        afterEach(() => {
+            vi.unstubAllGlobals();
+        });
+
+        const secret = "test-secret";
+
+        async function transcriptionEndpoint(): Promise<CommunityEndpointRuntime> {
+            return {
+                type: "proxy",
+                id: "community-endpoint-id",
+                ownerUserId: "owner-id",
+                modelId: "voodoohop/whisper",
+                name: "whisper",
+                title: "Whisper",
+                description: null,
+                modality: "transcription",
+                imagePricing: "request",
+                inputModalities: ["audio"],
+                baseUrl: "https://api.example.com/v1",
+                upstreamModel: "whisper-1",
+                visibility: "public",
+                paidOnly: false,
+                perUserRpm: null,
+                fallbacks: [],
+                hiddenAt: null,
+                hiddenReason: null,
+                bearerTokenCiphertext: await encryptSecret(
+                    "sk_saved_token",
+                    secret,
+                ),
+                ...communityEndpointPrices({ promptAudioPrice: 0.0000445 }),
+            };
+        }
+
+        const audioFile = new File([new Uint8Array([1, 2, 3])], "sample.wav", {
+            type: "audio/wav",
+        });
+        const transcriptionOptions = {
+            file: audioFile,
+            language: "en",
+            responseFormat: "json",
+        };
+
+        it("forwards the file and bills the upstream-reported audio seconds", async () => {
+            const fetchMock = vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                expect(request.url).toBe(
+                    "https://api.example.com/v1/audio/transcriptions",
+                );
+                expect(request.headers.get("authorization")).toBe(
+                    "Bearer sk_saved_token",
+                );
+                expect(request.headers.get("content-type")).toContain(
+                    "multipart/form-data",
+                );
+                const formData = await request.formData();
+                expect(formData.get("model")).toBe("whisper-1");
+                expect(formData.get("file")).toBeInstanceOf(File);
+                expect(formData.get("language")).toBe("en");
+                expect(formData.get("response_format")).toBe("verbose_json");
+
+                return Response.json({
+                    text: "Hello world",
+                    usage: { duration: 12.5 },
+                });
+            });
+            vi.stubGlobal("fetch", fetchMock);
+
+            const response = await callCommunityTranscriptionEndpoint(
+                await transcriptionEndpoint(),
+                transcriptionOptions,
+                secret,
+            );
+
+            expect(response.status).toBe(200);
+            // The shared formatter re-emits the OpenAI json shape: the
+            // upstream's usage block is normalized to usage.seconds.
+            expect(await response.json()).toEqual({
+                text: "Hello world",
+                usage: { type: "duration", seconds: 12.5 },
+            });
+            expect(response.headers.get(MODEL_USED_HEADER)).toBe(
+                "voodoohop/whisper",
+            );
+            expect(
+                response.headers.get(USAGE_TYPE_HEADERS.promptAudioSeconds),
+            ).toBe("12.5");
+        });
+
+        it("accepts whisper-style usage.seconds", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({
+                        text: "Hello",
+                        usage: { seconds: 3 },
+                    }),
+                ),
+            );
+
+            const response = await callCommunityTranscriptionEndpoint(
+                await transcriptionEndpoint(),
+                { file: audioFile },
+                secret,
+            );
+            expect(
+                response.headers.get(USAGE_TYPE_HEADERS.promptAudioSeconds),
+            ).toBe("3");
+        });
+
+        it("accepts a top-level duration, which is where whisper verbose_json puts it", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({ text: "Hello", duration: 8.25 }),
+                ),
+            );
+
+            const response = await callCommunityTranscriptionEndpoint(
+                await transcriptionEndpoint(),
+                { file: audioFile },
+                secret,
+            );
+            expect(
+                response.headers.get(USAGE_TYPE_HEADERS.promptAudioSeconds),
+            ).toBe("8.25");
+        });
+
+        it("explains the verbose_json requirement when the endpoint rejects it", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json(
+                        { error: { message: "unsupported response_format" } },
+                        { status: 400 },
+                    ),
+                ),
+            );
+
+            const call = callCommunityTranscriptionEndpoint(
+                await transcriptionEndpoint(),
+                { file: audioFile },
+                secret,
+            );
+            await expect(call).rejects.toThrow("response_format=verbose_json");
+            await expect(call).rejects.toMatchObject({ status: 502 });
+        });
+
+        it("fails rather than billing zero when the upstream reports no duration", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () => Response.json({ text: "Hello" })),
+            );
+
+            await expect(
+                callCommunityTranscriptionEndpoint(
+                    await transcriptionEndpoint(),
+                    { file: audioFile },
+                    secret,
+                ),
+            ).rejects.toMatchObject({ status: 502 });
+        });
+
+        it("asks upstream for verbose_json even when the caller wants text, then formats down", async () => {
+            const fetchMock = vi.fn(async (input, init) => {
+                const formData = await new Request(input, init).formData();
+                // text carries no usage object, so requesting it upstream would
+                // make the request unbillable. verbose_json is what the probe
+                // verified, and where whisper reports the duration.
+                expect(formData.get("response_format")).toBe("verbose_json");
+                return Response.json({
+                    text: "Hello world",
+                    usage: { seconds: 4 },
+                });
+            });
+            vi.stubGlobal("fetch", fetchMock);
+
+            const response = await callCommunityTranscriptionEndpoint(
+                await transcriptionEndpoint(),
+                { file: audioFile, responseFormat: "text" },
+                secret,
+            );
+
+            expect(response.headers.get("content-type")).toContain(
+                "text/plain",
+            );
+            expect(await response.text()).toBe("Hello world");
+            expect(
+                response.headers.get(USAGE_TYPE_HEADERS.promptAudioSeconds),
+            ).toBe("4");
+        });
+
+        it("serves verbose_json from the metered upstream body", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({
+                        text: "Hello world",
+                        language: "en",
+                        usage: { seconds: 6 },
+                    }),
+                ),
+            );
+
+            const response = await callCommunityTranscriptionEndpoint(
+                await transcriptionEndpoint(),
+                { file: audioFile, responseFormat: "verbose_json" },
+                secret,
+            );
+
+            expect(await response.json()).toMatchObject({
+                text: "Hello world",
+                task: "transcribe",
+                language: "en",
+                duration: 6,
+            });
+        });
+
+        it("serves the endpoint's own segments and words, not an invented one", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({
+                        text: "Hello world. Goodbye.",
+                        language: "en",
+                        duration: 6,
+                        segments: [
+                            { id: 0, start: 0, end: 2.5, text: "Hello world." },
+                            { id: 1, start: 3, end: 5.5, text: "Goodbye." },
+                        ],
+                        words: [
+                            { word: "Hello", start: 0, end: 0.6 },
+                            { word: "world.", start: 0.6, end: 2.5 },
+                        ],
+                    }),
+                ),
+            );
+
+            const response = await callCommunityTranscriptionEndpoint(
+                await transcriptionEndpoint(),
+                { file: audioFile, responseFormat: "verbose_json" },
+                secret,
+            );
+
+            expect(await response.json()).toMatchObject({
+                segments: [
+                    { id: 0, start: 0, end: 2.5, text: "Hello world." },
+                    { id: 1, start: 3, end: 5.5, text: "Goodbye." },
+                ],
+                words: [
+                    { word: "Hello", start: 0, end: 0.6 },
+                    { word: "world.", start: 0.6, end: 2.5 },
+                ],
+            });
+        });
+
+        it("falls back to one file-spanning segment when the endpoint reports none", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({ text: "Hello world", duration: 6 }),
+                ),
+            );
+
+            const response = await callCommunityTranscriptionEndpoint(
+                await transcriptionEndpoint(),
+                { file: audioFile, responseFormat: "verbose_json" },
+                secret,
+            );
+
+            expect(await response.json()).toMatchObject({
+                segments: [{ id: 0, start: 0, end: 6, text: "Hello world" }],
+                words: [],
+            });
+        });
+
+        it("skips upstream segments that are not fully timed", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({
+                        text: "Hello world",
+                        duration: 6,
+                        segments: [
+                            { start: 0, end: 2, text: "Hello" },
+                            { start: 2, text: "world" },
+                            { start: 4, end: 6 },
+                        ],
+                    }),
+                ),
+            );
+
+            const response = await callCommunityTranscriptionEndpoint(
+                await transcriptionEndpoint(),
+                { file: audioFile, responseFormat: "verbose_json" },
+                secret,
+            );
+
+            expect(await response.json()).toMatchObject({
+                segments: [{ id: 0, start: 0, end: 2, text: "Hello" }],
+            });
+        });
+
+        it("rejects diarized_json rather than answering with empty segments", async () => {
+            const fetchMock = vi.fn(async () =>
+                Response.json({ text: "Hello", usage: { seconds: 1 } }),
+            );
+            vi.stubGlobal("fetch", fetchMock);
+
+            await expect(
+                callCommunityTranscriptionEndpoint(
+                    await transcriptionEndpoint(),
+                    { file: audioFile, responseFormat: "diarized_json" },
+                    secret,
+                ),
+            ).rejects.toMatchObject({ status: 400 });
+            expect(fetchMock).not.toHaveBeenCalled();
+        });
+
+        it("asks upstream for verbose_json, the shape the probe verified", async () => {
+            const fetchMock = vi.fn(async (input, init) => {
+                const formData = await new Request(input, init).formData();
+                expect(formData.get("response_format")).toBe("verbose_json");
+                return Response.json({ text: "Hello", usage: { seconds: 2 } });
+            });
+            vi.stubGlobal("fetch", fetchMock);
+
+            const response = await callCommunityTranscriptionEndpoint(
+                await transcriptionEndpoint(),
+                { file: audioFile },
+                secret,
+            );
+            expect(
+                response.headers.get(USAGE_TYPE_HEADERS.promptAudioSeconds),
+            ).toBe("2");
+        });
+
+        it("propagates upstream transcription failures", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json(
+                        { error: { message: "Audio file too long" } },
+                        { status: 413 },
+                    ),
+                ),
+            );
+
+            await expect(
+                callCommunityTranscriptionEndpoint(
+                    await transcriptionEndpoint(),
+                    transcriptionOptions,
+                    secret,
+                ),
+            ).rejects.toMatchObject({
+                status: 413,
+                message: expect.stringContaining("Audio file too long"),
+            });
+        });
+    });
+
     it("builds Portkey gateway context with the saved token", async () => {
         const secret = "test-secret";
         const endpoint: CommunityEndpointRuntime = {
-            kind: "external",
+            type: "proxy",
             id: "community-endpoint-id",
             ownerUserId: "owner-id",
             modelId: "voodoohop/openai",
@@ -949,11 +1545,11 @@ describe("community endpoint helpers", () => {
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
             visibility: "public",
+            paidOnly: false,
             perUserRpm: null,
-            delegatesGeneration: false,
-            fallbackModelIds: [],
-            disabledAt: null,
-            disabledReason: null,
+            fallbacks: [],
+            hiddenAt: null,
+            hiddenReason: null,
             bearerTokenCiphertext: await encryptSecret(
                 "sk_saved_token",
                 secret,
@@ -994,14 +1590,14 @@ describe("community endpoint helpers", () => {
         expect(context).not.toHaveProperty("messages");
     });
 
-    describe("delegated agent endpoints", () => {
+    describe("endpoint agents", () => {
         const secret = "test-secret";
 
-        async function agentEndpoint(
-            overrides: Partial<ExternalCommunityEndpointRuntime> = {},
-        ): Promise<ExternalCommunityEndpointRuntime> {
+        function endpointAgent(
+            overrides: Partial<EndpointAgentCommunityEndpointRuntime> = {},
+        ): EndpointAgentCommunityEndpointRuntime {
             return {
-                kind: "external",
+                type: "endpoint_agent",
                 id: "agent-endpoint-id",
                 ownerUserId: "owner-id",
                 modelId: "voodoohop/agent",
@@ -1014,15 +1610,11 @@ describe("community endpoint helpers", () => {
                 baseUrl: "https://agent.example.com/v1",
                 upstreamModel: "agent",
                 visibility: "public",
+                paidOnly: false,
                 perUserRpm: null,
-                delegatesGeneration: true,
-                disabledAt: null,
-                disabledReason: null,
-                fallbackModelIds: [],
-                bearerTokenCiphertext: await encryptSecret(
-                    "sk_saved_token",
-                    secret,
-                ),
+                hiddenAt: null,
+                hiddenReason: null,
+                fallbacks: [],
                 ...communityEndpointPrices({}),
                 ...overrides,
             };
@@ -1047,23 +1639,20 @@ describe("community endpoint helpers", () => {
             });
         }
 
-        it("authenticates as a run token, not the caller's or owner's key", async () => {
-            const endpoint = await agentEndpoint();
+        it("authenticates as a run token, not the caller's key", async () => {
+            const endpoint = endpointAgent();
             const context = await contextFor(endpoint, "parent-key-id");
 
             const token = String(context.modelConfig?.authKey);
             expect(token).toMatch(/^ag_/);
             expect(token).not.toContain("sk_user_key");
-            // The owner's saved bearer is replaced, never sent alongside — the
-            // endpoint must not receive a credential it could spend as its own.
-            expect(token).not.toContain("sk_saved_token");
 
             const claims = await verifyAgentRunToken(token, secret);
             expect(claims).toMatchObject({ parentApiKeyId: "parent-key-id" });
         });
 
         it("carries the parent request id so a run's generations can be grouped", async () => {
-            const endpoint = await agentEndpoint();
+            const endpoint = endpointAgent();
             const context = await contextFor(
                 endpoint,
                 "parent-key-id",
@@ -1076,9 +1665,8 @@ describe("community endpoint helpers", () => {
             );
             expect(claims.parentRequestId).toBe("req-abc");
 
-            // A delegating fallback mints one token per attempt, all under the
-            // same parent request. They share the grouping id and are still
-            // distinct tokens.
+            // Fallback attempts share the parent request but still receive
+            // distinct signed credentials.
             const second = await contextFor(
                 endpoint,
                 "parent-key-id",
@@ -1094,26 +1682,28 @@ describe("community endpoint helpers", () => {
             );
         });
 
-        it("sends the saved bearer when the endpoint is not flagged", async () => {
-            const endpoint = await agentEndpoint({
-                delegatesGeneration: false,
-            });
+        // The complement of the test above, and the reason an agent listing
+        // has nowhere to store a credential: only a proxy sends one.
+        it("sends a proxy listing's saved bearer, never a run token", async () => {
+            const { type: _type, ...base } = endpointAgent();
+            const endpoint: CommunityEndpointRuntime = {
+                ...base,
+                type: "proxy",
+                bearerTokenCiphertext: await encryptSecret(
+                    "sk_saved_token",
+                    secret,
+                ),
+            };
             const context = await contextFor(endpoint, "parent-key-id");
             expect(context.modelConfig?.authKey).toBe("sk_saved_token");
         });
 
-        it("always scopes managed agents to their agent id", async () => {
-            const external = await agentEndpoint();
-            const {
-                bearerTokenCiphertext: _token,
-                delegatesGeneration: _delegates,
-                kind: _kind,
-                ...base
-            } = external;
+        it("always scopes managed agents to their listing id", async () => {
+            const { type: _type, ...base } = endpointAgent();
             const endpoint: CommunityEndpointRuntime = {
                 ...base,
-                kind: "agent",
-                agentId: "managed-agent-id",
+                id: "managed-agent-id",
+                type: "prompt_agent",
                 upstreamModel: "managed-agent-id",
             };
             const context = await contextFor(endpoint, "parent-key-id");
@@ -1121,19 +1711,20 @@ describe("community endpoint helpers", () => {
             const claims = await verifyAgentRunToken(token, secret);
             expect(claims).toMatchObject({
                 parentApiKeyId: "parent-key-id",
+                parentRequestId: "parent-request-id",
                 managedAgentId: "managed-agent-id",
             });
         });
 
         it("refuses to delegate when there is no key to bill", async () => {
-            const endpoint = await agentEndpoint();
+            const endpoint = endpointAgent();
             await expect(contextFor(endpoint, undefined)).rejects.toThrow(
                 "no API key to bill",
             );
         });
 
         it("refuses to delegate from an endpoint that charges a price", async () => {
-            const endpoint = await agentEndpoint({
+            const endpoint = endpointAgent({
                 ...communityEndpointPrices({ promptTextPrice: 0.1 }),
             });
             await expect(contextFor(endpoint, "parent-key-id")).rejects.toThrow(
@@ -1150,10 +1741,10 @@ fixtureTest(
         const modelName = `openai-${crypto.randomUUID().slice(0, 8)}`;
         const modelId = communityModelId(ownerGithubUsername, modelName);
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
-        await db.insert(communityEndpointTable).values({
+        await insertCommunityEndpoints({
             id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId,
             visibility: "public",
@@ -1284,7 +1875,7 @@ fixtureTest(
         const modelId = communityModelId(ownerGithubUsername, modelName);
         const endpointId = `endpoint-${crypto.randomUUID()}`;
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
             // Owner-only private models have no Pollinations charge and remain
             // callable without a Pollinations balance.
@@ -1295,7 +1886,7 @@ fixtureTest(
             name: "owner-key",
             userId: ownerUserId,
         });
-        await db.insert(communityEndpointTable).values({
+        await insertCommunityEndpoints({
             id: endpointId,
             ownerUserId,
             visibility: "private",
@@ -1432,10 +2023,10 @@ fixtureTest(
         const modelName = `stream-${crypto.randomUUID().slice(0, 8)}`;
         const modelId = communityModelId(ownerGithubUsername, modelName);
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
-        await db.insert(communityEndpointTable).values({
+        await insertCommunityEndpoints({
             id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId,
             visibility: "public",
@@ -1531,10 +2122,10 @@ fixtureTest(
         const modelName = `simple-${crypto.randomUUID().slice(0, 8)}`;
         const modelId = communityModelId(ownerGithubUsername, modelName);
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
-        await db.insert(communityEndpointTable).values({
+        await insertCommunityEndpoints({
             id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId,
             visibility: "public",
@@ -1630,10 +2221,10 @@ fixtureTest(
         const modelName = `catalog-${crypto.randomUUID().slice(0, 8)}`;
         const modelId = communityModelId(ownerGithubUsername, modelName);
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
-        await db.insert(communityEndpointTable).values({
+        await insertCommunityEndpoints({
             id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId,
             visibility: "public",
@@ -1730,7 +2321,7 @@ fixtureTest(
     async ({ restrictedApiKey }) => {
         const ownerGithubUsername = `order-${crypto.randomUUID().slice(0, 8)}`;
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         const newestDate = new Date("2100-01-02T00:00:00Z");
@@ -1740,7 +2331,7 @@ fixtureTest(
             ["a-tie", tiedDate],
             ["b-tie", tiedDate],
         ] as const) {
-            await db.insert(communityEndpointTable).values({
+            await insertCommunityEndpoints({
                 id: `endpoint-${crypto.randomUUID()}`,
                 ownerUserId,
                 visibility: "public",
@@ -1878,21 +2469,21 @@ fixtureTest(
 );
 
 fixtureTest(
-    "excludes a deactivated community model from public model catalogs",
+    "excludes a hidden community model from public model catalogs",
     async () => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `disabled-${crypto.randomUUID().slice(0, 8)}`;
         const modelId = communityModelId(ownerGithubUsername, modelName);
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
-        await db.insert(communityEndpointTable).values({
+        await insertCommunityEndpoints({
             id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId,
             visibility: "public",
             name: modelName,
-            description: "Deactivated community model",
+            description: "Hidden community model",
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
             bearerTokenCiphertext: await encryptSecret(
@@ -1901,9 +2492,9 @@ fixtureTest(
             ),
             promptTextPrice: 0.1 / 1_000_000,
             completionTextPrice: 0.2 / 1_000_000,
-            disabledAt: new Date(),
-            disabledReason: "repeated upstream 500s",
-            disabledBy: "monitor",
+            hiddenAt: new Date(),
+            hiddenReason: "repeated upstream 500s",
+            hiddenBy: "monitor",
             createdAt: new Date(),
             updatedAt: new Date(),
         });
@@ -1947,15 +2538,15 @@ fixtureTest(
         const imageModelId = communityModelId(imageOwner, imageName);
 
         const textUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: textOwner,
         });
         const imageUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: imageOwner,
         });
 
-        await db.insert(communityEndpointTable).values([
+        await insertCommunityEndpoints([
             {
                 id: `endpoint-${crypto.randomUUID()}`,
                 ownerUserId: textUserId,
@@ -2116,7 +2707,7 @@ fixtureTest(
 );
 
 fixtureTest(
-    "rejects a direct chat completion against a deactivated community model",
+    "routes direct calls to a hidden community model",
     async ({ apiKey }) => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `disabled-call-${crypto.randomUUID().slice(0, 8)}`;
@@ -2126,15 +2717,15 @@ fixtureTest(
             modelName,
         );
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
-        await db.insert(communityEndpointTable).values({
+        await insertCommunityEndpoints({
             id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId,
             visibility: "public",
             name: modelName,
-            description: "Deactivated community model",
+            description: "Hidden community model",
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
             bearerTokenCiphertext: await encryptSecret(
@@ -2143,12 +2734,43 @@ fixtureTest(
             ),
             promptTextPrice: 0.1 / 1_000_000,
             completionTextPrice: 0.2 / 1_000_000,
-            disabledAt: new Date(),
-            disabledReason: "repeated upstream 500s",
-            disabledBy: "monitor",
+            hiddenAt: new Date(),
+            hiddenReason: "repeated upstream 500s",
+            hiddenBy: "monitor",
             createdAt: new Date(),
             updatedAt: new Date(),
         });
+
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+
+            if (isPortkeyChatCompletionsRequest(request)) {
+                return Response.json({
+                    id: "chatcmpl_hidden",
+                    object: "chat.completion",
+                    model: "gpt-4.1-mini",
+                    choices: [
+                        {
+                            index: 0,
+                            message: { role: "assistant", content: "ok" },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    usage: {
+                        prompt_tokens: 2,
+                        completion_tokens: 1,
+                        total_tokens: 3,
+                    },
+                });
+            }
+
+            if (isBillingFetch(request)) {
+                return Response.json({ data: [] });
+            }
+
+            throw new Error(`Unexpected fetch: ${request.url}`);
+        });
+        vi.stubGlobal("fetch", fetchMock);
 
         for (const requestedModel of [modelId, legacyModelId]) {
             const response = await fetchGen(
@@ -2167,13 +2789,16 @@ fixtureTest(
                 },
             );
 
-            expect(response.status).toBe(400);
-            const body = (await response.json()) as {
-                error?: { message?: string };
-            };
-            expect(body.error?.message).toContain("Invalid model or alias");
-            expect(body.error?.message).not.toContain("repeated upstream 500s");
+            expect(response.status).toBe(200);
+            await expect(response.json()).resolves.toMatchObject({
+                choices: [{ message: { content: "ok" } }],
+            });
         }
+
+        const upstreamCalls = fetchMock.mock.calls.filter(([input, init]) =>
+            isPortkeyChatCompletionsRequest(new Request(input, init)),
+        );
+        expect(upstreamCalls).toHaveLength(2);
     },
 );
 
@@ -2354,7 +2979,7 @@ fixtureTest(
         );
         expect(publishResponse.status).toBe(403);
 
-        await db.insert(communityEndpointTable).values({
+        await insertCommunityEndpoints({
             id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId,
             visibility: "public",
@@ -2450,7 +3075,7 @@ fixtureTest(
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `pollinations-${crypto.randomUUID().slice(0, 8)}`;
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         const sessionToken = `session-${crypto.randomUUID()}`;
@@ -2656,7 +3281,7 @@ fixtureTest(
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `image-${crypto.randomUUID().slice(0, 8)}`;
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         const sessionToken = `session-${crypto.randomUUID()}`;
@@ -3140,6 +3765,233 @@ fixtureTest(
 );
 
 fixtureTest(
+    "registers an OpenAI-compatible transcription endpoint and bills it through transcription APIs",
+    async ({ apiKey }) => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `stt-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerUserId = await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: ownerGithubUsername,
+        });
+        const sessionToken = `session-${crypto.randomUUID()}`;
+        await db.insert(sessionTable).values({
+            id: `session-${crypto.randomUUID()}`,
+            token: sessionToken,
+            userId: ownerUserId,
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const enterApi = await createEnterCommunityApi();
+        const transcriptionUrl =
+            "https://api.example.com/v1/audio/transcriptions";
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            if (request.url === transcriptionUrl) {
+                expect(request.headers.get("authorization")).toBe(
+                    "Bearer sk_transcription_upstream",
+                );
+                const formData = await request.formData();
+                expect(formData.get("model")).toBe("whisper-1");
+                expect(formData.get("file")).toBeInstanceOf(File);
+                return Response.json({
+                    text: "ok",
+                    usage: { duration: 0.5 },
+                });
+            }
+            if (isBillingFetch(request)) {
+                return Response.json({ data: [] });
+            }
+            throw new Error(`Unexpected fetch: ${request.url}`);
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const registrationPayload = {
+            name: modelName,
+            title: "Community Transcription Endpoint",
+            description: "OpenAI-compatible speech-to-text endpoint",
+            modality: "transcription",
+            inputModalities: ["audio"],
+            visibility: "public",
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "whisper-1",
+            bearerToken: "Bearer sk_transcription_upstream",
+            promptAudioPrice: 0.0000445,
+        };
+        const unsupportedInputResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: await signedSessionCookie(sessionToken),
+                },
+                body: JSON.stringify({
+                    ...registrationPayload,
+                    name: `${modelName}-invalid`,
+                    inputModalities: ["text"],
+                }),
+            }),
+        );
+        expect(unsupportedInputResponse.status).toBe(400);
+
+        // Omitting inputModalities must follow the modality, not fall back to
+        // text — a text default would make transcription endpoints impossible
+        // to register without naming "audio" explicitly.
+        const defaultedInputResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: await signedSessionCookie(sessionToken),
+                },
+                body: JSON.stringify({
+                    ...registrationPayload,
+                    name: `${modelName}-defaulted`,
+                    inputModalities: undefined,
+                }),
+            }),
+        );
+        expect(defaultedInputResponse.status).toBe(200);
+        expect(await defaultedInputResponse.json()).toMatchObject({
+            modality: "transcription",
+            inputModalities: ["audio"],
+        });
+
+        const registerResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: await signedSessionCookie(sessionToken),
+                },
+                body: JSON.stringify(registrationPayload),
+            }),
+        );
+        expect(registerResponse.status).toBe(200);
+        const registered = (await registerResponse.json()) as {
+            id: string;
+            modelId: string;
+            modality: string;
+            inputModalities: string[];
+            baseUrl: string;
+            upstreamModel: string;
+            promptAudioPrice: number;
+        };
+        expect(registered).toMatchObject({
+            modelId: communityModelId(ownerGithubUsername, modelName),
+            modality: "transcription",
+            inputModalities: ["audio"],
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "whisper-1",
+            promptAudioPrice: 0.0000445,
+        });
+
+        const testResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints/test", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: await signedSessionCookie(sessionToken),
+                },
+                body: JSON.stringify({
+                    baseUrl: registered.baseUrl,
+                    bearerToken: "Bearer sk_transcription_upstream",
+                    model: registered.upstreamModel,
+                    modality: "transcription",
+                }),
+            }),
+        );
+        expect(testResponse.status).toBe(200);
+        await expect(testResponse.json()).resolves.toMatchObject({
+            message: "Endpoint responded with transcription text",
+            usage: { duration: 0.5 },
+            billableUsage: { promptAudioSeconds: 0.5 },
+        });
+
+        const transcriptionFormData = new FormData();
+        transcriptionFormData.append("model", registered.modelId);
+        transcriptionFormData.append("response_format", "json");
+        transcriptionFormData.append(
+            "file",
+            new Blob([new Uint8Array([1, 2, 3])], { type: "audio/wav" }),
+            "sample.wav",
+        );
+        const transcriptionResponse = await fetchGen(
+            new Request("https://gen.pollinations.ai/v1/audio/transcriptions", {
+                method: "POST",
+                headers: { Authorization: `Bearer ${apiKey}` },
+                body: transcriptionFormData,
+            }),
+        );
+        expect(transcriptionResponse.status).toBe(200);
+        await expect(transcriptionResponse.json()).resolves.toMatchObject({
+            text: "ok",
+        });
+        expect(transcriptionResponse.headers.get("x-model-used")).toBe(
+            registered.modelId,
+        );
+        expect(
+            transcriptionResponse.headers.get("x-usage-prompt-audio-seconds"),
+        ).toBe("0.5");
+
+        const openaiModelsResponse = await fetchGen(
+            "https://gen.pollinations.ai/v1/models",
+        );
+        expect(openaiModelsResponse.status).toBe(200);
+        const openaiModels = (await openaiModelsResponse.json()) as {
+            data: {
+                id: string;
+                input_modalities?: string[];
+                supported_endpoints?: string[];
+            }[];
+        };
+        const listedModel = openaiModels.data.find(
+            (model) => model.id === registered.modelId,
+        );
+        expect(listedModel?.input_modalities).toEqual(["audio"]);
+        expect(listedModel?.supported_endpoints).toEqual(
+            expect.arrayContaining(["/v1/audio/transcriptions"]),
+        );
+
+        const audioModelsResponse = await fetchGen(
+            "https://gen.pollinations.ai/audio/models",
+        );
+        expect(audioModelsResponse.status).toBe(200);
+        const audioModels = (await audioModelsResponse.json()) as {
+            name: string;
+            category?: string;
+            community?: boolean;
+            input_modalities?: string[];
+            supported_endpoints?: string[];
+            pricing?: Record<string, string>;
+        }[];
+        const listedAudioModel = audioModels.find(
+            (model) => model.name === registered.modelId,
+        );
+        expect(listedAudioModel).toMatchObject({
+            name: registered.modelId,
+            category: "audio",
+            community: true,
+            input_modalities: ["audio"],
+            pricing: { promptAudioSeconds: "0.0000445" },
+        });
+        expect(listedAudioModel?.supported_endpoints).toEqual(
+            expect.arrayContaining(["/v1/audio/transcriptions"]),
+        );
+        expect(
+            fetchMock.mock.calls.filter(
+                ([input]) => new Request(input).url === transcriptionUrl,
+            ),
+        ).toHaveLength(2);
+    },
+);
+
+fixtureTest(
     "manages my-models through account API with a key that has account keys permission",
     async () => {
         const ownerGithubUsername = `pk-${crypto.randomUUID().slice(0, 8)}`;
@@ -3147,13 +3999,13 @@ fixtureTest(
             type: "publishable",
             accountPermissions: ["keys"],
             user: {
-                githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+                githubId: nextAllowedGithubId(),
                 githubUsername: ownerGithubUsername,
             },
         });
         const denied = await createTestApiKey({
             user: {
-                githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+                githubId: nextAllowedGithubId(),
                 githubUsername: `denied-${crypto.randomUUID().slice(0, 8)}`,
             },
         });
@@ -3281,12 +4133,13 @@ fixtureTest(
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "gpt-4.1-mini",
             visibility: "private",
+            paidOnly: false,
             perUserRpm: 0.5,
             promptTextPrice: 0,
             completionTextPrice: 0,
-            disabled: false,
-            disabledReason: null,
-            disabledAt: null,
+            hidden: false,
+            hiddenReason: null,
+            hiddenAt: null,
         });
         expect(created).not.toHaveProperty("bearerToken");
         expect(created).not.toHaveProperty("bearerTokenCiphertext");
@@ -3295,9 +4148,9 @@ fixtureTest(
         await db
             .update(communityEndpointTable)
             .set({
-                disabledAt: new Date(),
-                disabledReason: "was failing",
-                disabledBy: "monitor",
+                hiddenAt: new Date(),
+                hiddenReason: "was failing",
+                hiddenBy: "monitor",
             })
             .where(eq(communityEndpointTable.id, createdId));
 
@@ -3315,6 +4168,7 @@ fixtureTest(
                         title: "Updated Model Title",
                         description: "Updated description",
                         visibility: "public",
+                        paidOnly: true,
                         promptTextPrice: 0.00001,
                         completionTextPrice: 0.00002,
                     }),
@@ -3326,13 +4180,14 @@ fixtureTest(
             title: "Updated Model Title",
             description: "Updated description",
             visibility: "public",
+            paidOnly: true,
             promptTextPrice: 0.00001,
             completionTextPrice: 0.00002,
-            disabled: true,
-            disabledReason: "was failing",
+            hidden: true,
+            hiddenReason: "was failing",
         });
 
-        const reactivateResponse = await fetchEnterApi(
+        const relistResponse = await fetchEnterApi(
             enterApi,
             new Request(
                 `http://localhost:3000/api/account/my-models/${createdId}/update`,
@@ -3342,18 +4197,18 @@ fixtureTest(
                         Authorization: `Bearer ${key}`,
                         "Content-Type": "application/json",
                     },
-                    body: JSON.stringify({ active: true }),
+                    body: JSON.stringify({ hidden: false }),
                 },
             ),
         );
-        expect(reactivateResponse.status).toBe(200);
-        await expect(reactivateResponse.json()).resolves.toMatchObject({
-            disabled: false,
-            disabledReason: null,
-            disabledAt: null,
+        expect(relistResponse.status).toBe(200);
+        await expect(relistResponse.json()).resolves.toMatchObject({
+            hidden: false,
+            hiddenReason: null,
+            hiddenAt: null,
         });
 
-        const deactivateResponse = await fetchEnterApi(
+        const hideResponse = await fetchEnterApi(
             enterApi,
             new Request(
                 `http://localhost:3000/api/account/my-models/${createdId}/update`,
@@ -3363,14 +4218,14 @@ fixtureTest(
                         Authorization: `Bearer ${key}`,
                         "Content-Type": "application/json",
                     },
-                    body: JSON.stringify({ active: false }),
+                    body: JSON.stringify({ hidden: true }),
                 },
             ),
         );
-        expect(deactivateResponse.status).toBe(200);
-        await expect(deactivateResponse.json()).resolves.toMatchObject({
-            disabled: true,
-            disabledReason: "Deactivated by owner",
+        expect(hideResponse.status).toBe(200);
+        await expect(hideResponse.json()).resolves.toMatchObject({
+            hidden: true,
+            hiddenReason: "Hidden by owner",
         });
 
         // Minimum-price policy is independent of visibility: any non-negative
@@ -3385,7 +4240,9 @@ fixtureTest(
                         Authorization: `Bearer ${key}`,
                         "Content-Type": "application/json",
                     },
-                    body: JSON.stringify({ promptTextPrice: 1e-12 }),
+                    body: JSON.stringify({
+                        promptTextPrice: 1e-12,
+                    }),
                 },
             ),
         );
@@ -3404,7 +4261,9 @@ fixtureTest(
                         Authorization: `Bearer ${key}`,
                         "Content-Type": "application/json",
                     },
-                    body: JSON.stringify({ promptTextPrice: -1e-12 }),
+                    body: JSON.stringify({
+                        promptTextPrice: -1e-12,
+                    }),
                 },
             ),
         );
@@ -3422,18 +4281,23 @@ fixtureTest(
                         Authorization: `Bearer ${key}`,
                         "Content-Type": "application/json",
                     },
-                    body: JSON.stringify({ promptTextPrice: 0.00003 }),
+                    body: JSON.stringify({
+                        promptTextPrice: 0.00003,
+                    }),
                 },
             ),
         );
         expect(priceOnlyResponse.status).toBe(200);
         await expect(priceOnlyResponse.json()).resolves.toMatchObject({
             visibility: "public",
+            paidOnly: true,
             promptTextPrice: 0.00003,
             completionTextPrice: 0.00002,
         });
 
-        // Making the model private clears all owner-set prices.
+        // Making the model private clears all owner-set prices, and with them
+        // the paid-only choice: a free listing that still demanded paid balance
+        // would only gate the owner out of their own model.
         const privatizeResponse = await fetchEnterApi(
             enterApi,
             new Request(
@@ -3444,13 +4308,16 @@ fixtureTest(
                         Authorization: `Bearer ${key}`,
                         "Content-Type": "application/json",
                     },
-                    body: JSON.stringify({ visibility: "private" }),
+                    body: JSON.stringify({
+                        visibility: "private",
+                    }),
                 },
             ),
         );
         expect(privatizeResponse.status).toBe(200);
         await expect(privatizeResponse.json()).resolves.toMatchObject({
             visibility: "private",
+            paidOnly: false,
             promptTextPrice: 0,
             completionTextPrice: 0,
         });
@@ -3467,7 +4334,9 @@ fixtureTest(
                         Authorization: `Bearer ${key}`,
                         "Content-Type": "application/json",
                     },
-                    body: JSON.stringify({ visibility: "public" }),
+                    body: JSON.stringify({
+                        visibility: "public",
+                    }),
                 },
             ),
         );
@@ -3522,7 +4391,9 @@ fixtureTest(
                         Authorization: `Bearer ${key}`,
                         "Content-Type": "application/json",
                     },
-                    body: JSON.stringify({ perUserRpm: null }),
+                    body: JSON.stringify({
+                        perUserRpm: null,
+                    }),
                 },
             ),
         );
@@ -3538,7 +4409,7 @@ fixtureTest(
     async () => {
         const ownerGithubUsername = `price-${crypto.randomUUID().slice(0, 8)}`;
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         const sessionToken = `session-${crypto.randomUUID()}`;
@@ -3589,7 +4460,9 @@ fixtureTest(
                             "Content-Type": "application/json",
                             Cookie: cookie,
                         },
-                        body: JSON.stringify({ promptTextPrice: price }),
+                        body: JSON.stringify({
+                            promptTextPrice: price,
+                        }),
                     },
                 ),
             );
@@ -3639,7 +4512,7 @@ fixtureTest(
         // Use an approved publisher so the request reaches the outbound probe;
         // non-allowlisted accounts are rejected before any fetch occurs.
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: `redir-${crypto.randomUUID().slice(0, 8)}`,
         });
         const sessionToken = `session-${crypto.randomUUID()}`;
@@ -3696,7 +4569,7 @@ fixtureTest(
 fixtureTest("rejects unsafe community model names", async () => {
     const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
     const ownerUserId = await createTestUser({
-        githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+        githubId: nextAllowedGithubId(),
         githubUsername: ownerGithubUsername,
     });
     const sessionToken = `session-${crypto.randomUUID()}`;
@@ -3740,11 +4613,11 @@ fixtureTest("rejects unsafe community model names", async () => {
 });
 
 fixtureTest(
-    "rejects community registration unless exactly one of baseUrl or agentId is provided",
+    "rejects proxy registration without a base URL or with agent-only fields",
     async () => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         const sessionToken = `session-${crypto.randomUUID()}`;
@@ -3788,395 +4661,420 @@ fixtureTest(
     },
 );
 
-fixtureTest(
-    "creates, edits, registers, and deletes managed agents",
-    async () => {
-        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
-        const modelName = `model-${crypto.randomUUID().slice(0, 8)}`;
-        const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
-            githubUsername: ownerGithubUsername,
-        });
-        const sessionToken = `session-${crypto.randomUUID()}`;
-        await db.insert(sessionTable).values({
-            id: `session-${crypto.randomUUID()}`,
-            token: sessionToken,
-            userId: ownerUserId,
-            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
+fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
+    const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+    const modelName = `model-${crypto.randomUUID().slice(0, 8)}`;
+    const ownerUserId = await createTestUser({
+        githubId: nextAllowedGithubId(),
+        githubUsername: ownerGithubUsername,
+    });
+    const sessionToken = `session-${crypto.randomUUID()}`;
+    await db.insert(sessionTable).values({
+        id: `session-${crypto.randomUUID()}`,
+        token: sessionToken,
+        userId: ownerUserId,
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    });
 
-        const enterEnv = {
-            ...env,
-            BETTER_AUTH_URL: "https://enter.test",
-            AGENT_RUNTIME_BASE_URL: env.AGENT_RUNTIME_BASE_URL,
-        };
-        const enterApi = await createEnterFrontendApi();
-        const cookie = (await signedSessionCookie(sessionToken)).replace(
-            "better-auth.session_token",
-            "__Secure-better-auth.session_token",
-        );
-        const promptAgent = {
-            systemPrompt: "You are a terse SQL tutor.",
-            baseModel: "openai-fast",
-            mcpServers: ["pollinations"],
-        };
-        const createAgentResponse = await fetchEnterApi(
-            enterApi,
-            new Request("https://enter.test/api/account/agents", {
+    const enterEnv = {
+        ...env,
+        BETTER_AUTH_URL: "https://enter.test",
+        AGENT_RUNTIME_BASE_URL: env.AGENT_RUNTIME_BASE_URL,
+    };
+    const enterApi = await createEnterFrontendApi();
+    const cookie = (await signedSessionCookie(sessionToken)).replace(
+        "better-auth.session_token",
+        "__Secure-better-auth.session_token",
+    );
+    const promptAgent = {
+        systemPrompt: "You are a terse SQL tutor.",
+        baseModel: "openai-fast",
+        mcpServers: ["pollinations"],
+    };
+    const createAgentResponse = await fetchEnterApi(
+        enterApi,
+        new Request("https://enter.test/api/account/agents", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: cookie,
+            },
+            body: JSON.stringify({
+                ...promptAgent,
+                name: modelName,
+                title: "Managed SQL Tutor",
+            }),
+        }),
+        enterEnv,
+    );
+    expect(createAgentResponse.status).toBe(200);
+    const agent = (await createAgentResponse.json()) as {
+        id: string;
+        systemPrompt: string;
+        baseModel: string;
+        mcpServers: string[];
+    };
+    expect(agent).toMatchObject({
+        systemPrompt: "You are a terse SQL tutor.",
+        baseModel: "openai-fast",
+        mcpServers: ["pollinations"],
+    });
+    expect(agent).not.toHaveProperty("apiKeyId");
+    expect(agent).not.toHaveProperty("apiKeyCiphertext");
+    expect(agent).not.toHaveProperty("bearerTokenCiphertext");
+    expect(agent).toMatchObject({
+        name: modelName,
+        description: null,
+        visibility: "private",
+        baseUrl: env.AGENT_RUNTIME_BASE_URL,
+        upstreamModel: agent.id,
+    });
+    const [storedAgent] = await db
+        .select()
+        .from(communityEndpointTable)
+        .where(eq(communityEndpointTable.id, agent.id));
+    expect(storedAgent.id).toBe(agent.id);
+    expect(storedAgent.baseUrl).toBe(PROMPT_AGENT_BASE_URL_PLACEHOLDER);
+    expect(storedAgent.upstreamModel).toBe(agent.id);
+    expect(JSON.parse(storedAgent.payload)).toEqual(promptAgent);
+    const partialUpdateResponse = await fetchEnterApi(
+        enterApi,
+        new Request(`https://enter.test/api/account/agents/${agent.id}`, {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: cookie,
+            },
+            body: JSON.stringify({
+                systemPrompt: "You are an editable SQL tutor.",
+            }),
+        }),
+        enterEnv,
+    );
+    expect(partialUpdateResponse.status).toBe(400);
+    const updateAgentResponse = await fetchEnterApi(
+        enterApi,
+        new Request(`https://enter.test/api/account/agents/${agent.id}`, {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: cookie,
+            },
+            body: JSON.stringify({
+                ...promptAgent,
+                systemPrompt: "You are an editable SQL tutor.",
+                name: modelName,
+                title: "Managed SQL Tutor",
+                description: "",
+                visibility: "public",
+            }),
+        }),
+        enterEnv,
+    );
+    expect(updateAgentResponse.status).toBe(200);
+    await expect(updateAgentResponse.json()).resolves.toMatchObject({
+        id: agent.id,
+        systemPrompt: "You are an editable SQL tutor.",
+        mcpServers: ["pollinations"],
+    });
+    const [agentAfterPromptUpdate] = await db
+        .select()
+        .from(communityEndpointTable)
+        .where(eq(communityEndpointTable.id, agent.id));
+    expect(JSON.parse(agentAfterPromptUpdate.payload)).toEqual({
+        ...promptAgent,
+        systemPrompt: "You are an editable SQL tutor.",
+    });
+    const listResponse = await fetchEnterApi(
+        enterApi,
+        new Request("https://enter.test/api/account/my-models", {
+            headers: { Cookie: cookie },
+        }),
+        enterEnv,
+    );
+    expect(listResponse.status).toBe(200);
+    const registration = (
+        (await listResponse.json()) as {
+            data: {
+                id: string;
+                modelId: string;
+                type: "prompt_agent";
+                baseUrl: string;
+                upstreamModel: string;
+            }[];
+        }
+    ).data.find((row) => row.id === agent.id);
+    expect(registration).toBeDefined();
+    if (!registration) throw new Error("Agent listing was not created");
+    expect(registration.id).toBe(agent.id);
+    expect(registration.type).toBe("prompt_agent");
+    expect(registration.baseUrl).toBe(env.AGENT_RUNTIME_BASE_URL);
+    expect(registration.upstreamModel).toBe(agent.id);
+    expect(registration).not.toHaveProperty("modality");
+    const paidUpdateResponse = await fetchEnterApi(
+        enterApi,
+        new Request(
+            `https://enter.test/api/account/my-models/${registration.id}/update`,
+            {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     Cookie: cookie,
                 },
-                body: JSON.stringify(promptAgent),
-            }),
-            enterEnv,
-        );
-        expect(createAgentResponse.status).toBe(200);
-        const agent = (await createAgentResponse.json()) as {
-            id: string;
-            systemPrompt: string;
-            baseModel: string;
-            mcpServers: string[];
-        };
-        expect(agent).toMatchObject({
-            systemPrompt: "You are a terse SQL tutor.",
-            baseModel: "openai-fast",
-            mcpServers: ["pollinations"],
-        });
-        expect(agent).not.toHaveProperty("apiKeyId");
-        expect(agent).not.toHaveProperty("apiKeyCiphertext");
-        expect(agent).not.toHaveProperty("bearerTokenCiphertext");
-        expect(agent).not.toHaveProperty("baseUrl");
-        const [storedAgent] = await db
-            .select()
-            .from(agentTable)
-            .where(eq(agentTable.id, agent.id));
-        expect(storedAgent.id).toBe(agent.id);
-        expect(JSON.parse(storedAgent.config)).toEqual(promptAgent);
-        const partialUpdateResponse = await fetchEnterApi(
-            enterApi,
-            new Request(`https://enter.test/api/account/agents/${agent.id}`, {
-                method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json",
-                    Cookie: cookie,
-                },
                 body: JSON.stringify({
-                    systemPrompt: "You are an editable SQL tutor.",
-                }),
-            }),
-            enterEnv,
-        );
-        expect(partialUpdateResponse.status).toBe(400);
-        const updateAgentResponse = await fetchEnterApi(
-            enterApi,
-            new Request(`https://enter.test/api/account/agents/${agent.id}`, {
-                method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json",
-                    Cookie: cookie,
-                },
-                body: JSON.stringify({
-                    ...promptAgent,
-                    systemPrompt: "You are an editable SQL tutor.",
-                }),
-            }),
-            enterEnv,
-        );
-        expect(updateAgentResponse.status).toBe(200);
-        await expect(updateAgentResponse.json()).resolves.toMatchObject({
-            id: agent.id,
-            systemPrompt: "You are an editable SQL tutor.",
-            mcpServers: ["pollinations"],
-        });
-        const [agentAfterPromptUpdate] = await db
-            .select()
-            .from(agentTable)
-            .where(eq(agentTable.id, agent.id));
-        expect(JSON.parse(agentAfterPromptUpdate.config)).toEqual({
-            ...promptAgent,
-            systemPrompt: "You are an editable SQL tutor.",
-        });
-        const registerResponse = await fetchEnterApi(
-            enterApi,
-            new Request("https://enter.test/api/account/my-models", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Cookie: cookie,
-                },
-                body: JSON.stringify({
-                    name: modelName,
-                    title: "Managed SQL Tutor",
-                    agentId: agent.id,
-                    visibility: "public",
                     promptTextPrice: 0.00001,
-                    completionTextPrice: 0.00002,
                 }),
-            }),
-            enterEnv,
-        );
-        expect(registerResponse.status).toBe(400);
-        const fallbackRegisterResponse = await fetchEnterApi(
-            enterApi,
-            new Request("https://enter.test/api/account/my-models", {
+            },
+        ),
+        enterEnv,
+    );
+    expect(paidUpdateResponse.status).toBe(400);
+    const fallbackUpdateResponse = await fetchEnterApi(
+        enterApi,
+        new Request(
+            `https://enter.test/api/account/my-models/${registration.id}/update`,
+            {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     Cookie: cookie,
                 },
                 body: JSON.stringify({
-                    name: modelName,
-                    title: "Managed SQL Tutor",
-                    agentId: agent.id,
-                    fallbackModelIds: ["owner/backup"],
+                    fallbacks: ["owner/backup"],
                 }),
-            }),
-            enterEnv,
-        );
-        expect(fallbackRegisterResponse.status).toBe(400);
-        expect(await fallbackRegisterResponse.text()).toContain(
-            "do not support fallback models",
-        );
-        const freeRegisterResponse = await fetchEnterApi(
-            enterApi,
-            new Request("https://enter.test/api/account/my-models", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Cookie: cookie,
-                },
-                body: JSON.stringify({
-                    name: modelName,
-                    title: "Managed SQL Tutor",
-                    agentId: agent.id,
-                    visibility: "public",
-                }),
-            }),
-            enterEnv,
-        );
-        expect(freeRegisterResponse.status).toBe(200);
-        const registration = (await freeRegisterResponse.json()) as {
-            id: string;
-            modelId: string;
-            agentId: string | null;
-            baseUrl: string;
-        };
-        expect(registration.id).not.toBe(agent.id);
-        expect(registration.agentId).toBe(agent.id);
-        expect(registration.baseUrl).toBe(enterEnv.AGENT_RUNTIME_BASE_URL);
-        const paidUpdateResponse = await fetchEnterApi(
-            enterApi,
-            new Request(
-                `https://enter.test/api/account/my-models/${registration.id}/update`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Cookie: cookie,
-                    },
-                    body: JSON.stringify({ promptTextPrice: 0.00001 }),
-                },
-            ),
-            enterEnv,
-        );
-        expect(paidUpdateResponse.status).toBe(400);
-        const fallbackUpdateResponse = await fetchEnterApi(
-            enterApi,
-            new Request(
-                `https://enter.test/api/account/my-models/${registration.id}/update`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Cookie: cookie,
-                    },
-                    body: JSON.stringify({
-                        fallbackModelIds: ["owner/backup"],
-                    }),
-                },
-            ),
-            enterEnv,
-        );
-        expect(fallbackUpdateResponse.status).toBe(400);
-        expect(await fallbackUpdateResponse.text()).toContain(
-            "do not support fallback models",
-        );
-        const fallbackCandidatesResponse = await fetchEnterApi(
-            enterApi,
-            new Request(
-                `https://enter.test/api/account/my-models/${registration.id}/fallback-candidates`,
-                { headers: { Cookie: cookie } },
-            ),
-            enterEnv,
-        );
-        expect(fallbackCandidatesResponse.status).toBe(200);
-        await expect(fallbackCandidatesResponse.json()).resolves.toEqual({
-            data: [],
-        });
-        const registryEntry = (
-            await getCommunityModelRegistryEntries(env)
-        ).find((entry) => entry.id === registration.modelId);
-        expect(registryEntry?.communityEndpoint).toMatchObject({
-            kind: "agent",
-            baseUrl: env.AGENT_RUNTIME_BASE_URL,
-            agentId: agent.id,
-            upstreamModel: agent.id,
-        });
-        // An agent listing carries no upstream credential of its own.
-        expect(registryEntry?.communityEndpoint).not.toHaveProperty(
-            "bearerTokenCiphertext",
-        );
-        if (!registryEntry) throw new Error("Agent listing was not registered");
-        expect(registryEntry.agentConfig).toEqual({
-            baseModel: promptAgent.baseModel,
-            mcpServers: ["pollinations"],
-        });
-        expect(registryEntry.definition.cost).toMatchObject({
-            promptTextTokens: 0,
-            completionTextTokens: 0,
-        });
-        const gatewayContext = await communityEndpointGatewayContext({
-            endpoint: registryEntry.communityEndpoint,
-            modelDefinition: registryEntry.definition,
-            requestData: { messages: [{ role: "user", content: "hello" }] },
-            secret: env.BETTER_AUTH_SECRET,
-            portkeyGatewayUrl: env.PORTKEY_GATEWAY_URL,
-            userApiKey: "sk_user_key",
-            parentRequestId: "caller-request-id",
-            parentApiKeyId: "caller-api-key-id",
-        });
-        const runtimeToken = String(gatewayContext.modelConfig?.authKey);
-        expect(runtimeToken).toMatch(/^ag_/);
-        await expect(
-            verifyAgentRunToken(runtimeToken, env.BETTER_AUTH_SECRET),
-        ).resolves.toMatchObject({
-            parentApiKeyId: "caller-api-key-id",
-            parentRequestId: "caller-request-id",
-            managedAgentId: agent.id,
-        });
-        expect(gatewayContext.modelConfig).toMatchObject({
-            "custom-host": env.AGENT_RUNTIME_BASE_URL,
-            model: agent.id,
-        });
+            },
+        ),
+        enterEnv,
+    );
+    expect(fallbackUpdateResponse.status).toBe(400);
+    expect(await fallbackUpdateResponse.text()).toContain(
+        'Unrecognized key: \\"fallbacks\\"',
+    );
+    const fallbackCandidatesResponse = await fetchEnterApi(
+        enterApi,
+        new Request(
+            `https://enter.test/api/account/my-models/${registration.id}/fallback-candidates`,
+            { headers: { Cookie: cookie } },
+        ),
+        enterEnv,
+    );
+    expect(fallbackCandidatesResponse.status).toBe(200);
+    await expect(fallbackCandidatesResponse.json()).resolves.toEqual({
+        data: [],
+    });
+    const registryEntry = (await getCommunityModelRegistryEntries(env)).find(
+        (entry) => entry.id === registration.modelId,
+    );
+    expect(registryEntry?.communityEndpoint).toMatchObject({
+        type: "prompt_agent",
+        baseUrl: env.AGENT_RUNTIME_BASE_URL,
+        upstreamModel: agent.id,
+    });
+    // An agent listing carries no upstream credential of its own.
+    expect(registryEntry?.communityEndpoint).not.toHaveProperty(
+        "bearerTokenCiphertext",
+    );
+    if (!registryEntry) throw new Error("Agent listing was not registered");
+    expect(registryEntry.agentConfig).toEqual({
+        baseModel: promptAgent.baseModel,
+        mcpServers: ["pollinations"],
+    });
+    expect(registryEntry.definition.cost).toMatchObject({
+        promptTextTokens: 0,
+        completionTextTokens: 0,
+    });
+    const gatewayContext = await communityEndpointGatewayContext({
+        endpoint: registryEntry.communityEndpoint,
+        modelDefinition: registryEntry.definition,
+        requestData: { messages: [{ role: "user", content: "hello" }] },
+        secret: env.BETTER_AUTH_SECRET,
+        portkeyGatewayUrl: env.PORTKEY_GATEWAY_URL,
+        userApiKey: "sk_user_key",
+        parentRequestId: "caller-request-id",
+        parentApiKeyId: "caller-api-key-id",
+    });
+    const runtimeToken = String(gatewayContext.modelConfig?.authKey);
+    expect(runtimeToken).toMatch(/^ag_/);
+    await expect(
+        verifyAgentRunToken(runtimeToken, env.BETTER_AUTH_SECRET),
+    ).resolves.toMatchObject({
+        parentApiKeyId: "caller-api-key-id",
+        parentRequestId: "caller-request-id",
+        managedAgentId: agent.id,
+    });
+    expect(gatewayContext.modelConfig).toMatchObject({
+        "custom-host": env.AGENT_RUNTIME_BASE_URL,
+        model: agent.id,
+    });
 
-        const [modelsResponse, openaiModelsResponse] = await Promise.all([
-            fetchGen("https://gen.pollinations.ai/models"),
-            fetchGen("https://gen.pollinations.ai/v1/models"),
-        ]);
-        const models = (await modelsResponse.json()) as {
-            name: string;
-            community?: boolean;
+    const endpointAgentId = `endpoint-${crypto.randomUUID()}`;
+    await insertCommunityEndpoints({
+        id: endpointAgentId,
+        ownerUserId,
+        type: "endpoint_agent",
+        name: `endpoint-agent-${crypto.randomUUID().slice(0, 8)}`,
+        title: "Endpoint Agent",
+        baseUrl: "https://agent.example.com/v1",
+        upstreamModel: "endpoint-agent",
+        visibility: "private",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    });
+    const updateEndpointAgentResponse = await fetchEnterApi(
+        enterApi,
+        new Request(
+            `https://enter.test/api/account/my-models/${endpointAgentId}/update`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: cookie,
+                },
+                body: JSON.stringify({
+                    baseUrl: "https://updated-agent.example.com/v1",
+                    upstreamModel: "updated-endpoint-agent",
+                    perUserRpm: 7,
+                }),
+            },
+        ),
+        enterEnv,
+    );
+    expect(updateEndpointAgentResponse.status).toBe(200);
+    const endpointAgentResponse = await updateEndpointAgentResponse.json();
+    expect(endpointAgentResponse).toMatchObject({
+        id: endpointAgentId,
+        type: "endpoint_agent",
+        baseUrl: "https://updated-agent.example.com/v1",
+        upstreamModel: "updated-endpoint-agent",
+        perUserRpm: 7,
+    });
+    expect(endpointAgentResponse).not.toHaveProperty("agentId");
+    expect(endpointAgentResponse).not.toHaveProperty("modality");
+    const invalidEndpointAgentUpdateResponse = await fetchEnterApi(
+        enterApi,
+        new Request(
+            `https://enter.test/api/account/my-models/${endpointAgentId}/update`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: cookie,
+                },
+                body: JSON.stringify({
+                    bearerToken: "not-supported",
+                }),
+            },
+        ),
+        enterEnv,
+    );
+    expect(invalidEndpointAgentUpdateResponse.status).toBe(400);
+    const endpointAgentRegistryEntry = (
+        await getCommunityModelRegistryEntries(env)
+    ).find((entry) => entry.communityEndpoint.id === endpointAgentId);
+    expect(endpointAgentRegistryEntry?.communityEndpoint).toMatchObject({
+        type: "endpoint_agent",
+        baseUrl: "https://updated-agent.example.com/v1",
+        upstreamModel: "updated-endpoint-agent",
+        perUserRpm: 7,
+    });
+    expect(endpointAgentRegistryEntry?.communityEndpoint).not.toHaveProperty(
+        "bearerTokenCiphertext",
+    );
+
+    const [modelsResponse, openaiModelsResponse] = await Promise.all([
+        fetchGen("https://gen.pollinations.ai/models"),
+        fetchGen("https://gen.pollinations.ai/v1/models"),
+    ]);
+    const models = (await modelsResponse.json()) as {
+        name: string;
+        community?: boolean;
+        agent?: boolean;
+        base_model?: string;
+        pricing?: Record<string, string>;
+        capabilities?: string[];
+        input_modalities?: string[];
+        output_modalities?: string[];
+    }[];
+    const openaiModels = (await openaiModelsResponse.json()) as {
+        data: {
+            id: string;
             agent?: boolean;
             base_model?: string;
             pricing?: Record<string, string>;
             capabilities?: string[];
             input_modalities?: string[];
             output_modalities?: string[];
+            tools?: boolean;
+            reasoning?: boolean;
+            context_length?: number;
         }[];
-        const openaiModels = (await openaiModelsResponse.json()) as {
-            data: {
-                id: string;
-                agent?: boolean;
-                base_model?: string;
-                pricing?: Record<string, string>;
-                capabilities?: string[];
-                input_modalities?: string[];
-                output_modalities?: string[];
-                tools?: boolean;
-                reasoning?: boolean;
-                context_length?: number;
-            }[];
-        };
-        const baseModelInfo = models.find(
-            (model) => model.name === promptAgent.baseModel,
-        );
-        const agentModelInfo = models.find(
-            (model) => model.name === registration.modelId,
-        );
-        expect(baseModelInfo).toBeDefined();
-        const agentCapabilities = [
-            ...(baseModelInfo?.capabilities ?? []),
-            "pollinations_models",
-        ];
-        expect(agentModelInfo).toMatchObject({
-            community: true,
-            agent: true,
-            base_model: promptAgent.baseModel,
-            pricing: baseModelInfo?.pricing,
-            capabilities: agentCapabilities,
-            input_modalities: baseModelInfo?.input_modalities,
-            output_modalities: baseModelInfo?.output_modalities,
-        });
-        const openaiBaseModel = openaiModels.data.find(
-            (model) => model.id === promptAgent.baseModel,
-        );
-        const openaiAgentModel = openaiModels.data.find(
-            (model) => model.id === registration.modelId,
-        );
-        expect(openaiBaseModel).toBeDefined();
-        expect(openaiAgentModel).toMatchObject({
-            agent: true,
-            base_model: promptAgent.baseModel,
-            pricing: baseModelInfo?.pricing,
-            capabilities: agentCapabilities,
-            input_modalities: openaiBaseModel?.input_modalities,
-            output_modalities: openaiBaseModel?.output_modalities,
-            tools: openaiBaseModel?.tools,
-            context_length: openaiBaseModel?.context_length,
-        });
+    };
+    const baseModelInfo = models.find(
+        (model) => model.name === promptAgent.baseModel,
+    );
+    const agentModelInfo = models.find(
+        (model) => model.name === registration.modelId,
+    );
+    expect(baseModelInfo).toBeDefined();
+    const agentCapabilities = [
+        ...(baseModelInfo?.capabilities ?? []),
+        "pollinations_models",
+    ];
+    expect(agentModelInfo).toMatchObject({
+        community: true,
+        agent: true,
+        base_model: promptAgent.baseModel,
+        pricing: baseModelInfo?.pricing,
+        capabilities: agentCapabilities,
+        input_modalities: baseModelInfo?.input_modalities,
+        output_modalities: baseModelInfo?.output_modalities,
+    });
+    const openaiBaseModel = openaiModels.data.find(
+        (model) => model.id === promptAgent.baseModel,
+    );
+    const openaiAgentModel = openaiModels.data.find(
+        (model) => model.id === registration.modelId,
+    );
+    expect(openaiBaseModel).toBeDefined();
+    expect(openaiAgentModel).toMatchObject({
+        agent: true,
+        base_model: promptAgent.baseModel,
+        pricing: baseModelInfo?.pricing,
+        capabilities: agentCapabilities,
+        input_modalities: openaiBaseModel?.input_modalities,
+        output_modalities: openaiBaseModel?.output_modalities,
+        tools: openaiBaseModel?.tools,
+        context_length: openaiBaseModel?.context_length,
+    });
 
-        const duplicateRegistrationResponse = await fetchEnterApi(
-            enterApi,
-            new Request("https://enter.test/api/account/my-models", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Cookie: cookie,
-                },
-                body: JSON.stringify({
-                    name: `${modelName}-duplicate`,
-                    title: "Duplicate Managed Agent",
-                    agentId: agent.id,
-                }),
-            }),
-            enterEnv,
-        );
-        expect(duplicateRegistrationResponse.status).toBe(400);
-
-        const deleteRegisteredAgentResponse = await fetchEnterApi(
-            enterApi,
-            new Request(`https://enter.test/api/account/agents/${agent.id}`, {
-                method: "DELETE",
-                headers: { Cookie: cookie },
-            }),
-            enterEnv,
-        );
-        expect(deleteRegisteredAgentResponse.status).toBe(200);
-        await expect(
-            db.select().from(agentTable).where(eq(agentTable.id, agent.id)),
-        ).resolves.toEqual([]);
-        await expect(
-            db
-                .select()
-                .from(communityEndpointTable)
-                .where(eq(communityEndpointTable.id, registration.id)),
-        ).resolves.toEqual([]);
-    },
-);
+    const deleteRegisteredAgentResponse = await fetchEnterApi(
+        enterApi,
+        new Request(`https://enter.test/api/account/agents/${agent.id}`, {
+            method: "DELETE",
+            headers: { Cookie: cookie },
+        }),
+        enterEnv,
+    );
+    expect(deleteRegisteredAgentResponse.status).toBe(200);
+    await expect(
+        db
+            .select()
+            .from(communityEndpointTable)
+            .where(eq(communityEndpointTable.id, agent.id)),
+    ).resolves.toEqual([]);
+});
 
 fixtureTest("validates community fallback targets on write", async () => {
     const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
     const ownerUserId = await createTestUser({
-        githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+        githubId: nextAllowedGithubId(),
         githubUsername: ownerGithubUsername,
     });
     const otherOwnerGithubUsername = `other-${crypto.randomUUID().slice(0, 8)}`;
     const otherOwnerUserId = await createTestUser({
-        githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+        githubId: nextAllowedGithubId(),
         githubUsername: otherOwnerGithubUsername,
     });
     const sessionToken = `session-${crypto.randomUUID()}`;
@@ -4197,6 +5095,7 @@ fixtureTest("validates community fallback targets on write", async () => {
         cheap: `cheap-${crypto.randomUUID().slice(0, 8)}`,
         priv: `private-${crypto.randomUUID().slice(0, 8)}`,
         otherPrivate: `other-private-${crypto.randomUUID().slice(0, 8)}`,
+        otherDisabled: `other-disabled-${crypto.randomUUID().slice(0, 8)}`,
         disabled: `disabled-${crypto.randomUUID().slice(0, 8)}`,
         delegating: `delegating-${crypto.randomUUID().slice(0, 8)}`,
         image: `image-${crypto.randomUUID().slice(0, 8)}`,
@@ -4231,6 +5130,20 @@ fixtureTest("validates community fallback targets on write", async () => {
         },
         {
             id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId: otherOwnerUserId,
+            visibility: "public",
+            name: targetNames.otherDisabled,
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "other-disabled-upstream",
+            bearerTokenCiphertext,
+            promptTextPrice: 0,
+            completionTextPrice: 0,
+            hiddenAt: new Date(),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        },
+        {
+            id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId,
             visibility: "public",
             name: targetNames.disabled,
@@ -4239,7 +5152,7 @@ fixtureTest("validates community fallback targets on write", async () => {
             bearerTokenCiphertext,
             promptTextPrice: 0,
             completionTextPrice: 0,
-            disabledAt: new Date(),
+            hiddenAt: new Date(),
             createdAt: new Date(),
             updatedAt: new Date(),
         },
@@ -4261,12 +5174,9 @@ fixtureTest("validates community fallback targets on write", async () => {
             ownerUserId,
             visibility: "public",
             name: targetNames.delegating,
+            type: "endpoint_agent",
             baseUrl: "https://agent.example.com/v1",
             upstreamModel: "delegating-upstream",
-            bearerTokenCiphertext,
-            delegatesGeneration: true,
-            promptTextPrice: 0,
-            completionTextPrice: 0,
             createdAt: new Date(),
             updatedAt: new Date(),
         },
@@ -4298,16 +5208,13 @@ fixtureTest("validates community fallback targets on write", async () => {
             createdAt: new Date(),
             updatedAt: new Date(),
         },
-    ] satisfies (typeof communityEndpointTable.$inferInsert)[]) {
-        await db.insert(communityEndpointTable).values(target);
+    ] satisfies CommunityEndpointFixture[]) {
+        await insertCommunityEndpoints(target);
     }
 
     const enterApi = await createEnterCommunityApi();
     const primaryName = `primary-${crypto.randomUUID().slice(0, 8)}`;
-    const createWithFallback = async (
-        name: string,
-        ...fallbackModelIds: string[]
-    ) =>
+    const createWithFallback = async (name: string, ...fallbacks: string[]) =>
         fetchEnterApi(
             enterApi,
             new Request("http://localhost:3000/api/community-endpoints", {
@@ -4325,7 +5232,7 @@ fixtureTest("validates community fallback targets on write", async () => {
                     visibility: "public",
                     promptTextPrice: 0.2 / 1_000_000,
                     completionTextPrice: 0.2 / 1_000_000,
-                    fallbackModelIds,
+                    fallbacks,
                 }),
             }),
         );
@@ -4352,9 +5259,7 @@ fixtureTest("validates community fallback targets on write", async () => {
     );
     expect(privateTarget.status).toBe(200);
     await expect(privateTarget.json()).resolves.toMatchObject({
-        fallbackModelIds: [
-            communityModelId(ownerGithubUsername, targetNames.priv),
-        ],
+        fallbacks: [communityModelId(ownerGithubUsername, targetNames.priv)],
     });
 
     const otherPrivateTarget = await createWithFallback(
@@ -4362,16 +5267,21 @@ fixtureTest("validates community fallback targets on write", async () => {
         communityModelId(otherOwnerGithubUsername, targetNames.otherPrivate),
     );
     expect(otherPrivateTarget.status).toBe(400);
-    expect(await otherPrivateTarget.text()).toContain(
-        "must be public or owned by you",
+    expect(await otherPrivateTarget.text()).toContain("does not exist");
+
+    const otherDisabledTarget = await createWithFallback(
+        `${primaryName}-other-disabled`,
+        communityModelId(otherOwnerGithubUsername, targetNames.otherDisabled),
     );
+    expect(otherDisabledTarget.status).toBe(400);
+    expect(await otherDisabledTarget.text()).toContain("does not exist");
 
     const disabledTarget = await createWithFallback(
         `${primaryName}-disabled`,
         communityModelId(ownerGithubUsername, targetNames.disabled),
     );
     expect(disabledTarget.status).toBe(400);
-    expect(await disabledTarget.text()).toContain("must be active");
+    expect(await disabledTarget.text()).toContain("must be listed");
 
     const delegatingTarget = await createWithFallback(
         `${primaryName}-delegating`,
@@ -4409,9 +5319,9 @@ fixtureTest("validates community fallback targets on write", async () => {
     const created = (await accepted.json()) as {
         id: string;
         modelId: string;
-        fallbackModelIds: string[];
+        fallbacks: string[];
     };
-    expect(created.fallbackModelIds).toEqual([cheapModelId]);
+    expect(created.fallbacks).toEqual([cheapModelId]);
 
     // One bad id fails the whole list, so a partial order is never stored.
     const partiallyBad = await createWithFallback(
@@ -4469,13 +5379,15 @@ fixtureTest("validates community fallback targets on write", async () => {
                     "Content-Type": "application/json",
                     Cookie: await signedSessionCookie(sessionToken),
                 },
-                body: JSON.stringify({ fallbackModelIds: [] }),
+                body: JSON.stringify({
+                    fallbacks: [],
+                }),
             },
         ),
     );
     expect(cleared.status).toBe(200);
     await expect(cleared.json()).resolves.toMatchObject({
-        fallbackModelIds: [],
+        fallbacks: [],
     });
 });
 
@@ -4484,35 +5396,21 @@ fixtureTest(
     async () => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         const bearerTokenCiphertext = await encryptSecret(
             "sk_saved_token",
             env.BETTER_AUTH_SECRET,
         );
-        const managedAgentId = crypto.randomUUID();
-        await db.insert(agentTable).values({
-            id: managedAgentId,
-            ownerUserId,
-            config: JSON.stringify({
-                version: 1,
-                kind: "prompt",
-                systemPrompt: "Use the available tools.",
-                baseModel: "openai",
-                mcpServers: [],
-            }),
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
         const suffix = crypto.randomUUID().slice(0, 8);
         const name = (label: string) => `${label}-${suffix}`;
         const id = (label: string) =>
             communityModelId(ownerGithubUsername, name(label));
         const endpoint = (
             label: string,
-            values: Partial<typeof communityEndpointTable.$inferInsert>,
-        ) => ({
+            values: Partial<CommunityEndpointFixture>,
+        ): CommunityEndpointFixture => ({
             id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId,
             visibility: "public" as const,
@@ -4530,46 +5428,36 @@ fixtureTest(
         // Inserted one at a time: D1 caps the bound variables per statement.
         for (const row of [
             endpoint("valid-primary", {
-                fallbackModelIds: [id("valid-target")],
+                fallbacks: [id("valid-target")],
             }),
             endpoint("valid-target", {
                 promptTextPrice: 0.1 / 1_000_000,
                 completionTextPrice: 0.1 / 1_000_000,
             }),
             endpoint("disabled-primary", {
-                fallbackModelIds: [id("disabled-target")],
+                fallbacks: [id("disabled-target")],
             }),
             endpoint("disabled-target", {
-                disabledAt: new Date(),
-                disabledReason: "repeated upstream 500s",
+                hiddenAt: new Date(),
+                hiddenReason: "repeated upstream 500s",
             }),
             endpoint("deleted-primary", {
-                fallbackModelIds: [
+                fallbacks: [
                     communityModelId(ownerGithubUsername, "never-existed"),
                 ],
             }),
             endpoint("repriced-primary", {
-                fallbackModelIds: [id("repriced-target")],
+                fallbacks: [id("repriced-target")],
             }),
             // Priced above its primary since the fallback was configured.
             endpoint("repriced-target", {
                 completionTextPrice: 0.5 / 1_000_000,
             }),
             endpoint("delegating-primary", {
-                fallbackModelIds: [id("delegating-target")],
+                fallbacks: [id("delegating-target")],
             }),
             endpoint("delegating-target", {
-                delegatesGeneration: true,
-                promptTextPrice: 0,
-                completionTextPrice: 0,
-            }),
-            endpoint("managed-primary", {
-                baseUrl: null,
-                agentId: managedAgentId,
-                bearerTokenCiphertext: null,
-                fallbackModelIds: [id("valid-target")],
-                promptTextPrice: 0,
-                completionTextPrice: 0,
+                type: "endpoint_agent",
             }),
             endpoint("second-target", {
                 promptTextPrice: 0.1 / 1_000_000,
@@ -4584,12 +5472,12 @@ fixtureTest(
                 completionTextPrice: 0.1 / 1_000_000,
             }),
             endpoint("multi-primary", {
-                fallbackModelIds: [id("valid-target"), id("second-target")],
+                fallbacks: [id("valid-target"), id("second-target")],
                 // Its own targets declare fallbacks too; none of them may leak
                 // into this model's routing.
             }),
             endpoint("greedy-primary", {
-                fallbackModelIds: [
+                fallbacks: [
                     id("valid-target"),
                     id("second-target"),
                     id("third-target"),
@@ -4597,7 +5485,7 @@ fixtureTest(
                 ],
             }),
             endpoint("gappy-primary", {
-                fallbackModelIds: [
+                fallbacks: [
                     id("valid-target"),
                     communityModelId(ownerGithubUsername, "never-existed"),
                     id("second-target"),
@@ -4609,7 +5497,7 @@ fixtureTest(
                 promptTextPrice: 0,
                 completionTextPrice: 0,
                 completionImagePrice: 0.02,
-                fallbackModelIds: [id("image-target")],
+                fallbacks: [id("image-target")],
             }),
             endpoint("image-target", {
                 modality: "image",
@@ -4625,7 +5513,7 @@ fixtureTest(
                 completionTextPrice: 0,
                 // 0.02 Pollen per generated image.
                 completionImagePrice: 0.02,
-                fallbackModelIds: [id("image-tokens-target")],
+                fallbacks: [id("image-tokens-target")],
             }),
             // Switched itself to token pricing after being picked as a target:
             // the same column now means Pollen per token (0.00005 = the 50
@@ -4639,7 +5527,7 @@ fixtureTest(
                 completionImagePrice: 0.00005,
             }),
         ]) {
-            await db.insert(communityEndpointTable).values(row);
+            await insertCommunityEndpoints(row);
         }
 
         resetGenerationModelRegistryCache();
@@ -4653,7 +5541,6 @@ fixtureTest(
         expect(fallbackIds(id("deleted-primary"))).toBeUndefined();
         expect(fallbackIds(id("repriced-primary"))).toBeUndefined();
         expect(fallbackIds(id("delegating-primary"))).toBeUndefined();
-        expect(fallbackIds(id("managed-primary"))).toBeUndefined();
 
         // Same image pricing mode on both sides: the price columns mean the
         // same thing, so the link stands.
@@ -4689,7 +5576,7 @@ fixtureTest(
         const suffix = crypto.randomUUID().slice(0, 8);
         const ownerGithubUsername = `transform-owner-${suffix}`;
         const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+            githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
         const fallbackModelId = communityModelId(
@@ -4697,7 +5584,7 @@ fixtureTest(
             `plain-${suffix}`,
         );
 
-        await db.insert(communityEndpointTable).values({
+        await insertCommunityEndpoints({
             id: `endpoint-${crypto.randomUUID()}`,
             ownerUserId,
             visibility: "public",
@@ -5081,7 +5968,7 @@ fixtureTest(
         for (const owner of owners) {
             userIds.push(
                 await createTestUser({
-                    githubId: COMMUNITY_ENDPOINT_ALLOWED_TEST_GITHUB_ID,
+                    githubId: nextAllowedGithubId(),
                     githubUsername: owner,
                 }),
             );
@@ -5097,7 +5984,7 @@ fixtureTest(
         );
 
         for (const [index, owner] of owners.entries()) {
-            await db.insert(communityEndpointTable).values({
+            await insertCommunityEndpoints({
                 id: `endpoint-${crypto.randomUUID()}`,
                 ownerUserId: userIds[index],
                 visibility: "public" as const,
@@ -5112,7 +5999,7 @@ fixtureTest(
                 // The primary declares BOTH fallbacks itself; neither target
                 // declares anything, so nothing but this list is followed.
                 ...(index === 0
-                    ? { fallbackModelIds: [modelIds[1], modelIds[2]] }
+                    ? { fallbacks: [modelIds[1], modelIds[2]] }
                     : {}),
                 createdAt: new Date(),
                 updatedAt: new Date(),

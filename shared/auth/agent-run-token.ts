@@ -85,6 +85,8 @@ export async function verifyAgentRunToken(
     if (
         typeof payload.sub !== "string" ||
         !payload.sub ||
+        typeof payload.jti !== "string" ||
+        !payload.jti ||
         typeof payload.iat !== "number" ||
         typeof payload.exp !== "number" ||
         typeof payload.parentRequestId !== "string" ||

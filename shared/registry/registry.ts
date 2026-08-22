@@ -146,6 +146,8 @@ export type BillingAdjustment = {
 export type ModelDefinition = {
     aliases: string[];
     provider: string;
+    /** Exact gateway-side request cap per Pollinations user. Null/unset means uncapped. */
+    perUserRpm?: number | null;
     /** Ordered model ids to try when this model's upstream fails. */
     fallbacks?: string[];
     /** Override the shared fallback status list for this model. Network failures always retry. */
@@ -206,6 +208,11 @@ export type ModelDefinition = {
     // Supported output resolutions; first entry is the default.
     resolutions?: string[];
     videoCapabilities?: VideoCapability[]; // Video-only: which frame controls the provider supports
+    minDuration?: number; // Video-only: minimum accepted duration in seconds
+    maxDuration?: number; // Video-only: maximum accepted duration in seconds
+    defaultDuration?: number; // Video-only: duration when caller omits the param
+    allowedDurations?: number[]; // Video-only: explicit set of valid durations (overrides min/max range)
+    durationStep?: number; // Video-only: duration must be a multiple of this value
     maxReferenceImages?: number; // Models with image input: effective accepted reference images
     maxReferenceVideos?: number; // Models with video input: effective accepted reference videos
 };

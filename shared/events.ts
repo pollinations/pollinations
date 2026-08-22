@@ -8,7 +8,7 @@ const MAX_DELAY = 2000;
 
 export type TinybirdErrorEvent = {
     timestamp: string;
-    kind: "server_error";
+    kind: "server_error" | "usage_anomaly";
     severity: "error";
     request_id?: string;
     environment?: string;

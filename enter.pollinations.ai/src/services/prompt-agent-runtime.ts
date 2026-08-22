@@ -15,7 +15,9 @@ const log = getLogger(["enter", "prompt-agent-runtime"]);
 
 export const PromptAgentRequestSchema = z
     .object({
-        messages: z.array(z.custom<ModelMessage>()).optional().default([]),
+        // z.custom() accepts the same inputs, but cannot be represented in the
+        // OpenAPI JSON Schema generated for the account service.
+        messages: z.array(z.unknown()).optional().default([]),
         stream: z.boolean().optional().default(false),
     })
     .passthrough();
@@ -53,16 +55,6 @@ type AgentOutput = {
 const MAX_STEPS = 8;
 const MAX_TOOL_CALLS = 16;
 const MCP_INITIALIZATION_TIMEOUT_MS = 15_000;
-const POLLINATIONS_AGENT_TOOLS = [
-    "generateImage",
-    "generateVideo",
-    "generate3D",
-    "generateText",
-    "createEmbeddings",
-    "generateAudio",
-    "listModels",
-    "getModelStatus",
-];
 const STEP_LIMIT_MESSAGE =
     "The agent reached its maximum number of tool-use steps without a final answer.";
 
@@ -121,7 +113,6 @@ async function loadPollinationsTools(
             },
         });
         for (const [name, definition] of Object.entries(await client.tools())) {
-            if (!POLLINATIONS_AGENT_TOOLS.includes(name)) continue;
             tools[`mcp__pollinations__${name}`] = definition;
         }
         log.info("MCP_SERVER_LOADED: name={name} url={url} tools={tools}", {
@@ -583,7 +574,9 @@ export async function handlePromptAgentRequest(
     signal: AbortSignal,
     runtime: PromptAgentRuntime,
 ): Promise<Response> {
-    const messages = Array.isArray(body.messages) ? body.messages : [];
+    const messages = (
+        Array.isArray(body.messages) ? body.messages : []
+    ) as ModelMessage[];
     const id = `chatcmpl-${crypto.randomUUID()}`;
     const created = Math.floor(Date.now() / 1000);
     try {

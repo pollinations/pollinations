@@ -89,6 +89,22 @@ test("serves modern and legacy clients without sessions", async () => {
     await legacy.close();
 });
 
+test("rejects JSON-RPC batches", async () => {
+    const response = await worker.fetch(
+        new Request("https://mcp.pollinations.ai", {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${TOKEN}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify([
+                { jsonrpc: "2.0", id: 1, method: "tools/list" },
+            ]),
+        }),
+    );
+    assert.equal(response.status, 400);
+});
+
 test("keeps bearer tokens scoped to each request", async (t) => {
     const originalFetch = globalThis.fetch;
     const seenAuthorizations = new Set();

@@ -11,10 +11,7 @@ import {
 } from "@shared/test/fixtures/index.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-    agentRuntimeRoutes,
-    POLLINATIONS_MCP_URL,
-} from "../src/routes/agent-runtime.ts";
+import { agentRuntimeRoutes } from "../src/routes/agent-runtime.ts";
 import { PromptAgentInputSchema } from "../src/services/prompt-agent.ts";
 import {
     handlePromptAgentRequest,
@@ -32,17 +29,8 @@ const BASE_RUNTIME: PromptAgentRuntime = {
     },
     apiKey: "sk_test",
     genBaseUrl: "https://gen.test.example",
-    pollinationsMcpUrl: "https://mcp.pollinations.test/",
 };
-
-describe("built-in Pollinations MCP endpoint", () => {
-    // Runtime tests mock whichever URL they receive, so assert the real hosted
-    // transport URL directly to keep the agent and MCP Worker in sync.
-    it("points at the root transport URL", () => {
-        expect(POLLINATIONS_MCP_URL).toBe("https://mcp.pollinations.ai");
-        expect(new URL(POLLINATIONS_MCP_URL).pathname).toBe("/");
-    });
-});
+const POLLINATIONS_MCP_PROXY_URL = `${BASE_RUNTIME.genBaseUrl}/mcp/pollinations`;
 
 async function agentRunToken(parentApiKeyId: string, managedAgentId: string) {
     return signAgentRunToken({
@@ -80,16 +68,15 @@ describe("prompt-agent config", () => {
         ).toBe(false);
     });
 
-    it("accepts the built-in Pollinations MCP server", () => {
+    it("accepts MCP servers from the built-in registry", () => {
         expect(
             PromptAgentConfigSchema.parse({
                 ...config,
-                mcpServers: ["pollinations"],
+                mcpServers: ["pollinations", "ffmpeg"],
             }),
-        ).toEqual({ ...config, mcpServers: ["pollinations"] });
+        ).toEqual({ ...config, mcpServers: ["pollinations", "ffmpeg"] });
     });
 });
-
 describe("prompt-agent runtime", () => {
     beforeEach(() => {
         vi.unstubAllGlobals();
@@ -271,7 +258,7 @@ describe("prompt-agent runtime", () => {
             async (input: RequestInfo | URL, init?: RequestInit) => {
                 const request = new Request(input, init);
                 const url = new URL(request.url);
-                if (request.url === BASE_RUNTIME.pollinationsMcpUrl) {
+                if (request.url === POLLINATIONS_MCP_PROXY_URL) {
                     mcpRequests.push(request.clone());
                     if (request.method === "GET") {
                         return new Response(null, { status: 405 });
@@ -433,7 +420,7 @@ describe("prompt-agent runtime", () => {
             "fetch",
             vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
                 const request = new Request(input, init);
-                if (request.url === BASE_RUNTIME.pollinationsMcpUrl) {
+                if (request.url === POLLINATIONS_MCP_PROXY_URL) {
                     if (request.method === "DELETE") {
                         return new Response(null, { status: 200 });
                     }
@@ -538,7 +525,7 @@ describe("prompt-agent runtime", () => {
             "fetch",
             vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
                 const request = new Request(input, init);
-                if (request.url === BASE_RUNTIME.pollinationsMcpUrl) {
+                if (request.url === POLLINATIONS_MCP_PROXY_URL) {
                     return new Response("Method Not Allowed", { status: 405 });
                 }
                 modelCalls++;
@@ -583,7 +570,7 @@ describe("prompt-agent runtime", () => {
                 init?: RequestInit,
             ) {
                 const request = new Request(input, init);
-                if (request.url === BASE_RUNTIME.pollinationsMcpUrl) {
+                if (request.url === POLLINATIONS_MCP_PROXY_URL) {
                     expect(this).toBe(globalThis);
                     mcpRequests.push(request.clone());
                     const body = (await request.json()) as {
@@ -718,7 +705,7 @@ describe("prompt-agent runtime", () => {
             "fetch",
             vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
                 const request = new Request(input, init);
-                if (request.url === BASE_RUNTIME.pollinationsMcpUrl) {
+                if (request.url === POLLINATIONS_MCP_PROXY_URL) {
                     if (request.method === "GET") {
                         return new Response(null, { status: 405 });
                     }
@@ -987,7 +974,7 @@ describe("prompt-agent runtime", () => {
         const fetchMock = vi.fn(
             async (input: RequestInfo | URL, init?: RequestInit) => {
                 const request = new Request(input, init);
-                if (request.url === BASE_RUNTIME.pollinationsMcpUrl) {
+                if (request.url === POLLINATIONS_MCP_PROXY_URL) {
                     if (request.method === "GET") {
                         return new Response(null, { status: 405 });
                     }

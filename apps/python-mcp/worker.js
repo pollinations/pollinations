@@ -118,7 +118,6 @@ export function createWorker({ getContainerImpl }) {
                         usage = reportedUsage;
                     }),
                 {
-                    legacy: "stateless",
                     onerror: (error) => console.error(error),
                 },
             );

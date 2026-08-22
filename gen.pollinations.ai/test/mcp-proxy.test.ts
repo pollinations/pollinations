@@ -34,6 +34,12 @@ test("lists the MCP servers exposed through Gen", async () => {
                     "Run FFmpeg against public HTTPS media and return hosted outputs.",
                 url: "https://gen.pollinations.ai/mcp/ffmpeg",
             },
+            {
+                id: "transcription",
+                name: "Transcription",
+                description: "Transcribe spoken audio from public HTTPS media.",
+                url: "https://gen.pollinations.ai/mcp/transcription",
+            },
         ],
     });
 });
@@ -61,6 +67,37 @@ test("routes Pollinations MCP with caller authorization for downstream billing",
         id: 1,
         result: {
             content: [{ type: "text", text: "pollinations proxied" }],
+        },
+    });
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 1,
+        packBalance: 0,
+    });
+});
+
+test("routes Transcription MCP with caller authorization for downstream billing", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1 },
+    });
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/transcription",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                Cookie: "session=private",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(MCP_REQUEST),
+        },
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+        jsonrpc: "2.0",
+        id: 1,
+        result: {
+            content: [{ type: "text", text: "transcription proxied" }],
         },
     });
     expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({

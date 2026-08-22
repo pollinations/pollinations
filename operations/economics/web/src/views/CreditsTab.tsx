@@ -121,17 +121,24 @@ function BalanceStatus({ row }: { row: ProviderBalanceRow }) {
             : status === "partial"
               ? `Only ${row.checkedAccounts} of ${row.expectedAccounts} active accounts have a same-day balance snapshot. Displayed balances sum the checked accounts only.`
               : "No current OP Cloud balance snapshot. Displayed balances are ledger estimates, not a verified account balance.";
+    const fullHint = row.balanceNote ? `${hint} ${row.balanceNote}.` : hint;
     return (
-        <Tooltip triggerAs="span" content={hint}>
-            <span
-                className={cn(
-                    "whitespace-nowrap text-sm",
-                    status === "checked"
-                        ? "text-theme-text-soft"
-                        : "text-intent-warning-text",
+        <Tooltip triggerAs="span" content={fullHint}>
+            <span className="flex flex-col whitespace-nowrap text-sm">
+                <span
+                    className={
+                        status === "checked"
+                            ? "text-theme-text-soft"
+                            : "text-intent-warning-text"
+                    }
+                >
+                    {label}
+                </span>
+                {row.balanceNote && (
+                    <span className="max-w-56 truncate text-xs text-theme-text-soft">
+                        {row.balanceNote}
+                    </span>
                 )}
-            >
-                {label}
             </span>
         </Tooltip>
     );

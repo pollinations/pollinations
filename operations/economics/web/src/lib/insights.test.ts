@@ -1799,6 +1799,7 @@ describe("providerBalanceRows", () => {
             creditBalanceUsd: 8.95,
             balanceAsOf: "2026-08-22",
             balanceStatus: "checked",
+            balanceNote: null,
         });
         expect(row.history.at(-1)).toMatchObject({
             month: "2026-08",

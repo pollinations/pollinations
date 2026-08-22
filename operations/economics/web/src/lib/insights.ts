@@ -1723,6 +1723,7 @@ export type ProviderBalanceRow = {
     balanceStatus: "checked" | "partial" | "not_checked";
     checkedAccounts: number;
     expectedAccounts: number;
+    balanceNote: string | null;
     creditDepletionDate: string | null;
     creditDepletionReason: "burn" | "expiry" | null;
     finished: boolean;
@@ -1766,6 +1767,7 @@ type ProviderBalanceAnchor = {
     creditUsd: number;
     observedOn: string;
     creditExpiry: string | null;
+    balanceNote: string | null;
 };
 
 type ProviderBalanceCoverage = Pick<
@@ -1868,6 +1870,9 @@ function providerBalanceAnchors(
                 ),
                 observedOn,
                 creditExpiry: expiries.at(-1) ?? null,
+                balanceNote:
+                    rows.find((row) => row.resource_sku === "usage-quota")
+                        ?.resource_name || null,
             });
             break;
         }
@@ -2090,6 +2095,7 @@ export function providerBalanceRows(
             balanceStatus: balanceCoverage.balanceStatus,
             checkedAccounts: balanceCoverage.checkedAccounts,
             expectedAccounts: balanceCoverage.expectedAccounts,
+            balanceNote: anchor?.balanceNote ?? null,
             creditDepletionDate: anchor
                 ? balanceCoverage.balanceStatus === "checked"
                     ? (anchoredDepletion?.creditDepletionDate ?? null)

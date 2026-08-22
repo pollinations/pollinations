@@ -23,7 +23,8 @@ const BUCKET_COLUMNS = {
  * regular overage falls back to Quest Pollen when pack is empty.
  * Paid-only requests always deduct from pack and never touch Quest Pollen.
  *
- * When keyPollenType is set, it restricts deduction to the specified bucket:
+ * When keyPollenType is set, it restricts deduction to the specified bucket
+ * (but only for non-paidOnly models):
  * - "quest" → always deduct from tier_balance
  * - "paid" → always deduct from pack_balance
  */
@@ -42,9 +43,9 @@ export async function atomicDeductUserBalance(
             SELECT
                 id,
                 CASE
+                    WHEN ${isPaidOnly ? 1 : 0} = 1 THEN 'pack'
                     WHEN ${keyPollenType === "quest" ? 1 : 0} = 1 THEN 'tier'
                     WHEN ${keyPollenType === "paid" ? 1 : 0} = 1 THEN 'pack'
-                    WHEN ${isPaidOnly ? 1 : 0} = 1 THEN 'pack'
                     WHEN COALESCE(tier_balance, 0) >= ${amount} THEN 'tier'
                     WHEN COALESCE(pack_balance, 0) > 0 THEN 'pack'
                     ELSE 'tier'

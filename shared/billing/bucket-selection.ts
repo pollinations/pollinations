@@ -15,14 +15,17 @@ export function canCoverEstimatedCharge(
 ): boolean {
     const threshold = Math.max(0, estimatedCost);
 
-    // Key-level pollen type restriction takes precedence.
-    if (keyPollenType === "quest") return balances.tierBalance > threshold;
-    if (keyPollenType === "paid") return balances.packBalance > threshold;
-
-    // Paid-only stays strict: the flag means "must hold paid balance", a
+    // paidOnly stays strict: the flag means "must hold paid balance", a
     // positive-balance requirement rather than a cost-coverage one. A paid-only
     // model is never free, so no zero-balance caller needs to get through.
-    if (isPaidOnly) return balances.packBalance > threshold;
+    // paidOnly takes precedence over keyPollenType — you can't route a
+    // paid-only model through the quest bucket.
+    if (isPaidOnly) return balances.packBalance >= threshold;
+
+    // Key-level pollen type restriction (only applies to non-paidOnly models).
+    if (keyPollenType === "quest") return balances.tierBalance >= threshold;
+    if (keyPollenType === "paid") return balances.packBalance >= threshold;
+
     // Cost coverage, so a zero-priced model is covered by a zero balance.
     return (
         balances.tierBalance >= threshold || balances.packBalance >= threshold

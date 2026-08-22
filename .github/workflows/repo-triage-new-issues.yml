@@ -34,10 +34,11 @@ jobs:
           script: |
             const issue = context.payload.issue;
 
-            // Skip app submissions or already-POLLI-labeled issues
+            // Skip submissions handled by dedicated review flows.
             const isAppSubmission = issue.labels?.some(l => l.name === 'APP-SUBMISSION');
-            if (isAppSubmission) {
-              console.log('Skipping: app submission');
+            const isCreatorQuest = issue.title?.startsWith('[CREATOR-QUEST]');
+            if (isAppSubmission || isCreatorQuest) {
+              console.log('Skipping: dedicated submission review');
               return;
             }
             const hasPolliLabel = issue.labels?.some(l => l.name === 'POLLI');

@@ -1,6 +1,6 @@
 name: YouTube Tutorial Quest
 description: Submit an original Pollinations tutorial for a 10 Pollen reward
-title: "[YOUTUBE-TUTORIAL]: "
+title: "[CREATOR-QUEST][YOUTUBE-TUTORIAL]: "
 labels: [".REQUEST"]
 body:
   - type: markdown

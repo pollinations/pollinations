@@ -7,6 +7,7 @@
   "watch": [
     "shared/mcp-usage.ts",
     "shared/registry/mcp.ts",
+    "shared/response-bytes.ts",
     "shared/user-media-url.ts"
   ]
 }

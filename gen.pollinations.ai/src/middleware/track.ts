@@ -22,15 +22,7 @@ import {
     remapUpstreamStatus,
     UpstreamError,
 } from "@shared/error.ts";
-import {
-    getTinybirdDatasourceIngestUrl,
-    sendErrorEventToTinybird,
-    sendToTinybird,
-} from "@shared/events.ts";
-import {
-    collectRequestInputs,
-    stringifyRequestInputs,
-} from "@shared/observability/request-inputs.ts";
+import { sendToTinybird } from "@shared/events.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import {
     type BillingAdjustment,
@@ -134,10 +126,6 @@ type ResponseTrackingData = {
     // A failure the response status cannot show. Replaces the status-derived
     // error data when the settlement row is emitted.
     errorTracking?: ErrorData;
-    // Complete parsed JSON response or SSE event list, retained only when an
-    // OpenRouter text response has missing/all-zero usage. The middleware
-    // writes it to error_event (24h TTL) together with the request body.
-    usageAnomalyOutput?: unknown;
 };
 
 export type TrackVariables = {
@@ -452,53 +440,6 @@ export const track = (eventType: EventType) =>
                         collectErrorData(response.status, c.get("error")),
                 });
 
-                if (responseTracking.usageAnomalyOutput !== undefined) {
-                    const errorTracking = responseTracking.errorTracking;
-                    await sendErrorEventToTinybird(
-                        {
-                            timestamp: endTime.toISOString(),
-                            kind: "usage_anomaly",
-                            severity: "error",
-                            request_id: finalEvent.requestId,
-                            environment: finalEvent.environment,
-                            route_path: finalEvent.requestPath,
-                            method: c.req.method,
-                            status: responseTracking.responseStatus,
-                            duration_ms:
-                                endTime.getTime() - startTime.getTime(),
-                            error_code: errorTracking?.errorResponseCode,
-                            error_class: "UsageAnomaly",
-                            message: errorTracking?.errorMessage,
-                            upstream_host: "openrouter.ai",
-                            upstream_status: responseTracking.responseStatus,
-                            upstream_body: stringifyUsageAnomalyOutput(
-                                responseTracking.usageAnomalyOutput,
-                            ),
-                            edge_colo: (
-                                c.req.raw as Request & {
-                                    cf?: { colo?: string };
-                                }
-                            ).cf?.colo,
-                            model_requested:
-                                finalEvent.modelRequested ?? undefined,
-                            resolved_model_requested:
-                                finalEvent.resolvedModelRequested,
-                            request_inputs: stringifyRequestInputs(
-                                await collectRequestInputs(c),
-                            ),
-                            user_id: finalEvent.userId,
-                            user_tier: finalEvent.userTier,
-                            api_key_id: finalEvent.apiKeyId,
-                        },
-                        getTinybirdDatasourceIngestUrl(
-                            c.env.TINYBIRD_INGEST_URL,
-                            "error_event",
-                        ),
-                        c.env.TINYBIRD_INGEST_TOKEN,
-                        log,
-                    );
-                }
-
                 log.trace(
                     [
                         "Tracking event:",
@@ -714,21 +655,43 @@ export async function trackResponse(
             requestTracking,
             response,
         );
-    const recordsOpenRouterUsageAnomaly =
-        eventType === "generate.text" && modelProviderUsed === "openrouter";
+    const hasFinishReasonError =
+        eventType === "generate.text"
+            ? containsFinishReasonError(output)
+            : false;
+    if (hasFinishReasonError) {
+        // Keep the proxy response untouched; only billing and health reflect
+        // the upstream protocol's explicit terminal failure.
+        const usage = modelUsage?.usage ?? {};
+        return {
+            responseStatus: 502,
+            cacheHit,
+            isBilledUsage: false,
+            fallbackUsed,
+            ...calculateUsageBilling({
+                model: resolvedModelRequested,
+                usage,
+                servedBy:
+                    servedModelDefinition ?? requestTracking.modelDefinition,
+                quotedBy: requestTracking.modelDefinition,
+                output,
+                input: pricingInput,
+            }),
+            modelUsed: modelUsage?.model ?? modelCalled,
+            modelProviderUsed,
+            usage,
+            contentFilterResults,
+            errorTracking: {
+                errorResponseCode: "upstream_finish_reason_error",
+                errorMessage:
+                    "Upstream ended generation with finish_reason=error",
+            },
+        };
+    }
     if (!modelUsage) {
         log.error("Failed to extract model usage for model {model}", {
             model: resolvedModelRequested,
         });
-        const errorTracking = recordsOpenRouterUsageAnomaly
-            ? {
-                  errorResponseCode: "usage_missing",
-                  errorMessage: `No usage and no determinable token charge for model ${resolvedModelRequested}`,
-              }
-            : undefined;
-        const usageAnomalyOutput = recordsOpenRouterUsageAnomaly
-            ? (output ?? null)
-            : undefined;
         // Missing token usage must never fabricate token charges, but some
         // provider fees are independently knowable from the request/response
         // (for example, Perplexity's flat per-request search fee).
@@ -752,8 +715,6 @@ export async function trackResponse(
                 modelUsed: modelCalled,
                 usage: {},
                 contentFilterResults,
-                errorTracking,
-                usageAnomalyOutput,
             };
         }
         // Nothing was charged and nothing could be. Mark the row so a billable
@@ -763,19 +724,14 @@ export async function trackResponse(
             contentFilterResults,
             modelUsed: modelCalled,
             errorTracking:
-                errorTracking ??
-                (eventType === "generate.text"
+                eventType === "generate.text"
                     ? {
                           errorResponseCode: "usage_missing",
                           errorMessage: `No usage and no determinable charge for model ${resolvedModelRequested}`,
                       }
-                    : undefined),
-            usageAnomalyOutput,
+                    : undefined,
         });
     }
-
-    const hasZeroOpenRouterUsage =
-        recordsOpenRouterUsageAnomaly && !hasPositiveUsage(modelUsage.usage);
     // Cost follows the model that ran; price follows the one the caller asked
     // for, so the invoice does not move because a fallback stepped in.
     const {
@@ -796,7 +752,7 @@ export async function trackResponse(
     return {
         responseStatus: response.status,
         cacheHit,
-        isBilledUsage: hasZeroOpenRouterUsage ? price.totalPrice > 0 : true,
+        isBilledUsage: true,
         fallbackUsed,
         cost,
         price,
@@ -808,33 +764,25 @@ export async function trackResponse(
         modelProviderUsed,
         usage: modelUsage.usage,
         contentFilterResults,
-        errorTracking: hasZeroOpenRouterUsage
-            ? {
-                  errorResponseCode: "usage_zero",
-                  errorMessage: `OpenRouter returned all-zero usage for model ${resolvedModelRequested}`,
-              }
-            : undefined,
-        usageAnomalyOutput: hasZeroOpenRouterUsage
-            ? (output ?? null)
-            : undefined,
     };
 }
 
-function hasPositiveUsage(usage: Usage): boolean {
-    return Object.values(usage).some(
-        (value) => typeof value === "number" && value > 0,
-    );
-}
-
-function stringifyUsageAnomalyOutput(output: unknown): string {
-    try {
-        return JSON.stringify(output);
-    } catch (error) {
-        return JSON.stringify({
-            error: "usage_anomaly_output_json_stringify_failed",
-            message: error instanceof Error ? error.message : String(error),
-        });
+function containsFinishReasonError(output: unknown): boolean {
+    if (!output || typeof output !== "object") return false;
+    const streamEvents = (output as { streamEvents?: unknown }).streamEvents;
+    const events = Array.isArray(streamEvents) ? streamEvents : [output];
+    for (const event of events) {
+        if (!event || typeof event !== "object") continue;
+        const choices = (event as { choices?: unknown }).choices;
+        if (!Array.isArray(choices)) continue;
+        for (const choice of choices) {
+            if (!choice || typeof choice !== "object") continue;
+            const finish = choice as { finish_reason?: unknown };
+            if (finish.finish_reason !== "error") continue;
+            return true;
+        }
     }
+    return false;
 }
 
 // Portkey reports the served target as "config.targets[N]" via the

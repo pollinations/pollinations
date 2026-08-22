@@ -1,0 +1,33 @@
+{
+  "pr_number": 13687,
+  "title": "fix: clarify docs drawer sections",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13687",
+  "merged_at": "2026-08-22T10:20:33Z",
+  "labels": [],
+  "pr_body_excerpt": "- Highlights drawer section headings with the Pollinations yellow accent.\n- Adds a fixed 12px gap before each section.\n- Applies consistently to desktop and mobile drawers.\n\nTests: `npx vitest run test/docs.test.ts`",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The docs got signposts",
+    "blurb": "The documentation drawer has a little more garden-path logic now. Section headings bloom in Pollinations yellow, with enough breathing room to avoid becoming one long hedge.",
+    "summary": "Updated the docs drawer on desktop and mobile so section headings use the Pollinations yellow accent and each section begins with a fixed 12px gap.",
+    "impact": "Readers can scan and navigate grouped documentation links more easily in either drawer layout.",
+    "keywords": [
+      "docs",
+      "navigation",
+      "drawer",
+      "mobile",
+      "ui"
+    ],
+    "visual_concept": "Polli acts as a friendly librarian-gardener in a cozy documentation drawer shaped like a small bookshelf, placing bright lime-yellow section labels above neatly separated rows of code-scrolls. Small code-plants and flowers grow between the organized sections, making the improved spacing and hierarchy visibly clear.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and tiny librarian glasses, arranging a retro documentation bookshelf with glowing lime green (#ecf874) section labels and neatly spaced code-scroll sections; little flowers and code-plants grow in the gaps. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, dark purple (#110518) outlines, pixel-font text: 'DOCS'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-22/PR-13687.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and tiny librarian glasses, arranging a retro documentation bookshelf with glowing lime green (#ecf874) section labels and neatly spaced code-scroll sections; little flowers and code-plants grow in the gaps. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, dark purple (#110518) outlines, pixel-font text: 'DOCS'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-22T10:21:32.308449+00:00"
+}

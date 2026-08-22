@@ -1,7 +1,12 @@
 import { env } from "cloudflare:test";
 import { getUserBalance } from "@shared/billing/balance.ts";
 import { atomicCreditUserBalance } from "@shared/billing/deduction.ts";
-import { computeDevCredit, MARKUP_PCT } from "@shared/billing/markup.ts";
+import {
+    byopClientAllowsMarkup,
+    computeDevCredit,
+    MARKUP_PCT,
+    withByopMarkup,
+} from "@shared/billing/markup.ts";
 import { roundPollenLedgerAmount } from "@shared/billing/precision.ts";
 import {
     handleBalanceDeduction,
@@ -128,6 +133,39 @@ describe("BYOP markup", () => {
         expect(computeDevCredit(0)).toBe(0);
         expect(computeDevCredit(-1)).toBe(0);
         expect(computeDevCredit(4)).toBeCloseTo(4 * MARKUP_PCT, 10);
+        expect(withByopMarkup(1, false)).toBe(1);
+        expect(withByopMarkup(1, true)).toBe(1 + MARKUP_PCT);
+        expect(withByopMarkup(0, true)).toBe(0);
+    });
+
+    it("allows BYOP markup only for a live pk_ with earnings, not self-spend", () => {
+        const client = {
+            userId: "dev",
+            prefix: "pk",
+            enabled: true,
+            expiresAt: null,
+            metadata: { earningsEnabled: true },
+        };
+        expect(byopClientAllowsMarkup(client, "payer")).toBe(true);
+        expect(byopClientAllowsMarkup(client, "dev")).toBe(false);
+        expect(
+            byopClientAllowsMarkup(
+                { ...client, metadata: { earningsEnabled: false } },
+                "payer",
+            ),
+        ).toBe(false);
+        expect(
+            byopClientAllowsMarkup({ ...client, prefix: "sk" }, "payer"),
+        ).toBe(false);
+        expect(
+            byopClientAllowsMarkup({ ...client, enabled: false }, "payer"),
+        ).toBe(false);
+        expect(
+            byopClientAllowsMarkup(
+                { ...client, expiresAt: new Date(0) },
+                "payer",
+            ),
+        ).toBe(false);
     });
 
     it("resolves markup only for enabled publishable app keys with earnings enabled", async () => {
@@ -353,13 +391,14 @@ describe("BYOP markup", () => {
         );
     });
 
-    it("uses the baseline estimate for BYOP API key budget preflight", async () => {
+    it("uses the baseline estimate when BYOP markup does not apply", async () => {
         const vars = {
             auth: {
                 user: { id: "preflight-payer" },
                 apiKey: {
                     id: "sk-test",
                     byopClientKeyId: "pk-test",
+                    byopMarkupApplies: false,
                     pollenBalance: 1.1,
                 },
             },
@@ -383,19 +422,123 @@ describe("BYOP markup", () => {
         } as CloudflareBindings);
     });
 
-    it("uses the baseline estimate for BYOP user balance preflight", async () => {
+    it("rejects a BYOP API key budget that covers baseline but not markup", async () => {
         const vars = {
             auth: {
                 user: { id: "preflight-payer" },
                 apiKey: {
                     id: "sk-test",
                     byopClientKeyId: "pk-test",
+                    byopMarkupApplies: true,
+                    pollenBalance: 1.1,
+                },
+            },
+            balance: {
+                getBalance: async () => ({
+                    tierBalance: 10,
+                    packBalance: 10,
+                }),
+            },
+            model: testModel(),
+            log: fakeLog(),
+        } as unknown as Parameters<typeof checkBalance>[0];
+
+        await expect(
+            checkBalance(vars, {
+                ...fakeStatsEnv(1),
+                DB: {
+                    prepare: () => {
+                        throw new Error("DB should not be used in preflight");
+                    },
+                } as unknown as D1Database,
+            } as CloudflareBindings),
+        ).rejects.toMatchObject({
+            status: 402,
+            message: expect.stringContaining("1.2500"),
+        });
+    });
+
+    it("admits a BYOP API key budget that covers baseline plus markup", async () => {
+        const vars = {
+            auth: {
+                user: { id: "preflight-payer" },
+                apiKey: {
+                    id: "sk-test",
+                    byopClientKeyId: "pk-test",
+                    byopMarkupApplies: true,
+                    pollenBalance: 1.25,
+                },
+            },
+            balance: {
+                getBalance: async () => ({
+                    tierBalance: 10,
+                    packBalance: 10,
+                }),
+            },
+            model: testModel(),
+            log: fakeLog(),
+        } as unknown as Parameters<typeof checkBalance>[0];
+
+        await checkBalance(vars, {
+            ...fakeStatsEnv(1),
+            DB: {
+                prepare: () => {
+                    throw new Error("DB should not be used in preflight");
+                },
+            } as unknown as D1Database,
+        } as CloudflareBindings);
+    });
+
+    it("rejects a BYOP user balance that covers baseline but not markup", async () => {
+        const vars = {
+            auth: {
+                user: { id: "preflight-payer" },
+                apiKey: {
+                    id: "sk-test",
+                    byopClientKeyId: "pk-test",
+                    byopMarkupApplies: true,
                     pollenBalance: 10,
                 },
             },
             balance: {
                 getBalance: async () => ({
                     tierBalance: 1.1,
+                    packBalance: 0,
+                }),
+            },
+            model: testModel(),
+            log: fakeLog(),
+        } as unknown as Parameters<typeof checkBalance>[0];
+
+        await expect(
+            checkBalance(vars, {
+                ...fakeStatsEnv(1),
+                DB: {
+                    prepare: () => {
+                        throw new Error("DB should not be used in preflight");
+                    },
+                } as unknown as D1Database,
+            } as CloudflareBindings),
+        ).rejects.toMatchObject({
+            status: 402,
+            message: expect.stringContaining("1.2500"),
+        });
+    });
+
+    it("admits a BYOP user balance that covers baseline plus markup", async () => {
+        const vars = {
+            auth: {
+                user: { id: "preflight-payer" },
+                apiKey: {
+                    id: "sk-test",
+                    byopClientKeyId: "pk-test",
+                    byopMarkupApplies: true,
+                    pollenBalance: 10,
+                },
+            },
+            balance: {
+                getBalance: async () => ({
+                    tierBalance: 1.25,
                     packBalance: 0,
                 }),
             },

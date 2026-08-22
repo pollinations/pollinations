@@ -94,6 +94,12 @@ export const KPIS = [
                     "Gross USD from Pollen pack purchases. Source: Stripe checkout events in Tinybird.",
             },
             {
+                key: "pollenRevenue",
+                name: "Pollen spent",
+                tooltip:
+                    "USD value of Pollen consumed by generation requests this week, across Paid and Quest balances. Source: Tinybird (weekly_usage_stats).",
+            },
+            {
                 name: "ARPA",
                 calc: (w) => w.revenue / w.wau,
                 tooltip:

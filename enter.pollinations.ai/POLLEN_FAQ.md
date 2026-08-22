@@ -13,7 +13,7 @@ No. Pollinations provides infrastructure that you connect to your own applicatio
 - **Generation APIs** for text, image, video, audio, realtime, embeddings, and 3D.
 - **Managed agents** built from a prompt, a base model, and optional Pollinations tools.
 - **Community models** for developers who operate compatible model endpoints.
-- **User-pays authorization (BYOP)** so an app can let each user fund their own requests.
+- **Connect User Wallets**, also called BYOP, so each app user can fund their own requests.
 
 You build and host the application. Pollinations provides model access, account authorization, and billing.
 
@@ -21,8 +21,8 @@ You build and host the application. Pollinations provides model access, account 
 
 - **Buy Pollen** from the [Pollen dashboard](https://enter.pollinations.ai/pollen) through Stripe Checkout.
 - **Complete Quests** and claim eligible rewards from the [Quests dashboard](https://enter.pollinations.ai/quests).
-- **Earn from a BYOP app** by enabling Developer earnings on an App Key. Users pay a 25% markup on that app's model usage, which is credited to the developer.
-- **Publish a community model** with a price. The model owner receives 75% of its model cost when other users call it.
+- **Earn from an app** by enabling Developer earnings on its App Key. Users pay a 25% markup on that app's model usage, which is credited to the developer.
+- **Publish a community model** with a price. The model owner receives 75% of the Pollen spent on it.
 
 ## 🆓 Can I try Pollinations without a credit card?
 
@@ -64,14 +64,14 @@ Pollinations supports text, images and image edits, video, speech and audio, tra
 ## 🔑 Which API key should I use?
 
 - **Personal Secret Key (`sk_`)** — use on a trusted server for your own model usage. It can have a Pollen budget, expiry, model restrictions, and account permissions. Do not ship a personal Secret Key in browser or mobile code.
-- **App Key (`pk_`)** — a publishable OAuth client identifier for BYOP. It identifies your app and its redirect URIs; it is not the generation credential. After user consent, your app receives a scoped, user-authorized `sk_` for API calls.
+- **App Key (`pk_`)** — a publishable OAuth client identifier for Connect User Wallets. It identifies your app and its redirect URIs; it is not the generation credential. After user consent, your app receives a scoped, user-authorized `sk_` for API calls.
 - **Raw publishable key (`pk_` without an app binding)** — legacy direct generation only, limited to 1 Pollen per IP per hour. Do not create new integrations around this flow.
 
 All traffic remains subject to platform abuse protection and any model-specific constraints.
 
-## 🔌 What is BYOP (Bring Your Own Pollen)?
+## 🔌 What is Connect User Wallets?
 
-BYOP lets users authorize an application to spend Pollen from their own wallet.
+Connect User Wallets, also called BYOP (Bring Your Own Pollen), lets users authorize an application to spend Pollen from their own wallet.
 
 For app developers:
 
@@ -82,23 +82,23 @@ For app developers:
 
 Users choose the budget, expiry, models, and account permissions they approve. They can edit or revoke issued keys from the dashboard.
 
-Read the [Bring Your Own Pollen guide](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md) for the complete integration.
+Read the [Connect User Wallets guide](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md) for the complete integration.
 
 ## 🤖 Can I build my own agent?
 
-Yes. A managed agent combines a system prompt, a Pollinations base model, and optional built-in Pollinations tools. Create one in [My Agents & Models](https://enter.pollinations.ai/my-models), then call its registered `owner/name` ID through the normal text-generation API.
+Yes. A managed agent combines a system prompt, a Pollinations base model, and optional built-in Pollinations tools. Create one in [My Models](https://enter.pollinations.ai/my-models), then call its registered `owner/name` ID through the normal text-generation API.
 
-An agent listing has no owner-set price, but the caller pays for its base model and any generations performed by tools. Every account can create an owner-only private agent; publishing an agent requires community publisher access.
+An agent listing has no owner-set price, but the caller pays for its base model and any generations performed by tools. A linked GitHub username is required to create an agent. Private agents are owner-only; publishing requires community publisher access. Read [Publish an Agent](https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md) for setup details.
 
 ## 🧩 Can I bring my own model?
 
-Yes. Register a compatible text, image, image-edit, or transcription provider from [My Agents & Models](https://enter.pollinations.ai/my-models) or the `/account/my-models` API. Every authenticated account can create an owner-only private model. Public publishing requires community publisher access.
+Yes. Register a compatible text, image, or transcription provider from [My Models](https://enter.pollinations.ai/my-models) or the `/account/my-models` API. A linked GitHub username is required. Private models are owner-only; public publishing requires community publisher access. Read [Publish a Model](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_MODEL.md) for setup details.
 
-Public community models can set prices and compatible fallback models. Pollinations monitors public text and image endpoints and credits 75% of their model cost to the owner when other users call them.
+Public community models can set prices and compatible fallback models. Pollinations monitors public text and image endpoints and credits 75% of the Pollen spent on them to the owner.
 
 ## 💳 What payment options are available?
 
-Pollen is sold as one-time packs through Stripe Checkout. Stripe displays the payment methods and local pricing available for the buyer's region and checkout session. Pollinations does not currently require a monthly subscription.
+Paid Pollen is available as a one-time purchase through Stripe Checkout. Stripe displays the payment methods and local pricing available for the buyer's region and checkout session. Pollinations does not currently require a monthly subscription.
 
 You can also configure automatic top-up from the Pollen dashboard after adding a supported default payment method.
 

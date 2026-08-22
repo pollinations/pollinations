@@ -338,8 +338,8 @@ export const proxyRoutes = new Hono<Env>()
                 ...(entry.info.context_length && {
                     context_length: entry.info.context_length,
                 }),
-                ...(entry.info.community && {
-                    per_user_rpm: entry.info.per_user_rpm ?? null,
+                ...(entry.info.per_user_rpm !== undefined && {
+                    per_user_rpm: entry.info.per_user_rpm,
                 }),
             });
 

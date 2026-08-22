@@ -802,7 +802,7 @@ describe("error observability", () => {
         });
     });
 
-    it("returns 400 for a status-less invalid image URL error from Portkey", async () => {
+    it("returns 400 for a status-less invalid image URL error from the provider", async () => {
         const fetchRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
             async (input, init) => {
@@ -860,13 +860,13 @@ describe("error observability", () => {
                 message:
                     "The image URL must be a valid and downloadable URL or look like data:<MIMEType>;base64,<YOUR-BASE64-CONTENT>",
                 details: {
-                    upstreamHost: "portkey.test",
+                    upstreamHost: "openrouter.ai",
                 },
             },
         });
         expect(fetchRequests).toHaveLength(1);
         expect(fetchRequests[0].url).toBe(
-            "https://portkey.test/v1/chat/completions",
+            "https://openrouter.ai/api/v1/chat/completions",
         );
     });
 });

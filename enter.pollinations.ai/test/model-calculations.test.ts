@@ -27,6 +27,15 @@ describe("model per-pollen calculations", () => {
         expect(calculatePerPollen(model({ realAvgCost: 0 }))).toBe("—");
     });
 
+    it("prices an agent by what its run spent, not by its free listing", () => {
+        // An agent charges no wrapper price, so the catalog lists it free, but
+        // it spends the caller's balance on the models and tools it calls.
+        // The measured run cost is the honest answer.
+        expect(
+            calculatePerPollen(model({ free: true, realAvgCost: 0.02 })),
+        ).toBe("50");
+    });
+
     it("identifies a zero-priced catalog model as free", () => {
         const [freeModel] = getModelPricesFromCatalog([
             {

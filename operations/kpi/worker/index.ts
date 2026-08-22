@@ -19,11 +19,11 @@ type Env = {
 
 // Helper to fetch from Tinybird with caching, retry, and error logging
 // Uses Cloudflare Cache API to avoid hammering Tinybird on concurrent page loads
-const TINYBIRD_CACHE_TTL = 21600; // 6 hours — weekly data barely changes
+const TINYBIRD_CACHE_TTL = 1800; // 30 minutes
 // Part of the cache key, not the request. A pipe that gains a column keeps
 // serving the old shape for TINYBIRD_CACHE_TTL because a Worker redeploy does
 // not touch caches.default — bump this in the same commit as the pipe change.
-const TINYBIRD_CACHE_VERSION = "3";
+const TINYBIRD_CACHE_VERSION = "5";
 
 async function fetchTinybird(
     env: Env,

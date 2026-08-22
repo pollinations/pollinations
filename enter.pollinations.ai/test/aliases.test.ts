@@ -2,6 +2,7 @@ import { AUDIO_SERVICES } from "@shared/registry/audio";
 import { IMAGE_SERVICES } from "@shared/registry/image";
 import type { ModelDefinition } from "@shared/registry/registry.js";
 import {
+    calculateBillingAdjustments,
     calculateCost,
     calculatePrice,
     getCostDefinition,
@@ -74,6 +75,49 @@ test("gemini-search applies grounding cost on top of shared token rates", () => 
     expect(geminiSearchCost.totalCost).toBeGreaterThan(
         geminiFastCost.totalCost,
     );
+});
+
+test("openai-search bills reported Azure web-search requests", () => {
+    const model = getRegistryModelDefinition("openai-search");
+    const adjustments = calculateBillingAdjustments(
+        model,
+        {
+            usage: {
+                server_tool_use_details: { web_search_requests: 2 },
+            },
+        },
+        "openai-search",
+    );
+
+    expect(adjustments).toEqual([
+        {
+            ruleId: "azure.bing.web_search.v1",
+            kind: "search_request",
+            unit: "request",
+            units: 2,
+            unitCost: 0.014,
+            cost: 0.028,
+            price: 0.021,
+        },
+    ]);
+    expect(
+        calculateBillingAdjustments(
+            model,
+            {
+                streamEvents: [
+                    {},
+                    {
+                        usage: {
+                            server_tool_use_details: {
+                                web_search_requests: 1,
+                            },
+                        },
+                    },
+                ],
+            },
+            "openai-search",
+        ),
+    ).toMatchObject([{ units: 1, cost: 0.014, price: 0.0105 }]);
 });
 
 test("public price equals provider cost times priceMultiplier for every model", () => {

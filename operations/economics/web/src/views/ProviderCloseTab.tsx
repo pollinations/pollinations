@@ -1,5 +1,6 @@
 import {
-    Chip,
+    Button,
+    Dialog,
     TableBody,
     TableCell,
     TableHead,
@@ -7,430 +8,448 @@ import {
     TableRow,
     Tooltip,
 } from "@pollinations/ui";
-import { useMemo, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import {
     DataTable,
     HeaderHint,
     TableScroller,
     withUniqueRowKeys,
 } from "../components/DataTable";
+import { EvidenceAction, EvidencePreview } from "../components/Evidence";
+import { MonthlyLedgerAuditPanel } from "../components/MonthlyLedgerAuditPanel";
 import { StatCards, type StatItem } from "../components/StatCards";
-import { driveDocumentLink } from "../lib/documents";
+import type { DriveDocumentLink } from "../lib/documents";
 import { fmtUsd } from "../lib/format";
-import {
-    type MonthFilterValue,
-    monthLabel,
-    type ValueFilter,
-} from "../lib/months";
+import { monthlyLedgerAuditRows } from "../lib/ledgerAudit";
+import { type MonthFilterValue, monthLabel } from "../lib/months";
 import {
     attentionFirst,
     type ProviderCloseEvidence,
-    type ProviderCloseModelRow,
     type ProviderCloseRow,
+    providerClosePeriodStatus,
     providerCloseRows,
     providerCloseSummary,
     visibleProviderCloseRows,
 } from "../lib/providerClose";
 import type { Data } from "../types";
 
-const STATUS_CLASS: Record<ProviderCloseRow["closeStatus"], string> = {
+const CLOSE_CLASS: Record<ProviderCloseRow["closeStatus"], string> = {
     ready: "bg-intent-success-bg-bright/15 text-intent-success-text ring-intent-success-bg-bright/30",
     "needs provider check":
         "bg-intent-danger-bg-light text-intent-danger-text ring-intent-danger-border/40",
-    "needs payment match":
-        "bg-intent-warning-bg-light text-intent-warning-text ring-intent-warning-text/25",
-    "needs usage match":
-        "bg-intent-warning-bg-light text-intent-warning-text ring-intent-warning-text/25",
-    "review allocation":
+    "needs account check":
         "bg-intent-warning-bg-light text-intent-warning-text ring-intent-warning-text/25",
 };
 
-const STATUS_HINT: Record<ProviderCloseRow["closeStatus"], string> = {
-    ready: "The provider statement, usage, and any required Wise payment witness are present.",
+const CLOSE_LABEL: Record<ProviderCloseRow["closeStatus"], string> = {
+    ready: "ready",
+    "needs provider check": "missing source",
+    "needs account check": "account incomplete",
+};
+
+const CLOSE_HINT: Record<ProviderCloseRow["closeStatus"], string> = {
+    ready: "Provider source and account coverage checks are complete for this provider-month.",
     "needs provider check":
-        "Usage exists, but no provider statement or billing export has been recorded. No payable cost is inferred.",
-    "needs payment match":
-        "The provider billed us, but no same-month or adjacent-month Wise payment is matched yet.",
-    "needs usage match":
-        "A provider statement exists, but no matching Pollen usage was found for this month.",
-    "review allocation":
-        "Provider cost and internal usage disagree materially. Review how provider cost is allocated to models.",
+        "The provider statement, dashboard export, or other archived source is missing. No provider cost is inferred.",
+    "needs account check":
+        "Provider data exists, but the active account coverage is incomplete or the source is not assigned to a known account.",
 };
 
-const FUNDING_CLASS: Record<ProviderCloseRow["fundingStatus"], string> = {
-    billed: "bg-theme-bg-active text-theme-text-strong ring-theme-border",
-    "credit/free":
-        "bg-intent-success-bg-bright/15 text-intent-success-text ring-intent-success-bg-bright/30",
-    mixed: "bg-intent-info-bg-hover text-intent-info-text ring-intent-info-text/30",
-    "needs check":
-        "bg-intent-danger-bg-light text-intent-danger-text ring-intent-danger-border/40",
+const FUNDING_LABEL: Record<ProviderCloseRow["fundingStatus"], string> = {
+    billed: "Cash",
+    "credit/free": "Credit / free",
+    mixed: "Cash + credit",
+    "not applicable": "Not applicable",
+    unknown: "Unknown",
+    "needs check": "—",
+};
+
+type EvidenceSelection = {
+    vendor: string;
+    month: string;
+    items: ProviderCloseEvidence[];
+};
+
+type PreviewSelection = {
+    documentLink: DriveDocumentLink;
+    title: string;
 };
 
 function StatusBadge({ row }: { row: ProviderCloseRow }) {
-    return (
-        <Tooltip triggerAs="span" content={STATUS_HINT[row.closeStatus]}>
-            <span
-                className={`inline-flex whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-medium ring-1 ${STATUS_CLASS[row.closeStatus]}`}
-            >
-                {row.closeStatus}
-            </span>
-        </Tooltip>
-    );
-}
-
-function FundingBadge({ row }: { row: ProviderCloseRow }) {
-    const hint =
-        row.fundingStatus === "needs check"
-            ? "Unknown until the provider statement is checked."
-            : row.fundingStatus === "credit/free"
-              ? "The checked provider statement creates no cash payable amount."
-              : row.fundingStatus === "mixed"
-                ? "This month contains both provider-billed and credit-funded usage."
-                : "The checked provider statement contains a cash payable amount.";
-    return (
-        <Tooltip triggerAs="span" content={hint}>
-            <span
-                className={`inline-flex whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-medium ring-1 ${FUNDING_CLASS[row.fundingStatus]}`}
-            >
-                {row.fundingStatus}
-            </span>
-        </Tooltip>
-    );
-}
-
-function EvidenceLink({ item }: { item: ProviderCloseEvidence }) {
-    const link = driveDocumentLink(item.evidence);
-    const label = item.kind === "provider" ? "Bill" : "Wise";
-    if (link) {
+    if (row.partial) {
         return (
-            <a
-                href={link.href}
-                target="_blank"
-                rel="noreferrer noopener"
-                className="font-medium text-theme-text underline underline-offset-4 hover:text-theme-text-soft"
-                title={`${item.source} · ${item.date}`}
+            <Tooltip
+                triggerAs="span"
+                content="The current month is open and excluded from close-readiness counts."
             >
-                {label}
-            </a>
+                <span className="inline-flex whitespace-nowrap rounded-md bg-theme-bg-active px-2 py-0.5 text-xs font-medium text-theme-text-soft ring-1 ring-theme-border">
+                    open
+                </span>
+            </Tooltip>
         );
     }
     return (
-        <Tooltip
-            triggerAs="span"
-            content={`${item.source} · ${item.date}\n${item.evidence}`}
-        >
-            <span className="text-theme-text-soft underline decoration-dotted underline-offset-4">
-                {label}
+        <Tooltip triggerAs="span" content={CLOSE_HINT[row.closeStatus]}>
+            <span
+                className={`inline-flex whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-medium ring-1 ${CLOSE_CLASS[row.closeStatus]}`}
+            >
+                {CLOSE_LABEL[row.closeStatus]}
             </span>
         </Tooltip>
     );
 }
 
-function modelRows(models: ProviderCloseModelRow[]) {
-    return models.map((model) => (
-        <TableRow key={`${model.vendor}|${model.model}`}>
-            <TableCell />
-            <TableCell />
-            <TableCell className="pl-8 text-theme-text-soft">
-                <span className="mr-2" aria-hidden="true">
-                    ↳
-                </span>
-                {model.model || "Unassigned model"}
-            </TableCell>
-            <TableCell>
-                <Chip intent="neutral" size="sm">
-                    model
-                </Chip>
-            </TableCell>
-            <TableCell align="right" numeric className="text-theme-text-soft">
-                {fmtUsd(model.retainedRevenueUsd)}
-            </TableCell>
-            <TableCell align="right" numeric className="text-theme-text-soft">
-                {fmtUsd(model.paidComputeCashUsd)}
-            </TableCell>
-            <TableCell />
-            <TableCell />
-            <TableCell
-                align="right"
-                numeric
-                className={
-                    model.paidContributionUsd != null &&
-                    model.paidContributionUsd < 0
-                        ? "text-intent-danger-text"
-                        : "text-theme-text-soft"
-                }
-            >
-                {fmtUsd(model.paidContributionUsd)}
-            </TableCell>
-            <TableCell align="right" numeric className="text-theme-text-soft">
-                {fmtUsd(model.questCashSubsidyUsd)}
-            </TableCell>
-            <TableCell
-                align="right"
-                numeric
-                className={
-                    model.netCashContributionUsd != null &&
-                    model.netCashContributionUsd < 0
-                        ? "text-intent-danger-text"
-                        : "text-theme-text-soft"
-                }
-            >
-                {fmtUsd(model.netCashContributionUsd)}
-            </TableCell>
-            <TableCell align="right" numeric className="text-theme-text-soft">
-                {fmtUsd(model.economicContributionUsd)}
-            </TableCell>
-            <TableCell />
-        </TableRow>
-    ));
+function FundingValue({ row }: { row: ProviderCloseRow }) {
+    const hint =
+        row.fundingStatus === "needs check"
+            ? "Unknown until the provider statement is checked."
+            : row.fundingStatus === "unknown"
+              ? "The historical provider funding could not be reconstructed; the gap is documented."
+              : row.fundingStatus === "not applicable"
+                ? "Internal usage has no external provider bill."
+                : row.fundingStatus === "credit/free"
+                  ? "The checked provider statement creates no cash payable amount."
+                  : row.fundingStatus === "mixed"
+                    ? "This month contains both provider-billed and credit-funded usage."
+                    : "The checked provider statement contains a cash payable amount.";
+    return (
+        <Tooltip triggerAs="span" content={hint}>
+            <span className="whitespace-nowrap text-sm text-theme-text-soft">
+                {FUNDING_LABEL[row.fundingStatus]}
+            </span>
+        </Tooltip>
+    );
+}
+
+function EvidenceGroupAction({
+    items,
+    onBrowse,
+}: {
+    items: ProviderCloseEvidence[];
+    onBrowse: () => void;
+}) {
+    if (!items.length) return null;
+    return (
+        <button
+            type="button"
+            onClick={onBrowse}
+            className="whitespace-nowrap text-xs font-medium text-theme-text underline underline-offset-4 hover:text-theme-text-soft"
+        >
+            Provider source ({items.length})
+        </button>
+    );
+}
+
+function EvidenceListDialog({
+    selection,
+    onClose,
+    onPreview,
+}: {
+    selection: EvidenceSelection | null;
+    onClose: () => void;
+    onPreview: (documentLink: DriveDocumentLink, title: string) => void;
+}) {
+    if (!selection) return null;
+
+    return (
+        <Dialog
+            open
+            onOpenChange={(open) => {
+                if (!open) onClose();
+            }}
+            title={`Provider source · ${selection.vendor} · ${monthLabel(selection.month)}`}
+            size="md"
+        >
+            <div className="flex max-h-[70vh] flex-col px-6 pb-6 pt-3">
+                <p className="pb-3 text-sm text-theme-text-soft">
+                    Statements, invoices, dashboard exports, or usage records
+                    collected from the provider.
+                </p>
+                <ol className="min-h-0 divide-y divide-theme-border/60 overflow-y-auto rounded-lg border border-theme-border/60">
+                    {selection.items.map((item, index) => (
+                        <li
+                            key={item.evidence}
+                            className="flex items-center justify-between gap-4 px-3 py-2.5"
+                        >
+                            <div className="min-w-0">
+                                <div className="font-medium text-theme-text-strong">
+                                    Source {index + 1}
+                                </div>
+                                <div className="truncate text-xs text-theme-text-soft">
+                                    {item.date} · {item.source}
+                                </div>
+                            </div>
+                            <div className="shrink-0 text-sm">
+                                <EvidenceAction
+                                    evidence={item.evidence}
+                                    previewLabel="Provider source"
+                                    openDocumentLabel="Provider source"
+                                    onPreview={(documentLink) =>
+                                        onPreview(
+                                            documentLink,
+                                            "Provider source",
+                                        )
+                                    }
+                                />
+                            </div>
+                        </li>
+                    ))}
+                </ol>
+                <div className="flex justify-end pt-4">
+                    <Button type="button" size="sm" onClick={onClose}>
+                        Close
+                    </Button>
+                </div>
+            </div>
+        </Dialog>
+    );
 }
 
 export function ProviderCloseTab({
+    controls,
     data,
     month = "",
-    vendor = "all",
 }: {
+    controls?: ReactNode;
     data: Data;
     month?: MonthFilterValue;
-    vendor?: ValueFilter;
 }) {
-    const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
+    const [evidenceSelection, setEvidenceSelection] =
+        useState<EvidenceSelection | null>(null);
+    const [previewSelection, setPreviewSelection] =
+        useState<PreviewSelection | null>(null);
     const allRows = useMemo(() => providerCloseRows(data), [data]);
-    const rows = useMemo(
+    const periodRows = useMemo(
         () =>
-            attentionFirst(
-                visibleProviderCloseRows({ rows: allRows, month, vendor }),
-            ),
-        [allRows, month, vendor],
+            visibleProviderCloseRows({
+                rows: allRows,
+                month,
+                vendor: "all",
+            }),
+        [allRows, month],
     );
-    const summary = useMemo(() => providerCloseSummary(rows), [rows]);
-    const stats = useMemo<StatItem[]>(
+    const rows = useMemo(() => attentionFirst(periodRows), [periodRows]);
+    const summary = useMemo(
+        () => providerCloseSummary(periodRows),
+        [periodRows],
+    );
+    const auditRows = useMemo(
+        () => monthlyLedgerAuditRows(data, month),
+        [data, month],
+    );
+    const closedAuditRows = auditRows.filter((row) => !row.partial);
+    const transactionEvidenceGaps = closedAuditRows.reduce(
+        (total, row) => total + row.transactionEvidenceGaps,
+        0,
+    );
+    const missingMappings = closedAuditRows.reduce(
+        (total, row) => total + row.missingMappings,
+        0,
+    );
+    const invalidRows = closedAuditRows.reduce(
+        (total, row) => total + row.invalidRows,
+        0,
+    );
+    const duplicateRows = closedAuditRows.reduce(
+        (total, row) => total + row.duplicateRows,
+        0,
+    );
+    const estimatedFxMonths = closedAuditRows.filter(
+        (row) => row.estimatedFx,
+    ).length;
+    const ledgerIssues =
+        transactionEvidenceGaps +
+        missingMappings +
+        invalidRows +
+        duplicateRows +
+        estimatedFxMonths;
+    const providerPeriodStatus = providerClosePeriodStatus(summary);
+    const periodStatus =
+        summary.blockers > 0 || ledgerIssues > 0
+            ? "action needed"
+            : summary.closedRows > 0 || closedAuditRows.length > 0
+              ? "ready"
+              : providerPeriodStatus;
+    const actionDetail = [
+        summary.blockers
+            ? `${summary.blockers} provider ${summary.blockers === 1 ? "check" : "checks"}`
+            : null,
+        transactionEvidenceGaps
+            ? `${transactionEvidenceGaps} transaction ${transactionEvidenceGaps === 1 ? "document" : "documents"} missing`
+            : null,
+        missingMappings
+            ? `${missingMappings} provider ${missingMappings === 1 ? "mapping" : "mappings"} missing`
+            : null,
+        invalidRows
+            ? `${invalidRows} invalid ${invalidRows === 1 ? "row" : "rows"}`
+            : null,
+        duplicateRows
+            ? `${duplicateRows} duplicate ${duplicateRows === 1 ? "row" : "rows"}`
+            : null,
+        estimatedFxMonths
+            ? `${estimatedFxMonths} estimated FX ${estimatedFxMonths === 1 ? "month" : "months"}`
+            : null,
+    ]
+        .filter(Boolean)
+        .join(" · ");
+    const statusStats = useMemo<StatItem[]>(
         () => [
             {
-                label: "Ready",
-                value: `${summary.ready} of ${summary.rows}`,
-                detail: `${summary.providers} providers`,
-                tone:
-                    summary.rows > 0 && summary.ready === summary.rows
-                        ? "pos"
-                        : "base",
-            },
-            {
-                label: "Needs attention",
-                value: String(summary.needsAttention),
-                detail: "provider-months",
-                tone: summary.needsAttention ? "warn" : "pos",
-            },
-            {
-                label: "Retained revenue",
-                value: fmtUsd(summary.retainedRevenueUsd),
-                detail: "paid Pollen after shares",
-            },
-            {
-                label: "Provider billed",
-                value: fmtUsd(summary.billedUsd),
-                detail: "cash cost — statements only",
-            },
-            {
-                label: "Credit / free",
-                value: fmtUsd(summary.creditFreeUsd),
-                detail: "economic cost, not payable",
-                tone: "pos",
-            },
-            {
-                label: "Cash contribution",
+                label: "Status",
                 value:
-                    summary.unknownContributionRows > 0
-                        ? `${fmtUsd(summary.netCashContributionUsd)} + unknown`
-                        : fmtUsd(summary.netCashContributionUsd),
-                detail: "retained revenue − billed",
-                tone: summary.netCashContributionUsd < 0 ? "neg" : "pos",
+                    periodStatus === "no data"
+                        ? "No data"
+                        : periodStatus === "open"
+                          ? "Open"
+                          : periodStatus === "action needed"
+                            ? "Action needed"
+                            : "Ready",
+                detail:
+                    periodStatus === "no data"
+                        ? "no provider-months selected"
+                        : periodStatus === "open"
+                          ? "current month is still open"
+                          : periodStatus === "action needed"
+                            ? actionDetail
+                            : `${summary.closeReady} provider-months ready · filing confirmation not tracked`,
+                tone:
+                    periodStatus === "action needed"
+                        ? "warn"
+                        : periodStatus === "ready"
+                          ? "success"
+                          : "base",
+            },
+            {
+                label: "Cash-funded usage",
+                value: fmtUsd(summary.billedUsd),
+                detail: "from archived provider sources",
+            },
+            {
+                label: "Credit / free usage",
+                value: fmtUsd(summary.creditFreeUsd),
+                detail: "not a cash cost",
             },
         ],
-        [summary],
+        [actionDetail, periodStatus, summary],
     );
 
-    const toggle = (key: string) => {
-        setExpanded((current) => {
-            const next = new Set(current);
-            if (next.has(key)) next.delete(key);
-            else next.add(key);
-            return next;
-        });
-    };
-
     return (
-        <>
-            <StatCards items={stats} />
-            <div className="rounded-xl border border-theme-border/60 bg-surface-opaque/40 px-4 py-3 text-sm text-theme-text-soft">
-                <strong className="text-theme-text-strong">Close rule:</strong>{" "}
-                usage never creates a bill. A provider statement decides what is
-                payable; Wise only confirms when it was paid. Expand a provider
-                to see the model allocation.
-            </div>
-            <TableScroller>
-                <DataTable className="min-w-[1180px]">
-                    <TableHead>
-                        <TableRow>
-                            <TableHeaderCell>Close</TableHeaderCell>
-                            <TableHeaderCell>Month</TableHeaderCell>
-                            <TableHeaderCell>Provider / model</TableHeaderCell>
-                            <TableHeaderCell>Funding</TableHeaderCell>
-                            <TableHeaderCell align="right">
-                                <HeaderHint hint="Paid Pollen revenue retained after BYOP and model-provider shares.">
-                                    Revenue
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell align="right">
-                                <HeaderHint hint="Cash payable from the checked provider statement. Internal usage never fills this value.">
-                                    Billed
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell align="right">
-                                <HeaderHint hint="Provider usage covered by credits or explicitly verified as free. This is not a cash payable amount.">
-                                    Credit / free
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell align="right">
-                                <HeaderHint hint="Wise cash payment witness. It may land one month before or after the provider statement.">
-                                    Wise paid
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell align="right">
-                                <HeaderHint hint="Paid-customer retained revenue minus the cash cost allocated to paid traffic.">
-                                    Paid margin
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell align="right">
-                                <HeaderHint hint="Cash provider cost allocated to free Quest traffic.">
-                                    Quest subsidy
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell align="right">
-                                <HeaderHint hint="Current cash contribution: retained paid revenue minus the provider-billed amount.">
-                                    Cash today
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell align="right">
-                                <HeaderHint hint="Economic contribution if credit-funded usage were valued at its full provider cost.">
-                                    After credits
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell>Evidence</TableHeaderCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {withUniqueRowKeys(
-                            rows,
-                            (row) => `${row.month}|${row.vendor}`,
-                        ).flatMap(({ key, row }) => {
-                            const isOpen = expanded.has(key);
-                            const hasModels = row.models.length > 0;
-                            return [
-                                <TableRow key={key}>
-                                    <TableCell>
-                                        <StatusBadge row={row} />
-                                    </TableCell>
-                                    <TableCell>
-                                        {monthLabel(row.month)}
-                                    </TableCell>
-                                    <TableCell className="font-semibold">
-                                        {hasModels ? (
-                                            <button
-                                                type="button"
-                                                onClick={() => toggle(key)}
-                                                aria-expanded={isOpen}
-                                                className="inline-flex items-center gap-1.5 text-left hover:text-theme-text"
-                                            >
-                                                <span
-                                                    className="text-theme-text-soft"
-                                                    aria-hidden="true"
-                                                >
-                                                    {isOpen ? "▾" : "▸"}
-                                                </span>
-                                                {row.vendor}
-                                                <span className="font-normal text-theme-text-soft">
-                                                    {row.models.length}
-                                                </span>
-                                            </button>
-                                        ) : (
-                                            row.vendor
-                                        )}
-                                    </TableCell>
-                                    <TableCell>
-                                        <FundingBadge row={row} />
-                                    </TableCell>
-                                    <TableCell align="right" numeric>
-                                        {fmtUsd(row.retainedRevenueUsd)}
-                                    </TableCell>
-                                    <TableCell align="right" numeric>
-                                        {fmtUsd(row.billedUsd)}
-                                    </TableCell>
-                                    <TableCell align="right" numeric>
-                                        {fmtUsd(row.creditFreeUsd)}
-                                    </TableCell>
-                                    <TableCell align="right" numeric>
-                                        <span
-                                            title={
-                                                row.cashCoverage ??
-                                                "No Wise payment required"
-                                            }
-                                        >
-                                            {fmtUsd(row.wiseCashUsd)}
-                                            {row.wiseCashMonth &&
-                                            row.wiseCashMonth !== row.month
-                                                ? ` · ${monthLabel(row.wiseCashMonth)}`
-                                                : ""}
-                                        </span>
-                                    </TableCell>
-                                    <TableCell align="right" numeric>
-                                        {fmtUsd(row.paidContributionUsd)}
-                                    </TableCell>
-                                    <TableCell align="right" numeric>
-                                        {fmtUsd(row.questCashSubsidyUsd)}
-                                    </TableCell>
-                                    <TableCell
-                                        align="right"
-                                        numeric
-                                        className={
-                                            row.netCashContributionUsd !=
-                                                null &&
-                                            row.netCashContributionUsd < 0
-                                                ? "text-intent-danger-text"
-                                                : "font-semibold text-intent-success-text"
-                                        }
-                                    >
-                                        {fmtUsd(row.netCashContributionUsd)}
-                                    </TableCell>
-                                    <TableCell align="right" numeric>
-                                        {fmtUsd(row.economicContributionUsd)}
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex flex-wrap gap-2">
-                                            {row.evidence.length ? (
-                                                row.evidence.map((item) => (
-                                                    <EvidenceLink
-                                                        key={`${item.kind}|${item.evidence}`}
-                                                        item={item}
+        <div className="flex flex-col gap-4">
+            <section className="flex flex-col gap-2">
+                <h3 className="text-lg font-semibold text-theme-text-strong">
+                    Ledger integrity
+                </h3>
+                <MonthlyLedgerAuditPanel data={data} month="" />
+            </section>
+            <section className="flex flex-col gap-4">
+                <h3 className="text-lg font-semibold text-theme-text-strong">
+                    Monthly close
+                </h3>
+                {controls}
+                <StatCards items={statusStats} />
+                <TableScroller>
+                    <DataTable className="min-w-[900px]">
+                        <TableHead>
+                            <TableRow>
+                                <TableHeaderCell>
+                                    <HeaderHint hint="One provider-source and account-coverage status. Transaction documents are checked in the month-level result; tax filing confirmation remains separate.">
+                                        Status
+                                    </HeaderHint>
+                                </TableHeaderCell>
+                                <TableHeaderCell>Month</TableHeaderCell>
+                                <TableHeaderCell>Provider</TableHeaderCell>
+                                <TableHeaderCell>
+                                    <HeaderHint hint="How the archived provider source says this provider-month was funded. Unknown means the historical gap is documented but not reconstructed.">
+                                        Funding
+                                    </HeaderHint>
+                                </TableHeaderCell>
+                                <TableHeaderCell align="right">
+                                    <HeaderHint hint="Provider cost recorded by the archived source as cash-funded. This is usage cost, not an invoice-to-payment match.">
+                                        Cash-funded
+                                    </HeaderHint>
+                                </TableHeaderCell>
+                                <TableHeaderCell align="right">
+                                    <HeaderHint hint="Provider usage covered by credits or explicitly verified as free. This is not a cash cost.">
+                                        Credit / free
+                                    </HeaderHint>
+                                </TableHeaderCell>
+                                <TableHeaderCell>
+                                    Provider source
+                                </TableHeaderCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {withUniqueRowKeys(
+                                rows,
+                                (row) => `${row.month}|${row.vendor}`,
+                            ).map(({ key, row }) => {
+                                return (
+                                    <TableRow key={key}>
+                                        <TableCell>
+                                            <StatusBadge row={row} />
+                                        </TableCell>
+                                        <TableCell>
+                                            {monthLabel(row.month)}
+                                        </TableCell>
+                                        <TableCell className="font-semibold">
+                                            {row.vendor}
+                                        </TableCell>
+                                        <TableCell>
+                                            <FundingValue row={row} />
+                                        </TableCell>
+                                        <TableCell align="right" numeric>
+                                            {fmtUsd(row.billedUsd)}
+                                        </TableCell>
+                                        <TableCell align="right" numeric>
+                                            {fmtUsd(row.creditFreeUsd)}
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex min-w-40 flex-col items-start gap-1.5">
+                                                {row.evidence.length ? (
+                                                    <EvidenceGroupAction
+                                                        items={row.evidence}
+                                                        onBrowse={() =>
+                                                            setEvidenceSelection(
+                                                                {
+                                                                    vendor: row.vendor,
+                                                                    month: row.month,
+                                                                    items: row.evidence,
+                                                                },
+                                                            )
+                                                        }
                                                     />
-                                                ))
-                                            ) : (
-                                                <Chip
-                                                    intent="warning"
-                                                    size="sm"
-                                                >
-                                                    Missing
-                                                </Chip>
-                                            )}
-                                        </div>
-                                    </TableCell>
-                                </TableRow>,
-                                ...(isOpen ? modelRows(row.models) : []),
-                            ];
-                        })}
-                    </TableBody>
-                </DataTable>
-            </TableScroller>
-        </>
+                                                ) : row.closeStatus ===
+                                                  "ready" ? (
+                                                    <span className="text-sm text-theme-text-soft">
+                                                        Not required
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-sm text-theme-text-soft">
+                                                        —
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            })}
+                        </TableBody>
+                    </DataTable>
+                </TableScroller>
+            </section>
+            <EvidenceListDialog
+                selection={evidenceSelection}
+                onClose={() => setEvidenceSelection(null)}
+                onPreview={(documentLink, title) => {
+                    setEvidenceSelection(null);
+                    setPreviewSelection({ documentLink, title });
+                }}
+            />
+            <EvidencePreview
+                documentLink={previewSelection?.documentLink ?? null}
+                title={previewSelection?.title}
+                onClose={() => setPreviewSelection(null)}
+            />
+        </div>
     );
 }

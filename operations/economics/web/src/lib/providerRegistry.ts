@@ -2,9 +2,11 @@ import reconciliationJson from "../../../provider-reconciliation.json";
 import registryJson from "../../../provider-registry.json";
 import type {
     Data,
+    OpCloudRow,
     ProviderObservation,
     ProviderObservationSource,
 } from "../types";
+import { isProviderCategory, transactionCategory } from "./categories";
 import { collectMonths, type MonthFilterValue, matchesMonth } from "./months";
 
 export type ProviderDefinition = {
@@ -173,6 +175,38 @@ export function pollenWitnessExplanation(
 
 type ObservationInput = Pick<Data, "opCloud" | "opPollen" | "opTransactions">;
 
+function nextMonth(month: string): string {
+    const [year, number] = month.split("-").map(Number);
+    const next = new Date(Date.UTC(year, number, 1));
+    return `${next.getUTCFullYear()}-${String(next.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+function cloudObservationMonths(row: OpCloudRow): string[] {
+    const startMonth = row.start.slice(0, 7);
+    const isVerifiedZeroRange =
+        row.resource_sku === "verified-zero" &&
+        Number(row.resource_count) === 0 &&
+        Number(row.credit) === 0 &&
+        Number(row.paid) === 0;
+    if (!isVerifiedZeroRange) return [startMonth];
+
+    const endMonth = row.end.slice(0, 7);
+    if (!/^\d{4}-\d{2}$/.test(endMonth) || endMonth < startMonth) {
+        return [startMonth];
+    }
+    const endIsMonthBoundary = row.end.startsWith(`${endMonth}-01 00:00:00`);
+    const exclusiveEnd = endIsMonthBoundary ? endMonth : nextMonth(endMonth);
+    const months: string[] = [];
+    for (
+        let current = startMonth;
+        current < exclusiveEnd && months.length < 120;
+        current = nextMonth(current)
+    ) {
+        months.push(current);
+    }
+    return months.length ? months : [startMonth];
+}
+
 export function collectProviderObservations(
     data: ObservationInput,
 ): ProviderObservation[] {
@@ -204,7 +238,7 @@ export function collectProviderObservations(
     };
 
     for (const row of data.opTransactions ?? []) {
-        if (row.category !== "cloud") continue;
+        if (!isProviderCategory(transactionCategory(row))) continue;
         add({
             month: row.date.slice(0, 7),
             vendor: row.vendor,
@@ -215,15 +249,17 @@ export function collectProviderObservations(
         });
     }
     for (const row of data.opCloud ?? []) {
-        add({
-            month: row.start.slice(0, 7),
-            vendor: row.vendor,
-            source: "cloud",
-            accountId: row.account_id,
-            // A credit award proves a grant, not that the month's provider
-            // statement, invoice, or usage dashboard was collected.
-            dashboardChecked: !(row.credit > 0 && row.paid === 0),
-        });
+        for (const month of cloudObservationMonths(row)) {
+            add({
+                month,
+                vendor: row.vendor,
+                source: "cloud",
+                accountId: row.account_id,
+                // A credit award proves a grant, not that the month's provider
+                // statement, invoice, or usage dashboard was collected.
+                dashboardChecked: !(row.credit > 0 && row.paid === 0),
+            });
+        }
     }
     for (const row of data.opPollen ?? []) {
         add({

@@ -84,9 +84,7 @@ describe("monthlyLedgerAuditRows", () => {
             cloudRows: 1,
             pollenRows: 1,
             transactionEvidenceGaps: 0,
-            cloudEvidenceGaps: 0,
             missingMappings: 0,
-            dashboardChecksDue: 0,
             estimatedFx: false,
             invalidRows: 0,
             duplicateRows: 0,
@@ -122,13 +120,17 @@ describe("monthlyLedgerAuditRows", () => {
         expect(row).toMatchObject({
             status: "structural",
             transactionEvidenceGaps: 2,
+            transactionEvidenceProviders: ["aws"],
             missingMappings: 1,
+            missingMappingProviders: ["new-provider"],
             invalidRows: 4,
+            invalidProviders: ["aws", "new-provider"],
             duplicateRows: 2,
+            duplicateProviders: ["aws"],
         });
     });
 
-    it("counts cloud evidence gaps once per provider-month", () => {
+    it("leaves provider statement readiness to Close", () => {
         const [row] = monthlyLedgerAuditRows(
             data({
                 opCloud: [
@@ -148,7 +150,7 @@ describe("monthlyLedgerAuditRows", () => {
             "2026-08",
         );
 
-        expect(row.cloudEvidenceGaps).toBe(1);
+        expect(row.status).toBe("clean");
     });
 
     it("marks the current month as partial without replacing its clean status", () => {

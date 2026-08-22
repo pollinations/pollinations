@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
-import type { Data, OpCloudRow, OpPollenRow, OpTransactionRow } from "../types";
-import { providerCloseRows, providerCloseSummary } from "./providerClose";
+import type { Data, OpCloudRow, OpPollenRow } from "../types";
+import {
+    providerClosePeriodStatus,
+    providerCloseRows,
+    providerCloseSummary,
+} from "./providerClose";
 
 const cloud = (over: Partial<OpCloudRow> = {}): OpCloudRow => ({
     entry_id: "cloud-test",
@@ -41,22 +45,6 @@ const pollen = (over: Partial<OpPollenRow> = {}): OpPollenRow => ({
     ...over,
 });
 
-const transaction = (
-    over: Partial<OpTransactionRow> = {},
-): OpTransactionRow => ({
-    entry_id: "wise-provider-payment",
-    source: "wise",
-    date: "2026-07-10",
-    vendor: "aws",
-    category: "cloud",
-    amount: -100,
-    currency: "USD",
-    description: "AWS invoice",
-    evidence: "https://drive.google.com/file/d/wise-payment/view",
-    recorded_at: "2026-07-10 00:00:00",
-    ...over,
-});
-
 const data = (over: Partial<Data>): Data => ({
     opTransactions: [],
     opCloud: [],
@@ -76,18 +64,13 @@ describe("providerCloseRows", () => {
 
         expect(row.closeStatus).toBe("ready");
         expect(row.fundingStatus).toBe("credit/free");
-        expect(row.retainedRevenueUsd).toBe(100);
         expect(row.billedUsd).toBe(0);
         expect(row.creditFreeUsd).toBe(100);
-        expect(row.netCashContributionUsd).toBe(100);
-        expect(row.models[0].paidComputeCashUsd).toBe(0);
-        expect(row.models[0].netCashContributionUsd).toBe(100);
     });
 
-    it("matches a billed provider to an adjacent-month Wise payment", () => {
+    it("records cash-funded usage from the provider source", () => {
         const [row] = providerCloseRows(
             data({
-                opTransactions: [transaction()],
                 opCloud: [cloud({ vendor: "aws", paid: -100 })],
                 opPollen: [pollen({ vendor: "aws" })],
             }),
@@ -96,9 +79,42 @@ describe("providerCloseRows", () => {
         expect(row.closeStatus).toBe("ready");
         expect(row.fundingStatus).toBe("billed");
         expect(row.billedUsd).toBe(100);
-        expect(row.wiseCashUsd).toBe(100);
-        expect(row.wiseCashMonth).toBe("2026-07");
-        expect(row.netCashContributionUsd).toBe(0);
+    });
+
+    it("counts one archived document once when several rows cite it", () => {
+        const sharedDocument =
+            "https://drive.google.com/file/d/provider-statement/view";
+        const [row] = providerCloseRows(
+            data({
+                opCloud: [
+                    cloud({
+                        entry_id: "cloud-model-a",
+                        model: "model-a",
+                        evidence: `model-a usage · ${sharedDocument}`,
+                    }),
+                    cloud({
+                        entry_id: "cloud-model-b",
+                        model: "model-b",
+                        evidence: `model-b usage · ${sharedDocument}`,
+                    }),
+                ],
+            }),
+        );
+
+        expect(row.evidence).toHaveLength(1);
+        expect(row.evidence[0].source).toBe("provider-statement");
+    });
+
+    it("keeps raw ledger references out of the Close document list", () => {
+        const [row] = providerCloseRows(
+            data({
+                opCloud: [
+                    cloud({ evidence: '{"usage": 42, "source": "cli"}' }),
+                ],
+            }),
+        );
+
+        expect(row.evidence).toEqual([]);
     });
 
     it("does not infer a payable cost from usage without a statement", () => {
@@ -107,10 +123,6 @@ describe("providerCloseRows", () => {
         expect(row.closeStatus).toBe("needs provider check");
         expect(row.fundingStatus).toBe("needs check");
         expect(row.billedUsd).toBeNull();
-        expect(row.netCashContributionUsd).toBeNull();
-        expect(row.models[0].paidComputeCashUsd).toBeNull();
-        expect(row.models[0].paidContributionUsd).toBeNull();
-        expect(row.models[0].questCashSubsidyUsd).toBeNull();
     });
 
     it("does not treat a local source note as an archived statement", () => {
@@ -151,7 +163,7 @@ describe("providerCloseRows", () => {
         expect(row.creditFreeUsd).toBeNull();
     });
 
-    it("requires a payment match when a provider statement is payable", () => {
+    it("keeps payment reconciliation outside provider close", () => {
         const [row] = providerCloseRows(
             data({
                 opCloud: [cloud({ paid: -60, credit: -40 })],
@@ -159,7 +171,7 @@ describe("providerCloseRows", () => {
             }),
         );
 
-        expect(row.closeStatus).toBe("needs payment match");
+        expect(row.closeStatus).toBe("ready");
         expect(row.fundingStatus).toBe("mixed");
         expect(row.billedUsd).toBe(60);
         expect(row.creditFreeUsd).toBe(40);
@@ -184,12 +196,9 @@ describe("providerCloseRows", () => {
         expect(row.closeStatus).toBe("ready");
         expect(row.fundingStatus).toBe("credit/free");
         expect(row.billedUsd).toBe(0);
-        expect(row.retainedRevenueUsd).toBe(75);
-        expect(row.netCashContributionUsd).toBe(75);
-        expect(row.models[0].paidComputeCashUsd).toBe(0);
     });
 
-    it("summarizes known cash contribution without hiding unknown rows", () => {
+    it("summarizes only operational close amounts", () => {
         const rows = providerCloseRows(
             data({
                 opCloud: [cloud({ credit: -100 })],
@@ -198,10 +207,179 @@ describe("providerCloseRows", () => {
         );
         const summary = providerCloseSummary(rows);
 
-        expect(summary.rows).toBe(2);
-        expect(summary.ready).toBe(1);
-        expect(summary.needsAttention).toBe(1);
-        expect(summary.netCashContributionUsd).toBe(100);
-        expect(summary.unknownContributionRows).toBe(1);
+        expect(summary.closedRows).toBe(2);
+        expect(summary.partialRows).toBe(0);
+        expect(summary.closeReady).toBe(1);
+        expect(summary.blockers).toBe(1);
+        expect(summary.billedUsd).toBe(0);
+        expect(summary.creditFreeUsd).toBe(100);
+    });
+
+    it("treats a checked zero-activity statement as ready without usage", () => {
+        const [row] = providerCloseRows(
+            data({ opCloud: [cloud()] }),
+            "2026-08",
+        );
+
+        expect(row.closeStatus).toBe("ready");
+        expect(row.fundingStatus).toBe("credit/free");
+    });
+
+    it("closes a provider-only residual when every active account is covered", () => {
+        const [row] = providerCloseRows(
+            data({
+                opCloud: ["myceli-ai", "myceli-ai2", "elliot-4"].map(
+                    (accountId, index) =>
+                        cloud({
+                            entry_id: `modal-${index}`,
+                            account_id: accountId,
+                            vendor: "modal",
+                            start: "2026-07-01 00:00:00",
+                            end: "2026-08-01 00:00:00",
+                            credit: -0.38201479,
+                        }),
+                ),
+            }),
+            "2026-08",
+        );
+
+        expect(row.closeStatus).toBe("ready");
+    });
+
+    it("flags incomplete active-account coverage", () => {
+        const [row] = providerCloseRows(
+            data({
+                opCloud: [
+                    cloud({
+                        account_id: "myceli-ai",
+                        vendor: "modal",
+                        start: "2026-07-01 00:00:00",
+                        end: "2026-08-01 00:00:00",
+                        credit: -0.38201479,
+                    }),
+                ],
+            }),
+            "2026-08",
+        );
+
+        expect(row.closeStatus).toBe("needs account check");
+    });
+
+    it("does not require an external statement for internal usage", () => {
+        const [row] = providerCloseRows(
+            data({
+                opPollen: [
+                    pollen({
+                        month: "2026-03",
+                        vendor: "bpai",
+                    }),
+                ],
+            }),
+            "2026-08",
+        );
+
+        expect(row.closeStatus).toBe("ready");
+        expect(row.fundingStatus).toBe("not applicable");
+    });
+
+    it("accepts a documented historical provider gap", () => {
+        const [row] = providerCloseRows(
+            data({
+                opCloud: [
+                    cloud({
+                        vendor: "pruna",
+                        start: "2026-03-01 00:00:00",
+                        end: "2026-04-01 00:00:00",
+                        evidence: "source data/inbox/pruna-history.json",
+                    }),
+                ],
+                opPollen: [
+                    pollen({
+                        month: "2026-03",
+                        vendor: "pruna",
+                    }),
+                ],
+            }),
+            "2026-08",
+        );
+
+        expect(row.closeStatus).toBe("ready");
+        expect(row.fundingStatus).toBe("unknown");
+    });
+
+    it("does not use Pollen meter drift as a close status", () => {
+        const [row] = providerCloseRows(
+            data({
+                opCloud: [
+                    cloud({
+                        vendor: "assemblyai",
+                        start: "2026-07-01 00:00:00",
+                        end: "2026-08-01 00:00:00",
+                        credit: -250,
+                    }),
+                ],
+                opPollen: [
+                    pollen({
+                        month: "2026-07",
+                        vendor: "assemblyai",
+                    }),
+                ],
+            }),
+            "2026-08",
+        );
+
+        expect(row.closeStatus).toBe("ready");
+    });
+
+    it("excludes the current month from close readiness", () => {
+        const rows = providerCloseRows(data({ opCloud: [cloud()] }), "2026-06");
+        const summary = providerCloseSummary(rows);
+
+        expect(rows[0].partial).toBe(true);
+        expect(summary.closedRows).toBe(0);
+        expect(summary.partialRows).toBe(1);
+        expect(summary.closeReady).toBe(0);
+        expect(summary.blockers).toBe(0);
+    });
+});
+
+describe("providerClosePeriodStatus", () => {
+    it("keeps the current month open", () => {
+        expect(
+            providerClosePeriodStatus({
+                closedRows: 0,
+                partialRows: 2,
+                closeReady: 0,
+                blockers: 0,
+                billedUsd: 0,
+                creditFreeUsd: 0,
+            }),
+        ).toBe("open");
+    });
+
+    it("requires action when any closed provider-month is blocked", () => {
+        expect(
+            providerClosePeriodStatus({
+                closedRows: 4,
+                partialRows: 0,
+                closeReady: 3,
+                blockers: 1,
+                billedUsd: 100,
+                creditFreeUsd: 0,
+            }),
+        ).toBe("action needed");
+    });
+
+    it("marks a fully checked period ready but never filed", () => {
+        expect(
+            providerClosePeriodStatus({
+                closedRows: 4,
+                partialRows: 0,
+                closeReady: 4,
+                blockers: 0,
+                billedUsd: 100,
+                creditFreeUsd: 0,
+            }),
+        ).toBe("ready");
     });
 });

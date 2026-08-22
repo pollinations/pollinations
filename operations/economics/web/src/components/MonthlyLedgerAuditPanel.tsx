@@ -1,10 +1,12 @@
 import {
     Chip,
+    cn,
     TableBody,
     TableCell,
     TableHead,
     TableHeaderCell,
     TableRow,
+    Tooltip,
 } from "@pollinations/ui";
 import { useMemo } from "react";
 import {
@@ -12,11 +14,7 @@ import {
     type MonthlyLedgerAuditStatus,
     monthlyLedgerAuditRows,
 } from "../lib/ledgerAudit";
-import {
-    type MonthFilterValue,
-    monthLabel,
-    type ValueFilter,
-} from "../lib/months";
+import { type MonthFilterValue, monthLabel } from "../lib/months";
 import type { Data } from "../types";
 import {
     DataTable,
@@ -49,29 +47,51 @@ const SORT_COLUMNS: SortColumn<MonthlyLedgerAuditRow>[] = [
         key: "transactionEvidenceGaps",
         value: (row) => row.transactionEvidenceGaps,
     },
-    { key: "cloudEvidenceGaps", value: (row) => row.cloudEvidenceGaps },
     { key: "missingMappings", value: (row) => row.missingMappings },
-    { key: "dashboardChecksDue", value: (row) => row.dashboardChecksDue },
     { key: "estimatedFx", value: (row) => row.estimatedFx },
     { key: "invalidRows", value: (row) => row.invalidRows },
     { key: "duplicateRows", value: (row) => row.duplicateRows },
 ];
 
-function NumberCell({
+function NumberCell({ value }: { value: number }) {
+    return <TableCell align="right">{value.toLocaleString()}</TableCell>;
+}
+
+function IssueCountCell({
     value,
-    warn = false,
+    providers,
+    className,
 }: {
     value: number;
-    warn?: boolean;
+    providers: string[];
+    className?: string;
 }) {
     return (
         <TableCell
             align="right"
-            className={
-                warn && value > 0 ? "text-intent-warning-text" : undefined
-            }
+            className={cn(className, value > 0 && "text-intent-warning-text")}
         >
-            {value.toLocaleString()}
+            {value > 0 ? (
+                <Tooltip
+                    triggerAs="span"
+                    content={
+                        <span className="block max-w-72">
+                            <strong>Affected providers</strong>
+                            <span className="mt-1 block">
+                                {providers.length > 0
+                                    ? providers.join(", ")
+                                    : "Unknown"}
+                            </span>
+                        </span>
+                    }
+                >
+                    <span className="underline decoration-dotted decoration-theme-border underline-offset-2">
+                        {value.toLocaleString()}
+                    </span>
+                </Tooltip>
+            ) : (
+                value.toLocaleString()
+            )}
         </TableCell>
     );
 }
@@ -79,205 +99,160 @@ function NumberCell({
 export function MonthlyLedgerAuditPanel({
     data,
     month,
-    vendor = "all",
 }: {
     data: Data;
     month: MonthFilterValue;
-    vendor?: ValueFilter;
 }) {
     const baseRows = useMemo(
-        () => monthlyLedgerAuditRows(data, month, undefined, vendor),
-        [data, month, vendor],
+        () => monthlyLedgerAuditRows(data, month),
+        [data, month],
     );
     const { headerProps, rows } = useSortableRows(baseRows, SORT_COLUMNS, null);
 
     return (
-        <section className="flex flex-col gap-3">
-            <div>
-                <h2 className="text-lg font-semibold text-theme-text-strong">
-                    Monthly ledger audit
-                </h2>
-                <p className="text-sm text-theme-text-soft">
-                    Structural integrity, evidence coverage, provider mapping,
-                    and monthly provider-check coverage. Provider economics are
-                    reconciled separately in Close. The current month stays
-                    partial without hiding integrity or evidence problems.
-                </p>
-            </div>
-
-            <TableScroller>
-                <DataTable className="min-w-[1080px]">
-                    <TableHead>
-                        <TableRow>
-                            <TableHeaderCell
-                                rowSpan={2}
-                                {...headerProps("status")}
-                            >
-                                Status
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                rowSpan={2}
-                                {...headerProps("month")}
-                            >
-                                Month
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                colSpan={3}
-                                align="center"
-                                className={GROUP_BORDER}
-                            >
-                                Ledger rows
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                colSpan={2}
-                                align="center"
-                                className={GROUP_BORDER}
-                            >
-                                Evidence gaps
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                colSpan={2}
-                                align="center"
-                                className={GROUP_BORDER}
-                            >
-                                Registry
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                colSpan={3}
-                                align="center"
-                                className={GROUP_BORDER}
-                            >
-                                Integrity
-                            </TableHeaderCell>
-                        </TableRow>
-                        <TableRow>
-                            <TableHeaderCell
-                                {...headerProps("transactionRows")}
-                                className={GROUP_BORDER}
-                                align="right"
-                            >
-                                Transactions
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                {...headerProps("cloudRows")}
-                                align="right"
-                            >
-                                Cloud
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                {...headerProps("pollenRows")}
-                                align="right"
-                            >
-                                Pollen
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                {...headerProps("transactionEvidenceGaps")}
-                                className={GROUP_BORDER}
-                                align="right"
-                            >
-                                <HeaderHint hint="Transactions whose invoice, receipt, statement, or reconciliation reference is not archived in Drive.">
-                                    Wise
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                {...headerProps("cloudEvidenceGaps")}
-                                align="right"
-                            >
-                                <HeaderHint hint="Provider-months with cost activity but no archived Drive statement, invoice, billing export, or reconciliation source. Multiple model rows backed by one authoritative monthly export count once.">
-                                    Cloud
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                {...headerProps("missingMappings")}
-                                className={GROUP_BORDER}
-                                align="right"
-                            >
+        <TableScroller>
+            <DataTable className="min-w-[900px]">
+                <TableHead>
+                    <TableRow>
+                        <TableHeaderCell rowSpan={2} {...headerProps("status")}>
+                            Status
+                        </TableHeaderCell>
+                        <TableHeaderCell rowSpan={2} {...headerProps("month")}>
+                            Month
+                        </TableHeaderCell>
+                        <TableHeaderCell
+                            colSpan={3}
+                            align="center"
+                            className={GROUP_BORDER}
+                        >
+                            Ledger rows
+                        </TableHeaderCell>
+                        <TableHeaderCell
+                            rowSpan={2}
+                            {...headerProps("transactionEvidenceGaps")}
+                            align="right"
+                            className={GROUP_BORDER}
+                        >
+                            <HeaderHint hint="Transactions whose invoice, receipt, statement, or reconciliation reference is not archived in Drive. Hover a non-zero count to see the affected providers.">
+                                Missing documents
+                            </HeaderHint>
+                        </TableHeaderCell>
+                        <TableHeaderCell
+                            rowSpan={2}
+                            {...headerProps("missingMappings")}
+                            align="right"
+                            className={GROUP_BORDER}
+                        >
+                            <HeaderHint hint="Providers in the ledgers that do not resolve to a canonical provider. Hover a non-zero count to see them.">
                                 Unmapped
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                {...headerProps("dashboardChecksDue")}
-                                align="right"
-                            >
-                                Provider due
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                {...headerProps("estimatedFx")}
-                                className={GROUP_BORDER}
-                            >
-                                <HeaderHint hint="Estimated means a future EUR or CAD row is converted using the latest published monthly rate. Closed months without a published rate fail instead of being guessed.">
-                                    FX
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                {...headerProps("invalidRows")}
-                                align="right"
-                            >
-                                Invalid
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                {...headerProps("duplicateRows")}
-                                align="right"
-                            >
-                                Duplicates
-                            </TableHeaderCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {rows.map((row) => (
-                            <TableRow key={row.month}>
-                                <TableCell>
-                                    <span className="flex flex-wrap gap-1">
-                                        <Chip
-                                            intent={STATUS_INTENT[row.status]}
-                                            size="sm"
-                                        >
-                                            {row.status}
-                                        </Chip>
-                                        {row.partial ? (
-                                            <Chip intent="neutral" size="sm">
-                                                partial
-                                            </Chip>
-                                        ) : null}
-                                    </span>
-                                </TableCell>
-                                <TableCell>{monthLabel(row.month)}</TableCell>
-                                <NumberCell value={row.transactionRows} />
-                                <NumberCell value={row.cloudRows} />
-                                <NumberCell value={row.pollenRows} />
-                                <NumberCell
-                                    value={row.transactionEvidenceGaps}
-                                    warn
-                                />
-                                <NumberCell
-                                    value={row.cloudEvidenceGaps}
-                                    warn
-                                />
-                                <NumberCell value={row.missingMappings} warn />
-                                <NumberCell
-                                    value={row.dashboardChecksDue}
-                                    warn
-                                />
-                                <TableCell className={GROUP_BORDER}>
+                            </HeaderHint>
+                        </TableHeaderCell>
+                        <TableHeaderCell
+                            colSpan={3}
+                            align="center"
+                            className={GROUP_BORDER}
+                        >
+                            Integrity
+                        </TableHeaderCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableHeaderCell
+                            {...headerProps("transactionRows")}
+                            className={GROUP_BORDER}
+                            align="right"
+                        >
+                            Transactions
+                        </TableHeaderCell>
+                        <TableHeaderCell
+                            {...headerProps("cloudRows")}
+                            align="right"
+                        >
+                            Cloud
+                        </TableHeaderCell>
+                        <TableHeaderCell
+                            {...headerProps("pollenRows")}
+                            align="right"
+                        >
+                            Pollen
+                        </TableHeaderCell>
+                        <TableHeaderCell
+                            {...headerProps("estimatedFx")}
+                            className={GROUP_BORDER}
+                        >
+                            <HeaderHint hint="Estimated means a future EUR or CAD row is converted using the latest published monthly rate. Closed months without a published rate fail instead of being guessed.">
+                                FX
+                            </HeaderHint>
+                        </TableHeaderCell>
+                        <TableHeaderCell
+                            {...headerProps("invalidRows")}
+                            align="right"
+                        >
+                            Invalid
+                        </TableHeaderCell>
+                        <TableHeaderCell
+                            {...headerProps("duplicateRows")}
+                            align="right"
+                        >
+                            Duplicates
+                        </TableHeaderCell>
+                    </TableRow>
+                </TableHead>
+                <TableBody>
+                    {rows.map((row) => (
+                        <TableRow key={row.month}>
+                            <TableCell>
+                                <span className="flex flex-wrap gap-1">
                                     <Chip
-                                        intent={
-                                            row.estimatedFx
-                                                ? "warning"
-                                                : "neutral"
-                                        }
+                                        intent={STATUS_INTENT[row.status]}
                                         size="sm"
                                     >
-                                        {row.estimatedFx
-                                            ? "estimated"
-                                            : "published"}
+                                        {row.status}
                                     </Chip>
-                                </TableCell>
-                                <NumberCell value={row.invalidRows} warn />
-                                <NumberCell value={row.duplicateRows} warn />
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </DataTable>
-            </TableScroller>
-        </section>
+                                    {row.partial ? (
+                                        <Chip intent="neutral" size="sm">
+                                            partial
+                                        </Chip>
+                                    ) : null}
+                                </span>
+                            </TableCell>
+                            <TableCell>{monthLabel(row.month)}</TableCell>
+                            <NumberCell value={row.transactionRows} />
+                            <NumberCell value={row.cloudRows} />
+                            <NumberCell value={row.pollenRows} />
+                            <IssueCountCell
+                                value={row.transactionEvidenceGaps}
+                                providers={row.transactionEvidenceProviders}
+                                className={GROUP_BORDER}
+                            />
+                            <IssueCountCell
+                                value={row.missingMappings}
+                                providers={row.missingMappingProviders}
+                                className={GROUP_BORDER}
+                            />
+                            <TableCell className={GROUP_BORDER}>
+                                <Chip
+                                    intent={
+                                        row.estimatedFx ? "warning" : "neutral"
+                                    }
+                                    size="sm"
+                                >
+                                    {row.estimatedFx
+                                        ? "estimated"
+                                        : "published"}
+                                </Chip>
+                            </TableCell>
+                            <IssueCountCell
+                                value={row.invalidRows}
+                                providers={row.invalidProviders}
+                            />
+                            <IssueCountCell
+                                value={row.duplicateRows}
+                                providers={row.duplicateProviders}
+                            />
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </DataTable>
+        </TableScroller>
     );
 }

@@ -348,6 +348,14 @@
             "monthlyReview": true
         },
         {
+            "id": "retell",
+            "label": "Retell AI",
+            "meteringBasis": "direct",
+            "aliases": [],
+            "connector": null,
+            "monthlyReview": false
+        },
+        {
             "id": "runpod",
             "label": "RunPod",
             "meteringBasis": "mixed",

@@ -1,19 +1,10 @@
 import type { Data, OpCloudRow, OpPollenRow, OpTransactionRow } from "../types";
+import { cloudCategory, transactionCategory } from "./categories";
 import { hasArchivedEvidence } from "./documents";
 import { fxEstimatedMonths } from "./fx";
-import { isCloudType, isTransactionCategory } from "./ledgerSchema";
-import {
-    collectMonths,
-    type MonthFilterValue,
-    matchesMonth,
-    matchesValue,
-    type ValueFilter,
-} from "./months";
+import { collectMonths, type MonthFilterValue, matchesMonth } from "./months";
 import { isCloudSource, isTransactionSource } from "./provenance";
-import {
-    missingProviderMappings,
-    providerReviewRows,
-} from "./providerRegistry";
+import { missingProviderMappings } from "./providerRegistry";
 
 const MONTH_RE = /^\d{4}-\d{2}$/;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -41,12 +32,14 @@ export type MonthlyLedgerAuditRow = {
     cloudRows: number;
     pollenRows: number;
     transactionEvidenceGaps: number;
-    cloudEvidenceGaps: number;
+    transactionEvidenceProviders: string[];
     missingMappings: number;
-    dashboardChecksDue: number;
+    missingMappingProviders: string[];
     estimatedFx: boolean;
     invalidRows: number;
+    invalidProviders: string[];
     duplicateRows: number;
+    duplicateProviders: string[];
 };
 
 function present(value: unknown): boolean {
@@ -63,7 +56,7 @@ function invalidTransaction(row: OpTransactionRow): boolean {
         !isTransactionSource(row.source) ||
         !DATE_RE.test(row.date) ||
         !present(row.vendor) ||
-        !isTransactionCategory(row.category) ||
+        transactionCategory(row) === "uncategorized" ||
         !finite(row.amount) ||
         !CURRENCY_RE.test(row.currency) ||
         !present(row.recorded_at)
@@ -75,7 +68,7 @@ function invalidCloud(row: OpCloudRow): boolean {
         !present(row.entry_id) ||
         !isCloudSource(row.source) ||
         !present(row.vendor) ||
-        !isCloudType(row.type) ||
+        cloudCategory(row) === "uncategorized" ||
         !MONTH_RE.test(row.start.slice(0, 7)) ||
         !finite(row.credit) ||
         !finite(row.paid) ||
@@ -109,18 +102,28 @@ function duplicateExtras<T>(rows: readonly T[], key: (row: T) => string) {
     );
 }
 
-function providerEvidenceGaps(rows: OpCloudRow[]): number {
-    const providers = new Map<string, OpCloudRow[]>();
+function providerNames(rows: readonly { vendor: string }[]): string[] {
+    return [
+        ...new Set(rows.map((row) => row.vendor.trim() || "missing provider")),
+    ].sort((a, b) => a.localeCompare(b));
+}
+
+function providersWithDuplicateKeys<T extends { vendor: string }>(
+    rows: readonly T[],
+    key: (row: T) => string,
+): string[] {
+    const counts = new Map<string, number>();
     for (const row of rows) {
-        if (row.credit > 0 && row.paid === 0) continue;
-        const providerRows = providers.get(row.vendor) ?? [];
-        providerRows.push(row);
-        providers.set(row.vendor, providerRows);
+        const value = key(row);
+        if (!value) continue;
+        counts.set(value, (counts.get(value) ?? 0) + 1);
     }
-    return [...providers.values()].filter(
-        (providerRows) =>
-            !providerRows.some((row) => hasArchivedEvidence(row.evidence)),
-    ).length;
+    return providerNames(
+        rows.filter((row) => {
+            const value = key(row);
+            return value !== "" && (counts.get(value) ?? 0) > 1;
+        }),
+    );
 }
 
 function statusFor(
@@ -133,12 +136,7 @@ function statusFor(
     ) {
         return "structural";
     }
-    if (
-        row.transactionEvidenceGaps > 0 ||
-        row.cloudEvidenceGaps > 0 ||
-        row.dashboardChecksDue > 0 ||
-        row.estimatedFx
-    ) {
+    if (row.transactionEvidenceGaps > 0 || row.estimatedFx) {
         return "attention";
     }
     return "clean";
@@ -148,7 +146,6 @@ export function monthlyLedgerAuditRows(
     data: Data,
     filter: MonthFilterValue = "",
     currentMonth = new Date().toISOString().slice(0, 7),
-    vendor: ValueFilter = "all",
 ): MonthlyLedgerAuditRow[] {
     const estimatedFxMonths = new Set(fxEstimatedMonths(data));
 
@@ -156,22 +153,24 @@ export function monthlyLedgerAuditRows(
         .filter((month) => matchesMonth(month, filter))
         .map((month) => {
             const transactions = (data.opTransactions ?? []).filter(
-                (row) =>
-                    row.date.slice(0, 7) === month &&
-                    matchesValue(row.vendor, vendor),
+                (row) => row.date.slice(0, 7) === month,
             );
             const cloud = (data.opCloud ?? []).filter(
-                (row) =>
-                    row.start.slice(0, 7) === month &&
-                    matchesValue(row.vendor, vendor),
+                (row) => row.start.slice(0, 7) === month,
             );
             const pollen = (data.opPollen ?? []).filter(
-                (row) =>
-                    row.month === month && matchesValue(row.vendor, vendor),
+                (row) => row.month === month,
             );
-            const review = providerReviewRows(data, month).filter((row) =>
-                matchesValue(row.provider, vendor),
+            const evidenceGaps = transactions.filter(
+                (row) => !hasArchivedEvidence(row.evidence),
             );
+            const mappingGaps = missingProviderMappings(data, month);
+            const missingMappingProviders = [
+                ...new Set(mappingGaps.map((row) => row.provider)),
+            ].sort((a, b) => a.localeCompare(b));
+            const invalidTransactions = transactions.filter(invalidTransaction);
+            const invalidCloudRows = cloud.filter(invalidCloud);
+            const invalidPollenRows = pollen.filter(invalidPollen);
             const partial = month >= currentMonth;
             const base = {
                 month,
@@ -179,23 +178,20 @@ export function monthlyLedgerAuditRows(
                 transactionRows: transactions.length,
                 cloudRows: cloud.length,
                 pollenRows: pollen.length,
-                transactionEvidenceGaps: transactions.filter(
-                    (row) => !hasArchivedEvidence(row.evidence),
-                ).length,
-                cloudEvidenceGaps: providerEvidenceGaps(cloud),
-                missingMappings: new Set(
-                    missingProviderMappings(data, month)
-                        .filter((row) => matchesValue(row.provider, vendor))
-                        .map((row) => row.provider),
-                ).size,
-                dashboardChecksDue: review.filter(
-                    (row) => row.dashboardStatus === "due",
-                ).length,
+                transactionEvidenceGaps: evidenceGaps.length,
+                transactionEvidenceProviders: providerNames(evidenceGaps),
+                missingMappings: missingMappingProviders.length,
+                missingMappingProviders,
                 estimatedFx: estimatedFxMonths.has(month),
                 invalidRows:
-                    transactions.filter(invalidTransaction).length +
-                    cloud.filter(invalidCloud).length +
-                    pollen.filter(invalidPollen).length,
+                    invalidTransactions.length +
+                    invalidCloudRows.length +
+                    invalidPollenRows.length,
+                invalidProviders: providerNames([
+                    ...invalidTransactions,
+                    ...invalidCloudRows,
+                    ...invalidPollenRows,
+                ]),
                 // OP Pollen is unique at its raw provider/model grain. After
                 // canonical aliases merge (for example bedrock -> aws), two
                 // legitimate source rows may share the display key and must be
@@ -203,6 +199,18 @@ export function monthlyLedgerAuditRows(
                 duplicateRows:
                     duplicateExtras(transactions, (row) => row.entry_id) +
                     duplicateExtras(cloud, (row) => row.entry_id),
+                duplicateProviders: [
+                    ...new Set([
+                        ...providersWithDuplicateKeys(
+                            transactions,
+                            (row) => row.entry_id,
+                        ),
+                        ...providersWithDuplicateKeys(
+                            cloud,
+                            (row) => row.entry_id,
+                        ),
+                    ]),
+                ].sort((a, b) => a.localeCompare(b)),
             };
             return { ...base, status: statusFor(base) };
         })

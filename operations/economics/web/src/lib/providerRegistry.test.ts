@@ -281,6 +281,37 @@ describe("provider observations", () => {
         expect(observations.every((row) => row.dashboardChecked)).toBe(true);
     });
 
+    it("expands an explicit verified-zero account range across its covered months", () => {
+        const observations = collectProviderObservations(
+            data({
+                opCloud: [
+                    cloud({
+                        start: "2026-01-01 00:00:00",
+                        end: "2026-08-21 00:00:00",
+                        vendor: "modal",
+                        account_id: "myceli-ai2",
+                        credit: 0,
+                        paid: 0,
+                        resource_sku: "verified-zero",
+                        resource_count: 0,
+                    }),
+                ],
+            }),
+        );
+
+        expect(observations.map((row) => row.month)).toEqual([
+            "2026-08",
+            "2026-07",
+            "2026-06",
+            "2026-05",
+            "2026-04",
+            "2026-03",
+            "2026-02",
+            "2026-01",
+        ]);
+        expect(observations.every((row) => row.dashboardChecked)).toBe(true);
+    });
+
     it("treats OP Cloud end timestamps as exclusive", () => {
         const observations = collectProviderObservations(
             data({

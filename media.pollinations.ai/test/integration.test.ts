@@ -12,6 +12,7 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import app from "../src/index";
+import { uploadUnlistedMedia } from "../src/media-upload.ts";
 
 // 1x1 red PNG (67 bytes)
 const TINY_PNG = new Uint8Array([
@@ -220,6 +221,56 @@ describe("media.pollinations.ai", () => {
         const body = (await res.json()) as Record<string, unknown>;
         expect(res.status).toBe(200);
         expect(body.service).toBe("media.pollinations.ai");
+    });
+
+    it("stores streamed unlisted media for internal services", async () => {
+        const bucket = createTestR2Bucket();
+        const stream = new Blob([TINY_PNG]).stream();
+        const upload = await uploadUnlistedMedia(
+            createMediaEnv(bucket),
+            stream,
+            {
+                contentType: "image/png",
+                fileName: "ffmpeg.png",
+                size: TINY_PNG.length,
+            },
+        );
+
+        expect(upload.url).toBe(`https://media.pollinations.ai/${upload.id}`);
+        expect(upload.size).toBe(TINY_PNG.length);
+        const object = bucket.getObject(upload.id);
+        expect(object).toBeDefined();
+        if (!object) throw new Error("Uploaded media was not stored");
+        expect(object.body).toEqual(TINY_PNG);
+        expect(object.httpMetadata?.contentType).toBe("image/png");
+        expect(object.httpMetadata?.cacheControl).toBe(
+            "public, max-age=31536000, immutable",
+        );
+        expect(object.customMetadata?.originalName).toBe("ffmpeg.png");
+        expect(object.customMetadata?.uploadedBy).toBe("pollinations-service");
+        expect(object.customMetadata?.keyType).toBe("service");
+    });
+
+    it("rejects invalid internal upload sizes before writing to R2", async () => {
+        const bucket = createTestR2Bucket();
+        const mediaEnv = {
+            ...createMediaEnv(bucket),
+            MAX_FILE_SIZE: "10",
+        };
+
+        await expect(
+            uploadUnlistedMedia(mediaEnv, new Blob([TINY_PNG]).stream(), {
+                contentType: "image/png",
+                size: 0,
+            }),
+        ).rejects.toThrow("Media size must be a positive integer");
+        await expect(
+            uploadUnlistedMedia(mediaEnv, new Blob([TINY_PNG]).stream(), {
+                contentType: "image/png",
+                size: 11,
+            }),
+        ).rejects.toThrow("Media exceeds 10 bytes");
+        expect(bucket.putCount).toBe(0);
     });
 
     it("POST /upload without key returns 401", async () => {

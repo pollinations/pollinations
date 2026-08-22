@@ -1,3 +1,4 @@
+import type { AuthenticatedApiKey, AuthUser } from "../auth/api-key.ts";
 import type { ApiKeyType } from "../auth/api-key-creation.ts";
 import type { PriceDefinition, Usage } from "../registry/registry.ts";
 import type { ContentFilterResult } from "./openai.ts";
@@ -8,6 +9,8 @@ export type EventType =
     | "generate.audio"
     | "generate.embedding"
     | "generate.realtime";
+
+export type TinybirdEventType = EventType | "tool.media";
 
 // Plain TypeScript type for Tinybird events (no D1 table - events sent directly to Tinybird)
 export type TinybirdEvent = {
@@ -21,7 +24,7 @@ export type TinybirdEvent = {
     responseTime?: number;
     responseStatus?: number;
     environment?: string;
-    eventType: EventType;
+    eventType: TinybirdEventType;
 
     // Cache identity is emitted only for requests that reached cache-backed
     // generation handling. The key is SHA-256 hashed before ingestion.
@@ -147,6 +150,41 @@ export type TinybirdEvent = {
     errorSource?: string;
     errorMessage?: string;
 };
+
+export type UsageEventIdentity = Pick<
+    TinybirdEvent,
+    | "userId"
+    | "userTier"
+    | "apiKeyId"
+    | "apiKeyName"
+    | "apiKeyType"
+    | "apiKeyCreatedVia"
+    | "apiKeyCreatedForApp"
+    | "apiKeyCreatedForUserId"
+    | "apiKeyClientId"
+>;
+
+/** Maps authenticated account data to the identity columns shared by usage events. */
+export function usageEventIdentity(auth: {
+    user?: Pick<AuthUser, "id" | "tier">;
+    apiKey?: AuthenticatedApiKey;
+}): UsageEventIdentity {
+    const metadata = auth.apiKey?.metadata;
+    const byopClientKeyId = auth.apiKey?.byopClientKeyId;
+    return {
+        userId: auth.user?.id,
+        userTier: auth.user?.tier,
+        apiKeyId: auth.apiKey?.id,
+        apiKeyType: metadata?.keyType as ApiKeyType,
+        apiKeyName: auth.apiKey?.name,
+        apiKeyCreatedVia: byopClientKeyId
+            ? "redirect-auth"
+            : (metadata?.createdVia as string | undefined),
+        apiKeyClientId: byopClientKeyId ?? undefined,
+        apiKeyCreatedForApp: auth.apiKey?.byopClientName ?? undefined,
+        apiKeyCreatedForUserId: auth.apiKey?.byopClientUserId ?? undefined,
+    };
+}
 
 export type GenerationEventPriceParams = {
     tokenPricePromptText: number;

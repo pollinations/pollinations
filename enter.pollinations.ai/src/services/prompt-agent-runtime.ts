@@ -33,6 +33,7 @@ type PromptAgentRuntime = {
     apiKey: string;
     genBaseUrl: string;
     pollinationsMcpUrl: string;
+    ffmpegMcpUrl: string;
 };
 
 type McpClient = Awaited<ReturnType<typeof createMCPClient>>;
@@ -74,7 +75,8 @@ function agentErrorResponse(error: unknown): Response {
     );
 }
 
-async function loadPollinationsTools(
+async function loadMcpTools(
+    serverName: string,
     url: string,
     apiKey: string,
     signal: AbortSignal,
@@ -113,17 +115,17 @@ async function loadPollinationsTools(
             },
         });
         for (const [name, definition] of Object.entries(await client.tools())) {
-            tools[`mcp__pollinations__${name}`] = definition;
+            tools[`mcp__${serverName}__${name}`] = definition;
         }
         log.info("MCP_SERVER_LOADED: name={name} url={url} tools={tools}", {
-            name: "pollinations",
+            name: serverName,
             url,
             tools: Object.keys(tools).length,
         });
     } catch (error) {
         // Tool availability is recoverable; the base model can still answer.
         log.error("MCP_SERVER_FAILED: name={name} url={url} error={error}", {
-            name: "pollinations",
+            name: serverName,
             url,
             error: error instanceof Error ? error.message : String(error),
         });
@@ -133,16 +135,29 @@ async function loadPollinationsTools(
 }
 
 async function createAgent(runtime: PromptAgentRuntime, signal: AbortSignal) {
-    const { tools, close } = runtime.config.mcpServers.includes("pollinations")
-        ? await loadPollinationsTools(
-              runtime.pollinationsMcpUrl,
-              runtime.apiKey,
-              signal,
-          )
-        : {
-              tools: {} as Record<string, McpTool>,
-              close: async () => {},
-          };
+    const servers = runtime.config.mcpServers.includes("pollinations")
+        ? await Promise.all([
+              loadMcpTools(
+                  "pollinations",
+                  runtime.pollinationsMcpUrl,
+                  runtime.apiKey,
+                  signal,
+              ),
+              loadMcpTools(
+                  "ffmpeg",
+                  runtime.ffmpegMcpUrl,
+                  runtime.apiKey,
+                  signal,
+              ),
+          ])
+        : [];
+    const tools: Record<string, McpTool> = Object.assign(
+        {},
+        ...servers.map((server) => server.tools),
+    );
+    const close = async () => {
+        await Promise.all(servers.map((server) => server.close()));
+    };
     const toolCallCounts: ToolCallCounts = {};
     let toolCalls = 0;
     for (const [name, tool] of Object.entries(tools)) {
@@ -381,7 +396,7 @@ function toolDetailsContent(
     output: string,
     hasContent: boolean,
 ): string {
-    const name = part.toolName.replace(/^mcp__pollinations__/, "");
+    const name = part.toolName.replace(/^mcp__[^_]+__/, "");
     const argumentsJson = JSON.stringify(part.input ?? {});
     return (
         (hasContent ? "\n\n" : "") +

@@ -14,11 +14,18 @@ import {
 
 // The MCP worker serves Streamable HTTP directly at the root URL.
 export const POLLINATIONS_MCP_URL = "https://mcp.pollinations.ai";
+export const FFMPEG_MCP_URL = "https://ffmpeg.pollinations.ai";
 
 function pollinationsMcpUrl(env: Env["Bindings"]): string {
     return (
         (env as { POLLINATIONS_MCP_URL?: string }).POLLINATIONS_MCP_URL ??
         POLLINATIONS_MCP_URL
+    );
+}
+
+function ffmpegMcpUrl(env: Env["Bindings"]): string {
+    return (
+        (env as { FFMPEG_MCP_URL?: string }).FFMPEG_MCP_URL ?? FFMPEG_MCP_URL
     );
 }
 
@@ -72,6 +79,7 @@ export const agentRuntimeRoutes = new Hono<Env>()
                 apiKey,
                 genBaseUrl: genBaseUrl(c.env),
                 pollinationsMcpUrl: pollinationsMcpUrl(c.env),
+                ffmpegMcpUrl: ffmpegMcpUrl(c.env),
             });
         },
     );

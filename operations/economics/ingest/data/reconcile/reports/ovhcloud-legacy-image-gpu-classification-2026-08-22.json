@@ -5,8 +5,19 @@
     "start": "2026-01-01",
     "end": "2026-03-01"
   },
-  "status": "proposal_only",
-  "tinybird_deployed": false,
+  "status": "published_staging",
+  "tinybird_staging_published": true,
+  "tinybird_production_published": false,
+  "publication": {
+    "published_at": "2026-08-22T21:20:23+02:00",
+    "workspace": "pollinations_enter_staging",
+    "rows_appended": 4,
+    "rows_verified": 4,
+    "effective_rows_before": 3076,
+    "effective_rows_after": 3076,
+    "quarantine_rows": 0,
+    "invalid_lines": 0
+  },
   "conclusion": {
     "gpu_classification": "gpu",
     "shared_workload": "legacy-image-api",

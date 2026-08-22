@@ -18,9 +18,10 @@ Use fixtures mode for UI development without password or Tinybird access:
 http://127.0.0.1:4180/?fixtures=1
 ```
 
-Live mode uses a password gate. The Tinybird read token lives only in
-`secrets/web.json` and is exposed only to the local/production Worker, never to
-the browser bundle.
+Live mode uses a password gate. Local development reads the staging Tinybird
+workspace through `secrets/web.dev.json`; production reads the production
+workspace through `secrets/web.json`. The credentials are exposed only to the
+Worker, never to the browser bundle.
 
 Production deploys through `.github/workflows/deploy-applications.yml`
 on the `production` branch. The workflow deploys the Worker with both custom

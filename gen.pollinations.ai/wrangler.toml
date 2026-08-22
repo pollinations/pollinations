@@ -8,7 +8,8 @@ account_id = "b6ec751c0862027ba269faf7029b2501"
 services = [
     { binding = "ENTER", service = "pollinations-enter" },
     { binding = "POLLINATIONS_MCP", service = "pollinations-mcp" },
-    { binding = "FFMPEG_MCP", service = "pollinations-ffmpeg-mcp" }
+    { binding = "FFMPEG_MCP", service = "pollinations-ffmpeg-mcp" },
+    { binding = "BROWSER_MCP", service = "pollinations-browser-mcp" }
 ]
 
 [images]
@@ -103,6 +104,10 @@ service = "pollinations-mcp"
 binding = "FFMPEG_MCP"
 service = "pollinations-ffmpeg-mcp"
 
+[[env.production.services]]
+binding = "BROWSER_MCP"
+service = "pollinations-browser-mcp"
+
 [[env.production.vpc_networks]]
 binding = "KLEIN_VPC"
 tunnel_id = "c340d8d9-c1f3-4a13-8115-38b59faac3d5"
@@ -194,6 +199,10 @@ service = "pollinations-mcp"
 binding = "FFMPEG_MCP"
 service = "pollinations-ffmpeg-mcp-staging"
 
+[[env.staging.services]]
+binding = "BROWSER_MCP"
+service = "pollinations-browser-mcp-staging"
+
 [[env.staging.d1_databases]]
 binding = "DB"
 database_name = "staging-pollinations-enter-db"
@@ -270,6 +279,10 @@ service = "pollinations-mcp"
 [[env.test.services]]
 binding = "FFMPEG_MCP"
 service = "pollinations-ffmpeg-mcp"
+
+[[env.test.services]]
+binding = "BROWSER_MCP"
+service = "pollinations-browser-mcp"
 
 [[env.test.d1_databases]]
 binding = "DB"

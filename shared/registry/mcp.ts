@@ -42,6 +42,15 @@ export const MCP_SERVERS = [
         provider: "cloudflare",
         eventType: "tool.media",
     },
+    {
+        id: "browser",
+        name: "Browser",
+        description:
+            "Fetch rendered web pages as Markdown, screenshots, or PDFs.",
+        billing: "usage_receipt",
+        provider: "cloudflare",
+        eventType: "tool.browser",
+    },
 ] as const satisfies readonly McpServerDefinition[];
 
 export type McpServerId = (typeof MCP_SERVERS)[number]["id"];

@@ -2,6 +2,7 @@ import { getLogger } from "@logtape/logtape";
 import { getUserBalance, payerBucketToMeter } from "@shared/billing/balance.ts";
 import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
 import { sendToTinybird } from "@shared/events.ts";
+import type { McpUsageReceipt } from "@shared/mcp-usage.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
 import {
     getMcpServerDefinition,
@@ -22,25 +23,17 @@ import { auth } from "@/middleware/auth.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { requestIdentity } from "@/middleware/track.ts";
 
-type McpUsage = {
-    cost: number;
-    tool: string;
-    status: number;
-    adjustmentId: string;
-    adjustmentUnits: number;
-    error?: string;
-};
-
 function getMcpBinding(
     env: CloudflareBindings,
     id: string,
 ): Fetcher | undefined {
     if (id === "pollinations") return env.POLLINATIONS_MCP;
     if (id === "ffmpeg") return env.FFMPEG_MCP;
+    if (id === "browser") return env.BROWSER_MCP;
     return undefined;
 }
 
-function parseUsage(headers: Headers): McpUsage | undefined {
+function parseUsage(headers: Headers): McpUsageReceipt | undefined {
     const costHeader = headers.get(MCP_USAGE_HEADERS.cost);
     if (costHeader === null) return undefined;
 
@@ -109,7 +102,7 @@ function responseForCaller(response: Response): Response {
 async function settleUsage(
     c: Context<Env>,
     server: Extract<McpServerDefinition, { billing: "usage_receipt" }>,
-    usage: McpUsage,
+    usage: McpUsageReceipt,
     startedAt: Date,
 ): Promise<void> {
     const user = c.var.auth.requireUser();

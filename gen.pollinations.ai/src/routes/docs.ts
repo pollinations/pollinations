@@ -34,6 +34,7 @@ const FAVICON_DATA_URI =
 
 import COMMUNITY_MODELS_MD from "../../../BRING_YOUR_OWN_MODEL.md?raw";
 import BYOP_MD from "../../../BRING_YOUR_OWN_POLLEN.md?raw";
+import AGENTS_MD from "../../../BUILD_YOUR_OWN_AGENT.md?raw";
 import MCP_README from "../../../packages/mcp/README.md?raw";
 import CLI_README from "../../../packages/polli-cli/README.md?raw";
 import MODEL3D_GENERATION_MD from "../docs/3d-generation.md?raw";
@@ -60,6 +61,8 @@ const DOC_TAGS = {
     userWallets: "Connect User Wallets",
     publishModel: "Publish a Model",
     communityModels: "Community Models",
+    publishAgent: "Publish an Agent",
+    communityAgents: "Community Agents",
     cli: "CLI",
     mcpServer: "MCP Server",
     errors: "Errors",
@@ -83,6 +86,7 @@ const LEGACY_DOC_TAGS: Record<string, string> = {
     "🔐 Authentication": DOC_TAGS.authentication,
     "🌸 BYOP": DOC_TAGS.userWallets,
     "🧩 Community Models": DOC_TAGS.communityModels,
+    "🤖 Community Agents": DOC_TAGS.communityAgents,
     "🖥 CLI": DOC_TAGS.cli,
     "🔌 MCP Server": DOC_TAGS.mcpServer,
     "❌ Errors": DOC_TAGS.errors,
@@ -120,6 +124,12 @@ const DOC_TAG_ICON_HTML: Record<string, string> = {
     ),
     [DOC_TAGS.publishModel]: docsIcon(
         '<path d="M9 3h6" /><path d="M10 3v6.5L4.5 18a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L14 9.5V3" /><path d="M7 14h10" />',
+    ),
+    [DOC_TAGS.communityAgents]: docsIcon(
+        '<rect x="4" y="7" width="16" height="13" rx="2" /><path d="M9 3h6" /><path d="M12 3v4" /><circle cx="9" cy="13" r="1" fill="currentColor" /><circle cx="15" cy="13" r="1" fill="currentColor" /><path d="M9 17h6" />',
+    ),
+    [DOC_TAGS.publishAgent]: docsIcon(
+        '<rect x="4" y="7" width="16" height="13" rx="2" /><path d="M9 3h6" /><path d="M12 3v4" /><circle cx="9" cy="13" r="1" fill="currentColor" /><circle cx="15" cy="13" r="1" fill="currentColor" /><path d="M9 17h6" />',
     ),
     [DOC_TAGS.cli]: docsIcon(
         '<polyline points="4 8 8 12 4 16" /><line x1="12" y1="20" x2="20" y2="20" />',
@@ -188,6 +198,7 @@ const stripLeadingHeading = (md: string) =>
 
 const USER_WALLETS_DOCS = stripLeadingHeading(BYOP_MD.trim());
 const PUBLISH_MODEL_DOCS = stripLeadingHeading(COMMUNITY_MODELS_MD.trim());
+const PUBLISH_AGENT_DOCS = stripLeadingHeading(AGENTS_MD.trim());
 
 // Dynamic registry values get injected into the markdown via {{PLACEHOLDER}}
 // substitution. The placeholders live in the .md files so the prose stays in
@@ -339,6 +350,7 @@ const GEN_API_DOCS = [
 
 const USER_WALLETS_SECTION = `## Connect User Wallets\n\n${USER_WALLETS_DOCS}`;
 const PUBLISH_MODEL_SECTION = `## Publish a Model\n\n${PUBLISH_MODEL_DOCS}`;
+const PUBLISH_AGENT_SECTION = `## Publish an Agent\n\n${PUBLISH_AGENT_DOCS}`;
 const CLI_SECTION = `## CLI\n\n${CLI_DOCS}`;
 const MCP_SECTION = `## MCP Server\n\n${MCP_DOCS}`;
 
@@ -346,6 +358,7 @@ const LLM_DOC_TEXT = [
     GEN_API_DOCS,
     USER_WALLETS_SECTION,
     PUBLISH_MODEL_SECTION,
+    PUBLISH_AGENT_SECTION,
     CLI_SECTION,
     MCP_SECTION,
 ].join("\n\n");
@@ -354,6 +367,7 @@ const LLM_DOC_SECTIONS: Record<string, string> = {
     api: GEN_API_DOCS,
     byop: USER_WALLETS_SECTION,
     "publish-a-model": PUBLISH_MODEL_SECTION,
+    "publish-an-agent": PUBLISH_AGENT_SECTION,
     cli: CLI_SECTION,
     mcp: MCP_SECTION,
 };
@@ -363,6 +377,8 @@ const GUIDE_REDIRECT_TAGS: Record<string, string> = {
     byop: "connect-user-wallets",
     models: "publish-a-model",
     "community-models": "publish-a-model",
+    agents: "publish-an-agent",
+    "community-agents": "publish-an-agent",
     cli: "cli",
     mcp: "mcp-server",
 };
@@ -473,6 +489,7 @@ function generationDocumentation(): OpenApiSchema {
                 tags: [
                     DOC_TAGS.userWallets,
                     DOC_TAGS.publishModel,
+                    DOC_TAGS.publishAgent,
                     DOC_TAGS.mcpServer,
                     DOC_TAGS.cli,
                 ],
@@ -494,6 +511,7 @@ function generationDocumentation(): OpenApiSchema {
                 tags: [
                     DOC_TAGS.models,
                     DOC_TAGS.communityModels,
+                    DOC_TAGS.communityAgents,
                     DOC_TAGS.quests,
                     DOC_TAGS.mediaStorage,
                     DOC_TAGS.account,
@@ -524,6 +542,15 @@ function generationDocumentation(): OpenApiSchema {
                 name: DOC_TAGS.communityModels,
                 description:
                     "Register, test, update, and remove community models owned by the authenticated account.",
+            },
+            {
+                name: DOC_TAGS.publishAgent,
+                description: PUBLISH_AGENT_DOCS,
+            },
+            {
+                name: DOC_TAGS.communityAgents,
+                description:
+                    "Create, inspect, update, and remove managed agents owned by the authenticated account.",
             },
             {
                 name: DOC_TAGS.cli,

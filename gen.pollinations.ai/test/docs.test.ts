@@ -82,6 +82,7 @@ describe("docs routes", () => {
             tags: [
                 { name: "👤 Account" },
                 { name: "🧩 Community Models" },
+                { name: "🤖 Community Agents" },
                 { name: "✨ Quests" },
                 { name: "Customer" },
             ],
@@ -112,13 +113,13 @@ describe("docs routes", () => {
                 },
                 "/api/account/agents": {
                     get: {
-                        tags: ["👤 Account"],
+                        tags: ["🤖 Community Agents"],
                         description:
                             "List managed agents. API keys require `account:keys`.",
                     },
                 },
                 "/api/account/agents/{id}": {
-                    patch: { tags: ["👤 Account"] },
+                    patch: { tags: ["🤖 Community Agents"] },
                 },
                 "/api/quests/catalog": {
                     get: { tags: ["✨ Quests"], security: [] },
@@ -234,12 +235,22 @@ describe("docs routes", () => {
         expect(integrations?.tags).not.toContain("Community Models");
         expect(resources?.tags).toContain("Community Models");
         expect(resources?.tags).not.toContain("Publish a Model");
+        expect(integrations?.tags).toContain("Publish an Agent");
+        expect(integrations?.tags).not.toContain("Community Agents");
+        expect(resources?.tags).toContain("Community Agents");
+        expect(resources?.tags).not.toContain("Publish an Agent");
         expect(schema.tags.map((tag) => tag.name)).toContain(
             "Connect User Wallets",
         );
         expect(schema.tags.map((tag) => tag.name)).toContain("Publish a Model");
         expect(schema.tags.map((tag) => tag.name)).toContain(
             "Community Models",
+        );
+        expect(schema.tags.map((tag) => tag.name)).toContain(
+            "Publish an Agent",
+        );
+        expect(schema.tags.map((tag) => tag.name)).toContain(
+            "Community Agents",
         );
         expect(schema.tags.map((tag) => tag.name)).toContain("CLI");
         expect(schema.tags.map((tag) => tag.name)).toContain("MCP Server");
@@ -308,6 +319,7 @@ describe("docs routes", () => {
             schema.paths["/account/agents"] as Record<string, unknown>
         )?.get as Record<string, unknown> | undefined;
         expect(agentsGet?.description).toContain("account:keys");
+        expect(agentsGet?.tags).toEqual(["Community Agents"]);
 
         // The catalog is unauthenticated → marked public (security: []).
         const questsCatalogGet = (
@@ -419,6 +431,18 @@ describe("docs routes", () => {
         expect(mcpRes.status).toBe(301);
         expect(mcpRes.headers.get("Location")).toBe("/docs#tag/mcp-server");
 
+        const agentsRes = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs/guides/agents", {
+                redirect: "manual",
+            }),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        expect(agentsRes.status).toBe(301);
+        expect(agentsRes.headers.get("Location")).toBe(
+            "/docs#tag/publish-an-agent",
+        );
+
         const modelsRes = await worker.fetch(
             new Request("https://gen.pollinations.ai/docs/guides/models", {
                 redirect: "manual",
@@ -497,6 +521,18 @@ describe("docs routes", () => {
         const modelsBody = await modelsRes.text();
         expect(modelsBody).toContain("## Publish a Model");
         expect(modelsBody).toContain("/account/my-models");
+
+        const agentsRes = await worker.fetch(
+            new Request(
+                "https://gen.pollinations.ai/docs/llm.txt?section=publish-an-agent",
+            ),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        expect(agentsRes.status).toBe(200);
+        const agentsBody = await agentsRes.text();
+        expect(agentsBody).toContain("## Publish an Agent");
+        expect(agentsBody).toContain("/account/agents");
 
         const badRes = await worker.fetch(
             new Request("https://gen.pollinations.ai/docs/llm.txt?section=bad"),

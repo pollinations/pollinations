@@ -12,6 +12,7 @@ Self-service endpoints for the authenticated user. All endpoints require authent
 | `GET /account/usage` | Per-request usage history with costs (account-wide) |
 | `GET /account/usage/daily` | Daily aggregated usage for dashboards |
 | `GET /account/key/usage` | Usage history for the calling API key only |
+| `/account/agents` | Managed prompt-agent configuration |
 | `/account/my-models` | Private community model registration and allowlisted public publishing |
 | `GET /account/key` | API key validity, type, and permissions |
 
@@ -47,6 +48,12 @@ Daily aggregated usage suitable for dashboards. Requires `account:usage`.
 ### GET /account/key
 
 Returns the current API key's validity, type, and permissions.
+
+### /account/agents
+
+Create and manage prompt agents and their callable `owner/name` model listings in one operation. `POST /account/agents` requires `name`, `title`, `systemPrompt`, and `baseModel`; `description`, `visibility`, and `mcpServers` are optional. `PATCH /account/agents/{id}` replaces the runtime configuration and can update listing fields. Managed agents are text-only and free, with no owner-set prices, fallbacks, or per-user request limit. Calls still consume Pollen for the base model and tool generations. API keys require `account:keys`.
+
+See [Publish an Agent](https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md) for dashboard, CLI, and API examples.
 
 ### /account/my-models
 

@@ -565,7 +565,7 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(1.875),
         },
         billing: openRouterGeminiBilling({
-            searchCostPerThousandRequests: 7,
+            searchCostPerThousandRequests: 14,
             storageCostPerMillionTokenHours: 0.25,
         }),
         title: "Gemini 3.7 Flash",
@@ -693,10 +693,9 @@ export const TEXT_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter google/gemma-4-26b-a4b-it posted rates (2026-06-02):
-            // prompt $0.06/M, completion $0.33/M. No prompt caching upstream.
-            promptTextTokens: perMillion(0.06),
-            completionTextTokens: perMillion(0.33),
+            // OpenRouter Novita BF16 preserves remote image URLs; verified 2026-08-22.
+            promptTextTokens: perMillion(0.13),
+            completionTextTokens: perMillion(0.4),
         },
         title: "Gemma 4 26B A4B",
         description:
@@ -718,8 +717,9 @@ export const TEXT_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(0.12),
-            completionTextTokens: perMillion(0.37),
+            // OpenRouter Novita BF16 endpoint, verified 2026-08-22.
+            promptTextTokens: perMillion(0.14),
+            completionTextTokens: perMillion(0.4),
         },
         title: "Gemma 4 31B",
         description: "Dense multimodal reasoning with configurable thinking",
@@ -1437,6 +1437,7 @@ export const TEXT_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
+            // OpenRouter Xiaomi FP8 endpoint, verified 2026-08-22.
             promptTextTokens: perMillion(0.435),
             promptCachedTokens: perMillion(0.0036),
             completionTextTokens: perMillion(0.87),
@@ -1803,10 +1804,9 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-03-22").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // Moved off Alibaba DashScope ($0.30/$1.50) to OpenRouter — same SKU,
-        // ~2.5x cheaper. OpenRouter routes to the cheapest live endpoint.
+        // OpenRouter Parasail BF16 endpoint, verified 2026-08-22.
         cost: {
-            promptTextTokens: perMillion(0.11), // per 1M tokens
+            promptTextTokens: perMillion(0.12), // per 1M tokens
             promptCachedTokens: perMillion(0.07), // per 1M cached input tokens
             completionTextTokens: perMillion(0.8), // per 1M tokens
         },
@@ -2087,8 +2087,9 @@ export const TEXT_SERVICES = {
         priceMultiplier: 1,
         category: "text",
         cost: {
-            promptTextTokens: perMillion(0.26),
-            completionTextTokens: perMillion(2.6),
+            // OpenRouter Alibaba endpoint, verified 2026-08-22.
+            promptTextTokens: perMillion(0.4),
+            completionTextTokens: perMillion(4),
         },
         title: "Qwen3 VL 235B A22B Thinking",
         description:

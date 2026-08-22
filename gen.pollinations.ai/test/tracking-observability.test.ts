@@ -563,18 +563,27 @@ describe("tracking observability", () => {
 
         const ctx = createExecutionContext();
         const response = await createHeaderApp(
-            { "x-usage-missing": "true" },
+            {
+                "x-model-used": "gemini-fast",
+                "x-usage-missing": "true",
+            },
             trackingUser,
             200,
             consumePollen,
+            "gemini-fast",
         ).fetch(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                    model: "openai",
+                    model: "gemini-fast",
                     stream: false,
-                    messages: [{ role: "user", content: "test" }],
+                    messages: [
+                        {
+                            role: "user",
+                            content: "complete input for missing usage",
+                        },
+                    ],
                 }),
             }),
             {
@@ -593,8 +602,19 @@ describe("tracking observability", () => {
         await waitOnExecutionContext(ctx);
 
         expect(response.status).toBe(200);
-        expect(tinybirdRequests).toHaveLength(1);
-        const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
+        expect(tinybirdRequests).toHaveLength(2);
+        const generationRequest = tinybirdRequests.find(
+            (request) =>
+                new URL(request.url).searchParams.get("name") ===
+                "generation_event_v2",
+        );
+        const anomalyRequest = tinybirdRequests.find(
+            (request) =>
+                new URL(request.url).searchParams.get("name") === "error_event",
+        );
+        expect(generationRequest).toBeDefined();
+        expect(anomalyRequest).toBeDefined();
+        const event = (await generationRequest?.json()) as TinybirdEvent;
         expect(event).toMatchObject({
             responseStatus: 200,
             isBilledUsage: false,
@@ -602,7 +622,137 @@ describe("tracking observability", () => {
             totalPrice: 0,
             errorResponseCode: "usage_missing",
         });
-        expect(event.modelUsed).toBe("openai");
+        expect(event.modelUsed).toBe("gemini-fast");
+        const anomaly = (await anomalyRequest?.json()) as {
+            kind: string;
+            status: number;
+            error_code: string;
+            model_requested: string;
+            resolved_model_requested: string;
+            request_inputs: string;
+            upstream_body: string;
+        };
+        expect(anomaly).toMatchObject({
+            kind: "usage_anomaly",
+            status: 200,
+            error_code: "usage_missing",
+            model_requested: "gemini-fast",
+            resolved_model_requested: "gemini-fast",
+        });
+        expect(JSON.parse(anomaly.request_inputs)).toMatchObject({
+            body: {
+                model: "gemini-fast",
+                stream: false,
+                messages: [
+                    {
+                        role: "user",
+                        content: "complete input for missing usage",
+                    },
+                ],
+            },
+        });
+        expect(JSON.parse(anomaly.upstream_body)).toEqual({
+            choices: [{ message: {} }],
+        });
+        expect(consumePollen).toHaveBeenCalledWith(0);
+    });
+
+    it("records and does not bill an OpenRouter response with all-zero usage", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+
+        const ctx = createExecutionContext();
+        const response = await createHeaderApp(
+            {
+                "x-model-used": "gemini-fast",
+                "x-usage-prompt-text-tokens": "0",
+                "x-usage-completion-text-tokens": "0",
+            },
+            trackingUser,
+            200,
+            consumePollen,
+            "gemini-fast",
+        ).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "gemini-fast",
+                    messages: [
+                        {
+                            role: "user",
+                            content: "complete input for zero usage",
+                        },
+                    ],
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(2);
+        const generationRequest = tinybirdRequests.find(
+            (request) =>
+                new URL(request.url).searchParams.get("name") ===
+                "generation_event_v2",
+        );
+        const anomalyRequest = tinybirdRequests.find(
+            (request) =>
+                new URL(request.url).searchParams.get("name") === "error_event",
+        );
+        const event = (await generationRequest?.json()) as TinybirdEvent;
+        expect(event).toMatchObject({
+            responseStatus: 200,
+            isBilledUsage: false,
+            totalCost: 0,
+            totalPrice: 0,
+            errorResponseCode: "usage_zero",
+            modelUsed: "gemini-fast",
+        });
+        const anomaly = (await anomalyRequest?.json()) as {
+            kind: string;
+            error_code: string;
+            request_inputs: string;
+            upstream_body: string;
+        };
+        expect(anomaly).toMatchObject({
+            kind: "usage_anomaly",
+            error_code: "usage_zero",
+        });
+        expect(JSON.parse(anomaly.request_inputs)).toMatchObject({
+            body: {
+                model: "gemini-fast",
+                messages: [
+                    {
+                        role: "user",
+                        content: "complete input for zero usage",
+                    },
+                ],
+            },
+        });
+        expect(JSON.parse(anomaly.upstream_body)).toEqual({
+            choices: [{ message: {} }],
+        });
         expect(consumePollen).toHaveBeenCalledWith(0);
     });
     it("tracks usage after a malformed SSE event", async () => {
@@ -1741,6 +1891,92 @@ describe("tracking observability", () => {
         expect(event.tokenCountCompletionText).toBe(500);
         expect(event.modelUsed).toBe("gpt-5-nano-2025-08-07");
         expect(event.isBilledUsage).toBe(true);
+    });
+
+    it("records the complete parsed stream when OpenRouter omits usage", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+
+        const ctx = createExecutionContext();
+        const response = await createSseStreamApp(
+            0,
+            {
+                requested: "gemini-fast",
+                resolved: "gemini-fast",
+                definition: getRegistryModelDefinition("gemini-fast"),
+            },
+            false,
+        ).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "gemini-fast",
+                    stream: true,
+                    messages: [
+                        {
+                            role: "user",
+                            content: "complete streaming input",
+                        },
+                    ],
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(2);
+        const anomalyRequest = tinybirdRequests.find(
+            (request) =>
+                new URL(request.url).searchParams.get("name") === "error_event",
+        );
+        const anomaly = (await anomalyRequest?.json()) as {
+            error_code: string;
+            request_inputs: string;
+            upstream_body: string;
+        };
+        expect(anomaly.error_code).toBe("usage_missing");
+        expect(JSON.parse(anomaly.request_inputs)).toMatchObject({
+            body: {
+                model: "gemini-fast",
+                stream: true,
+                messages: [
+                    {
+                        role: "user",
+                        content: "complete streaming input",
+                    },
+                ],
+            },
+        });
+        expect(JSON.parse(anomaly.upstream_body)).toEqual({
+            streamEvents: [
+                {
+                    model: "gpt-5-nano-2025-08-07",
+                    choices: [{ delta: { content: "hel" } }],
+                },
+                {
+                    model: "gpt-5-nano-2025-08-07",
+                    choices: [{ delta: { content: "lo" } }],
+                },
+            ],
+        });
     });
 
     it("marks a community endpoint stream that ended without usage", async () => {

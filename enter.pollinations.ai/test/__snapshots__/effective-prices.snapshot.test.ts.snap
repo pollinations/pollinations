@@ -1344,6 +1344,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000005,
     },
   },
+  "openai-search": {
+    "cost": {
+      "completionTextTokens": 0.00000125,
+      "promptCachedTokens": 0.00000002,
+      "promptTextTokens": 0.0000002,
+    },
+    "price": {
+      "completionTextTokens": 0.0000009375,
+      "promptCachedTokens": 0.000000015,
+      "promptTextTokens": 0.00000015,
+    },
+  },
   "p-image": {
     "cost": {
       "completionImageTokens": 0.005,

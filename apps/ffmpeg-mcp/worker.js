@@ -1,14 +1,14 @@
 import { createMcpHandler, McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
+import { MCP_USAGE_HEADERS } from "../../shared/registry/mcp.ts";
+import { validateUserMediaUrl } from "../../shared/user-media-url.ts";
 import {
     calculateFfmpegCharge,
     FFMPEG_COST_PER_SECOND,
     FFMPEG_MAX_MEDIA_BYTES,
     FFMPEG_MAX_RUN_MS,
     FFMPEG_OUTPUT_EXTENSIONS,
-} from "../../shared/ffmpeg.ts";
-import { withMcpUsageHeaders } from "../../shared/mcp-usage.ts";
-import { validateUserMediaUrl } from "../../shared/user-media-url.ts";
+} from "./ffmpeg.js";
 
 const MAX_SOURCE_REDIRECTS = 5;
 const ADJUSTMENT_ID = "cloudflare.container.basic_runtime.v1";
@@ -210,6 +210,26 @@ function buildServer(env, dependencies, reportUsage) {
     return server;
 }
 
+function withUsageHeaders(response, usage) {
+    if (!usage) return response;
+    const result = new Response(response.body, response);
+    result.headers.set(MCP_USAGE_HEADERS.cost, String(usage.cost));
+    result.headers.set(MCP_USAGE_HEADERS.tool, usage.tool);
+    result.headers.set(MCP_USAGE_HEADERS.status, String(usage.status));
+    result.headers.set(MCP_USAGE_HEADERS.adjustmentId, usage.adjustmentId);
+    result.headers.set(
+        MCP_USAGE_HEADERS.adjustmentUnits,
+        String(usage.adjustmentUnits),
+    );
+    if (usage.error) {
+        result.headers.set(
+            MCP_USAGE_HEADERS.error,
+            usage.error.replace(/[\r\n]+/g, " ").slice(0, 1000),
+        );
+    }
+    return result;
+}
+
 export function createWorker({
     fetchImpl,
     getContainerImpl,
@@ -223,14 +243,6 @@ export function createWorker({
     return {
         async fetch(request, env) {
             const url = new URL(request.url);
-            if (url.pathname === "/health" && request.method === "GET") {
-                return Response.json({
-                    name: "pollinations-ffmpeg-mcp",
-                    transport: "streamable-http",
-                    endpoint: "/",
-                    stateless: true,
-                });
-            }
             if (url.pathname !== "/") {
                 return new Response("Not found", { status: 404 });
             }
@@ -259,7 +271,6 @@ export function createWorker({
                         usage = reportedUsage;
                     }),
                 {
-                    legacy: "stateless",
                     onerror: (error) => console.error(error),
                 },
             );
@@ -268,7 +279,7 @@ export function createWorker({
             // response body is being read. Materialize it before attaching the
             // usage reported by that tool.
             const body = await response.arrayBuffer();
-            return withMcpUsageHeaders(new Response(body, response), usage);
+            return withUsageHeaders(new Response(body, response), usage);
         },
     };
 }

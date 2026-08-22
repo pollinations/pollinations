@@ -1,3 +1,4 @@
+import { AZURE_WEB_SEARCH_BILLING } from "./azure-billing";
 import {
     defineCostVariants,
     longContextAbove,
@@ -57,6 +58,32 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         maxReferenceImages: 10, // Azure OpenAI vision limit: 10 images/chat request (provider cap).
         tools: true,
+        contextLength: 400000,
+        isSpecialized: false,
+    },
+    "openai-search": {
+        aliases: [],
+        provider: "azure",
+        brand: "OpenAI",
+        category: "text",
+        addedDate: new Date("2026-08-22").getTime(),
+        paidOnly: true,
+        priceMultiplier: 0.75,
+        cost: {
+            promptTextTokens: perMillion(0.2),
+            promptCachedTokens: perMillion(0.02),
+            completionTextTokens: perMillion(1.25),
+        },
+        billing: AZURE_WEB_SEARCH_BILLING,
+        title: "OpenAI Search",
+        description:
+            "Fast answers grounded in current web sources with inline citations",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10,
+        tools: false,
+        search: true,
+        searchContextSizes: ["medium", "low", "high"],
         contextLength: 400000,
         isSpecialized: false,
     },

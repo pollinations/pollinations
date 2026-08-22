@@ -1,0 +1,34 @@
+{
+  "pr_number": 13710,
+  "title": "refactor: clarify balance deduction pipeline",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13710",
+  "merged_at": "2026-08-22T17:32:29Z",
+  "labels": [],
+  "pr_body_excerpt": "- Extracts the billing flow into named resolve, compute, deduct, and credit steps.\n- Deduplicates developer and community-owner credit handling without changing execution order.\n- Preserves SQL, balance thresholds, rounding, errors, logging, and return shapes.\n- Documents the authoritative deduction ladder and separates it from preflight/reporting behavior.\n\nChecks:\n- `npm run typecheck` (gen.pollinations.ai)\n- `npm run test` — 104 files passed; 1,248 tests passed, 6 skipped\n- `npx biome check --write shared/billing/bucket-selection.ts shared/billing/deduction.ts shared/billing/track-helpers.ts`",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The billing ladder gets labels",
+    "blurb": "The hive’s credit path has been untangled into named steps, with the same math and the same landing spot. Less spelunking through billing code; more knowing which rung you are on.",
+    "summary": "Refactored the shared billing deduction pipeline into explicit resolve, compute, deduct, and credit steps while preserving SQL behavior, balance thresholds, rounding, errors, logging, return shapes, and execution order.",
+    "impact": "Developers now have a documented authoritative deduction ladder and deduplicated developer/community-owner credit handling, making billing behavior easier to trace without changing account balances or request outcomes.",
+    "keywords": [
+      "billing",
+      "credits",
+      "deduction",
+      "refactor",
+      "balance",
+      "developer-experience"
+    ],
+    "visual_concept": "A cozy garden-shed billing workshop where Polli carefully climbs a labeled four-rung ladder—resolve, compute, deduct, credit—toward neatly sorted Pollen jars. A friendly CRT monitor robot holds a blueprint of the deduction path, while code-plants and small flowers show that the underlying system is unchanged but easier to navigate.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee with pink blush, light blue wings, and a tiny accountant visor, carefully climbing a four-rung ladder labeled in simple pixel text “RESOLVE”, “COMPUTE”, “DEDUCT”, “CREDIT” beside neatly organized glowing Pollen jars; a cute CRT-monitor robot holds a tidy billing blueprint in a flower-filled garden workshop. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-22/PR-13710.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee with pink blush, light blue wings, and a tiny accountant visor, carefully climbing a four-rung ladder labeled in simple pixel text “RESOLVE”, “COMPUTE”, “DEDUCT”, “CREDIT” beside neatly organized glowing Pollen jars; a cute CRT-monitor robot holds a tidy billing blueprint in a flower-filled garden workshop. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-22T17:33:23.810022+00:00"
+}

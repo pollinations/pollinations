@@ -5,7 +5,7 @@ Canonical vendor: `fireworks`
 Canonical accounts:
 
 - `pollinations`
-- `pollinations-ai`
+- `et-fy`
 - `neoglyph`
 - `myceli`
 - `pixelmarket`
@@ -13,8 +13,11 @@ Canonical accounts:
 ## Verified — 2026-08-20
 
 - Status: four configured API keys authenticate through `firectl`; the
-  `elliot@pollinations.ai` login also contains a separate `pollinations-ai`
-  organization that currently requires a dashboard balance check.
+  `elliot@pollinations.ai` login also contains the separate dashboard-only
+  `et-fy` organization.
+- Stable Fireworks account IDs do not match the two visible organization names:
+  `pollinations` is displayed as `Pollinations.AI`, while `et-fy` is displayed
+  as `Pollinations`. Use the IDs, never the menu labels, as ledger keys.
 - Fireworks money values are objects with `currency_code`, `units`, and
   `nanos`; parse them as Money objects, not JavaScript numbers.
 - Invoice evidence remains necessary to split credit-funded and postpaid cost.
@@ -106,8 +109,8 @@ Known traps:
 
 - Never save API keys in command logs or evidence files.
 - Five Fireworks organizations are in use. The `elliot@pollinations.ai` login
-  contains both `Pollinations` and `Pollinations.AI`; treat them as separate
-  accounts and sum all five for provider totals.
+  contains `Pollinations.AI` (`pollinations`) and `Pollinations` (`et-fy`);
+  treat them as separate accounts and sum all five for vendor totals.
 - A current account balance does not prove month-to-date usage. Do not recreate
   the retired month-open balance cache or infer a month solely from two snapshots.
 - Postpaid invoice date is not the usage month.

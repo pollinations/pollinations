@@ -16,11 +16,20 @@ if (!Array.isArray(rows)) throw new Error("Snapshot has no data array");
 
 const ACCOUNT_LABEL = new Map([
     ["myceli", "Myceli"],
-    ["pollinations", "Pollinations"],
+    ["pollinations", "Pollinations.AI"],
+    ["et-fy", "Pollinations"],
     ["neoglyph", "Neoglyph"],
     ["pixelmarket", "Pixelmarket"],
 ]);
 const MONTHLY_USAGE = new Map([
+    [
+        "et-fy|2026-07",
+        {
+            usd: 0,
+            evidence:
+                "https://app.fireworks.ai/account/billing — account ID et-fy; no active payment method, balance, spend, or transactions",
+        },
+    ],
     [
         "myceli|2026-01",
         {
@@ -262,6 +271,7 @@ if (unassignedNeoglyph) {
 }
 
 const zeroChecks = [
+    ["et-fy", "2026-07"],
     ["myceli", "2026-05"],
     ["myceli", "2026-06"],
     ["myceli", "2026-07"],

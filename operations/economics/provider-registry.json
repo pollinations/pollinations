@@ -17,7 +17,7 @@
         { "provider": "fal", "loginEmail": "elliot@myceli.ai", "url": "https://fal.ai/dashboard/usage-billing" },
         { "provider": "fireworks", "accountId": "myceli", "loginEmail": "elliot@myceli.ai", "url": "https://app.fireworks.ai/account/billing" },
         { "provider": "fireworks", "accountId": "pollinations", "loginEmail": "elliot@pollinations.ai", "url": "https://app.fireworks.ai/account/billing" },
-        { "provider": "fireworks", "accountId": "pollinations-ai", "loginEmail": "elliot@pollinations.ai", "url": "https://app.fireworks.ai/account/billing" },
+        { "provider": "fireworks", "accountId": "et-fy", "loginEmail": "elliot@pollinations.ai", "url": "https://app.fireworks.ai/account/billing" },
         { "provider": "fireworks", "accountId": "neoglyph", "loginEmail": "elliot@neoglyph.ai", "url": "https://app.fireworks.ai/account/billing" },
         { "provider": "fireworks", "accountId": "pixelmarket", "loginEmail": null, "url": "https://app.fireworks.ai/account/billing", "pending": true },
         { "provider": "github", "loginEmail": "elliot@myceli.ai", "url": "https://github.com/enterprises/myceli-ai/billing" },
@@ -206,13 +206,13 @@
             "accounts": [
                 {
                     "id": "pollinations",
-                    "label": "Pollinations",
+                    "label": "Pollinations.AI",
                     "activeFrom": "2026-03",
                     "activeTo": null
                 },
                 {
-                    "id": "pollinations-ai",
-                    "label": "Pollinations.AI",
+                    "id": "et-fy",
+                    "label": "Pollinations",
                     "activeFrom": "2026-07",
                     "activeTo": null
                 },

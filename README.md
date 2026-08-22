@@ -14,6 +14,13 @@
 
 </div>
 
+> [!IMPORTANT]
+> **Model IDs are being standardized on September 1**
+>
+> Each new ID will include the publisher and use the model's official name—for example, `flux` → `black-forest-labs/flux.1-schnell`. Existing IDs will keep working.
+>
+> [View all model ID changes →](MODEL_SLUGS.md)
+
 <p align="center"><img src="https://media.pollinations.ai/eb3be88cf66d7491" alt="Pixel art cozy hackerspace — robot at terminal, nomnom creature eating code, bee with glasses" width="800" /></p>
 
 <!-- recent-apps:start -->

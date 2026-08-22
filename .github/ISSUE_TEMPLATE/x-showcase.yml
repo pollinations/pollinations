@@ -1,0 +1,49 @@
+name: X Showcase Quest
+description: Submit an original Pollinations showcase post for a 1 Pollen reward
+title: "[X-SHOWCASE]: "
+labels: [".REQUEST"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Share something original that you built or created with Pollinations on X.
+
+        Include `POLLEN-YOUR_GITHUB_USERNAME` in the post so maintainers can verify that you control it. Approved submissions earn **1 Pollen**. One reward is available per GitHub user.
+
+  - type: input
+    id: post
+    attributes:
+      label: X post
+      description: Link to your public post. It must contain your GitHub proof string.
+      placeholder: https://x.com/your-account/status/...
+    validations:
+      required: true
+
+  - type: textarea
+    id: creation
+    attributes:
+      label: What did you make?
+      description: Briefly explain how the post's image, media, project, or example uses Pollinations.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: requirements
+    attributes:
+      label: Requirements
+      options:
+        - label: I created this post, and it includes `POLLEN-` followed by my GitHub username.
+          required: true
+        - label: The post is original and meaningfully shows or explains something made with Pollinations.
+          required: true
+        - label: The post mentions `@pollinations_ai` and discloses that it is eligible for a creator-quest reward.
+          required: true
+        - label: I will not make duplicate posts or use multiple accounts to enter.
+          required: true
+        - label: I have not previously claimed this quest.
+          required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        A maintainer will review the post. If approved, a claimable reward will appear on [Enter Quests](https://enter.pollinations.ai/quests).

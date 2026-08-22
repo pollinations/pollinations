@@ -13,7 +13,17 @@ type McpServerDefinitionBase = {
     id: string;
     name: string;
     description: string;
+    binding: McpBindingName;
 };
+
+export type McpBindingName =
+    | "POLLINATIONS_MCP"
+    | "FFMPEG_MCP"
+    | "BROWSER_MCP"
+    | "WEB_SEARCH_MCP"
+    | "TRANSCRIPTION_MCP"
+    | "VISION_MCP"
+    | "PYTHON_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -31,6 +41,7 @@ export const MCP_SERVERS = [
         name: "Pollinations",
         description:
             "Generate text, images, audio, video, embeddings, and 3D assets with Pollinations.",
+        binding: "POLLINATIONS_MCP",
         billing: "downstream",
     },
     {
@@ -38,6 +49,7 @@ export const MCP_SERVERS = [
         name: "FFmpeg",
         description:
             "Run FFmpeg against public HTTPS media and return hosted outputs.",
+        binding: "FFMPEG_MCP",
         billing: "usage_receipt",
         provider: "cloudflare",
         eventType: "tool.media",
@@ -47,6 +59,7 @@ export const MCP_SERVERS = [
         name: "Browser",
         description:
             "Fetch rendered web pages as Markdown, screenshots, or PDFs.",
+        binding: "BROWSER_MCP",
         billing: "usage_receipt",
         provider: "cloudflare",
         eventType: "tool.browser",
@@ -55,12 +68,14 @@ export const MCP_SERVERS = [
         id: "web-search",
         name: "Web Search",
         description: "Search the live web and return answers with citations.",
+        binding: "WEB_SEARCH_MCP",
         billing: "downstream",
     },
     {
         id: "transcription",
         name: "Transcription",
         description: "Transcribe spoken audio from public HTTPS media.",
+        binding: "TRANSCRIPTION_MCP",
         billing: "downstream",
     },
     {
@@ -68,6 +83,7 @@ export const MCP_SERVERS = [
         name: "Vision",
         description:
             "Analyze images, answer visual questions, and extract text.",
+        binding: "VISION_MCP",
         billing: "downstream",
     },
     {
@@ -75,6 +91,7 @@ export const MCP_SERVERS = [
         name: "Python",
         description:
             "Run short Python calculations in an ephemeral network-disabled container.",
+        binding: "PYTHON_MCP",
         billing: "usage_receipt",
         provider: "cloudflare",
         eventType: "tool.code",

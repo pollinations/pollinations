@@ -23,20 +23,6 @@ import { auth } from "@/middleware/auth.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { requestIdentity } from "@/middleware/track.ts";
 
-function getMcpBinding(
-    env: CloudflareBindings,
-    id: string,
-): Fetcher | undefined {
-    if (id === "pollinations") return env.POLLINATIONS_MCP;
-    if (id === "ffmpeg") return env.FFMPEG_MCP;
-    if (id === "browser") return env.BROWSER_MCP;
-    if (id === "web-search") return env.WEB_SEARCH_MCP;
-    if (id === "transcription") return env.TRANSCRIPTION_MCP;
-    if (id === "vision") return env.VISION_MCP;
-    if (id === "python") return env.PYTHON_MCP;
-    return undefined;
-}
-
 function parseUsage(headers: Headers): McpUsageReceipt | undefined {
     const costHeader = headers.get(MCP_USAGE_HEADERS.cost);
     if (costHeader === null) return undefined;
@@ -185,10 +171,10 @@ export const mcpRoutes = new Hono<Env>()
         c.var.auth.requireUser();
         const serverId = c.req.param("serverId");
         const server = getMcpServerDefinition(serverId);
-        const binding = getMcpBinding(c.env, serverId);
-        if (!server || !binding) {
+        if (!server) {
             throw new HTTPException(404, { message: "MCP server not found" });
         }
+        const binding = c.env[server.binding] as Fetcher;
 
         const startedAt = new Date();
         const response = await binding.fetch(requestForMcp(c.req.raw, server));

@@ -1,5 +1,5 @@
 {
-    "version": 8,
+    "version": 9,
     "auditTargets": [
         { "provider": "alibaba", "accountId": "5314153712077332", "loginEmail": "elliot@myceli.ai", "url": "https://billing-cost.console.alibabacloud.com/fortune/billing-account" },
         { "provider": "anthropic", "loginEmail": "elliot@myceli.ai", "url": "https://platform.claude.com/settings/billing" },
@@ -37,6 +37,7 @@
         { "provider": "replicate", "loginEmail": "elliot@myceli.ai", "url": "https://replicate.com/account/billing" },
         { "provider": "runpod", "loginEmail": "elliot@myceli.ai", "url": "https://console.runpod.io/user/billing" },
         { "provider": "scaleway", "accountId": "fad8c43c-762a-4cde-9043-641d6ff37586", "loginEmail": "elliot@pollinations.ai", "url": "https://console.scaleway.com/billing/optimization" },
+        { "provider": "scaleway", "accountId": "b399fe9d-4976-4162-a471-9920aaeda163", "loginEmail": "elliot@pollinations.ai", "url": "https://console.scaleway.com/billing/optimization" },
         { "provider": "stability", "loginEmail": "elliot@myceli.ai", "url": "https://platform.stability.ai/account/credits" },
         { "provider": "tinybird", "loginEmail": "elliot@myceli.ai", "url": "https://app.tinybird.co/" },
         { "provider": "vast.ai", "loginEmail": "elliot@myceli.ai", "url": "https://cloud.vast.ai/billing/" },
@@ -418,6 +419,12 @@
                     "id": "fad8c43c-762a-4cde-9043-641d6ff37586",
                     "label": "Pollinations.AI",
                     "activeFrom": "2026-01",
+                    "activeTo": null
+                },
+                {
+                    "id": "b399fe9d-4976-4162-a471-9920aaeda163",
+                    "label": "Pollinations GmbH",
+                    "activeFrom": "2026-08",
                     "activeTo": null
                 }
             ]

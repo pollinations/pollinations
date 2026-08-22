@@ -9,8 +9,10 @@ Canonical vendor: `scaleway`
 - Keep the connector for historical invoices and grants; zero consumption is
   a valid API result, not a credential failure.
 - Dashboard login: `elliot@pollinations.ai`.
-- The historical organization is `Pollinations.AI`, organization ID
-  `fad8c43c-762a-4cde-9043-641d6ff37586`.
+- The login contains two organizations: `Pollinations.AI` (organization ID
+  `fad8c43c-762a-4cde-9043-641d6ff37586`) and `Pollinations GmbH`
+  (`b399fe9d-4976-4162-a471-9920aaeda163`). Audit both before recording the
+  aggregate Scaleway balance.
 - Its Cost optimization page reports zero active vouchers and three expired
   vouchers. The separate `Pollinations GmbH` organization has no vouchers,
   payment method, invoices, or 2026 consumption.

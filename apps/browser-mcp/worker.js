@@ -6,6 +6,7 @@ import { validateUserMediaUrl } from "../../shared/user-media-url.ts";
 
 const BROWSER_COST_PER_SECOND = 0.09 / 3600;
 const ADJUSTMENT_ID = "cloudflare.browser_run.duration.v1";
+const MAX_MARKDOWN_BYTES = 1024 * 1024;
 const MAX_OUTPUT_BYTES = 100 * 1024 * 1024;
 
 class ToolFailure extends Error {
@@ -83,7 +84,12 @@ async function runBrowserAction({
 }
 
 async function markdownResult(response, url) {
-    const body = await response.json();
+    const bytes = await readResponseBytes(
+        response,
+        MAX_MARKDOWN_BYTES,
+        () => new ToolFailure(502, "Rendered Markdown exceeds 1 MB"),
+    );
+    const body = JSON.parse(new TextDecoder().decode(bytes));
     if (!body?.success || typeof body.result !== "string") {
         throw new ToolFailure(502, "Browser Run returned invalid Markdown");
     }
@@ -229,14 +235,6 @@ export function createWorker() {
     return {
         async fetch(request, env) {
             const url = new URL(request.url);
-            if (url.pathname === "/health" && request.method === "GET") {
-                return Response.json({
-                    name: "pollinations-browser-mcp",
-                    transport: "streamable-http",
-                    endpoint: "/",
-                    stateless: true,
-                });
-            }
             if (url.pathname !== "/") {
                 return new Response("Not found", { status: 404 });
             }

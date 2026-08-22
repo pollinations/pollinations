@@ -100,6 +100,29 @@ Community members run their own models on the Pollinations platform — text, im
 - **Automatic fallback routing** — nominate up to three compatible backup models so generations keep moving when an upstream model goes down.
 - **Discover and monitor** — browse community models via [gen.pollinations.ai/v1/models](https://gen.pollinations.ai/v1/models) and watch live health and community leaderboards at [model-monitor.pollinations.ai](https://model-monitor.pollinations.ai).
 
+<!-- community-showcase:start -->
+### Community providers
+
+| Provider | Models | Categories |
+|----------|-------:|------------|
+| [Catniti AI](<https://t.me/CatnitiAI_bot>) | 12 | Image, Text |
+| [Elixpo](<https://elixpo.com/>) | 1 | Text |
+| [InferencePort AI](<https://inferenceport.ai/>) | 11 | Image, Text |
+| [JankRouter](<https://jankrouter.waifly.com/>) | 11 | Text |
+| [OrchidLLM Proxy](<https://nobindes.work.gd/docs>) | 18 | Image, Text |
+| [OSAII](<https://osaii.wyvernhub.net/>) | 2 | Text |
+| [Pollinations](<https://pollinations.ai/>) | 1 | Text |
+| [SneezeJay](<https://instagram.com/@sneezejayhauser>) | 3 | Image, Text |
+| [TomdacatAI](<https://ai.tomdacat.com/>) | 3 | Text |
+
+### Latest community leaderboards
+
+<p align="center">
+<a href="https://media.pollinations.ai/25a3a1f4-897f-4d58-bcd5-6d0c0349db15"><img src="https://media.pollinations.ai/25a3a1f4-897f-4d58-bcd5-6d0c0349db15" alt="Community text model leaderboard" width="49%" /></a>
+<a href="https://media.pollinations.ai/d7a7ca1a-a4ff-423b-b4df-d91bd3cc9fcc"><img src="https://media.pollinations.ai/d7a7ca1a-a4ff-423b-b4df-d91bd3cc9fcc" alt="Community image model leaderboard" width="49%" /></a>
+</p>
+<!-- community-showcase:end -->
+
 For billing details when building apps on top, see [Bring Your Own Pollen](./BRING_YOUR_OWN_POLLEN.md).
 
 ## 🚀 Getting Started

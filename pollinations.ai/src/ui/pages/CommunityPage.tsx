@@ -1,5 +1,7 @@
 import { COMMUNITY_PAGE } from "../../copy/content/community";
 import { LINKS, SOCIAL_LINKS } from "../../copy/content/socialLinks";
+import { useCommunityLeaderboards } from "../../hooks/useCommunityLeaderboards";
+import { useCommunityProviders } from "../../hooks/useCommunityProviders";
 import { useDocumentMeta } from "../../hooks/useDocumentMeta";
 import { usePageCopy } from "../../hooks/usePageCopy";
 import { useTranslate } from "../../hooks/useTranslate";
@@ -22,6 +24,9 @@ interface VotingIssue {
 
 export default function CommunityPage() {
     const { copy: pageCopy, isTranslating } = usePageCopy(COMMUNITY_PAGE);
+    const { providers, loading: providersLoading } = useCommunityProviders();
+    const { leaderboards, loading: leaderboardsLoading } =
+        useCommunityLeaderboards();
     useDocumentMeta(pageCopy.pageTitle, pageCopy.pageDescription);
 
     const { translated: translatedVotingIssues } = useTranslate(
@@ -324,7 +329,138 @@ export default function CommunityPage() {
 
                 <TopContributors />
 
-                {/* Section 5 — Build Diary + Supporters */}
+                <Divider />
+
+                {/* Community model providers */}
+                <div className="mb-12">
+                    <Heading variant="section">
+                        {pageCopy.providersTitle}
+                    </Heading>
+                    <Body size="sm" spacing="comfortable">
+                        {pageCopy.providersSubtitle}
+                    </Body>
+                    {providersLoading && providers.length === 0 ? (
+                        <Body size="sm" spacing="none" className="text-muted">
+                            {pageCopy.providersLoading}
+                        </Body>
+                    ) : providers.length === 0 ? (
+                        <Body size="sm" spacing="none" className="text-muted">
+                            {pageCopy.providersEmpty}
+                        </Body>
+                    ) : (
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                            {providers.map((provider, index) => {
+                                const colors = [
+                                    "border-primary-strong",
+                                    "border-secondary-strong",
+                                    "border-tertiary-strong",
+                                    "border-accent-strong",
+                                ];
+                                return (
+                                    <a
+                                        key={`${provider.name}:${provider.url}`}
+                                        href={provider.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer nofollow ugc"
+                                        className={`block rounded-sub-card border-2 border-r-4 border-b-4 bg-white/60 p-4 transition hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none ${colors[index % colors.length]}`}
+                                    >
+                                        <div className="mb-2 flex items-start justify-between gap-3">
+                                            <Heading
+                                                variant="subsection"
+                                                as="h3"
+                                                spacing="tight"
+                                            >
+                                                {provider.name}
+                                            </Heading>
+                                            <ExternalLinkIcon className="mt-1 h-3 w-3 shrink-0" />
+                                        </div>
+                                        <p className="font-mono text-xs text-muted">
+                                            {provider.modelCount}{" "}
+                                            {provider.modelCount === 1
+                                                ? pageCopy.providerModelLabel
+                                                : pageCopy.providerModelsLabel}
+                                            {provider.categories.length > 0
+                                                ? ` · ${provider.categories.join(" · ")}`
+                                                : ""}
+                                        </p>
+                                    </a>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+
+                <Divider />
+
+                {/* Latest community model leaderboards */}
+                <div className="mb-12">
+                    <Heading variant="section">
+                        {pageCopy.leaderboardsTitle}
+                    </Heading>
+                    <Body size="sm" spacing="comfortable">
+                        {pageCopy.leaderboardsSubtitle}
+                    </Body>
+                    {leaderboardsLoading && leaderboards.length === 0 ? (
+                        <Body size="sm" spacing="none" className="text-muted">
+                            {pageCopy.leaderboardsLoading}
+                        </Body>
+                    ) : leaderboards.length === 0 ? (
+                        <Body size="sm" spacing="none" className="text-muted">
+                            {pageCopy.leaderboardsEmpty}
+                        </Body>
+                    ) : (
+                        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                            {leaderboards.map((board) => {
+                                const label =
+                                    board.kind === "text"
+                                        ? pageCopy.textLeaderboardLabel
+                                        : pageCopy.imageLeaderboardLabel;
+                                return (
+                                    <a
+                                        key={board.kind}
+                                        href={board.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="overflow-hidden rounded-sub-card border-2 border-r-4 border-b-4 border-dark bg-white/60 transition hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none"
+                                    >
+                                        <img
+                                            src={board.url}
+                                            alt={`${label} community model leaderboard`}
+                                            loading="lazy"
+                                            className="block h-auto w-full"
+                                        />
+                                        <div className="flex items-center justify-between gap-3 border-t-2 border-dark px-4 py-3">
+                                            <span className="font-headline text-xs font-black uppercase tracking-wider text-dark">
+                                                {label}
+                                            </span>
+                                            <span className="font-mono text-[11px] text-muted">
+                                                {
+                                                    pageCopy.leaderboardUpdatedLabel
+                                                }{" "}
+                                                <time
+                                                    dateTime={board.createdAt}
+                                                >
+                                                    {new Intl.DateTimeFormat(
+                                                        undefined,
+                                                        { dateStyle: "medium" },
+                                                    ).format(
+                                                        new Date(
+                                                            board.createdAt,
+                                                        ),
+                                                    )}
+                                                </time>
+                                            </span>
+                                        </div>
+                                    </a>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+
+                <Divider />
+
+                {/* Build Diary + Supporters */}
                 <div className="mb-12">
                     <Heading variant="section">
                         {pageCopy.buildDiaryTitle}

@@ -46,7 +46,7 @@ Core boundaries:
 - Every proposed OP row carries a stable `entry_id` and a millisecond
   `recorded_at`. `entry_id` is deterministic from the fact's identity, never
   from ingestion time: for `op_cloud`,
-  `{source}:{vendor}:{type}:{start}:{resource_id or resource_name}:{model}`,
+  `{source}:{vendor}:{provider_account_id}:{type}:{start}:{resource_id or resource_name}:{model}`,
   extended with the SKU or a line-item suffix when one period legitimately has
   several rows for the same resource; for `op_transactions`, the native bank
   identifier (Wise transfer/transaction ID) — two genuinely separate transfers
@@ -89,6 +89,9 @@ Canonical vendor rules:
 
 - Normalize aliases before proposing facts. Do not create a new vendor row for
   a product label, card descriptor, employee name, or legacy spreadsheet alias.
+- Keep the canonical provider separate from the provider account. For known
+  multi-account providers, set `provider_account_id` from the committed
+  provider registry; never encode an account name as a provider alias.
 - Anthropic, Anthropic Claude Subscription, and Anthropic Claude Code are
   canonical vendor `anthropic`.
 - Wise cashback is canonical vendor `wise`, category `revenue`. It is not
@@ -151,6 +154,10 @@ Schema:
 - Use entry_id as the stable source entry ID.
 - Use source_file as the exact local path to the raw source.
 - Use only enum values allowed by entry.schema.json.
+- When a source identifies a provider account, populate
+  `provider_account_id` and `provider_account_name`. Leave both null when the
+  source cannot distinguish the account; never infer an account from amount or
+  timing alone.
 
 ## Mode: collect
 

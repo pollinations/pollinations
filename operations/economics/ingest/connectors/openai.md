@@ -2,7 +2,7 @@
 
 Canonical vendor: `openai`
 
-## Verified — 2026-07-10
+## Verified — 2026-08-20
 
 - Status: organization costs API works with the admin key.
 - Amount values are already currency values; preserve the API currency and
@@ -27,7 +27,7 @@ Collection steps:
 2. For API usage, use an admin key with organization read access. Query a bounded period only:
 
    ```bash
-   curl "https://api.openai.com/v1/organization/costs?start_time=<period_start_epoch_utc>&end_time=<period_end_exclusive_epoch_utc>&bucket_width=1d&limit=<days_in_period>" \
+   curl "https://api.openai.com/v1/organization/costs?start_time=<period_start_epoch_utc>&end_time=<period_end_exclusive_epoch_utc>&bucket_width=1d&limit=<days_in_period>&group_by=project_id&group_by=line_item" \
      -H "Authorization: Bearer $OPENAI_ADMIN_KEY" \
      -H "Content-Type: application/json"
    ```
@@ -36,8 +36,12 @@ Collection steps:
 
 3. Use UTC Unix seconds. `start_time` is inclusive; `end_time` is exclusive. For a calendar month, use the first day of the month through the first day of the next month.
 4. If the response has `has_more: true`, repeat with `page=<next_page>` and append all buckets before extraction.
-5. For dashboard evidence, save screenshots or exports to `data/inbox/`.
-6. Use `agent.system.txt` with `mode: extract` for saved raw evidence.
+5. Group the results by calendar month, `project_id`, and `line_item`.
+   OpenAI line items contain the model plus billed SKU (for example input,
+   output, cached input, audio, image, or embedding). Preserve the full line
+   item in `resource_sku` and extract its model prefix into `model`.
+6. For dashboard evidence, save screenshots or exports to `data/inbox/`.
+7. Use `agent.system.txt` with `mode: extract` for saved raw evidence.
 
 Expected entry:
 

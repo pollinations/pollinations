@@ -2,12 +2,14 @@
 
 Canonical vendor: `deepinfra`
 
-## Verified — 2026-07-10
+## Verified — 2026-08-20
 
 - Status: usage and current-balance APIs work.
 - The account endpoint exposed the current Stripe-balance field.
 - The `initial_month` label can lag; trust the explicit epoch bounds and
   item interval rather than that lagging label.
+- The endpoint returns exact item rows with model, task, units, rate, pricing
+  type, and cost. Item and `total_cost` values are cents.
 
 Use when:
 
@@ -34,6 +36,10 @@ Known traps:
   that `877` means USD 8.77.
 - The returned `period` label can lag the bounded item interval by one month.
   Trust the explicit query bounds and item timestamps, and record the mismatch.
+- Older queries can be partial even when they return HTTP 200. On 2026-08-20,
+  April returned zero and May returned $23.64 while reviewed ledger/internal
+  evidence supported $4.82 and $36.26. Preserve stronger historical totals and
+  document the incomplete API response instead of overwriting them.
 - Bound the window to the requested month. For a current-month check, cap `to` at now so the query does not extend into the future.
 - `checklist.stripe_balance` is useful as a balance-now snapshot only. Do not
   derive historical monthly burn from successive snapshots unless the user

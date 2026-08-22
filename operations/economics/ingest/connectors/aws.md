@@ -2,9 +2,11 @@
 
 Canonical vendor: `aws`
 
-## Verified — 2026-07-10
+## Verified — 2026-08-20
 
 - Status: Umbrella authentication and the account-scoped data plane both work.
+- Service grouping is the best current ledger grain: Umbrella exposes named
+  Bedrock models such as `Claude Opus 5 [Amazon Bedrock Edition]` as services.
 - Keep the accounts separate in raw evidence before summing, because service
   ownership and reseller credits can differ.
 
@@ -77,6 +79,11 @@ Collection steps:
 7. Save raw API JSON to `data/inbox/aws-umbrella-<period>-cost-and-usage.json`.
 8. Use `agent.system.txt` with `mode: extract` for saved raw evidence.
 
+For the detailed provider ledger, use `groupBy=service`. Preserve the AWS
+account ID in `resource_id`, classify `Amazon Bedrock` and services ending in
+`[Amazon Bedrock Edition]` as inference, and normalize the named edition to the
+canonical model slug. Other services are infrastructure.
+
 Expected entry:
 
 - `cost_category`: `model` or `infrastructure`
@@ -101,7 +108,12 @@ Known traps:
   - `813596885972` original account with Bedrock workloads
   - `202731947268` Myceli/AIT infra refactor account
 - If both accounts are present, collect both and sum them for the usage month. If only one requested account is needed, choose by AWS account ID/name from the users response and explain the choice in `reconciliation_notes`.
-- Umbrella coverage starts around 2026-04. Earlier months may require manual invoice/dashboard evidence.
+- Umbrella API coverage starts in 2026-04 for these accounts. Preserve the
+  direct AWS evidence already collected for January-March.
+- `discount` can include a large `Credits Remaining` balance rather than
+  monthly consumed usage. Do not book that balance as provider cost. Use
+  `costType=cost` for service usage and reconcile the closed-month total to the
+  settlement/credit-burn evidence separately.
 - Service-name classification matters: Bedrock is model/inference; EC2, CloudFront, RDS, support, discounts, and credits are infra.
 - Cost-and-usage rows are month-grain. Use `startDate=<YYYY-MM-01>` and `endDate=<first day of next month>` for a bounded calendar month. Treat dates as UTC/calendar-month boundaries unless the export explicitly states otherwise.
 - Expected response row fields include `usage_date`, `service_name`, and `total_cost`. Map `total_cost` to `amount`, `service_name` to `cost_details[].label`, and Bedrock service names to `cost_category: model` / `op_cloud_type: inference`.

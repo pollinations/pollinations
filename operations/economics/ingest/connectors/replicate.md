@@ -2,9 +2,10 @@
 
 Canonical vendor: `replicate`
 
-## Verified — 2026-07-10
+## Verified — 2026-08-20
 
-- Status: account and predictions APIs work; invoice/balance remains manual.
+- Status: account and predictions APIs work; billing is available from the
+  logged-in dashboard and invoice JSON downloads.
 - The token resolved to an organization account.
 - Predictions prove operational activity, not the amount charged.
 
@@ -24,6 +25,9 @@ Primary evidence sources:
 - API model schema: `GET https://api.replicate.com/v1/models/{owner}/{name}`
 - Pricing evidence: public Replicate model pages. Pricing is not exposed in the model API.
 - Internal usage context: Tinybird `generation_event_v2` rows where `model_provider = 'replicate'`.
+- Exact provider detail: open a monthly invoice and use `Download JSON`. The
+  JSON includes model, SKU label, quantity, unit, unit cost, line cost,
+  adjustments, gross usage, and invoice status.
 
 Required credential:
 
@@ -62,6 +66,9 @@ Collection steps:
 5. For model pricing, save model page screenshots or short HTML/text evidence from the public model page. Do not infer pricing from `metrics.predict_time`.
 6. For invoice reconciliation, compare Replicate cash/invoice evidence with Tinybird metered Replicate model costs. Treat any remainder as a Replicate-wide reconciliation item until the missing source is identified.
 7. Use `agent.system.txt` with `mode: extract` for saved raw evidence.
+8. Prefer finalized invoice JSON over a manual monthly aggregate. Draft invoice
+   JSON is appropriate for the open month when it is timestamped and marked
+   provisional.
 
 Seedance 2.0 pricing witness:
 
@@ -91,6 +98,13 @@ Known traps:
 - Public model pricing lives on model pages, not in the API response.
 - Official model predictions use `/v1/models/{owner}/{name}/predictions`; pinned/community predictions use `/v1/predictions` with a version hash.
 - A provider-wide invoice gap should not be assigned to a single model price until untracked models, web UI runs, private deployments, storage/egress, background jobs, failed-but-billed work, and missing invoice lines have been checked.
+- Replicate's monthly invoice gross is authoritative for `op_cloud`; prepaid
+  adjustments reduce cash due but do not reduce model usage cost.
+- An adjustment labeled `One-time credit purchase applied` is purchased prepaid
+  balance. Keep that usage in `paid`; it is not a promotional provider credit.
+- The billing overview can lag the open invoice briefly. On 2026-08-20 it
+  displayed $968.89 while the downloaded draft moments later contained
+  $969.1874. Use the downloaded JSON total.
 
 Reconciliation notes:
 

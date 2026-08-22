@@ -2,9 +2,12 @@
 
 Canonical vendor: `azure`
 
-## Verified — 2026-07-10
+## Verified — 2026-08-20
 
 - Status: client-credential authentication and the invoices API work.
+- The subscription Cost Management query also works. A 2026 year-to-date
+  `ActualCost` query grouped by `ServiceName` and `Meter` returned exact model,
+  SKU, infrastructure, usage-quantity, and month detail, including August MTD.
 - Do not sum every returned invoice blindly. Select the monthly obligation
   and preserve invoice date separately from the covered billing period.
 
@@ -63,7 +66,11 @@ Collection steps:
    ```
 
 6. Save raw API JSON to `data/inbox/azure-<period>-billing-invoices.json`.
-7. Use `agent.system.txt` with `mode: extract` for saved raw evidence.
+7. For provider detail, query the subscription Cost Management endpoint with
+   monthly granularity and group by `ServiceName` and `Meter`. Preserve the raw
+   values; for closed months, allocate the final invoice total and funding split
+   across meter rows so the detailed ledger still ties exactly to the invoice.
+8. Use `agent.system.txt` with `mode: extract` for saved raw evidence.
 
 Expected entry:
 

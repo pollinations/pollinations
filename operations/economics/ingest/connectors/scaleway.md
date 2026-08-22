@@ -41,6 +41,12 @@ Collection steps:
 3. Use the invoice endpoints for closed-month obligations and downloads.
 4. Save bounded evidence to `data/inbox/` and use `agent.system.txt` to
    extract or reconcile it.
+5. Preserve positive consumption rows by project and SKU. Map managed AI to
+   `inference`, L4 compute to `gpu`, and CPU/network/storage to `infra`.
+6. If an invoice applies a discount only at invoice level, allocate that
+   discount pro rata across its exact consumption rows and document the
+   allocation. Keep VAT in a separate `infra` row so it reconciles the amount
+   due without inflating model/provider usage.
 
 Expected entry:
 
@@ -56,6 +62,8 @@ Known traps:
 - Discount `mode` determines whether `value` is a fixed amount or a rate.
 - Money objects carry currency; do not assume USD.
 - Expired discounts with zero remaining are historical facts, not active runway.
+- An issued or failed-payment invoice is still provider-payable. Do not record
+  it as a waiver; Wise/card evidence is required before calling it cash paid.
 - Do not forecast from partial current-month consumption.
 
 Official reference:

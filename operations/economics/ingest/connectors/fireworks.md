@@ -2,12 +2,23 @@
 
 Canonical vendor: `fireworks`
 
-## Verified — 2026-07-10
+Canonical accounts:
+
+- `pollinations`
+- `neoglyph`
+- `myceli`
+- `pixelmarket`
+
+## Verified — 2026-08-20
 
 - Status: all four configured API keys authenticate through `firectl`.
 - Fireworks money values are objects with `currency_code`, `units`, and
   `nanos`; parse them as Money objects, not JavaScript numbers.
 - Invoice evidence remains necessary to split credit-funded and postpaid cost.
+- All four stored keys can read account-level cumulative costs. On 2026-08-20,
+  model-grouped `billing get-usage` calls returned `PermissionDenied` for the
+  current keys; use the dashboard for model detail unless the key permissions
+  are expanded.
 
 Use when:
 
@@ -49,6 +60,21 @@ Collection steps:
 
    Save raw JSON to `data/inbox/fireworks-<account>-<period>-usage.json`.
 
+   Try provider-native model detail before falling back to the dashboard:
+
+   ```bash
+   firectl billing get-usage \
+     --api-key "$FIREWORKS_API_KEY" \
+     --start-time <YYYY-MM-01> \
+     --end-time <next-YYYY-MM-01> \
+     --usage-type serverless \
+     --group-by model_name \
+     -o json
+   ```
+
+   If this returns `PermissionDenied`, retain the exact account total and collect
+   the same calendar month's model view/export from the billing dashboard.
+
 2. Query invoices:
 
    ```bash
@@ -66,6 +92,7 @@ Collection steps:
 
 Expected entry:
 
+- `provider_account_id`: one of the four canonical account IDs above
 - `cost_category`: `model` or `inference_serverless`
 - `op_cloud_type`: `inference`
 - `op_transaction_category`: `cloud` for invoices/top-ups/card charges, `null` for pure usage exports

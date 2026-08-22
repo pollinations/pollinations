@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-08-21",
+  "period_start": "2026-08-21",
+  "period_end": "2026-08-21",
+  "generated_at": "2026-08-22T06:12:25.001480+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-08-21/images/reddit.jpg"
+    }
+  ],
+  "title": "App directory, model metadata, and docs fixes",
+  "text": "10 PRs merged today.\n\nThe app directory is easier to browse and search, and searches now have shareable URLs ([#12279](https://github.com/pollinations/pollinations/pull/12279)). Two community image apps also joined the directory: REKTY GENERATOR and ArtScape Studio ([#13652](https://github.com/pollinations/pollinations/pull/13652), [#13653](https://github.com/pollinations/pollinations/pull/13653)).\n\nVideo registry entries can now expose duration fields ([#11145](https://github.com/pollinations/pollinations/pull/11145)), which is a small bit of metadata with unusually large downstream consequences for clients trying to present video models honestly.\n\nThe API side got several repairs: prompt-agent OpenAPI schema generation is back ([#13600](https://github.com/pollinations/pollinations/pull/13600)), generated API docs should no longer quietly omit pieces ([#13609](https://github.com/pollinations/pollinations/pull/13609)), and catalog models now expose per-user RPM before a request discovers the limit the hard way ([#13617](https://github.com/pollinations/pollinations/pull/13617)).\n\nRouting/status reporting now distinguishes fallback spillover from actual model degradation ([#13274](https://github.com/pollinations/pollinations/pull/13274)). OpenRouter chat requests also route directly to OpenRouter rather than taking the scenic route ([#13664](https://github.com/pollinations/pollinations/pull/13664)).\n\nREADME links and project history were refreshed in [#13650](https://github.com/pollinations/pollinations/pull/13650). Code and the full PR trail are in the [repo](https://github.com/pollinations/pollinations); API docs are at [docs.pollinations.ai](https://docs.pollinations.ai/)."
+}

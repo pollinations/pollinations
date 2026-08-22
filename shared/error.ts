@@ -50,8 +50,15 @@ type UpstreamErrorOptions = {
     errorCode?: string;
 };
 
+/**
+ * Use for failures from a remote service or any error that must retain
+ * upstream diagnostics at the HTTP boundary. Use the more specific validation
+ * and auth errors for local client failures; plain Error remains appropriate
+ * for internal invariants. New code must not introduce HttpError, which is kept
+ * only as a compatibility adapter for existing image and 3D providers.
+ */
 export class UpstreamError extends HTTPException {
-    public readonly name = "UpstreamError" as const;
+    public override name: string = "UpstreamError";
     public readonly requestUrl?: URL;
     public readonly requestBody?: unknown;
     public readonly upstreamStatus?: number;

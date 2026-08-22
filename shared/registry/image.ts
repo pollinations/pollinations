@@ -1041,7 +1041,7 @@ const IMAGE_BASE_SERVICES = {
         },
         ...defineCostVariants(
             {
-                "768p": { completionVideoSeconds: 0.08 },
+                "768p": { completionVideoSeconds: 0.06 },
                 "2k": { completionVideoSeconds: 0.13 },
             },
             matchResolution("768p", "2k"),

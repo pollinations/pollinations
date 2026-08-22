@@ -457,10 +457,7 @@ export const AUDIO_SERVICES = {
                     promptAudioSeconds: 0.17 / 3600,
                 },
             },
-            ({ input }) =>
-                input?.transcriptionResponseFormat === "diarized_json"
-                    ? "diarization"
-                    : undefined,
+            ({ input }) => (input?.hasDiarization ? "diarization" : undefined),
             {
                 diarization: {
                     label: "Speaker diarization",
@@ -509,12 +506,12 @@ export const AUDIO_SERVICES = {
                 },
             },
             ({ input }) => {
-                const diarized =
-                    input?.transcriptionResponseFormat === "diarized_json";
                 if (input?.hasPrompt) {
-                    return diarized ? "prompting_diarization" : "prompting";
+                    return input.hasDiarization
+                        ? "prompting_diarization"
+                        : "prompting";
                 }
-                return diarized ? "diarization" : undefined;
+                return input?.hasDiarization ? "diarization" : undefined;
             },
             {
                 prompting: {

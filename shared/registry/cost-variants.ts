@@ -21,7 +21,7 @@ export type PricingInput = {
     hasImage?: boolean;
     megapixels?: number;
     searchContextSize?: "low" | "high";
-    transcriptionResponseFormat?: string;
+    hasDiarization?: boolean;
     hasPrompt?: boolean;
 };
 

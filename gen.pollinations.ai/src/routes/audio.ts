@@ -3011,15 +3011,10 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
         });
     }
 
-    if (
-        c.var.model.resolved === "universal-2" ||
-        c.var.model.resolved === "universal-3.5-pro"
-    ) {
-        c.var.track.setPricingInput({
-            transcriptionResponseFormat: responseFormat || "json",
-            hasPrompt: Boolean(prompt),
-        });
-    }
+    c.var.track.setPricingInput({
+        hasDiarization: responseFormat === "diarized_json",
+        hasPrompt: Boolean(prompt),
+    });
 
     const result = await withAudioFallback(c, async (candidate) => {
         if (candidate.communityEndpoint) {

@@ -1,0 +1,34 @@
+{
+  "pr_number": 13685,
+  "title": "fix: log OpenRouter usage anomalies",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13685",
+  "merged_at": "2026-08-22T10:00:34Z",
+  "labels": [],
+  "pr_body_excerpt": "- Records `usage_missing` and `usage_zero` OpenRouter responses in the private 24-hour `error_event` datasource.\n- Stores credential-redacted full request inputs and complete parsed JSON/SSE output for diagnosis.\n- Marks pure zero usage unbilled while preserving separately knowable provider fees.\n- Leaves the successful client response unchanged.\n\nRelated: #13620\n\nTests: `npx vitest run test/tracking-observability.test.ts test/error-observability.test.ts`; `npm run typecheck`",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The ledger noticed the silence",
+    "blurb": "When OpenRouter returns a suspiciously quiet usage report, the hive now preserves the clues without changing the reply you receive. Less billing guesswork, more useful breadcrumbs.",
+    "summary": "OpenRouter responses with missing or zero usage are now recorded in the private 24-hour error_event datasource with redacted request inputs and parsed JSON/SSE output, while pure zero-usage requests remain unbilled and separately known provider fees are retained.",
+    "impact": "Clients receive the same successful response as before, while operators can diagnose missing or zero OpenRouter usage and keep billing treatment accurate.",
+    "keywords": [
+      "OpenRouter",
+      "usage tracking",
+      "billing",
+      "observability",
+      "error events",
+      "SSE"
+    ],
+    "visual_concept": "A cozy observability garden: Polli, wearing a tiny detective hat, examines a retro terminal receipt that shows a conspicuously empty usage counter while a CRT monitor robot carefully files redacted diagnostic scrolls into a short-lived archive. Small code-plants and flowers represent retained provider-fee signals; the scene should communicate careful recordkeeping without exposing secrets.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing a tiny detective hat as she inspects a retro terminal with a lime green (#ecf874) usage meter reading \"0\"; a friendly CRT monitor robot files redacted code scrolls beside blooming code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, with dark purple (#110518) outlines and subtle pixel-font text: \"USAGE LOG\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-22/PR-13685.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing a tiny detective hat as she inspects a retro terminal with a lime green (#ecf874) usage meter reading \"0\"; a friendly CRT monitor robot files redacted code scrolls beside blooming code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, with dark purple (#110518) outlines and subtle pixel-font text: \"USAGE LOG\"."
+  },
+  "generated_at": "2026-08-22T10:01:29.972988+00:00"
+}

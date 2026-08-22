@@ -352,6 +352,33 @@ describe("long-context cost variants", () => {
     });
 });
 
+describe("AssemblyAI transcription cost variants", () => {
+    it.each([
+        ["universal-2", undefined, undefined, 0.15, undefined],
+        ["universal-2", "diarized_json", undefined, 0.17, "diarization"],
+        ["universal-3.5-pro", undefined, undefined, 0.21, undefined],
+        ["universal-3.5-pro", undefined, true, 0.26, "prompting"],
+        ["universal-3.5-pro", "diarized_json", undefined, 0.23, "diarization"],
+        [
+            "universal-3.5-pro",
+            "diarized_json",
+            true,
+            0.28,
+            "prompting_diarization",
+        ],
+    ] as const)("%s bills $%s/hour for format=%s prompt=%s", (model, transcriptionResponseFormat, hasPrompt, hourlyCost, variant) => {
+        const billing = bill(
+            model,
+            { promptAudioSeconds: 3600 },
+            { transcriptionResponseFormat, hasPrompt },
+        );
+
+        expect(billing.cost.totalCost).toBeCloseTo(hourlyCost, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(hourlyCost, 12);
+        expect(billing.costVariant).toBe(variant);
+    });
+});
+
 describe("request-mode cost variants", () => {
     it("qwen-image bills text-to-image and edit at their separate rates", () => {
         const textToImage = bill("qwen-image", {

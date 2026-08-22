@@ -1,3 +1,4 @@
+import { defineCostVariants } from "./cost-variants";
 import type { ModelDefinition } from "./registry";
 
 // Voice name to ElevenLabs voice ID mapping
@@ -450,6 +451,25 @@ export const AUDIO_SERVICES = {
             // AssemblyAI Universal-2: $0.15/hour
             promptAudioSeconds: 0.15 / 3600,
         },
+        ...defineCostVariants(
+            {
+                diarization: {
+                    promptAudioSeconds: 0.17 / 3600,
+                },
+            },
+            ({ input }) =>
+                input?.transcriptionResponseFormat === "diarized_json"
+                    ? "diarization"
+                    : undefined,
+            {
+                diarization: {
+                    label: "Speaker diarization",
+                    description:
+                        "Applies when response_format is diarized_json.",
+                },
+            },
+            "Standard transcription",
+        ),
         title: "AssemblyAI Universal-2",
         description: "Fast transcription with support for 99 languages",
         inputModalities: ["audio"],
@@ -476,6 +496,44 @@ export const AUDIO_SERVICES = {
             // AssemblyAI Universal-3.5 Pro async: $0.21/hour
             promptAudioSeconds: 0.21 / 3600,
         },
+        ...defineCostVariants(
+            {
+                prompting: {
+                    promptAudioSeconds: 0.26 / 3600,
+                },
+                diarization: {
+                    promptAudioSeconds: 0.23 / 3600,
+                },
+                prompting_diarization: {
+                    promptAudioSeconds: 0.28 / 3600,
+                },
+            },
+            ({ input }) => {
+                const diarized =
+                    input?.transcriptionResponseFormat === "diarized_json";
+                if (input?.hasPrompt) {
+                    return diarized ? "prompting_diarization" : "prompting";
+                }
+                return diarized ? "diarization" : undefined;
+            },
+            {
+                prompting: {
+                    label: "Prompting",
+                    description: "Applies when a prompt is provided.",
+                },
+                diarization: {
+                    label: "Speaker diarization",
+                    description:
+                        "Applies when response_format is diarized_json.",
+                },
+                prompting_diarization: {
+                    label: "Prompting and speaker diarization",
+                    description:
+                        "Applies when a prompt is provided and response_format is diarized_json.",
+                },
+            },
+            "Standard transcription",
+        ),
         title: "AssemblyAI Universal-3.5 Pro",
         description:
             "High-accuracy transcription with multilingual code switching and prompts",

@@ -21,6 +21,8 @@ export type PricingInput = {
     hasImage?: boolean;
     megapixels?: number;
     searchContextSize?: "low" | "high";
+    transcriptionResponseFormat?: string;
+    hasPrompt?: boolean;
 };
 
 export type CostVariantContext = {

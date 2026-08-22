@@ -41,7 +41,7 @@ const FX_TABLES: Record<string, Record<string, number>> = {
 // A past month with no table rate is a missing append — throw so it surfaces
 // instead of bending every margin. Future months cannot have a published
 // rate yet, so forecasts convert at the latest known rate; those months are
-// listed per-month on the Data Quality tab via fxEstimatedMonths.
+// surfaced by the monthly Audit via fxEstimatedMonths.
 function tableRate(currency: string, month: string): number {
     const table = FX_TABLES[currency];
     const rate = table[month];

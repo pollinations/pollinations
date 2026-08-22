@@ -2,7 +2,7 @@
 
 Canonical vendor: `elevenlabs`
 
-## Verified — 2026-07-10
+## Verified — 2026-08-20
 
 - Status: workspace analytics API works with the stored key.
 - The response is column-oriented (`columns` plus array-valued `rows`); it
@@ -40,14 +40,18 @@ Collection steps:
        "start_time": <start_unix_ms>,
        "end_time": <end_unix_ms>,
        "interval_seconds": 86400,
-       "column_units": "usd"
+       "column_units": "usd",
+       "group_by": ["product_type", "model"],
+       "time_zone": "UTC"
      }'
    ```
 
    Save raw JSON to `data/inbox/elevenlabs-<period>-usage-by-product.json`.
 
-2. Verify the response includes `columns` with `timestamp` and `total_cost`.
-3. Sum `total_cost` by month.
+2. Verify the response includes `columns` with `timestamp`, `product_type`,
+   `model`, and `total_cost`.
+3. Sum `total_cost` by month, product, and model. Preserve the raw provider
+   model identifier in `model` and the product type in `resource_sku`.
 4. Save invoice/top-up/subscription evidence separately when reconciling cash.
 5. Use `agent.system.txt` with `mode: extract` for saved raw evidence.
 

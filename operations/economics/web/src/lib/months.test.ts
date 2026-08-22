@@ -3,6 +3,7 @@ import { FIXTURES } from "../fixtures";
 import type { Data } from "../types";
 import {
     collectMonths,
+    completedMonthsInYear,
     latestClosedMonth,
     matchesMonth,
     monthLabel,
@@ -59,16 +60,49 @@ describe("latestClosedMonth", () => {
         expect(
             latestClosedMonth(
                 ["2026-06", "2026-07", "2026-08"],
-                new Date(2026, 7, 3),
+                new Date("2026-08-03T00:00:00Z"),
             ),
         ).toBe("2026-07");
     });
 
+    it("uses UTC at a local calendar-month boundary", () => {
+        expect(
+            latestClosedMonth(
+                ["2026-06", "2026-07", "2026-08"],
+                new Date("2026-08-01T00:30:00+02:00"),
+            ),
+        ).toBe("2026-06");
+    });
+
     it("uses the latest available month when no closed month exists", () => {
-        expect(latestClosedMonth(["2026-08"], new Date(2026, 7, 3))).toBe(
-            "2026-08",
-        );
-        expect(latestClosedMonth([], new Date(2026, 7, 3))).toBeNull();
+        expect(
+            latestClosedMonth(["2026-08"], new Date("2026-08-03T00:00:00Z")),
+        ).toBe("2026-08");
+        expect(
+            latestClosedMonth([], new Date("2026-08-03T00:00:00Z")),
+        ).toBeNull();
+    });
+});
+
+describe("completedMonthsInYear", () => {
+    it("excludes the current partial month from YTD", () => {
+        expect(
+            completedMonthsInYear(
+                ["2026-06", "2026-07", "2026-08"],
+                "2026",
+                new Date("2026-08-22T00:00:00Z"),
+            ),
+        ).toEqual(["2026-06", "2026-07"]);
+    });
+
+    it("keeps every observed month for a completed year", () => {
+        expect(
+            completedMonthsInYear(
+                ["2025-11", "2025-12", "2026-01"],
+                "2025",
+                new Date("2026-08-22T00:00:00Z"),
+            ),
+        ).toEqual(["2025-11", "2025-12"]);
     });
 });
 

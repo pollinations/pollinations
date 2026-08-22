@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 import type { Data, OpCloudRow, OpPollenRow } from "../types";
-import { gpuEconomics, gpuSummary, visibleGpuRows } from "./GpuTab";
+import {
+    demandCoveragePct,
+    gpuEconomics,
+    gpuResourceRows,
+    gpuResourceSummary,
+    gpuSummary,
+    gpuWorkloadRows,
+    visibleGpuResourceRows,
+    visibleGpuRows,
+} from "./GpuTab";
 
 const baseData: Data = {
     opTransactions: [],
@@ -10,6 +19,7 @@ const baseData: Data = {
 
 function cloud(overrides: Partial<OpCloudRow>): OpCloudRow {
     return {
+        entry_id: "cloud-test",
         source: "api",
         vendor: "runpod",
         type: "gpu",
@@ -73,6 +83,7 @@ describe("gpuEconomics", () => {
         expect(rows[0]).toMatchObject({
             vendor: "runpod",
             models: "zimage",
+            resources: 1,
             rentUsd: 100,
             paidRentUsd: 90,
             creditRentUsd: 10,
@@ -80,6 +91,8 @@ describe("gpuEconomics", () => {
             paidUsd: 160,
             questUsd: 40,
             retainedUsd: 130,
+            cashMarginUsd: 40,
+            cashMarginPct: (40 / 130) * 100,
             marginUsd: 30,
             marginPct: (30 / 130) * 100,
             effUsdPerReq: 1,
@@ -90,7 +103,29 @@ describe("gpuEconomics", () => {
         ]);
     });
 
-    it("sums rent across pods and models for the same vendor+month, without splitting Pollen", () => {
+    it("shows models served in Pollen instead of stale cloud labels", () => {
+        const rows = gpuEconomics(
+            {
+                ...baseData,
+                opCloud: [cloud({ model: "legacy-label" })],
+                opPollen: [
+                    pollen({ model: "flux" }),
+                    pollen({
+                        model: "zimage",
+                        price_paid: 20,
+                        price_quests: 0,
+                        requests_paid: 10,
+                        requests_quests: 0,
+                    }),
+                ],
+            },
+            "2026-06",
+        );
+
+        expect(rows[0].models).toBe("flux, zimage");
+    });
+
+    it("sums rent across resources without treating cloud labels as served models", () => {
         const rows = gpuEconomics(
             {
                 ...baseData,
@@ -121,7 +156,8 @@ describe("gpuEconomics", () => {
         expect(rows).toHaveLength(1);
         expect(rows[0]).toMatchObject({
             vendor: "runpod",
-            models: "klein, zimage",
+            models: "zimage",
+            resources: 2,
             rentUsd: 100,
             paidUsd: 100,
             requests: 100,
@@ -165,7 +201,7 @@ describe("gpuEconomics", () => {
         expect(rows[0].flags).toEqual(["missing model"]);
     });
 
-    it("flags no Pollen match when a model exists but nothing matched", () => {
+    it("flags no Pollen demand when a model exists but nothing matched", () => {
         const rows = gpuEconomics(
             {
                 ...baseData,
@@ -174,7 +210,53 @@ describe("gpuEconomics", () => {
             "2026-06",
         );
 
-        expect(rows[0].flags).toEqual(["no Pollen match"]);
+        expect(rows[0].flags).toEqual(["no Pollen demand"]);
+    });
+
+    it("keeps Pollen unallocated for a mixed inference and GPU month", () => {
+        const rows = gpuEconomics(
+            {
+                ...baseData,
+                opCloud: [
+                    cloud({}),
+                    cloud({
+                        entry_id: "inference-test",
+                        type: "inference",
+                        resource_id: "api",
+                    }),
+                ],
+                opPollen: [pollen({})],
+            },
+            "2026-06",
+        );
+
+        expect(rows[0]).toMatchObject({
+            requests: 0,
+            paidUsd: 0,
+            questUsd: 0,
+            flags: ["mixed mode · Pollen unallocated"],
+        });
+    });
+
+    it("ignores community rows even when their source is misclassified as GPU", () => {
+        const rows = gpuEconomics(
+            {
+                ...baseData,
+                opCloud: [cloud({ vendor: "community" })],
+                opPollen: [pollen({ vendor: "community" })],
+            },
+            "2026-06",
+        );
+
+        expect(rows).toEqual([]);
+    });
+});
+
+describe("demandCoveragePct", () => {
+    it("shows demand relative to capacity cost without capping at 100%", () => {
+        expect(demandCoveragePct(200, 100)).toBe(200);
+        expect(demandCoveragePct(50, 100)).toBe(50);
+        expect(demandCoveragePct(50, 0)).toBeNull();
     });
 });
 
@@ -198,6 +280,294 @@ describe("visibleGpuRows", () => {
     });
 });
 
+describe("gpuResourceRows", () => {
+    it("keeps one row per GPU and attaches its storage and network usage", () => {
+        const rows = gpuResourceRows(
+            {
+                ...baseData,
+                opCloud: [
+                    cloud({
+                        vendor: "vast.ai",
+                        entry_id: "gpu",
+                        resource_id: "42",
+                        resource_name: "Vast.ai instance 42 · gpu",
+                        resource_sku: "gpu-hours",
+                        resource_count: 10,
+                        model: "",
+                        paid: -100,
+                    }),
+                    cloud({
+                        vendor: "vast.ai",
+                        entry_id: "storage",
+                        resource_id: "42",
+                        resource_name: "Vast.ai instance 42 · storage",
+                        resource_sku: "storage-hours",
+                        resource_count: 11,
+                        model: "",
+                        paid: -10,
+                    }),
+                    cloud({
+                        vendor: "vast.ai",
+                        entry_id: "network",
+                        resource_id: "42",
+                        resource_name: "Vast.ai instance 42 · download",
+                        resource_sku: "download-gb",
+                        resource_count: 5,
+                        model: "",
+                        paid: -2,
+                    }),
+                ],
+            },
+            "2026-06",
+        );
+
+        expect(rows).toHaveLength(1);
+        expect(rows[0]).toMatchObject({
+            kind: "gpu",
+            vendor: "vast.ai",
+            resourceId: "42",
+            resourceName: "#42",
+            gpuHours: 10,
+            storageHours: 11,
+            networkGb: 5,
+            paidCostUsd: 112,
+            totalCostUsd: 112,
+            costPerGpuHour: 11.2,
+        });
+    });
+
+    it("keeps storage-only resources out of the GPU count", () => {
+        const rows = gpuResourceRows(
+            {
+                ...baseData,
+                opCloud: [
+                    cloud({
+                        vendor: "vast.ai",
+                        entry_id: "gpu",
+                        resource_id: "42",
+                        resource_sku: "gpu-hours",
+                        resource_count: 10,
+                        model: "",
+                        paid: -100,
+                    }),
+                    cloud({
+                        vendor: "vast.ai",
+                        entry_id: "orphan-storage",
+                        resource_id: "old-1",
+                        resource_sku: "storage-hours",
+                        resource_count: 2,
+                        model: "",
+                        paid: -3,
+                    }),
+                ],
+            },
+            "2026-06",
+        );
+
+        expect(rows).toHaveLength(2);
+        expect(rows.find((row) => row.kind === "overhead")).toMatchObject({
+            vendor: "vast.ai",
+            resourceName: "Overhead & adjustments",
+            storageHours: 2,
+            paidCostUsd: 3,
+            relatedResources: 1,
+        });
+        expect(gpuResourceSummary(rows)).toEqual({
+            gpuCount: 1,
+            overheadCostUsd: 3,
+            overheadResources: 1,
+            totalCostUsd: 103,
+        });
+    });
+
+    it("uses resource rows for legacy Lambda and RunPod hourly extracts", () => {
+        const rows = gpuResourceRows(
+            {
+                ...baseData,
+                opCloud: [
+                    cloud({
+                        vendor: "runpod",
+                        resource_id: "pod-1",
+                        resource_count: 24,
+                    }),
+                    cloud({
+                        vendor: "runpod",
+                        resource_id: "pod-2",
+                        resource_count: 12,
+                    }),
+                ],
+            },
+            "2026-06",
+        );
+
+        expect(rows).toHaveLength(2);
+        expect(rows.map((row) => row.gpuHours)).toEqual([24, 12]);
+        expect(
+            visibleGpuResourceRows(rows, "runpod").map((row) => row.resourceId),
+        ).toEqual(["pod-1", "pod-2"]);
+    });
+
+    it("keeps refunds as one overhead adjustment instead of a fake GPU", () => {
+        const rows = gpuResourceRows(
+            {
+                ...baseData,
+                opCloud: [
+                    cloud({ paid: -100 }),
+                    cloud({
+                        entry_id: "refund",
+                        resource_id: "refund-1",
+                        resource_name: "billing-history refund",
+                        resource_sku: "",
+                        resource_count: 1,
+                        paid: 5,
+                    }),
+                ],
+            },
+            "2026-06",
+        );
+
+        expect(gpuResourceSummary(rows)).toMatchObject({
+            gpuCount: 1,
+            overheadCostUsd: -5,
+            totalCostUsd: 95,
+        });
+    });
+});
+
+describe("gpuWorkloadRows", () => {
+    it("groups GPUs across vendors and calculates efficiency per workload", () => {
+        const rows = gpuWorkloadRows(
+            {
+                ...baseData,
+                opCloud: [
+                    cloud({
+                        vendor: "runpod",
+                        resource_id: "runpod-zimage",
+                        model: "zimage",
+                        paid: -40,
+                    }),
+                    cloud({
+                        vendor: "vast.ai",
+                        resource_id: "vast-zimage",
+                        resource_sku: "gpu-hours",
+                        resource_count: 24,
+                        model: "zimage",
+                        paid: -60,
+                    }),
+                ],
+                opPollen: [
+                    pollen({
+                        vendor: "runpod",
+                        model: "zimage",
+                        price_paid: 80,
+                        price_quests: 20,
+                        byop_paid: 10,
+                        model_paid: 0,
+                    }),
+                    pollen({
+                        vendor: "vast.ai",
+                        model: "zimage",
+                        price_paid: 120,
+                        price_quests: 30,
+                        byop_paid: 20,
+                        model_paid: 10,
+                    }),
+                ],
+            },
+            "2026-06",
+        );
+
+        expect(rows).toHaveLength(1);
+        expect(rows[0]).toMatchObject({
+            kind: "workload",
+            workload: "zimage",
+            vendors: "runpod, vast.ai",
+            gpuCount: 2,
+            paidUsd: 200,
+            questUsd: 50,
+            retainedUsd: 160,
+            paidCostUsd: 100,
+            totalCostUsd: 100,
+            resultUsd: 60,
+            performancePct: 37.5,
+            flags: [],
+        });
+        expect(rows[0].resources).toHaveLength(2);
+    });
+
+    it("keeps shared-model GPU pools as one workload", () => {
+        const rows = gpuWorkloadRows(
+            {
+                ...baseData,
+                opCloud: [
+                    cloud({
+                        vendor: "lambda",
+                        resource_id: "shared-gpu",
+                        model: "sana,ltx-2",
+                    }),
+                ],
+                opPollen: [
+                    pollen({ vendor: "lambda", model: "sana" }),
+                    pollen({
+                        vendor: "lambda",
+                        model: "ltx-2",
+                        price_paid: 20,
+                        price_quests: 10,
+                        byop_paid: 5,
+                        model_paid: 5,
+                        requests_paid: 10,
+                        requests_quests: 5,
+                    }),
+                ],
+            },
+            "2026-06",
+        );
+
+        expect(rows).toHaveLength(1);
+        expect(rows[0]).toMatchObject({
+            workload: "ltx-2 + sana",
+            vendors: "lambda",
+            gpuCount: 1,
+            paidUsd: 180,
+            questUsd: 50,
+            retainedUsd: 140,
+            totalCostUsd: 100,
+            resultUsd: 40,
+        });
+    });
+
+    it("keeps unknown short-lived GPUs visible without inventing efficiency", () => {
+        const rows = gpuWorkloadRows(
+            {
+                ...baseData,
+                opCloud: [
+                    cloud({
+                        vendor: "vast.ai",
+                        resource_id: "failed-start",
+                        resource_sku: "gpu-hours",
+                        resource_count: 0.5,
+                        model: "",
+                        paid: -0.08,
+                    }),
+                ],
+            },
+            "2026-06",
+        );
+
+        expect(rows).toHaveLength(1);
+        expect(rows[0]).toMatchObject({
+            kind: "unassigned",
+            workload: "Unassigned",
+            gpuCount: 1,
+            totalCostUsd: 0.08,
+            retainedUsd: null,
+            resultUsd: null,
+            performancePct: null,
+            flags: ["unmapped"],
+        });
+    });
+});
+
 describe("gpuSummary", () => {
     it("rolls up GPU rows for stat cards", () => {
         const rows = gpuEconomics(
@@ -213,11 +583,15 @@ describe("gpuSummary", () => {
             paidUsd: 160,
             questUsd: 40,
             rentUsd: 100,
+            paidRentUsd: 100,
             creditRentUsd: 0,
             retainedUsd: 130,
+            cashMarginUsd: 30,
+            cashMarginPct: (30 / 130) * 100,
             marginUsd: 30,
             marginPct: (30 / 130) * 100,
             flaggedRows: 0,
+            mixedRows: 0,
         });
     });
 });

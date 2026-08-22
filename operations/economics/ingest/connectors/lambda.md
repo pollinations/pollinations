@@ -2,12 +2,12 @@
 
 Canonical vendor: `lambda`
 
-## Verified — 2026-07-10
+## Verified — 2026-08-20
 
-- Status: live resource inventory and price-book APIs work; historical billing
-  remains unavailable.
-- A live snapshot proves the current fleet shape only. It cannot establish
-  historical runtime hours or a closed-month invoice.
+- Status: live resource inventory and price-book APIs work. The Cloud API still
+  does not expose historical billing, but the authenticated workspace Usage
+  dashboard exposes complete calendar-month history by instance, instance type,
+  region, duration, hours, rate, and spend.
 
 Use when:
 
@@ -22,6 +22,12 @@ Primary evidence sources:
   endpoint or console pricing visible at collection time.
 - Completed cost: Lambda invoice, receipt, dashboard/export, or an explicitly
   reviewed manual calculation.
+- Historical usage dashboard:
+  `https://cloud.lambda.ai/workspace/<workspace-id>/usage`. Collect the
+  Instances, Filesystems, and Users tabs; Instances is the detailed cost source.
+- Grant and cash settlement: `https://cloud.lambda.ai/account/billing`. Preserve
+  weekly credit applications and payment invoices separately from calendar-month
+  usage.
 - Cash context: Wise or `op_transactions` when a payment is made.
 
 Required credential:
@@ -57,6 +63,14 @@ Known traps:
 - Do not assume a price embedded in retired local state is still current.
 - Historical invoices or detailed usage evidence outrank a current instance
   snapshot.
+- Usage-dashboard spend is calendar-month gross usage. Lambda invoices and
+  service-credit applications are weekly, so invoice dates must not determine
+  the usage month.
+- If dashboard gross usage differs from grant-plus-cash settlement, keep the
+  provider-native detail and add one explicit settlement adjustment. Do not hide
+  the difference inside a model row.
+- A named instance can serve several models. Keep the shared model list on the
+  resource row until internal usage supplies a defensible allocation weight.
 
 Expected Economics use:
 

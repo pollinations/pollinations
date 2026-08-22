@@ -1,4 +1,11 @@
 import type { Data, OpCloudRow, OpTransactionRow } from "../types";
+import {
+    categoryLabel,
+    cloudCategory,
+    EXPENSE_CATEGORY_ORDER,
+    isComputeOrInfrastructureCategory,
+    transactionCategory,
+} from "./categories";
 import { toUsd } from "./fx";
 import {
     type MonthFilterValue,
@@ -6,16 +13,19 @@ import {
     monthLabel,
     WINDOW_START,
 } from "./months";
+import {
+    activeProviderAccounts,
+    type MeteringBasis,
+    meterDriftExplanation,
+    type ProviderReconciliationExplanation,
+    pollenWitnessExplanation,
+    providerMeteringBasis,
+    resolveProvider,
+} from "./providerRegistry";
 
 // ---------------------------------------------------------- transactions
 
-export const CATEGORY_ORDER = [
-    "cloud",
-    "saas",
-    "office",
-    "admin",
-    "payroll",
-] as const;
+export const CATEGORY_ORDER = EXPENSE_CATEGORY_ORDER;
 
 const MONTH_KEY_RE = /^\d{4}-\d{2}$/;
 
@@ -36,25 +46,25 @@ export function opCloudMonth(row: Pick<OpCloudRow, "start">): string {
     return row.start.slice(0, 7);
 }
 
+export function isOpCloudBalanceRow(row: Pick<OpCloudRow, "type">): boolean {
+    return row.type.trim().toLowerCase() === "balance";
+}
+
 // Signed burn: a refund (positive `paid`) reduces the vendor bill instead of
 // being dropped. Every lens — Providers, GPU, credits — must share these two
 // helpers so refund months can never disagree across tabs.
 export function opCloudPaidBurnUsd(
-    row: Pick<OpCloudRow, "currency" | "paid" | "start">,
+    row: Pick<OpCloudRow, "currency" | "paid" | "start" | "type">,
 ): number {
+    if (isOpCloudBalanceRow(row)) return 0;
     return -toUsd(row.paid, row.currency, row.start);
 }
 
 export function opCloudCreditBurnUsd(
-    row: Pick<OpCloudRow, "credit" | "currency" | "start">,
+    row: Pick<OpCloudRow, "credit" | "currency" | "start" | "type">,
 ): number {
+    if (isOpCloudBalanceRow(row)) return 0;
     return Math.max(0, -toUsd(row.credit, row.currency, row.start));
-}
-
-// Uncategorized spend stays visible as "other" — folding it into a named
-// bucket would silently misstate that bucket.
-function opSpendCategory(row: Pick<OpTransactionRow, "category">): string {
-    return row.category || "other";
 }
 
 type PnlMonth = {
@@ -86,13 +96,13 @@ export function pnlByMonth(data: Data, now: Date): PnlMonth[] {
             for (const row of data.opTransactions ?? []) {
                 if (row.date.slice(0, 7) !== month) continue;
                 const amountUsd = opTransactionUsd(row);
-                if (row.category === "revenue") {
+                const category = transactionCategory(row);
+                if (category === "revenue") {
                     revenue += amountUsd;
                     hasRevenue = true;
                     continue;
                 }
-                const key = opSpendCategory(row);
-                categories[key] = (categories[key] ?? 0) - amountUsd;
+                categories[category] = (categories[category] ?? 0) - amountUsd;
             }
             const hasTransactions = Object.keys(categories).length > 0;
             const spendUsd = hasTransactions
@@ -148,21 +158,6 @@ export type PnlLine = {
     pctOfRevenue: number | null; // on the primary period
     vendors?: PnlVendorLine[]; // category lines only
 };
-
-const CATEGORY_LABELS: Record<string, string> = {
-    cloud: "Cloud",
-    saas: "SaaS",
-    office: "Office",
-    admin: "Admin",
-    payroll: "Payroll",
-};
-
-function categoryLabel(category: string): string {
-    return (
-        CATEGORY_LABELS[category] ??
-        category.charAt(0).toUpperCase() + category.slice(1)
-    );
-}
 
 // net-margin as a percentage: cash P&L ÷ revenue. Null when either side is
 // missing or revenue is zero — a ratio against no revenue is meaningless.
@@ -263,10 +258,19 @@ export function pnlStatement(
     const cashPnlLine = fill((row) => row.cashPnlUsd);
 
     const netMarginLine: Record<string, number | null> = {};
-    for (const period of periods) {
+    for (const period of periods.filter(
+        (candidate) => candidate.kind !== "delta",
+    )) {
         netMarginLine[period.key] = netMarginPct(
             cashPnlLine[period.key],
             revenueLine[period.key],
+        );
+    }
+    if (isMonth) {
+        const [prior, selected] = monthKeys;
+        netMarginLine.delta = subtract(
+            netMarginLine[selected],
+            netMarginLine[prior],
         );
     }
 
@@ -357,10 +361,10 @@ function pnlVendorLines(
     // category → vendor → month → usd
     const byCategory = new Map<string, Map<string, Map<string, number>>>();
     for (const row of data.opTransactions ?? []) {
-        if (row.category === "revenue") continue;
+        const category = transactionCategory(row);
+        if (category === "revenue") continue;
         const month = row.date.slice(0, 7);
         if (!monthSet.has(month)) continue;
-        const category = opSpendCategory(row);
         const vendors = getOrInit(
             byCategory,
             category,
@@ -410,7 +414,14 @@ function pnlVendorLines(
 // Vendors funded by prepaid balance top-ups: cash precedes usage by more
 // than a month, so monthly cash matching is meaningless — coverage holds as
 // long as cumulative cash keeps up with cumulative paid burn.
-const PREPAID_VENDORS = new Set(["vast.ai", "deepinfra", "pruna", "fal"]);
+const PREPAID_VENDORS = new Set([
+    "vast.ai",
+    "deepinfra",
+    "pruna",
+    "fal",
+    "mistral",
+    "runpod",
+]);
 
 // Pollen activity below this is noise, not a funding question.
 const POLLEN_ACTIVE_USD = 1;
@@ -446,16 +457,19 @@ type MeterCoverage = "complete" | "missing cloud" | "missing pollen" | null;
 
 export type DataQualityStatus =
     | "ok"
+    | "explained"
     | "cash only"
     | "timing"
     | "missing cash"
     | "missing cloud"
     | "missing pollen"
+    | "variance"
     | "drift";
 
 export type VendorPlanes = {
     month: string;
     vendor: string;
+    meteringBasis: MeteringBasis;
     cashUsd: number | null;
     cloudPaidUsd: number | null;
     cloudCreditUsd: number | null;
@@ -467,6 +481,7 @@ export type VendorPlanes = {
     calibX: number | null;
     cashCoverage: CashCoverage;
     meterCoverage: MeterCoverage;
+    reconciliationExplanation: ProviderReconciliationExplanation | null;
     status: DataQualityStatus;
 };
 
@@ -556,6 +571,7 @@ function meterCoverageFor({
     cloudPaidUsd,
     expectsCloudMeter,
     meterCloudUsd,
+    pollenPriced,
     pollenCostUsd,
 }: {
     cashCoverage: CashCoverage;
@@ -564,18 +580,27 @@ function meterCoverageFor({
     cloudPaidUsd: number | null;
     expectsCloudMeter: boolean;
     meterCloudUsd: number | null;
+    pollenPriced: boolean;
     pollenCostUsd: number | null;
 }): MeterCoverage {
     const cashActive = activePositive(cashUsd, PROVIDER_PAID_FLOOR_USD);
     const cloudLedgerActive =
         activePositive(cloudPaidUsd, PROVIDER_PAID_FLOOR_USD) ||
         activePositive(cloudCreditUsd, PROVIDER_PAID_FLOOR_USD);
+    const meterCloudPresent = meterCloudUsd != null;
+    const pollenPresent = pollenCostUsd != null;
     const meterCloudActive = activePositive(meterCloudUsd, POLLEN_ACTIVE_USD);
     const pollenActive = activePositive(pollenCostUsd, POLLEN_ACTIVE_USD);
 
-    if (meterCloudActive && pollenActive) return "complete";
+    // Thresholds suppress one-sided noise; they must not erase a real witness.
+    // If both ledgers contain a non-zero value, coverage is complete even when
+    // one side is below $1 (for example a low-volume model or calibration gap).
+    if (meterCloudPresent && pollenPresent) return "complete";
+    // These providers are intentionally priced from the Pollen ledger itself;
+    // there is no separate external provider bill to witness.
+    if (pollenPriced && pollenPresent) return "complete";
     if (
-        !meterCloudActive &&
+        !meterCloudPresent &&
         (pollenActive ||
             (expectsCloudMeter &&
                 cashActive &&
@@ -583,7 +608,7 @@ function meterCoverageFor({
                 cashCoverage !== "prepaid"))
     )
         return "missing cloud";
-    if (meterCloudActive && !pollenActive) return "missing pollen";
+    if (meterCloudActive && !pollenPresent) return "missing pollen";
     return null;
 }
 
@@ -595,6 +620,7 @@ function dataQualityStatus({
     cloudPaidUsd,
     meterCloudUsd,
     meterCoverage,
+    meteringBasis,
     pollenCostUsd,
 }: {
     calibX: number | null;
@@ -604,12 +630,15 @@ function dataQualityStatus({
     cloudPaidUsd: number | null;
     meterCloudUsd: number | null;
     meterCoverage: MeterCoverage;
+    meteringBasis: MeteringBasis;
     pollenCostUsd: number | null;
 }): DataQualityStatus {
     if (cashCoverage === "missing cash") return "missing cash";
     if (meterCoverage === "missing cloud") return "missing cloud";
     if (meterCoverage === "missing pollen") return "missing pollen";
-    if (hasCalibDrift({ calibX, meterCloudUsd, pollenCostUsd })) return "drift";
+    if (hasCalibDrift({ calibX, meterCloudUsd, pollenCostUsd })) {
+        return meteringBasis === "direct" ? "drift" : "variance";
+    }
     if (cashCoverage === "cash ±1mo" || cashCoverage === "prepaid")
         return "timing";
     if (
@@ -634,7 +663,7 @@ export function vendorPlanes(data: Data): VendorPlanes[] {
     const infraCloudKeys = new Set<string>();
     const nonInfraCloudKeys = new Set<string>();
     for (const row of data.opTransactions ?? []) {
-        if (row.category !== "cloud") continue;
+        if (transactionCategory(row) !== "compute") continue;
         const month = row.date.slice(0, 7);
         if (!MONTH_KEY_RE.test(month)) continue;
         const key = `${month}|${row.vendor}`;
@@ -644,13 +673,18 @@ export function vendorPlanes(data: Data): VendorPlanes[] {
 
     const cloud = new Map<string, OpCloudWitness>();
     for (const row of data.opCloud ?? []) {
+        // Community rows are publisher rewards, not an external provider bill.
+        // Their OP Pollen provider cost is deliberately normalized to zero.
+        if (row.vendor === "community") continue;
         const month = opCloudMonth(row);
         if (!MONTH_KEY_RE.test(month)) continue;
         const key = `${month}|${row.vendor}`;
-        if (row.type === "infra") {
+        const category = cloudCategory(row);
+        if (category === "infrastructure") {
             infraCloudKeys.add(key);
             continue;
         }
+        if (category !== "compute") continue;
         const paidUsd = opCloudPaidBurnUsd(row);
         const creditUsd = opCloudCreditBurnUsd(row);
         const cloudUsd = paidUsd + creditUsd;
@@ -731,6 +765,7 @@ export function vendorPlanes(data: Data): VendorPlanes[] {
 
     return [...displayKeys].sort().map((key) => {
         const [month, vendor] = key.split("|");
+        const meteringBasis = providerMeteringBasis(vendor);
         const cloudEntry = cloud.get(key);
         const cloudPaidUsd = cloudEntry
             ? nonZeroOrNull(cloudEntry.paidUsd)
@@ -769,12 +804,31 @@ export function vendorPlanes(data: Data): VendorPlanes[] {
             cloudPaidUsd,
             expectsCloudMeter: cloudMeterVendors.has(vendor),
             meterCloudUsd,
+            pollenPriced: meteringBasis === "internal",
             pollenCostUsd,
         });
         const calibX = monthCalib(meterCloudUsd, pollenCostUsd);
+        const rawStatus = dataQualityStatus({
+            calibX,
+            cashCoverage,
+            cashUsd,
+            cloudCreditUsd,
+            cloudPaidUsd,
+            meterCloudUsd,
+            meterCoverage,
+            meteringBasis,
+            pollenCostUsd,
+        });
+        const reconciliationExplanation =
+            rawStatus === "missing pollen"
+                ? (pollenWitnessExplanation(month, vendor) ?? null)
+                : rawStatus === "drift"
+                  ? (meterDriftExplanation(month, vendor) ?? null)
+                  : null;
         return {
             month,
             vendor,
+            meteringBasis,
             cashUsd,
             cloudPaidUsd,
             cloudCreditUsd,
@@ -786,32 +840,35 @@ export function vendorPlanes(data: Data): VendorPlanes[] {
             calibX,
             cashCoverage,
             meterCoverage,
-            status: dataQualityStatus({
-                calibX,
-                cashCoverage,
-                cashUsd,
-                cloudCreditUsd,
-                cloudPaidUsd,
-                meterCloudUsd,
-                meterCoverage,
-                pollenCostUsd,
-            }),
+            reconciliationExplanation,
+            status: reconciliationExplanation ? "explained" : rawStatus,
         };
     });
 }
 
-export function insightVendorOptions(data: Data): string[] {
+export function insightVendorOptions(
+    data: Data,
+    month: MonthFilterValue = "",
+): string[] {
     const vendors = new Set<string>();
     for (const row of data.opTransactions ?? []) {
-        if (row.category === "cloud" && row.vendor.trim()) {
+        if (
+            matchesMonth(row.date, month) &&
+            isComputeOrInfrastructureCategory(transactionCategory(row)) &&
+            row.vendor.trim()
+        ) {
             vendors.add(row.vendor.trim());
         }
     }
     for (const row of data.opCloud ?? []) {
-        if (row.vendor.trim()) vendors.add(row.vendor.trim());
+        if (matchesMonth(row.start, month) && row.vendor.trim()) {
+            vendors.add(row.vendor.trim());
+        }
     }
     for (const row of data.opPollen ?? []) {
-        if (row.vendor.trim()) vendors.add(row.vendor.trim());
+        if (matchesMonth(row.month, month) && row.vendor.trim()) {
+            vendors.add(row.vendor.trim());
+        }
     }
     return ["all", ...[...vendors].sort((a, b) => a.localeCompare(b))];
 }
@@ -821,17 +878,17 @@ export function insightVendorOptions(data: Data): string[] {
 // Vendors priced from our own pollen records rather than an external bill.
 // Their calib is 1.00 by construction, a definition rather than a measurement.
 // Community has no provider cost; op_pollen_api normalizes its cost fields to 0.
-const POLLEN_PRICED_VENDORS = new Set([
-    "airforce",
-    "community",
-    "inferenceport",
-    "pointsflyer",
-    "seraphyn",
-]);
-
 // |calib − 1| beyond this marks a registry mispricing worth fixing.
 export const CALIB_DRIFT_ALARM = 0.25;
 export const CALIB_DRIFT_ABS_ALARM_USD = 100;
+
+export function providerPollenGapUsd({
+    meterCloudUsd,
+    pollenCostUsd,
+}: Pick<VendorPlanes, "meterCloudUsd" | "pollenCostUsd">): number | null {
+    if (meterCloudUsd == null || pollenCostUsd == null) return null;
+    return meterCloudUsd - pollenCostUsd;
+}
 
 export function hasCalibDrift({
     calibX,
@@ -841,9 +898,11 @@ export function hasCalibDrift({
     if (calibX == null || meterCloudUsd == null || pollenCostUsd == null) {
         return false;
     }
+    const gapUsd = providerPollenGapUsd({ meterCloudUsd, pollenCostUsd });
     return (
         Math.abs(calibX - 1) > CALIB_DRIFT_ALARM &&
-        Math.abs(meterCloudUsd - pollenCostUsd) > CALIB_DRIFT_ABS_ALARM_USD
+        gapUsd != null &&
+        Math.abs(gapUsd) > CALIB_DRIFT_ABS_ALARM_USD
     );
 }
 
@@ -931,7 +990,7 @@ export function trueMarginPct(row: EconRow): number | null {
 // Σ provider actual / Σ our metering over the scope, no pairing or smoothing.
 // A vendor with no provider bill has no calib: its true-cost columns stay
 // null ("–") rather than passing our own meter off as the provider's truth.
-// Month-level witness gaps surface on the Data Quality tab.
+// Month-level witness gaps surface in Provider Close.
 function opEconomics(
     data: Data,
     monthFilter: MonthFilterValue,
@@ -957,7 +1016,7 @@ function opEconomics(
         const month = opCloudMonth(row);
         if (!MONTH_KEY_RE.test(month) || month < WINDOW_START) continue;
         if (!matchesMonth(month, monthFilter)) continue;
-        if (row.type === "infra") continue;
+        if (cloudCategory(row) !== "compute") continue;
 
         const paidUsd = opCloudPaidBurnUsd(row);
         const creditUsd = opCloudCreditBurnUsd(row);
@@ -1020,7 +1079,7 @@ function opEconomics(
     const calibs = new Map<string, VendorCalib>();
     for (const [vendor, facts] of vendors) {
         if (!facts.hasPollen) continue;
-        const pollenPriced = POLLEN_PRICED_VENDORS.has(vendor);
+        const pollenPriced = providerMeteringBasis(vendor) === "internal";
         let calib: number | null = null;
         if (pollenPriced) {
             calib = 1;
@@ -1273,6 +1332,7 @@ export function isPreWindowGrantBurnRow(
 function opCloudGrantStatuses(data: Data): GrantStatus[] {
     const grants: GrantStatus[] = [];
     for (const row of data.opCloud ?? []) {
+        if (isOpCloudBalanceRow(row)) continue;
         const grantedUsd = Math.max(
             0,
             toUsd(row.credit, row.currency, row.start),
@@ -1638,4 +1698,360 @@ export function creditRunway(data: Data, now: Date): RunwayRow[] {
             a.remainingUsd - b.remainingUsd
         );
     });
+}
+
+// ----------------------------------------------------- provider balances
+
+export type ProviderBalanceMonth = {
+    month: string;
+    cashOpeningUsd: number | null;
+    cashAddedUsd: number | null;
+    cashUsedUsd: number | null;
+    cashClosingUsd: number | null;
+    creditOpeningUsd: number | null;
+    creditAddedUsd: number | null;
+    creditUsedUsd: number | null;
+    creditLapsedUsd: number | null;
+    creditClosingUsd: number | null;
+};
+
+export type ProviderBalanceRow = {
+    vendor: string;
+    cashBalanceUsd: number | null;
+    creditBalanceUsd: number | null;
+    balanceAsOf: string | null;
+    creditDepletionDate: string | null;
+    creditDepletionReason: "burn" | "expiry" | null;
+    finished: boolean;
+    history: ProviderBalanceMonth[];
+};
+
+type BalanceFlow = {
+    addedUsd: number;
+    usedUsd: number;
+    lapsedUsd: number;
+};
+
+function balanceMonths(now: Date): string[] {
+    const end = now.toISOString().slice(0, 7);
+    const months: string[] = [];
+    for (
+        let month = WINDOW_START;
+        month <= end && months.length < 120;
+        month = monthShift(month, 1)
+    ) {
+        months.push(month);
+    }
+    return months;
+}
+
+function balanceFlow(
+    flows: Map<string, Map<string, BalanceFlow>>,
+    vendor: string,
+    month: string,
+): BalanceFlow {
+    const months = getOrInit(flows, vendor, () => new Map());
+    return getOrInit(months, month, () => ({
+        addedUsd: 0,
+        usedUsd: 0,
+        lapsedUsd: 0,
+    }));
+}
+
+type ProviderBalanceAnchor = {
+    cashUsd: number;
+    creditUsd: number;
+    observedOn: string;
+    creditExpiry: string | null;
+};
+
+function providerBalanceAnchors(
+    data: Data,
+    currentMonth: string,
+    today: string,
+): Map<string, ProviderBalanceAnchor> {
+    const rowsByVendorDate = new Map<
+        string,
+        Map<string, Map<string, OpCloudRow>>
+    >();
+    for (const row of data.opCloud ?? []) {
+        if (!isOpCloudBalanceRow(row)) continue;
+        const observedOn = row.start.slice(0, 10);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(observedOn) || observedOn > today) {
+            continue;
+        }
+        const dates = getOrInit(rowsByVendorDate, row.vendor, () => new Map());
+        const accounts = getOrInit(dates, observedOn, () => new Map());
+        const accountId = row.account_id?.trim() || "default";
+        const existing = accounts.get(accountId);
+        if (
+            !existing ||
+            `${row.start}|${row.recorded_at}` >
+                `${existing.start}|${existing.recorded_at}`
+        ) {
+            accounts.set(accountId, row);
+        }
+    }
+
+    const anchors = new Map<string, ProviderBalanceAnchor>();
+    for (const [vendor, dates] of rowsByVendorDate) {
+        const provider = resolveProvider(vendor);
+        const expectedAccounts = provider
+            ? activeProviderAccounts(provider, currentMonth).map(
+                  (account) => account.id,
+              )
+            : [];
+        for (const [observedOn, accounts] of [...dates.entries()].sort((a, b) =>
+            b[0].localeCompare(a[0]),
+        )) {
+            if (
+                expectedAccounts.length > 0 &&
+                expectedAccounts.some((accountId) => !accounts.has(accountId))
+            ) {
+                continue;
+            }
+            const selected =
+                expectedAccounts.length > 0
+                    ? expectedAccounts.map((accountId) =>
+                          accounts.get(accountId),
+                      )
+                    : [...accounts.values()];
+            const rows = selected.filter(
+                (row): row is OpCloudRow => row != null,
+            );
+            if (rows.length === 0) continue;
+            const expiries = rows
+                .filter((row) => Number(row.credit) > 0 && row.end)
+                .map((row) => row.end.slice(0, 10))
+                .filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date))
+                .sort();
+            anchors.set(vendor, {
+                cashUsd: rows.reduce(
+                    (sum, row) =>
+                        sum + toUsd(row.paid, row.currency, row.start),
+                    0,
+                ),
+                creditUsd: rows.reduce(
+                    (sum, row) =>
+                        sum + toUsd(row.credit, row.currency, row.start),
+                    0,
+                ),
+                observedOn,
+                creditExpiry: expiries.at(-1) ?? null,
+            });
+            break;
+        }
+    }
+    return anchors;
+}
+
+function anchoredCreditDepletion(
+    anchor: ProviderBalanceAnchor,
+    credit: RunwayRow | null,
+    now: Date,
+): Pick<ProviderBalanceRow, "creditDepletionDate" | "creditDepletionReason"> {
+    if (anchor.creditUsd <= POOL_EPS_USD) {
+        return { creditDepletionDate: null, creditDepletionReason: null };
+    }
+    const candidates: {
+        date: string;
+        reason: "burn" | "expiry";
+    }[] = [];
+    if (credit?.monthlyRateUsd && credit.monthlyRateUsd > 0) {
+        const days =
+            (anchor.creditUsd / credit.monthlyRateUsd) * AVG_DAYS_PER_MONTH;
+        candidates.push({
+            date: new Date(now.getTime() + days * 86_400_000)
+                .toISOString()
+                .slice(0, 10),
+            reason: "burn",
+        });
+    }
+    if (anchor.creditExpiry) {
+        candidates.push({ date: anchor.creditExpiry, reason: "expiry" });
+    }
+    candidates.sort((a, b) => a.date.localeCompare(b.date));
+    const first = candidates[0];
+    return {
+        creditDepletionDate: first?.date ?? null,
+        creditDepletionReason: first?.reason ?? null,
+    };
+}
+
+// OP Cloud balance snapshots anchor the latest totals. When no complete snapshot
+// exists, free credit comes from grants/burn and cash prepaid is provider cash
+// outflow less cash-funded usage. Multi-account vendors require one same-day
+// snapshot for every active registry account before the aggregate is replaced.
+export function providerBalanceRows(
+    data: Data,
+    now: Date,
+): ProviderBalanceRow[] {
+    const today = now.toISOString().slice(0, 10);
+    const currentMonth = today.slice(0, 7);
+    const months = balanceMonths(now);
+    const anchors = providerBalanceAnchors(data, currentMonth, today);
+    const creditRows = creditRunway(data, now);
+    const creditByVendor = new Map(
+        creditRows.map((row) => [row.vendor, row] as const),
+    );
+    const cashFlows = new Map<string, Map<string, BalanceFlow>>();
+    const creditFlows = new Map<string, Map<string, BalanceFlow>>();
+    const cashVendors = new Set<string>();
+
+    for (const row of data.opTransactions ?? []) {
+        if (!PREPAID_VENDORS.has(row.vendor)) continue;
+        if (!isComputeOrInfrastructureCategory(transactionCategory(row))) {
+            continue;
+        }
+        const month = row.date.slice(0, 7);
+        if (!MONTH_KEY_RE.test(month) || month > currentMonth) continue;
+        const addedUsd = -opTransactionUsd(row);
+        if (Math.abs(addedUsd) <= 0.005) continue;
+        balanceFlow(cashFlows, row.vendor, month).addedUsd += addedUsd;
+        cashVendors.add(row.vendor);
+    }
+
+    for (const row of data.opCloud ?? []) {
+        if (isOpCloudBalanceRow(row)) continue;
+        const month = opCloudMonth(row);
+        if (!MONTH_KEY_RE.test(month) || month > currentMonth) continue;
+        const cashUsedUsd = opCloudPaidBurnUsd(row);
+        if (PREPAID_VENDORS.has(row.vendor) && Math.abs(cashUsedUsd) > 0.005) {
+            balanceFlow(cashFlows, row.vendor, month).usedUsd += cashUsedUsd;
+            cashVendors.add(row.vendor);
+        }
+        const creditUsedUsd = opCloudCreditBurnUsd(row);
+        if (creditUsedUsd > 0.005) {
+            balanceFlow(creditFlows, row.vendor, month).usedUsd +=
+                creditUsedUsd;
+        }
+    }
+
+    for (const credit of creditRows) {
+        for (const grant of credit.grants) {
+            balanceFlow(
+                creditFlows,
+                credit.vendor,
+                grant.startDate.slice(0, 7),
+            ).addedUsd += grant.grantedUsd;
+            if (grant.lapsedUsd > 0.005 && grant.expires) {
+                balanceFlow(
+                    creditFlows,
+                    credit.vendor,
+                    grant.expires.slice(0, 7),
+                ).lapsedUsd += grant.lapsedUsd;
+            }
+        }
+    }
+
+    const vendors = new Set([
+        ...creditByVendor.keys(),
+        ...cashVendors,
+        ...anchors.keys(),
+    ]);
+    const rows: ProviderBalanceRow[] = [];
+    for (const vendor of vendors) {
+        const credit = creditByVendor.get(vendor) ?? null;
+        const anchor = anchors.get(vendor) ?? null;
+        const hasCash = cashVendors.has(vendor) || anchor != null;
+        const hasCredit = credit != null || anchor != null;
+        const history = months.map(
+            (month): ProviderBalanceMonth => ({
+                month,
+                cashOpeningUsd: hasCash ? 0 : null,
+                cashAddedUsd: hasCash
+                    ? (cashFlows.get(vendor)?.get(month)?.addedUsd ?? 0)
+                    : null,
+                cashUsedUsd: hasCash
+                    ? (cashFlows.get(vendor)?.get(month)?.usedUsd ?? 0)
+                    : null,
+                cashClosingUsd: hasCash ? 0 : null,
+                creditOpeningUsd: hasCredit ? 0 : null,
+                creditAddedUsd: hasCredit
+                    ? (creditFlows.get(vendor)?.get(month)?.addedUsd ?? 0)
+                    : null,
+                creditUsedUsd: hasCredit
+                    ? (creditFlows.get(vendor)?.get(month)?.usedUsd ?? 0)
+                    : null,
+                creditLapsedUsd: hasCredit
+                    ? (creditFlows.get(vendor)?.get(month)?.lapsedUsd ?? 0)
+                    : null,
+                creditClosingUsd: hasCredit ? 0 : null,
+            }),
+        );
+
+        if (anchor) {
+            let closing = anchor.cashUsd;
+            for (let index = history.length - 1; index >= 0; index -= 1) {
+                const month = history[index];
+                month.cashClosingUsd = closing;
+                closing =
+                    closing -
+                    (month.cashAddedUsd ?? 0) +
+                    (month.cashUsedUsd ?? 0);
+                month.cashOpeningUsd = closing;
+            }
+        } else if (hasCash) {
+            let closing = [...(cashFlows.get(vendor)?.entries() ?? [])]
+                .filter(([month]) => month < WINDOW_START)
+                .reduce(
+                    (total, [, flow]) => total + flow.addedUsd - flow.usedUsd,
+                    0,
+                );
+            for (const month of history) {
+                month.cashOpeningUsd = closing;
+                closing += (month.cashAddedUsd ?? 0) - (month.cashUsedUsd ?? 0);
+                month.cashClosingUsd = closing;
+            }
+        }
+
+        if (hasCredit) {
+            let closing = anchor?.creditUsd ?? credit?.remainingUsd ?? 0;
+            for (let index = history.length - 1; index >= 0; index -= 1) {
+                const month = history[index];
+                month.creditClosingUsd = closing;
+                closing =
+                    closing -
+                    (month.creditAddedUsd ?? 0) +
+                    (month.creditUsedUsd ?? 0) +
+                    (month.creditLapsedUsd ?? 0);
+                month.creditOpeningUsd = closing;
+            }
+        }
+
+        const cashBalanceUsd = hasCash
+            ? (history.at(-1)?.cashClosingUsd ?? 0)
+            : null;
+        const creditBalanceUsd = hasCredit
+            ? (history.at(-1)?.creditClosingUsd ?? 0)
+            : null;
+        const anchoredDepletion = anchor
+            ? anchoredCreditDepletion(anchor, credit, now)
+            : null;
+        rows.push({
+            vendor,
+            cashBalanceUsd,
+            creditBalanceUsd,
+            balanceAsOf: anchor?.observedOn ?? null,
+            creditDepletionDate: anchor
+                ? (anchoredDepletion?.creditDepletionDate ?? null)
+                : (credit?.depletionDate ?? null),
+            creditDepletionReason: anchor
+                ? (anchoredDepletion?.creditDepletionReason ?? null)
+                : (credit?.depletionReason ?? null),
+            finished:
+                (cashBalanceUsd == null || cashBalanceUsd <= POOL_EPS_USD) &&
+                (creditBalanceUsd == null || creditBalanceUsd <= POOL_EPS_USD),
+            history,
+        });
+    }
+
+    return rows.sort(
+        (a, b) =>
+            Number(a.finished) - Number(b.finished) ||
+            (a.creditDepletionDate ?? "9999").localeCompare(
+                b.creditDepletionDate ?? "9999",
+            ) ||
+            a.vendor.localeCompare(b.vendor),
+    );
 }

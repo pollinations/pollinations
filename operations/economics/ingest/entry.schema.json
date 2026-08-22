@@ -30,6 +30,8 @@
     "entry_id": { "type": "string" },
     "source_file": { "type": "string" },
     "provider": { "type": ["string", "null"] },
+    "provider_account_id": { "type": ["string", "null"] },
+    "provider_account_name": { "type": ["string", "null"] },
     "invoice_id": { "type": ["string", "null"] },
     "issued_at": { "type": ["string", "null"] },
     "period_start": { "type": ["string", "null"] },

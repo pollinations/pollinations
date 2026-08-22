@@ -2,11 +2,15 @@
 
 Canonical vendor: `digitalocean`
 
-## Verified — 2026-07-10
+## Verified — 2026-08-20
 
 - Status: blocked by the stored token's scope, not by API availability.
 - `GET /v2/account` succeeded and reported an active account.
 - Both `/v2/customers/my/balance` and `/billing_history` returned HTTP 403.
+- The same 403 scope block was reconfirmed on 2026-08-20.
+- The final July invoice was recovered from the Myceli mailbox instead. Invoice
+  `550856601` records $231.77 of resource usage, fully covered by IaaS credit,
+  with $0 cash due. It is stored in Drive and published at resource grain.
 - Replace or re-scope `DIGITALOCEAN_TOKEN` with `billing:read`; until then,
   use invoices and dashboard evidence. Do not interpret the 403 as zero.
 

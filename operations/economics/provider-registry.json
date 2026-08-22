@@ -1,0 +1,505 @@
+{
+    "version": 9,
+    "auditTargets": [
+        { "provider": "alibaba", "accountId": "5314153712077332", "loginEmail": "elliot@myceli.ai", "url": "https://billing-cost.console.alibabacloud.com/fortune/billing-account" },
+        { "provider": "anthropic", "loginEmail": "elliot@myceli.ai", "url": "https://platform.claude.com/settings/billing" },
+        { "provider": "assemblyai", "loginEmail": "elliot@myceli.ai", "url": "https://www.assemblyai.com/dashboard/settings/billing" },
+        { "provider": "aws", "loginEmail": "elliot@myceli.ai", "url": "https://us-east-1.console.aws.amazon.com/costmanagement/home#/credits" },
+        { "provider": "aws", "loginEmail": "elliot@myceli.ai", "url": "https://glass.automat-it.com/myceliai-aws/dashboard" },
+        { "provider": "aws", "loginEmail": "elliot@myceli.ai", "url": "https://umbrellacost.io/cost-usage/cost-usage-explorer" },
+        { "provider": "azure", "loginEmail": "thomas@myceli.ai", "url": "https://portal.azure.com/#view/Microsoft_Azure_Billing/ModernBillingMenuBlade/~/BillingAccounts" },
+        { "provider": "bytedance", "accountId": "3000852661", "loginEmail": "elliot@myceli.ai", "url": "https://console.byteplus.com/finance/overview" },
+        { "provider": "cloudflare", "accountId": "myceli", "loginEmail": "elliot@myceli.ai", "url": "https://dash.cloudflare.com/b6ec751c0862027ba269faf7029b2501/billing/credits" },
+        { "provider": "cloudflare", "accountId": "pollinations", "loginEmail": "elliot@pollinations.ai", "url": "https://dash.cloudflare.com/efdcb0933eaac64f27c0b295039b28f2/billing/invoices" },
+        { "provider": "deepinfra", "loginEmail": "elliot@myceli.ai", "url": "https://deepinfra.com/dash/billing" },
+        { "provider": "digitalocean", "loginEmail": "elliot@myceli.ai", "url": "https://cloud.digitalocean.com/organizations/4a4e317f-17c7-4fdb-9c79-907331a02d2b/billing" },
+        { "provider": "elevenlabs", "loginEmail": "elliot@myceli.ai", "url": "https://elevenlabs.io/app/subscription/creative" },
+        { "provider": "fal", "loginEmail": "elliot@myceli.ai", "url": "https://fal.ai/dashboard/usage-billing" },
+        { "provider": "fireworks", "accountId": "myceli", "loginEmail": "elliot@myceli.ai", "url": "https://app.fireworks.ai/account/billing" },
+        { "provider": "fireworks", "accountId": "pollinations", "loginEmail": "elliot@pollinations.ai", "url": "https://app.fireworks.ai/account/billing", "pending": true },
+        { "provider": "fireworks", "accountId": "neoglyph", "loginEmail": "elliot@neoglyph.ai", "url": "https://app.fireworks.ai/account/billing", "pending": true },
+        { "provider": "fireworks", "accountId": "pixelmarket", "loginEmail": null, "url": "https://app.fireworks.ai/account/billing", "pending": true },
+        { "provider": "github", "loginEmail": "elliot@myceli.ai", "url": "https://github.com/enterprises/myceli-ai/billing" },
+        { "provider": "google", "loginEmail": "elliot@myceli.ai", "url": "https://console.cloud.google.com/billing/0180E5-574541-B8F8FD/credits/all" },
+        { "provider": "inception", "loginEmail": "elliot@myceli.ai", "url": "https://platform.inceptionlabs.ai/dashboard/logs" },
+        { "provider": "io.net", "loginEmail": "elliot@myceli.ai", "url": "https://cloud.io.net/cloud/billing" },
+        { "provider": "lambda", "loginEmail": "elliot@myceli.ai", "url": "https://cloud.lambda.ai/workspace/808f00c5d33c401192efc3b376d22b2f/usage" },
+        { "provider": "mistral", "loginEmail": "elliot@myceli.ai", "url": "https://admin.mistral.ai/organization/billing" },
+        { "provider": "modal", "accountId": "myceli-ai", "loginEmail": "elliot@myceli.ai", "url": "https://modal.com/settings/myceli-ai/usage" },
+        { "provider": "modal", "accountId": "myceli-ai2", "loginEmail": "elliot@myceli.ai", "url": "https://modal.com/settings/myceli-ai2/usage" },
+        { "provider": "modal", "accountId": "elliot-4", "loginEmail": "elliot@myceli.ai", "url": "https://modal.com/settings/elliot-4/usage" },
+        { "provider": "openai", "loginEmail": "elliot@myceli.ai", "url": "https://platform.openai.com/settings/organization/billing/credit-grants" },
+        { "provider": "openrouter", "accountId": "myceli", "loginEmail": "elliot@myceli.ai", "url": "https://openrouter.ai/settings/credits" },
+        { "provider": "openrouter", "accountId": "pollinations", "loginEmail": "elliot@pollinations.ai", "url": "https://openrouter.ai/settings/credits", "pending": true },
+        { "provider": "ovhcloud", "loginEmail": "elliot@myceli.ai", "url": "https://manager.eu.ovhcloud.com/#/dedicated/billing/credits" },
+        { "provider": "perplexity", "loginEmail": "elliot@myceli.ai", "url": "https://console.perplexity.ai/project/81749045/billing" },
+        { "provider": "pruna", "loginEmail": "elliot@myceli.ai", "url": "https://dashboard.pruna.ai/billing" },
+        { "provider": "replicate", "loginEmail": "elliot@myceli.ai", "url": "https://replicate.com/account/billing" },
+        { "provider": "runpod", "loginEmail": "elliot@myceli.ai", "url": "https://console.runpod.io/user/billing" },
+        { "provider": "scaleway", "accountId": "fad8c43c-762a-4cde-9043-641d6ff37586", "loginEmail": "elliot@pollinations.ai", "url": "https://console.scaleway.com/billing/optimization" },
+        { "provider": "scaleway", "accountId": "b399fe9d-4976-4162-a471-9920aaeda163", "loginEmail": "elliot@pollinations.ai", "url": "https://console.scaleway.com/billing/optimization" },
+        { "provider": "stability", "loginEmail": "elliot@myceli.ai", "url": "https://platform.stability.ai/account/credits" },
+        { "provider": "tinybird", "loginEmail": "elliot@myceli.ai", "url": "https://app.tinybird.co/" },
+        { "provider": "vast.ai", "loginEmail": "elliot@myceli.ai", "url": "https://cloud.vast.ai/billing/" },
+        { "provider": "vercel", "loginEmail": "elliot@myceli.ai", "url": "https://vercel.com/pollinations/~/ai-gateway" },
+        { "provider": "xai", "accountId": "ad7ac7e1-17f2-46e0-8dd2-7e99584f63e2", "loginEmail": "elliot@myceli.ai", "url": "https://console.x.ai/team/ad7ac7e1-17f2-46e0-8dd2-7e99584f63e2/settings/billing" }
+    ],
+    "providers": [
+    {
+      "id": "airforce",
+      "label": "Airforce",
+      "meteringBasis": "internal",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false
+        },
+        {
+            "id": "alibaba",
+            "label": "Alibaba",
+            "meteringBasis": "direct",
+            "aliases": [],
+            "connector": "alibaba",
+            "monthlyReview": true,
+            "accounts": [
+                {
+                    "id": "5314153712077332",
+                    "label": "Myceli.AI OÜ",
+                    "activeFrom": "2026-01",
+                    "activeTo": null
+                }
+            ]
+        },
+    {
+      "id": "anthropic",
+      "label": "Anthropic",
+      "meteringBasis": "direct",
+      "aliases": [],
+      "connector": "anthropic",
+      "monthlyReview": true
+    },
+    {
+      "id": "assemblyai",
+      "label": "AssemblyAI",
+      "meteringBasis": "direct",
+      "aliases": [],
+      "connector": "assemblyai",
+      "monthlyReview": true
+        },
+        {
+            "id": "aws",
+            "label": "AWS",
+            "meteringBasis": "mixed",
+            "aliases": ["aws-bedrock", "bedrock"],
+            "connector": "aws",
+            "monthlyReview": true
+        },
+        {
+            "id": "azure",
+            "label": "Azure",
+            "meteringBasis": "mixed",
+            "aliases": ["azure-2"],
+            "connector": "azure",
+            "monthlyReview": true
+        },
+    {
+      "id": "bpai",
+      "label": "BPAI",
+      "meteringBasis": "internal",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false
+        },
+        {
+            "id": "bytedance",
+            "label": "BytePlus / ByteDance",
+            "meteringBasis": "direct",
+            "aliases": [],
+            "connector": "bytedance",
+            "monthlyReview": false,
+            "accounts": [
+                {
+                    "id": "3000852661",
+                    "label": "Myceli.AI OÜ",
+                    "activeFrom": "2026-01",
+                    "activeTo": "2026-05"
+                }
+            ]
+        },
+        {
+            "id": "cloudflare",
+            "label": "Cloudflare",
+            "meteringBasis": "not_applicable",
+            "aliases": [],
+            "connector": "cloudflare",
+            "monthlyReview": true,
+            "accounts": [
+                {
+                    "id": "pollinations",
+                    "label": "Pollinations.ai (legacy)",
+                    "activeFrom": "2026-01",
+                    "activeTo": "2026-06"
+                },
+      {
+        "id": "myceli",
+        "label": "Myceli.AI OÜ",
+        "activeFrom": "2026-02",
+        "activeTo": null
+                }
+            ]
+        },
+        {
+            "id": "community",
+            "label": "Community models",
+            "meteringBasis": "internal",
+            "aliases": [],
+            "connector": "community",
+            "monthlyReview": false
+        },
+        {
+            "id": "daytona",
+            "label": "Daytona",
+            "meteringBasis": "not_applicable",
+            "aliases": [],
+            "connector": "daytona",
+            "monthlyReview": false
+        },
+        {
+            "id": "deepinfra",
+            "label": "DeepInfra",
+            "meteringBasis": "direct",
+            "aliases": [],
+            "connector": "deepinfra",
+            "monthlyReview": true
+        },
+        {
+            "id": "digitalocean",
+            "label": "DigitalOcean",
+            "meteringBasis": "capacity",
+            "aliases": [],
+            "connector": "digitalocean",
+            "monthlyReview": true
+        },
+        {
+            "id": "elevenlabs",
+            "label": "ElevenLabs",
+            "meteringBasis": "direct",
+            "aliases": [],
+            "connector": "elevenlabs",
+            "monthlyReview": true
+        },
+        {
+            "id": "fal",
+            "label": "fal.ai",
+            "meteringBasis": "direct",
+            "aliases": [],
+            "connector": "fal",
+            "monthlyReview": true
+        },
+        {
+            "id": "fireworks",
+            "label": "Fireworks",
+            "meteringBasis": "direct",
+            "aliases": [],
+            "connector": "fireworks",
+            "monthlyReview": true,
+            "accounts": [
+                {
+                    "id": "pollinations",
+                    "label": "Pollinations",
+                    "activeFrom": "2026-03",
+                    "activeTo": null
+                },
+                {
+                    "id": "neoglyph",
+                    "label": "Neoglyph",
+                    "activeFrom": "2026-05",
+                    "activeTo": null
+                },
+                {
+                    "id": "myceli",
+                    "label": "Myceli",
+                    "activeFrom": "2026-01",
+                    "activeTo": null
+                },
+                {
+                    "id": "pixelmarket",
+                    "label": "Pixelmarket",
+                    "activeFrom": "2026-05",
+                    "activeTo": null
+                }
+            ]
+        },
+        {
+            "id": "google",
+            "label": "Google Cloud",
+            "meteringBasis": "mixed",
+            "aliases": [],
+            "connector": "google",
+            "monthlyReview": true
+        },
+    {
+      "id": "github",
+      "label": "GitHub",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": "github",
+      "monthlyReview": true
+        },
+    {
+      "id": "inception",
+      "label": "Inception",
+      "meteringBasis": "direct",
+      "aliases": [],
+      "connector": "inception",
+      "monthlyReview": true
+        },
+    {
+      "id": "inferenceport",
+      "label": "InferencePort",
+      "meteringBasis": "internal",
+      "aliases": [],
+      "connector": "inferenceport",
+      "monthlyReview": true
+        },
+        {
+            "id": "io.net",
+            "label": "io.net",
+            "meteringBasis": "capacity",
+            "aliases": [],
+            "connector": "io-net",
+            "monthlyReview": false
+        },
+        {
+            "id": "lambda",
+            "label": "Lambda Cloud",
+            "meteringBasis": "capacity",
+            "aliases": [],
+            "connector": "lambda",
+            "monthlyReview": true
+        },
+        {
+            "id": "modal",
+            "label": "Modal",
+            "meteringBasis": "capacity",
+            "aliases": [],
+            "connector": "modal",
+            "monthlyReview": true,
+            "accounts": [
+                {
+                    "id": "myceli-ai",
+                    "label": "myceli-ai",
+                    "activeFrom": "2026-01",
+                    "activeTo": null
+                },
+                {
+                    "id": "myceli-ai2",
+                    "label": "myceli-ai2",
+                    "activeFrom": "2026-01",
+                    "activeTo": null
+                },
+                {
+                    "id": "elliot-4",
+                    "label": "elliot-4",
+                    "activeFrom": "2026-01",
+                    "activeTo": null
+                }
+            ]
+        },
+    {
+      "id": "mistral",
+      "label": "Mistral AI",
+      "meteringBasis": "direct",
+      "aliases": [],
+      "connector": "mistral",
+      "monthlyReview": true
+        },
+        {
+            "id": "nebius",
+            "label": "Nebius",
+            "meteringBasis": "capacity",
+            "aliases": [],
+            "connector": null,
+            "monthlyReview": false
+        },
+        {
+            "id": "openai",
+            "label": "OpenAI",
+            "meteringBasis": "direct",
+            "aliases": [],
+            "connector": "openai",
+            "monthlyReview": true
+        },
+        {
+            "id": "openrouter",
+            "label": "OpenRouter",
+            "meteringBasis": "direct",
+            "aliases": [],
+            "connector": "openrouter",
+            "monthlyReview": true,
+            "accounts": [
+                {
+                    "id": "myceli",
+                    "label": "Myceli.AI",
+                    "activeFrom": "2026-05",
+                    "activeTo": null
+                },
+                {
+                    "id": "pollinations",
+                    "label": "PollinationsAI",
+                    "activeFrom": "2026-07",
+                    "activeTo": null
+                }
+            ]
+        },
+        {
+            "id": "ovhcloud",
+            "label": "OVHcloud",
+            "meteringBasis": "capacity",
+            "aliases": [],
+            "connector": "ovhcloud",
+            "monthlyReview": true
+        },
+        {
+            "id": "perplexity",
+            "label": "Perplexity",
+            "meteringBasis": "direct",
+            "aliases": [],
+            "connector": "perplexity",
+            "monthlyReview": true
+        },
+        {
+            "id": "pointsflyer",
+            "label": "PointsFlyer",
+            "meteringBasis": "internal",
+            "aliases": [],
+            "connector": null,
+            "monthlyReview": false
+        },
+        {
+            "id": "pruna",
+            "label": "Pruna AI",
+            "meteringBasis": "direct",
+            "aliases": [],
+            "connector": "pruna",
+            "monthlyReview": true
+        },
+        {
+            "id": "replicate",
+            "label": "Replicate",
+            "meteringBasis": "direct",
+            "aliases": [],
+            "connector": "replicate",
+            "monthlyReview": true
+        },
+        {
+            "id": "retell",
+            "label": "Retell AI",
+            "meteringBasis": "direct",
+            "aliases": [],
+            "connector": null,
+            "monthlyReview": false
+        },
+        {
+            "id": "runpod",
+            "label": "RunPod",
+            "meteringBasis": "mixed",
+            "aliases": [],
+            "connector": "runpod",
+            "monthlyReview": true
+        },
+        {
+            "id": "scaleway",
+            "label": "Scaleway",
+            "meteringBasis": "mixed",
+            "aliases": [],
+            "connector": "scaleway",
+            "monthlyReview": false,
+            "accounts": [
+                {
+                    "id": "fad8c43c-762a-4cde-9043-641d6ff37586",
+                    "label": "Pollinations.AI",
+                    "activeFrom": "2026-01",
+                    "activeTo": null
+                },
+                {
+                    "id": "b399fe9d-4976-4162-a471-9920aaeda163",
+                    "label": "Pollinations GmbH",
+                    "activeFrom": "2026-08",
+                    "activeTo": null
+                }
+            ]
+        },
+        {
+            "id": "self-hosted",
+            "label": "Self-hosted",
+            "meteringBasis": "internal",
+            "aliases": [],
+            "connector": null,
+            "monthlyReview": false
+        },
+        {
+            "id": "self-issued",
+            "label": "Self-issued",
+            "meteringBasis": "not_applicable",
+            "aliases": [],
+            "connector": null,
+            "monthlyReview": false
+        },
+        {
+            "id": "seraphyn",
+            "label": "Seraphyn",
+            "meteringBasis": "internal",
+            "aliases": [],
+            "connector": null,
+            "monthlyReview": false
+        },
+        {
+            "id": "stability",
+            "label": "Stability AI",
+            "meteringBasis": "direct",
+            "aliases": [],
+            "connector": "stability",
+            "monthlyReview": true
+        },
+    {
+      "id": "tinybird",
+      "label": "Tinybird",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": "tinybird",
+      "monthlyReview": true
+        },
+        {
+            "id": "vast.ai",
+            "label": "Vast.ai",
+            "meteringBasis": "capacity",
+            "aliases": ["vast", "vastai"],
+            "connector": "vast-ai",
+            "monthlyReview": true
+        },
+    {
+      "id": "vercel",
+      "label": "Vercel AI Gateway",
+      "meteringBasis": "direct",
+      "aliases": [],
+      "connector": "vercel",
+      "monthlyReview": true
+        },
+        {
+            "id": "xai",
+            "label": "xAI",
+            "meteringBasis": "direct",
+            "aliases": [],
+            "connector": "xai",
+            "monthlyReview": true,
+            "accounts": [
+      {
+        "id": "ad7ac7e1-17f2-46e0-8dd2-7e99584f63e2",
+        "label": "Myceli.AI OÜ — tuesday-cuticle-eggnog",
+        "activeFrom": "2026-03",
+        "activeTo": null
+                }
+            ]
+        }
+    ]
+}

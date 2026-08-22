@@ -9,13 +9,14 @@ import {
     TableRow,
     Tooltip,
 } from "@pollinations/ui";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
     DataTable,
     GROUP_BORDER,
     TableScroller,
 } from "../components/DataTable";
 import { StatCards, type StatTone } from "../components/StatCards";
+import { categoryLabel } from "../lib/categories";
 import { fmtPeriod, fmtUsd } from "../lib/format";
 import { monthLabel } from "../lib/months";
 import {
@@ -26,22 +27,6 @@ import {
 } from "../lib/runway";
 import { signedTone } from "../lib/tone";
 import type { Data } from "../types";
-
-const CATEGORY_LABELS: Record<string, string> = {
-    revenue: "Revenue",
-    cloud: "Cloud",
-    saas: "SaaS",
-    office: "Office",
-    admin: "Admin",
-    payroll: "Payroll",
-};
-
-function categoryLabel(category: string) {
-    return (
-        CATEGORY_LABELS[category] ??
-        category.charAt(0).toUpperCase() + category.slice(1)
-    );
-}
 
 function valueTone(value: number | null): StatTone {
     if (value == null || value === 0) return "base";
@@ -324,6 +309,8 @@ function RunwayCategoryRows({
     group: RunwayGroup;
     columns: RunwayColumn[];
 }) {
+    const [expanded, setExpanded] = useState(false);
+
     return (
         <>
             <TableRow className="bg-theme-bg-subtle font-semibold">
@@ -331,10 +318,20 @@ function RunwayCategoryRows({
                     className={cn(
                         "sticky left-0 z-10 whitespace-nowrap bg-theme-bg-subtle",
                         group.category === "revenue" &&
-                            "text-intent-success-text",
+                            "text-outcome-positive-text",
                     )}
                 >
-                    {categoryLabel(group.category)}
+                    <button
+                        type="button"
+                        aria-expanded={expanded}
+                        onClick={() => setExpanded((current) => !current)}
+                        className="inline-flex items-center gap-1.5 text-left hover:text-theme-text"
+                    >
+                        <span className="text-theme-text-soft">
+                            {expanded ? "▾" : "▸"}
+                        </span>
+                        {categoryLabel(group.category)}
+                    </button>
                 </TableCell>
                 {columns.map((column, index) => (
                     <TableCell
@@ -353,46 +350,49 @@ function RunwayCategoryRows({
                     </TableCell>
                 ))}
             </TableRow>
-            {group.rows.map((row) => (
-                <TableRow key={`${row.category}|${row.vendor}`}>
-                    <TableCell className="sticky left-0 z-10 whitespace-nowrap bg-surface-opaque pl-6 text-theme-text-soft">
-                        <span className="inline-flex items-center gap-2">
-                            <span>{row.vendor}</span>
-                            {forecastMethodLabel(row.forecastMethod) && (
-                                <Chip
-                                    intent={
-                                        row.forecastMethod === "zero"
-                                            ? "warning"
-                                            : "neutral"
-                                    }
-                                    size="sm"
-                                >
-                                    {forecastMethodLabel(row.forecastMethod)}
-                                </Chip>
-                            )}
-                        </span>
-                    </TableCell>
-                    {columns.map((column, index) => (
-                        <TableCell
-                            key={column.id}
-                            align="right"
-                            numeric
-                            className={cn(
-                                monthColumnClass(
-                                    column,
-                                    startsMonthGroup(columns, index),
-                                ),
-                                runwayValueClass(row.values[column.id]),
-                            )}
-                        >
-                            <ForecastValue
-                                assumptions={row.assumptions[column.id]}
-                                value={row.values[column.id]}
-                            />
+            {expanded &&
+                group.rows.map((row) => (
+                    <TableRow key={`${row.category}|${row.vendor}`}>
+                        <TableCell className="sticky left-0 z-10 whitespace-nowrap bg-surface-opaque pl-6 text-theme-text-soft">
+                            <span className="inline-flex items-center gap-2">
+                                <span>{row.vendor}</span>
+                                {forecastMethodLabel(row.forecastMethod) && (
+                                    <Chip
+                                        intent={
+                                            row.forecastMethod === "zero"
+                                                ? "warning"
+                                                : "neutral"
+                                        }
+                                        size="sm"
+                                    >
+                                        {forecastMethodLabel(
+                                            row.forecastMethod,
+                                        )}
+                                    </Chip>
+                                )}
+                            </span>
                         </TableCell>
-                    ))}
-                </TableRow>
-            ))}
+                        {columns.map((column, index) => (
+                            <TableCell
+                                key={column.id}
+                                align="right"
+                                numeric
+                                className={cn(
+                                    monthColumnClass(
+                                        column,
+                                        startsMonthGroup(columns, index),
+                                    ),
+                                    runwayValueClass(row.values[column.id]),
+                                )}
+                            >
+                                <ForecastValue
+                                    assumptions={row.assumptions[column.id]}
+                                    value={row.values[column.id]}
+                                />
+                            </TableCell>
+                        ))}
+                    </TableRow>
+                ))}
         </>
     );
 }

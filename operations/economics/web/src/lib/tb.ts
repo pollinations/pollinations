@@ -6,6 +6,10 @@ import type {
     OpRunwayRow,
     OpTransactionRow,
 } from "../types";
+import {
+    canonicalProvider,
+    collectProviderObservations,
+} from "./providerRegistry";
 
 export const fixturesMode = (): boolean =>
     typeof window !== "undefined" &&
@@ -40,7 +44,57 @@ async function fetchPipe<T>(pipe: string): Promise<T[]> {
 }
 
 export function canonicalVendor(vendor: string): string {
-    return vendor === "vast" ? "vast.ai" : vendor;
+    return canonicalProvider(vendor);
+}
+
+const POLLEN_VALUE_FIELDS = [
+    "cost_paid",
+    "cost_quests",
+    "price_paid",
+    "price_quests",
+    "byop_paid",
+    "byop_quests",
+    "model_paid",
+    "model_quests",
+    "requests_paid",
+    "requests_quests",
+] as const satisfies readonly (keyof OpPollenRow)[];
+
+function pollenKey(row: OpPollenRow): string {
+    return [row.month, row.vendor, row.model, row.currency].join("|");
+}
+
+export function canonicalPollenRows(
+    rows: readonly OpPollenRow[],
+): OpPollenRow[] {
+    const aggregated = new Map<string, OpPollenRow>();
+
+    for (const sourceRow of rows) {
+        const row = {
+            ...sourceRow,
+            vendor: canonicalVendor(sourceRow.vendor),
+        };
+        if (POLLEN_VALUE_FIELDS.every((field) => Number(row[field]) === 0)) {
+            continue;
+        }
+
+        const key = pollenKey(row);
+        const existing = aggregated.get(key);
+        if (!existing) {
+            aggregated.set(key, row);
+            continue;
+        }
+        for (const field of POLLEN_VALUE_FIELDS) {
+            existing[field] = Number(existing[field]) + Number(row[field]);
+        }
+    }
+
+    return [...aggregated.values()].sort(
+        (a, b) =>
+            b.month.localeCompare(a.month) ||
+            a.vendor.localeCompare(b.vendor) ||
+            a.model.localeCompare(b.model),
+    );
 }
 
 export async function loadAll(): Promise<Data> {
@@ -53,13 +107,22 @@ export async function loadAll(): Promise<Data> {
         fetchPipe<OpRunwayRow>("op_runway_api"),
     ]);
 
-    return {
+    const canonicalize = <T extends { vendor: string }>(row: T): T => ({
+        ...row,
+        vendor: canonicalVendor(row.vendor),
+    });
+
+    const providerObservations = collectProviderObservations({
         opTransactions,
         opCloud,
-        opPollen: opPollen.map((row) => ({
-            ...row,
-            vendor: canonicalVendor(row.vendor),
-        })),
-        opRunway,
+        opPollen,
+    });
+
+    return {
+        opTransactions: opTransactions.map(canonicalize),
+        opCloud: opCloud.map(canonicalize),
+        opPollen: canonicalPollenRows(opPollen),
+        opRunway: opRunway.map(canonicalize),
+        providerObservations,
     };
 }

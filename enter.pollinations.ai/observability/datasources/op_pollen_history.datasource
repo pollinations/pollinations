@@ -1,0 +1,29 @@
+DESCRIPTION >
+    Immutable historical Pollen meter rows whose raw generation events are no
+    longer retained. Corrections append a newer row with the same entry_id;
+    op_pollen_api selects the latest version.
+
+TOKEN "operations_ingest" APPEND
+TOKEN "operations_ingest" READ
+
+SCHEMA >
+    `entry_id` String `json:$.entry_id`,
+    `month` LowCardinality(String) `json:$.month`,
+    `provider` LowCardinality(String) `json:$.provider`,
+    `model` LowCardinality(String) `json:$.model`,
+    `cost_paid` Float64 `json:$.cost_paid`,
+    `cost_quests` Float64 `json:$.cost_quests`,
+    `price_paid` Float64 `json:$.price_paid`,
+    `price_quests` Float64 `json:$.price_quests`,
+    `requests_paid` UInt64 `json:$.requests_paid`,
+    `requests_quests` UInt64 `json:$.requests_quests`,
+    `byop_paid` Float64 `json:$.byop_paid`,
+    `byop_quests` Float64 `json:$.byop_quests`,
+    `model_paid` Float64 `json:$.model_paid`,
+    `model_quests` Float64 `json:$.model_quests`,
+    `evidence` String `json:$.evidence`,
+    `reason` String `json:$.reason`,
+    `recorded_at` DateTime64(3) `json:$.recorded_at`
+
+ENGINE MergeTree
+ENGINE_SORTING_KEY entry_id, recorded_at

@@ -1,0 +1,516 @@
+import reconciliationJson from "../../../provider-reconciliation.json";
+import registryJson from "../../../provider-registry.json";
+import type {
+    Data,
+    OpCloudRow,
+    ProviderObservation,
+    ProviderObservationSource,
+} from "../types";
+import {
+    isComputeOrInfrastructureCategory,
+    transactionCategory,
+} from "./categories";
+import { collectMonths, type MonthFilterValue, matchesMonth } from "./months";
+
+export type ProviderDefinition = {
+    id: string;
+    label: string;
+    meteringBasis: MeteringBasis;
+    aliases: string[];
+    connector: string | null;
+    monthlyReview: boolean;
+    accounts?: ProviderAccountDefinition[];
+};
+
+export type MeteringBasis =
+    | "direct"
+    | "capacity"
+    | "mixed"
+    | "internal"
+    | "not_applicable";
+
+export type ProviderAccountDefinition = {
+    id: string;
+    label: string;
+    activeFrom: string;
+    activeTo: string | null;
+};
+
+type ProviderRegistryFile = {
+    version: number;
+    auditTargets: ProviderAuditTarget[];
+    providers: ProviderDefinition[];
+};
+
+export type ProviderAuditTarget = {
+    provider: string;
+    accountId?: string;
+    loginEmail: string | null;
+    url: string;
+    pending?: boolean;
+};
+
+export type PollenWitnessExplanation = {
+    month: string;
+    provider: string;
+    reason:
+        | "pre_meter_coverage"
+        | "provider_attribution_transition"
+        | "provider_only_residual";
+    explanation: string;
+    evidence: string[];
+};
+
+export type ProviderCheckExplanation = {
+    month: string;
+    provider: string;
+    reason: "unverifiable_history";
+    explanation: string;
+    evidence: string[];
+};
+
+export type MeterDriftExplanation = {
+    month: string;
+    provider: string;
+    reason: "historical_tracking_gap";
+    explanation: string;
+    evidence: string[];
+};
+
+export type ProviderReconciliationExplanation =
+    | PollenWitnessExplanation
+    | MeterDriftExplanation;
+
+type ProviderReconciliationFile = {
+    version: number;
+    providerCheckExplanations: ProviderCheckExplanation[];
+    meterDriftExplanations: MeterDriftExplanation[];
+    pollenWitnessExplanations: PollenWitnessExplanation[];
+};
+
+export const PROVIDER_REGISTRY = (registryJson as ProviderRegistryFile)
+    .providers;
+export const PROVIDER_AUDIT_TARGETS = (registryJson as ProviderRegistryFile)
+    .auditTargets;
+export const POLLEN_WITNESS_EXPLANATIONS = (
+    reconciliationJson as ProviderReconciliationFile
+).pollenWitnessExplanations;
+export const PROVIDER_CHECK_EXPLANATIONS = (
+    reconciliationJson as ProviderReconciliationFile
+).providerCheckExplanations;
+export const METER_DRIFT_EXPLANATIONS = (
+    reconciliationJson as ProviderReconciliationFile
+).meterDriftExplanations;
+
+const providerByAlias = new Map<string, ProviderDefinition>();
+for (const provider of PROVIDER_REGISTRY) {
+    providerByAlias.set(provider.id, provider);
+    for (const alias of provider.aliases) providerByAlias.set(alias, provider);
+}
+
+export function normalizeProviderName(value: string): string {
+    return value.trim().toLowerCase();
+}
+
+export function resolveProvider(value: string): ProviderDefinition | undefined {
+    return providerByAlias.get(normalizeProviderName(value));
+}
+
+export function providerAuditUrl(value: string): string | null {
+    const provider = resolveProvider(value);
+    return provider
+        ? (PROVIDER_AUDIT_TARGETS.find(
+              (target) => target.provider === provider.id && !target.pending,
+          )?.url ??
+              PROVIDER_AUDIT_TARGETS.find(
+                  (target) => target.provider === provider.id,
+              )?.url ??
+              null)
+        : null;
+}
+
+export function providerAuditTargets(value: string): ProviderAuditTarget[] {
+    const provider = resolveProvider(value);
+    return provider
+        ? PROVIDER_AUDIT_TARGETS.filter(
+              (target) => target.provider === provider.id,
+          )
+        : [];
+}
+
+export function providerMeteringBasis(value: string): MeteringBasis {
+    // Unknown providers are already surfaced as missing registry mappings. A
+    // conservative mixed basis avoids additionally presenting their ratio as
+    // a verified direct-price alarm before we classify them manually.
+    return resolveProvider(value)?.meteringBasis ?? "mixed";
+}
+
+export function activeProviderAccounts(
+    provider: ProviderDefinition,
+    month: string,
+): ProviderAccountDefinition[] {
+    return (provider.accounts ?? []).filter(
+        (account) =>
+            account.activeFrom <= month &&
+            (account.activeTo == null || account.activeTo >= month),
+    );
+}
+
+// Unknown names deliberately pass through unchanged. They remain visible in
+// the economics tables while the registry coverage check flags them.
+export function canonicalProvider(value: string): string {
+    const normalized = normalizeProviderName(value);
+    return resolveProvider(normalized)?.id ?? normalized;
+}
+
+const pollenExplanationByKey = new Map(
+    POLLEN_WITNESS_EXPLANATIONS.map((explanation) => [
+        `${explanation.month}|${canonicalProvider(explanation.provider)}`,
+        explanation,
+    ]),
+);
+const providerCheckExplanationByKey = new Map(
+    PROVIDER_CHECK_EXPLANATIONS.map((explanation) => [
+        `${explanation.month}|${canonicalProvider(explanation.provider)}`,
+        explanation,
+    ]),
+);
+const meterDriftExplanationByKey = new Map(
+    METER_DRIFT_EXPLANATIONS.map((explanation) => [
+        `${explanation.month}|${canonicalProvider(explanation.provider)}`,
+        explanation,
+    ]),
+);
+
+export function meterDriftExplanation(
+    month: string,
+    provider: string,
+): MeterDriftExplanation | undefined {
+    return meterDriftExplanationByKey.get(
+        `${month}|${canonicalProvider(provider)}`,
+    );
+}
+
+export function providerCheckExplanation(
+    month: string,
+    provider: string,
+): ProviderCheckExplanation | undefined {
+    return providerCheckExplanationByKey.get(
+        `${month}|${canonicalProvider(provider)}`,
+    );
+}
+
+export function pollenWitnessExplanation(
+    month: string,
+    provider: string,
+): PollenWitnessExplanation | undefined {
+    return pollenExplanationByKey.get(
+        `${month}|${canonicalProvider(provider)}`,
+    );
+}
+
+type ObservationInput = Pick<Data, "opCloud" | "opPollen" | "opTransactions">;
+
+function nextMonth(month: string): string {
+    const [year, number] = month.split("-").map(Number);
+    const next = new Date(Date.UTC(year, number, 1));
+    return `${next.getUTCFullYear()}-${String(next.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+function cloudObservationMonths(row: OpCloudRow): string[] {
+    const startMonth = row.start.slice(0, 7);
+    const isVerifiedZeroRange =
+        row.resource_sku === "verified-zero" &&
+        Number(row.resource_count) === 0 &&
+        Number(row.credit) === 0 &&
+        Number(row.paid) === 0;
+    if (!isVerifiedZeroRange) return [startMonth];
+
+    const endMonth = row.end.slice(0, 7);
+    if (!/^\d{4}-\d{2}$/.test(endMonth) || endMonth < startMonth) {
+        return [startMonth];
+    }
+    const endIsMonthBoundary = row.end.startsWith(`${endMonth}-01 00:00:00`);
+    const exclusiveEnd = endIsMonthBoundary ? endMonth : nextMonth(endMonth);
+    const months: string[] = [];
+    for (
+        let current = startMonth;
+        current < exclusiveEnd && months.length < 120;
+        current = nextMonth(current)
+    ) {
+        months.push(current);
+    }
+    return months.length ? months : [startMonth];
+}
+
+export function collectProviderObservations(
+    data: ObservationInput,
+): ProviderObservation[] {
+    const observations = new Map<string, ProviderObservation>();
+    const add = ({
+        accountId,
+        dashboardChecked,
+        month,
+        source,
+        vendor,
+    }: ProviderObservation) => {
+        const normalized = normalizeProviderName(vendor);
+        const normalizedAccountId = accountId
+            ? normalizeProviderName(accountId)
+            : undefined;
+        if (!normalized || !/^\d{4}-\d{2}$/.test(month)) return;
+        const key = `${month}|${normalized}|${source}|${normalizedAccountId ?? ""}`;
+        const existing = observations.get(key);
+        observations.set(key, {
+            month,
+            vendor: normalized,
+            source,
+            dashboardChecked:
+                dashboardChecked || existing?.dashboardChecked === true,
+            ...(normalizedAccountId == null
+                ? {}
+                : { accountId: normalizedAccountId }),
+        });
+    };
+
+    for (const row of data.opTransactions ?? []) {
+        if (!isComputeOrInfrastructureCategory(transactionCategory(row))) {
+            continue;
+        }
+        add({
+            month: row.date.slice(0, 7),
+            vendor: row.vendor,
+            source: "transactions",
+            // Wise proves payment. It does not prove the provider dashboard or
+            // statement was collected.
+            dashboardChecked: false,
+        });
+    }
+    for (const row of data.opCloud ?? []) {
+        if (row.type.trim().toLowerCase() === "balance") continue;
+        for (const month of cloudObservationMonths(row)) {
+            add({
+                month,
+                vendor: row.vendor,
+                source: "cloud",
+                accountId: row.account_id,
+                // A credit award proves a grant, not that the month's provider
+                // statement, invoice, or usage dashboard was collected.
+                dashboardChecked: !(row.credit > 0 && row.paid === 0),
+            });
+        }
+    }
+    for (const row of data.opPollen ?? []) {
+        add({
+            month: row.month.slice(0, 7),
+            vendor: row.vendor,
+            source: "pollen",
+            dashboardChecked: false,
+        });
+    }
+
+    return [...observations.values()].sort(
+        (a, b) =>
+            b.month.localeCompare(a.month) ||
+            a.vendor.localeCompare(b.vendor) ||
+            a.source.localeCompare(b.source),
+    );
+}
+
+export type ProviderReviewRow = {
+    month: string;
+    provider: string;
+    label: string;
+    meteringBasis: MeteringBasis | null;
+    observedAliases: string[];
+    sources: ProviderObservationSource[];
+    mapped: boolean;
+    monthlyReview: boolean;
+    dashboardChecked: boolean;
+    dashboardStatus:
+        | "recorded"
+        | "reviewed gap"
+        | "due"
+        | "no activity"
+        | "not required";
+    checkExplanation: ProviderCheckExplanation | null;
+    expectedAccounts: ProviderAccountDefinition[];
+    observedAccountIds: string[];
+    accountStatus:
+        | "complete"
+        | "partial"
+        | "unassigned"
+        | "no activity"
+        | "not tracked";
+    connector: string | null;
+};
+
+const SOURCE_ORDER: ProviderObservationSource[] = [
+    "transactions",
+    "cloud",
+    "pollen",
+];
+
+function reviewMonths(data: Data, filter: MonthFilterValue): string[] {
+    if (typeof filter === "string" && /^\d{4}-\d{2}$/.test(filter)) {
+        return [filter];
+    }
+    const months = collectMonths(data);
+    return months.filter((month) => matchesMonth(month, filter));
+}
+
+export function providerReviewRows(
+    data: Data,
+    month: MonthFilterValue = "",
+): ProviderReviewRow[] {
+    const observations =
+        data.providerObservations ?? collectProviderObservations(data);
+    const months = reviewMonths(data, month);
+    type ReviewAccumulator = ProviderReviewRow & {
+        aliasSet: Set<string>;
+        accountSet: Set<string>;
+        sourceSet: Set<ProviderObservationSource>;
+        hasUnassignedAccountEvidence: boolean;
+    };
+    const rows = new Map<string, ReviewAccumulator>();
+
+    const makeRow = (
+        reviewMonth: string,
+        provider: string,
+        definition?: ProviderDefinition,
+    ): ReviewAccumulator => {
+        const expectedAccounts = definition
+            ? activeProviderAccounts(definition, reviewMonth)
+            : [];
+        return {
+            month: reviewMonth,
+            provider,
+            label: definition?.label ?? "Not mapped",
+            meteringBasis: definition?.meteringBasis ?? null,
+            observedAliases: [],
+            sources: [],
+            mapped: definition != null,
+            monthlyReview: definition?.monthlyReview ?? false,
+            dashboardChecked: false,
+            checkExplanation: null,
+            dashboardStatus: definition?.monthlyReview
+                ? "no activity"
+                : "not required",
+            expectedAccounts,
+            observedAccountIds: [],
+            accountStatus: expectedAccounts.length
+                ? "no activity"
+                : "not tracked",
+            connector: definition?.connector ?? null,
+            aliasSet: new Set<string>(),
+            accountSet: new Set<string>(),
+            sourceSet: new Set<ProviderObservationSource>(),
+            hasUnassignedAccountEvidence: false,
+        };
+    };
+
+    for (const reviewMonth of months) {
+        for (const provider of PROVIDER_REGISTRY) {
+            if (!provider.monthlyReview) continue;
+            const key = `${reviewMonth}|${provider.id}`;
+            rows.set(key, makeRow(reviewMonth, provider.id, provider));
+        }
+    }
+
+    for (const observation of observations) {
+        if (!months.includes(observation.month)) continue;
+        const definition = resolveProvider(observation.vendor);
+        const provider = definition?.id ?? observation.vendor;
+        const key = `${observation.month}|${provider}`;
+        const row =
+            rows.get(key) ?? makeRow(observation.month, provider, definition);
+        row.aliasSet.add(observation.vendor);
+        row.sourceSet.add(observation.source);
+        row.dashboardChecked ||= observation.dashboardChecked;
+        if (observation.source === "cloud") {
+            if (observation.accountId) {
+                row.accountSet.add(observation.accountId);
+            } else if (row.expectedAccounts.length > 0) {
+                row.hasUnassignedAccountEvidence = true;
+            }
+        }
+        rows.set(key, row);
+    }
+
+    return [...rows.values()]
+        .map(
+            ({
+                accountSet,
+                aliasSet,
+                hasUnassignedAccountEvidence,
+                sourceSet,
+                ...row
+            }) => {
+                const observedAccountIds = [...accountSet].sort((a, b) =>
+                    a.localeCompare(b),
+                );
+                const expectedIds = new Set(
+                    row.expectedAccounts.map((account) => account.id),
+                );
+                const hasUnknownAccount = observedAccountIds.some(
+                    (accountId) => !expectedIds.has(accountId),
+                );
+                const allExpectedAccountsObserved = row.expectedAccounts.every(
+                    (account) => accountSet.has(account.id),
+                );
+                const accountStatus =
+                    row.expectedAccounts.length === 0
+                        ? ("not tracked" as const)
+                        : hasUnassignedAccountEvidence || hasUnknownAccount
+                          ? ("unassigned" as const)
+                          : allExpectedAccountsObserved
+                            ? ("complete" as const)
+                            : accountSet.size > 0
+                              ? ("partial" as const)
+                              : sourceSet.size > 0
+                                ? ("unassigned" as const)
+                                : ("no activity" as const);
+                const checkExplanation = providerCheckExplanation(
+                    row.month,
+                    row.provider,
+                );
+                return {
+                    ...row,
+                    checkExplanation: checkExplanation ?? null,
+                    observedAliases: [...aliasSet].sort((a, b) =>
+                        a.localeCompare(b),
+                    ),
+                    observedAccountIds,
+                    sources: SOURCE_ORDER.filter((source) =>
+                        sourceSet.has(source),
+                    ),
+                    accountStatus,
+                    dashboardStatus: checkExplanation
+                        ? ("reviewed gap" as const)
+                        : row.dashboardChecked
+                          ? ("recorded" as const)
+                          : row.mapped &&
+                              resolveProvider(row.provider)?.monthlyReview
+                            ? sourceSet.size > 0
+                                ? ("due" as const)
+                                : ("no activity" as const)
+                            : ("not required" as const),
+                };
+            },
+        )
+        .sort(
+            (a, b) =>
+                Number(a.mapped) - Number(b.mapped) ||
+                Number(a.dashboardStatus !== "due") -
+                    Number(b.dashboardStatus !== "due") ||
+                b.month.localeCompare(a.month) ||
+                a.provider.localeCompare(b.provider),
+        );
+}
+
+export function missingProviderMappings(
+    data: Data,
+    month: MonthFilterValue = "",
+): ProviderReviewRow[] {
+    return providerReviewRows(data, month).filter((row) => !row.mapped);
+}

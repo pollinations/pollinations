@@ -2,11 +2,15 @@
 
 Canonical vendor: `perplexity`
 
-## Verified — 2026-07-10
+## Verified — 2026-08-21
 
 - Status: internal usage meter works; provider account billing remains manual.
 - A read-only `GET /models` probe returned HTTP 404, confirming that the Sonar
   key does not expose an account/models surface.
+- The logged-in API Platform billing page exposes the current credit balance,
+  usage tier, invoice history, a last-30-day total, and a model/SKU billing
+  breakdown. It does not expose a calendar-month selector; the available
+  presets are last 24 hours, 7 days, 30 days, and year to date.
 
 Use when:
 
@@ -33,7 +37,13 @@ Collection steps:
    otherwise use the Economics meter and show its source.
 3. Ask the operator for dashboard evidence when balance, auto-top-up, or grant
    status matters. Save evidence to `data/inbox/`.
-4. Use `agent.system.txt` to extract or reconcile it.
+4. For a closed month, open **Invoice history** and download the original PDF.
+   The invoice subtotal is the authoritative provider total and its SKU lines
+   are the strongest model/request/token detail.
+5. Use `agent.system.txt` to extract or reconcile it.
+6. For model attribution, query `op_pollen_api` and retain paid + quest request
+   counts and provider-cost estimates by month/model. For closed months, use
+   those rows as proportions only when the provider invoice total is stronger.
 
 Expected entry:
 
@@ -51,6 +61,22 @@ Known traps:
   account.
 - Current balance is a snapshot, not historical usage.
 - Do not maintain a local balance cache or forecast from the partial month.
+- A credit purchase invoice is not model usage. On 2026-08-19, the dashboard
+  showed a $62 paid invoice for the user's $50-plus-tax tier purchase; keep it
+  in cash evidence and do not add it to `op_cloud` usage.
+- Perplexity per-request search fees were absent from the retained Pollen meter
+  until commit `0aa5fb55ef6030493fd4884f209d17fb58737b04` shipped on
+  2026-07-03. January–June provider/Pollen drift is therefore historical
+  under-metering; July is the partial rollout month. Preserve both source
+  ledgers and use `provider-reconciliation.json` instead of fabricating a
+  Paid/Quest allocation for the missing fees.
+- The dashboard's **Year to Date** total covers the current billing group, whose
+  invoice series starts on 2026-03-26. It excludes the legacy `HNCVBP` invoice
+  series from January through 2026-03-26. Reconcile full-year usage from both
+  invoice series; do not compare the current-group YTD card with January–July
+  invoices as though they had the same scope.
+- As of 2026-08-21, the dashboard showed $1,564.41 remaining, tier 1, and auto
+  reload disabled. Keep future balance checks timestamped because usage is live.
 
 Official reference:
 

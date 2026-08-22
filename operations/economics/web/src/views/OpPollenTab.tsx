@@ -5,7 +5,7 @@ import {
     TableHeaderCell,
     TableRow,
 } from "@pollinations/ui";
-import { useMemo } from "react";
+import { Fragment, useMemo, useState } from "react";
 import {
     DataTable,
     GROUP_BORDER,
@@ -13,7 +13,6 @@ import {
     type SortColumn,
     TableScroller,
     useSortableRows,
-    withUniqueRowKeys,
 } from "../components/DataTable";
 import { fmtNumber, fmtPeriod } from "../lib/format";
 import {
@@ -21,11 +20,21 @@ import {
     matchesMonth,
     matchesValue,
     type ValueFilter,
+    WINDOW_START,
 } from "../lib/months";
 import type { Data, OpPollenRow } from "../types";
 
-function opPollenKey(row: OpPollenRow) {
-    return [row.month, row.vendor, row.model, row.currency].join("|");
+function PayoutValue({ label, value }: { label: string; value: number }) {
+    return (
+        <div>
+            <dt className="text-xs font-medium uppercase tracking-wide text-theme-text-soft">
+                {label}
+            </dt>
+            <dd className="text-sm text-theme-text-strong">
+                {fmtNumber(value)}
+            </dd>
+        </div>
+    );
 }
 
 export function OpPollenTab({
@@ -37,27 +46,26 @@ export function OpPollenTab({
     month?: MonthFilterValue;
     vendor?: ValueFilter;
 }) {
-    const baseRows = useMemo(() => {
-        return (data.opPollen ?? []).filter(
-            (row) =>
-                matchesMonth(row.month, month) &&
-                matchesValue(row.vendor, vendor),
-        );
-    }, [data.opPollen, month, vendor]);
+    const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
+    const baseRows = useMemo(
+        () =>
+            (data.opPollen ?? []).filter(
+                (row) =>
+                    row.month >= WINDOW_START &&
+                    matchesMonth(row.month, month) &&
+                    matchesValue(row.vendor, vendor),
+            ),
+        [data.opPollen, month, vendor],
+    );
     const sortColumns = useMemo<SortColumn<OpPollenRow>[]>(
         () => [
             { key: "month", value: (row) => row.month },
             { key: "vendor", value: (row) => row.vendor },
             { key: "model", value: (row) => row.model },
-            { key: "currency", value: (row) => row.currency },
-            { key: "cost_paid", value: (row) => row.cost_paid },
-            { key: "cost_quests", value: (row) => row.cost_quests },
             { key: "price_paid", value: (row) => row.price_paid },
             { key: "price_quests", value: (row) => row.price_quests },
-            { key: "byop_paid", value: (row) => row.byop_paid },
-            { key: "byop_quests", value: (row) => row.byop_quests },
-            { key: "model_paid", value: (row) => row.model_paid },
-            { key: "model_quests", value: (row) => row.model_quests },
+            { key: "cost_paid", value: (row) => row.cost_paid },
+            { key: "cost_quests", value: (row) => row.cost_quests },
             { key: "requests_paid", value: (row) => row.requests_paid },
             { key: "requests_quests", value: (row) => row.requests_quests },
         ],
@@ -67,6 +75,15 @@ export function OpPollenTab({
         key: "month",
         direction: "desc",
     });
+
+    const toggle = (key: string) => {
+        setExpanded((current) => {
+            const next = new Set(current);
+            if (next.has(key)) next.delete(key);
+            else next.add(key);
+            return next;
+        });
+    };
 
     return (
         <TableScroller>
@@ -83,38 +100,18 @@ export function OpPollenTab({
                             Model
                         </TableHeaderCell>
                         <TableHeaderCell
-                            rowSpan={2}
-                            {...headerProps("currency")}
+                            colSpan={2}
+                            align="center"
+                            className={GROUP_BORDER}
                         >
-                            Currency
+                            Pollen used
                         </TableHeaderCell>
                         <TableHeaderCell
                             colSpan={2}
                             align="center"
                             className={GROUP_BORDER}
                         >
-                            Cost
-                        </TableHeaderCell>
-                        <TableHeaderCell
-                            colSpan={2}
-                            align="center"
-                            className={GROUP_BORDER}
-                        >
-                            Price
-                        </TableHeaderCell>
-                        <TableHeaderCell
-                            colSpan={2}
-                            align="center"
-                            className={GROUP_BORDER}
-                        >
-                            BYOP
-                        </TableHeaderCell>
-                        <TableHeaderCell
-                            colSpan={2}
-                            align="center"
-                            className={GROUP_BORDER}
-                        >
-                            Model
+                            Metered cost
                         </TableHeaderCell>
                         <TableHeaderCell
                             colSpan={2}
@@ -123,52 +120,15 @@ export function OpPollenTab({
                         >
                             Requests
                         </TableHeaderCell>
+                        <TableHeaderCell rowSpan={2}>Payouts</TableHeaderCell>
                     </TableRow>
                     <TableRow>
                         <TableHeaderCell
                             align="right"
                             className={GROUP_BORDER}
-                            {...headerProps("cost_paid")}
-                        >
-                            <HeaderHint
-                                hint={{
-                                    meaning:
-                                        "Provider cost for usage served through paid Pollen.",
-                                    tables: "op_pollen_api",
-                                    sources: "TB",
-                                }}
-                            >
-                                Paid
-                            </HeaderHint>
-                        </TableHeaderCell>
-                        <TableHeaderCell
-                            align="right"
-                            {...headerProps("cost_quests")}
-                        >
-                            <HeaderHint
-                                hint={{
-                                    meaning:
-                                        "Provider cost for usage served through quest Pollen.",
-                                    tables: "op_pollen_api",
-                                    sources: "TB",
-                                }}
-                            >
-                                Quest
-                            </HeaderHint>
-                        </TableHeaderCell>
-                        <TableHeaderCell
-                            align="right"
-                            className={GROUP_BORDER}
                             {...headerProps("price_paid")}
                         >
-                            <HeaderHint
-                                hint={{
-                                    meaning:
-                                        "Pollen charged to paid balances before ecosystem shares.",
-                                    tables: "op_pollen_api",
-                                    sources: "TB",
-                                }}
-                            >
+                            <HeaderHint hint="Pollen consumed from paid balances before ecosystem shares.">
                                 Paid
                             </HeaderHint>
                         </TableHeaderCell>
@@ -176,40 +136,20 @@ export function OpPollenTab({
                             align="right"
                             {...headerProps("price_quests")}
                         >
-                            <HeaderHint
-                                hint={{
-                                    meaning:
-                                        "Pollen value consumed from quest balances.",
-                                    tables: "op_pollen_api",
-                                    sources: "TB",
-                                }}
-                            >
+                            <HeaderHint hint="Pollen consumed from Quest balances. This is usage, never fiat revenue.">
                                 Quest
                             </HeaderHint>
                         </TableHeaderCell>
                         <TableHeaderCell
                             align="right"
                             className={GROUP_BORDER}
-                            {...headerProps("byop_paid")}
+                            {...headerProps("cost_paid")}
                         >
                             Paid
                         </TableHeaderCell>
                         <TableHeaderCell
                             align="right"
-                            {...headerProps("byop_quests")}
-                        >
-                            Quest
-                        </TableHeaderCell>
-                        <TableHeaderCell
-                            align="right"
-                            className={GROUP_BORDER}
-                            {...headerProps("model_paid")}
-                        >
-                            Paid
-                        </TableHeaderCell>
-                        <TableHeaderCell
-                            align="right"
-                            {...headerProps("model_quests")}
+                            {...headerProps("cost_quests")}
                         >
                             Quest
                         </TableHeaderCell>
@@ -229,61 +169,98 @@ export function OpPollenTab({
                     </TableRow>
                 </TableHead>
                 <TableBody>
-                    {withUniqueRowKeys(rows, opPollenKey).map(
-                        ({ key, row }) => (
-                            <TableRow key={key}>
-                                <TableCell>{fmtPeriod(row.month)}</TableCell>
-                                <TableCell>{row.vendor}</TableCell>
-                                <TableCell>{row.model}</TableCell>
-                                <TableCell>{row.currency}</TableCell>
-                                <TableCell
-                                    align="right"
-                                    className={GROUP_BORDER}
-                                >
-                                    {fmtNumber(row.cost_paid)}
-                                </TableCell>
-                                <TableCell align="right">
-                                    {fmtNumber(row.cost_quests)}
-                                </TableCell>
-                                <TableCell
-                                    align="right"
-                                    className={GROUP_BORDER}
-                                >
-                                    {fmtNumber(row.price_paid)}
-                                </TableCell>
-                                <TableCell align="right">
-                                    {fmtNumber(row.price_quests)}
-                                </TableCell>
-                                <TableCell
-                                    align="right"
-                                    className={GROUP_BORDER}
-                                >
-                                    {fmtNumber(row.byop_paid)}
-                                </TableCell>
-                                <TableCell align="right">
-                                    {fmtNumber(row.byop_quests)}
-                                </TableCell>
-                                <TableCell
-                                    align="right"
-                                    className={GROUP_BORDER}
-                                >
-                                    {fmtNumber(row.model_paid)}
-                                </TableCell>
-                                <TableCell align="right">
-                                    {fmtNumber(row.model_quests)}
-                                </TableCell>
-                                <TableCell
-                                    align="right"
-                                    className={GROUP_BORDER}
-                                >
-                                    {fmtNumber(row.requests_paid)}
-                                </TableCell>
-                                <TableCell align="right">
-                                    {fmtNumber(row.requests_quests)}
-                                </TableCell>
-                            </TableRow>
-                        ),
-                    )}
+                    {rows.map((row) => {
+                        const key = [
+                            row.month,
+                            row.vendor,
+                            row.model,
+                            row.currency,
+                        ].join("|");
+                        const isExpanded = expanded.has(key);
+                        return (
+                            <Fragment key={key}>
+                                <TableRow>
+                                    <TableCell>
+                                        {fmtPeriod(row.month)}
+                                    </TableCell>
+                                    <TableCell>{row.vendor}</TableCell>
+                                    <TableCell>{row.model}</TableCell>
+                                    <TableCell
+                                        align="right"
+                                        className={GROUP_BORDER}
+                                    >
+                                        {fmtNumber(row.price_paid)}
+                                    </TableCell>
+                                    <TableCell align="right">
+                                        {fmtNumber(row.price_quests)}
+                                    </TableCell>
+                                    <TableCell
+                                        align="right"
+                                        className={GROUP_BORDER}
+                                    >
+                                        {fmtNumber(row.cost_paid)}
+                                    </TableCell>
+                                    <TableCell align="right">
+                                        {fmtNumber(row.cost_quests)}
+                                    </TableCell>
+                                    <TableCell
+                                        align="right"
+                                        className={GROUP_BORDER}
+                                    >
+                                        {fmtNumber(row.requests_paid)}
+                                    </TableCell>
+                                    <TableCell align="right">
+                                        {fmtNumber(row.requests_quests)}
+                                    </TableCell>
+                                    <TableCell>
+                                        <button
+                                            type="button"
+                                            onClick={() => toggle(key)}
+                                            className="font-medium text-theme-text underline underline-offset-4 hover:text-theme-text-soft"
+                                            aria-expanded={isExpanded}
+                                        >
+                                            {isExpanded ? "Hide" : "Show"}
+                                        </button>
+                                    </TableCell>
+                                </TableRow>
+                                {isExpanded ? (
+                                    <TableRow>
+                                        <TableCell
+                                            colSpan={10}
+                                            className="bg-theme-bg-active/40"
+                                        >
+                                            <dl className="grid gap-4 p-2 sm:grid-cols-3 lg:grid-cols-5">
+                                                <PayoutValue
+                                                    label="BYOP · Paid"
+                                                    value={row.byop_paid}
+                                                />
+                                                <PayoutValue
+                                                    label="BYOP · Quest"
+                                                    value={row.byop_quests}
+                                                />
+                                                <PayoutValue
+                                                    label="Model reward · Paid"
+                                                    value={row.model_paid}
+                                                />
+                                                <PayoutValue
+                                                    label="Model reward · Quest"
+                                                    value={row.model_quests}
+                                                />
+                                                <div>
+                                                    <dt className="text-xs font-medium uppercase tracking-wide text-theme-text-soft">
+                                                        Currency
+                                                    </dt>
+                                                    <dd className="text-sm text-theme-text-strong">
+                                                        {row.currency}
+                                                    </dd>
+                                                </div>
+                                            </dl>
+                                        </TableCell>
+                                    </TableRow>
+                                ) : null}
+                            </Fragment>
+                        );
+                    })}
                 </TableBody>
             </DataTable>
         </TableScroller>

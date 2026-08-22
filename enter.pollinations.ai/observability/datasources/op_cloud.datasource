@@ -5,6 +5,8 @@ SCHEMA >
     `entry_id` String `json:$.entry_id`,
     `source` String `json:$.source`,
     `vendor` String `json:$.vendor`,
+    `account_id` Nullable(String) `json:$.account_id`,
+    `account_name` Nullable(String) `json:$.account_name`,
     `type` String `json:$.type`,
     `start` String `json:$.start`,
     `end` String `json:$.end`,

@@ -1,10 +1,15 @@
 import type { OpRunwayRow, OpTransactionRow } from "../types";
+import {
+    EXPENSE_CATEGORY_ORDER,
+    runwayCategory,
+    transactionCategory,
+} from "./categories";
 import { toUsd } from "./fx";
-import { CATEGORY_ORDER, monthShift } from "./insights";
+import { monthShift } from "./insights";
 import { WINDOW_START } from "./months";
 
 const MONTH_RE = /^\d{4}-\d{2}$/;
-const RUNWAY_CATEGORY_ORDER = ["revenue", ...CATEGORY_ORDER];
+const RUNWAY_CATEGORY_ORDER = ["revenue", ...EXPENSE_CATEGORY_ORDER];
 
 export type RunwayAssumption = OpRunwayRow & {
     amountUsd: number;
@@ -59,12 +64,6 @@ function normalizedVendor(value: string) {
     return value.trim() || "unmatched";
 }
 
-// Uncategorized facts stay visible as "other" — folding them into a named
-// bucket would silently misstate that bucket.
-function normalizedCategory(value: string) {
-    return value.trim() || "other";
-}
-
 function matrixKey(category: string, vendor: string) {
     return `${category}\u0000${vendor}`;
 }
@@ -110,7 +109,7 @@ export function buildRunway(
     for (const row of transactions) {
         const month = row.date.slice(0, 7);
         if (!MONTH_RE.test(month) || month < WINDOW_START) continue;
-        const category = normalizedCategory(row.category);
+        const category = transactionCategory(row);
         const vendor = normalizedVendor(row.vendor);
         const key = matrixKey(category, vendor);
         const months = actualByMonth.get(month) ?? new Map<string, number>();
@@ -128,7 +127,7 @@ export function buildRunway(
         if (fact.kind !== "forecast") continue;
         const month = fact.date.slice(0, 7);
         if (!MONTH_RE.test(month) || month < WINDOW_START) continue;
-        const category = normalizedCategory(fact.category);
+        const category = runwayCategory(fact);
         const vendor = normalizedVendor(fact.vendor);
         const key = matrixKey(category, vendor);
         const amountUsd = toUsd(fact.amount, fact.currency, fact.date);

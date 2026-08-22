@@ -12,8 +12,11 @@ export type OpTransactionRow = {
 };
 
 export type OpCloudRow = {
+    entry_id: string;
     source: string;
     vendor: string;
+    account_id?: string;
+    account_name?: string;
     type: "inference" | "gpu" | "infra" | string;
     start: string;
     end: string;
@@ -30,7 +33,9 @@ export type OpCloudRow = {
 };
 
 export type OpPollenRow = {
-    source: string;
+    // The live aggregate endpoint does not emit a source column; fixtures may
+    // still name their synthetic source for provenance in tests.
+    source?: string;
     month: string;
     vendor: string;
     model: string;
@@ -60,9 +65,22 @@ export type OpRunwayRow = {
     recorded_at: string;
 };
 
+export type ProviderObservationSource = "transactions" | "cloud" | "pollen";
+
+// Captured before provider aliases are canonicalized so the registry can show
+// exactly which raw Tinybird names were observed.
+export type ProviderObservation = {
+    month: string;
+    vendor: string;
+    source: ProviderObservationSource;
+    dashboardChecked: boolean;
+    accountId?: string;
+};
+
 export type Data = {
     opTransactions?: OpTransactionRow[];
     opCloud?: OpCloudRow[];
     opPollen?: OpPollenRow[];
     opRunway?: OpRunwayRow[];
+    providerObservations?: ProviderObservation[];
 };

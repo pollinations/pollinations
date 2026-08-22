@@ -1,0 +1,33 @@
+{
+  "pr_number": 13661,
+  "title": "Add pegalink and iotserver24 to the list",
+  "author": "gggff123",
+  "url": "https://github.com/pollinations/pollinations/pull/13661",
+  "merged_at": "2026-08-22T12:19:58Z",
+  "labels": [],
+  "pr_body_excerpt": "Closes #13658\r\nCloses #13666",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Two more keys to the garden",
+    "blurb": "The GitHub auth list grew by two friendly names. A tiny gatekeeping chore, completed without alarming the bees.",
+    "summary": "Added pegalink and iotserver24 to the shared GitHub authorization ID list, enabling their recognized access through the auth flow.",
+    "impact": "These two GitHub identities can now be matched by the shared authentication allowlist.",
+    "keywords": [
+      "github",
+      "auth",
+      "allowlist",
+      "access",
+      "shared-config"
+    ],
+    "visual_concept": "Depict Polli tending a cozy garden gate with two newly labeled seed packets, “pegalink” and “iotserver24,” being added to a friendly access ledger. The gate and a small retro terminal symbolize the shared GitHub authorization list, with flowers and code-plants making the configuration work feel welcoming.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny gardener scarf, carefully placing two seed packets labeled “pegalink” and “iotserver24” beside a warm garden gate and a retro terminal showing an access list; small code-plants and flowers grow around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-22/PR-13661.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny gardener scarf, carefully placing two seed packets labeled “pegalink” and “iotserver24” beside a warm garden gate and a retro terminal showing an access list; small code-plants and flowers grow around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-22T12:21:00.705258+00:00"
+}

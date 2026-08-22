@@ -1,0 +1,34 @@
+{
+  "pr_number": 13688,
+  "title": "fix: align GPT-5.6 Terra and Luna Azure cost sheets",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13688",
+  "merged_at": "2026-08-22T11:04:00Z",
+  "labels": [],
+  "pr_body_excerpt": "- Records Azure East US GlobalStandard costs effective 2026-08-01: Terra $2/$0.20/$2.50/$12 and Luna $0.20/$0.02/$0.25/$1.20 per million short-context input/cache-read/cache-write/output tokens, with the corresponding >272K tiers.\n- Sets Terra multiplier to `0.625` and Luna to `1`, preserving every existing customer price and Quest-Pollen access.\n- Keeps canonical IDs, aliases, Azure deployments, capabilities, and no-fallback behavior unchanged.\n- Direct Azure probes served `gpt-5.6-terra-2026-07-09` and `gpt-5.6-luna-2026-07-09`; 343 focused pricing/alias tests, Enter typecheck, and CI pass.\n- Authenticated local Gen E2E passed for both models: short and >272K billing, canonical IDs and aliases, image input, streaming, `/v1/models`, output-cache hit, single debit, and Tinybird provider/cost/price fields. Terra billed exact Azure cost × 0.625; Luna billed exact Azure cost × 1.\n\nAzure returned deterministic cache-write usage in live probes. Repeated long-prefix requests did not produce a provider cache-read hit, including with a stable `prompt_cache_key`; that published cache-read rate is therefore source-verified and covered by pricing tests, not live-usage-observed in this run.\n\nPricing evidence: [Microsoft announcement](https://azure.microsoft.com/en-us/blog/gpt-5-6-now-available-in-microsoft-foundry/) · [Azure Retail Prices API](https://prices.azure.com/api/retail/prices)\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The cost ledger blooms",
+    "blurb": "Terra and Luna's Azure accounting got a careful garden-path realignment. The prices people see and Quest-Pollen access stay exactly where they were.",
+    "summary": "Aligned GPT-5.6 Terra and Luna Azure East US GlobalStandard cost sheets for short and >272K-token contexts, setting Terra's cost multiplier to 0.625 and Luna's to 1 while retaining all existing customer prices, aliases, deployments, and access.",
+    "impact": "Billing telemetry and provider-cost records now match Azure's published Terra and Luna rates, with no change to customer-facing prices or Quest-Pollen availability.",
+    "keywords": [
+      "GPT-5.6",
+      "Terra",
+      "Luna",
+      "Azure",
+      "pricing",
+      "billing"
+    ],
+    "visual_concept": "A cozy billing-garden ledger scene: Polli carefully compares two labeled seed packets, Terra and Luna, against an Azure-blue-tinted retro terminal showing tiny token-cost rows. The visual metaphor is calibration rather than a price change: balanced scales, neat ledgers, and code-plants growing from the corrected records.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded light blue translucent wings, wearing tiny accountant glasses as she balances Terra and Luna token ledgers beside a retro terminal; neat code-plants and small flowers grow from the corrected cost sheet, with lime green (#ecf874) prominently glowing across the desk. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, subtle CRT glow, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-22/PR-13688.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded light blue translucent wings, wearing tiny accountant glasses as she balances Terra and Luna token ledgers beside a retro terminal; neat code-plants and small flowers grow from the corrected cost sheet, with lime green (#ecf874) prominently glowing across the desk. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, subtle CRT glow, emotionally warm."
+  },
+  "generated_at": "2026-08-22T11:04:56.830406+00:00"
+}

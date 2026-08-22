@@ -162,7 +162,7 @@ polli my-models update <id> --description "Updated description"
 polli my-models update <id> --paid-only            # only accept Paid Pollen; --no-paid-only reverts
 polli my-models delete <id>
 ```
-`my-models` manages owned community text, image, and transcription models for invite-only accounts. It requires `communityEndpointsAllowed: true` plus a key with `account:keys`, or an authenticated dashboard session through the API. Use `account:usage` for narrow read-only usage and `polli quests`; use both permissions when a client needs both read-only account state and admin operations. Quest claiming is dashboard-only; `polli quests` is read-only and account-aware.
+`my-models` manages owned community text, image, and transcription models. Any account can create private models; `communityEndpointsAllowed: true` is required only to publish them. API keys require `account:keys`. Use `account:usage` for narrow read-only usage and `polli quests`; use both permissions when a client needs both read-only account state and admin operations. Quest claiming is dashboard-only; `polli quests` is read-only and account-aware.
 
 ### Register an image my-model
 ```bash

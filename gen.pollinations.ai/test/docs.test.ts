@@ -81,6 +81,7 @@ describe("docs routes", () => {
             info: { title: "Enter", version: "0.0.0" },
             tags: [
                 { name: "👤 Account" },
+                { name: "🧩 Community Models" },
                 { name: "✨ Quests" },
                 { name: "Customer" },
             ],
@@ -101,13 +102,13 @@ describe("docs routes", () => {
                 },
                 "/api/account/my-models": {
                     get: {
-                        tags: ["👤 Account"],
+                        tags: ["🧩 Community Models"],
                         description:
                             "List invite-only community text models. API keys require `account:keys`.",
                     },
                 },
                 "/api/account/my-models/{id}/update": {
-                    post: { tags: ["👤 Account"] },
+                    post: { tags: ["🧩 Community Models"] },
                 },
                 "/api/account/agents": {
                     get: {
@@ -151,6 +152,7 @@ describe("docs routes", () => {
             info: { description: string };
             paths: Record<string, unknown>;
             servers: { url: string }[];
+            "x-tagGroups": { name: string; tags: string[] }[];
             tags: { name: string; description?: string }[];
             components: { schemas: Record<string, unknown> };
         };
@@ -222,10 +224,22 @@ describe("docs routes", () => {
         expect(schema.paths["/{id}/metadata"]).toBeDefined();
         expect(schema.paths["/media"]).toBeDefined();
         expect(schema.paths["/media/{id}"]).toBeDefined();
-        // Wallets, CLI, and MCP are plain tags in the Integrations group;
-        // the drawer icons are presentation, not part of the OpenAPI names.
+        const integrations = schema["x-tagGroups"].find(
+            (group) => group.name === "Integrations",
+        );
+        const resources = schema["x-tagGroups"].find(
+            (group) => group.name === "Resources",
+        );
+        expect(integrations?.tags).toContain("Publish a Model");
+        expect(integrations?.tags).not.toContain("Community Models");
+        expect(resources?.tags).toContain("Community Models");
+        expect(resources?.tags).not.toContain("Publish a Model");
         expect(schema.tags.map((tag) => tag.name)).toContain(
             "Connect User Wallets",
+        );
+        expect(schema.tags.map((tag) => tag.name)).toContain("Publish a Model");
+        expect(schema.tags.map((tag) => tag.name)).toContain(
+            "Community Models",
         );
         expect(schema.tags.map((tag) => tag.name)).toContain("CLI");
         expect(schema.tags.map((tag) => tag.name)).toContain("MCP Server");
@@ -288,6 +302,7 @@ describe("docs routes", () => {
             schema.paths["/account/my-models"] as Record<string, unknown>
         )?.get as Record<string, unknown> | undefined;
         expect(myModelsGet?.description).toContain("account:keys");
+        expect(myModelsGet?.tags).toEqual(["Community Models"]);
 
         const agentsGet = (
             schema.paths["/account/agents"] as Record<string, unknown>
@@ -404,6 +419,18 @@ describe("docs routes", () => {
         expect(mcpRes.status).toBe(301);
         expect(mcpRes.headers.get("Location")).toBe("/docs#tag/mcp-server");
 
+        const modelsRes = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs/guides/models", {
+                redirect: "manual",
+            }),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        expect(modelsRes.status).toBe(301);
+        expect(modelsRes.headers.get("Location")).toBe(
+            "/docs#tag/publish-a-model",
+        );
+
         const walletRes = await worker.fetch(
             new Request("https://gen.pollinations.ai/docs/guides/byop", {
                 redirect: "manual",
@@ -458,6 +485,18 @@ describe("docs routes", () => {
         );
         expect(byopRes.status).toBe(200);
         expect(await byopRes.text()).toContain("## Connect User Wallets");
+
+        const modelsRes = await worker.fetch(
+            new Request(
+                "https://gen.pollinations.ai/docs/llm.txt?section=publish-a-model",
+            ),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        expect(modelsRes.status).toBe(200);
+        const modelsBody = await modelsRes.text();
+        expect(modelsBody).toContain("## Publish a Model");
+        expect(modelsBody).toContain("/account/my-models");
 
         const badRes = await worker.fetch(
             new Request("https://gen.pollinations.ai/docs/llm.txt?section=bad"),

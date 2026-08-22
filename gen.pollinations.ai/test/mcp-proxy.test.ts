@@ -61,6 +61,13 @@ test("lists the MCP servers exposed through Gen", async () => {
                     "Analyze images, answer visual questions, and extract text.",
                 url: "https://gen.pollinations.ai/mcp/vision",
             },
+            {
+                id: "python",
+                name: "Python",
+                description:
+                    "Run short Python calculations in an ephemeral network-disabled container.",
+                url: "https://gen.pollinations.ai/mcp/python",
+            },
         ],
     });
 });
@@ -288,5 +295,34 @@ test("routes Browser MCP and bills its measured runtime", async () => {
     });
     const balance = await getUserBalance(drizzle(env.DB), userId);
     expect(balance.tierBalance).toBeCloseTo(1 - 0.000025);
+    expect(balance.packBalance).toBe(0);
+});
+
+test("routes Python MCP and bills its measured runtime", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1 },
+    });
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/python",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(MCP_REQUEST),
+        },
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+        jsonrpc: "2.0",
+        id: 1,
+        result: {
+            content: [{ type: "text", text: "python proxied" }],
+        },
+    });
+    const balance = await getUserBalance(drizzle(env.DB), userId);
+    expect(balance.tierBalance).toBeCloseTo(1 - 0.00001);
     expect(balance.packBalance).toBe(0);
 });

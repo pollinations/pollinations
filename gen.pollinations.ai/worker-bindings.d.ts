@@ -6,6 +6,7 @@ interface CloudflareBindings {
     WEB_SEARCH_MCP: Fetcher;
     TRANSCRIPTION_MCP: Fetcher;
     VISION_MCP: Fetcher;
+    PYTHON_MCP: Fetcher;
     PORTKEY?: Fetcher;
     KLEIN_VPC?: Fetcher;
     BETTER_AUTH_SECRET: string;

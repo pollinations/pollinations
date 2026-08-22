@@ -70,6 +70,15 @@ export const MCP_SERVERS = [
             "Analyze images, answer visual questions, and extract text.",
         billing: "downstream",
     },
+    {
+        id: "python",
+        name: "Python",
+        description:
+            "Run short Python calculations in an ephemeral network-disabled container.",
+        billing: "usage_receipt",
+        provider: "cloudflare",
+        eventType: "tool.code",
+    },
 ] as const satisfies readonly McpServerDefinition[];
 
 export type McpServerId = (typeof MCP_SERVERS)[number]["id"];

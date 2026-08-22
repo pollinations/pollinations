@@ -33,6 +33,7 @@ function getMcpBinding(
     if (id === "web-search") return env.WEB_SEARCH_MCP;
     if (id === "transcription") return env.TRANSCRIPTION_MCP;
     if (id === "vision") return env.VISION_MCP;
+    if (id === "python") return env.PYTHON_MCP;
     return undefined;
 }
 

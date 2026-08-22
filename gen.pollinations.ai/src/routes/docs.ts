@@ -615,7 +615,9 @@ async function fetchEnterSchema(c: Context<Env>) {
             headers: c.req.raw.headers,
         }),
     );
-    if (!response.ok) return undefined;
+    if (!response.ok) {
+        throw new Error(`Enter OpenAPI schema returned ${response.status}`);
+    }
 
     const schema = (await response.json()) as OpenApiSchema;
     return transformEnterSchema(stripGenerationPaths(schema));
@@ -895,7 +897,7 @@ export async function buildMergedOpenApiSpec(
 ): Promise<OpenApiSchema> {
     const [generationSchema, enterSchema, mediaSchema] = await Promise.all([
         getGenerationSchema(genApp),
-        fetchEnterSchema(c).catch(() => undefined),
+        fetchEnterSchema(c),
         fetchMediaSchema(c).catch(() => undefined),
     ]);
     return injectSamples(

@@ -8,7 +8,7 @@ import {
 } from "@shared/auth/api-key.ts";
 import {
     type CommunityEndpointRuntime,
-    isDelegatingEndpoint,
+    usesAgentRunToken,
 } from "@shared/community-endpoints.ts";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
@@ -73,7 +73,7 @@ function installAuth(
         if (
             agentRun &&
             model.communityEndpoint &&
-            isDelegatingEndpoint(model.communityEndpoint)
+            usesAgentRunToken(model.communityEndpoint)
         ) {
             throw new HTTPException(403, {
                 message: "Agent run tokens cannot call agent models",

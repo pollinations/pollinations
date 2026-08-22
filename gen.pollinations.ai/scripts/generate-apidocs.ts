@@ -25,6 +25,7 @@ type Spec = {
     info: { title: string; description: string; version: string };
     openapi: string;
     servers: { url: string }[];
+    tags?: { name: string; description?: string }[];
     paths: Record<string, Record<string, Operation>>;
     components: { schemas: Record<string, Schema> };
 };
@@ -756,10 +757,10 @@ function loadIntroductionTagline(): string {
 function renderGettingStarted(): string {
     return `## ${sectionHeading(SECTIONS.start)}
 
-**1. Get an API key** at [enter.pollinations.ai](https://enter.pollinations.ai/keys). Two key types are available:
+**1. Get an API key** at [enter.pollinations.ai](https://enter.pollinations.ai/keys). Use the key type for your environment:
 
-- \`sk_*\` — secret key for backend use (full account access)
-- \`pk_*\` — publishable key, safe to ship in browsers and mobile apps
+- \`sk_*\` — secret key for backend use. Never ship it in a browser, mobile app, or repository.
+- \`pk_*\` App Key — public OAuth client id for BYOP. Use it to obtain a scoped user \`sk_*\`; do not use raw publishable keys for new browser generation integrations.
 
 **2. Send the key** in the \`Authorization\` header (or as \`?key=\` query param for GET endpoints):
 
@@ -770,7 +771,7 @@ curl ${BASE_URL}/v1/models \\
 
 **3. Pick an endpoint** from the [${sectionHeading(SECTIONS.contents)}](#${sectionAnchor(SECTIONS.contents)}) below.
 
-**Integration guides:** [BYOP](https://gen.pollinations.ai/docs#tag/byop) · [CLI](https://gen.pollinations.ai/docs#tag/cli) · [MCP Server](https://gen.pollinations.ai/docs#tag/mcp-server)`;
+**Integration guides:** [Connect User Wallets](https://gen.pollinations.ai/docs#tag/connect-user-wallets) · [Publish a Model](https://gen.pollinations.ai/docs#tag/publish-a-model) · [MCP Server](https://gen.pollinations.ai/docs#tag/mcp-server) · [CLI](https://gen.pollinations.ai/docs#tag/cli)`;
 }
 
 function renderTableOfContents(
@@ -837,6 +838,13 @@ function renderEndpoints(
     for (const [tag, ops] of byTag) {
         out.push(`### ${tag}`);
         out.push("");
+        const description = spec.tags?.find(
+            (item) => item.name === tag,
+        )?.description;
+        if (description) {
+            out.push(description.trim());
+            out.push("");
+        }
         for (const { method, path, op } of ops) {
             out.push(renderEndpoint(spec, method, path, op));
             out.push("---");
@@ -1062,9 +1070,25 @@ const TAG_ORDER = [
     "Realtime",
     "Embeddings",
     "Models",
+    "Community Models",
     "Media Storage",
     "Account",
 ];
+
+const REQUIRED_PATHS = [
+    "/account/profile",
+    "/account/my-models",
+    "/account/agents",
+];
+
+function requireMergedPaths(spec: Spec): void {
+    const missing = REQUIRED_PATHS.filter((path) => !spec.paths[path]);
+    if (missing.length > 0) {
+        throw new Error(
+            `OpenAPI schema is incomplete; missing required paths: ${missing.join(", ")}`,
+        );
+    }
+}
 
 /** Group operations by tag, then re-key the map to follow TAG_ORDER. */
 function groupByTag(
@@ -1116,6 +1140,7 @@ function groupByTag(
 async function main() {
     console.log(`Fetching OpenAPI spec from ${OPENAPI_URL}...`);
     const spec = (await fetch(OPENAPI_URL).then((r) => r.json())) as Spec;
+    requireMergedPaths(spec);
     simplifyModelEnums(spec);
 
     const byTag = groupByTag(spec);

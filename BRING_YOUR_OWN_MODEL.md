@@ -1,6 +1,6 @@
 # Publish a Model
 
-Publishing a model—previously called Bring Your Own Model (BYOM)—lets you connect an OpenAI-compatible endpoint to Pollinations and call it through `gen.pollinations.ai` under an `owner/model` id. Pollinations handles authentication, Pollen billing, model discovery, and routing; the model continues to run on infrastructure you control.
+Publishing a model lets you connect an OpenAI-compatible endpoint to Pollinations and call it through `gen.pollinations.ai` under an `owner/model` id. Pollinations handles authentication, Pollen billing, model discovery, and routing; the model continues to run on infrastructure you control.
 
 Model publishing and [connecting user wallets](./BRING_YOUR_OWN_POLLEN.md) solve different problems. Model publishing supplies a model to the Pollinations catalog. The wallet flow lets users authorize an app to spend their own Pollen. An app can use either or both.
 
@@ -34,7 +34,7 @@ Owners receive 75% of the Pollen spent on their models. Paid and Quest Pollen ea
 
 ## Register in the Dashboard
 
-1. Open [My Agents & Models](https://enter.pollinations.ai/my-models).
+1. Open [My Models](https://enter.pollinations.ai/my-models).
 2. Choose **Add model**.
 3. Select text, image, or transcription and enter the upstream base URL, model id, and bearer token.
 4. Fetch the upstream model list or run the endpoint test before saving.
@@ -45,7 +45,7 @@ The upstream credential is used by Pollinations to proxy requests to your endpoi
 
 ## Register with the CLI
 
-The CLI currently manages text and image model registrations. Sign in, test the endpoint, then create the model:
+The CLI manages text, image, and transcription model registrations. Sign in, test the endpoint, then create the model:
 
 ```bash
 npx @pollinations/cli auth login
@@ -68,7 +68,19 @@ npx @pollinations/cli my-models create \
   --upstream-model image-v1
 ```
 
-Use `polli my-models list`, `update`, and `delete` for the rest of the lifecycle. API keys used for model management require the `account:keys` permission. Transcription registration currently uses the dashboard or Account API rather than the CLI.
+Use `polli my-models list`, `update`, and `delete` for the rest of the lifecycle. API keys used for model management require the `account:keys` permission.
+
+## Publishing Controls
+
+Public models support these owner controls in the dashboard or Account API:
+
+- `paidOnly` restricts calls to Paid Pollen.
+- `perUserRpm` limits each Pollinations user; `null` removes the limit.
+- Text models can declare `advertised.contextLength` and the `tool_calling` or `reasoning` capabilities.
+- The provider profile at `POST /account/my-models/provider` sets the public provider name and service URL shared by your models.
+- Owners can hide or relist their models without deleting them.
+
+Token prices cannot exceed 50 Pollen per 1M tokens. Fixed image prices cannot exceed 0.25 Pollen per image, and transcription prices cannot exceed 0.012 Pollen per minute. See the [Community Models API reference](https://gen.pollinations.ai/docs#tag/community-models) for the exact fields.
 
 ## Call Your Model
 
@@ -88,9 +100,9 @@ Authenticated model-list requests include your own private models. Public discov
 
 ## Fallbacks and Health
 
-Public and private community models can nominate up to three compatible community fallbacks. Fallbacks are tried in order and must use the same model family. They must not cost more than the primary model; image fallbacks must also match its pricing mode and support image input when the primary model does.
+Public and private community models can nominate up to three compatible community fallbacks. Fallbacks are tried in order and must use the same model family. They must not cost more than the primary model; image fallbacks must also match its pricing mode and support image input when the primary model does. A fallback cannot require Paid Pollen unless the primary model does too.
 
-Pollinations monitors public text and image models using live traffic and active probes. Sustained failures can deactivate a model after an owner notification and grace period. Fix and test the upstream endpoint before reactivating it. View public model health at [model-monitor.pollinations.ai](https://model-monitor.pollinations.ai).
+Pollinations monitors public text and image models using live traffic and active probes. Sustained failures can hide a model from listings while exact-ID calls continue to work. Owners can relist a fixed model, and the monitor can automatically relist models it hid after recovery is verified. View public model health at [model-monitor.pollinations.ai](https://model-monitor.pollinations.ai).
 
 ## Trust Boundary
 

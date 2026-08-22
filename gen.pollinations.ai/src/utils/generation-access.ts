@@ -28,6 +28,7 @@ export async function checkBalance(
     if (!auth.user?.id) return;
 
     const isPaidOnly = model.definition.paidOnly ?? false;
+    const keyPollenType = auth.apiKey?.pollenType ?? null;
     const estimatedCost = withByopMarkup(
         getEstimatedPrice(
             await getModelStats(env.KV, log),
@@ -46,10 +47,25 @@ export async function checkBalance(
 
     const userBalance = await balance.getBalance(auth.user.id);
 
-    if (!canCoverEstimatedCharge(userBalance, estimatedCost, isPaidOnly)) {
-        const available = isPaidOnly
-            ? userBalance.packBalance
-            : Math.max(userBalance.tierBalance, userBalance.packBalance);
+    if (
+        !canCoverEstimatedCharge(
+            userBalance,
+            estimatedCost,
+            isPaidOnly,
+            keyPollenType,
+        )
+    ) {
+        const available =
+            keyPollenType === "quest"
+                ? userBalance.tierBalance
+                : keyPollenType === "paid"
+                  ? userBalance.packBalance
+                  : isPaidOnly
+                    ? userBalance.packBalance
+                    : Math.max(
+                          userBalance.tierBalance,
+                          userBalance.packBalance,
+                      );
         throw new HTTPException(402, {
             message: `Insufficient balance. This request costs ~${estimatedCost.toFixed(4)} pollen, but your available balance is ${Math.max(0, available).toFixed(4)}.`,
         });

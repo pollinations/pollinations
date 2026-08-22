@@ -1,0 +1,35 @@
+{
+  "pr_number": 13673,
+  "title": "Add Pollen Image Studio to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13673",
+  "merged_at": "2026-08-22T04:08:57Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Pollen Image Studio](https://image.lanprint.com) to image\n- Pollen Image Studio is an online AI image generator powered by the Pollinations image API. --- --- What it is An online AI image generator using the Pollinations image API How to use Type a prompt or \n\nFixes #13671",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A new studio is blooming",
+    "blurb": "Pollen Image Studio has joined the garden: a simple online image generator running on the Pollinations image API. Bring a prompt; leave with pixels.",
+    "summary": "Added Pollen Image Studio (image.lanprint.com), an online AI image generator powered by the Pollinations image API, to the supported app directory.",
+    "impact": "People looking for a ready-to-use Pollinations-powered image tool can now discover Pollen Image Studio directly through the project’s app listings.",
+    "keywords": [
+      "community",
+      "image-generation",
+      "apps",
+      "pollinations-api",
+      "pollen-image-studio"
+    ],
+    "visual_concept": "Depict a cozy pixel-art image studio as a garden shed: Polli is helping a friendly CRT monitor robot turn a written prompt into a framed pastel landscape, with image-pixels blooming from code-plants. The studio represents the newly listed Pollen Image Studio app and should feel like a welcoming place for anyone to make images.",
+    "image_prompt": "A cozy pixel art scene inside a tiny garden image studio, where Polli—the cute yellow bee mascot with dark brown stripes, black oval eyes, pink rectangular cheek blush, light blue rounded wings, and a tiny painter’s beret—warmly helps a chunky CRT monitor robot create a framed AI landscape from a prompt card; pixel flowers and code-plants grow around a prominently lime green (#ecf874) glowing screen reading “IMAGE STUDIO.” Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-22/PR-13673.jpg",
+    "prompt": "A cozy pixel art scene inside a tiny garden image studio, where Polli—the cute yellow bee mascot with dark brown stripes, black oval eyes, pink rectangular cheek blush, light blue rounded wings, and a tiny painter’s beret—warmly helps a chunky CRT monitor robot create a framed AI landscape from a prompt card; pixel flowers and code-plants grow around a prominently lime green (#ecf874) glowing screen reading “IMAGE STUDIO.” Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-22T04:09:54.710165+00:00",
+  "app_name": "Pollen Image Studio",
+  "app_url": "https://image.lanprint.com"
+}

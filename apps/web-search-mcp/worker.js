@@ -127,7 +127,6 @@ export function createWorker({ fetchImpl = fetch } = {}) {
             const handler = createMcpHandler(
                 () => buildServer(env, authorization, fetchImpl),
                 {
-                    legacy: "stateless",
                     onerror: (error) => console.error(error),
                 },
             );

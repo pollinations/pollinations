@@ -39,12 +39,6 @@ Example `agent.json`:
 
 Updates replace the runtime configuration, so include `systemPrompt` and `baseModel`; include `mcpServers` if tools should remain enabled. You can also change the name, title, description, or visibility.
 
-## Privacy and prompt confidentiality
-
-Managed agents run on Pollinations, and publishing one does not by itself give its creator access to callers' request content. The selected base model and enabled tools receive the content required to execute each request; if they route content to a community-operated endpoint, that provider's data practices apply.
-
-Public agent instructions are not secret. Users may infer or extract them through interactions, so do not include credentials, personal data, confidential prompts, private business logic, or other content you are not authorized to disclose. Review the selected model and tools before publishing, and see the [Privacy Policy](https://pollinations.ai/privacy) for more information.
-
 ## Create with the CLI
 
 Create the agent and its callable model listing in one command:

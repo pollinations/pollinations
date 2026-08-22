@@ -453,11 +453,10 @@ export function CommunityEndpointDialog({
 
                     {form.visibility === "public" && (
                         <Alert intent="warning" title="Public provider duties">
-                            Callers' requests are sent to this endpoint and may
-                            contain personal or confidential data. Keep your
-                            provider details current, secure caller content, and
-                            disclose any retention, training, or other use. The
-                            Terms prohibit undisclosed reuse.
+                            Requests are sent to your endpoint. You are
+                            responsible for securing caller data and disclosing
+                            how you retain, share, train on, or otherwise use
+                            it.
                         </Alert>
                     )}
 

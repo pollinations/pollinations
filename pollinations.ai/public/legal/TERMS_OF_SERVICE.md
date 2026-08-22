@@ -51,9 +51,9 @@ Beta features carry no service level commitments. By using beta features, you ac
 
 Hosted access to model-powered APIs and tools per your plan, balance, and usage limits. Model outputs vary and may be incomplete, inaccurate, unsafe, unavailable, or unsuitable for your intended use. You are responsible for reviewing outputs before relying on them.
 
-**Community models and agents.** Community models and externally hosted agents are operated by third-party community providers, not by Pollinations. Selecting one sends the request content needed to provide the service to that provider. We do not control or verify the provider's infrastructure, instructions, security, retention, training practices, outputs, availability, or claims. Provider details shown in the catalog are supplied by the provider and do not constitute our endorsement. Review those details and do not submit credentials, confidential information, or sensitive personal data unless the provider's practices are suitable for your use.
+**Externally hosted community models.** Third-party community providers, not Pollinations, operate these models. Using one sends your request to its provider and any configured community fallback providers. Those providers are responsible for how they store, share, secure, train on, or otherwise use it; their terms and privacy policies apply. Pollinations does not control or verify those practices and, to the extent permitted by law, is not responsible for them. Provider details come from the provider and are not an endorsement. Check them before sending credentials, confidential information, or sensitive personal data.
 
-Managed prompt agents run on Pollinations infrastructure but use community-supplied instructions and selected models or tools. We do not verify those instructions. Public agent instructions are not confidential and may be inferred or extracted through interactions; creators must not include credentials, personal data, confidential information, or other content they are not authorized to disclose.
+**Managed agents.** Pollinations hosts these agents, and publishing one does not give its creator access to caller requests. Selected models and tools may still process those requests, and public agent instructions may be inferred or extracted. Creators must not include credentials or confidential data in agent instructions.
 
 We may make non-breaking changes and will notify you of material reductions where practical.
 
@@ -65,13 +65,7 @@ You retain all rights to data you submit ("Customer Data"). How personal data is
 
 Do not violate law; infringe IP/likeness/privacy; attack the Service; evade rate limits or spending controls; abuse Pollen grants, app attribution, or developer earnings; or replicate non-public features to build a competing hosted service. **No deepfakes of real people without consent. No CSAM (real or fictional).**
 
-If you publish a community model or externally hosted agent, you are responsible for its operation and must:
-
-- Accurately identify the provider and keep its public service and privacy information current.
-- Use caller content only to provide the requested service unless another use is clearly disclosed and has a lawful basis.
-- Apply appropriate security and retention controls, comply with privacy and data-subject-rights obligations, and honor deletion requests where required.
-- Not attempt to extract credentials, identify or profile callers, sell caller content, train on it, or use it for unrelated purposes without clear prior disclosure, necessary permission, and a lawful basis.
-- Ensure your endpoint, models, instructions, outputs, and use of caller content comply with these Terms and applicable law.
+If you publish an externally hosted community model, you are responsible for the endpoint and the caller data it receives. Identify the provider accurately, keep its privacy information current, use appropriate security and retention controls, and comply with applicable law. Clearly disclose how you store, share, train on, or otherwise use caller data. Do not mislead callers about the endpoint or its data practices.
 
 ## 6) Pollen, Fees, Taxes & Billing
 

@@ -481,17 +481,11 @@ export const Models: FC = () => {
                         title="Community model privacy"
                         className="mb-4"
                     >
-                        Community models send requests to independent providers.
-                        Managed agents use community-written instructions. Avoid
-                        sensitive data;{" "}
-                        <InlineLink
-                            href="https://gen.pollinations.ai/docs#tag/safety"
-                            showIcon={false}
-                        >
-                            Safety filters
-                        </InlineLink>{" "}
-                        can redact secrets and personal information when
-                        enabled. See our{" "}
+                        Requests to community models are sent to independent
+                        providers, including configured fallback providers. They
+                        may retain, share, or train on your data under their own
+                        policies. Check the provider information before sending
+                        confidential or sensitive data. See our{" "}
                         <InlineLink
                             href="https://pollinations.ai/privacy"
                             showIcon={false}

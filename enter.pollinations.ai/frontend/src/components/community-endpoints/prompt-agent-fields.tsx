@@ -33,9 +33,8 @@ export function PromptAgentFields({
             </FieldStack>
 
             <Alert intent="warning" title="Public instructions are not secret">
-                If you publish this agent, users may infer or extract its
-                instructions through interactions. Do not include credentials,
-                personal data, confidential prompts, or private business logic.
+                Users may infer or extract these instructions. Do not include
+                credentials, personal data, or confidential information.
             </Alert>
 
             <FieldStack

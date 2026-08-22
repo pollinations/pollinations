@@ -108,6 +108,4 @@ Pollinations monitors public text and image models using live traffic and active
 
 Community models run on the owner's infrastructure, not Pollinations infrastructure. Prompts, input media, and other request content are sent to that upstream provider. Do not send credentials or sensitive information to a community model unless you trust its owner and data handling.
 
-If you publish a model, keep your provider profile linked to a current website or privacy notice that identifies who operates the endpoint and explains any retention, training, or other use of caller content. Secure the content you receive and use it only to provide the requested service unless another use is clearly disclosed, permitted, and lawful. See the [Terms of Service](https://pollinations.ai/terms) for the complete provider requirements.
-
 For complete `/account/my-models` request and response schemas, use the [Community Models API reference](https://gen.pollinations.ai/docs#tag/community-models).

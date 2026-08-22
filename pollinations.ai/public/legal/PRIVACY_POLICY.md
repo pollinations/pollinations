@@ -16,7 +16,6 @@ This policy covers (a) the paid dashboard/API and (b) the pollinations.ai commun
 * **Service usage & API metadata (commercial):** timestamps, endpoints/models, token/Pollen usage, balance bucket used, baseline model cost, app markup/developer credit where applicable, rate-limit events, IP, user-agent, and error logs.
 * **Quests & rewards (commercial/community):** quest availability, progress, completions, reward amounts, credited balance bucket, source references, and display/audit metadata such as quest titles, app names/URLs, app-directory approval records, GitHub issue/PR numbers, issue titles/URLs, assignees, labels, and completion timestamps.
 * **Prompts/outputs (commercial & demos):** processed transiently to deliver results; not retained beyond what's necessary to run the Service, except configuration you save and short-lived response caches. Generated responses may be cached temporarily for performance, reliability, cost control, and abuse prevention. Generated media cache identifiers and image metadata may include prompt-derived data.
-* **Community model and agent configurations:** provider profile details, endpoint URLs, model identifiers, visibility, pricing, declared capabilities, and managed-agent instructions and tool settings that you save. Community endpoint credentials are stored encrypted and are never returned through the API.
 * **Community identifiers (community):** Discord ID/username (if you link or use our bots); GitHub ID/username and public GitHub profile/repository/activity signals if you link GitHub, contribute, identify an app, or complete GitHub-based quests; email if you contact us.
 * **Analytics processing:** we also use the data categories above (account identifiers, email, name, GitHub identity where linked, wallet balance attributes, API key metadata, session metadata, and payment-provider event records including customer email) for product analytics, billing attribution, abuse prevention, and developer-earnings reporting. We do not use passwords, password hashes, OAuth tokens, API key secrets, session tokens, or IP addresses for these analytics purposes.
 * **Telemetry:** aggregated counters and performance metrics.
@@ -38,19 +37,17 @@ When you authorize a third-party app, we show you the app identity we have, the 
 
 The app may process prompts, outputs, and other data you provide to that app under its own terms and privacy policy. Only authorize apps you trust. You can revoke app access or adjust app spending caps in the dashboard.
 
-## 5) Community Models & Agents
+## 5) Community Models & Managed Agents
 
-Community models and externally hosted agents are operated on infrastructure selected by their community providers, not by Pollinations. When you select one, we route the content needed to complete the request to that provider. Depending on the request, this may include prompts, messages, caller-supplied system or developer instructions, files or media, tool definitions and results, and generation parameters. We do not send the caller's Pollinations API key to the community provider.
+Externally hosted community models run on independent providers' infrastructure, not Pollinations. When you use one, your request is sent to that provider and any configured community fallback providers. A request may include prompts, messages, instructions, files or media, tool definitions and results, and generation settings. We do not send your Pollinations API key.
 
-Community providers can technically inspect or retain the content their endpoints receive. Their own privacy, retention, and model-training practices may apply, and their identity, location, and safeguards can differ. Review the provider details shown with the model where available. Do not use a community model or externally hosted agent for credentials, confidential information, or sensitive personal data unless you have reviewed and accepted the provider's practices and any required data-transfer arrangements.
+Community providers are responsible for how they store, share, secure, train on, or otherwise use your request. Their terms and privacy policies apply; Pollinations does not control or verify those practices. Check the provider information before sending credentials, confidential information, or sensitive personal data.
 
-Managed prompt agents run on Pollinations infrastructure using instructions supplied by their creator, a selected base model, and optional Pollinations tools. Publishing an agent does not by itself give its creator access to callers' request content. However, community-created instructions are not verified by us, may affect what the agent sends to enabled models or tools, and may be inferred or extracted through interactions. Agent creators should not place credentials, personal data, or confidential information in agent instructions.
+Managed agents run on Pollinations infrastructure. Publishing one does not give its creator access to caller requests, but its selected models and tools may process them. If a selected model is externally hosted, the rules above apply. Public agent instructions may be inferred or extracted, so creators should not include credentials or confidential data.
 
 ## 6) Model Training & Content Use
 
-We do not use your prompts/outputs to train or fine-tune models without your permission. Any training requires explicit opt-in.
-
-This commitment applies to Pollinations' use of your content. Independently operated community providers may have their own practices as described above.
+Pollinations does not use your prompts or outputs to train or fine-tune models without explicit opt-in. Community providers may follow different practices under their own policies.
 
 ## 7) Cookies & SDKs
 
@@ -62,7 +59,7 @@ We currently use only essential cookies and similar storage needed for login, se
 
 **Depending on your model/provider selection, prompts and outputs may be sent transiently to our model/inference compute sub-processors (see categories at /terms#15-dpa-and-sub-processors).**
 
-* **Community providers:** when you select a community model or externally hosted agent, we disclose the request content described in §5 to the provider operating that endpoint. Community providers are independently operated recipients and are responsible for their own endpoint and data practices.
+* **Community providers:** when you use an externally hosted community model, your request is sent to its provider and any configured community fallback providers. These independent providers are responsible for their own endpoints and data practices.
 * **Authorized apps:** when you approve an app connection, we share the approved API key/token and authorization details with that app.
 * **Affiliates:** internal operations under this policy.
 * **Authorities:** when required by law or to protect rights/safety.
@@ -73,7 +70,7 @@ We do not sell personal data.
 
 Where data leaves the EEA, we use approved safeguards (e.g., EU Standard Contractual Clauses) and appropriate supplementary measures.
 
-Community providers may operate in other countries under provider-specific arrangements. Do not select a community model or externally hosted agent for personal data that requires a particular residency or transfer mechanism unless you have confirmed that the provider meets those requirements.
+Community providers may process data in other countries. Before sending personal data, check that the provider meets any residency or transfer requirements that apply to you.
 
 ## 10) Retention
 
@@ -83,7 +80,7 @@ Community providers may operate in other countries under provider-specific arran
 * **API usage metadata:** typically 24 months (billing, fraud, capacity, developer-earnings attribution).
 * **Quest and reward records:** reward ledger records follow wallet/accounting retention where needed for balance, audit, fraud, and dispute purposes. Synced public GitHub quest issue records are retained while needed to display, process, and audit quest rewards.
 * **Generated response caches (text, image, audio, video):** typically up to 30 days, plus any downstream public/browser caches.
-* **Community providers:** independently operated community providers control their own retention of content received by their endpoints. Review the provider's notice where available before sending sensitive content.
+* **Community providers:** each provider sets its own retention policy. Review it before sending sensitive content.
 * **Uploaded media files (media.pollinations.ai):** a 30-day lifecycle applies from upload or the latest refresh. Retrieving the file body refreshes the lifecycle only when the file is at least 15 days old, so actively accessed uploads can remain longer.
 * **App authorization records:** while active. Related usage, billing, security, and dispute records may be retained under the retention periods above.
 * **Support conversations:** we don't run a proprietary ticket system. Support happens on third-party channels (GitHub Issues, Discord) and email. GitHub Issues are public and retained by GitHub; Discord and email retention follows those platforms' own policies. Don't share sensitive data in public channels.

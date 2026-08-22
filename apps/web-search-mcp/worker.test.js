@@ -96,6 +96,34 @@ test("forwards caller billing auth and returns cited search output", async () =>
     await client.close();
 });
 
+test("does not repeat citations already linked in the answer", async () => {
+    const url = "https://example.com/news";
+    const { worker, env } = createHarness({
+        response: Response.json({
+            choices: [
+                {
+                    message: {
+                        content: `Latest update ([Example](${url}))`,
+                        annotations: [
+                            {
+                                type: "url_citation",
+                                url_citation: { title: "Example", url },
+                            },
+                        ],
+                    },
+                },
+            ],
+        }),
+    });
+    const client = await connect(worker, env);
+    const result = await client.callTool({
+        name: "searchWeb",
+        arguments: { query: "latest update" },
+    });
+    assert.equal(result.content[0].text, `Latest update ([Example](${url}))`);
+    await client.close();
+});
+
 test("returns upstream failures as tool errors", async () => {
     const { worker, env } = createHarness({
         response: new Response("search unavailable", { status: 503 }),

@@ -28,8 +28,11 @@ function citationsFromMessage(message) {
 }
 
 function searchResult(answer, citations) {
-    const sources = citations.length
-        ? `\n\nSources:\n${citations.map(({ title, url }) => `- [${title}](${url})`).join("\n")}`
+    const additionalSources = citations.filter(
+        ({ url }) => !answer.includes(url),
+    );
+    const sources = additionalSources.length
+        ? `\n\nSources:\n${additionalSources.map(({ title, url }) => `- [${title}](${url})`).join("\n")}`
         : "";
     return {
         content: [{ type: "text", text: `${answer}${sources}` }],

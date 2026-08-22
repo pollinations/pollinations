@@ -16,8 +16,10 @@ npm run dev
 The dev server is pinned to `http://127.0.0.1:4180`.
 
 Auth uses a password gate backed by the Cloudflare Worker. For local development,
-the pipe-scoped Tinybird read token is decrypted from `../secrets/web.json` into
-the ignored `.dev.vars` file and is never bundled or stored in the browser.
+the shared password and the staging-only Tinybird reader are assembled from
+`../secrets/web.json` and `../secrets/web.dev.json` into the ignored `.dev.vars`
+file. Production deployment continues to use `../secrets/web.json`. No secret is
+bundled or stored in the browser.
 
 ## Fixtures Mode
 

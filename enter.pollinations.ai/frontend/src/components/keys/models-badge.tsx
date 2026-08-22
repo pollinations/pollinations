@@ -1,8 +1,9 @@
 import { Chip, Tooltip } from "@pollinations/ui";
 import type { FC, ReactNode } from "react";
+import type { ModelPermissionEntry } from "./types.ts";
 
 export const ModelsBadge: FC<{
-    permissions: Record<string, string[]> | null;
+    permissions: Record<string, string[] | ModelPermissionEntry[]> | null;
 }> = ({ permissions }) => {
     const models = permissions?.models ?? null;
     const isAllModels = models === null;
@@ -17,11 +18,14 @@ export const ModelsBadge: FC<{
                     Allowed models
                 </span>
                 <span className="block font-mono text-xs whitespace-nowrap">
-                    {models?.map((model) => (
-                        <span className="block" key={model}>
-                            {model}
-                        </span>
-                    ))}
+                    {models?.map((entry) => {
+                        const id = typeof entry === "string" ? entry : entry.id;
+                        return (
+                            <span className="block" key={id}>
+                                {id}
+                            </span>
+                        );
+                    })}
                 </span>
             </span>
         );

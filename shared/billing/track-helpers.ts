@@ -2,6 +2,7 @@ import { getLogger } from "@logtape/logtape";
 import { and, eq, gt, isNull, or } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { apikey as apikeyTable } from "../db/better-auth.ts";
+import type { KeyPollenType } from "./bucket-selection.ts";
 import {
     atomicCreditUserBalance,
     atomicDeductApiKeyBalance,
@@ -50,6 +51,7 @@ interface DeductionParams {
     apiKeyPollenBalance?: number | null;
     byopClientKeyId?: string | null;
     modelPaidOnly?: boolean;
+    keyPollenType?: KeyPollenType | null;
     communityModelReward?: CommunityModelRewardInput | null;
 }
 
@@ -142,6 +144,7 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
         apiKeyPollenBalance,
         byopClientKeyId,
         modelPaidOnly,
+        keyPollenType,
         communityModelReward: communityModelRewardInput,
     } = params;
 
@@ -180,6 +183,7 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
                 userId,
                 billedPrice,
                 modelPaidOnly,
+                keyPollenType,
             );
             payerBucket = deduction.bucket;
             postDeductionPackBalance = deduction.postDeductionPackBalance;
@@ -343,6 +347,7 @@ async function deductUserBalance(
     userId: string,
     amount: number,
     modelPaidOnly?: boolean,
+    keyPollenType?: KeyPollenType | null,
 ): Promise<{
     bucket: Bucket | null;
     postDeductionPackBalance: number | null;
@@ -353,6 +358,7 @@ async function deductUserBalance(
             userId,
             amount,
             modelPaidOnly ?? false,
+            keyPollenType,
         );
         if (!ok) {
             throw new Error(

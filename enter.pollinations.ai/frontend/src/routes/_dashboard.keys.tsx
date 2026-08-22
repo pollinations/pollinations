@@ -47,6 +47,8 @@ function KeysPage() {
             permissions: {
                 allowedModels: formState.allowedModels,
                 pollenBudget: formState.pollenBudget,
+                pollenType: formState.pollenType,
+                questPollenOnly: formState.questPollenOnly,
                 accountPermissions: formState.accountPermissions?.length
                     ? formState.accountPermissions
                     : undefined,
@@ -71,8 +73,12 @@ function KeysPage() {
         id: string,
         updates: {
             name?: string;
-            allowedModels?: string[] | null;
+            allowedModels?:
+                | (string | { id: string; pollenType: "quest" | "paid" })[]
+                | null;
             pollenBudget?: number | null;
+            pollenType?: "quest" | "paid" | null;
+            questPollenOnly?: boolean | null;
             accountPermissions?: string[] | null;
             expiresAt?: Date | null;
         },

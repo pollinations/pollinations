@@ -1,3 +1,4 @@
+import { extractAllowedModelIds } from "@shared/auth/api-key.ts";
 import {
     type CommunityEndpointRuntime,
     usesAgentRunToken,
@@ -211,13 +212,15 @@ export function resolveModel(
         // model the caller selected, so they inherit that model's permission.
         // Visible and community targets remain independently scoped: a key can
         // never be served — or billed for — a model it could not call directly.
-        const allowedModels = c.var.auth?.apiKey?.permissions?.models;
-        if (allowedModels && resolved.fallbackEntries) {
+        const allowedModelIds = extractAllowedModelIds(
+            c.var.auth?.apiKey?.permissions,
+        );
+        if (allowedModelIds && resolved.fallbackEntries) {
             resolved.fallbackEntries = resolved.fallbackEntries.filter(
                 (entry) =>
                     (entry.definition.hidden === true &&
                         !entry.communityEndpoint) ||
-                    allowedModels.includes(entry.id),
+                    allowedModelIds.includes(entry.id),
             );
         }
         c.set("model", resolved);

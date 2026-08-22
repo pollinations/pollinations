@@ -1,9 +1,12 @@
 import { expiryDaysToExpiresIn } from "@shared/auth/authorize-config.ts";
 import { apiClient } from "../api.ts";
+import type { ModelPermissionEntry } from "../components/keys/types.ts";
 
 type Permissions = {
-    allowedModels?: string[] | null;
+    allowedModels?: (string | ModelPermissionEntry)[] | null;
     pollenBudget?: number | null;
+    pollenType?: "quest" | "paid" | null;
+    questPollenOnly?: boolean | null;
     accountPermissions?: string[] | null;
 };
 
@@ -42,6 +45,8 @@ export async function createKeyWithPermissions({
         metadata,
         allowedModels: permissions?.allowedModels,
         pollenBudget: permissions?.pollenBudget,
+        pollenType: permissions?.pollenType,
+        questPollenOnly: permissions?.questPollenOnly,
         accountPermissions: permissions?.accountPermissions,
     };
 

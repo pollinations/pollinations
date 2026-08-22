@@ -379,6 +379,13 @@
       "when": 1787239130592,
       "tag": "0053_listing_envelope",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "6",
+      "when": 1787414044263,
+      "tag": "0054_wandering_vermin",
+      "breakpoints": true
     }
   ]
 }

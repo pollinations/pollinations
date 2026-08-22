@@ -1800,6 +1800,11 @@ exports[`effective cost and price per model — snapshot 1`] = `
     "cost": {
       "promptAudioSeconds": 0.0000416666666666667,
     },
+    "costVariants": {
+      "diarization": {
+        "promptAudioSeconds": 0.0000472222222222222,
+      },
+    },
     "price": {
       "promptAudioSeconds": 0.0000416666666666667,
     },
@@ -1807,6 +1812,17 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "universal-3.5-pro": {
     "cost": {
       "promptAudioSeconds": 0.0000583333333333333,
+    },
+    "costVariants": {
+      "diarization": {
+        "promptAudioSeconds": 0.0000638888888888889,
+      },
+      "prompting": {
+        "promptAudioSeconds": 0.0000722222222222222,
+      },
+      "prompting_diarization": {
+        "promptAudioSeconds": 0.0000777777777777778,
+      },
     },
     "price": {
       "promptAudioSeconds": 0.0000583333333333333,

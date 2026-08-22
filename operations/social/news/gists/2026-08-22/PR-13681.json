@@ -1,0 +1,35 @@
+{
+  "pr_number": 13681,
+  "title": "fix: pin OpenRouter routes to exact pricing",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13681",
+  "merged_at": "2026-08-22T10:11:29Z",
+  "labels": [],
+  "pr_body_excerpt": "- Pins eight existing OpenRouter routes to exact providers with `allow_fallbacks: false`: Qwen Coder (Parasail BF16), Qwen VL 30B/235B (Alibaba), Mistral Small 3.2 (DeepInfra FP8), Gemma 26B/31B (Novita BF16), and both MiMo V2.5 routes (Xiaomi FP8).\n- Aligns each registry sheet to its selected endpoint. MiMo Pro now uses Xiaomi's first-party FP8 route at `$0.435/$0.0036 cached/$0.87` per million tokens; Gemini search is corrected from `$0.007` to `$0.014` per request.\n- Keeps Gemma 26B on Novita despite NextBit's lower headline price: direct and local probes showed NextBit rejects normal remote `image_url` inputs, while Novita preserves the public vision contract and useful 400 errors.\n- Preserves canonical names, aliases, permissions, multipliers, capabilities, and the no-Pollinations-fallback policy. Mistral and Llama Scout remain in separate PR #13684.\n\nVerification: exact OpenRouter endpoint catalogs; MiMo Xiaomi 9/9 comparative burst plus text, stream, tools, reasoning, JSON, aliases, cache, permissions, billing, and errors; Gemma remote URL, ten embedded images, tools, cache, billing, and errors; 420 focused assertions; Gen and Enter typechecks. Local billing selected paid balance and recorded `totalCost = totalPrice`.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Routes, pinned like specimens",
+    "blurb": "Eight OpenRouter routes now know exactly which provider garden they belong to. Pricing sheets and actual endpoints have stopped improvising separately.",
+    "summary": "Pinned eight OpenRouter text and vision routes to exact providers with fallbacks disabled, including Xiaomi FP8 for both MiMo V2.5 routes, Novita BF16 for Gemma 26B/31B, Alibaba for Qwen VL, and corrected MiMo Pro plus Gemini search pricing.",
+    "impact": "Developers get predictable provider behavior and billing for these routes, while Gemma 26B continues accepting normal remote image URLs through Novita's public vision-compatible endpoint.",
+    "keywords": [
+      "openrouter",
+      "pricing",
+      "model-routing",
+      "billing",
+      "vision",
+      "mimo",
+      "gemma"
+    ],
+    "visual_concept": "A cozy model-routing garden where Polli carefully pins labeled seed packets to the correct provider flower beds, while a CRT monitor robot verifies that the displayed token prices match the plants growing from each route. Use small signs for Xiaomi, Novita, Alibaba, Parasail, and DeepInfra, with a remote-image postcard successfully reaching the Gemma vision plant.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses as she pins neat provider labels onto code-plants in lime green (#ecf874) flower pots; a cute chunky CRT-monitor robot compares price tags beside a Gemma plant receiving a little image postcard. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text reading “EXACT ROUTES” and a warm cream garden-shed background."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-22/PR-13681.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses as she pins neat provider labels onto code-plants in lime green (#ecf874) flower pots; a cute chunky CRT-monitor robot compares price tags beside a Gemma plant receiving a little image postcard. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text reading “EXACT ROUTES” and a warm cream garden-shed background."
+  },
+  "generated_at": "2026-08-22T10:12:24.349796+00:00"
+}

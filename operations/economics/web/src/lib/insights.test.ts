@@ -1798,6 +1798,7 @@ describe("providerBalanceRows", () => {
             cashBalanceUsd: 3_925.11,
             creditBalanceUsd: 8.95,
             balanceAsOf: "2026-08-22",
+            balanceStatus: "checked",
         });
         expect(row.history.at(-1)).toMatchObject({
             month: "2026-08",
@@ -1846,8 +1847,12 @@ describe("providerBalanceRows", () => {
         });
 
         expect(providerBalanceRows(base, now)[0]).toMatchObject({
-            creditBalanceUsd: 6_000,
-            balanceAsOf: null,
+            creditBalanceUsd: 16.17,
+            balanceAsOf: "2026-08-22",
+            balanceStatus: "partial",
+            checkedAccounts: 1,
+            expectedAccounts: 2,
+            creditDepletionDate: null,
         });
 
         base.opCloud?.push(
@@ -1866,6 +1871,32 @@ describe("providerBalanceRows", () => {
         expect(providerBalanceRows(base, now)[0]).toMatchObject({
             creditBalanceUsd: 1_516.17,
             balanceAsOf: "2026-08-22",
+            balanceStatus: "checked",
+            checkedAccounts: 2,
+            expectedAccounts: 2,
+        });
+    });
+
+    it("lists a reviewed external compute vendor before its balance is checked", () => {
+        const [row] = providerBalanceRows(
+            emptyData({
+                opCloud: [
+                    opCloud({
+                        vendor: "inception",
+                        type: "inference",
+                        paid: -10,
+                    }),
+                ],
+            }),
+            new Date("2026-08-22T12:00:00Z"),
+        );
+
+        expect(row).toMatchObject({
+            vendor: "inception",
+            cashBalanceUsd: null,
+            creditBalanceUsd: null,
+            balanceAsOf: null,
+            balanceStatus: "not_checked",
         });
     });
 });

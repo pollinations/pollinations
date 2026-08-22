@@ -1720,6 +1720,9 @@ export type ProviderBalanceRow = {
     cashBalanceUsd: number | null;
     creditBalanceUsd: number | null;
     balanceAsOf: string | null;
+    balanceStatus: "checked" | "partial" | "not_checked";
+    checkedAccounts: number;
+    expectedAccounts: number;
     creditDepletionDate: string | null;
     creditDepletionReason: "burn" | "expiry" | null;
     finished: boolean;
@@ -1765,11 +1768,19 @@ type ProviderBalanceAnchor = {
     creditExpiry: string | null;
 };
 
+type ProviderBalanceCoverage = Pick<
+    ProviderBalanceRow,
+    "balanceAsOf" | "balanceStatus" | "checkedAccounts" | "expectedAccounts"
+>;
+
 function providerBalanceAnchors(
     data: Data,
     currentMonth: string,
     today: string,
-): Map<string, ProviderBalanceAnchor> {
+): {
+    anchors: Map<string, ProviderBalanceAnchor>;
+    coverage: Map<string, ProviderBalanceCoverage>;
+} {
     const rowsByVendorDate = new Map<
         string,
         Map<string, Map<string, OpCloudRow>>
@@ -1794,6 +1805,7 @@ function providerBalanceAnchors(
     }
 
     const anchors = new Map<string, ProviderBalanceAnchor>();
+    const coverage = new Map<string, ProviderBalanceCoverage>();
     for (const [vendor, dates] of rowsByVendorDate) {
         const provider = resolveProvider(vendor);
         const expectedAccounts = provider
@@ -1801,15 +1813,33 @@ function providerBalanceAnchors(
                   (account) => account.id,
               )
             : [];
-        for (const [observedOn, accounts] of [...dates.entries()].sort((a, b) =>
+        const sortedDates = [...dates.entries()].sort((a, b) =>
             b[0].localeCompare(a[0]),
-        )) {
-            if (
-                expectedAccounts.length > 0 &&
-                expectedAccounts.some((accountId) => !accounts.has(accountId))
-            ) {
-                continue;
-            }
+        );
+        const latest = sortedDates[0];
+        if (latest) {
+            const [observedOn, accounts] = latest;
+            const checkedAccounts =
+                expectedAccounts.length > 0
+                    ? expectedAccounts.filter((accountId) =>
+                          accounts.has(accountId),
+                      ).length
+                    : accounts.size;
+            coverage.set(vendor, {
+                balanceAsOf: observedOn,
+                balanceStatus:
+                    expectedAccounts.length > 0 &&
+                    checkedAccounts < expectedAccounts.length
+                        ? "partial"
+                        : "checked",
+                checkedAccounts,
+                expectedAccounts:
+                    expectedAccounts.length > 0
+                        ? expectedAccounts.length
+                        : accounts.size,
+            });
+        }
+        for (const [observedOn, accounts] of sortedDates) {
             const selected =
                 expectedAccounts.length > 0
                     ? expectedAccounts.map((accountId) =>
@@ -1842,7 +1872,7 @@ function providerBalanceAnchors(
             break;
         }
     }
-    return anchors;
+    return { anchors, coverage };
 }
 
 function anchoredCreditDepletion(
@@ -1878,10 +1908,11 @@ function anchoredCreditDepletion(
     };
 }
 
-// OP Cloud balance snapshots anchor the latest totals. When no complete snapshot
+// OP Cloud balance snapshots anchor the latest known totals. When no snapshot
 // exists, free credit comes from grants/burn and cash prepaid is provider cash
-// outflow less cash-funded usage. Multi-account vendors require one same-day
-// snapshot for every active registry account before the aggregate is replaced.
+// outflow less cash-funded usage. A partial multi-account snapshot intentionally
+// shows only the checked accounts; coverage tells the UI that the total is a
+// known minimum rather than a complete provider balance.
 export function providerBalanceRows(
     data: Data,
     now: Date,
@@ -1889,7 +1920,11 @@ export function providerBalanceRows(
     const today = now.toISOString().slice(0, 10);
     const currentMonth = today.slice(0, 7);
     const months = balanceMonths(now);
-    const anchors = providerBalanceAnchors(data, currentMonth, today);
+    const { anchors, coverage } = providerBalanceAnchors(
+        data,
+        currentMonth,
+        today,
+    );
     const creditRows = creditRunway(data, now);
     const creditByVendor = new Map(
         creditRows.map((row) => [row.vendor, row] as const),
@@ -1897,6 +1932,7 @@ export function providerBalanceRows(
     const cashFlows = new Map<string, Map<string, BalanceFlow>>();
     const creditFlows = new Map<string, Map<string, BalanceFlow>>();
     const cashVendors = new Set<string>();
+    const reviewedVendors = new Set<string>();
 
     for (const row of data.opTransactions ?? []) {
         if (!PREPAID_VENDORS.has(row.vendor)) continue;
@@ -1913,6 +1949,10 @@ export function providerBalanceRows(
 
     for (const row of data.opCloud ?? []) {
         if (isOpCloudBalanceRow(row)) continue;
+        const provider = resolveProvider(row.vendor);
+        if (provider?.monthlyReview && provider.meteringBasis !== "internal") {
+            reviewedVendors.add(provider.id);
+        }
         const month = opCloudMonth(row);
         if (!MONTH_KEY_RE.test(month) || month > currentMonth) continue;
         const cashUsedUsd = opCloudPaidBurnUsd(row);
@@ -1948,11 +1988,24 @@ export function providerBalanceRows(
         ...creditByVendor.keys(),
         ...cashVendors,
         ...anchors.keys(),
+        ...coverage.keys(),
+        ...reviewedVendors,
     ]);
     const rows: ProviderBalanceRow[] = [];
     for (const vendor of vendors) {
+        const definition = resolveProvider(vendor);
+        if (definition?.meteringBasis === "internal") continue;
         const credit = creditByVendor.get(vendor) ?? null;
         const anchor = anchors.get(vendor) ?? null;
+        const balanceCoverage = coverage.get(vendor) ?? {
+            balanceAsOf: null,
+            balanceStatus: "not_checked" as const,
+            checkedAccounts: 0,
+            expectedAccounts:
+                definition == null
+                    ? 0
+                    : activeProviderAccounts(definition, currentMonth).length,
+        };
         const hasCash = cashVendors.has(vendor) || anchor != null;
         const hasCredit = credit != null || anchor != null;
         const history = months.map(
@@ -2025,19 +2078,27 @@ export function providerBalanceRows(
         const creditBalanceUsd = hasCredit
             ? (history.at(-1)?.creditClosingUsd ?? 0)
             : null;
-        const anchoredDepletion = anchor
-            ? anchoredCreditDepletion(anchor, credit, now)
-            : null;
+        const anchoredDepletion =
+            anchor && balanceCoverage.balanceStatus === "checked"
+                ? anchoredCreditDepletion(anchor, credit, now)
+                : null;
         rows.push({
             vendor,
             cashBalanceUsd,
             creditBalanceUsd,
-            balanceAsOf: anchor?.observedOn ?? null,
+            balanceAsOf: balanceCoverage.balanceAsOf,
+            balanceStatus: balanceCoverage.balanceStatus,
+            checkedAccounts: balanceCoverage.checkedAccounts,
+            expectedAccounts: balanceCoverage.expectedAccounts,
             creditDepletionDate: anchor
-                ? (anchoredDepletion?.creditDepletionDate ?? null)
+                ? balanceCoverage.balanceStatus === "checked"
+                    ? (anchoredDepletion?.creditDepletionDate ?? null)
+                    : null
                 : (credit?.depletionDate ?? null),
             creditDepletionReason: anchor
-                ? (anchoredDepletion?.creditDepletionReason ?? null)
+                ? balanceCoverage.balanceStatus === "checked"
+                    ? (anchoredDepletion?.creditDepletionReason ?? null)
+                    : null
                 : (credit?.depletionReason ?? null),
             finished:
                 (cashBalanceUsd == null || cashBalanceUsd <= POOL_EPS_USD) &&

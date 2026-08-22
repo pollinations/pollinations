@@ -138,6 +138,17 @@ export function providerAuditTargets(value: string): ProviderAuditTarget[] {
         : [];
 }
 
+export function providerAccountLabel(
+    value: string,
+    accountId: string,
+): string | null {
+    return (
+        resolveProvider(value)?.accounts?.find(
+            (account) => account.id === accountId,
+        )?.label ?? null
+    );
+}
+
 export function providerMeteringBasis(value: string): MeteringBasis {
     // Unknown providers are already surfaced as missing registry mappings. A
     // conservative mixed basis avoids additionally presenting their ratio as

@@ -1,6 +1,6 @@
 # Terms of Service
 
-**Updated: 2026-08-17**
+**Updated: 2026-08-22**
 
 _2026-07-02 — Pollen purchases now include a service fee shown before payment, and prices are shown exclusive of tax; applicable VAT or similar taxes are added at checkout._
 
@@ -51,6 +51,10 @@ Beta features carry no service level commitments. By using beta features, you ac
 
 Hosted access to model-powered APIs and tools per your plan, balance, and usage limits. Model outputs vary and may be incomplete, inaccurate, unsafe, unavailable, or unsuitable for your intended use. You are responsible for reviewing outputs before relying on them.
 
+**Community models and agents.** Community models and externally hosted agents are operated by third-party community providers, not by Pollinations. Selecting one sends the request content needed to provide the service to that provider. We do not control or verify the provider's infrastructure, instructions, security, retention, training practices, outputs, availability, or claims. Provider details shown in the catalog are supplied by the provider and do not constitute our endorsement. Review those details and do not submit credentials, confidential information, or sensitive personal data unless the provider's practices are suitable for your use.
+
+Managed prompt agents run on Pollinations infrastructure but use community-supplied instructions and selected models or tools. We do not verify those instructions. Public agent instructions are not confidential and may be inferred or extracted through interactions; creators must not include credentials, personal data, confidential information, or other content they are not authorized to disclose.
+
 We may make non-breaking changes and will notify you of material reductions where practical.
 
 ## 4) Customer Data & Privacy
@@ -60,6 +64,14 @@ You retain all rights to data you submit ("Customer Data"). How personal data is
 ## 5) Acceptable Use & Safety
 
 Do not violate law; infringe IP/likeness/privacy; attack the Service; evade rate limits or spending controls; abuse Pollen grants, app attribution, or developer earnings; or replicate non-public features to build a competing hosted service. **No deepfakes of real people without consent. No CSAM (real or fictional).**
+
+If you publish a community model or externally hosted agent, you are responsible for its operation and must:
+
+- Accurately identify the provider and keep its public service and privacy information current.
+- Use caller content only to provide the requested service unless another use is clearly disclosed and has a lawful basis.
+- Apply appropriate security and retention controls, comply with privacy and data-subject-rights obligations, and honor deletion requests where required.
+- Not attempt to extract credentials, identify or profile callers, sell caller content, train on it, or use it for unrelated purposes without clear prior disclosure, necessary permission, and a lawful basis.
+- Ensure your endpoint, models, instructions, outputs, and use of caller content comply with these Terms and applicable law.
 
 ## 6) Pollen, Fees, Taxes & Billing
 

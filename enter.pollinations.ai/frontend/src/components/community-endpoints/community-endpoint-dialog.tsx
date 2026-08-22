@@ -451,6 +451,16 @@ export function CommunityEndpointDialog({
                         }
                     />
 
+                    {form.visibility === "public" && (
+                        <Alert intent="warning" title="Public provider duties">
+                            Callers' requests are sent to this endpoint and may
+                            contain personal or confidential data. Keep your
+                            provider details current, secure caller content, and
+                            disclose any retention, training, or other use. The
+                            Terms prohibit undisclosed reuse.
+                        </Alert>
+                    )}
+
                     <div className="grid gap-4 sm:grid-cols-2">
                         <FieldStack
                             label="Endpoint URL"

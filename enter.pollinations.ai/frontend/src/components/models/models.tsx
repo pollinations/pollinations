@@ -9,6 +9,7 @@ import {
     DropdownItem,
     ExternalLinkButton,
     GitHubIcon,
+    InlineLink,
     Input,
     SearchIcon,
     Section,
@@ -474,6 +475,27 @@ export const Models: FC = () => {
                         </Dropdown>
                     </div>
                 </div>
+                {activeScope === "community" && (
+                    <Alert
+                        intent="warning"
+                        title="Community providers and instructions"
+                        className="mb-4"
+                    >
+                        Community models and externally hosted agents send
+                        request content to independent providers. Managed agents
+                        run on Pollinations but use community-written
+                        instructions. Do not include credentials, confidential
+                        information, or sensitive personal data. Review the
+                        provider link shown with a model and our{" "}
+                        <InlineLink
+                            href="https://pollinations.ai/privacy"
+                            showIcon={false}
+                        >
+                            Privacy Policy
+                        </InlineLink>
+                        .
+                    </Alert>
+                )}
                 {catalogError && (
                     <Alert intent="danger" className="mb-4">
                         {catalogError}

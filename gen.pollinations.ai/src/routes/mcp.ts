@@ -19,6 +19,7 @@ import { type Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
 import { auth } from "@/middleware/auth.ts";
+import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { requestIdentity } from "@/middleware/track.ts";
 
@@ -105,16 +106,29 @@ async function settleUsage(
 ): Promise<void> {
     const user = c.var.auth.requireUser();
     const db = drizzle(c.env.DB);
-    const deduction = await handleBalanceDeduction({
-        db: db as unknown as Parameters<typeof handleBalanceDeduction>[0]["db"],
-        isBilledUsage: usage.cost > 0,
-        totalPrice: usage.cost,
-        userId: user.id,
-        apiKeyId: c.var.auth.apiKey?.id,
-        apiKeyPollenBalance: c.var.auth.apiKey?.pollenBalance,
-        byopClientKeyId: c.var.auth.apiKey?.byopClientKeyId,
-        modelPaidOnly: false,
-    });
+    let deduction: Awaited<ReturnType<typeof handleBalanceDeduction>> | null =
+        null;
+    try {
+        deduction = await handleBalanceDeduction({
+            db: db as unknown as Parameters<
+                typeof handleBalanceDeduction
+            >[0]["db"],
+            isBilledUsage: usage.cost > 0,
+            totalPrice: usage.cost,
+            userId: user.id,
+            apiKeyId: c.var.auth.apiKey?.id,
+            apiKeyPollenBalance: c.var.auth.apiKey?.pollenBalance,
+            byopClientKeyId: c.var.auth.apiKey?.byopClientKeyId,
+            modelPaidOnly: false,
+        });
+    } catch (error) {
+        c.var.log.error(
+            "MCP billing deduction failed after response; continuing tracking: {error}",
+            {
+                error: error instanceof Error ? error.message : String(error),
+            },
+        );
+    }
     const endedAt = new Date();
     const event: TinybirdEvent = {
         id: crypto.randomUUID(),
@@ -127,7 +141,7 @@ async function settleUsage(
         environment: c.env.ENVIRONMENT,
         eventType: server.eventType,
         ...requestIdentity(c.var.auth),
-        ...(deduction.payerBucket
+        ...(deduction?.payerBucket
             ? payerBucketToMeter(deduction.payerBucket)
             : {}),
         modelRequested: server.id,
@@ -142,9 +156,9 @@ async function settleUsage(
         ...priceToEventParams(),
         ...usageToEventParams(),
         totalCost: usage.cost,
-        totalPrice: deduction.billedPrice,
+        totalPrice: deduction?.billedPrice ?? 0,
         devPrice: usage.cost,
-        markupRate: deduction.markup?.markupRate ?? 0,
+        markupRate: deduction?.markup?.markupRate ?? 0,
         errorResponseCode:
             usage.status >= 400 ? String(usage.status) : undefined,
         errorSource:
@@ -174,7 +188,7 @@ export const mcpRoutes = new Hono<Env>()
             })),
         }),
     )
-    .use("/mcp/:serverId", auth())
+    .use("/mcp/:serverId", auth(), frontendKeyRateLimit)
     .all("/mcp/:serverId", async (c) => {
         c.var.auth.requireUser();
         const serverId = c.req.param("serverId");
@@ -191,6 +205,7 @@ export const mcpRoutes = new Hono<Env>()
             if (usage) {
                 try {
                     await settleUsage(c, server, usage, startedAt);
+                    await c.var.frontendKeyRateLimit?.consumePollen(usage.cost);
                 } catch (error) {
                     c.var.log.error("MCP billing failed: {error}", {
                         error:

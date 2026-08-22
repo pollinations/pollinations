@@ -18,6 +18,7 @@ import {
 } from "../components/DataTable";
 import { EvidenceAction, EvidencePreview } from "../components/Evidence";
 import { SourceCell } from "../components/Provenance";
+import { categoryLabel, transactionCategory } from "../lib/categories";
 import type { DriveDocumentLink } from "../lib/documents";
 import { fmtNumber, fmtUtcDateTime } from "../lib/format";
 import {
@@ -49,14 +50,14 @@ export function OpTransactionsTab({
                 row.date.slice(0, 7) >= WINDOW_START &&
                 matchesMonth(row.date, month) &&
                 matchesValue(row.vendor, vendor) &&
-                matchesValue(row.category, category),
+                matchesValue(transactionCategory(row), category),
         );
     }, [data.opTransactions, month, vendor, category]);
     const sortColumns = useMemo<SortColumn<OpTransactionRow>[]>(
         () => [
             { key: "date", value: (row) => row.date },
             { key: "vendor", value: (row) => row.vendor },
-            { key: "category", value: (row) => row.category },
+            { key: "category", value: transactionCategory },
             { key: "amount", value: (row) => row.amount },
             { key: "currency", value: (row) => row.currency },
             { key: "description", value: (row) => row.description },
@@ -138,7 +139,9 @@ export function OpTransactionsTab({
                             Description
                         </TableHeaderCell>
                         <TableHeaderCell {...headerProps("evidence")}>
-                            Document
+                            <HeaderHint hint="Supporting document matched to this Wise cash movement. The transaction is the source of truth; Close reuses this same link when verifying provider payments.">
+                                Document
+                            </HeaderHint>
                         </TableHeaderCell>
                     </TableRow>
                 </TableHead>
@@ -160,7 +163,11 @@ export function OpTransactionsTab({
                                                 </Chip>
                                             )}
                                         </TableCell>
-                                        <TableCell>{row.category}</TableCell>
+                                        <TableCell>
+                                            {categoryLabel(
+                                                transactionCategory(row),
+                                            )}
+                                        </TableCell>
                                         <TableCell
                                             align="right"
                                             className={GROUP_BORDER}

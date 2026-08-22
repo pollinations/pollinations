@@ -17,6 +17,7 @@ import {
 } from "../components/DataTable";
 import { EvidenceAction, EvidencePreview } from "../components/Evidence";
 import { SourceCell } from "../components/Provenance";
+import { categoryLabel, cloudCategory } from "../lib/categories";
 import type { DriveDocumentLink } from "../lib/documents";
 import { fmtNumber, fmtUtcDateTime } from "../lib/format";
 import {
@@ -54,14 +55,14 @@ function DetailItem({ label, value }: { label: string; value: unknown }) {
 }
 
 export function OpCloudTab({
+    category = [],
     data,
     month = "",
-    type = [],
     vendor = "all",
 }: {
+    category?: ValueFilter;
     data: Data;
     month?: MonthFilterValue;
-    type?: ValueFilter;
     vendor?: ValueFilter;
 }) {
     const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
@@ -74,15 +75,15 @@ export function OpCloudTab({
                     row.start.slice(0, 7) >= WINDOW_START &&
                     matchesMonth(row.start, month) &&
                     matchesValue(row.vendor, vendor) &&
-                    matchesValue(row.type, type),
+                    matchesValue(cloudCategory(row), category),
             ),
-        [data.opCloud, month, vendor, type],
+        [data.opCloud, month, vendor, category],
     );
     const sortColumns = useMemo<SortColumn<OpCloudRow>[]>(
         () => [
             { key: "start", value: (row) => row.start },
             { key: "vendor", value: (row) => row.vendor },
-            { key: "type", value: (row) => row.type },
+            { key: "category", value: cloudCategory },
             { key: "resource", value: resourceLabel },
             { key: "paid", value: (row) => row.paid },
             { key: "credit", value: (row) => row.credit },
@@ -117,8 +118,11 @@ export function OpCloudTab({
                         <TableHeaderCell rowSpan={2} {...headerProps("vendor")}>
                             Provider
                         </TableHeaderCell>
-                        <TableHeaderCell rowSpan={2} {...headerProps("type")}>
-                            Type
+                        <TableHeaderCell
+                            rowSpan={2}
+                            {...headerProps("category")}
+                        >
+                            Category
                         </TableHeaderCell>
                         <TableHeaderCell
                             rowSpan={2}
@@ -185,7 +189,9 @@ export function OpCloudTab({
                                             {monthLabel(row.start.slice(0, 7))}
                                         </TableCell>
                                         <TableCell>{row.vendor}</TableCell>
-                                        <TableCell>{row.type}</TableCell>
+                                        <TableCell>
+                                            {categoryLabel(cloudCategory(row))}
+                                        </TableCell>
                                         <TableCell>
                                             {resourceLabel(row)}
                                         </TableCell>

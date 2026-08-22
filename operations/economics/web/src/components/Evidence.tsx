@@ -9,9 +9,13 @@ const LINK_CLASS =
 export function EvidenceAction({
     evidence,
     onPreview,
+    previewLabel = "Preview document",
+    openDocumentLabel = "Open document",
 }: {
     evidence: string;
     onPreview?: (documentLink: DriveDocumentLink) => void;
+    previewLabel?: string;
+    openDocumentLabel?: string;
 }) {
     const value = evidence.trim();
     if (!value) {
@@ -40,7 +44,7 @@ export function EvidenceAction({
                 onClick={() => onPreview(documentLink)}
                 className={LINK_CLASS}
             >
-                Preview invoice
+                {previewLabel}
             </button>
         );
     }
@@ -54,7 +58,7 @@ export function EvidenceAction({
         >
             {documentLink.label === "Open folder"
                 ? "Open folder"
-                : "Open invoice"}
+                : openDocumentLabel}
         </a>
     );
 }
@@ -62,9 +66,11 @@ export function EvidenceAction({
 export function EvidencePreview({
     documentLink,
     onClose,
+    title = "Document preview",
 }: {
     documentLink: DriveDocumentLink | null;
     onClose: () => void;
+    title?: string;
 }) {
     useScrollLock(documentLink != null);
 
@@ -84,21 +90,21 @@ export function EvidencePreview({
             <button
                 type="button"
                 className="absolute inset-0 bg-black/60"
-                aria-label="Close invoice preview"
+                aria-label="Close document preview"
                 onClick={onClose}
             />
             <div
                 role="dialog"
                 aria-modal="true"
-                aria-labelledby="invoice-preview-title"
+                aria-labelledby="document-preview-title"
                 className="relative flex h-[min(90vh,64rem)] w-[min(94vw,72rem)] flex-col overflow-hidden rounded-2xl bg-surface-opaque shadow-2xl"
             >
                 <div className="flex shrink-0 items-center justify-between gap-3 border-b border-theme-text-strong/10 px-4 py-3">
                     <h2
-                        id="invoice-preview-title"
+                        id="document-preview-title"
                         className="font-semibold text-theme-text-strong"
                     >
-                        Invoice preview
+                        {title}
                     </h2>
                     <div className="flex items-center gap-2">
                         <Button
@@ -123,7 +129,7 @@ export function EvidencePreview({
                 </div>
                 <iframe
                     src={documentLink.previewHref}
-                    title="Google Drive invoice preview"
+                    title={title}
                     className="min-h-0 w-full flex-1 bg-white"
                     referrerPolicy="strict-origin-when-cross-origin"
                     sandbox="allow-forms allow-popups allow-same-origin allow-scripts"

@@ -1,5 +1,10 @@
 import type { Data } from "../types";
-import { CLOUD_TYPES, TRANSACTION_CATEGORIES } from "./ledgerSchema";
+import {
+    categoryLabel,
+    cloudCategory,
+    pollenCategory,
+    transactionCategory,
+} from "./categories";
 import {
     type MonthFilterValue,
     matchesMonth,
@@ -20,26 +25,12 @@ export type FacetOption = {
 export type LedgerFacets = {
     vendors: FacetOption[];
     categories: FacetOption[];
-    types: FacetOption[];
 };
 
 type LedgerFacetSelection = {
     month: MonthFilterValue;
     vendors: ValueFilter;
     categories: ValueFilter;
-    types: ValueFilter;
-};
-
-const LABELS: Record<string, string> = {
-    admin: "Admin",
-    cloud: "Cloud",
-    gpu: "GPU",
-    inference: "Inference",
-    infra: "Infrastructure",
-    office: "Office",
-    payroll: "Payroll",
-    revenue: "Revenue",
-    saas: "SaaS",
 };
 
 function selectedValues(value: ValueFilter): readonly string[] {
@@ -76,12 +67,6 @@ function providerLabel(value: string): string {
     return resolveProvider(value)?.label ?? `Unmapped · ${value}`;
 }
 
-function controlledLabel(value: string, allowed: readonly string[]): string {
-    return allowed.includes(value)
-        ? (LABELS[value] ?? value)
-        : `Invalid · ${value}`;
-}
-
 export function providerOptions(
     values: readonly string[],
     selected: ValueFilter = [],
@@ -114,7 +99,7 @@ export function ledgerFacets(
                 matchesMonth(row.date, selection.month),
         );
         const vendorRows = rows.filter((row) =>
-            matchesValue(row.category, selection.categories),
+            matchesValue(transactionCategory(row), selection.categories),
         );
         const categoryRows = rows.filter((row) =>
             matchesValue(row.vendor, selection.vendors),
@@ -126,11 +111,10 @@ export function ledgerFacets(
                 (value) => value,
             ),
             categories: countedOptions(
-                categoryRows.map((row) => row.category),
+                categoryRows.map(transactionCategory),
                 selection.categories,
-                (value) => controlledLabel(value, TRANSACTION_CATEGORIES),
+                categoryLabel,
             ),
-            types: [],
         };
     }
 
@@ -141,9 +125,9 @@ export function ledgerFacets(
                 matchesMonth(row.start, selection.month),
         );
         const providerRows = rows.filter((row) =>
-            matchesValue(row.type, selection.types),
+            matchesValue(cloudCategory(row), selection.categories),
         );
-        const typeRows = rows.filter((row) =>
+        const categoryRows = rows.filter((row) =>
             matchesValue(row.vendor, selection.vendors),
         );
         return {
@@ -152,11 +136,10 @@ export function ledgerFacets(
                 selection.vendors,
                 providerLabel,
             ),
-            categories: [],
-            types: countedOptions(
-                typeRows.map((row) => row.type),
-                selection.types,
-                (value) => controlledLabel(value, CLOUD_TYPES),
+            categories: countedOptions(
+                categoryRows.map(cloudCategory),
+                selection.categories,
+                categoryLabel,
             ),
         };
     }
@@ -166,13 +149,22 @@ export function ledgerFacets(
             row.month >= WINDOW_START &&
             matchesMonth(row.month, selection.month),
     );
+    const providerRows = rows.filter(() =>
+        matchesValue(pollenCategory(), selection.categories),
+    );
+    const categoryRows = rows.filter((row) =>
+        matchesValue(row.vendor, selection.vendors),
+    );
     return {
         vendors: countedOptions(
-            rows.map((row) => row.vendor),
+            providerRows.map((row) => row.vendor),
             selection.vendors,
             providerLabel,
         ),
-        categories: [],
-        types: [],
+        categories: countedOptions(
+            categoryRows.map(pollenCategory),
+            selection.categories,
+            categoryLabel,
+        ),
     };
 }

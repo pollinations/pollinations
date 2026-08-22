@@ -19,11 +19,24 @@ describe("EvidenceAction", () => {
                     onPreview={() => undefined}
                 />,
             ),
-        ).toContain("Preview invoice");
+        ).toContain("Preview document");
         expect(
             renderToStaticMarkup(
                 <EvidenceAction evidence="https://drive.google.com/drive/folders/month-folder" />,
             ),
         ).toContain("Open folder");
+    });
+
+    it("supports provider-source labels without changing document defaults", () => {
+        expect(
+            renderToStaticMarkup(
+                <EvidenceAction
+                    evidence="https://drive.google.com/file/d/source-id/view"
+                    onPreview={() => undefined}
+                    previewLabel="Provider source"
+                    openDocumentLabel="Provider source"
+                />,
+            ),
+        ).toContain("Provider source");
     });
 });

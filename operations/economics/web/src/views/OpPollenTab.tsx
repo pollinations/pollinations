@@ -14,6 +14,7 @@ import {
     TableScroller,
     useSortableRows,
 } from "../components/DataTable";
+import { categoryLabel, pollenCategory } from "../lib/categories";
 import { fmtNumber, fmtPeriod } from "../lib/format";
 import {
     type MonthFilterValue,
@@ -38,10 +39,12 @@ function PayoutValue({ label, value }: { label: string; value: number }) {
 }
 
 export function OpPollenTab({
+    category = [],
     data,
     month = "",
     vendor = "all",
 }: {
+    category?: ValueFilter;
     data: Data;
     month?: MonthFilterValue;
     vendor?: ValueFilter;
@@ -53,14 +56,16 @@ export function OpPollenTab({
                 (row) =>
                     row.month >= WINDOW_START &&
                     matchesMonth(row.month, month) &&
-                    matchesValue(row.vendor, vendor),
+                    matchesValue(row.vendor, vendor) &&
+                    matchesValue(pollenCategory(), category),
             ),
-        [data.opPollen, month, vendor],
+        [data.opPollen, month, vendor, category],
     );
     const sortColumns = useMemo<SortColumn<OpPollenRow>[]>(
         () => [
             { key: "month", value: (row) => row.month },
             { key: "vendor", value: (row) => row.vendor },
+            { key: "category", value: pollenCategory },
             { key: "model", value: (row) => row.model },
             { key: "price_paid", value: (row) => row.price_paid },
             { key: "price_quests", value: (row) => row.price_quests },
@@ -95,6 +100,12 @@ export function OpPollenTab({
                         </TableHeaderCell>
                         <TableHeaderCell rowSpan={2} {...headerProps("vendor")}>
                             Provider
+                        </TableHeaderCell>
+                        <TableHeaderCell
+                            rowSpan={2}
+                            {...headerProps("category")}
+                        >
+                            Category
                         </TableHeaderCell>
                         <TableHeaderCell rowSpan={2} {...headerProps("model")}>
                             Model
@@ -184,6 +195,9 @@ export function OpPollenTab({
                                         {fmtPeriod(row.month)}
                                     </TableCell>
                                     <TableCell>{row.vendor}</TableCell>
+                                    <TableCell>
+                                        {categoryLabel(pollenCategory())}
+                                    </TableCell>
                                     <TableCell>{row.model}</TableCell>
                                     <TableCell
                                         align="right"
@@ -226,7 +240,7 @@ export function OpPollenTab({
                                 {isExpanded ? (
                                     <TableRow>
                                         <TableCell
-                                            colSpan={10}
+                                            colSpan={11}
                                             className="bg-theme-bg-active/40"
                                         >
                                             <dl className="grid gap-4 p-2 sm:grid-cols-3 lg:grid-cols-5">

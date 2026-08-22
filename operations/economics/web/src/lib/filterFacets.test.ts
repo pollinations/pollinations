@@ -42,7 +42,6 @@ const selection = {
     month: "2026-07",
     vendors: [] as string[],
     categories: [] as string[],
-    types: [] as string[],
 };
 
 describe("ledgerFacets", () => {
@@ -58,7 +57,7 @@ describe("ledgerFacets", () => {
 
         const byCategory = ledgerFacets(data, "op-transactions", {
             ...selection,
-            categories: ["saas"],
+            categories: ["operations"],
         });
         expect(byCategory.vendors).toEqual([
             { value: "figma", label: "figma", count: 2 },
@@ -69,7 +68,7 @@ describe("ledgerFacets", () => {
             vendors: ["aws"],
         });
         expect(byVendor.categories).toEqual([
-            { value: "cloud", label: "Cloud", count: 1 },
+            { value: "compute", label: "Compute", count: 1 },
         ]);
     });
 
@@ -84,9 +83,13 @@ describe("ledgerFacets", () => {
             { value: "aws", label: "AWS", count: 1 },
             { value: "new", label: "Unmapped · new", count: 1 },
         ]);
-        expect(facets.types).toEqual([
-            { value: "inference", label: "Inference", count: 1 },
-            { value: "odd", label: "Invalid · odd", count: 1 },
+        expect(facets.categories).toEqual([
+            { value: "compute", label: "Compute", count: 1 },
+            {
+                value: "uncategorized",
+                label: "Uncategorized",
+                count: 1,
+            },
         ]);
     });
 
@@ -94,7 +97,7 @@ describe("ledgerFacets", () => {
         const facets = ledgerFacets(
             { opCloud: [cloud("aws", "inference")] },
             "op-cloud",
-            { ...selection, vendors: ["google"], types: ["gpu"] },
+            { ...selection, vendors: ["google"], categories: ["compute"] },
         );
 
         expect(facets.vendors).toContainEqual({
@@ -102,9 +105,9 @@ describe("ledgerFacets", () => {
             label: "Google Cloud",
             count: 0,
         });
-        expect(facets.types).toContainEqual({
-            value: "gpu",
-            label: "GPU",
+        expect(facets.categories).toContainEqual({
+            value: "compute",
+            label: "Compute",
             count: 0,
         });
     });

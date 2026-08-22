@@ -18,16 +18,16 @@ SQL >
         vendor,
         model,
         'USD' AS currency,
-        if(vendor = 'community', 0, sum(cost_paid)) AS cost_paid,
-        if(vendor = 'community', 0, sum(cost_quests)) AS cost_quests,
-        sum(price_paid) AS price_paid,
-        sum(price_quests) AS price_quests,
-        sum(byop_paid) AS byop_paid,
-        sum(byop_quests) AS byop_quests,
-        sum(model_paid) AS model_paid,
-        sum(model_quests) AS model_quests,
-        sum(requests_paid) AS requests_paid,
-        sum(requests_quests) AS requests_quests
+        if(vendor = 'community', 0, if(max(replaces_base) = 1, sumIf(cost_paid, replaces_base = 1), sum(cost_paid))) AS cost_paid,
+        if(vendor = 'community', 0, if(max(replaces_base) = 1, sumIf(cost_quests, replaces_base = 1), sum(cost_quests))) AS cost_quests,
+        if(max(replaces_base) = 1, sumIf(price_paid, replaces_base = 1), sum(price_paid)) AS price_paid,
+        if(max(replaces_base) = 1, sumIf(price_quests, replaces_base = 1), sum(price_quests)) AS price_quests,
+        if(max(replaces_base) = 1, sumIf(byop_paid, replaces_base = 1), sum(byop_paid)) AS byop_paid,
+        if(max(replaces_base) = 1, sumIf(byop_quests, replaces_base = 1), sum(byop_quests)) AS byop_quests,
+        if(max(replaces_base) = 1, sumIf(model_paid, replaces_base = 1), sum(model_paid)) AS model_paid,
+        if(max(replaces_base) = 1, sumIf(model_quests, replaces_base = 1), sum(model_quests)) AS model_quests,
+        if(max(replaces_base) = 1, sumIf(requests_paid, replaces_base = 1), sum(requests_paid)) AS requests_paid,
+        if(max(replaces_base) = 1, sumIf(requests_quests, replaces_base = 1), sum(requests_quests)) AS requests_quests
     FROM
     (
         SELECT
@@ -40,6 +40,7 @@ SQL >
                 provider
             ) AS vendor,
             model,
+            0 AS replaces_base,
             sumMerge(cost_paid) AS cost_paid,
             sumMerge(cost_quests) AS cost_quests,
             sumMerge(price_paid) AS price_paid,
@@ -65,6 +66,7 @@ SQL >
                 provider
             ) AS vendor,
             model,
+            toUInt8(reason = 'workspace_snapshot') AS replaces_base,
             cost_paid,
             cost_quests,
             price_paid,
@@ -82,6 +84,7 @@ SQL >
                 argMax(month, recorded_at) AS month,
                 argMax(provider, recorded_at) AS provider,
                 argMax(model, recorded_at) AS model,
+                argMax(reason, recorded_at) AS reason,
                 argMax(cost_paid, recorded_at) AS cost_paid,
                 argMax(cost_quests, recorded_at) AS cost_quests,
                 argMax(price_paid, recorded_at) AS price_paid,
@@ -107,6 +110,17 @@ SQL >
         )
     )
     GROUP BY month, vendor, model
+    HAVING
+        cost_paid != 0
+        OR cost_quests != 0
+        OR price_paid != 0
+        OR price_quests != 0
+        OR byop_paid != 0
+        OR byop_quests != 0
+        OR model_paid != 0
+        OR model_quests != 0
+        OR requests_paid != 0
+        OR requests_quests != 0
     ORDER BY month DESC, vendor, model
 
 TYPE ENDPOINT

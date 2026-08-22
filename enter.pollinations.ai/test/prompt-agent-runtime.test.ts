@@ -31,6 +31,7 @@ const BASE_RUNTIME: PromptAgentRuntime = {
     genBaseUrl: "https://gen.test.example",
 };
 const POLLINATIONS_MCP_PROXY_URL = `${BASE_RUNTIME.genBaseUrl}/mcp/pollinations`;
+const BROWSER_MCP_PROXY_URL = `${BASE_RUNTIME.genBaseUrl}/mcp/browser`;
 
 async function agentRunToken(parentApiKeyId: string, managedAgentId: string) {
     return signAgentRunToken({
@@ -258,7 +259,7 @@ describe("prompt-agent runtime", () => {
             async (input: RequestInfo | URL, init?: RequestInit) => {
                 const request = new Request(input, init);
                 const url = new URL(request.url);
-                if (request.url === POLLINATIONS_MCP_PROXY_URL) {
+                if (request.url === BROWSER_MCP_PROXY_URL) {
                     mcpRequests.push(request.clone());
                     if (request.method === "GET") {
                         return new Response(null, { status: 405 });
@@ -326,7 +327,7 @@ describe("prompt-agent runtime", () => {
                                         {
                                             id: "c1",
                                             function: {
-                                                name: "mcp__pollinations__listModels",
+                                                name: "mcp__browser__listModels",
                                                 arguments: "{}",
                                             },
                                         },
@@ -353,7 +354,7 @@ describe("prompt-agent runtime", () => {
                 ...BASE_RUNTIME,
                 config: {
                     ...BASE_RUNTIME.config,
-                    mcpServers: ["pollinations"],
+                    mcpServers: ["browser"],
                 },
             },
         );

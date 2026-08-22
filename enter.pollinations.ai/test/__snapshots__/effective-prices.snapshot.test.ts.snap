@@ -1405,12 +1405,12 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "qwen-coder": {
     "cost": {
-      "completionTextTokens": 0.00000022,
-      "promptTextTokens": 0.00000006,
+      "completionTextTokens": 0.00000026,
+      "promptTextTokens": 0.00000007,
     },
     "price": {
-      "completionTextTokens": 0.00000022,
-      "promptTextTokens": 0.00000006,
+      "completionTextTokens": 0.00000026,
+      "promptTextTokens": 0.00000007,
     },
   },
   "qwen-coder-large": {
@@ -1893,10 +1893,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "whisper": {
     "cost": {
-      "promptAudioSeconds": 0.0000445,
+      "promptAudioSeconds": 0.0000452777777777778,
     },
     "price": {
-      "promptAudioSeconds": 0.0000445,
+      "promptAudioSeconds": 0.0000452777777777778,
     },
   },
   "zimage": {

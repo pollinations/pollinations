@@ -354,8 +354,8 @@ export const AUDIO_SERVICES = {
         addedDate: new Date("2026-02-08").getTime(),
         priceMultiplier: 1,
         cost: {
-            // OVH Whisper: €0.00004083/sec ≈ $0.0000445/sec
-            promptAudioSeconds: 0.0000445,
+            // OVHcloud USD list price: $0.163/hour.
+            promptAudioSeconds: 0.163 / 3600,
         },
         title: "Whisper Large V3",
         description: "Accurate, affordable speech-to-text transcription",

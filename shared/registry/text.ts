@@ -394,8 +394,9 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(0.06),
-            completionTextTokens: perMillion(0.22),
+            // OVHcloud USD list price for Qwen3-Coder-30B-A3B-Instruct.
+            promptTextTokens: perMillion(0.07),
+            completionTextTokens: perMillion(0.26),
         },
         title: "Qwen3 Coder 30B",
         description:

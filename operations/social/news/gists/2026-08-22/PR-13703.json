@@ -1,0 +1,34 @@
+{
+  "pr_number": 13703,
+  "title": "fix: align OVHcloud model pricing",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13703",
+  "merged_at": "2026-08-22T14:09:26Z",
+  "labels": [],
+  "pr_body_excerpt": "- Updates `qwen-coder` from $0.06/$0.22 to the OVHcloud USD list price of $0.07/$0.26 per million input/output tokens.\n- Updates `whisper` from $0.1602/hour to the OVHcloud USD list price of $0.163/hour.\n- Leaves routes, capabilities, aliases, permissions, multipliers, GPU status, and fallbacks unchanged.\n- Verified both exact OVHcloud routes directly and through authenticated local E2E, including aliases, Quest billing, cache no-double-debit, error handling, catalogs, and Tinybird settlement.\n\nSources: [OVHcloud USD prices](https://www.ovhcloud.com/en/public-cloud/prices/) and [OVHcloud EUR prices](https://www.ovhcloud.com/fr/public-cloud/prices/).",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Prices Meet the Price List",
+    "blurb": "The OVHcloud price tags got a careful calibration. Qwen Coder and Whisper billing now match the provider’s USD list prices, with every route and fallback staying exactly where it was.",
+    "summary": "Aligned OVHcloud list pricing in the registry: qwen-coder now bills at $0.07/$0.26 per million input/output tokens and whisper at $0.163 per audio hour, with routes, aliases, permissions, multipliers, GPU status, and fallbacks unchanged.",
+    "impact": "Authenticated requests, aliases, Quest billing, cache handling, catalogs, and Tinybird settlement now use the same qwen-coder and whisper rates published by OVHcloud.",
+    "keywords": [
+      "ovhcloud",
+      "pricing",
+      "qwen-coder",
+      "whisper",
+      "billing",
+      "registry"
+    ],
+    "visual_concept": "A cozy pricing-garden calibration scene: Polli carefully adjusts two small wooden price signs beside labeled Qwen Coder and Whisper code-plants, while a CRT monitor robot checks a tidy provider price sheet. The visual metaphor is accurate labels and settled billing, represented by matching tokens, a tiny calculator, and orderly sprouts rather than any dramatic change.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with black oval eyes, pink rectangular blush, light-blue rounded wings, and a tiny accountant visor, carefully matching wooden price tags beside two glowing code-plants labeled “QWEN” and “WHISPER”; a friendly chunky CRT-monitor robot holds a neat OVHcloud-style price sheet, with flowers and token coins growing nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-to-peach gradient background, warm lighting, retro gaming vibes like Stardew Valley, subtle CRT glow, dark purple (#110518) pixel-font text: “ALIGNED”, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-22/PR-13703.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with black oval eyes, pink rectangular blush, light-blue rounded wings, and a tiny accountant visor, carefully matching wooden price tags beside two glowing code-plants labeled “QWEN” and “WHISPER”; a friendly chunky CRT-monitor robot holds a neat OVHcloud-style price sheet, with flowers and token coins growing nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-to-peach gradient background, warm lighting, retro gaming vibes like Stardew Valley, subtle CRT glow, dark purple (#110518) pixel-font text: “ALIGNED”, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-08-22T14:10:36.793575+00:00"
+}

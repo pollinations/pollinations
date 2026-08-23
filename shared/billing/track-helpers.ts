@@ -162,6 +162,20 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
         };
     }
 
+    // The caller already bears the upstream cost of their own community
+    // endpoint. Do not charge them through Pollinations or pay them back a
+    // partial reward. The reward input follows the endpoint that actually
+    // served the request, so a fallback owned by somebody else is still billed.
+    if (communityModelRewardInput?.userId === userId) {
+        return {
+            markup: null,
+            communityModelReward: null,
+            payerBucket: null,
+            postDeductionPackBalance: null,
+            billedPrice: 0,
+        };
+    }
+
     // 1. Resolve the two independent "who else gets money" inputs.
     const markup = await resolveDevMarkup(
         db,

@@ -1521,6 +1521,109 @@ describe("tracking observability", () => {
         expect(primaryOwner?.tierBalance).toBe(0);
     });
 
+    it("rewards a public model owner when their private fallback serves", async () => {
+        const db = drizzle(env.DB);
+        const payerId = `track-private-fallback-payer-${crypto.randomUUID()}`;
+        const ownerId = `track-private-fallback-owner-${crypto.randomUUID()}`;
+        await db.insert(userTable).values(
+            [payerId, ownerId].map((id) => ({
+                id,
+                email: `${id}@test.local`,
+                name: id,
+                tierBalance: id === payerId ? 1 : 0,
+                packBalance: 0,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            })),
+        );
+        const [payer] = await db
+            .select()
+            .from(userTable)
+            .where(eq(userTable.id, payerId))
+            .limit(1);
+        if (!payer) throw new Error("Expected inserted payer");
+
+        const primaryEndpoint = createCommunityEndpoint(ownerId);
+        const fallbackEndpoint = createCommunityEndpoint(ownerId, {
+            id: "community-endpoint-private-fallback",
+            modelId: "test-owner/private-fallback",
+            name: "private-fallback",
+            visibility: "private",
+            ...communityEndpointPrices({
+                promptTextPrice: 0.00005,
+                completionTextPrice: 0.0001,
+            }),
+        });
+        const fallbackEntry = createCommunityEntry(fallbackEndpoint);
+        const model: ModelVariables["model"] = {
+            requested: primaryEndpoint.modelId,
+            resolved: primaryEndpoint.modelId,
+            definition: communityModelDefinition(primaryEndpoint),
+            communityEndpoint: primaryEndpoint,
+            fallbackEntries: [fallbackEntry],
+        };
+
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+
+        const ctx = createExecutionContext();
+        const response = await createTestApp(
+            async () => {},
+            payer,
+            model,
+            fallbackEntry,
+        ).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: primaryEndpoint.modelId,
+                    stream: false,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                ...env,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as unknown as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(1);
+        const event = (await tinybirdRequests[0].json()) as Record<
+            string,
+            unknown
+        >;
+        expect(event).toMatchObject({
+            resolvedModelRequested: primaryEndpoint.modelId,
+            totalPrice: 0.2,
+            communityModelRewardUserId: ownerId,
+            communityModelRewardRate: COMMUNITY_MODEL_REWARD_RATE,
+            communityModelRewardAmount: 0.075,
+        });
+
+        const [owner] = await db
+            .select({ tierBalance: userTable.tierBalance })
+            .from(userTable)
+            .where(eq(userTable.id, ownerId))
+            .limit(1);
+        expect(owner?.tierBalance).toBeCloseTo(0.075, 10);
+    });
+
     it("does not bill image generation that returns a JSON (non-image) content-type", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(

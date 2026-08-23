@@ -8,7 +8,6 @@ account_id = "b6ec751c0862027ba269faf7029b2501"
 services = [
     { binding = "ENTER", service = "pollinations-enter" },
     { binding = "POLLINATIONS_MCP", service = "pollinations-mcp" },
-    { binding = "FFMPEG_MCP", service = "pollinations-ffmpeg-mcp" },
     { binding = "PYTHON_MCP", service = "pollinations-python-mcp" },
     { binding = "BROWSER_MCP", service = "pollinations-browser-mcp" },
     { binding = "STORAGE_MCP", service = "pollinations-storage-mcp" }
@@ -101,10 +100,6 @@ service = "pollinations-enter-production"
 [[env.production.services]]
 binding = "POLLINATIONS_MCP"
 service = "pollinations-mcp"
-
-[[env.production.services]]
-binding = "FFMPEG_MCP"
-service = "pollinations-ffmpeg-mcp"
 
 [[env.production.services]]
 binding = "PYTHON_MCP"
@@ -206,10 +201,6 @@ binding = "POLLINATIONS_MCP"
 service = "pollinations-mcp"
 
 [[env.staging.services]]
-binding = "FFMPEG_MCP"
-service = "pollinations-ffmpeg-mcp-staging"
-
-[[env.staging.services]]
 binding = "PYTHON_MCP"
 service = "pollinations-python-mcp-staging"
 
@@ -293,10 +284,6 @@ service = "pollinations-enter"
 [[env.test.services]]
 binding = "POLLINATIONS_MCP"
 service = "pollinations-mcp"
-
-[[env.test.services]]
-binding = "FFMPEG_MCP"
-service = "pollinations-ffmpeg-mcp"
 
 [[env.test.services]]
 binding = "PYTHON_MCP"

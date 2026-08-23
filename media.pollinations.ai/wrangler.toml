@@ -21,24 +21,6 @@ database_name = "development-pollinations-enter-db"
 database_id = "2b844596-9890-4a2e-9da9-6c65681fa24d"
 migrations_dir = "../enter.pollinations.ai/drizzle"
 
-# Private staging Worker used through service bindings.
-[env.staging]
-name = "pollinations-media-staging"
-workers_dev = false
-
-[env.staging.vars]
-MAX_FILE_SIZE = "104857600"
-
-[[env.staging.r2_buckets]]
-binding = "MEDIA_BUCKET"
-bucket_name = "pollinations-media"
-
-[[env.staging.d1_databases]]
-binding = "DB"
-database_name = "staging-pollinations-enter-db"
-database_id = "2cb1cf1a-a18a-4cad-a4bb-be64e3c0e39f"
-migrations_dir = "../enter.pollinations.ai/drizzle"
-
 # Production environment
 [env.production]
 name = "pollinations-media-prod"

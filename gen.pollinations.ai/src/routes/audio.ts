@@ -16,7 +16,6 @@ import {
 } from "@shared/registry/usage-headers.ts";
 import { readResponseBytes } from "@shared/response-bytes.ts";
 import { SafeSchema } from "@shared/schemas/safety.ts";
-import { validateUserMediaUrl } from "@shared/user-media-url.ts";
 import { errorResponseDescriptions } from "@shared/utils/api-docs.ts";
 import { type Context, Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
@@ -47,6 +46,7 @@ import {
     withModelFallbackResponse,
 } from "../fallback.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
+import { validateUserMediaUrl } from "../utils/user-media-url.ts";
 import { transcribeWithAssemblyAi } from "./assemblyai-transcription.ts";
 import type { SimpleAudioQuery } from "./generation-handlers.ts";
 import {

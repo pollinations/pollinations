@@ -1,6 +1,26 @@
 [
   {
     "emoji": "🖼️",
+    "name": "vaia-ai-studio.my.id",
+    "url": "https://vaia-ai-studio.my.id",
+    "description": "Create collaborative images using the Pollinations image API",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "vaiaaistudio",
+    "githubUserId": "297363530",
+    "repositoryUrl": "https://github.com/vaiaaistudio/vaia-ai-studio",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-08-22",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/13699",
+    "approvedDate": "2026-08-23",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
+    "emoji": "🖼️",
     "name": "Dery Lau AI",
     "url": "https://derylau.my.id",
     "description": "Create collaborative images using the Pollinations image API",

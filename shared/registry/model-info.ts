@@ -45,6 +45,7 @@ export const ModelInfoSchema = z.object({
     brand_url: z.string().url().optional(),
     community: z.boolean().optional(),
     agent: z.boolean().optional(),
+    agent_card_url: z.string().url().optional(),
     base_model: z.string().optional(),
     per_user_rpm: z.number().positive().nullable().optional(),
     pricing: z

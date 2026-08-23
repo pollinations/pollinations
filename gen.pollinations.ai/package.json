@@ -35,6 +35,7 @@
         "wrangler": "^4.52.1"
     },
     "dependencies": {
+        "@a2a-js/sdk": "^1.0.1",
         "@aws-sdk/client-bedrock-runtime": "^3.1040.0",
         "@aws-sdk/client-s3": "^3.1040.0",
         "@hono/standard-validator": "^0.2.2",

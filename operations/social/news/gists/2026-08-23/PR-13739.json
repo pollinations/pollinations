@@ -1,0 +1,33 @@
+{
+  "pr_number": 13739,
+  "title": "Add zero2launch to the list",
+  "author": "gggff123",
+  "url": "https://github.com/pollinations/pollinations/pull/13739",
+  "merged_at": "2026-08-23T01:43:53Z",
+  "labels": [],
+  "pr_body_excerpt": "Closes #13678",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "One more bee in the list",
+    "blurb": "zero2launch has been added to the GitHub identity list. The garden gate recognizes one more familiar face.",
+    "summary": "Added the GitHub identity zero2launch to the shared authentication allowlist used by Pollinations services.",
+    "impact": "The zero2launch account can now be recognized by the shared GitHub authentication configuration.",
+    "keywords": [
+      "github",
+      "authentication",
+      "allowlist",
+      "identity",
+      "access"
+    ],
+    "visual_concept": "A cozy garden gate with a small GitHub-style identity badge being added to a friendly roster. Polli, wearing a tiny gatekeeper cap, checks the new name beside code-plants and a softly glowing lime-green terminal.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing a tiny gatekeeper cap as she adds a GitHub identity badge labeled \"zero2launch\" to a garden gate roster beside a lime green (#ecf874) terminal and flowering code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, emotionally warm and welcoming."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-23/PR-13739.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing a tiny gatekeeper cap as she adds a GitHub identity badge labeled \"zero2launch\" to a garden gate roster beside a lime green (#ecf874) terminal and flowering code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, emotionally warm and welcoming."
+  },
+  "generated_at": "2026-08-23T01:44:58.233463+00:00"
+}

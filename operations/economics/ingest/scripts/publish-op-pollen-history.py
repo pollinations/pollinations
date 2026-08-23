@@ -118,6 +118,48 @@ def verify_rows(expected, actual, fields, key):
         raise RuntimeError("Verification failed: " + "; ".join(errors))
 
 
+def verify_exact_rows(expected, actual, fields, key):
+    expected_keys = {key(row) for row in expected}
+    actual_keys = {key(row) for row in actual}
+    missing = sorted(expected_keys - actual_keys)
+    unexpected = sorted(actual_keys - expected_keys)
+    if missing or unexpected:
+        raise RuntimeError(
+            "Endpoint key verification failed: "
+            f"missing={missing[:10]}; unexpected={unexpected[:10]}"
+        )
+    verify_rows(expected, actual, fields, key)
+
+
+def endpoint_snapshot(rows):
+    grouped = {}
+    for row in rows:
+        provider = row["provider"]
+        if (
+            row["month"] == "2026-03"
+            and provider == "io.net"
+            and row["model"] in {"flux", "zimage"}
+        ):
+            provider = "vast.ai"
+        row_key = (row["month"], provider, row["model"])
+        aggregate = grouped.setdefault(
+            row_key,
+            {
+                "month": row["month"],
+                "vendor": provider,
+                "model": row["model"],
+                **{field: 0 for field in METRICS},
+            },
+        )
+        for field in METRICS:
+            aggregate[field] += float(row[field])
+    return [
+        row
+        for row in grouped.values()
+        if any(abs(row[field]) > 0.000000001 for field in METRICS)
+    ]
+
+
 def write_snapshot(path, rows):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps({"data": rows}, indent=2) + "\n")
@@ -130,6 +172,9 @@ def main():
     before = effective_history(admin)
     write_snapshot(args.before_snapshot.resolve(), before)
 
+    snapshot_mode = all(row["reason"] == "workspace_snapshot" for row in expected)
+    if any(row["reason"] == "workspace_snapshot" for row in expected) and not snapshot_mode:
+        raise RuntimeError("workspace_snapshot input cannot mix with additive history rows")
     expected_keys = {
         (row["month"], row["provider"], row["model"]) for row in expected
     }
@@ -139,10 +184,39 @@ def main():
         for row in endpoint_before
         if (row["month"], row["vendor"], row["model"]) in expected_keys
     ]
-    if collisions:
+    if collisions and not snapshot_mode:
         raise RuntimeError(
             f"Refusing to double-count {len(collisions)} existing endpoint rows"
         )
+    if snapshot_mode:
+        target_months = {row["month"] for row in expected}
+        endpoint_target_keys = {
+            (row["month"], row["vendor"], row["model"])
+            for row in endpoint_before
+            if row["month"] in target_months
+        }
+        uncovered_endpoint_keys = sorted(endpoint_target_keys - expected_keys)
+        if uncovered_endpoint_keys:
+            raise RuntimeError(
+                "Snapshot input does not cover every current endpoint key: "
+                + ", ".join(str(value) for value in uncovered_endpoint_keys[:10])
+            )
+        existing_snapshot_ids = {
+            row["entry_id"]
+            for row in before
+            if row["month"] in target_months and row["reason"] == "workspace_snapshot"
+        }
+        input_ids = {row["entry_id"] for row in expected}
+        missing_updates = sorted(existing_snapshot_ids - input_ids)
+        if missing_updates:
+            raise RuntimeError(
+                "Snapshot input does not update every existing target entry: "
+                + ", ".join(missing_updates[:10])
+            )
+        for row in expected:
+            for field in METRICS:
+                if float(row[field]) < 0:
+                    raise RuntimeError(f"{row['entry_id']} has negative {field}")
 
     result = append.datasource_append_data(
         "op_pollen_history", args.input.resolve(), mode="append", format="ndjson"
@@ -163,15 +237,25 @@ def main():
     write_snapshot(args.after_snapshot.resolve(), after)
 
     endpoint_after = admin.pipe_data("op_pollen_api").get("data", [])
-    endpoint_expected = [
-        {**row, "vendor": row["provider"]} for row in expected
-    ]
-    verify_rows(
-        endpoint_expected,
-        endpoint_after,
-        ["month", "vendor", "model", *METRICS],
-        lambda row: (row["month"], row["vendor"], row["model"]),
-    )
+    if snapshot_mode:
+        endpoint_expected = endpoint_snapshot(expected)
+        endpoint_actual = [
+            row for row in endpoint_after if row["month"] in target_months
+        ]
+        verify_exact_rows(
+            endpoint_expected,
+            endpoint_actual,
+            ["month", "vendor", "model", *METRICS],
+            lambda row: (row["month"], row["vendor"], row["model"]),
+        )
+    else:
+        endpoint_expected = [{**row, "vendor": row["provider"]} for row in expected]
+        verify_rows(
+            endpoint_expected,
+            endpoint_after,
+            ["month", "vendor", "model", *METRICS],
+            lambda row: (row["month"], row["vendor"], row["model"]),
+        )
     print(
         json.dumps(
             {
@@ -179,7 +263,8 @@ def main():
                 "rows_appended": len(expected),
                 "history_rows_before": len(before),
                 "history_rows_after": len(after),
-                "endpoint_rows_verified": len(expected),
+                "endpoint_rows_verified": len(endpoint_expected),
+                "snapshot_mode": snapshot_mode,
                 "quarantine_rows": result.get("quarantine_rows", 0),
                 "invalid_lines": result.get("invalid_lines", 0),
             }

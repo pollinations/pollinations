@@ -343,7 +343,7 @@ describe("Pollinations model discovery", () => {
 
         await expect(client.models()).resolves.toEqual(models);
         expect(fetchMock.mock.calls[0]?.[0]).toBe(
-            "https://example.test/models",
+            "https://example.test/v1/models",
         );
     });
 });

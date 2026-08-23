@@ -1587,7 +1587,14 @@ export class Pollinations {
         const qs = params.toString();
         const url = `${this.baseUrl}/account/earnings${qs ? `?${qs}` : ""}`;
 
-        return this.getJson<EarningsResponse>(url);
+        const response = await fetchWithTimeout(
+            url,
+            { headers: this.getHeaders() },
+            this.textTimeout,
+        );
+
+        if (!response.ok) await this.handleErrorResponse(response);
+        return response.json() as Promise<EarningsResponse>;
     }
 
     /**

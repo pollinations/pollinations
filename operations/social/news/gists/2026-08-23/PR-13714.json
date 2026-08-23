@@ -1,0 +1,35 @@
+{
+  "pr_number": 13714,
+  "title": "feat: allow agent composition",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13714",
+  "merged_at": "2026-08-23T00:27:57Z",
+  "labels": [],
+  "pr_body_excerpt": "- Allows `ag_` run tokens to call managed and endpoint agents while preserving inherited model permissions and parent-key billing.\n- Adds `agent: true|false` filtering to MCP `listModels` and keeps the returned agent marker visible.\n- Updates MCP instructions and `generateText` guidance so agents can discover and delegate to other agents.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Agents found the hive mind",
+    "blurb": "Agents can now hand work to other agents without dropping their inherited permissions or losing track of the pollen tab. The tiny delegation tree has become an actual forest.",
+    "summary": "Agent run tokens prefixed with ag_ can now call managed and endpoint agents with inherited model permissions and parent-key billing, while MCP listModels supports agent: true|false filtering and preserves each model's agent marker.",
+    "impact": "MCP-connected agents can discover which models are agents and delegate work to them directly, with usage continuing to bill through the original parent key.",
+    "keywords": [
+      "agents",
+      "mcp",
+      "agent-composition",
+      "listModels",
+      "generateText",
+      "billing",
+      "permissions"
+    ],
+    "visual_concept": "Depict agent composition as Polli tending a small garden of connected retro terminals, where one terminal-agent sends a glowing task packet along vine-like cables to another helpful terminal-agent. Polli is the observant coordinator, wearing a tiny tool belt and carrying a clipboard, while a parent terminal keeps a single glowing pollen ledger that represents inherited permissions and parent-key billing; code-plants and small flowers make the delegation network feel organic.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny tool belt and tending a garden of connected CRT terminals where one friendly monitor robot delegates a glowing task packet through vine-like cables to another; a parent terminal holds one lime green (#ecf874) pollen ledger, with code-plants and flowers sprouting around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font text: \"AGENTS HELP AGENTS\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-23/PR-13714.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny tool belt and tending a garden of connected CRT terminals where one friendly monitor robot delegates a glowing task packet through vine-like cables to another; a parent terminal holds one lime green (#ecf874) pollen ledger, with code-plants and flowers sprouting around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font text: \"AGENTS HELP AGENTS\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-23T00:28:54.348947+00:00"
+}

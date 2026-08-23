@@ -167,21 +167,7 @@ const EndpointAgentUpdateSchema = z
     })
     .strict();
 
-export const UpdateEndpointSchema = z
-    .object({
-        ...CommonUpdateFieldsSchema,
-        baseUrl: EndpointFieldsSchema.baseUrl.optional(),
-        upstreamModel: EndpointFieldsSchema.upstreamModel,
-        bearerToken: EndpointFieldsSchema.bearerToken.optional(),
-        perUserRpm: PerUserRpmSchema.optional(),
-        paidOnly: PaidOnlySchema.optional(),
-        imagePricing: ImagePricingSchema.optional(),
-        inputModalities: InputModalitiesSchema.optional(),
-        advertised: AdvertisedSchema.optional(),
-        fallbacks: FallbacksSchema.optional(),
-        ...UpdatePriceFieldsSchema,
-    })
-    .strict();
+export const UpdateEndpointSchema = ProxyUpdateSchema;
 
 const UPDATE_SCHEMA_BY_TYPE = {
     proxy: ProxyUpdateSchema,

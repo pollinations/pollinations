@@ -35,6 +35,8 @@ function missingTargetMessage(modelId: string): string {
     return `Fallback target ${modelId} does not exist`;
 }
 
+// Private or hidden rows owned by someone else must look identical to a
+// missing row. Distinct validation errors would expose whether a model exists.
 function shouldConcealTarget(
     primary: FallbackPrimary,
     target: CommunityEndpointRow,

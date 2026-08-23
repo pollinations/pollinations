@@ -4,6 +4,7 @@ import * as schema from "@shared/db/better-auth.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect } from "vitest";
+import { deriveCreateProxyPolicy } from "../../src/routes/community-endpoints/proxy-policy.ts";
 import { test } from "../fixtures.ts";
 
 const endpointUrl = "http://localhost:3000/api/account/my-models";
@@ -33,6 +34,23 @@ async function postModel(
 }
 
 describe("community endpoint configuration policy", () => {
+    test("preserves validation error precedence", () => {
+        expect(() =>
+            deriveCreateProxyPolicy({
+                name: "invalid-policy",
+                title: "Invalid policy",
+                visibility: "public",
+                baseUrl: "https://images.example.com/v1",
+                bearerToken: "test-provider-token",
+                modality: "image",
+                imagePricing: "request",
+                inputModalities: ["audio"],
+                advertised: { contextLength: 32000 },
+                paidOnly: false,
+            }),
+        ).toThrow("audio input is not supported for image models");
+    });
+
     test("derives image pricing transitions and private visibility", async ({
         sessionToken,
     }) => {

@@ -89,16 +89,21 @@ function hasAdvertisedClaim(
     );
 }
 
-function advertisedPolicy(
-    modality: CommunityEndpointModality,
+function normalizeAdvertised(
     advertised: CommunityEndpointAdvertised | undefined,
 ): CommunityEndpointAdvertised | undefined {
+    return hasAdvertisedClaim(advertised) ? advertised : undefined;
+}
+
+function assertAdvertised(
+    modality: CommunityEndpointModality,
+    advertised: CommunityEndpointAdvertised | undefined,
+): void {
     if (modality !== "text" && hasAdvertisedClaim(advertised)) {
         throw new HTTPException(400, {
             message: "advertised metadata is only supported for text models",
         });
     }
-    return hasAdvertisedClaim(advertised) ? advertised : undefined;
 }
 
 function visibilityPolicy(
@@ -120,8 +125,13 @@ function visibilityPolicy(
           };
 }
 
-function validatePolicy(policy: ProxyPolicy): ProxyPolicy {
+function validatePolicy(
+    policy: ProxyPolicy,
+    requestedAdvertised: CommunityEndpointAdvertised | undefined,
+): ProxyPolicy {
     assertInputModalities(policy.modality, policy.inputModalities);
+    // An omitted update preserves stored metadata without revalidating it.
+    assertAdvertised(policy.modality, requestedAdvertised);
     assertPriceLimits(policy.prices, policy.modality, policy.imagePricing);
     return policy;
 }
@@ -133,20 +143,23 @@ export function deriveCreateProxyPolicy(input: ProxyCreateInput): ProxyPolicy {
         input.inputModalities ??
         normalizeCommunityEndpointInputModalities(undefined, modality);
 
-    return validatePolicy({
-        modality,
-        imagePricing,
-        inputModalities,
-        advertised: advertisedPolicy(modality, input.advertised),
-        perUserRpm: input.perUserRpm ?? null,
-        ...visibilityPolicy(
-            input.visibility,
-            input.paidOnly,
-            input,
+    return validatePolicy(
+        {
             modality,
             imagePricing,
-        ),
-    });
+            inputModalities,
+            advertised: normalizeAdvertised(input.advertised),
+            perUserRpm: input.perUserRpm ?? null,
+            ...visibilityPolicy(
+                input.visibility,
+                input.paidOnly,
+                input,
+                modality,
+                imagePricing,
+            ),
+        },
+        input.advertised,
+    );
 }
 
 function updatePriceSource(
@@ -180,26 +193,29 @@ export function deriveUpdatedProxyPolicy(
             : stored.imagePricing;
     const inputModalities = input.inputModalities ?? stored.inputModalities;
 
-    return validatePolicy({
-        modality,
-        imagePricing,
-        inputModalities,
-        advertised:
-            input.advertised === undefined
-                ? stored.advertised
-                : advertisedPolicy(modality, input.advertised),
-        perUserRpm:
-            input.perUserRpm === undefined
-                ? stored.perUserRpm
-                : input.perUserRpm,
-        ...visibilityPolicy(
-            visibility,
-            input.paidOnly ?? stored.paidOnly,
-            updatePriceSource(stored, input, imagePricing),
+    return validatePolicy(
+        {
             modality,
             imagePricing,
-        ),
-    });
+            inputModalities,
+            advertised:
+                input.advertised === undefined
+                    ? stored.advertised
+                    : normalizeAdvertised(input.advertised),
+            perUserRpm:
+                input.perUserRpm === undefined
+                    ? stored.perUserRpm
+                    : input.perUserRpm,
+            ...visibilityPolicy(
+                visibility,
+                input.paidOnly ?? stored.paidOnly,
+                updatePriceSource(stored, input, imagePricing),
+                modality,
+                imagePricing,
+            ),
+        },
+        input.advertised,
+    );
 }
 
 export function changesProxyPayload(input: ProxyUpdateInput): boolean {

@@ -2,6 +2,10 @@ import { getLogger } from "@logtape/logtape";
 import { payerBucketToMeter } from "@shared/billing/balance.ts";
 import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
 import { sendToTinybird } from "@shared/events.ts";
+import {
+    type McpUsageReceipt,
+    parseMcpUsageHeaders,
+} from "@shared/mcp-usage.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
 import {
     getMcpServerDefinition,
@@ -19,51 +23,9 @@ import { type Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
 import { auth } from "@/middleware/auth.ts";
+import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { requestIdentity } from "@/middleware/track.ts";
-
-type McpUsage = {
-    cost: number;
-    tool: string;
-    status: number;
-    adjustmentId: string;
-    adjustmentUnits: number;
-    error?: string;
-};
-
-function parseUsage(headers: Headers): McpUsage | undefined {
-    const costHeader = headers.get(MCP_USAGE_HEADERS.cost);
-    if (costHeader === null) return undefined;
-
-    const cost = Number(costHeader);
-    const status = Number(headers.get(MCP_USAGE_HEADERS.status));
-    const adjustmentUnits = Number(
-        headers.get(MCP_USAGE_HEADERS.adjustmentUnits),
-    );
-    const tool = headers.get(MCP_USAGE_HEADERS.tool);
-    const adjustmentId = headers.get(MCP_USAGE_HEADERS.adjustmentId);
-    if (
-        !Number.isFinite(cost) ||
-        cost < 0 ||
-        !Number.isInteger(status) ||
-        status < 100 ||
-        status > 599 ||
-        !Number.isFinite(adjustmentUnits) ||
-        adjustmentUnits < 0 ||
-        !tool ||
-        !adjustmentId
-    ) {
-        throw new Error("MCP server returned invalid usage metadata");
-    }
-    return {
-        cost,
-        status,
-        adjustmentUnits,
-        tool,
-        adjustmentId,
-        error: headers.get(MCP_USAGE_HEADERS.error) ?? undefined,
-    };
-}
 
 function requestForMcp(request: Request, server: McpServerDefinition): Request {
     const headers = new Headers(request.headers);
@@ -100,21 +62,34 @@ function responseForCaller(response: Response): Response {
 async function settleUsage(
     c: Context<Env>,
     server: Extract<McpServerDefinition, { billing: "usage_receipt" }>,
-    usage: McpUsage,
+    usage: McpUsageReceipt,
     startedAt: Date,
 ): Promise<void> {
     const user = c.var.auth.requireUser();
     const db = drizzle(c.env.DB);
-    const deduction = await handleBalanceDeduction({
-        db: db as unknown as Parameters<typeof handleBalanceDeduction>[0]["db"],
-        isBilledUsage: usage.cost > 0,
-        totalPrice: usage.cost,
-        userId: user.id,
-        apiKeyId: c.var.auth.apiKey?.id,
-        apiKeyPollenBalance: c.var.auth.apiKey?.pollenBalance,
-        byopClientKeyId: c.var.auth.apiKey?.byopClientKeyId,
-        modelPaidOnly: false,
-    });
+    let deduction: Awaited<ReturnType<typeof handleBalanceDeduction>> | null =
+        null;
+    try {
+        deduction = await handleBalanceDeduction({
+            db: db as unknown as Parameters<
+                typeof handleBalanceDeduction
+            >[0]["db"],
+            isBilledUsage: usage.cost > 0,
+            totalPrice: usage.cost,
+            userId: user.id,
+            apiKeyId: c.var.auth.apiKey?.id,
+            apiKeyPollenBalance: c.var.auth.apiKey?.pollenBalance,
+            byopClientKeyId: c.var.auth.apiKey?.byopClientKeyId,
+            modelPaidOnly: false,
+        });
+    } catch (error) {
+        c.var.log.error(
+            "MCP billing deduction failed after response; continuing tracking: {error}",
+            {
+                error: error instanceof Error ? error.message : String(error),
+            },
+        );
+    }
     const endedAt = new Date();
     const event: TinybirdEvent = {
         id: crypto.randomUUID(),
@@ -127,7 +102,7 @@ async function settleUsage(
         environment: c.env.ENVIRONMENT,
         eventType: server.eventType,
         ...requestIdentity(c.var.auth),
-        ...(deduction.payerBucket
+        ...(deduction?.payerBucket
             ? payerBucketToMeter(deduction.payerBucket)
             : {}),
         modelRequested: server.id,
@@ -142,9 +117,9 @@ async function settleUsage(
         ...priceToEventParams(),
         ...usageToEventParams(),
         totalCost: usage.cost,
-        totalPrice: deduction.billedPrice,
+        totalPrice: deduction?.billedPrice ?? 0,
         devPrice: usage.cost,
-        markupRate: deduction.markup?.markupRate ?? 0,
+        markupRate: deduction?.markup?.markupRate ?? 0,
         errorResponseCode:
             usage.status >= 400 ? String(usage.status) : undefined,
         errorSource:
@@ -174,7 +149,7 @@ export const mcpRoutes = new Hono<Env>()
             })),
         }),
     )
-    .use("/mcp/:serverId", auth())
+    .use("/mcp/:serverId", auth(), frontendKeyRateLimit)
     .all("/mcp/:serverId", async (c) => {
         c.var.auth.requireUser();
         const serverId = c.req.param("serverId");
@@ -187,10 +162,11 @@ export const mcpRoutes = new Hono<Env>()
         const startedAt = new Date();
         const response = await binding.fetch(requestForMcp(c.req.raw, server));
         if (server.billing === "usage_receipt") {
-            const usage = parseUsage(response.headers);
+            const usage = parseMcpUsageHeaders(response.headers);
             if (usage) {
                 try {
                     await settleUsage(c, server, usage, startedAt);
+                    await c.var.frontendKeyRateLimit?.consumePollen(usage.cost);
                 } catch (error) {
                     c.var.log.error("MCP billing failed: {error}", {
                         error:

@@ -121,6 +121,30 @@ test("proxies MCP unchanged, strips credentials and usage headers, and bills rep
     });
 });
 
+test("rate limits publishable keys using the reported MCP cost", async () => {
+    const { key } = await createTestApiKey({
+        type: "publishable",
+        user: { tierBalance: 1 },
+    });
+    const request = () =>
+        SELF.fetch("https://gen.pollinations.ai/mcp/ffmpeg", {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                "CF-Connecting-IP": "203.0.113.42",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(MCP_REQUEST),
+        });
+
+    expect((await request()).status).toBe(200);
+    const blocked = await request();
+    expect(blocked.status).toBe(429);
+    expect(await blocked.json()).toMatchObject({
+        error: "Rate limit exceeded",
+    });
+});
+
 test("does not bill protocol negotiation without usage metadata", async () => {
     const { key, userId } = await createTestApiKey({
         user: { tierBalance: 1 },

@@ -24,7 +24,7 @@ import {
     createAuthMiddleware,
     getSessionFromCtx,
 } from "better-auth/api";
-import { admin, openAPI } from "better-auth/plugins";
+import { admin, genericOAuth, openAPI } from "better-auth/plugins";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 
@@ -36,6 +36,10 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     const discordEnv = env as Cloudflare.Env & {
         DISCORD_CLIENT_ID: string;
         DISCORD_CLIENT_SECRET: string;
+    };
+    const githubConnectEnv = env as Cloudflare.Env & {
+        GITHUB_CONNECT_APP_CLIENT_ID?: string;
+        GITHUB_CONNECT_APP_CLIENT_SECRET?: string;
     };
 
     const adminPlugin = admin({
@@ -70,6 +74,15 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                             "Discord can only be connected to an existing Pollinations account.",
                     });
                 }
+                if (
+                    authContext.path === "/sign-in/oauth2" &&
+                    authContext.body?.providerId === "github-app"
+                ) {
+                    throw new APIError("BAD_REQUEST", {
+                        message:
+                            "The GitHub App can only be connected to an existing Pollinations account.",
+                    });
+                }
                 if (authContext.path !== "/delete-user") return;
 
                 const session = await getSessionFromCtx(authContext);
@@ -94,6 +107,26 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             schema: betterAuthSchema,
             provider: "sqlite",
         }),
+        databaseHooks: {
+            account: {
+                create: {
+                    before: async (account) => {
+                        if (account.providerId !== "github-app") return;
+                        const [user] = await db
+                            .select({ githubId: userTable.githubId })
+                            .from(userTable)
+                            .where(eq(userTable.id, account.userId))
+                            .limit(1);
+                        if (String(user?.githubId) !== account.accountId) {
+                            throw new APIError("BAD_REQUEST", {
+                                message:
+                                    "Authorize the same GitHub account used to sign in to Pollinations.",
+                            });
+                        }
+                    },
+                },
+            },
+        },
         advanced: {
             // Configure background tasks for Cloudflare Workers
             // Required for deferUpdates to work properly
@@ -130,7 +163,8 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                 // Better Auth 1.4 requires this for Discord accounts without a
                 // verified email. The sign-in hook above still limits Discord
                 // to explicit, authenticated linkSocial flows.
-                trustedProviders: ["discord"],
+                disableImplicitLinking: true,
+                trustedProviders: ["discord", "github-app"],
             },
         },
         socialProviders: {
@@ -156,6 +190,58 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
         plugins: [
             adminPlugin,
             apiKeyPlugin,
+            genericOAuth({
+                config:
+                    githubConnectEnv.GITHUB_CONNECT_APP_CLIENT_ID &&
+                    githubConnectEnv.GITHUB_CONNECT_APP_CLIENT_SECRET
+                        ? [
+                              {
+                                  providerId: "github-app",
+                                  clientId:
+                                      githubConnectEnv.GITHUB_CONNECT_APP_CLIENT_ID,
+                                  clientSecret:
+                                      githubConnectEnv.GITHUB_CONNECT_APP_CLIENT_SECRET,
+                                  authorizationUrl:
+                                      "https://github.com/login/oauth/authorize",
+                                  tokenUrl:
+                                      "https://github.com/login/oauth/access_token",
+                                  disableSignUp: true,
+                                  getUserInfo: async (tokens) => {
+                                      const response = await fetch(
+                                          "https://api.github.com/user",
+                                          {
+                                              headers: {
+                                                  Accept: "application/vnd.github+json",
+                                                  Authorization: `Bearer ${tokens.accessToken}`,
+                                                  "User-Agent":
+                                                      "pollinations-enter",
+                                                  "X-GitHub-Api-Version":
+                                                      "2022-11-28",
+                                              },
+                                          },
+                                      );
+                                      if (!response.ok) return null;
+                                      const profile =
+                                          (await response.json()) as {
+                                              id: number;
+                                              login: string;
+                                              email: string | null;
+                                              avatar_url: string;
+                                          };
+                                      return {
+                                          id: String(profile.id),
+                                          email:
+                                              profile.email ??
+                                              `${profile.id}@github.invalid`,
+                                          emailVerified: true,
+                                          name: profile.login,
+                                          image: profile.avatar_url,
+                                      };
+                                  },
+                              },
+                          ]
+                        : [],
+            }),
             githubProfileSyncPlugin(env, ctx),
             stagingAccessPlugin(env),
             openAPIPlugin,

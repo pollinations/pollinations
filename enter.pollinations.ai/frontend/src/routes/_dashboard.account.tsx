@@ -23,6 +23,8 @@ const DELETE_CONFIRMATION = "DELETE";
 type DiscordConnection = {
     id: string;
     username: string | null;
+    displayName: string | null;
+    avatarUrl: string | null;
 };
 
 export const Route = createFileRoute("/_dashboard/account")({
@@ -61,7 +63,7 @@ function AccountPage() {
             }
 
             const { data: info } = await authClient.accountInfo({
-                query: { accountId: account.id },
+                query: { accountId: account.accountId },
             });
             const profile = info?.data as { username?: unknown } | undefined;
             setDiscordConnection({
@@ -70,6 +72,8 @@ function AccountPage() {
                     typeof profile?.username === "string"
                         ? profile.username
                         : null,
+                displayName: info?.user.name || null,
+                avatarUrl: info?.user.image || null,
             });
         });
     }, []);
@@ -176,22 +180,34 @@ function AccountPage() {
                     className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
                 >
                     <div className="flex items-center gap-3">
-                        <DiscordIcon className="h-6 w-6 shrink-0" />
+                        {discordConnection?.avatarUrl ? (
+                            <img
+                                src={discordConnection.avatarUrl}
+                                alt="Discord avatar"
+                                className="h-10 w-10 shrink-0 rounded-full"
+                            />
+                        ) : (
+                            <DiscordIcon className="h-6 w-6 shrink-0" />
+                        )}
                         <div>
                             <Text tone="strong" weight="semibold">
                                 Discord
                             </Text>
                             <Text size="sm" tone="muted">
                                 {discordConnection
-                                    ? "Connected to your Pollinations account."
+                                    ? [
+                                          discordConnection.displayName,
+                                          discordConnection.username &&
+                                              `@${discordConnection.username}`,
+                                      ]
+                                          .filter(Boolean)
+                                          .join(" · ")
                                     : discordConnection === undefined
                                       ? "Checking connection..."
                                       : "Connect your Discord identity for community features."}
                             </Text>
                             {discordConnection && (
                                 <Text size="sm" tone="muted">
-                                    {discordConnection.username &&
-                                        `@${discordConnection.username} · `}
                                     Discord ID: {discordConnection.id}
                                 </Text>
                             )}

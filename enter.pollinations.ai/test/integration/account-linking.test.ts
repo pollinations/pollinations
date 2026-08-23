@@ -68,7 +68,7 @@ test("links a Discord identity to the signed-in GitHub account", async ({
     expect(discordAccount?.refreshToken).not.toBe("mock_discord_refresh_token");
 
     const accountInfoResponse = await SELF.fetch(
-        `http://localhost:3000/api/auth/account-info?accountId=${discordAccount?.id}`,
+        `http://localhost:3000/api/auth/account-info?accountId=${discordAccount?.accountId}`,
         {
             headers: {
                 Cookie: `better-auth.session_token=${sessionToken}`,
@@ -78,7 +78,10 @@ test("links a Discord identity to the signed-in GitHub account", async ({
     expect(accountInfoResponse.status).toBe(200);
     await expect(accountInfoResponse.json()).resolves.toMatchObject({
         data: { username: "discord-test-user" },
-        user: { id: mocks.discord.state.userId },
+        user: {
+            id: mocks.discord.state.userId,
+            name: "Discord Test User",
+        },
     });
 });
 

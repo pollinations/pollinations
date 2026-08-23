@@ -58,9 +58,25 @@ function closeEnough(actual, expected, label) {
     }
 }
 
+function isArchivedDriveEvidence(evidence) {
+    const candidates = String(evidence ?? "").match(/https:\/\/[^\s<>"']+/giu);
+    if (!candidates) return false;
+
+    return candidates.some((candidate) => {
+        try {
+            const url = new URL(candidate.replace(/[),.;\]}]+$/u, ""));
+            return (
+                url.hostname === "drive.google.com" ||
+                url.hostname === "docs.google.com"
+            );
+        } catch {
+            return false;
+        }
+    });
+}
+
 function invoiceEvidence(rows) {
-    return rows.find((row) => String(row.evidence).includes("drive.google.com"))
-        ?.evidence;
+    return rows.find((row) => isArchivedDriveEvidence(row.evidence))?.evidence;
 }
 
 const cloudRows = readRows(cloudSnapshotPath);

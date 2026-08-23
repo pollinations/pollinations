@@ -334,3 +334,70 @@ describe("Pollinations.imageEdit — response resolution (characterization)", ()
         });
     });
 });
+
+describe("Pollinations account quests", () => {
+    it("requests GET /account/quests and returns the response", async () => {
+        const client = newClient();
+        const payload = {
+            quests: [
+                {
+                    id: "quest-1",
+                    title: "First Quest",
+                    description: "Do something",
+                    category: "setup",
+                    state: "available",
+                    status: "open",
+                    rewardAmount: 5,
+                    balanceBucket: "tier",
+                    url: null,
+                    reward: null,
+                },
+            ],
+        };
+        fetchMock.mockResolvedValueOnce(makeResponse(payload));
+
+        const result = await client.accountQuests();
+        expect(result).toEqual(payload);
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(fetchMock.mock.calls[0]?.[0]).toBe(
+            "https://example.test/account/quests",
+        );
+        const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
+        expect((init.headers as Record<string, string>)["Authorization"]).toBe(
+            "Bearer sk_test",
+        );
+    });
+
+    it("propagates a quest with a claimed reward", async () => {
+        const client = newClient();
+        const reward = {
+            id: "reward-1",
+            questId: "quest-1",
+            title: "First Quest reward",
+            pollenAmount: 5,
+            balanceBucket: "tier",
+            earnedAt: "2026-01-01T00:00:00.000Z",
+            claimedAt: "2026-01-02T00:00:00.000Z",
+        };
+        const payload = {
+            quests: [
+                {
+                    id: "quest-1",
+                    title: "First Quest",
+                    description: "Do something",
+                    category: "setup",
+                    state: "completed",
+                    status: "completed",
+                    rewardAmount: 5,
+                    balanceBucket: "tier",
+                    url: "https://example.com/quest",
+                    reward,
+                },
+            ],
+        };
+        fetchMock.mockResolvedValueOnce(makeResponse(payload));
+
+        const result = await client.accountQuests();
+        expect(result.quests[0]?.reward).toEqual(reward);
+    });
+});

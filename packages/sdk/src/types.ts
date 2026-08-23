@@ -588,6 +588,46 @@ export interface AccountBalance {
     balance: number;
 }
 
+/** A reward earned for completing a quest */
+export interface AccountQuestReward {
+    id: string;
+    questId: string | null;
+    title: string;
+    pollenAmount: number;
+    balanceBucket: string;
+    earnedAt: string;
+    claimedAt: string | null;
+}
+
+/** Quest category */
+export type QuestCategory =
+    | "setup"
+    | "grow"
+    | "build"
+    | "contribute"
+    | "community"
+    | "easteregg"
+    | string;
+
+/** A quest with the authenticated account's read-only status */
+export interface AccountQuest {
+    id: string;
+    title: string;
+    description: string;
+    category: QuestCategory;
+    state: "available" | "completed" | "coming_soon";
+    status: "open" | "completed" | "coming_soon";
+    rewardAmount: number;
+    balanceBucket: "tier" | "pack";
+    url: string | null;
+    reward: AccountQuestReward | null;
+}
+
+/** Response from GET /account/quests */
+export interface AccountQuestsResponse {
+    quests: AccountQuest[];
+}
+
 /** Usage record */
 export interface UsageRecord {
     timestamp: string;

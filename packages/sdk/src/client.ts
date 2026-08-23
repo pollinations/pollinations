@@ -3,6 +3,7 @@ import type {
     AccountBalance,
     AccountKey,
     AccountProfile,
+    AccountQuestsResponse,
     AudioBinaryResponse,
     AudioGenerateOptions,
     AuthorizeDeviceOptions,
@@ -1476,6 +1477,27 @@ export class Pollinations {
 
         if (!response.ok) await this.handleErrorResponse(response);
         return response.json() as Promise<AccountProfile>;
+    }
+
+    /**
+     * Get quest status for the authenticated account.
+     * Requires an API key with the `account:usage` permission.
+     *
+     * @example
+     * ```ts
+     * const { quests } = await pollinations.accountQuests();
+     * quests.forEach(q => console.log(q.title, q.status));
+     * ```
+     */
+    async accountQuests(options: RequestOptions = {}): Promise<AccountQuestsResponse> {
+        const response = await fetchWithTimeout(
+            `${this.baseUrl}/account/quests`,
+            { headers: this.getHeaders() },
+            this.textTimeout,
+            options.signal,
+        );
+        if (!response.ok) await this.handleErrorResponse(response);
+        return response.json() as Promise<AccountQuestsResponse>;
     }
 
     /**

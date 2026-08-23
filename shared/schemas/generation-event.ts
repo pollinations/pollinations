@@ -9,7 +9,11 @@ export type EventType =
     | "generate.embedding"
     | "generate.realtime";
 
-export type TinybirdEventType = EventType;
+export type TinybirdEventType =
+    | EventType
+    | "tool.media"
+    | "tool.code"
+    | "tool.browser";
 
 // Plain TypeScript type for Tinybird events (no D1 table - events sent directly to Tinybird)
 export type TinybirdEvent = {

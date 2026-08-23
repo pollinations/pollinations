@@ -1,0 +1,32 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "pollinations-browser-mcp",
+  "account_id": "b6ec751c0862027ba269faf7029b2501",
+  "main": "entrypoint.js",
+  "workers_dev": false,
+  "compatibility_date": "2026-08-20",
+  "browser": { "binding": "BROWSER" },
+  "services": [
+    {
+      "binding": "MEDIA",
+      "service": "pollinations-media-prod",
+      "entrypoint": "MediaUpload"
+    }
+  ],
+  "observability": { "enabled": true },
+  "env": {
+    "staging": {
+      "name": "pollinations-browser-mcp-staging",
+      "workers_dev": false,
+      "browser": { "binding": "BROWSER" },
+      "services": [
+        {
+          "binding": "MEDIA",
+          "service": "pollinations-media-staging",
+          "entrypoint": "MediaUpload"
+        }
+      ],
+      "observability": { "enabled": true }
+    }
+  }
+}

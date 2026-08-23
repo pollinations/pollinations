@@ -1,5 +1,8 @@
 import { env, SELF } from "cloudflare:test";
-import { COMMUNITY_ENDPOINT_PRICE_FIELDS } from "@shared/community-endpoints.ts";
+import {
+    COMMUNITY_ENDPOINT_PRICE_FIELDS,
+    parseListingPayload,
+} from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -34,6 +37,78 @@ async function postModel(
 }
 
 describe("community endpoint configuration policy", () => {
+    test("creates a private endpoint agent without proxy credentials or pricing", async ({
+        sessionToken,
+    }) => {
+        const created = await postModel(sessionToken, "/endpoint-agents", {
+            name: "external-agent",
+            title: "External agent",
+            description: "Runs on its owner's server",
+            baseUrl: "https://agent.example.com/v1/?ignored=yes",
+        });
+
+        expect(created).toMatchObject({
+            modelId: "testuser/external-agent",
+            type: "endpoint_agent",
+            name: "external-agent",
+            title: "External agent",
+            description: "Runs on its owner's server",
+            visibility: "private",
+            baseUrl: "https://agent.example.com/v1",
+            upstreamModel: "external-agent",
+            perUserRpm: null,
+        });
+        expect(created).not.toHaveProperty("bearerToken");
+        expect(created).not.toHaveProperty("promptTextPrice");
+        expect(created).not.toHaveProperty("fallbacks");
+
+        const stored = await drizzle(env.DB, {
+            schema,
+        }).query.communityEndpoint.findFirst({
+            where: eq(schema.communityEndpoint.id, created.id as string),
+        });
+        expect(stored).toMatchObject({
+            type: "endpoint_agent",
+            baseUrl: "https://agent.example.com/v1",
+            upstreamModel: "external-agent",
+            visibility: "private",
+        });
+        expect(
+            parseListingPayload("endpoint_agent", stored?.payload ?? null),
+        ).toEqual({ perUserRpm: null });
+    });
+
+    test("rejects proxy-only fields and unapproved public endpoint agents", async ({
+        sessionToken,
+    }) => {
+        const request = (body: Record<string, unknown>) =>
+            SELF.fetch(`${endpointUrl}/endpoint-agents`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: `better-auth.session_token=${sessionToken}`,
+                },
+                body: JSON.stringify(body),
+            });
+        const input = {
+            name: "external-agent",
+            title: "External agent",
+            baseUrl: "https://agent.example.com/v1",
+        };
+
+        const proxyField = await request({
+            ...input,
+            bearerToken: "must-not-be-stored",
+        });
+        expect(proxyField.status).toBe(400);
+
+        const publicAgent = await request({
+            ...input,
+            visibility: "public",
+        });
+        expect(publicAgent.status).toBe(403);
+    });
+
     test("preserves validation error precedence", () => {
         expect(() =>
             deriveCreateProxyPolicy({

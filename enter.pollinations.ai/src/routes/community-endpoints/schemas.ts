@@ -134,6 +134,18 @@ const ProxyCreateSchema = z
 export const CreateEndpointSchema = ProxyCreateSchema;
 export type ProxyCreateInput = z.infer<typeof ProxyCreateSchema>;
 
+export const CreateEndpointAgentSchema = z
+    .object({
+        name: EndpointFieldsSchema.name,
+        title: EndpointFieldsSchema.title,
+        description: EndpointFieldsSchema.description,
+        visibility: VisibilitySchema.optional().default("private"),
+        baseUrl: EndpointFieldsSchema.baseUrl,
+        upstreamModel: EndpointFieldsSchema.upstreamModel,
+        perUserRpm: PerUserRpmSchema.optional().default(null),
+    })
+    .strict();
+
 const CommonUpdateFieldsSchema = {
     name: EndpointFieldsSchema.name.optional(),
     title: EndpointFieldsSchema.title.optional(),
@@ -238,7 +250,7 @@ const PromptAgentEndpointResponseSchema = z
         type: z.literal("prompt_agent"),
     })
     .strict();
-const EndpointAgentEndpointResponseSchema = z
+export const EndpointAgentResponseSchema = z
     .object({
         ...CommunityEndpointResponseFieldsSchema,
         type: z.literal("endpoint_agent"),
@@ -248,7 +260,7 @@ const EndpointAgentEndpointResponseSchema = z
 export const CommunityEndpointResponseSchema = z.discriminatedUnion("type", [
     ProxyEndpointResponseSchema,
     PromptAgentEndpointResponseSchema,
-    EndpointAgentEndpointResponseSchema,
+    EndpointAgentResponseSchema,
 ]);
 export type CommunityEndpointResponse = z.infer<
     typeof CommunityEndpointResponseSchema

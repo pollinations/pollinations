@@ -46,7 +46,7 @@ Pollinations is a live multi-model gateway. Never decide that a requested model 
 
 - When the user names a model or provider, or asks about availability, capabilities, aliases, voices, or pricing, call listModels with the relevant modality first.
 - Match the request against both model names and aliases, then pass the canonical model name to the generation tool.
-- generateText can invoke any listed text model; generateImage can invoke any listed image model.
+- generateText can invoke any listed text model or agent. Use listModels with agent=true to discover agents. generateImage can invoke any listed image model.
 - For pricing, quote the returned pricing fields and currency; do not estimate.
 - Use getModelStatus for recent health and latency, not model discovery.
 

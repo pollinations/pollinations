@@ -5,6 +5,7 @@ import { Command } from "commander";
 import { agentsCommand } from "./commands/agents.js";
 import { authCommand } from "./commands/auth.js";
 import { docsCommand } from "./commands/docs.js";
+import { earningsCommand } from "./commands/earnings.js";
 import { createGenCommand } from "./commands/gen/index.js";
 import { keysCommand } from "./commands/keys.js";
 import { modelsCommand } from "./commands/models.js";
@@ -12,7 +13,6 @@ import { myModelsCommand } from "./commands/my-models.js";
 import { questsCommand } from "./commands/quests.js";
 import { uploadCommand } from "./commands/upload.js";
 import { usageCommand } from "./commands/usage.js";
-import { earningsCommand } from "./commands/earnings.js";
 
 import { setKeyOverride } from "./lib/config.js";
 import { setOutputMode } from "./lib/output.js";

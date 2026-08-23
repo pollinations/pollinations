@@ -67,7 +67,9 @@ export const earningsCommand = new Command("earnings")
             );
 
             console.log(
-                chalk.bold(`\nTotal Earnings: ${totalEarned.toLocaleString()} pollen\n`),
+                chalk.bold(
+                    `\nTotal Earnings: ${totalEarned.toLocaleString()} pollen\n`,
+                ),
             );
 
             if (data.perEntity.length > 0) {

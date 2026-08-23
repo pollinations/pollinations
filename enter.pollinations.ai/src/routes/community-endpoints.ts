@@ -482,6 +482,102 @@ const UpdateEndpointSchema = z
     })
     .strict();
 
+type ProxyUpdateInput = z.infer<typeof ProxyUpdateSchema>;
+type ProxyPolicy = Pick<
+    ProxyListingPayload,
+    | "modality"
+    | "imagePricing"
+    | "inputModalities"
+    | "paidOnly"
+    | "perUserRpm"
+    | "advertised"
+    | "prices"
+>;
+
+function pricesForVisibility(
+    visibility: CommunityEndpointVisibility,
+    source: Partial<Record<CommunityEndpointPriceKey, number>>,
+    modality: CommunityEndpointModality,
+    imagePricing: CommunityEndpointImagePricing,
+): CommunityEndpointPrices {
+    return visibility === "private"
+        ? communityEndpointPrices({})
+        : communityEndpointPricesForModality(source, modality, imagePricing);
+}
+
+function changesProxyPayload(input: ProxyUpdateInput): boolean {
+    return [
+        input.bearerToken,
+        input.visibility,
+        input.perUserRpm,
+        input.paidOnly,
+        input.imagePricing,
+        input.inputModalities,
+        input.advertised,
+        input.fallbacks,
+        ...COMMUNITY_ENDPOINT_PRICE_FIELDS.map(({ key }) => input[key]),
+    ].some((value) => value !== undefined);
+}
+
+function deriveProxyPolicy(
+    input: ProxyUpdateInput,
+    visibility: CommunityEndpointVisibility,
+    modality: CommunityEndpointModality,
+    stored?: ProxyListingPayload,
+): ProxyPolicy {
+    // Omitted values preserve an existing declaration or follow the modality
+    // when this is a new endpoint.
+    const inputModalities =
+        input.inputModalities ??
+        stored?.inputModalities ??
+        normalizeCommunityEndpointInputModalities(undefined, modality);
+    enforceCommunityEndpointInputModalities(modality, inputModalities);
+    enforceCommunityEndpointAdvertised(modality, input.advertised);
+
+    const imagePricing =
+        modality === "image"
+            ? (input.imagePricing ?? stored?.imagePricing ?? "request")
+            : (stored?.imagePricing ?? "request");
+    const priceSource = { ...stored?.prices, ...input };
+    if (stored && imagePricing !== stored.imagePricing) {
+        for (const field of communityEndpointPriceFieldsForModality(
+            modality,
+            imagePricing,
+        )) {
+            if (input[field.key] === undefined) priceSource[field.key] = 0;
+        }
+    }
+    const prices = pricesForVisibility(
+        visibility,
+        priceSource,
+        modality,
+        imagePricing,
+    );
+    const paidOnly =
+        visibility === "public"
+            ? (input.paidOnly ?? stored?.paidOnly ?? false)
+            : false;
+    enforceCommunityEndpointPriceLimits(prices, modality, imagePricing);
+
+    return {
+        modality,
+        imagePricing,
+        inputModalities,
+        paidOnly,
+        perUserRpm:
+            input.perUserRpm === undefined
+                ? (stored?.perUserRpm ?? null)
+                : input.perUserRpm,
+        advertised:
+            input.advertised === undefined
+                ? stored?.advertised
+                : hasAdvertisedClaim(input.advertised)
+                  ? input.advertised
+                  : undefined,
+        prices,
+    };
+}
+
 function assertValidUpdate(
     type: "proxy" | "prompt_agent" | "endpoint_agent",
     input: unknown,
@@ -1053,56 +1149,25 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 user.id,
             );
             await ensureModelNameAvailable(db, user.id, input.name);
-            const modality = input.modality;
-            const imagePricing =
-                modality === "image" ? input.imagePricing : "request";
-            // An omitted set follows the modality — audio for transcription,
-            // text otherwise. An explicit set is validated rather than
-            // silently rewritten, so a wrong declaration still gets a 400.
-            const inputModalities =
-                input.inputModalities ??
-                normalizeCommunityEndpointInputModalities(undefined, modality);
-            enforceCommunityEndpointInputModalities(modality, inputModalities);
-            enforceCommunityEndpointAdvertised(modality, input.advertised);
-            const prices =
-                input.visibility === "public"
-                    ? communityEndpointPricesForModality(
-                          input,
-                          modality,
-                          imagePricing,
-                      )
-                    : communityEndpointPrices({});
-            const paidOnly =
-                input.visibility === "public" ? input.paidOnly : false;
-            enforceCommunityEndpointPriceLimits(prices, modality, imagePricing);
+            const policy = deriveProxyPolicy(
+                input,
+                input.visibility,
+                input.modality,
+            );
+            const modelId = communityModelId(ownerGithubUsername, input.name);
             const payload: ProxyListingPayload = {
-                modality,
-                imagePricing,
-                inputModalities,
-                paidOnly,
                 bearerTokenCiphertext: await encryptSecret(
                     normalizeInputBearerToken(input.bearerToken),
                     c.env.BETTER_AUTH_SECRET,
                 ),
-                perUserRpm: input.perUserRpm ?? null,
+                ...policy,
                 fallbacks: input.fallbacks
                     ? await resolveFallbacks(db, input.fallbacks, {
-                          modelId: communityModelId(
-                              ownerGithubUsername,
-                              input.name,
-                          ),
+                          modelId,
                           ownerUserId: user.id,
-                          modality,
-                          imagePricing,
-                          paidOnly,
-                          prices,
-                          inputModalities,
+                          ...policy,
                       })
                     : [],
-                ...(hasAdvertisedClaim(input.advertised)
-                    ? { advertised: input.advertised }
-                    : {}),
-                prices,
             };
             await enforcePublishingAccess(db, user.id, input.visibility);
             const [row] = await db
@@ -1321,45 +1386,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 if (!stored) {
                     throw new Error(`Invalid proxy payload for ${endpoint.id}`);
                 }
-                const modality = stored.modality;
-                const inputModalities =
-                    input.inputModalities ?? stored.inputModalities;
-                enforceCommunityEndpointInputModalities(
-                    modality,
-                    inputModalities,
-                );
-                enforceCommunityEndpointAdvertised(modality, input.advertised);
-                const imagePricing =
-                    modality === "image" && input.imagePricing !== undefined
-                        ? input.imagePricing
-                        : stored.imagePricing;
-                const priceSource = { ...stored.prices, ...input };
-                if (imagePricing !== stored.imagePricing) {
-                    for (const field of communityEndpointPriceFieldsForModality(
-                        modality,
-                        imagePricing,
-                    )) {
-                        if (input[field.key] === undefined) {
-                            priceSource[field.key] = 0;
-                        }
-                    }
-                }
-                const prices =
-                    effectiveVisibility === "private"
-                        ? communityEndpointPrices({})
-                        : communityEndpointPricesForModality(
-                              priceSource,
-                              modality,
-                              imagePricing,
-                          );
-                const paidOnly =
-                    effectiveVisibility === "public"
-                        ? (input.paidOnly ?? stored.paidOnly)
-                        : false;
-                enforceCommunityEndpointPriceLimits(
-                    prices,
-                    modality,
-                    imagePricing,
+                const policy = deriveProxyPolicy(
+                    input,
+                    effectiveVisibility,
+                    stored.modality,
+                    stored,
                 );
                 const fallbacks =
                     input.fallbacks === undefined
@@ -1370,11 +1401,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                                   input.name ?? endpoint.name,
                               ),
                               ownerUserId: user.id,
-                              modality,
-                              imagePricing,
-                              paidOnly,
-                              prices,
-                              inputModalities,
+                              ...policy,
                           });
                 if (input.baseUrl !== undefined) {
                     update.baseUrl = normalizeInputBaseUrl(input.baseUrl);
@@ -1382,20 +1409,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 if (input.upstreamModel !== undefined) {
                     update.upstreamModel = input.upstreamModel;
                 }
-                const changesPayload = [
-                    input.bearerToken,
-                    input.visibility,
-                    input.perUserRpm,
-                    input.paidOnly,
-                    input.imagePricing,
-                    input.inputModalities,
-                    input.advertised,
-                    input.fallbacks,
-                    ...COMMUNITY_ENDPOINT_PRICE_FIELDS.map(
-                        ({ key }) => input[key],
-                    ),
-                ].some((value) => value !== undefined);
-                if (changesPayload) {
+                if (changesProxyPayload(input)) {
                     const payload: ProxyListingPayload = {
                         bearerTokenCiphertext:
                             input.bearerToken === undefined
@@ -1406,22 +1420,8 @@ export const communityEndpointsRoutes = new Hono<Env>()
                                       ),
                                       c.env.BETTER_AUTH_SECRET,
                                   ),
-                        modality,
-                        imagePricing,
-                        inputModalities,
-                        paidOnly,
-                        perUserRpm:
-                            input.perUserRpm === undefined
-                                ? stored.perUserRpm
-                                : input.perUserRpm,
+                        ...policy,
                         fallbacks,
-                        advertised:
-                            input.advertised === undefined
-                                ? stored.advertised
-                                : hasAdvertisedClaim(input.advertised)
-                                  ? input.advertised
-                                  : undefined,
-                        prices,
                     };
                     update.payload = JSON.stringify(payload);
                 }

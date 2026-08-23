@@ -1,0 +1,34 @@
+{
+  "pr_number": 13767,
+  "title": "refactor: modularize community endpoint policy",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13767",
+  "merged_at": "2026-08-23T10:54:56Z",
+  "labels": [],
+  "pr_body_excerpt": "- Splits the 1,487-line route into HTTP orchestration plus focused schema, proxy-policy, fallback, and presenter modules.\\n- Derives create and update policy with pure functions and a declarative price-limit table.\\n- Shares one fallback eligibility rule between candidate listing and write validation.\\n- Preserves encryption, fallback resolution, publishing checks, response shapes, and database ordering.\\n- Adds transition coverage for image pricing, private visibility, advertised metadata clearing, and listing-only updates.\\n\\nChecks:\\n- TypeScript: passed\\n- Biome: passed\\n- All five community-endpoint test files: 29 tests passed\\n\\nReplaces #13763 with the same behavior-focused change reconstructed on current main.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The endpoint garden got pruned",
+    "blurb": "The community endpoint route stopped carrying 1,487 lines in one tiny wheelbarrow. Its policy rules now live in smaller, testable beds without changing the harvest.",
+    "summary": "Refactored the 1,487-line community-endpoints route into schema, proxy-policy, fallback, and presenter modules, with shared fallback eligibility and declarative create/update price-limit policies.",
+    "impact": "Community endpoint behavior, including encryption, publishing checks, fallback resolution, response shapes, and database ordering, remains consistent while future policy changes gain focused transition coverage.",
+    "keywords": [
+      "community-endpoints",
+      "endpoint-policy",
+      "refactor",
+      "fallbacks",
+      "pricing",
+      "tests"
+    ],
+    "visual_concept": "Polli tends a cozy garden where one overgrown code-vine has been carefully separated into four labeled flower pots for schemas, proxy policy, fallbacks, and presentation. A helpful CRT robot compares matching fallback paths on a clipboard, showing that the reorganized garden still leads to the same endpoint.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener apron, carefully transplanting an overgrown code-plant into four neat lime green (#ecf874) flower pots labeled in simple pixel text: \"SCHEMA\", \"POLICY\", \"FALLBACK\", and \"PRESENTER\"; a cheerful CRT monitor robot holds a clipboard with matching checkmarks beside a retro terminal. Cozy 8-bit pixel art aesthetic, soft lime green and pastel lavender-to-cream gradient background, chunky retro sprites, warm lighting, subtle scanlines, garden flowers and code-vines, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-23/PR-13767.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener apron, carefully transplanting an overgrown code-plant into four neat lime green (#ecf874) flower pots labeled in simple pixel text: \"SCHEMA\", \"POLICY\", \"FALLBACK\", and \"PRESENTER\"; a cheerful CRT monitor robot holds a clipboard with matching checkmarks beside a retro terminal. Cozy 8-bit pixel art aesthetic, soft lime green and pastel lavender-to-cream gradient background, chunky retro sprites, warm lighting, subtle scanlines, garden flowers and code-vines, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-23T10:55:54.765032+00:00"
+}

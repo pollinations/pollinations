@@ -1,0 +1,33 @@
+{
+  "pr_number": 13738,
+  "title": "fix: reward private fallbacks at served price",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13738",
+  "merged_at": "2026-08-23T01:13:47Z",
+  "labels": [],
+  "pr_body_excerpt": "- Keeps the caller charge fixed to the requested public listing price\n- Calculates the owner reward from the private fallback's own served price\n- Preserves the existing 75% reward rate and validates a cheaper fallback\n\nFollow-up to #13736",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Fair pollen for fallback work",
+    "blurb": "Private fallback providers now get their pollen measured from the model that actually served the request. The public price stays put; the reward math has stopped admiring the wrong flower.",
+    "summary": "Fixed private fallback reward tracking so callers remain charged the requested public listing price while fallback owners receive 75% of their own lower served price.",
+    "impact": "Users keep predictable public model pricing, while private fallback providers are rewarded accurately when their cheaper model handles a request.",
+    "keywords": [
+      "billing",
+      "rewards",
+      "private-fallbacks",
+      "tracking",
+      "gen-api"
+    ],
+    "visual_concept": "Depict Polli as a careful garden bookkeeper wearing tiny round accountant glasses, weighing two labeled pollen jars: a public-price sign remains fixed for the caller while a smaller private fallback flower receives its correctly measured 75% reward. A cozy retro terminal and code-plants make the request-routing and tracking context clear.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny accountant glasses, carefully measuring pollen from a smaller private fallback flower into a jar marked \"75%\" while a nearby sign keeps the public price steady. A retro terminal glows lime green (#ecf874) beside code-plants and pastel flowers; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-23/PR-13738.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny accountant glasses, carefully measuring pollen from a smaller private fallback flower into a jar marked \"75%\" while a nearby sign keeps the public price steady. A retro terminal glows lime green (#ecf874) beside code-plants and pastel flowers; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-23T01:14:50.831357+00:00"
+}

@@ -1,0 +1,33 @@
+{
+  "pr_number": 13496,
+  "title": "fix: preserve MIDIjourney model permissions",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13496",
+  "merged_at": "2026-08-23T22:15:12Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds canonical `midijourney` alongside existing `midijourney-large` permissions for the 1,259 affected production restricted keys.\n- Keeps those keys authorized before the Gen change, after it, and if Gen is rolled back.\n- Preserves unrelated permission fields, array order, and pre-existing duplicates.\n- Uses `json()` for subtype safety, aggregate `ORDER BY`, and an `instr()` prefilter for D1 CPU safety.\n- Covers invalid JSON, both-ID rows, unrelated duplicates, 10,000 unaffected rows, and repeated execution.\n\nStaging contains 0 affected restricted keys.\n\nThis migration preserves key access; it does not preserve the public `midijourney-large` model ID. #13497 intentionally removes that ID and serves only canonical `midijourney`. A later cleanup migration can remove the unused stored legacy permission after the canonical-only Worker is established.\n\nChecks: focused migration test, Enter type check, Biome, and `git diff --check`.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "MIDIjourney keys keep humming",
+    "blurb": "A careful little migration teaches 1,259 restricted keys the canonical `midijourney` name while keeping their existing garden of permissions intact. The model rename can now happen without dropping anyone's invitation at the gate.",
+    "summary": "Added a migration that grants canonical `midijourney` permission to 1,259 production restricted keys carrying `midijourney-large`, preserving unrelated permissions, ordering, and existing duplicates across rollout or rollback.",
+    "impact": "Restricted-key users retain MIDIjourney access as Gen moves from the legacy public `midijourney-large` model ID to canonical `midijourney`.",
+    "keywords": [
+      "midijourney",
+      "permissions",
+      "restricted-keys",
+      "migration",
+      "gen"
+    ],
+    "visual_concept": "Polli tends a pair of labeled code-plants in a cozy key garden: an older `midijourney-large` plant and a new canonical `midijourney` plant connected by a safe transfer vine. A CRT monitor robot checks a ring of permission keys, while the scene conveys that every existing key remains safely authorized.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing a tiny gardener hat as she gently ties a glowing vine from an older code-plant labeled `midijourney-large` to a thriving new plant labeled `midijourney`; a friendly CRT monitor robot carefully counts little permission keys nearby. Cozy 8-bit pixel art aesthetic with prominent lime green (#ecf874), warm cream and lavender pastel gradients, pixel flowers and terminal sprouts, warm lighting, retro gaming vibes, with small pixel-font text: `ACCESS PRESERVED`."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-23/PR-13496.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing a tiny gardener hat as she gently ties a glowing vine from an older code-plant labeled `midijourney-large` to a thriving new plant labeled `midijourney`; a friendly CRT monitor robot carefully counts little permission keys nearby. Cozy 8-bit pixel art aesthetic with prominent lime green (#ecf874), warm cream and lavender pastel gradients, pixel flowers and terminal sprouts, warm lighting, retro gaming vibes, with small pixel-font text: `ACCESS PRESERVED`."
+  },
+  "generated_at": "2026-08-23T22:16:12.993391+00:00"
+}

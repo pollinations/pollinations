@@ -1,0 +1,34 @@
+{
+  "pr_number": 13780,
+  "title": "test: make Enter suite self-contained",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13780",
+  "merged_at": "2026-08-23T13:39:12Z",
+  "labels": [],
+  "pr_body_excerpt": "- Builds SDK, UI, and Enter frontend artifacts automatically before the standard test command.\n- Keeps hermetic tests on the tracked test environment instead of requiring decrypted development secrets.\n- Runs the complete Enter suite in pull-request CI and reuses the generated artifacts for typechecking.\n- Updates stale API-key fixtures to create keys through the production account route.\n\nTests:\n- npm test: 829 passed\n- Enter TypeScript check\n- Focused API-key tests: 27 passed",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The test hive seals itself",
+    "blurb": "Enter’s test garden now brings its own tools, artifacts, and keys. Fewer secret handoffs, more reproducible buzzing.",
+    "summary": "Made the Enter test suite self-contained by building SDK, UI, and frontend artifacts before tests, using the tracked test environment, running the full suite in PR CI, and creating API-key fixtures through the production account route.",
+    "impact": "Contributors get more reliable pull-request validation for Enter, with 829 tests and focused API-key coverage running without decrypted development secrets.",
+    "keywords": [
+      "enter",
+      "testing",
+      "ci",
+      "api-keys",
+      "typescript",
+      "fixtures"
+    ],
+    "visual_concept": "Polli is a careful test gardener tending a sealed greenhouse full of tiny code-plants, while the eager CRT monitor robot checks a completed test checklist. Small key-shaped seedlings and neatly packed build artifacts represent hermetic fixtures and reused CI outputs.",
+    "image_prompt": "A cozy pixel art CI greenhouse where Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener tool belt, carefully tends code-plants growing beside neatly labeled build crates and key-shaped seedlings; a chunky CRT monitor robot proudly checks a glowing lime green (#ecf874) test checklist reading \"829 PASS\". Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle scanlines, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-23/PR-13780.jpg",
+    "prompt": "A cozy pixel art CI greenhouse where Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener tool belt, carefully tends code-plants growing beside neatly labeled build crates and key-shaped seedlings; a chunky CRT monitor robot proudly checks a glowing lime green (#ecf874) test checklist reading \"829 PASS\". Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle scanlines, emotionally warm."
+  },
+  "generated_at": "2026-08-23T13:40:08.443410+00:00"
+}

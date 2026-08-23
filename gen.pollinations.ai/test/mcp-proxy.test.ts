@@ -42,6 +42,13 @@ test("lists the MCP servers exposed through Gen", async () => {
                 url: "https://gen.pollinations.ai/mcp/python",
             },
             {
+                id: "sandbox",
+                name: "Sandbox",
+                description:
+                    "Run shell commands and work with files in a short-lived development sandbox.",
+                url: "https://gen.pollinations.ai/mcp/sandbox",
+            },
+            {
                 id: "browser",
                 name: "Browser",
                 description:
@@ -112,6 +119,36 @@ test("routes Python MCP and bills its measured runtime", async () => {
         id: 1,
         result: {
             content: [{ type: "text", text: "python proxied" }],
+        },
+    });
+    const balance = await getUserBalance(drizzle(env.DB), userId);
+    expect(balance.tierBalance).toBeCloseTo(1 - 0.00001);
+    expect(balance.packBalance).toBe(0);
+});
+
+test("routes Sandbox MCP with trusted caller isolation and measured billing", async () => {
+    const { id, key, userId } = await createTestApiKey({
+        user: { tierBalance: 1 },
+    });
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/sandbox",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                "Content-Type": "application/json",
+                "x-pollinations-mcp-caller-id": "spoofed",
+            },
+            body: JSON.stringify(MCP_REQUEST),
+        },
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+        jsonrpc: "2.0",
+        id: 1,
+        result: {
+            content: [{ type: "text", text: `sandbox:${id}` }],
         },
     });
     const balance = await getUserBalance(drizzle(env.DB), userId);

@@ -3,6 +3,7 @@ interface CloudflareBindings {
     POLLINATIONS_MCP: Fetcher;
     FFMPEG_MCP: Fetcher;
     PYTHON_MCP: Fetcher;
+    SANDBOX_MCP: Fetcher;
     BROWSER_MCP: Fetcher;
     STORAGE_MCP: Fetcher;
     PORTKEY?: Fetcher;

@@ -9,6 +9,8 @@ export const MCP_USAGE_HEADERS = {
     error: "x-pollinations-mcp-error",
 } as const;
 
+export const MCP_CALLER_ID_HEADER = "x-pollinations-mcp-caller-id";
+
 type McpServerDefinitionBase = {
     id: string;
     name: string;
@@ -20,6 +22,7 @@ export type McpBindingName =
     | "POLLINATIONS_MCP"
     | "FFMPEG_MCP"
     | "PYTHON_MCP"
+    | "SANDBOX_MCP"
     | "BROWSER_MCP"
     | "STORAGE_MCP";
 
@@ -58,6 +61,16 @@ export const MCP_SERVERS = [
         description:
             "Run short Python calculations in an ephemeral network-disabled container.",
         binding: "PYTHON_MCP",
+        billing: "usage_receipt",
+        provider: "cloudflare",
+        eventType: "tool.code",
+    },
+    {
+        id: "sandbox",
+        name: "Sandbox",
+        description:
+            "Run shell commands and work with files in a short-lived development sandbox.",
+        binding: "SANDBOX_MCP",
         billing: "usage_receipt",
         provider: "cloudflare",
         eventType: "tool.code",

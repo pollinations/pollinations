@@ -9,6 +9,7 @@ services = [
     { binding = "ENTER", service = "pollinations-enter" },
     { binding = "POLLINATIONS_MCP", service = "pollinations-mcp" },
     { binding = "PYTHON_MCP", service = "pollinations-python-mcp" },
+    { binding = "SANDBOX_MCP", service = "pollinations-sandbox-mcp" },
     { binding = "BROWSER_MCP", service = "pollinations-browser-mcp" },
     { binding = "STORAGE_MCP", service = "pollinations-storage-mcp" },
     { binding = "FFMPEG_MCP", service = "pollinations-ffmpeg-mcp" }
@@ -105,6 +106,10 @@ service = "pollinations-mcp"
 [[env.production.services]]
 binding = "PYTHON_MCP"
 service = "pollinations-python-mcp"
+
+[[env.production.services]]
+binding = "SANDBOX_MCP"
+service = "pollinations-sandbox-mcp"
 
 [[env.production.services]]
 binding = "BROWSER_MCP"
@@ -210,6 +215,10 @@ binding = "PYTHON_MCP"
 service = "pollinations-python-mcp-staging"
 
 [[env.staging.services]]
+binding = "SANDBOX_MCP"
+service = "pollinations-sandbox-mcp-staging"
+
+[[env.staging.services]]
 binding = "BROWSER_MCP"
 service = "pollinations-browser-mcp-staging"
 
@@ -297,6 +306,10 @@ service = "pollinations-mcp"
 [[env.test.services]]
 binding = "PYTHON_MCP"
 service = "pollinations-python-mcp"
+
+[[env.test.services]]
+binding = "SANDBOX_MCP"
+service = "pollinations-sandbox-mcp"
 
 [[env.test.services]]
 binding = "BROWSER_MCP"

@@ -107,6 +107,7 @@ describe("explorer view list", () => {
 
 const margin = KPIS.find((row) => row.key === "grossMargin");
 const coverage = KPIS.find((row) => row.key === "cashCoverage");
+const revenue = KPIS.find((row) => row.key === "revenue");
 
 // A real week from prod (2026-08-10), trimmed to the fields these rows read.
 const marginWeek = {
@@ -115,6 +116,25 @@ const marginWeek = {
     costUsd: 3740,
     revenue: 2278,
 };
+
+describe("revenue row", () => {
+    it("cycles between Pollen bought, Pollen spent, and ARPA", () => {
+        expect([0, 1, 2].map((i) => kpiView(revenue, i).name)).toEqual([
+            "Revenue",
+            "Pollen spent",
+            "ARPA",
+        ]);
+        expect(
+            [0, 1, 2].map((i) =>
+                kpiValue(kpiView(revenue, i), {
+                    revenue: 2278,
+                    pollenRevenue: 3469,
+                    wau: 3352,
+                }),
+            ),
+        ).toEqual([2278, 3469, 2278 / 3352]);
+    });
+});
 
 describe("gross margin row", () => {
     it("measures Pollen revenue against cost, not Stripe cash", () => {

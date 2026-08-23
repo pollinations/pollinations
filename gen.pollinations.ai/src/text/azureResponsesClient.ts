@@ -67,9 +67,6 @@ interface ResponsesData {
     incomplete_details?: { reason?: string };
     output?: ResponseItem[];
     usage?: ResponsesUsage;
-    tool_usage?: {
-        web_search?: { num_requests?: number };
-    };
     error?: { message?: string; status?: number };
 }
 
@@ -288,10 +285,7 @@ function buildBody(messages: ChatMessage[], options: TransformOptions): Json {
     return body;
 }
 
-function chatUsage(
-    usage: ResponsesUsage,
-    toolUsage?: ResponsesData["tool_usage"],
-): Json {
+function chatUsage(usage: ResponsesUsage, output: ResponseItem[] = []): Json {
     const result: Json = {
         prompt_tokens: usage.input_tokens ?? 0,
         completion_tokens: usage.output_tokens ?? 0,
@@ -309,12 +303,10 @@ function chatUsage(
             reasoning_tokens: usage.output_tokens_details.reasoning_tokens ?? 0,
         };
     }
-    const webSearchRequests = toolUsage?.web_search?.num_requests;
-    if (
-        typeof webSearchRequests === "number" &&
-        Number.isFinite(webSearchRequests) &&
-        webSearchRequests > 0
-    ) {
+    const webSearchRequests = output.filter(
+        (item) => item.type === "web_search_call",
+    ).length;
+    if (webSearchRequests > 0) {
         result.server_tool_use_details = {
             web_search_requests: webSearchRequests,
         };
@@ -399,7 +391,7 @@ function parseResponse(data: ResponsesData, requestedModel: string) {
             },
         ],
     };
-    if (data.usage) completion.usage = chatUsage(data.usage, data.tool_usage);
+    if (data.usage) completion.usage = chatUsage(data.usage, data.output);
     return completion;
 }
 
@@ -452,7 +444,7 @@ function convertStream(
             created,
             model,
             choices: [],
-            usage: chatUsage(response.usage ?? {}, response.tool_usage),
+            usage: chatUsage(response.usage ?? {}, response.output),
         });
 
     return source

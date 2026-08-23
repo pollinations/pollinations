@@ -256,6 +256,8 @@ describe("callAzureResponses", () => {
             model: "gpt-5.6-sol",
             status: "completed",
             output: [
+                { type: "web_search_call", status: "completed" },
+                { type: "web_search_call", status: "completed" },
                 {
                     type: "reasoning",
                     summary: [{ type: "summary_text", text: "Checked." }],
@@ -295,7 +297,6 @@ describe("callAzureResponses", () => {
                 output_tokens_details: { reasoning_tokens: 3 },
                 total_tokens: 15,
             },
-            tool_usage: { web_search: { num_requests: 2 } },
         });
 
         const completion = await callAzureResponses(
@@ -371,7 +372,7 @@ describe("callAzureResponses", () => {
             'data: {"type":"response.created","response":{"id":"resp_stream","created_at":1234}}\n\n',
             'data: {"type":"response.output_text.delta","delta":"Hello"}\n\n',
             'data: {"type":"response.output_text.annotation.added","annotation":{"type":"url_citation","start_index":0,"end_index":5,"title":"Hello","url":"https://example.com/hello"}}\n\n',
-            'data: {"type":"response.completed","response":{"status":"completed","output":[{"type":"message"}],"usage":{"input_tokens":3,"input_tokens_details":{"cached_tokens":1,"cache_write_tokens":0},"output_tokens":2,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":5},"tool_usage":{"web_search":{"num_requests":1}}}}\n\n',
+            'data: {"type":"response.completed","response":{"status":"completed","output":[{"type":"web_search_call","status":"completed"},{"type":"message"}],"usage":{"input_tokens":3,"input_tokens_details":{"cached_tokens":1,"cache_write_tokens":0},"output_tokens":2,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":5}}}\n\n',
         ]);
         const completion = await callAzureResponses(
             [{ role: "user", content: "Hi" }],
@@ -523,18 +524,21 @@ describe("callAzureResponses", () => {
         ["logit bias", { logit_bias: { "1": 1 } }, "logit_bias"],
         ["logprobs", { logprobs: true }, "logprobs are not supported"],
         ["top logprobs", { top_logprobs: 2 }, "logprobs are not supported"],
-    ])("returns a client error for unsupported %s", async (_name, extra, message) => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
-        await expect(
-            callAzureResponses([{ role: "user", content: "Hi" }], {
-                model: "gpt-5.6-sol",
-                modelConfig,
-                ...extra,
-            }),
-        ).rejects.toMatchObject({
-            status: 400,
-            message: expect.stringContaining(message),
-        });
-        expect(fetchSpy).not.toHaveBeenCalled();
-    });
+    ])(
+        "returns a client error for unsupported %s",
+        async (_name, extra, message) => {
+            const fetchSpy = vi.spyOn(globalThis, "fetch");
+            await expect(
+                callAzureResponses([{ role: "user", content: "Hi" }], {
+                    model: "gpt-5.6-sol",
+                    modelConfig,
+                    ...extra,
+                }),
+            ).rejects.toMatchObject({
+                status: 400,
+                message: expect.stringContaining(message),
+            });
+            expect(fetchSpy).not.toHaveBeenCalled();
+        },
+    );
 });

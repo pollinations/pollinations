@@ -30,7 +30,11 @@ test("links a Discord identity to the signed-in GitHub account", async ({
     expect(linkResponse.status).toBe(200);
 
     const { url } = (await linkResponse.json()) as { url: string };
-    const state = new URL(url).searchParams.get("state");
+    const authorizationUrl = new URL(url);
+    const state = authorizationUrl.searchParams.get("state");
+    expect(authorizationUrl.searchParams.get("scope")?.split(" ")).toContain(
+        "guilds.members.read",
+    );
     const stateCookie = linkResponse.headers.get("Set-Cookie");
     if (!state || !stateCookie) throw new Error("Expected Discord OAuth state");
 

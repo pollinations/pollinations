@@ -146,6 +146,7 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                 clientId: discordEnv.DISCORD_CLIENT_ID,
                 clientSecret: discordEnv.DISCORD_CLIENT_SECRET,
                 disableSignUp: true,
+                scope: ["guilds.members.read"],
                 mapProfileToUser: (profile) => ({
                     // Better Auth requires an email even when explicitly
                     // linking a phone-only Discord account.

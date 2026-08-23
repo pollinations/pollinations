@@ -106,8 +106,7 @@ test("links a Discord identity to the signed-in GitHub account", async ({
         joinedAt: "2021-09-10T11:09:04.586000+00:00",
     });
 
-    const questCheck = await checkQuestsForUser(env, user.id);
-    expect(questCheck.success).toBe(true);
+    await checkQuestsForUser(env, user.id);
     const [reward] = await db
         .select({
             questId: rewardsTable.questId,

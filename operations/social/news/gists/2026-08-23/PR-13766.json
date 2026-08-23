@@ -1,0 +1,34 @@
+{
+  "pr_number": 13766,
+  "title": "refactor: simplify text request and response adapters",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13766",
+  "merged_at": "2026-08-23T11:18:35Z",
+  "labels": [],
+  "pr_body_excerpt": "- Replaces the fake Express request adapter with typed chat and simple-text projections.\\n- Consolidates message compatibility repairs into one pure pass while preserving provider-specific fields.\\n- Normalizes request options once at the provider-pipeline boundary instead of in both the route projection and transport client.\\n- Preserves every upstream choice and response extension without mutating upstream objects.\\n- Keeps existing seed, JSON, streaming, schema-validation, error, and billing behavior.\\n- Strips only private usage fields and emits missing created values in epoch seconds.\\n\\nProduction source: 126 net lines removed.\\n\\nChecks:\\n- Gen TypeScript typecheck\\n- Full Gen suite before the follow-up: 1,251 passed, 6 skipped\\n- Focused request/client/provider suites after the follow-up: 43 passed\\n- Biome and diff checks",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Adapters shed their exoskeleton",
+    "blurb": "The text pipeline got a quieter, smaller set of moving parts. Polli swept the duplicate normalization out of the garden without disturbing seeds, streams, schemas, or billing.",
+    "summary": "Refactored the text-generation request and response adapters to use typed chat/simple-text projections, perform message repairs and option normalization once at the provider boundary, preserve provider extensions, and emit missing `created` timestamps in epoch seconds.",
+    "impact": "Text API behavior for seeds, JSON mode, streaming, schema validation, errors, and billing stays intact while providers receive a cleaner, non-mutating request path and clients retain upstream response extensions.",
+    "keywords": [
+      "text-api",
+      "openai-compatibility",
+      "request-normalization",
+      "providers",
+      "refactor",
+      "streaming"
+    ],
+    "visual_concept": "Polli, wearing a tiny gardener's tool belt, carefully combines several tangled API pipes into one clean watering line feeding code-plants. A friendly CRT monitor robot watches a terminal preserve labeled seed packets, JSON scrolls, streaming droplets, and response flowers, representing compatibility retained while duplicate adapter layers are removed.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute yellow-and-brown striped bee with pink cheek blush, light-blue wings, and a tiny gardener tool belt, neatly joining tangled request pipes into one clean line that waters code-plants beside a retro terminal glowing lime green (#ecf874); a cheerful CRT monitor robot holds intact seed, JSON, stream, and schema scrolls. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley, with subtle pixel-font text: \"ONE CLEAN PASS\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-23/PR-13766.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute yellow-and-brown striped bee with pink cheek blush, light-blue wings, and a tiny gardener tool belt, neatly joining tangled request pipes into one clean line that waters code-plants beside a retro terminal glowing lime green (#ecf874); a cheerful CRT monitor robot holds intact seed, JSON, stream, and schema scrolls. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley, with subtle pixel-font text: \"ONE CLEAN PASS\"."
+  },
+  "generated_at": "2026-08-23T11:19:28.856472+00:00"
+}

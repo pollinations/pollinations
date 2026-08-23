@@ -39,6 +39,12 @@ export function isActiveBalanceRow(row: Pick<ProviderBalanceRow, "finished">) {
     return !row.finished;
 }
 
+export function needsBalanceAttention(
+    row: Pick<ProviderBalanceRow, "balanceStatus" | "finished">,
+) {
+    return !row.finished && row.balanceStatus !== "checked";
+}
+
 function balanceTone(value: number | null) {
     return value != null && value < -0.005 ? "text-intent-danger-text" : "";
 }
@@ -107,27 +113,29 @@ function VendorAccess({ vendor }: { vendor: string }) {
 
 function BalanceStatus({ row }: { row: ProviderBalanceRow }) {
     const status = row.balanceStatus;
-    const label =
-        status === "checked"
-            ? row.balanceAsOf
-                ? fmtPeriod(row.balanceAsOf)
-                : "Checked"
-            : status === "partial"
-              ? `${row.checkedAccounts}/${row.expectedAccounts} accounts`
-              : "Not checked";
-    const hint =
-        status === "checked"
-            ? `Current balance snapshot checked${row.balanceAsOf ? ` on ${fmtPeriod(row.balanceAsOf)}` : ""}.`
-            : status === "partial"
-              ? `Only ${row.checkedAccounts} of ${row.expectedAccounts} active accounts have a same-day balance snapshot. Displayed balances sum the checked accounts only.`
-              : "No current OP Cloud balance snapshot. Displayed balances are ledger estimates, not a verified account balance.";
+    const label = row.finished
+        ? "Finished"
+        : status === "checked"
+          ? row.balanceAsOf
+              ? fmtPeriod(row.balanceAsOf)
+              : "Checked"
+          : status === "partial"
+            ? `${row.checkedAccounts}/${row.expectedAccounts} accounts`
+            : "Not checked";
+    const hint = row.finished
+        ? "The tracked cash and free-credit pools are exhausted, so there is no active balance to verify."
+        : status === "checked"
+          ? `Current balance snapshot checked${row.balanceAsOf ? ` on ${fmtPeriod(row.balanceAsOf)}` : ""}.`
+          : status === "partial"
+            ? `Only ${row.checkedAccounts} of ${row.expectedAccounts} active accounts have a same-day balance snapshot. Displayed balances sum the checked accounts only.`
+            : "No current OP Cloud balance snapshot. Displayed balances are ledger estimates, not a verified account balance.";
     const fullHint = row.balanceNote ? `${hint} ${row.balanceNote}.` : hint;
     return (
         <Tooltip triggerAs="span" content={fullHint}>
             <span className="flex flex-col whitespace-nowrap text-sm">
                 <span
                     className={
-                        status === "checked"
+                        row.finished || status === "checked"
                             ? "text-theme-text-soft"
                             : "text-intent-warning-text"
                     }
@@ -245,13 +253,18 @@ export function BalancesTab({ data }: { data: Data }) {
     const totals = useMemo(() => {
         let cashBalance = 0;
         let creditBalance = 0;
+        let active = 0;
         let checked = 0;
+        let attention = 0;
         for (const row of rows) {
             cashBalance += Math.max(row.cashBalanceUsd ?? 0, 0);
             creditBalance += Math.max(row.creditBalanceUsd ?? 0, 0);
+            if (row.finished) continue;
+            active += 1;
             if (row.balanceStatus === "checked") checked += 1;
+            if (needsBalanceAttention(row)) attention += 1;
         }
-        return { cashBalance, creditBalance, checked };
+        return { cashBalance, creditBalance, active, checked, attention };
     }, [rows]);
     const sortColumns = useMemo<SortColumn<ProviderBalanceRow>[]>(
         () => [
@@ -282,12 +295,12 @@ export function BalancesTab({ data }: { data: Data }) {
                     {
                         label: "Free credit",
                         value: fmtUsd(totals.creditBalance),
-                        detail: `Known balance · ${totals.checked} of ${rows.length} vendors checked`,
+                        detail: `Known balance · ${totals.checked} of ${totals.active} active balances checked`,
                     },
                     {
                         label: "Cash prepaid",
                         value: fmtUsd(totals.cashBalance),
-                        detail: `${rows.length - totals.checked} need attention`,
+                        detail: `${totals.attention} active balance${totals.attention === 1 ? "" : "s"} need${totals.attention === 1 ? "s" : ""} attention`,
                     },
                 ]}
             />

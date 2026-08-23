@@ -1,10 +1,37 @@
 import { describe, expect, it } from "vitest";
-import { depletionTone, isActiveBalanceRow } from "./CreditsTab";
+import {
+    depletionTone,
+    isActiveBalanceRow,
+    needsBalanceAttention,
+} from "./CreditsTab";
 
 describe("isActiveBalanceRow", () => {
     it("tracks whether any provider balance remains", () => {
         expect(isActiveBalanceRow({ finished: false })).toBe(true);
         expect(isActiveBalanceRow({ finished: true })).toBe(false);
+    });
+});
+
+describe("needsBalanceAttention", () => {
+    it("ignores finished pools and flags only active unchecked balances", () => {
+        expect(
+            needsBalanceAttention({
+                finished: true,
+                balanceStatus: "not_checked",
+            }),
+        ).toBe(false);
+        expect(
+            needsBalanceAttention({
+                finished: false,
+                balanceStatus: "partial",
+            }),
+        ).toBe(true);
+        expect(
+            needsBalanceAttention({
+                finished: false,
+                balanceStatus: "checked",
+            }),
+        ).toBe(false);
     });
 });
 

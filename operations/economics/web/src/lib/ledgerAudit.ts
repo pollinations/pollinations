@@ -1,6 +1,6 @@
 import type { Data, OpCloudRow, OpPollenRow, OpTransactionRow } from "../types";
 import { cloudCategory, transactionCategory } from "./categories";
-import { hasArchivedEvidence } from "./documents";
+import { hasReconciledTransactionEvidence } from "./documents";
 import { fxEstimatedMonths } from "./fx";
 import { collectMonths, type MonthFilterValue, matchesMonth } from "./months";
 import { isCloudSource, isTransactionSource } from "./provenance";
@@ -164,7 +164,7 @@ export function monthlyLedgerAuditRows(
                 (row) => row.month === month,
             );
             const evidenceGaps = transactions.filter(
-                (row) => !hasArchivedEvidence(row.evidence),
+                (row) => !hasReconciledTransactionEvidence(row),
             );
             const mappingGaps = missingProviderMappings(data, month);
             const missingMappingProviders = [

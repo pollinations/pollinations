@@ -84,3 +84,16 @@ export function driveDocumentLink(evidence: string): DriveDocumentLink | null {
 export function hasArchivedEvidence(evidence: string): boolean {
     return driveDocumentLink(evidence) != null;
 }
+
+const OPEN_EVIDENCE_WORDING = /\b(?:missing|unresolved|awaiting)\b/iu;
+
+export function hasReconciledTransactionEvidence({
+    description,
+    evidence,
+}: {
+    description: string;
+    evidence: string;
+}): boolean {
+    if (!hasArchivedEvidence(evidence)) return false;
+    return !OPEN_EVIDENCE_WORDING.test(`${description} ${evidence}`);
+}

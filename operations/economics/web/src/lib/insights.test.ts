@@ -564,7 +564,7 @@ describe("data quality status", () => {
             "provider_attribution_transition",
         );
 
-        const unresolved = emptyData({
+        const historicalException = emptyData({
             opCloud: [
                 opCloud({
                     start: "2026-02-01 00:00:00",
@@ -573,10 +573,12 @@ describe("data quality status", () => {
                 }),
             ],
         });
-        const [unresolvedRow] = vendorPlanes(unresolved);
-        expect(unresolvedRow.meterCoverage).toBe("missing pollen");
-        expect(unresolvedRow.status).toBe("missing pollen");
-        expect(unresolvedRow.reconciliationExplanation).toBeNull();
+        const [historicalExceptionRow] = vendorPlanes(historicalException);
+        expect(historicalExceptionRow.meterCoverage).toBe("missing pollen");
+        expect(historicalExceptionRow.status).toBe("explained");
+        expect(historicalExceptionRow.reconciliationExplanation?.reason).toBe(
+            "unverifiable_history",
+        );
     });
 
     it("never alarms on sub-dollar OP Cloud paid amounts", () => {

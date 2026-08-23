@@ -153,6 +153,23 @@ describe("monthlyLedgerAuditRows", () => {
         expect(row.status).toBe("clean");
     });
 
+    it("does not treat an unresolved exception note as resolved evidence", () => {
+        const [row] = monthlyLedgerAuditRows(
+            data({
+                opTransactions: [
+                    transaction({
+                        description: "Distinct supplier invoice unresolved",
+                    }),
+                ],
+            }),
+            "2026-07",
+            "2026-08",
+        );
+
+        expect(row.status).toBe("attention");
+        expect(row.transactionEvidenceGaps).toBe(1);
+    });
+
     it("marks the current month as partial without replacing its clean status", () => {
         const [row] = monthlyLedgerAuditRows(
             data({

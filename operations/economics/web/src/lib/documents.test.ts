@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { driveDocumentLink, hasArchivedEvidence } from "./documents";
+import {
+    driveDocumentLink,
+    hasArchivedEvidence,
+    hasReconciledTransactionEvidence,
+} from "./documents";
 
 describe("driveDocumentLink", () => {
     it("recognizes Drive folders", () => {
@@ -69,5 +73,24 @@ describe("driveDocumentLink", () => {
                 "https://drive.google.com.example.com/file/d/file-id/view",
             ),
         ).toBeNull();
+    });
+
+    it("keeps an archived but unresolved transaction open", () => {
+        const evidence =
+            "https://drive.google.com/file/d/exception-register/view";
+
+        expect(
+            hasReconciledTransactionEvidence({
+                description: "Distinct supplier invoice unresolved",
+                evidence,
+            }),
+        ).toBe(false);
+        expect(
+            hasReconciledTransactionEvidence({
+                description:
+                    "Supplier invoice unavailable; standing exception retained",
+                evidence,
+            }),
+        ).toBe(true);
     });
 });

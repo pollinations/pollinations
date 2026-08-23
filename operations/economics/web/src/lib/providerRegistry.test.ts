@@ -185,7 +185,10 @@ describe("provider registry", () => {
             provider: "vast.ai",
             reason: "provider_attribution_transition",
         });
-        expect(pollenWitnessExplanation("2026-02", "pruna")).toBeUndefined();
+        expect(pollenWitnessExplanation("2026-02", "pruna")).toMatchObject({
+            provider: "pruna",
+            reason: "unverifiable_history",
+        });
     });
 
     it("keeps reviewed provider limitations unique, canonical, and archived", () => {

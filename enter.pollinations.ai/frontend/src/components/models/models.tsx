@@ -184,7 +184,7 @@ export const Models: FC = () => {
     const activeSort = modelSearch.sort ?? "newest";
     const urlSearch = modelSearch.q ?? "";
     const [search, setSearch] = useState(urlSearch);
-    const [freeTierOnly, setFreeTierOnly] = useState(false);
+    const [questPollenOnly, setQuestPollenOnly] = useState(false);
     const lastPushedSearchRef = useRef(urlSearch);
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
     const [catalogError, setCatalogError] = useState<string | null>(null);
@@ -202,19 +202,14 @@ export const Models: FC = () => {
             ),
         [activeScope, allModels],
     );
-    const freeTierModels = useMemo(
-        () =>
-            freeTierOnly
-                ? scopedModels.filter((model) => !isPaidOnly(model))
-                : scopedModels,
-        [freeTierOnly, scopedModels],
-    );
     const filteredModels = useMemo(
         () =>
-            query
-                ? freeTierModels.filter((model) => matchesQuery(model, query))
-                : freeTierModels,
-        [query, freeTierModels],
+            scopedModels.filter(
+                (model) =>
+                    (!questPollenOnly || !isPaidOnly(model)) &&
+                    matchesQuery(model, query),
+            ),
+        [query, questPollenOnly, scopedModels],
     );
 
     const loadModelCatalog = useCallback(
@@ -414,16 +409,16 @@ export const Models: FC = () => {
                         </div>
                         <div className="flex items-center gap-2">
                             <Switch
-                                checked={freeTierOnly}
-                                onChange={setFreeTierOnly}
+                                checked={questPollenOnly}
+                                onChange={setQuestPollenOnly}
                                 ariaLabel={
-                                    freeTierOnly
+                                    questPollenOnly
                                         ? "Show all models"
-                                        : "Show only free-tier models"
+                                        : "Show only Quest Pollen models"
                                 }
                             />
                             <span className="text-sm font-medium text-theme-text-soft">
-                                Free tier only
+                                Quest Pollen models
                             </span>
                         </div>
                     </div>
@@ -527,8 +522,8 @@ export const Models: FC = () => {
                     <p className="py-8 text-center text-sm text-theme-text-muted">
                         {query
                             ? `No ${searchTarget.toLowerCase()} match “${search.trim()}”.`
-                            : freeTierOnly
-                              ? `No free-tier ${searchTarget.toLowerCase()} in this category.`
+                            : questPollenOnly
+                              ? `No ${searchTarget.toLowerCase()} available with Quest Pollen in this category.`
                               : `No ${searchTarget.toLowerCase()} available.`}
                     </p>
                 ) : (

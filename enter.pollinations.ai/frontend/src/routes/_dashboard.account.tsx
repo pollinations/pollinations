@@ -3,6 +3,7 @@ import {
     Button,
     CopyButton,
     Dialog,
+    DiscordIcon,
     FieldStack,
     GitHubIcon,
     Heading,
@@ -13,7 +14,7 @@ import {
     Text,
 } from "@pollinations/ui";
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { authClient } from "../auth.ts";
 import { Route as DashboardRoute } from "./_dashboard.tsx";
 
@@ -34,6 +35,23 @@ export const Route = createFileRoute("/_dashboard/account")({
 function AccountPage() {
     const { user, githubUsername } = DashboardRoute.useLoaderData();
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [discordConnected, setDiscordConnected] = useState<boolean | null>(
+        null,
+    );
+    const [connectionError, setConnectionError] = useState<string | null>(null);
+
+    useEffect(() => {
+        void authClient.listAccounts().then(({ data, error }) => {
+            if (error) {
+                setConnectionError("Could not load connected accounts.");
+                return;
+            }
+            setDiscordConnected(
+                data?.some((account) => account.providerId === "discord") ??
+                    false,
+            );
+        });
+    }, []);
 
     if (!user) return null;
 
@@ -104,6 +122,51 @@ function AccountPage() {
                         )}
                     </CopyButton>
                 </Surface>
+            </Section>
+
+            <Section title="Connected accounts" framed>
+                <Surface
+                    variant="card"
+                    className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+                >
+                    <div className="flex items-center gap-3">
+                        <DiscordIcon className="h-6 w-6 shrink-0" />
+                        <div>
+                            <Text tone="strong" weight="semibold">
+                                Discord
+                            </Text>
+                            <Text size="sm" tone="muted">
+                                {discordConnected
+                                    ? "Connected to your Pollinations account."
+                                    : discordConnected === null
+                                      ? "Checking connection..."
+                                      : "Connect your Discord identity for community features."}
+                            </Text>
+                        </div>
+                    </div>
+                    <Button
+                        type="button"
+                        className="shrink-0 self-start sm:self-center"
+                        disabled={discordConnected !== false}
+                        onClick={() =>
+                            void authClient.linkSocial({
+                                provider: "discord",
+                                callbackURL: "/account",
+                            })
+                        }
+                    >
+                        {discordConnected
+                            ? "Connected"
+                            : discordConnected === null
+                              ? "Checking..."
+                              : "Connect Discord"}
+                    </Button>
+                </Surface>
+                {connectionError && (
+                    <Text size="sm" tone="muted">
+                        {connectionError}
+                    </Text>
+                )}
             </Section>
 
             <Section title="Danger zone" framed>

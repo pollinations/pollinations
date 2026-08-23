@@ -1,5 +1,6 @@
 import { Alert, Chip, FieldStack, Switch, Textarea } from "@pollinations/ui";
 import { MCP_SERVERS } from "@shared/registry/mcp.ts";
+import { config } from "../../config.ts";
 import { BaseModelInput } from "./base-model-input.tsx";
 import type { AgentFormState } from "./types.ts";
 
@@ -89,7 +90,7 @@ export function PromptAgentFields({
                                 />
                             </div>
                             <p className="break-all font-mono text-xs text-theme-text-muted">
-                                https://gen.pollinations.ai/mcp/{server.id}
+                                {config.genBaseUrl}/mcp/{server.id}
                             </p>
                         </div>
                     );

@@ -12,6 +12,7 @@ on:
       - 'packages/sdk/**'
       - 'packages/ui/**'
       - 'packages/mcp/**'
+      - 'apps/*-mcp/**'
       - 'package.json'
       - 'package-lock.json'
       - '.github/workflows/deploy-cloudflare-production.yml'
@@ -42,9 +43,12 @@ jobs:
       enter: ${{ github.event_name == 'workflow_dispatch' && (inputs.service == 'all' || inputs.service == 'enter') || steps.filter.outputs.enter == 'true' }}
       gen: ${{ github.event_name == 'workflow_dispatch' && (inputs.service == 'all' || inputs.service == 'gen') || steps.filter.outputs.gen == 'true' }}
       media: ${{ github.event_name == 'workflow_dispatch' && (inputs.service == 'all' || inputs.service == 'media') || steps.filter.outputs.media == 'true' }}
+      mcp_apps: ${{ steps.mcp-apps.outputs.apps || '[]' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Detect changed services
         id: filter
@@ -84,6 +88,19 @@ jobs:
               - 'shared/**'
               - 'enter.pollinations.ai/drizzle/**'
               - '.github/workflows/deploy-cloudflare-production.yml'
+
+      - name: Detect changed MCP applications
+        id: mcp-apps
+        if: github.event_name == 'push'
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          CURRENT_SHA: ${{ github.sha }}
+        run: |
+          git diff --name-only "$BEFORE_SHA" "$CURRENT_SHA" > changed.txt
+          APPS=$(node operations/deployment/discover.cjs --scope=apps --changed=changed.txt)
+          MCP_APPS=$(node -e 'const apps = JSON.parse(process.argv[1]); process.stdout.write(JSON.stringify(apps.filter(({ name }) => name.endsWith("-mcp"))))' "$APPS")
+          echo "MCP applications: $MCP_APPS"
+          echo "apps=$MCP_APPS" >> "$GITHUB_OUTPUT"
 
   # Gen's suite runs BEFORE the migration, not inside deploy-gen after it. Two
   # reasons. It keeps a red gen test from letting a schema change reach
@@ -178,8 +195,13 @@ jobs:
         run: npm run deploy:production --workspace pollinations-enter
 
   deploy-gen:
-    needs: [changes, migrate]
-    if: needs.changes.outputs.gen == 'true'
+    needs: [changes, migrate, deploy-mcp-apps]
+    if: >-
+      always() &&
+      needs.changes.outputs.gen == 'true' &&
+      needs.migrate.result == 'success' &&
+      (needs.deploy-mcp-apps.result == 'success' ||
+       needs.deploy-mcp-apps.result == 'skipped')
     runs-on: ubuntu-latest
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
@@ -263,3 +285,39 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
         run: npm run deploy:production
         working-directory: ./media.pollinations.ai
+
+  # A Worker must exist before Gen can deploy a service binding to it. Deploy
+  # changed private MCP applications after Media (their optional upload
+  # dependency) and before Gen. The Applications workflow may select the same
+  # app, but the shared concurrency key serializes the harmless duplicate.
+  deploy-mcp-apps:
+    needs: [changes, deploy-media]
+    if: >-
+      always() &&
+      needs.changes.outputs.mcp_apps != '[]' &&
+      (needs.deploy-media.result == 'success' ||
+       needs.deploy-media.result == 'skipped')
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: ${{ fromJSON(needs.changes.outputs.mcp_apps) }}
+    concurrency:
+      group: deploy-${{ matrix.app.path }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Verify Docker
+        if: matrix.app.docker
+        run: docker info
+
+      - name: Deploy ${{ matrix.app.path }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
+        run: operations/deployment/deploy.sh "${{ matrix.app.path }}"

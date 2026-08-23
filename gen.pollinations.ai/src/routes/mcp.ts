@@ -2,6 +2,10 @@ import { getLogger } from "@logtape/logtape";
 import { payerBucketToMeter } from "@shared/billing/balance.ts";
 import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
 import { sendToTinybird } from "@shared/events.ts";
+import {
+    type McpUsageReceipt,
+    parseMcpUsageHeaders,
+} from "@shared/mcp-usage.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
 import {
     getMcpServerDefinition,
@@ -22,49 +26,6 @@ import { auth } from "@/middleware/auth.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { requestIdentity } from "@/middleware/track.ts";
-
-type McpUsage = {
-    cost: number;
-    tool: string;
-    status: number;
-    adjustmentId: string;
-    adjustmentUnits: number;
-    error?: string;
-};
-
-function parseUsage(headers: Headers): McpUsage | undefined {
-    const costHeader = headers.get(MCP_USAGE_HEADERS.cost);
-    if (costHeader === null) return undefined;
-
-    const cost = Number(costHeader);
-    const status = Number(headers.get(MCP_USAGE_HEADERS.status));
-    const adjustmentUnits = Number(
-        headers.get(MCP_USAGE_HEADERS.adjustmentUnits),
-    );
-    const tool = headers.get(MCP_USAGE_HEADERS.tool);
-    const adjustmentId = headers.get(MCP_USAGE_HEADERS.adjustmentId);
-    if (
-        !Number.isFinite(cost) ||
-        cost < 0 ||
-        !Number.isInteger(status) ||
-        status < 100 ||
-        status > 599 ||
-        !Number.isFinite(adjustmentUnits) ||
-        adjustmentUnits < 0 ||
-        !tool ||
-        !adjustmentId
-    ) {
-        throw new Error("MCP server returned invalid usage metadata");
-    }
-    return {
-        cost,
-        status,
-        adjustmentUnits,
-        tool,
-        adjustmentId,
-        error: headers.get(MCP_USAGE_HEADERS.error) ?? undefined,
-    };
-}
 
 function requestForMcp(request: Request, server: McpServerDefinition): Request {
     const headers = new Headers(request.headers);
@@ -101,7 +62,7 @@ function responseForCaller(response: Response): Response {
 async function settleUsage(
     c: Context<Env>,
     server: Extract<McpServerDefinition, { billing: "usage_receipt" }>,
-    usage: McpUsage,
+    usage: McpUsageReceipt,
     startedAt: Date,
 ): Promise<void> {
     const user = c.var.auth.requireUser();
@@ -201,7 +162,7 @@ export const mcpRoutes = new Hono<Env>()
         const startedAt = new Date();
         const response = await binding.fetch(requestForMcp(c.req.raw, server));
         if (server.billing === "usage_receipt") {
-            const usage = parseUsage(response.headers);
+            const usage = parseMcpUsageHeaders(response.headers);
             if (usage) {
                 try {
                     await settleUsage(c, server, usage, startedAt);

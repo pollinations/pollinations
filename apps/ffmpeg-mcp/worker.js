@@ -1,6 +1,6 @@
 import { createMcpHandler, McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
-import { MCP_USAGE_HEADERS } from "../../shared/registry/mcp.ts";
+import { withMcpUsageHeaders } from "../../shared/mcp-usage.ts";
 import { validateUserMediaUrl } from "../../shared/user-media-url.ts";
 import {
     calculateFfmpegCharge,
@@ -210,26 +210,6 @@ function buildServer(env, dependencies, reportUsage) {
     return server;
 }
 
-function withUsageHeaders(response, usage) {
-    if (!usage) return response;
-    const result = new Response(response.body, response);
-    result.headers.set(MCP_USAGE_HEADERS.cost, String(usage.cost));
-    result.headers.set(MCP_USAGE_HEADERS.tool, usage.tool);
-    result.headers.set(MCP_USAGE_HEADERS.status, String(usage.status));
-    result.headers.set(MCP_USAGE_HEADERS.adjustmentId, usage.adjustmentId);
-    result.headers.set(
-        MCP_USAGE_HEADERS.adjustmentUnits,
-        String(usage.adjustmentUnits),
-    );
-    if (usage.error) {
-        result.headers.set(
-            MCP_USAGE_HEADERS.error,
-            usage.error.replace(/[\r\n]+/g, " ").slice(0, 1000),
-        );
-    }
-    return result;
-}
-
 export function createWorker({
     fetchImpl,
     getContainerImpl,
@@ -279,7 +259,7 @@ export function createWorker({
             // response body is being read. Materialize it before attaching the
             // usage reported by that tool.
             const body = await response.arrayBuffer();
-            return withUsageHeaders(new Response(body, response), usage);
+            return withMcpUsageHeaders(new Response(body, response), usage);
         },
     };
 }

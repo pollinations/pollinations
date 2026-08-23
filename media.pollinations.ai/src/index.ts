@@ -303,7 +303,7 @@ api.post(
         tags: ["media.pollinations.ai"],
         summary: "Create a temporary S3 session",
         description:
-            "Exchange a Pollinations API key or agent run token for 15-minute Cloudflare R2 S3 credentials scoped to its owner. Secret keys and agent tokens receive read/write access to the owner's prefix; publishable keys receive read-only access to the owner's public prefix.",
+            "Exchange a Pollinations secret key or agent run token for 15-minute Cloudflare R2 S3 credentials scoped to the owner's prefix. Public media retrieval does not require credentials.",
         responses: {
             200: {
                 description: "Temporary S3 credentials",
@@ -332,8 +332,8 @@ api.post(
         if (!auth.userId) {
             return c.json({ error: "Credential has no attached user" }, 403);
         }
-        if (auth.type !== "publishable" && auth.type !== "secret") {
-            return c.json({ error: "Unsupported credential type" }, 403);
+        if (auth.type !== "secret") {
+            return c.json({ error: "Secret key required" }, 403);
         }
         if (
             !c.env.R2_ACCOUNT_ID ||
@@ -344,14 +344,7 @@ api.post(
             return c.json({ error: "S3 credentials are not configured" }, 503);
         }
 
-        const permission =
-            auth.type === "publishable"
-                ? "object-read-only"
-                : "object-read-write";
-        const prefix =
-            auth.type === "publishable"
-                ? `${auth.userId}/public/`
-                : `${auth.userId}/`;
+        const prefix = `${auth.userId}/`;
         const runTokenTtl = agentRunTokenTtl(token);
         if (token.startsWith("ag_") && runTokenTtl === null) {
             return c.json({ error: "Invalid agent run token" }, 401);
@@ -369,7 +362,6 @@ api.post(
             Date.now() + ttlSeconds * 1000,
         ).toISOString();
         const credentials = await issueR2Credentials(c.env, {
-            permission,
             prefix,
             ttlSeconds,
         });

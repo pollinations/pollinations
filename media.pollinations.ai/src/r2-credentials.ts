@@ -2,8 +2,6 @@ import { z } from "zod";
 
 export const R2_CREDENTIAL_TTL_SECONDS = 15 * 60;
 
-export type R2CredentialPermission = "object-read-only" | "object-read-write";
-
 export interface R2CredentialEnv {
     R2_ACCOUNT_ID: string;
     R2_BUCKET_NAME: string;
@@ -23,7 +21,6 @@ const CloudflareResponseSchema = z.object({
 export async function issueR2Credentials(
     env: R2CredentialEnv,
     input: {
-        permission: R2CredentialPermission;
         prefix: string;
         ttlSeconds: number;
     },
@@ -40,7 +37,7 @@ export async function issueR2Credentials(
                 body: JSON.stringify({
                     bucket: env.R2_BUCKET_NAME,
                     parentAccessKeyId: env.R2_PARENT_ACCESS_KEY_ID,
-                    permission: input.permission,
+                    permission: "object-read-write",
                     ttlSeconds: input.ttlSeconds,
                     prefixes: [input.prefix],
                 }),

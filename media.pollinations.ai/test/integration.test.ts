@@ -305,19 +305,9 @@ describe("media.pollinations.ai", () => {
             });
         });
 
-        it("limits publishable keys to their public prefix", async () => {
-            let issued: Record<string, unknown> | undefined;
-            mockR2Credentials((body) => {
-                issued = body;
-            });
-
+        it("does not issue credentials for public reads", async () => {
             const response = await requestS3Credentials("pk_alice");
-
-            expect(response.status).toBe(200);
-            expect(issued).toMatchObject({
-                permission: "object-read-only",
-                prefixes: ["user_alice/public/"],
-            });
+            expect(response.status).toBe(403);
         });
 
         it("does not outlive an agent run token", async () => {

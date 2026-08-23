@@ -20,6 +20,11 @@ import { Route as DashboardRoute } from "./_dashboard.tsx";
 
 const DELETE_CONFIRMATION = "DELETE";
 
+type DiscordConnection = {
+    id: string;
+    username: string | null;
+};
+
 export const Route = createFileRoute("/_dashboard/account")({
     beforeLoad: ({ context, location }) => {
         if (!context.user) {
@@ -35,22 +40,37 @@ export const Route = createFileRoute("/_dashboard/account")({
 function AccountPage() {
     const { user, githubUsername } = DashboardRoute.useLoaderData();
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-    const [discordConnected, setDiscordConnected] = useState<boolean | null>(
-        null,
-    );
+    const [discordConnection, setDiscordConnection] = useState<
+        DiscordConnection | null | undefined
+    >();
     const [connectionPending, setConnectionPending] = useState(false);
     const [connectionError, setConnectionError] = useState<string | null>(null);
 
     useEffect(() => {
-        void authClient.listAccounts().then(({ data, error }) => {
+        void authClient.listAccounts().then(async ({ data, error }) => {
             if (error) {
                 setConnectionError("Could not load connected accounts.");
                 return;
             }
-            setDiscordConnected(
-                data?.some((account) => account.providerId === "discord") ??
-                    false,
+            const account = data?.find(
+                (account) => account.providerId === "discord",
             );
+            if (!account) {
+                setDiscordConnection(null);
+                return;
+            }
+
+            const { data: info } = await authClient.accountInfo({
+                query: { accountId: account.id },
+            });
+            const profile = info?.data as { username?: unknown } | undefined;
+            setDiscordConnection({
+                id: account.accountId,
+                username:
+                    typeof profile?.username === "string"
+                        ? profile.username
+                        : null,
+            });
         });
     }, []);
 
@@ -62,14 +82,14 @@ function AccountPage() {
         setConnectionPending(true);
         setConnectionError(null);
 
-        if (discordConnected) {
+        if (discordConnection) {
             const { error } = await authClient.unlinkAccount({
                 providerId: "discord",
             });
             if (error) {
                 setConnectionError("Could not disconnect Discord.");
             } else {
-                setDiscordConnected(false);
+                setDiscordConnection(null);
             }
             setConnectionPending(false);
             return;
@@ -162,27 +182,34 @@ function AccountPage() {
                                 Discord
                             </Text>
                             <Text size="sm" tone="muted">
-                                {discordConnected
+                                {discordConnection
                                     ? "Connected to your Pollinations account."
-                                    : discordConnected === null
+                                    : discordConnection === undefined
                                       ? "Checking connection..."
                                       : "Connect your Discord identity for community features."}
                             </Text>
+                            {discordConnection && (
+                                <Text size="sm" tone="muted">
+                                    {discordConnection.username &&
+                                        `@${discordConnection.username} · `}
+                                    Discord ID: {discordConnection.id}
+                                </Text>
+                            )}
                         </div>
                     </div>
                     <Button
                         type="button"
                         className="shrink-0 self-start sm:self-center"
                         disabled={
-                            discordConnected === null || connectionPending
+                            discordConnection === undefined || connectionPending
                         }
                         onClick={() => void handleDiscordConnection()}
                     >
                         {connectionPending
                             ? "Working..."
-                            : discordConnected
+                            : discordConnection
                               ? "Disconnect Discord"
-                              : discordConnected === null
+                              : discordConnection === undefined
                                 ? "Checking..."
                                 : "Connect Discord"}
                     </Button>

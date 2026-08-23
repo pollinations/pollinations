@@ -94,22 +94,6 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             schema: betterAuthSchema,
             provider: "sqlite",
         }),
-        databaseHooks: {
-            account: {
-                create: {
-                    before: async (account) => {
-                        if (account.providerId !== "discord") return;
-                        return { data: discardOAuthTokens(account) };
-                    },
-                },
-                update: {
-                    before: async (account, context) => {
-                        if (context?.params?.id !== "discord") return;
-                        return { data: discardOAuthTokens(account) };
-                    },
-                },
-            },
-        },
         advanced: {
             // Configure background tasks for Cloudflare Workers
             // Required for deferUpdates to work properly
@@ -140,6 +124,7 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             },
         },
         account: {
+            encryptOAuthTokens: true,
             accountLinking: {
                 allowDifferentEmails: true,
                 // Better Auth 1.4 requires this for Discord accounts without a
@@ -182,17 +167,6 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
 export type Auth = ReturnType<typeof createAuth>;
 export type Session = Auth["$Infer"]["Session"]["session"];
 export type User = Auth["$Infer"]["Session"]["user"];
-
-function discardOAuthTokens<T extends Record<string, unknown>>(account: T) {
-    return {
-        ...account,
-        accessToken: null,
-        refreshToken: null,
-        idToken: null,
-        accessTokenExpiresAt: null,
-        refreshTokenExpiresAt: null,
-    };
-}
 
 function githubProfileSyncPlugin(
     env: Cloudflare.Env,

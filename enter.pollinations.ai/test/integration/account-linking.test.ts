@@ -1,10 +1,13 @@
 import { env, SELF } from "cloudflare:test";
 import {
     account as accountTable,
+    rewards as rewardsTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
+import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
+import { checkQuestsForUser } from "../../src/services/quest-checker.ts";
 import { test } from "../fixtures.ts";
 
 test("links a Discord identity to the signed-in GitHub account", async ({
@@ -58,6 +61,7 @@ test("links a Discord identity to the signed-in GitHub account", async ({
 
     const db = drizzle(env.DB);
     const [user] = await db.select({ id: userTable.id }).from(userTable);
+    if (!user) throw new Error("Expected fixture user");
     const discordAccount = (await db.select().from(accountTable)).find(
         (account) => account.providerId === "discord",
     );
@@ -101,6 +105,22 @@ test("links a Discord identity to the signed-in GitHub account", async ({
         member: true,
         joinedAt: "2021-09-10T11:09:04.586000+00:00",
     });
+
+    const questCheck = await checkQuestsForUser(env, user.id);
+    expect(questCheck.success).toBe(true);
+    const [reward] = await db
+        .select({
+            questId: rewardsTable.questId,
+            pollenAmount: rewardsTable.pollenAmount,
+        })
+        .from(rewardsTable)
+        .where(
+            and(
+                eq(rewardsTable.userId, user.id),
+                eq(rewardsTable.questId, "join_discord"),
+            ),
+        );
+    expect(reward).toEqual({ questId: "join_discord", pollenAmount: 0.25 });
 });
 
 test("rejects Discord as a standalone sign-in provider", async () => {

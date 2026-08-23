@@ -11,7 +11,6 @@ import {
 import { isCommunityEndpointOwnerAllowed } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import {
-    account as accountTable,
     apikey as apikeyTable,
     rewards as rewardsTable,
     user as userTable,
@@ -30,6 +29,10 @@ import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
+import {
+    type DiscordMembership,
+    getPollinationsDiscordMembership,
+} from "../services/discord.ts";
 import { QUEST_CATEGORIES } from "../services/quests/definitions.ts";
 import { listQuestCards } from "../services/quests/index.ts";
 import {
@@ -47,7 +50,6 @@ const DEFAULT_USAGE_DAYS = 30;
 const DEFAULT_DAILY_USAGE_DAYS = 90;
 const MAX_USAGE_DAYS = 90;
 const MAX_USAGE_EXPORT_ROWS = 50_000;
-const POLLINATIONS_DISCORD_GUILD_ID = "885844321461485618";
 
 const SECONDS_PER_DAY = 86400;
 const USAGE_MIN_DATE = "2026-01-01";
@@ -56,10 +58,6 @@ type PeriodGranularity = (typeof PERIOD_GRANULARITIES)[number];
 
 type UsageDebugBindings = CloudflareBindings & {
     USAGE_DEBUG_USER_ID?: string;
-};
-
-type DiscordBindings = CloudflareBindings & {
-    DISCORD_BOT_TOKEN: string;
 };
 
 export function resolveUsageTargetUserId(
@@ -828,48 +826,24 @@ export const accountRoutes = new Hono<Env>()
         async (c) => {
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
-            const [discordAccount] = await drizzle(c.env.DB)
-                .select({ accountId: accountTable.accountId })
-                .from(accountTable)
-                .where(
-                    and(
-                        eq(accountTable.userId, user.id),
-                        eq(accountTable.providerId, "discord"),
-                    ),
-                )
-                .limit(1);
-
-            if (!discordAccount) {
-                throw new HTTPException(404, {
-                    message: "Discord account not connected",
-                });
-            }
-
-            const response = await fetch(
-                `https://discord.com/api/v10/guilds/${POLLINATIONS_DISCORD_GUILD_ID}/members/${discordAccount.accountId}`,
-                {
-                    headers: {
-                        Authorization: `Bot ${(c.env as DiscordBindings).DISCORD_BOT_TOKEN}`,
-                    },
-                },
-            );
-
-            if (response.status === 404) {
-                return c.json({ member: false, joinedAt: null });
-            }
-            if (!response.ok) {
+            let membership: DiscordMembership | null;
+            try {
+                membership = await getPollinationsDiscordMembership(
+                    c.env,
+                    user.id,
+                );
+            } catch {
                 throw new HTTPException(502, {
                     message: "Discord membership check failed",
                 });
             }
 
-            const member = (await response.json()) as {
-                joined_at?: string;
-            };
-            return c.json({
-                member: true,
-                joinedAt: member.joined_at ?? null,
-            });
+            if (!membership) {
+                throw new HTTPException(404, {
+                    message: "Discord account not connected",
+                });
+            }
+            return c.json(membership);
         },
     )
     .get(

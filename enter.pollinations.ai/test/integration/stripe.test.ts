@@ -1208,6 +1208,81 @@ test("PATCH /api/stripe/auto-top-up does not charge immediately when balance is 
     expect(updatedUser?.autoTopUpEnabled).toBe(true);
 });
 
+test.for([
+    {
+        name: "disabled even with high balance and invalid pack",
+        setup: {
+            autoTopUpEnabled: false,
+            packBalance: 6,
+            autoTopUpAmountUsd: 7,
+        },
+        reason: "auto top-up disabled",
+    },
+    {
+        name: "paid balance is above threshold even with invalid pack",
+        setup: {
+            autoTopUpEnabled: true,
+            packBalance: 6,
+            autoTopUpAmountUsd: 7,
+        },
+        reason: "paid balance above threshold",
+    },
+    {
+        name: "balance is at threshold and configured pack is invalid",
+        setup: {
+            autoTopUpEnabled: true,
+            packBalance: 5,
+            autoTopUpAmountUsd: 7,
+        },
+        reason: "auto top-up pack invalid",
+    },
+])("POST /api/stripe/auto-top-up/trigger skips before Stripe when $name", async ({
+    setup,
+    reason,
+}, { sessionToken, mocks }) => {
+    void sessionToken;
+    await mocks.enable("stripe", "tinybird");
+
+    const db = drizzle(env.DB);
+    const [user] = await db
+        .select({ id: userTable.id })
+        .from(userTable)
+        .limit(1);
+
+    expect(user).toBeTruthy();
+    if (!user) throw new Error("Expected seeded test user");
+
+    await db.update(userTable).set(setup).where(eq(userTable.id, user.id));
+
+    const response = await SELF.fetch(`${base}/auto-top-up/trigger`, {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${env.PLN_ENTER_TOKEN}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId: user.id, environment: env.ENVIRONMENT }),
+    });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+        status: "skipped",
+        reason,
+    });
+
+    expect(mocks.stripe.state.invoices).toHaveLength(0);
+    expect(
+        mocks.stripe.state.requests.some(
+            (request) => request.path === "/v1/invoices",
+        ),
+    ).toBe(false);
+    const attempts = await env.DB.prepare(
+        `SELECT COUNT(*) AS count FROM stripe_auto_top_up_attempt WHERE user_id = ?`,
+    )
+        .bind(user.id)
+        .first<{ count: number }>();
+    expect(attempts?.count).toBe(0);
+});
+
 test("POST /api/stripe/auto-top-up/trigger creates and pays auto top-up invoice", async ({
     sessionToken,
     mocks,

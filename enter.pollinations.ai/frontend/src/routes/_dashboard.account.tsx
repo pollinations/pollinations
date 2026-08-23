@@ -15,6 +15,7 @@ import {
 } from "@pollinations/ui";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
 import { Route as DashboardRoute } from "./_dashboard.tsx";
 
@@ -25,6 +26,7 @@ type DiscordConnection = {
     username: string | null;
     displayName: string | null;
     avatarUrl: string | null;
+    isPollinationsMember: boolean | null;
 };
 
 export const Route = createFileRoute("/_dashboard/account")({
@@ -62,9 +64,15 @@ function AccountPage() {
                 return;
             }
 
-            const { data: info } = await authClient.accountInfo({
-                query: { accountId: account.accountId },
-            });
+            const [{ data: info }, membershipResponse] = await Promise.all([
+                authClient.accountInfo({
+                    query: { accountId: account.accountId },
+                }),
+                apiClient.account["discord-membership"].$get(),
+            ]);
+            const membership = membershipResponse.ok
+                ? await membershipResponse.json()
+                : null;
             const profile = info?.data as { username?: unknown } | undefined;
             setDiscordConnection({
                 id: account.accountId,
@@ -74,6 +82,7 @@ function AccountPage() {
                         : null,
                 displayName: info?.user.name || null,
                 avatarUrl: info?.user.image || null,
+                isPollinationsMember: membership?.member ?? null,
             });
         });
     }, []);
@@ -207,9 +216,19 @@ function AccountPage() {
                                       : "Connect your Discord identity for community features."}
                             </Text>
                             {discordConnection && (
-                                <Text size="sm" tone="muted">
-                                    Discord ID: {discordConnection.id}
-                                </Text>
+                                <>
+                                    <Text size="sm" tone="muted">
+                                        Discord ID: {discordConnection.id}
+                                    </Text>
+                                    {discordConnection.isPollinationsMember !==
+                                        null && (
+                                        <Text size="sm" tone="muted">
+                                            {discordConnection.isPollinationsMember
+                                                ? "Member of the Pollinations Discord"
+                                                : "Not a member of the Pollinations Discord"}
+                                        </Text>
+                                    )}
+                                </>
                             )}
                         </div>
                     </div>

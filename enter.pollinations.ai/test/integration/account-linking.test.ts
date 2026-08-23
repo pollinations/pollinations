@@ -32,9 +32,9 @@ test("links a Discord identity to the signed-in GitHub account", async ({
     const { url } = (await linkResponse.json()) as { url: string };
     const authorizationUrl = new URL(url);
     const state = authorizationUrl.searchParams.get("state");
-    expect(authorizationUrl.searchParams.get("scope")?.split(" ")).toContain(
-        "guilds.members.read",
-    );
+    expect(
+        authorizationUrl.searchParams.get("scope")?.split(" "),
+    ).not.toContain("guilds.members.read");
     const stateCookie = linkResponse.headers.get("Set-Cookie");
     if (!state || !stateCookie) throw new Error("Expected Discord OAuth state");
 
@@ -86,6 +86,20 @@ test("links a Discord identity to the signed-in GitHub account", async ({
             id: mocks.discord.state.userId,
             name: "Discord Test User",
         },
+    });
+
+    const membershipResponse = await SELF.fetch(
+        "http://localhost:3000/api/account/discord-membership",
+        {
+            headers: {
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+        },
+    );
+    expect(membershipResponse.status).toBe(200);
+    await expect(membershipResponse.json()).resolves.toEqual({
+        member: true,
+        joinedAt: "2021-09-10T11:09:04.586000+00:00",
     });
 });
 

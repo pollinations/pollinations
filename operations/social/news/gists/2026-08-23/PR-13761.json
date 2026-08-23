@@ -1,0 +1,33 @@
+{
+  "pr_number": 13761,
+  "title": "chore: restore staging Discord OAuth credentials",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13761",
+  "merged_at": "2026-08-23T07:47:34Z",
+  "labels": [],
+  "pr_body_excerpt": "- Restores the existing encrypted Discord OAuth client credentials for staging only.\n- Leaves all other decrypted staging secret values unchanged.\n- Enables testing the Discord account-linking PR on Enter staging.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The staging hive reconnects",
+    "blurb": "Discord account linking has its staging pollen again. The secret garden is ready for a careful test flight.",
+    "summary": "Restored the encrypted Discord OAuth client credentials in Enter staging so the Discord account-linking flow can be tested without changing other staging secrets.",
+    "impact": "Contributors can now validate Discord account linking on the Enter staging environment before it reaches the public hive.",
+    "keywords": [
+      "discord",
+      "oauth",
+      "staging",
+      "enter",
+      "account-linking"
+    ],
+    "visual_concept": "Polli, wearing a tiny staging-test helmet, reconnects a glowing Discord-style chat bubble to a cozy retro terminal in a garden shed. The scene represents restoring a private staging credential and safely testing account linking, with a small lock-and-key motif and code-plants nearby.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing a tiny tester helmet while carefully connecting a small glowing chat bubble cable to a retro terminal beside a locked flower pot of code-plants. Cozy 8-bit pixel art aesthetic with a prominent lime green (#ecf874) and soft pastel gradient background, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike; pixel-font text on the terminal reads \"STAGING LINK\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-23/PR-13761.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing a tiny tester helmet while carefully connecting a small glowing chat bubble cable to a retro terminal beside a locked flower pot of code-plants. Cozy 8-bit pixel art aesthetic with a prominent lime green (#ecf874) and soft pastel gradient background, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike; pixel-font text on the terminal reads \"STAGING LINK\"."
+  },
+  "generated_at": "2026-08-23T07:48:37.212458+00:00"
+}

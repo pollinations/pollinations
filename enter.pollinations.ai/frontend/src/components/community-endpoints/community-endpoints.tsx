@@ -71,6 +71,8 @@ export function CommunityEndpoints({
     const [toggling, setToggling] = useState<CommunityEndpoint | null>(null);
     const [togglingId, setTogglingId] = useState<string | null>(null);
     const [agentCreateOpen, setAgentCreateOpen] = useState(false);
+    const [endpointAgentCreateOpen, setEndpointAgentCreateOpen] =
+        useState(false);
     const [editingAgent, setEditingAgent] = useState<ManagedAgent | null>(null);
     const [deletingAgent, setDeletingAgent] = useState<ManagedAgent | null>(
         null,
@@ -163,6 +165,27 @@ export function CommunityEndpoints({
     ): Promise<void> {
         const response = await apiClient.account["my-models"].$post({
             json: { ...payload, bearerToken },
+        });
+        if (!response.ok) throw new Error(await readError(response));
+        await loadEndpoints();
+        await onChange?.();
+    }
+
+    async function handleCreateEndpointAgent(
+        payload: EndpointPayload,
+    ): Promise<void> {
+        const response = await apiClient.account["my-models"][
+            "endpoint-agents"
+        ].$post({
+            json: {
+                name: payload.name,
+                title: payload.title,
+                description: payload.description,
+                visibility: payload.visibility,
+                baseUrl: payload.baseUrl,
+                upstreamModel: payload.upstreamModel,
+                perUserRpm: payload.perUserRpm,
+            },
         });
         if (!response.ok) throw new Error(await readError(response));
         await loadEndpoints();
@@ -411,21 +434,40 @@ export function CommunityEndpoints({
                     title="Agents"
                     framed
                     action={
-                        <AgentDialog
-                            open={agentCreateOpen}
-                            onOpenChange={setAgentCreateOpen}
-                            onSubmit={handleCreateAgent}
-                            canPublish={canPublish}
-                            trigger={
-                                <Button
-                                    type="button"
-                                    className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
-                                >
-                                    <BotIcon className="h-4 w-4" />
-                                    Add Agent
-                                </Button>
-                            }
-                        />
+                        <div className="flex flex-wrap justify-end gap-2">
+                            <AgentDialog
+                                open={agentCreateOpen}
+                                onOpenChange={setAgentCreateOpen}
+                                onSubmit={handleCreateAgent}
+                                canPublish={canPublish}
+                                trigger={
+                                    <Button
+                                        type="button"
+                                        className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
+                                    >
+                                        <BotIcon className="h-4 w-4" />
+                                        Add Agent
+                                    </Button>
+                                }
+                            />
+                            <CommunityEndpointDialog
+                                createType="endpoint_agent"
+                                open={endpointAgentCreateOpen}
+                                onOpenChange={setEndpointAgentCreateOpen}
+                                onSubmit={handleCreateEndpointAgent}
+                                canPublish={canPublish}
+                                fallbackOptions={fallbackOptions}
+                                trigger={
+                                    <Button
+                                        type="button"
+                                        className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
+                                    >
+                                        <GlobeIcon className="h-4 w-4" />
+                                        Add Endpoint
+                                    </Button>
+                                }
+                            />
+                        </div>
                     }
                 >
                     <div className="flex flex-col gap-3">
@@ -440,8 +482,8 @@ export function CommunityEndpoints({
                                     Create your first agent
                                 </p>
                                 <p className="text-sm text-theme-text-muted">
-                                    Build a managed agent with a system prompt,
-                                    model, and tools.
+                                    Build a managed prompt agent or connect one
+                                    running on your own endpoint.
                                 </p>
                             </Surface>
                         ) : (

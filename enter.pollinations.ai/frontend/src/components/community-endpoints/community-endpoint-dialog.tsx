@@ -50,6 +50,8 @@ import {
 type CommunityEndpointDialogProps = {
     /** Present in edit mode (prefills the form); omit to create. */
     endpoint?: EditableEndpoint;
+    /** Selects which listing kind the create-mode form submits. */
+    createType?: "proxy" | "endpoint_agent";
     // Allowlisted owners can choose Public. Everyone else sees the same
     // lifecycle control with Public disabled.
     canPublish: boolean;
@@ -64,6 +66,7 @@ type CommunityEndpointDialogProps = {
 
 export function CommunityEndpointDialog({
     endpoint,
+    createType = "proxy",
     canPublish,
     fallbackOptions,
     open,
@@ -72,7 +75,9 @@ export function CommunityEndpointDialog({
     trigger,
 }: CommunityEndpointDialogProps) {
     const isEdit = !!endpoint;
-    const isEndpointAgent = endpoint?.type === "endpoint_agent";
+    const isEndpointAgent =
+        endpoint?.type === "endpoint_agent" ||
+        (!endpoint && createType === "endpoint_agent");
     const [form, setForm] = useState<EndpointFormState>(emptyForm);
     const [modelOptions, setModelOptions] = useState<string[]>([]);
     const [modelListState, setModelListState] =
@@ -367,14 +372,20 @@ export function CommunityEndpointDialog({
             <div className="shrink-0 p-6 pb-4">
                 <DialogTitle className="text-lg font-semibold">
                     {isEndpointAgent
-                        ? "Edit Endpoint Agent"
+                        ? isEdit
+                            ? "Edit Endpoint Agent"
+                            : "Add Endpoint Agent"
                         : isEdit
                           ? "Edit Model"
                           : "Add Model"}
                 </DialogTitle>
                 <p className="mt-1 text-sm text-theme-text-muted">
                     {isEndpointAgent ? (
-                        "Update the externally hosted agent listing and its endpoint URL."
+                        isEdit ? (
+                            "Update the externally hosted agent listing and its endpoint URL."
+                        ) : (
+                            "Connect an externally hosted OpenAI-compatible agent endpoint."
+                        )
                     ) : (
                         <>
                             Register an OpenAI-compatible endpoint as a{" "}
@@ -484,7 +495,7 @@ export function CommunityEndpointDialog({
                         {isEndpointAgent ? (
                             <FieldStack
                                 label="Agent model ID"
-                                helper="Model ID sent to the endpoint with each request."
+                                helper="Model ID sent to the endpoint with each request. Defaults to the listing name."
                                 alignLabelRow
                             >
                                 <Input
@@ -493,7 +504,6 @@ export function CommunityEndpointDialog({
                                     autoComplete="off"
                                     autoCapitalize="none"
                                     spellCheck={false}
-                                    required
                                     onChange={(event) =>
                                         updateForm(
                                             "upstreamModel",
@@ -777,11 +787,17 @@ export function CommunityEndpointDialog({
                     >
                         {isSubmitting
                             ? "Saving…"
-                            : isEdit
-                              ? "Save Model"
-                              : isShared
-                                ? "Publish Model"
-                                : "Add Private Model"}
+                            : isEndpointAgent
+                              ? isEdit
+                                  ? "Save Agent"
+                                  : form.visibility === "public"
+                                    ? "Publish Agent"
+                                    : "Add Private Agent"
+                              : isEdit
+                                ? "Save Model"
+                                : isShared
+                                  ? "Publish Model"
+                                  : "Add Private Model"}
                     </Button>
                 </div>
             </form>

@@ -18,8 +18,8 @@ import type {
 } from "../services/quests/types.ts";
 import { requireAccountPermission } from "./account-permissions.ts";
 
-// Bumped to v27: the Discord community membership quest is available.
-const CACHE_KEY = "quests:catalog:v27";
+// Bumped to v28: the Discord community membership quest rewards 1 Pollen.
+const CACHE_KEY = "quests:catalog:v28";
 const CACHE_TTL = 60;
 const QUEST_CHECK_THROTTLE_SECONDS = 60;
 

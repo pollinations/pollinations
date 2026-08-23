@@ -119,7 +119,7 @@ test("links a Discord identity to the signed-in GitHub account", async ({
                 eq(rewardsTable.questId, "join_discord"),
             ),
         );
-    expect(reward).toEqual({ questId: "join_discord", pollenAmount: 0.25 });
+    expect(reward).toEqual({ questId: "join_discord", pollenAmount: 1 });
 });
 
 test("rejects Discord as a standalone sign-in provider", async () => {

@@ -14,7 +14,7 @@ const joinDiscordQuest: QuestDefinition = {
     description: "Connect Discord and join the Pollinations community server.",
     category: "community",
     scope: "perUser",
-    rewardAmount: 0.25,
+    rewardAmount: 1,
     balanceBucket: "tier",
     url: "https://discord.gg/pollinations-ai-885844321461485618",
 };

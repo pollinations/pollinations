@@ -11,7 +11,8 @@ import {
 const joinDiscordQuest: QuestDefinition = {
     id: "join_discord",
     title: "Join the Pollinations Discord",
-    description: "Connect Discord and join the Pollinations community server.",
+    description:
+        "[Connect Discord](/account), then [join the Pollinations community server](https://discord.gg/pollinations-ai-885844321461485618).",
     category: "community",
     scope: "perUser",
     rewardAmount: 1,

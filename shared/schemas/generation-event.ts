@@ -11,6 +11,7 @@ export type EventType =
 
 export type TinybirdEventType =
     | EventType
+    | "tool.media"
     | "tool.code"
     | "tool.browser";
 

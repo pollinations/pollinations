@@ -1,6 +1,7 @@
 interface CloudflareBindings {
     ENTER: Fetcher;
     POLLINATIONS_MCP: Fetcher;
+    FFMPEG_MCP: Fetcher;
     PYTHON_MCP: Fetcher;
     BROWSER_MCP: Fetcher;
     STORAGE_MCP: Fetcher;

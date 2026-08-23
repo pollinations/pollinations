@@ -14,6 +14,7 @@ import {
     SearchIcon,
     Section,
     SparklesIcon,
+    Switch,
     TabButton,
     TokensIcon,
     TrendUpIcon,
@@ -34,7 +35,7 @@ import {
     fetchModelCatalog,
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
-import { getModelDisplayName } from "./model-info.ts";
+import { getModelDisplayName, isPaidOnly } from "./model-info.ts";
 import type { ModelScope, ModelSort } from "./model-search.ts";
 import { sortModels } from "./model-sort.ts";
 import {
@@ -183,6 +184,7 @@ export const Models: FC = () => {
     const activeSort = modelSearch.sort ?? "newest";
     const urlSearch = modelSearch.q ?? "";
     const [search, setSearch] = useState(urlSearch);
+    const [freeTierOnly, setFreeTierOnly] = useState(false);
     const lastPushedSearchRef = useRef(urlSearch);
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
     const [catalogError, setCatalogError] = useState<string | null>(null);
@@ -200,12 +202,19 @@ export const Models: FC = () => {
             ),
         [activeScope, allModels],
     );
+    const freeTierModels = useMemo(
+        () =>
+            freeTierOnly
+                ? scopedModels.filter((model) => !isPaidOnly(model))
+                : scopedModels,
+        [freeTierOnly, scopedModels],
+    );
     const filteredModels = useMemo(
         () =>
             query
-                ? scopedModels.filter((model) => matchesQuery(model, query))
-                : scopedModels,
-        [query, scopedModels],
+                ? freeTierModels.filter((model) => matchesQuery(model, query))
+                : freeTierModels,
+        [query, freeTierModels],
     );
 
     const loadModelCatalog = useCallback(
@@ -403,6 +412,20 @@ export const Models: FC = () => {
                                 );
                             })}
                         </div>
+                        <div className="flex items-center gap-2">
+                            <Switch
+                                checked={freeTierOnly}
+                                onChange={setFreeTierOnly}
+                                ariaLabel={
+                                    freeTierOnly
+                                        ? "Show all models"
+                                        : "Show only free-tier models"
+                                }
+                            />
+                            <span className="text-sm font-medium text-theme-text-soft">
+                                Free tier only
+                            </span>
+                        </div>
                     </div>
                     <div className="flex w-full items-center justify-between gap-2">
                         <div className="relative min-w-0 max-w-md flex-1">
@@ -500,9 +523,13 @@ export const Models: FC = () => {
                         {catalogError}
                     </Alert>
                 )}
-                {query && sectionModels[activeTab].length === 0 ? (
+                {sectionModels[activeTab].length === 0 ? (
                     <p className="py-8 text-center text-sm text-theme-text-muted">
-                        No {searchTarget.toLowerCase()} match “{search.trim()}”.
+                        {query
+                            ? `No ${searchTarget.toLowerCase()} match “${search.trim()}”.`
+                            : freeTierOnly
+                              ? `No free-tier ${searchTarget.toLowerCase()} in this category.`
+                              : `No ${searchTarget.toLowerCase()} available.`}
                     </p>
                 ) : (
                     <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">

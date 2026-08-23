@@ -24,14 +24,12 @@ const BUCKET_COLUMNS = {
  * of whether an estimate is affordable, while `createBalanceCheckResult` only
  * labels a meter for reporting. Neither is an authoritative write-path rule.
  *
-<<<<<<< HEAD
  *   1. paid-only  → `pack` only (never Quest Pollen)
  *   2. tier       → Quest Pollen when it covers the full amount (`>=`)
  *   3. pack       → any positive paid balance when Quest Pollen can't cover
  *   4. tier       → fall back to Quest Pollen when pack is non-positive
  *
 =======
->>>>>>> 3bace2907 (fix: correct pollen type precedence and add database migration)
  * When keyPollenType is set, it restricts deduction to the specified bucket
  * (but only for non-paidOnly models):
  * - "quest" → always deduct from tier_balance

@@ -89,9 +89,9 @@ describe("canonical categories", () => {
         ).toBe("revenue");
         expect(
             transactionCategory(
-                transaction("polar", "admin", "Polar Myceli-Ai", -5),
+                transaction("polar", "balance_sheet", "Polar Myceli-Ai", -5),
             ),
-        ).toBe("admin");
+        ).toBe("balance_sheet");
     });
 
     it("keeps personal purchases paid by the company out of expenses", () => {

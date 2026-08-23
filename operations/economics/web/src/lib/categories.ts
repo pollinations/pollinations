@@ -145,7 +145,9 @@ export function transactionCategory(
     if (vendor === "polar") {
         return description.includes("hubben") || row.amount > 0
             ? "revenue"
-            : "admin";
+            : description.includes("myceli-ai")
+              ? "balance_sheet"
+              : "admin";
     }
     if (vendor === "wise") {
         return description.includes("cashback") || row.amount > 0

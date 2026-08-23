@@ -33,6 +33,10 @@ const DELETE_ACCOUNT_FRESH_SESSION_MS = 10 * 60 * 1000;
 export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     const db = drizzle(env.DB);
     const apiKeyPlugin = createApiKeyPlugin();
+    const discordEnv = env as Cloudflare.Env & {
+        DISCORD_CLIENT_ID: string;
+        DISCORD_CLIENT_SECRET: string;
+    };
 
     const adminPlugin = admin({
         adminUserIds: ["Py5RZYN9c10OsC1fjUYiqMYjttf0PLGv"],
@@ -57,6 +61,15 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             // scales freshAge by 1e3 twice (update-user.mjs), so the threshold
             // lands ~1000x too high and never fires. Enforce it here instead.
             before: createAuthMiddleware(async (authContext) => {
+                if (
+                    authContext.path === "/sign-in/social" &&
+                    authContext.body.provider === "discord"
+                ) {
+                    throw new APIError("BAD_REQUEST", {
+                        message:
+                            "Discord can only be connected to an existing Pollinations account.",
+                    });
+                }
                 if (authContext.path !== "/delete-user") return;
 
                 const session = await getSessionFromCtx(authContext);
@@ -110,6 +123,16 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                 enabled: true,
             },
         },
+        account: {
+            encryptOAuthTokens: true,
+            accountLinking: {
+                allowDifferentEmails: true,
+                // Better Auth 1.4 requires this for Discord accounts without a
+                // verified email. The sign-in hook above still limits Discord
+                // to explicit, authenticated linkSocial flows.
+                trustedProviders: ["discord"],
+            },
+        },
         socialProviders: {
             github: {
                 clientId: env.GITHUB_CLIENT_ID,
@@ -117,6 +140,16 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                 mapProfileToUser: (profile) => ({
                     githubId: profile.id,
                     githubUsername: profile.login,
+                }),
+            },
+            discord: {
+                clientId: discordEnv.DISCORD_CLIENT_ID,
+                clientSecret: discordEnv.DISCORD_CLIENT_SECRET,
+                disableSignUp: true,
+                mapProfileToUser: (profile) => ({
+                    // Better Auth requires an email even when explicitly
+                    // linking a phone-only Discord account.
+                    email: profile.email ?? `${profile.id}@discord.invalid`,
                 }),
             },
         },

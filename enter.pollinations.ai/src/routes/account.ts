@@ -29,6 +29,10 @@ import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
+import {
+    type DiscordMembership,
+    getPollinationsDiscordMembership,
+} from "../services/discord.ts";
 import { QUEST_CATEGORIES } from "../services/quests/definitions.ts";
 import { listQuestCards } from "../services/quests/index.ts";
 import {
@@ -664,6 +668,11 @@ const profileResponseSchema = z.object({
         ),
 });
 
+const discordMembershipResponseSchema = z.object({
+    member: z.boolean(),
+    joinedAt: z.string().nullable(),
+});
+
 const accountBalanceSchema = z.object({
     total: z
         .number()
@@ -793,6 +802,50 @@ export const accountRoutes = new Hono<Env>()
     .use(auth({ allowApiKey: true, allowSessionCookie: true }))
     .route("/agents", agentsRoutes)
     .route("/my-models", communityEndpointsRoutes)
+    .get(
+        "/discord-membership",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Check Discord Membership",
+            description:
+                "Checks whether the linked Discord account belongs to the Pollinations Discord server.",
+            responses: {
+                200: {
+                    description: "Discord membership status",
+                    content: {
+                        "application/json": {
+                            schema: resolver(discordMembershipResponseSchema),
+                        },
+                    },
+                },
+                401: { description: "Unauthorized" },
+                404: { description: "Discord account not connected" },
+                502: { description: "Discord membership check failed" },
+            },
+        }),
+        async (c) => {
+            await c.var.auth.requireAuthorization();
+            const user = c.var.auth.requireUser();
+            let membership: DiscordMembership | null;
+            try {
+                membership = await getPollinationsDiscordMembership(
+                    c.env,
+                    user.id,
+                );
+            } catch {
+                throw new HTTPException(502, {
+                    message: "Discord membership check failed",
+                });
+            }
+
+            if (!membership) {
+                throw new HTTPException(404, {
+                    message: "Discord account not connected",
+                });
+            }
+            return c.json(membership);
+        },
+    )
     .get(
         "/profile",
         describeRoute({

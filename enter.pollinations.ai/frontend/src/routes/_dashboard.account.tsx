@@ -3,6 +3,7 @@ import {
     Button,
     CopyButton,
     Dialog,
+    DiscordIcon,
     FieldStack,
     GitHubIcon,
     Heading,
@@ -13,11 +14,20 @@ import {
     Text,
 } from "@pollinations/ui";
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
 import { Route as DashboardRoute } from "./_dashboard.tsx";
 
 const DELETE_CONFIRMATION = "DELETE";
+
+type DiscordConnection = {
+    id: string;
+    username: string | null;
+    displayName: string | null;
+    avatarUrl: string | null;
+    isPollinationsMember: boolean | null;
+};
 
 export const Route = createFileRoute("/_dashboard/account")({
     beforeLoad: ({ context, location }) => {
@@ -34,10 +44,77 @@ export const Route = createFileRoute("/_dashboard/account")({
 function AccountPage() {
     const { user, githubUsername } = DashboardRoute.useLoaderData();
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [discordConnection, setDiscordConnection] = useState<
+        DiscordConnection | null | undefined
+    >();
+    const [connectionPending, setConnectionPending] = useState(false);
+    const [connectionError, setConnectionError] = useState<string | null>(null);
+
+    useEffect(() => {
+        void authClient.listAccounts().then(async ({ data, error }) => {
+            if (error) {
+                setConnectionError("Could not load connected accounts.");
+                return;
+            }
+            const account = data?.find(
+                (account) => account.providerId === "discord",
+            );
+            if (!account) {
+                setDiscordConnection(null);
+                return;
+            }
+
+            const [{ data: info }, membershipResponse] = await Promise.all([
+                authClient.accountInfo({
+                    query: { accountId: account.accountId },
+                }),
+                apiClient.account["discord-membership"].$get(),
+            ]);
+            const membership = membershipResponse.ok
+                ? await membershipResponse.json()
+                : null;
+            const profile = info?.data as { username?: unknown } | undefined;
+            setDiscordConnection({
+                id: account.accountId,
+                username:
+                    typeof profile?.username === "string"
+                        ? profile.username
+                        : null,
+                displayName: info?.user.name || null,
+                avatarUrl: info?.user.image || null,
+                isPollinationsMember: membership?.member ?? null,
+            });
+        });
+    }, []);
 
     if (!user) return null;
 
     const displayName = user.name || githubUsername || "Pollinations user";
+
+    async function handleDiscordConnection(): Promise<void> {
+        setConnectionPending(true);
+        setConnectionError(null);
+
+        if (discordConnection) {
+            const { error } = await authClient.unlinkAccount({
+                providerId: "discord",
+            });
+            if (error) {
+                setConnectionError("Could not disconnect Discord.");
+            } else {
+                setDiscordConnection(null);
+            }
+            setConnectionPending(false);
+            return;
+        }
+
+        const { error } = await authClient.linkSocial({
+            provider: "discord",
+            callbackURL: "/account",
+        });
+        if (error) setConnectionError("Could not connect Discord.");
+        setConnectionPending(false);
+    }
 
     return (
         <div className="flex flex-col gap-6">
@@ -104,6 +181,79 @@ function AccountPage() {
                         )}
                     </CopyButton>
                 </Surface>
+            </Section>
+
+            <Section title="Connected accounts" framed>
+                <Surface
+                    variant="card"
+                    className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+                >
+                    <div className="flex items-center gap-3">
+                        {discordConnection?.avatarUrl ? (
+                            <img
+                                src={discordConnection.avatarUrl}
+                                alt="Discord avatar"
+                                className="h-10 w-10 shrink-0 rounded-full"
+                            />
+                        ) : (
+                            <DiscordIcon className="h-6 w-6 shrink-0" />
+                        )}
+                        <div>
+                            <Text tone="strong" weight="semibold">
+                                Discord
+                            </Text>
+                            <Text size="sm" tone="muted">
+                                {discordConnection
+                                    ? [
+                                          discordConnection.displayName,
+                                          discordConnection.username &&
+                                              `@${discordConnection.username}`,
+                                      ]
+                                          .filter(Boolean)
+                                          .join(" · ")
+                                    : discordConnection === undefined
+                                      ? "Checking connection..."
+                                      : "Connect your Discord identity for community features."}
+                            </Text>
+                            {discordConnection && (
+                                <>
+                                    <Text size="sm" tone="muted">
+                                        Discord ID: {discordConnection.id}
+                                    </Text>
+                                    {discordConnection.isPollinationsMember !==
+                                        null && (
+                                        <Text size="sm" tone="muted">
+                                            {discordConnection.isPollinationsMember
+                                                ? "Member of the Pollinations Discord"
+                                                : "Not a member of the Pollinations Discord"}
+                                        </Text>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    </div>
+                    <Button
+                        type="button"
+                        className="shrink-0 self-start sm:self-center"
+                        disabled={
+                            discordConnection === undefined || connectionPending
+                        }
+                        onClick={() => void handleDiscordConnection()}
+                    >
+                        {connectionPending
+                            ? "Working..."
+                            : discordConnection
+                              ? "Disconnect Discord"
+                              : discordConnection === undefined
+                                ? "Checking..."
+                                : "Connect Discord"}
+                    </Button>
+                </Surface>
+                {connectionError && (
+                    <Text size="sm" tone="muted">
+                        {connectionError}
+                    </Text>
+                )}
             </Section>
 
             <Section title="Danger zone" framed>

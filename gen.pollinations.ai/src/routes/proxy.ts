@@ -49,11 +49,13 @@ import {
     CreateChatCompletionResponseSchema,
     CreateImageRequestSchema,
     CreateImageResponseSchema,
+    GetModelResponseSchema,
     GetModelsResponseSchema,
 } from "@shared/schemas/openai.ts";
 import { SafeSchema, type SafeValue } from "@shared/schemas/safety.ts";
 import { errorResponseDescriptions } from "@shared/utils/api-docs.ts";
 import { createFactory } from "hono/factory";
+import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 import {
     applySafety,
@@ -249,6 +251,23 @@ const modelsListHandler =
         );
     };
 
+function toOpenAIModelEntry(entry: GenerationModelEntry) {
+    return {
+        id: entry.id,
+        object: "model" as const,
+        created: entry.info.added_date ?? 0,
+        owned_by: entry.info.brand,
+        input_modalities: entry.info.input_modalities,
+        output_modalities: entry.info.output_modalities,
+        supported_endpoints: entry.supportedEndpoints,
+        ...(entry.info.tools && { tools: entry.info.tools }),
+        ...(entry.info.reasoning && { reasoning: entry.info.reasoning }),
+        ...(entry.info.context_length && {
+            context_length: entry.info.context_length,
+        }),
+    };
+}
+
 async function getVisibleModelEntries(c: Context<Env>) {
     return (await getGenerationModelRegistry(c.env)).visibleEntries(
         c.var.auth?.user?.id,
@@ -310,6 +329,7 @@ export const proxyRoutes = new Hono<Env>()
     .use("*", edgeRateLimit)
     // Optional auth for models endpoints - doesn't require auth but uses it if provided
     .use("/v1/models", auth())
+    .use("/v1/models/:model", auth())
     .use("/image/models", auth())
     .use("/3d/models", auth())
     .use("/video/models", auth())
@@ -344,28 +364,73 @@ export const proxyRoutes = new Hono<Env>()
                 allowedModels,
                 paidBalance,
             );
-            const now = Date.now();
-
-            const toModelEntry = (entry: GenerationModelEntry) => ({
-                id: entry.info.name,
-                object: "model" as const,
-                created: now,
-                input_modalities: entry.info.input_modalities,
-                output_modalities: entry.info.output_modalities,
-                supported_endpoints: entry.supportedEndpoints,
-                ...(entry.info.tools && { tools: entry.info.tools }),
-                ...(entry.info.reasoning && {
-                    reasoning: entry.info.reasoning,
-                }),
-                ...(entry.info.context_length && {
-                    context_length: entry.info.context_length,
-                }),
-            });
-
             return c.json({
                 object: "list" as const,
-                data: modelEntries.map(toModelEntry),
+                data: modelEntries.map(toOpenAIModelEntry),
             });
+        },
+    )
+    .get(
+        "/v1/models/:model",
+        describeRoute({
+            tags: ["🤖 Models"],
+            summary: "Retrieve Model (OpenAI-compatible)",
+            description:
+                "Returns metadata for a single model by ID or alias. The response uses the canonical model ID. Returns 404 if the model does not exist or is inaccessible to the caller.",
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(GetModelResponseSchema),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 404, 500),
+            },
+        }),
+        async (c) => {
+            const modelId = c.req.param("model");
+            const registry = await getGenerationModelRegistry(c.env);
+            const entry = registry.resolve(modelId);
+
+            if (!entry) {
+                throw new HTTPException(404, {
+                    message: `Model '${modelId}' not found`,
+                });
+            }
+
+            // Check visibility (private community models only visible to their owner)
+            if (!entry.visible) {
+                const endpoint = entry.communityEndpoint;
+                const userId = c.var.auth?.user?.id;
+                if (
+                    !endpoint ||
+                    endpoint.visibility !== "private" ||
+                    endpoint.ownerUserId !== userId
+                ) {
+                    throw new HTTPException(404, {
+                        message: `Model '${modelId}' not found`,
+                    });
+                }
+            }
+
+            // Check API key model permissions
+            const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+            if (allowedModels && !allowedModels.includes(entry.id)) {
+                throw new HTTPException(404, {
+                    message: `Model '${modelId}' not found`,
+                });
+            }
+
+            // Check paid balance for paid-only models
+            if (entry.info.paid_only && hasPaidBalance(c) === false) {
+                throw new HTTPException(404, {
+                    message: `Model '${modelId}' not found`,
+                });
+            }
+
+            return c.json(toOpenAIModelEntry(entry));
         },
     )
     .get(

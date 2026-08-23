@@ -193,3 +193,73 @@ test("requires paid balance for Recraft vector", async ({
     );
     expect(generation.status).toBe(402);
 });
+
+test("retrieves a model by ID from GET /v1/models/:model", async () => {
+    const response = await fetchWorker("/v1/models/openai-fast");
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+        id: string;
+        object: string;
+        created: number;
+        owned_by: string;
+    };
+    expect(body.id).toBe("openai-fast");
+    expect(body.object).toBe("model");
+    expect(typeof body.created).toBe("number");
+    expect(typeof body.owned_by).toBe("string");
+});
+
+test("GET /v1/models/:model resolves alias to canonical model ID", async () => {
+    const response = await fetchWorker("/v1/models/gpt-5-nano");
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { id: string; object: string };
+    expect(body.id).toBe("openai-fast");
+    expect(body.object).toBe("model");
+});
+
+test("GET /v1/models/:model returns 404 for unknown model", async () => {
+    const response = await fetchWorker("/v1/models/does-not-exist-xyz");
+    expect(response.status).toBe(404);
+});
+
+test("GET /v1/models/:model returns 404 for model excluded by API key permissions", async ({
+    restrictedApiKey,
+}) => {
+    const response = await fetchWorker("/v1/models/openai", {
+        headers: { Authorization: `Bearer ${restrictedApiKey}` },
+    });
+    expect(response.status).toBe(404);
+});
+
+test("GET /v1/models/:model returns 404 for paid-only model without paid balance", async ({
+    apiKey,
+}) => {
+    const response = await fetchWorker("/v1/models/krea", {
+        headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    expect(response.status).toBe(404);
+});
+
+test("GET /v1/models/:model returns paid-only model when caller has paid balance", async ({
+    paidApiKey,
+}) => {
+    const response = await fetchWorker("/v1/models/krea", {
+        headers: { Authorization: `Bearer ${paidApiKey}` },
+    });
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { id: string };
+    expect(body.id).toBe("krea");
+});
+
+test("GET /v1/models and GET /v1/models/:model return the same created timestamp", async () => {
+    const listResponse = await fetchWorker("/v1/models");
+    const listBody = (await listResponse.json()) as {
+        data: { id: string; created: number }[];
+    };
+    const fromList = listBody.data.find((m) => m.id === "openai-fast");
+    expect(fromList).toBeDefined();
+
+    const retrieveResponse = await fetchWorker("/v1/models/openai-fast");
+    const fromRetrieve = (await retrieveResponse.json()) as { created: number };
+    expect(fromRetrieve.created).toBe(fromList!.created);
+});

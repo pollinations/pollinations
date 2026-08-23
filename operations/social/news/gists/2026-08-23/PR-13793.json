@@ -1,0 +1,34 @@
+{
+  "pr_number": 13793,
+  "title": "fix: clarify community model privacy",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13793",
+  "merged_at": "2026-08-23T21:49:47Z",
+  "labels": [],
+  "pr_body_excerpt": "- Simplifies and formats the community-model privacy notice\n- Links the optional text privacy filter and Privacy Policy\n- Clarifies that enabled checks run before providers and fallbacks\n- Adds provider-boundary regression coverage for personal-data redaction",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Privacy signs, freshly planted",
+    "blurb": "Community models now explain their privacy boundaries with fewer twists in the garden path. Optional text filtering and the Privacy Policy are one click closer, while the checks keep standing watch before requests leave the hive.",
+    "summary": "Clarified and reformatted the community-model privacy notice, linked the optional text privacy filter and Privacy Policy, and added regression coverage confirming personal-data redaction runs before providers and fallbacks.",
+    "impact": "People using community models can more clearly see when privacy checks apply and find the relevant filtering and policy details before their text reaches a provider.",
+    "keywords": [
+      "privacy",
+      "community-models",
+      "text-filtering",
+      "personal-data",
+      "safety",
+      "documentation"
+    ],
+    "visual_concept": "Polli acts as a warm privacy guide beside a community-model terminal, placing a small leafy privacy notice on the screen while a friendly filter gate catches tiny redacted text sprites before they travel along branching provider paths. A code-plant garden and subtle shield-shaped flowers represent safety checks happening before every route and fallback.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, black oval eyes, pink rectangular cheek blushes, light blue wings, and a tiny librarian scarf, gently posting a privacy notice beside a retro community-model terminal; a leafy filter gate safely redacts little text sprites before they travel down branching provider paths through code-plants and shield-shaped flowers. Cozy 8-bit pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream and lavender, subtle CRT glow, and pixel-font text reading \"PRIVACY CHECKS\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-23/PR-13793.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, black oval eyes, pink rectangular cheek blushes, light blue wings, and a tiny librarian scarf, gently posting a privacy notice beside a retro community-model terminal; a leafy filter gate safely redacts little text sprites before they travel down branching provider paths through code-plants and shield-shaped flowers. Cozy 8-bit pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream and lavender, subtle CRT glow, and pixel-font text reading \"PRIVACY CHECKS\"."
+  },
+  "generated_at": "2026-08-23T21:50:47.527330+00:00"
+}

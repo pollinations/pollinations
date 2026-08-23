@@ -157,6 +157,16 @@ test("generateText uses the non-streaming chat completion contract", async (t) =
     const client = await connectClient({
         versionNegotiation: { mode: "auto" },
     });
+    const generateTextTool = (await client.listTools()).tools.find(
+        ({ name }) => name === "generateText",
+    );
+    assert.ok(generateTextTool);
+    assert.equal(generateTextTool.inputSchema.properties.stream, undefined);
+    assert.equal(
+        generateTextTool.inputSchema.properties.stream_options,
+        undefined,
+    );
+
     const result = await client.callTool({
         name: "generateText",
         arguments: {

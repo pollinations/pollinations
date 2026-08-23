@@ -364,9 +364,16 @@ export const track = (eventType: EventType) =>
                 let billedPrice = 0;
                 let shouldRunAutoTopUp = false;
                 try {
-                    const communityEndpoint = servedEntry
+                    const requestedCommunityEndpoint =
+                        c.var.model?.communityEndpoint;
+                    const servedCommunityEndpoint = servedEntry
                         ? servedEntry.communityEndpoint
-                        : c.var.model?.communityEndpoint;
+                        : requestedCommunityEndpoint;
+                    const sameOwnerPrivateFallback =
+                        requestedCommunityEndpoint?.visibility === "public" &&
+                        servedCommunityEndpoint?.visibility === "private" &&
+                        servedCommunityEndpoint.ownerUserId ===
+                            requestedCommunityEndpoint.ownerUserId;
                     const deduction = await handleBalanceDeduction({
                         db: balanceDb,
                         isBilledUsage: responseTracking.isBilledUsage,
@@ -376,19 +383,24 @@ export const track = (eventType: EventType) =>
                         apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
                         byopClientKeyId: c.var.auth?.apiKey?.byopClientKeyId,
                         modelPaidOnly: c.var.model?.definition.paidOnly,
-                        // Only public endpoints pay their owner a reward: a
-                        // private endpoint is owner-called (base cost billed to
-                        // the owner, no markup, no self-credit).
+                        // A private endpoint only earns a reward when it backs
+                        // its owner's public listing. Cross-owner private
+                        // fallbacks are rejected when the fallback is linked.
                         communityModelReward:
-                            communityEndpoint?.visibility === "public"
+                            servedCommunityEndpoint?.visibility === "public"
                                 ? {
-                                      userId: communityEndpoint.ownerUserId,
+                                      userId: servedCommunityEndpoint.ownerUserId,
                                       rewardRate: COMMUNITY_MODEL_REWARD_RATE,
                                       // Their own listing, not the one the
                                       // caller bought — see basePrice.
                                       basePrice: responseTracking.servedPrice,
                                   }
-                                : null,
+                                : sameOwnerPrivateFallback
+                                  ? {
+                                        userId: requestedCommunityEndpoint.ownerUserId,
+                                        rewardRate: COMMUNITY_MODEL_REWARD_RATE,
+                                    }
+                                  : null,
                     });
                     markup = deduction.markup;
                     communityModelReward = deduction.communityModelReward;

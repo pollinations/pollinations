@@ -3,13 +3,16 @@
 import {
     BuiltinMcpServerIdSchema,
     PromptAgentConfigSchema,
+    type PromptAgentGitHubSource,
     PromptAgentInputSchema,
     type PromptAgentListingPayload,
+    PromptAgentListingPayloadSchema,
 } from "@shared/community-endpoints.ts";
+import type { z } from "zod";
 
 export { BuiltinMcpServerIdSchema, PromptAgentInputSchema };
-export type PromptAgentConfig = PromptAgentListingPayload;
-export type PromptAgentInput = PromptAgentListingPayload;
+export type PromptAgentConfig = z.infer<typeof PromptAgentConfigSchema>;
+export type PromptAgentInput = z.infer<typeof PromptAgentInputSchema>;
 
 export function agentRuntimeBaseUrl(env: {
     AGENT_RUNTIME_BASE_URL: string;
@@ -26,6 +29,27 @@ export function parsePromptAgentConfig(raw: string): PromptAgentConfig | null {
     }
 }
 
-export function serializePromptAgentConfig(config: PromptAgentConfig): string {
-    return JSON.stringify(PromptAgentConfigSchema.parse(config));
+export function parsePromptAgentListing(
+    raw: string,
+): PromptAgentListingPayload | null {
+    try {
+        const parsed = PromptAgentListingPayloadSchema.safeParse(
+            JSON.parse(raw),
+        );
+        return parsed.success ? parsed.data : null;
+    } catch {
+        return null;
+    }
+}
+
+export function serializePromptAgentListing(
+    config: PromptAgentConfig,
+    source?: PromptAgentGitHubSource,
+): string {
+    return JSON.stringify(
+        PromptAgentListingPayloadSchema.parse({
+            ...config,
+            ...(source ? { source } : {}),
+        }),
+    );
 }

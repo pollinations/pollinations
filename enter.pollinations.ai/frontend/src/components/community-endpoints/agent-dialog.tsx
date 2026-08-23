@@ -3,6 +3,8 @@ import {
     Button,
     Dialog,
     DialogTitle,
+    FieldStack,
+    Input,
     ScrollArea,
 } from "@pollinations/ui";
 import type { FormEvent, ReactNode } from "react";
@@ -34,6 +36,7 @@ type AgentDialogProps = {
         agent: AgentPayload,
         listing: AgentListingDetailsPayload,
     ) => Promise<void>;
+    onSync?: () => Promise<void>;
     trigger?: ReactNode;
 };
 
@@ -44,6 +47,7 @@ export function AgentDialog({
     open,
     onOpenChange,
     onSubmit,
+    onSync,
     trigger,
 }: AgentDialogProps) {
     const [form, setForm] = useState<AgentDialogFormState>(() => ({
@@ -61,6 +65,10 @@ export function AgentDialog({
                       systemPrompt: agent.systemPrompt,
                       baseModel: agent.baseModel,
                       mcpServers: agent.mcpServers,
+                      repositoryUrl: agent.source?.repositoryUrl ?? "",
+                      manifestPath:
+                          agent.source?.manifestPath ??
+                          emptyAgentForm.manifestPath,
                   }
                 : emptyAgentForm),
         });
@@ -80,7 +88,10 @@ export function AgentDialog({
         setIsSubmitting(true);
         setError(null);
         try {
-            await onSubmit(toAgentPayload(form), toAgentListingPayload(form));
+            await onSubmit(
+                toAgentPayload(form, form.visibility === "public"),
+                toAgentListingPayload(form),
+            );
             onOpenChange(false);
         } catch (thrown) {
             setError(
@@ -91,12 +102,32 @@ export function AgentDialog({
         }
     }
 
+    async function handleSync(): Promise<void> {
+        if (!onSync) return;
+        setIsSubmitting(true);
+        setError(null);
+        try {
+            await onSync();
+            onOpenChange(false);
+        } catch (thrown) {
+            setError(
+                thrown instanceof Error ? thrown.message : "Agent sync failed",
+            );
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
+
+    const hasConfiguration =
+        form.visibility === "public"
+            ? form.repositoryUrl.trim() !== "" &&
+              form.manifestPath.trim() !== ""
+            : form.systemPrompt.trim() !== "" && form.baseModel.trim() !== "";
     const canSubmit =
         !isSubmitting &&
         form.name.trim() !== "" &&
         form.title.trim() !== "" &&
-        form.systemPrompt.trim() !== "" &&
-        form.baseModel.trim() !== "";
+        hasConfiguration;
     const submitLabel = endpoint
         ? "Save Agent"
         : form.visibility === "public"
@@ -148,14 +179,80 @@ export function AgentDialog({
                     />
 
                     <div className="border-t border-divider pt-4">
-                        <PromptAgentFields
-                            form={form}
-                            disabled={isSubmitting}
-                            onChange={updateAgentForm}
-                        />
+                        {form.visibility === "public" ? (
+                            <div className="space-y-4">
+                                <Alert
+                                    intent="info"
+                                    title="Public agents are imported from GitHub"
+                                >
+                                    Pollinations validates the manifest and runs
+                                    the last valid, commit-pinned snapshot. The
+                                    repository must be public and owned by your
+                                    linked GitHub account.
+                                </Alert>
+                                <FieldStack
+                                    label="GitHub repository"
+                                    helper="A public repository owned by your linked GitHub account."
+                                    alignLabelRow
+                                >
+                                    <Input
+                                        type="url"
+                                        name="prompt-agent-repository-url"
+                                        value={form.repositoryUrl}
+                                        placeholder="https://github.com/username/agent"
+                                        disabled={isSubmitting}
+                                        onChange={(event) =>
+                                            updateAgentForm(
+                                                "repositoryUrl",
+                                                event.target.value,
+                                            )
+                                        }
+                                    />
+                                </FieldStack>
+                                <FieldStack
+                                    label="Manifest path"
+                                    helper="Relative path to the JSON agent configuration."
+                                    alignLabelRow
+                                >
+                                    <Input
+                                        name="prompt-agent-manifest-path"
+                                        value={form.manifestPath}
+                                        placeholder="pollinations-agent.json"
+                                        disabled={isSubmitting}
+                                        onChange={(event) =>
+                                            updateAgentForm(
+                                                "manifestPath",
+                                                event.target.value,
+                                            )
+                                        }
+                                    />
+                                </FieldStack>
+                                {agent?.source && (
+                                    <p className="break-all font-mono text-xs text-theme-text-muted">
+                                        Synced commit {agent.source.commitSha}
+                                    </p>
+                                )}
+                            </div>
+                        ) : (
+                            <PromptAgentFields
+                                form={form}
+                                disabled={isSubmitting}
+                                onChange={updateAgentForm}
+                            />
+                        )}
                     </div>
                 </ScrollArea>
-                <div className="flex shrink-0 justify-end gap-2 border-t border-divider p-6 pt-4">
+                <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-divider p-6 pt-4">
+                    {agent?.source && onSync && (
+                        <Button
+                            type="button"
+                            intent="info"
+                            disabled={isSubmitting}
+                            onClick={() => void handleSync()}
+                        >
+                            {isSubmitting ? "Syncing…" : "Sync from GitHub"}
+                        </Button>
+                    )}
                     <Button
                         type="button"
                         intent="danger"

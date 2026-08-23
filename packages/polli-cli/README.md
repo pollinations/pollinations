@@ -104,6 +104,8 @@ and catalog title:
 polli agents get <id>
 polli agents create --config agent.json --name my-agent --title "My Agent"
 polli agents update <id> --config agent.json
+polli agents create --repo https://github.com/me/my-agent --name my-agent --title "My Agent" --visibility public
+polli agents sync <id>
 polli agents delete <id>
 ```
 
@@ -117,7 +119,7 @@ polli agents delete <id>
 }
 ```
 
-Creating an agent also creates its callable model listing. See [Publish an Agent](https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md) for visibility, billing, and lifecycle details.
+Creating an agent also creates its callable model listing. Private agents can use an inline config file. Public agents import the same JSON schema from a public GitHub repository owned by the linked GitHub account. See [Publish an Agent](https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md) for visibility, synchronization, billing, and lifecycle details.
 
 `polli auth login` creates a key with all account permissions Polli needs: `profile`, `usage`, and `keys`. Use `account:usage` for narrow read-only account state like usage and quests. Use `account:keys` to manage keys and, where invite-only My Models access is enabled, my-models. Quest claiming remains in the dashboard.
 

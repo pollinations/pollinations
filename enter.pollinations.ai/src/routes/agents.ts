@@ -4,6 +4,8 @@ import {
     COMMUNITY_ENDPOINT_VISIBILITIES,
     isCommunityEndpointOwnerAllowed,
     PROMPT_AGENT_BASE_URL_PLACEHOLDER,
+    PromptAgentGitHubSourceInputSchema,
+    PromptAgentGitHubSourceSchema,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
@@ -19,9 +21,10 @@ import {
     agentRuntimeBaseUrl,
     BuiltinMcpServerIdSchema,
     PromptAgentInputSchema,
-    parsePromptAgentConfig,
-    serializePromptAgentConfig,
+    parsePromptAgentListing,
+    serializePromptAgentListing,
 } from "../services/prompt-agent.ts";
+import { importPromptAgentFromGitHub } from "../services/prompt-agent-github.ts";
 import { requireAccountPermission } from "./account-permissions.ts";
 
 const ListingFieldsSchema = z.object({
@@ -42,23 +45,60 @@ const ListingFieldsSchema = z.object({
     visibility: z.enum(COMMUNITY_ENDPOINT_VISIBILITIES),
 });
 
-// Agent writes are one operation: prompt configuration and catalog identity
-// live in the same community_endpoint row and cannot get out of sync.
-const AgentWriteSchema = PromptAgentInputSchema.extend(
-    ListingFieldsSchema.shape,
-).strict();
-const CreateAgentSchema = AgentWriteSchema.extend({
+const CreateListingFieldsSchema = ListingFieldsSchema.extend({
     description: ListingFieldsSchema.shape.description.optional().default(""),
     visibility: ListingFieldsSchema.shape.visibility
         .optional()
         .default("private"),
+});
+const CreateInlineAgentSchema = PromptAgentInputSchema.extend(
+    CreateListingFieldsSchema.shape,
+).strict();
+const CreateGitHubAgentSchema = CreateListingFieldsSchema.extend({
+    source: PromptAgentGitHubSourceInputSchema,
 }).strict();
-const UpdateAgentSchema = PromptAgentInputSchema.extend({
-    name: ListingFieldsSchema.shape.name.optional(),
-    title: ListingFieldsSchema.shape.title.optional(),
-    description: ListingFieldsSchema.shape.description.optional(),
-    visibility: ListingFieldsSchema.shape.visibility.optional(),
-}).strict();
+const CreateAgentSchema = z.union([
+    CreateInlineAgentSchema,
+    CreateGitHubAgentSchema,
+]);
+const UpdateAgentSchema = z
+    .object({
+        systemPrompt: PromptAgentInputSchema.shape.systemPrompt.optional(),
+        baseModel: PromptAgentInputSchema.shape.baseModel.optional(),
+        mcpServers: z.array(BuiltinMcpServerIdSchema).max(1).optional(),
+        source: PromptAgentGitHubSourceInputSchema.optional(),
+        name: ListingFieldsSchema.shape.name.optional(),
+        title: ListingFieldsSchema.shape.title.optional(),
+        description: ListingFieldsSchema.shape.description.optional(),
+        visibility: ListingFieldsSchema.shape.visibility.optional(),
+    })
+    .strict()
+    .superRefine((input, ctx) => {
+        const hasInlineConfig =
+            input.systemPrompt !== undefined ||
+            input.baseModel !== undefined ||
+            input.mcpServers !== undefined;
+        if (
+            hasInlineConfig &&
+            (input.systemPrompt === undefined || input.baseModel === undefined)
+        ) {
+            ctx.addIssue({
+                code: "custom",
+                message:
+                    "systemPrompt and baseModel are both required when replacing inline configuration",
+            });
+        }
+        if (hasInlineConfig && input.source) {
+            ctx.addIssue({
+                code: "custom",
+                message:
+                    "Provide either inline configuration or a GitHub source, not both",
+            });
+        }
+        if (Object.keys(input).length === 0) {
+            ctx.addIssue({ code: "custom", message: "No updates provided" });
+        }
+    });
 const AgentResponseSchema = z.object({
     id: z.string(),
     name: z.string(),
@@ -70,6 +110,7 @@ const AgentResponseSchema = z.object({
     systemPrompt: z.string(),
     baseModel: z.string(),
     mcpServers: z.array(BuiltinMcpServerIdSchema),
+    source: PromptAgentGitHubSourceSchema.nullable(),
     createdAt: z.string(),
     updatedAt: z.string(),
 });
@@ -81,9 +122,31 @@ const AgentDeleteResponseSchema = z.object({ id: z.string() });
 type Db = ReturnType<typeof drizzle<typeof schema>>;
 type AgentRow = typeof schema.communityEndpoint.$inferSelect;
 
+function promptConfigFromInput(input: {
+    systemPrompt?: string;
+    baseModel?: string;
+    mcpServers?: "pollinations"[];
+}) {
+    return PromptAgentInputSchema.parse({
+        systemPrompt: input.systemPrompt,
+        baseModel: input.baseModel,
+        mcpServers: input.mcpServers,
+    });
+}
+
+function requireOwnerGithubId(owner: { githubId: number | null } | undefined) {
+    if (!owner?.githubId) {
+        throw new HTTPException(400, {
+            message: "A linked GitHub account is required",
+        });
+    }
+    return owner.githubId;
+}
+
 function toResponse(row: AgentRow, baseUrl: string) {
-    const config = parsePromptAgentConfig(row.payload);
-    if (!config) throw new Error(`Agent ${row.id} has invalid configuration`);
+    const listing = parsePromptAgentListing(row.payload);
+    if (!listing) throw new Error(`Agent ${row.id} has invalid configuration`);
+    const { source = null, ...config } = listing;
     return {
         id: row.id,
         name: row.name,
@@ -93,6 +156,7 @@ function toResponse(row: AgentRow, baseUrl: string) {
         baseUrl,
         upstreamModel: row.upstreamModel,
         ...config,
+        source,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
     };
@@ -148,6 +212,28 @@ async function requireAgentWriteAccess(
             message: "Community model name is already registered",
         });
     }
+    return owner;
+}
+
+async function requireGitHubAccessToken(db: Db, ownerUserId: string) {
+    const githubAccount = await db.query.account.findFirst({
+        columns: { accessToken: true, accessTokenExpiresAt: true },
+        where: and(
+            eq(schema.account.userId, ownerUserId),
+            eq(schema.account.providerId, "github"),
+        ),
+    });
+    if (
+        !githubAccount?.accessToken ||
+        (githubAccount.accessTokenExpiresAt &&
+            githubAccount.accessTokenExpiresAt <= new Date())
+    ) {
+        throw new HTTPException(400, {
+            message:
+                "GitHub authorization is unavailable. Sign out and reconnect GitHub, then try again.",
+        });
+    }
+    return githubAccount.accessToken;
 }
 
 export const agentsRoutes = new Hono<Env>()
@@ -250,12 +336,33 @@ export const agentsRoutes = new Hono<Env>()
             const input = c.req.valid("json");
             requireAccountPermission(c.var.auth.apiKey, "keys");
             const db = drizzle(c.env.DB, { schema });
-            await requireAgentWriteAccess(
+            const owner = await requireAgentWriteAccess(
                 db,
                 user.id,
                 input.name,
                 input.visibility,
             );
+            if (input.visibility === "public" && !("source" in input)) {
+                throw new HTTPException(400, {
+                    message: "Public agents require a GitHub source repository",
+                });
+            }
+            if (input.visibility !== "public" && "source" in input) {
+                throw new HTTPException(400, {
+                    message: "GitHub-backed agents must be public",
+                });
+            }
+            const config =
+                "source" in input
+                    ? await importPromptAgentFromGitHub(
+                          input.source,
+                          requireOwnerGithubId(owner),
+                          await requireGitHubAccessToken(db, user.id),
+                      )
+                    : {
+                          config: promptConfigFromInput(input),
+                          source: undefined,
+                      };
             const id = crypto.randomUUID();
             const [row] = await db
                 .insert(schema.communityEndpoint)
@@ -268,7 +375,10 @@ export const agentsRoutes = new Hono<Env>()
                     type: "prompt_agent",
                     baseUrl: PROMPT_AGENT_BASE_URL_PLACEHOLDER,
                     upstreamModel: id,
-                    payload: serializePromptAgentConfig(input),
+                    payload: serializePromptAgentListing(
+                        config.config,
+                        config.source,
+                    ),
                     visibility: input.visibility,
                     createdAt: new Date(),
                     updatedAt: new Date(),
@@ -307,9 +417,52 @@ export const agentsRoutes = new Hono<Env>()
             const db = drizzle(c.env.DB, { schema });
             const id = c.req.param("id");
             const stored = await requireOwnedAgent(db, id, user.id);
+            const storedListing = parsePromptAgentListing(stored.payload);
+            if (!storedListing) {
+                throw new HTTPException(500, {
+                    message: "Stored agent configuration is invalid",
+                });
+            }
             const name = input.name ?? stored.name;
             const visibility = input.visibility ?? stored.visibility;
-            await requireAgentWriteAccess(db, user.id, name, visibility, id);
+            const owner = await requireAgentWriteAccess(
+                db,
+                user.id,
+                name,
+                visibility,
+                id,
+            );
+            const hasInlineConfig =
+                input.systemPrompt !== undefined ||
+                input.baseModel !== undefined ||
+                input.mcpServers !== undefined;
+            if (input.source && visibility !== "public") {
+                throw new HTTPException(400, {
+                    message: "GitHub-backed agents must be public",
+                });
+            }
+            const imported = input.source
+                ? await importPromptAgentFromGitHub(
+                      input.source,
+                      requireOwnerGithubId(owner),
+                      await requireGitHubAccessToken(db, user.id),
+                  )
+                : null;
+            const nextConfig = imported
+                ? imported.config
+                : hasInlineConfig
+                  ? promptConfigFromInput(input)
+                  : storedListing;
+            const nextSource = imported
+                ? imported.source
+                : hasInlineConfig || visibility === "private"
+                  ? undefined
+                  : storedListing.source;
+            if (visibility === "public" && !nextSource) {
+                throw new HTTPException(400, {
+                    message: "Public agents require a GitHub source repository",
+                });
+            }
             const [row] = await db
                 .update(schema.communityEndpoint)
                 .set({
@@ -320,7 +473,78 @@ export const agentsRoutes = new Hono<Env>()
                             ? stored.description
                             : input.description || null,
                     visibility,
-                    payload: serializePromptAgentConfig(input),
+                    payload: serializePromptAgentListing(
+                        nextConfig,
+                        nextSource,
+                    ),
+                    updatedAt: new Date(),
+                })
+                .where(
+                    and(
+                        eq(schema.communityEndpoint.id, id),
+                        eq(schema.communityEndpoint.ownerUserId, user.id),
+                        eq(schema.communityEndpoint.type, "prompt_agent"),
+                    ),
+                )
+                .returning();
+            return c.json(toResponse(row, agentRuntimeBaseUrl(c.env)));
+        },
+    )
+    .post(
+        "/:id/sync",
+        describeRoute({
+            tags: ["🤖 Community Agents"],
+            summary: "Sync Agent from GitHub",
+            description:
+                "Import the current default-branch manifest from an agent's public GitHub source. The previous valid snapshot remains active if synchronization fails. API keys require `account:keys`.",
+            responses: {
+                200: {
+                    description: "Synchronized agent",
+                    content: {
+                        "application/json": {
+                            schema: resolver(AgentResponseSchema),
+                        },
+                    },
+                },
+                400: { description: "Invalid GitHub source or manifest" },
+                401: { description: "Unauthorized" },
+                403: { description: "Permission denied" },
+                404: { description: "Agent not found" },
+                502: { description: "GitHub request failed" },
+                503: { description: "GitHub rate limit reached" },
+            },
+        }),
+        async (c) => {
+            const user = c.var.auth.requireUser();
+            requireAccountPermission(c.var.auth.apiKey, "keys");
+            const db = drizzle(c.env.DB, { schema });
+            const id = c.req.param("id");
+            const stored = await requireOwnedAgent(db, id, user.id);
+            const listing = parsePromptAgentListing(stored.payload);
+            if (!listing?.source) {
+                throw new HTTPException(400, {
+                    message: "Agent does not have a GitHub source",
+                });
+            }
+            const owner = await db.query.user.findFirst({
+                columns: { githubId: true },
+                where: eq(schema.user.id, user.id),
+            });
+            const imported = await importPromptAgentFromGitHub(
+                {
+                    repositoryUrl: listing.source.repositoryUrl,
+                    manifestPath: listing.source.manifestPath,
+                },
+                requireOwnerGithubId(owner),
+                await requireGitHubAccessToken(db, user.id),
+            );
+            const [row] = await db
+                .update(schema.communityEndpoint)
+                .set({
+                    payload: serializePromptAgentListing(
+                        imported.config,
+                        imported.source,
+                    ),
                     updatedAt: new Date(),
                 })
                 .where(

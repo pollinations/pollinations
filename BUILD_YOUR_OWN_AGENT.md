@@ -7,9 +7,9 @@ This is different from hosting your own OpenAI-compatible model endpoint. It is 
 ## Create an agent in the dashboard
 
 1. Open [My Models](https://enter.pollinations.ai/my-models).
-2. Add an agent and choose its name, title, visibility, system prompt, and base model.
-3. Optionally enable Pollinations tools so the agent can generate media, call other models, and inspect the model catalog.
-4. Save it. The dashboard creates the agent configuration and registers its callable model name.
+2. Add an agent and choose its name, title, and visibility.
+3. For a private agent, enter the system prompt, base model, and optional Pollinations tools. For a public agent, enter a public GitHub repository and manifest path.
+4. Save it. Pollinations validates the configuration and registers its callable model name.
 
 A linked GitHub username is required to create an agent. Private agents are visible and callable only by their owner. Publishing an agent for everyone requires [community publisher access](https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml).
 
@@ -23,11 +23,13 @@ An agent combines catalog fields with its runtime configuration:
 | `title` | Yes | Display title shown in the model catalog. |
 | `description` | No | Catalog description. |
 | `visibility` | No | `private` by default, or `public` with publisher access. |
-| `systemPrompt` | Yes | Instructions for the agent, from 1 to 8,000 characters. |
-| `baseModel` | Yes | A text model ID from [`GET /v1/models`](https://gen.pollinations.ai/v1/models). |
+| `systemPrompt` | Private/manifest | Instructions for the agent, from 1 to 8,000 characters. |
+| `baseModel` | Private/manifest | A text model ID from [`GET /v1/models`](https://gen.pollinations.ai/v1/models). |
 | `mcpServers` | No | `[]` or `["pollinations"]` to enable the built-in Pollinations tools. |
+| `source.repositoryUrl` | Public | Public repository owned by the account's linked GitHub identity. |
+| `source.manifestPath` | Public | Relative JSON manifest path. Defaults to `pollinations-agent.json`. |
 
-Example `agent.json`:
+Private CLI configuration and public GitHub manifests use the same strict JSON schema:
 
 ```json
 {
@@ -37,7 +39,7 @@ Example `agent.json`:
 }
 ```
 
-Updates replace the runtime configuration, so include `systemPrompt` and `baseModel`; include `mcpServers` if tools should remain enabled. You can also change the name, title, description, or visibility.
+Public agents run the last valid snapshot stored by Pollinations, not a live GitHub response. Each successful import records the exact commit SHA. Invalid repository updates leave the previous snapshot active.
 
 ## Create with the CLI
 
@@ -50,7 +52,18 @@ npx @pollinations/cli agents create \
   --title "Research Assistant"
 ```
 
-The callable model ID is `<your-github-username>/research-assistant`. Add `--visibility public` to publish it after your account has community publisher access. Managed agents are always text-only and free: they cannot set prices, fallbacks, or a per-user request limit.
+To publish the same manifest from GitHub:
+
+```bash
+npx @pollinations/cli agents create \
+  --repo https://github.com/your-name/research-agent \
+  --manifest pollinations-agent.json \
+  --name research-assistant \
+  --title "Research Assistant" \
+  --visibility public
+```
+
+The callable model ID is `<your-github-username>/research-assistant`. Public publishing requires community publisher access. Managed agents are always text-only and free: they cannot set prices, fallbacks, or a per-user request limit.
 
 ## Call an agent
 
@@ -74,9 +87,10 @@ The agent listing itself has no owner-set price. The caller still pays for the s
 npx @pollinations/cli agents list
 npx @pollinations/cli agents get <agent-id>
 npx @pollinations/cli agents update <agent-id> --config agent.json
+npx @pollinations/cli agents sync <agent-id>
 npx @pollinations/cli agents delete <agent-id>
 ```
 
-Deleting an agent also deletes its model listing. Updating an agent can change its prompt, base model, tools, name, title, description, or visibility.
+Deleting an agent also deletes its model listing. Private inline agents can replace their prompt, base model, and tools. Public agents import those fields from GitHub; use `sync` after changing the repository. Listing fields can be updated through the dashboard or API.
 
 The Account API exposes the same operations under `/account/agents`. API keys need the `account:keys` permission. See the [Community Agents API reference](https://gen.pollinations.ai/docs#tag/community-agents) for request and response schemas.

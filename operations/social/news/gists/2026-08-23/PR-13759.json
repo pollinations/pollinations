@@ -1,0 +1,36 @@
+{
+  "pr_number": 13759,
+  "title": "Add StoryForge to writing",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13759",
+  "merged_at": "2026-08-23T07:39:37Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [StoryForge](https://storyforge.wiradifit-makmur-sejahtera.duckdns.org) to writing\n- Turn any idea into an illustrated AI micro-story. The user signs in via the official BYOP OAuth flow (PKCE) with a self-chosen pollen budget, describes an idea, picks a genre (fantasy / sci-fi / myste\n\nFixes #13746",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Small ideas, full worlds",
+    "blurb": "StoryForge has joined the writing garden. Bring an idea, pick a genre and Pollen budget, and leave with an illustrated little world of its own.",
+    "summary": "Added StoryForge to the writing app directory, letting users sign in through BYOP OAuth with PKCE, choose a Pollen budget and genre, and turn an idea into an illustrated AI micro-story.",
+    "impact": "People can now discover and launch StoryForge from Pollinations writing tools to make budget-controlled fantasy, sci-fi, mystery, and other illustrated short stories.",
+    "keywords": [
+      "StoryForge",
+      "writing",
+      "illustrated-stories",
+      "BYOP",
+      "OAuth",
+      "community-app"
+    ],
+    "visual_concept": "Depict StoryForge as a cozy storybook-making nook: Polli helps a tiny illustrated book bloom from a seed-like idea prompt, with genre symbols such as a castle and small spaceship emerging from its pages. Include a retro terminal showing a simple OAuth key/lock motif, plus flowers and code-vines to connect the app directory addition to the Pollinations garden.",
+    "image_prompt": "A cozy pixel art storybook workshop where Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny writer’s beret, gently plants a glowing idea-seed into an open illustrated book; a tiny fantasy castle and pastel spaceship rise warmly from its pages beside a retro terminal with a small key icon. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-flowers and garden vines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-23/PR-13759.jpg",
+    "prompt": "A cozy pixel art storybook workshop where Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny writer’s beret, gently plants a glowing idea-seed into an open illustrated book; a tiny fantasy castle and pastel spaceship rise warmly from its pages beside a retro terminal with a small key icon. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-flowers and garden vines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-08-23T07:40:36.226370+00:00",
+  "app_name": "StoryForge",
+  "app_url": "https://storyforge.wiradifit-makmur-sejahtera.duckdns.org"
+}

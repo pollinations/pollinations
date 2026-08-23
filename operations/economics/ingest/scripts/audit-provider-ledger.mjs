@@ -253,6 +253,7 @@ const knownExternalProviders = new Set([
 const missingCloudWitnesses = [...pollenKeys]
     .filter((key) => {
         const { provider } = splitProviderMonth(key);
+        if (definitionFor(provider)?.meteringBasis === "internal") return false;
         return (
             knownExternalProviders.has(provider) && !providerCloudRows.has(key)
         );

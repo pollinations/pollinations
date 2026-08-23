@@ -374,15 +374,6 @@
             ]
         },
         {
-            "month": "2026-07",
-            "provider": "mistral",
-            "reason": "provider_only_residual",
-            "explanation": "The Mistral dashboard records EUR 8.18 of direct OCR activity. Mistral was not a Pollinations runtime provider, so no OP Pollen witness is expected.",
-            "evidence": [
-                "https://drive.google.com/file/d/1IWQqyEG8xRVuqDM02iXonZ1vmKsmJtTI/view?usp=drivesdk"
-            ]
-        },
-        {
             "month": "2026-08",
             "provider": "lambda",
             "reason": "provider_only_residual",

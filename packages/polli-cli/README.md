@@ -67,7 +67,7 @@ polli docs                   # full API reference in the terminal
 polli docs /image            # one endpoint
 polli docs --open            # open in browser
 polli quests                 # public quest catalog
-polli quests mine            # your completed and earned quest status
+polli quests --claimed       # already-completed and earned quest status
 ```
 
 ## Account
@@ -92,7 +92,7 @@ Keys can't be edited — to change a name, budget, or model list, revoke and rec
 polli usage                  # pollen balance
 polli usage --history        # recent requests
 polli usage --daily          # daily spend
-polli quests mine --completed # completed and earned quests
+polli quests --claimable     # only rewards ready to claim
 polli agents list            # managed prompt agents
 polli my-models list         # invite-only community text, image, and transcription models
 ```

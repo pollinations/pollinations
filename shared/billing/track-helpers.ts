@@ -1,6 +1,10 @@
 import { getLogger } from "@logtape/logtape";
 import { and, eq, gt, isNull, or } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
+import {
+    COMMUNITY_MODEL_REWARD_RATE,
+    type CommunityEndpointRuntime,
+} from "../community-endpoints.ts";
 import { apikey as apikeyTable } from "../db/better-auth.ts";
 import {
     atomicCreditUserBalance,
@@ -40,6 +44,35 @@ export type CommunityModelRewardInput = {
      */
     basePrice?: number;
 };
+
+export function selectCommunityModelReward(
+    requestedCommunityEndpoint: CommunityEndpointRuntime | null | undefined,
+    servedCommunityEndpoint: CommunityEndpointRuntime | null | undefined,
+    servedPrice: number | undefined,
+): CommunityModelRewardInput | null {
+    if (servedCommunityEndpoint?.visibility === "public") {
+        return {
+            userId: servedCommunityEndpoint.ownerUserId,
+            rewardRate: COMMUNITY_MODEL_REWARD_RATE,
+            basePrice: servedPrice,
+        };
+    }
+
+    if (
+        requestedCommunityEndpoint?.visibility === "public" &&
+        servedCommunityEndpoint?.visibility === "private" &&
+        servedCommunityEndpoint.ownerUserId ===
+            requestedCommunityEndpoint.ownerUserId
+    ) {
+        return {
+            userId: requestedCommunityEndpoint.ownerUserId,
+            rewardRate: COMMUNITY_MODEL_REWARD_RATE,
+            basePrice: servedPrice,
+        };
+    }
+
+    return null;
+}
 
 interface DeductionParams {
     db: DrizzleD1Database;

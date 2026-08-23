@@ -534,3 +534,42 @@ describe("Pollinations model discovery", () => {
         );
     });
 });
+
+describe("Pollinations account endpoints", () => {
+    it("accountQuests() requests the correct URL and returns quests", async () => {
+        const client = newClient();
+        const mockResponse = {
+            quests: [
+                {
+                    id: "setup-profile",
+                    title: "Setup Profile",
+                    description: "Complete your profile",
+                    category: "setup",
+                    state: "available",
+                    status: "completed",
+                    rewardAmount: 10,
+                    balanceBucket: "tier",
+                    url: null,
+                    reward: {
+                        id: "reward-1",
+                        title: "Setup Profile Reward",
+                        pollenAmount: 10,
+                        balanceBucket: "tier",
+                        earnedAt: "2026-08-23T00:00:00.000Z",
+                        claimedAt: null,
+                    },
+                },
+            ],
+        };
+
+        fetchMock.mockResolvedValueOnce(makeResponse(mockResponse));
+
+        const result = await client.accountQuests();
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(fetchMock.mock.calls[0]?.[0]).toBe(
+            "https://example.test/account/quests",
+        );
+        expect(result).toEqual(mockResponse);
+    });
+});

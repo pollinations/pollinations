@@ -1,6 +1,6 @@
 import { collectUpstreamHeaders, remapUpstreamStatus } from "@shared/error.ts";
 import debug from "debug";
-import { normalizeOptions, prepareMessages } from "./textGenerationUtils.js";
+import { prepareMessages } from "./textGenerationUtils.js";
 import type {
     ChatCompletion,
     ChatMessage,
@@ -145,12 +145,7 @@ export async function genericOpenAIClient(
     options: TransformOptions = {},
     config: OpenAIClientConfig,
 ): Promise<ChatCompletion> {
-    const {
-        endpoint,
-        defaultOptions = {},
-        additionalHeaders = {},
-        fetcher = fetch,
-    } = config;
+    const { endpoint, additionalHeaders = {}, fetcher = fetch } = config;
     const startTime = Date.now();
     const requestId = crypto.randomUUID();
     let requestUrl: URL | undefined;
@@ -163,15 +158,13 @@ export async function genericOpenAIClient(
         optionKeys: Object.keys(options),
     });
 
-    let normalizedOptions: TransformOptions;
     let modelName = "unknown";
 
     try {
-        normalizedOptions = normalizeOptions(options, defaultOptions);
-        if (!normalizedOptions.model) {
+        if (!options.model) {
             throw new Error("Model is required");
         }
-        modelName = normalizedOptions.model;
+        modelName = options.model;
 
         const preparedMessages = prepareMessages(messages);
         const {
@@ -185,7 +178,7 @@ export async function genericOpenAIClient(
             requestedModel: _requestedModel,
             userApiKey: _userApiKey,
             ...cleanedOptions
-        } = normalizedOptions;
+        } = options;
         const requestBody = cleanNullAndUndefined({
             model: modelName,
             messages: preparedMessages,
@@ -196,12 +189,12 @@ export async function genericOpenAIClient(
             model: modelName,
             messageCount: preparedMessages.length,
             optionKeys: Object.keys(cleanedOptions),
-            stream: normalizedOptions.stream === true,
+            stream: options.stream === true,
         });
 
         const endpointUrl =
             typeof endpoint === "function"
-                ? endpoint(modelName, normalizedOptions)
+                ? endpoint(modelName, options)
                 : endpoint;
         requestUrl = new URL(endpointUrl);
 
@@ -245,7 +238,7 @@ export async function genericOpenAIClient(
             response.headers.get("x-portkey-last-used-option-index") ??
             undefined;
 
-        if (normalizedOptions.stream) {
+        if (options.stream) {
             log(
                 `[${requestId}] Streaming response, status: ${response.status}`,
             );
@@ -316,9 +309,9 @@ export async function genericOpenAIClient(
                 if (
                     _normalizeFinishReasonAtTokenLimit &&
                     formattedChoice.finish_reason === "stop" &&
-                    typeof normalizedOptions.max_tokens === "number" &&
+                    typeof options.max_tokens === "number" &&
                     typeof data.usage?.completion_tokens === "number" &&
-                    data.usage.completion_tokens >= normalizedOptions.max_tokens
+                    data.usage.completion_tokens >= options.max_tokens
                 ) {
                     formattedChoice.finish_reason = "length";
                 }

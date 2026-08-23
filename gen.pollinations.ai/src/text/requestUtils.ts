@@ -11,10 +11,6 @@ function requestsJson(json: unknown, jsonMode: unknown): boolean {
     );
 }
 
-function clamp(value: number, min: number, max: number): number {
-    return Math.max(min, Math.min(max, value));
-}
-
 export function getChatRequestData(
     body: CreateChatCompletionRequest & Record<string, unknown>,
 ): RequestData {
@@ -73,18 +69,6 @@ export function getSimpleTextRequestData(
         messages,
         ...(options.seed !== undefined
             ? { seed: normalizeSeed(options.seed) }
-            : {}),
-        ...(options.temperature !== undefined
-            ? { temperature: clamp(options.temperature, 0, 3) }
-            : {}),
-        ...(options.top_p !== undefined
-            ? { top_p: clamp(options.top_p, 0, 1) }
-            : {}),
-        ...(options.presence_penalty !== undefined
-            ? { presence_penalty: clamp(options.presence_penalty, -2, 2) }
-            : {}),
-        ...(options.frequency_penalty !== undefined
-            ? { frequency_penalty: clamp(options.frequency_penalty, -2, 2) }
             : {}),
         ...(json ? { response_format: { type: "json_object" } } : {}),
     };

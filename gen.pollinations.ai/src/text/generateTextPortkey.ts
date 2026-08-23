@@ -3,6 +3,7 @@ import { findModelByName } from "./availableModels.js";
 import { callAzureResponses } from "./azureResponsesClient.js";
 import { sanitizeCohereResponse } from "./cohereCommandAPlus.js";
 import { genericOpenAIClient } from "./genericOpenAIClient.js";
+import { normalizeOptions } from "./textGenerationUtils.js";
 import { generateHeaders } from "./transforms/headerGenerator.js";
 import { imageUrlToBase64Transform } from "./transforms/imageUrlToBase64Transform.js";
 import { processParameters } from "./transforms/parameterProcessor.js";
@@ -16,12 +17,6 @@ import type {
 import { resolveModelConfig } from "./utils/modelResolver.js";
 
 export const log = debug("pollinations:portkey");
-
-const clientConfig = {
-    defaultOptions: {
-        model: "openai-fast",
-    },
-};
 
 // Portkey applies this millisecond deadline per attempt until provider response
 // headers arrive. Keep retries disabled unless the total deadline is reconsidered.
@@ -40,7 +35,10 @@ export async function generateTextPortkey(
     options: TransformOptions = {},
     portkeyFetcher?: OpenAIClientConfig["fetcher"],
 ): Promise<ChatCompletion> {
-    let state: TransformResult = { messages, options: { ...options } };
+    let state: TransformResult = {
+        messages,
+        options: normalizeOptions(options),
+    };
     const modelDef = state.options.model
         ? findModelByName(state.options.model)
         : null;
@@ -71,12 +69,10 @@ export async function generateTextPortkey(
     const requestConfig =
         typeof directEndpoint === "string"
             ? {
-                  ...clientConfig,
                   endpoint: directEndpoint,
                   additionalHeaders,
               }
             : {
-                  ...clientConfig,
                   endpoint: () => buildEndpoint(portkeyGatewayUrl),
                   additionalHeaders: {
                       "x-portkey-request-timeout": String(

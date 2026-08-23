@@ -130,7 +130,7 @@ describe("getSimpleTextRequestData", () => {
         });
     });
 
-    it("preserves GET-only clamping and permissive numeric parsing", () => {
+    it("leaves numeric normalization to the provider pipeline", () => {
         const query = GenerateTextRequestQueryParamsSchema.parse({
             temperature: "4",
             top_p: "-1 trailing",
@@ -142,10 +142,10 @@ describe("getSimpleTextRequestData", () => {
         expect(
             getSimpleTextRequestData("hello", "resolved-model", query),
         ).toMatchObject({
-            temperature: 3,
-            top_p: 0,
-            presence_penalty: 2,
-            frequency_penalty: -2,
+            temperature: 4,
+            top_p: -1,
+            presence_penalty: 3,
+            frequency_penalty: -3,
             max_tokens: 16,
         });
         expect(query.repetition_penalty).toBeUndefined();

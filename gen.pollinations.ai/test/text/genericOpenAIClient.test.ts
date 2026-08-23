@@ -226,7 +226,6 @@ describe("genericOpenAIClient", () => {
                     provider_message_option: "kept",
                 },
             ],
-            stream: false,
             tools: [
                 {
                     type: "function",

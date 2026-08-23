@@ -1,6 +1,7 @@
 import { pollinationsErrorFromResponse } from "./error-response.js";
 import type {
     AccountBalance,
+    AccountEarningsOptions,
     AccountKey,
     AccountProfile,
     AudioBinaryResponse,
@@ -14,6 +15,7 @@ import type {
     CreateKeyOptions,
     DailyUsageOptions,
     DailyUsageResponse,
+    DeveloperEarningsResponse,
     DeviceAuthorization,
     DeviceCodeResponse,
     DeviceTokenResponse,
@@ -1509,6 +1511,30 @@ export class Pollinations {
         const url = `${this.baseUrl}/account/usage/daily${qs ? `?${qs}` : ""}`;
 
         return this.getJson<DailyUsageResponse>(url);
+    }
+
+    /**
+     * Get developer earnings summary
+     *
+     * @example
+     * ```ts
+     * const earnings = await pollinations.accountEarnings({ days: 30 });
+     * console.log(earnings.perEntity);
+     * ```
+     */
+    async accountEarnings(
+        options: AccountEarningsOptions = {},
+    ): Promise<DeveloperEarningsResponse> {
+        const params = new URLSearchParams();
+        if (options.format) params.set("format", options.format);
+        if (options.days) params.set("days", String(options.days));
+        if (options.granularity) params.set("granularity", options.granularity);
+        if (options.period) params.set("period", options.period);
+
+        const qs = params.toString();
+        const url = `${this.baseUrl}/account/earnings${qs ? `?${qs}` : ""}`;
+
+        return this.getJson<DeveloperEarningsResponse>(url);
     }
 
     /**

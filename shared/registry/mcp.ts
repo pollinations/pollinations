@@ -16,7 +16,7 @@ type McpServerDefinitionBase = {
     binding: McpBindingName;
 };
 
-export type McpBindingName = "POLLINATIONS_MCP" | "FFMPEG_MCP";
+export type McpBindingName = "POLLINATIONS_MCP" | "FFMPEG_MCP" | "STORAGE_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -46,6 +46,13 @@ export const MCP_SERVERS = [
         billing: "usage_receipt",
         provider: "cloudflare",
         eventType: "tool.media",
+    },
+    {
+        id: "storage",
+        name: "Storage",
+        description: "Store and retrieve small files in Pollinations storage.",
+        binding: "STORAGE_MCP",
+        billing: "downstream",
     },
 ] as const satisfies readonly McpServerDefinition[];
 

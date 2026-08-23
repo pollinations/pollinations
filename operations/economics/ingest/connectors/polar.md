@@ -27,6 +27,13 @@ with Stripe totals without checking the migration cutoff for overlap.
 
 ## Access
 
+The live dashboard organization `myceliai-dev` was checked on 2026-08-23 and
+is an unused Myceli.AI organization: it has no income, orders, payouts, fee
+credits, or payout account. It is **not** evidence for the January 2026 Polar
+entries. Historical reconciliation must use the organization ID below. If that
+organization is not available to the signed-in account, keep the affected rows
+unresolved instead of attaching evidence from `myceliai-dev`.
+
 Create a read-only organization access token in Polar org settings, load it
 locally for the session, and unset it afterward. Never print the token.
 

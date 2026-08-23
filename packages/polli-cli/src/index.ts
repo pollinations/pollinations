@@ -12,6 +12,7 @@ import { myModelsCommand } from "./commands/my-models.js";
 import { questsCommand } from "./commands/quests.js";
 import { uploadCommand } from "./commands/upload.js";
 import { usageCommand } from "./commands/usage.js";
+import { earningsCommand } from "./commands/earnings.js";
 
 import { setKeyOverride } from "./lib/config.js";
 import { setOutputMode } from "./lib/output.js";
@@ -66,6 +67,7 @@ program.addCommand(usageCommand);
 program.addCommand(questsCommand);
 program.addCommand(agentsCommand);
 program.addCommand(myModelsCommand);
+program.addCommand(earningsCommand);
 
 // Generation
 program.addCommand(createGenCommand());

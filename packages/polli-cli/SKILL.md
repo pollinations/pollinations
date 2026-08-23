@@ -147,6 +147,7 @@ Use `--stats` before choosing a model. **Caveat**: the `err%` column counts **5x
 polli usage              # current pollen balance
 polli usage --history    # recent individual requests
 polli usage --daily      # daily cost summary
+polli earnings           # total pollen earnings breakdown
 polli quests             # your quests + claim state (open/claimable/claimed/coming)
 polli quests --claimable # only rewards ready to claim
 ```

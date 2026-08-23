@@ -1,0 +1,33 @@
+{
+  "pr_number": 13755,
+  "title": "feat(enter): filter models usable with Quest Pollen",
+  "author": "gggff123",
+  "url": "https://github.com/pollinations/pollinations/pull/13755",
+  "merged_at": "2026-08-23T11:28:59Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds a local-only `Quest Pollen models` switch to the Models page.\n- Uses the canonical `isPaidOnly` predicate across scopes, categories, and search.\n- Updates filtered empty states without URL or local storage persistence.\n\nFixes #11436",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Find the quest-friendly flowers",
+    "blurb": "The Models page now has a Quest Pollen switch for browsing models available without paid-only access. A small filter, for when the model garden has become pleasantly enormous.",
+    "summary": "Added a local-only \"Quest Pollen models\" switch on the Models page that filters scopes, categories, and search results using the canonical isPaidOnly predicate, with matching empty states.",
+    "impact": "People using Quest Pollen can quickly find usable models without changing the URL or saving a filter preference.",
+    "keywords": [
+      "quest-pollen",
+      "models",
+      "model-browser",
+      "filtering",
+      "enter"
+    ],
+    "visual_concept": "Polli, wearing a tiny gardener hat and holding a seed packet labeled \"Quest Pollen,\" stands beside a cozy model garden where available code-flowers are brightly blooming and paid-only flowers sit behind a gentle little sign. A retro terminal and a chunky toggle switch show that Polli is filtering the garden rather than changing it.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, flipping a chunky retro toggle labeled \"QUEST POLLEN\" beside a garden of glowing code-flowers; accessible blooms shine lime green (#ecf874) while a few distant flowers rest behind a small \"paid only\" sign. A warm CRT terminal and soft mint, lavender, peach, and cream gradients fill the cozy scene, with pixel vines and seed packets nearby; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-23/PR-13755.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, flipping a chunky retro toggle labeled \"QUEST POLLEN\" beside a garden of glowing code-flowers; accessible blooms shine lime green (#ecf874) while a few distant flowers rest behind a small \"paid only\" sign. A warm CRT terminal and soft mint, lavender, peach, and cream gradients fill the cozy scene, with pixel vines and seed packets nearby; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-23T11:29:59.397901+00:00"
+}

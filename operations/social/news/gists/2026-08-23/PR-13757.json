@@ -1,0 +1,34 @@
+{
+  "pr_number": 13757,
+  "title": "refactor: consolidate Stripe billing flow",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13757",
+  "merged_at": "2026-08-23T20:29:58Z",
+  "labels": [],
+  "pr_body_excerpt": "- Extracts auto-top-up eligibility while preserving skip precedence, threshold behavior, reason strings, and pre-Stripe exits.\n- Shares checkout-session Tinybird serialization across successful, failed, and expired checkout events.\n- Preserves payment-status fallbacks, presentment fields, offered-method behavior, fulfillment, claim handling, and webhook acknowledgements.\n- Adds combined regression coverage for auto-top-up skip paths and exact checkout event wire payloads.\n- Supersedes #13749 and #13753.\n\nChecks:\n- Biome on all changed files\n- Enter TypeScript typecheck\n- `test/integration/stripe.test.ts` — 70/70 passed with checked-in test vars\n- `git diff --check`\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Stripe bees share a path",
+    "blurb": "The billing hive now sends checkout events down one well-tested path. Auto-top-ups still mind their thresholds, skip reasons, and all the tiny details that make money code politely terrifying.",
+    "summary": "Consolidated Stripe checkout-event serialization and auto-top-up eligibility logic while preserving payment-status fallbacks, presentment fields, fulfillment, claim handling, webhook acknowledgements, and existing skip/threshold behavior.",
+    "impact": "Checkout, payment, and auto-top-up flows keep the same user-visible behavior, now backed by shared logic and regression tests covering exact webhook payloads and skip paths.",
+    "keywords": [
+      "stripe",
+      "billing",
+      "checkout",
+      "auto-top-up",
+      "webhooks",
+      "regression-tests"
+    ],
+    "visual_concept": "Polli, wearing a tiny accountant visor, tends a cozy garden of checkout receipts flowing through one shared irrigation pipe into a Stripe-like payment terminal. A CRT monitor robot carefully compares identical event slips while flowers grow from labeled auto-top-up pots, representing preserved thresholds and skip rules.",
+    "image_prompt": "A cozy pixel art billing garden where Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny accountant visor, guides checkout receipt streams through one shared lime green (#ecf874) pipe into a friendly retro payment terminal; a CRT monitor robot checks matching event slips beside flowering pots labeled with tiny pixel text 'AUTO TOP-UP'. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, code-vines and small flowers, dark purple (#110518) outlines, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-23/PR-13757.jpg",
+    "prompt": "A cozy pixel art billing garden where Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny accountant visor, guides checkout receipt streams through one shared lime green (#ecf874) pipe into a friendly retro payment terminal; a CRT monitor robot checks matching event slips beside flowering pots labeled with tiny pixel text 'AUTO TOP-UP'. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, code-vines and small flowers, dark purple (#110518) outlines, emotionally warm."
+  },
+  "generated_at": "2026-08-23T20:30:55.953038+00:00"
+}

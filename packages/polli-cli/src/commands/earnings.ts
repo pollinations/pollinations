@@ -53,9 +53,7 @@ export function earningsTableRows(
 }
 
 export const earningsCommand = new Command("earnings")
-    .description(
-        "Show developer earnings from BYOP apps and community models",
-    )
+    .description("Show developer earnings from BYOP apps and community models")
     .option("--days <n>", "Days to look back (1–90)", "90")
     .action(async (opts) => {
         const key = requireKey();

@@ -5,9 +5,7 @@ import {
     earningsTableRows,
 } from "./earnings.js";
 
-function makeRow(
-    overrides: Partial<EarningsRow> = {},
-): EarningsRow {
+function makeRow(overrides: Partial<EarningsRow> = {}): EarningsRow {
     return {
         date: "2026-08-01",
         entity_id: "app-1",
@@ -73,7 +71,9 @@ describe("earningsTableRows", () => {
     });
 
     it("formats pollen to 4 decimal places", () => {
-        const rows = earningsTableRows([makeRow({ pollen_earned: 1.23456789 })]);
+        const rows = earningsTableRows([
+            makeRow({ pollen_earned: 1.23456789 }),
+        ]);
         expect(rows[0]).toMatchObject({ pollen: "1.2346" });
     });
 });

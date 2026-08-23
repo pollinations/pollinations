@@ -6,7 +6,11 @@ import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
-import { fallbackCandidates, withModelFallback } from "../fallback.ts";
+import {
+    fallbackCandidates,
+    formatFallbackTarget,
+    withModelFallback,
+} from "../fallback.ts";
 import type { GenerationModelEntry } from "../model-registry.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 import {
@@ -540,7 +544,7 @@ export async function generateImageOrVideoResponse(
             // Same shape text emits, so tracking has one fallback marker.
             headers.set(
                 FALLBACK_TARGET_HEADER,
-                `config.targets[${servedIndex}]`,
+                formatFallbackTarget(servedIndex),
             );
         }
         return new Response(bufferToUint8Array(result.buffer), { headers });

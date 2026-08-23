@@ -6,6 +6,10 @@ import { Hono } from "hono";
 import { createMiddleware } from "hono/factory";
 
 export type MockGithubState = {
+    secretScanningPublicKeys: Array<{
+        key_identifier: string;
+        key: string;
+    }>;
     user: {
         id: number;
         login: string;
@@ -48,6 +52,7 @@ export type MockGithubState = {
 
 export function createMockGithub(): MockAPI<MockGithubState> {
     const state: MockGithubState = {
+        secretScanningPublicKeys: [],
         user: {
             id: 12345,
             login: "testuser",
@@ -85,6 +90,9 @@ export function createMockGithub(): MockAPI<MockGithubState> {
 
     const githubAPI = new Hono()
         .use("*", trackRequest)
+        .get("/meta/public_keys/secret_scanning", (c) =>
+            c.json({ public_keys: state.secretScanningPublicKeys }),
+        )
         .get("/search/issues", (c) => {
             if (state.failQuestSearch) {
                 return c.json({ message: "rate limited" }, 403);
@@ -175,6 +183,7 @@ export function createMockGithub(): MockAPI<MockGithubState> {
     };
 
     const reset = () => {
+        state.secretScanningPublicKeys = [];
         state.requests = [];
     };
 

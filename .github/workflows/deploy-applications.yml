@@ -9,8 +9,6 @@ on:
       - "packages/sdk/**"
       - "packages/ui/**"
       - "packages/mcp/**"
-      - "shared/mcp-usage.ts"
-      - "shared/registry/mcp.ts"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/deploy-applications.yml"

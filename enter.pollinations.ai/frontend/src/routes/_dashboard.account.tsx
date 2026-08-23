@@ -13,8 +13,10 @@ import {
     Text,
 } from "@pollinations/ui";
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
+import { config } from "../config.ts";
 import { Route as DashboardRoute } from "./_dashboard.tsx";
 
 const DELETE_CONFIRMATION = "DELETE";
@@ -34,6 +36,17 @@ export const Route = createFileRoute("/_dashboard/account")({
 function AccountPage() {
     const { user, githubUsername } = DashboardRoute.useLoaderData();
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [githubApp, setGithubApp] = useState<{
+        configured: boolean;
+        connected: boolean;
+        manageUrl?: string | null;
+    } | null>(null);
+
+    useEffect(() => {
+        void apiClient["github-app"].status.$get().then(async (response) => {
+            if (response.ok) setGithubApp(await response.json());
+        });
+    }, []);
 
     if (!user) return null;
 
@@ -104,6 +117,58 @@ function AccountPage() {
                         )}
                     </CopyButton>
                 </Surface>
+            </Section>
+
+            <Section title="Connections" framed>
+                <Surface
+                    variant="card"
+                    className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+                >
+                    <div className="flex items-center gap-3">
+                        <GitHubIcon className="h-6 w-6 shrink-0" />
+                        <div>
+                            <Text tone="strong" weight="semibold">
+                                GitHub account
+                            </Text>
+                            <Text size="sm" tone="muted">
+                                @{githubUsername} · Connected for sign-in
+                            </Text>
+                        </div>
+                    </div>
+                </Surface>
+
+                {githubApp?.configured && (
+                    <Surface
+                        variant="card"
+                        className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                        <div>
+                            <Text tone="strong" weight="semibold">
+                                Pollinations GitHub App
+                            </Text>
+                            <Text size="sm" tone="muted">
+                                {githubApp.connected
+                                    ? "Connected to your personal GitHub account"
+                                    : "Connect repositories you choose to Pollinations"}
+                            </Text>
+                        </div>
+                        <Button
+                            type="button"
+                            className="shrink-0 self-start sm:self-center"
+                            onClick={() => {
+                                window.location.assign(
+                                    githubApp.connected && githubApp.manageUrl
+                                        ? githubApp.manageUrl
+                                        : `${config.apiBaseUrl}/github-app/install`,
+                                );
+                            }}
+                        >
+                            {githubApp.connected
+                                ? "Manage on GitHub"
+                                : "Connect GitHub App"}
+                        </Button>
+                    </Surface>
+                )}
             </Section>
 
             <Section title="Danger zone" framed>

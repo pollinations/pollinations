@@ -2,6 +2,11 @@
 GITHUB_CLIENT_ID=your_github_client_id
 GITHUB_CLIENT_SECRET=your_github_client_secret
 
+# Separate, metadata-only GitHub App for optional personal-account connections
+GITHUB_CONNECT_APP_ID=your_connect_app_id
+GITHUB_CONNECT_APP_PRIVATE_KEY=your_connect_app_private_key
+GITHUB_CONNECT_APP_SLUG=your_connect_app_slug
+
 # Auth
 BETTER_AUTH_SECRET=your_better_auth_secret_at_least_32_chars
 

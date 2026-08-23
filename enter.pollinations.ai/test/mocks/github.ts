@@ -44,6 +44,12 @@ export type MockGithubState = {
     }>;
     requests: Array<{ method: string; path: string; url: string }>;
     failQuestSearch: boolean;
+    userInstallation: {
+        id: number;
+        account: { id: number; login: string };
+        target_type: "User" | "Organization";
+        html_url: string;
+    } | null;
 };
 
 export function createMockGithub(): MockAPI<MockGithubState> {
@@ -61,6 +67,7 @@ export function createMockGithub(): MockAPI<MockGithubState> {
         repos: [],
         requests: [],
         failQuestSearch: false,
+        userInstallation: null,
     };
 
     const githubAuth = createMiddleware(async (c, next) => {
@@ -150,6 +157,15 @@ export function createMockGithub(): MockAPI<MockGithubState> {
             }
             return c.json(state.user);
         })
+        .get("/users/:login/installation", (c) => {
+            if (
+                c.req.param("login") !== state.user.login ||
+                !state.userInstallation
+            ) {
+                return c.json({ message: "Not Found" }, 404);
+            }
+            return c.json(state.userInstallation);
+        })
         .get("/users/:login/repos", (c) => {
             if (c.req.param("login") !== state.user.login) {
                 return c.json({ message: "Not Found" }, 404);
@@ -176,6 +192,7 @@ export function createMockGithub(): MockAPI<MockGithubState> {
 
     const reset = () => {
         state.requests = [];
+        state.userInstallation = null;
     };
 
     return {

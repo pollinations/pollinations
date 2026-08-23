@@ -207,7 +207,10 @@ test("proxies discovery and uploads generated audio, video, and 3D", async (t) =
         });
 
         if (url.endsWith("/audio/models?community=false")) {
-            return Response.json([{ name: "speech-test" }]);
+            return Response.json([
+                { name: "speech-test" },
+                { name: "audio-agent", agent: true },
+            ]);
         }
         if (url.endsWith("/video/models")) {
             return Response.json([{ name: "veo" }]);
@@ -257,6 +260,14 @@ test("proxies discovery and uploads generated audio, video, and 3D", async (t) =
         arguments: { type: "audio", community: false },
     });
     assert.match(models.content[0].text, /speech-test/);
+
+    const agents = await client.callTool({
+        name: "listModels",
+        arguments: { type: "audio", community: false, agent: true },
+    });
+    assert.match(agents.content[0].text, /audio-agent/);
+    assert.match(agents.content[0].text, /"agent": true/);
+    assert.doesNotMatch(agents.content[0].text, /speech-test/);
 
     const status = await client.callTool({
         name: "getModelStatus",

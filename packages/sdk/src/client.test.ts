@@ -334,3 +334,71 @@ describe("Pollinations.imageEdit — response resolution (characterization)", ()
         });
     });
 });
+
+describe("Pollinations model discovery", () => {
+    it("returns the model array from the registry endpoint", async () => {
+        const client = newClient();
+        const models = [{ name: "openai", title: "OpenAI" }];
+        fetchMock.mockResolvedValueOnce(makeResponse(models));
+
+        await expect(client.models()).resolves.toEqual(models);
+        expect(fetchMock.mock.calls[0]?.[0]).toBe(
+            "https://example.test/models",
+        );
+    });
+});
+
+describe("Pollinations accountEarnings", () => {
+    it("calls GET /account/earnings with no params by default", async () => {
+        const client = newClient();
+        const payload = { daily: [], perEntity: [] };
+        fetchMock.mockResolvedValueOnce(makeResponse(payload));
+
+        const result = await client.accountEarnings();
+
+        expect(result).toEqual(payload);
+        expect(fetchMock.mock.calls[0]?.[0]).toBe(
+            "https://example.test/account/earnings",
+        );
+    });
+
+    it("forwards days, granularity, and period as query params", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValueOnce(makeResponse({ daily: [], perEntity: [] }));
+
+        await client.accountEarnings({ days: 7, granularity: "week", period: "2026-W34" });
+
+        const url = fetchMock.mock.calls[0]?.[0] as string;
+        expect(url).toContain("days=7");
+        expect(url).toContain("granularity=week");
+        expect(url).toContain("period=2026-W34");
+    });
+
+    it("returns typed daily and perEntity arrays", async () => {
+        const client = newClient();
+        const row = {
+            date: "2026-08-01",
+            entity_id: "pk_abc",
+            entity_name: "My App",
+            source: "byop_markup",
+            requests: 100,
+            paid_requests: 60,
+            tier_requests: 40,
+            baseline_price: 0.001,
+            pollen_earned: 5,
+            paid_earned: 3,
+            tier_earned: 2,
+            cost_usd: 0.05,
+            reward_rate: 0.1,
+        };
+        fetchMock.mockResolvedValueOnce(
+            makeResponse({ daily: [row], perEntity: [{ ...row, date: "" }] }),
+        );
+
+        const { daily, perEntity } = await client.accountEarnings();
+
+        expect(daily).toHaveLength(1);
+        expect(daily[0].entity_name).toBe("My App");
+        expect(perEntity[0].date).toBe("");
+    });
+});

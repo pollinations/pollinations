@@ -665,6 +665,56 @@ export interface DailyUsageResponse {
     count: number;
 }
 
+/** Options for fetching developer earnings */
+export interface EarningsOptions {
+    /** Response format (default: 'json') */
+    format?: "json" | "csv";
+    /** Number of days to include, max 90 (default: 90) */
+    days?: number;
+    /** Exact period granularity */
+    granularity?: "day" | "week" | "month";
+    /** Exact period, e.g. YYYY-MM-DD, YYYY-WNN, or YYYY-MM */
+    period?: string;
+}
+
+/** A single developer earnings row (per date+entity bucket or per-entity rollup) */
+export interface EarningsRow {
+    /** Date bucket (YYYY-MM-DD or hourly); empty string on rollup rows */
+    date: string;
+    /** Earning entity id (BYOP app key or community model) */
+    entity_id: string;
+    /** Earning entity display name */
+    entity_name: string;
+    /** Reward source */
+    source: "byop_markup" | "community_model";
+    /** Number of billed requests */
+    requests: number;
+    /** Billed requests paid from paid balance */
+    paid_requests: number;
+    /** Billed requests paid from tier balance */
+    tier_requests: number;
+    /** Model cost before markup (sum over the bucket) */
+    baseline_price: number;
+    /** Developer credit earned over the bucket */
+    pollen_earned: number;
+    /** Developer credit earned from paid-balance spend */
+    paid_earned: number;
+    /** Developer credit earned from Quest Pollen spend */
+    tier_earned: number;
+    /** Reward basis total for the bucket */
+    cost_usd: number;
+    /** Average reward or markup rate applied */
+    reward_rate: number;
+}
+
+/** Developer earnings response */
+export interface EarningsResponse {
+    /** Per-(date, earning entity) buckets for the period */
+    daily: EarningsRow[];
+    /** Per-earning-entity rollups for the period */
+    perEntity: EarningsRow[];
+}
+
 /** API key validation response */
 export interface KeyInfo {
     valid: boolean;

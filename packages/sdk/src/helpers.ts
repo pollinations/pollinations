@@ -42,6 +42,8 @@ import type {
     CreateKeyOptions,
     DailyUsageOptions,
     DailyUsageResponse,
+    EarningsOptions,
+    EarningsResponse,
     DeviceAuthorization,
     ImageEditOptions,
     ImageGenerateOptions,
@@ -627,6 +629,17 @@ export async function getDailyUsage(
     options?: DailyUsageOptions,
 ): Promise<DailyUsageResponse> {
     return getClient().accountUsageDaily(options);
+}
+
+/**
+ * Get developer earnings (BYOP app markup and community model rewards).
+ *
+ * Requires `account:usage` permission when using API keys.
+ */
+export async function getEarnings(
+    options?: EarningsOptions,
+): Promise<EarningsResponse> {
+    return getClient().accountEarnings(options);
 }
 
 /**

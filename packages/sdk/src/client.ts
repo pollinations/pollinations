@@ -14,6 +14,8 @@ import type {
     CreateKeyOptions,
     DailyUsageOptions,
     DailyUsageResponse,
+    EarningsOptions,
+    EarningsResponse,
     DeviceAuthorization,
     DeviceCodeResponse,
     DeviceTokenResponse,
@@ -1560,6 +1562,32 @@ export class Pollinations {
 
         if (!response.ok) await this.handleErrorResponse(response);
         return response.json() as Promise<DailyUsageResponse>;
+    }
+
+    /**
+     * Get developer earnings (BYOP app markup and community model rewards).
+     *
+     * Requires `account:usage` permission when using API keys.
+     *
+     * @example
+     * ```ts
+     * const { daily, perEntity } = await pollinations.accountEarnings({ days: 30 });
+     * perEntity.forEach(r => console.log(r.entity_name, r.pollen_earned));
+     * ```
+     */
+    async accountEarnings(
+        options: EarningsOptions = {},
+    ): Promise<EarningsResponse> {
+        const params = new URLSearchParams();
+        if (options.format) params.set("format", options.format);
+        if (options.days) params.set("days", String(options.days));
+        if (options.granularity) params.set("granularity", options.granularity);
+        if (options.period) params.set("period", options.period);
+
+        const qs = params.toString();
+        const url = `${this.baseUrl}/account/earnings${qs ? `?${qs}` : ""}`;
+
+        return this.getJson<EarningsResponse>(url);
     }
 
     /**

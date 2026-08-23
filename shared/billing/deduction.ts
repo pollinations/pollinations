@@ -29,7 +29,6 @@ const BUCKET_COLUMNS = {
  *   3. pack       → any positive paid balance when Quest Pollen can't cover
  *   4. tier       → fall back to Quest Pollen when pack is non-positive
  *
-=======
  * When keyPollenType is set, it restricts deduction to the specified bucket
  * (but only for non-paidOnly models):
  * - "quest" → always deduct from tier_balance

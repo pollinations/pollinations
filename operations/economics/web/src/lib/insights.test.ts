@@ -1900,6 +1900,61 @@ describe("providerBalanceRows", () => {
         });
     });
 
+    it("combines fresh multi-account snapshots checked on adjacent days", () => {
+        const now = new Date("2026-08-23T12:00:00Z");
+        const rows = providerBalanceRows(
+            emptyData({
+                opCloud: [
+                    opCloud({
+                        vendor: "openrouter",
+                        account_id: "myceli",
+                        type: "balance",
+                        start: "2026-08-22 10:00:00",
+                        credit: 16.17,
+                    }),
+                    opCloud({
+                        vendor: "openrouter",
+                        account_id: "pollinations",
+                        type: "balance",
+                        start: "2026-08-23 10:00:00",
+                        credit: 1_500,
+                    }),
+                ],
+            }),
+            now,
+        );
+
+        expect(rows[0]).toMatchObject({
+            creditBalanceUsd: 1_516.17,
+            balanceAsOf: "2026-08-22",
+            balanceStatus: "checked",
+            checkedAccounts: 2,
+            expectedAccounts: 2,
+        });
+    });
+
+    it("does not call stale balance snapshots checked", () => {
+        const [row] = providerBalanceRows(
+            emptyData({
+                opCloud: [
+                    opCloud({
+                        vendor: "vast.ai",
+                        type: "balance",
+                        start: "2026-08-01 10:00:00",
+                        paid: 500,
+                    }),
+                ],
+            }),
+            new Date("2026-08-23T12:00:00Z"),
+        );
+
+        expect(row).toMatchObject({
+            balanceAsOf: null,
+            balanceStatus: "not_checked",
+            cashBalanceUsd: null,
+        });
+    });
+
     it("does not list a billed vendor without a balance to track", () => {
         expect(
             providerBalanceRows(

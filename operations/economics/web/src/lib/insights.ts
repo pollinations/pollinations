@@ -1776,6 +1776,14 @@ type ProviderBalanceCoverage = Pick<
     "balanceAsOf" | "balanceStatus" | "checkedAccounts" | "expectedAccounts"
 >;
 
+const MAX_BALANCE_SNAPSHOT_AGE_DAYS = 7;
+
+function dateShift(date: string, days: number): string {
+    const shifted = new Date(`${date}T00:00:00Z`);
+    shifted.setUTCDate(shifted.getUTCDate() + days);
+    return shifted.toISOString().slice(0, 10);
+}
+
 function providerBalanceAnchors(
     data: Data,
     currentMonth: string,
@@ -1784,18 +1792,18 @@ function providerBalanceAnchors(
     anchors: Map<string, ProviderBalanceAnchor>;
     coverage: Map<string, ProviderBalanceCoverage>;
 } {
-    const rowsByVendorDate = new Map<
-        string,
-        Map<string, Map<string, OpCloudRow>>
-    >();
+    const rowsByVendorAccount = new Map<string, Map<string, OpCloudRow>>();
     for (const row of data.opCloud ?? []) {
         if (!isOpCloudBalanceRow(row)) continue;
         const observedOn = row.start.slice(0, 10);
         if (!/^\d{4}-\d{2}-\d{2}$/.test(observedOn) || observedOn > today) {
             continue;
         }
-        const dates = getOrInit(rowsByVendorDate, row.vendor, () => new Map());
-        const accounts = getOrInit(dates, observedOn, () => new Map());
+        const accounts = getOrInit(
+            rowsByVendorAccount,
+            row.vendor,
+            () => new Map(),
+        );
         const accountId = row.account_id?.trim() || "default";
         const existing = accounts.get(accountId);
         if (
@@ -1809,74 +1817,60 @@ function providerBalanceAnchors(
 
     const anchors = new Map<string, ProviderBalanceAnchor>();
     const coverage = new Map<string, ProviderBalanceCoverage>();
-    for (const [vendor, dates] of rowsByVendorDate) {
+    const freshSince = dateShift(today, -MAX_BALANCE_SNAPSHOT_AGE_DAYS);
+    for (const [vendor, accounts] of rowsByVendorAccount) {
         const provider = resolveProvider(vendor);
         const expectedAccounts = provider
             ? activeProviderAccounts(provider, currentMonth).map(
                   (account) => account.id,
               )
             : [];
-        const sortedDates = [...dates.entries()].sort((a, b) =>
-            b[0].localeCompare(a[0]),
+        const selected = (
+            expectedAccounts.length > 0
+                ? expectedAccounts.map((accountId) => accounts.get(accountId))
+                : [...accounts.values()]
+        ).filter((row): row is OpCloudRow => row != null);
+        const rows = selected.filter(
+            (row) => row.start.slice(0, 10) >= freshSince,
         );
-        const latest = sortedDates[0];
-        if (latest) {
-            const [observedOn, accounts] = latest;
-            const checkedAccounts =
-                expectedAccounts.length > 0
-                    ? expectedAccounts.filter((accountId) =>
-                          accounts.has(accountId),
-                      ).length
-                    : accounts.size;
-            coverage.set(vendor, {
-                balanceAsOf: observedOn,
-                balanceStatus:
-                    expectedAccounts.length > 0 &&
-                    checkedAccounts < expectedAccounts.length
-                        ? "partial"
-                        : "checked",
-                checkedAccounts,
-                expectedAccounts:
-                    expectedAccounts.length > 0
-                        ? expectedAccounts.length
-                        : accounts.size,
-            });
-        }
-        for (const [observedOn, accounts] of sortedDates) {
-            const selected =
-                expectedAccounts.length > 0
-                    ? expectedAccounts.map((accountId) =>
-                          accounts.get(accountId),
-                      )
-                    : [...accounts.values()];
-            const rows = selected.filter(
-                (row): row is OpCloudRow => row != null,
-            );
-            if (rows.length === 0) continue;
-            const expiries = rows
-                .filter((row) => Number(row.credit) > 0 && row.end)
-                .map((row) => row.end.slice(0, 10))
-                .filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date))
-                .sort();
-            anchors.set(vendor, {
-                cashUsd: rows.reduce(
-                    (sum, row) =>
-                        sum + toUsd(row.paid, row.currency, row.start),
-                    0,
-                ),
-                creditUsd: rows.reduce(
-                    (sum, row) =>
-                        sum + toUsd(row.credit, row.currency, row.start),
-                    0,
-                ),
-                observedOn,
-                creditExpiry: expiries.at(-1) ?? null,
-                balanceNote:
-                    rows.find((row) => row.resource_sku === "usage-quota")
-                        ?.resource_name || null,
-            });
-            break;
-        }
+        const expectedCount =
+            expectedAccounts.length > 0
+                ? expectedAccounts.length
+                : accounts.size;
+        const observedDates = rows.map((row) => row.start.slice(0, 10)).sort();
+        const checkedAccounts = rows.length;
+        coverage.set(vendor, {
+            balanceAsOf: observedDates[0] ?? null,
+            balanceStatus:
+                checkedAccounts === 0
+                    ? "not_checked"
+                    : checkedAccounts < expectedCount
+                      ? "partial"
+                      : "checked",
+            checkedAccounts,
+            expectedAccounts: expectedCount,
+        });
+        if (rows.length === 0) continue;
+        const expiries = rows
+            .filter((row) => Number(row.credit) > 0 && row.end)
+            .map((row) => row.end.slice(0, 10))
+            .filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date))
+            .sort();
+        anchors.set(vendor, {
+            cashUsd: rows.reduce(
+                (sum, row) => sum + toUsd(row.paid, row.currency, row.start),
+                0,
+            ),
+            creditUsd: rows.reduce(
+                (sum, row) => sum + toUsd(row.credit, row.currency, row.start),
+                0,
+            ),
+            observedOn: observedDates[0],
+            creditExpiry: expiries.at(-1) ?? null,
+            balanceNote:
+                rows.find((row) => row.resource_sku === "usage-quota")
+                    ?.resource_name || null,
+        });
     }
     return { anchors, coverage };
 }

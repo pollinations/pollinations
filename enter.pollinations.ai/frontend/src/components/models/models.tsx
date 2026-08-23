@@ -14,6 +14,7 @@ import {
     SearchIcon,
     Section,
     SparklesIcon,
+    Switch,
     TabButton,
     TokensIcon,
     TrendUpIcon,
@@ -476,16 +477,16 @@ export const Models: FC = () => {
                                 </div>
                             )}
                         </Dropdown>
-                        <TabButton
-                            active={hidePaid}
-                            onClick={() => setHidePaid((value) => !value)}
-                            size="sm"
-                            variant="ghost"
-                            ariaLabel="Hide paid models"
-                            className="col-start-2 justify-self-end"
-                        >
-                            Hide paid
-                        </TabButton>
+                        <div className="col-start-2 flex items-center gap-2 justify-self-end">
+                            <span className="text-xs font-medium text-theme-text-muted">
+                                Hide paid
+                            </span>
+                            <Switch
+                                checked={hidePaid}
+                                onChange={setHidePaid}
+                                ariaLabel="Hide paid models"
+                            />
+                        </div>
                     </div>
                 </div>
                 {activeScope === "community" && (

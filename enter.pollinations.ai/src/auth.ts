@@ -6,6 +6,10 @@ import {
 } from "@shared/auth/api-key.ts";
 import * as betterAuthSchema from "@shared/db/better-auth.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
+import {
+    getInstallationToken,
+    githubAppCredentialsFromEnv,
+} from "@shared/github/app-auth.ts";
 import { AUTH_TRUSTED_ORIGINS } from "@shared/public-urls.ts";
 import {
     type BetterAuthOptions,
@@ -15,10 +19,16 @@ import {
     type User as GenericUser,
 } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { APIError } from "better-auth/api";
+import {
+    APIError,
+    createAuthMiddleware,
+    getSessionFromCtx,
+} from "better-auth/api";
 import { admin, openAPI } from "better-auth/plugins";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
+
+const DELETE_ACCOUNT_FRESH_SESSION_MS = 10 * 60 * 1000;
 
 export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     const db = drizzle(env.DB);
@@ -41,6 +51,31 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
         basePath: "/api/auth",
         onAPIError: {
             errorURL: "/error",
+        },
+        hooks: {
+            // better-auth has its own freshness check on /delete-user, but it
+            // scales freshAge by 1e3 twice (update-user.mjs), so the threshold
+            // lands ~1000x too high and never fires. Enforce it here instead.
+            before: createAuthMiddleware(async (authContext) => {
+                if (authContext.path !== "/delete-user") return;
+
+                const session = await getSessionFromCtx(authContext);
+                if (!session) return;
+
+                const sessionCreatedAt = new Date(
+                    session.session.createdAt,
+                ).getTime();
+                if (
+                    Date.now() - sessionCreatedAt >
+                    DELETE_ACCOUNT_FRESH_SESSION_MS
+                ) {
+                    throw new APIError("BAD_REQUEST", {
+                        code: "SESSION_EXPIRED",
+                        message:
+                            "For security, sign in again before deleting your account.",
+                    });
+                }
+            }),
         },
         database: drizzleAdapter(db, {
             schema: betterAuthSchema,
@@ -71,6 +106,9 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
         ],
         user: {
             additionalFields: authAdditionalFields.user,
+            deleteUser: {
+                enabled: true,
+            },
         },
         socialProviders: {
             github: {
@@ -150,14 +188,21 @@ function onAfterSessionCreate(
                     const githubId = user?.githubId;
                     if (!githubId) return;
 
+                    // OAuth client_id/secret Basic auth is rejected by GitHub
+                    // (401); the App installation token is the authenticated path.
                     const headers: Record<string, string> = {
                         Accept: "application/vnd.github+json",
                         "User-Agent": "pollinations-enter",
+                        "X-GitHub-Api-Version": "2022-11-28",
+                        Authorization: `token ${
+                            env.ENVIRONMENT === "test"
+                                ? "mock_github_auth_token"
+                                : await getInstallationToken(
+                                      githubAppCredentialsFromEnv(env),
+                                      "pollinations",
+                                  )
+                        }`,
                     };
-                    // Use OAuth app credentials for 5,000 req/hr (vs 60 unauthenticated)
-                    if (env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET) {
-                        headers.Authorization = `Basic ${btoa(`${env.GITHUB_CLIENT_ID}:${env.GITHUB_CLIENT_SECRET}`)}`;
-                    }
                     const res = await fetch(
                         `https://api.github.com/user/${githubId}`,
                         { headers },

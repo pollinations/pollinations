@@ -1,5 +1,9 @@
 import { collectUpstreamHeaders, remapUpstreamStatus } from "@shared/error.ts";
 import debug from "debug";
+import {
+    normalizeOptions,
+    validateAndNormalizeMessages,
+} from "./textGenerationUtils.js";
 import type {
     ChatCompletion,
     ChatMessage,
@@ -139,61 +143,17 @@ function withUpstreamContext(thrown: unknown, requestUrl: URL): ServiceError {
     return error;
 }
 
-const MESSAGE_NAME_PATTERN = /^[a-zA-Z0-9_-]{1,64}$/;
-
-function prepareMessages(messages: ChatMessage[]): ChatMessage[] {
-    if (messages.length === 0) {
-        const error = new Error(
-            "Messages must be a non-empty array",
-        ) as ServiceError;
-        error.status = 400;
-        throw error;
-    }
-
-    return messages.map((message) => {
-        const emptyUserContent =
-            message.role === "user" &&
-            (!message.content ||
-                (typeof message.content === "string" &&
-                    message.content.trim() === "") ||
-                (Array.isArray(message.content) &&
-                    message.content.length === 0));
-        const missingAssistantContent =
-            message.role === "assistant" && message.content === undefined;
-        const invalidName =
-            message.name !== undefined &&
-            (typeof message.name !== "string" ||
-                !MESSAGE_NAME_PATTERN.test(message.name));
-
-        if (invalidName && ["tool", "function"].includes(message.role)) {
-            const error = new Error(
-                `Invalid message name for role '${message.role}'. Names must match ^[a-zA-Z0-9_-]{1,64}$.`,
-            ) as ServiceError;
-            error.status = 400;
-            throw error;
-        }
-        if (!emptyUserContent && !missingAssistantContent && !invalidName)
-            return message;
-
-        const prepared = {
-            ...message,
-            ...(emptyUserContent
-                ? { content: "Please provide a response." }
-                : missingAssistantContent
-                  ? { content: message.tool_calls ? null : "" }
-                  : {}),
-        };
-        if (invalidName) delete prepared.name;
-        return prepared;
-    });
-}
-
 export async function genericOpenAIClient(
     messages: ChatMessage[],
     options: TransformOptions = {},
     config: OpenAIClientConfig,
 ): Promise<ChatCompletion> {
-    const { endpoint, defaultOptions = {}, additionalHeaders = {} } = config;
+    const {
+        endpoint,
+        defaultOptions = {},
+        additionalHeaders = {},
+        fetcher = fetch,
+    } = config;
     const startTime = Date.now();
     const requestId = crypto.randomUUID();
     let requestUrl: URL | undefined;
@@ -206,22 +166,20 @@ export async function genericOpenAIClient(
         optionKeys: Object.keys(options),
     });
 
-    let requestOptions: TransformOptions;
+    let normalizedOptions: TransformOptions;
     let modelName = "unknown";
 
     try {
-        requestOptions = {
-            ...defaultOptions,
-            ...options,
-        } as TransformOptions;
-        if (!requestOptions.model) {
+        normalizedOptions = normalizeOptions(options, defaultOptions);
+        if (!normalizedOptions.model) {
             throw new Error("Model is required");
         }
-        modelName = requestOptions.model;
+        modelName = normalizedOptions.model;
 
-        const preparedMessages = prepareMessages(messages);
+        const validatedMessages = validateAndNormalizeMessages(messages);
         const {
             additionalHeaders: _additionalHeaders,
+            jsonMode: _jsonMode,
             modelConfig: _modelConfig,
             modelDef: _modelDef,
             normalizeFinishReasonAtTokenLimit:
@@ -230,23 +188,23 @@ export async function genericOpenAIClient(
             requestedModel: _requestedModel,
             userApiKey: _userApiKey,
             ...cleanedOptions
-        } = requestOptions;
+        } = normalizedOptions;
         const requestBody = cleanNullAndUndefined({
             model: modelName,
-            messages: preparedMessages,
+            messages: validatedMessages,
             ...cleanedOptions,
         });
 
         log(`[${requestId}] Request body prepared`, {
             model: modelName,
-            messageCount: preparedMessages.length,
+            messageCount: validatedMessages.length,
             optionKeys: Object.keys(cleanedOptions),
-            stream: requestOptions.stream === true,
+            stream: normalizedOptions.stream === true,
         });
 
         const endpointUrl =
             typeof endpoint === "function"
-                ? endpoint(modelName, requestOptions)
+                ? endpoint(modelName, normalizedOptions)
                 : endpoint;
         requestUrl = new URL(endpointUrl);
 
@@ -259,7 +217,7 @@ export async function genericOpenAIClient(
 
         let response: Response;
         try {
-            response = await fetch(endpointUrl, {
+            response = await fetcher(endpointUrl, {
                 method: "POST",
                 headers,
                 body: JSON.stringify(requestBody),
@@ -290,7 +248,7 @@ export async function genericOpenAIClient(
             response.headers.get("x-portkey-last-used-option-index") ??
             undefined;
 
-        if (requestOptions.stream) {
+        if (normalizedOptions.stream) {
             log(
                 `[${requestId}] Streaming response, status: ${response.status}`,
             );
@@ -361,9 +319,9 @@ export async function genericOpenAIClient(
         if (
             _normalizeFinishReasonAtTokenLimit &&
             formattedChoice.finish_reason === "stop" &&
-            typeof requestOptions.max_tokens === "number" &&
+            typeof normalizedOptions.max_tokens === "number" &&
             typeof data.usage?.completion_tokens === "number" &&
-            data.usage.completion_tokens >= requestOptions.max_tokens
+            data.usage.completion_tokens >= normalizedOptions.max_tokens
         ) {
             formattedChoice.finish_reason = "length";
         }

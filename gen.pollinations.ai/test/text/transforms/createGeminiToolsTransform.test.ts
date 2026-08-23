@@ -15,7 +15,7 @@ describe("OpenRouter Gemini routing", () => {
             "google/gemini-3.1-pro-preview",
             "google-vertex/global",
         ],
-        ["gemini", "google/gemini-3.6-flash", "google-vertex/global"],
+        ["gemini", "google/gemini-3.7-flash", "google-vertex/global"],
         [
             "gemini-flash-lite-3.5",
             "google/gemini-3.5-flash-lite",
@@ -34,8 +34,8 @@ describe("OpenRouter Gemini routing", () => {
             allow_fallbacks: false,
         });
         expect(options.modelConfig).toMatchObject({
-            provider: "openai",
-            "custom-host": "https://openrouter.ai/api/v1",
+            provider: "openrouter",
+            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
         });
     });
 

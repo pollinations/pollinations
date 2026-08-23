@@ -7,23 +7,20 @@ import {
     MODEL_USED_HEADER,
     openaiUsageToUsage,
 } from "@shared/registry/usage-headers.ts";
-import type { CreateChatCompletionRequest } from "@shared/schemas/openai.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
 import {
+    attachFallbackTarget,
     type FallbackCandidate,
     fallbackCandidates,
     withModelFallback,
 } from "../fallback.ts";
 import { fixWavHeader } from "../routes/audio.js";
-import type { GenerateTextRequestQueryParams } from "../schemas/text.ts";
+import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 import { communityEndpointGatewayContext } from "./communityEndpoint.ts";
 import { generateTextPortkey } from "./generateTextPortkey.js";
-import {
-    getChatRequestData,
-    getSimpleTextRequestData,
-} from "./requestUtils.js";
+import { type ExpressLikeRequest, getRequestData } from "./requestUtils.js";
 import type {
     ChatCompletion,
     RequestData,
@@ -67,6 +64,23 @@ function syncTextEnvironment(env: CloudflareBindings): void {
 
 function generatePollinationsId(): string {
     return `pllns_${crypto.randomUUID().replaceAll("-", "")}`;
+}
+
+function createExpressLikeRequest(
+    c: TextContext,
+    body: Record<string, unknown>,
+    path: string,
+    params: Record<string, string> = {},
+): ExpressLikeRequest {
+    return {
+        query: Object.fromEntries(new URL(c.req.url).searchParams),
+        body,
+        path,
+        params,
+        method: c.req.method,
+        headers: Object.fromEntries(c.req.raw.headers.entries()),
+        url: c.req.url,
+    };
 }
 
 function prepareRequestParameters(
@@ -114,15 +128,16 @@ function gatewayContext(
     if (!communityEndpoint || !definition) {
         return withGatewayContext(c, candidateRequest);
     }
-    return communityEndpointGatewayContext(
-        communityEndpoint,
-        definition,
-        candidateRequest,
-        c.env.BETTER_AUTH_SECRET,
-        c.env.PORTKEY_GATEWAY_URL,
-        c.var.auth?.apiKey?.rawKey || "",
-        c.var.auth?.apiKey?.id,
-    );
+    return communityEndpointGatewayContext({
+        endpoint: communityEndpoint,
+        modelDefinition: definition,
+        requestData: candidateRequest,
+        secret: c.env.BETTER_AUTH_SECRET,
+        portkeyGatewayUrl: c.env.PORTKEY_GATEWAY_URL,
+        userApiKey: c.var.auth?.apiKey?.rawKey || "",
+        parentRequestId: c.get("requestId"),
+        parentApiKeyId: c.var.auth?.apiKey?.id,
+    });
 }
 
 function withGatewayContext(c: TextContext, requestData: RequestData) {
@@ -376,6 +391,7 @@ async function generateTextResponse(
             return normalization.errorResponse;
         }
         const normalizedRequestData = normalization.requestData;
+        const portkey = c.env.PORTKEY;
         const {
             result: completion,
             candidate,
@@ -386,16 +402,19 @@ async function generateTextResponse(
                 generateTextPortkey(
                     normalizedRequestData.messages,
                     await gatewayContext(c, normalizedRequestData, attempt),
+                    portkey
+                        ? (input, init) => portkey.fetch(input, init)
+                        : undefined,
                 ),
             c.var.track?.failedCalls,
+            (attempt) => enforceModelRateLimit(c, attempt),
         );
         c.set("upstreamRequestUrl", completion.upstreamRequestUrl);
         completion.id = completion.id || generatePollinationsId();
-        if (index > 0) {
-            // Same "config.targets[N]" shape a Portkey strategy would report, so
-            // the response header and tracking's parsing cover both.
-            completion.fallbackTarget = `config.targets[${index}]`;
-        }
+        // Same "config.targets[N]" shape a Portkey strategy would report, so
+        // the response header and tracking's parsing cover both. Non-enumerable
+        // so JSON.stringify / R2 cache snapshots never leak the field.
+        attachFallbackTarget(completion, index);
 
         // Cost and the owner reward follow what actually served, so record the
         // serving entry before the response (streaming included) leaves the
@@ -403,15 +422,9 @@ async function generateTextResponse(
         const servedEntry = candidate.entry;
         if (servedEntry) c.set("servedModelEntry", servedEntry);
 
-        // Only override the provider's own name where it is misleading. A
-        // community endpoint reports its upstream — "gemini-2.0-flash" for what
-        // everyone calls "alice/pro" — and after a rescue that upstream belongs
-        // to a different owner's model. A static model instead reports the
-        // exact version behind our id ("gpt-5-nano-2025-08-07" for "openai"),
-        // which is strictly more information, so leave it alone.
-        const servedModelId =
-            servedEntry?.id ??
-            (c.var.model?.communityEndpoint ? c.var.model.resolved : undefined);
+        // The successful candidate always carries the canonical registry id,
+        // including aliases, community models, and fallback targets.
+        const servedModelId = candidate.id || undefined;
         if (normalizedRequestData.stream)
             return sendTextStreamResponse(completion, servedModelId);
         // Provider-reported cost is read post-response in track (clamp-and-alert
@@ -482,17 +495,20 @@ function normalizeSearchContext(
 
 export async function handleChatCompletionLocal(
     c: TextContext,
-    body: CreateChatCompletionRequest,
+    body: Record<string, unknown>,
 ): Promise<Response> {
-    return generateTextResponse(c, getChatRequestData(body), false);
+    const req = createExpressLikeRequest(c, body, "/openai");
+    const requestData = getRequestData(req);
+    return generateTextResponse(c, requestData, false);
 }
 
 export async function handleTextContentLocal(
     c: TextContext,
-    body: CreateChatCompletionRequest,
+    body: Record<string, unknown>,
 ): Promise<Response> {
+    const req = createExpressLikeRequest(c, body, c.req.path);
     const requestData = prepareRequestParameters(
-        getChatRequestData(body),
+        getRequestData(req),
         c.var.model.definition,
     );
     return generateTextResponse(c, requestData, true);
@@ -502,10 +518,17 @@ export async function handleSimpleTextLocal(
     c: TextContext,
     prompt: string,
     model: string,
-    query: GenerateTextRequestQueryParams,
+    body: Record<string, unknown> = {},
 ): Promise<Response> {
+    const req = createExpressLikeRequest(c, body, c.req.path, {
+        ...c.req.param(),
+        0: prompt,
+    });
     const requestData = prepareRequestParameters(
-        getSimpleTextRequestData(prompt, model, query),
+        {
+            ...getRequestData(req),
+            model,
+        },
         c.var.model.definition,
     );
     return generateTextResponse(c, requestData, true);

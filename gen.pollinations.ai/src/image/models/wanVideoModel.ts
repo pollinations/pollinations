@@ -15,9 +15,9 @@
  * the call to I2V.
  */
 
+import { HttpError } from "@shared/http-error.ts";
 import debug from "debug";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
-import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import { closestRatioLogSpace } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
@@ -96,7 +96,7 @@ function withSeed(
     input: Record<string, unknown>,
     safeParams: ImageParams,
 ): Record<string, unknown> {
-    if (safeParams.seed !== undefined && safeParams.seed !== -1) {
+    if (safeParams.seed !== undefined) {
         input.seed = safeParams.seed;
     }
     return input;

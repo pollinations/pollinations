@@ -1,0 +1,70 @@
+import { normalizeSeed } from "@/util.ts";
+
+function validateFloat(value: unknown): number | undefined {
+    if (value === undefined || value === null) return undefined;
+    const parsed = Number.parseFloat(String(value));
+    return Number.isNaN(parsed) ? undefined : parsed;
+}
+
+function validateInt(value: unknown): number | undefined {
+    if (value === undefined || value === null) return undefined;
+    const parsed = Number.parseInt(String(value), 10);
+    return Number.isNaN(parsed) ? undefined : parsed;
+}
+
+function validateBoolean(value: unknown): boolean | undefined {
+    if (value === undefined || value === null) return undefined;
+    if (typeof value === "boolean") return value;
+    if (typeof value === "string") {
+        const lower = value.toLowerCase();
+        if (["true", "1", "yes"].includes(lower)) return true;
+        if (["false", "0", "no"].includes(lower)) return false;
+    }
+    return Boolean(value);
+}
+
+function validateString(
+    value: unknown,
+    defaultValue?: string,
+): string | undefined {
+    if (value === undefined || value === null) return defaultValue;
+    return String(value);
+}
+
+/**
+ * Checks whether JSON mode is enabled from various input formats.
+ */
+function validateJsonMode(data: Record<string, unknown>): boolean {
+    const responseFormat = data.response_format as
+        | Record<string, unknown>
+        | undefined;
+    return !!(
+        data.jsonMode ||
+        (typeof data.json === "string" && data.json.toLowerCase() === "true") ||
+        data.json === true ||
+        responseFormat?.type === "json_object"
+    );
+}
+
+/**
+ * Validates all common text generation parameters from a data object.
+ */
+export function validateTextGenerationParams(
+    data: Record<string, unknown>,
+): Record<string, unknown> {
+    return {
+        temperature: validateFloat(data.temperature),
+        top_p: validateFloat(data.top_p),
+        presence_penalty: validateFloat(data.presence_penalty),
+        frequency_penalty: validateFloat(data.frequency_penalty),
+        repetition_penalty: validateFloat(data.repetition_penalty),
+        seed: normalizeSeed(validateInt(data.seed)),
+        stream: validateBoolean(data.stream),
+        model: validateString(data.model),
+        voice: validateString(data.voice),
+        reasoning_effort: validateString(data.reasoning_effort),
+        max_tokens: validateInt(data.max_tokens),
+        max_completion_tokens: validateInt(data.max_completion_tokens),
+        jsonMode: validateJsonMode(data),
+    };
+}

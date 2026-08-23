@@ -87,17 +87,17 @@ describe("long-context cost variants", () => {
 
     it("Grok uses OpenRouter's inclusive 200K boundary", () => {
         expect(
-            bill("grok-4.5", {
+            bill("grok-4.6", {
                 promptTextTokens: 199_999,
             }).costVariant,
         ).toBeUndefined();
         expect(
-            bill("grok-4.5", {
+            bill("grok-4.6", {
                 promptTextTokens: 200_000,
             }).costVariant,
         ).toBe("long_context");
         expect(
-            bill("grok-4.5", {
+            bill("grok-4.6", {
                 promptTextTokens: 200_001,
             }).costVariant,
         ).toBe("long_context");
@@ -210,16 +210,17 @@ describe("long-context cost variants", () => {
     });
 
     it.each([
-        ["gpt-5.6-sol", 10, 1, 12.5, 45],
-        ["gpt-5.6-terra", 5, 0.5, 6.25, 22.5],
-        ["gpt-5.6-luna", 2, 0.2, 2.5, 9],
+        ["gpt-5.6-sol", 10, 1, 12.5, 45, 0.5],
+        ["gpt-5.6-terra", 4, 0.4, 5, 18, 0.625],
+        ["gpt-5.6-luna", 0.4, 0.04, 0.5, 1.8, 1],
     ] satisfies [
         ModelName,
         number,
         number,
         number,
         number,
-    ][])("%s applies every Azure long-context meter to the full request", (model, input, cached, cacheWrite, output) => {
+        number,
+    ][])("%s applies every Azure long-context meter to the full request", (model, input, cached, cacheWrite, output, multiplier) => {
         const billing = bill(model, {
             promptTextTokens: 272_001,
             promptCachedTokens: 1_000,
@@ -229,10 +230,10 @@ describe("long-context cost variants", () => {
 
         expect(billing.costVariant).toBe("long_context");
         expect(billing.priceDefinition).toMatchObject({
-            promptTextTokens: (input * 0.5) / 1e6,
-            promptCachedTokens: (cached * 0.5) / 1e6,
-            promptCacheWriteTokens: (cacheWrite * 0.5) / 1e6,
-            completionTextTokens: (output * 0.5) / 1e6,
+            promptTextTokens: (input / 1e6) * multiplier,
+            promptCachedTokens: (cached / 1e6) * multiplier,
+            promptCacheWriteTokens: (cacheWrite / 1e6) * multiplier,
+            completionTextTokens: (output / 1e6) * multiplier,
         });
         expect(billing.cost.totalCost).toBeCloseTo(
             272_001 * (input / 1e6) +
@@ -328,12 +329,12 @@ describe("long-context cost variants", () => {
             completionTextTokens: 3.84 / 1e6,
         });
         expect(
-            bill("grok-4.5", {
+            bill("grok-4.6", {
                 promptTextTokens: 200_000,
             }).priceDefinition,
         ).toMatchObject({
             promptTextTokens: 4 / 1e6,
-            promptCachedTokens: 0.6 / 1e6,
+            promptCachedTokens: 1 / 1e6,
             completionTextTokens: 12 / 1e6,
         });
     });
@@ -348,6 +349,33 @@ describe("long-context cost variants", () => {
             2_000 * (22.5 / 1e6),
             12,
         );
+    });
+});
+
+describe("AssemblyAI transcription cost variants", () => {
+    it.each([
+        ["universal-2", "json", false, 0.15, undefined],
+        ["universal-2", "diarized_json", false, 0.17, "diarization"],
+        ["universal-3.5-pro", "json", false, 0.21, undefined],
+        ["universal-3.5-pro", "json", true, 0.26, "prompting"],
+        ["universal-3.5-pro", "diarized_json", false, 0.23, "diarization"],
+        [
+            "universal-3.5-pro",
+            "diarized_json",
+            true,
+            0.28,
+            "prompting_diarization",
+        ],
+    ] as const)("%s format=%s prompt=%s bills $%s/hour", (model, responseFormat, hasPrompt, hourlyCost, variant) => {
+        const billing = bill(
+            model,
+            { promptAudioSeconds: 3600 },
+            { hasDiarization: responseFormat === "diarized_json", hasPrompt },
+        );
+
+        expect(billing.cost.totalCost).toBeCloseTo(hourlyCost, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(hourlyCost, 12);
+        expect(billing.costVariant).toBe(variant);
     });
 });
 
@@ -548,6 +576,11 @@ describe("selection safety and composition", () => {
                             kind: "test",
                             unit: "request",
                             unitCost: 0.1,
+                            publicPricing: {
+                                label: "Test",
+                                quantity: 1,
+                                unit: "request",
+                            },
                             countUnits: () => 1,
                         },
                     ],
@@ -702,6 +735,10 @@ describe("registry-wide variant invariants", () => {
             if (variantNames.length === 0) continue;
 
             const info = modelInfoFromDefinition(model, def);
+            expect(def.defaultCostVariantLabel?.trim()).not.toBe("");
+            expect(info.pricing_default_label).toBe(
+                def.defaultCostVariantLabel,
+            );
             expect(
                 info.pricing_variants?.map((variant) => variant.name).sort(),
             ).toEqual(variantNames);

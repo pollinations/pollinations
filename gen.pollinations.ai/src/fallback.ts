@@ -1,7 +1,9 @@
 import {
     type CommunityEndpointRuntime,
+    isCommunityFallbackBalanceAllowed,
     isCommunityFallbackPricingAllowed,
     MAX_FALLBACK_TARGETS,
+    usesAgentRunToken,
 } from "@shared/community-endpoints.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
@@ -17,6 +19,24 @@ import type { GenerationModelEntry } from "./model-registry.ts";
  * the primary's credentials or upstream model are broken, which the fallback may
  * survive.
  */
+/**
+ * Internal-only marker: which declared target served. Must stay
+ * non-enumerable so JSON bodies and R2 cache snapshots never leak it.
+ */
+export function attachFallbackTarget<T extends object>(
+    value: T,
+    index: number,
+): T {
+    if (index <= 0) return value;
+    Object.defineProperty(value, "fallbackTarget", {
+        value: `config.targets[${index}]`,
+        enumerable: false,
+        configurable: true,
+        writable: true,
+    });
+    return value;
+}
+
 export const FALLBACK_ON_STATUS_CODES = [
     401, 402, 403, 404, 408, 429, 500, 502, 503, 504,
 ];
@@ -96,6 +116,23 @@ function upstreamStatus(failure: UpstreamFailure): number | undefined {
     return typeof status === "number" ? status : undefined;
 }
 
+/** The deadline we send to Portkey is the request's terminal time budget. */
+function isPortkeyRequestTimeout(failure: UpstreamFailure): boolean {
+    if (upstreamStatus(failure) !== 408) return false;
+    const details = failure.details;
+    if (!details || typeof details !== "object") return false;
+    const error = (details as { error?: unknown }).error;
+    if (!error || typeof error !== "object") return false;
+    const timeoutError = error as { message?: unknown; type?: unknown };
+    return (
+        timeoutError.type === "timeout_error" &&
+        typeof timeoutError.message === "string" &&
+        timeoutError.message.startsWith(
+            "Request exceeded the timeout sent in the request:",
+        )
+    );
+}
+
 /**
  * Every place a provider might have put its reason. Content-policy detection is
  * a case-insensitive substring match, so the whole details bag is worth handing
@@ -130,18 +167,25 @@ function upstreamFailureText(failure: UpstreamFailure): (string | null)[] {
  * delegating endpoint, a failed secret decryption all reach here as a plain
  * Error and are rethrown untouched.
  */
-export function isRetryableFallbackError(error: unknown): boolean {
+export function isRetryableFallbackError(
+    error: unknown,
+    allowedStatusCodes: readonly number[] = FALLBACK_ON_STATUS_CODES,
+): boolean {
     if (isNetworkFailure(error)) return true;
     if (!(error instanceof Error)) return false;
     const failure = error as UpstreamFailure;
     const status = upstreamStatus(failure);
     if (!status) return false;
+    // A generic provider 408 can benefit from a fallback. Portkey's exact
+    // timeout envelope is our own total deadline and must not multiply across
+    // fallback candidates.
+    if (isPortkeyRequestTimeout(failure)) return false;
     // A dead endpoint reaches us as the gateway's own 400 rather than as a
     // network error, because the gateway is the one that could not connect.
-    if (
-        !FALLBACK_ON_STATUS_CODES.includes(status) &&
-        !isGatewayRoutingFailure(failure)
-    ) {
+    const gatewayRoutingFailure =
+        allowedStatusCodes === FALLBACK_ON_STATUS_CODES &&
+        isGatewayRoutingFailure(failure);
+    if (!allowedStatusCodes.includes(status) && !gatewayRoutingFailure) {
         return false;
     }
     return !firstContentPolicyMessage(upstreamFailureText(failure));
@@ -203,7 +247,16 @@ function isUsableCommunityFallback(
     const primary = from.communityEndpoint;
     const candidate = target.communityEndpoint;
     if (!primary || !candidate) return false;
+    if (usesAgentRunToken(candidate)) return false;
     if (primary.imagePricing !== candidate.imagePricing) return false;
+    if (!isCommunityFallbackBalanceAllowed(primary, candidate)) return false;
+    if (
+        !from.supportedEndpoints.every((endpoint) =>
+            target.supportedEndpoints.includes(endpoint),
+        )
+    ) {
+        return false;
+    }
     return isCommunityFallbackPricingAllowed(primary, candidate);
 }
 
@@ -213,12 +266,10 @@ export function linkFallbackEntries(
     byIdOrAlias: Map<string, GenerationModelEntry>,
 ): void {
     for (const entry of entries) {
+        const configured = entry.definition.fallbacks ?? [];
         const declared = entry.communityEndpoint
-            ? entry.communityEndpoint.fallbackModelIds.slice(
-                  0,
-                  MAX_FALLBACK_TARGETS,
-              )
-            : (entry.definition.fallbacks ?? []);
+            ? configured.slice(0, MAX_FALLBACK_TARGETS)
+            : configured;
         const targets: GenerationModelEntry[] = [];
 
         for (const targetId of declared) {
@@ -226,7 +277,7 @@ export function linkFallbackEntries(
             if (!target || target === entry) continue;
             if (entry.communityEndpoint) {
                 const targetEndpoint = target.communityEndpoint;
-                if (targetEndpoint?.disabledAt != null) continue;
+                if (targetEndpoint?.hiddenAt != null) continue;
                 if (
                     targetEndpoint?.visibility === "private" &&
                     entry.communityEndpoint.ownerUserId !==
@@ -263,10 +314,11 @@ export type FailedCall = {
  * Runs `attempt` against each candidate until one succeeds.
  *
  * Placed around the upstream call itself rather than around the request, so
- * authentication, balance, rate limiting and moderation run exactly once no
- * matter how many models are tried. Every candidate is tried at most once: the
- * dominant failure is an exhausted quota, and asking the same endpoint again
- * would only spend more of a budget that is already gone.
+ * authentication, balance and moderation run exactly once no matter how many
+ * models are tried. A local per-candidate guard may run immediately before an
+ * attempt. Every candidate is tried at most once: the dominant failure is an
+ * exhausted quota, and asking the same endpoint again would only spend more of
+ * a budget that is already gone.
  *
  * Every failed call is appended to `failures`, including the one that ends the
  * request. Recording is not the same as retrying: this loop decides only which
@@ -280,8 +332,13 @@ export async function withModelFallback<T>(
     candidates: FallbackCandidate[],
     attempt: (candidate: FallbackCandidate) => Promise<T>,
     failures?: FailedCall[],
+    beforeAttempt?: (candidate: FallbackCandidate) => Promise<void>,
 ): Promise<{ result: T; candidate: FallbackCandidate; index: number }> {
+    const allowedStatusCodes = candidates[0]?.definition?.fallbackOnStatusCodes;
     for (const [index, candidate] of candidates.entries()) {
+        // Local gates are not upstream failures and must not trigger or be
+        // attributed to another fallback candidate.
+        await beforeAttempt?.(candidate);
         // Timed from this attempt's own start. Measured from the request's, a
         // second attempt would report the first one's timeout as part of its
         // own latency.
@@ -291,7 +348,7 @@ export async function withModelFallback<T>(
         } catch (error) {
             const terminal =
                 index === candidates.length - 1 ||
-                !isRetryableFallbackError(error);
+                !isRetryableFallbackError(error, allowedStatusCodes);
             failures?.push({
                 candidate,
                 error,
@@ -312,11 +369,13 @@ export async function withModelFallbackResponse(
     model: PrimaryModel,
     attempt: (candidate: FallbackCandidate) => Promise<Response>,
     failures?: FailedCall[],
+    beforeAttempt?: (candidate: FallbackCandidate) => Promise<void>,
 ): Promise<{ response: Response; servedEntry?: GenerationModelEntry }> {
     const { result, candidate, index } = await withModelFallback(
         fallbackCandidates(model),
         attempt,
         failures,
+        beforeAttempt,
     );
     if (index > 0) {
         result.headers.set(FALLBACK_TARGET_HEADER, `config.targets[${index}]`);

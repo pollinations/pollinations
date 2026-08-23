@@ -6,6 +6,41 @@ afterEach(() => {
 });
 
 describe("genericOpenAIClient", () => {
+    it("uses a configured service-binding fetcher", async () => {
+        const fetcher = vi.fn(async () =>
+            Response.json({
+                model: "provider-model",
+                choices: [
+                    {
+                        index: 0,
+                        message: { role: "assistant", content: "ok" },
+                        finish_reason: "stop",
+                    },
+                ],
+            }),
+        );
+        const globalFetch = vi
+            .spyOn(globalThis, "fetch")
+            .mockRejectedValue(new Error("unexpected public fetch"));
+
+        const completion = await genericOpenAIClient(
+            [{ role: "user", content: "hello" }],
+            { model: "provider-model" },
+            {
+                endpoint: "https://portkey.myceli.ai/v1/chat/completions",
+                fetcher,
+            },
+        );
+
+        expect(fetcher).toHaveBeenCalledOnce();
+        expect(fetcher).toHaveBeenCalledWith(
+            "https://portkey.myceli.ai/v1/chat/completions",
+            expect.objectContaining({ method: "POST" }),
+        );
+        expect(globalFetch).not.toHaveBeenCalled();
+        expect(completion.choices?.[0]?.message?.content).toBe("ok");
+    });
+
     it("normalizes provider stop to length at the configured token limit", async () => {
         let upstreamBody: Record<string, unknown> | undefined;
 
@@ -153,7 +188,6 @@ describe("genericOpenAIClient", () => {
                     role: "assistant",
                     tool_calls: [{ id: "call_1", type: "function" }],
                     content: null,
-                    provider_message_option: "kept",
                 },
             ],
             {
@@ -188,9 +222,9 @@ describe("genericOpenAIClient", () => {
                     role: "assistant",
                     content: null,
                     tool_calls: [{ id: "call_1", type: "function" }],
-                    provider_message_option: "kept",
                 },
             ],
+            stream: false,
             tools: [
                 {
                     type: "function",
@@ -208,7 +242,7 @@ describe("genericOpenAIClient", () => {
         });
     });
 
-    it("keeps narrow message repairs without rebuilding messages", async () => {
+    it("drops invalid optional message names before sending upstream", async () => {
         let upstreamBody: Record<string, unknown> | undefined;
 
         vi.spyOn(globalThis, "fetch").mockImplementationOnce(
@@ -254,16 +288,6 @@ describe("genericOpenAIClient", () => {
                 { role: "user", name: "foo.bar", content: "dot" },
                 { role: "assistant", name: "a@b", content: "at" },
                 { role: "system", name: "a".repeat(65), content: "long" },
-                {
-                    role: "user",
-                    content: "  ",
-                    provider_message_option: "kept",
-                },
-                { role: "assistant", provider_message_option: "kept" },
-                {
-                    role: "assistant",
-                    tool_calls: [{ id: "call_1", type: "function" }],
-                },
             ],
             { model: "provider-model" },
             { endpoint: "https://portkey.test/chat" },
@@ -277,21 +301,6 @@ describe("genericOpenAIClient", () => {
             { role: "user", content: "dot" },
             { role: "assistant", content: "at" },
             { role: "system", content: "long" },
-            {
-                role: "user",
-                content: "Please provide a response.",
-                provider_message_option: "kept",
-            },
-            {
-                role: "assistant",
-                content: "",
-                provider_message_option: "kept",
-            },
-            {
-                role: "assistant",
-                content: null,
-                tool_calls: [{ id: "call_1", type: "function" }],
-            },
         ]);
     });
 

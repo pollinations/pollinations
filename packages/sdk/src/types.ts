@@ -37,7 +37,7 @@ export type ImageReasoningMode = "fast" | "balanced" | "pro";
 
 /** Options for image generation */
 export interface ImageGenerateOptions extends RequestOptions {
-    /** Image model to use (default: 'zimage') */
+    /** Image model to use (server default: 'zimage') */
     model?: ImageModel;
     /** Image width in pixels (default: 1024) */
     width?: number;
@@ -65,7 +65,7 @@ export interface ImageGenerateOptions extends RequestOptions {
 
 /** Options for image editing (POST /v1/images/edits) */
 export interface ImageEditOptions extends RequestOptions {
-    /** Image model to use (default: 'flux') */
+    /** Image model to use (server default: 'flux') */
     model?: ImageModel;
     /** Source image URL(s) for editing */
     image?: string | string[];
@@ -87,7 +87,7 @@ export interface ImageResponse {
 
 /** Options for video generation */
 export interface VideoGenerateOptions extends RequestOptions {
-    /** Video model to use (default: 'veo') */
+    /** Video model to use (server default: 'veo') */
     model?: VideoModel;
     /** Duration in seconds (supported range varies by model) */
     duration?: number;
@@ -198,7 +198,7 @@ export interface Message {
 
 /** Options for simple text generation */
 export interface TextGenerateOptions extends RequestOptions {
-    /** Text model to use (default: 'openai') */
+    /** Text model to use (server default: 'openai') */
     model?: TextModel;
     /** System prompt to set context */
     systemPrompt?: string;
@@ -256,7 +256,7 @@ export type BuiltInToolType =
 
 /** Options for chat completions (POST endpoint) */
 export interface ChatOptions extends RequestOptions {
-    /** Text model to use (default: 'openai') */
+    /** Text model to use (server default: 'openai') */
     model?: TextModel;
     /** Temperature 0-2 (default: 1) */
     temperature?: number;
@@ -433,9 +433,9 @@ export type AudioModel = "elevenlabs" | "elevenmusic" | string;
 
 /** Options for text-to-speech generation (GET /audio/{text} or POST /v1/audio/speech) */
 export interface AudioGenerateOptions extends RequestOptions {
-    /** Voice to use (default: 'alloy') */
+    /** Voice to use (server default: 'alloy') */
     voice?: AudioVoice;
-    /** Audio model to use (default: 'elevenlabs') */
+    /** Audio model to use (server default: 'elevenlabs') */
     model?: AudioModel;
     /** Duration in seconds (for music models like elevenmusic) */
     duration?: number;
@@ -487,7 +487,7 @@ export type TranscriptionResponseFormat =
 
 /** Options for speech-to-text transcription */
 export interface TranscribeOptions extends RequestOptions {
-    /** Model to use (default: 'whisper-large-v3') */
+    /** Model to use (server default: 'whisper-large-v3') */
     model?: TranscriptionModel;
     /** Language code (ISO-639-1, e.g. 'en', 'fr') */
     language?: string;
@@ -585,7 +585,20 @@ export interface AccountProfile {
 
 /** Account balance */
 export interface AccountBalance {
+    /**
+     * Pollen remaining for this caller. Budgeted API keys see the key budget
+     * here, not the account total.
+     */
     balance: number;
+    /**
+     * Full account balances. Present only when the caller can view account
+     * usage (session or `account:usage`).
+     */
+    accountBalance?: {
+        total: number;
+        tier: number;
+        paid: number;
+    };
 }
 
 /** Usage record */
@@ -786,10 +799,13 @@ export type ModelCapability =
     | "tool_calling"
     | "reasoning"
     | "web_search"
-    | "code_execution";
+    | "code_execution"
+    | "pollinations_models";
 
 /** Model information */
 export interface ModelInfo {
+    /** Fields added by the model registry pass through without an SDK release. */
+    [key: string]: unknown;
     id?: string;
     name: string;
     /** Display name. Present on registry endpoints (/models, /text/models, …); absent on OpenAI-compatible /v1/models. */
@@ -799,9 +815,16 @@ export interface ModelInfo {
     description?: string;
     aliases?: string[];
     community?: boolean;
+    agent?: boolean;
+    base_model?: string;
     input_modalities?: string[];
     output_modalities?: string[];
     video_capabilities?: VideoCapability[];
+    min_duration?: number;
+    max_duration?: number;
+    default_duration?: number;
+    allowed_durations?: number[];
+    duration_step?: number;
     max_reference_images?: number;
     max_reference_videos?: number;
     capabilities?: ModelCapability[];
@@ -880,7 +903,7 @@ export interface UserInfo {
 
 /** Options for POST /v1/images/generations */
 export interface ImageGenerateV1Options extends RequestOptions {
-    /** Image model to use (default: 'zimage') */
+    /** Image model to use (server default: 'flux') */
     model?: ImageModel;
     /** Size string like "1024x1024". Alternative to width + height. */
     size?: string;

@@ -98,6 +98,18 @@ export type BillingAdjustmentRule = {
     kind: string;
     unit: string;
     unitCost: number;
+    publicPricing: {
+        label: string;
+        quantity: number;
+        unit: string;
+        suffix?: string;
+        option?: {
+            group: string;
+            value: string;
+            label: string;
+            default?: boolean;
+        };
+    };
     // Counts billable units from the response output (stream outputs carry a
     // `streamEvents` array). Returning 0 skips the rule for this request.
     // Provider-specific parsing lives with the rule's provider module
@@ -134,8 +146,12 @@ export type BillingAdjustment = {
 export type ModelDefinition = {
     aliases: string[];
     provider: string;
+    /** Exact gateway-side request cap per Pollinations user. Null/unset means uncapped. */
+    perUserRpm?: number | null;
     /** Ordered model ids to try when this model's upstream fails. */
     fallbacks?: string[];
+    /** Override the shared fallback status list for this model. Network failures always retry. */
+    fallbackOnStatusCodes?: number[];
     brand: string;
     category: Category;
     cost: CostDefinition;
@@ -148,6 +164,9 @@ export type ModelDefinition = {
     // selector so /models and the dashboard can disclose when alternate rates
     // apply without attempting to serialize selector code.
     costVariantMetadata?: Record<string, CostVariantMetadata>;
+    // Public label for the base rate sheet selected when no named variant
+    // applies, such as "720p" or "≤272K context".
+    defaultCostVariantLabel?: string;
     // Picks the rate sheet for one request, evaluated once at billing time
     // inside calculateUsageBilling. Must be pure and never throw. Returning
     // undefined (or an unknown name — warned) bills at base rates. Selection
@@ -189,6 +208,11 @@ export type ModelDefinition = {
     // Supported output resolutions; first entry is the default.
     resolutions?: string[];
     videoCapabilities?: VideoCapability[]; // Video-only: which frame controls the provider supports
+    minDuration?: number; // Video-only: minimum accepted duration in seconds
+    maxDuration?: number; // Video-only: maximum accepted duration in seconds
+    defaultDuration?: number; // Video-only: duration when caller omits the param
+    allowedDurations?: number[]; // Video-only: explicit set of valid durations (overrides min/max range)
+    durationStep?: number; // Video-only: duration must be a multiple of this value
     maxReferenceImages?: number; // Models with image input: effective accepted reference images
     maxReferenceVideos?: number; // Models with video input: effective accepted reference videos
 };

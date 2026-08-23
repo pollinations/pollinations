@@ -79,4 +79,4 @@ ElevenLabs: rachel, domi, bella, charlotte, sarah, emily, lily, matilda (F) | ad
 
 ## Monorepo
 
-enter.pollinations.ai/ (API Dashboard, Auth & Billing React app + CF Workers) | gen.pollinations.ai/ (Unified Hono proxy gateway for image, text, and video generation in gen.pollinations.ai/src/image/) | text.pollinations.ai/ (Node.js text generation API) | packages/sdk/ (Official SDK) | packages/mcp/ (Official MCP server) | shared/ (Shared registries and utilities) | pollinations.ai/ (React main site) | apps/ (Core/official apps, community apps linked in APPS.md)
+enter.pollinations.ai/ (API Dashboard, Auth & Billing React app + CF Workers) | gen.pollinations.ai/ (Unified Hono proxy gateway for image, text, and video generation in gen.pollinations.ai/src/image/) | text.pollinations.ai/ (Node.js text generation API) | packages/sdk/ (Official SDK) | packages/mcp/ (Official MCP server) | shared/ (Shared registries and utilities) | pollinations.ai/ (React main site) | apps/ (Applications maintained in this repository) | operations/app-management/ (Community app catalog and automation)

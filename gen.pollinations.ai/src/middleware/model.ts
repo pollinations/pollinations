@@ -1,4 +1,7 @@
-import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
+import {
+    type CommunityEndpointRuntime,
+    usesAgentRunToken,
+} from "@shared/community-endpoints.ts";
 import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
 import { DEFAULT_EMBEDDING_MODEL } from "@shared/registry/embeddings.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
@@ -31,6 +34,12 @@ export type ModelVariables = {
         /** Static registry definition, or a dynamic definition resolved from D1. */
         definition: ModelDefinition;
         communityEndpoint?: CommunityEndpointRuntime;
+        /**
+         * Extra cache-key scope for models whose output is not shareable
+         * between callers. Unset means the response is cacheable platform-wide,
+         * which is the default for every static and external community model.
+         */
+        cacheScope?: string;
         /** Entry that serves the request when this model's upstream fails. */
         fallbackEntries?: GenerationModelEntry[];
     };
@@ -118,6 +127,12 @@ export async function resolveModelDefinition(
         ...(entry.communityEndpoint && {
             communityEndpoint: entry.communityEndpoint,
         }),
+        // An agent run executes tools and spends the caller's balance, so its
+        // answer belongs to that caller and must never be replayed to another.
+        ...(entry.communityEndpoint &&
+            usesAgentRunToken(entry.communityEndpoint) && {
+                cacheScope: `agent:${entry.id}`,
+            }),
         ...(entry.fallbackEntries && {
             fallbackEntries: entry.fallbackEntries,
         }),

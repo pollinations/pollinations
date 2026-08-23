@@ -15,6 +15,7 @@ import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
 import { createMockVcr } from "@shared/test/mocks/vcr.ts";
 import { afterEach, expect, inject } from "vitest";
 import worker from "../src/index.ts";
+import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
 
 const snapshotServerUrl = inject("snapshotServerUrl");
 const png1x1Base64 =
@@ -193,6 +194,9 @@ async function fakePortkeyResponse(request: Request) {
     const model = body.model || "openai-fast";
     const prompt =
         body.messages?.map((m) => contentToText(m.content)).join("\n") || "";
+    const reportedModel = prompt.includes("provider model mismatch")
+        ? "provider-model-version"
+        : model;
 
     if (body.stream) {
         const streamUsageExtras = prompt.includes("vcr perplexity stream cost")
@@ -207,7 +211,7 @@ async function fakePortkeyResponse(request: Request) {
         const streamEvent = {
             id: "chatcmpl_vcr_stream",
             object: "chat.completion.chunk",
-            model,
+            model: reportedModel,
             choices: [
                 {
                     index: 0,
@@ -359,7 +363,7 @@ async function fakePortkeyResponse(request: Request) {
             id: "chatcmpl_vcr",
             object: "chat.completion",
             created: 1,
-            model,
+            model: reportedModel,
             citations: selectedCase?.citations,
             prompt_filter_results: selectedCase?.promptFilterResults,
             choices: [
@@ -416,7 +420,7 @@ async function fetchWorker(path: string, init: RequestInit) {
     const ctx = createExecutionContext();
     const response = await worker.fetch(
         new Request(`https://gen.pollinations.ai${path}`, init),
-        env,
+        withInlineGenerationCoordinator(env),
         ctx,
     );
 
@@ -473,6 +477,68 @@ test("chat completions use local text generation with VCR-backed Portkey", async
     expect(mocks.tinybird.state.events[0]).not.toHaveProperty(
         "adjustmentUnits",
     );
+});
+
+test("canonical model headers preserve provider-reported payload models", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+
+    const { response, wait } = await fetchWorker("/v1/chat/completions", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "openai-fast",
+            messages: [
+                { role: "user", content: "provider model mismatch json" },
+            ],
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-model-used")).toBe("openai-fast");
+    await expect(response.json()).resolves.toMatchObject({
+        model: "provider-model-version",
+    });
+    await wait();
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        modelUsed: "openai-fast",
+    });
+
+    const { response: streamResponse, wait: waitForStream } = await fetchWorker(
+        "/v1/chat/completions",
+        {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${paidApiKey}`,
+            },
+            body: JSON.stringify({
+                model: "openai-fast",
+                stream: true,
+                messages: [
+                    {
+                        role: "user",
+                        content: "provider model mismatch stream",
+                    },
+                ],
+            }),
+        },
+    );
+
+    expect(streamResponse.status).toBe(200);
+    expect(streamResponse.headers.get("x-model-used")).toBe("openai-fast");
+    const streamBody = await streamResponse.text();
+    expect(streamBody).toContain('"model":"provider-model-version"');
+    expect(streamBody).not.toContain('"model":"openai-fast"');
+    await waitForStream();
+    expect(mocks.tinybird.state.events[1]).toMatchObject({
+        modelUsed: "openai-fast",
+    });
 });
 
 test("chat completions bill provider-reported Perplexity request cost without exposing it", async ({
@@ -554,7 +620,7 @@ test("Perplexity aliases add no options and allow explicit override", async ({
         });
 
         expect(response.status).toBe(200);
-        expect(response.headers.get("x-model-used")).toBe("sonar");
+        expect(response.headers.get("x-model-used")).toBe("perplexity-fast");
         await response.text();
         await wait();
     }
@@ -740,6 +806,7 @@ test("non-stream chat completions keep moderation telemetry in generation events
     expect(response.headers.get("x-moderation-prompt-hate-severity")).toBe(
         "safe",
     );
+    await response.arrayBuffer();
     await wait();
 
     expect(mocks.tinybird.state.events).toHaveLength(1);
@@ -978,9 +1045,11 @@ test("simple text prompts can include slashes", async ({
     await expect(response.text()).resolves.toBe("snapshot slash response");
 });
 
-test("flux image generation uses Replicate fallback from gen", async ({
+test("flux returns 503 without Replicate when the Vast pool is empty", async ({
     mocks,
 }) => {
+    const existing = await env.KV.list({ prefix: "image:server:test:flux:" });
+    await Promise.all(existing.keys.map((k) => env.KV.delete(k.name)));
     await mocks.enable("tinybird", "replicate");
     const { key } = await createTestApiKey({
         allowedModels: ["flux"],
@@ -990,44 +1059,23 @@ test("flux image generation uses Replicate fallback from gen", async ({
     const { response, wait } = await fetchWorker(
         "/image/vcr%20red%20square?model=flux&width=1280&height=720&seed=42",
         {
-            // The key allows only public `flux` (and one unrelated text model).
-            // Its hidden provider route must remain available as an internal
-            // implementation detail of that permitted public model.
             headers: { authorization: `Bearer ${key}` },
         },
     );
 
-    const failureBody =
-        response.status === 200 ? "" : await response.clone().text();
-    expect(response.status, failureBody).toBe(200);
-    expect(response.headers.get("content-type")).toMatch(/^image\//);
-    expect(response.headers.get("x-fallback-target")).toBe("config.targets[1]");
-    expect((await response.arrayBuffer()).byteLength).toBeGreaterThan(0);
-    await wait();
-
-    expect(mocks.replicate.state.requests).toHaveLength(1);
-    expect(mocks.replicate.state.requests[0]).toMatchObject({
-        url: "https://api.replicate.com/v1/models/black-forest-labs/flux-schnell/predictions",
-        body: {
-            input: {
-                prompt: "vcr red square",
-                aspect_ratio: "16:9",
-                num_inference_steps: 4,
-                num_outputs: 1,
-                output_format: "jpg",
-                output_quality: 90,
-                go_fast: true,
-                megapixels: "1",
-                seed: 42,
-            },
-        },
-        headers: {
-            authorization: `Bearer ${env.REPLICATE_API_TOKEN}`,
-            "content-type": "application/json",
-            prefer: "wait=60",
+    expect(response.status).toBe(503);
+    expect(response.headers.get("x-fallback-target")).toBeNull();
+    await expect(response.json()).resolves.toMatchObject({
+        success: false,
+        error: {
+            code: "SERVICE_UNAVAILABLE",
+            message: "No active flux servers available",
         },
     });
-    expect(mocks.tinybird.state.events).toHaveLength(2);
+    await wait();
+
+    expect(mocks.replicate.state.requests).toHaveLength(0);
+    expect(mocks.tinybird.state.events).toHaveLength(1);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         eventType: "generate.image",
         modelRequested: "flux",
@@ -1036,30 +1084,56 @@ test("flux image generation uses Replicate fallback from gen", async ({
         modelProviderUsed: "vast",
         responseStatus: 503,
         fallbackUsed: false,
-        isFinal: false,
+        isFinal: true,
         isBilledUsage: false,
     });
-    expect(mocks.tinybird.state.events[1]).toMatchObject({
-        eventType: "generate.image",
-        modelRequested: "flux",
-        resolvedModelRequested: "flux",
-        modelUsed: "flux",
-        modelProviderUsed: "replicate",
-        tokenCountCompletionImage: 1,
-        totalCost: 0.003,
-        totalPrice: 0.002,
-        devPrice: 0.002,
-        fallbackUsed: true,
-        isFinal: true,
-        isBilledUsage: true,
+});
+
+test("removed flux-replicate model returns invalid model", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "replicate");
+    const { response, wait } = await fetchWorker(
+        "/image/test?model=flux-replicate",
+        {
+            headers: { authorization: `Bearer ${paidApiKey}` },
+        },
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+        success: false,
+        error: {
+            code: "BAD_REQUEST",
+            message:
+                'Invalid model or alias: "flux-replicate". Must be a valid model name or alias.',
+        },
     });
+    await wait();
+
+    expect(mocks.replicate.state.requests).toHaveLength(0);
 });
 
 test("OpenAI image generation returns token usage", async ({
     paidApiKey,
     mocks,
 }) => {
-    await mocks.enable("tinybird", "replicate");
+    const existing = await env.KV.list({ prefix: "image:server:test:flux:" });
+    await Promise.all(existing.keys.map((k) => env.KV.delete(k.name)));
+    const { response: registerResponse } = await fetchWorker("/register", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${env.PLN_GPU_TOKEN}`,
+        },
+        body: JSON.stringify({
+            url: `https://${imageBackendHost}`,
+            type: "flux",
+        }),
+    });
+    expect(registerResponse.status).toBe(200);
+    await mocks.enable("tinybird", "imageBackend");
 
     const { response, wait } = await fetchWorker("/v1/images/generations", {
         method: "POST",
@@ -1077,6 +1151,8 @@ test("OpenAI image generation returns token usage", async ({
     });
 
     expect(response.status).toBe(200);
+    expect(response.headers.get("x-cache")).toBe("HIT");
+    expect(response.headers.get("x-cache-type")).toBeNull();
     await expect(response.json()).resolves.toMatchObject({
         data: [{ b64_json: expect.any(String) }],
         usage: {
@@ -1163,6 +1239,7 @@ test("the sana alias routes to the dreamshaper pool and records its flat price",
 
     expect(response.status).toBe(200);
     expect(response.headers.get("x-model-used")).toBe("dreamshaper");
+    await response.arrayBuffer();
     await wait();
 
     expect(mocks.tinybird.state.events).toHaveLength(1);

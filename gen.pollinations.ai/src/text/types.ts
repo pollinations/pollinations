@@ -152,7 +152,6 @@ export interface RequestData {
 /** Configuration for the generic OpenAI client. */
 export interface OpenAIClientConfig {
     endpoint: string | ((model: string, options: TransformOptions) => string);
-    defaultOptions?: Record<string, unknown>;
     additionalHeaders?: Record<string, string>;
     fetcher?: (input: string, init?: RequestInit) => Promise<Response>;
 }

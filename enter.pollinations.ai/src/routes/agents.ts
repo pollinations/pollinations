@@ -352,18 +352,17 @@ export const agentsRoutes = new Hono<Env>()
                     message: "GitHub-backed agents must be public",
                 });
             }
-            const imported =
+            const config =
                 "source" in input
                     ? await importPromptAgentFromGitHub(
                           input.source,
                           requireOwnerGithubId(owner),
                           await requireGitHubAccessToken(db, user.id),
                       )
-                    : null;
-            const config = imported ?? {
-                config: promptConfigFromInput(input),
-                source: undefined,
-            };
+                    : {
+                          config: promptConfigFromInput(input),
+                          source: undefined,
+                      };
             const id = crypto.randomUUID();
             const [row] = await db
                 .insert(schema.communityEndpoint)

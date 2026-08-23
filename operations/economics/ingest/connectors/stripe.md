@@ -31,6 +31,16 @@ Collection steps:
    `data/inbox/stripe-<period>-payouts.json`.
 3. When the question is what a specific automatic payout contains, query its
    balance transactions by payout ID and save the raw response separately.
+   Use the paginated collector so a payout with more than 100 rows is not
+   silently truncated:
+
+   ```bash
+   sops exec-env secrets/env.json \
+     'node scripts/collect-stripe-payout.mjs <po_id> data/inbox/stripe-<date>-payout.json'
+   ```
+
+   The collector stops unless the contained balance-transaction net equals
+   the payout amount exactly.
 4. When the question is activity during a calendar month, query balance
    transactions by `created[gte]` and exclusive `created[lt]`. Sum `net` only
    after filtering to the requested question; Stripe monetary fields are minor

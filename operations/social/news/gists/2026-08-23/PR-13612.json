@@ -1,0 +1,35 @@
+{
+  "pr_number": 13612,
+  "title": "docs: refresh FAQ and key guidance",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13612",
+  "merged_at": "2026-08-23T22:10:27Z",
+  "labels": [],
+  "pr_body_excerpt": "- Refreshes the FAQ for current Pollen balances, API keys, agents, community models, payments, and support\n- Removes stale model counts, unsupported balance-expiry claims, old voting links, and speculative roadmap items\n- Uses Connect User Wallets and Paid Pollen wording consistently\n\nValidation: npm run build:frontend",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The FAQ shed its husk",
+    "blurb": "The Pollen FAQ got a careful pruning. Current guidance on balances, API keys, agents, community models, payments, and support is now where the bees can find it.",
+    "summary": "Refreshed the Pollen FAQ with current guidance on balances, API keys, agents, community models, payments, and support, while standardizing the terms “Connect User Wallets” and “Paid Pollen.”",
+    "impact": "Developers and users now get clearer, current answers without stale model counts, outdated voting links, balance-expiry claims, or speculative roadmap notes.",
+    "keywords": [
+      "documentation",
+      "FAQ",
+      "Pollen",
+      "API keys",
+      "wallets",
+      "payments",
+      "support"
+    ],
+    "visual_concept": "Polli acts as a cozy garden librarian, replacing dusty old FAQ pages with fresh labeled pages beside a glowing retro terminal. Small code-plants and flowers represent the newly organized guidance; a wallet icon, key, tiny robot agent, and Pollen jar make the covered topics visible.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny librarian hat, tidying a warm garden-shed FAQ bookshelf beside a lime green (#ecf874) glowing retro terminal. Fresh pixel pages labeled “FAQ,” a small key, wallet, Pollen jar, and helpful CRT robot sit among flowering code-plants; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text: “CURRENT ANSWERS.”"
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-23/PR-13612.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny librarian hat, tidying a warm garden-shed FAQ bookshelf beside a lime green (#ecf874) glowing retro terminal. Fresh pixel pages labeled “FAQ,” a small key, wallet, Pollen jar, and helpful CRT robot sit among flowering code-plants; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text: “CURRENT ANSWERS.”"
+  },
+  "generated_at": "2026-08-23T22:11:24.235816+00:00"
+}

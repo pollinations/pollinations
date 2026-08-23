@@ -10,6 +10,16 @@ const IMAGE_URL = "https://media.pollinations.ai/example.png";
 
 function createHarness(options = {}) {
     const calls = [];
+    const imageCalls = [];
+    const fetchImage = async (url, init) => {
+        imageCalls.push({ url: url.toString(), init });
+        return (
+            options.imageResponse ??
+            new Response(new Uint8Array([1, 2, 3]), {
+                headers: { "Content-Type": "image/png" },
+            })
+        );
+    };
     const fetchGen = async (url, init) => {
         calls.push({ url, init, body: JSON.parse(init.body) });
         if (options.response) return options.response;
@@ -19,7 +29,8 @@ function createHarness(options = {}) {
     };
     return {
         calls,
-        worker: createWorker(),
+        imageCalls,
+        worker: createWorker({ fetchImpl: fetchImage }),
         env: { GEN: { fetch: fetchGen } },
     };
 }
@@ -57,7 +68,7 @@ test("lists one visual-understanding tool", async () => {
 });
 
 test("forwards multimodal input and caller billing auth to Gen", async () => {
-    const { calls, worker, env } = createHarness();
+    const { calls, imageCalls, worker, env } = createHarness();
     const client = await connect(worker, env);
     const result = await client.callTool({
         name: "analyzeImage",
@@ -70,6 +81,7 @@ test("forwards multimodal input and caller billing auth to Gen", async () => {
 
     assert.equal(result.isError, undefined);
     assert.equal(result.content[0].text, "The sign says Pollinations.");
+    assert.equal(imageCalls[0].url, IMAGE_URL);
     assert.equal(
         calls[0].url,
         "https://gen.pollinations.ai/v1/chat/completions",
@@ -84,7 +96,7 @@ test("forwards multimodal input and caller billing auth to Gen", async () => {
                     { type: "text", text: "Read the sign" },
                     {
                         type: "image_url",
-                        image_url: { url: IMAGE_URL },
+                        image_url: { url: "data:image/png;base64,AQID" },
                     },
                 ],
             },
@@ -94,7 +106,7 @@ test("forwards multimodal input and caller billing auth to Gen", async () => {
 });
 
 test("rejects unsafe image URLs before calling Gen", async () => {
-    const { calls, worker, env } = createHarness();
+    const { calls, imageCalls, worker, env } = createHarness();
     const client = await connect(worker, env);
     for (const imageUrl of [
         "http://example.com/image.png",
@@ -109,6 +121,7 @@ test("rejects unsafe image URLs before calling Gen", async () => {
         assert.equal(result.isError, true);
     }
     assert.equal(calls.length, 0);
+    assert.equal(imageCalls.length, 0);
     await client.close();
 });
 

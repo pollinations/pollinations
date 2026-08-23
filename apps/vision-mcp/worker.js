@@ -1,6 +1,11 @@
+import { Buffer } from "node:buffer";
 import { createMcpHandler, McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
+import { readResponseBytes } from "../../shared/response-bytes.ts";
 import { validateUserMediaUrl } from "../../shared/user-media-url.ts";
+
+const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
+const MAX_REDIRECTS = 5;
 
 class VisionFailure extends Error {}
 
@@ -9,7 +14,45 @@ const imageUrlSchema = z.url().refine((value) => {
     return validation.ok && validation.url.protocol === "https:";
 }, "imageUrl must be a public HTTPS URL without credentials");
 
-async function analyzeImage(params, env, authorization) {
+async function fetchImageDataUrl(value, fetchImpl) {
+    let url = validateUserMediaUrl(value).url;
+    let response;
+    for (let redirects = 0; ; redirects += 1) {
+        response = await fetchImpl(url, { redirect: "manual" });
+        if (response.status < 300 || response.status >= 400) break;
+        const location = response.headers.get("location");
+        if (!location || redirects >= MAX_REDIRECTS) {
+            throw new VisionFailure("Image has an invalid redirect");
+        }
+        await response.body?.cancel();
+        const validation = validateUserMediaUrl(
+            new URL(location, url).toString(),
+        );
+        if (!validation.ok || validation.url.protocol !== "https:") {
+            throw new VisionFailure("Image has an unsafe redirect");
+        }
+        url = validation.url;
+    }
+    if (!response.ok) {
+        throw new VisionFailure(`Image returned HTTP ${response.status}`);
+    }
+    const contentType = response.headers.get("content-type")?.split(";")[0];
+    if (!contentType?.startsWith("image/")) {
+        throw new VisionFailure("URL did not return an image");
+    }
+    const bytes = await readResponseBytes(
+        response,
+        MAX_IMAGE_BYTES,
+        () => new VisionFailure("Image exceeds 20 MB"),
+    );
+    if (bytes.byteLength === 0) {
+        throw new VisionFailure("Image is empty");
+    }
+    return `data:${contentType};base64,${Buffer.from(bytes).toString("base64")}`;
+}
+
+async function analyzeImage(params, env, authorization, fetchImpl) {
+    const imageDataUrl = await fetchImageDataUrl(params.imageUrl, fetchImpl);
     const response = await env.GEN.fetch(
         "https://gen.pollinations.ai/v1/chat/completions",
         {
@@ -27,7 +70,7 @@ async function analyzeImage(params, env, authorization) {
                             { type: "text", text: params.question },
                             {
                                 type: "image_url",
-                                image_url: { url: params.imageUrl },
+                                image_url: { url: imageDataUrl },
                             },
                         ],
                     },
@@ -50,7 +93,7 @@ async function analyzeImage(params, env, authorization) {
     return { content: [{ type: "text", text: answer }] };
 }
 
-function buildServer(env, authorization) {
+function buildServer(env, authorization, fetchImpl) {
     const server = new McpServer(
         { name: "pollinations-vision-mcp", version: "0.1.0" },
         {
@@ -73,12 +116,12 @@ function buildServer(env, authorization) {
                 model: z.string().optional().default("openai"),
             }),
         },
-        (params) => analyzeImage(params, env, authorization),
+        (params) => analyzeImage(params, env, authorization, fetchImpl),
     );
     return server;
 }
 
-export function createWorker() {
+export function createWorker({ fetchImpl = fetch } = {}) {
     return {
         async fetch(request, env) {
             if (new URL(request.url).pathname !== "/") {
@@ -103,7 +146,7 @@ export function createWorker() {
             }
             const authorization = request.headers.get("authorization") ?? "";
             const handler = createMcpHandler(
-                () => buildServer(env, authorization),
+                () => buildServer(env, authorization, fetchImpl),
                 {
                     onerror: (error) => console.error(error),
                 },

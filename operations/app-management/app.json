@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "✍️",
+    "name": "StoryForge",
+    "url": "https://storyforge.wiradifit-makmur-sejahtera.duckdns.org",
+    "description": "Turn any idea into an illustrated AI micro-story. The user signs in via the official BYOP OAuth flow (PKCE) with a self-chosen pollen budget, describes an idea, picks a genre (fantasy / sci-fi / myste",
+    "language": "en",
+    "category": "writing",
+    "platform": "web",
+    "githubUsername": "wiradifit",
+    "githubUserId": "39960371",
+    "repositoryUrl": "https://github.com/wiradifit/storyforge",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-08-23",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/13746",
+    "approvedDate": "2026-08-23",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🖼️",
     "name": "vaia-ai-studio.my.id",
     "url": "https://vaia-ai-studio.my.id",

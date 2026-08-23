@@ -394,8 +394,9 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(0.06),
-            completionTextTokens: perMillion(0.22),
+            // OVHcloud USD list price for Qwen3-Coder-30B-A3B-Instruct.
+            promptTextTokens: perMillion(0.07),
+            completionTextTokens: perMillion(0.26),
         },
         title: "Qwen3 Coder 30B",
         description:
@@ -1288,10 +1289,10 @@ export const TEXT_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Poolside route rates (2026-07-22).
-            promptTextTokens: perMillion(0.1),
-            promptCachedTokens: perMillion(0.01),
-            completionTextTokens: perMillion(0.2),
+            // OpenRouter Poolside route rates (2026-08-22).
+            promptTextTokens: perMillion(0.09),
+            promptCachedTokens: perMillion(0.009),
+            completionTextTokens: perMillion(0.18),
         },
         title: "Laguna S 2.1",
         description:

@@ -10,7 +10,7 @@ import { createStripeClient, verifyWebhookSignature } from "../utils/stripe.ts";
 import {
     creditAutoTopUpInvoice,
     markAutoTopUpInvoiceFailed,
-} from "../utils/stripe-billing.ts";
+} from "../utils/stripe-billing/index.ts";
 import { recordStripeCardFingerprintAttempt } from "../utils/stripe-card-gate.ts";
 
 interface StripeEventData {

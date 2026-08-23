@@ -1,0 +1,33 @@
+{
+  "pr_number": 13789,
+  "title": "chore: store staging Discord bot token",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13789",
+  "merged_at": "2026-08-23T13:46:53Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `DISCORD_BOT_TOKEN` to encrypted Enter staging SOPS\n- Keeps the secret change isolated from the Discord feature PR\n- Matches the token already verified on the staging Worker",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "A key for the staging hive",
+    "blurb": "The staging Discord bot now has its token tucked safely into Enter's encrypted secret garden. Even worker bees need credentials.",
+    "summary": "Added the verified DISCORD_BOT_TOKEN to Enter's encrypted staging SOPS variables so the staging Worker can run the Discord bot configuration.",
+    "impact": "Staging deployments can now access the existing Discord bot token reliably while keeping the secret isolated from the feature work.",
+    "keywords": [
+      "discord",
+      "staging",
+      "secrets",
+      "sops",
+      "enter"
+    ],
+    "visual_concept": "A secure staging-secret handoff: Polli carries a tiny key toward a locked lime-green garden shed labeled STAGING, while a friendly CRT monitor robot waits beside a retro terminal with a Discord-style chat bubble. Include code-plants and subtle lock imagery to convey encrypted configuration without exposing any secret.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny locksmith tool belt, placing a small key into a locked lime green (#ecf874) garden shed labeled “STAGING”; a friendly CRT monitor robot watches from a warm retro terminal surrounded by code-plants and pastel flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-23/PR-13789.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny locksmith tool belt, placing a small key into a locked lime green (#ecf874) garden shed labeled “STAGING”; a friendly CRT monitor robot watches from a warm retro terminal surrounded by code-plants and pastel flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-08-23T13:48:22.373493+00:00"
+}

@@ -3249,8 +3249,61 @@ test("POST /api/webhooks/stripe emits checkout.session.async_payment_failed to T
     expect(mocks.tinybird.state.stripeEvents[0]).toMatchObject({
         event_id: "evt_test_async_failed",
         event_type: "checkout.session.async_payment_failed",
+        session_id: "cs_test_async_failed",
+        user_id: "u_test",
+        amount_cents: 429,
         currency: "eur",
         payment_status: "unpaid",
+        payment_method: "unknown",
         payment_methods_offered: "sepa_debit",
+        customer_email: "buyer@example.com",
+        livemode: 0,
     });
+});
+
+test("POST /api/webhooks/stripe emits checkout.session.expired to Tinybird without payment_methods_offered", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+
+    // Expired sessions serialize a hardcoded "expired" status and omit
+    // payment_methods_offered (unlike the completed/async handlers).
+    const expiredEvent = {
+        id: "evt_test_expired",
+        type: "checkout.session.expired",
+        livemode: false,
+        data: {
+            object: {
+                id: "cs_test_expired",
+                object: "checkout.session",
+                amount_total: 429,
+                currency: "eur",
+                payment_status: "unpaid",
+                payment_method_types: ["card"],
+                metadata: { userId: "u_test" },
+                customer_email: "buyer@example.com",
+            },
+        },
+    };
+
+    const response = await postSignedStripeWebhook(expiredEvent);
+    expect(response.status).toBe(200);
+
+    expect(mocks.tinybird.state.stripeEvents).toHaveLength(1);
+    const emitted = mocks.tinybird.state.stripeEvents[0];
+    expect(emitted).toMatchObject({
+        event_id: "evt_test_expired",
+        event_type: "checkout.session.expired",
+        session_id: "cs_test_expired",
+        user_id: "u_test",
+        amount_cents: 429,
+        currency: "eur",
+        payment_status: "expired",
+        payment_method: "unknown",
+        customer_email: "buyer@example.com",
+        livemode: 0,
+    });
+    // Exact serialization: the expired handler does not emit the offered
+    // payment methods, so the shared mapper must not synthesize them here.
+    expect(emitted.payment_methods_offered).toBe("");
 });

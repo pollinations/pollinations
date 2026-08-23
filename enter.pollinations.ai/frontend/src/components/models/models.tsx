@@ -9,10 +9,12 @@ import {
     DropdownItem,
     ExternalLinkButton,
     GitHubIcon,
+    InlineLink,
     Input,
     SearchIcon,
     Section,
     SparklesIcon,
+    Switch,
     TabButton,
     TokensIcon,
     TrendUpIcon,
@@ -33,7 +35,7 @@ import {
     fetchModelCatalog,
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
-import { getModelDisplayName } from "./model-info.ts";
+import { getModelDisplayName, isPaidOnly } from "./model-info.ts";
 import type { ModelScope, ModelSort } from "./model-search.ts";
 import { sortModels } from "./model-sort.ts";
 import {
@@ -182,6 +184,7 @@ export const Models: FC = () => {
     const activeSort = modelSearch.sort ?? "newest";
     const urlSearch = modelSearch.q ?? "";
     const [search, setSearch] = useState(urlSearch);
+    const [questPollenOnly, setQuestPollenOnly] = useState(false);
     const lastPushedSearchRef = useRef(urlSearch);
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
     const [catalogError, setCatalogError] = useState<string | null>(null);
@@ -201,10 +204,12 @@ export const Models: FC = () => {
     );
     const filteredModels = useMemo(
         () =>
-            query
-                ? scopedModels.filter((model) => matchesQuery(model, query))
-                : scopedModels,
-        [query, scopedModels],
+            scopedModels.filter(
+                (model) =>
+                    (!questPollenOnly || !isPaidOnly(model)) &&
+                    matchesQuery(model, query),
+            ),
+        [query, questPollenOnly, scopedModels],
     );
 
     const loadModelCatalog = useCallback(
@@ -402,6 +407,20 @@ export const Models: FC = () => {
                                 );
                             })}
                         </div>
+                        <div className="flex items-center gap-2">
+                            <Switch
+                                checked={questPollenOnly}
+                                onChange={setQuestPollenOnly}
+                                ariaLabel={
+                                    questPollenOnly
+                                        ? "Show all models"
+                                        : "Show only Quest Pollen models"
+                                }
+                            />
+                            <span className="text-sm font-medium text-theme-text-soft">
+                                Quest Pollen models
+                            </span>
+                        </div>
                     </div>
                     <div className="flex w-full items-center justify-between gap-2">
                         <div className="relative min-w-0 max-w-md flex-1">
@@ -474,14 +493,49 @@ export const Models: FC = () => {
                         </Dropdown>
                     </div>
                 </div>
+                {activeScope === "community" && (
+                    <Alert
+                        intent="warning"
+                        title="Community model privacy"
+                        className="mb-4"
+                    >
+                        <p>
+                            Requests go to independent providers and configured
+                            fallbacks, which handle your data under their own
+                            policies.
+                        </p>
+                        <p className="mt-2">
+                            <strong>Avoid sensitive data.</strong> For text
+                            input, you can use our optional{" "}
+                            <InlineLink
+                                href="https://gen.pollinations.ai/docs#tag/Safety"
+                                showIcon={false}
+                            >
+                                privacy filter
+                            </InlineLink>
+                            . See our{" "}
+                            <InlineLink
+                                href="https://pollinations.ai/privacy"
+                                showIcon={false}
+                            >
+                                Privacy Policy
+                            </InlineLink>
+                            .
+                        </p>
+                    </Alert>
+                )}
                 {catalogError && (
                     <Alert intent="danger" className="mb-4">
                         {catalogError}
                     </Alert>
                 )}
-                {query && sectionModels[activeTab].length === 0 ? (
+                {sectionModels[activeTab].length === 0 ? (
                     <p className="py-8 text-center text-sm text-theme-text-muted">
-                        No {searchTarget.toLowerCase()} match “{search.trim()}”.
+                        {query
+                            ? `No ${searchTarget.toLowerCase()} match “${search.trim()}”.`
+                            : questPollenOnly
+                              ? `No ${searchTarget.toLowerCase()} available with Quest Pollen in this category.`
+                              : `No ${searchTarget.toLowerCase()} available.`}
                     </p>
                 ) : (
                     <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
@@ -536,7 +590,7 @@ export const Models: FC = () => {
                         <UsageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
                             <strong>requests /pollen</strong> — estimated from
-                            average usage over the last 7 days.
+                            the median observed cost over the last 7 days.
                         </span>
                     </p>
                 </div>

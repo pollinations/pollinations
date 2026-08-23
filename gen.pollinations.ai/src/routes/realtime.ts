@@ -42,6 +42,7 @@ import {
 import { RealtimeUsageSchema } from "@/schemas/realtime.ts";
 import { generateRandomId } from "@/util.ts";
 import { checkBalance } from "@/utils/generation-access.ts";
+import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 
 type AzureRealtimeApiKey =
     | "AZURE_MYCELI_PROD_EASTUS2_API_KEY"
@@ -780,7 +781,7 @@ function createRealtimeTrackingEvent(args: {
         ...usageToEventParams(args.usage),
         ...reduceAdjustmentsToEventFields(args.adjustments),
         totalCost: args.cost.totalCost,
-        totalPrice: args.price.totalPrice + (args.markup?.devCredit ?? 0),
+        totalPrice: args.tracking.deduction?.billedPrice ?? 0,
         devPrice: args.price.totalPrice,
         markupRate: args.markup?.markupRate ?? 0,
     };
@@ -1411,6 +1412,11 @@ export async function handleRealtimeWebSocket(
         return new Response("Expected Upgrade: websocket", { status: 426 });
     }
     const userId = await authorizeRealtimeSession(c);
+    await enforceModelRateLimit(c, {
+        id: c.var.model.resolved,
+        definition: c.var.model.definition,
+        communityEndpoint: c.var.model.communityEndpoint,
+    });
     const tracking = await createRealtimeBillingContext(c);
     if (c.var.model.resolved === "scribe-realtime") {
         if (!c.env.ELEVENLABS_API_KEY) {

@@ -20,6 +20,12 @@ export const APPS_PAGE = {
     pollenCtaDescription:
         "Let users sign in with their own Pollinations account.",
     pollenCtaButton: "Learn More",
+    docsCtaTitle: "📖 Read the Docs",
+    docsCtaDescription: "Everything you need to build on the API.",
+    docsCtaButton: "View Docs",
+
+    // Search
+    searchPlaceholder: "Search apps…",
 
     // Badges & tooltips
     pollenBadge: "🏵️ POLLEN",
@@ -37,7 +43,6 @@ export const APPS_PAGE = {
 
     // Legend
     pollenLegendDesc: "In-app user sign in",
-    pollenDocsLink: "</> Docs",
     buzzLegendDesc: "100+ requests / 24h",
     newLegendDesc: "Recently added",
 
@@ -71,6 +76,12 @@ export const badges = {
 
 // Genre filters — category-based, each with a glow color cycling through palette
 export const GENRE_FILTERS = [
+    {
+        id: "all",
+        label: "✨ All",
+        match: (_app: App) => true,
+        glow: "var(--primary-strong)",
+    },
     {
         id: "image",
         label: "🖼️ Image",

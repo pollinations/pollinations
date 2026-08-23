@@ -7,6 +7,7 @@ import {
     MODEL_USED_HEADER,
     openaiUsageToUsage,
 } from "@shared/registry/usage-headers.ts";
+import type { CreateChatCompletionRequest } from "@shared/schemas/openai.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
@@ -17,10 +18,14 @@ import {
     withModelFallback,
 } from "../fallback.ts";
 import { fixWavHeader } from "../routes/audio.js";
-import { enforceCommunityModelRateLimit } from "../utils/community-model-rate-limit.ts";
+import type { GenerateTextRequestQueryParams } from "../schemas/text.ts";
+import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 import { communityEndpointGatewayContext } from "./communityEndpoint.ts";
 import { generateTextPortkey } from "./generateTextPortkey.js";
-import { type ExpressLikeRequest, getRequestData } from "./requestUtils.js";
+import {
+    getChatRequestData,
+    getSimpleTextRequestData,
+} from "./requestUtils.js";
 import type {
     ChatCompletion,
     RequestData,
@@ -64,23 +69,6 @@ function syncTextEnvironment(env: CloudflareBindings): void {
 
 function generatePollinationsId(): string {
     return `pllns_${crypto.randomUUID().replaceAll("-", "")}`;
-}
-
-function createExpressLikeRequest(
-    c: TextContext,
-    body: Record<string, unknown>,
-    path: string,
-    params: Record<string, string> = {},
-): ExpressLikeRequest {
-    return {
-        query: Object.fromEntries(new URL(c.req.url).searchParams),
-        body,
-        path,
-        params,
-        method: c.req.method,
-        headers: Object.fromEntries(c.req.raw.headers.entries()),
-        url: c.req.url,
-    };
 }
 
 function prepareRequestParameters(
@@ -128,15 +116,16 @@ function gatewayContext(
     if (!communityEndpoint || !definition) {
         return withGatewayContext(c, candidateRequest);
     }
-    return communityEndpointGatewayContext(
-        communityEndpoint,
-        definition,
-        candidateRequest,
-        c.env.BETTER_AUTH_SECRET,
-        c.env.PORTKEY_GATEWAY_URL,
-        c.var.auth?.apiKey?.rawKey || "",
-        c.var.auth?.apiKey?.id,
-    );
+    return communityEndpointGatewayContext({
+        endpoint: communityEndpoint,
+        modelDefinition: definition,
+        requestData: candidateRequest,
+        secret: c.env.BETTER_AUTH_SECRET,
+        portkeyGatewayUrl: c.env.PORTKEY_GATEWAY_URL,
+        userApiKey: c.var.auth?.apiKey?.rawKey || "",
+        parentRequestId: c.get("requestId"),
+        parentApiKeyId: c.var.auth?.apiKey?.id,
+    });
 }
 
 function withGatewayContext(c: TextContext, requestData: RequestData) {
@@ -181,16 +170,6 @@ function usageHeaders(
     return headers;
 }
 
-const PUBLIC_USAGE_FIELDS = new Set([
-    "cache_creation_input_tokens",
-    "cache_read_input_tokens",
-    "completion_tokens",
-    "completion_tokens_details",
-    "prompt_tokens",
-    "prompt_tokens_details",
-    "total_tokens",
-]);
-
 function publicCompletionUsage(
     usage: ChatCompletion["usage"],
 ): ChatCompletion["usage"] {
@@ -198,9 +177,12 @@ function publicCompletionUsage(
         return usage;
     }
 
-    return Object.fromEntries(
-        Object.entries(usage).filter(([key]) => PUBLIC_USAGE_FIELDS.has(key)),
-    );
+    const {
+        cost: _cost,
+        search_context_size: _searchContextSize,
+        ...publicUsage
+    } = usage;
+    return publicUsage;
 }
 
 function publicChatCompletion(completion: ChatCompletion): ChatCompletion {
@@ -234,7 +216,7 @@ function sendOpenAIResponse(
             ...completion,
             id: completion.id || generatePollinationsId(),
             object: completion.object || "chat.completion",
-            created: completion.created || Date.now(),
+            created: completion.created || Math.floor(Date.now() / 1000),
         }),
         { headers },
     );
@@ -406,8 +388,7 @@ async function generateTextResponse(
                         : undefined,
                 ),
             c.var.track?.failedCalls,
-            (attempt) =>
-                enforceCommunityModelRateLimit(c, attempt.communityEndpoint),
+            (attempt) => enforceModelRateLimit(c, attempt),
         );
         c.set("upstreamRequestUrl", completion.upstreamRequestUrl);
         completion.id = completion.id || generatePollinationsId();
@@ -495,20 +476,17 @@ function normalizeSearchContext(
 
 export async function handleChatCompletionLocal(
     c: TextContext,
-    body: Record<string, unknown>,
+    body: CreateChatCompletionRequest,
 ): Promise<Response> {
-    const req = createExpressLikeRequest(c, body, "/openai");
-    const requestData = getRequestData(req);
-    return generateTextResponse(c, requestData, false);
+    return generateTextResponse(c, getChatRequestData(body), false);
 }
 
 export async function handleTextContentLocal(
     c: TextContext,
-    body: Record<string, unknown>,
+    body: CreateChatCompletionRequest,
 ): Promise<Response> {
-    const req = createExpressLikeRequest(c, body, c.req.path);
     const requestData = prepareRequestParameters(
-        getRequestData(req),
+        getChatRequestData(body),
         c.var.model.definition,
     );
     return generateTextResponse(c, requestData, true);
@@ -518,17 +496,10 @@ export async function handleSimpleTextLocal(
     c: TextContext,
     prompt: string,
     model: string,
-    body: Record<string, unknown> = {},
+    query: GenerateTextRequestQueryParams,
 ): Promise<Response> {
-    const req = createExpressLikeRequest(c, body, c.req.path, {
-        ...c.req.param(),
-        0: prompt,
-    });
     const requestData = prepareRequestParameters(
-        {
-            ...getRequestData(req),
-            model,
-        },
+        getSimpleTextRequestData(prompt, model, query),
         c.var.model.definition,
     );
     return generateTextResponse(c, requestData, true);

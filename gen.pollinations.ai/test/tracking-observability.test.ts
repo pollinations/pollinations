@@ -3,6 +3,7 @@ import {
     env,
     waitOnExecutionContext,
 } from "cloudflare:test";
+import type { AgentRunClaims } from "@shared/auth/agent-run-token.ts";
 import type { AuthUser } from "@shared/auth/api-key.ts";
 import {
     COMMUNITY_MODEL_REWARD_RATE,
@@ -57,6 +58,7 @@ function createTestApp(
     servedModelEntry?: ModelVariables["servedModelEntry"],
     responseHeaders: Record<string, string> = {},
     generationCache?: GenerationCacheVariables["generationCache"],
+    agentRun?: AgentRunClaims,
 ) {
     const app = new Hono<Env>();
 
@@ -70,6 +72,7 @@ function createTestApp(
                 throw new Error("user should not be required in this test");
             },
             requireModelAccess: () => {},
+            ...(agentRun && { agentRun }),
         });
         c.set("balance", {
             getBalance: async () => ({
@@ -549,6 +552,108 @@ describe("tracking observability", () => {
         expect(joinerConsume).toHaveBeenCalledWith(0);
     });
 
+    it("tags a run token's generation with the parent request id", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const bindings = {
+            DB: env.DB,
+            ENVIRONMENT: "test",
+            LOG_LEVEL: "debug",
+            LOG_FORMAT: "text",
+            BETTER_AUTH_SECRET: "test_secret",
+            TINYBIRD_INGEST_URL:
+                "https://tinybird.test/v0/events?name=generation_event_v2",
+            TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+        } as CloudflareBindings;
+
+        const ctx = createExecutionContext();
+        await createTestApp(
+            async () => {},
+            trackingUser,
+            undefined,
+            undefined,
+            {},
+            undefined,
+            {
+                parentApiKeyId: "parent-key-id",
+                parentRequestId: "req-parent",
+                issuedAt: 0,
+                expiresAt: 0,
+            },
+        ).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai",
+                    stream: false,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            bindings,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        expect(tinybirdRequests).toHaveLength(1);
+        const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
+        // The grouping key the model stats pipe joins on. Without it a run's
+        // steps ingest as '' and the run reads as free.
+        expect(event.parentRequestId).toBe("req-parent");
+        expect(event.requestId).not.toBe("req-parent");
+    });
+
+    it("leaves the parent request id unset for an ordinary call", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const bindings = {
+            DB: env.DB,
+            ENVIRONMENT: "test",
+            LOG_LEVEL: "debug",
+            LOG_FORMAT: "text",
+            BETTER_AUTH_SECRET: "test_secret",
+            TINYBIRD_INGEST_URL:
+                "https://tinybird.test/v0/events?name=generation_event_v2",
+            TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+        } as CloudflareBindings;
+
+        const ctx = createExecutionContext();
+        await createTestApp(async () => {}).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai",
+                    stream: false,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            bindings,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        expect(tinybirdRequests).toHaveLength(1);
+        // removeUnset drops it, so ClickHouse's DEFAULT '' fills the column and
+        // agent_run_steps excludes the row.
+        expect(
+            Object.hasOwn(
+                (await tinybirdRequests[0].json()) as object,
+                "parentRequestId",
+            ),
+        ).toBe(false);
+    });
+
     it("does not bill a successful text response when upstream usage is missing", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
@@ -605,6 +710,79 @@ describe("tracking observability", () => {
         expect(event.modelUsed).toBe("openai");
         expect(consumePollen).toHaveBeenCalledWith(0);
     });
+
+    it("records a stream ending with finish_reason error as failed", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+        const upstreamBody = [
+            'data: {"model":"gpt-5-nano","choices":[{"index":0,"delta":{"content":"partial output"},"finish_reason":null}]}',
+            "",
+            'data: {"model":"gpt-5-nano","choices":[{"index":0,"delta":{},"finish_reason":"error","native_finish_reason":"UPSTREAM_ERROR"}]}',
+            "",
+            'data: {"model":"gpt-5-nano","choices":[{"index":0,"delta":{},"finish_reason":"error","native_finish_reason":"UPSTREAM_ERROR"}],"usage":{"prompt_tokens":0,"completion_tokens":0,"total_tokens":0}}',
+            "",
+            "data: [DONE]",
+            "",
+        ].join("\n");
+        const upstream = new Response(upstreamBody, {
+            headers: { "content-type": "text/event-stream" },
+        });
+
+        const ctx = createExecutionContext();
+        const response = await createWrongContentTypeApp(
+            consumePollen,
+            "generate.text",
+            upstream,
+        ).fetch(
+            new Request("https://gen.pollinations.ai/upstream", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai",
+                    stream: true,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        expect(response.status).toBe(200);
+        await expect(response.text()).resolves.toBe(upstreamBody);
+        await waitOnExecutionContext(ctx);
+
+        const generationRequest = tinybirdRequests.find(
+            (request) =>
+                new URL(request.url).searchParams.get("name") ===
+                "generation_event_v2",
+        );
+        expect(tinybirdRequests).toHaveLength(1);
+        await expect(generationRequest?.json()).resolves.toMatchObject({
+            responseStatus: 502,
+            isBilledUsage: false,
+            errorResponseCode: "upstream_finish_reason_error",
+            errorMessage: "Upstream ended generation with finish_reason=error",
+        });
+        expect(consumePollen).toHaveBeenCalledWith(0);
+    });
+
     it("tracks usage after a malformed SSE event", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
@@ -1341,6 +1519,109 @@ describe("tracking observability", () => {
             .where(eq(userTable.id, primaryOwnerId))
             .limit(1);
         expect(primaryOwner?.tierBalance).toBe(0);
+    });
+
+    it("rewards a public model owner when their private fallback serves", async () => {
+        const db = drizzle(env.DB);
+        const payerId = `track-private-fallback-payer-${crypto.randomUUID()}`;
+        const ownerId = `track-private-fallback-owner-${crypto.randomUUID()}`;
+        await db.insert(userTable).values(
+            [payerId, ownerId].map((id) => ({
+                id,
+                email: `${id}@test.local`,
+                name: id,
+                tierBalance: id === payerId ? 1 : 0,
+                packBalance: 0,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            })),
+        );
+        const [payer] = await db
+            .select()
+            .from(userTable)
+            .where(eq(userTable.id, payerId))
+            .limit(1);
+        if (!payer) throw new Error("Expected inserted payer");
+
+        const primaryEndpoint = createCommunityEndpoint(ownerId);
+        const fallbackEndpoint = createCommunityEndpoint(ownerId, {
+            id: "community-endpoint-private-fallback",
+            modelId: "test-owner/private-fallback",
+            name: "private-fallback",
+            visibility: "private",
+            ...communityEndpointPrices({
+                promptTextPrice: 0.00005,
+                completionTextPrice: 0.0001,
+            }),
+        });
+        const fallbackEntry = createCommunityEntry(fallbackEndpoint);
+        const model: ModelVariables["model"] = {
+            requested: primaryEndpoint.modelId,
+            resolved: primaryEndpoint.modelId,
+            definition: communityModelDefinition(primaryEndpoint),
+            communityEndpoint: primaryEndpoint,
+            fallbackEntries: [fallbackEntry],
+        };
+
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+
+        const ctx = createExecutionContext();
+        const response = await createTestApp(
+            async () => {},
+            payer,
+            model,
+            fallbackEntry,
+        ).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: primaryEndpoint.modelId,
+                    stream: false,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                ...env,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as unknown as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(1);
+        const event = (await tinybirdRequests[0].json()) as Record<
+            string,
+            unknown
+        >;
+        expect(event).toMatchObject({
+            resolvedModelRequested: primaryEndpoint.modelId,
+            totalPrice: 0.2,
+            communityModelRewardUserId: ownerId,
+            communityModelRewardRate: COMMUNITY_MODEL_REWARD_RATE,
+            communityModelRewardAmount: 0.075,
+        });
+
+        const [owner] = await db
+            .select({ tierBalance: userTable.tierBalance })
+            .from(userTable)
+            .where(eq(userTable.id, ownerId))
+            .limit(1);
+        expect(owner?.tierBalance).toBeCloseTo(0.075, 10);
     });
 
     it("does not bill image generation that returns a JSON (non-image) content-type", async () => {

@@ -45,6 +45,7 @@ import {
     type FallbackCandidate,
     withModelFallbackResponse,
 } from "../fallback.ts";
+import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 import { validateUserMediaUrl } from "../utils/user-media-url.ts";
 import { transcribeWithAssemblyAi } from "./assemblyai-transcription.ts";
 import type { SimpleAudioQuery } from "./generation-handlers.ts";
@@ -158,6 +159,7 @@ async function withAudioFallback(
         c.var.model,
         attempt,
         c.var.track?.failedCalls,
+        (candidate) => enforceModelRateLimit(c, candidate),
     );
     if (servedEntry) c.set("servedModelEntry", servedEntry);
     return response;
@@ -3008,6 +3010,11 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
             message: "speakers_expected requires response_format=diarized_json",
         });
     }
+
+    c.var.track.setPricingInput({
+        hasDiarization: responseFormat === "diarized_json",
+        hasPrompt: Boolean(prompt),
+    });
 
     const result = await withAudioFallback(c, async (candidate) => {
         if (candidate.communityEndpoint) {

@@ -1561,17 +1561,18 @@ describe("community endpoint helpers", () => {
         };
         const modelDefinition = communityModelDefinition(endpoint);
 
-        const context = await communityEndpointGatewayContext(
+        const context = await communityEndpointGatewayContext({
             endpoint,
             modelDefinition,
-            {
+            requestData: {
                 messages: [{ role: "user", content: "hello" }],
                 max_tokens: 5,
             },
             secret,
-            "https://portkey.test",
-            "sk_user_key",
-        );
+            portkeyGatewayUrl: "https://portkey.test",
+            userApiKey: "sk_user_key",
+            parentRequestId: "parent-request-id",
+        });
 
         expect(context).toMatchObject({
             max_tokens: 5,
@@ -1622,16 +1623,20 @@ describe("community endpoint helpers", () => {
         async function contextFor(
             endpoint: CommunityEndpointRuntime,
             parentApiKeyId?: string,
+            parentRequestId = "parent-request-id",
         ) {
-            return communityEndpointGatewayContext(
+            return communityEndpointGatewayContext({
                 endpoint,
-                communityModelDefinition(endpoint),
-                { messages: [{ role: "user", content: "make a video" }] },
+                modelDefinition: communityModelDefinition(endpoint),
+                requestData: {
+                    messages: [{ role: "user", content: "make a video" }],
+                },
                 secret,
-                "https://portkey.test",
-                "sk_user_key",
+                portkeyGatewayUrl: "https://portkey.test",
+                userApiKey: "sk_user_key",
+                parentRequestId,
                 parentApiKeyId,
-            );
+            });
         }
 
         it("authenticates as a run token, not the caller's key", async () => {
@@ -1644,6 +1649,37 @@ describe("community endpoint helpers", () => {
 
             const claims = await verifyAgentRunToken(token, secret);
             expect(claims).toMatchObject({ parentApiKeyId: "parent-key-id" });
+        });
+
+        it("carries the parent request id so a run's generations can be grouped", async () => {
+            const endpoint = endpointAgent();
+            const context = await contextFor(
+                endpoint,
+                "parent-key-id",
+                "req-abc",
+            );
+
+            const claims = await verifyAgentRunToken(
+                String(context.modelConfig?.authKey),
+                secret,
+            );
+            expect(claims.parentRequestId).toBe("req-abc");
+
+            // Fallback attempts share the parent request but still receive
+            // distinct signed credentials.
+            const second = await contextFor(
+                endpoint,
+                "parent-key-id",
+                "req-abc",
+            );
+            const secondClaims = await verifyAgentRunToken(
+                String(second.modelConfig?.authKey),
+                secret,
+            );
+            expect(secondClaims.parentRequestId).toBe("req-abc");
+            expect(String(second.modelConfig?.authKey)).not.toBe(
+                String(context.modelConfig?.authKey),
+            );
         });
 
         // The complement of the test above, and the reason an agent listing
@@ -1675,6 +1711,7 @@ describe("community endpoint helpers", () => {
             const claims = await verifyAgentRunToken(token, secret);
             expect(claims).toMatchObject({
                 parentApiKeyId: "parent-key-id",
+                parentRequestId: "parent-request-id",
                 managedAgentId: "managed-agent-id",
             });
         });
@@ -4848,21 +4885,23 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         promptTextTokens: 0,
         completionTextTokens: 0,
     });
-    const gatewayContext = await communityEndpointGatewayContext(
-        registryEntry.communityEndpoint,
-        registryEntry.definition,
-        { messages: [{ role: "user", content: "hello" }] },
-        env.BETTER_AUTH_SECRET,
-        env.PORTKEY_GATEWAY_URL,
-        "sk_user_key",
-        "caller-api-key-id",
-    );
+    const gatewayContext = await communityEndpointGatewayContext({
+        endpoint: registryEntry.communityEndpoint,
+        modelDefinition: registryEntry.definition,
+        requestData: { messages: [{ role: "user", content: "hello" }] },
+        secret: env.BETTER_AUTH_SECRET,
+        portkeyGatewayUrl: env.PORTKEY_GATEWAY_URL,
+        userApiKey: "sk_user_key",
+        parentRequestId: "caller-request-id",
+        parentApiKeyId: "caller-api-key-id",
+    });
     const runtimeToken = String(gatewayContext.modelConfig?.authKey);
     expect(runtimeToken).toMatch(/^ag_/);
     await expect(
         verifyAgentRunToken(runtimeToken, env.BETTER_AUTH_SECRET),
     ).resolves.toMatchObject({
         parentApiKeyId: "caller-api-key-id",
+        parentRequestId: "caller-request-id",
         managedAgentId: agent.id,
     });
     expect(gatewayContext.modelConfig).toMatchObject({

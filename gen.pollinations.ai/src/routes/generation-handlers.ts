@@ -22,12 +22,14 @@ import {
 } from "@/middleware/safety.ts";
 import { handle3dPrompt } from "@/model3d/handler.ts";
 import type { CreateEmbeddingRequestSchema } from "@/schemas/embeddings.ts";
+import type { GenerateTextRequestQueryParams } from "@/schemas/text.ts";
 import {
     handleChatCompletionLocal,
     handleSimpleTextLocal,
     handleTextContentLocal,
 } from "@/text/handler.ts";
 import { withModelFallbackResponse } from "../fallback.ts";
+import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 
 export const textBodyLimit = bodyLimit({
     maxSize: 20 * 1024 * 1024,
@@ -159,6 +161,7 @@ export async function generateEmbeddingsResponse(
                 candidate.id,
             ),
         c.var.track?.failedCalls,
+        (candidate) => enforceModelRateLimit(c, candidate),
     );
     if (servedEntry) c.set("servedModelEntry", servedEntry);
     return response;
@@ -219,10 +222,9 @@ export async function generateTextContent(c: Context<Env>): Promise<Response> {
 }
 
 export async function generateSimpleText(c: Context<Env>): Promise<Response> {
-    const query = c.req.valid("query" as never) as {
-        safe?: SafeValue;
-        system?: string;
-    };
+    const query = c.req.valid(
+        "query" as never,
+    ) as GenerateTextRequestQueryParams;
     const textInputs =
         typeof query.system === "string"
             ? [c.req.param("prompt"), query.system]
@@ -235,12 +237,10 @@ export async function generateSimpleText(c: Context<Env>): Promise<Response> {
 
     return withSafetyHeaders(
         c,
-        await handleSimpleTextLocal(
-            c,
-            prompt,
-            c.var.model.resolved,
-            system ? { system } : undefined,
-        ),
+        await handleSimpleTextLocal(c, prompt, c.var.model.resolved, {
+            ...query,
+            system,
+        }),
     );
 }
 

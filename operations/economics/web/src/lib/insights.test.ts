@@ -1880,27 +1880,21 @@ describe("providerBalanceRows", () => {
         });
     });
 
-    it("lists a reviewed external compute vendor before its balance is checked", () => {
-        const [row] = providerBalanceRows(
-            emptyData({
-                opCloud: [
-                    opCloud({
-                        vendor: "inception",
-                        type: "inference",
-                        paid: -10,
-                    }),
-                ],
-            }),
-            new Date("2026-08-22T12:00:00Z"),
-        );
-
-        expect(row).toMatchObject({
-            vendor: "inception",
-            cashBalanceUsd: null,
-            creditBalanceUsd: null,
-            balanceAsOf: null,
-            balanceStatus: "not_checked",
-        });
+    it("does not list a billed vendor without a balance to track", () => {
+        expect(
+            providerBalanceRows(
+                emptyData({
+                    opCloud: [
+                        opCloud({
+                            vendor: "inception",
+                            type: "inference",
+                            paid: -10,
+                        }),
+                    ],
+                }),
+                new Date("2026-08-22T12:00:00Z"),
+            ),
+        ).toEqual([]);
     });
 });
 

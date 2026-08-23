@@ -1937,7 +1937,6 @@ export function providerBalanceRows(
     const cashFlows = new Map<string, Map<string, BalanceFlow>>();
     const creditFlows = new Map<string, Map<string, BalanceFlow>>();
     const cashVendors = new Set<string>();
-    const reviewedVendors = new Set<string>();
 
     for (const row of data.opTransactions ?? []) {
         if (!PREPAID_VENDORS.has(row.vendor)) continue;
@@ -1954,10 +1953,6 @@ export function providerBalanceRows(
 
     for (const row of data.opCloud ?? []) {
         if (isOpCloudBalanceRow(row)) continue;
-        const provider = resolveProvider(row.vendor);
-        if (provider?.monthlyReview && provider.meteringBasis !== "internal") {
-            reviewedVendors.add(provider.id);
-        }
         const month = opCloudMonth(row);
         if (!MONTH_KEY_RE.test(month) || month > currentMonth) continue;
         const cashUsedUsd = opCloudPaidBurnUsd(row);
@@ -1994,7 +1989,6 @@ export function providerBalanceRows(
         ...cashVendors,
         ...anchors.keys(),
         ...coverage.keys(),
-        ...reviewedVendors,
     ]);
     const rows: ProviderBalanceRow[] = [];
     for (const vendor of vendors) {

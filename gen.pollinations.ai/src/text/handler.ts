@@ -137,7 +137,6 @@ function gatewayContext(
         userApiKey: c.var.auth?.apiKey?.rawKey || "",
         parentRequestId: c.get("requestId"),
         parentApiKeyId: c.var.auth?.apiKey?.id,
-        agentDepth: c.var.auth?.agentRun?.agentDepth ?? 0,
     });
 }
 

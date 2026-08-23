@@ -36,13 +36,11 @@ async function mintDelegatedToken({
     endpoint,
     parentApiKeyId,
     parentRequestId,
-    agentDepth,
     secret,
 }: {
     endpoint: CommunityEndpointRuntime;
     parentApiKeyId: string | undefined;
     parentRequestId: string;
-    agentDepth: number;
     secret: string;
 }): Promise<string | undefined> {
     if (!usesAgentRunToken(endpoint)) return undefined;
@@ -60,7 +58,6 @@ async function mintDelegatedToken({
         secret,
         parentApiKeyId,
         parentRequestId,
-        agentDepth: agentDepth + 1,
         // The managed runtime uses the listing id (also its upstream model) to
         // select the prompt config. An external agent only needs spend scope.
         managedAgentId:
@@ -77,7 +74,6 @@ export async function communityEndpointGatewayContext({
     userApiKey,
     parentRequestId,
     parentApiKeyId,
-    agentDepth = 0,
 }: {
     endpoint: CommunityEndpointRuntime;
     modelDefinition: ModelDefinition;
@@ -87,14 +83,12 @@ export async function communityEndpointGatewayContext({
     userApiKey: string;
     parentRequestId: string;
     parentApiKeyId?: string;
-    agentDepth?: number;
 }): Promise<TransformOptions> {
     const { messages: _messages, ...requestDataWithoutMessages } = requestData;
     const runToken = await mintDelegatedToken({
         endpoint,
         parentApiKeyId,
         parentRequestId,
-        agentDepth,
         secret,
     });
     // Only a proxy stores and receives its registered upstream bearer secret.

@@ -26,6 +26,11 @@ async function stripeJson(url) {
 const payout = await stripeJson(
     `https://api.stripe.com/v1/payouts/${payoutId}`,
 );
+const account = await stripeJson("https://api.stripe.com/v1/account");
+const accountDisplayName =
+    account.settings?.dashboard?.display_name ??
+    account.business_profile?.name ??
+    "";
 const balanceTransactions = [];
 let startingAfter = "";
 let pageCount = 0;
@@ -64,6 +69,10 @@ writeFileSync(
     `${JSON.stringify(
         {
             collected_at: new Date().toISOString(),
+            stripe_account: {
+                id: account.id,
+                display_name: accountDisplayName,
+            },
             payout,
             page_count: pageCount,
             balance_transactions: balanceTransactions,
@@ -81,6 +90,8 @@ writeFileSync(
 console.log(
     JSON.stringify({
         output: outputPath,
+        account_id: account.id,
+        account_name: accountDisplayName,
         pages: pageCount,
         rows: balanceTransactions.length,
         payout_amount: payout.amount,

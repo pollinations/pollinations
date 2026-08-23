@@ -20,6 +20,15 @@ Primary evidence sources:
 - Balance activity: bounded `GET https://api.stripe.com/v1/balance_transactions`.
 - Dashboard/report: Stripe payout reconciliation report for an automatic payout.
 
+Account identity:
+
+- Stripe account ID is part of the evidence contract. Do not infer the account
+  from a bank description such as `STRIPE`.
+- Use one API key and one export per Stripe account. Never combine pagination
+  across accounts.
+- `collect-stripe-payout.mjs` records the authenticated account ID and display
+  name alongside the payout and its balance transactions.
+
 Required credential:
 
 - `STRIPE_API_KEY`
@@ -40,7 +49,8 @@ Collection steps:
    ```
 
    The collector stops unless the contained balance-transaction net equals
-   the payout amount exactly.
+   the payout amount exactly. Confirm the recorded `stripe_account.id` is the
+   intended account before using the file as evidence.
 4. When the question is activity during a calendar month, query balance
    transactions by `created[gte]` and exclusive `created[lt]`. Sum `net` only
    after filtering to the requested question; Stripe monetary fields are minor
@@ -60,6 +70,9 @@ Known traps:
   moved cash between months and broke bank reconciliation.
 - A large Stripe-looking inflow is not automatically an investment. Require
   separate financing evidence before using canonical vendor `investment`.
+- One company can have multiple Stripe accounts with indistinguishable Wise
+  descriptions. A payout amount match is insufficient without the Stripe
+  account ID embedded in the source export.
 
 Economics use:
 

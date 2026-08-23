@@ -102,6 +102,7 @@ export function pnlByMonth(data: Data, now: Date): PnlMonth[] {
                     hasRevenue = true;
                     continue;
                 }
+                if (category === "balance_sheet") continue;
                 categories[category] = (categories[category] ?? 0) - amountUsd;
             }
             const hasTransactions = Object.keys(categories).length > 0;
@@ -362,7 +363,7 @@ function pnlVendorLines(
     const byCategory = new Map<string, Map<string, Map<string, number>>>();
     for (const row of data.opTransactions ?? []) {
         const category = transactionCategory(row);
-        if (category === "revenue") continue;
+        if (category === "revenue" || category === "balance_sheet") continue;
         const month = row.date.slice(0, 7);
         if (!monthSet.has(month)) continue;
         const vendors = getOrInit(

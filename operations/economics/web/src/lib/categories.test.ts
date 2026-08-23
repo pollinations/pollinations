@@ -94,6 +94,15 @@ describe("canonical categories", () => {
         ).toBe("admin");
     });
 
+    it("keeps personal purchases paid by the company out of expenses", () => {
+        expect(
+            transactionCategory(
+                transaction("self-issued", "cloud", "Personal Pollen pack"),
+            ),
+        ).toBe("balance_sheet");
+        expect(categoryLabel("balance_sheet")).toBe("Balance Sheet");
+    });
+
     it("collapses technical cloud types into the shared business category", () => {
         expect(cloudCategory({ type: "inference" })).toBe("compute");
         expect(cloudCategory({ type: "gpu" })).toBe("compute");

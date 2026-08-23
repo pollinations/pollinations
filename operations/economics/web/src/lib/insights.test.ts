@@ -154,6 +154,26 @@ describe("pnlByMonth", () => {
         expect(april.cashPnlUsd).toBeNull();
     });
 
+    it("excludes balance-sheet movements from revenue and expense", () => {
+        const [month] = pnlByMonth(
+            emptyData({
+                opTransactions: [
+                    opTxn({
+                        vendor: "self-issued",
+                        category: "cloud",
+                        amount: -10,
+                    }),
+                ],
+            }),
+            now,
+        );
+
+        expect(month.categories).toEqual({});
+        expect(month.spendUsd).toBeNull();
+        expect(month.revenueNetUsd).toBeNull();
+        expect(month.cashPnlUsd).toBeNull();
+    });
+
     it("ignores pre-window transaction rows entirely", () => {
         const data = emptyData({
             opTransactions: [

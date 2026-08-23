@@ -9,6 +9,7 @@ export const CATEGORY_IDS = [
     "office",
     "admin",
     "payroll",
+    "balance_sheet",
 ] as const;
 
 export type Category = (typeof CATEGORY_IDS)[number];
@@ -33,6 +34,7 @@ const CATEGORY_LABELS: Record<CategoryValue, string> = {
     office: "Office",
     admin: "Admin",
     payroll: "Payroll",
+    balance_sheet: "Balance Sheet",
     uncategorized: "Uncategorized",
 };
 
@@ -80,7 +82,7 @@ const TRANSACTION_VENDOR_CATEGORIES: Record<string, Category> = {
     replicate: "compute",
     retell: "compute",
     runpod: "compute",
-    "self-issued": "compute",
+    "self-issued": "balance_sheet",
     slack: "operations",
     "so-lab-x": "payroll",
     "space-berlin": "office",

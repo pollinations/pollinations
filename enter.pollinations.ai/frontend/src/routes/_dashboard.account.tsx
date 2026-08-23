@@ -39,6 +39,8 @@ function AccountPage() {
     const [githubApp, setGithubApp] = useState<{
         configured: boolean;
         connected: boolean;
+        authorized?: boolean;
+        personalInstalled?: boolean;
         manageUrl?: string | null;
     } | null>(null);
 
@@ -148,8 +150,10 @@ function AccountPage() {
                             </Text>
                             <Text size="sm" tone="muted">
                                 {githubApp.connected
-                                    ? "Connected to your personal GitHub account"
-                                    : "Connect repositories you choose to Pollinations"}
+                                    ? "Pollinations can read and write the repositories you selected."
+                                    : githubApp.authorized
+                                      ? "Authorized; finish selecting repositories for Pollinations."
+                                      : "Let Pollinations work with repositories you choose."}
                             </Text>
                         </div>
                         <Button

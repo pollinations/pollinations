@@ -132,7 +132,7 @@ async function importSigningKey(privateKey: string): Promise<CryptoKey> {
 }
 
 /** Mint a short-lived App JWT (valid ~9 min, iat backdated for clock skew). */
-export async function mintAppJwt(creds: GithubAppCredentials): Promise<string> {
+async function mintAppJwt(creds: GithubAppCredentials): Promise<string> {
     const key = await importSigningKey(creds.privateKey);
     const nowSec = Math.floor(Date.now() / 1000);
     const header = { alg: "RS256", typ: "JWT" };
@@ -146,34 +146,6 @@ export async function mintAppJwt(creds: GithubAppCredentials): Promise<string> {
         new TextEncoder().encode(signingInput),
     );
     return `${signingInput}.${b64urlFromBytes(new Uint8Array(sig))}`;
-}
-
-export type GithubUserInstallation = {
-    id: number;
-    account: { id: number; login: string } | null;
-    target_type: string;
-    html_url: string;
-};
-
-/** Return this App's installation on a personal GitHub account, if present. */
-export async function getUserInstallation(
-    appJwt: string,
-    githubUsername: string,
-): Promise<GithubUserInstallation | null> {
-    const path = `/users/${encodeURIComponent(githubUsername)}/installation`;
-    const res = await fetch(`${GITHUB_API}${path}`, {
-        headers: {
-            Authorization: `Bearer ${appJwt}`,
-            Accept: "application/vnd.github+json",
-            "X-GitHub-Api-Version": "2022-11-28",
-            "User-Agent": USER_AGENT,
-        },
-    });
-    if (res.status === 404) return null;
-    if (!res.ok) {
-        throw new Error(`GitHub App GET ${path} -> ${res.status}`);
-    }
-    return (await res.json()) as GithubUserInstallation;
 }
 
 async function appJsonGet<T>(path: string, jwt: string): Promise<T> {

@@ -1,62 +1,33 @@
-import {
-    type GithubAppCredentials,
-    getUserInstallation,
-    mintAppJwt,
-} from "@shared/github/app-auth.ts";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 
+const PROVIDER_ID = "github-app";
+
 type GithubConnectBindings = CloudflareBindings & {
-    GITHUB_CONNECT_APP_ID?: string;
-    GITHUB_CONNECT_APP_PRIVATE_KEY?: string;
+    GITHUB_CONNECT_APP_CLIENT_ID?: string;
+    GITHUB_CONNECT_APP_CLIENT_SECRET?: string;
     GITHUB_CONNECT_APP_SLUG?: string;
 };
 
-type GithubConnectConfig = GithubAppCredentials & { slug: string };
+type GithubInstallation = {
+    id: number;
+    account: { id: number; login: string } | null;
+    target_type: "User" | "Organization";
+    html_url: string;
+};
 
-function getConfig(env: CloudflareBindings): GithubConnectConfig | null {
+function getConfig(env: CloudflareBindings) {
     const bindings = env as GithubConnectBindings;
     if (
-        !bindings.GITHUB_CONNECT_APP_ID ||
-        !bindings.GITHUB_CONNECT_APP_PRIVATE_KEY ||
+        !bindings.GITHUB_CONNECT_APP_CLIENT_ID ||
+        !bindings.GITHUB_CONNECT_APP_CLIENT_SECRET ||
         !bindings.GITHUB_CONNECT_APP_SLUG
     ) {
         return null;
     }
-    return {
-        appId: bindings.GITHUB_CONNECT_APP_ID,
-        privateKey: bindings.GITHUB_CONNECT_APP_PRIVATE_KEY,
-        slug: bindings.GITHUB_CONNECT_APP_SLUG,
-    };
-}
-
-function getGithubIdentity(user: {
-    githubId?: number | null;
-    githubUsername?: string | null;
-}) {
-    if (!user?.githubId || !user.githubUsername) {
-        throw new HTTPException(409, {
-            message: "A linked GitHub identity is required",
-        });
-    }
-    return {
-        githubId: user.githubId,
-        githubUsername: user.githubUsername,
-    };
-}
-
-async function loadInstallation(
-    env: CloudflareBindings,
-    config: GithubConnectConfig,
-    githubUsername: string,
-) {
-    const appJwt =
-        env.ENVIRONMENT === "test"
-            ? "mock_github_auth_token"
-            : await mintAppJwt(config);
-    return getUserInstallation(appJwt, githubUsername);
+    return { slug: bindings.GITHUB_CONNECT_APP_SLUG };
 }
 
 export const githubAppRoutes = new Hono<Env>()
@@ -66,20 +37,80 @@ export const githubAppRoutes = new Hono<Env>()
         const config = getConfig(c.env);
         if (!config) return c.json({ configured: false, connected: false });
 
-        const user = getGithubIdentity(c.var.auth.requireUser());
-        const installation = await loadInstallation(
-            c.env,
-            config,
-            user.githubUsername,
+        const user = c.var.auth.requireUser();
+        const accounts = await c.var.auth.client.api.listUserAccounts({
+            headers: c.req.raw.headers,
+        });
+        const account = accounts.find(
+            (candidate) => candidate.providerId === PROVIDER_ID,
         );
-        const connected =
-            installation?.target_type === "User" &&
-            installation.account?.id === user.githubId;
+        if (!account) {
+            return c.json({
+                configured: true,
+                connected: false,
+                authorized: false,
+                manageUrl: null,
+            });
+        }
+
+        let accessToken: string;
+        try {
+            const tokens = await c.var.auth.client.api.getAccessToken({
+                body: { providerId: PROVIDER_ID, accountId: account.id },
+                headers: c.req.raw.headers,
+            });
+            accessToken = tokens.accessToken;
+        } catch {
+            return c.json({
+                configured: true,
+                connected: false,
+                authorized: false,
+                manageUrl: null,
+            });
+        }
+
+        const headers = {
+            Accept: "application/vnd.github+json",
+            Authorization: `Bearer ${accessToken}`,
+            "User-Agent": "pollinations-enter",
+            "X-GitHub-Api-Version": "2022-11-28",
+        };
+        const [profileResponse, installationsResponse] = await Promise.all([
+            fetch("https://api.github.com/user", { headers }),
+            fetch("https://api.github.com/user/installations", { headers }),
+        ]);
+        if (!profileResponse.ok || !installationsResponse.ok) {
+            throw new HTTPException(502, {
+                message: "GitHub connection check failed",
+            });
+        }
+
+        const profile = (await profileResponse.json()) as { id: number };
+        if (profile.id !== user.githubId) {
+            throw new HTTPException(403, {
+                message: "GitHub connection belongs to another account",
+            });
+        }
+
+        const { installations } = (await installationsResponse.json()) as {
+            installations: GithubInstallation[];
+        };
+        const personalInstallation = installations.find(
+            (installation) =>
+                installation.target_type === "User" &&
+                installation.account?.id === user.githubId,
+        );
+        const connected = installations.length > 0;
 
         return c.json({
             configured: true,
             connected,
-            manageUrl: connected ? installation.html_url : null,
+            authorized: true,
+            personalInstalled: Boolean(personalInstallation),
+            manageUrl:
+                personalInstallation?.html_url ??
+                installations[0]?.html_url ??
+                null,
         });
     })
     .get("/install", async (c) => {
@@ -90,7 +121,6 @@ export const githubAppRoutes = new Hono<Env>()
                 message: "GitHub connection is not configured",
             });
         }
-        getGithubIdentity(c.var.auth.requireUser());
         return c.redirect(
             `https://github.com/apps/${encodeURIComponent(config.slug)}/installations/new`,
             302,
@@ -98,36 +128,28 @@ export const githubAppRoutes = new Hono<Env>()
     })
     .get("/callback", async (c) => {
         await c.var.auth.requireAuthorization();
-        const config = getConfig(c.env);
-        if (!config) {
-            throw new HTTPException(503, {
-                message: "GitHub connection is not configured",
-            });
-        }
-
         const installationId = Number(c.req.query("installation_id"));
         if (!Number.isSafeInteger(installationId) || installationId <= 0) {
             throw new HTTPException(400, {
                 message: "Invalid GitHub installation",
             });
         }
-
-        const user = getGithubIdentity(c.var.auth.requireUser());
-        const installation = await loadInstallation(
-            c.env,
-            config,
-            user.githubUsername,
-        );
-        if (
-            !installation ||
-            installation.id !== installationId ||
-            installation.target_type !== "User" ||
-            installation.account?.id !== user.githubId
-        ) {
-            throw new HTTPException(403, {
-                message: "GitHub installation does not belong to this account",
+        return c.redirect("/api/github-app/authorize", 302);
+    })
+    .get("/authorize", async (c) => {
+        await c.var.auth.requireAuthorization();
+        if (!getConfig(c.env)) {
+            throw new HTTPException(503, {
+                message: "GitHub connection is not configured",
             });
         }
-
-        return c.redirect("/account", 302);
+        const result = await c.var.auth.client.api.oAuth2LinkAccount({
+            body: { providerId: PROVIDER_ID, callbackURL: "/account" },
+            headers: c.req.raw.headers,
+            returnHeaders: true,
+        });
+        result.headers.forEach((value, name) => {
+            c.header(name, value);
+        });
+        return c.redirect(result.response.url, 302);
     });

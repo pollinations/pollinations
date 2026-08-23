@@ -10,21 +10,17 @@ const IMAGE_URL = "https://media.pollinations.ai/example.png";
 
 function createHarness(options = {}) {
     const calls = [];
-    const worker = createWorker({
-        fetchImpl: async (url, init) => {
-            calls.push({ url, init, body: JSON.parse(init.body) });
-            if (options.response) return options.response;
-            return Response.json({
-                choices: [
-                    { message: { content: "The sign says Pollinations." } },
-                ],
-            });
-        },
-    });
+    const fetchGen = async (url, init) => {
+        calls.push({ url, init, body: JSON.parse(init.body) });
+        if (options.response) return options.response;
+        return Response.json({
+            choices: [{ message: { content: "The sign says Pollinations." } }],
+        });
+    };
     return {
         calls,
-        worker,
-        env: { POLLINATIONS_BASE_URL: "https://gen.pollinations.ai" },
+        worker: createWorker(),
+        env: { GEN: { fetch: fetchGen } },
     };
 }
 

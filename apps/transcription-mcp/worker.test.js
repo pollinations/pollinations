@@ -10,34 +10,32 @@ const SOURCE = "https://cdn.example.com/speech.mp3";
 
 function createHarness(options = {}) {
     const calls = [];
-    const worker = createWorker({
-        fetchImpl: async (url, init) => {
-            calls.push({ url: url.toString(), init });
-            if (url.toString() === SOURCE) {
-                return (
-                    options.sourceResponse ??
-                    new Response(new Uint8Array([1, 2, 3]), {
-                        headers: {
-                            "Content-Type": "audio/mpeg",
-                            "Content-Length": "3",
-                        },
-                    })
-                );
-            }
-            if (options.transcriptionResponse) {
-                return options.transcriptionResponse;
-            }
-            return Response.json({
-                text: "Hello from the recording.",
-                language: "en",
-                duration: 1.5,
-            });
-        },
-    });
+    const fetchImpl = async (url, init) => {
+        calls.push({ url: url.toString(), init });
+        if (url.toString() === SOURCE) {
+            return (
+                options.sourceResponse ??
+                new Response(new Uint8Array([1, 2, 3]), {
+                    headers: {
+                        "Content-Type": "audio/mpeg",
+                        "Content-Length": "3",
+                    },
+                })
+            );
+        }
+        if (options.transcriptionResponse) {
+            return options.transcriptionResponse;
+        }
+        return Response.json({
+            text: "Hello from the recording.",
+            language: "en",
+            duration: 1.5,
+        });
+    };
     return {
         calls,
-        worker,
-        env: { POLLINATIONS_BASE_URL: "https://gen.pollinations.ai" },
+        worker: createWorker({ fetchImpl }),
+        env: { GEN: { fetch: fetchImpl } },
     };
 }
 

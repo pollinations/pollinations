@@ -8,34 +8,32 @@ import { createWorker } from "./worker.js";
 
 function createHarness(options = {}) {
     const calls = [];
-    const worker = createWorker({
-        fetchImpl: async (url, init) => {
-            calls.push({ url, init, body: JSON.parse(init.body) });
-            if (options.response) return options.response;
-            return Response.json({
-                choices: [
-                    {
-                        message: {
-                            content: "The current answer.",
-                            annotations: [
-                                {
-                                    type: "url_citation",
-                                    url_citation: {
-                                        title: "Primary source",
-                                        url: "https://example.com/source",
-                                    },
+    const fetchGen = async (url, init) => {
+        calls.push({ url, init, body: JSON.parse(init.body) });
+        if (options.response) return options.response;
+        return Response.json({
+            choices: [
+                {
+                    message: {
+                        content: "The current answer.",
+                        annotations: [
+                            {
+                                type: "url_citation",
+                                url_citation: {
+                                    title: "Primary source",
+                                    url: "https://example.com/source",
                                 },
-                            ],
-                        },
+                            },
+                        ],
                     },
-                ],
-            });
-        },
-    });
+                },
+            ],
+        });
+    };
     return {
         calls,
-        worker,
-        env: { POLLINATIONS_BASE_URL: "https://gen.pollinations.ai" },
+        worker: createWorker(),
+        env: { GEN: { fetch: fetchGen } },
     };
 }
 

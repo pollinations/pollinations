@@ -39,9 +39,9 @@ function searchResult(answer, citations) {
     };
 }
 
-async function searchWeb(params, env, authorization, fetchImpl) {
-    const response = await fetchImpl(
-        `${env.POLLINATIONS_BASE_URL}/v1/chat/completions`,
+async function searchWeb(params, env, authorization) {
+    const response = await env.GEN.fetch(
+        "https://gen.pollinations.ai/v1/chat/completions",
         {
             method: "POST",
             headers: {
@@ -71,7 +71,7 @@ async function searchWeb(params, env, authorization, fetchImpl) {
     return searchResult(message.content, citationsFromMessage(message));
 }
 
-function buildServer(env, authorization, fetchImpl) {
+function buildServer(env, authorization) {
     const server = new McpServer(
         { name: "pollinations-web-search-mcp", version: "0.1.0" },
         {
@@ -93,12 +93,12 @@ function buildServer(env, authorization, fetchImpl) {
                     .default("medium"),
             }),
         },
-        (params) => searchWeb(params, env, authorization, fetchImpl),
+        (params) => searchWeb(params, env, authorization),
     );
     return server;
 }
 
-export function createWorker({ fetchImpl = fetch } = {}) {
+export function createWorker() {
     return {
         async fetch(request, env) {
             const url = new URL(request.url);
@@ -125,7 +125,7 @@ export function createWorker({ fetchImpl = fetch } = {}) {
 
             const authorization = request.headers.get("authorization") ?? "";
             const handler = createMcpHandler(
-                () => buildServer(env, authorization, fetchImpl),
+                () => buildServer(env, authorization),
                 {
                     onerror: (error) => console.error(error),
                 },

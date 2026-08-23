@@ -5,17 +5,17 @@
   "main": "entrypoint.js",
   "workers_dev": false,
   "compatibility_date": "2026-08-20",
-  "vars": {
-    "POLLINATIONS_BASE_URL": "https://gen.pollinations.ai"
-  },
+  "services": [
+    { "binding": "GEN", "service": "pollinations-gen-production" }
+  ],
   "observability": { "enabled": true },
   "env": {
     "staging": {
       "name": "pollinations-web-search-mcp-staging",
       "workers_dev": false,
-      "vars": {
-        "POLLINATIONS_BASE_URL": "https://staging.gen.pollinations.ai"
-      },
+      "services": [
+        { "binding": "GEN", "service": "pollinations-gen-staging" }
+      ],
       "observability": { "enabled": true }
     }
   }

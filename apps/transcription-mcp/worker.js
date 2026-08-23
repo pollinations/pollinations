@@ -62,8 +62,8 @@ async function transcribeAudio(params, env, authorization, fetchImpl) {
     if (params.language) form.append("language", params.language);
     if (params.prompt) form.append("prompt", params.prompt);
 
-    const response = await fetchImpl(
-        `${env.POLLINATIONS_BASE_URL}/v1/audio/transcriptions`,
+    const response = await env.GEN.fetch(
+        "https://gen.pollinations.ai/v1/audio/transcriptions",
         {
             method: "POST",
             headers: { Authorization: authorization },

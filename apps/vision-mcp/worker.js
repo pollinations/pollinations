@@ -9,9 +9,9 @@ const imageUrlSchema = z.url().refine((value) => {
     return validation.ok && validation.url.protocol === "https:";
 }, "imageUrl must be a public HTTPS URL without credentials");
 
-async function analyzeImage(params, env, authorization, fetchImpl) {
-    const response = await fetchImpl(
-        `${env.POLLINATIONS_BASE_URL}/v1/chat/completions`,
+async function analyzeImage(params, env, authorization) {
+    const response = await env.GEN.fetch(
+        "https://gen.pollinations.ai/v1/chat/completions",
         {
             method: "POST",
             headers: {
@@ -50,7 +50,7 @@ async function analyzeImage(params, env, authorization, fetchImpl) {
     return { content: [{ type: "text", text: answer }] };
 }
 
-function buildServer(env, authorization, fetchImpl) {
+function buildServer(env, authorization) {
     const server = new McpServer(
         { name: "pollinations-vision-mcp", version: "0.1.0" },
         {
@@ -73,12 +73,12 @@ function buildServer(env, authorization, fetchImpl) {
                 model: z.string().optional().default("openai"),
             }),
         },
-        (params) => analyzeImage(params, env, authorization, fetchImpl),
+        (params) => analyzeImage(params, env, authorization),
     );
     return server;
 }
 
-export function createWorker({ fetchImpl = fetch } = {}) {
+export function createWorker() {
     return {
         async fetch(request, env) {
             if (new URL(request.url).pathname !== "/") {
@@ -103,7 +103,7 @@ export function createWorker({ fetchImpl = fetch } = {}) {
             }
             const authorization = request.headers.get("authorization") ?? "";
             const handler = createMcpHandler(
-                () => buildServer(env, authorization, fetchImpl),
+                () => buildServer(env, authorization),
                 {
                     onerror: (error) => console.error(error),
                 },

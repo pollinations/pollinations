@@ -1,76 +1,153 @@
-import { describe, expect, it } from "vitest";
-import { getRequestData } from "../../src/text/requestUtils.js";
-import { SENTINEL_SEED } from "../../src/util.ts";
+import { CreateChatCompletionRequestSchema } from "@shared/schemas/openai.ts";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { GenerateTextRequestQueryParamsSchema } from "../../src/schemas/text.js";
+import {
+    getChatRequestData,
+    getSimpleTextRequestData,
+} from "../../src/text/requestUtils.js";
+import { SENTINEL_SEED } from "../../src/util.js";
 
-describe("getRequestData", () => {
-    it("normalizes seed -1 to the sentinel seed", () => {
-        const requestData = getRequestData({
-            query: { seed: "-1" },
-            body: {},
-            path: "/text/prompt",
-            params: { 0: "hello" },
-            method: "GET",
-            headers: {},
+afterEach(() => vi.restoreAllMocks());
+
+describe("getChatRequestData", () => {
+    it("preserves validated OpenAI and provider fields", () => {
+        const body = CreateChatCompletionRequestSchema.parse({
+            model: "openai-fast",
+            messages: [
+                {
+                    role: "user",
+                    content: "hello",
+                    provider_message_option: "kept",
+                },
+            ],
+            parallel_tool_calls: false,
+            function_call: "auto",
+            functions: [{ name: "lookup" }],
+            provider_request_option: { mode: "fast" },
         });
 
-        expect(requestData.seed).toBe(SENTINEL_SEED);
-    });
-
-    it("coerces token limits from query strings", () => {
-        const requestData = getRequestData({
-            query: {
-                model: "openai-fast",
-                max_tokens: "12",
-                max_completion_tokens: "16",
-            },
-            body: {},
-            path: "/text/prompt",
-            params: { 0: "hello" },
-            method: "GET",
-            headers: {},
-            url: "https://gen.pollinations.ai/text/hello?model=openai-fast&max_tokens=12&max_completion_tokens=16",
+        expect(getChatRequestData(body)).toMatchObject({
+            model: "openai-fast",
+            messages: [
+                {
+                    role: "user",
+                    content: "hello",
+                    provider_message_option: "kept",
+                },
+            ],
+            parallel_tool_calls: false,
+            function_call: "auto",
+            functions: [{ name: "lookup" }],
+            provider_request_option: { mode: "fast" },
         });
-
-        expect(requestData.max_tokens).toBe(12);
-        expect(requestData.max_completion_tokens).toBe(16);
     });
 
-    it("does not expose deprecated thinking aliases as request params", () => {
-        const requestData = getRequestData({
-            query: {},
-            body: {
+    it("applies aliases without forwarding SDK-owned controls", () => {
+        const request = getChatRequestData(
+            CreateChatCompletionRequestSchema.parse({
                 model: "openai-fast",
                 messages: [{ role: "user", content: "hello" }],
+                safe: "privacy",
+                system: "Be concise",
+                json: true,
+                seed: -1,
                 thinking: { type: "enabled", budget_tokens: 1024 },
                 thinking_budget: 1024,
                 reasoning_effort: "medium",
-            },
-            path: "/v1/chat/completions",
-            params: {},
-            method: "POST",
-            headers: {},
-            url: "https://gen.pollinations.ai/v1/chat/completions",
-        });
+            }),
+        );
 
-        expect(requestData.reasoning_effort).toBe("medium");
-        expect("thinking" in requestData).toBe(false);
-        expect("thinking_budget" in requestData).toBe(false);
+        expect(request.messages).toEqual([
+            { role: "system", content: "Be concise" },
+            { role: "user", content: "hello" },
+        ]);
+        expect(request.response_format).toEqual({ type: "json_object" });
+        expect(request.seed).toBe(SENTINEL_SEED);
+        expect(request.reasoning_effort).toBe("medium");
+        for (const field of [
+            "safe",
+            "system",
+            "json",
+            "thinking",
+            "thinking_budget",
+        ]) {
+            expect(request).not.toHaveProperty(field);
+        }
     });
 
-    it("preserves the OpenAI parallel tool-call setting", () => {
-        const requestData = getRequestData({
-            query: {},
-            body: {
-                model: "gpt-5.6-luna",
+    it("prefers the standard response_format over the json alias", () => {
+        const request = getChatRequestData(
+            CreateChatCompletionRequestSchema.parse({
+                model: "openai-fast",
                 messages: [{ role: "user", content: "hello" }],
-                parallel_tool_calls: false,
-            },
-            path: "/v1/chat/completions",
-            params: {},
-            method: "POST",
-            headers: {},
+                json: true,
+                response_format: { type: "text" },
+            }),
+        );
+        expect(request.response_format).toEqual({ type: "text" });
+    });
+});
+
+describe("getSimpleTextRequestData", () => {
+    it("uses the validated GET query without reparsing it", () => {
+        const query = GenerateTextRequestQueryParamsSchema.parse({
+            model: "openai-fast",
+            seed: "12",
+            system: "Be concise",
+            json: "true",
+            temperature: "0.5",
+            top_p: "0.8",
+            max_tokens: "16",
+            stream: "false",
         });
 
-        expect(requestData.parallel_tool_calls).toBe(false);
+        expect(
+            getSimpleTextRequestData("hello", "resolved-model", query),
+        ).toEqual({
+            model: "resolved-model",
+            messages: [
+                { role: "system", content: "Be concise" },
+                { role: "user", content: "hello" },
+            ],
+            seed: 12,
+            temperature: 0.5,
+            top_p: 0.8,
+            max_tokens: 16,
+            stream: false,
+            response_format: { type: "json_object" },
+        });
+    });
+
+    it("keeps the established simple-text defaults", () => {
+        const query = GenerateTextRequestQueryParamsSchema.parse({});
+        expect(
+            getSimpleTextRequestData("hello", "resolved-model", query),
+        ).toEqual({
+            model: "resolved-model",
+            messages: [{ role: "user", content: "hello" }],
+            seed: 0,
+            stream: false,
+        });
+    });
+
+    it("leaves numeric normalization to the provider pipeline", () => {
+        const query = GenerateTextRequestQueryParamsSchema.parse({
+            temperature: "4",
+            top_p: "-1 trailing",
+            presence_penalty: "3",
+            frequency_penalty: "-3",
+            max_tokens: "16 tokens",
+            repetition_penalty: "invalid",
+        });
+        expect(
+            getSimpleTextRequestData("hello", "resolved-model", query),
+        ).toMatchObject({
+            temperature: 4,
+            top_p: -1,
+            presence_penalty: 3,
+            frequency_penalty: -3,
+            max_tokens: 16,
+        });
+        expect(query.repetition_penalty).toBeUndefined();
     });
 });

@@ -110,6 +110,55 @@ describe("community endpoint configuration policy", () => {
         }
     });
 
+    test("keeps fallback writes and candidate discovery aligned", async ({
+        sessionToken,
+    }) => {
+        await approveCommunityModels();
+        const cheaper = await postModel(sessionToken, "", {
+            name: "cheaper-fallback",
+            title: "Cheaper fallback",
+            visibility: "public",
+            baseUrl: "https://text.example.com/v1",
+            bearerToken: "test-provider-token",
+            promptTextPrice: 0.000001,
+        });
+        const expensive = await postModel(sessionToken, "", {
+            name: "expensive-fallback",
+            title: "Expensive fallback",
+            visibility: "public",
+            baseUrl: "https://text.example.com/v1",
+            bearerToken: "test-provider-token",
+            promptTextPrice: 0.000003,
+        });
+        const cheaperModelId = cheaper.modelId as string;
+        const expensiveModelId = expensive.modelId as string;
+        const primary = await postModel(sessionToken, "", {
+            name: "primary-with-fallback",
+            title: "Primary with fallback",
+            visibility: "public",
+            baseUrl: "https://text.example.com/v1",
+            bearerToken: "test-provider-token",
+            promptTextPrice: 0.000002,
+            fallbacks: [cheaperModelId],
+        });
+
+        expect(primary.fallbacks).toEqual([cheaperModelId]);
+
+        const response = await SELF.fetch(
+            `${endpointUrl}/${primary.id as string}/fallback-candidates`,
+            {
+                headers: {
+                    Cookie: `better-auth.session_token=${sessionToken}`,
+                },
+            },
+        );
+        expect(response.status, await response.clone().text()).toBe(200);
+        const candidates = await response.json<{ data: string[] }>();
+        expect(candidates.data).toContain(cheaperModelId);
+        expect(candidates.data).not.toContain(expensiveModelId);
+        expect(candidates.data).not.toContain(primary.modelId as string);
+    });
+
     test("clears advertised metadata without rewriting payload for listing-only changes", async ({
         sessionToken,
     }) => {

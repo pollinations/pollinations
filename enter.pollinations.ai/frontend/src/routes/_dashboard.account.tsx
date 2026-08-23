@@ -38,6 +38,7 @@ function AccountPage() {
     const [discordConnected, setDiscordConnected] = useState<boolean | null>(
         null,
     );
+    const [connectionPending, setConnectionPending] = useState(false);
     const [connectionError, setConnectionError] = useState<string | null>(null);
 
     useEffect(() => {
@@ -56,6 +57,31 @@ function AccountPage() {
     if (!user) return null;
 
     const displayName = user.name || githubUsername || "Pollinations user";
+
+    async function handleDiscordConnection(): Promise<void> {
+        setConnectionPending(true);
+        setConnectionError(null);
+
+        if (discordConnected) {
+            const { error } = await authClient.unlinkAccount({
+                providerId: "discord",
+            });
+            if (error) {
+                setConnectionError("Could not disconnect Discord.");
+            } else {
+                setDiscordConnected(false);
+            }
+            setConnectionPending(false);
+            return;
+        }
+
+        const { error } = await authClient.linkSocial({
+            provider: "discord",
+            callbackURL: "/account",
+        });
+        if (error) setConnectionError("Could not connect Discord.");
+        setConnectionPending(false);
+    }
 
     return (
         <div className="flex flex-col gap-6">
@@ -147,19 +173,18 @@ function AccountPage() {
                     <Button
                         type="button"
                         className="shrink-0 self-start sm:self-center"
-                        disabled={discordConnected !== false}
-                        onClick={() =>
-                            void authClient.linkSocial({
-                                provider: "discord",
-                                callbackURL: "/account",
-                            })
+                        disabled={
+                            discordConnected === null || connectionPending
                         }
+                        onClick={() => void handleDiscordConnection()}
                     >
-                        {discordConnected
-                            ? "Connected"
-                            : discordConnected === null
-                              ? "Checking..."
-                              : "Connect Discord"}
+                        {connectionPending
+                            ? "Working..."
+                            : discordConnected
+                              ? "Disconnect Discord"
+                              : discordConnected === null
+                                ? "Checking..."
+                                : "Connect Discord"}
                     </Button>
                 </Surface>
                 {connectionError && (

@@ -3,6 +3,7 @@ import type {
     AccountBalance,
     AccountKey,
     AccountProfile,
+    AccountQuestsResponse,
     AudioBinaryResponse,
     AudioGenerateOptions,
     AuthorizeDeviceOptions,
@@ -1434,6 +1435,21 @@ export class Pollinations {
     // ============================================================================
     // Account
     // ============================================================================
+
+    /**
+     * Get authenticated account quest status
+     *
+     * @example
+     * ```ts
+     * const { quests } = await pollinations.accountQuests();
+     * quests.forEach(q => console.log(q.title, q.status));
+     * ```
+     */
+    async accountQuests(): Promise<AccountQuestsResponse> {
+        return this.getJson<AccountQuestsResponse>(
+            `${this.baseUrl}/account/quests`,
+        );
+    }
 
     /**
      * Get user profile information

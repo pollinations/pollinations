@@ -630,6 +630,57 @@ export interface UsageResponse {
     count: number;
 }
 
+// ============================================================================
+// Quests
+// ============================================================================
+
+/** Quest categories */
+export type QuestCategory =
+    | "setup"
+    | "grow"
+    | "build"
+    | "contribute"
+    | "community"
+    | "easteregg";
+
+/** Quest state in the catalog */
+export type QuestState = "available" | "completed" | "coming_soon";
+
+/** Quest completion status for the authenticated account */
+export type QuestStatus = "open" | "completed" | "coming_soon";
+
+/** Balance bucket for rewards */
+export type QuestBalanceBucket = "tier" | "pack";
+
+/** Reward details for a completed quest */
+export interface AccountQuestReward {
+    id: string;
+    title: string;
+    pollenAmount: number;
+    balanceBucket: QuestBalanceBucket;
+    earnedAt: string;
+    claimedAt: string | null;
+}
+
+/** Quest with the account's completion status */
+export interface AccountQuest {
+    id: string;
+    title: string;
+    description: string;
+    category: QuestCategory;
+    state: QuestState;
+    status: QuestStatus;
+    rewardAmount: number;
+    balanceBucket: QuestBalanceBucket;
+    url: string | null;
+    reward: AccountQuestReward | null;
+}
+
+/** Response from GET /account/quests */
+export interface AccountQuestsResponse {
+    quests: AccountQuest[];
+}
+
 /** Options for fetching usage */
 export interface UsageOptions {
     /** Response format (default: 'json') */

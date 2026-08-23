@@ -279,6 +279,7 @@ describe("media.pollinations.ai", () => {
             const response = await requestS3Credentials("sk_alice");
             const body = (await response.json()) as {
                 endpoint: string;
+                publicEndpoint: string;
                 bucket: string;
                 prefix: string;
                 credentials: { sessionToken: string };
@@ -290,6 +291,8 @@ describe("media.pollinations.ai", () => {
             );
             expect(body).toMatchObject({
                 endpoint: "https://test-account.r2.cloudflarestorage.com",
+                publicEndpoint:
+                    "https://media.pollinations.ai/s3/user_alice/public",
                 bucket: "test-media",
                 prefix: "user_alice/",
                 credentials: {
@@ -308,6 +311,36 @@ describe("media.pollinations.ai", () => {
         it("does not issue credentials for public reads", async () => {
             const response = await requestS3Credentials("pk_alice");
             expect(response.status).toBe(403);
+        });
+
+        it("serves only the public S3 prefix without credentials", async () => {
+            const bucket = createTestR2Bucket();
+            await bucket.put("user_alice/public/folder/file.txt", "hello", {
+                httpMetadata: { contentType: "text/plain" },
+            });
+            await bucket.put("user_alice/private.txt", "secret");
+            const mediaEnv = createMediaEnv(bucket);
+            const publicUrl =
+                "https://media.pollinations.ai/s3/user_alice/public/folder/file.txt";
+
+            const response = await app.fetch(new Request(publicUrl), mediaEnv);
+            const head = await app.fetch(
+                new Request(publicUrl, { method: "HEAD" }),
+                mediaEnv,
+            );
+            const privateResponse = await app.fetch(
+                new Request(
+                    "https://media.pollinations.ai/s3/user_alice/private.txt",
+                ),
+                mediaEnv,
+            );
+
+            expect(response.status).toBe(200);
+            expect(await response.text()).toBe("hello");
+            expect(response.headers.get("content-type")).toBe("text/plain");
+            expect(head.status).toBe(200);
+            expect(head.headers.get("content-length")).toBe("5");
+            expect(privateResponse.status).toBe(404);
         });
 
         it("does not outlive an agent run token", async () => {

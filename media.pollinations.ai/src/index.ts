@@ -258,6 +258,7 @@ const DeleteResponseSchema = z.object({
 
 const R2CredentialsResponseSchema = z.object({
     endpoint: z.string(),
+    publicEndpoint: z.string(),
     region: z.literal("auto"),
     bucket: z.string(),
     prefix: z.string(),
@@ -296,6 +297,34 @@ const MediaListQuerySchema = z.object({
 });
 
 const api = new Hono<{ Bindings: Env }>();
+
+async function servePublicS3Object(
+    bucket: R2Bucket,
+    key: string,
+    head: boolean,
+): Promise<Response> {
+    try {
+        const object = head ? await bucket.head(key) : await bucket.get(key);
+        if (!object) {
+            return Response.json({ error: "Not found" }, { status: 404 });
+        }
+
+        const headers = new Headers();
+        headers.set(
+            "Content-Type",
+            object.httpMetadata?.contentType || "application/octet-stream",
+        );
+        headers.set("Content-Length", object.size.toString());
+        headers.set("Cache-Control", PUBLISHED_CACHE_CONTROL);
+        headers.set("ETag", object.httpEtag);
+
+        return new Response(head ? null : (object as R2ObjectBody).body, {
+            headers,
+        });
+    } catch {
+        return Response.json({ error: "Retrieval failed" }, { status: 500 });
+    }
+}
 
 api.post(
     "/s3/credentials",
@@ -375,6 +404,7 @@ api.post(
         c.header("Cache-Control", "private, no-store");
         return c.json({
             endpoint: `https://${c.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+            publicEndpoint: `https://${DOMAIN}/s3/${auth.userId}/public`,
             region: "auto" as const,
             bucket: c.env.R2_BUCKET_NAME,
             prefix,
@@ -383,6 +413,44 @@ api.post(
         });
     },
 );
+
+api.get(
+    "/s3/:owner/public/*",
+    describeRoute({
+        tags: ["media.pollinations.ai"],
+        summary: "Retrieve a public S3 object",
+        description:
+            "Read an object from an owner's public prefix without authentication.",
+        security: [],
+        responses: {
+            200: { description: "Object content" },
+            404: { description: "Object not found" },
+        },
+    }),
+    (c) => {
+        const owner = c.req.param("owner");
+        if (!/^[A-Za-z0-9_-]+$/.test(owner)) {
+            return c.json({ error: "Not found" }, 404);
+        }
+        return servePublicS3Object(
+            c.env.MEDIA_BUCKET,
+            `${owner}/public/${c.req.param("*")}`,
+            false,
+        );
+    },
+);
+
+api.on("HEAD", "/s3/:owner/public/*", (c) => {
+    const owner = c.req.param("owner");
+    if (!/^[A-Za-z0-9_-]+$/.test(owner)) {
+        return new Response(null, { status: 404 });
+    }
+    return servePublicS3Object(
+        c.env.MEDIA_BUCKET,
+        `${owner}/public/${c.req.param("*")}`,
+        true,
+    );
+});
 
 api.post(
     "/upload",
@@ -1015,6 +1083,7 @@ app.get("/", (c) => {
         endpoints: {
             s3Credentials:
                 "POST /s3/credentials (temporary owner-scoped S3 credentials)",
+            s3Retrieve: "GET /s3/<owner>/public/<key> (public; no auth)",
             upload: "POST /upload (requires API key; optional tags — tags publish to public galleries)",
             retrieve: "GET /:id",
             metadata: "GET /:id/metadata",

@@ -43,4 +43,4 @@ curl -X POST "https://media.pollinations.ai/s3/credentials" \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
-The response contains the S3 endpoint, region, bucket, required key prefix, and standard access key, secret key, and session token fields. Use them with any S3 client that supports temporary session credentials. Secret keys and agent run tokens receive read/write access to their owner's prefix. Public files remain directly readable from their `media.pollinations.ai` URL without a token.
+The response contains the S3 endpoint, public endpoint, region, bucket, required key prefix, and standard access key, secret key, and session token fields. Use them with any S3 client that supports temporary session credentials. Secret keys and agent run tokens receive read/write access to their owner's prefix. Objects stored below its `public/` folder are readable from the returned public endpoint without a token; other objects are not exposed there.

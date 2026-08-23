@@ -46,6 +46,7 @@ import {
     parseCommunityModelId,
 } from "@shared/community-endpoints.ts";
 import {
+    account as accountTable,
     communityEndpoint as communityEndpointTable,
     session as sessionTable,
 } from "@shared/db/better-auth.ts";
@@ -4663,10 +4664,20 @@ fixtureTest(
 
 fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+    const ownerGithubId = nextAllowedGithubId();
     const modelName = `model-${crypto.randomUUID().slice(0, 8)}`;
     const ownerUserId = await createTestUser({
-        githubId: nextAllowedGithubId(),
+        githubId: ownerGithubId,
         githubUsername: ownerGithubUsername,
+    });
+    await db.insert(accountTable).values({
+        id: `account-${crypto.randomUUID()}`,
+        accountId: String(ownerGithubId),
+        providerId: "github",
+        userId: ownerUserId,
+        accessToken: "mock_github_auth_token",
+        createdAt: new Date(),
+        updatedAt: new Date(),
     });
     const sessionToken = `session-${crypto.randomUUID()}`;
     await db.insert(sessionTable).values({
@@ -4693,6 +4704,45 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         baseModel: "openai-fast",
         mcpServers: ["pollinations"],
     };
+    const githubRepositoryUrl = `https://github.com/${ownerGithubUsername}/sql-agent`;
+    let githubCommitSha = "a".repeat(40);
+    let githubRepositoryOwnerId = ownerGithubId;
+    let githubManifest = {
+        ...promptAgent,
+        systemPrompt: "You are an editable SQL tutor.",
+    };
+    const originalFetch = globalThis.fetch;
+    vi.stubGlobal(
+        "fetch",
+        async (input: RequestInfo | URL, init?: RequestInit) => {
+            const request = new Request(input, init);
+            const url = new URL(request.url);
+            if (url.hostname !== "api.github.com") {
+                return originalFetch(input, init);
+            }
+            expect(request.headers.get("authorization")).toMatch(/^Bearer /);
+            const repositoryPath = `/repos/${ownerGithubUsername}/sql-agent`;
+            if (url.pathname === repositoryPath) {
+                return Response.json({
+                    private: false,
+                    default_branch: "main",
+                    html_url: githubRepositoryUrl,
+                    owner: { id: githubRepositoryOwnerId },
+                });
+            }
+            if (url.pathname === `${repositoryPath}/commits/main`) {
+                return new Response(githubCommitSha);
+            }
+            if (
+                url.pathname ===
+                `${repositoryPath}/contents/pollinations-agent.json`
+            ) {
+                expect(url.searchParams.get("ref")).toBe(githubCommitSha);
+                return new Response(JSON.stringify(githubManifest));
+            }
+            return Response.json({ message: "Not Found" }, { status: 404 });
+        },
+    );
     const createAgentResponse = await fetchEnterApi(
         enterApi,
         new Request("https://enter.test/api/account/agents", {
@@ -4754,6 +4804,27 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         enterEnv,
     );
     expect(partialUpdateResponse.status).toBe(400);
+    githubRepositoryOwnerId = ownerGithubId + 1;
+    const wrongOwnerResponse = await fetchEnterApi(
+        enterApi,
+        new Request(`https://enter.test/api/account/agents/${agent.id}`, {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: cookie,
+            },
+            body: JSON.stringify({
+                source: {
+                    repositoryUrl: githubRepositoryUrl,
+                    manifestPath: "pollinations-agent.json",
+                },
+                visibility: "public",
+            }),
+        }),
+        enterEnv,
+    );
+    expect(wrongOwnerResponse.status).toBe(403);
+    githubRepositoryOwnerId = ownerGithubId;
     const updateAgentResponse = await fetchEnterApi(
         enterApi,
         new Request(`https://enter.test/api/account/agents/${agent.id}`, {
@@ -4763,8 +4834,10 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
                 Cookie: cookie,
             },
             body: JSON.stringify({
-                ...promptAgent,
-                systemPrompt: "You are an editable SQL tutor.",
+                source: {
+                    repositoryUrl: githubRepositoryUrl,
+                    manifestPath: "pollinations-agent.json",
+                },
                 name: modelName,
                 title: "Managed SQL Tutor",
                 description: "",
@@ -4778,14 +4851,64 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         id: agent.id,
         systemPrompt: "You are an editable SQL tutor.",
         mcpServers: ["pollinations"],
+        source: {
+            repositoryUrl: githubRepositoryUrl,
+            manifestPath: "pollinations-agent.json",
+            commitSha: githubCommitSha,
+        },
     });
     const [agentAfterPromptUpdate] = await db
         .select()
         .from(communityEndpointTable)
         .where(eq(communityEndpointTable.id, agent.id));
-    expect(JSON.parse(agentAfterPromptUpdate.payload)).toEqual({
-        ...promptAgent,
-        systemPrompt: "You are an editable SQL tutor.",
+    expect(JSON.parse(agentAfterPromptUpdate.payload)).toMatchObject({
+        ...githubManifest,
+        source: {
+            repositoryUrl: githubRepositoryUrl,
+            manifestPath: "pollinations-agent.json",
+            commitSha: githubCommitSha,
+        },
+    });
+    githubManifest = {
+        ...githubManifest,
+        systemPrompt: "You are a synced SQL tutor.",
+    };
+    githubCommitSha = "b".repeat(40);
+    const syncAgentResponse = await fetchEnterApi(
+        enterApi,
+        new Request(`https://enter.test/api/account/agents/${agent.id}/sync`, {
+            method: "POST",
+            headers: { Cookie: cookie },
+        }),
+        enterEnv,
+    );
+    expect(syncAgentResponse.status).toBe(200);
+    await expect(syncAgentResponse.json()).resolves.toMatchObject({
+        id: agent.id,
+        systemPrompt: "You are a synced SQL tutor.",
+        source: { commitSha: githubCommitSha },
+    });
+    githubManifest = {
+        ...githubManifest,
+        systemPrompt: "",
+    };
+    githubCommitSha = "c".repeat(40);
+    const invalidSyncResponse = await fetchEnterApi(
+        enterApi,
+        new Request(`https://enter.test/api/account/agents/${agent.id}/sync`, {
+            method: "POST",
+            headers: { Cookie: cookie },
+        }),
+        enterEnv,
+    );
+    expect(invalidSyncResponse.status).toBe(400);
+    const [agentAfterInvalidSync] = await db
+        .select()
+        .from(communityEndpointTable)
+        .where(eq(communityEndpointTable.id, agent.id));
+    expect(JSON.parse(agentAfterInvalidSync.payload)).toMatchObject({
+        systemPrompt: "You are a synced SQL tutor.",
+        source: { commitSha: "b".repeat(40) },
     });
     const listResponse = await fetchEnterApi(
         enterApi,

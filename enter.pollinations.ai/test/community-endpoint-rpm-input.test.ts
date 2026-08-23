@@ -26,16 +26,37 @@ describe("community endpoint per-user RPM input", () => {
 
     it("serializes the prompt-agent fields", () => {
         expect(
-            toAgentPayload({
-                ...emptyAgentForm,
-                systemPrompt: " Help ",
-                baseModel: " openai ",
-                mcpServers: ["pollinations"],
-            }),
+            toAgentPayload(
+                {
+                    ...emptyAgentForm,
+                    systemPrompt: " Help ",
+                    baseModel: " openai ",
+                    mcpServers: ["pollinations"],
+                },
+                false,
+            ),
         ).toEqual({
             systemPrompt: "Help",
             baseModel: "openai",
             mcpServers: ["pollinations"],
+        });
+    });
+
+    it("serializes a GitHub-backed prompt-agent source", () => {
+        expect(
+            toAgentPayload(
+                {
+                    ...emptyAgentForm,
+                    repositoryUrl: " https://github.com/owner/agent ",
+                    manifestPath: " agents/research.json ",
+                },
+                true,
+            ),
+        ).toEqual({
+            source: {
+                repositoryUrl: "https://github.com/owner/agent",
+                manifestPath: "agents/research.json",
+            },
         });
     });
 

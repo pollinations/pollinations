@@ -447,7 +447,44 @@ export const PromptAgentConfigSchema = z.object({
 });
 export const PromptAgentInputSchema = PromptAgentConfigSchema.strict();
 
-export type PromptAgentListingPayload = z.infer<typeof PromptAgentConfigSchema>;
+export const DEFAULT_PROMPT_AGENT_MANIFEST_PATH = "pollinations-agent.json";
+
+export const PromptAgentGitHubSourceInputSchema = z
+    .object({
+        repositoryUrl: z
+            .string()
+            .trim()
+            .url()
+            .max(COMMUNITY_PROVIDER_URL_MAX_LENGTH)
+            .startsWith("https://github.com/"),
+        manifestPath: z
+            .string()
+            .trim()
+            .min(1)
+            .max(240)
+            .default(DEFAULT_PROMPT_AGENT_MANIFEST_PATH),
+    })
+    .strict();
+
+export const PromptAgentGitHubSourceSchema =
+    PromptAgentGitHubSourceInputSchema.extend({
+        commitSha: z.string().regex(/^[0-9a-f]{40}$/),
+        syncedAt: z.string().datetime(),
+    }).strict();
+
+export const PromptAgentListingPayloadSchema = PromptAgentConfigSchema.extend({
+    source: PromptAgentGitHubSourceSchema.optional(),
+});
+
+export type PromptAgentGitHubSourceInput = z.infer<
+    typeof PromptAgentGitHubSourceInputSchema
+>;
+export type PromptAgentGitHubSource = z.infer<
+    typeof PromptAgentGitHubSourceSchema
+>;
+export type PromptAgentListingPayload = z.infer<
+    typeof PromptAgentListingPayloadSchema
+>;
 
 /**
  * An agent on the owner's own server. It is sent a run token rather than a
@@ -495,7 +532,7 @@ export function parseListingPayload<K extends ListingType>(
         return result.success ? (result.data as ListingPayloadByType[K]) : null;
     }
     if (type === "prompt_agent") {
-        const result = PromptAgentConfigSchema.safeParse(source);
+        const result = PromptAgentListingPayloadSchema.safeParse(source);
         return result.success ? (result.data as ListingPayloadByType[K]) : null;
     }
 

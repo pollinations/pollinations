@@ -34,4 +34,24 @@ describe("agentBody", () => {
             visibility: "private",
         });
     });
+
+    it("builds a public GitHub source request without reading a config file", () => {
+        expect(
+            agentBody(undefined, {
+                repo: "https://github.com/example/research-agent",
+                manifest: "agents/research.json",
+                name: "research-agent",
+                title: "Research Agent",
+                visibility: "public",
+            }),
+        ).toEqual({
+            source: {
+                repositoryUrl: "https://github.com/example/research-agent",
+                manifestPath: "agents/research.json",
+            },
+            name: "research-agent",
+            title: "Research Agent",
+            visibility: "public",
+        });
+    });
 });

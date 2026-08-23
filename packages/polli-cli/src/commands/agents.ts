@@ -21,6 +21,12 @@ type Agent = {
     systemPrompt: string;
     baseModel: string;
     mcpServers: string[];
+    source: {
+        repositoryUrl: string;
+        manifestPath: string;
+        commitSha: string;
+        syncedAt: string;
+    } | null;
     createdAt: string;
     updatedAt: string;
 };
@@ -41,7 +47,7 @@ function readConfig(path: string): Record<string, unknown> {
 }
 
 export function agentBody(
-    configPath: string,
+    configPath: string | undefined,
     opts: Record<string, unknown>,
 ): Record<string, unknown> {
     if (
@@ -52,8 +58,31 @@ export function agentBody(
         printError("--visibility must be 'private' or 'public'");
         process.exit(1);
     }
+    const repositoryUrl = typeof opts.repo === "string" ? opts.repo.trim() : "";
+    if (!!configPath === !!repositoryUrl) {
+        printError("Provide exactly one of --config or --repo");
+        process.exit(1);
+    }
+    if (opts.visibility === "public" && !repositoryUrl) {
+        printError("Public agents require --repo");
+        process.exit(1);
+    }
+    if (repositoryUrl && opts.visibility === "private") {
+        printError("--repo requires --visibility public");
+        process.exit(1);
+    }
     return {
-        ...readConfig(configPath),
+        ...(repositoryUrl
+            ? {
+                  source: {
+                      repositoryUrl,
+                      manifestPath:
+                          typeof opts.manifest === "string"
+                              ? opts.manifest
+                              : "pollinations-agent.json",
+                  },
+              }
+            : readConfig(configPath ?? "")),
         ...(opts.name !== undefined && { name: opts.name }),
         ...(opts.title !== undefined && { title: opts.title }),
         ...(opts.description !== undefined && {
@@ -76,11 +105,19 @@ function printAgents(agents: Agent[]): void {
             name: agent.name,
             base_model: agent.baseModel,
             visibility: agent.visibility,
+            source: agent.source ? "github" : "inline",
             pollinations_tools: agent.mcpServers.includes("pollinations")
                 ? "yes"
                 : "no",
         })),
-        ["id", "name", "base_model", "visibility", "pollinations_tools"],
+        [
+            "id",
+            "name",
+            "base_model",
+            "visibility",
+            "source",
+            "pollinations_tools",
+        ],
     );
 }
 
@@ -123,9 +160,12 @@ const get = new Command("get")
 
 const create = new Command("create")
     .description("Create a prompt agent")
-    .requiredOption(
-        "--config <file>",
-        "JSON agent config file sent directly to the API",
+    .option("--config <file>", "JSON agent config file for a private agent")
+    .option("--repo <url>", "Public GitHub repository containing the manifest")
+    .option(
+        "--manifest <path>",
+        "Manifest path inside the repository",
+        "pollinations-agent.json",
     )
     .requiredOption("--name <name>", "Callable model name")
     .requiredOption("--title <title>", "Display title shown in the catalog")
@@ -159,9 +199,12 @@ const create = new Command("create")
 const update = new Command("update")
     .description("Update an agent")
     .argument("<id>", "Agent id")
-    .requiredOption(
-        "--config <file>",
-        "JSON agent config file sent directly to the API",
+    .option("--config <file>", "JSON agent config file for a private agent")
+    .option("--repo <url>", "Public GitHub repository containing the manifest")
+    .option(
+        "--manifest <path>",
+        "Manifest path inside the repository",
+        "pollinations-agent.json",
     )
     .option("--name <name>", "Callable model name")
     .option("--title <title>", "Display title shown in the catalog")
@@ -186,6 +229,29 @@ const update = new Command("update")
         } catch (error) {
             printError(
                 `Failed to update agent: ${error instanceof Error ? error.message : "unknown"}`,
+            );
+            process.exit(1);
+        }
+    });
+
+const sync = new Command("sync")
+    .description("Sync an agent from its GitHub repository")
+    .argument("<id>", "Agent id")
+    .action(async (id) => {
+        const key = requireKey();
+        try {
+            const agent = await gen<Agent>(
+                `/account/agents/${encodeURIComponent(id)}/sync`,
+                { apiKey: key, method: "POST" },
+            );
+            if (getOutputMode() === "json") printResult(agent);
+            else {
+                printSuccess(`Agent synced: ${agent.id}`);
+                printAgents([agent]);
+            }
+        } catch (error) {
+            printError(
+                `Failed to sync agent: ${error instanceof Error ? error.message : "unknown"}`,
             );
             process.exit(1);
         }
@@ -217,4 +283,5 @@ export const agentsCommand = new Command("agents")
     .addCommand(get)
     .addCommand(create)
     .addCommand(update)
+    .addCommand(sync)
     .addCommand(remove);

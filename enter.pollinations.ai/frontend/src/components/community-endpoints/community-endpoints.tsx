@@ -157,6 +157,17 @@ export function CommunityEndpoints({
         }
     }
 
+    async function handleSyncAgent(): Promise<void> {
+        if (!editingAgent) return;
+        const response = await apiClient.account.agents[":id"].sync.$post({
+            param: { id: editingAgent.id },
+        });
+        if (!response.ok) throw new Error(await readError(response));
+        setEditingAgent(null);
+        await loadEndpoints();
+        await onChange?.();
+    }
+
     async function handleCreate(
         payload: EndpointPayload,
         bearerToken: string,
@@ -554,6 +565,7 @@ export function CommunityEndpoints({
                 open={!!editingAgent}
                 onOpenChange={(open) => !open && setEditingAgent(null)}
                 onSubmit={handleUpdateAgent}
+                onSync={handleSyncAgent}
             />
 
             <AgentDeleteConfirmation

@@ -9,6 +9,7 @@ import {
     type CommunityEndpointPrices,
     type CommunityEndpointVisibility,
     communityEndpointPriceFieldsForModality,
+    DEFAULT_PROMPT_AGENT_MANIFEST_PATH,
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MAX_COMMUNITY_PRICE_PER_SECOND,
@@ -31,8 +32,16 @@ export type ManagedAgent = {
     systemPrompt: string;
     baseModel: string;
     mcpServers: "pollinations"[];
+    source: AgentGitHubSource | null;
     createdAt: string;
     updatedAt: string;
+};
+
+export type AgentGitHubSource = {
+    repositoryUrl: string;
+    manifestPath: string;
+    commitSha: string;
+    syncedAt: string;
 };
 
 type AgentFields = Pick<
@@ -40,9 +49,16 @@ type AgentFields = Pick<
     "systemPrompt" | "baseModel" | "mcpServers"
 >;
 
-export type AgentFormState = AgentFields;
+export type AgentFormState = AgentFields & {
+    repositoryUrl: string;
+    manifestPath: string;
+};
 
-export type AgentPayload = AgentFields;
+export type AgentPayload =
+    | AgentFields
+    | {
+          source: Pick<AgentGitHubSource, "repositoryUrl" | "manifestPath">;
+      };
 
 export type CommunityProviderProfile = {
     name: string | null;
@@ -236,6 +252,8 @@ export const emptyAgentForm: AgentFormState = {
     systemPrompt: "",
     baseModel: "",
     mcpServers: [],
+    repositoryUrl: "",
+    manifestPath: DEFAULT_PROMPT_AGENT_MANIFEST_PATH,
 };
 
 export const idleAction: ActionState = { status: "idle" };
@@ -444,7 +462,21 @@ export function observedUsageValue(
         : null;
 }
 
-export function toAgentPayload(form: AgentFormState): AgentPayload {
+export function toAgentPayload(
+    form: AgentFormState,
+    githubBacked: boolean,
+): AgentPayload {
+    if (githubBacked) {
+        const repositoryUrl = form.repositoryUrl.trim();
+        if (!repositoryUrl) {
+            throw new Error("GitHub repository URL is required");
+        }
+        const manifestPath = form.manifestPath.trim();
+        if (!manifestPath) {
+            throw new Error("Manifest path is required");
+        }
+        return { source: { repositoryUrl, manifestPath } };
+    }
     const systemPrompt = form.systemPrompt.trim();
     if (!systemPrompt) {
         throw new Error("System prompt is required for a prompt agent");

@@ -534,3 +534,20 @@ describe("Pollinations model discovery", () => {
         );
     });
 });
+
+describe("Account earnings", () => {
+    it("requests developer earnings with correctly formatted parameters", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValueOnce(
+            makeResponse({ daily: [], perEntity: [] }),
+        );
+
+        await client.accountEarnings({ days: 30, granularity: "day" });
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        const url = new URL(fetchMock.mock.calls[0][0] as string);
+        expect(url.pathname).toBe("/account/earnings");
+        expect(url.searchParams.get("days")).toBe("30");
+        expect(url.searchParams.get("granularity")).toBe("day");
+    });
+});

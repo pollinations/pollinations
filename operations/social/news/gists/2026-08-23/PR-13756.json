@@ -1,0 +1,34 @@
+{
+  "pr_number": 13756,
+  "title": "refactor: clarify generation fallback attribution",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13756",
+  "merged_at": "2026-08-23T22:38:10Z",
+  "labels": [],
+  "pr_body_excerpt": "- Extracts community reward selection while preserving direct public, cross-owner public fallback, and same-owner private-fallback rewards.\n- Centralizes the `config.targets[N]` served-target marker across completion metadata and text/image response headers.\n- Preserves deduction ordering, served-price reward bases, fallback guards, non-enumerability, and Portkey passthrough behavior.\n- Supersedes the smaller #13747 and #13754; the observable realtime ledger correction remains separate in #13751.\n\nChecks:\n- Biome on all six changed files\n- Gen TypeScript typecheck\n- `fallback.test.ts` + `tracking-observability.test.ts` — 63/63 passed\n- `git diff --check`\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Fallbacks Know Their Flowers",
+    "blurb": "The hive sorted out which garden gets credit when generation takes a scenic fallback route. Same rewards, clearer trail of pollen.",
+    "summary": "Refactored generation fallback attribution by extracting community reward selection and centralizing the config.targets[N] served-target marker across completion metadata plus text and image response headers.",
+    "impact": "Reward deduction order, served-price bases, public and private fallback guards, non-enumerable metadata, and Portkey passthrough behavior remain consistent while the attribution path is easier to maintain and verify.",
+    "keywords": [
+      "fallbacks",
+      "billing",
+      "community rewards",
+      "generation",
+      "tracking",
+      "metadata"
+    ],
+    "visual_concept": "Polli acts as a careful garden courier, following several labeled branching paths from a generation terminal to the correct flower bed and placing a pollen reward token there. A small CRT monitor robot helps trace the served-target marker through metadata cards, representing centralized attribution without implying a user-visible behavior change.",
+    "image_prompt": "A cozy pixel art garden workshop where Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears a tiny accountant visor while following branching vine paths from a retro generation terminal to the correct lime green (#ecf874) flower pot; a chunky CRT-monitor robot holds metadata cards labeled \"targets[N]\". Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, warm lighting, retro gaming vibes, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-23/PR-13756.jpg",
+    "prompt": "A cozy pixel art garden workshop where Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears a tiny accountant visor while following branching vine paths from a retro generation terminal to the correct lime green (#ecf874) flower pot; a chunky CRT-monitor robot holds metadata cards labeled \"targets[N]\". Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, warm lighting, retro gaming vibes, emotionally warm."
+  },
+  "generated_at": "2026-08-23T22:39:10.936844+00:00"
+}

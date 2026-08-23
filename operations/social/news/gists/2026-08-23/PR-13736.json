@@ -1,0 +1,34 @@
+{
+  "pr_number": 13736,
+  "title": "fix: reward owners for private fallback usage",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13736",
+  "merged_at": "2026-08-23T00:36:17Z",
+  "labels": [],
+  "pr_body_excerpt": "- Keeps public-to-private fallbacks limited to models owned by the same developer\n- Rewards that owner from the public listing price when their private backup serves\n- Leaves cross-owner private fallbacks concealed and rejected\n- Adds a billing regression test\n\nFixes #12892",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Fallbacks pay their gardeners",
+    "blurb": "A private backup can now step in without leaving its developer unpaid. The hive keeps fallback routes within the same garden, then sends the Pollen where it belongs.",
+    "summary": "Fixed generation tracking so a developer’s private fallback model, when serving a request from that developer’s public listing, earns the public listing price while cross-owner private fallbacks remain concealed and rejected.",
+    "impact": "Model owners now receive the expected reward when their own private backup handles traffic for a public model listing, with owner boundaries preserved.",
+    "keywords": [
+      "billing",
+      "fallbacks",
+      "model-owners",
+      "generation-tracking",
+      "rewards",
+      "private-models"
+    ],
+    "visual_concept": "Depict a cozy model garden where a public flower is supported by a matching private backup plant growing behind it, both marked with the same tiny gardener badge. Polli, wearing a gardener tool belt, guides a glowing Pollen coin from the backup plant to its rightful owner’s little seed jar, while a garden fence quietly keeps unrelated plots separate.",
+    "image_prompt": "Cozy pixel art scene of the cute pollinations bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener tool belt as she guides a glowing Pollen coin from a hidden backup code-plant to the matching public flower’s seed jar; a soft garden fence separates other plots. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, nature-filled retro terminal garden, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-23/PR-13736.jpg",
+    "prompt": "Cozy pixel art scene of the cute pollinations bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener tool belt as she guides a glowing Pollen coin from a hidden backup code-plant to the matching public flower’s seed jar; a soft garden fence separates other plots. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, nature-filled retro terminal garden, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-23T00:37:13.146095+00:00"
+}

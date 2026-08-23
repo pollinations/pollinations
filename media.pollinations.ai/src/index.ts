@@ -22,6 +22,11 @@ import {
     TagError,
     tagsForItems,
 } from "./catalog.ts";
+import {
+    issueR2Credentials,
+    R2_CREDENTIAL_TTL_SECONDS,
+    type R2CredentialEnv,
+} from "./r2-credentials.ts";
 
 const DOMAIN = "media.pollinations.ai";
 // gen.pollinations.ai proxies /account/* to enter — using the public path
@@ -34,7 +39,7 @@ const IMMUTABLE_CACHE_CONTROL = "public, max-age=31536000, immutable";
 const PUBLISHED_CACHE_CONTROL = "no-store";
 const DEFAULT_MAX_SIZE = 104857600; // 100 MB
 
-interface Env {
+interface Env extends R2CredentialEnv {
     MEDIA_BUCKET: R2Bucket;
     MAX_FILE_SIZE: string;
     DB: D1Database;
@@ -50,6 +55,7 @@ interface KeyVerifyResponse {
     name: string | null;
     userId: string | null;
     byopApp: { clientKeyId: string } | null;
+    expiresIn: number | null;
 }
 
 interface AuthResult {
@@ -58,6 +64,7 @@ interface AuthResult {
     name: string | null;
     userId: string | null;
     byopClientKeyId: string | null;
+    expiresIn: number | null;
 }
 
 async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
@@ -77,6 +84,7 @@ async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
             name: data.name ?? null,
             userId: data.userId ?? null,
             byopClientKeyId: data.byopApp?.clientKeyId ?? null,
+            expiresIn: data.expiresIn ?? null,
         };
     } catch {
         return null;
@@ -89,6 +97,23 @@ function extractApiKey(req: Request): string | null {
         ?.match(/^Bearer (.+)$/)?.[1];
     if (bearer) return bearer;
     return new URL(req.url).searchParams.get("key");
+}
+
+function agentRunTokenTtl(token: string): number | null {
+    if (!token.startsWith("ag_")) return null;
+    try {
+        const payload = token.slice(3).split(".")[1];
+        if (!payload) return null;
+        const base64 = payload.replaceAll("-", "+").replaceAll("_", "/");
+        const claims = JSON.parse(
+            atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, "=")),
+        ) as { exp?: unknown };
+        return typeof claims.exp === "number"
+            ? claims.exp - Math.floor(Date.now() / 1000)
+            : null;
+    } catch {
+        return null;
+    }
 }
 
 function fileTooLargeError(maxSize: number): { error: string } {
@@ -231,6 +256,19 @@ const DeleteResponseSchema = z.object({
     id: z.string().describe("Id of the deleted media item"),
 });
 
+const R2CredentialsResponseSchema = z.object({
+    endpoint: z.string(),
+    region: z.literal("auto"),
+    bucket: z.string(),
+    prefix: z.string(),
+    expiresAt: z.string(),
+    credentials: z.object({
+        accessKeyId: z.string(),
+        secretAccessKey: z.string(),
+        sessionToken: z.string(),
+    }),
+});
+
 // Query-param schema for GET /media, used with validator("query", …): one
 // schema that both validates and documents. `limit` is a coerced integer
 // (query values arrive as strings) bounded to [1, MAX_LIMIT]; non-numeric,
@@ -258,6 +296,101 @@ const MediaListQuerySchema = z.object({
 });
 
 const api = new Hono<{ Bindings: Env }>();
+
+api.post(
+    "/s3/credentials",
+    describeRoute({
+        tags: ["media.pollinations.ai"],
+        summary: "Create a temporary S3 session",
+        description:
+            "Exchange a Pollinations API key or agent run token for 15-minute Cloudflare R2 S3 credentials scoped to its owner. Secret keys and agent tokens receive read/write access to the owner's prefix; publishable keys receive read-only access to the owner's public prefix.",
+        responses: {
+            200: {
+                description: "Temporary S3 credentials",
+                content: {
+                    "application/json": {
+                        schema: resolver(R2CredentialsResponseSchema),
+                    },
+                },
+            },
+            401: { description: "Missing, invalid, or expiring credential" },
+            403: { description: "Credential has no attached user" },
+            502: { description: "R2 credential service unavailable" },
+            503: { description: "R2 credential service not configured" },
+        },
+    }),
+    async (c) => {
+        const token = c.req
+            .header("authorization")
+            ?.match(/^Bearer (.+)$/)?.[1];
+        if (!token) return c.json({ error: "Bearer token required" }, 401);
+
+        const auth = await verifyApiKey(token);
+        if (!auth) {
+            return c.json({ error: "Invalid or expired credential" }, 401);
+        }
+        if (!auth.userId) {
+            return c.json({ error: "Credential has no attached user" }, 403);
+        }
+        if (auth.type !== "publishable" && auth.type !== "secret") {
+            return c.json({ error: "Unsupported credential type" }, 403);
+        }
+        if (
+            !c.env.R2_ACCOUNT_ID ||
+            !c.env.R2_BUCKET_NAME ||
+            !c.env.R2_PARENT_ACCESS_KEY_ID ||
+            !c.env.R2_TEMP_CREDENTIALS_API_TOKEN
+        ) {
+            return c.json({ error: "S3 credentials are not configured" }, 503);
+        }
+
+        const permission =
+            auth.type === "publishable"
+                ? "object-read-only"
+                : "object-read-write";
+        const prefix =
+            auth.type === "publishable"
+                ? `${auth.userId}/public/`
+                : `${auth.userId}/`;
+        const runTokenTtl = agentRunTokenTtl(token);
+        if (token.startsWith("ag_") && runTokenTtl === null) {
+            return c.json({ error: "Invalid agent run token" }, 401);
+        }
+        const remainingSeconds = runTokenTtl ?? auth.expiresIn;
+        const ttlSeconds = Math.min(
+            R2_CREDENTIAL_TTL_SECONDS,
+            remainingSeconds ?? R2_CREDENTIAL_TTL_SECONDS,
+        );
+        if (ttlSeconds < 1) {
+            return c.json({ error: "Credential is expiring" }, 401);
+        }
+
+        const expiresAt = new Date(
+            Date.now() + ttlSeconds * 1000,
+        ).toISOString();
+        const credentials = await issueR2Credentials(c.env, {
+            permission,
+            prefix,
+            ttlSeconds,
+        });
+        if (!credentials) {
+            return c.json(
+                { error: "Could not create temporary S3 credentials" },
+                502,
+            );
+        }
+
+        c.header("Cache-Control", "private, no-store");
+        return c.json({
+            endpoint: `https://${c.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+            region: "auto" as const,
+            bucket: c.env.R2_BUCKET_NAME,
+            prefix,
+            expiresAt,
+            credentials,
+        });
+    },
+);
 
 api.post(
     "/upload",
@@ -888,6 +1021,8 @@ app.get("/", (c) => {
         service: DOMAIN,
         version: "1.0.0",
         endpoints: {
+            s3Credentials:
+                "POST /s3/credentials (temporary owner-scoped S3 credentials)",
             upload: "POST /upload (requires API key; optional tags — tags publish to public galleries)",
             retrieve: "GET /:id",
             metadata: "GET /:id/metadata",

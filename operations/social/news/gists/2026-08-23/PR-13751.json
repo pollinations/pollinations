@@ -1,0 +1,34 @@
+{
+  "pr_number": 13751,
+  "title": "fix: report ledger-rounded realtime billed price",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13751",
+  "merged_at": "2026-08-23T20:20:25Z",
+  "labels": [],
+  "pr_body_excerpt": "- Uses `handleBalanceDeduction`'s authoritative ledger-rounded `billedPrice` for realtime Tinybird `totalPrice`.\n- Keeps `devPrice`, `markupRate`, rate-limit consumption, settlement state, and side-effect ordering unchanged.\n- Adds a BYOP rounding regression proving telemetry total equals the actual paid-balance debit.\n\nChecks:\n- Biome\n- Gen TypeScript typecheck\n- Focused regression\n- Full realtime test file (39 passed)\n- `git diff --check`",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The ledger and hive agree",
+    "blurb": "Realtime usage reports now use the same rounded price the ledger actually debits. Polli has retired the tiny accountant disagreement.",
+    "summary": "Realtime Tinybird telemetry now records the authoritative ledger-rounded `billedPrice` from `handleBalanceDeduction`, so `totalPrice` exactly matches the balance debit for BYOP requests.",
+    "impact": "Developers reviewing realtime usage and billing data will see Tinybird `totalPrice` match the amount actually charged after ledger rounding.",
+    "keywords": [
+      "realtime",
+      "billing",
+      "ledger",
+      "Tinybird",
+      "BYOP",
+      "telemetry"
+    ],
+    "visual_concept": "Depict Polli as a tiny bookkeeper with round glasses comparing a glowing realtime terminal receipt against a garden ledger, with both showing the same neatly rounded total. A helpful CRT monitor robot can hold the matching receipt while small code-plants grow around the accounting desk, representing telemetry and balance settlement staying in sync.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing tiny accountant glasses and comparing a lime green (#ecf874) glowing ledger with a retro realtime terminal receipt; both display the same simple pixel-font total. A cheerful CRT monitor robot holds the matching receipt beside little code-plants and flowers, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-23/PR-13751.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing tiny accountant glasses and comparing a lime green (#ecf874) glowing ledger with a retro realtime terminal receipt; both display the same simple pixel-font total. A cheerful CRT monitor robot holds the matching receipt beside little code-plants and flowers, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-23T20:21:22.601686+00:00"
+}

@@ -941,6 +941,7 @@ import { createS3Router } from "./s3.ts";
 const s3Router = createS3Router(verifyApiKey);
 // Mount at /s3/* — both /s3 and /s3/ will be forwarded to the s3 subrouter.
 app.route("/s3", s3Router);
+app.route("/s3/", s3Router);
 app.route("/", api);
 
 

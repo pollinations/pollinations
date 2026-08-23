@@ -1,0 +1,35 @@
+{
+  "pr_number": 13740,
+  "title": "Add vaia-ai-studio.my.id to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13740",
+  "merged_at": "2026-08-23T01:28:47Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [vaia-ai-studio.my.id](https://vaia-ai-studio.my.id) to image\n- Create collaborative images using the Pollinations image API\n\nFixes #13699",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A new canvas in bloom",
+    "blurb": "vaia-ai-studio.my.id joined the image garden. It gives collaborators a shared place to turn prompts into pixels with the Pollinations image API.",
+    "summary": "Added vaia-ai-studio.my.id to the Pollinations app directory, showcasing a collaborative image-making studio powered by the Pollinations image API.",
+    "impact": "People browsing the ecosystem can now find a shared canvas for creating images together with Pollinations.",
+    "keywords": [
+      "community",
+      "image-api",
+      "collaboration",
+      "apps",
+      "vaia-ai-studio"
+    ],
+    "visual_concept": "Depict a cozy shared art studio where Polli and a few unseen collaborators contribute to one large pixel canvas, with image prompts growing like flowers from pots beside it. The collaborative canvas and several small paint tools represent the new app, while Polli wears a painter's beret and thoughtfully adds a final pixel.",
+    "image_prompt": "A cozy pixel art collaborative image studio where the cute Pollinations bee mascot, with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears a tiny painter's beret while adding pixels to a large shared canvas with friendly floating paint cursors; code-plants and pixel flowers sprout from lime green (#ecf874) pots beside a retro monitor displaying simple pixel text: \"CREATE TOGETHER\". Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-23/PR-13740.jpg",
+    "prompt": "A cozy pixel art collaborative image studio where the cute Pollinations bee mascot, with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears a tiny painter's beret while adding pixels to a large shared canvas with friendly floating paint cursors; code-plants and pixel flowers sprout from lime green (#ecf874) pots beside a retro monitor displaying simple pixel text: \"CREATE TOGETHER\". Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-23T01:29:56.684574+00:00",
+  "app_name": "vaia-ai-studio.my.id",
+  "app_url": "https://vaia-ai-studio.my.id"
+}

@@ -1,0 +1,34 @@
+{
+  "pr_number": 13734,
+  "title": "fix: make self-owned community model calls free",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13734",
+  "merged_at": "2026-08-23T00:02:09Z",
+  "labels": [],
+  "pr_body_excerpt": "- Skips wallet and API-key budget deductions when a public community endpoint serves its owner\n- Skips the circular 75% owner reward for the same request\n- Keeps normal billing when another owner's endpoint serves a fallback\n\nTests: `npm exec vitest -- run src/byop-markup.test.ts` (26 passed); `npm run typecheck --workspace pollinations-gen`\n\nFixes #13700",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive stopped charging itself",
+    "blurb": "Community model owners can now visit their own public endpoint without the wallet doing a tiny lap around the garden. No deduction, no circular reward, just the request getting on with it.",
+    "summary": "Public community endpoints now waive wallet and API-key budget deductions when they serve requests from their own owner, while preserving normal billing when another owner’s endpoint handles a fallback.",
+    "impact": "Community model owners can use their own public endpoints without spending budget or generating the circular 75% owner reward, while fallback requests remain billed normally.",
+    "keywords": [
+      "community-models",
+      "billing",
+      "BYOP",
+      "wallet",
+      "API-keys",
+      "bug-fix"
+    ],
+    "visual_concept": "Depict Polli as a community model gardener tending her own code-plant at a public terminal, with a wallet resting safely closed beside it to show that self-owned requests do not trigger billing. A friendly CRT monitor robot can display a looping request arrow that gently stops before reaching a tiny Pollen jar, surrounded by flowers and vines; the scene represents avoiding circular owner rewards while keeping the shared garden operational.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener apron, tending her own glowing code-plant at a public retro terminal while a closed wallet and full Pollen jar sit safely nearby. A cheerful CRT monitor robot watches a request arrow stop before looping back into the jar, surrounded by flowers and vines on a prominent lime green (#ecf874), warm cream, mint, and lavender background; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-23/PR-13734.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener apron, tending her own glowing code-plant at a public retro terminal while a closed wallet and full Pollen jar sit safely nearby. A cheerful CRT monitor robot watches a request arrow stop before looping back into the jar, surrounded by flowers and vines on a prominent lime green (#ecf874), warm cream, mint, and lavender background; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-08-23T00:03:05.429120+00:00"
+}

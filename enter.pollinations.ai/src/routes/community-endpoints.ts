@@ -1,51 +1,16 @@
 import {
-    COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
-    COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES,
-    COMMUNITY_ENDPOINT_INPUT_MODALITIES,
-    COMMUNITY_ENDPOINT_MODALITIES,
-    COMMUNITY_ENDPOINT_PRICE_FIELDS,
-    COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH,
-    COMMUNITY_ENDPOINT_VISIBILITIES,
-    COMMUNITY_PROVIDER_NAME_MAX_LENGTH,
-    COMMUNITY_PROVIDER_URL_MAX_LENGTH,
-    type CommunityEndpointAdvertised,
-    CommunityEndpointAdvertisedSchema,
-    type CommunityEndpointImagePricing,
-    type CommunityEndpointModality,
-    type CommunityEndpointPriceKey,
-    type CommunityEndpointPrices,
     type CommunityEndpointVisibility,
-    communityEndpointPriceFieldsForModality,
-    communityEndpointPrices,
-    communityEndpointPricesForModality,
-    communityEndpointTitle,
     communityModelId,
+    type EndpointAgentListingPayload,
     isCommunityEndpointOwnerAllowed,
-    isCommunityFallbackBalanceAllowed,
-    isCommunityFallbackPricingAllowed,
-    MAX_COMMUNITY_PRICE_PER_IMAGE,
-    MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
-    MAX_COMMUNITY_PRICE_PER_SECOND,
-    MAX_COMMUNITY_PRICE_PER_TOKEN,
-    MAX_FALLBACK_TARGETS,
-    MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
-    MIN_COMMUNITY_PRICE_PER_TOKEN,
-    normalizeCommunityEndpointAdvertised,
     normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
-    normalizeCommunityEndpointInputModalities,
     normalizeCommunityProviderUrl,
     type ProxyListingPayload,
-    parseCommunityModelId,
     parseListingPayload,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
-import { ValidationError } from "@shared/http/validation-error.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import {
-    MODEL_INPUT_MODALITIES,
-    type ModelInputModality,
-} from "@shared/registry/registry.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import { and, desc, eq, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -53,7 +18,6 @@ import type { Context } from "hono";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { describeRoute, resolver } from "hono-openapi";
-import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import {
@@ -63,556 +27,37 @@ import {
     testCommunityTranscriptionEndpoint,
 } from "../services/community-endpoint-openai.ts";
 import { requireAccountPermission } from "./account-permissions.ts";
+import {
+    type FallbackPrimary,
+    fallbackTargetRejection,
+    resolveFallbacks,
+} from "./community-endpoints/fallbacks.ts";
+import { toCommunityEndpointResponse } from "./community-endpoints/presenter.ts";
+import {
+    changesProxyPayload,
+    deriveCreateProxyPolicy,
+    deriveUpdatedProxyPolicy,
+} from "./community-endpoints/proxy-policy.ts";
+import {
+    assertValidUpdate,
+    CommunityEndpointDeleteResponseSchema,
+    CommunityEndpointListResponseSchema,
+    CommunityEndpointModelsResponseSchema,
+    CommunityEndpointResponseSchema,
+    CommunityEndpointTestResponseSchema,
+    CommunityProviderProfileInputSchema,
+    CommunityProviderProfileResponseSchema,
+    CreateEndpointAgentSchema,
+    CreateEndpointSchema,
+    EndpointAgentResponseSchema,
+    FallbackCandidatesResponseSchema,
+    ModelListSchema,
+    TestEndpointSchema,
+    UpdateEndpointSchema,
+} from "./community-endpoints/schemas.ts";
 
-const ModalitySchema = z
-    .enum(COMMUNITY_ENDPOINT_MODALITIES)
-    .describe(
-        'Upstream API family. "text" uses `/v1/chat/completions`; "image" uses `/v1/images/generations` and optionally `/v1/images/edits` when the endpoint test succeeds; "transcription" uses `/v1/audio/transcriptions`.',
-    );
-const ImagePricingSchema = z
-    .enum(COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES)
-    .describe(
-        'Image models only. "request": the generated-image price is charged once per generation. "tokens": provider-returned OpenAI image token usage is charged against per-token prices. Detected by the endpoint test.',
-    );
-const InputModalitySchema = z.enum(MODEL_INPUT_MODALITIES);
-const InputModalitiesSchema = z
-    .array(InputModalitySchema)
-    .min(1)
-    .describe(
-        "Input types accepted by the model. Select every supported modality so the model catalog can advertise them accurately.",
-    );
-const AdvertisedSchema = z
-    .object(CommunityEndpointAdvertisedSchema.shape)
-    .strict()
-    .describe("Owner-declared catalog metadata for text models.");
-const PriceSchema = z
-    .number()
-    .finite()
-    .min(0)
-    .refine((price) => price === 0 || price >= MIN_COMMUNITY_PRICE_PER_TOKEN, {
-        message: `Price must be 0 (free) or at least ${MIN_COMMUNITY_PRICE_PER_TOKEN} per token (${MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS} per 1M tokens)`,
-    })
-    .describe(
-        'Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request".',
-    );
-const UpdatePriceFieldsSchema = Object.fromEntries(
-    COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
-        field.key,
-        PriceSchema.optional(),
-    ]),
-) as unknown as Record<
-    CommunityEndpointPriceKey,
-    z.ZodOptional<z.ZodType<number>>
->;
-
-function enforceCommunityEndpointPriceLimits(
-    source: Partial<Record<CommunityEndpointPriceKey, number>>,
-    modality: (typeof COMMUNITY_ENDPOINT_MODALITIES)[number],
-    imagePricing: (typeof COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES)[number],
-): void {
-    for (const field of communityEndpointPriceFieldsForModality(
-        modality,
-        imagePricing,
-    )) {
-        const price = source[field.key];
-        const maxPrice =
-            field.priceUnit === "image"
-                ? MAX_COMMUNITY_PRICE_PER_IMAGE
-                : field.priceUnit === "second"
-                  ? MAX_COMMUNITY_PRICE_PER_SECOND
-                  : MAX_COMMUNITY_PRICE_PER_TOKEN;
-        if (price === undefined || price <= maxPrice) continue;
-
-        const limit =
-            field.priceUnit === "image"
-                ? `${MAX_COMMUNITY_PRICE_PER_IMAGE} Pollen per image`
-                : field.priceUnit === "second"
-                  ? `${MAX_COMMUNITY_PRICE_PER_SECOND} Pollen per second`
-                  : `${MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS} Pollen per 1M tokens`;
-        throw new HTTPException(400, {
-            message: `${field.label} price must not exceed ${limit}`,
-        });
-    }
-}
-
-function enforceCommunityEndpointInputModalities(
-    modality: CommunityEndpointModality,
-    inputModalities: readonly string[],
-): void {
-    const permitted = COMMUNITY_ENDPOINT_INPUT_MODALITIES[modality];
-    const unsupported = inputModalities.find(
-        (input) => !(permitted as readonly string[]).includes(input),
-    );
-    if (!unsupported) return;
-    throw new HTTPException(400, {
-        message: `${unsupported} input is not supported for ${modality} models`,
-    });
-}
-
-function hasAdvertisedClaim(
-    advertised: CommunityEndpointAdvertised | undefined,
-): boolean {
-    return Object.values(advertised ?? {}).some((value) =>
-        Array.isArray(value) ? value.length > 0 : value != null,
-    );
-}
-
-function enforceCommunityEndpointAdvertised(
-    modality: CommunityEndpointModality,
-    advertised: CommunityEndpointAdvertised | undefined,
-): void {
-    if (modality === "text" || !hasAdvertisedClaim(advertised)) return;
-    throw new HTTPException(400, {
-        message: "advertised metadata is only supported for text models",
-    });
-}
-
-// Community fallback targets are restricted to public community models or
-// private models owned by the same developer.
-// Pointing a community model at a Pollinations-operated model is deliberately
-// out of scope: static registry prices can be function-valued/dynamic, so the
-// "same or lower price" comparison is not well-defined against them.
-const FallbacksSchema = z
-    .array(z.string().trim().min(1))
-    .max(MAX_FALLBACK_TARGETS)
-    .describe(
-        'Community model ids ("<owner>/<name>") tried in order when this model\'s upstream fails, or an empty array to clear them. Each must be another listed community model of the same modality, public or owned by you, and priced at or below this model on every price field.',
-    );
-
-const SELF_FALLBACK_MESSAGE = "Fallback target cannot be the model itself";
-
-type FallbackPrimary = {
-    modelId: string;
-    ownerUserId: string;
-    modality: CommunityEndpointModality;
-    imagePricing: CommunityEndpointImagePricing;
-    paidOnly: boolean;
-    prices: CommunityEndpointPrices;
-    inputModalities?: readonly ModelInputModality[] | null;
-};
-
-function fallbackTargetMissingMessage(modelId: string): string {
-    return `Fallback target ${modelId} does not exist`;
-}
-
-/**
- * Private or hidden rows owned by someone else must look identical to a
- * missing row. Distinct 400s were an existence oracle.
- */
-function shouldConcealFallbackTarget(
-    primary: FallbackPrimary,
-    target: CommunityEndpointRow,
-): boolean {
-    if (target.ownerUserId === primary.ownerUserId) return false;
-    return target.visibility === "private" || target.hiddenAt !== null;
-}
-
-/**
- * Why `target` may not serve as a fallback for `primary`, or null when it may.
- *
- * The candidate list the dashboard offers and the validation the write path
- * applies must agree, so both go through this one function — a target the UI
- * shows can always be saved, and one it hides always explains itself.
- */
-function fallbackTargetRejection(
-    primary: FallbackPrimary,
-    modelId: string,
-    target: CommunityEndpointRow,
-): string | null {
-    // Reached from the candidates route, where the model itself is one of the
-    // public rows scanned. The write path checks this earlier, before any
-    // lookup, because a model being created has no row to find.
-    if (modelId === primary.modelId) return SELF_FALLBACK_MESSAGE;
-    if (shouldConcealFallbackTarget(primary, target)) {
-        return fallbackTargetMissingMessage(modelId);
-    }
-    if (target.hiddenAt !== null) {
-        return `Fallback target ${modelId} must be listed`;
-    }
-    if (target.type !== "proxy") {
-        return `Fallback target ${modelId} cannot delegate generation`;
-    }
-    if (
-        target.visibility === "private" &&
-        target.ownerUserId !== primary.ownerUserId
-    ) {
-        return `Fallback target ${modelId} must be public or owned by you`;
-    }
-    const payload = parseListingPayload("proxy", target.payload);
-    if (!payload) {
-        return `Fallback target ${modelId} has invalid configuration`;
-    }
-    const targetModality = payload.modality;
-    if (targetModality !== primary.modality) {
-        return `Fallback target ${modelId} is a ${targetModality} model, not ${primary.modality}`;
-    }
-    // The stored price columns mean different things in "request" and "tokens"
-    // mode, so comparing across modes is meaningless.
-    const targetImagePricing = payload.imagePricing;
-    if (
-        primary.modality === "image" &&
-        targetImagePricing !== primary.imagePricing
-    ) {
-        return `Fallback target ${modelId} bills images per ${targetImagePricing}, not per ${primary.imagePricing}`;
-    }
-    const primaryInputs = normalizeCommunityEndpointInputModalities(
-        primary.inputModalities,
-        primary.modality,
-    );
-    const targetInputs = normalizeCommunityEndpointInputModalities(
-        payload.inputModalities,
-        targetModality,
-    );
-    if (
-        primary.modality === "image" &&
-        primaryInputs.includes("image") &&
-        !targetInputs.includes("image")
-    ) {
-        return `Fallback target ${modelId} does not support image edits`;
-    }
-    const targetPrices = payload.prices;
-    if (!isCommunityFallbackBalanceAllowed(primary, payload)) {
-        return `Fallback target ${modelId} accepts only Paid Pollen, which this model does not require`;
-    }
-    if (!isCommunityFallbackPricingAllowed(primary.prices, targetPrices)) {
-        const excesses = COMMUNITY_ENDPOINT_PRICE_FIELDS.filter(
-            (field) => targetPrices[field.key] > primary.prices[field.key],
-        ).map(
-            (field) =>
-                `${field.key} (${targetPrices[field.key]}) exceeds this model's (${primary.prices[field.key]})`,
-        );
-        return `Fallback target ${modelId} ${excesses.join(", ")}`;
-    }
-    return null;
-}
-
-// Resolves and validates one requested fallback target.
-async function resolveFallback(
-    db: Db,
-    requested: string,
-    primary: FallbackPrimary,
-): Promise<string> {
-    const parsed = parseCommunityModelId(requested);
-    if (!parsed) {
-        throw new HTTPException(400, {
-            message: `Fallback target ${requested} must be a community model id in the form <owner>/<name>`,
-        });
-    }
-    const fallbackModelId = communityModelId(
-        parsed.ownerGithubUsername,
-        parsed.modelName,
-    );
-    // Before the lookup: on create the model has no row yet, so a self-reference
-    // would otherwise surface as "does not exist".
-    if (fallbackModelId === primary.modelId) {
-        throw new HTTPException(400, { message: SELF_FALLBACK_MESSAGE });
-    }
-
-    const targetOwner = await db.query.user.findFirst({
-        columns: { id: true },
-        where: eq(schema.user.githubUsername, parsed.ownerGithubUsername),
-    });
-    const target = targetOwner
-        ? await db.query.communityEndpoint.findFirst({
-              where: and(
-                  eq(schema.communityEndpoint.ownerUserId, targetOwner.id),
-                  eq(schema.communityEndpoint.name, parsed.modelName),
-              ),
-          })
-        : undefined;
-    if (!target || shouldConcealFallbackTarget(primary, target)) {
-        throw new HTTPException(400, {
-            message: fallbackTargetMissingMessage(fallbackModelId),
-        });
-    }
-    const rejection = fallbackTargetRejection(primary, fallbackModelId, target);
-    if (rejection) throw new HTTPException(400, { message: rejection });
-    return fallbackModelId;
-}
-
-// Resolves the whole declared list.
-//
-// A target can later be deleted, hidden, or repriced above the primary.
-// There is no reconciliation job: the generation registry re-checks these same
-// rules when it links entries, so this is a UX guard, not an invariant.
-async function resolveFallbacks(
-    db: Db,
-    requested: string[],
-    primary: FallbackPrimary,
-): Promise<string[]> {
-    const resolved: string[] = [];
-    for (const id of requested) {
-        const modelId = await resolveFallback(db, id, primary);
-        if (resolved.includes(modelId)) {
-            throw new HTTPException(400, {
-                message: `Fallback target ${modelId} is listed more than once`,
-            });
-        }
-        resolved.push(modelId);
-    }
-    return resolved;
-}
-
-const VisibilitySchema = z
-    .enum(COMMUNITY_ENDPOINT_VISIBILITIES)
-    .describe(
-        '"private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account.',
-    );
-const PaidOnlySchema = z
-    .boolean()
-    .describe(
-        "Restrict callers to spending Paid Pollen on this model. Use it when the upstream bills per use, so Quest Pollen cannot cover the price and leave you paying the inference cost.",
-    );
-const PerUserRpmSchema = z
-    .number()
-    .finite()
-    .positive()
-    .nullable()
-    .describe(
-        "Maximum requests per minute for each Pollinations user. Decimals are supported; 0.5 means one request every two minutes. Null means no Pollinations-side limit.",
-    );
-const EndpointFieldsSchema = {
-    // This slug is used in `<owner>/<name>` model ids and by operational tools.
-    // Keep it safe to pass as data without accepting shell or SQL syntax.
-    name: z
-        .string()
-        .trim()
-        .min(1)
-        .max(120)
-        .regex(
-            /^[A-Za-z0-9._:-]+$/,
-            "Model name may only contain letters, numbers, periods, underscores, colons, and hyphens",
-        ),
-    title: z
-        .string()
-        .trim()
-        .min(1)
-        .max(COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH)
-        .describe("Display name shown in the model catalog."),
-    description: z
-        .string()
-        .trim()
-        .max(COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH)
-        .optional(),
-    baseUrl: z
-        .string()
-        .url()
-        .describe(
-            "OpenAI-compatible `/v1` base URL or full chat, image generation, or image edit URL.",
-        ),
-    upstreamModel: z.string().trim().min(1).max(253).optional(),
-    bearerToken: z.string().min(1),
-} as const;
-
-// Proxies are created here. Prompt agents use /account/agents so their config
-// and listing are written atomically; endpoint agents remain admin-created.
-const ProxyCreateSchema = z
-    .object({
-        name: EndpointFieldsSchema.name,
-        title: EndpointFieldsSchema.title,
-        description: EndpointFieldsSchema.description,
-        visibility: VisibilitySchema.optional().default("private"),
-        baseUrl: EndpointFieldsSchema.baseUrl,
-        bearerToken: EndpointFieldsSchema.bearerToken,
-        upstreamModel: EndpointFieldsSchema.upstreamModel,
-        modality: ModalitySchema.optional().default("text"),
-        imagePricing: ImagePricingSchema.optional().default("request"),
-        // No blanket default: what an omitted set means depends on the
-        // modality, so it is resolved in the handler once modality is known.
-        inputModalities: InputModalitiesSchema.optional(),
-        advertised: AdvertisedSchema.optional(),
-        perUserRpm: PerUserRpmSchema.optional(),
-        paidOnly: PaidOnlySchema.optional().default(false),
-        fallbacks: FallbacksSchema.optional(),
-        ...UpdatePriceFieldsSchema,
-    })
-    .strict();
-const CreateEndpointSchema = ProxyCreateSchema;
-const CommonUpdateFieldsSchema = {
-    name: EndpointFieldsSchema.name.optional(),
-    title: EndpointFieldsSchema.title.optional(),
-    description: EndpointFieldsSchema.description,
-    visibility: VisibilitySchema.optional(),
-    hidden: z.boolean().optional(),
-} as const;
-const ProxyUpdateSchema = z
-    .object({
-        ...CommonUpdateFieldsSchema,
-        baseUrl: EndpointFieldsSchema.baseUrl.optional(),
-        upstreamModel: EndpointFieldsSchema.upstreamModel,
-        bearerToken: EndpointFieldsSchema.bearerToken.optional(),
-        perUserRpm: PerUserRpmSchema.optional(),
-        paidOnly: PaidOnlySchema.optional(),
-        imagePricing: ImagePricingSchema.optional(),
-        inputModalities: InputModalitiesSchema.optional(),
-        advertised: AdvertisedSchema.optional(),
-        fallbacks: FallbacksSchema.optional(),
-        ...UpdatePriceFieldsSchema,
-    })
-    .strict();
-const PromptAgentUpdateSchema = z
-    .object({
-        ...CommonUpdateFieldsSchema,
-    })
-    .strict();
-const EndpointAgentUpdateSchema = z
-    .object({
-        ...CommonUpdateFieldsSchema,
-        baseUrl: EndpointFieldsSchema.baseUrl.optional(),
-        upstreamModel: EndpointFieldsSchema.upstreamModel,
-        perUserRpm: PerUserRpmSchema.optional(),
-    })
-    .strict();
-// The public contract lists every updateable field without requiring clients to
-// echo the row's immutable type. Once the row is loaded, its exact strict schema
-// performs the authoritative parse and rejects fields from another listing kind.
-const UpdateEndpointSchema = z
-    .object({
-        ...CommonUpdateFieldsSchema,
-        baseUrl: EndpointFieldsSchema.baseUrl.optional(),
-        upstreamModel: EndpointFieldsSchema.upstreamModel,
-        bearerToken: EndpointFieldsSchema.bearerToken.optional(),
-        perUserRpm: PerUserRpmSchema.optional(),
-        paidOnly: PaidOnlySchema.optional(),
-        imagePricing: ImagePricingSchema.optional(),
-        inputModalities: InputModalitiesSchema.optional(),
-        advertised: AdvertisedSchema.optional(),
-        fallbacks: FallbacksSchema.optional(),
-        ...UpdatePriceFieldsSchema,
-    })
-    .strict();
-
-function assertValidUpdate(
-    type: "proxy" | "prompt_agent" | "endpoint_agent",
-    input: unknown,
-): void {
-    const selected =
-        type === "proxy"
-            ? ProxyUpdateSchema
-            : type === "prompt_agent"
-              ? PromptAgentUpdateSchema
-              : EndpointAgentUpdateSchema;
-    const result = selected.safeParse(input);
-    if (!result.success) throw new ValidationError(result.error, "json");
-}
-const FallbackCandidatesResponseSchema = z.object({
-    data: z.array(z.string()),
-});
-const ModelListSchema = z
-    .object({
-        baseUrl: z.string().url(),
-        bearerToken: z.string().min(1),
-    })
-    .strict();
-const TestEndpointSchema = z
-    .object({
-        baseUrl: z.string().url(),
-        bearerToken: z.string().min(1),
-        model: z.string().trim().min(1).max(253),
-        modality: ModalitySchema.optional().default("text"),
-    })
-    .strict();
-const ResponsePriceFieldsSchema = Object.fromEntries(
-    COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [field.key, z.number()]),
-) as unknown as Record<CommunityEndpointPriceKey, z.ZodType<number>>;
-const CommunityEndpointResponseFieldsSchema = {
-    id: z.string(),
-    modelId: z.string(),
-    name: z.string(),
-    title: z.string(),
-    description: z.string().nullable(),
-    baseUrl: z.string().url(),
-    upstreamModel: z.string().min(1),
-    visibility: VisibilitySchema,
-    hidden: z.boolean(),
-    hiddenReason: z.string().nullable(),
-    hiddenAt: z.string().nullable(),
-    createdAt: z.string(),
-    updatedAt: z.string(),
-} as const;
-const ProxyEndpointResponseSchema = z
-    .object({
-        ...CommunityEndpointResponseFieldsSchema,
-        type: z.literal("proxy"),
-        modality: ModalitySchema,
-        imagePricing: ImagePricingSchema,
-        inputModalities: z.array(InputModalitySchema),
-        advertised: AdvertisedSchema,
-        perUserRpm: PerUserRpmSchema,
-        paidOnly: z.boolean(),
-        fallbacks: z.array(z.string()),
-        ...ResponsePriceFieldsSchema,
-    })
-    .strict();
-const PromptAgentEndpointResponseSchema = z
-    .object({
-        ...CommunityEndpointResponseFieldsSchema,
-        type: z.literal("prompt_agent"),
-    })
-    .strict();
-const EndpointAgentEndpointResponseSchema = z
-    .object({
-        ...CommunityEndpointResponseFieldsSchema,
-        type: z.literal("endpoint_agent"),
-        perUserRpm: PerUserRpmSchema,
-    })
-    .strict();
-const CommunityEndpointResponseSchema = z.discriminatedUnion("type", [
-    ProxyEndpointResponseSchema,
-    PromptAgentEndpointResponseSchema,
-    EndpointAgentEndpointResponseSchema,
-]);
-const CommunityEndpointListResponseSchema = z.object({
-    data: z.array(CommunityEndpointResponseSchema),
-    provider: z.object({
-        name: z.string().nullable(),
-        url: z.string().url().nullable(),
-    }),
-});
-const CommunityProviderProfileInputSchema = z
-    .object({
-        name: z.string().trim().max(COMMUNITY_PROVIDER_NAME_MAX_LENGTH),
-        url: z.string().trim().max(COMMUNITY_PROVIDER_URL_MAX_LENGTH),
-    })
-    .strict();
-const CommunityProviderProfileResponseSchema = z.object({
-    name: z.string().nullable(),
-    url: z.string().url().nullable(),
-});
-const CommunityEndpointModelsResponseSchema = z.object({
-    data: z.array(z.string()),
-});
-const CommunityEndpointTestResponseSchema = z
-    .object({
-        ok: z.boolean(),
-        message: z.string(),
-        usage: z
-            .record(z.string(), z.unknown())
-            .describe(
-                "Raw provider usage, or `{ images: 1 }` when an image provider returns no token usage.",
-            ),
-        billableUsage: z
-            .record(z.string(), z.number())
-            .describe(
-                "Normalized billable usage fields used to reveal applicable prices.",
-            ),
-        imagePricing: ImagePricingSchema.optional().describe(
-            "Image tests only: pricing mode detected from the provider response.",
-        ),
-        inputModalities: z
-            .array(InputModalitySchema)
-            .optional()
-            .describe(
-                "Image tests only: input types detected from generation and edit probes.",
-            ),
-    })
-    .passthrough();
-const CommunityEndpointDeleteResponseSchema = z.object({
-    id: z.string(),
-});
 const ENDPOINT_PROBE_THROTTLE_SECONDS = 30;
 type Db = ReturnType<typeof drizzle<typeof schema>>;
-type CommunityEndpointRow = typeof schema.communityEndpoint.$inferSelect;
 function normalizeInputBaseUrl(value: string): string {
     try {
         return normalizeCommunityEndpointBaseUrl(value);
@@ -679,62 +124,6 @@ async function requireOwnerGithubUsername(
     throw new HTTPException(400, {
         message:
             "A GitHub username is required to register community endpoints",
-    });
-}
-
-function toResponse(
-    row: CommunityEndpointRow,
-    ownerGithubUsername: string,
-    agentRuntimeUrl: string,
-): z.infer<typeof CommunityEndpointResponseSchema> {
-    const common = {
-        id: row.id,
-        modelId: communityModelId(ownerGithubUsername, row.name),
-        name: row.name,
-        title: communityEndpointTitle({
-            modelId: communityModelId(ownerGithubUsername, row.name),
-            title: row.title,
-            description: row.description,
-        }),
-        description: row.description,
-        baseUrl: row.type === "prompt_agent" ? agentRuntimeUrl : row.baseUrl,
-        upstreamModel: row.upstreamModel,
-        visibility: row.visibility,
-        hidden: row.hiddenAt !== null,
-        hiddenReason: row.hiddenReason,
-        hiddenAt: row.hiddenAt?.toISOString() ?? null,
-        createdAt: row.createdAt.toISOString(),
-        updatedAt: row.updatedAt.toISOString(),
-    };
-    if (row.type === "prompt_agent") {
-        return CommunityEndpointResponseSchema.parse({
-            ...common,
-            type: row.type,
-        });
-    }
-    if (row.type === "endpoint_agent") {
-        const payload = parseListingPayload("endpoint_agent", row.payload);
-        if (!payload) {
-            throw new Error(`Invalid endpoint_agent payload for ${row.id}`);
-        }
-        return CommunityEndpointResponseSchema.parse({
-            ...common,
-            type: row.type,
-            perUserRpm: payload.perUserRpm,
-        });
-    }
-    const payload = parseListingPayload("proxy", row.payload);
-    if (!payload) throw new Error(`Invalid proxy payload for ${row.id}`);
-    const { bearerTokenCiphertext: _credential, prices, ...proxy } = payload;
-    return CommunityEndpointResponseSchema.parse({
-        ...common,
-        type: row.type,
-        ...proxy,
-        advertised: normalizeCommunityEndpointAdvertised(
-            payload.advertised,
-            payload.modality,
-        ),
-        ...prices,
     });
 }
 
@@ -868,7 +257,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             return c.json(
                 CommunityEndpointListResponseSchema.parse({
                     data: rows.map((endpoint) =>
-                        toResponse(
+                        toCommunityEndpointResponse(
                             endpoint,
                             ownerGithubUsername,
                             c.env.AGENT_RUNTIME_BASE_URL,
@@ -1022,6 +411,68 @@ export const communityEndpointsRoutes = new Hono<Env>()
         },
     )
     .post(
+        "/endpoint-agents",
+        describeRoute({
+            tags: ["🤖 Community Agents"],
+            summary: "Create Endpoint Agent",
+            description:
+                "Register an agent running on an external OpenAI-compatible endpoint. Pollinations sends a short-lived agent run token instead of a stored bearer credential. Private is the default; public agents require an allowlisted account. API keys require `account:keys`.",
+            responses: {
+                200: {
+                    description: "Created endpoint agent",
+                    content: {
+                        "application/json": {
+                            schema: resolver(EndpointAgentResponseSchema),
+                        },
+                    },
+                },
+                400: { description: "Invalid endpoint agent configuration" },
+                401: { description: "Unauthorized" },
+                403: { description: "Permission denied" },
+            },
+        }),
+        validator("json", CreateEndpointAgentSchema),
+        async (c) => {
+            const user = c.var.auth.requireUser();
+            const input = c.req.valid("json");
+            const db = drizzle(c.env.DB, { schema });
+            requireAccountPermission(c.var.auth.apiKey, "keys");
+            const ownerGithubUsername = await requireOwnerGithubUsername(
+                db,
+                user.id,
+            );
+            await ensureModelNameAvailable(db, user.id, input.name);
+            await enforcePublishingAccess(db, user.id, input.visibility);
+            const payload: EndpointAgentListingPayload = {
+                perUserRpm: input.perUserRpm,
+            };
+            const [row] = await db
+                .insert(schema.communityEndpoint)
+                .values({
+                    id: crypto.randomUUID(),
+                    ownerUserId: user.id,
+                    name: input.name,
+                    title: input.title,
+                    description: input.description || null,
+                    visibility: input.visibility,
+                    type: "endpoint_agent",
+                    baseUrl: normalizeInputBaseUrl(input.baseUrl),
+                    upstreamModel: input.upstreamModel ?? input.name,
+                    payload: JSON.stringify(payload),
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                })
+                .returning();
+            return c.json(
+                toCommunityEndpointResponse(
+                    row,
+                    ownerGithubUsername,
+                    c.env.AGENT_RUNTIME_BASE_URL,
+                ),
+            );
+        },
+    )
+    .post(
         "/",
         describeRoute({
             tags: ["🧩 Community Models"],
@@ -1053,56 +504,21 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 user.id,
             );
             await ensureModelNameAvailable(db, user.id, input.name);
-            const modality = input.modality;
-            const imagePricing =
-                modality === "image" ? input.imagePricing : "request";
-            // An omitted set follows the modality — audio for transcription,
-            // text otherwise. An explicit set is validated rather than
-            // silently rewritten, so a wrong declaration still gets a 400.
-            const inputModalities =
-                input.inputModalities ??
-                normalizeCommunityEndpointInputModalities(undefined, modality);
-            enforceCommunityEndpointInputModalities(modality, inputModalities);
-            enforceCommunityEndpointAdvertised(modality, input.advertised);
-            const prices =
-                input.visibility === "public"
-                    ? communityEndpointPricesForModality(
-                          input,
-                          modality,
-                          imagePricing,
-                      )
-                    : communityEndpointPrices({});
-            const paidOnly =
-                input.visibility === "public" ? input.paidOnly : false;
-            enforceCommunityEndpointPriceLimits(prices, modality, imagePricing);
+            const policy = deriveCreateProxyPolicy(input);
+            const modelId = communityModelId(ownerGithubUsername, input.name);
             const payload: ProxyListingPayload = {
-                modality,
-                imagePricing,
-                inputModalities,
-                paidOnly,
                 bearerTokenCiphertext: await encryptSecret(
                     normalizeInputBearerToken(input.bearerToken),
                     c.env.BETTER_AUTH_SECRET,
                 ),
-                perUserRpm: input.perUserRpm ?? null,
+                ...policy,
                 fallbacks: input.fallbacks
                     ? await resolveFallbacks(db, input.fallbacks, {
-                          modelId: communityModelId(
-                              ownerGithubUsername,
-                              input.name,
-                          ),
+                          modelId,
                           ownerUserId: user.id,
-                          modality,
-                          imagePricing,
-                          paidOnly,
-                          prices,
-                          inputModalities,
+                          ...policy,
                       })
                     : [],
-                ...(hasAdvertisedClaim(input.advertised)
-                    ? { advertised: input.advertised }
-                    : {}),
-                prices,
             };
             await enforcePublishingAccess(db, user.id, input.visibility);
             const [row] = await db
@@ -1123,7 +539,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 })
                 .returning();
             return c.json(
-                toResponse(
+                toCommunityEndpointResponse(
                     row,
                     ownerGithubUsername,
                     c.env.AGENT_RUNTIME_BASE_URL,
@@ -1321,45 +737,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 if (!stored) {
                     throw new Error(`Invalid proxy payload for ${endpoint.id}`);
                 }
-                const modality = stored.modality;
-                const inputModalities =
-                    input.inputModalities ?? stored.inputModalities;
-                enforceCommunityEndpointInputModalities(
-                    modality,
-                    inputModalities,
-                );
-                enforceCommunityEndpointAdvertised(modality, input.advertised);
-                const imagePricing =
-                    modality === "image" && input.imagePricing !== undefined
-                        ? input.imagePricing
-                        : stored.imagePricing;
-                const priceSource = { ...stored.prices, ...input };
-                if (imagePricing !== stored.imagePricing) {
-                    for (const field of communityEndpointPriceFieldsForModality(
-                        modality,
-                        imagePricing,
-                    )) {
-                        if (input[field.key] === undefined) {
-                            priceSource[field.key] = 0;
-                        }
-                    }
-                }
-                const prices =
-                    effectiveVisibility === "private"
-                        ? communityEndpointPrices({})
-                        : communityEndpointPricesForModality(
-                              priceSource,
-                              modality,
-                              imagePricing,
-                          );
-                const paidOnly =
-                    effectiveVisibility === "public"
-                        ? (input.paidOnly ?? stored.paidOnly)
-                        : false;
-                enforceCommunityEndpointPriceLimits(
-                    prices,
-                    modality,
-                    imagePricing,
+                const policy = deriveUpdatedProxyPolicy(
+                    stored,
+                    input,
+                    effectiveVisibility,
                 );
                 const fallbacks =
                     input.fallbacks === undefined
@@ -1370,11 +751,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                                   input.name ?? endpoint.name,
                               ),
                               ownerUserId: user.id,
-                              modality,
-                              imagePricing,
-                              paidOnly,
-                              prices,
-                              inputModalities,
+                              ...policy,
                           });
                 if (input.baseUrl !== undefined) {
                     update.baseUrl = normalizeInputBaseUrl(input.baseUrl);
@@ -1382,20 +759,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 if (input.upstreamModel !== undefined) {
                     update.upstreamModel = input.upstreamModel;
                 }
-                const changesPayload = [
-                    input.bearerToken,
-                    input.visibility,
-                    input.perUserRpm,
-                    input.paidOnly,
-                    input.imagePricing,
-                    input.inputModalities,
-                    input.advertised,
-                    input.fallbacks,
-                    ...COMMUNITY_ENDPOINT_PRICE_FIELDS.map(
-                        ({ key }) => input[key],
-                    ),
-                ].some((value) => value !== undefined);
-                if (changesPayload) {
+                if (changesProxyPayload(input)) {
                     const payload: ProxyListingPayload = {
                         bearerTokenCiphertext:
                             input.bearerToken === undefined
@@ -1406,22 +770,8 @@ export const communityEndpointsRoutes = new Hono<Env>()
                                       ),
                                       c.env.BETTER_AUTH_SECRET,
                                   ),
-                        modality,
-                        imagePricing,
-                        inputModalities,
-                        paidOnly,
-                        perUserRpm:
-                            input.perUserRpm === undefined
-                                ? stored.perUserRpm
-                                : input.perUserRpm,
+                        ...policy,
                         fallbacks,
-                        advertised:
-                            input.advertised === undefined
-                                ? stored.advertised
-                                : hasAdvertisedClaim(input.advertised)
-                                  ? input.advertised
-                                  : undefined,
-                        prices,
                     };
                     update.payload = JSON.stringify(payload);
                 }
@@ -1437,7 +787,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 )
                 .returning();
             return c.json(
-                toResponse(
+                toCommunityEndpointResponse(
                     row,
                     ownerGithubUsername,
                     c.env.AGENT_RUNTIME_BASE_URL,

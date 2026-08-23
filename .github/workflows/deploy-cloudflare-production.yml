@@ -288,8 +288,8 @@ jobs:
 
   # A Worker must exist before Gen can deploy a service binding to it. Deploy
   # changed private MCP applications after Media (their optional upload
-  # dependency) and before Gen. The Applications workflow may select the same
-  # app, but the shared concurrency key serializes the harmless duplicate.
+  # dependency) and before Gen. The automatic Applications workflow excludes
+  # MCP Workers so it cannot race this dependency chain.
   deploy-mcp-apps:
     needs: [changes, deploy-media]
     if: >-

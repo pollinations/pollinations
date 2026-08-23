@@ -19,7 +19,7 @@ export const requireKey = (): string => {
             "Or pipe a key: printf '%s' '<your-key>' | polli auth login --with-token",
         );
     }
-    return key;
+    return key as string;
 };
 
 interface RequestOptions {

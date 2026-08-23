@@ -323,11 +323,26 @@ writeFileSync(
     `${outputBase}.evidence.json`,
     `${JSON.stringify(evidencePacket, null, 2)}\n`,
 );
+writeFileSync(
+    `${outputBase}.simulated.json`,
+    `${JSON.stringify(
+        {
+            workspace: cutover.payload.workspace,
+            source: "op_pollen_api_restoration_preview",
+            generated_at: generatedAt,
+            rows: desiredRows.length,
+            data: desiredRows,
+        },
+        null,
+        2,
+    )}\n`,
+);
 
 if (!evidenceUrl) {
     console.log(
         JSON.stringify({
             evidence_file: `${outputBase}.evidence.json`,
+            simulated_file: `${outputBase}.simulated.json`,
             desired_rows: desiredRows.length,
             snapshot_rows: targetKeys.size,
             restored_missing_rows: restoredMissingRows.length,
@@ -458,6 +473,7 @@ writeFileSync(
 console.log(
     JSON.stringify({
         evidence_file: `${outputBase}.evidence.json`,
+        simulated_file: `${outputBase}.simulated.json`,
         history_file: `${outputBase}.history.ndjson`,
         report_file: `${outputBase}.report.json`,
         desired_rows: desiredRows.length,

@@ -30,6 +30,9 @@ async function request(path) {
         throw new Error(`OVH time request failed: ${timestampResponse.status}`);
     }
     const timestamp = await timestampResponse.text();
+    // OVH's legacy application-key protocol requires this exact SHA-1 request
+    // signature. It authenticates a short-lived HTTPS request and is not used
+    // for password storage or content-integrity decisions.
     const signature = `$1$${createHash("sha1")
         .update(
             `${applicationSecret}+${consumerKey}+${method}+${url}++${timestamp}`,

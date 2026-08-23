@@ -188,6 +188,7 @@ describe("genericOpenAIClient", () => {
                     role: "assistant",
                     tool_calls: [{ id: "call_1", type: "function" }],
                     content: null,
+                    provider_message_option: "kept",
                 },
             ],
             {
@@ -222,9 +223,9 @@ describe("genericOpenAIClient", () => {
                     role: "assistant",
                     content: null,
                     tool_calls: [{ id: "call_1", type: "function" }],
+                    provider_message_option: "kept",
                 },
             ],
-            stream: false,
             tools: [
                 {
                     type: "function",
@@ -491,7 +492,7 @@ describe("genericOpenAIClient", () => {
         });
     });
 
-    it("does not classify post-response processing bugs as upstream", async () => {
+    it("normalizes choices without mutating frozen upstream objects", async () => {
         const response = new Response();
         Object.defineProperty(response, "json", {
             value: async () => ({
@@ -505,15 +506,63 @@ describe("genericOpenAIClient", () => {
         });
         vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(response);
 
-        const promise = genericOpenAIClient(
+        const completion = await genericOpenAIClient(
             [{ role: "user", content: "hello" }],
             { model: "provider-model" },
             { endpoint: "https://portkey.test/chat" },
         );
 
-        await expect(promise).rejects.toBeInstanceOf(TypeError);
-        await expect(promise).rejects.not.toHaveProperty("status");
-        await expect(promise).rejects.not.toHaveProperty("requestUrl");
+        expect(completion.choices?.[0]?.finish_reason).toBe("tool_calls");
+    });
+
+    it("preserves and normalizes every upstream choice and extension", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({
+                id: "chatcmpl_multi",
+                object: "chat.completion",
+                provider_response_option: { trace: "kept" },
+                choices: [
+                    {
+                        index: 0,
+                        message: { role: "assistant", content: "first" },
+                        finish_reason: "stop",
+                        provider_choice_option: "first-kept",
+                    },
+                    {
+                        index: 1,
+                        message: {
+                            role: "assistant",
+                            content: null,
+                            tool_calls: [{ id: "call_1" }],
+                        },
+                        finish_reason: "stop",
+                        provider_choice_option: "second-kept",
+                    },
+                ],
+                usage: { completion_tokens: 5 },
+            }),
+        );
+
+        const completion = await genericOpenAIClient(
+            [{ role: "user", content: "hello" }],
+            {
+                model: "provider-model",
+                max_tokens: 5,
+                normalizeFinishReasonAtTokenLimit: true,
+            },
+            { endpoint: "https://portkey.test/chat" },
+        );
+
+        expect(completion.provider_response_option).toEqual({ trace: "kept" });
+        expect(completion.choices).toHaveLength(2);
+        expect(completion.choices?.[0]).toMatchObject({
+            finish_reason: "length",
+            provider_choice_option: "first-kept",
+        });
+        expect(completion.choices?.[1]).toMatchObject({
+            finish_reason: "tool_calls",
+            provider_choice_option: "second-kept",
+        });
     });
 
     it("preserves non-Error transport failures as the cause", async () => {
@@ -609,6 +658,25 @@ describe("genericOpenAIClient", () => {
 
         expect(text).toContain('"content":"ok"');
         expect(text).toContain("data: [DONE]\n\n");
+    });
+
+    it("rejects a JSON response to a streaming upstream request", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({ choices: [] }),
+        );
+
+        await expect(
+            genericOpenAIClient(
+                [{ role: "user", content: "hello" }],
+                { model: "provider-model", stream: true },
+                { endpoint: "https://portkey.test/chat" },
+            ),
+        ).rejects.toMatchObject({
+            status: 502,
+            message:
+                "Stream requested for model provider-model but upstream returned content-type: application/json",
+            requestUrl: new URL("https://portkey.test/chat"),
+        });
     });
 
     it("captures the Portkey fallback target header on non-streaming responses", async () => {

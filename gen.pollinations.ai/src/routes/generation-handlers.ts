@@ -1,9 +1,5 @@
 import { UpstreamError } from "@shared/error.ts";
-import {
-    type CreateChatCompletionRequest,
-    type CreateChatCompletionResponse,
-    CreateChatCompletionResponseSchema,
-} from "@shared/schemas/openai.ts";
+import type { CreateChatCompletionRequest } from "@shared/schemas/openai.ts";
 import { SafeSchema, type SafeValue } from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
 import { bodyLimit } from "hono/body-limit";
@@ -22,6 +18,7 @@ import {
 } from "@/middleware/safety.ts";
 import { handle3dPrompt } from "@/model3d/handler.ts";
 import type { CreateEmbeddingRequestSchema } from "@/schemas/embeddings.ts";
+import type { GenerateTextRequestQueryParams } from "@/schemas/text.ts";
 import {
     handleChatCompletionLocal,
     handleSimpleTextLocal,
@@ -183,10 +180,9 @@ export async function generateChatCompletion(
     if (!c.var.track.streamRequested) {
         const responseText = await response.clone().text();
         try {
-            const parsedResponse = CreateChatCompletionResponseSchema.parse(
-                JSON.parse(responseText),
-                { reportInput: true },
-            );
+            const parsedResponse = JSON.parse(
+                responseText,
+            ) as ModerationResponse;
             contentFilterHeaders =
                 contentFilterResultsToHeaders(parsedResponse);
         } catch (parseError) {
@@ -221,10 +217,9 @@ export async function generateTextContent(c: Context<Env>): Promise<Response> {
 }
 
 export async function generateSimpleText(c: Context<Env>): Promise<Response> {
-    const query = c.req.valid("query" as never) as {
-        safe?: SafeValue;
-        system?: string;
-    };
+    const query = c.req.valid(
+        "query" as never,
+    ) as GenerateTextRequestQueryParams;
     const textInputs =
         typeof query.system === "string"
             ? [c.req.param("prompt"), query.system]
@@ -237,12 +232,10 @@ export async function generateSimpleText(c: Context<Env>): Promise<Response> {
 
     return withSafetyHeaders(
         c,
-        await handleSimpleTextLocal(
-            c,
-            prompt,
-            c.var.model.resolved,
-            system ? { system } : undefined,
-        ),
+        await handleSimpleTextLocal(c, prompt, c.var.model.resolved, {
+            ...query,
+            system,
+        }),
     );
 }
 
@@ -264,7 +257,7 @@ function assertStreamContentType(
 }
 
 export function contentFilterResultsToHeaders(
-    response: CreateChatCompletionResponse,
+    response: ModerationResponse,
 ): Record<string, string> {
     const promptFilters =
         response.prompt_filter_results?.[0]?.content_filter_results;
@@ -319,3 +312,20 @@ export function contentFilterResultsToHeaders(
     }
     return headers;
 }
+
+type ModerationResult = {
+    hate?: { severity?: unknown };
+    self_harm?: { severity?: unknown };
+    sexual?: { severity?: unknown };
+    violence?: { severity?: unknown };
+    jailbreak?: { detected?: unknown };
+    protected_material_text?: { detected?: unknown };
+    protected_material_code?: { detected?: unknown };
+};
+
+type ModerationResponse = {
+    prompt_filter_results?: Array<{
+        content_filter_results?: ModerationResult;
+    }> | null;
+    choices?: Array<{ content_filter_results?: ModerationResult | null }>;
+};

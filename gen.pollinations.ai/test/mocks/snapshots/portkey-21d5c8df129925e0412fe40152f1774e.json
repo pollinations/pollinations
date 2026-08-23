@@ -13,8 +13,7 @@
           }
         ],
         "seed": 42,
-        "temperature": 1,
-        "stream": false
+        "temperature": 1
       }
     },
     "params": {}

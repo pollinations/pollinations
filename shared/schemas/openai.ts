@@ -146,34 +146,40 @@ const ChatCompletionMessageContentPartRedactedThinkingSchema = z.object({
     data: z.string(),
 });
 
-const ChatCompletionRequestSystemMessageSchema = z.object({
-    content: z.union([
-        z.string(),
-        z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
-    ]),
-    role: z.literal("system"),
-    name: z.string().optional(),
-    cache_control: CacheControlSchema,
-});
+const ChatCompletionRequestSystemMessageSchema = z
+    .object({
+        content: z.union([
+            z.string(),
+            z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
+        ]),
+        role: z.literal("system"),
+        name: z.string().optional(),
+        cache_control: CacheControlSchema,
+    })
+    .passthrough();
 
-const ChatCompletionRequestDeveloperMessageSchema = z.object({
-    content: z.union([
-        z.string(),
-        z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
-    ]),
-    role: z.literal("developer"),
-    name: z.string().optional(),
-    cache_control: CacheControlSchema,
-});
+const ChatCompletionRequestDeveloperMessageSchema = z
+    .object({
+        content: z.union([
+            z.string(),
+            z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
+        ]),
+        role: z.literal("developer"),
+        name: z.string().optional(),
+        cache_control: CacheControlSchema,
+    })
+    .passthrough();
 
-const ChatCompletionRequestUserMessageSchema = z.object({
-    content: z.union([
-        z.string(),
-        z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
-    ]),
-    role: z.literal("user"),
-    name: z.string().optional(),
-});
+const ChatCompletionRequestUserMessageSchema = z
+    .object({
+        content: z.union([
+            z.string(),
+            z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
+        ]),
+        role: z.literal("user"),
+        name: z.string().optional(),
+    })
+    .passthrough();
 
 const ChatCompletionMessageToolCallSchema = z.object({
     id: z.string(),
@@ -188,44 +194,51 @@ const ChatCompletionMessageToolCallsSchema = z.array(
     ChatCompletionMessageToolCallSchema,
 );
 
-const ChatCompletionRequestAssistantMessageSchema = z.object({
-    content: z
-        .union([
-            z.string(),
-            z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
-        ])
-        .nullable()
-        .optional(),
-    role: z.literal("assistant"),
-    name: z.string().optional(),
-    tool_calls: ChatCompletionMessageToolCallsSchema.optional(),
-    function_call: z
-        .object({
-            arguments: z.string(),
-            name: z.string(),
-        })
-        .nullable()
-        .optional(),
-    cache_control: CacheControlSchema,
-});
+const ChatCompletionRequestAssistantMessageSchema = z
+    .object({
+        content: z
+            .union([
+                z.string(),
+                z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
+            ])
+            .nullable()
+            .optional(),
+        role: z.literal("assistant"),
+        name: z.string().optional(),
+        tool_calls: ChatCompletionMessageToolCallsSchema.optional(),
+        function_call: z
+            .object({
+                arguments: z.string(),
+                name: z.string(),
+            })
+            .nullable()
+            .optional(),
+        cache_control: CacheControlSchema,
+    })
+    .passthrough();
 
-const ChatCompletionRequestToolMessageSchema = z.object({
-    role: z.literal("tool"),
-    content: z
-        .union([
-            z.string(),
-            z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
-        ])
-        .nullable(),
-    tool_call_id: z.string(),
-    cache_control: CacheControlSchema,
-});
+const ChatCompletionRequestToolMessageSchema = z
+    .object({
+        role: z.literal("tool"),
+        content: z
+            .union([
+                z.string(),
+                z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
+            ])
+            .nullable(),
+        tool_call_id: z.string(),
+        name: z.string().optional(),
+        cache_control: CacheControlSchema,
+    })
+    .passthrough();
 
-const ChatCompletionRequestFunctionMessageSchema = z.object({
-    role: z.literal("function"),
-    content: z.string().nullable(),
-    name: z.string(),
-});
+const ChatCompletionRequestFunctionMessageSchema = z
+    .object({
+        role: z.literal("function"),
+        content: z.string().nullable(),
+        name: z.string(),
+    })
+    .passthrough();
 
 const ChatCompletionRequestMessageSchema = z.union([
     ChatCompletionRequestSystemMessageSchema,
@@ -269,7 +282,7 @@ const ChatCompletionStreamOptionsSchema = z
 
 export const CreateChatCompletionRequestSchema = z
     .object({
-        messages: z.array(ChatCompletionRequestMessageSchema),
+        messages: z.array(ChatCompletionRequestMessageSchema).min(1),
         model: z.string().optional().default(DEFAULT_TEXT_MODEL).meta({
             description:
                 "AI model for text generation. See /v1/models for full list.",

@@ -1,53 +1,74 @@
-import type { RequestData } from "./types.js";
-import { validateTextGenerationParams } from "./utils/parameterValidators.js";
+import type { CreateChatCompletionRequest } from "@shared/schemas/openai.ts";
+import type { GenerateTextRequestQueryParams } from "@/schemas/text.ts";
+import { normalizeSeed } from "@/util.ts";
+import type { ChatMessage, RequestData } from "./types.js";
 
-export interface ExpressLikeRequest {
-    query: Record<string, unknown>;
-    body: Record<string, unknown>;
-    path: string;
-    params: Record<string, string>;
-    method: string;
-    headers: Record<string, string>;
-    url?: string;
+function requestsJson(json: unknown, jsonMode: unknown): boolean {
+    return (
+        Boolean(jsonMode) ||
+        json === true ||
+        (typeof json === "string" && json.toLowerCase() === "true")
+    );
 }
 
-export function getRequestData(req: ExpressLikeRequest): RequestData {
-    const data: Record<string, unknown> = { ...req.query, ...req.body };
-    const validated = validateTextGenerationParams(data);
+function clamp(value: number, min: number, max: number): number {
+    return Math.max(min, Math.min(max, value));
+}
 
-    const systemPrompt = (data.system as string) || null;
-
-    const messages = (data.messages as RequestData["messages"]) || [
-        { role: "user", content: req.params[0] },
-    ];
-    if (systemPrompt) {
-        messages.unshift({ role: "system", content: systemPrompt });
+export function getChatRequestData(
+    body: CreateChatCompletionRequest & Record<string, unknown>,
+): RequestData {
+    const {
+        safe: _safe,
+        system,
+        json,
+        jsonMode,
+        thinking: _thinking,
+        thinking_budget: _thinkingBudget,
+        ...requestData
+    } = body;
+    const messages = [...requestData.messages] as ChatMessage[];
+    if (typeof system === "string" && system) {
+        messages.unshift({ role: "system", content: system });
     }
 
-    return {
-        // Validated params (temperature, top_p, seed, model, stream, etc.)
-        ...validated,
-        messages,
-        // Passthrough params not handled by validateTextGenerationParams
-        tools: data.tools as unknown[] | undefined,
-        tool_choice: data.tool_choice,
-        parallel_tool_calls:
-            typeof data.parallel_tool_calls === "boolean"
-                ? data.parallel_tool_calls
-                : undefined,
-        modalities: data.modalities as string[] | undefined,
-        audio: data.audio as Record<string, unknown> | undefined,
-        response_format: data.response_format as RequestData["response_format"],
-        web_search_options: data.web_search_options as
-            | { search_context_size: "low" | "medium" | "high" }
-            | undefined,
-        stop: data.stop,
-        stream_options: data.stream_options as
-            | Record<string, unknown>
-            | undefined,
-        logprobs: data.logprobs,
-        top_logprobs: data.top_logprobs,
-        logit_bias: data.logit_bias,
-        user: data.user,
-    } as RequestData;
+    const request = { ...requestData, messages } as RequestData;
+    if (request.seed !== undefined && request.seed !== null) {
+        request.seed = normalizeSeed(request.seed);
+    } else {
+        delete request.seed;
+    }
+    if (!request.response_format && requestsJson(json, jsonMode)) {
+        request.response_format = { type: "json_object" };
+    }
+    return request;
+}
+
+export function getSimpleTextRequestData(
+    prompt: string,
+    model: string,
+    query: GenerateTextRequestQueryParams,
+): RequestData {
+    const {
+        safe: _safe,
+        system,
+        json,
+        model: _requestedModel,
+        ...options
+    } = query;
+    const messages: ChatMessage[] = [];
+    if (system) messages.push({ role: "system", content: system });
+    messages.push({ role: "user", content: prompt });
+
+    const request: RequestData = { ...options, model, messages };
+    if (request.seed !== undefined) request.seed = normalizeSeed(request.seed);
+    if (request.temperature !== undefined)
+        request.temperature = clamp(request.temperature, 0, 3);
+    if (request.top_p !== undefined) request.top_p = clamp(request.top_p, 0, 1);
+    if (request.presence_penalty !== undefined)
+        request.presence_penalty = clamp(request.presence_penalty, -2, 2);
+    if (request.frequency_penalty !== undefined)
+        request.frequency_penalty = clamp(request.frequency_penalty, -2, 2);
+    if (json) request.response_format = { type: "json_object" };
+    return request;
 }

@@ -8,14 +8,12 @@
         "model": "gpt-5-nano",
         "messages": [
           {
-            "role": "user",
-            "content": "vcr chat stream"
+            "content": "vcr chat stream",
+            "role": "user"
           }
         ],
-        "presence_penalty": 0,
-        "frequency_penalty": 0,
-        "stream": true,
         "logprobs": false,
+        "stream": true,
         "stream_options": {
           "include_usage": true
         },

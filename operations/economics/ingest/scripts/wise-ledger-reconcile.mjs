@@ -31,7 +31,20 @@ async function fetchJson(url, options = {}) {
 }
 
 export function stripHtml(value) {
-    return String(value ?? "").replace(/<[^>]+>/g, "");
+    let text = "";
+    let insideTag = false;
+    for (const character of String(value ?? "")) {
+        if (character === "<") {
+            insideTag = true;
+            continue;
+        }
+        if (character === ">") {
+            insideTag = false;
+            continue;
+        }
+        if (!insideTag) text += character;
+    }
+    return text;
 }
 
 export function normalizedMerchant(value) {

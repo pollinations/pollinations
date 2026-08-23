@@ -5,6 +5,7 @@ import {
     coveredWiseEntryIds,
     defaultSettledAmount,
     parseDisplayAmount,
+    stripHtml,
     transactionProposal,
     wiseEntryId,
 } from "./wise-ledger-reconcile.mjs";
@@ -26,6 +27,13 @@ test("parses Wise direction and stable resource IDs", () => {
         { amount: 5.25, currency: "EUR" },
     );
     assert.equal(wiseEntryId(activity()), "CARD_TRANSACTION-123");
+});
+
+test("removes malformed HTML without leaving executable markup", () => {
+    assert.equal(
+        stripHtml("<script<>alert(1)</script>Known vendor"),
+        "alert(1)Known vendor",
+    );
 });
 
 test("uses the EUR settled amount for a foreign-currency card payment", () => {

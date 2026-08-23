@@ -37,6 +37,10 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
         GITHUB_CONNECT_APP_CLIENT_ID?: string;
         GITHUB_CONNECT_APP_CLIENT_SECRET?: string;
     };
+    const discordEnv = env as Cloudflare.Env & {
+        DISCORD_CLIENT_ID: string;
+        DISCORD_CLIENT_SECRET: string;
+    };
 
     const adminPlugin = admin({
         adminUserIds: ["Py5RZYN9c10OsC1fjUYiqMYjttf0PLGv"],
@@ -62,12 +66,14 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             // lands ~1000x too high and never fires. Enforce it here instead.
             before: createAuthMiddleware(async (authContext) => {
                 if (
-                    authContext.path === "/sign-in/oauth2" &&
-                    authContext.body?.providerId === "github-app"
+                    (authContext.path === "/sign-in/oauth2" &&
+                        authContext.body?.providerId === "github-app") ||
+                    (authContext.path === "/sign-in/social" &&
+                        authContext.body?.provider === "discord")
                 ) {
                     throw new APIError("BAD_REQUEST", {
                         message:
-                            "The GitHub App can only be connected to an existing Pollinations account.",
+                            "This provider can only be connected to an existing Pollinations account.",
                     });
                 }
                 if (authContext.path !== "/delete-user") return;
@@ -98,7 +104,12 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             account: {
                 create: {
                     before: async (account) => {
-                        if (account.providerId !== "github-app") return;
+                        if (account.providerId === "discord") {
+                            return { data: discardOAuthTokens(account) };
+                        }
+                        if (account.providerId !== "github-app") {
+                            return undefined;
+                        }
                         const [user] = await db
                             .select({ githubId: userTable.githubId })
                             .from(userTable)
@@ -110,6 +121,13 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                                     "Authorize the same GitHub account used to sign in to Pollinations.",
                             });
                         }
+                        return undefined;
+                    },
+                },
+                update: {
+                    before: async (account, context) => {
+                        if (context?.params?.id !== "discord") return;
+                        return { data: discardOAuthTokens(account) };
                     },
                 },
             },
@@ -148,7 +166,10 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             accountLinking: {
                 allowDifferentEmails: true,
                 disableImplicitLinking: true,
-                trustedProviders: ["github-app"],
+                // Better Auth 1.4 requires this for Discord accounts without a
+                // verified email. The sign-in hook above still limits Discord
+                // to explicit, authenticated linkSocial flows.
+                trustedProviders: ["discord", "github-app"],
             },
         },
         socialProviders: {
@@ -158,6 +179,16 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                 mapProfileToUser: (profile) => ({
                     githubId: profile.id,
                     githubUsername: profile.login,
+                }),
+            },
+            discord: {
+                clientId: discordEnv.DISCORD_CLIENT_ID,
+                clientSecret: discordEnv.DISCORD_CLIENT_SECRET,
+                disableSignUp: true,
+                mapProfileToUser: (profile) => ({
+                    // Better Auth requires an email even when explicitly
+                    // linking a phone-only Discord account.
+                    email: profile.email ?? `${profile.id}@discord.invalid`,
                 }),
             },
         },
@@ -227,6 +258,17 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
 export type Auth = ReturnType<typeof createAuth>;
 export type Session = Auth["$Infer"]["Session"]["session"];
 export type User = Auth["$Infer"]["Session"]["user"];
+
+function discardOAuthTokens<T extends Record<string, unknown>>(account: T) {
+    return {
+        ...account,
+        accessToken: null,
+        refreshToken: null,
+        idToken: null,
+        accessTokenExpiresAt: null,
+        refreshTokenExpiresAt: null,
+    };
+}
 
 function githubProfileSyncPlugin(
     env: Cloudflare.Env,

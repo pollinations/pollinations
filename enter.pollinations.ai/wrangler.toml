@@ -237,6 +237,8 @@ GITHUB_CLIENT_SECRET = "test_github_client_secret"
 GITHUB_CONNECT_APP_CLIENT_ID = "test_github_connect_client_id"
 GITHUB_CONNECT_APP_CLIENT_SECRET = "test_github_connect_client_secret"
 GITHUB_CONNECT_APP_SLUG = "pollinations-connect-test"
+DISCORD_CLIENT_ID = "test_discord_client_id"
+DISCORD_CLIENT_SECRET = "test_discord_client_secret"
 BETTER_AUTH_SECRET = "not-a-secret-workers-test-only"
 # isInternalRequest() rejects tokens shorter than 32 characters, so a shorter
 # placeholder 401s every internal route instead of exercising it.

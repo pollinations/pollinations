@@ -4,6 +4,7 @@ interface CloudflareBindings {
     FFMPEG_MCP: Fetcher;
     PYTHON_MCP: Fetcher;
     BROWSER_MCP: Fetcher;
+    STORAGE_MCP: Fetcher;
     PORTKEY?: Fetcher;
     KLEIN_VPC?: Fetcher;
     BETTER_AUTH_SECRET: string;

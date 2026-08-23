@@ -48,6 +48,13 @@ test("lists the MCP servers exposed through Gen", async () => {
                     "Fetch rendered web pages as Markdown, screenshots, or PDFs.",
                 url: "https://gen.pollinations.ai/mcp/browser",
             },
+            {
+                id: "storage",
+                name: "Storage",
+                description:
+                    "Store and retrieve small files in Pollinations storage.",
+                url: "https://gen.pollinations.ai/mcp/storage",
+            },
         ],
     });
 });
@@ -87,14 +94,17 @@ test("routes Python MCP and bills its measured runtime", async () => {
     const { key, userId } = await createTestApiKey({
         user: { tierBalance: 1 },
     });
-    const response = await SELF.fetch("https://gen.pollinations.ai/mcp/python", {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${key}`,
-            "Content-Type": "application/json",
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/python",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(MCP_REQUEST),
         },
-        body: JSON.stringify(MCP_REQUEST),
-    });
+    );
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
@@ -107,6 +117,37 @@ test("routes Python MCP and bills its measured runtime", async () => {
     const balance = await getUserBalance(drizzle(env.DB), userId);
     expect(balance.tierBalance).toBeCloseTo(1 - 0.00001);
     expect(balance.packBalance).toBe(0);
+});
+
+test("routes Storage MCP with caller authorization for downstream billing", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1 },
+    });
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/storage",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                Cookie: "session=private",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(MCP_REQUEST),
+        },
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+        jsonrpc: "2.0",
+        id: 1,
+        result: {
+            content: [{ type: "text", text: "storage proxied" }],
+        },
+    });
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 1,
+        packBalance: 0,
+    });
 });
 
 test("requires a Pollinations credential before invoking an MCP server", async () => {

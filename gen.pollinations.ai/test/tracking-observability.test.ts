@@ -1549,6 +1549,10 @@ describe("tracking observability", () => {
             modelId: "test-owner/private-fallback",
             name: "private-fallback",
             visibility: "private",
+            ...communityEndpointPrices({
+                promptTextPrice: 0.00005,
+                completionTextPrice: 0.0001,
+            }),
         });
         const fallbackEntry = createCommunityEntry(fallbackEndpoint);
         const model: ModelVariables["model"] = {
@@ -1609,7 +1613,7 @@ describe("tracking observability", () => {
             totalPrice: 0.2,
             communityModelRewardUserId: ownerId,
             communityModelRewardRate: COMMUNITY_MODEL_REWARD_RATE,
-            communityModelRewardAmount: 0.15,
+            communityModelRewardAmount: 0.075,
         });
 
         const [owner] = await db
@@ -1617,7 +1621,7 @@ describe("tracking observability", () => {
             .from(userTable)
             .where(eq(userTable.id, ownerId))
             .limit(1);
-        expect(owner?.tierBalance).toBeCloseTo(0.15, 10);
+        expect(owner?.tierBalance).toBeCloseTo(0.075, 10);
     });
 
     it("does not bill image generation that returns a JSON (non-image) content-type", async () => {

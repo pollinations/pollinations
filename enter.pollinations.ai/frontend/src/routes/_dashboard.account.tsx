@@ -40,9 +40,14 @@ function AccountPage() {
         configured: boolean;
         connected: boolean;
         authorized?: boolean;
+        login?: string | null;
+        installationCount?: number;
+        repositorySelection?: "all" | "selected" | null;
         personalInstalled?: boolean;
         manageUrl?: string | null;
     } | null>(null);
+    const [githubAppPending, setGithubAppPending] = useState(false);
+    const [githubAppError, setGithubAppError] = useState<string | null>(null);
 
     useEffect(() => {
         void apiClient["github-app"].status.$get().then(async (response) => {
@@ -53,6 +58,32 @@ function AccountPage() {
     if (!user) return null;
 
     const displayName = user.name || githubUsername || "Pollinations user";
+
+    async function disconnectGithubApp(): Promise<void> {
+        setGithubAppPending(true);
+        setGithubAppError(null);
+        const { error } = await authClient.unlinkAccount({
+            providerId: "github-app",
+        });
+        if (error) {
+            setGithubAppError("Could not disconnect the GitHub App.");
+        } else {
+            setGithubApp((current) =>
+                current
+                    ? {
+                          configured: current.configured,
+                          connected: false,
+                          authorized: false,
+                          login: null,
+                          installationCount: 0,
+                          repositorySelection: null,
+                          manageUrl: null,
+                      }
+                    : current,
+            );
+        }
+        setGithubAppPending(false);
+    }
 
     return (
         <div className="flex flex-col gap-6">
@@ -140,38 +171,77 @@ function AccountPage() {
                 </Surface>
 
                 {githubApp?.configured && (
-                    <Surface
-                        variant="card"
-                        className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
-                    >
-                        <div>
-                            <Text tone="strong" weight="semibold">
-                                Pollinations GitHub App
-                            </Text>
-                            <Text size="sm" tone="muted">
-                                {githubApp.connected
-                                    ? "Pollinations can read and write the repositories you selected."
-                                    : githubApp.authorized
-                                      ? "Authorized; finish selecting repositories for Pollinations."
-                                      : "Let Pollinations work with repositories you choose."}
-                            </Text>
-                        </div>
-                        <Button
-                            type="button"
-                            className="shrink-0 self-start sm:self-center"
-                            onClick={() => {
-                                window.location.assign(
-                                    githubApp.connected && githubApp.manageUrl
-                                        ? githubApp.manageUrl
-                                        : `${config.apiBaseUrl}/github-app/install`,
-                                );
-                            }}
+                    <>
+                        <Surface
+                            variant="card"
+                            className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
                         >
-                            {githubApp.connected
-                                ? "Manage on GitHub"
-                                : "Connect GitHub App"}
-                        </Button>
-                    </Surface>
+                            <div>
+                                <Text tone="strong" weight="semibold">
+                                    Pollinations GitHub App
+                                </Text>
+                                <Text size="sm" tone="muted">
+                                    {githubApp.connected
+                                        ? [
+                                              githubApp.login &&
+                                                  `@${githubApp.login}`,
+                                              `${githubApp.installationCount ?? 0} installation${githubApp.installationCount === 1 ? "" : "s"}`,
+                                              githubApp.repositorySelection ===
+                                              "all"
+                                                  ? "All repositories"
+                                                  : "Selected repositories",
+                                          ]
+                                              .filter(Boolean)
+                                              .join(" · ")
+                                        : githubApp.authorized
+                                          ? `@${githubApp.login} · Authorized; select repositories to finish connecting.`
+                                          : "Let Pollinations work with repositories you choose."}
+                                </Text>
+                                {githubApp.connected && (
+                                    <Text size="sm" tone="muted">
+                                        Manage repository access or uninstall on
+                                        GitHub.
+                                    </Text>
+                                )}
+                            </div>
+                            <div className="flex shrink-0 flex-wrap gap-2 self-start sm:self-center">
+                                <Button
+                                    type="button"
+                                    disabled={githubAppPending}
+                                    onClick={() => {
+                                        window.location.assign(
+                                            githubApp.connected &&
+                                                githubApp.manageUrl
+                                                ? githubApp.manageUrl
+                                                : `${config.apiBaseUrl}/github-app/install`,
+                                        );
+                                    }}
+                                >
+                                    {githubApp.connected
+                                        ? "Manage on GitHub"
+                                        : "Connect GitHub App"}
+                                </Button>
+                                {githubApp.authorized && (
+                                    <Button
+                                        type="button"
+                                        disabled={githubAppPending}
+                                        onClick={() =>
+                                            void disconnectGithubApp()
+                                        }
+                                    >
+                                        {githubAppPending
+                                            ? "Disconnecting..."
+                                            : "Disconnect"}
+                                    </Button>
+                                )}
+                            </div>
+                        </Surface>
+                        {githubAppError && (
+                            <Text size="sm" tone="muted">
+                                {githubAppError}
+                            </Text>
+                        )}
+                    </>
                 )}
             </Section>
 

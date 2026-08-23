@@ -51,6 +51,9 @@ test("connects an installed GitHub App with encrypted delegated tokens", async (
         configured: true,
         connected: false,
         authorized: false,
+        login: null,
+        installationCount: 0,
+        repositorySelection: null,
         manageUrl: null,
     });
 
@@ -83,6 +86,7 @@ test("connects an installed GitHub App with encrypted delegated tokens", async (
             },
             target_type: "User",
             html_url: "https://github.com/settings/installations/4242",
+            repository_selection: "selected",
         },
     ];
 
@@ -111,9 +115,30 @@ test("connects an installed GitHub App with encrypted delegated tokens", async (
         configured: true,
         connected: true,
         authorized: true,
+        login: "testuser",
+        installationCount: 1,
+        repositorySelection: "selected",
         personalInstalled: true,
         manageUrl: "https://github.com/settings/installations/4242",
     });
+
+    const disconnect = await SELF.fetch(
+        "http://localhost:3000/api/auth/unlink-account",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: cookie(sessionToken),
+            },
+            body: JSON.stringify({ providerId: "github-app" }),
+        },
+    );
+    expect(disconnect.status).toBe(200);
+    expect(
+        (await drizzle(env.DB).select().from(accountTable)).some(
+            (account) => account.providerId === "github-app",
+        ),
+    ).toBe(false);
 });
 
 test("rejects authorization from a different GitHub account", async ({

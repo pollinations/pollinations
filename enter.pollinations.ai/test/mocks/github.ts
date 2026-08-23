@@ -49,6 +49,7 @@ export type MockGithubState = {
         account: { id: number; login: string };
         target_type: "User" | "Organization";
         html_url: string;
+        repository_selection: "all" | "selected";
     }>;
 };
 

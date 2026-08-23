@@ -16,7 +16,18 @@ type GithubInstallation = {
     account: { id: number; login: string } | null;
     target_type: "User" | "Organization";
     html_url: string;
+    repository_selection: "all" | "selected";
 };
+
+const disconnectedStatus = (configured: boolean) => ({
+    configured,
+    connected: false,
+    authorized: false,
+    login: null,
+    installationCount: 0,
+    repositorySelection: null,
+    manageUrl: null,
+});
 
 function getConfig(env: CloudflareBindings) {
     const bindings = env as GithubConnectBindings;
@@ -35,7 +46,7 @@ export const githubAppRoutes = new Hono<Env>()
     .get("/status", async (c) => {
         await c.var.auth.requireAuthorization();
         const config = getConfig(c.env);
-        if (!config) return c.json({ configured: false, connected: false });
+        if (!config) return c.json(disconnectedStatus(false));
 
         const user = c.var.auth.requireUser();
         const accounts = await c.var.auth.client.api.listUserAccounts({
@@ -44,14 +55,7 @@ export const githubAppRoutes = new Hono<Env>()
         const account = accounts.find(
             (candidate) => candidate.providerId === PROVIDER_ID,
         );
-        if (!account) {
-            return c.json({
-                configured: true,
-                connected: false,
-                authorized: false,
-                manageUrl: null,
-            });
-        }
+        if (!account) return c.json(disconnectedStatus(true));
 
         let accessToken: string;
         try {
@@ -61,12 +65,7 @@ export const githubAppRoutes = new Hono<Env>()
             });
             accessToken = tokens.accessToken;
         } catch {
-            return c.json({
-                configured: true,
-                connected: false,
-                authorized: false,
-                manageUrl: null,
-            });
+            return c.json(disconnectedStatus(true));
         }
 
         const headers = {
@@ -79,13 +78,22 @@ export const githubAppRoutes = new Hono<Env>()
             fetch("https://api.github.com/user", { headers }),
             fetch("https://api.github.com/user/installations", { headers }),
         ]);
+        if (
+            profileResponse.status === 401 ||
+            installationsResponse.status === 401
+        ) {
+            return c.json(disconnectedStatus(true));
+        }
         if (!profileResponse.ok || !installationsResponse.ok) {
             throw new HTTPException(502, {
                 message: "GitHub connection check failed",
             });
         }
 
-        const profile = (await profileResponse.json()) as { id: number };
+        const profile = (await profileResponse.json()) as {
+            id: number;
+            login: string;
+        };
         if (profile.id !== user.githubId) {
             throw new HTTPException(403, {
                 message: "GitHub connection belongs to another account",
@@ -106,6 +114,12 @@ export const githubAppRoutes = new Hono<Env>()
             configured: true,
             connected,
             authorized: true,
+            login: profile.login,
+            installationCount: installations.length,
+            repositorySelection:
+                personalInstallation?.repository_selection ??
+                installations[0]?.repository_selection ??
+                null,
             personalInstalled: Boolean(personalInstallation),
             manageUrl:
                 personalInstallation?.html_url ??

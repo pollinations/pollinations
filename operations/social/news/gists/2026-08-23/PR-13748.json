@@ -1,0 +1,33 @@
+{
+  "pr_number": 13748,
+  "title": "docs(polli-cli): fix stale 'quests mine' examples in README",
+  "author": "wiradifit",
+  "url": "https://github.com/pollinations/pollinations/pull/13748",
+  "merged_at": "2026-08-23T06:57:32Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\r\nThe `polli-cli` README documents a `polli quests mine` command in two places, but the `quests` command takes no positional arguments — commander rejects it with:\r\n\r\n```\r\nerror: too many arguments for 'quests'. Expected 0 arguments but got 1.\r\n```\r\n\r\n## Changes\r\n- `polli quests mine` → `polli quests --claimed`\r\n- `polli quests mine --completed` → `polli quests --claimable`\r\n\r\nThese match the real interface in `packages/polli-cli/src/commands/quests.ts` (filter flags: `--open`, `--claimable`, `--claimed`, `--coming-soon`) and the examples already used correctly in `SKILL.md`.\r\n\r\n## Verification\r\n- Reproduced the failure on polli 0.1.10: `polli quests mine` → argument-count error\r\n- Confirmed via code search this was the only file still referencing `quests mine`\r\n\r\n## Quest link\r\nContributes to the Contribute-a-pull-request quest 🌱\r\n\r\n## Screenshoot\r\n<img width=\"654\" height=\"936\" alt=\"image\" src=\"https://github.com/user-attachments/assets/68396d9f-8be5-4f92-8e90-efb77a1dbf6b\" />",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Quest flags find their way",
+    "blurb": "The CLI quest map now points to commands that actually open the door. Polli gave two stale examples a tiny, well-earned prune.",
+    "summary": "Updated the polli-cli README examples from the invalid `polli quests mine` syntax to the supported `polli quests --claimed` and `polli quests --claimable` filters.",
+    "impact": "CLI users can now copy the README commands to view claimed or claimable Quests without Commander rejecting an extra positional argument.",
+    "keywords": [
+      "polli-cli",
+      "quests",
+      "README",
+      "CLI",
+      "documentation"
+    ],
+    "visual_concept": "Polli, wearing a small explorer hat and holding a corrected quest map, points a friendly monitor robot toward two garden signposts labeled `--claimed` and `--claimable`; crossed-out `quests mine` directions sit in a compost bin beside blooming code-plants.",
+    "image_prompt": "A cozy pixel art garden path where Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny explorer hat, holds a quest map and points a cheerful CRT monitor robot toward signposts reading `--claimed` and `--claimable`; a crossed-out `quests mine` note composts beside flowering code-plants. Cozy 8-bit pixel art aesthetic with a prominent lime green (#ecf874) and soft pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-23/PR-13748.jpg",
+    "prompt": "A cozy pixel art garden path where Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny explorer hat, holds a quest map and points a cheerful CRT monitor robot toward signposts reading `--claimed` and `--claimable`; a crossed-out `quests mine` note composts beside flowering code-plants. Cozy 8-bit pixel art aesthetic with a prominent lime green (#ecf874) and soft pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-23T06:58:28.450325+00:00"
+}

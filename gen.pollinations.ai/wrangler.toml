@@ -7,8 +7,7 @@ account_id = "b6ec751c0862027ba269faf7029b2501"
 # Service binding to enter worker (zero latency - same V8 isolate)
 services = [
     { binding = "ENTER", service = "pollinations-enter" },
-    { binding = "POLLINATIONS_MCP", service = "pollinations-mcp" },
-    { binding = "FFMPEG_MCP", service = "pollinations-ffmpeg-mcp" }
+    { binding = "POLLINATIONS_MCP", service = "pollinations-mcp" }
 ]
 
 [images]
@@ -99,10 +98,6 @@ service = "pollinations-enter-production"
 binding = "POLLINATIONS_MCP"
 service = "pollinations-mcp"
 
-[[env.production.services]]
-binding = "FFMPEG_MCP"
-service = "pollinations-ffmpeg-mcp"
-
 [[env.production.vpc_networks]]
 binding = "KLEIN_VPC"
 tunnel_id = "c340d8d9-c1f3-4a13-8115-38b59faac3d5"
@@ -190,10 +185,6 @@ service = "pollinations-enter-staging"
 binding = "POLLINATIONS_MCP"
 service = "pollinations-mcp"
 
-[[env.staging.services]]
-binding = "FFMPEG_MCP"
-service = "pollinations-ffmpeg-mcp-staging"
-
 [[env.staging.d1_databases]]
 binding = "DB"
 database_name = "staging-pollinations-enter-db"
@@ -266,10 +257,6 @@ service = "pollinations-enter"
 [[env.test.services]]
 binding = "POLLINATIONS_MCP"
 service = "pollinations-mcp"
-
-[[env.test.services]]
-binding = "FFMPEG_MCP"
-service = "pollinations-ffmpeg-mcp"
 
 [[env.test.d1_databases]]
 binding = "DB"

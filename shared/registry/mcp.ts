@@ -33,7 +33,7 @@ export const MCP_SERVERS = [
         id: "pollinations",
         name: "Pollinations",
         description:
-            "Generate text, images, audio, video, embeddings, and 3D assets with Pollinations.",
+            "Access Pollinations models and API capabilities through agent tools.",
         binding: "POLLINATIONS_MCP",
         billing: "downstream",
     },

@@ -23,7 +23,7 @@ test("lists the MCP servers exposed through Gen", async () => {
                 id: "pollinations",
                 name: "Pollinations",
                 description:
-                    "Generate text, images, audio, video, embeddings, and 3D assets with Pollinations.",
+                    "Access Pollinations models and API capabilities through agent tools.",
                 url: "https://gen.pollinations.ai/mcp/pollinations",
             },
         ],

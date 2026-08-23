@@ -301,10 +301,15 @@ const api = new Hono<{ Bindings: Env }>();
 async function servePublicS3Object(
     bucket: R2Bucket,
     key: string,
-    head: boolean,
+    request: Request,
 ): Promise<Response> {
     try {
-        const object = head ? await bucket.head(key) : await bucket.get(key);
+        const head = request.method === "HEAD";
+        const rangeHeader = request.headers.get("range");
+        const partial = !head && Boolean(rangeHeader);
+        const object = head
+            ? await bucket.head(key)
+            : await bucket.get(key, { range: request.headers });
         if (!object) {
             return Response.json({ error: "Not found" }, { status: 404 });
         }
@@ -314,11 +319,32 @@ async function servePublicS3Object(
             "Content-Type",
             object.httpMetadata?.contentType || "application/octet-stream",
         );
-        headers.set("Content-Length", object.size.toString());
+        headers.set("Accept-Ranges", "bytes");
         headers.set("Cache-Control", PUBLISHED_CACHE_CONTROL);
         headers.set("ETag", object.httpEtag);
+        headers.set("Last-Modified", object.uploaded.toUTCString());
+
+        if (partial && object.range) {
+            const rangeLength =
+                "suffix" in object.range
+                    ? Math.min(object.range.suffix, object.size)
+                    : (object.range.length ??
+                      object.size - (object.range.offset ?? 0));
+            const rangeStart =
+                "suffix" in object.range
+                    ? object.size - rangeLength
+                    : (object.range.offset ?? 0);
+            headers.set(
+                "Content-Range",
+                `bytes ${rangeStart}-${rangeStart + rangeLength - 1}/${object.size}`,
+            );
+            headers.set("Content-Length", rangeLength.toString());
+        } else {
+            headers.set("Content-Length", object.size.toString());
+        }
 
         return new Response(head ? null : (object as R2ObjectBody).body, {
+            status: partial ? 206 : 200,
             headers,
         });
     } catch {
@@ -415,7 +441,7 @@ api.post(
 );
 
 api.get(
-    "/s3/:owner/public/*",
+    "/s3/:owner/public/:key{.+}",
     describeRoute({
         tags: ["media.pollinations.ai"],
         summary: "Retrieve a public S3 object",
@@ -434,21 +460,21 @@ api.get(
         }
         return servePublicS3Object(
             c.env.MEDIA_BUCKET,
-            `${owner}/public/${c.req.param("*")}`,
-            false,
+            `${owner}/public/${c.req.param("key")}`,
+            c.req.raw,
         );
     },
 );
 
-api.on("HEAD", "/s3/:owner/public/*", (c) => {
+api.on("HEAD", "/s3/:owner/public/:key{.+}", (c) => {
     const owner = c.req.param("owner");
     if (!/^[A-Za-z0-9_-]+$/.test(owner)) {
         return new Response(null, { status: 404 });
     }
     return servePublicS3Object(
         c.env.MEDIA_BUCKET,
-        `${owner}/public/${c.req.param("*")}`,
-        true,
+        `${owner}/public/${c.req.param("key")}`,
+        c.req.raw,
     );
 });
 

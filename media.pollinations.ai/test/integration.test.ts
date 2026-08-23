@@ -314,24 +314,27 @@ describe("media.pollinations.ai", () => {
         });
 
         it("serves only the public S3 prefix without credentials", async () => {
-            const bucket = createTestR2Bucket();
-            await bucket.put("user_alice/public/folder/file.txt", "hello", {
+            const suffix = crypto.randomUUID();
+            const publicKey = `user_alice/public/${suffix}/file.txt`;
+            const privateKey = `user_alice/${suffix}/private.txt`;
+            await env.MEDIA_BUCKET.put(publicKey, "hello", {
                 httpMetadata: { contentType: "text/plain" },
             });
-            await bucket.put("user_alice/private.txt", "secret");
-            const mediaEnv = createMediaEnv(bucket);
-            const publicUrl =
-                "https://media.pollinations.ai/s3/user_alice/public/folder/file.txt";
+            await env.MEDIA_BUCKET.put(privateKey, "secret");
+            const mediaEnv = createMediaEnv(env.MEDIA_BUCKET);
+            const publicUrl = `https://media.pollinations.ai/s3/${publicKey}`;
 
             const response = await app.fetch(new Request(publicUrl), mediaEnv);
             const head = await app.fetch(
                 new Request(publicUrl, { method: "HEAD" }),
                 mediaEnv,
             );
+            const range = await app.fetch(
+                new Request(publicUrl, { headers: { Range: "bytes=1-3" } }),
+                mediaEnv,
+            );
             const privateResponse = await app.fetch(
-                new Request(
-                    "https://media.pollinations.ai/s3/user_alice/private.txt",
-                ),
+                new Request(`https://media.pollinations.ai/s3/${privateKey}`),
                 mediaEnv,
             );
 
@@ -340,7 +343,12 @@ describe("media.pollinations.ai", () => {
             expect(response.headers.get("content-type")).toBe("text/plain");
             expect(head.status).toBe(200);
             expect(head.headers.get("content-length")).toBe("5");
+            expect(range.status).toBe(206);
+            expect(range.headers.get("content-range")).toBe("bytes 1-3/5");
+            expect(await range.text()).toBe("ell");
             expect(privateResponse.status).toBe(404);
+
+            await env.MEDIA_BUCKET.delete([publicKey, privateKey]);
         });
 
         it("does not outlive an agent run token", async () => {

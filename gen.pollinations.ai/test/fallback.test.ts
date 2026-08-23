@@ -4,6 +4,7 @@ import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import { describe, expect, it, vi } from "vitest";
 import {
+    attachFallbackTarget,
     type FailedCall,
     type FallbackCandidate,
     fallbackCandidates,
@@ -45,18 +46,22 @@ function communityEntry(
     id: string,
     ownerUserId: string,
     visibility: "private" | "public" = "public",
-    disabledAt: number | null = null,
-    fallbackModelIds: string[] = [],
+    hiddenAt: number | null = null,
+    fallbacks: string[] = [],
     rate = 10,
+    paidOnly = false,
 ): GenerationModelEntry {
-    const entry = registryEntry(id, [], rate);
-    entry.visible = visibility === "public" && disabledAt === null;
+    const entry = registryEntry(id, fallbacks, rate);
+    entry.visible = visibility === "public" && hiddenAt === null;
+    entry.definition.hidden = hiddenAt !== null;
     entry.communityEndpoint = {
+        type: "proxy",
         ownerUserId,
         visibility,
-        disabledAt,
+        hiddenAt,
+        paidOnly,
         imagePricing: "request",
-        fallbackModelIds,
+        fallbacks,
         ...communityEndpointPrices({
             promptTextPrice: rate,
             completionTextPrice: rate,
@@ -95,6 +100,22 @@ describe("registry fallback linking", () => {
                 fallbackEntries: primary.fallbackEntries,
             }).map((candidate) => candidate.id),
         ).toEqual(["primary", "target"]);
+    });
+
+    it("does not apply the community fallback cap to registry declarations", () => {
+        const targetIds = ["one", "two", "three", "four"];
+        const primary = registryEntry("primary", targetIds);
+        const targets = targetIds.map((id) => registryEntry(id));
+        const entries = [primary, ...targets];
+
+        linkFallbackEntries(
+            entries,
+            new Map(entries.map((entry) => [entry.id, entry])),
+        );
+
+        expect(primary.fallbackEntries?.map((entry) => entry.id)).toEqual(
+            targetIds,
+        );
     });
     it("guards community declarations but trusts registry declarations", () => {
         const ownPrimary = communityEntry(
@@ -142,6 +163,112 @@ describe("registry fallback linking", () => {
         expect(
             registryPrimary.fallbackEntries?.map((entry) => entry.id),
         ).toEqual(["public", "owner/private", "owner/disabled"]);
+    });
+
+    it("keeps a paid-only target off a primary that takes Quest Pollen", () => {
+        const anyPollen = communityEntry("owner/any", "owner", "public", null, [
+            "other/paid",
+            "other/free",
+        ]);
+        const paidPrimary = communityEntry(
+            "owner/paid",
+            "owner",
+            "public",
+            null,
+            ["other/paid", "other/free"],
+            10,
+            true,
+        );
+        const paidTarget = communityEntry(
+            "other/paid",
+            "other",
+            "public",
+            null,
+            [],
+            10,
+            true,
+        );
+        const freeTarget = communityEntry("other/free", "other");
+        const entries = [anyPollen, paidPrimary, paidTarget, freeTarget];
+
+        linkFallbackEntries(entries, new Map(entries.map((e) => [e.id, e])));
+
+        expect(anyPollen.fallbackEntries?.map((entry) => entry.id)).toEqual([
+            "other/free",
+        ]);
+        expect(paidPrimary.fallbackEntries?.map((entry) => entry.id)).toEqual([
+            "other/paid",
+            "other/free",
+        ]);
+    });
+
+    it("does not link an edits-capable image model to a generations-only target", () => {
+        const primary = communityEntry(
+            "owner/edit",
+            "owner",
+            "public",
+            null,
+            ["owner/gen-only"],
+            0.02,
+        );
+        primary.eventType = "generate.image";
+        primary.supportedEndpoints = [
+            "/v1/images/generations",
+            "/v1/images/edits",
+            "/image/{prompt}",
+        ];
+        primary.communityEndpoint = {
+            ...primary.communityEndpoint,
+            modality: "image",
+            imagePricing: "request",
+            ...communityEndpointPrices({ completionImagePrice: 0.02 }),
+        } as GenerationModelEntry["communityEndpoint"];
+
+        const genOnly = communityEntry("owner/gen-only", "owner", "public");
+        genOnly.eventType = "generate.image";
+        genOnly.supportedEndpoints = [
+            "/v1/images/generations",
+            "/image/{prompt}",
+        ];
+        genOnly.communityEndpoint = {
+            ...genOnly.communityEndpoint,
+            modality: "image",
+            imagePricing: "request",
+            ...communityEndpointPrices({ completionImagePrice: 0.01 }),
+        } as GenerationModelEntry["communityEndpoint"];
+
+        const entries = [primary, genOnly];
+        linkFallbackEntries(
+            entries,
+            new Map(entries.map((entry) => [entry.id, entry])),
+        );
+
+        expect(primary.fallbackEntries).toBeUndefined();
+    });
+});
+
+describe("attachFallbackTarget", () => {
+    it("stores the Portkey-shaped marker without making it enumerable", () => {
+        const completion = { id: "chatcmpl_test", model: "openai" };
+        attachFallbackTarget(completion, 1);
+        expect((completion as { fallbackTarget?: string }).fallbackTarget).toBe(
+            "config.targets[1]",
+        );
+        expect(
+            Object.prototype.propertyIsEnumerable.call(
+                completion,
+                "fallbackTarget",
+            ),
+        ).toBe(false);
+        expect(JSON.stringify({ ...completion })).not.toContain(
+            "fallbackTarget",
+        );
+    });
+
+    it("leaves the primary response untouched", () => {
+        const completion = { id: "chatcmpl_test" };
+        attachFallbackTarget(completion, 0);
+        expect(completion).not.toHaveProperty("fallbackTarget");
     });
 });
 
@@ -430,6 +557,9 @@ describe("withModelFallbackResponse", () => {
         const primary = registryEntry("primary", ["target"]);
         const target = registryEntry("target");
         primary.fallbackEntries = [target];
+        const beforeAttempt = vi.fn(
+            async (_candidate: FallbackCandidate) => {},
+        );
 
         const { response, servedEntry } = await withModelFallbackResponse(
             {
@@ -445,9 +575,14 @@ describe("withModelFallbackResponse", () => {
                 }
                 return Response.json({ model: candidate.id });
             },
+            undefined,
+            beforeAttempt,
         );
 
         expect(servedEntry?.id).toBe("target");
+        expect(
+            beforeAttempt.mock.calls.map(([candidate]) => candidate.id),
+        ).toEqual(["primary", "target"]);
         expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBe(
             "config.targets[1]",
         );

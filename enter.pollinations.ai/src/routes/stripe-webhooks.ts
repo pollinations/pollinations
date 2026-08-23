@@ -1,3 +1,4 @@
+import { POLLEN_BILLING_PRECISION } from "@shared/billing/precision.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
 import { getPollenPackByKey } from "@shared/pollen-packs.ts";
 import { eq } from "drizzle-orm";
@@ -9,7 +10,7 @@ import { createStripeClient, verifyWebhookSignature } from "../utils/stripe.ts";
 import {
     creditAutoTopUpInvoice,
     markAutoTopUpInvoiceFailed,
-} from "../utils/stripe-billing.ts";
+} from "../utils/stripe-billing/index.ts";
 import { recordStripeCardFingerprintAttempt } from "../utils/stripe-card-gate.ts";
 
 interface StripeEventData {
@@ -236,7 +237,10 @@ async function creditCheckoutSessionOnce({
             ),
             env.DB.prepare(
                 `UPDATE user
-                SET pack_balance = COALESCE(pack_balance, 0) + ?
+                SET pack_balance = ROUND(
+                    COALESCE(pack_balance, 0) + ?,
+                    ${POLLEN_BILLING_PRECISION}
+                )
                 WHERE id = ?`,
             ).bind(creditsToAdd, userId),
         ]);

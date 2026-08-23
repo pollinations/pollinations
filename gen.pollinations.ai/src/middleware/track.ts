@@ -364,9 +364,16 @@ export const track = (eventType: EventType) =>
                 let billedPrice = 0;
                 let shouldRunAutoTopUp = false;
                 try {
-                    const communityEndpoint = servedEntry
+                    const requestedCommunityEndpoint =
+                        c.var.model?.communityEndpoint;
+                    const servedCommunityEndpoint = servedEntry
                         ? servedEntry.communityEndpoint
-                        : c.var.model?.communityEndpoint;
+                        : requestedCommunityEndpoint;
+                    const sameOwnerPrivateFallback =
+                        requestedCommunityEndpoint?.visibility === "public" &&
+                        servedCommunityEndpoint?.visibility === "private" &&
+                        servedCommunityEndpoint.ownerUserId ===
+                            requestedCommunityEndpoint.ownerUserId;
                     const deduction = await handleBalanceDeduction({
                         db: balanceDb,
                         isBilledUsage: responseTracking.isBilledUsage,
@@ -376,19 +383,24 @@ export const track = (eventType: EventType) =>
                         apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
                         byopClientKeyId: c.var.auth?.apiKey?.byopClientKeyId,
                         modelPaidOnly: c.var.model?.definition.paidOnly,
-                        // Only public endpoints pay their owner a reward: a
-                        // private endpoint is owner-called (base cost billed to
-                        // the owner, no markup, no self-credit).
+                        // A private endpoint only earns a reward when it backs
+                        // its owner's public listing. Cross-owner private
+                        // fallbacks are rejected when the fallback is linked.
                         communityModelReward:
-                            communityEndpoint?.visibility === "public"
+                            servedCommunityEndpoint?.visibility === "public"
                                 ? {
-                                      userId: communityEndpoint.ownerUserId,
+                                      userId: servedCommunityEndpoint.ownerUserId,
                                       rewardRate: COMMUNITY_MODEL_REWARD_RATE,
                                       // Their own listing, not the one the
                                       // caller bought — see basePrice.
                                       basePrice: responseTracking.servedPrice,
                                   }
-                                : null,
+                                : sameOwnerPrivateFallback
+                                  ? {
+                                        userId: requestedCommunityEndpoint.ownerUserId,
+                                        rewardRate: COMMUNITY_MODEL_REWARD_RATE,
+                                    }
+                                  : null,
                     });
                     markup = deduction.markup;
                     communityModelReward = deduction.communityModelReward;
@@ -655,6 +667,39 @@ export async function trackResponse(
             requestTracking,
             response,
         );
+    const hasFinishReasonError =
+        eventType === "generate.text"
+            ? containsFinishReasonError(output)
+            : false;
+    if (hasFinishReasonError) {
+        // Keep the proxy response untouched; only billing and health reflect
+        // the upstream protocol's explicit terminal failure.
+        const usage = modelUsage?.usage ?? {};
+        return {
+            responseStatus: 502,
+            cacheHit,
+            isBilledUsage: false,
+            fallbackUsed,
+            ...calculateUsageBilling({
+                model: resolvedModelRequested,
+                usage,
+                servedBy:
+                    servedModelDefinition ?? requestTracking.modelDefinition,
+                quotedBy: requestTracking.modelDefinition,
+                output,
+                input: pricingInput,
+            }),
+            modelUsed: modelUsage?.model ?? modelCalled,
+            modelProviderUsed,
+            usage,
+            contentFilterResults,
+            errorTracking: {
+                errorResponseCode: "upstream_finish_reason_error",
+                errorMessage:
+                    "Upstream ended generation with finish_reason=error",
+            },
+        };
+    }
     if (!modelUsage) {
         log.error("Failed to extract model usage for model {model}", {
             model: resolvedModelRequested,
@@ -734,6 +779,24 @@ export async function trackResponse(
     };
 }
 
+function containsFinishReasonError(output: unknown): boolean {
+    if (!output || typeof output !== "object") return false;
+    const streamEvents = (output as { streamEvents?: unknown }).streamEvents;
+    const events = Array.isArray(streamEvents) ? streamEvents : [output];
+    for (const event of events) {
+        if (!event || typeof event !== "object") continue;
+        const choices = (event as { choices?: unknown }).choices;
+        if (!Array.isArray(choices)) continue;
+        for (const choice of choices) {
+            if (!choice || typeof choice !== "object") continue;
+            const finish = choice as { finish_reason?: unknown };
+            if (finish.finish_reason !== "error") continue;
+            return true;
+        }
+    }
+    return false;
+}
+
 // Portkey reports the served target as "config.targets[N]" via the
 // x-fallback-target header (re-emitted from x-portkey-last-used-option-index).
 // A fallback fired whenever the served target is not the primary (index 0).
@@ -806,7 +869,14 @@ async function* extractResponseStream(
 
     for await (const event of asyncIteratorStream(eventStream)) {
         if (event.data === "[DONE]") return;
-        yield JSON.parse(event.data);
+
+        let data: unknown;
+        try {
+            data = JSON.parse(event.data);
+        } catch {
+            continue;
+        }
+        yield data;
     }
 }
 
@@ -836,6 +906,7 @@ async function* asyncIteratorStream<T>(
 export type UserData = {
     userId?: string;
     userTier?: string;
+    parentRequestId?: string;
     apiKeyId?: string;
     apiKeyType?: ApiKeyType;
     apiKeyName?: string;
@@ -853,6 +924,9 @@ export function requestIdentity(auth: AuthVariables["auth"]): UserData {
     return {
         userId: auth.user?.id,
         userTier: auth.user?.tier,
+        // A verified claim, never a header — the run token is the only channel
+        // that crosses the hop.
+        parentRequestId: auth.agentRun?.parentRequestId,
         apiKeyId: auth.apiKey?.id,
         apiKeyType: apiKeyMetadata?.keyType as ApiKeyType,
         apiKeyName: auth.apiKey?.name,

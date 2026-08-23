@@ -11,12 +11,13 @@ import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
 import {
+    attachFallbackTarget,
     type FallbackCandidate,
     fallbackCandidates,
     withModelFallback,
 } from "../fallback.ts";
 import { fixWavHeader } from "../routes/audio.js";
-import { enforceCommunityModelRateLimit } from "../utils/community-model-rate-limit.ts";
+import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 import { communityEndpointGatewayContext } from "./communityEndpoint.ts";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import { type ExpressLikeRequest, getRequestData } from "./requestUtils.js";
@@ -127,15 +128,16 @@ function gatewayContext(
     if (!communityEndpoint || !definition) {
         return withGatewayContext(c, candidateRequest);
     }
-    return communityEndpointGatewayContext(
-        communityEndpoint,
-        definition,
-        candidateRequest,
-        c.env.BETTER_AUTH_SECRET,
-        c.env.PORTKEY_GATEWAY_URL,
-        c.var.auth?.apiKey?.rawKey || "",
-        c.var.auth?.apiKey?.id,
-    );
+    return communityEndpointGatewayContext({
+        endpoint: communityEndpoint,
+        modelDefinition: definition,
+        requestData: candidateRequest,
+        secret: c.env.BETTER_AUTH_SECRET,
+        portkeyGatewayUrl: c.env.PORTKEY_GATEWAY_URL,
+        userApiKey: c.var.auth?.apiKey?.rawKey || "",
+        parentRequestId: c.get("requestId"),
+        parentApiKeyId: c.var.auth?.apiKey?.id,
+    });
 }
 
 function withGatewayContext(c: TextContext, requestData: RequestData) {
@@ -405,16 +407,14 @@ async function generateTextResponse(
                         : undefined,
                 ),
             c.var.track?.failedCalls,
-            (attempt) =>
-                enforceCommunityModelRateLimit(c, attempt.communityEndpoint),
+            (attempt) => enforceModelRateLimit(c, attempt),
         );
         c.set("upstreamRequestUrl", completion.upstreamRequestUrl);
         completion.id = completion.id || generatePollinationsId();
-        if (index > 0) {
-            // Same "config.targets[N]" shape a Portkey strategy would report, so
-            // the response header and tracking's parsing cover both.
-            completion.fallbackTarget = `config.targets[${index}]`;
-        }
+        // Same "config.targets[N]" shape a Portkey strategy would report, so
+        // the response header and tracking's parsing cover both. Non-enumerable
+        // so JSON.stringify / R2 cache snapshots never leak the field.
+        attachFallbackTarget(completion, index);
 
         // Cost and the owner reward follow what actually served, so record the
         // serving entry before the response (streaming included) leaves the

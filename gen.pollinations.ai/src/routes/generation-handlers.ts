@@ -28,6 +28,7 @@ import {
     handleTextContentLocal,
 } from "@/text/handler.ts";
 import { withModelFallbackResponse } from "../fallback.ts";
+import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 
 export const textBodyLimit = bodyLimit({
     maxSize: 20 * 1024 * 1024,
@@ -44,7 +45,7 @@ export const simpleAudioQuerySchema = z.object({
         .default("mp3")
         .meta({
             description:
-                "Audio output format. CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; lyria-3-clip and eleven-sfx support mp3 only.",
+                "Audio output format. Grok TTS supports mp3, wav, and pcm; Fish Audio supports mp3 and pcm; CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; lyria-3-clip and eleven-sfx support mp3 only.",
             example: "mp3",
         }),
     model: z.string().optional().meta({
@@ -159,6 +160,7 @@ export async function generateEmbeddingsResponse(
                 candidate.id,
             ),
         c.var.track?.failedCalls,
+        (candidate) => enforceModelRateLimit(c, candidate),
     );
     if (servedEntry) c.set("servedModelEntry", servedEntry);
     return response;

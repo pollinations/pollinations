@@ -1,5 +1,9 @@
 import { createExecutionContext, env } from "cloudflare:test";
 import { signAgentRunToken } from "@shared/auth/agent-run-token.ts";
+import {
+    PROMPT_AGENT_BASE_URL_PLACEHOLDER,
+    PromptAgentConfigSchema,
+} from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import {
     createTestApiKey,
@@ -11,10 +15,7 @@ import {
     agentRuntimeRoutes,
     POLLINATIONS_MCP_URL,
 } from "../src/routes/agent-runtime.ts";
-import {
-    PromptAgentInputSchema,
-    PromptAgentSchema,
-} from "../src/services/prompt-agent.ts";
+import { PromptAgentInputSchema } from "../src/services/prompt-agent.ts";
 import {
     handlePromptAgentRequest,
     type PromptAgentRequest,
@@ -47,8 +48,8 @@ async function agentRunToken(parentApiKeyId: string, managedAgentId: string) {
     return signAgentRunToken({
         secret: env.BETTER_AUTH_SECRET,
         parentApiKeyId,
+        parentRequestId: crypto.randomUUID(),
         managedAgentId,
-        runId: crypto.randomUUID(),
     });
 }
 
@@ -81,7 +82,7 @@ describe("prompt-agent config", () => {
 
     it("accepts the built-in Pollinations MCP server", () => {
         expect(
-            PromptAgentSchema.parse({
+            PromptAgentConfigSchema.parse({
                 ...config,
                 mcpServers: ["pollinations"],
             }),
@@ -131,14 +132,20 @@ describe("prompt-agent runtime", () => {
         const agentId = crypto.randomUUID();
         const parent = await createTestApiKey();
         const token = await agentRunToken(parent.id, agentId);
-        await db.insert(schema.agent).values({
+        await db.insert(schema.communityEndpoint).values({
             id: agentId,
             ownerUserId: await createTestUser(),
-            config: JSON.stringify({
+            name: `agent-${agentId}`,
+            title: "Test agent",
+            type: "prompt_agent",
+            baseUrl: PROMPT_AGENT_BASE_URL_PLACEHOLDER,
+            upstreamModel: agentId,
+            payload: JSON.stringify({
                 systemPrompt: "Answer briefly.",
                 baseModel: "openai-fast",
                 mcpServers: [],
             }),
+            visibility: "private",
             createdAt: new Date(),
             updatedAt: new Date(),
         });
@@ -566,7 +573,7 @@ describe("prompt-agent runtime", () => {
         expect(JSON.parse(text).choices[0].message.content).toBe("still here");
     });
 
-    it("passes the caller token only to the built-in Pollinations MCP", async () => {
+    it("passes the caller token and exposes the Pollinations MCP tools", async () => {
         const mcpRequests: Request[] = [];
         vi.stubGlobal(
             "fetch",
@@ -627,6 +634,8 @@ describe("prompt-agent runtime", () => {
                 };
                 expect(body.tools.map((tool) => tool.function.name)).toEqual([
                     "mcp__pollinations__generateImage",
+                    "mcp__pollinations__getBalance",
+                    "mcp__pollinations__getUsage",
                 ]);
                 return Response.json({
                     choices: [

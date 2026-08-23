@@ -41,6 +41,18 @@ interface Env {
     DB: D1Database;
 }
 
+/**
+ * Wire shape of `GET /account/key`. BYOP attribution arrives nested under
+ * `byopApp`, which is null for keys not minted through the BYOP flow.
+ */
+interface KeyVerifyResponse {
+    valid: boolean;
+    type: string;
+    name: string | null;
+    userId: string | null;
+    byopApp: { clientKeyId: string } | null;
+}
+
 // Exported so that s3.ts can share the same type without duplicating it.
 export interface AuthResult {
     valid: boolean;
@@ -56,7 +68,7 @@ async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
             headers: { Authorization: `Bearer ${apiKey}` },
         });
         if (!res.ok) return null;
-        const data = await res.json<AuthResult>();
+        const data = await res.json<KeyVerifyResponse>();
         if (!data.valid) return null;
         // Normalize: an enter deployment that predates the identity fields
         // omits them, and `undefined` would slip past the `=== null` guards
@@ -66,7 +78,7 @@ async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
             type: data.type,
             name: data.name ?? null,
             userId: data.userId ?? null,
-            byopClientKeyId: data.byopClientKeyId ?? null,
+            byopClientKeyId: data.byopApp?.clientKeyId ?? null,
         };
     } catch {
         return null;
@@ -885,7 +897,12 @@ app.use(
             "x-amz-decoded-content-length",
             "x-amz-content-sha256",
         ],
-        exposeHeaders: ["X-Content-Id", "X-Content-Size", "ETag", "Content-Range"],
+        exposeHeaders: [
+            "X-Content-Id",
+            "X-Content-Size",
+            "ETag",
+            "Content-Range",
+        ],
     }),
 );
 
@@ -938,12 +955,12 @@ app.get("/openapi.json", async (c, next) => {
 });
 
 import { createS3Router } from "./s3.ts";
+
 const s3Router = createS3Router(verifyApiKey);
 // Mount at /s3/* — both /s3 and /s3/ will be forwarded to the s3 subrouter.
 app.route("/s3", s3Router);
 app.route("/s3/", s3Router);
 app.route("/", api);
-
 
 const MIME_TYPES: Record<string, string> = {
     jpg: "image/jpeg",

@@ -14,7 +14,6 @@ import {
     SearchIcon,
     Section,
     SparklesIcon,
-    Switch,
     TabButton,
     TokensIcon,
     TrendUpIcon,
@@ -184,7 +183,7 @@ export const Models: FC = () => {
     const activeSort = modelSearch.sort ?? "newest";
     const urlSearch = modelSearch.q ?? "";
     const [search, setSearch] = useState(urlSearch);
-    const [questPollenOnly, setQuestPollenOnly] = useState(false);
+    const [hidePaid, setHidePaid] = useState(false);
     const lastPushedSearchRef = useRef(urlSearch);
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
     const [catalogError, setCatalogError] = useState<string | null>(null);
@@ -206,10 +205,10 @@ export const Models: FC = () => {
         () =>
             scopedModels.filter(
                 (model) =>
-                    (!questPollenOnly || !isPaidOnly(model)) &&
+                    (!hidePaid || !isPaidOnly(model)) &&
                     matchesQuery(model, query),
             ),
-        [query, questPollenOnly, scopedModels],
+        [hidePaid, query, scopedModels],
     );
 
     const loadModelCatalog = useCallback(
@@ -407,22 +406,8 @@ export const Models: FC = () => {
                                 );
                             })}
                         </div>
-                        <div className="flex items-center gap-2">
-                            <Switch
-                                checked={questPollenOnly}
-                                onChange={setQuestPollenOnly}
-                                ariaLabel={
-                                    questPollenOnly
-                                        ? "Show all models"
-                                        : "Show only Quest Pollen models"
-                                }
-                            />
-                            <span className="text-sm font-medium text-theme-text-soft">
-                                Quest Pollen models
-                            </span>
-                        </div>
                     </div>
-                    <div className="flex w-full items-center justify-between gap-2">
+                    <div className="grid w-full grid-cols-[minmax(0,28rem)_auto] items-start justify-between gap-x-2 gap-y-1.5">
                         <div className="relative min-w-0 max-w-md flex-1">
                             <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />
                             <Input
@@ -491,6 +476,16 @@ export const Models: FC = () => {
                                 </div>
                             )}
                         </Dropdown>
+                        <TabButton
+                            active={hidePaid}
+                            onClick={() => setHidePaid((value) => !value)}
+                            size="sm"
+                            variant="ghost"
+                            ariaLabel="Hide paid models"
+                            className="col-start-2 justify-self-end"
+                        >
+                            Hide paid
+                        </TabButton>
                     </div>
                 </div>
                 {activeScope === "community" && (
@@ -522,7 +517,7 @@ export const Models: FC = () => {
                     <p className="py-8 text-center text-sm text-theme-text-muted">
                         {query
                             ? `No ${searchTarget.toLowerCase()} match “${search.trim()}”.`
-                            : questPollenOnly
+                            : hidePaid
                               ? `No ${searchTarget.toLowerCase()} available with Quest Pollen in this category.`
                               : `No ${searchTarget.toLowerCase()} available.`}
                     </p>

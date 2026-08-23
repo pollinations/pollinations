@@ -1,0 +1,34 @@
+{
+  "pr_number": 13779,
+  "title": "refactor(enter): simplify paid model filter",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13779",
+  "merged_at": "2026-08-23T22:25:24Z",
+  "labels": [],
+  "pr_body_excerpt": "- Keeps the standard SDK `Switch` for the paid-model toggle.\n- Moves the shorter `Hide paid` control directly below the sort selector.\n- Keeps filtering local-only and preserves the canonical `isPaidOnly` predicate.\n\nFollow-up to #13755.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Paid models, tidied up",
+    "blurb": "The model garden got a small pruning. The shorter Hide paid control now lives beside sorting, while the familiar toggle keeps doing its thing.",
+    "summary": "Simplified the paid-model filter in the Enter model browser by retaining the SDK Switch, moving the local-only “Hide paid” control below the sort selector, and preserving the canonical isPaidOnly predicate.",
+    "impact": "Users get a cleaner model-browsing layout and can still filter paid models locally without changing the underlying filtering behavior.",
+    "keywords": [
+      "enter",
+      "model-browser",
+      "paid-models",
+      "filtering",
+      "frontend",
+      "ui"
+    ],
+    "visual_concept": "Polli acts as a careful garden keeper at a cozy model-selection terminal, moving a small “Hide paid” seed label beneath a sort dial while a familiar toggle remains in place. Tiny code-plants and labeled model cards make the local filter feel like a neat bit of garden organization.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener apron, tidying a retro model-browser terminal: she places a small pixel label reading “HIDE PAID” beneath a round sort selector while a familiar toggle stays glowing nearby. Lime green (#ecf874) model cards, code-plants, flowers, and warm cream-and-lavender pastel gradients fill the cozy garden workspace; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-23/PR-13779.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener apron, tidying a retro model-browser terminal: she places a small pixel label reading “HIDE PAID” beneath a round sort selector while a familiar toggle stays glowing nearby. Lime green (#ecf874) model cards, code-plants, flowers, and warm cream-and-lavender pastel gradients fill the cozy garden workspace; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-08-23T22:26:19.240099+00:00"
+}

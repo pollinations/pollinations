@@ -399,6 +399,7 @@ export const track = (eventType: EventType) =>
                                   ? {
                                         userId: requestedCommunityEndpoint.ownerUserId,
                                         rewardRate: COMMUNITY_MODEL_REWARD_RATE,
+                                        basePrice: responseTracking.servedPrice,
                                     }
                                   : null,
                     });

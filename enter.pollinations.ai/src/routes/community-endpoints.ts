@@ -776,9 +776,8 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     };
 
                     // 12-hour price delay for public model price changes
-                    const storedPayload = stored.payload
-                        ? (JSON.parse(stored.payload) as ProxyListingPayload)
-                        : undefined;
+                    const storedPayload: ProxyListingPayload | undefined =
+                        stored ?? undefined;
                     const pricesChanged =
                         JSON.stringify(policy.prices) !==
                         JSON.stringify(storedPayload?.prices);

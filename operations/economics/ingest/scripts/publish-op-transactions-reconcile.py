@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
 import argparse
+import asyncio
 import json
-import time
+from datetime import datetime
 from pathlib import Path
 
-from tinybird.tb.client import TinyB
+from tinybird.client import TinyB
 
 
 HOST = "https://api.europe-west2.gcp.tinybird.co"
@@ -15,6 +16,7 @@ WORKSPACES = {
 }
 FIELDS = [
     "entry_id",
+    "kind",
     "source",
     "date",
     "vendor",
@@ -24,11 +26,12 @@ FIELDS = [
     "description",
     "evidence",
 ]
+KINDS = {"transaction", "opening_balance"}
 
 
 def arguments():
     parser = argparse.ArgumentParser(
-        description="Append a reviewed op_transactions correction and verify every row."
+        description="Append reviewed op_transactions facts and verify every row."
     )
     parser.add_argument("environment", choices=WORKSPACES)
     parser.add_argument("input", type=Path)
@@ -43,26 +46,68 @@ def read_ndjson(path):
     ids = [row["entry_id"] for row in rows]
     if not rows or len(ids) != len(set(ids)):
         raise RuntimeError("Input must contain unique op_transactions entry IDs")
+
+    invalid_kinds = [row["entry_id"] for row in rows if row.get("kind") not in KINDS]
+    if invalid_kinds:
+        raise RuntimeError(
+            "Transactions require kind=transaction|opening_balance: "
+            + ", ".join(invalid_kinds)
+        )
+
+    invalid_dates = []
+    for row in rows:
+        try:
+            datetime.strptime(str(row.get("date", "")), "%Y-%m-%d")
+        except ValueError:
+            invalid_dates.append(row["entry_id"])
+    if invalid_dates:
+        raise RuntimeError(
+            "Transactions require YYYY-MM-DD dates: " + ", ".join(invalid_dates)
+        )
+
+    opening_rows = [row for row in rows if row["kind"] == "opening_balance"]
+    opening_dates = {row.get("date") for row in opening_rows}
+    if len(opening_dates) > 1:
+        raise RuntimeError("Opening balances must share one statement date")
+    if opening_rows and not str(opening_rows[0].get("date", "")).endswith("-01"):
+        raise RuntimeError("Opening balance date must be the first day of a month")
+    opening_currencies = [row.get("currency") for row in opening_rows]
+    if len(opening_currencies) != len(set(opening_currencies)):
+        raise RuntimeError("Opening balances require at most one row per currency")
+    invalid_opening = [
+        row["entry_id"]
+        for row in opening_rows
+        if row.get("source") != "wise"
+        or row.get("vendor") != "wise"
+        or row.get("category") != "balance_sheet"
+        or abs(float(row.get("amount", 0))) < 0.000000001
+    ]
+    if invalid_opening:
+        raise RuntimeError(
+            "Opening balances require Wise source/vendor and balance_sheet category: "
+            + ", ".join(invalid_opening)
+        )
     return rows
 
 
-def client_for(workspace_name, *, append=False):
+async def client_for(workspace_name, *, append=False):
     repo = Path(__file__).resolve().parents[4]
     config = json.loads((repo / "enter.pollinations.ai/observability/.tinyb").read_text())
     user = TinyB(token=config["user_token"], host=HOST)
-    workspaces = user.user_workspaces_and_branches(version="v1")["workspaces"]
+    workspaces = (await user.user_workspaces_and_branches(version="v1"))["workspaces"]
     workspace = next(item for item in workspaces if item["name"] == workspace_name)
     admin = TinyB(token=workspace["token"], host=HOST)
     if not append:
         return admin
-    token = admin.get_token_by_name("operations_ingest")["token"]
+    token = (await admin.get_token_by_name("operations_ingest"))["token"]
     return TinyB(token=token, host=HOST)
 
 
-def effective_rows(client):
+async def effective_rows(client):
     query = """
         SELECT
             entry_id,
+            kind,
             source,
             formatDateTime(date, '%F') AS date,
             vendor,
@@ -76,6 +121,7 @@ def effective_rows(client):
         (
             SELECT
                 entry_id,
+                argMax(kind, recorded_at) AS kind,
                 argMax(source, recorded_at) AS source,
                 argMax(date, recorded_at) AS date,
                 argMax(vendor, recorded_at) AS vendor,
@@ -91,14 +137,15 @@ def effective_rows(client):
         ORDER BY date DESC, vendor, entry_id
         FORMAT JSON
     """
-    return client.query(query)["data"]
+    return (await client.query(query))["data"]
 
 
-def latest_rows(client, entry_ids):
+async def latest_rows(client, entry_ids):
     quoted = ",".join("'" + value.replace("'", "''") + "'" for value in entry_ids)
     query = f"""
         SELECT
             entry_id,
+            argMax(kind, recorded_at) AS kind,
             argMax(source, recorded_at) AS source,
             formatDateTime(argMax(date, recorded_at), '%F') AS date,
             argMax(vendor, recorded_at) AS vendor,
@@ -112,7 +159,7 @@ def latest_rows(client, entry_ids):
         GROUP BY entry_id
         FORMAT JSON
     """
-    return client.query(query)["data"]
+    return (await client.query(query))["data"]
 
 
 def equal_value(expected, actual):
@@ -143,36 +190,35 @@ def write_snapshot(path, rows):
     path.write_text(json.dumps({"data": rows}, indent=2) + "\n")
 
 
-def main():
+async def main():
     args = arguments()
-    input_path = args.input.resolve()
-    expected = read_ndjson(input_path)
+    expected = read_ndjson(args.input.resolve())
     workspace_name = WORKSPACES[args.environment]
-    admin = client_for(workspace_name)
-
-    before = effective_rows(admin)
+    admin = await client_for(workspace_name)
+    before = await effective_rows(admin)
     write_snapshot(args.before_snapshot.resolve(), before)
 
     result = {}
     if not args.verify_only:
-        append = client_for(workspace_name, append=True)
-        result = append.datasource_append_data(
-            "op_transactions", input_path, mode="append", format="ndjson"
+        append = await client_for(workspace_name, append=True)
+        result = await append.datasource_append_data(
+            "op_transactions", args.input.resolve(), mode="append", format="ndjson"
         )
         if result.get("error"):
             raise RuntimeError(f"Tinybird append failed: {result['error']}")
 
     actual = []
     for attempt in range(6):
-        actual = latest_rows(admin, [row["entry_id"] for row in expected])
+        actual = await latest_rows(admin, [row["entry_id"] for row in expected])
         try:
             verify(expected, actual)
             break
         except RuntimeError:
             if attempt == 5:
                 raise
-            time.sleep(1)
-    after = effective_rows(admin)
+            await asyncio.sleep(1)
+
+    after = await effective_rows(admin)
     write_snapshot(args.after_snapshot.resolve(), after)
     print(
         json.dumps(
@@ -190,4 +236,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

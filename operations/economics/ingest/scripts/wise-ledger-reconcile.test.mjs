@@ -77,6 +77,7 @@ test("reuses a ledger-proven merchant classification and amount field", () => {
     );
     assert.deepEqual(proposal.row, {
         entry_id: "CARD_TRANSACTION-123",
+        kind: "transaction",
         source: "wise",
         date: "2026-08-08",
         vendor: "known",

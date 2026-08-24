@@ -1,0 +1,34 @@
+TOKEN "operations_read" READ
+
+NODE endpoint
+SQL >
+    SELECT
+        entry_id,
+        formatDateTime(month, '%F') AS month,
+        vendor,
+        category,
+        amount,
+        currency,
+        method,
+        source,
+        evidence,
+        toString(latest_recorded_at) AS recorded_at
+    FROM
+    (
+        SELECT
+            entry_id,
+            argMax(month, recorded_at) AS month,
+            argMax(vendor, recorded_at) AS vendor,
+            argMax(category, recorded_at) AS category,
+            argMax(amount, recorded_at) AS amount,
+            argMax(currency, recorded_at) AS currency,
+            argMax(method, recorded_at) AS method,
+            argMax(source, recorded_at) AS source,
+            argMax(evidence, recorded_at) AS evidence,
+            max(recorded_at) AS latest_recorded_at
+        FROM op_forecast
+        GROUP BY entry_id
+    )
+    ORDER BY month, vendor, category, entry_id
+
+TYPE ENDPOINT

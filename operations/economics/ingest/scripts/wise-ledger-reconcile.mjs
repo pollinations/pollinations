@@ -176,6 +176,7 @@ export function transactionProposal(activity, history, recordedAt, evidence) {
     return {
         row: {
             entry_id: entryId,
+            kind: "transaction",
             source: "wise",
             date: String(activity.createdOn).slice(0, 10),
             vendor: classification.vendor,
@@ -226,21 +227,6 @@ function ndjson(rows) {
     return `${rows.map((row) => JSON.stringify(row)).join("\n")}\n`;
 }
 
-function currentBalanceRows(balances, date, recordedAt, evidence) {
-    return balances.map((balance) => ({
-        entry_id: `wise-current-balance-${String(balance.currency).toLowerCase()}`,
-        kind: "current_balance",
-        date,
-        vendor: "wise",
-        category: "cash",
-        amount: Number(balance.cashAmount?.value ?? balance.amount?.value ?? 0),
-        currency: balance.currency || balance.amount?.currency,
-        source: "wise",
-        evidence,
-        recorded_at: recordedAt,
-    }));
-}
-
 async function main() {
     const { values } = parseArgs({
         options: {
@@ -248,7 +234,6 @@ async function main() {
             until: { type: "string" },
             archive: { type: "string" },
             transactions: { type: "string" },
-            runway: { type: "string" },
         },
     });
     if (!/^\d{4}-\d{2}-\d{2}$/.test(values.from ?? "")) {
@@ -257,8 +242,8 @@ async function main() {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(values.until ?? "")) {
         throw new Error("--until must use YYYY-MM-DD and is exclusive");
     }
-    if (!values.archive || !values.transactions || !values.runway) {
-        throw new Error("--archive, --transactions, and --runway are required");
+    if (!values.archive || !values.transactions) {
+        throw new Error("--archive and --transactions are required");
     }
     if (values.from >= values.until)
         throw new Error("--from must precede --until");
@@ -272,25 +257,19 @@ async function main() {
         .toISOString()
         .replace("T", " ")
         .replace("Z", "");
-    const snapshotDate = new Date().toISOString().slice(0, 10);
     const archivePath = resolve(values.archive);
     const evidence = `Wise API archive: ${archivePath}`;
 
-    const [period, historyActivities, balances, transactions] =
-        await Promise.all([
-            fetchActivities({ profileId, token, since, until }),
-            fetchActivities({
-                profileId,
-                token,
-                since: "2026-01-01T00:00:00.000Z",
-                until: since,
-            }),
-            fetchJson(
-                `https://api.wise.com/v4/profiles/${profileId}/balances?types=STANDARD`,
-                { headers: { Authorization: `Bearer ${token}` } },
-            ),
-            tinybirdRows("op_transactions_api", tinybirdToken),
-        ]);
+    const [period, historyActivities, transactions] = await Promise.all([
+        fetchActivities({ profileId, token, since, until }),
+        fetchActivities({
+            profileId,
+            token,
+            since: "2026-01-01T00:00:00.000Z",
+            until: since,
+        }),
+        tinybirdRows("op_transactions_api", tinybirdToken),
+    ]);
 
     const existingIds = coveredWiseEntryIds(transactions);
     const history = buildMerchantHistory(
@@ -318,7 +297,6 @@ async function main() {
         interval: { since, until },
         pages: period.pages,
         activities: period.activities,
-        balances,
     };
     await writeFile(archivePath, `${JSON.stringify(archive, null, 2)}\n`);
     if (review.length) {
@@ -328,23 +306,11 @@ async function main() {
         );
     }
 
-    const balanceRows = currentBalanceRows(
-        balances,
-        snapshotDate,
-        recordedAt,
-        evidence,
-    );
-    await Promise.all([
-        writeFile(resolve(values.transactions), ndjson(proposals)),
-        writeFile(resolve(values.runway), ndjson(balanceRows)),
-    ]);
+    await writeFile(resolve(values.transactions), ndjson(proposals));
     console.log(
         JSON.stringify({
             activity_pages: period.pages,
             completed_transactions: proposals.length,
-            current_balance_currencies: balanceRows
-                .map((row) => row.currency)
-                .sort(),
             review_items: 0,
         }),
     );

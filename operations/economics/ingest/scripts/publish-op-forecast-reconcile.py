@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
 import argparse
+import asyncio
 import json
-import time
+from datetime import datetime
 from pathlib import Path
 
-from tinybird.tb.client import TinyB
+from tinybird.client import TinyB
 
 
 HOST = "https://api.europe-west2.gcp.tinybird.co"
@@ -15,20 +16,32 @@ WORKSPACES = {
 }
 FIELDS = [
     "entry_id",
-    "kind",
-    "date",
+    "month",
     "vendor",
     "category",
     "amount",
     "currency",
+    "method",
     "source",
     "evidence",
 ]
+FORECAST_METHODS = {"fixed", "funded", "last", "one_off"}
+FORECAST_CATEGORIES = {
+    "revenue",
+    "compute",
+    "infrastructure",
+    "development",
+    "operations",
+    "office",
+    "admin",
+    "payroll",
+    "balance_sheet",
+}
 
 
 def arguments():
     parser = argparse.ArgumentParser(
-        description="Append reviewed op_runway facts and verify every row."
+        description="Append reviewed op_forecast facts and verify every row."
     )
     parser.add_argument("environment", choices=WORKSPACES)
     parser.add_argument("input", type=Path)
@@ -42,33 +55,78 @@ def read_ndjson(path):
     rows = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
     ids = [row["entry_id"] for row in rows]
     if not rows or len(ids) != len(set(ids)):
-        raise RuntimeError("Input must contain unique op_runway entry IDs")
+        raise RuntimeError("Input must contain unique op_forecast entry IDs")
+    invalid_categories = [
+        row["entry_id"]
+        for row in rows
+        if str(row.get("category", "")).strip() not in FORECAST_CATEGORIES
+    ]
+    if invalid_categories:
+        raise RuntimeError(
+            "Forecast rows require canonical categories: "
+            + ", ".join(invalid_categories)
+        )
+    invalid_methods = [
+        row["entry_id"]
+        for row in rows
+        if str(row.get("method", "")).strip() not in FORECAST_METHODS
+    ]
+    if invalid_methods:
+        raise RuntimeError(
+            "Forecast rows require a structured method: "
+            + ", ".join(invalid_methods)
+        )
+    invalid_months = []
+    for row in rows:
+        try:
+            month = datetime.strptime(str(row.get("month", "")), "%Y-%m-%d")
+        except ValueError:
+            invalid_months.append(row["entry_id"])
+            continue
+        if month.day != 1:
+            invalid_months.append(row["entry_id"])
+    if invalid_months:
+        raise RuntimeError(
+            "Forecast months must be first-of-month YYYY-MM-01 dates: "
+            + ", ".join(invalid_months)
+        )
+    invalid_zeroes = [
+        row["entry_id"]
+        for row in rows
+        if abs(float(row.get("amount", 0))) < 0.000000001
+        and row.get("method") != "funded"
+    ]
+    if invalid_zeroes:
+        raise RuntimeError(
+            "Only funded forecast rows may carry a zero amount: "
+            + ", ".join(invalid_zeroes)
+        )
     return rows
 
 
-def client_for(workspace_name, *, append=False):
+async def client_for(workspace_name, *, append=False):
     repo = Path(__file__).resolve().parents[4]
     config = json.loads((repo / "enter.pollinations.ai/observability/.tinyb").read_text())
     user = TinyB(token=config["user_token"], host=HOST)
-    workspaces = user.user_workspaces_and_branches(version="v1")["workspaces"]
+    workspaces = (await user.user_workspaces_and_branches(version="v1"))["workspaces"]
     workspace = next(item for item in workspaces if item["name"] == workspace_name)
     admin = TinyB(token=workspace["token"], host=HOST)
     if not append:
         return admin
-    token = admin.get_token_by_name("operations_ingest")["token"]
+    token = (await admin.get_token_by_name("operations_ingest"))["token"]
     return TinyB(token=token, host=HOST)
 
 
-def effective_rows(client):
+async def effective_rows(client):
     query = """
         SELECT
             entry_id,
-            kind,
-            formatDateTime(date, '%F') AS date,
+            formatDateTime(month, '%F') AS month,
             vendor,
             category,
             amount,
             currency,
+            method,
             source,
             evidence,
             formatDateTime(latest_recorded_at, '%F %T.%f') AS recorded_at
@@ -76,43 +134,43 @@ def effective_rows(client):
         (
             SELECT
                 entry_id,
-                argMax(kind, recorded_at) AS kind,
-                argMax(date, recorded_at) AS date,
+                argMax(month, recorded_at) AS month,
                 argMax(vendor, recorded_at) AS vendor,
                 argMax(category, recorded_at) AS category,
                 argMax(amount, recorded_at) AS amount,
                 argMax(currency, recorded_at) AS currency,
+                argMax(method, recorded_at) AS method,
                 argMax(source, recorded_at) AS source,
                 argMax(evidence, recorded_at) AS evidence,
                 max(recorded_at) AS latest_recorded_at
-            FROM op_runway
+            FROM op_forecast
             GROUP BY entry_id
         )
-        ORDER BY date, kind, vendor, entry_id
+        ORDER BY month, vendor, entry_id
         FORMAT JSON
     """
-    return client.query(query)["data"]
+    return (await client.query(query))["data"]
 
 
-def latest_rows(client, entry_ids):
+async def latest_rows(client, entry_ids):
     quoted = ",".join("'" + value.replace("'", "''") + "'" for value in entry_ids)
     query = f"""
         SELECT
             entry_id,
-            argMax(kind, recorded_at) AS kind,
-            formatDateTime(argMax(date, recorded_at), '%F') AS date,
+            formatDateTime(argMax(month, recorded_at), '%F') AS month,
             argMax(vendor, recorded_at) AS vendor,
             argMax(category, recorded_at) AS category,
             argMax(amount, recorded_at) AS amount,
             argMax(currency, recorded_at) AS currency,
+            argMax(method, recorded_at) AS method,
             argMax(source, recorded_at) AS source,
             argMax(evidence, recorded_at) AS evidence
-        FROM op_runway
+        FROM op_forecast
         WHERE entry_id IN ({quoted})
         GROUP BY entry_id
         FORMAT JSON
     """
-    return client.query(query)["data"]
+    return (await client.query(query))["data"]
 
 
 def equal_value(expected, actual):
@@ -143,35 +201,35 @@ def write_snapshot(path, rows):
     path.write_text(json.dumps({"data": rows}, indent=2) + "\n")
 
 
-def main():
+async def main():
     args = arguments()
     expected = read_ndjson(args.input.resolve())
     workspace_name = WORKSPACES[args.environment]
-    admin = client_for(workspace_name)
-    before = effective_rows(admin)
+    admin = await client_for(workspace_name)
+    before = await effective_rows(admin)
     write_snapshot(args.before_snapshot.resolve(), before)
 
     result = {}
     if not args.verify_only:
-        append = client_for(workspace_name, append=True)
-        result = append.datasource_append_data(
-            "op_runway", args.input.resolve(), mode="append", format="ndjson"
+        append = await client_for(workspace_name, append=True)
+        result = await append.datasource_append_data(
+            "op_forecast", args.input.resolve(), mode="append", format="ndjson"
         )
         if result.get("error"):
             raise RuntimeError(f"Tinybird append failed: {result['error']}")
 
     actual = []
     for attempt in range(6):
-        actual = latest_rows(admin, [row["entry_id"] for row in expected])
+        actual = await latest_rows(admin, [row["entry_id"] for row in expected])
         try:
             verify(expected, actual)
             break
         except RuntimeError:
             if attempt == 5:
                 raise
-            time.sleep(1)
+            await asyncio.sleep(1)
 
-    after = effective_rows(admin)
+    after = await effective_rows(admin)
     write_snapshot(args.after_snapshot.resolve(), after)
     print(
         json.dumps(
@@ -189,4 +247,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

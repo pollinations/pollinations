@@ -147,6 +147,7 @@ if (
 const transactionUpdates = [
     {
         ...mayTopup,
+        kind: "transaction",
         description:
             "Pruna.ai; US$100 prepaid credit top-up; invoice 548AAE0E-2304",
         evidence: `${topupInvoiceUrl} · receipt ${topupReceiptUrl}`,

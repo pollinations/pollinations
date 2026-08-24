@@ -8,6 +8,7 @@ SQL >
     -- name because ClickHouse substitutes aliases into the argMax arguments.
     SELECT
         entry_id,
+        kind,
         source,
         formatDateTime(date, '%F') AS date,
         vendor,
@@ -21,6 +22,7 @@ SQL >
     (
         SELECT
             entry_id,
+            argMax(kind, recorded_at) AS kind,
             argMax(source, recorded_at) AS source,
             argMax(date, recorded_at) AS date,
             argMax(vendor, recorded_at) AS vendor,

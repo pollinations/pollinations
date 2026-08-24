@@ -53,6 +53,12 @@ describe("canonical categories", () => {
         expect(transactionCategory(transaction("tele2", "office"))).toBe(
             "operations",
         );
+        expect(transactionCategory(transaction("wispr", "saas"))).toBe(
+            "development",
+        );
+        expect(transactionCategory(transaction("typeless", "saas"))).toBe(
+            "development",
+        );
         expect(runwayLineItem("operations", "tele2")).toBe("Telecom");
     });
 

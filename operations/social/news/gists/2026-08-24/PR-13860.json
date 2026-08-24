@@ -1,0 +1,35 @@
+{
+  "pr_number": 13860,
+  "title": "fix: improve Kontext failure attribution",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13860",
+  "merged_at": "2026-08-24T23:38:01Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n\n- Preserve true Azure HTTP status, response headers, and request IDs for Kontext failures.\n- Map explicit no-image content filters and moderation-worded Azure HTTP errors to `422 content_policy_violation`, while retaining the real upstream status.\n- Return `502` for other HTTP-200/no-image responses and record a structural response summary that excludes prompt, image URL, and base64 fields.\n- Require official-model failures across multiple keys/users, or a matching-surface synthetic probe, before declaring `DEGRADED`.\n\n## Why\n\nThe Kontext alert reported 17 “Azure 500s,” but all 17 came from one user/key using the same reference image. That key also had 15 successes, other callers were healthy, and a direct edit probe against the production Azure route returned a valid image.\n\nThe adapter was turning an Azure HTTP 200 response without `data[0].b64_json` into a generic local 500 and discarding the response shape. The monitor then treated the concentrated caller-specific cluster as an official outage. This fixes both sources of misattribution without changing the route, credentials, pricing, or success response.\n\n## Verification\n\n- `npx vitest run test/image/azureFluxKontextModel.test.ts` — 6 passed\n- `npm run typecheck` — passed\n- Biome and `git diff --check` — passed\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive reads the receipt",
+    "blurb": "Kontext failures now keep their upstream paperwork instead of arriving dressed as generic 500s. The monitor also learned that one troublesome flowerpot is not necessarily a garden-wide drought.",
+    "summary": "The Azure Flux Kontext adapter now preserves upstream HTTP status, headers, and request IDs; maps explicit no-image content-filter responses to 422 content_policy_violation; returns 502 with a scrubbed structural response summary for other HTTP-200/no-image results; and requires failures across users or a matching probe before marking the official model DEGRADED.",
+    "impact": "Users get more accurate Kontext error handling and content-policy signals, while operators can distinguish isolated caller-specific failures from a real Azure route outage without exposing prompts, image URLs, or base64 data.",
+    "keywords": [
+      "Kontext",
+      "Azure",
+      "image generation",
+      "error handling",
+      "content policy",
+      "monitoring",
+      "reliability"
+    ],
+    "visual_concept": "Depict Kontext response diagnosis as a cozy garden clinic: Polli compares several neatly labeled request receipts from different garden paths while a healthy code-plant blooms beside one wilted pot, showing that a single bad response is not a platform-wide outage. Include a retro CRT monitor robot displaying a simple pixel response shape and a friendly 422 content-policy sign, with no real prompt or image data shown.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-server shed where Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears tiny detective glasses and compares request-ID receipts beside a blooming code-plant and one small wilted pot; a chunky CRT monitor robot displays a clean simplified response diagram and pixel text reading “422 POLICY OK”. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-24/PR-13860.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-server shed where Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears tiny detective glasses and compares request-ID receipts beside a blooming code-plant and one small wilted pot; a chunky CRT monitor robot displays a clean simplified response diagram and pixel text reading “422 POLICY OK”. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-24T23:41:15.654818+00:00"
+}

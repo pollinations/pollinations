@@ -70,7 +70,7 @@ describe("community endpoint price/visibility delay", () => {
         });
         expect(pending.promptTextPrice).toBe(0.000001);
 
-        let row = await drizzle(env.DB, {
+        const row = await drizzle(env.DB, {
             schema,
         }).query.communityEndpoint.findFirst({
             where: eq(schema.communityEndpoint.name, "delay-model"),

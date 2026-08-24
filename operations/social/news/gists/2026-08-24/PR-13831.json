@@ -1,0 +1,34 @@
+{
+  "pr_number": 13831,
+  "title": "fix: price Nova Canvas by output dimensions",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13831",
+  "merged_at": "2026-08-24T12:09:47Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds Nova Canvas Standard exact AWS dimension tiers: $0.04 when both final dimensions are at most 1024px; $0.06 when either exceeds 1024px.\n- Selects pricing from the same 16px-aligned dimensions sent to `amazon.nova-canvas-v1:0`, so requests such as 1025px that normalize to 1024px remain on the lower tier.\n- Preserves `nova-canvas`, `amazon-nova-canvas`, Bedrock, `paidOnly: false`, multiplier 1, Pollinations GPU off, and no fallback.\n- AWS Cost Explorer evidence for the controlled 2026-08-22 14:00 UTC batch: 3 × 1024 Standard = $0.12 and 4 × 2048 Standard = $0.24. Direct dimensions confirmed `1008×1040` is the higher tier. Source: https://aws.amazon.com/bedrock/pricing/\n- Tests: Gen focused suite (5), Enter cost/snapshot suite (55), Gen and Enter typechecks, Biome.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Canvas math found its ruler",
+    "blurb": "Nova Canvas now checks the dimensions it actually sends to AWS before picking a price tier. Even pixels like to be measured after they have been neatly trimmed to the grid.",
+    "summary": "Fixed Nova Canvas Standard pricing to use the same 16px-aligned output dimensions sent to `amazon.nova-canvas-v1:0`: $0.04 at dimensions up to 1024px on both sides, and $0.06 when either aligned dimension exceeds 1024px.",
+    "impact": "Requests such as 1025px that normalize to 1024px now receive the lower $0.04 tier, while aligned sizes such as 1008×1040 correctly use the $0.06 tier.",
+    "keywords": [
+      "nova canvas",
+      "aws bedrock",
+      "image generation",
+      "pricing",
+      "dimensions",
+      "billing"
+    ],
+    "visual_concept": "Depict Nova Canvas pricing as a cozy pixel-art measuring station: Polli uses a tiny ruler and grid mat to align canvas tiles in 16px increments before placing them into two labeled baskets, \"≤1024\" and \">1024\". A friendly CRT monitor can display neat aligned dimensions and small price tags, with code-plants and flowers growing around the workspace to make the technical accounting feel like careful garden tending.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny accountant visor, carefully measuring glowing canvas tiles on a 16px grid mat; a friendly CRT monitor shows aligned dimensions, while two warm little baskets read \"≤1024 $0.04\" and \">1024 $0.06\" in simple pixel font. Lime green (#ecf874) is prominent among soft mint, lavender, peach, and warm cream code-plants and flowers; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-24/PR-13831.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny accountant visor, carefully measuring glowing canvas tiles on a 16px grid mat; a friendly CRT monitor shows aligned dimensions, while two warm little baskets read \"≤1024 $0.04\" and \">1024 $0.06\" in simple pixel font. Lime green (#ecf874) is prominent among soft mint, lavender, peach, and warm cream code-plants and flowers; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-24T12:11:38.309561+00:00"
+}

@@ -63,13 +63,13 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
         checkIfBanned();
     }, [imageId]);
 
-    const handleLoad = (event: any) => {
+    const handleLoad = (event: React.SyntheticEvent<HTMLImageElement>) => {
         setIsLoading(false);
         setError(false);
         onLoad?.(event);
     };
 
-    const handleError = (event: any) => {
+    const handleError = (event: unknown) => {
         setError(true);
         setIsLoading(false);
         onError?.(event);

@@ -1,0 +1,33 @@
+{
+  "pr_number": 13804,
+  "title": "fix: clarify Activity timestamps use UTC",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13804",
+  "merged_at": "2026-08-24T01:22:27Z",
+  "labels": [],
+  "pr_body_excerpt": "- Clarifies that every date and time on the Activity page uses UTC\n- Keeps the period picker, API windows, chart buckets, and event timestamps consistent\n- Avoids partially localizing labels while the underlying periods remain UTC\n\nFixes #13651\n\nTest: `/Users/thomash/Documents/GitHub/pollinations/node_modules/.bin/biome check enter.pollinations.ai/frontend/src/routes/_dashboard.activity.tsx`",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Time zones, politely contained",
+    "blurb": "The Activity page now says the quiet part out loud: its clocks run on UTC. Polli put a tiny world clock next to the data so nobody has to guess what noon means.",
+    "summary": "Clarified that the Activity page's period picker, API windows, chart buckets, and event timestamps all use UTC.",
+    "impact": "Users can now interpret Activity data against one explicitly labeled UTC timeline instead of encountering partially localized labels over UTC-based periods.",
+    "keywords": [
+      "activity",
+      "utc",
+      "timestamps",
+      "dashboard",
+      "analytics"
+    ],
+    "visual_concept": "Depict Polli tending a cozy dashboard garden beside a chunky retro world clock set to UTC, with chart bars and timestamped activity sprouts aligned to the same clock. The scene represents one consistent time standard across the Activity page.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny watchmaker hat, carefully aligning timestamped code-plants and chart sprouts beneath a glowing retro world clock labeled \"UTC\". A lime green (#ecf874) Activity dashboard monitor glows beside warm cream, mint, and lavender garden details; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-24/PR-13804.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny watchmaker hat, carefully aligning timestamped code-plants and chart sprouts beneath a glowing retro world clock labeled \"UTC\". A lime green (#ecf874) Activity dashboard monitor glows beside warm cream, mint, and lavender garden details; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-24T01:23:26.894644+00:00"
+}

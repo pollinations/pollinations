@@ -34,6 +34,7 @@ export {
 } from "./extras.js";
 // Helper functions
 export {
+    accountEarnings,
     authorizeDevice,
     authorizeUrl,
     chat,
@@ -98,9 +99,12 @@ export type {
     CreateKeyOptions,
     DailyUsageRecord,
     DailyUsageResponse,
+    DeveloperEarningsRow,
     DeviceAuthorization,
     DeviceCodeResponse,
     DeviceTokenResponse,
+    EarningsOptions,
+    EarningsResponse,
     FileContentPart,
     FunctionDefinition,
     ImageContentPart,

@@ -40,6 +40,8 @@ import type {
     DailyUsageOptions,
     DailyUsageResponse,
     DeviceAuthorization,
+    EarningsOptions,
+    EarningsResponse,
     ImageEditOptions,
     ImageGenerateOptions,
     ImageGenerateV1Options,
@@ -520,6 +522,15 @@ export async function getDailyUsage(
     options?: DailyUsageOptions,
 ): Promise<DailyUsageResponse> {
     return getClient().accountUsageDaily(options);
+}
+
+/**
+ * Get developer earnings
+ */
+export async function accountEarnings(
+    options?: EarningsOptions,
+): Promise<EarningsResponse> {
+    return getClient().accountEarnings(options);
 }
 
 /**

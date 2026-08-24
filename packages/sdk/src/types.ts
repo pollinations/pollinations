@@ -632,6 +632,41 @@ export interface UsageResponse {
     count: number;
 }
 
+/** Developer earnings row details */
+export interface DeveloperEarningsRow {
+    date: string;
+    entity_id: string;
+    entity_name: string;
+    source: "byop_markup" | "community_model" | string;
+    requests: number;
+    paid_requests: number;
+    tier_requests: number;
+    baseline_price: number;
+    pollen_earned: number;
+    paid_earned: number;
+    tier_earned: number;
+    cost_usd: number;
+    reward_rate: number;
+}
+
+/** Options for fetching developer earnings */
+export interface EarningsOptions extends RequestOptions {
+    /** Response format (default: 'json') */
+    format?: "json" | "csv";
+    /** Number of days to include (default: 30) */
+    days?: number;
+    /** Exact period granularity */
+    granularity?: "day" | "week" | "month";
+    /** Exact period, e.g. YYYY-MM-DD, YYYY-WNN, or YYYY-MM */
+    period?: string;
+}
+
+/** Response for GET /account/earnings */
+export interface EarningsResponse {
+    daily: DeveloperEarningsRow[];
+    perEntity: DeveloperEarningsRow[];
+}
+
 /** Options for fetching usage */
 export interface UsageOptions {
     /** Response format (default: 'json') */

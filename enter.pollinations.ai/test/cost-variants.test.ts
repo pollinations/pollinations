@@ -415,6 +415,23 @@ describe("request-mode cost variants", () => {
 });
 
 describe("resolution cost variants", () => {
+    it.each([
+        [1024, 1024, 0.04, undefined],
+        [1008, 1040, 0.06, "2048"],
+        [1024, 1040, 0.06, "2048"],
+        [2048, 2048, 0.06, "2048"],
+    ] as const)("nova-canvas bills %sx%s at $%s/image", (width, height, rate, variant) => {
+        const billing = bill(
+            "nova-canvas",
+            { completionImageTokens: 1 },
+            { maxImageDimension: Math.max(width, height) },
+        );
+
+        expect(billing.costVariant).toBe(variant);
+        expect(billing.cost.totalCost).toBeCloseTo(rate, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(rate, 12);
+    });
+
     it("p-video bills the 720p base and 1080p variant", () => {
         expect(
             bill("p-video", { completionVideoSeconds: 10 }).cost.totalCost,

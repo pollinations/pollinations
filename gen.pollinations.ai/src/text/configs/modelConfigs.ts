@@ -331,11 +331,18 @@ export const portkeyConfig: PortkeyConfigMap = {
         "mistralai/mistral-small-3.2-24b-instruct",
         "deepinfra/fp8",
     ),
-    "mistral-small-2603": createPinnedOpenRouterConfig(
-        "mistralai/mistral-small-2603",
-        "mistral",
-        64000,
-    ),
+    "mistral-small-2603": () =>
+        createOpenRouterModelConfig({
+            model: "mistralai/mistral-small-2603",
+            defaultOptions: {
+                max_tokens: 64000,
+                provider: {
+                    only: ["mistral"],
+                    ignore: ["mistral/zdr"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
 
     // -- Azure (Myceli Prod — eastus, Mistral Large) -------------------------
     "Mistral-Large-3": () =>

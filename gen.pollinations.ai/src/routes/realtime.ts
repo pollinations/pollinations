@@ -41,7 +41,11 @@ import {
 } from "@/middleware/track.ts";
 import { RealtimeUsageSchema } from "@/schemas/realtime.ts";
 import { generateRandomId } from "@/util.ts";
-import { checkBalance } from "@/utils/generation-access.ts";
+import {
+    checkBalance,
+    releaseApiKeyBudgetReservation,
+    reserveApiKeyBudget,
+} from "@/utils/generation-access.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 
 type AzureRealtimeApiKey =
@@ -101,6 +105,7 @@ type RealtimeBillingContext = {
     // reaches a realtime row without touching this file.
     identity: UserData & { userId: string };
     apiKeyPollenBalance?: number | null;
+    apiKeyReservedAmount?: number;
     byopClientKeyId?: string | null;
     modelRequested: string;
     resolvedModelRequested: string;
@@ -781,7 +786,7 @@ function createRealtimeTrackingEvent(args: {
         ...usageToEventParams(args.usage),
         ...reduceAdjustmentsToEventFields(args.adjustments),
         totalCost: args.cost.totalCost,
-        totalPrice: args.price.totalPrice + (args.markup?.devCredit ?? 0),
+        totalPrice: args.tracking.deduction?.billedPrice ?? 0,
         devPrice: args.price.totalPrice,
         markupRate: args.markup?.markupRate ?? 0,
     };
@@ -796,6 +801,18 @@ async function settleRealtimeSession(
 
     const usage = positiveEntries(tracking.usage);
     if (!hasPositiveUsage(usage)) {
+        if (!tracking.deductionAttempted) {
+            await handleBalanceDeduction({
+                db: drizzle(c.env.DB),
+                isBilledUsage: false,
+                userId: tracking.identity.userId,
+                apiKeyId: tracking.identity.apiKeyId,
+                apiKeyPollenBalance: tracking.apiKeyPollenBalance,
+                apiKeyReservedAmount: tracking.apiKeyReservedAmount,
+            });
+            tracking.deductionAttempted = true;
+            c.var.balance.apiKeyReservation = undefined;
+        }
         tracking.settled = true;
         return;
     }
@@ -807,6 +824,18 @@ async function settleRealtimeSession(
         output: { realtimeCache: tracking.cacheUsage },
     });
     if (price.totalPrice <= 0) {
+        if (!tracking.deductionAttempted) {
+            await handleBalanceDeduction({
+                db: drizzle(c.env.DB),
+                isBilledUsage: false,
+                userId: tracking.identity.userId,
+                apiKeyId: tracking.identity.apiKeyId,
+                apiKeyPollenBalance: tracking.apiKeyPollenBalance,
+                apiKeyReservedAmount: tracking.apiKeyReservedAmount,
+            });
+            tracking.deductionAttempted = true;
+            c.var.balance.apiKeyReservation = undefined;
+        }
         tracking.settled = true;
         return;
     }
@@ -826,9 +855,11 @@ async function settleRealtimeSession(
             userId: tracking.identity.userId,
             apiKeyId: tracking.identity.apiKeyId,
             apiKeyPollenBalance: tracking.apiKeyPollenBalance,
+            apiKeyReservedAmount: tracking.apiKeyReservedAmount,
             byopClientKeyId: tracking.byopClientKeyId,
             modelPaidOnly: tracking.modelDefinition.paidOnly,
         });
+        c.var.balance.apiKeyReservation = undefined;
     }
 
     if (!tracking.rateLimitConsumed) {
@@ -1424,7 +1455,14 @@ export async function handleRealtimeWebSocket(
                 message: "ElevenLabs realtime provider is not configured.",
             });
         }
-        return proxyScribeOpenAIRealtime(c, tracking);
+        await reserveApiKeyBudget(c.var, c.env);
+        tracking.apiKeyReservedAmount = c.var.balance.apiKeyReservation?.amount;
+        try {
+            return proxyScribeOpenAIRealtime(c, tracking);
+        } catch (error) {
+            await releaseApiKeyBudgetReservation(c.var, c.env);
+            throw error;
+        }
     }
 
     const upstream = await connectAzureRealtime(
@@ -1434,5 +1472,13 @@ export async function handleRealtimeWebSocket(
     );
     if (upstream instanceof Response) return upstream;
 
-    return proxyRealtimeWebSockets(c, upstream, tracking);
+    await reserveApiKeyBudget(c.var, c.env);
+    tracking.apiKeyReservedAmount = c.var.balance.apiKeyReservation?.amount;
+    try {
+        return proxyRealtimeWebSockets(c, upstream, tracking);
+    } catch (error) {
+        await releaseApiKeyBudgetReservation(c.var, c.env);
+        closeSocket(upstream, 1011, "Unable to start realtime session");
+        throw error;
+    }
 }

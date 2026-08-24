@@ -17,6 +17,7 @@ const EXPECTED_TOOLS = [
     "getBalance",
     "getModelStatus",
     "listModels",
+    "transcribeAudio",
 ];
 
 function localFetch(input, init) {
@@ -89,6 +90,22 @@ test("serves modern and legacy clients without sessions", async () => {
     await legacy.close();
 });
 
+test("rejects JSON-RPC batches", async () => {
+    const response = await worker.fetch(
+        new Request("https://mcp.pollinations.ai", {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${TOKEN}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify([
+                { jsonrpc: "2.0", id: 1, method: "tools/list" },
+            ]),
+        }),
+    );
+    assert.equal(response.status, 400);
+});
+
 test("keeps bearer tokens scoped to each request", async (t) => {
     const originalFetch = globalThis.fetch;
     const seenAuthorizations = new Set();
@@ -124,6 +141,63 @@ test("keeps bearer tokens scoped to each request", async (t) => {
     );
 
     await Promise.all([firstClient.close(), secondClient.close()]);
+});
+
+test("generateText uses the non-streaming chat completion contract", async (t) => {
+    const originalFetch = globalThis.fetch;
+    let completionBody;
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+
+    globalThis.fetch = async (input, init = {}) => {
+        const url = String(input);
+        if (url === "https://gen.pollinations.ai/text/models") {
+            return Response.json([{ name: "openai" }]);
+        }
+        if (url === "https://gen.pollinations.ai/v1/chat/completions") {
+            completionBody = JSON.parse(init.body);
+            return Response.json({
+                model: "openai",
+                choices: [
+                    {
+                        message: { role: "assistant", content: "hello" },
+                        finish_reason: "stop",
+                    },
+                ],
+                usage: { completion_tokens: 1 },
+            });
+        }
+        throw new Error(`Unexpected URL: ${url}`);
+    };
+
+    const client = await connectClient({
+        versionNegotiation: { mode: "auto" },
+    });
+    const generateTextTool = (await client.listTools()).tools.find(
+        ({ name }) => name === "generateText",
+    );
+    assert.ok(generateTextTool);
+    assert.equal(generateTextTool.inputSchema.properties.stream, undefined);
+    assert.equal(
+        generateTextTool.inputSchema.properties.stream_options,
+        undefined,
+    );
+
+    const result = await client.callTool({
+        name: "generateText",
+        arguments: {
+            model: "openai",
+            messages: [{ role: "user", content: "hi" }],
+        },
+    });
+
+    assert.equal(result.content[0].text, "hello");
+    assert.deepEqual(completionBody, {
+        messages: [{ role: "user", content: "hi" }],
+        model: "openai",
+    });
+    await client.close();
 });
 
 test("uploads generated images and returns an MCP resource link", async (t) => {

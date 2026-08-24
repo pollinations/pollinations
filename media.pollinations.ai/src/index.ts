@@ -24,9 +24,7 @@ import {
 } from "./catalog.ts";
 
 const DOMAIN = "media.pollinations.ai";
-// gen.pollinations.ai proxies /account/* to enter — using the public path
-// keeps internal services consistent with the documented SDK/external usage.
-const KEY_VERIFY_URL = "https://gen.pollinations.ai/account/key";
+const KEY_VERIFY_URL = "https://enter.pollinations.ai/api/account/key";
 // Untagged uploads cannot be deleted through the API, and each unique id always
 // maps to the same bytes, so they can be cached immutably. Tagged uploads are
 // deletable and must never be retained by downstream caches after deletion.

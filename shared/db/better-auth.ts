@@ -198,6 +198,28 @@ export const stripeCardFingerprintAttempt = sqliteTable("stripe_card_fingerprint
   ),
 ]);
 
+export const billableEvent = sqliteTable("billable_event", {
+  id: text("id").primaryKey(),
+  requestId: text("request_id").notNull(),
+  apiKeyId: text("api_key_id").notNull(),
+  userId: text("user_id").notNull(),
+  meter: text("meter").notNull(),
+  price: real("price").notNull(),
+  billedPrice: real("billed_price").notNull(),
+  paidOnly: integer("paid_only", { mode: "boolean" }).default(false).notNull(),
+  payerBucket: text("payer_bucket", { enum: ["tier", "pack"] }),
+  devUserId: text("dev_user_id"),
+  devCredit: real("dev_credit").default(0).notNull(),
+  occurredAt: integer("occurred_at", { mode: "timestamp_ms" }).notNull(),
+  settledAt: integer("settled_at", { mode: "timestamp_ms" }),
+  createdAt: integer("created_at", { mode: "timestamp_ms" })
+    .defaultNow()
+    .notNull(),
+}, (table) => [
+  index("idx_billable_event_request_id").on(table.requestId),
+  index("idx_billable_event_user_occurred").on(table.userId, table.occurredAt),
+]);
+
 export const communityEndpoint = sqliteTable("community_endpoint", {
   id: text("id").primaryKey(),
   ownerUserId: text("owner_user_id")

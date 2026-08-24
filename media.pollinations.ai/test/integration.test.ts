@@ -116,8 +116,8 @@ function mockAuth() {
     fetchMock.activate();
     fetchMock.disableNetConnect();
     fetchMock
-        .get("https://gen.pollinations.ai")
-        .intercept({ path: "/account/key" })
+        .get("https://enter.pollinations.ai")
+        .intercept({ path: "/api/account/key" })
         .reply(({ headers }) => {
             const headerBag = headers as Record<string, string>;
             const authHeader =
@@ -622,7 +622,7 @@ describe("media.pollinations.ai", () => {
         expect(alice.status).toBe(200);
         const aliceUpload = alice.body as UploadResponse;
 
-        // The catalog row carries the identity attested by /account/key —
+        // The catalog row carries the identity attested by Enter —
         // pk_alice → user_alice via app pk_app_1 — not the form fields.
         const db = drizzle(env.DB);
         const [row] = await db
@@ -728,7 +728,7 @@ describe("media.pollinations.ai", () => {
         const upload = plain.body as UploadResponse;
         expect(upload.tags).toBeUndefined();
 
-        // An /account/key response predating the identity fields (userId
+        // An Enter response predating the identity fields (userId
         // absent, not null) must read as not-user-attached: same behavior.
         const legacyTagged = await uploadViaForm("sk_legacy", {
             fileName: "legacy-tagged.png",
@@ -1038,7 +1038,7 @@ describe("media.pollinations.ai", () => {
             });
             expect(noUser.status).toBe(403);
 
-            // An /account/key response predating the identity fields (userId
+            // An Enter response predating the identity fields (userId
             // absent, not null) must read as not-user-attached — the `?? null`
             // normalization guard, exercised on the delete path.
             const legacy = await SELF.fetch(url, {

@@ -13,6 +13,15 @@ https://mcp.pollinations.ai
 Authorization: Bearer YOUR_KEY
 ```
 
+Other Pollinations-hosted MCP servers are listed at
+[`https://gen.pollinations.ai/mcp`](https://gen.pollinations.ai/mcp). Connect to
+an entry's URL with the same authorization header.
+
+The server can only use models and account features allowed by that key's
+permissions, and it cannot spend beyond the key's budget. Configure both in
+[API key settings](https://enter.pollinations.ai/keys); see
+[Authentication](https://gen.pollinations.ai/docs#tag/-authentication).
+
 Local stdio:
 
 ```bash

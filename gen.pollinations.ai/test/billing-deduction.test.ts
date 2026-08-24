@@ -212,6 +212,30 @@ describe("billing deduction", () => {
         expect(await getApiKeyBalance(apiKeyId)).toBeCloseTo(7, 10);
     });
 
+    it("settles post-execution usage without a preflight reservation", async () => {
+        const userId = await createUser({ tierBalance: 100, packBalance: 0 });
+        const { id: apiKeyId } = await createTestApiKey({
+            userId,
+            pollenBudget: 2,
+        });
+
+        await handleBalanceDeduction({
+            db,
+            isBilledUsage: true,
+            totalPrice: 3,
+            userId,
+            apiKeyId,
+            apiKeyPollenBalance: 2,
+            apiKeyReservedAmount: 0,
+        });
+
+        expect(await getApiKeyBalance(apiKeyId)).toBeCloseTo(-1, 10);
+        expect(await getUserBalance(db, userId)).toEqual({
+            tierBalance: 97,
+            packBalance: 0,
+        });
+    });
+
     it("refunds the API key reservation when usage is not billed", async () => {
         const userId = await createUser({ tierBalance: 100, packBalance: 0 });
         const { id: apiKeyId } = await createTestApiKey({

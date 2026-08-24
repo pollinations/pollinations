@@ -54,6 +54,24 @@ export default {
         const token = readBearerToken(request);
         if (!token) return unauthorizedResponse();
 
+        if (
+            request.method === "POST" &&
+            Array.isArray(
+                await request
+                    .clone()
+                    .json()
+                    .catch(() => null),
+            )
+        ) {
+            return Response.json(
+                {
+                    error: "invalid_request",
+                    message: "Batch requests are not supported.",
+                },
+                { status: 400 },
+            );
+        }
+
         return mcpHandler.fetch(request, {
             authInfo: {
                 token,

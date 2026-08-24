@@ -105,6 +105,19 @@ describe("canonical categories", () => {
         expect(categoryLabel("balance_sheet")).toBe("Cash adjustments");
     });
 
+    it("keeps grants and investments out of operating revenue", () => {
+        expect(
+            transactionCategory(
+                transaction(
+                    "investment",
+                    "revenue",
+                    "Mercatus startup grant",
+                    9_993.89,
+                ),
+            ),
+        ).toBe("balance_sheet");
+    });
+
     it("treats the bank opening anchor as a non-movement", () => {
         expect(
             transactionCategory({

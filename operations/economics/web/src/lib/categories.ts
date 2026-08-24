@@ -68,7 +68,7 @@ const TRANSACTION_VENDOR_CATEGORIES: Record<string, Category> = {
     google: "compute",
     "google-workspace": "operations",
     inferenceport: "compute",
-    investment: "revenue",
+    investment: "balance_sheet",
     "io.net": "compute",
     lambda: "compute",
     mistral: "compute",

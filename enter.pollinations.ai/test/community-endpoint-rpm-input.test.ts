@@ -3,7 +3,6 @@ import {
     agentListingToForm,
     emptyAgentForm,
     emptyForm,
-    isValidMcpRow,
     isValidPerUserRpm,
     publicCommunityFallbackOptions,
     toAgentListingPayload,
@@ -25,84 +24,19 @@ describe("community endpoint per-user RPM input", () => {
         expect(isValidPerUserRpm("0")).toBe(false);
     });
 
-    it("validates and normalizes agent MCP servers", () => {
-        expect(
-            isValidMcpRow({
-                id: "1",
-                name: "docs",
-                url: "https://mcp.example.com/rpc/",
-                headers: [],
-            }),
-        ).toBe(true);
-        expect(
-            isValidMcpRow({
-                id: "2",
-                name: "docs",
-                url: "ftp://mcp.example.com/rpc",
-                headers: [],
-            }),
-        ).toBe(false);
+    it("serializes the prompt-agent fields", () => {
         expect(
             toAgentPayload({
                 ...emptyAgentForm,
-                systemPrompt: "Help",
-                baseModel: "openai",
-                mcpServers: [
-                    {
-                        id: "3",
-                        name: "docs",
-                        url: "https://mcp.example.com/rpc/",
-                        headers: [
-                            {
-                                id: "header-1",
-                                name: "Authorization",
-                                value: "Bearer secret",
-                                saved: false,
-                            },
-                            {
-                                id: "header-2",
-                                name: "X-Saved",
-                                value: "",
-                                saved: true,
-                            },
-                        ],
-                    },
-                ],
-            }).mcpServers,
-        ).toEqual([
-            {
-                name: "docs",
-                url: "https://mcp.example.com/rpc",
-                headers: {
-                    Authorization: "Bearer secret",
-                    "X-Saved": null,
-                },
-            },
-        ]);
-    });
-
-    it("rejects duplicate agent MCP names", () => {
-        expect(() =>
-            toAgentPayload({
-                ...emptyAgentForm,
-                systemPrompt: "Help",
-                baseModel: "openai",
-                mcpServers: [
-                    {
-                        id: "1",
-                        name: "docs",
-                        url: "https://one.example.com/mcp",
-                        headers: [],
-                    },
-                    {
-                        id: "2",
-                        name: "docs",
-                        url: "https://two.example.com/mcp",
-                        headers: [],
-                    },
-                ],
+                systemPrompt: " Help ",
+                baseModel: " openai ",
+                mcpServers: ["pollinations"],
             }),
-        ).toThrow('MCP server name "docs" is already in use');
+        ).toEqual({
+            systemPrompt: "Help",
+            baseModel: "openai",
+            mcpServers: ["pollinations"],
+        });
     });
 
     it("does not offer agent listings as fallback models", () => {
@@ -119,25 +53,21 @@ describe("community endpoint per-user RPM input", () => {
         ).toEqual([{ modelId: "owner/model", modality: "text" }]);
     });
 
-    it("serializes agent listings without prices or fallbacks", () => {
-        const payload = toAgentListingPayload(
-            {
-                ...agentListingToForm(),
-                name: "researcher",
-                title: "Researcher",
-                visibility: "public",
-                perUserRpm: "12",
-            },
-            ["text", "image"],
-        );
-        expect(payload).toMatchObject({
-            modality: "text",
-            inputModalities: ["text", "image"],
-            perUserRpm: null,
+    // Create adds the type and agent id at the API call site; the reusable
+    // listing form only emits fields that are also valid for updates.
+    it("serializes agent listing details only", () => {
+        const payload = toAgentListingPayload({
+            ...agentListingToForm(),
+            name: "researcher",
+            title: "Researcher",
+            visibility: "public",
+            perUserRpm: "12",
         });
-        expect(payload).not.toHaveProperty("agentId");
-        expect(payload).not.toHaveProperty("baseUrl");
-        expect(payload).not.toHaveProperty("fallbackModelIds");
-        expect(payload).not.toHaveProperty("promptTextPrice");
+        expect(payload).toEqual({
+            name: "researcher",
+            title: "Researcher",
+            description: "",
+            visibility: "public",
+        });
     });
 });

@@ -1,5 +1,6 @@
 import { type CallToolResult, createMCPClient } from "@ai-sdk/mcp";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import { getLogger } from "@logtape/logtape";
 import {
     APICallError,
     type FinishReason,
@@ -8,14 +9,15 @@ import {
     ToolLoopAgent,
 } from "ai";
 import { z } from "zod";
-import type {
-    PromptAgentConfig,
-    PromptAgentMcpHeaders,
-} from "./prompt-agent.ts";
+import type { PromptAgentConfig } from "./prompt-agent.ts";
+
+const log = getLogger(["enter", "prompt-agent-runtime"]);
 
 export const PromptAgentRequestSchema = z
     .object({
-        messages: z.array(z.custom<ModelMessage>()).optional().default([]),
+        // z.custom() accepts the same inputs, but cannot be represented in the
+        // OpenAPI JSON Schema generated for the account service.
+        messages: z.array(z.unknown()).optional().default([]),
         stream: z.boolean().optional().default(false),
     })
     .passthrough();
@@ -28,18 +30,11 @@ export type PromptAgentRequest = z.output<typeof PromptAgentRequestSchema>;
 
 type PromptAgentRuntime = {
     config: PromptAgentConfig;
-    mcpHeaders: PromptAgentMcpHeaders;
     apiKey: string;
     genBaseUrl: string;
     pollinationsMcpUrl: string;
 };
 
-type McpServer = {
-    name: string;
-    url: string;
-    headers?: Record<string, string>;
-    includeTools?: string[];
-};
 type McpClient = Awaited<ReturnType<typeof createMCPClient>>;
 type McpTool = Awaited<ReturnType<McpClient["tools"]>>[string];
 type ToolCallCounts = Record<string, number>;
@@ -60,16 +55,6 @@ type AgentOutput = {
 const MAX_STEPS = 8;
 const MAX_TOOL_CALLS = 16;
 const MCP_INITIALIZATION_TIMEOUT_MS = 15_000;
-const POLLINATIONS_AGENT_TOOLS = [
-    "generateImage",
-    "generateVideo",
-    "generate3D",
-    "generateText",
-    "createEmbeddings",
-    "generateAudio",
-    "listModels",
-    "getModelStatus",
-];
 const STEP_LIMIT_MESSAGE =
     "The agent reached its maximum number of tool-use steps without a final answer.";
 
@@ -89,92 +74,75 @@ function agentErrorResponse(error: unknown): Response {
     );
 }
 
-async function loadMcpTools(
-    servers: McpServer[],
+async function loadPollinationsTools(
+    url: string,
+    apiKey: string,
     signal: AbortSignal,
 ): Promise<{
     tools: Record<string, McpTool>;
     close: () => Promise<void>;
 }> {
-    const clients: McpClient[] = [];
+    let client: McpClient | undefined;
     const tools: Record<string, McpTool> = {};
     let closed = false;
 
     const close = async () => {
         if (closed) return;
         closed = true;
-        await Promise.all(clients.map((client) => client.close()));
+        await client?.close();
     };
 
     try {
-        for (const server of servers) {
-            const client = await createMCPClient({
-                clientName: "pollinations-prompt-agent",
-                initializationOptions: {
-                    signal,
-                    timeout: MCP_INITIALIZATION_TIMEOUT_MS,
-                },
-                transport: {
-                    type: "http",
-                    url: server.url,
-                    headers: server.headers,
-                    fetch: async (input, init) => {
-                        const response = await globalThis.fetch.call(
-                            globalThis,
-                            input,
-                            { ...init, redirect: "manual" },
-                        );
-                        if (response.status >= 300 && response.status < 400) {
-                            await response.body?.cancel();
-                            throw new Error(
-                                "MCP server redirects are not allowed",
-                            );
-                        }
-                        return response;
-                    },
-                },
-            });
-            clients.push(client);
-            for (const [name, definition] of Object.entries(
-                await client.tools(),
-            )) {
-                if (server.includeTools && !server.includeTools.includes(name))
-                    continue;
-                tools[`mcp__${server.name}__${name}`] = definition;
-            }
+        client = await createMCPClient({
+            clientName: "pollinations-prompt-agent",
+            initializationOptions: {
+                signal,
+                timeout: MCP_INITIALIZATION_TIMEOUT_MS,
+            },
+            transport: {
+                type: "http",
+                url,
+                headers: { Authorization: `Bearer ${apiKey}` },
+                // The MCP client asks for redirect "error", which workerd does
+                // not support. Use a valid fetch mode for the hosted endpoint.
+                fetch: async (input, init) =>
+                    globalThis.fetch.call(globalThis, input, {
+                        ...init,
+                        redirect: "follow",
+                    }),
+            },
+        });
+        for (const [name, definition] of Object.entries(await client.tools())) {
+            tools[`mcp__pollinations__${name}`] = definition;
         }
+        log.info("MCP_SERVER_LOADED: name={name} url={url} tools={tools}", {
+            name: "pollinations",
+            url,
+            tools: Object.keys(tools).length,
+        });
     } catch (error) {
-        await close();
-        throw error;
+        // Tool availability is recoverable; the base model can still answer.
+        log.error("MCP_SERVER_FAILED: name={name} url={url} error={error}", {
+            name: "pollinations",
+            url,
+            error: error instanceof Error ? error.message : String(error),
+        });
     }
 
     return { tools, close };
 }
 
 async function createAgent(runtime: PromptAgentRuntime, signal: AbortSignal) {
-    const servers: McpServer[] = runtime.config.mcpServers.map((server) => {
-        const storedHeaders = runtime.mcpHeaders[server.name] ?? {};
-        return {
-            name: server.name,
-            url: server.url,
-            headers: Object.fromEntries(
-                server.headers.flatMap((name) =>
-                    storedHeaders[name] === undefined
-                        ? []
-                        : [[name, storedHeaders[name]]],
-                ),
-            ),
-        };
-    });
-    if (runtime.config.pollinationsTools) {
-        servers.push({
-            name: "pollinations",
-            url: runtime.pollinationsMcpUrl,
-            headers: { Authorization: `Bearer ${runtime.apiKey}` },
-            includeTools: POLLINATIONS_AGENT_TOOLS,
-        });
-    }
-    const { tools, close } = await loadMcpTools(servers, signal);
+    const { tools, close } = runtime.config.mcpServers.includes("pollinations")
+        ? await loadPollinationsTools(
+              runtime.pollinationsMcpUrl,
+              runtime.apiKey,
+              signal,
+          )
+        : {
+              tools: {} as Record<string, McpTool>,
+              close: async () => {},
+          };
     const toolCallCounts: ToolCallCounts = {};
     let toolCalls = 0;
     for (const [name, tool] of Object.entries(tools)) {
@@ -301,6 +269,27 @@ function safeMcpModelOutput({ output }: { output: unknown }) {
           };
 }
 
+function escapeHtml(value: string): string {
+    return value.replace(
+        /[&<>"']/g,
+        (character) =>
+            ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;",
+            })[character] ?? character,
+    );
+}
+
+function toolOutputText(output: unknown): string {
+    const modelOutput = safeMcpModelOutput({ output });
+    return modelOutput.type === "text"
+        ? modelOutput.value
+        : modelOutput.value.map((part) => part.text).join("\n");
+}
+
 function mediaResultContent(
     toolName: string,
     output: unknown,
@@ -361,6 +350,51 @@ function mediaResultContent(
     return `${hasContent ? "\n\n" : ""}${links.join("\n\n")}\n\n`;
 }
 
+function toolResultContent(
+    part: {
+        toolCallId: string;
+        toolName: string;
+        input: unknown;
+        output: unknown;
+    },
+    seenUrls: Set<string>,
+    hasContent: boolean,
+): string {
+    const details = toolDetailsContent(
+        part,
+        "Tool Executed",
+        toolOutputText(part.output),
+        hasContent,
+    );
+    const media = mediaResultContent(
+        part.toolName,
+        part.output,
+        seenUrls,
+        true,
+    );
+    return `${details}${media || "\n\n"}`;
+}
+
+function toolDetailsContent(
+    part: { toolCallId: string; toolName: string; input: unknown },
+    summary: string,
+    output: string,
+    hasContent: boolean,
+): string {
+    const name = part.toolName.replace(/^mcp__pollinations__/, "");
+    const argumentsJson = JSON.stringify(part.input ?? {});
+    return (
+        (hasContent ? "\n\n" : "") +
+        `<details type="tool_calls" done="true" ` +
+        `id="${escapeHtml(part.toolCallId)}" ` +
+        `name="${escapeHtml(name)}" ` +
+        `arguments="${escapeHtml(argumentsJson)}">\n` +
+        `<summary>${summary}</summary>\n` +
+        `${escapeHtml(output)}\n` +
+        "</details>"
+    );
+}
+
 async function runAgent(
     runtime: PromptAgentRuntime,
     messages: ModelMessage[],
@@ -379,12 +413,19 @@ async function runAgent(
             for (const part of step.content) {
                 if (part.type === "text") content += part.text;
                 if (part.type === "tool-result") {
-                    content += mediaResultContent(
-                        part.toolName,
-                        part.output,
+                    content += toolResultContent(
+                        part,
                         seenUrls,
                         content.length > 0,
                     );
+                }
+                if (part.type === "tool-error") {
+                    content += `${toolDetailsContent(
+                        part,
+                        "Tool Failed",
+                        agentErrorMessage(part.error),
+                        content.length > 0,
+                    )}\n\n`;
                 }
             }
         }
@@ -441,9 +482,8 @@ async function streamAgent(
                         );
                     }
                     if (part.type === "tool-result") {
-                        const content = mediaResultContent(
-                            part.toolName,
-                            part.output,
+                        const content = toolResultContent(
+                            part,
                             seenUrls,
                             hasContent,
                         );
@@ -458,6 +498,23 @@ async function streamAgent(
                                 ),
                             );
                         }
+                    }
+                    if (part.type === "tool-error") {
+                        const content = toolDetailsContent(
+                            part,
+                            "Tool Failed",
+                            agentErrorMessage(part.error),
+                            hasContent,
+                        );
+                        hasContent = true;
+                        send(
+                            contentChunk(
+                                id,
+                                created,
+                                runtime.config.baseModel,
+                                `${content}\n\n`,
+                            ),
+                        );
                     }
                 }
                 const [reason, usage, steps] = await Promise.all([
@@ -517,7 +574,9 @@ export async function handlePromptAgentRequest(
     signal: AbortSignal,
     runtime: PromptAgentRuntime,
 ): Promise<Response> {
-    const messages = Array.isArray(body.messages) ? body.messages : [];
+    const messages = (
+        Array.isArray(body.messages) ? body.messages : []
+    ) as ModelMessage[];
     const id = `chatcmpl-${crypto.randomUUID()}`;
     const created = Math.floor(Date.now() / 1000);
     try {

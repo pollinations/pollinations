@@ -9,46 +9,11 @@
 import type { ModelCapability } from "@shared/registry/model-info.ts";
 import type { GenerationModelEntry } from "./model-registry.ts";
 
-/** The agent fields the catalog reads out of the stored agent config. */
+/** The agent fields the catalog reads out of the listing payload. */
 export type AgentCatalogConfig = {
     baseModel: string;
-    pollinationsTools: boolean;
+    mcpServers: "pollinations"[];
 };
-
-/** Every environment binding the agent catalog needs. */
-export type AgentCatalogEnv = Pick<
-    CloudflareBindings,
-    "AGENT_RUNTIME_BASE_URL"
->;
-
-/** Where agent listings send their generation requests. */
-export function agentRuntimeBaseUrl(env: AgentCatalogEnv): string {
-    return env.AGENT_RUNTIME_BASE_URL;
-}
-
-/**
- * The catalog view of a stored agent config, or null when it cannot be read.
- *
- * A row whose config is unreadable still serves traffic through the runtime,
- * which parses it strictly; the catalog only loses the base-model metadata.
- */
-export function parseAgentCatalogConfig(
-    raw: string | null,
-): AgentCatalogConfig | null {
-    if (!raw) return null;
-    try {
-        const parsed = JSON.parse(raw) as Record<string, unknown>;
-        if (typeof parsed.baseModel !== "string" || !parsed.baseModel.trim()) {
-            return null;
-        }
-        return {
-            baseModel: parsed.baseModel,
-            pollinationsTools: parsed.pollinationsTools === true,
-        };
-    } catch {
-        return null;
-    }
-}
 
 function applyBaseModelMetadata(
     entry: GenerationModelEntry,
@@ -56,7 +21,9 @@ function applyBaseModelMetadata(
 ): void {
     const config = entry.agentConfig;
     if (!config) return;
-    const agentCapabilities: ModelCapability[] = config.pollinationsTools
+    const agentCapabilities: ModelCapability[] = config.mcpServers.includes(
+        "pollinations",
+    )
         ? ["pollinations_models"]
         : [];
 

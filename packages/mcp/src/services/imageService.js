@@ -142,7 +142,9 @@ const imageParamsSchema = {
     model: z
         .string()
         .optional()
-        .describe("Image model. Use listModels with type=image"),
+        .describe(
+            "Canonical image model name or alias returned by listModels with type=image",
+        ),
     n: z
         .literal(1)
         .optional()
@@ -204,7 +206,7 @@ const videoParamsSchema = {
 export const imageTools = [
     [
         "generateImage",
-        "Generate or edit one image and return an unlisted media.pollinations.ai resource link. To edit, provide an HTTP(S) reference in image.",
+        "Generate or edit one image using any image model in the live Pollinations registry and return an unlisted media.pollinations.ai resource link. If the user requests a named model or provider, call listModels with type=image first and pass the matched canonical model name. To edit, provide an HTTP(S) reference in image.",
         imageParamsSchema,
         generateImage,
     ],

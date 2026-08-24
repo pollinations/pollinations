@@ -5,9 +5,10 @@
 // released, we should consider updating to the latest version of better-auth
 // and re-generating the schema including the indexes.
 
-import type { ModelInputModality } from "../registry/registry.ts";
+import { LISTING_TYPES } from "../community-endpoints.ts";
 import { relations, sql } from "drizzle-orm";
 import {
+  check,
   sqliteTable,
   text,
   integer,
@@ -53,7 +54,7 @@ export const user = sqliteTable("user", {
   index("idx_user_email").on(table.email),
   index("idx_user_auto_top_up_enabled").on(table.autoTopUpEnabled),
   // GitHub profile lookup for quest checks and account display.
-  index("idx_user_github_id").on(table.githubId),
+  uniqueIndex("user_github_id_unique").on(table.githubId),
 ]);
 
 export const session = sqliteTable("session", {
@@ -197,24 +198,6 @@ export const stripeCardFingerprintAttempt = sqliteTable("stripe_card_fingerprint
   ),
 ]);
 
-export const agent = sqliteTable("agent", {
-  id: text("id").primaryKey(),
-  ownerUserId: text("owner_user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-  config: text("config").notNull(),
-  mcpHeadersCiphertext: text("mcp_headers_ciphertext"),
-  createdAt: integer("created_at", { mode: "timestamp" })
-    .defaultNow()
-    .notNull(),
-  updatedAt: integer("updated_at", { mode: "timestamp" })
-    .defaultNow()
-    .$onUpdate(() => /* @__PURE__ */ new Date())
-    .notNull(),
-}, (table) => [
-  index("idx_agent_owner_user_id").on(table.ownerUserId),
-]);
-
 export const communityEndpoint = sqliteTable("community_endpoint", {
   id: text("id").primaryKey(),
   ownerUserId: text("owner_user_id")
@@ -225,61 +208,30 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   // Required on create, so only the pre-existing backlog is null.
   title: text("title"),
   description: text("description"),
-  modality: text("modality").default("text").notNull(),
-  // Image endpoints only: "request" bills the fixed per-image price once per
-  // generation; "tokens" bills provider-returned image token usage. Detected
-  // by the registration probe.
-  imagePricing: text("image_pricing", { enum: ["request", "tokens"] })
-    .default("request")
-    .notNull(),
-  // Legacy rollout column. Runtime capability is derived only from
-  // inputModalities; remove this in a follow-up after all workers run 0042 code.
-  legacySupportsImageEdits: integer("supports_image_edits", { mode: "boolean" })
-    .default(false)
-    .notNull(),
-  // Null for rows created before this column existed; read paths default to text.
-  inputModalities: text("input_modalities", { mode: "json" }).$type<
-    ModelInputModality[]
-  >(),
-  // External models keep their target here. Managed agents resolve their
-  // target through agentId so the agent can outlive its community listing.
-  baseUrl: text("base_url"),
-  agentId: text("agent_id").references(() => agent.id, {
-    onDelete: "restrict",
-  }),
+  // What this listing IS to callers, and the only thing deciding whether a
+  // call is sent a run token that spends the caller's balance.
+  //   proxy         → the owner's server, called with its upstream secret
+  //   prompt_agent  → an agent Enter runs, named by this row's id
+  //   endpoint_agent → an agent on the owner's own server
+  type: text("type", { enum: LISTING_TYPES }).default("proxy").notNull(),
+  // Every listing stores an OpenAI-compatible target. Prompt agents use an
+  // environment-neutral placeholder which readers replace with this
+  // deployment's AGENT_RUNTIME_BASE_URL.
+  baseUrl: text("base_url").notNull(),
   upstreamModel: text("upstream_model").notNull(),
-  bearerTokenCiphertext: text("bearer_token_ciphertext"),
+  // Everything that belongs to one kind of listing rather than all of them.
+  // Shape is selected by `type`; read it with parseListingPayload. Fields a
+  // kind does not have simply have nowhere to live, which is what replaced the
+  // per-field rejections the write path used to carry.
+  payload: text("payload").notNull().default("{}"),
   // Models default to private (owner-only and free). Public visibility is
   // allowlist-gated and may be free or owner-priced.
   visibility: text("visibility", { enum: ["private", "public"] })
     .default("private")
     .notNull(),
-  perUserRpm: real("per_user_rpm"),
-  promptTextPrice: real("prompt_text_price").notNull(),
-  promptCachedPrice: real("prompt_cached_price").default(0).notNull(),
-  promptCacheWritePrice: real("prompt_cache_write_price").default(0).notNull(),
-  promptAudioPrice: real("prompt_audio_price").default(0).notNull(),
-  promptImagePrice: real("prompt_image_price").default(0).notNull(),
-  completionTextPrice: real("completion_text_price").notNull(),
-  completionReasoningPrice: real("completion_reasoning_price").default(0).notNull(),
-  completionAudioPrice: real("completion_audio_price").default(0).notNull(),
-  completionImagePrice: real("completion_image_price").default(0).notNull(),
-  // Admin-only, off by default: it hands a third party spend authority over
-  // whoever called the model. See mintDelegatedToken in
-  // gen.pollinations.ai/src/text/communityEndpoint.ts.
-  delegatesGeneration: integer("delegates_generation", { mode: "boolean" })
-    .default(false)
-    .notNull(),
-  // Ordered community model ids ("<github_username>/<name>") tried, one after
-  // the other, when this endpoint's upstream fails. The owner declares the
-  // whole list, so no other owner's choice can change where this model's
-  // traffic goes.
-  fallbackModelIds: text("fallback_model_ids", { mode: "json" }).$type<
-    string[]
-  >(),
-  disabledAt: integer("disabled_at", { mode: "timestamp" }),
-  disabledReason: text("disabled_reason"),
-  disabledBy: text("disabled_by"),
+  hiddenAt: integer("hidden_at", { mode: "timestamp" }),
+  hiddenReason: text("hidden_reason"),
+  hiddenBy: text("hidden_by"),
   createdAt: integer("created_at", { mode: "timestamp" })
     .defaultNow()
     .notNull(),
@@ -293,7 +245,18 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
     table.ownerUserId,
     table.name,
   ),
-  uniqueIndex("idx_community_endpoint_agent_id").on(table.agentId),
+  check(
+    "community_endpoint_type",
+    sql`type IN ('proxy', 'prompt_agent', 'endpoint_agent')`,
+  ),
+  check(
+    "community_endpoint_prompt_agent_model",
+    sql`type != 'prompt_agent' OR upstream_model = id`,
+  ),
+  check(
+    "community_endpoint_base_url",
+    sql`type != 'prompt_agent' OR base_url = 'https://agent-runtime.invalid/api/agent-runtime/v1'`,
+  ),
 ]);
 
 // Drizzle relations for query builder joins
@@ -303,7 +266,6 @@ export const userRelations = relations(user, ({ many }) => ({
   accounts: many(account),
   stripeAutoTopUpAttempts: many(stripeAutoTopUpAttempt),
   stripeCardFingerprintAttempts: many(stripeCardFingerprintAttempt),
-  agents: many(agent),
   communityEndpoints: many(communityEndpoint),
 }));
 
@@ -353,18 +315,6 @@ export const communityEndpointRelations = relations(communityEndpoint, ({ one })
     fields: [communityEndpoint.ownerUserId],
     references: [user.id],
   }),
-  agent: one(agent, {
-    fields: [communityEndpoint.agentId],
-    references: [agent.id],
-  }),
-}));
-
-export const agentRelations = relations(agent, ({ one }) => ({
-  owner: one(user, {
-    fields: [agent.ownerUserId],
-    references: [user.id],
-  }),
-  communityEndpoint: one(communityEndpoint),
 }));
 
 // Device Authorization Grant (RFC 8628) table
@@ -430,11 +380,11 @@ export const polarCheckoutCredits = sqliteTable("polar_checkout_credits", {
 export const rewards = sqliteTable("rewards", {
   id: text("id").primaryKey(),
   // Idempotency guard. Encodes the quest's completion scope, e.g.
-  // "quest:{issue}" or "quest:{questId}:user:{userId}".
+  // "quest:{issue}" or "quest:{questId}:github:{githubId}". The GitHub id in
+  // the key is what stops a replacement account re-earning the same reward.
   idempotencyKey: text("idempotency_key").notNull().unique(),
   userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
+    .references(() => user.id, { onDelete: "set null" }),
   // Catalog id of the quest that was earned; null for one-off rewards.
   questId: text("quest_id"),
   // Quest title snapshotted when earned, so history renders it directly.

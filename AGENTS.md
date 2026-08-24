@@ -110,7 +110,7 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 
 **CRITICAL — production Cloudflare deployments must always run through GitHub Actions:**
 
-- Use the service's production deployment workflow, such as `Deploy / gen.pollinations.ai`; use `workflow_dispatch` when path filters do not trigger it.
+- Use the production deployment workflow `Deploy / Cloudflare production`; use `workflow_dispatch` (and its `service` input to target one worker) when path filters do not trigger it.
 - Dispatch production workflows only from the `production` branch. Select a secret-synchronization input only after the Secret Mutation Safety approval gate.
 - Never run `wrangler deploy --env production`, a production deployment npm script, or a direct production Worker upload from a local machine or agent session.
 - If CI credentials lack a required permission, follow the Secret Mutation Safety approval gate before updating the scoped GitHub Actions secret and rerunning the workflow. Never bypass CI with a local Cloudflare OAuth session.
@@ -212,6 +212,7 @@ Preserve during compaction: modified files + line numbers, all code/diffs/impl d
 
 ## Git Workflow
 
+- Feature branches target `main`. Promote `main` to `production` only through a separate promotion PR; never target `production` directly with feature or fix work.
 - "send to git" = git status, diff, branch, commit all, push, PR description.
 - Verify branch: `git branch --show-current` and confirm if unsure (branch mix-ups are a recurring mistake).
 - Avoid force pushes (`--force`, `--force-with-lease`) — prefer follow-up commits.
@@ -221,6 +222,12 @@ Preserve during compaction: modified files + line numbers, all code/diffs/impl d
 ## Communication Style
 
 Be concise. PRs/comments/issues: bullets, <200 words, no fluff.
+
+### Pollinations identity
+
+- Pollinations.ai is the product brand. Use `hello@pollinations.ai` for public support, privacy, legal, and general customer contact, and `billing@pollinations.ai` for billing contact.
+- Myceli.AI OÜ is the registered legal entity and data controller. Preserve its legal name, copyright and ownership attribution, contributor identities, provider-account identities, infrastructure hostnames, and entity-specific operational contacts.
+- Never replace Myceli entity or infrastructure references merely because they differ from the Pollinations product brand. Change them only as part of an explicitly requested legal-entity or infrastructure migration.
 
 - PRs: "- Adds X", "- Fix Y"; 3-5 bullets; titles "fix:"/"feat:"/"Add"; no marketing.
 - Issue comments: bullets only; facts not opinions; link code; be direct (no "I think"/"maybe").
@@ -242,3 +249,4 @@ Fixes #issue
 
 - Use "Fixes #issue" or "Addresses #issue" in PRs.
 - Email: `{username} <{user_id}+{username}@users.noreply.github.com>` (user_id from issue API).
+- For publisher-allowlist PRs prompted by an access-request issue, add the requester as a `Co-authored-by` contributor using their numeric GitHub ID.

@@ -1,13 +1,18 @@
 import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { HttpError } from "@shared/http-error.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
-import { fallbackCandidates, withModelFallback } from "../fallback.ts";
+import {
+    fallbackCandidates,
+    formatFallbackTarget,
+    withModelFallback,
+} from "../fallback.ts";
 import type { GenerationModelEntry } from "../model-registry.ts";
-import { enforceCommunityModelRateLimit } from "../utils/community-model-rate-limit.ts";
+import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 import {
     getRegisteredServers,
     isValidType,
@@ -28,7 +33,6 @@ import {
     type VideoGenerationResult,
 } from "./createAndReturnVideos.ts";
 import { getImageEnv, syncImageEnv } from "./env.ts";
-import { HttpError } from "./httpError.ts";
 import { setKleinVpcBinding } from "./models/fluxKleinModel.ts";
 import { type ImageParams, ImageParamsSchema } from "./params.ts";
 import { sanitizeString, sleep } from "./util.ts";
@@ -38,12 +42,21 @@ import {
     contentPolicyMessage,
     firstContentPolicyMessage,
 } from "./utils/contentModeration.ts";
-import { bufferToUint8Array, detectMimeType } from "./utils/imageDownload.ts";
+import {
+    bufferToUint8Array,
+    detectMimeType,
+    downloadUserImage,
+    readImageDimensions,
+} from "./utils/imageDownload.ts";
 import { setImagesBinding } from "./utils/imageTransform.ts";
 import { buildTrackingHeaders } from "./utils/trackingHeaders.ts";
 
 type ImageContext = Context<Env>;
 type RuntimeImageParams = Omit<ImageParams, "model"> & { model: string };
+
+const EDIT_IMAGE_PROBE_TIMEOUT_MS = 10_000;
+const EDIT_DIMENSION_STEP = 16;
+const MIN_EDIT_DIMENSION = 256;
 
 const IMAGE_ENV_KEYS = [
     "AWS_ACCESS_KEY_ID",
@@ -381,7 +394,6 @@ async function generateImageResult(
     c: ImageContext,
     originalPrompt: string,
     safeParams: RuntimeImageParams,
-    metadataModel: ImageParams["model"] = safeParams.model as ImageParams["model"],
 ): Promise<ImageGenerationResult> {
     const prompt = sanitizeString(String(originalPrompt));
 
@@ -390,7 +402,6 @@ async function generateImageResult(
         safeParams as ImageParams,
         originalPrompt,
         createAuthResult(c),
-        metadataModel,
     );
 
     if (result.isChild && result.isMature) {
@@ -433,27 +444,12 @@ async function generateMediaWithFallback(
                 assertNonEmptyMedia(generated.buffer, "Video provider");
                 return { result: generated, params };
             }
-            const hiddenFallback = attempt.entry?.definition.hidden === true;
-            const generated = await generateImageResult(
-                c,
-                prompt,
-                params,
-                (hiddenFallback
-                    ? safeParams.model
-                    : params.model) as ImageParams["model"],
-            );
+            const generated = await generateImageResult(c, prompt, params);
             assertNonEmptyMedia(generated.buffer, "Image provider");
-            // Hidden static fallbacks are internal routes for the same public
-            // service. Keep their id out of filenames and EXIF metadata while
-            // servedEntry still carries their provider and cost to tracking.
-            return {
-                result: generated,
-                params: hiddenFallback ? safeParams : params,
-            };
+            return { result: generated, params };
         },
         c.var.track?.failedCalls,
-        (attempt) =>
-            enforceCommunityModelRateLimit(c, attempt.communityEndpoint),
+        (attempt) => enforceModelRateLimit(c, attempt),
     );
     return {
         ...result,
@@ -474,6 +470,45 @@ async function generateVideoResult(
     );
 }
 
+/**
+ * Edit requests that omit `size` should preserve the source image's aspect
+ * ratio instead of silently defaulting to the model's square default (e.g.
+ * 1024x1024). Downloads the first reference image, reads its actual
+ * dimensions, and overrides the params. Explicit size requests and video
+ * models are untouched; any failure falls back to the model default.
+ */
+export async function resolveEditDimensionsForImage(
+    safeParams: RuntimeImageParams,
+): Promise<RuntimeImageParams> {
+    if (safeParams.dimensionsExplicit) return safeParams;
+    const imageUrls = safeParams.image;
+    if (!imageUrls?.length) return safeParams;
+    try {
+        const { buffer, mimeType } = await downloadUserImage(
+            imageUrls[0],
+            AbortSignal.timeout(EDIT_IMAGE_PROBE_TIMEOUT_MS),
+        );
+        const source = readImageDimensions(buffer, mimeType);
+        if (!source) return safeParams;
+
+        const targetLongEdge = Math.max(safeParams.width, safeParams.height);
+        const scale = targetLongEdge / Math.max(source.width, source.height);
+        const normalizeSide = (side: number) =>
+            Math.max(
+                MIN_EDIT_DIMENSION,
+                Math.round((side * scale) / EDIT_DIMENSION_STEP) *
+                    EDIT_DIMENSION_STEP,
+            );
+        return {
+            ...safeParams,
+            width: normalizeSide(source.width),
+            height: normalizeSide(source.height),
+        };
+    } catch {
+        // Keep the model default if the source image cannot be read.
+        return safeParams;
+    }
+}
 export async function generateImageOrVideoResponse(
     c: ImageContext,
     prompt: string,
@@ -481,7 +516,13 @@ export async function generateImageOrVideoResponse(
 ): Promise<Response> {
     syncImageEnvironment(c.env);
     const originalPrompt = decodePrompt(prompt || "random_prompt");
-    const safeParams = parseImageParams(c, body);
+    const parsedParams = parseImageParams(c, body);
+    const definition = c.var.model.definition;
+    const safeParams =
+        definition.category === "image" &&
+        definition.inputModalities?.includes("image")
+            ? await resolveEditDimensionsForImage(parsedParams)
+            : parsedParams;
     c.var.track.setPricingInput({
         resolution: safeParams.resolution,
         quality: safeParams.quality,
@@ -503,7 +544,7 @@ export async function generateImageOrVideoResponse(
             // Same shape text emits, so tracking has one fallback marker.
             headers.set(
                 FALLBACK_TARGET_HEADER,
-                `config.targets[${servedIndex}]`,
+                formatFallbackTarget(servedIndex),
             );
         }
         return new Response(bufferToUint8Array(result.buffer), { headers });

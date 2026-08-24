@@ -3,7 +3,7 @@ import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
 
 describe("request input redaction", () => {
-    it("redacts custom header objects from error inputs", async () => {
+    it("redacts nested header objects from error inputs", async () => {
         const app = new Hono().post("/", async (c) =>
             c.json(await collectRequestInputs(c)),
         );
@@ -11,7 +11,7 @@ describe("request input redaction", () => {
             method: "POST",
             headers: { "content-type": "application/json" },
             body: JSON.stringify({
-                mcpServers: [
+                connectors: [
                     {
                         name: "docs",
                         headers: {
@@ -24,7 +24,7 @@ describe("request input redaction", () => {
 
         await expect(response.json()).resolves.toMatchObject({
             body: {
-                mcpServers: [{ name: "docs", headers: "[redacted]" }],
+                connectors: [{ name: "docs", headers: "[redacted]" }],
             },
         });
     });

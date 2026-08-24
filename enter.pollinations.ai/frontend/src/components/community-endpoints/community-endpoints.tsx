@@ -25,13 +25,14 @@ import { CommunityEndpointDialog } from "./community-endpoint-dialog.tsx";
 import { CommunityEndpointToggleConfirmation } from "./community-endpoint-toggle-confirmation.tsx";
 import {
     type AgentListingDetailsPayload,
-    type AgentListingPayload,
     type AgentPayload,
     type CommunityEndpoint,
     type CommunityProviderProfile,
+    type EditableEndpoint,
     type EndpointPayload,
     type FallbackModelOption,
     type ManagedAgent,
+    type PromptAgentCommunityEndpoint,
     readError,
 } from "./types.ts";
 
@@ -43,6 +44,9 @@ type CommunityEndpointsProps = {
     // Public community models offered as fallback targets in the dialog.
     fallbackOptions: FallbackModelOption[];
 };
+
+const PUBLISHER_ACCESS_REQUEST_URL =
+    "https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml";
 
 export function CommunityEndpoints({
     onChange,
@@ -62,7 +66,7 @@ export function CommunityEndpoints({
         providerName === (savedProvider.name ?? "") &&
         providerUrl === (savedProvider.url ?? "");
     const [createOpen, setCreateOpen] = useState(false);
-    const [editing, setEditing] = useState<CommunityEndpoint | null>(null);
+    const [editing, setEditing] = useState<EditableEndpoint | null>(null);
     const [deleting, setDeleting] = useState<CommunityEndpoint | null>(null);
     const [toggling, setToggling] = useState<CommunityEndpoint | null>(null);
     const [togglingId, setTogglingId] = useState<string | null>(null);
@@ -111,20 +115,9 @@ export function CommunityEndpoints({
         listing: AgentListingDetailsPayload,
     ): Promise<void> {
         const response = await apiClient.account.agents.$post({
-            json: payload,
+            json: { ...payload, ...listing },
         });
         if (!response.ok) throw new Error(await readError(response));
-        const createdAgent = (await response.json()) as ManagedAgent;
-        const listingResponse = await apiClient.account["my-models"].$post({
-            json: { ...listing, agentId: createdAgent.id },
-        });
-        if (!listingResponse.ok) {
-            const listingError = await readError(listingResponse);
-            await apiClient.account.agents[":id"]
-                .$delete({ param: { id: createdAgent.id } })
-                .catch(() => undefined);
-            throw new Error(listingError);
-        }
         await loadEndpoints();
         await onChange?.();
     }
@@ -134,28 +127,11 @@ export function CommunityEndpoints({
         listing: AgentListingDetailsPayload,
     ): Promise<void> {
         if (!editingAgent) return;
-        const endpoint = endpoints.find(
-            (candidate) => candidate.agentId === editingAgent.id,
-        );
-        if (!endpoint) throw new Error("Agent listing not found");
         const response = await apiClient.account.agents[":id"].$patch({
             param: { id: editingAgent.id },
-            json: payload,
+            json: { ...payload, ...listing },
         });
         if (!response.ok) throw new Error(await readError(response));
-        const listingPayload: AgentListingPayload = {
-            ...listing,
-            agentId: editingAgent.id,
-        };
-        const listingResponse = await apiClient.account["my-models"][
-            ":id"
-        ].update.$post({
-            param: { id: endpoint.id },
-            json: listingPayload,
-        });
-        if (!listingResponse.ok) {
-            throw new Error(await readError(listingResponse));
-        }
         await loadEndpoints();
         await onChange?.();
     }
@@ -186,7 +162,7 @@ export function CommunityEndpoints({
         bearerToken: string,
     ): Promise<void> {
         const response = await apiClient.account["my-models"].$post({
-            json: bearerToken ? { ...payload, bearerToken } : payload,
+            json: { ...payload, bearerToken },
         });
         if (!response.ok) throw new Error(await readError(response));
         await loadEndpoints();
@@ -198,11 +174,26 @@ export function CommunityEndpoints({
         bearerToken: string,
     ): Promise<void> {
         if (!editing) return;
+        const { modality: _modality, ...proxyUpdate } = payload;
+        const update =
+            editing.type === "endpoint_agent"
+                ? {
+                      name: payload.name,
+                      title: payload.title,
+                      description: payload.description,
+                      visibility: payload.visibility,
+                      baseUrl: payload.baseUrl,
+                      upstreamModel: payload.upstreamModel,
+                      perUserRpm: payload.perUserRpm,
+                  }
+                : bearerToken
+                  ? { ...proxyUpdate, bearerToken }
+                  : proxyUpdate;
         const response = await apiClient.account["my-models"][
             ":id"
         ].update.$post({
             param: { id: editing.id },
-            json: bearerToken ? { ...payload, bearerToken } : payload,
+            json: update,
         });
         if (!response.ok) throw new Error(await readError(response));
         await loadEndpoints();
@@ -267,7 +258,7 @@ export function CommunityEndpoints({
                 ":id"
             ].update.$post({
                 param: { id: endpoint.id },
-                json: { active: endpoint.disabled },
+                json: { hidden: !endpoint.hidden },
             });
             if (!response.ok) throw new Error(await readError(response));
             const updated = (await response.json()) as CommunityEndpoint;
@@ -288,20 +279,19 @@ export function CommunityEndpoints({
         }
     }
 
+    const publisherAccessRequestLink = (
+        <InlineLink href={PUBLISHER_ACCESS_REQUEST_URL} showIcon={false}>
+            publisher access request
+        </InlineLink>
+    );
+
     const privateModelGuidance = (
         <>
             Your models are private — callable only by you and shown only when{" "}
-            <strong>/models</strong> is authenticated with your API key. Enter
-            the upstream model ID manually, then test the saved model by calling
-            its model ID. Public publishing is allowlist-only. To request
-            publishing access for your account, submit a{" "}
-            <InlineLink
-                href="https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml"
-                showIcon={false}
-            >
-                community model publisher allowlist request
-            </InlineLink>{" "}
-            form. You can register and test private models without approval. For
+            <strong>/models</strong> is authenticated with your API key. Public
+            publishing is allowlist-only. To request publishing access for
+            models, agents, or both, submit a {publisherAccessRequestLink}. You
+            can register, probe, and test private models without approval. For
             questions, ask in{" "}
             <InlineLink
                 href="https://discord.gg/pollinations-ai-885844321461485618"
@@ -313,12 +303,14 @@ export function CommunityEndpoints({
         </>
     );
 
-    const endpointByAgentId = new Map<string, CommunityEndpoint>();
+    const endpointByAgentId = new Map<string, PromptAgentCommunityEndpoint>();
     const modelEndpoints: CommunityEndpoint[] = [];
     const agentEndpoints: CommunityEndpoint[] = [];
     for (const endpoint of endpoints) {
-        if (endpoint.agentId) {
-            endpointByAgentId.set(endpoint.agentId, endpoint);
+        if (endpoint.type === "prompt_agent") {
+            endpointByAgentId.set(endpoint.id, endpoint);
+            agentEndpoints.push(endpoint);
+        } else if (endpoint.type === "endpoint_agent") {
             agentEndpoints.push(endpoint);
         } else {
             modelEndpoints.push(endpoint);
@@ -327,21 +319,26 @@ export function CommunityEndpoints({
     const agentById = new Map(agents.map((agent) => [agent.id, agent]));
 
     function renderEndpointCard(endpoint: CommunityEndpoint) {
-        const agent = endpoint.agentId
-            ? agentById.get(endpoint.agentId)
-            : undefined;
+        const agent =
+            endpoint.type === "prompt_agent"
+                ? agentById.get(endpoint.id)
+                : undefined;
         return (
             <CommunityEndpointCard
                 key={endpoint.id}
                 endpoint={endpoint}
                 isToggling={togglingId === endpoint.id}
                 onToggle={() => setToggling(endpoint)}
-                onEdit={() =>
-                    agent ? setEditingAgent(agent) : setEditing(endpoint)
-                }
-                onDelete={() =>
-                    agent ? setDeletingAgent(agent) : setDeleting(endpoint)
-                }
+                onEdit={() => {
+                    if (agent) setEditingAgent(agent);
+                    else if (endpoint.type !== "prompt_agent") {
+                        setEditing(endpoint);
+                    }
+                }}
+                onDelete={() => {
+                    if (agent) setDeletingAgent(agent);
+                    else setDeleting(endpoint);
+                }}
             />
         );
     }
@@ -372,7 +369,7 @@ export function CommunityEndpoints({
                                         }
                                     />
                                 </FieldStack>
-                                <FieldStack label="Website">
+                                <FieldStack label="Website or privacy notice">
                                     <Input
                                         type="url"
                                         name="community-provider-url"
@@ -401,7 +398,11 @@ export function CommunityEndpoints({
                         </form>
                         <p className="mt-4 flex items-start gap-1.5 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
                             <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                            <span>Shown on all your public deployments.</span>
+                            <span>
+                                Shown on all your public deployments. Keep it
+                                current so callers can review who operates the
+                                endpoint and how request content is handled.
+                            </span>
                         </p>
                     </Section>
                 )}
@@ -447,6 +448,17 @@ export function CommunityEndpoints({
                             agentEndpoints.map(renderEndpointCard)
                         )}
                     </div>
+                    {!isLoading && !canPublish && (
+                        <p className="mt-4 flex items-start gap-1.5 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
+                            <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>
+                                Private agents do not need approval. To publish
+                                agents for everyone in <strong>/models</strong>,
+                                submit a {publisherAccessRequestLink} for agents
+                                or both.
+                            </span>
+                        </p>
+                    )}
                 </Section>
 
                 <Section
@@ -513,7 +525,7 @@ export function CommunityEndpoints({
                 </Section>
             </div>
 
-            {editing && !editing.agentId && (
+            {editing && (
                 <CommunityEndpointDialog
                     key={editing.id}
                     endpoint={editing}

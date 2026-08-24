@@ -1,5 +1,6 @@
 import {
     Alert,
+    BotIcon,
     Button,
     ChevronIcon,
     Chip,
@@ -8,10 +9,12 @@ import {
     DropdownItem,
     ExternalLinkButton,
     GitHubIcon,
+    InlineLink,
     Input,
     SearchIcon,
     Section,
     SparklesIcon,
+    Switch,
     TabButton,
     TokensIcon,
     TrendUpIcon,
@@ -32,7 +35,7 @@ import {
     fetchModelCatalog,
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
-import { getModelDisplayName } from "./model-info.ts";
+import { getModelDisplayName, isPaidOnly } from "./model-info.ts";
 import type { ModelScope, ModelSort } from "./model-search.ts";
 import { sortModels } from "./model-sort.ts";
 import {
@@ -73,18 +76,33 @@ const SORT_OPTIONS: Array<{
     accessibleLabel: string;
 }> = [
     { value: "newest", label: "Newest", accessibleLabel: "Newest" },
+    { value: "oldest", label: "Oldest", accessibleLabel: "Oldest" },
     {
         value: "price-low",
-        label: "Price ↑",
-        accessibleLabel: "Price: Low to high",
+        label: "Price: Low",
+        accessibleLabel: "Lowest price first",
     },
     {
         value: "price-high",
-        label: "Price ↓",
-        accessibleLabel: "Price: High to low",
+        label: "Price: High",
+        accessibleLabel: "Highest price first",
     },
-    { value: "title", label: "Title", accessibleLabel: "Title: A to Z" },
-    { value: "brand", label: "Brand", accessibleLabel: "Brand: A to Z" },
+    { value: "title", label: "Name: A–Z", accessibleLabel: "Name: A to Z" },
+    {
+        value: "title-desc",
+        label: "Name: Z–A",
+        accessibleLabel: "Name: Z to A",
+    },
+    {
+        value: "brand",
+        label: "Publisher: A–Z",
+        accessibleLabel: "Publisher: A to Z",
+    },
+    {
+        value: "brand-desc",
+        label: "Publisher: Z–A",
+        accessibleLabel: "Publisher: Z to A",
+    },
 ];
 
 const SEARCH_LABELS: Record<SectionType, string> = {
@@ -166,6 +184,7 @@ export const Models: FC = () => {
     const activeSort = modelSearch.sort ?? "newest";
     const urlSearch = modelSearch.q ?? "";
     const [search, setSearch] = useState(urlSearch);
+    const [hidePaid, setHidePaid] = useState(false);
     const lastPushedSearchRef = useRef(urlSearch);
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
     const [catalogError, setCatalogError] = useState<string | null>(null);
@@ -185,10 +204,12 @@ export const Models: FC = () => {
     );
     const filteredModels = useMemo(
         () =>
-            query
-                ? scopedModels.filter((model) => matchesQuery(model, query))
-                : scopedModels,
-        [query, scopedModels],
+            scopedModels.filter(
+                (model) =>
+                    (!hidePaid || !isPaidOnly(model)) &&
+                    matchesQuery(model, query),
+            ),
+        [hidePaid, query, scopedModels],
     );
 
     const loadModelCatalog = useCallback(
@@ -218,6 +239,7 @@ export const Models: FC = () => {
         activeScope === "community"
             ? COMMUNITY_SECTION_ORDER
             : POLLINATIONS_SECTION_ORDER;
+    const hasAgents = scopedModels.some((model) => model.agent);
     const scopeLabel = SCOPE_LABELS[activeScope];
     const searchLabel = SEARCH_LABELS[activeTab];
     const searchTarget =
@@ -359,18 +381,34 @@ export const Models: FC = () => {
                             ))}
                         </div>
                         <div className="flex flex-wrap gap-1.5">
-                            {sectionOrder.map((section) => (
-                                <TabButton
-                                    key={section}
-                                    active={activeTab === section}
-                                    onClick={() => setActiveTab(section)}
-                                >
-                                    {sectionLabels[section]}
-                                </TabButton>
-                            ))}
+                            {sectionOrder.map((section) => {
+                                const showAgentsNew =
+                                    section === "agent" && hasAgents;
+                                return (
+                                    <TabButton
+                                        key={section}
+                                        active={activeTab === section}
+                                        onClick={() => setActiveTab(section)}
+                                        ariaLabel={
+                                            showAgentsNew
+                                                ? "Agents, new"
+                                                : undefined
+                                        }
+                                    >
+                                        <span className="inline-flex items-center gap-1.5">
+                                            {sectionLabels[section]}
+                                            {showAgentsNew && (
+                                                <Chip intent="new" size="sm">
+                                                    New
+                                                </Chip>
+                                            )}
+                                        </span>
+                                    </TabButton>
+                                );
+                            })}
                         </div>
                     </div>
-                    <div className="flex w-full items-center justify-between gap-2">
+                    <div className="grid w-full grid-cols-[minmax(0,28rem)_auto] items-start justify-between gap-x-2 gap-y-1.5">
                         <div className="relative min-w-0 max-w-md flex-1">
                             <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />
                             <Input
@@ -395,8 +433,9 @@ export const Models: FC = () => {
                             trigger={(open) => (
                                 <Button
                                     type="button"
+                                    size="md"
                                     aria-label={`Sort models by ${activeSortAccessibleLabel}`}
-                                    className="h-[42px] shrink-0 justify-end gap-2 px-3 text-sm"
+                                    className="shrink-0 justify-end gap-2"
                                 >
                                     <span className="text-right">
                                         {activeSortLabel}
@@ -438,16 +477,61 @@ export const Models: FC = () => {
                                 </div>
                             )}
                         </Dropdown>
+                        <div className="col-start-2 flex items-center gap-2 justify-self-end">
+                            <span className="text-xs font-medium text-theme-text-muted">
+                                Hide paid
+                            </span>
+                            <Switch
+                                checked={hidePaid}
+                                onChange={setHidePaid}
+                                ariaLabel="Hide paid models"
+                            />
+                        </div>
                     </div>
                 </div>
+                {activeScope === "community" && (
+                    <Alert
+                        intent="warning"
+                        title="Community model privacy"
+                        className="mb-4"
+                    >
+                        <p>
+                            Requests go to independent providers and configured
+                            fallbacks, which handle your data under their own
+                            policies.
+                        </p>
+                        <p className="mt-2">
+                            <strong>Avoid sensitive data.</strong> For text
+                            input, you can use our optional{" "}
+                            <InlineLink
+                                href="https://gen.pollinations.ai/docs#tag/Safety"
+                                showIcon={false}
+                            >
+                                privacy filter
+                            </InlineLink>
+                            . See our{" "}
+                            <InlineLink
+                                href="https://pollinations.ai/privacy"
+                                showIcon={false}
+                            >
+                                Privacy Policy
+                            </InlineLink>
+                            .
+                        </p>
+                    </Alert>
+                )}
                 {catalogError && (
                     <Alert intent="danger" className="mb-4">
                         {catalogError}
                     </Alert>
                 )}
-                {query && sectionModels[activeTab].length === 0 ? (
+                {sectionModels[activeTab].length === 0 ? (
                     <p className="py-8 text-center text-sm text-theme-text-muted">
-                        No {searchTarget.toLowerCase()} match “{search.trim()}”.
+                        {query
+                            ? `No ${searchTarget.toLowerCase()} match “${search.trim()}”.`
+                            : hidePaid
+                              ? `No ${searchTarget.toLowerCase()} available with Quest Pollen in this category.`
+                              : `No ${searchTarget.toLowerCase()} available.`}
                     </p>
                 ) : (
                     <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
@@ -467,6 +551,16 @@ export const Models: FC = () => {
                     </div>
                 )}
                 <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
+                    {activeTab === "agent" && (
+                        <p className="flex items-start gap-1.5">
+                            <BotIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>
+                                <strong>agent pricing</strong> — listed rates
+                                are for the agent&apos;s base model running its
+                                saved instructions.
+                            </span>
+                        </p>
+                    )}
                     <p className="flex items-start gap-1.5">
                         <SparklesIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
@@ -491,9 +585,8 @@ export const Models: FC = () => {
                     <p className="flex items-start gap-1.5">
                         <UsageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
-                            <strong>gen /pollen</strong> — how many generations
-                            you can make with 1 Pollen, estimated from average
-                            usage over the last 7 days.
+                            <strong>requests /pollen</strong> — estimated from
+                            the median observed cost over the last 7 days.
                         </span>
                     </p>
                 </div>

@@ -1,0 +1,34 @@
+{
+  "pr_number": 13166,
+  "title": "fix: reserve API key budgets atomically instead of read-then-compare",
+  "author": "davealan74",
+  "url": "https://github.com/pollinations/pollinations/pull/13166",
+  "merged_at": "2026-08-24T02:04:55Z",
+  "labels": [],
+  "pr_body_excerpt": "- `checkBalance` compared a stale auth-time balance snapshot against the estimated cost; concurrent requests on one key all passed the same check and were billed in full at settlement, so the balance had no bound tied to the key's budget.\n- Adds `atomicReserveApiKeyBalance`: one UPDATE that decrements and admits only if there's headroom, closing the race at admission instead of guarding settlement. A settlement-side guard doesn't work here: the wallet is debited before the key, so a rejected key UPDATE would throw after the wallet is already charged and skip the BYOP/community payouts that run later in the same try.\n- `atomicDeductApiKeyBalance` → `atomicAdjustApiKeyBalance(delta)`: settlement now reconciles the actual billed price against what was reserved instead of charging on top of it, and a request that ends up unbilled refunds the reservation in full.\n- Same reservation threaded through the realtime WebSocket route, which takes its own reservation via `checkBalance` but settles independently of the main `track.ts` path.\n- Known residual: an uncaught crash between a successful reservation and settlement leaves the hold unreleased. No background reconciliation job exists for this today on the wallet side either, so out of scope here.\n\nFixes #12851",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "No more budget stampedes",
+    "blurb": "One API key budget, one orderly queue at the hive door. Concurrent generations now reserve their Pollen before heading out, then settle against the amount they actually used.",
+    "summary": "API key budgets now use an atomic reserve-at-admission update across HTTP, audio, proxy, and realtime WebSocket generation routes, with settlement reconciling actual cost against the reserved amount or refunding it when a request is unbilled.",
+    "impact": "Concurrent requests sharing one API key now stay within that key's configured budget instead of all passing the same stale balance check and being charged later.",
+    "keywords": [
+      "api-keys",
+      "billing",
+      "budgets",
+      "atomic-reservations",
+      "websockets",
+      "realtime"
+    ],
+    "visual_concept": "Depict API-key budget control as a cozy hive gate with a small set of pollen jars being reserved one at a time before bees enter generation tunnels. Polli acts as the careful keeper with a tiny accountant visor and clipboard, while a friendly CRT monitor robot watches a realtime WebSocket cable; code-plants and flowers reinforce that orderly resource sharing helps the garden grow.",
+    "image_prompt": "A cozy pixel art hive budget station where Polli, the cute yellow bee mascot with dark brown stripes, black oval eyes, pink rectangular cheek blush, light blue rounded wings, and a tiny accountant visor carefully places glowing lime green (#ecf874) pollen tokens into labeled reservation jars before little generation tunnels; a chunky CRT-monitor robot happily watches a softly glowing WebSocket cable beside code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green and pastel mint-lavender-peach gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font sign reading \"RESERVED\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-24/PR-13166.jpg",
+    "prompt": "A cozy pixel art hive budget station where Polli, the cute yellow bee mascot with dark brown stripes, black oval eyes, pink rectangular cheek blush, light blue rounded wings, and a tiny accountant visor carefully places glowing lime green (#ecf874) pollen tokens into labeled reservation jars before little generation tunnels; a chunky CRT-monitor robot happily watches a softly glowing WebSocket cable beside code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green and pastel mint-lavender-peach gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font sign reading \"RESERVED\"."
+  },
+  "generated_at": "2026-08-24T02:05:56.805738+00:00"
+}

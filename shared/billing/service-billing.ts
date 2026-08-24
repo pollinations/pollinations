@@ -1,4 +1,4 @@
-import { and, eq, gt, isNull, lte } from "drizzle-orm";
+import { and, eq, gt, inArray, isNull, lte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import {
     RESERVATION_CANCELED,
@@ -20,8 +20,10 @@ import type {
     ServiceSettleInput,
 } from "../schemas/service-billing.ts";
 import { getUserBalance, payerBucketToMeter } from "./balance.ts";
-import { canCoverEstimatedCharge } from "./bucket-selection.ts";
-import type { Bucket } from "./deduction.ts";
+import {
+    type BalanceBucket as Bucket,
+    canCoverEstimatedCharge,
+} from "./bucket-selection.ts";
 import { withByopMarkup } from "./markup.ts";
 import { POLLEN_BILLING_PRECISION } from "./precision.ts";
 import {
@@ -74,6 +76,18 @@ export type SettledEventOutcome = {
     /** The derived analytics row for this settlement: one best-effort write, never retried. */
     tinybirdEvent: TinybirdEvent;
 };
+
+/** The committed ledger row of one settled event, read back after the batch. */
+type SettledLedgerRow = Pick<
+    typeof serviceBillingEvent.$inferSelect,
+    | "eventId"
+    | "billedPrice"
+    | "payerBucket"
+    | "markupRate"
+    | "communityRewardUserId"
+    | "communityRewardCredit"
+    | "communityRewardRate"
+>;
 
 export type SettleServiceBillingResult =
     | {
@@ -676,6 +690,10 @@ export async function settleServiceBillingEvents(
     const outcomes: SettledEventOutcome[] = [];
     if (statements.length > 0) {
         const results = await d1.batch(statements);
+        const settledEvents: {
+            event: ServiceBillableEvent;
+            packBalance: number | null;
+        }[] = [];
         for (const { event, claimIndex, walletIndex } of plan) {
             if ((results[claimIndex].meta.changes ?? 0) === 0) {
                 // Lost to a concurrent settlement of the same event, or the
@@ -713,30 +731,59 @@ export async function settleServiceBillingEvents(
             const wallet =
                 walletIndex >= 0
                     ? (results[walletIndex].results[0] as
-                          | {
-                                packBalance: number | null;
-                                payerBucket: Bucket | null;
-                                billedPrice: number;
-                                markupRate: number;
-                            }
+                          | { packBalance: number | null }
                           | undefined)
                     : undefined;
-            const billedPrice = wallet?.billedPrice ?? 0;
-            const payerBucket = wallet?.payerBucket ?? null;
+            settledEvents.push({
+                event,
+                packBalance: wallet?.packBalance ?? null,
+            });
+        }
+
+        // Report what the batch committed — after the cap and the credit
+        // suppression — not what was planned before it ran.
+        const ledger = new Map(
+            (
+                await db
+                    .select({
+                        eventId: serviceBillingEvent.eventId,
+                        billedPrice: serviceBillingEvent.billedPrice,
+                        payerBucket: serviceBillingEvent.payerBucket,
+                        markupRate: serviceBillingEvent.markupRate,
+                        communityRewardUserId:
+                            serviceBillingEvent.communityRewardUserId,
+                        communityRewardCredit:
+                            serviceBillingEvent.communityRewardCredit,
+                        communityRewardRate:
+                            serviceBillingEvent.communityRewardRate,
+                    })
+                    .from(serviceBillingEvent)
+                    .where(
+                        and(
+                            eq(serviceBillingEvent.authorizationId, aid),
+                            inArray(serviceBillingEvent.eventId, settled),
+                        ),
+                    )
+            ).map((row) => [row.eventId, row]),
+        );
+        for (const { event, packBalance } of settledEvents) {
+            const row = ledger.get(event.eventId);
+            if (!row) {
+                throw new Error(
+                    `Settled event ${event.eventId} is missing from the ledger`,
+                );
+            }
+            const payerBucket = (row.payerBucket as Bucket | null) ?? null;
             outcomes.push({
                 eventId: event.eventId,
-                billedPrice,
+                billedPrice: row.billedPrice,
                 payerBucket,
                 postDeductionPackBalance:
-                    payerBucket === "pack"
-                        ? (wallet?.packBalance ?? null)
-                        : null,
+                    payerBucket === "pack" ? packBalance : null,
                 tinybirdEvent: toTinybirdEvent(authorization, event, {
                     environment: options.environment,
                     settledAt: now,
-                    billedPrice,
-                    payerBucket,
-                    markupRate: wallet?.markupRate ?? 0,
+                    ledger: row,
                 }),
             });
         }
@@ -824,8 +871,8 @@ export async function cancelServiceAuthorization(
 
 /**
  * The analytics row for one settled event. Money fields come from the
- * ledger outcome, never from caller telemetry; the caller's telemetry only
- * adds request detail (status, usage, error, fallback...).
+ * committed ledger row, never from caller telemetry; the caller's telemetry
+ * only adds request detail (status, timing, usage, error, fallback...).
  */
 function toTinybirdEvent(
     authorization: AuthorizationRow,
@@ -833,27 +880,28 @@ function toTinybirdEvent(
     outcome: {
         environment: string;
         settledAt: Date;
-        billedPrice: number;
-        payerBucket: Bucket | null;
-        markupRate: number;
+        ledger: SettledLedgerRow;
     },
 ): TinybirdEvent {
+    const { ledger } = outcome;
+    const payerBucket = (ledger.payerBucket as Bucket | null) ?? null;
     return {
-        // Service-supplied detail first; everything below it is canonical
-        // and wins: request, identity, event type and money come from the
-        // authorization snapshot and the ledger.
+        // Defaults a service may refine (a service that measured its own
+        // work reports its timing), then its telemetry, then everything
+        // canonical, which wins: request, identity, event type and money
+        // come from the authorization snapshot and the ledger.
         ...priceToEventParams(),
         ...usageToEventParams(),
         totalCost: 0,
         responseStatus: 200,
-        ...event.telemetry,
-        id: crypto.randomUUID(),
-        requestId: authorization.requestId,
-        requestPath: authorization.requestPath,
         startTime: authorization.createdAt,
         endTime: outcome.settledAt,
         responseTime:
             outcome.settledAt.getTime() - authorization.createdAt.getTime(),
+        ...event.telemetry,
+        id: crypto.randomUUID(),
+        requestId: authorization.requestId,
+        requestPath: authorization.requestPath,
         environment: outcome.environment,
         eventType: event.eventType,
         userId: authorization.userId,
@@ -864,12 +912,15 @@ function toTinybirdEvent(
             (authorization.apiKeyType as TinybirdEvent["apiKeyType"]) ??
             undefined,
         apiKeyClientId: authorization.byopClientKeyId ?? undefined,
-        modelUsed: event.modelUsed ?? undefined,
+        ...(event.modelUsed !== undefined && { modelUsed: event.modelUsed }),
         devPrice: Math.max(0, event.price),
-        isBilledUsage: outcome.billedPrice > 0,
-        ...(outcome.payerBucket ? payerBucketToMeter(outcome.payerBucket) : {}),
-        totalPrice: outcome.billedPrice,
-        markupRate: outcome.markupRate,
+        isBilledUsage: ledger.billedPrice > 0,
+        ...(payerBucket ? payerBucketToMeter(payerBucket) : {}),
+        totalPrice: ledger.billedPrice,
+        markupRate: ledger.markupRate,
+        communityModelRewardUserId: ledger.communityRewardUserId ?? undefined,
+        communityModelRewardRate: ledger.communityRewardRate,
+        communityModelRewardAmount: ledger.communityRewardCredit,
     };
 }
 
@@ -907,4 +958,54 @@ export async function expireServiceAuthorizations(
         if ((results[0].meta.changes ?? 0) > 0) expired++;
     }
     return expired;
+}
+
+/**
+ * Delete authorizations, with their events, that expired a full TTL ago.
+ * The ledger is an idempotency window, not an archive — Tinybird keeps the
+ * history — and at gen's request volume it would otherwise grow without
+ * bound. An authorization is only pruned once nothing is outstanding on it
+ * (settled, or its reservation released), and a late settlement of a pruned
+ * authorization is refused as unknown, so nothing is ever charged twice.
+ */
+export async function pruneServiceAuthorizations(
+    d1: D1Database,
+    now = new Date(),
+    limit = 100,
+): Promise<number> {
+    const cutoff = toDbTime(
+        new Date(now.getTime() - SERVICE_AUTHORIZATION_TTL_SECONDS * 1000),
+    );
+    const doomed = `SELECT id FROM service_authorization
+                    WHERE expires_at <= ?1
+                      AND (settled_at IS NOT NULL
+                           OR reservation_holder IS NOT NULL
+                           OR reserved_price = 0)
+                    LIMIT ?2`;
+    const results = await d1.batch([
+        d1
+            .prepare(
+                `DELETE FROM service_billing_event
+                 WHERE authorization_id IN (${doomed})`,
+            )
+            .bind(cutoff, limit),
+        d1
+            .prepare(`DELETE FROM service_authorization WHERE id IN (${doomed})`)
+            .bind(cutoff, limit),
+    ]);
+    return results[1].meta.changes ?? 0;
+}
+
+/**
+ * Housekeeping every service runs opportunistically after its own billing
+ * calls (no service runs crons): release expired reservations, then prune
+ * long-expired rows.
+ */
+export async function sweepServiceBilling(
+    d1: D1Database,
+    now = new Date(),
+): Promise<{ expired: number; pruned: number }> {
+    const expired = await expireServiceAuthorizations(d1, now);
+    const pruned = await pruneServiceAuthorizations(d1, now);
+    return { expired, pruned };
 }

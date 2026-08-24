@@ -2,7 +2,7 @@ import { and, eq, isNull, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import type * as schema from "../db/better-auth.ts";
 import { rewards, user as userTable } from "../db/better-auth.ts";
-import type { Bucket } from "./deduction.ts";
+import type { BalanceBucket as Bucket } from "./bucket-selection.ts";
 import { POLLEN_BILLING_PRECISION } from "./precision.ts";
 
 export const MAX_REWARD_AMOUNT = 10_000;

@@ -8,7 +8,7 @@ export type BalanceBucket = "tier" | "pack";
 /**
  * Preflight "can the caller afford this estimate" check. This is intentionally
  * a different question from the authoritative bucket ladder in
- * `atomicDeductUserBalance`: that function chooses *which* bucket to write to
+ * `settleServiceBillingEvents`: that engine chooses *which* bucket to write to
  * when money actually moves; this one only asks whether *enough exists* to let
  * the request proceed before any mutation.
  *

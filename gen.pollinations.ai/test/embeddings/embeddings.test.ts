@@ -1206,6 +1206,8 @@ describe("embedding models", () => {
             data: { id: string; supported_endpoints?: string[] }[];
         };
         expect(data.object).toBe("list");
+        expect(data.data[0]).toHaveProperty("created");
+        expect(data.data[0]).toHaveProperty("owned_by");
         expect(data.data).toEqual(
             expect.arrayContaining([
                 expect.objectContaining({
@@ -1230,5 +1232,33 @@ describe("embedding models", () => {
                 }),
             ]),
         );
+    });
+
+    test("retrieves a single model via GET /v1/models/:model", async () => {
+        const { response } = await fetchWorker(`/v1/models/${TEST_EMBEDDING_MODEL}`);
+
+        expect(response.status).toBe(200);
+        const data = (await response.json()) as {
+            id: string;
+            object: string;
+            created: number;
+            owned_by: string;
+            supported_endpoints?: string[];
+        };
+        expect(data.object).toBe("model");
+        expect(data.id).toBe(TEST_EMBEDDING_MODEL);
+        expect(data.created).toBe(1704067200);
+        expect(data.owned_by).toBe("pollinations");
+        expect(data.supported_endpoints).toContain("/v1/embeddings");
+    });
+
+    test("returns 404 for non-existent model on GET /v1/models/:model", async () => {
+        const { response } = await fetchWorker("/v1/models/non-existent-model-xyz");
+
+        expect(response.status).toBe(404);
+        const data = (await response.json()) as {
+            error: { message: string; code: string };
+        };
+        expect(data.error.code).toBe("model_not_found");
     });
 });

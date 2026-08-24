@@ -40,6 +40,7 @@ import {
     DEFAULT_3D_MODEL,
     getModel3dModelIds,
 } from "@shared/registry/model3d.ts";
+import { resolveModelName } from "@shared/registry/registry.ts";
 import {
     DEFAULT_REALTIME_MODEL,
     REALTIME_MODEL_NAMES,
@@ -276,11 +277,42 @@ async function getVisibleVideoModelEntries(c: Context<Env>) {
     ).filter((entry) => entry.definition.category === "video");
 }
 
+const REGISTRY_CREATED_TIMESTAMP = 1704067200;
+
+function toOpenAIModelEntry(entry: GenerationModelEntry) {
+    return {
+        id: entry.info.name,
+        object: "model" as const,
+        created: REGISTRY_CREATED_TIMESTAMP,
+        owned_by: entry.info.owned_by ?? "pollinations",
+        input_modalities: entry.info.input_modalities,
+        output_modalities: entry.info.output_modalities,
+        supported_endpoints: entry.supportedEndpoints,
+        ...(entry.info.agent && { agent: true }),
+        ...(entry.info.base_model && {
+            base_model: entry.info.base_model,
+        }),
+        pricing: entry.info.pricing,
+        capabilities: entry.info.capabilities,
+        ...(entry.info.tools && { tools: entry.info.tools }),
+        ...(entry.info.reasoning && {
+            reasoning: entry.info.reasoning,
+        }),
+        ...(entry.info.context_length && {
+            context_length: entry.info.context_length,
+        }),
+        ...(entry.info.per_user_rpm !== undefined && {
+            per_user_rpm: entry.info.per_user_rpm,
+        }),
+    };
+}
+
 export const proxyRoutes = new Hono<Env>()
     // Edge rate limiter: first line of defense (10 req/s per IP)
     .use("*", edgeRateLimit)
     // Optional auth for models endpoints - doesn't require auth but uses it if provided
     .use("/v1/models", auth())
+    .use("/v1/models/*", auth())
     .use("/image/models", auth())
     .use("/3d/models", auth())
     .use("/video/models", auth())
@@ -322,37 +354,67 @@ export const proxyRoutes = new Hono<Env>()
                 ),
                 community,
             );
-            const now = Date.now();
-
-            const toModelEntry = (entry: GenerationModelEntry) => ({
-                id: entry.info.name,
-                object: "model" as const,
-                created: now,
-                input_modalities: entry.info.input_modalities,
-                output_modalities: entry.info.output_modalities,
-                supported_endpoints: entry.supportedEndpoints,
-                ...(entry.info.agent && { agent: true }),
-                ...(entry.info.base_model && {
-                    base_model: entry.info.base_model,
-                }),
-                pricing: entry.info.pricing,
-                capabilities: entry.info.capabilities,
-                ...(entry.info.tools && { tools: entry.info.tools }),
-                ...(entry.info.reasoning && {
-                    reasoning: entry.info.reasoning,
-                }),
-                ...(entry.info.context_length && {
-                    context_length: entry.info.context_length,
-                }),
-                ...(entry.info.per_user_rpm !== undefined && {
-                    per_user_rpm: entry.info.per_user_rpm,
-                }),
-            });
 
             return c.json({
                 object: "list" as const,
-                data: modelEntries.map(toModelEntry),
+                data: modelEntries.map(toOpenAIModelEntry),
             });
+        },
+    )
+    .get(
+        "/v1/models/:model",
+        describeRoute({
+            tags: ["🤖 Models"],
+            summary: "Retrieve Model (OpenAI-compatible)",
+            description:
+                "Retrieves a single model instance by ID or alias in OpenAI-compatible format.",
+            responses: {
+                200: {
+                    description: "Success",
+                },
+                ...errorResponseDescriptions(404, 500),
+            },
+        }),
+        async (c) => {
+            const requestedModel = c.req.param("model");
+            const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+            const paidBalance = hasPaidBalance(c);
+
+            const visibleEntries = filterEntriesByPermissions(
+                await getVisibleModelEntries(c),
+                allowedModels,
+                paidBalance,
+            );
+
+            let canonicalName: string = requestedModel;
+            try {
+                canonicalName = resolveModelName(requestedModel);
+            } catch {
+                // Not a built-in model; requestedModel may be a community model name
+            }
+
+            const targetEntry = visibleEntries.find(
+                (entry) =>
+                    entry.info.name === requestedModel ||
+                    entry.info.name === canonicalName ||
+                    entry.info.aliases?.includes(requestedModel),
+            );
+
+            if (!targetEntry) {
+                return c.json(
+                    {
+                        error: {
+                            message: `Model '${requestedModel}' not found`,
+                            type: "invalid_request_error",
+                            param: "model",
+                            code: "model_not_found",
+                        },
+                    },
+                    404,
+                );
+            }
+
+            return c.json(toOpenAIModelEntry(targetEntry));
         },
     )
     .get(

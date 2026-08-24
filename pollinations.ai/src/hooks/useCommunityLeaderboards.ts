@@ -19,7 +19,6 @@ export interface CommunityLeaderboard {
 
 interface MediaGalleryResponse {
     items?: Array<{ url?: string; createdAt?: string }>;
-    user?: string;
 }
 
 async function fetchBoard(
@@ -30,7 +29,6 @@ async function fetchBoard(
     );
     if (!response.ok) return null;
     const gallery = (await response.json()) as MediaGalleryResponse;
-    if (gallery.user !== LEADERBOARD_USER) return null;
     const item = gallery.items?.[0];
     if (!item?.url || !item.createdAt) return null;
     return { kind: board.kind, url: item.url, createdAt: item.createdAt };

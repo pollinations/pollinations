@@ -41,7 +41,9 @@ async function listModels(
         },
     });
     expect(response.status, await response.clone().text()).toBe(200);
-    const body = await response.json<{ data: Array<Record<string, unknown>> }>();
+    const body = await response.json<{
+        data: Array<Record<string, unknown>>;
+    }>();
     return body.data;
 }
 
@@ -68,16 +70,19 @@ describe("community endpoint price/visibility delay", () => {
         });
         expect(pending.promptTextPrice).toBe(0.000001);
 
-        let row = await drizzle(env.DB, { schema })
-            .query.communityEndpoint.findFirst({
-                where: eq(schema.communityEndpoint.name, "delay-model"),
-            });
+        let row = await drizzle(env.DB, {
+            schema,
+        }).query.communityEndpoint.findFirst({
+            where: eq(schema.communityEndpoint.name, "delay-model"),
+        });
         expect(row?.payload).toContain("0.000001");
         expect(row?.pendingPayload).toContain("0.000004");
 
         await drizzle(env.DB, { schema })
             .update(schema.communityEndpoint)
-            .set({ pendingAt: new Date(Date.now() - PRICE_CHANGE_DELAY_MS - 1) })
+            .set({
+                pendingAt: new Date(Date.now() - PRICE_CHANGE_DELAY_MS - 1),
+            })
             .where(eq(schema.communityEndpoint.name, "delay-model"));
 
         const after = await listModels(sessionToken);
@@ -110,10 +115,11 @@ describe("community endpoint price/visibility delay", () => {
         expect(reverted.pending).toBeNull();
         expect(reverted.visibility).toBe("private");
 
-        const finalRow = await drizzle(env.DB, { schema })
-            .query.communityEndpoint.findFirst({
-                where: eq(schema.communityEndpoint.name, "revert-model"),
-            });
+        const finalRow = await drizzle(env.DB, {
+            schema,
+        }).query.communityEndpoint.findFirst({
+            where: eq(schema.communityEndpoint.name, "revert-model"),
+        });
         expect(finalRow?.pendingAt).toBeNull();
         expect(finalRow?.pendingPayload).toBeNull();
     });

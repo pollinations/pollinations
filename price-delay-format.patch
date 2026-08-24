@@ -1,0 +1,61 @@
+===================================================================
+--- a/enter.pollinations.ai/test/integration/community-endpoint-price-delay.test.ts
++++ b/enter.pollinations.ai/test/integration/community-endpoint-price-delay.test.ts
+@@ -40,9 +40,11 @@
+             Cookie: `better-auth.session_token=${sessionToken}`,
+         },
+     });
+     expect(response.status, await response.clone().text()).toBe(200);
+-    const body = await response.json<{ data: Array<Record<string, unknown>> }>();
++    const body = await response.json<{
++        data: Array<Record<string, unknown>>;
++    }>();
+     return body.data;
+ }
+ 
+ describe("community endpoint price/visibility delay", () => {
+@@ -67,18 +69,21 @@
+             promptTextPrice: 0.000004,
+         });
+         expect(pending.promptTextPrice).toBe(0.000001);
+ 
+-        let row = await drizzle(env.DB, { schema })
+-            .query.communityEndpoint.findFirst({
+-                where: eq(schema.communityEndpoint.name, "delay-model"),
+-            });
++        let row = await drizzle(env.DB, {
++            schema,
++        }).query.communityEndpoint.findFirst({
++            where: eq(schema.communityEndpoint.name, "delay-model"),
++        });
+         expect(row?.payload).toContain("0.000001");
+         expect(row?.pendingPayload).toContain("0.000004");
+ 
+         await drizzle(env.DB, { schema })
+             .update(schema.communityEndpoint)
+-            .set({ pendingAt: new Date(Date.now() - PRICE_CHANGE_DELAY_MS - 1) })
++            .set({
++                pendingAt: new Date(Date.now() - PRICE_CHANGE_DELAY_MS - 1),
++            })
+             .where(eq(schema.communityEndpoint.name, "delay-model"));
+ 
+         const after = await listModels(sessionToken);
+         const effective = after.find((m) => m.name === "delay-model");
+@@ -109,12 +114,13 @@
+         });
+         expect(reverted.pending).toBeNull();
+         expect(reverted.visibility).toBe("private");
+ 
+-        const finalRow = await drizzle(env.DB, { schema })
+-            .query.communityEndpoint.findFirst({
+-                where: eq(schema.communityEndpoint.name, "revert-model"),
+-            });
++        const finalRow = await drizzle(env.DB, {
++            schema,
++        }).query.communityEndpoint.findFirst({
++            where: eq(schema.communityEndpoint.name, "revert-model"),
++        });
+         expect(finalRow?.pendingAt).toBeNull();
+         expect(finalRow?.pendingPayload).toBeNull();
+     });
+ });

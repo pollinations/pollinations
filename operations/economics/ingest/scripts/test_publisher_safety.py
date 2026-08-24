@@ -2,6 +2,7 @@ import unittest
 
 from publisher_safety import (
     assert_immutable_fields,
+    assert_no_new_duplicates,
     assert_newer_versions,
     canonical_pollen_provider,
     latest_version_query,
@@ -55,6 +56,23 @@ class PublisherSafetyTest(unittest.TestCase):
             canonical_pollen_provider("2026-04", "io.net", "flux"),
             "io.net",
         )
+
+    def test_rejects_new_ids_for_the_same_fact(self):
+        fields = ["month", "vendor", "category", "amount"]
+        current = [
+            {
+                "entry_id": "forecast-a",
+                "month": "2026-09-01",
+                "vendor": "openai",
+                "category": "development",
+                "amount": -200,
+            }
+        ]
+        assert_no_new_duplicates([{**current[0], "amount": -201}], current, fields)
+        with self.assertRaisesRegex(RuntimeError, "forecast-a/forecast-b"):
+            assert_no_new_duplicates(
+                [{**current[0], "entry_id": "forecast-b"}], current, fields
+            )
 
 
 if __name__ == "__main__":

@@ -82,3 +82,27 @@ def canonical_pollen_provider(month, provider, model):
     if month == "2026-03" and provider == "io.net" and model in {"flux", "zimage"}:
         return "vast.ai"
     return provider
+
+
+def assert_no_new_duplicates(rows, current_rows, fields):
+    current_signatures = {}
+    for row in current_rows:
+        signature = tuple(row.get(field) for field in fields)
+        current_signatures.setdefault(signature, set()).add(row["entry_id"])
+
+    seen = {}
+    duplicates = []
+    for row in rows:
+        signature = tuple(row.get(field) for field in fields)
+        prior_input_id = seen.get(signature)
+        if prior_input_id is not None and prior_input_id != row["entry_id"]:
+            duplicates.append(f"{prior_input_id}/{row['entry_id']}")
+        seen[signature] = row["entry_id"]
+        existing_ids = current_signatures.get(signature, set())
+        if existing_ids and row["entry_id"] not in existing_ids:
+            duplicates.append(f"{sorted(existing_ids)[0]}/{row['entry_id']}")
+
+    if duplicates:
+        raise RuntimeError(
+            "New rows duplicate existing ledger facts: " + ", ".join(duplicates)
+        )

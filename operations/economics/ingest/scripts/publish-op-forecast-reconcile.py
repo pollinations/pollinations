@@ -9,6 +9,7 @@ from pathlib import Path
 from tinybird.client import TinyB
 
 from publisher_safety import (
+    assert_no_new_duplicates,
     assert_newer_versions,
     latest_version_query,
     validate_recorded_at,
@@ -33,6 +34,14 @@ FIELDS = [
 ]
 FORECAST_METHODS = {"fixed", "funded", "last", "one_off", "canceled"}
 FORECAST_CURRENCIES = {"EUR", "USD"}
+FORECAST_IDENTITY_FIELDS = [
+    "month",
+    "vendor",
+    "category",
+    "amount",
+    "currency",
+    "method",
+]
 FORECAST_CATEGORIES = {
     "revenue",
     "compute",
@@ -246,6 +255,7 @@ async def main():
 
     result = {}
     if not args.verify_only:
+        assert_no_new_duplicates(expected, before, FORECAST_IDENTITY_FIELDS)
         assert_newer_versions(
             expected,
             await current_versions(admin, [row["entry_id"] for row in expected]),

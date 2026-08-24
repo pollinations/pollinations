@@ -1,7 +1,7 @@
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { ArrowRight, Clock, X } from "lucide-react";
 import { Button } from "./ui/button";
 import { ScrollArea } from "./ui/scroll-area";
-import { X, Clock, ArrowRight } from "lucide-react";
 
 interface StoryEntry {
     id: string;
@@ -18,7 +18,12 @@ interface StoryHistoryProps {
     characterName: string;
 }
 
-export function StoryHistory({ storyHistory, isOpen, onClose, characterName }: StoryHistoryProps) {
+export function StoryHistory({
+    storyHistory,
+    isOpen,
+    onClose,
+    characterName,
+}: StoryHistoryProps) {
     const formatTime = (timestamp: number) => {
         return new Date(timestamp).toLocaleTimeString();
     };
@@ -50,7 +55,8 @@ export function StoryHistory({ storyHistory, isOpen, onClose, characterName }: S
                                     {characterName}'s Adventure Chronicle
                                 </h2>
                                 <p className="text-[#b8a389] mt-1">
-                                    Complete story from the beginning • {storyHistory.length} chapters
+                                    Complete story from the beginning •{" "}
+                                    {storyHistory.length} chapters
                                 </p>
                             </div>
                             <Button
@@ -76,7 +82,8 @@ export function StoryHistory({ storyHistory, isOpen, onClose, characterName }: S
                                             className="relative"
                                         >
                                             {/* Timeline connector */}
-                                            {index < storyHistory.length - 1 && (
+                                            {index <
+                                                storyHistory.length - 1 && (
                                                 <div className="absolute left-8 top-16 w-0.5 h-16 bg-gradient-to-b from-[#d4a76a] to-transparent" />
                                             )}
 
@@ -92,9 +99,19 @@ export function StoryHistory({ storyHistory, isOpen, onClose, characterName }: S
                                                     {entry.characterChoice && (
                                                         <div className="flex items-center gap-2 mb-3 text-sm text-[#d4a76a] font-medium">
                                                             <ArrowRight className="h-4 w-4" />
-                                                            <span>"{entry.characterChoice}"</span>
+                                                            <span>
+                                                                "
+                                                                {
+                                                                    entry.characterChoice
+                                                                }
+                                                                "
+                                                            </span>
                                                             <Clock className="h-3 w-3 ml-auto" />
-                                                            <span className="text-[#b8a389]">{formatTime(entry.timestamp)}</span>
+                                                            <span className="text-[#b8a389]">
+                                                                {formatTime(
+                                                                    entry.timestamp,
+                                                                )}
+                                                            </span>
                                                         </div>
                                                     )}
 
@@ -103,14 +120,18 @@ export function StoryHistory({ storyHistory, isOpen, onClose, characterName }: S
                                                         <div className="p-4 md:p-6">
                                                             {/* Text */}
                                                             <p className="text-[#f5e6d3] leading-relaxed mb-4 text-sm md:text-base">
-                                                                {entry.description}
+                                                                {
+                                                                    entry.description
+                                                                }
                                                             </p>
 
                                                             {/* Image */}
                                                             {entry.image && (
                                                                 <div className="w-full h-32 md:h-48 relative overflow-hidden rounded-lg border border-[#d4a76a]/20">
                                                                     <img
-                                                                        src={entry.image}
+                                                                        src={
+                                                                            entry.image
+                                                                        }
                                                                         alt={`Scene ${index + 1}`}
                                                                         className="w-full h-full object-cover"
                                                                     />
@@ -125,8 +146,13 @@ export function StoryHistory({ storyHistory, isOpen, onClose, characterName }: S
 
                                     {storyHistory.length === 0 && (
                                         <div className="text-center py-12">
-                                            <p className="text-[#b8a389] text-lg">No story entries yet.</p>
-                                            <p className="text-[#8b7355] mt-2">Start your adventure to see the chronicle unfold!</p>
+                                            <p className="text-[#b8a389] text-lg">
+                                                No story entries yet.
+                                            </p>
+                                            <p className="text-[#8b7355] mt-2">
+                                                Start your adventure to see the
+                                                chronicle unfold!
+                                            </p>
                                         </div>
                                     )}
                                 </div>
@@ -136,7 +162,9 @@ export function StoryHistory({ storyHistory, isOpen, onClose, characterName }: S
                         {/* Footer */}
                         <div className="border-t border-[#d4a76a]/30 p-4">
                             <div className="flex justify-between items-center text-sm text-[#b8a389]">
-                                <span>Scroll to view your complete adventure</span>
+                                <span>
+                                    Scroll to view your complete adventure
+                                </span>
                                 <Button
                                     onClick={onClose}
                                     className="bg-[#d4a76a] hover:bg-[#c9975a] text-[#2c1e12]"

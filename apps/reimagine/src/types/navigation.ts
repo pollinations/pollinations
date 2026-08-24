@@ -1,6 +1,6 @@
-import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { ImageSource } from '../types/imageSelection';
+import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { ImageSource } from '../types/imageSelection';
 
 
 export type TabParamList = {

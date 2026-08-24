@@ -135,24 +135,25 @@ describe("imageUrlToBase64Transform", () => {
         });
     });
 
-    it.each([
-        401, 403, 404, 429, 500,
-    ])("returns 400 failed_to_download_image when the image host answers %i", async (upstreamStatus) => {
-        vi.spyOn(globalThis, "fetch").mockResolvedValue(
-            new Response("nope", { status: upstreamStatus }),
-        );
+    it.each([401, 403, 404, 429, 500])(
+        "returns 400 failed_to_download_image when the image host answers %i",
+        async (upstreamStatus) => {
+            vi.spyOn(globalThis, "fetch").mockResolvedValue(
+                new Response("nope", { status: upstreamStatus }),
+            );
 
-        await expect(
-            transform(
-                imageMessage(["https://example.com/image.png"]),
-                bedrockOptions,
-            ),
-        ).rejects.toMatchObject({
-            status: 400,
-            errorCode: "failed_to_download_image",
-            upstreamStatus,
-        });
-    });
+            await expect(
+                transform(
+                    imageMessage(["https://example.com/image.png"]),
+                    bedrockOptions,
+                ),
+            ).rejects.toMatchObject({
+                status: 400,
+                errorCode: "failed_to_download_image",
+                upstreamStatus,
+            });
+        },
+    );
 
     // Not our call to make: the type is relayed and the provider answers. It
     // gives a better error about its own accepted formats than a guess here.

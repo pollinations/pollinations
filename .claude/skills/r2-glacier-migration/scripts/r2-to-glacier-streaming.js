@@ -15,21 +15,21 @@
  */
 
 import {
-    S3Client,
-    ListObjectsV2Command,
     GetObjectCommand,
+    ListObjectsV2Command,
     PutObjectCommand,
+    S3Client,
 } from "@aws-sdk/client-s3";
-import {
-    createWriteStream,
-    createReadStream,
-    unlinkSync,
-    mkdirSync,
-    existsSync,
-    writeFileSync,
-    readFileSync,
-} from "fs";
 import archiver from "archiver";
+import {
+    createReadStream,
+    createWriteStream,
+    existsSync,
+    mkdirSync,
+    readFileSync,
+    unlinkSync,
+    writeFileSync,
+} from "fs";
 import { parseArgs } from "util";
 
 const { values: args } = parseArgs({
@@ -280,7 +280,7 @@ async function transfer() {
     if (startAfter) console.log(`   Starting after: ${startAfter}`);
 
     let batch = [];
-    let continuationToken = undefined;
+    let continuationToken;
     let listingCount = 0;
 
     console.log(`\n📋 Streaming objects...`);

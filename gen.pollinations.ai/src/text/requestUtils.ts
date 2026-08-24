@@ -1,53 +1,75 @@
-import type { RequestData } from "./types.js";
-import { validateTextGenerationParams } from "./utils/parameterValidators.js";
+import type { CreateChatCompletionRequest } from "@shared/schemas/openai.ts";
+import type { GenerateTextRequestQueryParams } from "@/schemas/text.ts";
+import { normalizeSeed } from "@/util.ts";
+import type { ChatMessage, RequestData } from "./types.js";
 
-export interface ExpressLikeRequest {
-    query: Record<string, unknown>;
-    body: Record<string, unknown>;
-    path: string;
-    params: Record<string, string>;
-    method: string;
-    headers: Record<string, string>;
-    url?: string;
+function requestsJson(json: unknown, jsonMode: unknown): boolean {
+    return (
+        Boolean(jsonMode) ||
+        json === true ||
+        (typeof json === "string" && json.toLowerCase() === "true")
+    );
 }
 
-export function getRequestData(req: ExpressLikeRequest): RequestData {
-    const data: Record<string, unknown> = { ...req.query, ...req.body };
-    const validated = validateTextGenerationParams(data);
-
-    const systemPrompt = (data.system as string) || null;
-
-    const messages = (data.messages as RequestData["messages"]) || [
-        { role: "user", content: req.params[0] },
-    ];
-    if (systemPrompt) {
-        messages.unshift({ role: "system", content: systemPrompt });
-    }
+export function getChatRequestData(
+    body: CreateChatCompletionRequest & Record<string, unknown>,
+): RequestData {
+    const {
+        safe: _safe,
+        system,
+        json,
+        jsonMode,
+        thinking: _thinking,
+        thinking_budget: _thinkingBudget,
+        ...requestData
+    } = body;
+    const messages = [
+        ...(typeof system === "string" && system
+            ? [{ role: "system", content: system }]
+            : []),
+        ...requestData.messages,
+    ] as ChatMessage[];
+    const seed =
+        requestData.seed == null
+            ? {}
+            : { seed: normalizeSeed(requestData.seed) };
+    const responseFormat =
+        !requestData.response_format && requestsJson(json, jsonMode)
+            ? { response_format: { type: "json_object" } as const }
+            : {};
 
     return {
-        // Validated params (temperature, top_p, seed, model, stream, etc.)
-        ...validated,
+        ...requestData,
+        ...seed,
+        ...responseFormat,
         messages,
-        // Passthrough params not handled by validateTextGenerationParams
-        tools: data.tools as unknown[] | undefined,
-        tool_choice: data.tool_choice,
-        parallel_tool_calls:
-            typeof data.parallel_tool_calls === "boolean"
-                ? data.parallel_tool_calls
-                : undefined,
-        modalities: data.modalities as string[] | undefined,
-        audio: data.audio as Record<string, unknown> | undefined,
-        response_format: data.response_format as RequestData["response_format"],
-        web_search_options: data.web_search_options as
-            | { search_context_size: "low" | "medium" | "high" }
-            | undefined,
-        stop: data.stop,
-        stream_options: data.stream_options as
-            | Record<string, unknown>
-            | undefined,
-        logprobs: data.logprobs,
-        top_logprobs: data.top_logprobs,
-        logit_bias: data.logit_bias,
-        user: data.user,
     } as RequestData;
+}
+
+export function getSimpleTextRequestData(
+    prompt: string,
+    model: string,
+    query: GenerateTextRequestQueryParams,
+): RequestData {
+    const {
+        safe: _safe,
+        system,
+        json,
+        model: _requestedModel,
+        ...options
+    } = query;
+    const messages: ChatMessage[] = [
+        ...(system ? [{ role: "system", content: system }] : []),
+        { role: "user", content: prompt },
+    ];
+
+    return {
+        ...options,
+        model,
+        messages,
+        ...(options.seed !== undefined
+            ? { seed: normalizeSeed(options.seed) }
+            : {}),
+        ...(json ? { response_format: { type: "json_object" } } : {}),
+    };
 }

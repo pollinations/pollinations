@@ -14,12 +14,11 @@ const testFunctionCalling = async () => {
 
     await sendMessage(
         messages,
-        (chunk, fullContent, error) => {
+        (chunk, _fullContent, _error) => {
             console.log("Chunk received:", chunk);
         },
-        (finalContent, error) => {
+        (finalContent, _error) => {
             console.log("Final content:", finalContent);
-            console.log("Error:", error);
         },
         (error) => {
             console.error("Error:", error);

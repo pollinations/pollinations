@@ -1,4 +1,3 @@
-import React from "react";
 import "../styles/PromptEditor.css";
 
 function PromptEditor({ prompt, setPrompt, onGenerate, isLoading, error }) {

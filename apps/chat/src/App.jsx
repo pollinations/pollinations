@@ -570,8 +570,8 @@ function App() {
                 : updated.messages;
             sendMessage(
                 runtimeMessages,
-                (_, full) =>
-                    updateMessage(aid, { content: full, isStreaming: true }),
+                (chunk, _full) =>
+                    updateMessage(aid, { content: chunk, isStreaming: true }),
                 (full) => {
                     updateMessage(aid, { content: full, isStreaming: false });
                     setIsGenerating(false);

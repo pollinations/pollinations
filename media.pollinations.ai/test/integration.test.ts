@@ -1,7 +1,6 @@
 import {
     createExecutionContext,
     env,
-    fetchMock,
     SELF,
     waitOnExecutionContext,
 } from "cloudflare:test";
@@ -10,7 +9,7 @@ import { mediaItem, mediaTag } from "@shared/db/media-catalog.ts";
 import { createTestR2Bucket } from "@shared/test/mocks/r2.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import app from "../src/index";
 
 // 1x1 red PNG (67 bytes)
@@ -47,101 +46,41 @@ interface MediaPageResponse {
 }
 
 // Kept for the pre-existing tests that don't care about identity.
+// Key identities (pk_alice, sk_bob, ...) live in ./setup/enter-stub.mjs, the
+// auxiliary worker behind the ENTER service binding.
 const VALID_KEY = "pk_alice";
 
-const KEY_IDENTITIES: Record<
-    string,
-    {
-        valid: boolean;
-        type?: string;
-        name?: string | null;
-        userId?: string | null;
-        byopApp?: { clientKeyId: string } | null;
-    }
-> = {
-    pk_alice: {
-        valid: true,
-        type: "publishable",
-        name: "alice-key",
-        userId: "user_alice",
-        byopApp: { clientKeyId: "pk_app_1" },
-    },
-    pk_bob: {
-        valid: true,
-        type: "publishable",
-        name: "bob-key",
-        userId: "user_bob",
-        byopApp: null,
-    },
-    pk_nouser: {
-        valid: true,
-        type: "publishable",
-        name: "service-key",
-        userId: null,
-        byopApp: null,
-    },
-    // Deleting media is secret-key only, so delete tests use these.
-    sk_alice: {
-        valid: true,
-        type: "secret",
-        name: "alice-secret",
-        userId: "user_alice",
-        byopApp: null,
-    },
-    sk_bob: {
-        valid: true,
-        type: "secret",
-        name: "bob-secret",
-        userId: "user_bob",
-        byopApp: null,
-    },
-    // The response shape of an enter deployment that predates the identity
-    // fields — userId/byopApp entirely absent, not null.
-    sk_legacy: {
-        valid: true,
-        type: "secret",
-        name: "legacy-key",
-    },
+// The stub's test hooks, absent from the production binding contract.
+type EnterStub = {
+    recordedCalls(): Promise<{
+        authorize: Array<{
+            token: string;
+            service: string;
+            requestId: string;
+            requestPath: string;
+            estimatedPrice: number;
+        }>;
+        settle: Array<{
+            authorizationId: string;
+            events: Array<{
+                eventId: string;
+                eventType: string;
+                price: number;
+            }>;
+        }>;
+    }>;
+    resetCalls(): Promise<void>;
 };
+
+const testEnv = env as typeof env & { ENTER: EnterStub };
 
 function createMediaEnv(bucket = createTestR2Bucket()) {
     return {
         MEDIA_BUCKET: bucket,
         MAX_FILE_SIZE: "104857600",
         DB: env.DB,
+        ENTER: testEnv.ENTER,
     };
-}
-
-function mockAuth() {
-    fetchMock.activate();
-    fetchMock.disableNetConnect();
-    fetchMock
-        .get("https://gen.pollinations.ai")
-        .intercept({ path: "/account/key" })
-        .reply(({ headers }) => {
-            const headerBag = headers as Record<string, string>;
-            const authHeader =
-                headerBag.authorization ?? headerBag.Authorization ?? "";
-            const key = authHeader.replace(/^Bearer /, "");
-            const identity = KEY_IDENTITIES[key];
-            if (!identity) {
-                return {
-                    statusCode: 200,
-                    data: JSON.stringify({ valid: false }),
-                    responseOptions: {
-                        headers: { "content-type": "application/json" },
-                    },
-                };
-            }
-            return {
-                statusCode: 200,
-                data: JSON.stringify(identity),
-                responseOptions: {
-                    headers: { "content-type": "application/json" },
-                },
-            };
-        })
-        .persist();
 }
 
 async function seedUsers() {
@@ -207,12 +146,8 @@ describe("media.pollinations.ai", () => {
         await seedUsers();
     });
 
-    beforeEach(() => {
-        mockAuth();
-    });
-
-    afterEach(() => {
-        fetchMock.deactivate();
+    beforeEach(async () => {
+        await testEnv.ENTER.resetCalls();
     });
 
     it("GET / returns service info", async () => {
@@ -622,8 +557,9 @@ describe("media.pollinations.ai", () => {
         expect(alice.status).toBe(200);
         const aliceUpload = alice.body as UploadResponse;
 
-        // The catalog row carries the identity attested by /account/key —
-        // pk_alice → user_alice via app pk_app_1 — not the form fields.
+        // The catalog row carries the identity attested by Enter's
+        // authorization — pk_alice → user_alice via app pk_app_1 — not the
+        // form fields.
         const db = drizzle(env.DB);
         const [row] = await db
             .select({
@@ -709,46 +645,76 @@ describe("media.pollinations.ai", () => {
         expect(res.status).toBe(400);
     });
 
-    it("keys without a user can't publish, but plain uploads still work", async () => {
-        const withTag = await uploadViaForm("pk_nouser", {
-            fileName: "nouser-tagged.png",
-            bytes: variant(8),
-            tags: ["should-fail"],
+    it("key without typed metadata acts as a secret key (legacy keys)", async () => {
+        // Keys created before typed key metadata carry no keyType; media must
+        // fall back to "secret" like /account/key does, so their owner can
+        // still publish and delete.
+        const upload = await uploadViaForm("sk_alice_legacy", {
+            fileName: "legacy.png",
+            bytes: variant(11),
+            tags: ["legacy-tag"],
         });
-        expect(withTag.status).toBe(400);
-        expect((withTag.body as { error: string }).error).toMatch(
-            /requires a user-owned API key/,
-        );
+        expect(upload.status).toBe(200);
+        const item = upload.body as UploadResponse;
 
-        const plain = await uploadViaForm("pk_nouser", {
-            fileName: "nouser-plain.png",
+        const deleted = await SELF.fetch(
+            `https://media.pollinations.ai/media/${item.id}`,
+            {
+                method: "DELETE",
+                headers: { Authorization: "Bearer sk_alice_legacy" },
+            },
+        );
+        expect(deleted.status).toBe(200);
+    });
+
+    it("upload authorizes with Enter first, then settles one media.upload event", async () => {
+        const bucket = createTestR2Bucket();
+        const form = new FormData();
+        form.append("file", pngFile("billed.png", variant(8)));
+
+        const ctx = createExecutionContext();
+        const res = await app.fetch(
+            new Request("https://media.pollinations.ai/upload", {
+                method: "POST",
+                body: form,
+                headers: { Authorization: "Bearer pk_alice" },
+            }),
+            createMediaEnv(bucket),
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        expect(res.status).toBe(200);
+
+        const calls = await testEnv.ENTER.recordedCalls();
+        expect(calls.authorize).toHaveLength(1);
+        expect(calls.authorize[0]).toMatchObject({
+            token: "pk_alice",
+            service: "media.pollinations.ai",
+            requestPath: "/upload",
+            estimatedPrice: 0,
+        });
+        expect(calls.settle).toHaveLength(1);
+        expect(calls.settle[0].events).toEqual([
+            { eventId: "upload", eventType: "media.upload", price: 0 },
+        ]);
+    });
+
+    it("maps Enter denials onto the upload response", async () => {
+        const banned = await uploadViaForm("pk_banned", {
+            fileName: "banned.png",
             bytes: variant(9),
         });
-        expect(plain.status).toBe(200);
-        const upload = plain.body as UploadResponse;
-        expect(upload.tags).toBeUndefined();
+        expect(banned.status).toBe(403);
 
-        // An /account/key response predating the identity fields (userId
-        // absent, not null) must read as not-user-attached: same behavior.
-        const legacyTagged = await uploadViaForm("sk_legacy", {
-            fileName: "legacy-tagged.png",
-            bytes: variant(11),
-            tags: ["should-fail"],
-        });
-        expect(legacyTagged.status).toBe(400);
-
-        const legacyPlain = await uploadViaForm("sk_legacy", {
-            fileName: "legacy-plain.png",
+        const broke = await uploadViaForm("pk_broke", {
+            fileName: "broke.png",
             bytes: variant(12),
         });
-        expect(legacyPlain.status).toBe(200);
-        const legacyUpload = legacyPlain.body as UploadResponse;
-        const db = drizzle(env.DB);
-        const rows = await db
-            .select({ id: mediaItem.id })
-            .from(mediaItem)
-            .where(eq(mediaItem.id, legacyUpload.id));
-        expect(rows).toHaveLength(0);
+        expect(broke.status).toBe(402);
+
+        // Denied requests must not settle anything.
+        const calls = await testEnv.ENTER.recordedCalls();
+        expect(calls.settle).toHaveLength(0);
     });
 
     it("re-uploading the same bytes creates a distinct item, not a merge", async () => {
@@ -1030,22 +996,6 @@ describe("media.pollinations.ai", () => {
                 headers: { Authorization: "Bearer sk_bob" },
             });
             expect(nonOwner.status).toBe(403);
-
-            // A valid key with no attached user has no library to own.
-            const noUser = await SELF.fetch(url, {
-                method: "DELETE",
-                headers: { Authorization: "Bearer pk_nouser" },
-            });
-            expect(noUser.status).toBe(403);
-
-            // An /account/key response predating the identity fields (userId
-            // absent, not null) must read as not-user-attached — the `?? null`
-            // normalization guard, exercised on the delete path.
-            const legacy = await SELF.fetch(url, {
-                method: "DELETE",
-                headers: { Authorization: "Bearer sk_legacy" },
-            });
-            expect(legacy.status).toBe(403);
 
             // None of the failed attempts deleted anything.
             const getRes = await SELF.fetch(

@@ -3,7 +3,11 @@ import { defineConfig } from "drizzle-kit";
 
 export default defineConfig({
     out: "./drizzle",
-    schema: ["../shared/db/better-auth.ts", "../shared/db/media-catalog.ts"],
+    schema: [
+        "../shared/db/better-auth.ts",
+        "../shared/db/media-catalog.ts",
+        "../shared/db/service-billing.ts",
+    ],
     dialect: "sqlite",
     driver: "d1-http",
     dbCredentials: {

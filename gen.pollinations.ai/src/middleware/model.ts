@@ -23,6 +23,9 @@ const ENDPOINT_LABEL: Record<EventType, string> = {
     "generate.audio": "audio",
     "generate.embedding": "embeddings",
     "generate.realtime": "realtime",
+    // Emitted by media.pollinations.ai via enter's ServiceGateway; gen has no
+    // route for it, the label only completes the record.
+    "media.upload": "media",
 };
 
 export type ModelVariables = {

@@ -32,6 +32,20 @@ export default defineWorkersConfig(async () => {
                         bindings: {
                             TEST_MIGRATIONS: migrations,
                         },
+                        workers: [
+                            // Satisfies the ENTER service binding
+                            // (entrypoint = "ServiceGateway") declared in
+                            // wrangler.toml; see enter-stub.mjs.
+                            {
+                                name: "pollinations-enter",
+                                modules: true,
+                                scriptPath: path.join(
+                                    __dirname,
+                                    "test/setup/enter-stub.mjs",
+                                ),
+                                compatibilityDate: "2025-11-12",
+                            },
+                        ],
                     },
                 },
             },

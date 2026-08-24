@@ -1,4 +1,11 @@
 import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
+import type {
+    ServiceAuthorization,
+    ServiceDenial,
+    ServiceGatewayBinding,
+    TokenIntrospectionResult,
+} from "@shared/schemas/service-billing.ts";
+import type { Context } from "hono";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import {
@@ -24,9 +31,6 @@ import {
 } from "./catalog.ts";
 
 const DOMAIN = "media.pollinations.ai";
-// gen.pollinations.ai proxies /account/* to enter — using the public path
-// keeps internal services consistent with the documented SDK/external usage.
-const KEY_VERIFY_URL = "https://gen.pollinations.ai/account/key";
 // Untagged uploads cannot be deleted through the API, and each unique id always
 // maps to the same bytes, so they can be cached immutably. Tagged uploads are
 // deletable and must never be retained by downstream caches after deletion.
@@ -38,49 +42,33 @@ interface Env {
     MEDIA_BUCKET: R2Bucket;
     MAX_FILE_SIZE: string;
     DB: D1Database;
-}
-
-/**
- * Wire shape of `GET /account/key`. BYOP attribution arrives nested under
- * `byopApp`, which is null for keys not minted through the BYOP flow.
- */
-interface KeyVerifyResponse {
-    valid: boolean;
-    type: string;
-    name: string | null;
-    userId: string | null;
-    byopApp: { clientKeyId: string } | null;
+    // Enter's ServiceGateway RPC entrypoint, over a named Service Binding.
+    // Enter stays the auth and billing authority; media never sees balances.
+    ENTER: ServiceGatewayBinding;
 }
 
 interface AuthResult {
-    valid: boolean;
     type: string;
     name: string | null;
-    userId: string | null;
+    userId: string;
     byopClientKeyId: string | null;
 }
 
-async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
-    try {
-        const res = await fetch(KEY_VERIFY_URL, {
-            headers: { Authorization: `Bearer ${apiKey}` },
-        });
-        if (!res.ok) return null;
-        const data = await res.json<KeyVerifyResponse>();
-        if (!data.valid) return null;
-        // Normalize: an enter deployment that predates the identity fields
-        // omits them, and `undefined` would slip past the `=== null` guards
-        // downstream — never treat an unattested key as user-attached.
-        return {
-            valid: true,
-            type: data.type,
-            name: data.name ?? null,
-            userId: data.userId ?? null,
-            byopClientKeyId: data.byopApp?.clientKeyId ?? null,
-        };
-    } catch {
-        return null;
-    }
+// Same derivation as enter's /account/key: keys created before typed metadata
+// existed are secret keys.
+function toAuthResult(
+    identity: Pick<ServiceAuthorization, "user" | "apiKey">,
+): AuthResult {
+    return {
+        type: (identity.apiKey.metadata?.keyType as string) || "secret",
+        name: identity.apiKey.name ?? null,
+        userId: identity.user.id,
+        byopClientKeyId: identity.apiKey.byopClientKeyId ?? null,
+    };
+}
+
+function denialResponse(c: Context<{ Bindings: Env }>, denial: ServiceDenial) {
+    return c.json({ error: denial.message }, denial.status);
 }
 
 function extractApiKey(req: Request): string | null {
@@ -305,13 +293,25 @@ api.post(
             },
             400: {
                 description:
-                    "No/empty file, invalid JSON/base64, invalid tags, or tags on a key with no user account",
+                    "No/empty file, invalid JSON/base64, or invalid tags",
                 content: {
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
             },
             401: {
                 description: "Missing or invalid API key",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+            402: {
+                description: "Account balance or API key budget too low",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+            403: {
+                description: "Banned account or restricted key",
                 content: {
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
@@ -334,10 +334,22 @@ api.post(
                 401,
             );
         }
-        const authResult = await verifyApiKey(apiKey);
-        if (!authResult) {
-            return c.json({ error: "Invalid or expired API key" }, 401);
+        // Authorize with Enter before any storage work: bans, staging locks
+        // and (for finite-budget keys) an upfront reservation all happen
+        // here. Uploads are currently free, so the estimate is zero and the
+        // settlement below is an observability-only billing event.
+        const requestId = crypto.randomUUID();
+        const authorization = await c.env.ENTER.authorize({
+            token: apiKey,
+            service: DOMAIN,
+            requestId,
+            requestPath: "/upload",
+            estimatedPrice: 0,
+        });
+        if (!authorization.ok) {
+            return denialResponse(c, authorization.denial);
         }
+        const authResult = toAuthResult(authorization);
 
         const maxSize = parseInt(c.env.MAX_FILE_SIZE, 10) || DEFAULT_MAX_SIZE;
 
@@ -443,15 +455,6 @@ api.post(
                 throw error;
             }
 
-            if (authResult.userId === null && tags.length > 0) {
-                return c.json(
-                    {
-                        error: "publishing (tags) requires a user-owned API key",
-                    },
-                    400,
-                );
-            }
-
             // One id for everything: the R2 storage key, the retrieval id,
             // and (for user uploads) the catalog row id.
             const id = crypto.randomUUID();
@@ -477,9 +480,7 @@ api.post(
             // rows (untagged uploads stay uncataloged blobs behind their
             // unguessable id). The write is awaited inline (not waitUntil):
             // a D1 failure must surface as a 500, not be silently swallowed.
-            // `tags` non-empty implies a user-attached key (rejected above
-            // otherwise), so ownerUserId is always real here.
-            if (tags.length > 0 && authResult.userId !== null) {
+            if (tags.length > 0) {
                 const db = getDb(c.env.DB);
                 await insertUploadCatalogItem(db, {
                     id,
@@ -499,6 +500,23 @@ api.post(
                     contentType,
                     keyType: authResult.type,
                     uploadedBy: authResult.name || "unknown",
+                }),
+            );
+
+            // Settle the completed work with Enter. The event id is stable
+            // within the authorization, so a redelivered settlement records
+            // (and would bill) exactly once. Zero price: uploads are free —
+            // this row is the Tinybird observability trail.
+            c.executionCtx.waitUntil(
+                c.env.ENTER.settle({
+                    authorizationId: authorization.authorizationId,
+                    events: [
+                        {
+                            eventId: "upload",
+                            eventType: "media.upload",
+                            price: 0,
+                        },
+                    ],
                 }),
             );
 
@@ -621,7 +639,7 @@ api.delete(
             },
             403: {
                 description:
-                    "Key is not a secret (`sk_`) key, is not attached to a user account, or the item belongs to someone else",
+                    "Key is not a secret (`sk_`) key, or the item belongs to someone else",
                 content: {
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
@@ -644,16 +662,12 @@ api.delete(
                 401,
             );
         }
-        const auth = await verifyApiKey(apiKey);
-        if (!auth) {
-            return c.json({ error: "Invalid or expired API key" }, 401);
+        const introspection: TokenIntrospectionResult =
+            await c.env.ENTER.introspect(apiKey);
+        if (!introspection.valid) {
+            return denialResponse(c, introspection.denial);
         }
-        if (auth.userId === null) {
-            return c.json(
-                { error: "This API key is not attached to a user account" },
-                403,
-            );
-        }
+        const auth = toAuthResult(introspection);
         // Publishable keys ship inside public clients — anyone holding one
         // could delete the owner's published media, so deletion is
         // secret-key only.

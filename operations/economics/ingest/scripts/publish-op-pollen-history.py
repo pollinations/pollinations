@@ -8,8 +8,8 @@ from pathlib import Path
 from tinybird.tb.client import TinyB
 
 from publisher_safety import (
-    assert_immutable_fields,
     assert_newer_versions,
+    assert_pollen_reason_transitions,
     canonical_pollen_provider,
     latest_version_query,
     validate_recorded_at,
@@ -169,6 +169,40 @@ def endpoint_snapshot(rows):
     ]
 
 
+def tombstone_endpoint_snapshot(endpoint_before, expected, history_before):
+    rows_by_key = {
+        (row["month"], row["vendor"], row["model"]): {
+            **row,
+            **{field: float(row[field]) for field in METRICS},
+        }
+        for row in endpoint_before
+    }
+    history_by_id = {row["entry_id"]: row for row in history_before}
+    target_keys = set()
+    for tombstone in expected:
+        current = history_by_id[tombstone["entry_id"]]
+        vendor = canonical_pollen_provider(
+            current["month"], current["provider"], current["model"]
+        )
+        key = (current["month"], vendor, current["model"])
+        target_keys.add(key)
+        endpoint_row = rows_by_key.get(key)
+        if endpoint_row is None:
+            raise RuntimeError(f"Cannot retract missing endpoint row {key}")
+        for field in METRICS:
+            contribution = float(current[field])
+            if vendor == "community" and field in {"cost_paid", "cost_quests"}:
+                contribution = 0
+            endpoint_row[field] -= contribution
+
+    return [
+        row
+        for key, row in rows_by_key.items()
+        if key in target_keys
+        and any(abs(row[field]) > 0.000000001 for field in METRICS)
+    ], target_keys
+
+
 def write_snapshot(path, rows):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps({"data": rows}, indent=2) + "\n")
@@ -181,9 +215,11 @@ def main():
     before = effective_history(admin)
     write_snapshot(args.before_snapshot.resolve(), before)
 
-    snapshot_mode = all(row["reason"] == "workspace_snapshot" for row in expected)
-    if any(row["reason"] == "workspace_snapshot" for row in expected) and not snapshot_mode:
-        raise RuntimeError("workspace_snapshot input cannot mix with additive history rows")
+    reasons = {row["reason"] for row in expected}
+    snapshot_mode = reasons == {"workspace_snapshot"}
+    tombstone_mode = reasons == {"tombstone"}
+    if ("workspace_snapshot" in reasons or "tombstone" in reasons) and len(reasons) > 1:
+        raise RuntimeError("Snapshot, tombstone, and additive history rows cannot mix")
     expected_keys = {
         (
             row["month"],
@@ -202,7 +238,7 @@ def main():
         for row in endpoint_before
         if (row["month"], row["vendor"], row["model"]) in expected_keys
     ]
-    if collisions and not snapshot_mode:
+    if collisions and not snapshot_mode and not tombstone_mode:
         raise RuntimeError(
             f"Refusing to double-count {len(collisions)} existing endpoint rows"
         )
@@ -240,7 +276,14 @@ def main():
         expected,
         current_versions(admin, [row["entry_id"] for row in expected]),
     )
-    assert_immutable_fields(expected, before, ["reason"])
+    assert_pollen_reason_transitions(expected, before, METRICS)
+
+    tombstone_expected = []
+    tombstone_target_keys = set()
+    if tombstone_mode:
+        tombstone_expected, tombstone_target_keys = tombstone_endpoint_snapshot(
+            endpoint_before, expected, before
+        )
 
     result = append.datasource_append_data(
         "op_pollen_history", args.input.resolve(), mode="append", format="ndjson"
@@ -272,6 +315,20 @@ def main():
             ["month", "vendor", "model", *METRICS],
             lambda row: (row["month"], row["vendor"], row["model"]),
         )
+    elif tombstone_mode:
+        endpoint_actual = [
+            row
+            for row in endpoint_after
+            if (row["month"], row["vendor"], row["model"])
+            in tombstone_target_keys
+        ]
+        verify_exact_rows(
+            tombstone_expected,
+            endpoint_actual,
+            ["month", "vendor", "model", *METRICS],
+            lambda row: (row["month"], row["vendor"], row["model"]),
+        )
+        endpoint_expected = tombstone_expected
     else:
         endpoint_expected = [
             {
@@ -296,7 +353,13 @@ def main():
                 "history_rows_before": len(before),
                 "history_rows_after": len(after),
                 "endpoint_rows_verified": len(endpoint_expected),
-                "snapshot_mode": snapshot_mode,
+                "mode": (
+                    "snapshot"
+                    if snapshot_mode
+                    else "tombstone"
+                    if tombstone_mode
+                    else "additive"
+                ),
                 "quarantine_rows": result.get("quarantine_rows", 0),
                 "invalid_lines": result.get("invalid_lines", 0),
             }

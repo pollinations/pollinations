@@ -104,15 +104,7 @@ SQL >
             FROM op_pollen_history
             GROUP BY entry_id
         )
-        WHERE NOT (
-            tupleElement(latest, 5) = 0
-            AND tupleElement(latest, 6) = 0
-            AND tupleElement(latest, 7) = 0
-            AND tupleElement(latest, 8) = 0
-            AND tupleElement(latest, 13) = 0
-            AND tupleElement(latest, 14) = 0
-            AND positionCaseInsensitive(tupleElement(latest, 15), 'superseded') > 0
-        )
+        WHERE tupleElement(latest, 4) != 'tombstone'
     )
     GROUP BY month, vendor, model
     HAVING

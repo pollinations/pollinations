@@ -125,6 +125,36 @@ def assert_explicit_tombstones(rows, value_fields):
         )
 
 
+def assert_pollen_reason_transitions(rows, current_rows, metric_fields):
+    current_by_id = {row["entry_id"]: row for row in current_rows}
+    invalid = []
+    for row in rows:
+        current = current_by_id.get(row["entry_id"])
+        reason = row.get("reason")
+        if reason != "tombstone":
+            if current is not None and reason != current.get("reason"):
+                invalid.append(f"{row['entry_id']}.reason")
+            continue
+
+        if current is None or current.get("reason") in {
+            "workspace_snapshot",
+            "tombstone",
+        }:
+            invalid.append(f"{row['entry_id']}.reason")
+            continue
+        if any(
+            row.get(field) != current.get(field)
+            for field in ("month", "provider", "model")
+        ):
+            invalid.append(f"{row['entry_id']}.identity")
+        if any(float(row.get(field, 0)) != 0 for field in metric_fields):
+            invalid.append(f"{row['entry_id']}.metrics")
+    if invalid:
+        raise RuntimeError(
+            "Invalid Pollen history reason transition: " + ", ".join(invalid)
+        )
+
+
 def canonical_pollen_provider(month, provider, model):
     if month == "2026-03" and provider == "io.net" and model in {"flux", "zimage"}:
         return "vast.ai"

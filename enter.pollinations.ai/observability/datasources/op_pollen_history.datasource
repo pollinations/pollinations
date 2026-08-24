@@ -1,7 +1,9 @@
 DESCRIPTION >
     Immutable historical Pollen meter rows whose raw generation events are no
     longer retained. Corrections append a newer row with the same entry_id;
-    op_pollen_api selects the latest version.
+    op_pollen_api selects the latest version. Additive rows can be retracted
+    only with an explicit zero-valued tombstone reason; workspace snapshots
+    stay immutable so their suppressed live rows cannot reappear.
 
 TOKEN "operations_ingest" APPEND
 TOKEN "operations_ingest" READ

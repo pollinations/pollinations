@@ -6,6 +6,7 @@ from publisher_safety import (
     assert_immutable_fields,
     assert_no_new_duplicates,
     assert_newer_versions,
+    assert_pollen_reason_transitions,
     canonical_pollen_provider,
     latest_version_query,
     validate_recorded_at,
@@ -106,6 +107,55 @@ class PublisherSafetyTest(unittest.TestCase):
                     }
                 ],
                 ["credit", "paid"],
+            )
+
+    def test_allows_only_safe_pollen_retractions(self):
+        current = [
+            {
+                "entry_id": "a",
+                "month": "2026-07",
+                "provider": "aws",
+                "model": "model",
+                "reason": "manual_correction",
+                "price_paid": 10,
+            },
+            {
+                "entry_id": "snapshot",
+                "month": "2026-07",
+                "provider": "aws",
+                "model": "other",
+                "reason": "workspace_snapshot",
+                "price_paid": 10,
+            },
+        ]
+        assert_pollen_reason_transitions(
+            [
+                {
+                    **current[0],
+                    "reason": "tombstone",
+                    "price_paid": 0,
+                }
+            ],
+            current,
+            ["price_paid"],
+        )
+        with self.assertRaisesRegex(RuntimeError, "a.metrics"):
+            assert_pollen_reason_transitions(
+                [{**current[0], "reason": "tombstone"}],
+                current,
+                ["price_paid"],
+            )
+        with self.assertRaisesRegex(RuntimeError, "snapshot.reason"):
+            assert_pollen_reason_transitions(
+                [
+                    {
+                        **current[1],
+                        "reason": "tombstone",
+                        "price_paid": 0,
+                    }
+                ],
+                current,
+                ["price_paid"],
             )
         with self.assertRaisesRegex(RuntimeError, "source=tombstone"):
             assert_explicit_tombstones(

@@ -94,14 +94,20 @@ describe("reasoning_effort model wiring", () => {
         "nemotron-3.5-lightning",
         "minimax",
         "muse-glimmer",
-    ])("disables thinking via reasoning_effort=none on %s", async (modelName) => {
-        const transform = findModelByName(modelName)?.transform;
-        if (!transform) throw new Error(`${modelName} transform missing`);
-        const { options } = await transform([{ role: "user", content: "hi" }], {
-            reasoning_effort: "none",
-        });
-        expect(options.reasoning_effort).toBe("none");
-    });
+    ])(
+        "disables thinking via reasoning_effort=none on %s",
+        async (modelName) => {
+            const transform = findModelByName(modelName)?.transform;
+            if (!transform) throw new Error(`${modelName} transform missing`);
+            const { options } = await transform(
+                [{ role: "user", content: "hi" }],
+                {
+                    reasoning_effort: "none",
+                },
+            );
+            expect(options.reasoning_effort).toBe("none");
+        },
+    );
 
     it.each([
         "glm-5.3",
@@ -118,18 +124,20 @@ describe("reasoning_effort model wiring", () => {
         expect(options.reasoning_effort).toBeUndefined();
     });
 
-    it.each([
-        "mistral-large",
-        "llama",
-        "qwen-coder",
-    ])("strips reasoning_effort on non-reasoning model %s", async (modelName) => {
-        const transform = findModelByName(modelName)?.transform;
-        if (!transform) throw new Error(`${modelName} transform missing`);
-        const { options } = await transform([{ role: "user", content: "hi" }], {
-            reasoning_effort: "high",
-        });
-        expect(options.reasoning_effort).toBeUndefined();
-    });
+    it.each(["mistral-large", "llama", "qwen-coder"])(
+        "strips reasoning_effort on non-reasoning model %s",
+        async (modelName) => {
+            const transform = findModelByName(modelName)?.transform;
+            if (!transform) throw new Error(`${modelName} transform missing`);
+            const { options } = await transform(
+                [{ role: "user", content: "hi" }],
+                {
+                    reasoning_effort: "high",
+                },
+            );
+            expect(options.reasoning_effort).toBeUndefined();
+        },
+    );
 
     it("passes Command A+ requests through without a model-specific transform", () => {
         expect(findModelByName("command-a-plus")?.transform).toBeUndefined();

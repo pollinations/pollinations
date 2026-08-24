@@ -115,26 +115,27 @@ describe("qwenImage3Model", () => {
         });
     });
 
-    it.each([
-        1, 3,
-    ])("routes edits with %i reference image(s) and meters each input", async (imageCount) => {
-        const requests: FalRequest[] = [];
-        mockFal(requests);
+    it.each([1, 3])(
+        "routes edits with %i reference image(s) and meters each input",
+        async (imageCount) => {
+            const requests: FalRequest[] = [];
+            mockFal(requests);
 
-        const result = await callQwenImage3API("edit the references", {
-            ...baseParams,
-            image: Array.from({ length: imageCount }, () => INPUT_IMAGE),
-        });
+            const result = await callQwenImage3API("edit the references", {
+                ...baseParams,
+                image: Array.from({ length: imageCount }, () => INPUT_IMAGE),
+            });
 
-        expect(requests[0].url).toBe(EDIT_URL);
-        expect(requests[0].body.image_urls).toEqual(
-            Array.from({ length: imageCount }, () => INPUT_IMAGE),
-        );
-        expect(result.trackingData?.usage).toEqual({
-            promptImageTokens: imageCount,
-            completionImageTokens: 1,
-        });
-    });
+            expect(requests[0].url).toBe(EDIT_URL);
+            expect(requests[0].body.image_urls).toEqual(
+                Array.from({ length: imageCount }, () => INPUT_IMAGE),
+            );
+            expect(result.trackingData?.usage).toEqual({
+                promptImageTokens: imageCount,
+                completionImageTokens: 1,
+            });
+        },
+    );
 
     it("rejects more than three reference images before calling Fal", async () => {
         const fetchSpy = vi.spyOn(globalThis, "fetch");
@@ -151,19 +152,22 @@ describe("qwenImage3Model", () => {
     it.each([
         [256, 256],
         [4096, 4096],
-    ])("rejects output dimensions outside Fal's pixel range (%ix%i)", async (width, height) => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
+    ])(
+        "rejects output dimensions outside Fal's pixel range (%ix%i)",
+        async (width, height) => {
+            const fetchSpy = vi.spyOn(globalThis, "fetch");
 
-        await expect(
-            callQwenImage3API("invalid size", {
-                ...baseParams,
-                width,
-                height,
-                dimensionsExplicit: true,
-            }),
-        ).rejects.toMatchObject({ status: 400 });
-        expect(fetchSpy).not.toHaveBeenCalled();
-    });
+            await expect(
+                callQwenImage3API("invalid size", {
+                    ...baseParams,
+                    width,
+                    height,
+                    dimensionsExplicit: true,
+                }),
+            ).rejects.toMatchObject({ status: 400 });
+            expect(fetchSpy).not.toHaveBeenCalled();
+        },
+    );
 
     it.each([
         ["1:1", "square_hd"],
@@ -174,17 +178,20 @@ describe("qwenImage3Model", () => {
         ["21:9", { width: 1536, height: 658 }],
         ["9:21", { width: 658, height: 1536 }],
         ["adaptive", { width: 1024, height: 1024 }],
-    ] as const)("maps aspect ratio %s to Fal's supported size", async (aspectRatio, expected) => {
-        const requests: FalRequest[] = [];
-        mockFal(requests);
+    ] as const)(
+        "maps aspect ratio %s to Fal's supported size",
+        async (aspectRatio, expected) => {
+            const requests: FalRequest[] = [];
+            mockFal(requests);
 
-        await callQwenImage3API("aspect ratio", {
-            ...baseParams,
-            aspectRatio,
-        });
+            await callQwenImage3API("aspect ratio", {
+                ...baseParams,
+                aspectRatio,
+            });
 
-        expect(requests[0].body.image_size).toEqual(expected);
-    });
+            expect(requests[0].body.image_size).toEqual(expected);
+        },
+    );
 
     it("rejects a successful Fal response without an output image", async () => {
         mockFal([], { images: [] });

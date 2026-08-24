@@ -77,29 +77,28 @@ describe("processParameters", () => {
         expect(result.options.stream_options).toEqual({ include_usage: true });
     });
 
-    it.each([
-        "gpt-5.5",
-        "gpt-5.6-sol",
-        "o3",
-    ])("normalizes unsupported sampling parameters for %s", (model) => {
-        const result = processParameters(messages, {
-            model,
-            temperature: 0.7,
-            top_p: 0.9,
-            frequency_penalty: 0.5,
-            presence_penalty: 0.5,
-            modelConfig: {
-                provider: "azure-openai",
-                "azure-deployment-id": model,
-            },
-            modelDef,
-        });
+    it.each(["gpt-5.5", "gpt-5.6-sol", "o3"])(
+        "normalizes unsupported sampling parameters for %s",
+        (model) => {
+            const result = processParameters(messages, {
+                model,
+                temperature: 0.7,
+                top_p: 0.9,
+                frequency_penalty: 0.5,
+                presence_penalty: 0.5,
+                modelConfig: {
+                    provider: "azure-openai",
+                    "azure-deployment-id": model,
+                },
+                modelDef,
+            });
 
-        expect(result.options.temperature).toBe(1);
-        expect(result.options.top_p).toBeUndefined();
-        expect(result.options.frequency_penalty).toBeUndefined();
-        expect(result.options.presence_penalty).toBeUndefined();
-    });
+            expect(result.options.temperature).toBe(1);
+            expect(result.options.top_p).toBeUndefined();
+            expect(result.options.frequency_penalty).toBeUndefined();
+            expect(result.options.presence_penalty).toBeUndefined();
+        },
+    );
 
     it("keeps sampling parameters for non-reasoning Azure models", () => {
         const result = processParameters(messages, {

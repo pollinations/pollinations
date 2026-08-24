@@ -1,0 +1,34 @@
+{
+  "pr_number": 13672,
+  "title": "feat: add hosted MCP registry and Gen proxy",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13672",
+  "merged_at": "2026-08-24T06:22:17Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds a registry for Pollinations-hosted MCP servers\\n- Proxies authenticated MCP requests through Gen\\n- Bills trusted usage receipts through the existing Pollen flow\\n- Exposes registered MCPs to managed-agent configuration\\n- Registers the existing Pollinations MCP as the first server",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "MCPs move into the hive",
+    "blurb": "Pollinations can now host MCP servers in a proper registry instead of leaving agents to forage for tools alone. Authenticated calls pass through Gen, trusted receipts find the existing Pollen flow, and the first resident is the Pollinations MCP itself.",
+    "summary": "Added a Pollinations-hosted MCP registry and Gen MCP proxy that authenticates requests, bills trusted usage receipts through Pollen, and exposes registered servers in managed-agent configuration, starting with the existing Pollinations MCP.",
+    "impact": "Managed agents can now discover and use registered Pollinations MCP servers through a single authenticated Gen path, with usage accounted for through the established Pollen billing flow.",
+    "keywords": [
+      "MCP",
+      "agents",
+      "Gen proxy",
+      "MCP registry",
+      "Pollen billing",
+      "managed agents"
+    ],
+    "visual_concept": "Depict a cozy garden-tool registry for AI agents: labeled little tool drawers and glowing terminal portals represent hosted MCP servers, while a friendly managed-agent configuration screen points toward the first Pollinations MCP. Polli acts as the observant registry keeper, routing a glowing authenticated request through a Gen terminal and placing a tiny Pollen receipt into a garden ledger; code-plants and flowers show that the tool ecosystem is growing.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and rounded light blue translucent wings, wearing a tiny librarian hat as she files glowing MCP tool cards into a garden registry beside a lime green (#ecf874) CRT terminal labeled in simple pixel text “MCP”. A small managed-agent robot eagerly follows an authenticated glowing path from the Gen terminal to a code-plant tool shed while Polli adds a tiny Pollen receipt to a ledger; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with flowers and vines around the workstation."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-24/PR-13672.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and rounded light blue translucent wings, wearing a tiny librarian hat as she files glowing MCP tool cards into a garden registry beside a lime green (#ecf874) CRT terminal labeled in simple pixel text “MCP”. A small managed-agent robot eagerly follows an authenticated glowing path from the Gen terminal to a code-plant tool shed while Polli adds a tiny Pollen receipt to a ledger; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with flowers and vines around the workstation."
+  },
+  "generated_at": "2026-08-24T06:23:40.722042+00:00"
+}

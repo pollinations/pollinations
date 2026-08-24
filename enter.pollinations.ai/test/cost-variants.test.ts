@@ -203,15 +203,15 @@ describe("long-context cost variants", () => {
             12,
         );
         expect(billing.priceDefinition).toMatchObject({
-            promptTextTokens: 10 / 1e6,
-            promptCachedTokens: 1 / 1e6,
-            completionTextTokens: 45 / 1e6,
+            promptTextTokens: (10 / 1e6) * 0.75,
+            promptCachedTokens: (1 / 1e6) * 0.75,
+            completionTextTokens: (45 / 1e6) * 0.75,
         });
     });
 
     it.each([
-        ["gpt-5.6-sol", 10, 1, 12.5, 45, 0.5],
-        ["gpt-5.6-terra", 4, 0.4, 5, 18, 0.625],
+        ["gpt-5.6-sol", 10, 1, 12.5, 45, 1 / 3],
+        ["gpt-5.6-terra", 4, 0.4, 5, 18, 1],
         ["gpt-5.6-luna", 0.4, 0.04, 0.5, 1.8, 1],
     ] satisfies [
         ModelName,

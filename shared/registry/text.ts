@@ -109,7 +109,7 @@ export const TEXT_SERVICES = {
         brand: "OpenAI",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(2.5),
             promptCachedTokens: perMillion(0.25),
@@ -176,7 +176,7 @@ export const TEXT_SERVICES = {
         brand: "OpenAI",
         category: "text",
         addedDate: new Date("2026-05-02").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(5.0),
             promptCachedTokens: perMillion(0.5),
@@ -219,7 +219,10 @@ export const TEXT_SERVICES = {
         brand: "OpenAI",
         category: "text",
         addedDate: new Date("2026-07-10").getTime(),
-        priceMultiplier: 0.5,
+        // OpenRouter's promotion discounts Azure output more deeply than
+        // input/cache. One third matches its output rate and keeps the other
+        // dimensions below OpenRouter under the registry's uniform multiplier.
+        priceMultiplier: 1 / 3,
         cost: {
             promptTextTokens: perMillion(5.0),
             promptCachedTokens: perMillion(0.5),
@@ -261,7 +264,7 @@ export const TEXT_SERVICES = {
         brand: "OpenAI",
         category: "text",
         addedDate: new Date("2026-07-10").getTime(),
-        priceMultiplier: 0.625,
+        priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(2.0),
             promptCachedTokens: perMillion(0.2),
@@ -474,7 +477,7 @@ export const TEXT_SERVICES = {
         brand: "OpenAI",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(0.6),
             completionTextTokens: perMillion(2.4),
@@ -497,12 +500,14 @@ export const TEXT_SERVICES = {
         brand: "OpenAI",
         category: "text",
         addedDate: new Date("2026-04-02").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
+            // Azure GPT Audio 1.5 Global meters, verified against account
+            // usage and Retail Prices on 2026-08-24.
             promptTextTokens: perMillion(2.5),
             completionTextTokens: perMillion(10.0),
-            promptAudioTokens: perMillion(40.0),
-            completionAudioTokens: perMillion(80.0),
+            promptAudioTokens: perMillion(32.0),
+            completionAudioTokens: perMillion(64.0),
         },
         title: "GPT Audio 1.5",
         description:
@@ -772,7 +777,7 @@ export const TEXT_SERVICES = {
         brand: "xAI",
         category: "text",
         addedDate: new Date("2025-11-10").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(2.0),
             promptCachedTokens: perMillion(0.2),
@@ -795,7 +800,7 @@ export const TEXT_SERVICES = {
         brand: "xAI",
         category: "text",
         addedDate: new Date("2026-05-26").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         // xAI applies a higher price tier above 200K tokens; currently absorbed
         // by Pollinations — see _local/model-changes-2026-06-02.md.
         cost: {
@@ -923,7 +928,7 @@ export const TEXT_SERVICES = {
         brand: "Pollinations",
         category: "text",
         addedDate: new Date("2026-03-23").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(5.0),
             promptCachedTokens: perMillion(0.5),

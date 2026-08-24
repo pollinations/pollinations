@@ -114,18 +114,30 @@ test("GPT-5.5 is available without paid-only gating", () => {
     expect(definition.paidOnly).toBeUndefined();
 });
 
-test("GPT-5.6 models are quest-eligible at their approved multipliers", () => {
-    for (const [model, multiplier] of [
-        ["gpt-5.6-sol", 0.5],
-        ["gpt-5.6-terra", 0.625],
+test("Azure models use the approved public-price multipliers", () => {
+    const gpt56Multipliers = new Map([
+        ["gpt-5.6-sol", 1 / 3],
+        ["gpt-5.6-terra", 1],
         ["gpt-5.6-luna", 1],
-    ] as const) {
-        const definition = getRegistryModelDefinition(model);
+    ]);
 
-        expect(definition.provider).toBe("azure");
-        expect(definition.paidOnly).toBeUndefined();
-        expect(definition.priceMultiplier).toBe(multiplier);
+    for (const model of getModels()) {
+        const definition = getRegistryModelDefinition(model);
+        if (definition.provider !== "azure") continue;
+
+        expect(definition.priceMultiplier, model).toBe(
+            gpt56Multipliers.get(model) ?? 0.75,
+        );
     }
+});
+
+test("GPT Audio 1.5 uses the exact Azure Global meter sheet", () => {
+    expect(getCostDefinition("openai-audio-large")).toEqual({
+        promptTextTokens: 2.5 / 1e6,
+        completionTextTokens: 10 / 1e6,
+        promptAudioTokens: 32 / 1e6,
+        completionAudioTokens: 64 / 1e6,
+    });
 });
 
 test("Seedream 5 Pro uses Replicate and requires paid balance at provider cost", () => {

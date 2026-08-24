@@ -5,12 +5,13 @@ import {
     BannedAccountError,
     StagingAccessDeniedError,
 } from "@shared/auth/api-key.ts";
-import { getUserBalance } from "@shared/billing/balance.ts";
 import { handleError } from "@shared/error.ts";
 import { requestId } from "@shared/middleware/request-id.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
-import { BillableEventBatchSchema } from "@shared/schemas/billable-event.ts";
-import { drizzle } from "drizzle-orm/d1";
+import {
+    BillableEventBatchSchema,
+    BillingAuthorizationSchema,
+} from "@shared/schemas/billable-event.ts";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -21,7 +22,9 @@ import { logger } from "./middleware/logger.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
 import { wellKnownRoutes } from "./routes/well-known.ts";
 import {
+    authorizeBillingRequest,
     type BillingEventResult,
+    cancelBillingAuthorization,
     settleBillableEvents,
 } from "./services/billing-service.ts";
 
@@ -124,13 +127,26 @@ export type BillingAuthorizationResponse =
               apiKey: {
                   id: string;
                   permissions: Record<string, string[]> | null;
-                  pollenBudget: number | null;
-                  byopClientKeyId: string | null;
+                  keyType: string | null;
               };
-              balance: { tier: number; paid: number };
+              grant: {
+                  id: string;
+                  reservedPrice: number;
+                  duplicate: boolean;
+              };
           };
       }
-    | { ok: false; error: "invalid_api_key" | "forbidden" };
+    | {
+          ok: false;
+          error:
+              | "invalid_authorization"
+              | "invalid_api_key"
+              | "forbidden"
+              | "authorization_conflict"
+              | "authorization_closed"
+              | "insufficient_balance_or_budget"
+              | "model_not_allowed";
+      };
 
 async function authenticateServiceToken(
     apiToken: string,
@@ -164,7 +180,14 @@ async function authenticateServiceToken(
 
 /** Internal-only billing capability exposed through a named Service Binding. */
 export class BillingService extends WorkerEntrypoint<CloudflareBindings> {
-    async authorize(apiToken: string): Promise<BillingAuthorizationResponse> {
+    async authorize(
+        apiToken: string,
+        input: unknown,
+    ): Promise<BillingAuthorizationResponse> {
+        const authorization = BillingAuthorizationSchema.safeParse(input);
+        if (!authorization.success) {
+            return { ok: false, error: "invalid_authorization" };
+        }
         const result = await authenticateServiceToken(
             apiToken,
             this.env,
@@ -172,8 +195,14 @@ export class BillingService extends WorkerEntrypoint<CloudflareBindings> {
         );
         if (!result.ok) return result;
 
+        const grant = await authorizeBillingRequest(
+            this.env.DB,
+            result.auth,
+            authorization.data,
+        );
+        if (!grant.ok) return grant;
+
         const { apiKey, user } = result.auth;
-        const balance = await getUserBalance(drizzle(this.env.DB), user.id);
         return {
             ok: true,
             authorization: {
@@ -182,36 +211,38 @@ export class BillingService extends WorkerEntrypoint<CloudflareBindings> {
                 apiKey: {
                     id: apiKey.id,
                     permissions: apiKey.permissions ?? null,
-                    pollenBudget: apiKey.pollenBalance ?? null,
-                    byopClientKeyId: apiKey.byopClientKeyId ?? null,
+                    keyType:
+                        typeof apiKey.metadata?.keyType === "string"
+                            ? apiKey.metadata.keyType
+                            : null,
                 },
-                balance: {
-                    tier: balance.tierBalance,
-                    paid: balance.packBalance,
-                },
+                grant: grant.grant,
             },
         };
     }
 
     async settle(
-        apiToken: string,
+        authorizationId: string,
         input: unknown,
     ): Promise<BillingServiceResponse> {
         const events = BillableEventBatchSchema.safeParse(input);
         if (!events.success) return { ok: false, error: "invalid_events" };
 
-        const result = await authenticateServiceToken(
-            apiToken,
-            this.env,
-            this.ctx,
-        );
-        if (!result.ok) return result;
         return {
             ok: true,
             events: await settleBillableEvents(
                 this.env.DB,
-                result.auth,
+                authorizationId,
                 events.data,
+            ),
+        };
+    }
+
+    async cancel(authorizationId: string): Promise<{ cancelled: boolean }> {
+        return {
+            cancelled: await cancelBillingAuthorization(
+                this.env.DB,
+                authorizationId,
             ),
         };
     }

@@ -14,6 +14,7 @@ import {
   integer,
   real,
   index,
+  primaryKey,
   uniqueIndex,
 } from "drizzle-orm/sqlite-core";
 
@@ -198,8 +199,38 @@ export const stripeCardFingerprintAttempt = sqliteTable("stripe_card_fingerprint
   ),
 ]);
 
-export const billableEvent = sqliteTable("billable_event", {
+export const billingAuthorization = sqliteTable("billing_authorization", {
   id: text("id").primaryKey(),
+  producer: text("producer").notNull(),
+  requestId: text("request_id").notNull(),
+  apiKeyId: text("api_key_id").notNull(),
+  userId: text("user_id").notNull(),
+  estimatedPrice: real("estimated_price").notNull(),
+  reservedPrice: real("reserved_price").notNull(),
+  actualPrice: real("actual_price"),
+  paidOnly: integer("paid_only", { mode: "boolean" }).default(false).notNull(),
+  byopClientKeyId: text("byop_client_key_id"),
+  keyBudgetLimited: integer("key_budget_limited", { mode: "boolean" })
+    .default(false)
+    .notNull(),
+  reservationApplied: integer("reservation_applied", { mode: "boolean" })
+    .default(false)
+    .notNull(),
+  settledAt: integer("settled_at", { mode: "timestamp_ms" }),
+  cancelledAt: integer("cancelled_at", { mode: "timestamp_ms" }),
+  createdAt: integer("created_at", { mode: "timestamp_ms" })
+    .defaultNow()
+    .notNull(),
+}, (table) => [
+  uniqueIndex("idx_billing_authorization_producer_request").on(
+    table.producer,
+    table.requestId,
+  ),
+]);
+
+export const billableEvent = sqliteTable("billable_event", {
+  id: text("id").notNull(),
+  authorizationId: text("authorization_id").notNull(),
   requestId: text("request_id").notNull(),
   apiKeyId: text("api_key_id").notNull(),
   userId: text("user_id").notNull(),
@@ -216,6 +247,7 @@ export const billableEvent = sqliteTable("billable_event", {
     .defaultNow()
     .notNull(),
 }, (table) => [
+  primaryKey({ columns: [table.authorizationId, table.id] }),
   index("idx_billable_event_request_id").on(table.requestId),
   index("idx_billable_event_user_occurred").on(table.userId, table.occurredAt),
 ]);

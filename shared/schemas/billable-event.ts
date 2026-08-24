@@ -2,6 +2,16 @@ import { z } from "zod";
 
 export const BILLABLE_EVENT_BATCH_LIMIT = 50;
 
+export const BillingAuthorizationSchema = z
+    .object({
+        producer: z.string().min(1).max(64),
+        requestId: z.string().min(1).max(128),
+        estimatedPrice: z.number().finite().nonnegative(),
+        paidOnly: z.boolean().default(false),
+        model: z.string().min(1).max(128).optional(),
+    })
+    .strict();
+
 export const BillableEventSchema = z
     .object({
         id: z.string().min(1).max(128),
@@ -32,3 +42,4 @@ export const BillableEventBatchSchema = z
     });
 
 export type BillableEvent = z.infer<typeof BillableEventSchema>;
+export type BillingAuthorization = z.infer<typeof BillingAuthorizationSchema>;

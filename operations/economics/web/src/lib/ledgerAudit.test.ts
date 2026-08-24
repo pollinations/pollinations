@@ -105,6 +105,7 @@ describe("monthlyLedgerAuditRows", () => {
             cloudRows: 1,
             pollenRows: 1,
             forecastRows: 0,
+            missingBankData: false,
             transactionEvidenceGaps: 0,
             missingMappings: 0,
             estimatedFx: false,
@@ -180,6 +181,7 @@ describe("monthlyLedgerAuditRows", () => {
     it("leaves provider statement readiness to Close", () => {
         const [row] = monthlyLedgerAuditRows(
             data({
+                opTransactions: [transaction()],
                 opCloud: [
                     cloud({
                         entry_id: "cloud-model-a",
@@ -198,6 +200,20 @@ describe("monthlyLedgerAuditRows", () => {
         );
 
         expect(row.status).toBe("clean");
+    });
+
+    it("flags a closed month with no bank transactions", () => {
+        const [row] = monthlyLedgerAuditRows(
+            data({ opCloud: [cloud()] }),
+            "2026-07",
+            "2026-08",
+        );
+
+        expect(row).toMatchObject({
+            status: "attention",
+            transactionRows: 0,
+            missingBankData: true,
+        });
     });
 
     it("does not treat an unresolved exception note as resolved evidence", () => {
@@ -287,6 +303,7 @@ describe("monthlyLedgerAuditRows", () => {
             cloudRows: 1,
             pollenRows: 1,
             forecastRows: 0,
+            missingBankData: false,
             invalidRows: 3,
         });
     });

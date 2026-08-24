@@ -58,6 +58,25 @@ function NumberCell({ value }: { value: number }) {
     return <TableCell align="right">{value.toLocaleString()}</TableCell>;
 }
 
+function BankRowsCell({ row }: { row: MonthlyLedgerAuditRow }) {
+    return (
+        <TableCell align="right" className={GROUP_BORDER}>
+            {row.missingBankData ? (
+                <Tooltip
+                    triggerAs="span"
+                    content="No bank transactions are present for this closed month. Confirm the statement import before closing it."
+                >
+                    <span className="text-intent-warning-text underline decoration-dotted underline-offset-2">
+                        0
+                    </span>
+                </Tooltip>
+            ) : (
+                row.transactionRows.toLocaleString()
+            )}
+        </TableCell>
+    );
+}
+
 function IssueCountCell({
     value,
     vendors,
@@ -223,7 +242,7 @@ export function MonthlyLedgerAuditPanel({
                                 </span>
                             </TableCell>
                             <TableCell>{monthLabel(row.month)}</TableCell>
-                            <NumberCell value={row.transactionRows} />
+                            <BankRowsCell row={row} />
                             <NumberCell value={row.cloudRows} />
                             <NumberCell value={row.pollenRows} />
                             <NumberCell value={row.forecastRows} />

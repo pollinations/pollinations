@@ -49,6 +49,7 @@ export type MonthlyLedgerAuditRow = {
     cloudRows: number;
     pollenRows: number;
     forecastRows: number;
+    missingBankData: boolean;
     transactionEvidenceGaps: number;
     transactionEvidenceProviders: string[];
     missingMappings: number;
@@ -224,7 +225,11 @@ function statusFor(
     ) {
         return "structural";
     }
-    if (row.transactionEvidenceGaps > 0 || row.estimatedFx) {
+    if (
+        row.missingBankData ||
+        row.transactionEvidenceGaps > 0 ||
+        row.estimatedFx
+    ) {
         return "attention";
     }
     return "clean";
@@ -281,6 +286,7 @@ export function monthlyLedgerAuditRows(
                 cloudRows: cloud.length,
                 pollenRows: pollen.length,
                 forecastRows: forecast.length,
+                missingBankData: !partial && transactions.length === 0,
                 transactionEvidenceGaps: evidenceGaps.length,
                 transactionEvidenceProviders: providerNames(evidenceGaps),
                 missingMappings: missingMappingProviders.length,
@@ -360,6 +366,7 @@ export function monthlyLedgerAuditRows(
             cloudRows: invalidDateCloud.length,
             pollenRows: invalidDatePollen.length,
             forecastRows: invalidDateForecast.length,
+            missingBankData: false,
             transactionEvidenceGaps: 0,
             transactionEvidenceProviders: [],
             missingMappings: 0,

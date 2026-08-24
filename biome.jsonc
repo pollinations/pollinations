@@ -51,7 +51,7 @@
     },
     "overrides": [
         {
-            "includes": ["apps/chat/**"],
+            "includes": ["apps/chat/**", "apps/ai-dungeon-master/**"],
             "linter": {
                 "rules": {
                     "a11y": {
@@ -61,7 +61,6 @@
                         "useKeyWithClickEvents": "off",
                         "useKeyWithMouseEvents": "off",
                         "noLabelWithoutControl": "off",
-                        "useMediaCaption": "off",
                         "useSemanticElements": "off"
                     },
                     "suspicious": {

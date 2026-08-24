@@ -115,18 +115,14 @@ test("GPT-5.5 is available without paid-only gating", () => {
 });
 
 test("Azure models use the approved public-price multipliers", () => {
-    const gpt56Multipliers = new Map([
-        ["gpt-5.6-sol", 1 / 3],
-        ["gpt-5.6-terra", 1],
-        ["gpt-5.6-luna", 1],
-    ]);
+    const azureMultiplierOverrides = new Map([["gpt-5.6-sol", 1 / 3]]);
 
     for (const model of getModels()) {
         const definition = getRegistryModelDefinition(model);
         if (definition.provider !== "azure") continue;
 
         expect(definition.priceMultiplier, model).toBe(
-            gpt56Multipliers.get(model) ?? 0.75,
+            azureMultiplierOverrides.get(model) ?? 0.75,
         );
     }
 });

@@ -477,10 +477,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       },
     },
     "price": {
-      "completionTextTokens": 0.0000012,
-      "promptCacheWriteTokens": 0.00000025,
-      "promptCachedTokens": 0.00000002,
-      "promptTextTokens": 0.0000002,
+      "completionTextTokens": 0.0000009,
+      "promptCacheWriteTokens": 0.0000001875,
+      "promptCachedTokens": 0.000000015,
+      "promptTextTokens": 0.00000015,
     },
   },
   "gpt-5.6-sol": {
@@ -521,10 +521,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       },
     },
     "price": {
-      "completionTextTokens": 0.000012,
-      "promptCacheWriteTokens": 0.0000025,
-      "promptCachedTokens": 0.0000002,
-      "promptTextTokens": 0.000002,
+      "completionTextTokens": 0.000009,
+      "promptCacheWriteTokens": 0.000001875,
+      "promptCachedTokens": 0.00000015,
+      "promptTextTokens": 0.0000015,
     },
   },
   "gpt-image-2": {

@@ -211,8 +211,8 @@ describe("long-context cost variants", () => {
 
     it.each([
         ["gpt-5.6-sol", 10, 1, 12.5, 45, 1 / 3],
-        ["gpt-5.6-terra", 4, 0.4, 5, 18, 1],
-        ["gpt-5.6-luna", 0.4, 0.04, 0.5, 1.8, 1],
+        ["gpt-5.6-terra", 4, 0.4, 5, 18, 0.75],
+        ["gpt-5.6-luna", 0.4, 0.04, 0.5, 1.8, 0.75],
     ] satisfies [
         ModelName,
         number,

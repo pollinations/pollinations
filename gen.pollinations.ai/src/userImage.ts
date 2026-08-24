@@ -1,6 +1,7 @@
 import type { ImageInputErrorCode } from "@shared/error.ts";
 import { HttpError } from "@shared/http-error.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
+import { stripImageMetadata } from "@shared/image-strip.ts";
 import { readResponseBytes } from "@shared/response-bytes.ts";
 import { validateUserMediaUrl } from "./utils/user-media-url.ts";
 
@@ -192,7 +193,7 @@ export async function fetchUserImage(
                 "unsupported_image_media_type",
             );
         }
-        return { bytes, mimeType };
+        return { bytes: stripImageMetadata(bytes), mimeType };
     }
 
     const url = assertAllowedImageUrl(imageUrl);
@@ -281,5 +282,5 @@ export async function fetchUserImage(
         );
     }
 
-    return { bytes, mimeType };
+    return { bytes: stripImageMetadata(bytes), mimeType };
 }

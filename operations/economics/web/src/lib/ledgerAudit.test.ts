@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import type { Data, OpCloudRow, OpPollenRow, OpTransactionRow } from "../types";
+import type {
+    Data,
+    OpCloudRow,
+    OpForecastRow,
+    OpPollenRow,
+    OpTransactionRow,
+} from "../types";
 import { monthlyLedgerAuditRows } from "./ledgerAudit";
 
 const transaction = (
@@ -59,6 +65,20 @@ const pollen = (over: Partial<OpPollenRow> = {}): OpPollenRow => ({
     ...over,
 });
 
+const forecast = (over: Partial<OpForecastRow> = {}): OpForecastRow => ({
+    entry_id: "forecast-1",
+    month: "2026-08-01",
+    vendor: "aws",
+    category: "compute",
+    amount: -100,
+    currency: "USD",
+    method: "fixed",
+    source: "reviewed",
+    evidence: "forecast batch",
+    recorded_at: "2026-08-01 00:00:00",
+    ...over,
+});
+
 const data = (over: Partial<Data> = {}): Data => ({
     opTransactions: [],
     opCloud: [],
@@ -84,11 +104,37 @@ describe("monthlyLedgerAuditRows", () => {
             transactionRows: 1,
             cloudRows: 1,
             pollenRows: 1,
+            forecastRows: 0,
             transactionEvidenceGaps: 0,
             missingMappings: 0,
             estimatedFx: false,
             invalidRows: 0,
             duplicateRows: 0,
+        });
+    });
+
+    it("audits forecast-only months and invalid forecast facts", () => {
+        const rows = monthlyLedgerAuditRows(
+            data({
+                opForecast: [
+                    forecast(),
+                    forecast({
+                        entry_id: "forecast-2",
+                        currency: "GBP",
+                    }),
+                ],
+            }),
+            "",
+            "2026-08",
+        );
+
+        expect(rows).toHaveLength(1);
+        expect(rows[0]).toMatchObject({
+            month: "2026-08",
+            forecastRows: 2,
+            invalidRows: 1,
+            invalidProviders: ["aws"],
+            status: "structural",
         });
     });
 
@@ -240,6 +286,7 @@ describe("monthlyLedgerAuditRows", () => {
             transactionRows: 1,
             cloudRows: 1,
             pollenRows: 1,
+            forecastRows: 0,
             invalidRows: 3,
         });
     });

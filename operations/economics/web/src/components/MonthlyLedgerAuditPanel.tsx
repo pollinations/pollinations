@@ -43,6 +43,7 @@ const SORT_COLUMNS: SortColumn<MonthlyLedgerAuditRow>[] = [
     { key: "transactionRows", value: (row) => row.transactionRows },
     { key: "cloudRows", value: (row) => row.cloudRows },
     { key: "pollenRows", value: (row) => row.pollenRows },
+    { key: "forecastRows", value: (row) => row.forecastRows },
     {
         key: "transactionEvidenceGaps",
         value: (row) => row.transactionEvidenceGaps,
@@ -121,7 +122,7 @@ export function MonthlyLedgerAuditPanel({
                             Month
                         </TableHeaderCell>
                         <TableHeaderCell
-                            colSpan={3}
+                            colSpan={4}
                             align="center"
                             className={GROUP_BORDER}
                         >
@@ -176,6 +177,12 @@ export function MonthlyLedgerAuditPanel({
                             Pollen
                         </TableHeaderCell>
                         <TableHeaderCell
+                            {...headerProps("forecastRows")}
+                            align="right"
+                        >
+                            Forecast
+                        </TableHeaderCell>
+                        <TableHeaderCell
                             {...headerProps("estimatedFx")}
                             className={GROUP_BORDER}
                         >
@@ -219,6 +226,7 @@ export function MonthlyLedgerAuditPanel({
                             <NumberCell value={row.transactionRows} />
                             <NumberCell value={row.cloudRows} />
                             <NumberCell value={row.pollenRows} />
+                            <NumberCell value={row.forecastRows} />
                             <IssueCountCell
                                 value={row.transactionEvidenceGaps}
                                 vendors={row.transactionEvidenceProviders}

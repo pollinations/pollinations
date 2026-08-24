@@ -1,5 +1,15 @@
-import type { Data, OpCloudRow, OpPollenRow, OpTransactionRow } from "../types";
-import { cloudCategory, transactionCategory } from "./categories";
+import type {
+    Data,
+    OpCloudRow,
+    OpForecastRow,
+    OpPollenRow,
+    OpTransactionRow,
+} from "../types";
+import {
+    cloudCategory,
+    forecastCategory,
+    transactionCategory,
+} from "./categories";
 import { hasReconciledTransactionEvidence } from "./documents";
 import { fxEstimatedMonths } from "./fx";
 import {
@@ -8,11 +18,14 @@ import {
     isMonthKey,
     type MonthFilterValue,
     matchesMonth,
+    WINDOW_START,
 } from "./months";
 import { isCloudSource, isTransactionSource } from "./provenance";
 import { missingProviderMappings } from "./providerRegistry";
 
 const CURRENCY_RE = /^[A-Z]{3}$/;
+const FORECAST_CURRENCIES = new Set(["EUR", "USD"]);
+const FORECAST_METHODS = new Set(["fixed", "funded", "last", "one_off"]);
 const POLLEN_MEASURES: (keyof OpPollenRow)[] = [
     "cost_paid",
     "cost_quests",
@@ -35,6 +48,7 @@ export type MonthlyLedgerAuditRow = {
     transactionRows: number;
     cloudRows: number;
     pollenRows: number;
+    forecastRows: number;
     transactionEvidenceGaps: number;
     transactionEvidenceProviders: string[];
     missingMappings: number;
@@ -93,6 +107,21 @@ function invalidPollen(row: OpPollenRow): boolean {
         POLLEN_MEASURES.some(
             (field) => !finite(row[field]) || Number(row[field]) < 0,
         )
+    );
+}
+
+function invalidForecast(row: OpForecastRow): boolean {
+    return (
+        !present(row.entry_id) ||
+        !isDateKey(row.month) ||
+        !row.month.endsWith("-01") ||
+        !present(row.vendor) ||
+        forecastCategory(row) === "uncategorized" ||
+        !finite(row.amount) ||
+        !FORECAST_CURRENCIES.has(row.currency) ||
+        !FORECAST_METHODS.has(row.method) ||
+        !present(row.source) ||
+        !present(row.recorded_at)
     );
 }
 
@@ -172,6 +201,19 @@ function cloudDuplicateKey(row: OpCloudRow): string {
     ]);
 }
 
+function forecastDuplicateKey(row: OpForecastRow): string {
+    return JSON.stringify([
+        row.month,
+        row.vendor,
+        row.category,
+        row.amount,
+        row.currency,
+        row.method,
+        row.source,
+        row.evidence,
+    ]);
+}
+
 function statusFor(
     row: Omit<MonthlyLedgerAuditRow, "status">,
 ): MonthlyLedgerAuditStatus {
@@ -195,7 +237,14 @@ export function monthlyLedgerAuditRows(
 ): MonthlyLedgerAuditRow[] {
     const estimatedFxMonths = new Set(fxEstimatedMonths(data));
 
-    const rows = collectMonths(data)
+    const auditMonths = new Set(collectMonths(data));
+    for (const row of data.opForecast ?? []) {
+        const month = String(row.month ?? "").slice(0, 7);
+        if (isMonthKey(month) && month >= WINDOW_START) auditMonths.add(month);
+    }
+
+    const rows = [...auditMonths]
+        .sort((a, b) => a.localeCompare(b))
         .filter((month) => matchesMonth(month, filter))
         .map((month) => {
             const bankRows = (data.opTransactions ?? []).filter(
@@ -210,6 +259,9 @@ export function monthlyLedgerAuditRows(
             const pollen = (data.opPollen ?? []).filter(
                 (row) => row.month === month,
             );
+            const forecast = (data.opForecast ?? []).filter(
+                (row) => row.month.slice(0, 7) === month,
+            );
             const evidenceGaps = transactions.filter(
                 (row) => !hasReconciledTransactionEvidence(row),
             );
@@ -220,6 +272,7 @@ export function monthlyLedgerAuditRows(
             const invalidTransactions = bankRows.filter(invalidTransaction);
             const invalidCloudRows = cloud.filter(invalidCloud);
             const invalidPollenRows = pollen.filter(invalidPollen);
+            const invalidForecastRows = forecast.filter(invalidForecast);
             const partial = month >= currentMonth;
             const base = {
                 month,
@@ -227,6 +280,7 @@ export function monthlyLedgerAuditRows(
                 transactionRows: transactions.length,
                 cloudRows: cloud.length,
                 pollenRows: pollen.length,
+                forecastRows: forecast.length,
                 transactionEvidenceGaps: evidenceGaps.length,
                 transactionEvidenceProviders: providerNames(evidenceGaps),
                 missingMappings: missingMappingProviders.length,
@@ -235,11 +289,13 @@ export function monthlyLedgerAuditRows(
                 invalidRows:
                     invalidTransactions.length +
                     invalidCloudRows.length +
-                    invalidPollenRows.length,
+                    invalidPollenRows.length +
+                    invalidForecastRows.length,
                 invalidProviders: providerNames([
                     ...invalidTransactions,
                     ...invalidCloudRows,
                     ...invalidPollenRows,
+                    ...invalidForecastRows,
                 ]),
                 // OP Pollen is unique at its raw provider/model grain. After
                 // canonical aliases merge (for example bedrock -> aws), two
@@ -250,7 +306,8 @@ export function monthlyLedgerAuditRows(
                 // financial fact instead of re-counting correction history.
                 duplicateRows:
                     duplicateExtras(bankRows, transactionDuplicateKey) +
-                    duplicateExtras(cloud, cloudDuplicateKey),
+                    duplicateExtras(cloud, cloudDuplicateKey) +
+                    duplicateExtras(forecast, forecastDuplicateKey),
                 duplicateProviders: [
                     ...new Set([
                         ...providersWithDuplicateKeys(
@@ -258,6 +315,10 @@ export function monthlyLedgerAuditRows(
                             transactionDuplicateKey,
                         ),
                         ...providersWithDuplicateKeys(cloud, cloudDuplicateKey),
+                        ...providersWithDuplicateKeys(
+                            forecast,
+                            forecastDuplicateKey,
+                        ),
                     ]),
                 ].sort((a, b) => a.localeCompare(b)),
             };
@@ -273,6 +334,11 @@ export function monthlyLedgerAuditRows(
     const invalidDatePollen = (data.opPollen ?? []).filter(
         (row) => !isMonthKey(String(row.month ?? "")),
     );
+    const invalidDateForecast = (data.opForecast ?? []).filter(
+        (row) =>
+            !isDateKey(String(row.month ?? "")) ||
+            !String(row.month ?? "").endsWith("-01"),
+    );
     const broadFilter =
         typeof filter === "string"
             ? filter === "" || filter.length === 4
@@ -281,6 +347,7 @@ export function monthlyLedgerAuditRows(
         ...invalidDateTransactions,
         ...invalidDateCloud,
         ...invalidDatePollen,
+        ...invalidDateForecast,
     ];
     if (broadFilter && invalidDateRows.length > 0) {
         rows.push({
@@ -292,6 +359,7 @@ export function monthlyLedgerAuditRows(
             ).length,
             cloudRows: invalidDateCloud.length,
             pollenRows: invalidDatePollen.length,
+            forecastRows: invalidDateForecast.length,
             transactionEvidenceGaps: 0,
             transactionEvidenceProviders: [],
             missingMappings: 0,

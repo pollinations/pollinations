@@ -52,7 +52,7 @@ describe("community endpoint price/visibility delay", () => {
         sessionToken,
     }) => {
         await approveCommunityModels();
-        await postModel(sessionToken, "", {
+        const created = await postModel(sessionToken, "", {
             name: "delay-model",
             title: "Delay model",
             visibility: "public",
@@ -61,9 +61,13 @@ describe("community endpoint price/visibility delay", () => {
             promptTextPrice: 0.000001,
         });
 
-        const pending = await postModel(sessionToken, "/delay-model/update", {
-            promptTextPrice: 0.000004,
-        });
+        const pending = await postModel(
+            sessionToken,
+            `/${created.id as string}/update`,
+            {
+                promptTextPrice: 0.000004,
+            },
+        );
         expect(pending.pending).toMatchObject({
             effectiveAt: expect.any(String),
             promptTextPrice: 0.000004,
@@ -95,7 +99,7 @@ describe("community endpoint price/visibility delay", () => {
         sessionToken,
     }) => {
         await approveCommunityModels();
-        await postModel(sessionToken, "", {
+        const created = await postModel(sessionToken, "", {
             name: "revert-model",
             title: "Revert model",
             visibility: "public",
@@ -104,14 +108,22 @@ describe("community endpoint price/visibility delay", () => {
             promptTextPrice: 0.000001,
         });
 
-        const pending = await postModel(sessionToken, "/revert-model/update", {
-            promptTextPrice: 0.000004,
-        });
+        const pending = await postModel(
+            sessionToken,
+            `/${created.id as string}/update`,
+            {
+                promptTextPrice: 0.000004,
+            },
+        );
         expect(pending.pending?.promptTextPrice).toBe(0.000004);
 
-        const reverted = await postModel(sessionToken, "/revert-model/update", {
-            visibility: "private",
-        });
+        const reverted = await postModel(
+            sessionToken,
+            `/${created.id as string}/update`,
+            {
+                visibility: "private",
+            },
+        );
         expect(reverted.pending).toBeNull();
         expect(reverted.visibility).toBe("private");
 

@@ -39,7 +39,6 @@ Install: `npm i -g @pollinations/cli@latest` (provides the `polli` binary).
 | Filter models by type | `polli models --type image` |
 | Model health + latency | `polli models --stats` (default 60m, `--window <min>`) |
 | Check balance | `polli usage` |
-| Check developer earnings | `polli earnings` (add `--days N` for a custom range) |
 | List your quests + claim state | `polli quests` (filters: `--open --claimable --claimed --coming-soon`) |
 | Manage prompt agents | `polli agents list` |
 | Manage invite-only community models | `polli my-models list` |
@@ -148,12 +147,10 @@ Use `--stats` before choosing a model. **Caveat**: the `err%` column counts **5x
 polli usage              # current pollen balance
 polli usage --history    # recent individual requests
 polli usage --daily      # daily cost summary
-polli earnings          # developer earnings total + per-entity breakdown
-polli earnings --days 90 # earnings over the last 90 days
 polli quests             # your quests + claim state (open/claimable/claimed/coming)
 polli quests --claimable # only rewards ready to claim
 ```
-**History is eventually consistent** — a request you just made may not appear for 30–60s. When matching costs to freshly-generated media, use `--limit 50` and filter by timestamp, and retry if the expected entry is missing. `polli usage --json` returns `{"pollen": <number>}` — the current balance only; use `--history --json` or `--daily --json` for cost breakdowns. `polli earnings --json` returns `{"days": <n>, "totalPollen": <number>, "totalRequests": <number>, "entities": [...]}`. Earnings covers both BYOP apps (`byop_markup`) and community models (`community_model`). `--days` accepts any positive integer; the API caps it to its available range.
+**History is eventually consistent** — a request you just made may not appear for 30–60s. When matching costs to freshly-generated media, use `--limit 50` and filter by timestamp, and retry if the expected entry is missing. `polli usage --json` returns `{"pollen": <number>}` — the current balance only; use `--history --json` or `--daily --json` for cost breakdowns.
 
 ### Manage my-models
 ```bash

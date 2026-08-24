@@ -895,7 +895,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.04,
     },
     "price": {
-      "completionImageTokens": 0.04,
+      "completionImageTokens": 0.03,
     },
   },
   "krea": {

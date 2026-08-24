@@ -50,7 +50,7 @@ const IMAGE_BASE_SERVICES = {
         brand: "Black Forest Labs",
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             completionImageTokens: 0.04, // per image
         },

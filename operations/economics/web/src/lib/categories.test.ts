@@ -110,6 +110,26 @@ describe("canonical categories", () => {
         expect(categoryLabel("balance_sheet")).toBe("Cash adjustments");
     });
 
+    it("folds office merchants into stable runway line items", () => {
+        expect(runwayLineItem("office", "gaswerksiedlung")).toBe(
+            "Rent & utilities",
+        );
+        expect(runwayLineItem("office", "naturenergie")).toBe(
+            "Rent & utilities",
+        );
+        expect(runwayLineItem("office", "space-berlin")).toBe("Food & drink");
+        expect(runwayLineItem("office", "denns-biomarkt")).toBe("Food & drink");
+        expect(runwayLineItem("office", "zara-home")).toBe(
+            "Furniture & equipment",
+        );
+        expect(runwayLineItem("office", "amazon")).toBe(
+            "Furniture & equipment",
+        );
+        expect(runwayLineItem("office", "barbara-khamouguinoff")).toBe(
+            "Cleaning",
+        );
+    });
+
     it("keeps grants and investments out of operating revenue", () => {
         expect(
             transactionCategory(

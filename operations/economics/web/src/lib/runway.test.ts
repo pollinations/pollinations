@@ -173,6 +173,51 @@ describe("buildRunway", () => {
         expect(result.projectedMonthEndCashUsd).toBe(1_100);
     });
 
+    it("folds office merchants into shared economic line items", () => {
+        const result = buildRunway(
+            [
+                opening(),
+                transaction({
+                    entry_id: "rent",
+                    vendor: "gaswerksiedlung",
+                    category: "office",
+                    amount: -1_000,
+                }),
+                transaction({
+                    entry_id: "power",
+                    vendor: "naturenergie",
+                    category: "office",
+                    amount: -50,
+                }),
+            ],
+            [
+                forecast({
+                    entry_id: "forecast-2026-08-power",
+                    vendor: "naturenergie",
+                    category: "office",
+                    amount: -50,
+                    method: "fixed",
+                }),
+                forecast({
+                    entry_id: "forecast-2026-09-power",
+                    month: "2026-09-01",
+                    vendor: "naturenergie",
+                    category: "office",
+                    amount: -50,
+                    method: "fixed",
+                }),
+            ],
+            NOW,
+        );
+        const rent = result.rows.find(
+            (row) => row.vendor === "Rent & utilities",
+        );
+
+        expect(rent?.category).toBe("office");
+        expect(rent?.values["2026-08:current"]).toBe(-1_050);
+        expect(rent?.values["2026-08:forecast"]).toBe(-50);
+    });
+
     it("uses every same-date opening currency and excludes anchors from cash change", () => {
         const result = buildRunway(
             [

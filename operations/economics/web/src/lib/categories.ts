@@ -40,6 +40,16 @@ const CATEGORY_LABELS: Record<CategoryValue, string> = {
 
 const KNOWN_CATEGORIES = new Set<string>(CATEGORY_IDS);
 
+const OFFICE_RUNWAY_LINE_ITEMS: Record<string, string> = {
+    amazon: "Furniture & equipment",
+    "barbara-khamouguinoff": "Cleaning",
+    "denns-biomarkt": "Food & drink",
+    gaswerksiedlung: "Rent & utilities",
+    naturenergie: "Rent & utilities",
+    "space-berlin": "Food & drink",
+    "zara-home": "Furniture & equipment",
+};
+
 // One manually reviewed source of truth for the business purpose of each cash
 // vendor. Mixed-purpose vendors are handled explicitly below.
 const TRANSACTION_VENDOR_CATEGORIES: Record<string, Category> = {
@@ -169,7 +179,11 @@ export function isBankMovement(row: Pick<OpTransactionRow, "kind">): boolean {
 }
 
 export function runwayLineItem(category: string, vendor: string): string {
-    if (category === "operations" && normalize(vendor) === "tele2") {
+    const normalized = normalize(vendor);
+    if (category === "office") {
+        return OFFICE_RUNWAY_LINE_ITEMS[normalized] ?? vendor;
+    }
+    if (category === "operations" && normalized === "tele2") {
         return "Telecom";
     }
     return vendor;

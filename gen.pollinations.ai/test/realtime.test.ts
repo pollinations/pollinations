@@ -102,7 +102,7 @@ function zeroAudioBase64(byteLength: number): string {
     return btoa("\0".repeat(byteLength));
 }
 
-function mockRealtimeProvider(initialMessage?: string) {
+function mockRealtimeProvider(initialMessage?: string, estimatedCost = 0) {
     let upstreamRequest: Request | undefined;
     let upstreamClient: WebSocket | undefined;
     let upstreamServer: WebSocket | undefined;
@@ -119,7 +119,17 @@ function mockRealtimeProvider(initialMessage?: string) {
             }
             // checkBalance fetches the model-stats pipe for estimated pricing.
             if (request.url.includes("public_model_stats.json")) {
-                return Response.json({ data: [] });
+                return Response.json({
+                    data:
+                        estimatedCost > 0
+                            ? [
+                                  {
+                                      model: "gpt-realtime-2",
+                                      avg_cost_usd: estimatedCost,
+                                  },
+                              ]
+                            : [],
+                });
             }
 
             upstreamRequest = request;
@@ -193,6 +203,25 @@ async function getUserBalances(userId: string) {
     return user;
 }
 
+async function getApiKeyBalance(apiKeyId: string) {
+    const [row] = await drizzle(env.DB)
+        .select({ pollenBalance: apiKeyTable.pollenBalance })
+        .from(apiKeyTable)
+        .where(eq(apiKeyTable.id, apiKeyId));
+    return row?.pollenBalance;
+}
+
+async function waitForApiKeyBalanceAbove(apiKeyId: string, minBalance: number) {
+    for (let attempt = 0; attempt < 20; attempt++) {
+        const pollenBalance = await getApiKeyBalance(apiKeyId);
+        if (pollenBalance != null && pollenBalance > minBalance) {
+            return pollenBalance;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+    return getApiKeyBalance(apiKeyId);
+}
+
 async function waitForPackBalanceBelow(userId: string, maxBalance: number) {
     for (let attempt = 0; attempt < 20; attempt++) {
         const user = await getUserBalances(userId);
@@ -220,12 +249,14 @@ async function openPaidRealtimeSession({
     referrer,
     initialProviderMessage,
     byopClientKeyId,
+    estimatedCost = 0,
 }: {
     name: string;
     model?: string;
     referrer?: string;
     initialProviderMessage?: string;
     byopClientKeyId?: string;
+    estimatedCost?: number;
 }) {
     const {
         key,
@@ -242,7 +273,10 @@ async function openPaidRealtimeSession({
             .set({ byopClientKeyId })
             .where(eq(apiKeyTable.id, apiKeyId));
     }
-    const upstream = mockRealtimeProvider(initialProviderMessage);
+    const upstream = mockRealtimeProvider(
+        initialProviderMessage,
+        estimatedCost,
+    );
     const headers: Record<string, string> = {
         Authorization: `Bearer ${key}`,
         Upgrade: "websocket",
@@ -1266,6 +1300,39 @@ test("deducts aggregate session usage from paid pack balance on close", async ()
     expect(telemetry.tokenCountCompletionText).toBe(100);
     expect(telemetry.tokenCountCompletionAudio).toBe(50);
     expect(telemetry.totalPrice).toBeCloseTo(expectedCharge, 8);
+});
+
+test("releases a realtime API key reservation when the session has no usage", async () => {
+    const session = await openPaidRealtimeSession({
+        name: "unused-budgeted-realtime-key",
+        estimatedCost: 0.2,
+    });
+
+    expect(await getApiKeyBalance(session.apiKeyId)).toBeCloseTo(0.8, 8);
+    await closeRealtimeSession(session);
+
+    expect(await waitForApiKeyBalanceAbove(session.apiKeyId, 0.9)).toBeCloseTo(
+        1,
+        8,
+    );
+});
+
+test("settles realtime usage against the API key reservation", async () => {
+    const session = await openPaidRealtimeSession({
+        name: "reserved-budgeted-realtime-key",
+        estimatedCost: 0.2,
+    });
+
+    const forwardedEvent = nextMessage(session.client);
+    session.upstream.server.send(cachedModalityUsageEvent);
+    await expect(forwardedEvent).resolves.toBe(cachedModalityUsageEvent);
+    await closeAndReadTelemetry(session);
+
+    const expectedCharge = 0.0023975 * 0.75;
+    expect(await waitForApiKeyBalanceAbove(session.apiKeyId, 0.9)).toBeCloseTo(
+        1 - expectedCharge,
+        7,
+    );
 });
 
 test("does not retry a partially completed realtime deduction", async () => {

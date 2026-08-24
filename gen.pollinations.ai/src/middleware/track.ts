@@ -79,6 +79,7 @@ import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import type { FrontendKeyRateLimitVariables } from "@/middleware/rate-limit-durable.ts";
 import { generateRandomId, parseBooleanLike } from "@/util.ts";
+import { releaseApiKeyBudgetReservation } from "@/utils/generation-access.ts";
 import type { FailedCall } from "../fallback.ts";
 
 export type ModelUsage = {
@@ -273,6 +274,7 @@ export const track = (eventType: EventType) =>
         // caller only receives that captured result and must not emit it again.
         if (c.var.track.detachedExecutionTracked) return;
 
+        let billingStarted = false;
         c.executionCtx.waitUntil(
             (async () => {
                 const userId = userTracking.userId;
@@ -341,6 +343,7 @@ export const track = (eventType: EventType) =>
                     pricingInput,
                 );
                 if (responseTracking.cacheHit) {
+                    await releaseApiKeyBudgetReservation(c.var, c.env);
                     await c.var.frontendKeyRateLimit?.consumePollen(0);
                     return;
                 }
@@ -363,6 +366,7 @@ export const track = (eventType: EventType) =>
                     null;
                 let billedPrice = 0;
                 let shouldRunAutoTopUp = false;
+                billingStarted = true;
                 try {
                     const requestedCommunityEndpoint =
                         c.var.model?.communityEndpoint;
@@ -376,6 +380,8 @@ export const track = (eventType: EventType) =>
                         userId,
                         apiKeyId: c.var.auth?.apiKey?.id,
                         apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
+                        apiKeyReservedAmount:
+                            c.var.balance.apiKeyReservation?.amount,
                         byopClientKeyId: c.var.auth?.apiKey?.byopClientKeyId,
                         modelPaidOnly: c.var.model?.definition.paidOnly,
                         // A private endpoint only earns a reward when it backs
@@ -387,6 +393,7 @@ export const track = (eventType: EventType) =>
                             responseTracking.servedPrice,
                         ),
                     });
+                    c.var.balance.apiKeyReservation = undefined;
                     markup = deduction.markup;
                     communityModelReward = deduction.communityModelReward;
                     payerBucket = deduction.payerBucket;
@@ -456,7 +463,12 @@ export const track = (eventType: EventType) =>
                 if (shouldRunAutoTopUp) {
                     await triggerAutoTopUp(c.env, userId, log);
                 }
-            })(),
+            })().catch(async (error) => {
+                if (!billingStarted) {
+                    await releaseApiKeyBudgetReservation(c.var, c.env);
+                }
+                throw error;
+            }),
         );
     });
 

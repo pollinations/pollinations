@@ -139,7 +139,7 @@ Local layout:
   entries.ndjson (one ingest_entry.v1 object per line) and every raw evidence
   file, original filenames preserved. source_id is the document's base
   entry_id.
-- data/processed/runway/entries/: NDJSON batches of approved forecast facts.
+- data/processed/forecast/entries/: NDJSON batches of approved forecast facts.
 - data/other/: non-billing material worth keeping (contracts, decks, financial
   models, mockups). Never ledger evidence.
 - data/reconcile/: reconcile working artifacts — reports/ (per-vendor reconcile

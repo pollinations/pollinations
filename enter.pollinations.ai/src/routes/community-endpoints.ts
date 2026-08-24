@@ -3,6 +3,7 @@ import {
     communityModelId,
     type EndpointAgentListingPayload,
     isCommunityEndpointOwnerAllowed,
+    isFreeCommunityEndpoint,
     normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
     normalizeCommunityProviderUrl,
@@ -773,6 +774,33 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         ...policy,
                         fallbacks,
                     };
+
+                    // Quest #13800: 12-hour delay for public model price changes.
+                    // Rules:
+                    // - First price: immediate
+                    // - Price changes while private: immediate
+                    // - Public model price change: 12h delay
+                    // - Private→public: 12h delay for price
+                    // - Public→private: immediate
+                    const pricesChanged = JSON.stringify(policy.prices) !== JSON.stringify(stored.prices);
+                    const wasPublic = stored.prices && !isFreeCommunityEndpoint(stored.prices);
+                    const isPublic = effectiveVisibility === "public" && !isFreeCommunityEndpoint(policy.prices);
+                    const wasActuallyPublic = endpoint.visibility === "public";
+                    const isFirstPrice = !stored.pendingPrices && !wasPublic && isPublic;
+                    const becamePrivate = wasActuallyPublic && effectiveVisibility === "private";
+
+                    if (pricesChanged && isPublic && !isFirstPrice && !becamePrivate) {
+                        // Delay: set pending price, keep current price active for 12h
+                        payload.pendingPrices = policy.prices;
+                        payload.pendingPricesEffectiveAt = Date.now() + 12 * 60 * 60 * 1000;
+                        // Restore current prices (don't change them yet)
+                        payload.prices = stored.prices;
+                    } else if (becamePrivate || !isPublic) {
+                        // Clear pending prices when going private or becoming free
+                        payload.pendingPrices = undefined;
+                        payload.pendingPricesEffectiveAt = undefined;
+                    }
+
                     update.payload = JSON.stringify(payload);
                 }
             }

@@ -4,6 +4,7 @@ import {
     communityModelDefinition,
     communityModelId,
     parseListingPayload,
+    resolveEffectivePrices,
     usesAgentRunToken,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
@@ -165,6 +166,8 @@ export async function getCommunityModelRegistryEntries(
             case "proxy": {
                 const payload = parseListingPayload("proxy", row.payload);
                 if (!payload) return [];
+                // Quest #13800: Resolve effective prices (apply pending after 12h)
+                const effective = resolveEffectivePrices(payload);
                 communityEndpoint = {
                     ...identity,
                     type: "proxy",
@@ -176,7 +179,7 @@ export async function getCommunityModelRegistryEntries(
                     perUserRpm: payload.perUserRpm,
                     fallbacks: payload.fallbacks,
                     advertised: payload.advertised,
-                    ...payload.prices,
+                    ...effective.prices,
                 };
             }
         }

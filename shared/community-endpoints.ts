@@ -287,6 +287,33 @@ export function communityEndpointPrices(
 }
 
 /**
+ * Quest #13800: Resolve effective prices for a community model.
+ * If a pending price change exists and its effective time has passed,
+ * apply it and clear the pending state.
+ */
+export function resolveEffectivePrices(
+    payload: ProxyListingPayload,
+    now = Date.now(),
+): { prices: CommunityEndpointPrices; pendingPrices?: CommunityEndpointPrices; pendingPricesEffectiveAt?: number } {
+    if (
+        payload.pendingPrices &&
+        payload.pendingPricesEffectiveAt &&
+        now >= payload.pendingPricesEffectiveAt
+    ) {
+        // Pending price has taken effect — apply it and clear pending
+        return {
+            prices: payload.pendingPrices,
+            // pendingPrices and pendingPricesEffectiveAt cleared (undefined)
+        };
+    }
+    return {
+        prices: payload.prices,
+        pendingPrices: payload.pendingPrices,
+        pendingPricesEffectiveAt: payload.pendingPricesEffectiveAt,
+    };
+}
+
+/**
  * True when the owner charges nothing for calling this endpoint. The price set
  * must be complete — a missing field is not a free one.
  */
@@ -434,6 +461,10 @@ export type ProxyListingPayload = {
     fallbacks: string[];
     advertised?: CommunityEndpointAdvertised;
     prices: CommunityEndpointPrices;
+    // Quest #13800: 12-hour delay for public model price changes.
+    // When set, these prices take effect after pendingPricesEffectiveAt.
+    pendingPrices?: CommunityEndpointPrices;
+    pendingPricesEffectiveAt?: number; // epoch ms
 };
 
 /**

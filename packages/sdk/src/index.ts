@@ -34,6 +34,7 @@ export {
 } from "./extras.js";
 // Helper functions
 export {
+    accountQuests,
     authorizeDevice,
     authorizeUrl,
     chat,
@@ -78,6 +79,9 @@ export type {
     AccountKey,
     AccountPermission,
     AccountProfile,
+    AccountQuest,
+    AccountQuestReward,
+    AccountQuestsResponse,
     AudioBinaryResponse,
     AudioContentPart,
     AudioFormat,

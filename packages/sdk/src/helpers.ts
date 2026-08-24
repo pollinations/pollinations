@@ -31,6 +31,7 @@ import type {
     AccountBalance,
     AccountKey,
     AccountProfile,
+    AccountQuestsResponse,
     AudioGenerateOptions,
     AuthorizeDeviceOptions,
     AuthorizeOptions,
@@ -47,6 +48,8 @@ import type {
     KeyUsageOptions,
     Message,
     ModelInfo,
+    PollinationsConfig,
+    RequestOptions,
     TextGenerateOptions,
     TranscribeOptions,
     TranscriptionResponse,
@@ -495,6 +498,15 @@ export async function getProfile(): Promise<AccountProfile> {
  */
 export async function getBalance(): Promise<AccountBalance> {
     return getClient().accountBalance();
+}
+
+/**
+ * Get account quest status
+ */
+export async function accountQuests(
+    options?: RequestOptions,
+): Promise<AccountQuestsResponse> {
+    return getClient().accountQuests(options);
 }
 
 /**

@@ -3,6 +3,7 @@ import type {
     AccountBalance,
     AccountKey,
     AccountProfile,
+    AccountQuestsResponse,
     AudioBinaryResponse,
     AudioGenerateOptions,
     AuthorizeDeviceOptions,
@@ -1396,6 +1397,24 @@ export class Pollinations {
      */
     async accountBalance(): Promise<AccountBalance> {
         return this.getJson<AccountBalance>(`${this.baseUrl}/account/balance`);
+    }
+
+    /**
+     * Get account quest status
+     *
+     * @example
+     * ```ts
+     * const { quests } = await pollinations.accountQuests();
+     * quests.forEach(q => console.log(q.title, q.status));
+     * ```
+     */
+    async accountQuests(
+        options: RequestOptions = {},
+    ): Promise<AccountQuestsResponse> {
+        return this.getJson<AccountQuestsResponse>(
+            `${this.baseUrl}/account/quests`,
+            options.signal,
+        );
     }
 
     /**

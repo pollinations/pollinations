@@ -102,6 +102,25 @@ describe("compute modes", () => {
         );
     });
 
+    it("ignores zero-value witness rows when classifying compute mode", () => {
+        const inference = cloud("modal", "inference");
+        const witness = cloud("modal", "gpu");
+        witness.entry_id = "modal-gpu-witness";
+        witness.credit = 0;
+        witness.paid = 0;
+
+        const data: Data = {
+            opCloud: [inference, witness],
+            opPollen: [pollen("modal")],
+        };
+        const index = computeModeIndex(data);
+
+        expect(providerMonthComputeMode(index, "2026-07", "modal")).toBe(
+            "managed-inference",
+        );
+        expect(managedInferenceData(data, index).opPollen).toHaveLength(1);
+    });
+
     it("keeps community economics out of managed inference", () => {
         const result = managedInferenceData({
             opCloud: [

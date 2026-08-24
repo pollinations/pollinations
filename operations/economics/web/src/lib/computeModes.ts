@@ -1,4 +1,4 @@
-import type { Data } from "../types";
+import type { Data, OpCloudRow } from "../types";
 import { canonicalVendor } from "./tb";
 
 export type ComputeMode =
@@ -31,12 +31,17 @@ function classifiedMode(types: ReadonlySet<string>): ComputeMode {
     return "unclassified";
 }
 
+function carriesComputeCost(row: OpCloudRow) {
+    return Math.abs(Number(row.paid)) > 0.0001 || Number(row.credit) < -0.0001;
+}
+
 export function computeModeIndex(data: Data): ComputeModeIndex {
     const typesByProviderMonth = new Map<string, Set<string>>();
 
     for (const row of data.opCloud ?? []) {
         const type = row.type.trim().toLowerCase();
         if (type !== "inference" && type !== "gpu") continue;
+        if (!carriesComputeCost(row)) continue;
         const month = row.start.slice(0, 7);
         const provider = canonicalVendor(row.vendor);
         const monthTypes = typesByProviderMonth.get(

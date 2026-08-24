@@ -100,23 +100,36 @@ export async function atomicDeductUserBalance(
     };
 }
 
+/** Reserve an estimated charge from a finite API-key budget. */
+export async function atomicReserveApiKeyBalance(
+    db: DrizzleD1Database,
+    apiKeyId: string,
+    amount: number,
+): Promise<{ ok: boolean; reserved: number }> {
+    if (amount <= 0) return { ok: true, reserved: 0 };
+
+    const result = await db.run(sql`
+			UPDATE ${apiKeyTable}
+			SET pollen_balance = ROUND(pollen_balance - ${amount}, ${POLLEN_BILLING_PRECISION})
+			WHERE id = ${apiKeyId}
+			AND pollen_balance IS NOT NULL
+			AND pollen_balance >= ${amount}
+		`);
+
+    const ok = (result.meta.changes ?? 0) > 0;
+    return { ok, reserved: ok ? amount : 0 };
+}
+
 /**
- * Atomically deducts pollen from API key balance.
- * The `AND pollen_balance IS NOT NULL` guard means keys with NULL balance
- * (= unlimited budget) are never touched — no COALESCE needed here.
- *
- * @param db - Drizzle database instance
- * @param apiKeyTable - API key table
- * @param apiKeyId - API key ID to deduct from
- * @param amount - Amount of pollen to deduct
- * @returns Promise that resolves when deduction is complete
+ * Reconcile a finite API-key budget with the final charge. Positive amounts
+ * deduct more; negative amounts release unused reservation.
  */
-export async function atomicDeductApiKeyBalance(
+export async function atomicAdjustApiKeyBalance(
     db: DrizzleD1Database,
     apiKeyId: string,
     amount: number,
 ): Promise<{ ok: boolean }> {
-    if (amount <= 0) return { ok: true };
+    if (amount === 0) return { ok: true };
 
     const result = await db.run(sql`
 			UPDATE ${apiKeyTable}

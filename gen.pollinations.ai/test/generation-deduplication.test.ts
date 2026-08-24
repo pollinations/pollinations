@@ -85,6 +85,7 @@ function createApp(
                     selectedMeterSlug: "v1:meter:tier",
                     balances: { "v1:meter:tier": 1, "v1:meter:pack": 2 },
                 },
+                apiKeyBudgetEstimate: 0.25,
             });
             c.set("track", { streamRequested: stream });
             if (executorBody) c.set("generationRequestBody", executorBody);
@@ -210,6 +211,7 @@ describe("generation request deduplication", () => {
             "v1:meter:tier": 1,
             "v1:meter:pack": 2,
         });
+        expect(jobs[0].apiKeyBudgetEstimate).toBe(0.25);
         expect(new TextDecoder().decode(jobs[0].request.body)).toBe(
             JSON.stringify({
                 model: "resolved-model",

@@ -26,19 +26,6 @@ interface Highlight {
 const PINNED_NEWS: Highlight[] = [
     {
         date: "2026-08-15",
-        dateLabel: "New quests",
-        emoji: "🌱",
-        title: "More ways for developers to earn Pollen",
-        description:
-            "Earn Quest Pollen when people use your apps or through your GitHub history.",
-        details: [
-            "Earn 15 Pollen for your first external Paid Pollen request and 15 Pollen when your apps reach ten external users.",
-            "GitHub accounts that are at least two years old can earn 3 Pollen.",
-            "Visit the [Quests tab](/quests) to see the new rewards and upcoming quests.",
-        ],
-    },
-    {
-        date: "2026-08-15",
         dateLabel: "Alpha",
         emoji: "🤖",
         title: "Build your own agents",
@@ -50,28 +37,20 @@ const PINNED_NEWS: Highlight[] = [
         ],
     },
     {
+        date: "2026-08-15",
+        dateLabel: "New quests",
+        emoji: "🌱",
+        title: "More ways to earn Pollen",
+        description:
+            "Earn 15 Pollen for your first external Paid Pollen request, 15 for reaching ten external app users, and 3 for an eligible two-year-old GitHub account. [View quests](/quests).",
+    },
+    {
         date: "2026-07-15",
         dateLabel: "Limited time",
         emoji: "☀️",
         title: "GPT-5.6 launch promotion",
         description:
-            "Try GPT-5.6 Sol, Terra, and Luna at half the provider price for a limited time.",
-        details: [
-            "Per 1M input/output tokens: Sol 2.50/15 Pollen, Terra 1.25/7.50 Pollen, Luna 0.50/3 Pollen.",
-            "Choose a GPT-5.6 model from the [Models tab](/models) and start building.",
-        ],
-    },
-    {
-        date: "2026-06-30",
-        dateLabel: "Now live",
-        emoji: "🎯",
-        title: "Quests are live",
-        description: "Earn Quest Pollen by completing dashboard quests.",
-        details: [
-            "New quests are available for onboarding, app growth, community, and GitHub contributions.",
-            "Open the [Quests tab](/quests) to see available rewards and claim completed quests.",
-            "Tiers have stopped; previous Tier Pollen is now Quest Pollen and balances stay unchanged.",
-        ],
+            "Try GPT-5.6 Sol, Terra, and Luna at half price for a limited time. [View models](/models).",
     },
     {
         date: "2026-06-30",

@@ -64,7 +64,7 @@ export function toCommunityEndpointResponse(
 
     const payload = parseListingPayload(
         "proxy",
-        ready && row.pendingPayload ? row.pendingPayload : row.payload,
+        row.pendingPayload ? row.pendingPayload : row.payload,
     );
     if (!payload) throw new Error(`Invalid proxy payload for ${row.id}`);
     const { bearerTokenCiphertext: _credential, prices, ...proxy } = payload;

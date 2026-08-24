@@ -1,8 +1,7 @@
 # Economics Web
 
 Economics UI for `economics.myceli.ai` and `economics.pollinations.ai`, backed
-by OP Tinybird pipe outputs in `enter.pollinations.ai/observability/`, deployed
-to the `pollinations_enter` (prod) workspace.
+by OP Tinybird pipe outputs in `enter.pollinations.ai/observability/`.
 Insights include cash P&L, cash runway, credit runway, and unit economics. Raw
 tabs: Data Quality, Transactions, Pollen, and Cloud.
 
@@ -34,6 +33,9 @@ Write-side conventions (entry_id, idempotent corrections) live in the
 Economics ingest agent's own system prompt.
 
 The app is a read-only mirror; all reads go through the Worker proxy.
+Production deployment stops before changing the Worker unless all four required
+pipes already respond from the production Tinybird workspace. Deploy and verify
+Tinybird schema changes before promoting a Worker that reads them.
 
 Runway reconstructs cash from one statement-backed opening-balance row in
 `op_transactions` plus later bank movements. Closed months are actuals. The

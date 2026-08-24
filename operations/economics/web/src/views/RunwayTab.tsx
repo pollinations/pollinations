@@ -206,6 +206,12 @@ export function RunwayTab({ data }: { data: Data }) {
         (column) =>
             column.month > runway.currentMonth && column.kind === "forecast",
     );
+    const nextPlanFacts = next
+        ? runway.assumptions.filter(
+              (assumption) => assumption.month.slice(0, 7) === next.month,
+          ).length
+        : 0;
+    const nextChange = nextPlanFacts > 0 ? (next?.netUsd ?? null) : null;
     const last = runway.columns.at(-1);
     const runwayTone: StatTone =
         runway.runwayMonths == null
@@ -271,9 +277,12 @@ export function RunwayTab({ data }: { data: Data }) {
                     },
                     {
                         label: "Next full month change",
-                        value: fmtUsd(next?.netUsd),
-                        tone: valueTone(next?.netUsd ?? null),
-                        detail: `${runway.assumptions.length} explicit forecast fact${runway.assumptions.length === 1 ? "" : "s"}`,
+                        value: fmtUsd(nextChange),
+                        tone: valueTone(nextChange),
+                        detail:
+                            nextPlanFacts > 0
+                                ? `${nextPlanFacts} explicit forecast fact${nextPlanFacts === 1 ? "" : "s"}`
+                                : "plan unavailable",
                     },
                 ]}
             />

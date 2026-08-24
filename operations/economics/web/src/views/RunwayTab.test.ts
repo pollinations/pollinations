@@ -102,4 +102,57 @@ describe("RunwayTab labels", () => {
         expect(html).toContain("Cash change");
         expect(html).toContain("Cash balance");
     });
+
+    it("does not present a missing next-month plan as zero change", () => {
+        const html = renderToStaticMarkup(
+            createElement(RunwayTab, {
+                data: {
+                    opTransactions: [
+                        {
+                            entry_id: "opening",
+                            kind: "opening_balance",
+                            source: "wise",
+                            date: "2026-01-01",
+                            vendor: "wise",
+                            category: "balance_sheet",
+                            amount: 1_000,
+                            currency: "USD",
+                            description: "Opening balance",
+                            evidence: "Statement",
+                            recorded_at: "2026-08-01 00:00:00",
+                        },
+                    ],
+                    opForecast: [
+                        {
+                            entry_id: "august",
+                            month: "2026-08-01",
+                            vendor: "aws",
+                            category: "compute",
+                            amount: -100,
+                            currency: "USD",
+                            method: "fixed",
+                            source: "reviewed",
+                            evidence: "plan",
+                            recorded_at: "2026-08-01 00:00:00",
+                        },
+                        {
+                            entry_id: "october",
+                            month: "2026-10-01",
+                            vendor: "aws",
+                            category: "compute",
+                            amount: -100,
+                            currency: "USD",
+                            method: "fixed",
+                            source: "reviewed",
+                            evidence: "plan",
+                            recorded_at: "2026-08-01 00:00:00",
+                        },
+                    ],
+                },
+            }),
+        );
+
+        expect(html).toContain("Next full month change");
+        expect(html).toContain("plan unavailable");
+    });
 });

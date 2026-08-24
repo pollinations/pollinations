@@ -1699,7 +1699,7 @@ describe("creditRunway", () => {
 describe("providerBalanceRows", () => {
     const NOW = new Date("2026-03-15T12:00:00Z");
 
-    it("carries prepaid cash and free credit through monthly history", () => {
+    it("shows ledger flows without inventing an unchecked balance", () => {
         const data = emptyData({
             opTransactions: [
                 opTxn({
@@ -1738,28 +1738,30 @@ describe("providerBalanceRows", () => {
 
         const [row] = providerBalanceRows(data, NOW);
         expect(row.vendor).toBe("vast.ai");
-        expect(row.cashBalanceUsd).toBe(250);
-        expect(row.creditBalanceUsd).toBe(700);
+        expect(row.cashBalanceUsd).toBeNull();
+        expect(row.creditBalanceUsd).toBeNull();
+        expect(row.balanceStatus).toBe("not_checked");
+        expect(row.finished).toBe(false);
 
         const january = row.history.find((month) => month.month === "2026-01");
         const february = row.history.find((month) => month.month === "2026-02");
         expect(january).toMatchObject({
-            cashOpeningUsd: 100,
+            cashOpeningUsd: null,
             cashAddedUsd: 400,
             cashUsedUsd: 200,
-            cashClosingUsd: 300,
-            creditOpeningUsd: 0,
+            cashClosingUsd: null,
+            creditOpeningUsd: null,
             creditAddedUsd: 1000,
             creditUsedUsd: 100,
-            creditClosingUsd: 900,
+            creditClosingUsd: null,
         });
         expect(february).toMatchObject({
-            cashOpeningUsd: 300,
+            cashOpeningUsd: null,
             cashUsedUsd: 50,
-            cashClosingUsd: 250,
-            creditOpeningUsd: 900,
+            cashClosingUsd: null,
+            creditOpeningUsd: null,
             creditUsedUsd: 200,
-            creditClosingUsd: 700,
+            creditClosingUsd: null,
         });
     });
 
@@ -1777,10 +1779,10 @@ describe("providerBalanceRows", () => {
 
         expect(row.vendor).toBe("aws");
         expect(row.cashBalanceUsd).toBeNull();
-        expect(row.creditBalanceUsd).toBe(900);
+        expect(row.creditBalanceUsd).toBeNull();
     });
 
-    it("keeps an overdrawn prepaid balance active for attention", () => {
+    it("keeps an unchecked prepaid pool active for attention", () => {
         const [row] = providerBalanceRows(
             emptyData({
                 opTransactions: [
@@ -1804,7 +1806,7 @@ describe("providerBalanceRows", () => {
             NOW,
         );
 
-        expect(row.cashBalanceUsd).toBe(-50);
+        expect(row.cashBalanceUsd).toBeNull();
         expect(row.finished).toBe(false);
     });
 

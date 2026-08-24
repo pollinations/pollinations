@@ -271,10 +271,9 @@ export function BalancesTab({ data }: { data: Data }) {
                                 <HeaderHint
                                     hint={{
                                         meaning:
-                                            "Latest OP Cloud balance snapshot. A partial multi-account row sums only the checked accounts. Without a snapshot, this falls back to cumulative prepaid payments minus cash-funded usage.",
-                                        tables: "op_cloud_api + op_transactions_api",
-                                        formula:
-                                            "snapshot, else payments − cash usage",
+                                            "Latest dated OP Cloud balance snapshot. A partial multi-account row sums only the checked accounts. Without a snapshot, the balance stays blank.",
+                                        tables: "op_cloud_api",
+                                        formula: "latest balance snapshot",
                                     }}
                                 >
                                     Cash prepaid
@@ -290,10 +289,9 @@ export function BalancesTab({ data }: { data: Data }) {
                                 <HeaderHint
                                     hint={{
                                         meaning:
-                                            "Latest OP Cloud balance snapshot. A partial multi-account row sums only the checked accounts. Without a snapshot, this falls back to unexpired grants minus credit-funded usage.",
+                                            "Latest dated OP Cloud balance snapshot. A partial multi-account row sums only the checked accounts. Without a snapshot, the balance stays blank.",
                                         tables: "op_cloud_api",
-                                        formula:
-                                            "snapshot, else grants − used − lapsed",
+                                        formula: "latest balance snapshot",
                                     }}
                                 >
                                     Left

@@ -1911,11 +1911,11 @@ function anchoredCreditDepletion(
     };
 }
 
-// OP Cloud balance snapshots anchor the latest known totals. When no snapshot
-// exists, free credit comes from grants/burn and cash prepaid is provider cash
-// outflow less cash-funded usage. A partial multi-account snapshot intentionally
-// shows only the checked accounts; coverage tells the UI that the total is a
-// known minimum rather than a complete provider balance.
+// OP Cloud balance snapshots are the only current-balance truth. Ledger flows
+// remain visible without a snapshot, but they never invent a current balance.
+// A partial multi-account snapshot intentionally shows only the checked
+// accounts; coverage tells the UI that the total is a known minimum rather than
+// a complete provider balance.
 export function providerBalanceRows(
     data: Data,
     now: Date,
@@ -2016,30 +2016,30 @@ export function providerBalanceRows(
                     ? 0
                     : activeProviderAccounts(definition, currentMonth).length,
         };
-        const hasCash = cashVendors.has(vendor) || anchor != null;
-        const hasCredit = credit != null || anchor != null;
+        const hasCashFlows = cashVendors.has(vendor) || anchor != null;
+        const hasCreditFlows = credit != null || anchor != null;
         const history = months.map(
             (month): ProviderBalanceMonth => ({
                 month,
-                cashOpeningUsd: hasCash ? 0 : null,
-                cashAddedUsd: hasCash
+                cashOpeningUsd: anchor ? 0 : null,
+                cashAddedUsd: hasCashFlows
                     ? (cashFlows.get(vendor)?.get(month)?.addedUsd ?? 0)
                     : null,
-                cashUsedUsd: hasCash
+                cashUsedUsd: hasCashFlows
                     ? (cashFlows.get(vendor)?.get(month)?.usedUsd ?? 0)
                     : null,
-                cashClosingUsd: hasCash ? 0 : null,
-                creditOpeningUsd: hasCredit ? 0 : null,
-                creditAddedUsd: hasCredit
+                cashClosingUsd: anchor ? 0 : null,
+                creditOpeningUsd: anchor ? 0 : null,
+                creditAddedUsd: hasCreditFlows
                     ? (creditFlows.get(vendor)?.get(month)?.addedUsd ?? 0)
                     : null,
-                creditUsedUsd: hasCredit
+                creditUsedUsd: hasCreditFlows
                     ? (creditFlows.get(vendor)?.get(month)?.usedUsd ?? 0)
                     : null,
-                creditLapsedUsd: hasCredit
+                creditLapsedUsd: hasCreditFlows
                     ? (creditFlows.get(vendor)?.get(month)?.lapsedUsd ?? 0)
                     : null,
-                creditClosingUsd: hasCredit ? 0 : null,
+                creditClosingUsd: anchor ? 0 : null,
             }),
         );
 
@@ -2054,22 +2054,10 @@ export function providerBalanceRows(
                     (month.cashUsedUsd ?? 0);
                 month.cashOpeningUsd = closing;
             }
-        } else if (hasCash) {
-            let closing = [...(cashFlows.get(vendor)?.entries() ?? [])]
-                .filter(([month]) => month < WINDOW_START)
-                .reduce(
-                    (total, [, flow]) => total + flow.addedUsd - flow.usedUsd,
-                    0,
-                );
-            for (const month of history) {
-                month.cashOpeningUsd = closing;
-                closing += (month.cashAddedUsd ?? 0) - (month.cashUsedUsd ?? 0);
-                month.cashClosingUsd = closing;
-            }
         }
 
-        if (hasCredit) {
-            let closing = anchor?.creditUsd ?? credit?.remainingUsd ?? 0;
+        if (anchor) {
+            let closing = anchor.creditUsd;
             for (let index = history.length - 1; index >= 0; index -= 1) {
                 const month = history[index];
                 month.creditClosingUsd = closing;
@@ -2082,12 +2070,8 @@ export function providerBalanceRows(
             }
         }
 
-        const cashBalanceUsd = hasCash
-            ? (history.at(-1)?.cashClosingUsd ?? 0)
-            : null;
-        const creditBalanceUsd = hasCredit
-            ? (history.at(-1)?.creditClosingUsd ?? 0)
-            : null;
+        const cashBalanceUsd = anchor?.cashUsd ?? null;
+        const creditBalanceUsd = anchor?.creditUsd ?? null;
         const anchoredDepletion =
             anchor && balanceCoverage.balanceStatus === "checked"
                 ? anchoredCreditDepletion(anchor, credit, now)
@@ -2101,21 +2085,18 @@ export function providerBalanceRows(
             checkedAccounts: balanceCoverage.checkedAccounts,
             expectedAccounts: balanceCoverage.expectedAccounts,
             balanceNote: anchor?.balanceNote ?? null,
-            creditDepletionDate: anchor
-                ? balanceCoverage.balanceStatus === "checked"
+            creditDepletionDate:
+                anchor && balanceCoverage.balanceStatus === "checked"
                     ? (anchoredDepletion?.creditDepletionDate ?? null)
-                    : null
-                : (credit?.depletionDate ?? null),
-            creditDepletionReason: anchor
-                ? balanceCoverage.balanceStatus === "checked"
+                    : null,
+            creditDepletionReason:
+                anchor && balanceCoverage.balanceStatus === "checked"
                     ? (anchoredDepletion?.creditDepletionReason ?? null)
-                    : null
-                : (credit?.depletionReason ?? null),
+                    : null,
             finished:
-                (cashBalanceUsd == null ||
-                    Math.abs(cashBalanceUsd) <= POOL_EPS_USD) &&
-                (creditBalanceUsd == null ||
-                    Math.abs(creditBalanceUsd) <= POOL_EPS_USD),
+                anchor != null &&
+                Math.abs(cashBalanceUsd ?? 0) <= POOL_EPS_USD &&
+                Math.abs(creditBalanceUsd ?? 0) <= POOL_EPS_USD,
             history,
         });
     }

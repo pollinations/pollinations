@@ -3,6 +3,7 @@ import {
     communityModelId,
     type EndpointAgentListingPayload,
     isCommunityEndpointOwnerAllowed,
+    isFreeCommunityEndpoint,
     normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
     normalizeCommunityProviderUrl,
@@ -773,6 +774,41 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         ...policy,
                         fallbacks,
                     };
+
+                    // 12-hour price delay for public model price changes
+                    const storedPayload = stored.payload
+                        ? (JSON.parse(stored.payload) as ProxyListingPayload)
+                        : undefined;
+                    const pricesChanged =
+                        JSON.stringify(policy.prices) !==
+                        JSON.stringify(storedPayload?.prices);
+                    const wasPublic =
+                        storedPayload?.prices &&
+                        !isFreeCommunityEndpoint(storedPayload.prices);
+                    const isPublic =
+                        effectiveVisibility === "public" &&
+                        !isFreeCommunityEndpoint(policy.prices);
+                    const wasActuallyPublic = endpoint.visibility === "public";
+                    const isFirstPrice =
+                        !storedPayload?.pendingPrices && !wasPublic && isPublic;
+                    const becamePrivate =
+                        wasActuallyPublic && effectiveVisibility === "private";
+
+                    if (
+                        pricesChanged &&
+                        isPublic &&
+                        !isFirstPrice &&
+                        !becamePrivate
+                    ) {
+                        payload.pendingPrices = policy.prices;
+                        payload.pendingPricesEffectiveAt =
+                            Date.now() + 12 * 60 * 60 * 1000;
+                        payload.prices = storedPayload?.prices ?? policy.prices;
+                    } else if (becamePrivate || !isPublic) {
+                        payload.pendingPrices = undefined;
+                        payload.pendingPricesEffectiveAt = undefined;
+                    }
+
                     update.payload = JSON.stringify(payload);
                 }
             }

@@ -298,6 +298,30 @@ export function isFreeCommunityEndpoint(
     );
 }
 
+export function resolveEffectivePrices(
+    payload: ProxyListingPayload,
+    now = Date.now(),
+): {
+    prices: CommunityEndpointPrices;
+    pendingPrices?: CommunityEndpointPrices;
+    pendingPricesEffectiveAt?: number;
+} {
+    if (
+        payload.pendingPrices &&
+        payload.pendingPricesEffectiveAt &&
+        now >= payload.pendingPricesEffectiveAt
+    ) {
+        return {
+            prices: payload.pendingPrices,
+        };
+    }
+    return {
+        prices: payload.prices,
+        pendingPrices: payload.pendingPrices,
+        pendingPricesEffectiveAt: payload.pendingPricesEffectiveAt,
+    };
+}
+
 export function communityEndpointPricesForModality(
     source: Partial<CommunityEndpointPrices>,
     modality: CommunityEndpointModality,
@@ -434,6 +458,8 @@ export type ProxyListingPayload = {
     fallbacks: string[];
     advertised?: CommunityEndpointAdvertised;
     prices: CommunityEndpointPrices;
+    pendingPrices?: CommunityEndpointPrices;
+    pendingPricesEffectiveAt?: number;
 };
 
 /**

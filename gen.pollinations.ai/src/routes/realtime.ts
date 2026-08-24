@@ -34,10 +34,15 @@ import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
-import { reduceAdjustmentsToEventFields } from "@/middleware/track.ts";
+import {
+    reduceAdjustmentsToEventFields,
+    requestIdentity,
+    type UserData,
+} from "@/middleware/track.ts";
 import { RealtimeUsageSchema } from "@/schemas/realtime.ts";
 import { generateRandomId } from "@/util.ts";
 import { checkBalance } from "@/utils/generation-access.ts";
+import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 
 type AzureRealtimeApiKey =
     | "AZURE_MYCELI_PROD_EASTUS2_API_KEY"
@@ -65,9 +70,21 @@ const REALTIME_ROUTES = {
         deployment: "gpt-realtime-2",
         apiKeyEnv: "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
     },
+    "gpt-live-transcribe": {
+        endpoint:
+            "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/realtime",
+        deployment: "test-gpt-live-transcribe",
+        apiKeyEnv: "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
+        intent: "transcription",
+    },
 } satisfies Record<
     string,
-    { endpoint: string; deployment: string; apiKeyEnv: AzureRealtimeApiKey }
+    {
+        endpoint: string;
+        deployment: string;
+        apiKeyEnv: AzureRealtimeApiKey;
+        intent?: "transcription";
+    }
 >;
 type AzureRealtimeModelName = keyof typeof REALTIME_ROUTES;
 const UNSUPPORTED_TRANSCRIPTION_MESSAGE =
@@ -80,15 +97,9 @@ type RealtimeCacheUsage = {
     imageTokens: number;
 };
 type RealtimeBillingContext = {
-    userId: string;
-    userTier?: string;
-    apiKeyId?: string;
-    apiKeyName?: string;
-    apiKeyType?: "secret" | "publishable";
-    apiKeyCreatedVia?: string;
-    apiKeyCreatedForApp?: string;
-    apiKeyCreatedForUserId?: string;
-    apiKeyClientId?: string;
+    // Spread verbatim into the event, so an identity column added to UserData
+    // reaches a realtime row without touching this file.
+    identity: UserData & { userId: string };
     apiKeyPollenBalance?: number | null;
     byopClientKeyId?: string | null;
     modelRequested: string;
@@ -135,7 +146,11 @@ async function createSafetyIdentifier(
 function buildUpstreamUrl(model: AzureRealtimeModelName): string {
     const route = REALTIME_ROUTES[model];
     const upstreamUrl = new URL(route.endpoint);
-    upstreamUrl.searchParams.set("model", route.deployment);
+    if ("intent" in route) {
+        upstreamUrl.searchParams.set("intent", route.intent);
+    } else {
+        upstreamUrl.searchParams.set("model", route.deployment);
+    }
     return upstreamUrl.toString();
 }
 
@@ -299,6 +314,7 @@ function forwardMessage(
     target: WebSocket,
     validate?: (data: unknown) => string | null,
     onReject?: () => void,
+    transform?: (data: unknown) => unknown,
 ): void {
     source.addEventListener("message", (event) => {
         const error = validate?.(event.data);
@@ -308,7 +324,7 @@ function forwardMessage(
             onReject?.();
             return;
         }
-        if (isOpen(target)) target.send(event.data);
+        if (isOpen(target)) target.send(transform?.(event.data) ?? event.data);
     });
 }
 
@@ -616,8 +632,21 @@ function parseEventData(data: unknown): unknown | null {
     }
 }
 
-function validateClientRealtimeEvent(data: unknown): string | null {
+function validateClientRealtimeEvent(
+    data: unknown,
+    allowTranscription: boolean,
+): string | null {
     const event = asRecord(parseEventData(data));
+    if (allowTranscription) {
+        const transcription = asRecord(
+            asRecord(asRecord(event.session).audio).input,
+        ).transcription;
+        const requestedModel = asRecord(transcription).model;
+        return typeof requestedModel === "string" &&
+            requestedModel !== "gpt-live-transcribe"
+            ? "gpt-live-transcribe sessions cannot select another transcription model."
+            : null;
+    }
     const eventType = event.type;
     if (
         typeof eventType === "string" &&
@@ -655,11 +684,31 @@ function isInputAudioTranscriptionEventType(type: unknown): type is string {
     );
 }
 
-function validateUpstreamRealtimeEvent(data: unknown): string | null {
+function validateUpstreamRealtimeEvent(
+    data: unknown,
+    allowTranscription: boolean,
+): string | null {
+    if (allowTranscription) return null;
     const event = asRecord(parseEventData(data));
     return isInputAudioTranscriptionEventType(event.type)
         ? UNSUPPORTED_TRANSCRIPTION_MESSAGE
         : null;
+}
+
+function rewriteLiveTranscriptionModel(
+    data: unknown,
+    from: string,
+    to: string,
+): unknown {
+    const event = asRecord(parseEventData(data));
+    const audioInput = asRecord(asRecord(asRecord(event.session).audio).input);
+    const transcription = asRecord(audioInput.transcription);
+    if (!Object.keys(transcription).length) return data;
+    if (transcription.model === undefined || transcription.model === from) {
+        transcription.model = to;
+        return JSON.stringify(event);
+    }
+    return data;
 }
 
 function extractReferrerHeader(c: Context<Env>): {
@@ -719,15 +768,7 @@ function createRealtimeTrackingEvent(args: {
         eventType: "generate.realtime",
         ipSubnet: args.tracking.ipSubnet,
         ipHash: args.tracking.ipHash,
-        userId: args.tracking.userId,
-        userTier: args.tracking.userTier,
-        apiKeyId: args.tracking.apiKeyId,
-        apiKeyName: args.tracking.apiKeyName,
-        apiKeyType: args.tracking.apiKeyType,
-        apiKeyCreatedVia: args.tracking.apiKeyCreatedVia,
-        apiKeyCreatedForApp: args.tracking.apiKeyCreatedForApp,
-        apiKeyCreatedForUserId: args.tracking.apiKeyCreatedForUserId,
-        apiKeyClientId: args.tracking.apiKeyClientId,
+        ...args.tracking.identity,
         referrerUrl: args.tracking.referrerUrl,
         referrerDomain: args.tracking.referrerDomain,
         modelRequested: args.tracking.modelRequested,
@@ -740,7 +781,7 @@ function createRealtimeTrackingEvent(args: {
         ...usageToEventParams(args.usage),
         ...reduceAdjustmentsToEventFields(args.adjustments),
         totalCost: args.cost.totalCost,
-        totalPrice: args.price.totalPrice + (args.markup?.devCredit ?? 0),
+        totalPrice: args.tracking.deduction?.billedPrice ?? 0,
         devPrice: args.price.totalPrice,
         markupRate: args.markup?.markupRate ?? 0,
     };
@@ -782,8 +823,8 @@ async function settleRealtimeSession(
             db,
             isBilledUsage: true,
             totalPrice: price.totalPrice,
-            userId: tracking.userId,
-            apiKeyId: tracking.apiKeyId,
+            userId: tracking.identity.userId,
+            apiKeyId: tracking.identity.apiKeyId,
             apiKeyPollenBalance: tracking.apiKeyPollenBalance,
             byopClientKeyId: tracking.byopClientKeyId,
             modelPaidOnly: tracking.modelDefinition.paidOnly,
@@ -795,7 +836,7 @@ async function settleRealtimeSession(
         tracking.rateLimitConsumed = true;
     }
 
-    const balances = await getUserBalance(db, tracking.userId);
+    const balances = await getUserBalance(db, tracking.identity.userId);
     await sendToTinybird(
         createRealtimeTrackingEvent({
             tracking,
@@ -844,17 +885,24 @@ function collectBillingEvents(
             return;
         }
 
-        const transcriptionUsage =
-            extractUnsupportedInputTranscriptionUsage(eventData);
+        const transcriptionUsage = extractInputTranscriptionUsage(eventData);
         if (transcriptionUsage) addUsage(billing.usage, transcriptionUsage);
     });
 }
 
-function extractUnsupportedInputTranscriptionUsage(
-    eventData: unknown,
-): Usage | null {
+function extractInputTranscriptionUsage(eventData: unknown): Usage | null {
     const event = asRecord(eventData);
     if (!isInputAudioTranscriptionEventType(event.type)) return null;
+
+    const rawUsage = asRecord(event.usage);
+    if (
+        rawUsage.type === "duration" &&
+        typeof rawUsage.seconds === "number" &&
+        Number.isFinite(rawUsage.seconds) &&
+        rawUsage.seconds > 0
+    ) {
+        return { promptAudioSeconds: rawUsage.seconds };
+    }
 
     const usage = realtimeUsageToUsage(event.usage);
     return hasPositiveUsage(usage) ? usage : null;
@@ -936,14 +984,38 @@ function proxyRealtimeWebSockets(
 ): Response {
     const pair = new WebSocketPair();
     const [client, downstream] = Object.values(pair) as [WebSocket, WebSocket];
+    const allowTranscription =
+        tracking.resolvedModelRequested === "gpt-live-transcribe";
 
     downstream.binaryType = "arraybuffer";
     collectBillingEvents(c, upstream, tracking);
-    forwardMessage(downstream, upstream, validateClientRealtimeEvent, () =>
-        scheduleRealtimeSettlement(c, tracking),
+    forwardMessage(
+        downstream,
+        upstream,
+        (data) => validateClientRealtimeEvent(data, allowTranscription),
+        () => scheduleRealtimeSettlement(c, tracking),
+        allowTranscription
+            ? (data) =>
+                  rewriteLiveTranscriptionModel(
+                      data,
+                      "gpt-live-transcribe",
+                      REALTIME_ROUTES["gpt-live-transcribe"].deployment,
+                  )
+            : undefined,
     );
-    forwardMessage(upstream, downstream, validateUpstreamRealtimeEvent, () =>
-        scheduleRealtimeSettlement(c, tracking),
+    forwardMessage(
+        upstream,
+        downstream,
+        (data) => validateUpstreamRealtimeEvent(data, allowTranscription),
+        () => scheduleRealtimeSettlement(c, tracking),
+        allowTranscription
+            ? (data) =>
+                  rewriteLiveTranscriptionModel(
+                      data,
+                      REALTIME_ROUTES["gpt-live-transcribe"].deployment,
+                      "gpt-live-transcribe",
+                  )
+            : undefined,
     );
     wireClose(c, downstream, upstream, tracking);
     wireClose(c, upstream, downstream, tracking);
@@ -1278,9 +1350,6 @@ async function createRealtimeBillingContext(
     c: Context<Env>,
 ): Promise<RealtimeBillingContext> {
     const user = c.var.auth.requireUser();
-    const apiKeyMetadata = c.var.auth.apiKey?.metadata as
-        | Record<string, unknown>
-        | undefined;
     const rawIp = getRealClientIp(c);
     const clientIp =
         rawIp !== "unknown" ? stripIPv4MappedPrefix(rawIp) : undefined;
@@ -1296,16 +1365,8 @@ async function createRealtimeBillingContext(
     }
 
     return {
-        userId: user.id,
-        userTier: user.tier,
-        apiKeyId: c.var.auth.apiKey?.id,
-        apiKeyName: c.var.auth.apiKey?.name,
-        apiKeyType: apiKeyMetadata?.keyType as "secret" | "publishable",
-        apiKeyCreatedVia: apiKeyMetadata?.createdVia as string | undefined,
-        apiKeyCreatedForApp: c.var.auth.apiKey?.byopClientName ?? undefined,
-        apiKeyCreatedForUserId:
-            c.var.auth.apiKey?.byopClientUserId ?? undefined,
-        apiKeyClientId: c.var.auth.apiKey?.byopClientKeyId ?? undefined,
+        // requireUser() above proves the id, which the optional field cannot.
+        identity: { ...requestIdentity(c.var.auth), userId: user.id },
         apiKeyPollenBalance: c.var.auth.apiKey?.pollenBalance,
         byopClientKeyId: c.var.auth.apiKey?.byopClientKeyId,
         modelRequested: modelInfo.requested,
@@ -1332,10 +1393,6 @@ async function createRealtimeBillingContext(
 }
 
 async function authorizeRealtimeSession(c: Context<Env>): Promise<string> {
-    await c.var.auth.requireAuthorization({
-        message:
-            "Realtime WebSocket requires a Pollinations API key in the Authorization header or key query parameter.",
-    });
     const user = c.var.auth.requireUser();
 
     const resolvedModel = c.var.model.resolved;
@@ -1355,6 +1412,11 @@ export async function handleRealtimeWebSocket(
         return new Response("Expected Upgrade: websocket", { status: 426 });
     }
     const userId = await authorizeRealtimeSession(c);
+    await enforceModelRateLimit(c, {
+        id: c.var.model.resolved,
+        definition: c.var.model.definition,
+        communityEndpoint: c.var.model.communityEndpoint,
+    });
     const tracking = await createRealtimeBillingContext(c);
     if (c.var.model.resolved === "scribe-realtime") {
         if (!c.env.ELEVENLABS_API_KEY) {

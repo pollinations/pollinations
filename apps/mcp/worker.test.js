@@ -126,6 +126,63 @@ test("keeps bearer tokens scoped to each request", async (t) => {
     await Promise.all([firstClient.close(), secondClient.close()]);
 });
 
+test("generateText uses the non-streaming chat completion contract", async (t) => {
+    const originalFetch = globalThis.fetch;
+    let completionBody;
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+
+    globalThis.fetch = async (input, init = {}) => {
+        const url = String(input);
+        if (url === "https://gen.pollinations.ai/text/models") {
+            return Response.json([{ name: "openai" }]);
+        }
+        if (url === "https://gen.pollinations.ai/v1/chat/completions") {
+            completionBody = JSON.parse(init.body);
+            return Response.json({
+                model: "openai",
+                choices: [
+                    {
+                        message: { role: "assistant", content: "hello" },
+                        finish_reason: "stop",
+                    },
+                ],
+                usage: { completion_tokens: 1 },
+            });
+        }
+        throw new Error(`Unexpected URL: ${url}`);
+    };
+
+    const client = await connectClient({
+        versionNegotiation: { mode: "auto" },
+    });
+    const generateTextTool = (await client.listTools()).tools.find(
+        ({ name }) => name === "generateText",
+    );
+    assert.ok(generateTextTool);
+    assert.equal(generateTextTool.inputSchema.properties.stream, undefined);
+    assert.equal(
+        generateTextTool.inputSchema.properties.stream_options,
+        undefined,
+    );
+
+    const result = await client.callTool({
+        name: "generateText",
+        arguments: {
+            model: "openai",
+            messages: [{ role: "user", content: "hi" }],
+        },
+    });
+
+    assert.equal(result.content[0].text, "hello");
+    assert.deepEqual(completionBody, {
+        messages: [{ role: "user", content: "hi" }],
+        model: "openai",
+    });
+    await client.close();
+});
+
 test("uploads generated images and returns an MCP resource link", async (t) => {
     const originalFetch = globalThis.fetch;
     let generationBody;
@@ -207,7 +264,10 @@ test("proxies discovery and uploads generated audio, video, and 3D", async (t) =
         });
 
         if (url.endsWith("/audio/models?community=false")) {
-            return Response.json([{ name: "speech-test" }]);
+            return Response.json([
+                { name: "speech-test" },
+                { name: "audio-agent", agent: true },
+            ]);
         }
         if (url.endsWith("/video/models")) {
             return Response.json([{ name: "veo" }]);
@@ -257,6 +317,14 @@ test("proxies discovery and uploads generated audio, video, and 3D", async (t) =
         arguments: { type: "audio", community: false },
     });
     assert.match(models.content[0].text, /speech-test/);
+
+    const agents = await client.callTool({
+        name: "listModels",
+        arguments: { type: "audio", community: false, agent: true },
+    });
+    assert.match(agents.content[0].text, /audio-agent/);
+    assert.match(agents.content[0].text, /"agent": true/);
+    assert.doesNotMatch(agents.content[0].text, /speech-test/);
 
     const status = await client.callTool({
         name: "getModelStatus",

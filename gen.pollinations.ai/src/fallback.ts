@@ -1,13 +1,37 @@
 import {
     type CommunityEndpointRuntime,
+    isCommunityFallbackBalanceAllowed,
     isCommunityFallbackPricingAllowed,
-    isDelegatingEndpoint,
     MAX_FALLBACK_TARGETS,
+    usesAgentRunToken,
 } from "@shared/community-endpoints.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import { firstContentPolicyMessage } from "./image/utils/contentModeration.ts";
 import type { GenerationModelEntry } from "./model-registry.ts";
+
+/** Formats the served target marker in Portkey's header shape. */
+export function formatFallbackTarget(index: number): string {
+    return `config.targets[${index}]`;
+}
+
+/**
+ * Internal-only marker: which declared target served. Must stay
+ * non-enumerable so JSON bodies and R2 cache snapshots never leak it.
+ */
+export function attachFallbackTarget<T extends object>(
+    value: T,
+    index: number,
+): T {
+    if (index <= 0) return value;
+    Object.defineProperty(value, "fallbackTarget", {
+        value: formatFallbackTarget(index),
+        enumerable: false,
+        configurable: true,
+        writable: true,
+    });
+    return value;
+}
 
 /**
  * Upstream statuses that make a request move on to the model's next fallback
@@ -228,10 +252,16 @@ function isUsableCommunityFallback(
     const primary = from.communityEndpoint;
     const candidate = target.communityEndpoint;
     if (!primary || !candidate) return false;
-    if (isDelegatingEndpoint(primary) || isDelegatingEndpoint(candidate)) {
+    if (usesAgentRunToken(candidate)) return false;
+    if (primary.imagePricing !== candidate.imagePricing) return false;
+    if (!isCommunityFallbackBalanceAllowed(primary, candidate)) return false;
+    if (
+        !from.supportedEndpoints.every((endpoint) =>
+            target.supportedEndpoints.includes(endpoint),
+        )
+    ) {
         return false;
     }
-    if (primary.imagePricing !== candidate.imagePricing) return false;
     return isCommunityFallbackPricingAllowed(primary, candidate);
 }
 
@@ -241,12 +271,10 @@ export function linkFallbackEntries(
     byIdOrAlias: Map<string, GenerationModelEntry>,
 ): void {
     for (const entry of entries) {
+        const configured = entry.definition.fallbacks ?? [];
         const declared = entry.communityEndpoint
-            ? entry.communityEndpoint.fallbackModelIds.slice(
-                  0,
-                  MAX_FALLBACK_TARGETS,
-              )
-            : (entry.definition.fallbacks ?? []);
+            ? configured.slice(0, MAX_FALLBACK_TARGETS)
+            : configured;
         const targets: GenerationModelEntry[] = [];
 
         for (const targetId of declared) {
@@ -254,7 +282,7 @@ export function linkFallbackEntries(
             if (!target || target === entry) continue;
             if (entry.communityEndpoint) {
                 const targetEndpoint = target.communityEndpoint;
-                if (targetEndpoint?.disabledAt != null) continue;
+                if (targetEndpoint?.hiddenAt != null) continue;
                 if (
                     targetEndpoint?.visibility === "private" &&
                     entry.communityEndpoint.ownerUserId !==
@@ -346,14 +374,16 @@ export async function withModelFallbackResponse(
     model: PrimaryModel,
     attempt: (candidate: FallbackCandidate) => Promise<Response>,
     failures?: FailedCall[],
+    beforeAttempt?: (candidate: FallbackCandidate) => Promise<void>,
 ): Promise<{ response: Response; servedEntry?: GenerationModelEntry }> {
     const { result, candidate, index } = await withModelFallback(
         fallbackCandidates(model),
         attempt,
         failures,
+        beforeAttempt,
     );
     if (index > 0) {
-        result.headers.set(FALLBACK_TARGET_HEADER, `config.targets[${index}]`);
+        result.headers.set(FALLBACK_TARGET_HEADER, formatFallbackTarget(index));
     }
     return { response: result, servedEntry: candidate.entry };
 }

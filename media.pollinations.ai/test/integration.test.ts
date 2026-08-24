@@ -57,7 +57,7 @@ const KEY_IDENTITIES: Record<
         type?: string;
         name?: string | null;
         userId?: string | null;
-        byopClientKeyId?: string | null;
+        byopApp?: { clientKeyId: string } | null;
     }
 > = {
     pk_alice: {
@@ -65,21 +65,21 @@ const KEY_IDENTITIES: Record<
         type: "publishable",
         name: "alice-key",
         userId: "user_alice",
-        byopClientKeyId: "pk_app_1",
+        byopApp: { clientKeyId: "pk_app_1" },
     },
     pk_bob: {
         valid: true,
         type: "publishable",
         name: "bob-key",
         userId: "user_bob",
-        byopClientKeyId: null,
+        byopApp: null,
     },
     pk_nouser: {
         valid: true,
         type: "publishable",
         name: "service-key",
         userId: null,
-        byopClientKeyId: null,
+        byopApp: null,
     },
     // Deleting media is secret-key only, so delete tests use these.
     sk_alice: {
@@ -87,17 +87,17 @@ const KEY_IDENTITIES: Record<
         type: "secret",
         name: "alice-secret",
         userId: "user_alice",
-        byopClientKeyId: null,
+        byopApp: null,
     },
     sk_bob: {
         valid: true,
         type: "secret",
         name: "bob-secret",
         userId: "user_bob",
-        byopClientKeyId: null,
+        byopApp: null,
     },
     // The response shape of an enter deployment that predates the identity
-    // fields — userId/byopClientKeyId entirely absent, not null.
+    // fields — userId/byopApp entirely absent, not null.
     sk_legacy: {
         valid: true,
         type: "secret",

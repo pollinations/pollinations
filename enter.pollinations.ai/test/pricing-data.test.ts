@@ -1,3 +1,4 @@
+import { BotIcon, ChatIcon, ImageIcon } from "@pollinations/ui";
 import { AUDIO_SERVICES } from "@shared/registry/audio.ts";
 import { EMBEDDING_SERVICES } from "@shared/registry/embeddings.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
@@ -21,6 +22,8 @@ import {
     type ModelName,
 } from "@shared/registry/registry.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
+import { type ComponentProps, createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { expect, test } from "vitest";
 import {
     formatDisplayPrice,
@@ -28,7 +31,13 @@ import {
     formatPricePer1M,
 } from "../frontend/src/components/models/formatters.ts";
 import { getModelPricesFromCatalog } from "../frontend/src/components/models/model-catalog.ts";
-import { getModelBrandLogoPath } from "../frontend/src/components/models/model-info.ts";
+import { getCommunityModelIcon } from "../frontend/src/components/models/model-icons.tsx";
+import {
+    getModelBrandLogoPath,
+    hasPollinationsTools,
+} from "../frontend/src/components/models/model-info.ts";
+import { ModelRow } from "../frontend/src/components/models/model-row.tsx";
+import { ModelPricingLedger } from "../frontend/src/components/models/price-badge.tsx";
 
 const getCatalogModelPrices = () =>
     getModelPricesFromCatalog([
@@ -294,17 +303,80 @@ test("catalog models resolve brand logo SVG assets", () => {
     expect(missingLogos).toEqual([]);
 });
 
-test("community models use the community logo regardless of provider brand", () => {
+test("community models use their model type icon instead of a provider logo", () => {
+    const communityModel = {
+        name: "owner/model",
+        type: "text" as const,
+        community: true,
+        brand: "Custom Provider",
+        capabilities: [],
+        prices: [],
+    };
+
+    expect(getModelBrandLogoPath(communityModel)).toBeUndefined();
+    expect(getCommunityModelIcon(communityModel)).toBe(ChatIcon);
+    expect(getCommunityModelIcon({ ...communityModel, type: "image" })).toBe(
+        ImageIcon,
+    );
+    expect(getCommunityModelIcon({ ...communityModel, agent: true })).toBe(
+        BotIcon,
+    );
+});
+
+test("Pollinations tools are shown only for agents with the MCP capability", () => {
+    const agent: ComponentProps<typeof ModelRow>["model"] = {
+        name: "owner/agent",
+        type: "text" as const,
+        community: true,
+        agent: true,
+        capabilities: [],
+        prices: [],
+    };
+
+    const toolsAgent = {
+        ...agent,
+        capabilities: ["pollinations_models" as const],
+    };
+
+    expect(hasPollinationsTools(agent)).toBe(false);
+    expect(hasPollinationsTools(toolsAgent)).toBe(true);
     expect(
-        getModelBrandLogoPath({
-            name: "owner/model",
-            type: "text",
-            community: true,
-            brand: "Custom Provider",
-            capabilities: [],
-            prices: [],
-        }),
-    ).toBe("/brand-logos/community.svg");
+        renderToStaticMarkup(createElement(ModelRow, { model: agent })),
+    ).not.toContain(">Tools</span>");
+    expect(
+        renderToStaticMarkup(createElement(ModelRow, { model: toolsAgent })),
+    ).toContain(">Tools</span>");
+});
+
+test("cached modality adjustments remain visible without a matching base row", () => {
+    const pricing: ComponentProps<typeof ModelPricingLedger>["pricing"] = {
+        prices: [
+            {
+                direction: "input",
+                kind: "cached",
+                price: "0.06",
+                unit: "token",
+            },
+        ],
+        adjustments: [
+            {
+                name: "cached-audio-delta",
+                label: "Cached audio input",
+                kind: "cached_audio_input",
+                price: "0.24",
+                quantity: 1_000_000,
+                unit: "tokens",
+            },
+        ],
+        dropdowns: [],
+    };
+    const markup = renderToStaticMarkup(
+        createElement(ModelPricingLedger, { pricing }),
+    );
+
+    expect(markup).toContain("Cached input");
+    expect(markup).toContain("Cached audio input");
+    expect(markup).toContain("0.24");
 });
 
 test("model info exposes public capabilities without raw implementation flags", () => {
@@ -578,7 +650,7 @@ test("Gemini search cost follows each route's provider metadata", () => {
     // OpenRouter search-capable routes bill per reported web search request.
     expect(gemini3FlashCost.totalCost).toBeCloseTo(3.528, 8);
     expect(geminiSearchFastCost.totalCost).toBeCloseTo(2.828, 8);
-    expect(geminiSearchLargeCost.totalCost).toBeCloseTo(2.264, 8);
+    expect(geminiSearchLargeCost.totalCost).toBeCloseTo(2.278, 8);
     expect(ungroundedGeminiSearchFastCost.totalCost).toBeCloseTo(2.8, 8);
 });
 
@@ -1058,9 +1130,9 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
         kind: "search_request",
         unit: "request",
         units: 1,
-        unitCost: 0.007,
-        cost: 0.007,
-        price: 0.007,
+        unitCost: 0.014,
+        cost: 0.014,
+        price: 0.014,
     });
 
     const streamedSearch = calculateBillingAdjustments(

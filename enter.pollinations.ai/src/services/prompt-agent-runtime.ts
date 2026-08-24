@@ -15,7 +15,9 @@ const log = getLogger(["enter", "prompt-agent-runtime"]);
 
 export const PromptAgentRequestSchema = z
     .object({
-        messages: z.array(z.custom<ModelMessage>()).optional().default([]),
+        // z.custom() accepts the same inputs, but cannot be represented in the
+        // OpenAPI JSON Schema generated for the account service.
+        messages: z.array(z.unknown()).optional().default([]),
         stream: z.boolean().optional().default(false),
     })
     .passthrough();
@@ -53,16 +55,6 @@ type AgentOutput = {
 const MAX_STEPS = 8;
 const MAX_TOOL_CALLS = 16;
 const MCP_INITIALIZATION_TIMEOUT_MS = 15_000;
-const POLLINATIONS_AGENT_TOOLS = [
-    "generateImage",
-    "generateVideo",
-    "generate3D",
-    "generateText",
-    "createEmbeddings",
-    "generateAudio",
-    "listModels",
-    "getModelStatus",
-];
 const STEP_LIMIT_MESSAGE =
     "The agent reached its maximum number of tool-use steps without a final answer.";
 
@@ -121,7 +113,6 @@ async function loadPollinationsTools(
             },
         });
         for (const [name, definition] of Object.entries(await client.tools())) {
-            if (!POLLINATIONS_AGENT_TOOLS.includes(name)) continue;
             tools[`mcp__pollinations__${name}`] = definition;
         }
         log.info("MCP_SERVER_LOADED: name={name} url={url} tools={tools}", {
@@ -278,6 +269,27 @@ function safeMcpModelOutput({ output }: { output: unknown }) {
           };
 }
 
+function escapeHtml(value: string): string {
+    return value.replace(
+        /[&<>"']/g,
+        (character) =>
+            ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;",
+            })[character] ?? character,
+    );
+}
+
+function toolOutputText(output: unknown): string {
+    const modelOutput = safeMcpModelOutput({ output });
+    return modelOutput.type === "text"
+        ? modelOutput.value
+        : modelOutput.value.map((part) => part.text).join("\n");
+}
+
 function mediaResultContent(
     toolName: string,
     output: unknown,
@@ -338,6 +350,51 @@ function mediaResultContent(
     return `${hasContent ? "\n\n" : ""}${links.join("\n\n")}\n\n`;
 }
 
+function toolResultContent(
+    part: {
+        toolCallId: string;
+        toolName: string;
+        input: unknown;
+        output: unknown;
+    },
+    seenUrls: Set<string>,
+    hasContent: boolean,
+): string {
+    const details = toolDetailsContent(
+        part,
+        "Tool Executed",
+        toolOutputText(part.output),
+        hasContent,
+    );
+    const media = mediaResultContent(
+        part.toolName,
+        part.output,
+        seenUrls,
+        true,
+    );
+    return `${details}${media || "\n\n"}`;
+}
+
+function toolDetailsContent(
+    part: { toolCallId: string; toolName: string; input: unknown },
+    summary: string,
+    output: string,
+    hasContent: boolean,
+): string {
+    const name = part.toolName.replace(/^mcp__pollinations__/, "");
+    const argumentsJson = JSON.stringify(part.input ?? {});
+    return (
+        (hasContent ? "\n\n" : "") +
+        `<details type="tool_calls" done="true" ` +
+        `id="${escapeHtml(part.toolCallId)}" ` +
+        `name="${escapeHtml(name)}" ` +
+        `arguments="${escapeHtml(argumentsJson)}">\n` +
+        `<summary>${summary}</summary>\n` +
+        `${escapeHtml(output)}\n` +
+        "</details>"
+    );
+}
+
 async function runAgent(
     runtime: PromptAgentRuntime,
     messages: ModelMessage[],
@@ -356,12 +413,19 @@ async function runAgent(
             for (const part of step.content) {
                 if (part.type === "text") content += part.text;
                 if (part.type === "tool-result") {
-                    content += mediaResultContent(
-                        part.toolName,
-                        part.output,
+                    content += toolResultContent(
+                        part,
                         seenUrls,
                         content.length > 0,
                     );
+                }
+                if (part.type === "tool-error") {
+                    content += `${toolDetailsContent(
+                        part,
+                        "Tool Failed",
+                        agentErrorMessage(part.error),
+                        content.length > 0,
+                    )}\n\n`;
                 }
             }
         }
@@ -418,9 +482,8 @@ async function streamAgent(
                         );
                     }
                     if (part.type === "tool-result") {
-                        const content = mediaResultContent(
-                            part.toolName,
-                            part.output,
+                        const content = toolResultContent(
+                            part,
                             seenUrls,
                             hasContent,
                         );
@@ -435,6 +498,23 @@ async function streamAgent(
                                 ),
                             );
                         }
+                    }
+                    if (part.type === "tool-error") {
+                        const content = toolDetailsContent(
+                            part,
+                            "Tool Failed",
+                            agentErrorMessage(part.error),
+                            hasContent,
+                        );
+                        hasContent = true;
+                        send(
+                            contentChunk(
+                                id,
+                                created,
+                                runtime.config.baseModel,
+                                `${content}\n\n`,
+                            ),
+                        );
                     }
                 }
                 const [reason, usage, steps] = await Promise.all([
@@ -494,7 +574,9 @@ export async function handlePromptAgentRequest(
     signal: AbortSignal,
     runtime: PromptAgentRuntime,
 ): Promise<Response> {
-    const messages = Array.isArray(body.messages) ? body.messages : [];
+    const messages = (
+        Array.isArray(body.messages) ? body.messages : []
+    ) as ModelMessage[];
     const id = `chatcmpl-${crypto.randomUUID()}`;
     const created = Math.floor(Date.now() / 1000);
     try {

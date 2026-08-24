@@ -774,7 +774,8 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         ...policy,
                         fallbacks,
                     }; // 12-hour price delay for public model price VALUE changes
-                    // (not structural changes like imagePricing mode switches)
+                    // (not structural changes like imagePricing mode switches,
+                    //  not when model is hidden or going private)
                     const storedPayload: ProxyListingPayload | undefined =
                         stored ?? undefined;
                     const pricingModeChanged =
@@ -791,6 +792,8 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         effectiveVisibility === "public" &&
                         !isFreeCommunityEndpoint(policy.prices);
                     const wasActuallyPublic = endpoint.visibility === "public";
+                    const isHidden =
+                        input.hidden === true || endpoint.hiddenAt !== null;
                     const isFirstPrice =
                         !storedPayload?.pendingPrices && !wasPublic && isPublic;
                     const becamePrivate =
@@ -800,13 +803,14 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         priceValuesChanged &&
                         isPublic &&
                         !isFirstPrice &&
-                        !becamePrivate
+                        !becamePrivate &&
+                        !isHidden
                     ) {
                         payload.pendingPrices = policy.prices;
                         payload.pendingPricesEffectiveAt =
                             Date.now() + 12 * 60 * 60 * 1000;
                         payload.prices = storedPayload?.prices ?? policy.prices;
-                    } else if (becamePrivate || !isPublic) {
+                    } else if (becamePrivate || !isPublic || isHidden) {
                         payload.pendingPrices = undefined;
                         payload.pendingPricesEffectiveAt = undefined;
                     }

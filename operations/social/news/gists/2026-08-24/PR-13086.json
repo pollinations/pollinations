@@ -1,0 +1,34 @@
+{
+  "pr_number": 13086,
+  "title": "refactor: unify fallback outcome tracking",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13086",
+  "merged_at": "2026-08-24T01:51:11Z",
+  "labels": [],
+  "pr_body_excerpt": "- Reconstructs the fallback tracking simplification on current main instead of rebasing the stale implementation.\n- Records every provider attempt in one ordered trace; the settling candidate now drives provider/model attribution, cost, fallback status, and community reward ownership.\n- Removes the separate servedModelEntry state and modality-specific writes across text, image/video, audio, embeddings, and 3D.\n- Preserves per-model fallback statuses, per-candidate RPM gates, cache and detached execution behavior, caller pricing, private fallback rewards, and overdrawn-credit safeguards.\n\nValidation:\n- Gen typecheck and Biome\n- 1,330 tests passed across the full Gen suite; 6 skipped\n- Focused billing, terminal failure, cache/detached, and local RPM-gate regressions",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Every fallback leaves tracks",
+    "blurb": "The hive now keeps one orderly trail for every provider it visits. Whichever flower finally delivers the goods gets the credit, cost, and reward attached to its name.",
+    "summary": "Unified fallback tracking across text, image/video, audio, embeddings, and 3D into one ordered provider-attempt trace, with the successful settling candidate determining provider/model attribution, cost, fallback status, and community reward ownership.",
+    "impact": "Users and community model operators get more accurate generation attribution, pricing, fallback reporting, and reward ownership while preserving cache, detached execution, per-candidate RPM gates, and credit safeguards.",
+    "keywords": [
+      "fallbacks",
+      "provider-attribution",
+      "billing",
+      "community-models",
+      "generation-tracking",
+      "rewards"
+    ],
+    "visual_concept": "Depict fallback routing as a cozy garden path through several small provider flower stations, each leaving a tiny labeled trail marker; Polli follows the full route with a clipboard and gives the final blooming station a clear credit ribbon. The visual metaphor is that every attempt is recorded, but the provider that successfully settles the generation receives the attribution and pollen reward.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing tiny accountant glasses and holding a clipboard as she follows an ordered trail through pastel provider-flower stations; the final blooming station receives a lime green (#ecf874) ribbon reading \"SETTLED\" while earlier stations have small trace markers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and vines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-24/PR-13086.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing tiny accountant glasses and holding a clipboard as she follows an ordered trail through pastel provider-flower stations; the final blooming station receives a lime green (#ecf874) ribbon reading \"SETTLED\" while earlier stations have small trace markers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and vines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-24T01:52:18.643136+00:00"
+}

@@ -137,7 +137,7 @@ export async function callAzureFluxKontext(
         }>;
     };
 
-    if (!data.data || !data.data[0] || !data.data[0].b64_json) {
+    if (!data.data?.[0]?.b64_json) {
         throw new HttpError(
             "Invalid response from Azure Flux Kontext API",
             500,

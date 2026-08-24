@@ -44,7 +44,9 @@ Collection steps:
    period; it is the Economics cash ledger derived from Wise.
 2. For a missing or live period, request Wise activities with explicit ISO 8601
    `since` and `until` bounds, `size=100`, and follow `cursor` with
-   `nextCursor` until it is null.
+   `nextCursor` until it is null. Re-read the preceding 35 days: an activity
+   created as pending before the month boundary can settle inside the requested
+   month. The statement settlement date still decides which month is booked.
 3. For cash-now verification, list `STANDARD` balances and convert each balance
    to the chosen reporting currency with an explicit dated FX source. Do not
    persist the snapshot and do not include Jars unless the user asks.
@@ -65,11 +67,12 @@ sops exec-env ingest/secrets/env.json \
   --transactions=ingest/data/reconcile/proposals/wise-YYYY-MM-transactions.ndjson"'
 ```
 
-`--until` is exclusive. The script follows every activity cursor, skips
-cancelled/card-check activity, reuses classifications already proven by prior
-Wise rows, and stops for genuinely new merchants. It uses statement dates,
-amounts, currencies, and fees for every proposal and refuses activity-only
-bookings. Every proposal is a `kind: transaction` bank movement.
+`--until` is exclusive. The script follows every activity cursor, overlaps the
+preceding 35 days, skips cancelled/card-check activity, reuses classifications
+already proven by prior Wise rows, and stops for genuinely new merchants. It
+uses statement dates, amounts, currencies, and fees for every proposal and
+refuses activity-only bookings. Every proposal is a `kind: transaction` bank
+movement.
 
 Runway requires one separate `kind: opening_balance` row per non-zero statement
 currency, all on the same first-of-month anchor date. Derive those anchors only

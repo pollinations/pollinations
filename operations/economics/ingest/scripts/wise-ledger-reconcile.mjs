@@ -4,6 +4,7 @@ import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 
 const TINYBIRD_API = "https://api.europe-west2.gcp.tinybird.co";
+const ACTIVITY_LOOKBACK_DAYS = 35;
 
 const NEW_MERCHANT_RULES = new Map([
     ["api credit", { vendor: "perplexity", category: "cloud" }],
@@ -20,6 +21,13 @@ function requiredEnvironment(name) {
     const value = process.env[name];
     if (!value) throw new Error(`Missing ${name}`);
     return value;
+}
+
+export function activityQueryStart(from) {
+    const date = new Date(`${from}T00:00:00.000Z`);
+    if (Number.isNaN(date.getTime())) throw new Error(`Invalid date: ${from}`);
+    date.setUTCDate(date.getUTCDate() - ACTIVITY_LOOKBACK_DAYS);
+    return date.toISOString();
 }
 
 async function fetchJson(url, options = {}) {
@@ -384,7 +392,8 @@ async function main() {
     const token = requiredEnvironment("WISE_API_TOKEN");
     const profileId = requiredEnvironment("WISE_BUSINESS_PROFILE_ID");
     const tinybirdToken = requiredEnvironment("TINYBIRD_ECONOMICS_READ_TOKEN");
-    const since = `${values.from}T00:00:00.000Z`;
+    const requestedSince = `${values.from}T00:00:00.000Z`;
+    const since = activityQueryStart(values.from);
     const until = `${values.until}T00:00:00.000Z`;
     const recordedAt = new Date()
         .toISOString()
@@ -399,7 +408,7 @@ async function main() {
         fetchActivities({
             profileId,
             token,
-            since: "2026-01-01T00:00:00.000Z",
+            since: "2025-01-01T00:00:00.000Z",
             until: since,
         }),
         tinybirdRows("op_transactions_api", tinybirdToken),
@@ -426,6 +435,10 @@ async function main() {
         const settlements = settlementFacts.byEntryId.get(entryId) ?? [];
         consumedSettlementIds.add(entryId);
         if (settlements.length === 0) {
+            const activityChangedAt = String(
+                activity.updatedOn ?? activity.createdOn ?? "",
+            );
+            if (activityChangedAt < requestedSince) continue;
             const proposal = transactionProposal(
                 activity,
                 history,
@@ -467,7 +480,9 @@ async function main() {
     }
     const archive = {
         collected_at: new Date().toISOString(),
-        interval: { since, until },
+        requested_interval: { since: requestedSince, until },
+        query_interval: { since, until },
+        lookback_days: ACTIVITY_LOOKBACK_DAYS,
         pages: period.pages,
         statement_files: statements.paths,
         activities: period.activities,

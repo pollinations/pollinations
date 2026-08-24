@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+    activityQueryStart,
     buildMerchantHistory,
     buildStatementSettlements,
     coveredWiseEntryIds,
@@ -38,6 +39,10 @@ test("parses Wise direction and stable resource IDs", () => {
         { amount: 5.25, currency: "EUR" },
     );
     assert.equal(wiseEntryId(activity()), "CARD_TRANSACTION-123");
+});
+
+test("overlaps the prior month so pending activities can settle", () => {
+    assert.equal(activityQueryStart("2026-08-01"), "2026-06-27T00:00:00.000Z");
 });
 
 test("removes malformed HTML without leaving executable markup", () => {

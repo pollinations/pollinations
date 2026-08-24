@@ -10,15 +10,11 @@ import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import { firstContentPolicyMessage } from "./image/utils/contentModeration.ts";
 import type { GenerationModelEntry } from "./model-registry.ts";
 
-/**
- * Upstream statuses that make a request move on to the model's next fallback
- * target.
- *
- * 400 and 422 are left out on purpose: those are caller errors and retrying
- * them elsewhere cannot succeed. 401/402/403/404 are included because they mean
- * the primary's credentials or upstream model are broken, which the fallback may
- * survive.
- */
+/** Formats the served target marker in Portkey's header shape. */
+export function formatFallbackTarget(index: number): string {
+    return `config.targets[${index}]`;
+}
+
 /**
  * Internal-only marker: which declared target served. Must stay
  * non-enumerable so JSON bodies and R2 cache snapshots never leak it.
@@ -29,7 +25,7 @@ export function attachFallbackTarget<T extends object>(
 ): T {
     if (index <= 0) return value;
     Object.defineProperty(value, "fallbackTarget", {
-        value: `config.targets[${index}]`,
+        value: formatFallbackTarget(index),
         enumerable: false,
         configurable: true,
         writable: true,
@@ -37,6 +33,15 @@ export function attachFallbackTarget<T extends object>(
     return value;
 }
 
+/**
+ * Upstream statuses that make a request move on to the model's next fallback
+ * target.
+ *
+ * 400 and 422 are left out on purpose: those are caller errors and retrying
+ * them elsewhere cannot succeed. 401/402/403/404 are included because they mean
+ * the primary's credentials or upstream model are broken, which the fallback may
+ * survive.
+ */
 export const FALLBACK_ON_STATUS_CODES = [
     401, 402, 403, 404, 408, 429, 500, 502, 503, 504,
 ];
@@ -378,7 +383,7 @@ export async function withModelFallbackResponse(
         beforeAttempt,
     );
     if (index > 0) {
-        result.headers.set(FALLBACK_TARGET_HEADER, `config.targets[${index}]`);
+        result.headers.set(FALLBACK_TARGET_HEADER, formatFallbackTarget(index));
     }
     return { response: result, servedEntry: candidate.entry };
 }

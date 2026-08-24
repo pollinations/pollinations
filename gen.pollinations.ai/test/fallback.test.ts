@@ -8,6 +8,7 @@ import {
     type FailedCall,
     type FallbackCandidate,
     fallbackCandidates,
+    formatFallbackTarget,
     isRetryableFallbackError,
     linkFallbackEntries,
     withModelFallback,
@@ -244,6 +245,14 @@ describe("registry fallback linking", () => {
         );
 
         expect(primary.fallbackEntries).toBeUndefined();
+    });
+});
+
+describe("formatFallbackTarget", () => {
+    it("formats the marker for index > 0", () => {
+        expect(formatFallbackTarget(1)).toBe("config.targets[1]");
+        expect(formatFallbackTarget(2)).toBe("config.targets[2]");
+        expect(formatFallbackTarget(10)).toBe("config.targets[10]");
     });
 });
 

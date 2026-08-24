@@ -219,11 +219,13 @@ async function openPaidRealtimeSession({
     model = "gpt-realtime-2",
     referrer,
     initialProviderMessage,
+    byopClientKeyId,
 }: {
     name: string;
     model?: string;
     referrer?: string;
     initialProviderMessage?: string;
+    byopClientKeyId?: string;
 }) {
     const {
         key,
@@ -234,6 +236,12 @@ async function openPaidRealtimeSession({
         pollenBudget: 1,
         user: { tierBalance: 0, packBalance: 1 },
     });
+    if (byopClientKeyId) {
+        await drizzle(env.DB)
+            .update(apiKeyTable)
+            .set({ byopClientKeyId })
+            .where(eq(apiKeyTable.id, apiKeyId));
+    }
     const upstream = mockRealtimeProvider(initialProviderMessage);
     const headers: Record<string, string> = {
         Authorization: `Bearer ${key}`,
@@ -1654,4 +1662,70 @@ test("rejects realtime access for empty model permissions", async () => {
     });
 
     expect(response.status).toBe(403);
+});
+
+test("Tinybird event total equals actual wallet debit with BYOP markup and ledger rounding", async () => {
+    const suffix = `rounding-test-${Date.now()}`;
+    const devId = `dev-${suffix}`;
+    const pkId = `pk_rounding_${suffix}`;
+
+    const db = drizzle(env.DB);
+    await db.insert(userTable).values({
+        id: devId,
+        email: `${devId}@test.local`,
+        name: devId,
+        tierBalance: 0,
+        packBalance: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    });
+    await db.insert(apiKeyTable).values({
+        id: pkId,
+        userId: devId,
+        name: "markup-app",
+        prefix: "pk",
+        key: `hashed-${pkId}`,
+        enabled: true,
+        metadata: JSON.stringify({ earningsEnabled: true }),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    });
+
+    const session = await openPaidRealtimeSession({
+        name: `byop-rounding-realtime-key-${suffix}`,
+        byopClientKeyId: pkId,
+    });
+
+    const usageEvent = JSON.stringify({
+        type: "response.done",
+        response: {
+            usage: {
+                input_tokens: 135,
+                output_tokens: 75,
+                input_token_details: {
+                    text_tokens: 100,
+                    audio_tokens: 10,
+                    image_tokens: 5,
+                    cached_tokens: 20,
+                    cached_tokens_details: {
+                        text_tokens: 20,
+                        audio_tokens: 0,
+                        image_tokens: 0,
+                    },
+                },
+                output_token_details: {
+                    text_tokens: 50,
+                    audio_tokens: 25,
+                },
+            },
+        },
+    });
+
+    session.upstream.server.send(usageEvent);
+    const telemetry = await closeAndReadTelemetry(session);
+    const userBalances = await getUserBalances(session.userId);
+    const actualDebit = 1 - (userBalances?.packBalance ?? 1);
+
+    expect(telemetry.markupRate).toBeGreaterThan(0);
+    expect(telemetry.totalPrice).toBe(roundPollenLedgerAmount(actualDebit));
 });

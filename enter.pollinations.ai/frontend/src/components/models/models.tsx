@@ -14,6 +14,7 @@ import {
     SearchIcon,
     Section,
     SparklesIcon,
+    Switch,
     TabButton,
     TokensIcon,
     TrendUpIcon,
@@ -34,7 +35,7 @@ import {
     fetchModelCatalog,
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
-import { getModelDisplayName } from "./model-info.ts";
+import { getModelDisplayName, isPaidOnly } from "./model-info.ts";
 import type { ModelScope, ModelSort } from "./model-search.ts";
 import { sortModels } from "./model-sort.ts";
 import {
@@ -183,6 +184,7 @@ export const Models: FC = () => {
     const activeSort = modelSearch.sort ?? "newest";
     const urlSearch = modelSearch.q ?? "";
     const [search, setSearch] = useState(urlSearch);
+    const [hidePaid, setHidePaid] = useState(false);
     const lastPushedSearchRef = useRef(urlSearch);
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
     const [catalogError, setCatalogError] = useState<string | null>(null);
@@ -202,10 +204,12 @@ export const Models: FC = () => {
     );
     const filteredModels = useMemo(
         () =>
-            query
-                ? scopedModels.filter((model) => matchesQuery(model, query))
-                : scopedModels,
-        [query, scopedModels],
+            scopedModels.filter(
+                (model) =>
+                    (!hidePaid || !isPaidOnly(model)) &&
+                    matchesQuery(model, query),
+            ),
+        [hidePaid, query, scopedModels],
     );
 
     const loadModelCatalog = useCallback(
@@ -404,7 +408,7 @@ export const Models: FC = () => {
                             })}
                         </div>
                     </div>
-                    <div className="flex w-full items-center justify-between gap-2">
+                    <div className="grid w-full grid-cols-[minmax(0,28rem)_auto] items-start justify-between gap-x-2 gap-y-1.5">
                         <div className="relative min-w-0 max-w-md flex-1">
                             <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />
                             <Input
@@ -473,6 +477,16 @@ export const Models: FC = () => {
                                 </div>
                             )}
                         </Dropdown>
+                        <div className="col-start-2 flex items-center gap-2 justify-self-end">
+                            <span className="text-xs font-medium text-theme-text-muted">
+                                Hide paid
+                            </span>
+                            <Switch
+                                checked={hidePaid}
+                                onChange={setHidePaid}
+                                ariaLabel="Hide paid models"
+                            />
+                        </div>
                     </div>
                 </div>
                 {activeScope === "community" && (
@@ -481,18 +495,29 @@ export const Models: FC = () => {
                         title="Community model privacy"
                         className="mb-4"
                     >
-                        Requests to community models are sent to independent
-                        providers, including configured fallback providers. They
-                        may retain, share, or train on your data under their own
-                        policies. Check the provider information before sending
-                        confidential or sensitive data. See our{" "}
-                        <InlineLink
-                            href="https://pollinations.ai/privacy"
-                            showIcon={false}
-                        >
-                            Privacy Policy
-                        </InlineLink>
-                        .
+                        <p>
+                            Requests go to independent providers and configured
+                            fallbacks, which handle your data under their own
+                            policies.
+                        </p>
+                        <p className="mt-2">
+                            <strong>Avoid sensitive data.</strong> For text
+                            input, you can use our optional{" "}
+                            <InlineLink
+                                href="https://gen.pollinations.ai/docs#tag/Safety"
+                                showIcon={false}
+                            >
+                                privacy filter
+                            </InlineLink>
+                            . See our{" "}
+                            <InlineLink
+                                href="https://pollinations.ai/privacy"
+                                showIcon={false}
+                            >
+                                Privacy Policy
+                            </InlineLink>
+                            .
+                        </p>
                     </Alert>
                 )}
                 {catalogError && (
@@ -500,9 +525,13 @@ export const Models: FC = () => {
                         {catalogError}
                     </Alert>
                 )}
-                {query && sectionModels[activeTab].length === 0 ? (
+                {sectionModels[activeTab].length === 0 ? (
                     <p className="py-8 text-center text-sm text-theme-text-muted">
-                        No {searchTarget.toLowerCase()} match “{search.trim()}”.
+                        {query
+                            ? `No ${searchTarget.toLowerCase()} match “${search.trim()}”.`
+                            : hidePaid
+                              ? `No ${searchTarget.toLowerCase()} available with Quest Pollen in this category.`
+                              : `No ${searchTarget.toLowerCase()} available.`}
                     </p>
                 ) : (
                     <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">

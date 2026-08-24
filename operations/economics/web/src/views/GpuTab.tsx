@@ -388,7 +388,8 @@ export function gpuResourceRows(
         hasNetwork: boolean;
         hasStructuredUsage: boolean;
         hasPositiveCost: boolean;
-        isAdjustment: boolean;
+        hasNonAdjustment: boolean;
+        legacyGpuHours: number;
         paidCostUsd: number;
         creditCostUsd: number;
     };
@@ -425,40 +426,42 @@ export function gpuResourceRows(
             hasNetwork: false,
             hasStructuredUsage: false,
             hasPositiveCost: false,
-            isAdjustment: false,
+            hasNonAdjustment: false,
+            legacyGpuHours: 0,
             paidCostUsd: 0,
             creditCostUsd: 0,
         };
 
         const kind = usageKind(row);
+        const rowIsAdjustment = isFinancialOrAggregateRow(row);
         const quantity = Math.max(0, Number(row.resource_count) || 0);
         acc.paidCostUsd += paidCostUsd;
         acc.creditCostUsd += creditCostUsd;
         acc.hasPositiveCost ||= totalCostUsd > 0;
-        acc.isAdjustment ||= isFinancialOrAggregateRow(row);
+        acc.hasNonAdjustment ||= !rowIsAdjustment;
         if (row.resource_name.trim()) acc.names.add(row.resource_name.trim());
         if (row.resource_sku.trim()) acc.hardware.add(row.resource_sku.trim());
         for (const model of splitModels(row.model)) acc.models.add(model);
 
-        if (kind) acc.hasStructuredUsage = true;
-        if (kind === "gpu") {
+        if (kind && !rowIsAdjustment) acc.hasStructuredUsage = true;
+        if (kind === "gpu" && !rowIsAdjustment) {
             acc.gpuHours += quantity;
             acc.hasGpuHours = true;
-        } else if (kind === "storage") {
+        } else if (kind === "storage" && !rowIsAdjustment) {
             acc.storageHours += quantity;
             acc.hasStorageHours = true;
-        } else if (kind === "download" || kind === "upload") {
+        } else if (
+            (kind === "download" || kind === "upload") &&
+            !rowIsAdjustment
+        ) {
             acc.networkGb += quantity;
             acc.hasNetwork = true;
         } else if (
             LEGACY_HOURLY_VENDORS.has(vendor) &&
-            !acc.isAdjustment &&
+            !rowIsAdjustment &&
             quantity > 0
         ) {
-            // Historical Lambda and RunPod extracts recorded billed GPU hours
-            // directly in resource_count before explicit usage-kind SKUs.
-            acc.gpuHours += quantity;
-            acc.hasGpuHours = true;
+            acc.legacyGpuHours += quantity;
         }
 
         groups.set(key, acc);
@@ -471,16 +474,25 @@ export function gpuResourceRows(
     >();
 
     for (const acc of groups.values()) {
+        const legacyGpuHours =
+            !acc.hasStructuredUsage && acc.hasNonAdjustment
+                ? acc.legacyGpuHours
+                : 0;
         const isGpu =
             acc.hasGpuHours ||
+            legacyGpuHours > 0 ||
             (!acc.hasStructuredUsage &&
                 Boolean(acc.resourceId) &&
                 acc.hasPositiveCost &&
-                !acc.isAdjustment);
+                acc.hasNonAdjustment);
         const totalCostUsd = acc.paidCostUsd + acc.creditCostUsd;
 
         if (isGpu) {
-            const gpuHours = acc.hasGpuHours ? acc.gpuHours : null;
+            const gpuHours = acc.hasGpuHours
+                ? acc.gpuHours
+                : legacyGpuHours > 0
+                  ? legacyGpuHours
+                  : null;
             gpuRows.push({
                 kind: "gpu",
                 month: acc.month,

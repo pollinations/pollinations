@@ -432,6 +432,37 @@ describe("gpuResourceRows", () => {
             totalCostUsd: 95,
         });
     });
+
+    it("classifies legacy usage independently of adjustment row order", () => {
+        const usage = cloud({
+            vendor: "runpod",
+            entry_id: "usage",
+            resource_id: "pod-1",
+            resource_count: 24,
+            paid: -100,
+        });
+        const adjustment = cloud({
+            vendor: "runpod",
+            entry_id: "refund",
+            resource_id: "pod-1",
+            resource_name: "billing-history refund",
+            resource_count: 1,
+            paid: 5,
+        });
+
+        for (const opCloud of [
+            [usage, adjustment],
+            [adjustment, usage],
+        ]) {
+            const rows = gpuResourceRows({ ...baseData, opCloud }, "2026-06");
+            expect(rows).toHaveLength(1);
+            expect(rows[0]).toMatchObject({
+                kind: "gpu",
+                gpuHours: 24,
+                paidCostUsd: 95,
+            });
+        }
+    });
 });
 
 describe("gpuWorkloadRows", () => {

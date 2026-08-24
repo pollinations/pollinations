@@ -29,7 +29,9 @@ describe("RunwayTab labels", () => {
         expect(forecastMethodHint("fixed")).toBe(
             "Uses a fixed monthly amount.",
         );
-        expect(forecastMethodHint("funded")).toBe("Covered by vendor credits.");
+        expect(forecastMethodHint("funded")).toBe(
+            "Covered by verified vendor credits or prepaid balance.",
+        );
         expect(forecastMethodHint("last")).toBe(
             "Repeats the latest closed month.",
         );

@@ -52,7 +52,9 @@ export function forecastMethodLabel(method: RunwayMatrixRow["forecastMethod"]) {
 
 export function forecastMethodHint(method: RunwayMatrixRow["forecastMethod"]) {
     if (method === "fixed") return "Uses a fixed monthly amount.";
-    if (method === "funded") return "Covered by vendor credits.";
+    if (method === "funded") {
+        return "Covered by verified vendor credits or prepaid balance.";
+    }
     if (method === "last") return "Repeats the latest closed month.";
     if (method === "one_off") return "Included only in this month.";
     return null;

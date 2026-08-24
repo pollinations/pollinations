@@ -26,6 +26,8 @@ import type {
     Message,
     ModelInfo,
     PollinationsConfig,
+    QuestsOptions,
+    QuestsResponse,
     RequestOptions,
     TextGenerateOptions,
     TranscribeOptions,
@@ -1446,6 +1448,19 @@ export class Pollinations {
         const url = `${this.baseUrl}/account/usage/daily${qs ? `?${qs}` : ""}`;
 
         return this.getJson<DailyUsageResponse>(url);
+    }
+
+    /**
+     * Get quest status.
+     */
+    async accountQuests(options: QuestsOptions = {}): Promise<QuestsResponse> {
+        const params = new URLSearchParams();
+        if (options.status !== undefined) {
+            params.set("status", options.status);
+        }
+        const qs = params.toString() ? `?${params.toString()}` : "";
+        const url = `${this.baseUrl}/account/quests${qs}`;
+        return this.getJson<QuestsResponse>(url);
     }
 
     /**

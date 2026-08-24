@@ -126,6 +126,10 @@ export type {
     PollinationsConfig,
     // Errors
     PollinationsErrorDetails,
+    Quest,
+    QuestReward,
+    QuestsOptions,
+    QuestsResponse,
     RequestOptions,
     ResponseFormat,
     TextContentPart,

@@ -680,6 +680,33 @@ export interface DailyUsageResponse {
     count: number;
 }
 
+export interface QuestsOptions {
+    status?: "all" | "available" | "in_progress" | "completed";
+}
+
+export interface QuestReward {
+    type: string;
+    amount: number;
+    description: string;
+}
+
+export interface Quest {
+    id: number;
+    title: string;
+    description: string;
+    status: string;
+    bounty: number;
+    labels: string[];
+    url: string;
+    createdAt: string;
+    reward?: QuestReward;
+}
+
+export interface QuestsResponse {
+    quests: Quest[];
+    count: number;
+}
+
 /** API key validation response */
 export interface KeyInfo {
     valid: boolean;

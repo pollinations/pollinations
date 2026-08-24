@@ -3,13 +3,20 @@ import { getCohortFromCountry } from "../src/utils/currency-router.ts";
 
 describe("getCohortFromCountry", () => {
     describe("USD cohort (default)", () => {
-        test.each(["US", "CA", "AU", "NZ", "UA", "JP", "KR", "ZA", "ZZ"])(
-            "routes %s to USD",
-            (country) => {
-                const cohort = getCohortFromCountry(country);
-                expect(cohort).toBe("USD");
-            },
-        );
+        test.each([
+            "US",
+            "CA",
+            "AU",
+            "NZ",
+            "UA",
+            "JP",
+            "KR",
+            "ZA",
+            "ZZ",
+        ])("routes %s to USD", (country) => {
+            const cohort = getCohortFromCountry(country);
+            expect(cohort).toBe("USD");
+        });
 
         test("routes MO to USD (spoof-signal regression)", () => {
             // 99.8% of MO billing-country charges in the live audit were
@@ -18,12 +25,14 @@ describe("getCohortFromCountry", () => {
             expect(getCohortFromCountry("MO")).toBe("USD");
         });
 
-        test.each(["XX", "", null, undefined])(
-            "routes %p to USD",
-            (country) => {
-                expect(getCohortFromCountry(country)).toBe("USD");
-            },
-        );
+        test.each([
+            "XX",
+            "",
+            null,
+            undefined,
+        ])("routes %p to USD", (country) => {
+            expect(getCohortFromCountry(country)).toBe("USD");
+        });
     });
 
     describe("BR cohort", () => {

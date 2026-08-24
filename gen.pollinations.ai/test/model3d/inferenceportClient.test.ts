@@ -178,27 +178,26 @@ describe("runInferenceport", () => {
         ).rejects.toMatchObject({ name: "InferenceportError", status: 429 });
     });
 
-    it.each([400, 422])(
-        "maps upstream %i validation errors to 400",
-        async (status) => {
-            vi.spyOn(globalThis, "fetch").mockResolvedValue(
-                new Response(
-                    JSON.stringify({ detail: "Invalid image dimensions" }),
-                    { status },
-                ),
-            );
+    it.each([
+        400, 422,
+    ])("maps upstream %i validation errors to 400", async (status) => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(
+                JSON.stringify({ detail: "Invalid image dimensions" }),
+                { status },
+            ),
+        );
 
-            await expect(
-                runInferenceport({
-                    model: "trellis2",
-                    imageUrls: ["https://example.com/a.jpg"],
-                }),
-            ).rejects.toMatchObject({
-                name: "InferenceportError",
-                status: 400,
-            });
-        },
-    );
+        await expect(
+            runInferenceport({
+                model: "trellis2",
+                imageUrls: ["https://example.com/a.jpg"],
+            }),
+        ).rejects.toMatchObject({
+            name: "InferenceportError",
+            status: 400,
+        });
+    });
 
     it("maps other HTTP errors to 502", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(

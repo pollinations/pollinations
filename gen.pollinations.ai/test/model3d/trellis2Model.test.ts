@@ -55,20 +55,20 @@ describe("callTrellis2", () => {
         expect(body.resolution).toBe("medium");
     });
 
-    it.each(["low", "medium", "high"] as const)(
-        "sends %s resolution",
-        async (resolution) => {
-            const fetchSpy = mockAsyncSuccess();
+    it.each([
+        "low",
+        "medium",
+        "high",
+    ] as const)("sends %s resolution", async (resolution) => {
+        const fetchSpy = mockAsyncSuccess();
 
-            await callTrellis2(params(resolution));
+        await callTrellis2(params(resolution));
 
-            const body = JSON.parse(
-                (fetchSpy.mock.calls[0] as [string, RequestInit])[1]
-                    .body as string,
-            );
-            expect(body.resolution).toBe(resolution);
-        },
-    );
+        const body = JSON.parse(
+            (fetchSpy.mock.calls[0] as [string, RequestInit])[1].body as string,
+        );
+        expect(body.resolution).toBe(resolution);
+    });
 
     it("returns a GLB buffer from the completed job", async () => {
         mockAsyncSuccess();

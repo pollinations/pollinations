@@ -6,19 +6,18 @@ import {
 } from "../src/services/d1-tinybird-sync.ts";
 import { test } from "./fixtures.ts";
 
-test.each(D1_TINYBIRD_DATASOURCES)(
-    "exports a valid page from %s using the real D1 schema",
-    async (datasource) => {
-        const page = await exportD1TinybirdPage(env.DB, datasource);
+test.each(
+    D1_TINYBIRD_DATASOURCES,
+)("exports a valid page from %s using the real D1 schema", async (datasource) => {
+    const page = await exportD1TinybirdPage(env.DB, datasource);
 
-        expect(page).toEqual({
-            datasource,
-            rows: [],
-            nextCursor: null,
-            done: true,
-        });
-    },
-);
+    expect(page).toEqual({
+        datasource,
+        rows: [],
+        nextCursor: null,
+        done: true,
+    });
+});
 
 test("exports large tables with keyset pagination", async () => {
     await env.DB.prepare(`

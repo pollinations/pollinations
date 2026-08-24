@@ -11,15 +11,14 @@ const videoModelIds = getVideoModelIds() as ImageModelName[];
 const nonVideoModelIds = getImageModelIds() as ImageModelName[];
 
 describe("video duration registry fields", () => {
-    it.each(videoModelIds)(
-        "%s has min_duration, max_duration, and default_duration",
-        (name) => {
-            const info = modelInfoFromDefinition(name, IMAGE_SERVICES[name]);
-            expect(info.min_duration).toBeGreaterThan(0);
-            expect(info.max_duration).toBeGreaterThan(0);
-            expect(info.default_duration).toBeGreaterThan(0);
-        },
-    );
+    it.each(
+        videoModelIds,
+    )("%s has min_duration, max_duration, and default_duration", (name) => {
+        const info = modelInfoFromDefinition(name, IMAGE_SERVICES[name]);
+        expect(info.min_duration).toBeGreaterThan(0);
+        expect(info.max_duration).toBeGreaterThan(0);
+        expect(info.default_duration).toBeGreaterThan(0);
+    });
 
     it.each(videoModelIds)("%s satisfies min ≤ default ≤ max", (name) => {
         const info = modelInfoFromDefinition(name, IMAGE_SERVICES[name]);

@@ -34,20 +34,20 @@ describe("long-context cost variants", () => {
         ["gpt-5.6-sol", 272_000],
         ["gpt-5.6-terra", 272_000],
         ["gpt-5.6-luna", 272_000],
-    ] satisfies [ModelName, number][])(
-        "%s uses a strict greater-than boundary",
-        (model, threshold) => {
-            expect(
-                bill(model, { promptTextTokens: threshold - 1 }).costVariant,
-            ).toBeUndefined();
-            expect(
-                bill(model, { promptTextTokens: threshold }).costVariant,
-            ).toBeUndefined();
-            expect(
-                bill(model, { promptTextTokens: threshold + 1 }).costVariant,
-            ).toBe("long_context");
-        },
-    );
+    ] satisfies [
+        ModelName,
+        number,
+    ][])("%s uses a strict greater-than boundary", (model, threshold) => {
+        expect(
+            bill(model, { promptTextTokens: threshold - 1 }).costVariant,
+        ).toBeUndefined();
+        expect(
+            bill(model, { promptTextTokens: threshold }).costVariant,
+        ).toBeUndefined();
+        expect(
+            bill(model, { promptTextTokens: threshold + 1 }).costVariant,
+        ).toBe("long_context");
+    });
 
     it("Gemini uses OpenRouter's inclusive 200K boundary", () => {
         expect(
@@ -110,14 +110,11 @@ describe("long-context cost variants", () => {
         [255_999, "context_32k"],
         [256_000, "context_256k"],
         [256_001, "context_256k"],
-    ] as const)(
-        "Qwen3.7 Flash selects the expected sheet at %s prompt tokens",
-        (promptTextTokens, expectedVariant) => {
-            expect(
-                bill("qwen3.7-flash", { promptTextTokens }).costVariant,
-            ).toBe(expectedVariant);
-        },
-    );
+    ] as const)("Qwen3.7 Flash selects the expected sheet at %s prompt tokens", (promptTextTokens, expectedVariant) => {
+        expect(bill("qwen3.7-flash", { promptTextTokens }).costVariant).toBe(
+            expectedVariant,
+        );
+    });
 
     it("Qwen3.7 Flash counts cached and media tokens toward its tiers", () => {
         expect(
@@ -216,32 +213,36 @@ describe("long-context cost variants", () => {
         ["gpt-5.6-sol", 10, 1, 12.5, 45, 0.5],
         ["gpt-5.6-terra", 4, 0.4, 5, 18, 0.625],
         ["gpt-5.6-luna", 0.4, 0.04, 0.5, 1.8, 1],
-    ] satisfies [ModelName, number, number, number, number, number][])(
-        "%s applies every Azure long-context meter to the full request",
-        (model, input, cached, cacheWrite, output, multiplier) => {
-            const billing = bill(model, {
-                promptTextTokens: 272_001,
-                promptCachedTokens: 1_000,
-                promptCacheWriteTokens: 1_000,
-                completionTextTokens: 1_000,
-            });
+    ] satisfies [
+        ModelName,
+        number,
+        number,
+        number,
+        number,
+        number,
+    ][])("%s applies every Azure long-context meter to the full request", (model, input, cached, cacheWrite, output, multiplier) => {
+        const billing = bill(model, {
+            promptTextTokens: 272_001,
+            promptCachedTokens: 1_000,
+            promptCacheWriteTokens: 1_000,
+            completionTextTokens: 1_000,
+        });
 
-            expect(billing.costVariant).toBe("long_context");
-            expect(billing.priceDefinition).toMatchObject({
-                promptTextTokens: (input / 1e6) * multiplier,
-                promptCachedTokens: (cached / 1e6) * multiplier,
-                promptCacheWriteTokens: (cacheWrite / 1e6) * multiplier,
-                completionTextTokens: (output / 1e6) * multiplier,
-            });
-            expect(billing.cost.totalCost).toBeCloseTo(
-                272_001 * (input / 1e6) +
-                    1_000 * (cached / 1e6) +
-                    1_000 * (cacheWrite / 1e6) +
-                    1_000 * (output / 1e6),
-                12,
-            );
-        },
-    );
+        expect(billing.costVariant).toBe("long_context");
+        expect(billing.priceDefinition).toMatchObject({
+            promptTextTokens: (input / 1e6) * multiplier,
+            promptCachedTokens: (cached / 1e6) * multiplier,
+            promptCacheWriteTokens: (cacheWrite / 1e6) * multiplier,
+            completionTextTokens: (output / 1e6) * multiplier,
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(
+            272_001 * (input / 1e6) +
+                1_000 * (cached / 1e6) +
+                1_000 * (cacheWrite / 1e6) +
+                1_000 * (output / 1e6),
+            12,
+        );
+    });
 
     it("counts every prompt token modality, but not audio seconds", () => {
         expect(
@@ -365,23 +366,20 @@ describe("AssemblyAI transcription cost variants", () => {
             0.28,
             "prompting_diarization",
         ],
-    ] as const)(
-        "%s format=%s prompt=%s bills $%s/hour",
-        (model, responseFormat, hasPrompt, hourlyCost, variant) => {
-            const billing = bill(
-                model,
-                { promptAudioSeconds: 3600 },
-                {
-                    hasDiarization: responseFormat === "diarized_json",
-                    hasPrompt,
-                },
-            );
+    ] as const)("%s format=%s prompt=%s bills $%s/hour", (model, responseFormat, hasPrompt, hourlyCost, variant) => {
+        const billing = bill(
+            model,
+            { promptAudioSeconds: 3600 },
+            {
+                hasDiarization: responseFormat === "diarized_json",
+                hasPrompt,
+            },
+        );
 
-            expect(billing.cost.totalCost).toBeCloseTo(hourlyCost, 12);
-            expect(billing.price.totalPrice).toBeCloseTo(hourlyCost, 12);
-            expect(billing.costVariant).toBe(variant);
-        },
-    );
+        expect(billing.cost.totalCost).toBeCloseTo(hourlyCost, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(hourlyCost, 12);
+        expect(billing.costVariant).toBe(variant);
+    });
 });
 
 describe("request-mode cost variants", () => {
@@ -425,20 +423,17 @@ describe("resolution cost variants", () => {
         [1008, 1040, 0.06, "2048"],
         [1024, 1040, 0.06, "2048"],
         [2048, 2048, 0.06, "2048"],
-    ] as const)(
-        "nova-canvas bills %sx%s at $%s/image",
-        (width, height, rate, variant) => {
-            const billing = bill(
-                "nova-canvas",
-                { completionImageTokens: 1 },
-                { maxImageDimension: Math.max(width, height) },
-            );
+    ] as const)("nova-canvas bills %sx%s at $%s/image", (width, height, rate, variant) => {
+        const billing = bill(
+            "nova-canvas",
+            { completionImageTokens: 1 },
+            { maxImageDimension: Math.max(width, height) },
+        );
 
-            expect(billing.costVariant).toBe(variant);
-            expect(billing.cost.totalCost).toBeCloseTo(rate, 12);
-            expect(billing.price.totalPrice).toBeCloseTo(rate, 12);
-        },
-    );
+        expect(billing.costVariant).toBe(variant);
+        expect(billing.cost.totalCost).toBeCloseTo(rate, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(rate, 12);
+    });
 
     it("p-video bills the 720p base and 1080p variant", () => {
         expect(

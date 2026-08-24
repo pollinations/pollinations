@@ -668,215 +668,215 @@ describe("prompt-agent runtime", () => {
         }
     });
 
-    it.each([false, true])(
-        "returns generated image links when stream:%s",
-        async (stream) => {
-            let modelCalls = 0;
-            const modelResponse = (
-                message: Record<string, unknown>,
-                finishReason: "stop" | "tool_calls",
-            ) => {
-                const usage = { prompt_tokens: 2, completion_tokens: 1 };
-                if (!stream) {
-                    return Response.json({
+    it.each([
+        false,
+        true,
+    ])("returns generated image links when stream:%s", async (stream) => {
+        let modelCalls = 0;
+        const modelResponse = (
+            message: Record<string, unknown>,
+            finishReason: "stop" | "tool_calls",
+        ) => {
+            const usage = { prompt_tokens: 2, completion_tokens: 1 };
+            if (!stream) {
+                return Response.json({
+                    choices: [
+                        {
+                            message,
+                            finish_reason: finishReason,
+                        },
+                    ],
+                    usage,
+                });
+            }
+            return new Response(
+                `${[
+                    {
                         choices: [
                             {
-                                message,
+                                index: 0,
+                                delta: message,
+                                finish_reason: null,
+                            },
+                        ],
+                    },
+                    {
+                        choices: [
+                            {
+                                index: 0,
+                                delta: {},
                                 finish_reason: finishReason,
                             },
                         ],
                         usage,
-                    });
-                }
-                return new Response(
-                    `${[
-                        {
-                            choices: [
-                                {
-                                    index: 0,
-                                    delta: message,
-                                    finish_reason: null,
-                                },
-                            ],
-                        },
-                        {
-                            choices: [
-                                {
-                                    index: 0,
-                                    delta: {},
-                                    finish_reason: finishReason,
-                                },
-                            ],
-                            usage,
-                        },
-                    ]
-                        .map((event) => `data: ${JSON.stringify(event)}\n\n`)
-                        .join("")}data: [DONE]\n\n`,
-                    { headers: { "content-type": "text/event-stream" } },
-                );
-            };
-            vi.stubGlobal(
-                "fetch",
-                vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-                    const request = new Request(input, init);
-                    if (request.url === POLLINATIONS_MCP_PROXY_URL) {
-                        if (request.method === "GET") {
-                            return new Response(null, { status: 405 });
-                        }
-                        if (request.method === "DELETE") {
-                            return new Response(null, { status: 200 });
-                        }
-                        const body = (await request.json()) as {
-                            id?: string;
-                            method: string;
-                            params?: {
-                                arguments?: Record<string, unknown>;
-                            };
+                    },
+                ]
+                    .map((event) => `data: ${JSON.stringify(event)}\n\n`)
+                    .join("")}data: [DONE]\n\n`,
+                { headers: { "content-type": "text/event-stream" } },
+            );
+        };
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+                const request = new Request(input, init);
+                if (request.url === POLLINATIONS_MCP_PROXY_URL) {
+                    if (request.method === "GET") {
+                        return new Response(null, { status: 405 });
+                    }
+                    if (request.method === "DELETE") {
+                        return new Response(null, { status: 200 });
+                    }
+                    const body = (await request.json()) as {
+                        id?: string;
+                        method: string;
+                        params?: {
+                            arguments?: Record<string, unknown>;
                         };
-                        if (body.method === "initialize") {
-                            return Response.json({
-                                jsonrpc: "2.0",
-                                id: body.id,
-                                result: {
-                                    protocolVersion: "2025-06-18",
-                                    capabilities: { tools: {} },
-                                    serverInfo: {
-                                        name: "pollinations",
-                                        version: "1.0.0",
-                                    },
-                                },
-                            });
-                        }
-                        if (body.method === "notifications/initialized") {
-                            return new Response(null, { status: 202 });
-                        }
-                        if (body.method === "tools/list") {
-                            return Response.json({
-                                jsonrpc: "2.0",
-                                id: body.id,
-                                result: {
-                                    tools: [
-                                        {
-                                            name: "generateImage",
-                                            inputSchema: { type: "object" },
-                                        },
-                                    ],
-                                },
-                            });
-                        }
-                        expect(body.params?.arguments).toMatchObject({
-                            prompt: "a pirate",
-                        });
+                    };
+                    if (body.method === "initialize") {
                         return Response.json({
                             jsonrpc: "2.0",
                             id: body.id,
                             result: {
-                                content: [
+                                protocolVersion: "2025-06-18",
+                                capabilities: { tools: {} },
+                                serverInfo: {
+                                    name: "pollinations",
+                                    version: "1.0.0",
+                                },
+                            },
+                        });
+                    }
+                    if (body.method === "notifications/initialized") {
+                        return new Response(null, { status: 202 });
+                    }
+                    if (body.method === "tools/list") {
+                        return Response.json({
+                            jsonrpc: "2.0",
+                            id: body.id,
+                            result: {
+                                tools: [
                                     {
-                                        type: "image",
-                                        data: "U0hPVUxEX05PVF9SRUFDSF9NT0RFTA==",
-                                        mimeType: "image/png",
-                                    },
-                                    {
-                                        type: "resource_link",
-                                        uri: "https://images.example/pirate.png",
-                                        name: "Generated image",
-                                    },
-                                    {
-                                        type: "text",
-                                        text: '{"data":[{"url":"https://images.example/pirate.png"}]}',
+                                        name: "generateImage",
+                                        inputSchema: { type: "object" },
                                     },
                                 ],
                             },
                         });
                     }
+                    expect(body.params?.arguments).toMatchObject({
+                        prompt: "a pirate",
+                    });
+                    return Response.json({
+                        jsonrpc: "2.0",
+                        id: body.id,
+                        result: {
+                            content: [
+                                {
+                                    type: "image",
+                                    data: "U0hPVUxEX05PVF9SRUFDSF9NT0RFTA==",
+                                    mimeType: "image/png",
+                                },
+                                {
+                                    type: "resource_link",
+                                    uri: "https://images.example/pirate.png",
+                                    name: "Generated image",
+                                },
+                                {
+                                    type: "text",
+                                    text: '{"data":[{"url":"https://images.example/pirate.png"}]}',
+                                },
+                            ],
+                        },
+                    });
+                }
 
-                    modelCalls++;
-                    const body = (await request.json()) as {
-                        messages: { role: string; content: string }[];
-                    };
-                    if (modelCalls === 2) {
-                        const toolMessage = body.messages.find(
-                            (message) => message.role === "tool",
-                        );
-                        expect(toolMessage?.content).toContain(
-                            "https://images.example/pirate.png",
-                        );
-                        expect(JSON.stringify(toolMessage)).not.toContain(
-                            "U0hPVUxEX05PVF9SRUFDSF9NT0RFTA==",
-                        );
-                    }
-                    if (modelCalls === 1) {
-                        return modelResponse(
-                            {
-                                role: "assistant",
-                                content: "Drawing",
-                                tool_calls: [
-                                    {
-                                        index: 0,
-                                        id: "c1",
-                                        type: "function",
-                                        function: {
-                                            name: "mcp__pollinations__generateImage",
-                                            arguments: '{"prompt":"a pirate"}',
-                                        },
-                                    },
-                                ],
-                            },
-                            "tool_calls",
-                        );
-                    }
+                modelCalls++;
+                const body = (await request.json()) as {
+                    messages: { role: string; content: string }[];
+                };
+                if (modelCalls === 2) {
+                    const toolMessage = body.messages.find(
+                        (message) => message.role === "tool",
+                    );
+                    expect(toolMessage?.content).toContain(
+                        "https://images.example/pirate.png",
+                    );
+                    expect(JSON.stringify(toolMessage)).not.toContain(
+                        "U0hPVUxEX05PVF9SRUFDSF9NT0RFTA==",
+                    );
+                }
+                if (modelCalls === 1) {
                     return modelResponse(
                         {
                             role: "assistant",
-                            content: "Finished",
+                            content: "Drawing",
+                            tool_calls: [
+                                {
+                                    index: 0,
+                                    id: "c1",
+                                    type: "function",
+                                    function: {
+                                        name: "mcp__pollinations__generateImage",
+                                        arguments: '{"prompt":"a pirate"}',
+                                    },
+                                },
+                            ],
                         },
-                        "stop",
+                        "tool_calls",
                     );
-                }),
-            );
-
-            const response = await runAgent(
-                {
-                    messages: [{ role: "user", content: "draw a pirate" }],
-                    stream,
-                },
-                {
-                    ...BASE_RUNTIME,
-                    config: {
-                        ...BASE_RUNTIME.config,
-                        mcpServers: ["pollinations"],
+                }
+                return modelResponse(
+                    {
+                        role: "assistant",
+                        content: "Finished",
                     },
-                },
-            );
-            expect(response.status).toBe(200);
+                    "stop",
+                );
+            }),
+        );
 
-            let content: string;
-            if (stream) {
-                content = (await response.text())
-                    .split("\n\n")
-                    .filter((block) => block.startsWith("data: {"))
-                    .map((block) => JSON.parse(block.slice(6)))
-                    .map((event) => event.choices?.[0]?.delta?.content ?? "")
-                    .join("");
-            } else {
-                const json = (await response.json()) as {
-                    choices: { message: { content: string } }[];
-                };
-                content = json.choices[0].message.content;
-            }
-            expect(content).toContain(
-                '<details type="tool_calls" done="true" id="c1" name="generateImage" arguments="{&quot;prompt&quot;:&quot;a pirate&quot;}">',
-            );
-            expect(content).toContain("[image output omitted");
-            expect(content).not.toContain("U0hPVUxEX05PVF9SRUFDSF9NT0RFTA==");
-            expect(content).toContain(
-                "![Generated image](<https://images.example/pirate.png>)",
-            );
-            expect(content.startsWith("Drawing\n\n")).toBe(true);
-            expect(content.endsWith("Finished")).toBe(true);
-        },
-    );
+        const response = await runAgent(
+            {
+                messages: [{ role: "user", content: "draw a pirate" }],
+                stream,
+            },
+            {
+                ...BASE_RUNTIME,
+                config: {
+                    ...BASE_RUNTIME.config,
+                    mcpServers: ["pollinations"],
+                },
+            },
+        );
+        expect(response.status).toBe(200);
+
+        let content: string;
+        if (stream) {
+            content = (await response.text())
+                .split("\n\n")
+                .filter((block) => block.startsWith("data: {"))
+                .map((block) => JSON.parse(block.slice(6)))
+                .map((event) => event.choices?.[0]?.delta?.content ?? "")
+                .join("");
+        } else {
+            const json = (await response.json()) as {
+                choices: { message: { content: string } }[];
+            };
+            content = json.choices[0].message.content;
+        }
+        expect(content).toContain(
+            '<details type="tool_calls" done="true" id="c1" name="generateImage" arguments="{&quot;prompt&quot;:&quot;a pirate&quot;}">',
+        );
+        expect(content).toContain("[image output omitted");
+        expect(content).not.toContain("U0hPVUxEX05PVF9SRUFDSF9NT0RFTA==");
+        expect(content).toContain(
+            "![Generated image](<https://images.example/pirate.png>)",
+        );
+        expect(content.startsWith("Drawing\n\n")).toBe(true);
+        expect(content.endsWith("Finished")).toBe(true);
+    });
 
     it("streams SSE with usage on the final chunk when stream:true", async () => {
         const upstreamEvents = [

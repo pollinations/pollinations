@@ -3,6 +3,9 @@ import worker from "./index";
 
 const env = {
     ECONOMICS_PASSWORD: "correct horse battery staple",
+    LOGIN_RATE_LIMITER: {
+        limit: vi.fn().mockResolvedValue({ success: true }),
+    },
     TINYBIRD_API: "https://api.europe-west2.gcp.tinybird.co",
     TINYBIRD_ECONOMICS_READ_TOKEN: "test-token",
 };
@@ -27,6 +30,7 @@ async function authenticatedCookie() {
 afterEach(() => {
     vi.useRealTimers();
     vi.unstubAllGlobals();
+    env.LOGIN_RATE_LIMITER.limit.mockResolvedValue({ success: true });
 });
 
 describe("economics Worker auth", () => {
@@ -46,6 +50,23 @@ describe("economics Worker auth", () => {
         });
 
         expect(response.status).toBe(401);
+    });
+
+    it("rate limits repeated login attempts", async () => {
+        env.LOGIN_RATE_LIMITER.limit.mockResolvedValueOnce({
+            success: false,
+        });
+
+        const response = await request("/api/auth/login", {
+            method: "POST",
+            headers: { "CF-Connecting-IP": "192.0.2.1" },
+            body: JSON.stringify({ password: env.ECONOMICS_PASSWORD }),
+        });
+
+        expect(response.status).toBe(429);
+        expect(env.LOGIN_RATE_LIMITER.limit).toHaveBeenCalledWith({
+            key: "192.0.2.1",
+        });
     });
 
     it("creates a secure session cookie", async () => {

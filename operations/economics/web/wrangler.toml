@@ -15,6 +15,14 @@ run_worker_first = ["/api/*"]
 [vars]
 TINYBIRD_API = "https://api.europe-west2.gcp.tinybird.co"
 
+[[ratelimits]]
+name = "LOGIN_RATE_LIMITER"
+namespace_id = "13712"
+
+[ratelimits.simple]
+limit = 10
+period = 60
+
 # Secrets:
 # - ECONOMICS_PASSWORD
 # - TINYBIRD_ECONOMICS_READ_TOKEN

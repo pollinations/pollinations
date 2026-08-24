@@ -11,6 +11,7 @@ const READ_PIPES = new Set([
 
 interface Env {
     ECONOMICS_PASSWORD: string;
+    LOGIN_RATE_LIMITER: RateLimit;
     TINYBIRD_API: string;
     TINYBIRD_ECONOMICS_READ_TOKEN: string;
 }
@@ -137,6 +138,13 @@ async function handleApi(request: Request, env: Env) {
     }
 
     if (url.pathname === "/api/auth/login" && request.method === "POST") {
+        const rateLimit = await env.LOGIN_RATE_LIMITER.limit({
+            key: request.headers.get("CF-Connecting-IP") || "unknown",
+        });
+        if (!rateLimit.success) {
+            return json({ error: "Too many login attempts" }, 429);
+        }
+
         let body: { password?: string };
         try {
             body = (await request.json()) as { password?: string };

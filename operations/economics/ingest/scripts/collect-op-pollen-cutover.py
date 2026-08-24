@@ -9,16 +9,20 @@ from tinybird.tb.client import TinyB
 
 
 HOST = "https://api.europe-west2.gcp.tinybird.co"
-WORKSPACE = "pollinations_enter_staging"
+WORKSPACES = {
+    "staging": "pollinations_enter_staging",
+    "production": "pollinations_enter",
+}
 
 
 def arguments():
     parser = argparse.ArgumentParser(
         description=(
-            "Collect a read-only staging aggregate of generation_event_v2 after "
+            "Collect a read-only aggregate of generation_event_v2 after "
             "an immutable op_pollen backup cutoff."
         )
     )
+    parser.add_argument("environment", choices=WORKSPACES)
     parser.add_argument("output", type=Path)
     parser.add_argument("--endpoint-output", type=Path)
     parser.add_argument("--history-output", type=Path)
@@ -27,12 +31,12 @@ def arguments():
     return parser.parse_args()
 
 
-def client():
+def client(workspace_name):
     repo = Path(__file__).resolve().parents[4]
     config = json.loads((repo / "enter.pollinations.ai/observability/.tinyb").read_text())
     user = TinyB(token=config["user_token"], host=HOST)
     workspaces = user.user_workspaces_and_branches(version="v1")["workspaces"]
-    workspace = next(item for item in workspaces if item["name"] == WORKSPACE)
+    workspace = next(item for item in workspaces if item["name"] == workspace_name)
     return TinyB(token=workspace["token"], host=HOST)
 
 
@@ -45,6 +49,7 @@ def main():
     args = arguments()
     cutoff = validate_timestamp(args.cutoff)
     end = validate_timestamp(args.end)
+    workspace_name = WORKSPACES[args.environment]
     if cutoff >= end:
         raise RuntimeError("Cutoff must be before the exclusive end")
 
@@ -71,17 +76,17 @@ def main():
         ORDER BY month, vendor, model
         FORMAT JSON
     """
-    staging = client()
-    rows = staging.query(query)["data"]
+    workspace = client(workspace_name)
+    rows = workspace.query(query)["data"]
     boundary_query = f"""
         SELECT count() AS events
         FROM generation_event_v2
         WHERE start_time = toDateTime('{cutoff}')
         FORMAT JSON
     """
-    boundary_events = int(staging.query(boundary_query)["data"][0]["events"])
+    boundary_events = int(workspace.query(boundary_query)["data"][0]["events"])
     payload = {
-        "workspace": WORKSPACE,
+        "workspace": workspace_name,
         "source": "generation_event_v2",
         "cutoff_exclusive_utc": cutoff,
         "end_exclusive_utc": end,
@@ -96,13 +101,13 @@ def main():
     endpoint_rows = None
     endpoint_output = None
     if args.endpoint_output:
-        endpoint_rows = staging.pipe_data("op_pollen_api").get("data", [])
+        endpoint_rows = workspace.pipe_data("op_pollen_api").get("data", [])
         endpoint_output = args.endpoint_output.resolve()
         endpoint_output.parent.mkdir(parents=True, exist_ok=True)
         endpoint_output.write_text(
             json.dumps(
                 {
-                    "workspace": WORKSPACE,
+                    "workspace": workspace_name,
                     "source": "op_pollen_api",
                     "generated_at": payload["generated_at"],
                     "rows": len(endpoint_rows),
@@ -139,13 +144,13 @@ def main():
             ORDER BY month, provider, model, entry_id
             FORMAT JSON
         """
-        history_rows = staging.query(history_query)["data"]
+        history_rows = workspace.query(history_query)["data"]
         history_output = args.history_output.resolve()
         history_output.parent.mkdir(parents=True, exist_ok=True)
         history_output.write_text(
             json.dumps(
                 {
-                    "workspace": WORKSPACE,
+                    "workspace": workspace_name,
                     "source": "op_pollen_history",
                     "reason": "workspace_snapshot",
                     "generated_at": payload["generated_at"],
@@ -166,7 +171,7 @@ def main():
                 "endpoint_rows": len(endpoint_rows) if endpoint_rows is not None else None,
                 "history_output": str(history_output) if history_output else None,
                 "history_rows": len(history_rows) if history_rows is not None else None,
-                "workspace": WORKSPACE,
+                "workspace": workspace_name,
             }
         )
     )

@@ -1,5 +1,4 @@
 import { FileText, Loader2 } from "lucide-react";
-import React from "react";
 import Logo from "../assets/pollinations-logo.svg";
 
 const RepoInput = ({ onGenerate, loading }) => {
@@ -31,6 +30,7 @@ const RepoInput = ({ onGenerate, loading }) => {
                 </p>
 
                 <button
+                    type="button"
                     onClick={handleSubmit}
                     disabled={loading}
                     className="mt-4 px-8 py-4 bg-blue-600 text-white text-lg rounded-lg font-semibold hover:bg-blue-700 disabled:bg-slate-400 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl flex items-center gap-3"

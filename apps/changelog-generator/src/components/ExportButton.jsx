@@ -1,6 +1,5 @@
 import dayjs from "dayjs";
 import { Download } from "lucide-react";
-import React from "react";
 
 const ExportButton = ({ entries, repoName }) => {
     const generateMarkdown = () => {
@@ -49,7 +48,7 @@ const ExportButton = ({ entries, repoName }) => {
     const generateText = () => {
         let text = `Changelog - ${repoName}\n`;
         text += `Generated on ${dayjs().format("MMMM D, YYYY")}\n\n`;
-        text += "=".repeat(50) + "\n\n";
+        text += `${"=".repeat(50)}\n\n`;
 
         const categories = {
             feat: [],
@@ -80,7 +79,7 @@ const ExportButton = ({ entries, repoName }) => {
         Object.entries(categories).forEach(([category, items]) => {
             if (items.length > 0) {
                 text += `${categoryLabels[category]}\n`;
-                text += "-".repeat(50) + "\n";
+                text += `${"-".repeat(50)}\n`;
                 items.forEach((item) => {
                     text += `• ${item.changelog} (${dayjs(item.date).format("MMM D, YYYY")})\n`;
                 });

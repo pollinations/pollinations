@@ -366,9 +366,9 @@ function App() {
             try {
                 await sendMessage(
                     runtimeMessages,
-                    (_, fullContent) =>
+                    (chunk, _fullContent, _error) =>
                         updateMessage(assistantId, {
-                            content: fullContent,
+                            content: chunk,
                             isStreaming: true,
                         }),
                     (fullContent) => {

@@ -603,6 +603,40 @@ export interface AccountBalance {
     };
 }
 
+/** A reward the account earned for a quest */
+export interface AccountQuestReward {
+    id: string;
+    questId: string | null;
+    title: string;
+    pollenAmount: number;
+    balanceBucket: string;
+    earnedAt: string;
+    /** null while the reward is waiting to be claimed on the dashboard */
+    claimedAt: string | null;
+}
+
+/** One quest from the catalog with the account's read-only status */
+export interface AccountQuest {
+    id: string;
+    title: string;
+    description: string;
+    category: string;
+    /** Catalog state: available, completed (globally done), or coming_soon */
+    state: "available" | "completed" | "coming_soon";
+    /** This account's status: open, completed, or coming_soon */
+    status: "open" | "completed" | "coming_soon";
+    rewardAmount: number;
+    balanceBucket: "tier" | "pack";
+    url: string | null;
+    /** Present once the account has earned the quest's reward */
+    reward: AccountQuestReward | null;
+}
+
+/** Quest status response */
+export interface AccountQuestsResponse {
+    quests: AccountQuest[];
+}
+
 /** Usage record */
 export interface UsageRecord {
     timestamp: string;

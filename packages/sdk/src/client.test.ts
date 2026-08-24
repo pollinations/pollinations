@@ -608,3 +608,54 @@ describe("Pollinations model discovery", () => {
         );
     });
 });
+
+describe("Pollinations account quests", () => {
+    it("returns the quest list from /account/quests untouched", async () => {
+        const client = newClient();
+        const payload = {
+            quests: [
+                {
+                    id: "merged_pr",
+                    title: "Contribute a pull request",
+                    description: "Your PR got merged.",
+                    category: "contribute",
+                    state: "available",
+                    status: "completed",
+                    rewardAmount: 5,
+                    balanceBucket: "tier",
+                    url: null,
+                    reward: {
+                        id: "r1",
+                        questId: "merged_pr",
+                        title: "Contribute a pull request",
+                        pollenAmount: 5,
+                        balanceBucket: "tier",
+                        earnedAt: "2026-07-03T16:11:34.000Z",
+                        claimedAt: null,
+                    },
+                },
+                {
+                    id: "early_adopter",
+                    title: "Early adopter",
+                    description: "Account at least nine months old.",
+                    category: "grow",
+                    state: "coming_soon",
+                    status: "coming_soon",
+                    rewardAmount: 2,
+                    balanceBucket: "tier",
+                    url: null,
+                    reward: null,
+                },
+            ],
+        };
+        fetchMock.mockResolvedValueOnce(makeResponse(payload));
+
+        const result = await client.accountQuests();
+
+        expect(fetchMock.mock.calls[0]?.[0]).toBe(
+            "https://example.test/account/quests",
+        );
+        expect(result).toEqual(payload);
+        expect(result.quests[0].reward?.claimedAt).toBeNull();
+    });
+});

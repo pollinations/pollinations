@@ -3,6 +3,7 @@ import type {
     AccountBalance,
     AccountKey,
     AccountProfile,
+    AccountQuestsResponse,
     AudioBinaryResponse,
     AudioGenerateOptions,
     AuthorizeDeviceOptions,
@@ -1396,6 +1397,25 @@ export class Pollinations {
      */
     async accountBalance(): Promise<AccountBalance> {
         return this.getJson<AccountBalance>(`${this.baseUrl}/account/balance`);
+    }
+
+    /**
+     * Get the quest catalog with this account's read-only status and earned
+     * rewards. Claiming stays dashboard-only.
+     *
+     * @example
+     * ```ts
+     * const { quests } = await pollinations.accountQuests();
+     * quests.filter(q => q.status === "completed").forEach(q => console.log(q.title));
+     * ```
+     */
+    async accountQuests(
+        options: RequestOptions = {},
+    ): Promise<AccountQuestsResponse> {
+        return this.getJson<AccountQuestsResponse>(
+            `${this.baseUrl}/account/quests`,
+            options.signal,
+        );
     }
 
     /**

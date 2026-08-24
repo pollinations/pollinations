@@ -22,14 +22,16 @@ import {
     type ModelName,
 } from "@shared/registry/registry.ts";
 import type { TinybirdEvent } from "@shared/schemas/generation-event.ts";
+import { createTestApiKey } from "@shared/test/fixtures/index.ts";
 import { removeUnset } from "@shared/util.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { Hono } from "hono";
+import { type Context, Hono } from "hono";
 import { requestId } from "hono/request-id";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
 import type { FallbackAttempt, FallbackCandidate } from "@/fallback.ts";
+import { BILLING_SERVICE } from "@/middleware/billing.ts";
 import type {
     GenerationCacheAdapter,
     GenerationCacheVariables,
@@ -42,12 +44,47 @@ import {
     trackResponse,
 } from "@/middleware/track.ts";
 import type { GenerationModelEntry } from "@/model-registry.ts";
+import { enterGatewayFor } from "./gateway.ts";
 
 afterEach(() => {
     vi.restoreAllMocks();
 });
 
 let trackingUser: AuthUser;
+
+// Enter settles what track reports and writes the Tinybird row itself, so the
+// in-process gateway carries the ingest target these tests capture.
+const tinybirdGateway = enterGatewayFor({
+    ENVIRONMENT: "test",
+    TINYBIRD_INGEST_URL:
+        "https://tinybird.test/v0/events?name=generation_event_v2",
+    TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+});
+
+const apiKeys = new Map<string, string>();
+
+/** Authorize the request with Enter, as the coordinator or edge would. */
+async function authorizeRequest(
+    c: Context<Env>,
+    user: AuthUser,
+    model: ModelVariables["model"],
+): Promise<void> {
+    let token = apiKeys.get(user.id);
+    if (!token) {
+        token = (await createTestApiKey({ userId: user.id })).key;
+        apiKeys.set(user.id, token);
+    }
+    const authorization = await tinybirdGateway.authorize({
+        token,
+        service: BILLING_SERVICE,
+        requestId: c.get("requestId"),
+        requestPath: c.req.path,
+        estimatedPrice: 0,
+        paidOnly: model.definition.paidOnly,
+    });
+    if (!authorization.ok) throw new Error(authorization.denial.message);
+    c.set("billing", { authorizationId: authorization.authorizationId });
+}
 
 function createTestApp(
     consumePollen: (amount: number) => Promise<void>,
@@ -85,6 +122,7 @@ function createTestApp(
         c.set("frontendKeyRateLimit", { consumePollen });
         c.set("model", model);
         if (generationCache) c.set("generationCache", generationCache);
+        if (user) await authorizeRequest(c, user, model);
         await next();
     });
     app.post("/v1/chat/completions", track("generate.text"), (c) => {
@@ -194,6 +232,7 @@ function createWrongContentTypeApp(
             resolved: model,
             definition: getRegistryModelDefinition(model),
         });
+        await authorizeRequest(c, trackingUser, c.var.model);
         await next();
     });
     app.all("/upstream", track(eventType), () => response.clone());
@@ -229,6 +268,7 @@ function createSseStreamApp(
         });
         c.set("frontendKeyRateLimit", { consumePollen: async () => {} });
         c.set("model", model);
+        await authorizeRequest(c, user, model);
         await next();
     });
     app.post("/v1/chat/completions", track("generate.text"), () => {
@@ -309,6 +349,7 @@ function createHeaderApp(
             resolved: model,
             definition: getRegistryModelDefinition(model),
         });
+        if (user) await authorizeRequest(c, user, c.var.model);
         await next();
     });
     app.post("/v1/chat/completions", track("generate.text"), (c) => {
@@ -387,6 +428,7 @@ async function captureFallbackEvent(extraHeaders: Record<string, string>) {
             TINYBIRD_INGEST_URL:
                 "https://tinybird.test/v0/events?name=generation_event_v2",
             TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            ENTER_GATEWAY: tinybirdGateway,
         } as CloudflareBindings,
         ctx,
     );
@@ -419,7 +461,8 @@ describe("tracking observability", () => {
             email: `${userId}@test.local`,
             name: "Tracking Observability Test",
             tierBalance: 10_000,
-            packBalance: 0,
+            // Paid-only models are authorized against the pack.
+            packBalance: 100,
             createdAt: new Date(),
             updatedAt: new Date(),
         });
@@ -468,6 +511,7 @@ describe("tracking observability", () => {
                 TINYBIRD_INGEST_URL:
                     "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+                ENTER_GATEWAY: tinybirdGateway,
             } as CloudflareBindings,
             ctx,
         );
@@ -533,6 +577,7 @@ describe("tracking observability", () => {
             TINYBIRD_INGEST_URL:
                 "https://tinybird.test/v0/events?name=generation_event_v2",
             TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            ENTER_GATEWAY: tinybirdGateway,
         } as CloudflareBindings;
         const request = () =>
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
@@ -598,6 +643,7 @@ describe("tracking observability", () => {
             TINYBIRD_INGEST_URL:
                 "https://tinybird.test/v0/events?name=generation_event_v2",
             TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            ENTER_GATEWAY: tinybirdGateway,
         } as CloudflareBindings;
 
         const ctx = createExecutionContext();
@@ -654,6 +700,7 @@ describe("tracking observability", () => {
             TINYBIRD_INGEST_URL:
                 "https://tinybird.test/v0/events?name=generation_event_v2",
             TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            ENTER_GATEWAY: tinybirdGateway,
         } as CloudflareBindings;
 
         const ctx = createExecutionContext();
@@ -720,6 +767,7 @@ describe("tracking observability", () => {
                 TINYBIRD_INGEST_URL:
                     "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+                ENTER_GATEWAY: tinybirdGateway,
             } as CloudflareBindings,
             ctx,
         );
@@ -789,6 +837,7 @@ describe("tracking observability", () => {
                 TINYBIRD_INGEST_URL:
                     "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+                ENTER_GATEWAY: tinybirdGateway,
             } as CloudflareBindings,
             ctx,
         );
@@ -861,6 +910,7 @@ describe("tracking observability", () => {
                 TINYBIRD_INGEST_URL:
                     "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+                ENTER_GATEWAY: tinybirdGateway,
             } as CloudflareBindings,
             ctx,
         );
@@ -916,6 +966,7 @@ describe("tracking observability", () => {
                 TINYBIRD_INGEST_URL:
                     "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+                ENTER_GATEWAY: tinybirdGateway,
             } as CloudflareBindings,
             ctx,
         );
@@ -984,6 +1035,7 @@ describe("tracking observability", () => {
                 TINYBIRD_INGEST_URL:
                     "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+                ENTER_GATEWAY: tinybirdGateway,
             } as CloudflareBindings,
             ctx,
         );
@@ -1045,6 +1097,7 @@ describe("tracking observability", () => {
                 TINYBIRD_INGEST_URL:
                     "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+                ENTER_GATEWAY: tinybirdGateway,
             } as CloudflareBindings,
             ctx,
         );
@@ -1110,6 +1163,7 @@ describe("tracking observability", () => {
                 TINYBIRD_INGEST_URL:
                     "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+                ENTER_GATEWAY: tinybirdGateway,
             } as CloudflareBindings,
             ctx,
         );
@@ -1166,6 +1220,7 @@ describe("tracking observability", () => {
                 TINYBIRD_INGEST_URL:
                     "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+                ENTER_GATEWAY: tinybirdGateway,
             } as CloudflareBindings,
             ctx,
         );
@@ -1213,6 +1268,7 @@ describe("tracking observability", () => {
                 TINYBIRD_INGEST_URL:
                     "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+                ENTER_GATEWAY: tinybirdGateway,
             } as CloudflareBindings,
             ctx,
         );
@@ -1257,6 +1313,7 @@ describe("tracking observability", () => {
                 TINYBIRD_INGEST_URL:
                     "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+                ENTER_GATEWAY: tinybirdGateway,
             } as CloudflareBindings,
             ctx,
         );
@@ -1288,7 +1345,9 @@ describe("tracking observability", () => {
             .limit(1);
         if (!user) throw new Error("Expected inserted user");
 
-        vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("ok"));
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValue(new Response("ok"));
         const enterFetch = vi.fn<typeof env.ENTER.fetch>(async () =>
             Response.json({ status: "created" }),
         );
@@ -1322,6 +1381,7 @@ describe("tracking observability", () => {
                 TINYBIRD_INGEST_URL:
                     "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+                ENTER_GATEWAY: tinybirdGateway,
             } as unknown as CloudflareBindings,
             ctx,
         );
@@ -1330,6 +1390,15 @@ describe("tracking observability", () => {
 
         expect(response.status).toBe(200);
         expect(enterFetch).not.toHaveBeenCalled();
+        // Enter debited the pack and wrote the row; nothing reached Stripe.
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+        const [charged] = await db
+            .select({ packBalance: userTable.packBalance })
+            .from(userTable)
+            .where(eq(userTable.id, userId))
+            .limit(1);
+        expect(charged?.packBalance).toBeLessThan(100);
+        expect(charged?.packBalance).toBeGreaterThan(99);
     });
 
     it("emits the credited community model reward amount", async () => {
@@ -1402,6 +1471,7 @@ describe("tracking observability", () => {
                 TINYBIRD_INGEST_URL:
                     "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+                ENTER_GATEWAY: tinybirdGateway,
             } as unknown as CloudflareBindings,
             ctx,
         );
@@ -1509,6 +1579,7 @@ describe("tracking observability", () => {
                 TINYBIRD_INGEST_URL:
                     "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+                ENTER_GATEWAY: tinybirdGateway,
             } as unknown as CloudflareBindings,
             ctx,
         );
@@ -1625,6 +1696,7 @@ describe("tracking observability", () => {
                 TINYBIRD_INGEST_URL:
                     "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+                ENTER_GATEWAY: tinybirdGateway,
             } as unknown as CloudflareBindings,
             ctx,
         );
@@ -1688,6 +1760,7 @@ describe("tracking observability", () => {
                 TINYBIRD_INGEST_URL:
                     "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+                ENTER_GATEWAY: tinybirdGateway,
             } as CloudflareBindings,
             ctx,
         );
@@ -1749,6 +1822,7 @@ describe("tracking observability", () => {
                 TINYBIRD_INGEST_URL:
                     "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+                ENTER_GATEWAY: tinybirdGateway,
             } as CloudflareBindings,
             ctx,
         );
@@ -1808,6 +1882,7 @@ describe("tracking observability", () => {
                 TINYBIRD_INGEST_URL:
                     "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+                ENTER_GATEWAY: tinybirdGateway,
             } as CloudflareBindings,
             ctx,
         );
@@ -1866,6 +1941,7 @@ describe("tracking observability", () => {
                 TINYBIRD_INGEST_URL:
                     "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+                ENTER_GATEWAY: tinybirdGateway,
             } as CloudflareBindings,
             ctx,
         );
@@ -1898,7 +1974,8 @@ describe("tracking observability", () => {
             headers: {
                 "content-type": "model/gltf-binary",
                 "x-model-used": "triposr",
-                "x-usage-completion-image-tokens": "1",
+                // Priced usage: Enter derives isBilledUsage from the ledger.
+                "x-usage-completion-text-tokens": "500",
             },
         });
 
@@ -1920,6 +1997,7 @@ describe("tracking observability", () => {
                 TINYBIRD_INGEST_URL:
                     "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+                ENTER_GATEWAY: tinybirdGateway,
             } as CloudflareBindings,
             ctx,
         );
@@ -1981,6 +2059,7 @@ describe("tracking observability", () => {
                 TINYBIRD_INGEST_URL:
                     "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+                ENTER_GATEWAY: tinybirdGateway,
             } as CloudflareBindings,
             ctx,
         );
@@ -2027,6 +2106,7 @@ describe("tracking observability", () => {
                 TINYBIRD_INGEST_URL:
                     "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+                ENTER_GATEWAY: tinybirdGateway,
             } as CloudflareBindings,
             ctx,
         );
@@ -2123,6 +2203,7 @@ describe("tracking observability", () => {
                 TINYBIRD_INGEST_URL:
                     "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+                ENTER_GATEWAY: tinybirdGateway,
             } as unknown as CloudflareBindings,
             ctx,
         );

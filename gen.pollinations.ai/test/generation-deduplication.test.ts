@@ -15,6 +15,7 @@ import {
     type GenerationJob,
 } from "@/middleware/generation-deduplication.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
+import type { ModelVariables } from "@/middleware/model.ts";
 
 const testLog = {
     getChild: () => testLog,
@@ -30,6 +31,7 @@ type TestEnv = {
         RequestIdVariables &
         AuthVariables &
         BalanceVariables &
+        ModelVariables &
         GenerationCacheVariables & {
             track: { streamRequested: boolean };
             formData?: FormData;
@@ -85,8 +87,13 @@ function createApp(
                     selectedMeterSlug: "v1:meter:tier",
                     balances: { "v1:meter:tier": 1, "v1:meter:pack": 2 },
                 },
-                apiKeyBudgetEstimate: 0.25,
+                estimatedPrice: 0.25,
             });
+            c.set("model", {
+                requested: "test",
+                resolved: "resolved-model",
+                definition: { paidOnly: true },
+            } as never);
             c.set("track", { streamRequested: stream });
             if (executorBody) c.set("generationRequestBody", executorBody);
             c.set("auth", {
@@ -211,7 +218,15 @@ describe("generation request deduplication", () => {
             "v1:meter:tier": 1,
             "v1:meter:pack": 2,
         });
-        expect(jobs[0].apiKeyBudgetEstimate).toBe(0.25);
+        // The execution owner authorizes under the caller's credential; it
+        // travels in memory only (the coordinator persists the resulting id).
+        expect(jobs[0].authorize).toEqual({
+            token: "pk-secret",
+            requestPath: "/generate",
+            estimatedPrice: 0.25,
+            model: "resolved-model",
+            paidOnly: true,
+        });
         expect(new TextDecoder().decode(jobs[0].request.body)).toBe(
             JSON.stringify({
                 model: "resolved-model",
@@ -270,6 +285,11 @@ describe("generation request deduplication", () => {
                         },
                     },
                 });
+                c.set("model", {
+                    requested: "voice-transform",
+                    resolved: "voice-transform",
+                    definition: {},
+                } as never);
                 c.set("track", { streamRequested: false });
                 c.set("formData", await c.req.formData());
                 c.set("auth", {
@@ -389,6 +409,33 @@ describe("generation request deduplication", () => {
         expect(response.headers.get("retry-after")).toBe("30");
         expect(response.headers.get("x-cache-type")).toBeNull();
         expect(await response.json()).toEqual({ error: "blocked" });
+    });
+
+    it("returns Enter's denial to the caller without a direct generation", async () => {
+        const generation = createApp(createAdapter(new Map()));
+        const bindings = {
+            GENERATION_COORDINATOR: {
+                getByName: () => ({
+                    startAndWait: async () => ({
+                        status: "denied",
+                        denial: {
+                            status: 402,
+                            message: "Insufficient balance",
+                        },
+                    }),
+                }),
+            },
+        } as unknown as CloudflareBindings;
+
+        const response = await generation.app.fetch(
+            new Request("https://gen.pollinations.ai/generate"),
+            bindings,
+            executionContext(),
+        );
+
+        expect(response.status).toBe(402);
+        expect(await response.text()).toBe("Insufficient balance");
+        expect(generation.originHits).toBe(0);
     });
 
     it("keeps connected callers waiting past 90 seconds", async () => {

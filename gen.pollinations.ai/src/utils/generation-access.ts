@@ -33,12 +33,13 @@ export async function checkBalance(
     if (!auth.user?.id) return;
 
     const isPaidOnly = model.definition.paidOnly ?? false;
+    const estimatedPrice = getEstimatedPrice(
+        await getModelStats(env.KV, log),
+        model.resolved,
+        model.definition,
+    );
     const estimatedCost = withByopMarkup(
-        getEstimatedPrice(
-            await getModelStats(env.KV, log),
-            model.resolved,
-            model.definition,
-        ),
+        estimatedPrice,
         Boolean(auth.apiKey?.byopMarkupApplies),
     );
     const apiKeyBudget = auth.apiKey?.pollenBalance;
@@ -64,6 +65,7 @@ export async function checkBalance(
         userBalance,
         isPaidOnly,
     );
+    balance.estimatedPrice = Math.max(0, estimatedPrice);
     if (typeof apiKeyBudget === "number") {
         balance.apiKeyBudgetEstimate = requiredBudget;
     }
@@ -111,18 +113,6 @@ export async function releaseApiKeyBudgetReservation(
     }
     vars.balance.apiKeyReservation = undefined;
 }
-
-export const apiKeyBudgetReservation = createMiddleware<GenerationAccessEnv>(
-    async (c, next) => {
-        await reserveApiKeyBudget(c.var, c.env);
-        try {
-            await next();
-        } catch (error) {
-            await releaseApiKeyBudgetReservation(c.var, c.env);
-            throw error;
-        }
-    },
-);
 
 export async function requireGenerationAccess(
     vars: GenerationAccessVariables,

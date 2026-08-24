@@ -34,7 +34,16 @@ export type GenerationCacheVariables = {
     generationCacheBody?: string;
     /** Executor callback used to await durable cache materialization. */
     registerGenerationCacheWrite?: (promise: Promise<void>) => void;
+    /** The in-flight durable write of this request's response, if any. */
+    generationCacheWrite?: Promise<void>;
 };
+
+export function generationCacheBucket(
+    env: CloudflareBindings,
+    storage: GenerationCacheStorage,
+): R2Bucket {
+    return storage === "media" ? env.IMAGE_BUCKET : env.TEXT_BUCKET;
+}
 
 export type GenerationCacheEnv = {
     Bindings: CloudflareBindings;
@@ -233,14 +242,13 @@ export function createGenerationCache(adapter: GenerationCacheAdapter) {
             }
         }
 
-        if (coordinate) {
-            c.set("generationCache", { adapter, key: cacheKey });
-        }
+        c.set("generationCache", { adapter, key: cacheKey });
 
         await next();
 
         const cacheWrite = capture(c, adapter, cacheKey);
         if (cacheWrite) {
+            c.set("generationCacheWrite", cacheWrite);
             c.executionCtx.waitUntil(
                 cacheWrite.catch((error) => {
                     log.error("Error caching response: {error}", { error });
@@ -276,6 +284,7 @@ export function createGenerationExecutionCache(
 
         const register = c.var.registerGenerationCacheWrite;
         if (!register) throw new Error("Generation cache registrar is missing");
+        c.set("generationCacheWrite", cacheWrite);
         register(cacheWrite);
     });
 }

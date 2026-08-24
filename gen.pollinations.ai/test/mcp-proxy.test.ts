@@ -1,4 +1,8 @@
-import { env, SELF } from "cloudflare:test";
+import {
+    createExecutionContext,
+    env,
+    waitOnExecutionContext,
+} from "cloudflare:test";
 import { getLogger } from "@logtape/logtape";
 import { authenticateApiKeyRequest } from "@shared/auth/api-key.ts";
 import { getUserBalance } from "@shared/billing/balance.ts";
@@ -6,6 +10,15 @@ import { createTestApiKey, test } from "@shared/test/fixtures/index.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
 import { authorizeMcpUsage, settleMcpUsage } from "@/routes/mcp.ts";
+import worker from "../src/index.ts";
+
+// Enter's gateway is an RPC binding; the test env carries the real one.
+async function fetchWorker(url: string, init?: RequestInit): Promise<Response> {
+    const ctx = createExecutionContext();
+    const response = await worker.fetch(new Request(url, init), env, ctx);
+    await waitOnExecutionContext(ctx);
+    return response;
+}
 
 const MCP_REQUEST = {
     jsonrpc: "2.0",
@@ -18,7 +31,7 @@ const MCP_REQUEST = {
 };
 
 test("lists the MCP servers exposed through Gen", async () => {
-    const response = await SELF.fetch("https://gen.pollinations.ai/mcp");
+    const response = await fetchWorker("https://gen.pollinations.ai/mcp");
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
         data: [
@@ -37,7 +50,7 @@ test("routes Pollinations MCP with caller authorization for downstream billing",
     const { key, userId } = await createTestApiKey({
         user: { tierBalance: 1 },
     });
-    const response = await SELF.fetch(
+    const response = await fetchWorker(
         "https://gen.pollinations.ai/mcp/pollinations",
         {
             method: "POST",
@@ -65,7 +78,7 @@ test("routes Pollinations MCP with caller authorization for downstream billing",
 });
 
 test("requires a Pollinations credential before invoking an MCP server", async () => {
-    const response = await SELF.fetch(
+    const response = await fetchWorker(
         "https://gen.pollinations.ai/mcp/pollinations",
         {
             method: "POST",
@@ -78,7 +91,7 @@ test("requires a Pollinations credential before invoking an MCP server", async (
 
 test("rejects MCP batch requests at the proxy", async () => {
     const { key } = await createTestApiKey();
-    const response = await SELF.fetch(
+    const response = await fetchWorker(
         "https://gen.pollinations.ai/mcp/pollinations",
         {
             method: "POST",

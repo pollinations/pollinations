@@ -1,4 +1,6 @@
 import { DurableObject } from "cloudflare:workers";
+import { BILLING_SERVICE } from "@/middleware/billing.ts";
+import { generationCacheBucket } from "@/middleware/generation-cache.ts";
 import type {
     GenerationCacheIdentity,
     GenerationJob,
@@ -11,11 +13,15 @@ const JOB_KEY = "job";
 const BODY_KEY_PREFIX = "body:";
 const BODY_CHUNK_BYTES = 1_000_000;
 
-type PersistedJob = Omit<GenerationJob, "request"> & {
+/** The job at rest: the Enter authorization id stands in for the credential. */
+type PersistedJob = Omit<GenerationJob, "request" | "authorize"> & {
     request: Omit<GenerationRequestSnapshot, "body">;
+    authorizationId: string;
     bodyChunks: number;
     started: boolean;
 };
+
+type RestoredJob = Omit<GenerationJob, "authorize">;
 
 function bodyChunkKeys(count: number): string[] {
     return Array.from(
@@ -28,8 +34,7 @@ async function cacheExists(
     env: CloudflareBindings,
     cache: GenerationCacheIdentity,
 ): Promise<boolean> {
-    const bucket =
-        cache.storage === "media" ? env.IMAGE_BUCKET : env.TEXT_BUCKET;
+    const bucket = generationCacheBucket(env, cache.storage);
     return (await bucket.head(cache.key)) !== null;
 }
 
@@ -64,7 +69,21 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
             }
 
             if (!stored) {
-                await this.persist(job);
+                // The execution owner authorizes once, under the lock, so
+                // every later caller joins without a second reservation.
+                const authorization = await this.env.ENTER_GATEWAY.authorize({
+                    ...job.authorize,
+                    service: BILLING_SERVICE,
+                    requestId: job.requestId,
+                });
+                if (!authorization.ok) {
+                    immediate = {
+                        status: "denied",
+                        denial: authorization.denial,
+                    };
+                    return;
+                }
+                await this.persist(job, authorization.authorizationId);
             }
 
             wait = new Promise<GenerationOutcome>((resolve) => {
@@ -97,6 +116,7 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
         });
 
         if (interrupted) {
+            await this.cancel(interrupted.authorizationId);
             await this.finish(
                 unavailable("Detached generation was interrupted"),
                 interrupted.bodyChunks,
@@ -108,6 +128,7 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
         let settlement: Promise<void> | undefined;
         try {
             if (await cacheExists(this.env, stored.cache)) {
+                await this.cancel(stored.authorizationId);
                 await this.finish({ status: "cached" }, stored.bodyChunks);
                 return;
             }
@@ -122,13 +143,14 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
                 job.auth,
                 job.requestId,
                 job.balanceCheckResult,
-                job.apiKeyBudgetEstimate,
+                stored.authorizationId,
                 this.env,
             );
             settlement = execution.settlement;
             await this.finish(execution.result, stored.bodyChunks);
         } catch (error) {
             console.error("Detached generation failed", error);
+            await this.cancel(stored.authorizationId);
             await this.finish(
                 unavailable("Detached generation failed"),
                 stored.bodyChunks,
@@ -138,7 +160,19 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
         }
     }
 
-    private async persist(job: GenerationJob): Promise<void> {
+    /** Release the authorization of work that never reached settlement. */
+    private async cancel(authorizationId: string): Promise<void> {
+        try {
+            await this.env.ENTER_GATEWAY.cancel(authorizationId);
+        } catch (error) {
+            console.error("Generation authorization cancel failed", error);
+        }
+    }
+
+    private async persist(
+        job: GenerationJob,
+        authorizationId: string,
+    ): Promise<void> {
         const body = job.request.body;
         const chunks: Uint8Array[] = [];
         if (body !== undefined) {
@@ -159,7 +193,7 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
             auth: job.auth,
             requestId: job.requestId,
             balanceCheckResult: job.balanceCheckResult,
-            apiKeyBudgetEstimate: job.apiKeyBudgetEstimate,
+            authorizationId,
             request,
             bodyChunks: chunks.length,
             started: false,
@@ -172,7 +206,7 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
         await this.ctx.storage.setAlarm(Date.now());
     }
 
-    private async restore(job: PersistedJob): Promise<GenerationJob> {
+    private async restore(job: PersistedJob): Promise<RestoredJob> {
         let body: Uint8Array | undefined;
         if (job.bodyChunks > 0) {
             const keys = bodyChunkKeys(job.bodyChunks);
@@ -203,7 +237,6 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
             auth: job.auth,
             requestId: job.requestId,
             balanceCheckResult: job.balanceCheckResult,
-            apiKeyBudgetEstimate: job.apiKeyBudgetEstimate,
             request: { ...job.request, ...(body !== undefined && { body }) },
         };
     }

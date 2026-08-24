@@ -1,3 +1,4 @@
+import { BILLING_SERVICE } from "@/middleware/billing.ts";
 import type { GenerationJob } from "@/middleware/generation-deduplication.ts";
 import { executeGeneration } from "@/utils/execute-generation.ts";
 
@@ -10,6 +11,18 @@ export function withInlineGenerationCoordinator(
         getByName() {
             return {
                 async startAndWait(job: GenerationJob) {
+                    const authorization =
+                        await coordinated.ENTER_GATEWAY.authorize({
+                            ...job.authorize,
+                            service: BILLING_SERVICE,
+                            requestId: job.requestId,
+                        });
+                    if (!authorization.ok) {
+                        return {
+                            status: "denied" as const,
+                            denial: authorization.denial,
+                        };
+                    }
                     const execution = await executeGeneration(
                         new Request(job.request.url, {
                             method: job.request.method,
@@ -19,7 +32,7 @@ export function withInlineGenerationCoordinator(
                         job.auth,
                         job.requestId,
                         job.balanceCheckResult,
-                        job.apiKeyBudgetEstimate,
+                        authorization.authorizationId,
                         coordinated,
                     );
                     await execution.settlement;

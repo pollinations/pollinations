@@ -1,3 +1,5 @@
+import { getUserBalance } from "@shared/billing/balance.ts";
+import { drizzle } from "drizzle-orm/d1";
 import { type Context, Hono } from "hono";
 import { every } from "hono/combine";
 import { resolver as baseResolver, describeRoute } from "hono-openapi";
@@ -5,6 +7,7 @@ import type { Env } from "@/env.ts";
 import { handleRegisterServer } from "@/image/handler.ts";
 import { auth } from "@/middleware/auth.ts";
 import { balance } from "@/middleware/balance.ts";
+import { authorizeGeneration } from "@/middleware/billing.ts";
 import { prepareGenerationRequest } from "@/middleware/generation-cache.ts";
 import { deduplicateGeneration } from "@/middleware/generation-deduplication.ts";
 import {
@@ -73,10 +76,7 @@ import {
 } from "@/schemas/models.ts";
 import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
-import {
-    apiKeyBudgetReservation,
-    generationAccess,
-} from "@/utils/generation-access.ts";
+import { generationAccess } from "@/utils/generation-access.ts";
 import {
     type GenerationModelEntry,
     getGenerationModelRegistry,
@@ -147,7 +147,7 @@ const imageVideoHandlers = factory.createHandlers(
     imageCache,
     generationAccess,
     deduplicateGeneration,
-    apiKeyBudgetReservation,
+    authorizeGeneration,
     generateImageVideo,
 );
 
@@ -158,7 +158,7 @@ const model3dHandlers = factory.createHandlers(
     model3dCache,
     generationAccess,
     deduplicateGeneration,
-    apiKeyBudgetReservation,
+    authorizeGeneration,
     generateModel3d,
 );
 
@@ -170,7 +170,7 @@ const chatCompletionHandlers = factory.createHandlers(
     textCache,
     generationAccess,
     deduplicateGeneration,
-    apiKeyBudgetReservation,
+    authorizeGeneration,
     generateChatCompletion,
 );
 
@@ -187,14 +187,13 @@ function filterEntriesByPermissions(
     });
 }
 
-// Check if authenticated user has paid balance (pack > 0)
-// Auth middleware already fetches the full user row (SELECT *), so no extra DB query needed.
+// Check if authenticated user has paid balance (pack > 0).
 // Returns undefined if no user (unauthenticated), true/false otherwise.
-// biome-ignore lint/suspicious/noExplicitAny: User type doesn't include balance fields from SELECT *
-function hasPaidBalance(c: any): boolean | undefined {
-    const user = c.var?.auth?.user;
+async function hasPaidBalance(c: Context<Env>): Promise<boolean | undefined> {
+    const user = c.var.auth?.user;
     if (!user) return undefined;
-    return (user.packBalance ?? 0) > 0;
+    const { packBalance } = await getUserBalance(drizzle(c.env.DB), user.id);
+    return packBalance > 0;
 }
 
 // Optionally filter entries by the validated `?community` query parameter.
@@ -224,7 +223,7 @@ const modelsListHandler = (
                 "query" as never,
             ) as ModelListQueryParams;
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
-            const paidBalance = hasPaidBalance(c);
+            const paidBalance = await hasPaidBalance(c);
             return c.json(
                 filterEntriesByCommunityParam(
                     filterEntriesByPermissions(
@@ -313,7 +312,7 @@ export const proxyRoutes = new Hono<Env>()
                 "query" as never,
             ) as ModelListQueryParams;
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
-            const paidBalance = hasPaidBalance(c);
+            const paidBalance = await hasPaidBalance(c);
             const modelEntries = filterEntriesByCommunityParam(
                 filterEntriesByPermissions(
                     await getVisibleModelEntries(c),
@@ -633,7 +632,7 @@ export const proxyRoutes = new Hono<Env>()
         textCache,
         generationAccess,
         deduplicateGeneration,
-        every(apiKeyBudgetReservation, generateEmbeddingsResponse),
+        every(authorizeGeneration, generateEmbeddingsResponse),
     )
     .post(
         "/text",
@@ -660,7 +659,7 @@ export const proxyRoutes = new Hono<Env>()
         textCache,
         generationAccess,
         deduplicateGeneration,
-        apiKeyBudgetReservation,
+        authorizeGeneration,
         generateTextContent,
     )
     .get(
@@ -700,7 +699,7 @@ export const proxyRoutes = new Hono<Env>()
         textCache,
         generationAccess,
         deduplicateGeneration,
-        apiKeyBudgetReservation,
+        authorizeGeneration,
         generateSimpleText,
     )
     .get(
@@ -894,7 +893,7 @@ export const proxyRoutes = new Hono<Env>()
         every(prepareGenerationRequest, model3dCache),
         generationAccess,
         deduplicateGeneration,
-        every(apiKeyBudgetReservation, generateModel3d),
+        every(authorizeGeneration, generateModel3d),
     )
     .get(
         "/audio/:text",
@@ -944,7 +943,7 @@ export const proxyRoutes = new Hono<Env>()
         audioCache,
         generationAccess,
         deduplicateGeneration,
-        apiKeyBudgetReservation,
+        authorizeGeneration,
         handleSimpleAudio,
     )
     .post(
@@ -979,7 +978,7 @@ export const proxyRoutes = new Hono<Env>()
         prepareGenerationRequest,
         imageCache,
         deduplicateGeneration,
-        every(apiKeyBudgetReservation, handleImageGeneration),
+        every(authorizeGeneration, handleImageGeneration),
     )
     .post(
         "/v1/images/edits",
@@ -1013,6 +1012,6 @@ export const proxyRoutes = new Hono<Env>()
         textCache,
         generationAccess,
         deduplicateGeneration,
-        apiKeyBudgetReservation,
+        authorizeGeneration,
         handleImageEdit,
     );

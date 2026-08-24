@@ -20,6 +20,8 @@ export type BalanceVariables = {
     balance: {
         getBalance: (userId: string) => Promise<UserBalance>;
         balanceCheckResult?: BalanceCheckResult;
+        /** Pre-markup estimate handed to Enter's authorize (which reserves it). */
+        estimatedPrice?: number;
         apiKeyBudgetEstimate?: number;
         apiKeyReservation?: ApiKeyBudgetReservation;
     };

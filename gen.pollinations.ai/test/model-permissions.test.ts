@@ -1,4 +1,8 @@
-import { SELF } from "cloudflare:test";
+import {
+    createExecutionContext,
+    env,
+    waitOnExecutionContext,
+} from "cloudflare:test";
 import { getAudioModelsInfo } from "@shared/registry/model-info.ts";
 import {
     getRegistryModelDefinition,
@@ -12,9 +16,18 @@ import {
     test,
 } from "@shared/test/fixtures/index.ts";
 import { expect } from "vitest";
+import worker from "../src/index.ts";
 
+// Enter's gateway is an RPC binding; the test env carries the real one.
 async function fetchWorker(path: string, init: RequestInit = {}) {
-    return SELF.fetch(new Request(`https://gen.pollinations.ai${path}`, init));
+    const ctx = createExecutionContext();
+    const response = await worker.fetch(
+        new Request(`https://gen.pollinations.ai${path}`, init),
+        env,
+        ctx,
+    );
+    await waitOnExecutionContext(ctx);
+    return response;
 }
 
 test("filters OpenAI-compatible model list by API key permissions", async ({

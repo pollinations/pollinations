@@ -6,6 +6,7 @@ import {
     type CommunityModelRewardResolution,
     handleBalanceDeduction,
     type MarkupResolution,
+    selectCommunityModelReward,
 } from "@shared/billing/track-helpers.ts";
 import {
     getRealClientIp,
@@ -13,7 +14,6 @@ import {
     stripIPv4MappedPrefix,
     truncateIpToSubnet,
 } from "@shared/client-ip.ts";
-import { COMMUNITY_MODEL_REWARD_RATE } from "@shared/community-endpoints.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
 import type { ErrorVariables } from "@shared/error.ts";
 import {
@@ -369,11 +369,6 @@ export const track = (eventType: EventType) =>
                     const servedCommunityEndpoint = servedEntry
                         ? servedEntry.communityEndpoint
                         : requestedCommunityEndpoint;
-                    const sameOwnerPrivateFallback =
-                        requestedCommunityEndpoint?.visibility === "public" &&
-                        servedCommunityEndpoint?.visibility === "private" &&
-                        servedCommunityEndpoint.ownerUserId ===
-                            requestedCommunityEndpoint.ownerUserId;
                     const deduction = await handleBalanceDeduction({
                         db: balanceDb,
                         isBilledUsage: responseTracking.isBilledUsage,
@@ -386,22 +381,11 @@ export const track = (eventType: EventType) =>
                         // A private endpoint only earns a reward when it backs
                         // its owner's public listing. Cross-owner private
                         // fallbacks are rejected when the fallback is linked.
-                        communityModelReward:
-                            servedCommunityEndpoint?.visibility === "public"
-                                ? {
-                                      userId: servedCommunityEndpoint.ownerUserId,
-                                      rewardRate: COMMUNITY_MODEL_REWARD_RATE,
-                                      // Their own listing, not the one the
-                                      // caller bought — see basePrice.
-                                      basePrice: responseTracking.servedPrice,
-                                  }
-                                : sameOwnerPrivateFallback
-                                  ? {
-                                        userId: requestedCommunityEndpoint.ownerUserId,
-                                        rewardRate: COMMUNITY_MODEL_REWARD_RATE,
-                                        basePrice: responseTracking.servedPrice,
-                                    }
-                                  : null,
+                        communityModelReward: selectCommunityModelReward(
+                            requestedCommunityEndpoint,
+                            servedCommunityEndpoint,
+                            responseTracking.servedPrice,
+                        ),
                     });
                     markup = deduction.markup;
                     communityModelReward = deduction.communityModelReward;

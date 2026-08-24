@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
 import { checkQuestsForUser } from "../src/services/quest-checker.ts";
+import * as discordCommunity from "../src/services/quests/groups/discord-community.ts";
 import * as questIndex from "../src/services/quests/index.ts";
 import type { QuestGroup } from "../src/services/quests/types.ts";
 import { test } from "./fixtures.ts";
@@ -21,6 +22,25 @@ const QUEST_REWARDS_LAUNCH_CUTOFF_MILLIS = Date.parse(
 const BEFORE_QUEST_REWARDS_LAUNCH_MILLIS =
     QUEST_REWARDS_LAUNCH_CUTOFF_MILLIS - 1;
 const AFTER_QUEST_REWARDS_LAUNCH_DATE = new Date("2026-06-22T00:00:00.000Z");
+
+test("omits the Discord quest when its configuration is incomplete", async () => {
+    const ctx = {
+        db: drizzle(env.DB, { schema }),
+        env: {
+            ...env,
+            DISCORD_BOT_TOKEN: "",
+        } as unknown as CloudflareBindings,
+    };
+
+    await expect(discordCommunity.listQuestCards(ctx)).resolves.toEqual([]);
+    await expect(
+        discordCommunity.evaluateUser(ctx, {
+            id: "unused",
+            githubId: null,
+            githubUsername: null,
+        }),
+    ).resolves.toEqual({ proposals: [] });
+});
 
 // Build an issue body the deriver can parse: a "### Reward" heading (when a
 // reward is given) plus a short Goal section for the description.

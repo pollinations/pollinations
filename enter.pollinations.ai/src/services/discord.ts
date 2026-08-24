@@ -1,7 +1,15 @@
 const POLLINATIONS_DISCORD_GUILD_ID = "885844321461485618";
 
 type DiscordBindings = CloudflareBindings & {
-    DISCORD_BOT_TOKEN: string;
+    DISCORD_CLIENT_ID?: string;
+    DISCORD_CLIENT_SECRET?: string;
+    DISCORD_BOT_TOKEN?: string;
+};
+
+type DiscordConfig = {
+    clientId: string;
+    clientSecret: string;
+    botToken: string;
 };
 
 export type DiscordMembership = {
@@ -9,10 +17,23 @@ export type DiscordMembership = {
     joinedAt: string | null;
 };
 
+export function discordConfigFromEnv(env: object): DiscordConfig | null {
+    const bindings = env as DiscordBindings;
+    const clientId = bindings.DISCORD_CLIENT_ID?.trim();
+    const clientSecret = bindings.DISCORD_CLIENT_SECRET?.trim();
+    const botToken = bindings.DISCORD_BOT_TOKEN?.trim();
+    return clientId && clientSecret && botToken
+        ? { clientId, clientSecret, botToken }
+        : null;
+}
+
 export async function getPollinationsDiscordMembership(
     env: CloudflareBindings,
     userId: string,
 ): Promise<DiscordMembership | null> {
+    const config = discordConfigFromEnv(env);
+    if (!config) return null;
+
     const account = await env.DB.prepare(
         `SELECT account_id AS accountId
          FROM account
@@ -28,7 +49,7 @@ export async function getPollinationsDiscordMembership(
         `https://discord.com/api/v10/guilds/${POLLINATIONS_DISCORD_GUILD_ID}/members/${account.accountId}`,
         {
             headers: {
-                Authorization: `Bot ${(env as DiscordBindings).DISCORD_BOT_TOKEN}`,
+                Authorization: `Bot ${config.botToken}`,
             },
         },
     );

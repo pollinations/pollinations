@@ -27,16 +27,14 @@ import {
 import { admin, openAPI } from "better-auth/plugins";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
+import { discordConfigFromEnv } from "./services/discord.ts";
 
 const DELETE_ACCOUNT_FRESH_SESSION_MS = 10 * 60 * 1000;
 
 export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     const db = drizzle(env.DB);
     const apiKeyPlugin = createApiKeyPlugin();
-    const discordEnv = env as Cloudflare.Env & {
-        DISCORD_CLIENT_ID: string;
-        DISCORD_CLIENT_SECRET: string;
-    };
+    const discordConfig = discordConfigFromEnv(env);
 
     const adminPlugin = admin({
         adminUserIds: ["Py5RZYN9c10OsC1fjUYiqMYjttf0PLGv"],
@@ -130,7 +128,7 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                 // Better Auth 1.4 requires this for Discord accounts without a
                 // verified email. The sign-in hook above still limits Discord
                 // to explicit, authenticated linkSocial flows.
-                trustedProviders: ["discord"],
+                trustedProviders: discordConfig ? ["discord"] : [],
             },
         },
         socialProviders: {
@@ -142,16 +140,18 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                     githubUsername: profile.login,
                 }),
             },
-            discord: {
-                clientId: discordEnv.DISCORD_CLIENT_ID,
-                clientSecret: discordEnv.DISCORD_CLIENT_SECRET,
-                disableSignUp: true,
-                mapProfileToUser: (profile) => ({
-                    // Better Auth requires an email even when explicitly
-                    // linking a phone-only Discord account.
-                    email: profile.email ?? `${profile.id}@discord.invalid`,
-                }),
-            },
+            ...(discordConfig && {
+                discord: {
+                    clientId: discordConfig.clientId,
+                    clientSecret: discordConfig.clientSecret,
+                    disableSignUp: true,
+                    mapProfileToUser: (profile) => ({
+                        // Better Auth requires an email even when explicitly
+                        // linking a phone-only Discord account.
+                        email: profile.email ?? `${profile.id}@discord.invalid`,
+                    }),
+                },
+            }),
         },
         plugins: [
             adminPlugin,

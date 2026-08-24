@@ -7,8 +7,32 @@ import {
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
+import { createAuth } from "../../src/auth.ts";
+import { discordConfigFromEnv } from "../../src/services/discord.ts";
 import { checkQuestsForUser } from "../../src/services/quest-checker.ts";
 import { test } from "../fixtures.ts";
+
+test("requires complete Discord configuration", () => {
+    expect(
+        discordConfigFromEnv({
+            DISCORD_CLIENT_ID: "client-id",
+            DISCORD_CLIENT_SECRET: "client-secret",
+        }),
+    ).toBeNull();
+    expect(
+        discordConfigFromEnv({
+            DISCORD_CLIENT_ID: "client-id",
+            DISCORD_CLIENT_SECRET: "client-secret",
+            DISCORD_BOT_TOKEN: "bot-token",
+        }),
+    ).not.toBeNull();
+
+    const auth = createAuth({
+        ...env,
+        DISCORD_BOT_TOKEN: "",
+    } as unknown as Cloudflare.Env);
+    expect(auth.options.socialProviders).not.toHaveProperty("discord");
+});
 
 test("links a Discord identity to the signed-in GitHub account", async ({
     mocks,

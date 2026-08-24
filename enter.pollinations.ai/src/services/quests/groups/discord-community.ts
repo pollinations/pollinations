@@ -1,4 +1,7 @@
-import { getPollinationsDiscordMembership } from "../../discord.ts";
+import {
+    discordConfigFromEnv,
+    getPollinationsDiscordMembership,
+} from "../../discord.ts";
 import type { QuestDefinition } from "../definitions.ts";
 import {
     type QuestCard,
@@ -20,16 +23,17 @@ const joinDiscordQuest: QuestDefinition = {
     url: "https://discord.gg/pollinations-ai-885844321461485618",
 };
 
-export async function listQuestCards(
-    _ctx: QuestEvaluationContext,
-): Promise<QuestCard[]> {
-    return [questToCard(joinDiscordQuest)];
+export async function listQuestCards({
+    env,
+}: QuestEvaluationContext): Promise<QuestCard[]> {
+    return discordConfigFromEnv(env) ? [questToCard(joinDiscordQuest)] : [];
 }
 
 export async function evaluateUser(
     { env }: QuestEvaluationContext,
     user: QuestUser,
 ): Promise<QuestEvaluation> {
+    if (!discordConfigFromEnv(env)) return { proposals: [] };
     const membership = await getPollinationsDiscordMembership(env, user.id);
     return {
         proposals: membership?.member

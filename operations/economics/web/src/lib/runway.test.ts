@@ -336,6 +336,31 @@ describe("buildRunway", () => {
         expect(result.runwayCapped).toBe(true);
     });
 
+    it("reports the first forecast month that exhausts cash", () => {
+        const result = buildRunway(
+            [opening(250)],
+            [
+                forecast({ amount: -50 }),
+                forecast({
+                    entry_id: "forecast-2026-09-aws",
+                    month: "2026-09-01",
+                    amount: -100,
+                }),
+                forecast({
+                    entry_id: "forecast-2026-10-aws",
+                    month: "2026-10-01",
+                    amount: -100,
+                }),
+            ],
+            NOW,
+        );
+
+        expect(result.projectedMonthEndCashUsd).toBe(200);
+        expect(result.runwayMonths).toBe(1);
+        expect(result.runwayExhaustedMonth).toBe("2026-10");
+        expect(result.runwayCapped).toBe(false);
+    });
+
     it("includes cash adjustments in cash change but not expenses", () => {
         const result = buildRunway(
             [opening()],

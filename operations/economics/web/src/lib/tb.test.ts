@@ -1,6 +1,26 @@
 import { describe, expect, it } from "vitest";
+import { FIXTURES } from "../fixtures";
 import type { OpPollenRow } from "../types";
-import { canonicalPollenRows, canonicalVendor } from "./tb";
+import { canonicalPollenRows, canonicalVendor, validatePipeRows } from "./tb";
+
+describe("Tinybird pipe contracts", () => {
+    it("keeps every fixture aligned with its live pipe contract", () => {
+        for (const [pipe, rows] of Object.entries(FIXTURES)) {
+            expect(validatePipeRows(pipe, rows)).toBe(rows);
+        }
+    });
+
+    it("rejects malformed financial values at the API boundary", () => {
+        expect(() =>
+            validatePipeRows("op_forecast_api", [
+                {
+                    ...(FIXTURES.op_forecast_api[0] as Record<string, unknown>),
+                    amount: "9000",
+                },
+            ]),
+        ).toThrow("op_forecast_api[0].amount: expected number");
+    });
+});
 
 describe("canonicalVendor", () => {
     it("normalizes the Vast Pollen alias", () => {

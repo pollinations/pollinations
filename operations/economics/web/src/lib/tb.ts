@@ -26,21 +26,130 @@ export class TbError extends Error {
     }
 }
 
+type PipeContract = {
+    strings: readonly string[];
+    numbers: readonly string[];
+    enums?: Readonly<Record<string, readonly string[]>>;
+};
+
+const PIPE_CONTRACTS: Record<string, PipeContract> = {
+    op_transactions_api: {
+        strings: [
+            "entry_id",
+            "kind",
+            "source",
+            "date",
+            "vendor",
+            "category",
+            "currency",
+            "description",
+            "evidence",
+            "recorded_at",
+        ],
+        numbers: ["amount"],
+        enums: { kind: ["transaction", "opening_balance"] },
+    },
+    op_cloud_api: {
+        strings: [
+            "entry_id",
+            "source",
+            "vendor",
+            "type",
+            "start",
+            "end",
+            "currency",
+            "resource_id",
+            "resource_name",
+            "resource_sku",
+            "model",
+            "evidence",
+            "recorded_at",
+        ],
+        numbers: ["credit", "paid", "resource_count"],
+    },
+    op_pollen_api: {
+        strings: ["month", "vendor", "model", "currency"],
+        numbers: [
+            "cost_paid",
+            "cost_quests",
+            "price_paid",
+            "price_quests",
+            "byop_paid",
+            "byop_quests",
+            "model_paid",
+            "model_quests",
+            "requests_paid",
+            "requests_quests",
+        ],
+    },
+    op_forecast_api: {
+        strings: [
+            "entry_id",
+            "month",
+            "vendor",
+            "category",
+            "currency",
+            "method",
+            "source",
+            "evidence",
+            "recorded_at",
+        ],
+        numbers: ["amount"],
+        enums: { method: ["fixed", "funded", "last", "one_off"] },
+    },
+};
+
+export function validatePipeRows<T>(pipe: string, rows: unknown[]): T[] {
+    const contract = PIPE_CONTRACTS[pipe];
+    if (!contract) throw new Error(`Unknown pipe contract: ${pipe}`);
+
+    rows.forEach((value, index) => {
+        if (
+            value == null ||
+            typeof value !== "object" ||
+            Array.isArray(value)
+        ) {
+            throw new Error(`${pipe}[${index}]: row must be an object`);
+        }
+        const row = value as Record<string, unknown>;
+        for (const field of contract.strings) {
+            if (typeof row[field] !== "string") {
+                throw new Error(`${pipe}[${index}].${field}: expected string`);
+            }
+        }
+        for (const field of contract.numbers) {
+            if (
+                typeof row[field] !== "number" ||
+                !Number.isFinite(row[field])
+            ) {
+                throw new Error(`${pipe}[${index}].${field}: expected number`);
+            }
+        }
+        for (const [field, allowed] of Object.entries(contract.enums ?? {})) {
+            if (!allowed.includes(String(row[field]))) {
+                throw new Error(`${pipe}[${index}].${field}: unexpected value`);
+            }
+        }
+    });
+
+    return rows as T[];
+}
+
 async function fetchPipe<T>(pipe: string): Promise<T[]> {
     if (fixturesMode()) {
         const rows = FIXTURES[pipe];
         if (!rows) throw new Error(`Missing fixture for pipe ${pipe}`);
-        return rows as T[];
+        return validatePipeRows<T>(pipe, rows);
     }
 
     const res = await fetch(`/api/pipes/${encodeURIComponent(pipe)}`);
     if (!res.ok) throw new TbError(pipe, res.status);
 
-    const body = (await res.json()) as { data?: T[] };
+    const body = (await res.json()) as { data?: unknown[] };
     if (!Array.isArray(body.data)) {
         throw new Error(`${pipe}: response has no data array`);
     }
-    return body.data;
+    return validatePipeRows<T>(pipe, body.data);
 }
 
 export function canonicalVendor(vendor: string): string {

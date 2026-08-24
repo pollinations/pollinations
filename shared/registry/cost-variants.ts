@@ -17,8 +17,12 @@ import type {
 // live model prices on it.
 export type PricingInput = {
     resolution?: string;
+    quality?: string;
     hasImage?: boolean;
+    megapixels?: number;
     searchContextSize?: "low" | "high";
+    hasDiarization?: boolean;
+    hasPrompt?: boolean;
 };
 
 export type CostVariantContext = {

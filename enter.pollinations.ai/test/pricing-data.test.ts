@@ -1,3 +1,4 @@
+import { BotIcon, ChatIcon, ImageIcon } from "@pollinations/ui";
 import { AUDIO_SERVICES } from "@shared/registry/audio.ts";
 import { EMBEDDING_SERVICES } from "@shared/registry/embeddings.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
@@ -21,6 +22,8 @@ import {
     type ModelName,
 } from "@shared/registry/registry.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
+import { type ComponentProps, createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { expect, test } from "vitest";
 import {
     formatDisplayPrice,
@@ -28,7 +31,13 @@ import {
     formatPricePer1M,
 } from "../frontend/src/components/models/formatters.ts";
 import { getModelPricesFromCatalog } from "../frontend/src/components/models/model-catalog.ts";
-import { getModelBrandLogoPath } from "../frontend/src/components/models/model-info.ts";
+import { getCommunityModelIcon } from "../frontend/src/components/models/model-icons.tsx";
+import {
+    getModelBrandLogoPath,
+    hasPollinationsTools,
+} from "../frontend/src/components/models/model-info.ts";
+import { ModelRow } from "../frontend/src/components/models/model-row.tsx";
+import { ModelPricingLedger } from "../frontend/src/components/models/price-badge.tsx";
 
 const getCatalogModelPrices = () =>
     getModelPricesFromCatalog([
@@ -294,17 +303,80 @@ test("catalog models resolve brand logo SVG assets", () => {
     expect(missingLogos).toEqual([]);
 });
 
-test("community models use the community logo regardless of provider brand", () => {
+test("community models use their model type icon instead of a provider logo", () => {
+    const communityModel = {
+        name: "owner/model",
+        type: "text" as const,
+        community: true,
+        brand: "Custom Provider",
+        capabilities: [],
+        prices: [],
+    };
+
+    expect(getModelBrandLogoPath(communityModel)).toBeUndefined();
+    expect(getCommunityModelIcon(communityModel)).toBe(ChatIcon);
+    expect(getCommunityModelIcon({ ...communityModel, type: "image" })).toBe(
+        ImageIcon,
+    );
+    expect(getCommunityModelIcon({ ...communityModel, agent: true })).toBe(
+        BotIcon,
+    );
+});
+
+test("Pollinations tools are shown only for agents with the MCP capability", () => {
+    const agent: ComponentProps<typeof ModelRow>["model"] = {
+        name: "owner/agent",
+        type: "text" as const,
+        community: true,
+        agent: true,
+        capabilities: [],
+        prices: [],
+    };
+
+    const toolsAgent = {
+        ...agent,
+        capabilities: ["pollinations_models" as const],
+    };
+
+    expect(hasPollinationsTools(agent)).toBe(false);
+    expect(hasPollinationsTools(toolsAgent)).toBe(true);
     expect(
-        getModelBrandLogoPath({
-            name: "owner/model",
-            type: "text",
-            community: true,
-            brand: "Custom Provider",
-            capabilities: [],
-            prices: [],
-        }),
-    ).toBe("/brand-logos/community.svg");
+        renderToStaticMarkup(createElement(ModelRow, { model: agent })),
+    ).not.toContain(">Tools</span>");
+    expect(
+        renderToStaticMarkup(createElement(ModelRow, { model: toolsAgent })),
+    ).toContain(">Tools</span>");
+});
+
+test("cached modality adjustments remain visible without a matching base row", () => {
+    const pricing: ComponentProps<typeof ModelPricingLedger>["pricing"] = {
+        prices: [
+            {
+                direction: "input",
+                kind: "cached",
+                price: "0.06",
+                unit: "token",
+            },
+        ],
+        adjustments: [
+            {
+                name: "cached-audio-delta",
+                label: "Cached audio input",
+                kind: "cached_audio_input",
+                price: "0.24",
+                quantity: 1_000_000,
+                unit: "tokens",
+            },
+        ],
+        dropdowns: [],
+    };
+    const markup = renderToStaticMarkup(
+        createElement(ModelPricingLedger, { pricing }),
+    );
+
+    expect(markup).toContain("Cached input");
+    expect(markup).toContain("Cached audio input");
+    expect(markup).toContain("0.24");
 });
 
 test("model info exposes public capabilities without raw implementation flags", () => {
@@ -340,7 +412,9 @@ test("catalog prices expose audio second rates from registry pricing", () => {
 
     for (const modelPrice of getCatalogModelPrices()) {
         const model = sourceByName.get(modelPrice.name);
-        if (model?.category !== "audio") continue;
+        if (model?.category !== "audio" && model?.category !== "realtime") {
+            continue;
+        }
 
         const promptAudioSeconds = Number(model.pricing.promptAudioSeconds);
         const completionAudioSeconds = Number(
@@ -423,6 +497,38 @@ test("Claude Fable 5 is paid-only and billed at current standard rates", () => {
     );
 });
 
+test("Qwen Image 3 uses Fal's output tier and reference-image rates", () => {
+    expect(
+        calculatePrice("qwen-image-3", {
+            completionImageTokens: 1,
+        }).totalPrice,
+    ).toBeCloseTo(0.04, 8);
+    expect(
+        calculatePrice(
+            "qwen-image-3",
+            { completionImageTokens: 1 },
+            undefined,
+            { megapixels: (1536 * 1536) / 1_000_000 },
+        ).totalPrice,
+    ).toBeCloseTo(0.04, 8);
+    expect(
+        calculatePrice(
+            "qwen-image-3",
+            { completionImageTokens: 1 },
+            undefined,
+            { megapixels: 2.4 },
+        ).totalPrice,
+    ).toBeCloseTo(0.075, 8);
+    expect(
+        calculatePrice(
+            "qwen-image-3",
+            { promptImageTokens: 3, completionImageTokens: 1 },
+            undefined,
+            { megapixels: 4.194304 },
+        ).totalPrice,
+    ).toBeCloseTo(0.084, 8);
+});
+
 test("updated provider prices are reflected for xAI media and OpenRouter text", () => {
     expect(getCostDefinition("llama-scout").promptTextTokens).toBeCloseTo(
         0.0000001,
@@ -458,6 +564,21 @@ test("updated provider prices are reflected for xAI media and OpenRouter text", 
             completionImageTokens: 1,
         }).totalCost,
     ).toBeCloseTo(0.06, 8);
+    for (const [quality, resolution, expected] of [
+        ["low", "1k", 0.05],
+        ["low", "2k", 0.07],
+        ["medium", "1k", 0.07],
+        ["medium", "2k", 0.09],
+    ] as const) {
+        expect(
+            calculatePrice(
+                "grok-imagine-image-2.0",
+                { promptImageTokens: 1, completionImageTokens: 1 },
+                undefined,
+                { quality, resolution },
+            ).totalPrice,
+        ).toBeCloseTo(expected, 8);
+    }
     expect(
         calculateCost("grok-video-pro", {
             promptImageTokens: 1,
@@ -529,7 +650,7 @@ test("Gemini search cost follows each route's provider metadata", () => {
     // OpenRouter search-capable routes bill per reported web search request.
     expect(gemini3FlashCost.totalCost).toBeCloseTo(3.528, 8);
     expect(geminiSearchFastCost.totalCost).toBeCloseTo(2.828, 8);
-    expect(geminiSearchLargeCost.totalCost).toBeCloseTo(9.028, 8);
+    expect(geminiSearchLargeCost.totalCost).toBeCloseTo(2.278, 8);
     expect(ungroundedGeminiSearchFastCost.totalCost).toBeCloseTo(2.8, 8);
 });
 
@@ -943,9 +1064,21 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
     expect(proCacheWrite[0].unitCost).toBeCloseTo(4.5 / 12_000_000, 15);
     expect(proCacheWrite[0].cost).toBeCloseTo(0.375, 15);
 
+    const discountedCacheWrite = calculateBillingAdjustments(
+        getRegistryModelDefinition("gemini"),
+        {
+            usage: {
+                prompt_tokens_details: { cache_write_tokens: 1_000_000 },
+            },
+        },
+        "gemini",
+    );
+    expect(discountedCacheWrite).toHaveLength(1);
+    expect(discountedCacheWrite[0].unitCost).toBeCloseTo(0.25 / 12_000_000, 15);
+    expect(discountedCacheWrite[0].cost).toBeCloseTo(0.25 / 12, 15);
+
     for (const model of [
         "gemini-3-flash",
-        "gemini",
         "gemini-flash-lite-3.5",
         "gemini-fast",
         "gemini-large",
@@ -981,6 +1114,26 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
             `${model} unused web search fee`,
         ).toEqual([]);
     }
+
+    expect(
+        calculateBillingAdjustments(
+            getRegistryModelDefinition("gemini"),
+            {
+                usage: {
+                    server_tool_use_details: { web_search_requests: 1 },
+                },
+            },
+            "gemini",
+        ),
+    ).toContainEqual({
+        ruleId: "openrouter.google.web_search.v1",
+        kind: "search_request",
+        unit: "request",
+        units: 1,
+        unitCost: 0.014,
+        cost: 0.014,
+        price: 0.014,
+    });
 
     const streamedSearch = calculateBillingAdjustments(
         getRegistryModelDefinition("gemini-3-flash"),

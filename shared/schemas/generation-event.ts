@@ -15,6 +15,10 @@ export type TinybirdEvent = {
 
     // Request
     requestId: string;
+    // Set on generations made with a run token: the requestId of the call that
+    // minted it. Groups one agent call's model steps and tool calls; the parent
+    // row is free, so a run costs the sum over its children.
+    parentRequestId?: string;
     requestPath?: string;
     startTime: Date;
     endTime?: Date;
@@ -22,6 +26,12 @@ export type TinybirdEvent = {
     responseStatus?: number;
     environment?: string;
     eventType: EventType;
+
+    // Cache identity is emitted only for requests that reached cache-backed
+    // generation handling. The key is SHA-256 hashed before ingestion.
+    cacheHit?: boolean;
+    cacheType?: string;
+    cacheKey?: string;
 
     // User
     userId?: string;

@@ -435,6 +435,80 @@ describe("Pollinations seed handling", () => {
     });
 });
 
+describe("Pollinations simple text facade", () => {
+    it("maps every simple text option to one canonical chat request", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValue(
+            makeResponse({ choices: [{ message: { content: "ok" } }] }),
+        );
+
+        await expect(
+            client.text("hello", {
+                systemPrompt: "be concise",
+                model: "openai",
+                temperature: 0.5,
+                maxTokens: 42,
+                frequencyPenalty: 0.25,
+                presencePenalty: -0.25,
+                seed: -1,
+                json: true,
+                private: true,
+            }),
+        ).resolves.toBe("ok");
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(bodyOf(fetchMock.mock.calls[0])).toEqual({
+            messages: [
+                { role: "system", content: "be concise" },
+                { role: "user", content: "hello" },
+            ],
+            model: "openai",
+            temperature: 0.5,
+            max_tokens: 42,
+            frequency_penalty: 0.25,
+            presence_penalty: -0.25,
+            seed: -1,
+            private: true,
+            stream: false,
+            response_format: { type: "json_object" },
+        });
+    });
+
+    it("streams only text deltas through the canonical chat parser", async () => {
+        const client = newClient();
+        const stream = [
+            'data: {"choices":[{"delta":{"role":"assistant"}}]}',
+            'data: {"choices":[{"delta":{"content":"hello"}}]}',
+            'data: {"choices":[{"delta":{"content":""}}]}',
+            "data: [DONE]",
+            "",
+        ].join("\n");
+        fetchMock.mockResolvedValue(
+            makeResponse(stream, {
+                kind: "stream",
+                contentType: "text/event-stream",
+            }),
+        );
+
+        const chunks: string[] = [];
+        for await (const chunk of client.textStream("hello", {
+            json: true,
+            private: true,
+        })) {
+            chunks.push(chunk);
+        }
+
+        expect(chunks).toEqual(["hello"]);
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(bodyOf(fetchMock.mock.calls[0])).toMatchObject({
+            messages: [{ role: "user", content: "hello" }],
+            stream: true,
+            private: true,
+            response_format: { type: "json_object" },
+        });
+    });
+});
+
 describe("Pollinations.imageEdit — response resolution (characterization)", () => {
     it("returns the resolved image item for a normal url response", async () => {
         const client = newClient();
@@ -456,6 +530,32 @@ describe("Pollinations.imageEdit — response resolution (characterization)", ()
 
         expect(result.url).toBe("https://img.test/x.png");
         expect(result.contentType).toBe("image/png");
+    });
+
+    it("throws the API error when an image URL cannot be downloaded", async () => {
+        const client = newClient();
+
+        fetchMock
+            .mockResolvedValueOnce(
+                makeResponse({ data: [{ url: "https://img.test/x.png" }] }),
+            )
+            .mockResolvedValueOnce(
+                makeResponse(
+                    {
+                        error: {
+                            message: "Image not found",
+                            code: "NOT_FOUND",
+                        },
+                    },
+                    { ok: false, status: 404 },
+                ),
+            );
+
+        await expect(client.imageEdit("make it blue")).rejects.toMatchObject({
+            message: "Image not found",
+            code: "NOT_FOUND",
+            status: 404,
+        });
     });
 
     it("returns the resolved image item for a b64_json response", async () => {
@@ -493,5 +593,18 @@ describe("Pollinations.imageEdit — response resolution (characterization)", ()
             code: "NO_IMAGE",
             status: 500,
         });
+    });
+});
+
+describe("Pollinations model discovery", () => {
+    it("returns the model array from the registry endpoint", async () => {
+        const client = newClient();
+        const models = [{ name: "openai", title: "OpenAI" }];
+        fetchMock.mockResolvedValueOnce(makeResponse(models));
+
+        await expect(client.models()).resolves.toEqual(models);
+        expect(fetchMock.mock.calls[0]?.[0]).toBe(
+            "https://example.test/models",
+        );
     });
 });

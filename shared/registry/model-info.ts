@@ -19,6 +19,7 @@ export const ModelCapabilitySchema = z.enum([
     "reasoning",
     "web_search",
     "code_execution",
+    "pollinations_models",
 ]);
 
 export type ModelCapability = z.infer<typeof ModelCapabilitySchema>;
@@ -43,6 +44,9 @@ export const ModelInfoSchema = z.object({
     brand: z.string(),
     brand_url: z.string().url().optional(),
     community: z.boolean().optional(),
+    agent: z.boolean().optional(),
+    base_model: z.string().optional(),
+    per_user_rpm: z.number().positive().nullable().optional(),
     pricing: z
         .record(z.string(), z.string())
         .and(z.object({ currency: z.literal("pollen") })),
@@ -88,6 +92,11 @@ export const ModelInfoSchema = z.object({
     output_modalities: z.array(z.string()).optional(),
     supported_endpoints: z.array(z.string()).optional(),
     video_capabilities: z.array(z.string()).optional(),
+    min_duration: z.number().positive().optional(),
+    max_duration: z.number().positive().optional(),
+    default_duration: z.number().positive().optional(),
+    allowed_durations: z.array(z.number().positive()).optional(),
+    duration_step: z.number().positive().optional(),
     max_reference_images: z.number().int().positive().optional(),
     max_reference_videos: z.number().int().positive().optional(),
     capabilities: z.array(ModelCapabilitySchema),
@@ -123,6 +132,7 @@ function getCapabilities(service: ModelDefinition): ModelCapability[] {
 
 type ModelInfoOptions = {
     community?: boolean;
+    agent?: boolean;
 };
 
 function pricingInfoFromDefinition(
@@ -169,6 +179,8 @@ export function modelInfoFromDefinition(
         brand: service.brand,
         brand_url: service.brandUrl,
         community: options.community || undefined,
+        agent: options.agent || undefined,
+        per_user_rpm: service.perUserRpm,
         pricing: pricingInfoFromDefinition(getPriceDefinitionForModel(service)),
         pricing_variants:
             service.costVariants && service.costVariantMetadata
@@ -204,6 +216,13 @@ export function modelInfoFromDefinition(
         output_modalities: service.outputModalities,
         supported_endpoints: service.supportedEndpoints,
         video_capabilities: service.videoCapabilities,
+        min_duration: service.minDuration,
+        max_duration: service.maxDuration,
+        default_duration: service.defaultDuration,
+        allowed_durations: service.allowedDurations
+            ? [...service.allowedDurations]
+            : undefined,
+        duration_step: service.durationStep,
         max_reference_images: service.maxReferenceImages,
         max_reference_videos: service.maxReferenceVideos,
         capabilities: getCapabilities(service),

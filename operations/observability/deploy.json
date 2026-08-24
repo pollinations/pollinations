@@ -1,0 +1,12 @@
+{
+  "target": "script",
+  "credentials": "observability",
+  "sops": "default",
+  "docker": true,
+  "install": "npm ci",
+  "deploy": "npm run check && npm run deploy && npm run push-secrets",
+  "verify": [
+    "https://observability.myceli.ai/api/health",
+    "https://observability.pollinations.ai/api/health"
+  ]
+}

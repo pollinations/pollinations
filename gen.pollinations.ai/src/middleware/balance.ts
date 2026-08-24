@@ -15,7 +15,6 @@ export type BalanceVariables = {
     balance: {
         getBalance: (userId: string) => Promise<UserBalance>;
         balanceCheckResult?: BalanceCheckResult;
-        apiKeyReservation?: { apiKeyId: string; amount: number };
     };
 };
 

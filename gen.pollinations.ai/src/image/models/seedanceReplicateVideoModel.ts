@@ -11,9 +11,9 @@
  * and the registry cost variant.
  */
 
+import { HttpError } from "@shared/http-error.ts";
 import debug from "debug";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
-import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import { closestRatioLogSpace } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
@@ -135,12 +135,16 @@ async function generateSeedanceVideo(
     const input: SeedanceInput = {
         prompt,
         duration,
-        resolution: safeParams.resolution ?? "720p",
+        resolution:
+            safeParams.resolution === "480p" ||
+            safeParams.resolution === "1080p"
+                ? safeParams.resolution
+                : "720p",
         aspect_ratio: resolveSeedanceAspectRatio(safeParams),
         fps: 24,
         camera_fixed: false,
     };
-    if (safeParams.seed !== undefined && safeParams.seed !== -1) {
+    if (safeParams.seed !== undefined) {
         input.seed = safeParams.seed;
     }
 

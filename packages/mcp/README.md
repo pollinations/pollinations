@@ -1,10 +1,20 @@
 # pollinations.ai MCP Server
 
-A [Model Context Protocol](https://modelcontextprotocol.io) server for pollinations.ai. Lets MCP-capable hosts (Claude Desktop, Cursor, Windsurf, …) generate images, videos, text, and audio, plus check the authenticated key's Pollen balance and usage.
+A [Model Context Protocol](https://modelcontextprotocol.io) server for pollinations.ai. Lets MCP-capable hosts (Claude Desktop, Cursor, Windsurf, …) generate text, images, video, audio, embeddings, and 3D models; inspect model health; and check Pollen balance.
 
-All calls go through `https://gen.pollinations.ai`. Models, voices, and pricing are read live from the registry — no hardcoded enums.
+All calls go through `https://gen.pollinations.ai` by default. Set `POLLINATIONS_BASE_URL` to use another compatible gateway. Models, voices, and pricing are read live from the registry — no hardcoded enums.
 
 ## Quick Start
+
+For Streamable HTTP clients, connect to `https://mcp.pollinations.ai` and send
+your API key as `Authorization: Bearer YOUR_KEY`.
+
+The server can only use models and account features allowed by that key's
+permissions, and it cannot spend beyond the key's budget. Configure both in
+[API key settings](https://enter.pollinations.ai/keys); see
+[Authentication](https://gen.pollinations.ai/docs#tag/-authentication).
+
+Or run the server locally over stdio:
 
 ```bash
 # Run directly with npx (no installation required)
@@ -27,52 +37,56 @@ Get your API key at [enter.pollinations.ai](https://enter.pollinations.ai/keys),
 - `pk_` (publishable) — client-safe, rate-limited (1 pollen per IP per hour)
 - `sk_` (secret) — server-side only, no rate limits, can spend Pollen
 
-Set your key via environment variable or the `setApiKey` tool:
+For the local server, set your key via environment variable or the `setApiKey`
+tool:
 
 ```bash
 export POLLINATIONS_API_KEY=sk_your_key_here
 npx @pollinations/mcp
 ```
 
+To use a local or self-hosted compatible gateway:
+
+```bash
+export POLLINATIONS_BASE_URL=http://localhost:8788
+npx @pollinations/mcp
+```
+
 ## Available Tools
 
-### Image & Video Generation
+### Media Generation
 
-| Tool                 | Description                                                |
-| -------------------- | ---------------------------------------------------------- |
-| `generateImageUrl`   | Generate a shareable image URL from a text prompt          |
-| `generateImage`      | Generate an image and return base64 data                   |
-| `generateImageBatch` | Generate multiple images in parallel (best with `sk_` keys)|
-| `generateVideo`      | Generate a video and return base64 data                    |
-| `generateVideoUrl`   | Generate a shareable video URL from a text prompt          |
-| `describeImage`      | Vision analysis of an image URL                            |
-| `analyzeVideo`       | Analyze YouTube videos or video URLs                       |
-| `listImageModels`    | List available image & video models (live)                 |
+| Tool            | API route                | MCP result         |
+| --------------- | ------------------------ | ------------------ |
+| `generateImage` | `/v1/images/generations` | Image resource link |
+| `generateVideo` | `/video/{prompt}`        | Video resource link |
+| `generate3D`    | `/3d/{prompt}`           | GLB resource link   |
 
-Common image parameters: `prompt`, `model`, `width`, `height`, `seed`, `quality`, `image` (for image-to-image), `transparent`. Common video parameters: `model`, `duration`, `aspectRatio`, `audio`. Call `listImageModels` for the current model set and per-model capabilities.
+Generated media is uploaded unlisted to `media.pollinations.ai` and returned as an MCP resource link, so binary data does not consume model context. Anyone with the unguessable URL can access it; uploads use the media service's 30-day lifecycle. To edit an image, pass its HTTP(S) URL in `image`. Generate multiple images with multiple tool calls rather than a separate batch contract.
 
 ### Text Generation
 
-| Tool             | Description                                       |
-| ---------------- | ------------------------------------------------- |
-| `generateText`   | Simple text generation from a prompt              |
-| `chatCompletion` | OpenAI-compatible chat completions + tool calling |
-| `webSearch`      | Web-grounded answers (perplexity, gemini-search)  |
-| `listTextModels` | List available text models (live)                 |
-| `getPricing`     | Per-model pricing (text / image / audio)          |
+| Tool               | API route              | Description                                      |
+| ------------------ | ---------------------- | ------------------------------------------------ |
+| `generateText`     | `/v1/chat/completions` | Text, search, multimodal input, and tool calling |
+| `createEmbeddings` | `/v1/embeddings`       | Text or multimodal vector embeddings             |
 
-Call `listTextModels` for the current model set, aliases, and capabilities (reasoning, tools, audio output, etc.).
+Use `generateText` with the appropriate model and message content for simple text, web search, image/video analysis, and tool calling.
 
 ### Audio
 
-| Tool               | Description                              |
-| ------------------ | ---------------------------------------- |
-| `respondAudio`     | AI responds to a prompt with speech      |
-| `sayText`          | Text-to-speech (verbatim)                |
-| `transcribeAudio`  | Transcribe audio (gemini-large)          |
-| `listAudioVoices`  | List available voices (live)             |
+| Tool            | API route      | Description                      |
+| --------------- | -------------- | -------------------------------- |
+| `generateAudio` | `/audio/{text}` | Generate speech, music, or sound |
 
-Call `listAudioVoices` for the current voice list. Output formats: mp3, wav, flac, opus, pcm16.
+`generateAudio` returns an unlisted media resource link. Call `listModels` with `type=audio` for model and voice metadata.
+
+### Discovery
+
+| Tool             | API route              | Description                                  |
+| ---------------- | ---------------------- | -------------------------------------------- |
+| `listModels`     | Modality model routes  | Live models, capabilities, voices and pricing |
+| `getModelStatus` | `/v1/models/status`    | Recent request counts, errors and latency    |
 
 ### Auth Tools
 
@@ -87,8 +101,6 @@ Call `listAudioVoices` for the current voice list. Output formats: mp3, wav, fla
 | Tool         | Description                                                                  |
 | ------------ | ---------------------------------------------------------------------------- |
 | `getBalance` | Remaining Pollen for the authenticated key (requires `account:usage`)        |
-| `getUsage`   | Per-request history, or daily aggregate when `daily: true` (`account:usage`) |
-| `listQuests` | Quests and earned rewards for the authenticated account (`account:usage`)   |
 
 ## Claude Desktop Integration
 
@@ -115,9 +127,9 @@ Generate an image of a sunset over mountains using the flux model.
 
 Create a 6-second video of waves crashing on a beach using veo.
 
-Have a chatCompletion conversation about the weather, with the ability to call a weather API.
+Have a conversation about the weather with `generateText`, with the ability to call a weather API.
 
-Say "Hello, welcome to pollinations.ai!" using the nova voice.
+Generate audio saying "Hello, welcome to pollinations.ai!" using the nova voice.
 ```
 
 ## Testing
@@ -126,15 +138,52 @@ Say "Hello, welcome to pollinations.ai!" using the nova voice.
 POLLINATIONS_API_KEY=sk_… npm run test
 ```
 
-Spawns the server over stdio, lists tools, and exercises a small live slice (auth, text, image URL, balance). Skips authenticated calls when the env var is unset.
+Without an API key, this runs an offline smoke test of the stdio connection, tool registration, and unauthenticated model listing through a local registry stub. With `POLLINATIONS_API_KEY`, it also exercises a small live slice (models, auth, chat, image URL, balance).
+
+## Deployment (Hosted Worker)
+
+The hosted MCP server at `mcp.pollinations.ai` is a Cloudflare Worker
+defined in [`apps/mcp/`](../../apps/mcp/). It is deployed automatically
+by the
+[`Deploy / Applications`](../../.github/workflows/deploy-applications.yml)
+workflow.
+
+**How it works:**
+
+1. A push to the `production` branch touching `apps/**` or
+   `packages/mcp/**` triggers the workflow.
+2. [`operations/deployment/discover.cjs`](../../operations/deployment/discover.cjs)
+   scans for `apps/*/deploy.json` manifests and matches changed files
+   against each app's path and `watch` globs.
+3. [`apps/mcp/deploy.json`](../../apps/mcp/deploy.json) declares
+   `"watch": ["packages/mcp/**"]`, so changes to the SDK source in
+   `packages/mcp/` are detected even though the worker entry point
+   lives in `apps/mcp/`.
+4. [`operations/deployment/deploy.sh`](../../operations/deployment/deploy.sh)
+   reads the manifest and runs `npm ci`, the test suite
+   (`node --test worker.test.js`), and `wrangler deploy`.
+5. [`apps/mcp/wrangler.jsonc`](../../apps/mcp/wrangler.jsonc) routes
+   traffic to `mcp.pollinations.ai` and `mcp.myceli.ai`.
+
+**Production gating:** the workflow only runs on `production`, and
+[`guard-production-source.yml`](../../.github/workflows/guard-production-source.yml)
+prevents PRs to `production` from branches other than `main`.
+
+**Staging:** there is no separate staging deploy for the MCP worker.
+Because the worker is a thin proxy to `gen.pollinations.ai`, staging
+is handled at the gateway level (see `deploy-cloudflare-production.yml`), not
+at the MCP layer.
+
+**Manual deploy:** use `workflow_dispatch` on the Actions tab to
+redeploy without a code change (select `mcp` or `all`).
 
 ## System Requirements
 
-- Node.js 18.0.0 or higher
+- Node.js 20.0.0 or higher
 
 ## API Reference
 
-All requests go through `https://gen.pollinations.ai`. Full API docs: [gen.pollinations.ai/docs](https://gen.pollinations.ai/docs).
+All requests go through `POLLINATIONS_BASE_URL`, which defaults to `https://gen.pollinations.ai`. Full API docs: [gen.pollinations.ai/docs](https://gen.pollinations.ai/docs).
 
 ## License
 

@@ -1,12 +1,14 @@
-import { env, SELF } from "cloudflare:test";
+import { createExecutionContext, env } from "cloudflare:test";
 import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import { test as workerTest } from "@shared/test/fixtures/index.ts";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import worker from "../../src/index.ts";
 import { resetGenerationModelRegistryCache } from "../../src/model-registry.ts";
 import { createAndReturnModel3d } from "../../src/model3d/createAndReturnModel3d.ts";
 import { syncModel3dEnvironment } from "../../src/model3d/env.ts";
 import type { Model3dParams } from "../../src/model3d/params.ts";
+import { withInlineGenerationCoordinator } from "../helpers/inline-generation-coordinator.ts";
 
 beforeEach(() => {
     syncModel3dEnvironment({
@@ -19,6 +21,14 @@ beforeEach(() => {
 afterEach(() => {
     vi.restoreAllMocks();
 });
+
+async function fetchGen(input: RequestInfo | URL, init?: RequestInit) {
+    return worker.fetch(
+        new Request(input, init),
+        withInlineGenerationCoordinator(env),
+        createExecutionContext(),
+    );
+}
 
 function baseParams(
     model: string,
@@ -83,17 +93,25 @@ workerTest("uses the shared fallback loop for 3D", async ({ paidApiKey }) => {
                     upstreams.push("hyper3d-rodin");
                     return new Response("rate limited", { status: 429 });
                 }
-                if (request.url.includes("api.inferenceport.ai")) {
-                    upstreams.push("trellis-2");
+                if (request.url.includes("/v1/3d/jobs/")) {
                     return Response.json({
+                        job_id: "job_123",
+                        status: "completed",
                         data: [{ model_glb_b64_bytes: btoa("glTF") }],
                     });
+                }
+                if (request.url.includes("api.inferenceport.ai")) {
+                    upstreams.push("trellis-2");
+                    return Response.json(
+                        { job_id: "job_123", status: "pending" },
+                        { status: 202 },
+                    );
                 }
                 return new Response("unexpected request", { status: 500 });
             },
         );
 
-        const response = await SELF.fetch(
+        const response = await fetchGen(
             `https://gen.pollinations.ai/3d/${crypto.randomUUID()}?model=hyper3d-rodin&image=https%3A%2F%2Fexample.com%2Fref.jpg`,
             { headers: { Authorization: `Bearer ${paidApiKey}` } },
         );
@@ -131,18 +149,26 @@ workerTest(
                     ) {
                         return new Response("", { status: 202 });
                     }
+                    if (request.url.includes("/v1/3d/jobs/")) {
+                        return Response.json({
+                            job_id: "job_123",
+                            status: "completed",
+                            data: [{ model_glb_b64_bytes: btoa("glTF") }],
+                        });
+                    }
                     const body = (await request.json()) as {
                         resolution?: unknown;
                     };
                     resolutions.push(body.resolution);
-                    return Response.json({
-                        data: [{ model_glb_b64_bytes: btoa("glTF") }],
-                    });
+                    return Response.json(
+                        { job_id: "job_123", status: "pending" },
+                        { status: 202 },
+                    );
                 },
             );
 
             for (const resolution of ["low", "medium", "high"]) {
-                const response = await SELF.fetch(
+                const response = await fetchGen(
                     `https://gen.pollinations.ai/3d/${crypto.randomUUID()}?model=trellis-2-${resolution}&image=https%3A%2F%2Fexample.com%2Fref.jpg`,
                     { headers: { Authorization: `Bearer ${paidApiKey}` } },
                 );
@@ -152,7 +178,7 @@ workerTest(
                 expect(await response.text()).toBe("glTF");
             }
 
-            const overrideResponse = await SELF.fetch(
+            const overrideResponse = await fetchGen(
                 `https://gen.pollinations.ai/3d/${crypto.randomUUID()}?model=trellis-2-high&resolution=low&image=https%3A%2F%2Fexample.com%2Fref.jpg`,
                 { headers: { Authorization: `Bearer ${paidApiKey}` } },
             );
@@ -161,7 +187,7 @@ workerTest(
 
             const cachePrompt = crypto.randomUUID();
             for (const resolution of ["low", "high"]) {
-                const response = await SELF.fetch(
+                const response = await fetchGen(
                     `https://gen.pollinations.ai/3d/${cachePrompt}?model=trellis-2&resolution=${resolution}&image=https%3A%2F%2Fexample.com%2Fref.jpg`,
                     { headers: { Authorization: `Bearer ${paidApiKey}` } },
                 );
@@ -204,7 +230,7 @@ workerTest(
             },
         );
 
-        const response = await SELF.fetch(
+        const response = await fetchGen(
             `https://gen.pollinations.ai/3d/invalid-${crypto.randomUUID()}?model=trellis-2&resolution=low&image=https%3A%2F%2Fexample.com%2Fref.jpg`,
             { headers: { Authorization: `Bearer ${paidApiKey}` } },
         );

@@ -12,6 +12,7 @@ import type { RequestIdVariables } from "hono/request-id";
 import { describe, expect, it } from "vitest";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import { textCache } from "@/middleware/text-cache.ts";
+import { generateCacheKey } from "@/utils/text-cache.ts";
 
 const testLog = {
     getChild: () => testLog,
@@ -49,6 +50,7 @@ function createTextCacheApp() {
                         headers: {
                             "Content-Type": "application/json; charset=utf-8",
                             "x-model-used": "openai-fast",
+                            "x-fallback-target": "openai",
                             "x-usage-prompt-text-tokens": "12",
                             "x-moderation-hate-severity": "safe",
                         },
@@ -112,6 +114,35 @@ function chatInit(body: unknown): RequestInit {
 }
 
 describe("text cache", () => {
+    it("partitions managed-agent cache keys by caller API key", async () => {
+        const request = new Request(
+            "https://gen.pollinations.ai/v1/chat/completions",
+            chatInit({
+                model: "owner/agent",
+                messages: [{ role: "user", content: "hello" }],
+            }),
+        );
+        const body = await request.clone().text();
+        const first = await generateCacheKey(
+            request,
+            body,
+            "agent:agent-id:key:key-one",
+        );
+        const sameCaller = await generateCacheKey(
+            request,
+            body,
+            "agent:agent-id:key:key-one",
+        );
+        const otherCaller = await generateCacheKey(
+            request,
+            body,
+            "agent:agent-id:key:key-two",
+        );
+
+        expect(sameCaller).toBe(first);
+        expect(otherCaller).not.toBe(first);
+    });
+
     it("serves cached responses before auth while misses still require auth", async () => {
         let originHits = 0;
         const app = new Hono<TestEnv>()
@@ -219,6 +250,7 @@ describe("text cache", () => {
         await waitOnExecutionContext(secondCtx);
 
         expect(second.headers.get("X-Cache")).toBe("HIT");
+        expect(second.headers.get("X-Cache-Type")).toBeNull();
         expect(second.headers.get("Cache-Control")).toBe(
             IMMUTABLE_CACHE_CONTROL,
         );
@@ -226,10 +258,68 @@ describe("text cache", () => {
             "application/json; charset=utf-8",
         );
         expect(second.headers.get("x-model-used")).toBe("openai-fast");
+        expect(second.headers.get("x-fallback-target")).toBe("openai");
         expect(second.headers.get("x-usage-prompt-text-tokens")).toBe("12");
         expect(second.headers.get("x-moderation-hate-severity")).toBe("safe");
         expect(await second.json()).toMatchObject({ originHits: 1 });
         expect(cache.originHits).toBe(1);
+    });
+
+    it("keeps cache headers authoritative on streaming misses", async () => {
+        const app = new Hono<TestEnv>()
+            .use("*", async (c, next) => {
+                c.set("log", testLog);
+                c.set("requestId", "test-request");
+                await next();
+            })
+            .post("/v1/chat/completions", textCache, () => {
+                return new Response("data: [DONE]\n\n", {
+                    headers: {
+                        "Content-Type": "text/event-stream",
+                        "Cache-Control": "no-cache",
+                    },
+                });
+            });
+
+        const result = await dispatch(
+            app,
+            "/v1/chat/completions",
+            chatInit({
+                model: "openai-fast",
+                messages: [{ role: "user", content: "stream" }],
+                stream: true,
+            }),
+        );
+        await consumeAndWait(result);
+
+        expect(result.response.headers.get("Cache-Control")).toBe(
+            IMMUTABLE_CACHE_CONTROL,
+        );
+    });
+
+    it("does not cache accepted responses", async () => {
+        let originHits = 0;
+        const app = new Hono<TestEnv>()
+            .use("*", async (c, next) => {
+                c.set("log", testLog);
+                c.set("requestId", "test-request");
+                await next();
+            })
+            .get("/text/:prompt", textCache, () => {
+                originHits += 1;
+                return Response.json({ status: "pending" }, { status: 202 });
+            });
+        const env = createTextCacheEnv();
+
+        const first = await dispatch(app, "/text/test", undefined, env);
+        await consumeAndWait(first);
+        const second = await dispatch(app, "/text/test", undefined, env);
+        await consumeAndWait(second);
+
+        expect(first.response.status).toBe(202);
+        expect(second.response.status).toBe(202);
+        expect(second.response.headers.get("X-Cache")).not.toBe("HIT");
+        expect(originHits).toBe(2);
     });
 
     it("treats different POST bodies as different cache entries", async () => {
@@ -401,7 +491,7 @@ describe("text cache", () => {
         expect(cache.originHits).toBe(2);
     });
 
-    it("bypasses cache for seed -1 in POST bodies and GET query params", async () => {
+    it("caches seed -1 in POST bodies and GET query params", async () => {
         const cache = createTextCacheApp();
         const { app } = cache;
         const env = createTextCacheEnv();
@@ -446,11 +536,11 @@ describe("text cache", () => {
         );
         await consumeAndWait(secondGet);
 
-        expect(firstPost.response.headers.get("X-Cache")).toBeNull();
-        expect(secondPost.response.headers.get("X-Cache")).toBeNull();
-        expect(firstGet.response.headers.get("X-Cache")).toBeNull();
-        expect(secondGet.response.headers.get("X-Cache")).toBeNull();
-        expect(cache.originHits).toBe(4);
+        expect(firstPost.response.headers.get("X-Cache")).toBe("MISS");
+        expect(secondPost.response.headers.get("X-Cache")).toBe("HIT");
+        expect(firstGet.response.headers.get("X-Cache")).toBe("MISS");
+        expect(secondGet.response.headers.get("X-Cache")).toBe("HIT");
+        expect(cache.originHits).toBe(2);
     });
 
     it("does not add text cache headers to routes without cache middleware", async () => {

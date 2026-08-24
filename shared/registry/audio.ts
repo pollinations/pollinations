@@ -1,3 +1,4 @@
+import { defineCostVariants } from "./cost-variants";
 import type { ModelDefinition } from "./registry";
 
 // Voice name to ElevenLabs voice ID mapping
@@ -111,10 +112,42 @@ export const KOKORO_VOICES = [
     "zm_yunyang",
 ] as const;
 
+export const XAI_TTS_VOICES = [
+    "altair",
+    "ara",
+    "atlas",
+    "aurora",
+    "carina",
+    "castor",
+    "celeste",
+    "cosmo",
+    "eve",
+    "helios",
+    "helix",
+    "iris",
+    "kepler",
+    "leo",
+    "liora",
+    "lumen",
+    "luna",
+    "lux",
+    "naksh",
+    "orion",
+    "perseus",
+    "rex",
+    "rigel",
+    "sal",
+    "sirius",
+    "ursa",
+    "zagan",
+    "zenith",
+] as const;
+
 export const AUDIO_VOICES = [
     ...ELEVENLABS_VOICES,
     ...CSM_VOICES,
     ...KOKORO_VOICES,
+    ...XAI_TTS_VOICES,
 ];
 
 export const DEFAULT_AUDIO_MODEL = "elevenlabs" as const;
@@ -217,7 +250,6 @@ export const AUDIO_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: ELEVENLABS_VOICES as string[],
-        supportedEndpoints: ["/v1/audio/dialogue"],
     },
     "eleven-voice-changer": {
         aliases: ["voice-changer", "speech-to-speech"],
@@ -267,7 +299,9 @@ export const AUDIO_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            // ElevenLabs Music v2: billed per second of output audio.
+            // ElevenLabs Music v2: reference ingestion and generated output
+            // are each billed at $0.15/minute.
+            promptAudioSeconds: 0.0025,
             // Measured empirically (ffprobe-verified, 10s & 30s clips): 15.05 credits/sec.
             // Scale plan $0.166/1k credits => 15.05 * 0.166/1000 ≈ $0.0025/sec ($0.15/min).
             completionAudioSeconds: 0.0025,
@@ -320,13 +354,34 @@ export const AUDIO_SERVICES = {
         addedDate: new Date("2026-02-08").getTime(),
         priceMultiplier: 1,
         cost: {
-            // OVH Whisper: €0.00004083/sec ≈ $0.0000445/sec
-            promptAudioSeconds: 0.0000445,
+            // OVHcloud USD list price: $0.163/hour.
+            promptAudioSeconds: 0.163 / 3600,
         },
         title: "Whisper Large V3",
         description: "Accurate, affordable speech-to-text transcription",
         inputModalities: ["audio"],
         outputModalities: ["text"],
+        supportedEndpoints: ["/v1/audio/transcriptions"],
+    },
+    "gpt-transcribe": {
+        aliases: [],
+        provider: "azure",
+        brand: "OpenAI",
+        category: "audio",
+        addedDate: new Date("2026-08-19").getTime(),
+        paidOnly: false,
+        priceMultiplier: 0.75,
+        cost: {
+            // Provisional OpenAI list price: $0.0045 per input minute. Azure's
+            // exact meter was not yet visible when this route launched.
+            promptAudioSeconds: 0.0045 / 60,
+        },
+        title: "GPT Transcribe",
+        description:
+            "Fast multilingual speech recognition with optional language and prompt context",
+        inputModalities: ["audio"],
+        outputModalities: ["text"],
+        supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     scribe: {
         aliases: ["scribe_v2", "scribe-v2"],
@@ -344,6 +399,46 @@ export const AUDIO_SERVICES = {
         description: "Transcription in 90+ languages with speaker labels",
         inputModalities: ["audio"],
         outputModalities: ["text"],
+        supportedEndpoints: ["/v1/audio/transcriptions"],
+    },
+    "grok-transcribe": {
+        aliases: [],
+        provider: "xai",
+        brand: "xAI",
+        category: "audio",
+        addedDate: new Date("2026-08-07").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // xAI REST speech-to-text: $0.10/hour.
+            promptAudioSeconds: 0.1 / 3600,
+        },
+        title: "Grok Transcribe",
+        description:
+            "Fast multilingual speech recognition with word timestamps, speaker labels, and text formatting",
+        inputModalities: ["audio"],
+        outputModalities: ["text"],
+        supportedEndpoints: ["/v1/audio/transcriptions"],
+    },
+    "grok-tts": {
+        aliases: [],
+        provider: "xai",
+        brand: "xAI",
+        category: "audio",
+        addedDate: new Date("2026-08-19").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // xAI REST text-to-speech: $15 per 1M input characters.
+            completionAudioTokens: 15 / 1_000_000,
+        },
+        title: "Grok TTS",
+        description:
+            "Expressive multilingual speech across 28 built-in voices with inline style controls",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        voices: [...XAI_TTS_VOICES],
+        supportedEndpoints: ["/audio/{text}", "/v1/audio/speech"],
     },
     "universal-2": {
         aliases: ["assemblyai-universal-2", "assemblyai-u2"],
@@ -356,10 +451,27 @@ export const AUDIO_SERVICES = {
             // AssemblyAI Universal-2: $0.15/hour
             promptAudioSeconds: 0.15 / 3600,
         },
+        ...defineCostVariants(
+            {
+                diarization: {
+                    promptAudioSeconds: 0.17 / 3600,
+                },
+            },
+            ({ input }) => (input?.hasDiarization ? "diarization" : undefined),
+            {
+                diarization: {
+                    label: "Speaker diarization",
+                    description:
+                        "Applies when response_format is diarized_json.",
+                },
+            },
+            "Standard transcription",
+        ),
         title: "AssemblyAI Universal-2",
         description: "Fast transcription with support for 99 languages",
         inputModalities: ["audio"],
         outputModalities: ["text"],
+        supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     "universal-3.5-pro": {
         aliases: [
@@ -381,11 +493,50 @@ export const AUDIO_SERVICES = {
             // AssemblyAI Universal-3.5 Pro async: $0.21/hour
             promptAudioSeconds: 0.21 / 3600,
         },
+        ...defineCostVariants(
+            {
+                prompting: {
+                    promptAudioSeconds: 0.26 / 3600,
+                },
+                diarization: {
+                    promptAudioSeconds: 0.23 / 3600,
+                },
+                prompting_diarization: {
+                    promptAudioSeconds: 0.28 / 3600,
+                },
+            },
+            ({ input }) => {
+                if (input?.hasPrompt) {
+                    return input.hasDiarization
+                        ? "prompting_diarization"
+                        : "prompting";
+                }
+                return input?.hasDiarization ? "diarization" : undefined;
+            },
+            {
+                prompting: {
+                    label: "Prompting",
+                    description: "Applies when a prompt is provided.",
+                },
+                diarization: {
+                    label: "Speaker diarization",
+                    description:
+                        "Applies when response_format is diarized_json.",
+                },
+                prompting_diarization: {
+                    label: "Prompting and speaker diarization",
+                    description:
+                        "Applies when a prompt is provided and response_format is diarized_json.",
+                },
+            },
+            "Standard transcription",
+        ),
         title: "AssemblyAI Universal-3.5 Pro",
         description:
             "High-accuracy transcription with multilingual code switching and prompts",
         inputModalities: ["audio"],
         outputModalities: ["text"],
+        supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     "stable-audio-3-medium": {
         aliases: ["stable-audio", "stability-audio", "stable-audio-2.5"],
@@ -433,6 +584,24 @@ export const AUDIO_SERVICES = {
         description:
             "Highest-quality long-form stereo music generation; priced per generation",
         inputModalities: ["text", "audio"],
+        outputModalities: ["audio"],
+    },
+    "fish-audio-s2.1-pro": {
+        aliases: [],
+        provider: "openrouter",
+        brand: "Fish Audio",
+        category: "audio",
+        addedDate: new Date("2026-08-19").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter, verified 2026-08-19: $15 per 1M UTF-8 input bytes.
+            completionAudioTokens: 15 / 1_000_000,
+        },
+        title: "Fish Audio S2.1 Pro",
+        description:
+            "Multilingual expressive speech with natural-language emotion and delivery control",
+        inputModalities: ["text"],
         outputModalities: ["audio"],
     },
     "qwen-tts": {

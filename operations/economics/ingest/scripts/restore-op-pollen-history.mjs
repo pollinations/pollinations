@@ -205,6 +205,29 @@ function assertFinite(rows) {
     }
 }
 
+function assertNoJulyRegression(currentRows, desiredRows) {
+    const current = totalsByMonth(currentRows).find(
+        (row) => row.month === "2026-07",
+    );
+    const desired = totalsByMonth(desiredRows).find(
+        (row) => row.month === "2026-07",
+    );
+    if (!current || !desired) {
+        throw new Error(
+            "July continuity check requires both current and restored totals",
+        );
+    }
+
+    const regressions = metricFields.filter(
+        (field) => desired[field] + Number.EPSILON < current[field],
+    );
+    if (regressions.length > 0) {
+        throw new Error(
+            `July restoration would decrease existing metrics: ${regressions.join(", ")}. Rebuild the post-cutoff source before publishing.`,
+        );
+    }
+}
+
 const legacy = readNdjson(legacyArgument);
 const current = readJson(currentArgument);
 const cutover = readJson(cutoverArgument);
@@ -263,6 +286,7 @@ const julyLegacyMap = new Map(
 const desiredMap = addMaps(closedLegacyMap, julyLegacyMap, cutoverMap);
 const desiredRows = sortedRows(desiredMap);
 assertFinite(desiredRows);
+assertNoJulyRegression(sortedRows(currentMap), desiredRows);
 
 const targetKeys = new Set([...desiredMap.keys(), ...currentMap.keys()]);
 const suppressedCurrentRows = [...currentMap.keys()].filter(

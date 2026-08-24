@@ -106,6 +106,25 @@ def assert_immutable_fields(rows, current_rows, fields):
         )
 
 
+def assert_explicit_tombstones(rows, value_fields):
+    invalid = []
+    implicit = []
+    for row in rows:
+        tombstone = row.get("source") == "tombstone"
+        if tombstone and any(float(row.get(field, 0)) != 0 for field in value_fields):
+            invalid.append(row.get("entry_id", "<missing>"))
+        if not tombstone and "superseded" in str(row.get("evidence", "")).lower():
+            implicit.append(row.get("entry_id", "<missing>"))
+    if invalid:
+        raise RuntimeError(
+            "Tombstones require zero financial values: " + ", ".join(invalid)
+        )
+    if implicit:
+        raise RuntimeError(
+            "Superseded rows require source=tombstone: " + ", ".join(implicit)
+        )
+
+
 def canonical_pollen_provider(month, provider, model):
     if month == "2026-03" and provider == "io.net" and model in {"flux", "zimage"}:
         return "vast.ai"

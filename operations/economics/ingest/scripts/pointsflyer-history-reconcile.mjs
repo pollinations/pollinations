@@ -203,6 +203,7 @@ const cloudUpdates = [];
 for (const group of groups) {
     cloudUpdates.push({
         ...group.legacy_cloud,
+        source: "tombstone",
         credit: 0,
         paid: 0,
         evidence: `${evidenceUrl} · superseded by exact preserved model meter rows`,

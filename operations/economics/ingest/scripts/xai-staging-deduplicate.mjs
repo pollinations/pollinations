@@ -79,6 +79,7 @@ for (const [month, expected] of Object.entries(expectedMonthlyTotals)) {
 const recordedAt = new Date().toISOString().replace("T", " ").replace("Z", "");
 const corrections = duplicates.map((row) => ({
     ...row,
+    source: "tombstone",
     account_id: ACCOUNT_ID,
     account_name: ACCOUNT_NAME,
     credit: 0,
@@ -101,7 +102,7 @@ const simulatedRows = stagingRows
             !(
                 Number(row.credit) === 0 &&
                 Number(row.paid) === 0 &&
-                String(row.evidence).includes("superseded")
+                row.source === "tombstone"
             ),
     );
 writeFileSync(

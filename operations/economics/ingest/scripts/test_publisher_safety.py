@@ -2,6 +2,7 @@ import unittest
 
 from publisher_safety import (
     assert_base_versions,
+    assert_explicit_tombstones,
     assert_immutable_fields,
     assert_no_new_duplicates,
     assert_newer_versions,
@@ -79,6 +80,45 @@ class PublisherSafetyTest(unittest.TestCase):
                 [{"entry_id": "a", "reason": "manual_correction"}],
                 current,
                 ["reason"],
+            )
+
+    def test_requires_explicit_zero_value_tombstones(self):
+        assert_explicit_tombstones(
+            [
+                {
+                    "entry_id": "a",
+                    "source": "tombstone",
+                    "credit": 0,
+                    "paid": 0,
+                    "evidence": "replaced by detail rows",
+                }
+            ],
+            ["credit", "paid"],
+        )
+        with self.assertRaisesRegex(RuntimeError, "zero financial values"):
+            assert_explicit_tombstones(
+                [
+                    {
+                        "entry_id": "a",
+                        "source": "tombstone",
+                        "credit": 1,
+                        "paid": 0,
+                    }
+                ],
+                ["credit", "paid"],
+            )
+        with self.assertRaisesRegex(RuntimeError, "source=tombstone"):
+            assert_explicit_tombstones(
+                [
+                    {
+                        "entry_id": "a",
+                        "source": "manual",
+                        "credit": 0,
+                        "paid": 0,
+                        "evidence": "superseded by detail rows",
+                    }
+                ],
+                ["credit", "paid"],
             )
 
     def test_matches_the_endpoint_pollen_provider_relabel(self):

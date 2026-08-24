@@ -195,7 +195,7 @@ const rows = [
     ...supersededEntryIds.map((entryId) => ({
         ...shared,
         entry_id: entryId,
-        source: "correction",
+        source: "tombstone",
         paid: 0,
         evidence: `Superseded by instance-level Vast.ai ${month} usage rows; ${evidence}`,
         resource_sku: "superseded",

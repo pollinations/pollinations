@@ -92,6 +92,7 @@ if (!legacyJanuary) {
 }
 updates.push({
     ...legacyJanuary,
+    source: "tombstone",
     credit: 0,
     paid: 0,
     evidence: `${evidenceByMonth["2026-01"]} · superseded by the exact dashboard model export`,

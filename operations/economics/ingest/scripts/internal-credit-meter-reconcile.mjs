@@ -123,6 +123,7 @@ const updates = [];
 for (const group of groups) {
     updates.push({
         ...group.legacy,
+        source: "tombstone",
         credit: 0,
         paid: 0,
         evidence: `${evidenceUrl} · superseded by exact internal model meter rows`,

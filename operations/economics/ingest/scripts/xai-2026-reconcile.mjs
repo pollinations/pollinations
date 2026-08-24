@@ -231,6 +231,7 @@ if (provisionalAugustRows.length !== 3) {
 for (const row of provisionalAugustRows) {
     updates.push({
         ...row,
+        source: "tombstone",
         account_id: ACCOUNT_ID,
         account_name: ACCOUNT_NAME,
         credit: 0,
@@ -384,7 +385,7 @@ const simulatedRows = [...simulatedById.values()].filter(
         !(
             value(row.credit) === 0 &&
             value(row.paid) === 0 &&
-            String(row.evidence).includes("superseded")
+            row.source === "tombstone"
         ),
 );
 

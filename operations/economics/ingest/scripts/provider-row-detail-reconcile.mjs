@@ -125,6 +125,7 @@ const stability = requiredRow(stabilityEntryId);
 assertAmount(stability, { credit: 0, paid: -30, currency: "USD" });
 const stabilityTombstone = {
     ...stability,
+    source: "tombstone",
     credit: 0,
     paid: 0,
     evidence: `${stability.evidence} · superseded because this document is a prepaid credit purchase, not June provider usage; the purchase remains in op_transactions`,
@@ -179,6 +180,7 @@ if (Math.abs(replicateTotal - 6.06) > 1e-9) {
 }
 const replicateTombstone = {
     ...replicateAggregate,
+    source: "tombstone",
     credit: 0,
     paid: 0,
     evidence: `${replicateEvidence} · superseded by exact finalized invoice model rows; the applied balance was purchased credit, so usage remains cash-backed`,
@@ -203,7 +205,7 @@ const simulated = [...simulatedById.values()].filter(
         !(
             Number(row.credit) === 0 &&
             Number(row.paid) === 0 &&
-            String(row.evidence).toLowerCase().includes("superseded")
+            row.source === "tombstone"
         ),
 );
 

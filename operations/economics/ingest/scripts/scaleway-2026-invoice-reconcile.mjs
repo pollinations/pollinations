@@ -228,6 +228,7 @@ const tombstones = legacyEntryIds.flatMap((entryId) => {
         ? [
               {
                   ...row,
+                  source: "tombstone",
                   credit: 0,
                   paid: 0,
                   evidence: `${INVOICE_LIST_EVIDENCE} · superseded by exact 2026 invoice and consumption rows; the two issued invoices were not waived`,
@@ -286,7 +287,7 @@ const simulated = [...simulatedById.values()].filter(
         !(
             Number(row.credit) === 0 &&
             Number(row.paid) === 0 &&
-            String(row.evidence).toLowerCase().includes("superseded")
+            row.source === "tombstone"
         ),
 );
 const activeScaleway2026 = simulated.filter(

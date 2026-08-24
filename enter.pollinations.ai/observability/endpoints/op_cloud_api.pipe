@@ -50,7 +50,7 @@ SQL >
         FROM op_cloud
         GROUP BY entry_id
     )
-    WHERE NOT (credit = 0 AND paid = 0 AND positionCaseInsensitive(evidence, 'superseded') > 0)
+    WHERE source != 'tombstone'
     ORDER BY start DESC, vendor, type, resource_name, resource_id
 
 TYPE ENDPOINT

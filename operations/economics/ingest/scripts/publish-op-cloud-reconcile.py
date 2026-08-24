@@ -10,6 +10,7 @@ from tinybird.tb.client import TinyB
 
 from publisher_safety import (
     assert_base_versions,
+    assert_explicit_tombstones,
     assert_newer_versions,
     latest_version_query,
     validate_recorded_at,
@@ -61,6 +62,7 @@ def read_ndjson(path):
     if not rows or len(ids) != len(set(ids)):
         raise RuntimeError("Input must contain unique op_cloud entry IDs")
     validate_recorded_at(rows)
+    assert_explicit_tombstones(rows, ["credit", "paid"])
     return rows
 
 
@@ -132,10 +134,7 @@ def effective_rows(client, fields):
             FROM op_cloud
             GROUP BY entry_id
         )
-        WHERE NOT (
-            credit = 0 AND paid = 0
-            AND positionCaseInsensitive(evidence, 'superseded') > 0
-        )
+        WHERE source != 'tombstone'
         ORDER BY start DESC, vendor, type, resource_name, resource_id
         FORMAT JSON
     """

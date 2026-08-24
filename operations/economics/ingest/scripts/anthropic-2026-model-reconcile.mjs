@@ -214,6 +214,7 @@ const zeroRows = ["2026-05", "2026-06", "2026-07"].map((month) => {
 
 const tombstones = [...LEGACY_IDS.values()].map((entryId) => ({
     ...rowById.get(entryId),
+    source: "tombstone",
     credit: 0,
     paid: 0,
     evidence: `${EVIDENCE} · superseded by exact description-grouped Anthropic Cost API model rows`,
@@ -240,7 +241,7 @@ const simulated = [...simulatedById.values()].filter(
         !(
             Number(row.credit) === 0 &&
             Number(row.paid) === 0 &&
-            String(row.evidence).toLowerCase().includes("superseded")
+            row.source === "tombstone"
         ),
 );
 

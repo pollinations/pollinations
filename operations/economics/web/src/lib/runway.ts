@@ -82,6 +82,10 @@ function matrixKey(category: string, vendor: string) {
     return `${category}\u0000${vendor}`;
 }
 
+function planMatchKey(vendor: string, amount: number) {
+    return `${vendor}\u0000${amount >= 0 ? "inflow" : "outflow"}`;
+}
+
 function categoryRank(category: string) {
     const rank = RUNWAY_CATEGORY_ORDER.indexOf(category);
     return rank === -1 ? RUNWAY_CATEGORY_ORDER.length : rank;
@@ -121,6 +125,8 @@ export function buildRunway(
     const flags: string[] = [];
     const actualByMonth = new Map<string, Map<string, number>>();
     const forecastByMonth = new Map<string, Map<string, number>>();
+    const actualPlanMatchByMonth = new Map<string, Map<string, number>>();
+    const forecastPlanMatchByMonth = new Map<string, Map<string, number>>();
     const assumptionsByCell = new Map<string, RunwayAssumption[]>();
     const identities = new Map<string, { category: string; vendor: string }>();
     const observedMonths = new Set<string>([currentMonth]);
@@ -140,11 +146,16 @@ export function buildRunway(
         if (!MONTH_RE.test(month) || month < WINDOW_START) continue;
         const category = transactionCategory(row);
         const vendor = normalizedVendor(row.vendor);
+        const amountUsd = toUsd(row.amount, row.currency, row.date);
         const key = matrixKey(category, vendor);
         const monthValues =
             actualByMonth.get(month) ?? new Map<string, number>();
-        addAmount(monthValues, key, toUsd(row.amount, row.currency, row.date));
+        addAmount(monthValues, key, amountUsd);
         actualByMonth.set(month, monthValues);
+        const planMatchValues =
+            actualPlanMatchByMonth.get(month) ?? new Map<string, number>();
+        addAmount(planMatchValues, planMatchKey(vendor, amountUsd), amountUsd);
+        actualPlanMatchByMonth.set(month, planMatchValues);
         identities.set(key, { category, vendor });
         observedMonths.add(month);
     }
@@ -177,6 +188,10 @@ export function buildRunway(
             forecastByMonth.get(month) ?? new Map<string, number>();
         addAmount(monthValues, key, amountUsd);
         forecastByMonth.set(month, monthValues);
+        const planMatchValues =
+            forecastPlanMatchByMonth.get(month) ?? new Map<string, number>();
+        addAmount(planMatchValues, planMatchKey(vendor, amountUsd), amountUsd);
+        forecastPlanMatchByMonth.set(month, planMatchValues);
         const cellKey = `${month}\u0000${key}`;
         const cellAssumptions = assumptionsByCell.get(cellKey) ?? [];
         cellAssumptions.push(assumption);
@@ -341,9 +356,12 @@ export function buildRunway(
         .sort()
         .at(-1);
     const currentCashUsd = cashBalanceByMonth.get(currentMonth) ?? null;
-    const currentPlan = forecastByMonth.get(currentMonth);
+    const currentPlan = forecastPlanMatchByMonth.get(currentMonth);
     const remainingCurrentPlanUsd = currentPlan
-        ? remainingPlanUsd(currentPlan, actualByMonth.get(currentMonth))
+        ? remainingPlanUsd(
+              currentPlan,
+              actualPlanMatchByMonth.get(currentMonth),
+          )
         : null;
     const projectedMonthEndCashUsd =
         currentCashUsd != null && remainingCurrentPlanUsd != null

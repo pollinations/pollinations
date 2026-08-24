@@ -130,6 +130,49 @@ describe("buildRunway", () => {
         expect(result.remainingCurrentPlanUsd).toBe(0);
     });
 
+    it("matches current plans by vendor and cash direction, not category", () => {
+        const result = buildRunway(
+            [
+                opening(),
+                transaction({
+                    entry_id: "deel-payroll",
+                    vendor: "deel",
+                    category: "payroll",
+                    amount: -100,
+                }),
+                transaction({
+                    entry_id: "deel-refund",
+                    vendor: "deel",
+                    category: "payroll",
+                    amount: 250,
+                }),
+            ],
+            [
+                forecast({
+                    entry_id: "deel-payroll-plan",
+                    vendor: "deel",
+                    category: "payroll",
+                    amount: -300,
+                }),
+                forecast({
+                    entry_id: "deel-refund-plan",
+                    vendor: "deel",
+                    category: "balance_sheet",
+                    amount: 400,
+                    method: "one_off",
+                }),
+                forecast({
+                    entry_id: "forecast-2026-09-aws",
+                    month: "2026-09-01",
+                }),
+            ],
+            NOW,
+        );
+
+        expect(result.remainingCurrentPlanUsd).toBe(-50);
+        expect(result.projectedMonthEndCashUsd).toBe(1_100);
+    });
+
     it("uses every same-date opening currency and excludes anchors from cash change", () => {
         const result = buildRunway(
             [

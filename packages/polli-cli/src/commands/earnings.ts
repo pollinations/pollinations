@@ -1,4 +1,3 @@
-import chalk from "chalk";
 import { Command } from "commander";
 import { gen, requireKey } from "../lib/api.js";
 import {

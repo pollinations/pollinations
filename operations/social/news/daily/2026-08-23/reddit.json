@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-08-23",
+  "period_start": "2026-08-23",
+  "period_end": "2026-08-23",
+  "generated_at": "2026-08-24T06:21:07.838787+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-08-23/images/reddit.jpg"
+    }
+  ],
+  "title": "Agent composition and model access fixes shipped",
+  "text": "18 PRs merged today.\n\nThe larger change is agent composition: agents can now discover, call, and register other endpoint agents through the API. This is deliberately fairly plain infrastructure, but it means an agent can become a reusable part of another agent instead of a carefully copied prompt living in somebody else's project.\n\nModel discovery also got less misleading. Enter now filters models that can be used with Quest Pollen, while the paid-model filter was simplified. MIDIjourney permissions are preserved rather than being quietly lost during updates.\n\nA few accounting and community-endpoint fixes landed together: self-owned community model calls are free; private fallback usage rewards owners; fallback rewards use the served price; and realtime billed prices now report the ledger-rounded value. Community model privacy wording was clarified too, because ambiguity is not a billing feature.\n\nOn the SDK side, text helpers now delegate through the canonical chat path. MCP text-tool responses remain non-streaming, which is less exciting than it sounds and more useful than it sounds.\n\nDocs were refreshed across the FAQ, key guidance, README, and the stale `quests mine` CLI examples. StoryForge and vaia-ai-studio.my.id were added to the app listings.\n\nCode and PR history: https://github.com/pollinations/pollinations\nDocs: https://pollinations.ai"
+}

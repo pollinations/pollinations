@@ -773,14 +773,17 @@ export const communityEndpointsRoutes = new Hono<Env>()
                                   ),
                         ...policy,
                         fallbacks,
-                    };
-
-                    // 12-hour price delay for public model price changes
+                    }; // 12-hour price delay for public model price VALUE changes
+                    // (not structural changes like imagePricing mode switches)
                     const storedPayload: ProxyListingPayload | undefined =
                         stored ?? undefined;
-                    const pricesChanged =
+                    const pricingModeChanged =
+                        storedPayload &&
+                        storedPayload.imagePricing !== policy.imagePricing;
+                    const priceValuesChanged =
+                        !pricingModeChanged &&
                         JSON.stringify(policy.prices) !==
-                        JSON.stringify(storedPayload?.prices);
+                            JSON.stringify(storedPayload?.prices);
                     const wasPublic =
                         storedPayload?.prices &&
                         !isFreeCommunityEndpoint(storedPayload.prices);
@@ -794,7 +797,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         wasActuallyPublic && effectiveVisibility === "private";
 
                     if (
-                        pricesChanged &&
+                        priceValuesChanged &&
                         isPublic &&
                         !isFirstPrice &&
                         !becamePrivate

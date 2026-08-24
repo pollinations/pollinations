@@ -54,6 +54,9 @@ export default {
             return new Response("Not found", { status: 404 });
         }
 
+        const token = readBearerToken(request);
+        if (!token) return unauthorizedResponse();
+
         if (
             request.method === "POST" &&
             Array.isArray(
@@ -71,9 +74,6 @@ export default {
                 { status: 400 },
             );
         }
-
-        const token = readBearerToken(request);
-        if (!token) return unauthorizedResponse();
 
         return mcpHandler.fetch(request, {
             authInfo: {

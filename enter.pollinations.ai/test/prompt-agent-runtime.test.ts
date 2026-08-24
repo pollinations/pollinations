@@ -78,6 +78,19 @@ describe("prompt-agent config", () => {
             }),
         ).toEqual({ ...config, mcpServers: MCP_SERVER_IDS });
     });
+
+    it("rejects duplicate built-in MCP servers", () => {
+        const result = PromptAgentInputSchema.safeParse({
+            ...config,
+            mcpServers: ["pollinations", "pollinations"],
+        });
+
+        expect(result.error?.issues).toContainEqual(
+            expect.objectContaining({
+                message: "Duplicate MCP servers are not allowed",
+            }),
+        );
+    });
 });
 describe("prompt-agent runtime", () => {
     beforeEach(() => {

@@ -72,3 +72,20 @@ test("requires a Pollinations credential before invoking an MCP server", async (
     );
     expect(response.status).toBe(401);
 });
+
+test("rejects MCP batch requests at the proxy", async () => {
+    const { key } = await createTestApiKey();
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/pollinations",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify([MCP_REQUEST]),
+        },
+    );
+
+    expect(response.status).toBe(400);
+});

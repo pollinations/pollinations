@@ -447,6 +447,9 @@ export const PromptAgentConfigSchema = z.object({
     mcpServers: z
         .array(BuiltinMcpServerIdSchema)
         .max(MCP_SERVER_IDS.length)
+        .refine((servers) => new Set(servers).size === servers.length, {
+            message: "Duplicate MCP servers are not allowed",
+        })
         .optional()
         .default([]),
 });

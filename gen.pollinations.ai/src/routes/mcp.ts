@@ -1,4 +1,3 @@
-import { getLogger } from "@logtape/logtape";
 import { payerBucketToMeter } from "@shared/billing/balance.ts";
 import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
 import { sendToTinybird } from "@shared/events.ts";
@@ -79,6 +78,9 @@ async function settleUsage(
             userId: user.id,
             apiKeyId: c.var.auth.apiKey?.id,
             apiKeyPollenBalance: c.var.auth.apiKey?.pollenBalance,
+            // Tool cost is known only after execution. Reconcile the final
+            // receipt directly instead of inventing a maximum-cost preflight.
+            apiKeyReservedAmount: 0,
             byopClientKeyId: c.var.auth.apiKey?.byopClientKeyId,
             modelPaidOnly: false,
         });
@@ -131,7 +133,7 @@ async function settleUsage(
             event,
             c.env.TINYBIRD_INGEST_URL,
             c.env.TINYBIRD_INGEST_TOKEN,
-            getLogger(["mcp", "track"]),
+            c.var.log,
         ),
     );
 }
@@ -152,6 +154,19 @@ export const mcpRoutes = new Hono<Env>()
     .use("/mcp/:serverId", auth(), frontendKeyRateLimit)
     .all("/mcp/:serverId", async (c) => {
         c.var.auth.requireUser();
+        if (
+            c.req.method === "POST" &&
+            Array.isArray(
+                await c.req.raw
+                    .clone()
+                    .json()
+                    .catch(() => null),
+            )
+        ) {
+            throw new HTTPException(400, {
+                message: "MCP batch requests are not supported",
+            });
+        }
         const serverId = c.req.param("serverId");
         const server = getMcpServerDefinition(serverId);
         if (!server) {

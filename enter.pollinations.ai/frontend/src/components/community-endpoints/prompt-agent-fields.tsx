@@ -54,40 +54,38 @@ export function PromptAgentFields({
                 {MCP_SERVERS.map((server) => {
                     const selected = form.mcpServers.includes(server.id);
                     return (
-                        <div key={server.id} className="space-y-1">
-                            <div className="flex items-start justify-between gap-3">
-                                <div className="space-y-1">
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <span className="font-medium">
-                                            {server.name} MCP
-                                        </span>
-                                        <Chip size="sm" intent="neutral">
-                                            Built-in
-                                        </Chip>
-                                    </div>
-                                    <p className="text-xs text-theme-text-muted">
-                                        {server.description}
-                                    </p>
+                        <div
+                            key={server.id}
+                            className="flex items-start justify-between gap-3"
+                        >
+                            <div className="space-y-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <span className="font-medium">
+                                        {server.name} MCP
+                                    </span>
+                                    <Chip size="sm" intent="neutral">
+                                        Built-in
+                                    </Chip>
                                 </div>
-                                <Switch
-                                    checked={selected}
-                                    disabled={disabled}
-                                    ariaLabel={`Allow ${server.name} tools`}
-                                    onChange={(value) =>
-                                        onChange(
-                                            "mcpServers",
-                                            value
-                                                ? [
-                                                      ...form.mcpServers,
-                                                      server.id,
-                                                  ]
-                                                : form.mcpServers.filter(
-                                                      (id) => id !== server.id,
-                                                  ),
-                                        )
-                                    }
-                                />
+                                <p className="text-xs text-theme-text-muted">
+                                    {server.description}
+                                </p>
                             </div>
+                            <Switch
+                                checked={selected}
+                                disabled={disabled}
+                                ariaLabel={`Allow ${server.name} tools`}
+                                onChange={(value) =>
+                                    onChange(
+                                        "mcpServers",
+                                        value
+                                            ? [...form.mcpServers, server.id]
+                                            : form.mcpServers.filter(
+                                                  (id) => id !== server.id,
+                                              ),
+                                    )
+                                }
+                            />
                         </div>
                     );
                 })}

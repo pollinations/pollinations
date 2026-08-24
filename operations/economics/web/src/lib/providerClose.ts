@@ -7,6 +7,7 @@ import {
     matchesMonth,
     matchesValue,
     type ValueFilter,
+    WINDOW_START,
 } from "./months";
 import {
     providerCheckExplanation,
@@ -170,14 +171,18 @@ export function providerCloseRows(
     );
     const productKeys = new Set<string>();
     for (const row of data.opPollen ?? []) {
-        productKeys.add(`${row.month}|${row.vendor}`);
+        if (row.month >= WINDOW_START) {
+            productKeys.add(`${row.month}|${row.vendor}`);
+        }
     }
     for (const row of cloudRows) {
+        const month = row.start.slice(0, 7);
         if (
+            month >= WINDOW_START &&
             cloudCategory(row) === "compute" &&
             !(row.credit > 0 && row.paid === 0)
         ) {
-            productKeys.add(`${row.start.slice(0, 7)}|${row.vendor}`);
+            productKeys.add(`${month}|${row.vendor}`);
         }
     }
     const planes = [...productKeys].sort().map((key): VendorPlanes => {

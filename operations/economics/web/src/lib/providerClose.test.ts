@@ -341,6 +341,23 @@ describe("providerCloseRows", () => {
         expect(summary.closeReady).toBe(0);
         expect(summary.blockers).toBe(0);
     });
+
+    it("excludes provider months before the accounting window", () => {
+        const rows = providerCloseRows(
+            data({
+                opCloud: [
+                    cloud({
+                        start: "2025-12-01 00:00:00",
+                        end: "2026-01-01 00:00:00",
+                    }),
+                ],
+                opPollen: [pollen({ month: "2025-12" })],
+            }),
+            "2026-08",
+        );
+
+        expect(rows).toEqual([]);
+    });
 });
 
 describe("providerClosePeriodStatus", () => {

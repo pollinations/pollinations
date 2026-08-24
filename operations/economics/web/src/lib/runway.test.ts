@@ -330,11 +330,32 @@ describe("buildRunway", () => {
         );
 
         expect(result.rows).toEqual([]);
-        expect(result.flags).toEqual(
-            expect.arrayContaining([
-                "Forecast categories need correction for aws.",
-                "Forecast methods need correction for aws.",
-            ]),
+        expect(result.projectedMonthEndCashUsd).toBeNull();
+        expect(result.runwayMonths).toBeNull();
+        expect(result.flags).toContain(
+            "2 forecast facts need correction (category, method) for aws; month-end cash and runway are unavailable.",
+        );
+    });
+
+    it("does not crash or project around an unsupported forecast currency", () => {
+        const result = buildRunway(
+            [opening()],
+            [
+                forecast({ currency: "GBP" }),
+                forecast({
+                    entry_id: "forecast-2026-09-aws",
+                    month: "2026-09-01",
+                    amount: -100,
+                }),
+            ],
+            NOW,
+        );
+
+        expect(result.currentCashUsd).toBe(1_000);
+        expect(result.projectedMonthEndCashUsd).toBeNull();
+        expect(result.runwayMonths).toBeNull();
+        expect(result.flags).toContain(
+            "1 forecast fact needs correction (currency) for aws; month-end cash and runway are unavailable.",
         );
     });
 

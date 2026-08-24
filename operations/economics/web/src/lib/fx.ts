@@ -38,6 +38,12 @@ const FX_TABLES: Record<string, Record<string, number>> = {
     CAD: FX_CAD_USD,
 };
 
+export function canConvertToUsd(currency: string): boolean {
+    return ["EUR", "CAD", "USD", "POLLEN", ""].includes(
+        String(currency ?? "").toUpperCase(),
+    );
+}
+
 // A past month with no table rate is a missing append — throw so it surfaces
 // instead of bending every margin. Future months cannot have a published
 // rate yet, so forecasts convert at the latest known rate; those months are

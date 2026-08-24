@@ -8,7 +8,7 @@ import {
     forecastCategory,
     transactionCategory,
 } from "./categories";
-import { toUsd } from "./fx";
+import { canConvertToUsd, toUsd } from "./fx";
 import { monthShift } from "./insights";
 import { WINDOW_START } from "./months";
 
@@ -75,7 +75,7 @@ function monthRange(start: string, end: string): string[] {
 }
 
 function normalizedVendor(value: string) {
-    return value.trim() || "unmatched";
+    return String(value ?? "").trim() || "unmatched";
 }
 
 function matrixKey(category: string, vendor: string) {
@@ -160,23 +160,37 @@ export function buildRunway(
         observedMonths.add(month);
     }
 
-    const invalidForecastCategoryVendors = new Set<string>();
-    const invalidForecastMethodVendors = new Set<string>();
+    const invalidForecastVendors = new Set<string>();
+    const invalidForecastReasons = new Set<string>();
+    let invalidForecastFacts = 0;
     const assumptions: RunwayAssumption[] = [];
     for (const fact of forecastFacts) {
-        const month = fact.month.slice(0, 7);
-        if (!MONTH_RE.test(month) || month < WINDOW_START) continue;
-        const category = forecastCategory(fact);
         const vendor = normalizedVendor(fact.vendor);
+        const factMonth = String(fact.month ?? "");
+        const validMonth = /^\d{4}-(0[1-9]|1[0-2])-01$/.test(factMonth);
+        const month = validMonth ? factMonth.slice(0, 7) : "";
+        if (validMonth && month < WINDOW_START) continue;
+        const category = forecastCategory({
+            category: String(fact.category ?? ""),
+        });
         const invalidCategory = category === "uncategorized";
         const invalidMethod = !FORECAST_METHODS.has(fact.method);
-        if (invalidCategory) {
-            invalidForecastCategoryVendors.add(vendor);
-        }
-        if (invalidMethod) {
-            invalidForecastMethodVendors.add(vendor);
-        }
-        if (invalidCategory || invalidMethod) {
+        const invalidAmount = !Number.isFinite(Number(fact.amount));
+        const invalidCurrency = !canConvertToUsd(fact.currency);
+        if (
+            !validMonth ||
+            invalidCategory ||
+            invalidMethod ||
+            invalidAmount ||
+            invalidCurrency
+        ) {
+            invalidForecastFacts += 1;
+            invalidForecastVendors.add(vendor);
+            if (!validMonth) invalidForecastReasons.add("month");
+            if (invalidCategory) invalidForecastReasons.add("category");
+            if (invalidMethod) invalidForecastReasons.add("method");
+            if (invalidAmount) invalidForecastReasons.add("amount");
+            if (invalidCurrency) invalidForecastReasons.add("currency");
             continue;
         }
         const key = matrixKey(category, vendor);
@@ -200,14 +214,10 @@ export function buildRunway(
         observedMonths.add(month);
     }
 
-    if (invalidForecastCategoryVendors.size > 0) {
+    const forecastUsable = invalidForecastFacts === 0;
+    if (!forecastUsable) {
         flags.push(
-            `Forecast categories need correction for ${[...invalidForecastCategoryVendors].sort().join(", ")}.`,
-        );
-    }
-    if (invalidForecastMethodVendors.size > 0) {
-        flags.push(
-            `Forecast methods need correction for ${[...invalidForecastMethodVendors].sort().join(", ")}.`,
+            `${invalidForecastFacts} forecast ${invalidForecastFacts === 1 ? "fact needs" : "facts need"} correction (${[...invalidForecastReasons].sort().join(", ")}) for ${[...invalidForecastVendors].sort().join(", ")}; month-end cash and runway are unavailable.`,
         );
     }
 
@@ -248,14 +258,14 @@ export function buildRunway(
     );
     const lastFutureForecastMonth = futureForecastMonths.at(-1);
     const missingFutureMonths: string[] = [];
-    if (!forecastByMonth.has(currentMonth)) {
+    if (forecastUsable && !forecastByMonth.has(currentMonth)) {
         flags.push(
             "No current-month plan; month-end cash and runway are unavailable.",
         );
     }
-    if (!lastFutureForecastMonth) {
+    if (forecastUsable && !lastFutureForecastMonth) {
         flags.push("No future plan; runway is unavailable.");
-    } else {
+    } else if (forecastUsable && lastFutureForecastMonth) {
         for (const month of monthRange(
             monthShift(currentMonth, 1),
             lastFutureForecastMonth,
@@ -373,12 +383,13 @@ export function buildRunway(
         .at(-1);
     const currentCashUsd = cashBalanceByMonth.get(currentMonth) ?? null;
     const currentPlan = forecastPlanMatchByMonth.get(currentMonth);
-    const remainingCurrentPlanUsd = currentPlan
-        ? remainingPlanUsd(
-              currentPlan,
-              actualPlanMatchByMonth.get(currentMonth),
-          )
-        : null;
+    const remainingCurrentPlanUsd =
+        forecastUsable && currentPlan
+            ? remainingPlanUsd(
+                  currentPlan,
+                  actualPlanMatchByMonth.get(currentMonth),
+              )
+            : null;
     const projectedMonthEndCashUsd =
         currentCashUsd != null && remainingCurrentPlanUsd != null
             ? currentCashUsd + remainingCurrentPlanUsd
@@ -427,6 +438,7 @@ export function buildRunway(
     let runwayCapped = false;
     if (
         projectedMonthEndCashUsd != null &&
+        forecastUsable &&
         futureForecastMonths.length > 0 &&
         missingFutureMonths.length === 0
     ) {

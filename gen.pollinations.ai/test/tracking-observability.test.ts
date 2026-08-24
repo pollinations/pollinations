@@ -2147,14 +2147,14 @@ describe("tracking observability", () => {
         expect(after?.tierBalance).toBe(1);
     });
 
-    it("records fallbackUsed=true when Portkey served a non-primary target", async () => {
+    it("records fallbackUsed=true for a non-primary target", async () => {
         const event = await captureFallbackEvent({
             "x-fallback-target": "config.targets[1]",
         });
         expect(event.fallbackUsed).toBe(true);
     });
 
-    it("records fallbackUsed=false when Portkey served the primary target", async () => {
+    it("records fallbackUsed=false for the primary target", async () => {
         const event = await captureFallbackEvent({
             "x-fallback-target": "config.targets[0]",
         });

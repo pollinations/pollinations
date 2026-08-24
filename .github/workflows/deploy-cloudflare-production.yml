@@ -290,8 +290,12 @@ jobs:
   # changed private MCP applications before Gen. The automatic Applications
   # workflow excludes MCP Workers so it cannot race this dependency chain.
   deploy-mcp-apps:
-    needs: [changes]
-    if: needs.changes.outputs.mcp_apps != '[]'
+    needs: [changes, deploy-media]
+    if: >-
+      always() &&
+      needs.changes.outputs.mcp_apps != '[]' &&
+      (needs.deploy-media.result == 'success' ||
+       needs.deploy-media.result == 'skipped')
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

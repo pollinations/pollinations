@@ -5,6 +5,7 @@ import {
     PromptAgentConfigSchema,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
+import { MCP_SERVER_IDS } from "@shared/registry/mcp.ts";
 import {
     createTestApiKey,
     createTestUser,
@@ -73,9 +74,9 @@ describe("prompt-agent config", () => {
         expect(
             PromptAgentConfigSchema.parse({
                 ...config,
-                mcpServers: ["pollinations", "ffmpeg"],
+                mcpServers: MCP_SERVER_IDS,
             }),
-        ).toEqual({ ...config, mcpServers: ["pollinations", "ffmpeg"] });
+        ).toEqual({ ...config, mcpServers: MCP_SERVER_IDS });
     });
 });
 describe("prompt-agent runtime", () => {

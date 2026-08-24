@@ -3,7 +3,7 @@
 ## Design Principles
 
 1. **Thin proxy, single gateway.** All API calls go through `gen.pollinations.ai`. Do not add local model, default, pricing, or error policy.
-2. **Eight tools.** Keep the public surface at `listModels`, `chatCompletion`, `generateImage`, `generateVideo`, `textToSpeech`, `transcribeAudio`, `getBalance`, and `getUsage`. Extend these request schemas instead of adding semantic wrappers.
+2. **One tool per distinct capability.** Keep embeddings, 3D, general audio, model status, and other endpoint capabilities available. Remove semantic convenience wrappers only when another tool fully preserves the capability.
 3. **Raw pass-through.** Forward request fields and preserve upstream JSON. Reshape only when MCP requires a content block for binary image, video, or audio data.
 4. **Stateless authentication.** Hosted credentials come from request context. Stdio credentials come from `POLLINATIONS_API_KEY`. Never add mutable credential tools or process-global request credentials.
 
@@ -17,14 +17,17 @@ packages/mcp/
     services/
       imageService.js            # generateImage, generateVideo
       textService.js             # chatCompletion, listModels
-      audioService.js            # textToSpeech, transcribeAudio
+      audioService.js            # generateAudio, textToSpeech, transcribeAudio
+      embeddingService.js        # createEmbeddings
+      model3dService.js           # generate3D
+      discoveryService.js         # getModelStatus
       accountService.js          # getBalance, getUsage
     utils/
       authUtils.js               # request/environment auth projection
       coreUtils.js               # Gen URL, fetch, and MCP content helpers
 ```
 
-The hosted Streamable HTTP Worker is in `apps/mcp/` and must expose the same eight tools as stdio.
+The hosted Streamable HTTP Worker is in `apps/mcp/` and must expose the same tools as stdio.
 
 ## Stdio Discipline
 

@@ -7,6 +7,21 @@ import {
     createTextContent,
     fetchResponseWithAuth,
 } from "../utils/coreUtils.js";
+import { fetchGeneratedMedia } from "../utils/mediaUtils.js";
+
+async function generateAudio(params, context) {
+    const { text, output, ...options } = params;
+    const url = buildUrl(`/audio/${encodeURIComponent(text)}`, options);
+    const { data, contentType } = await fetchGeneratedMedia(
+        url,
+        { expectedType: "audio", output, timeoutMs: 600000 },
+        context,
+    );
+    if (data === undefined) {
+        return createMCPResponse([createTextContent(url)]);
+    }
+    return createMCPResponse([{ type: "audio", data, mimeType: contentType }]);
+}
 
 async function textToSpeech(params, context) {
     requireApiKey(context);
@@ -106,6 +121,21 @@ export async function transcribeAudio(params, context) {
 }
 
 export const audioTools = [
+    [
+        "generateAudio",
+        "Generate speech, music, or sound and return its Gen URL or inline MCP audio.",
+        z
+            .object({
+                text: z.string().min(1),
+                model: z
+                    .string()
+                    .optional()
+                    .describe("Audio model; use listModels"),
+                output: z.enum(["url", "inline"]).optional(),
+            })
+            .passthrough(),
+        generateAudio,
+    ],
     [
         "textToSpeech",
         "Convert text to speech through Gen's OpenAI-compatible audio endpoint.",

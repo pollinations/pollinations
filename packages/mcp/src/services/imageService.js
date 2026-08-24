@@ -1,47 +1,30 @@
 import { z } from "zod";
-import { requireApiKey } from "../utils/authUtils.js";
 import {
-    arrayBufferToBase64,
     buildUrl,
     createMCPResponse,
     createTextContent,
-    fetchResponseWithAuth,
 } from "../utils/coreUtils.js";
+import { fetchGeneratedMedia } from "../utils/mediaUtils.js";
 
 function mediaUrl({ prompt, output: _output, ...params }) {
     return buildUrl(`/image/${encodeURIComponent(prompt)}`, params);
 }
 
-async function fetchMedia(url, expectedType, context) {
-    const response = await fetchResponseWithAuth(
-        url,
-        { timeoutMs: expectedType === "video" ? 600000 : 300000 },
-        context,
-    );
-    const contentType = response.headers.get("content-type") || "";
-    if (!contentType.startsWith(`${expectedType}/`)) {
-        await response.body?.cancel();
-        throw new Error(
-            `Expected ${expectedType} response, received ${contentType || "no content type"}`,
-        );
-    }
-    return { response, contentType };
-}
-
 async function generateMedia(params, expectedType, context) {
-    requireApiKey(context);
     const url = mediaUrl(params);
-    const { response, contentType } = await fetchMedia(
+    const { data, contentType } = await fetchGeneratedMedia(
         url,
-        expectedType,
+        {
+            expectedType,
+            output: params.output,
+            timeoutMs: expectedType === "video" ? 600000 : 300000,
+        },
         context,
     );
-    if ((params.output || "url") === "url") {
-        await response.body?.cancel();
+    if (data === undefined) {
         return createMCPResponse([createTextContent(url)]);
     }
 
-    const data = arrayBufferToBase64(await response.arrayBuffer());
     if (expectedType === "image") {
         return createMCPResponse([
             { type: "image", data, mimeType: contentType },

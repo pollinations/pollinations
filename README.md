@@ -230,7 +230,7 @@ Browser clients pass the key as a query parameter (`?key=`); server clients can 
 
 ### MCP Server for AI Assistants
 
-Our stateless MCP (Model Context Protocol) server gives AI assistants eight low-level tools for model discovery, generation, transcription, and account usage. [Learn more](./packages/mcp/README.md)
+Our stateless MCP (Model Context Protocol) server gives AI assistants direct tools for every supported generation, model-discovery, transcription, and account capability. [Learn more](./packages/mcp/README.md)
 
 #### Configuration
 

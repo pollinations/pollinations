@@ -9,9 +9,13 @@ import worker from "./worker.js";
 const TOKEN = "sk_test_request_scoped";
 const EXPECTED_TOOLS = [
     "chatCompletion",
+    "createEmbeddings",
+    "generate3D",
+    "generateAudio",
     "generateImage",
     "generateVideo",
     "getBalance",
+    "getModelStatus",
     "getUsage",
     "listModels",
     "textToSpeech",
@@ -64,7 +68,7 @@ test("serves health and requires bearer auth", async () => {
     );
 });
 
-test("serves exactly eight tools to modern and legacy clients", async () => {
+test("serves every distinct capability to modern and legacy clients", async () => {
     const modern = await connectClient({
         versionNegotiation: { mode: "auto" },
     });
@@ -239,5 +243,51 @@ test("proxies raw model and key-usage data", async (t) => {
         "https://gen.pollinations.ai/models",
         "https://gen.pollinations.ai/account/key/usage?days=7&limit=5",
     ]);
+    await client.close();
+});
+
+test("proxies restored JSON capabilities without reconstruction", async (t) => {
+    const originalFetch = globalThis.fetch;
+    let embeddingBody;
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+    globalThis.fetch = async (input, init) => {
+        const url = String(input);
+        if (url.endsWith("/v1/embeddings")) {
+            embeddingBody = JSON.parse(init.body);
+            return Response.json({
+                data: [{ embedding: [0.1] }],
+                provider_extension: "kept",
+            });
+        }
+        if (url.endsWith("/v1/models/status?minutes=15")) {
+            return Response.json({ models: [], status_extension: "kept" });
+        }
+        throw new Error(`Unexpected URL: ${url}`);
+    };
+
+    const client = await connectClient({
+        versionNegotiation: { mode: "auto" },
+    });
+    const embeddings = await client.callTool({
+        name: "createEmbeddings",
+        arguments: {
+            input: "hello",
+            model: "embedding-model",
+            provider_options: { custom: true },
+        },
+    });
+    const status = await client.callTool({
+        name: "getModelStatus",
+        arguments: { minutes: 15 },
+    });
+    assert.deepEqual(embeddingBody, {
+        input: "hello",
+        model: "embedding-model",
+        provider_options: { custom: true },
+    });
+    assert.match(embeddings.content[0].text, /provider_extension/);
+    assert.match(status.content[0].text, /status_extension/);
     await client.close();
 });

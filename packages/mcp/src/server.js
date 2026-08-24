@@ -1,11 +1,22 @@
 import { createMcpHandler, McpServer } from "@modelcontextprotocol/server";
 import { accountTools } from "./services/accountService.js";
 import { audioTools } from "./services/audioService.js";
+import { discoveryTools } from "./services/discoveryService.js";
+import { embeddingTools } from "./services/embeddingService.js";
 import { imageTools } from "./services/imageService.js";
+import { model3dTools } from "./services/model3dService.js";
 import { textTools } from "./services/textService.js";
 import { validateApiBaseUrl } from "./utils/coreUtils.js";
 
-const tools = [...imageTools, ...textTools, ...audioTools, ...accountTools];
+const tools = [
+    ...imageTools,
+    ...textTools,
+    ...audioTools,
+    ...embeddingTools,
+    ...model3dTools,
+    ...discoveryTools,
+    ...accountTools,
+];
 
 export { createMcpHandler };
 

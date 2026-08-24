@@ -2,14 +2,23 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { accountTools } from "../src/services/accountService.js";
 import { audioTools } from "../src/services/audioService.js";
+import { discoveryTools } from "../src/services/discoveryService.js";
+import { embeddingTools } from "../src/services/embeddingService.js";
 import { imageTools } from "../src/services/imageService.js";
+import { model3dTools } from "../src/services/model3dService.js";
 import { textTools } from "../src/services/textService.js";
 
 const context = { http: { authInfo: { token: "sk_test" } } };
 const handlers = new Map(
-    [...imageTools, ...textTools, ...audioTools, ...accountTools].map(
-        ([name, _description, _schema, handler]) => [name, handler],
-    ),
+    [
+        ...imageTools,
+        ...textTools,
+        ...audioTools,
+        ...embeddingTools,
+        ...model3dTools,
+        ...discoveryTools,
+        ...accountTools,
+    ].map(([name, _description, _schema, handler]) => [name, handler]),
 );
 
 function mockFetch(t, implementation) {
@@ -20,12 +29,16 @@ function mockFetch(t, implementation) {
     });
 }
 
-test("registers exactly the eight low-level handlers", () => {
+test("registers one low-level handler for every distinct capability", () => {
     assert.deepEqual([...handlers.keys()].sort(), [
         "chatCompletion",
+        "createEmbeddings",
+        "generate3D",
+        "generateAudio",
         "generateImage",
         "generateVideo",
         "getBalance",
+        "getModelStatus",
         "getUsage",
         "listModels",
         "textToSpeech",
@@ -137,4 +150,113 @@ test("textToSpeech forwards the raw request and wraps binary for MCP", async (t)
     assert.deepEqual(result, {
         content: [{ type: "audio", data: "BAUG", mimeType: "audio/mpeg" }],
     });
+});
+
+test("createEmbeddings preserves request and response extensions", async (t) => {
+    let requestBody;
+    mockFetch(t, async (input, init) => {
+        assert.equal(
+            String(input),
+            "https://gen.pollinations.ai/v1/embeddings",
+        );
+        requestBody = JSON.parse(init.body);
+        return Response.json({
+            data: [{ embedding: [0.1, 0.2] }],
+            provider_extension: "kept",
+        });
+    });
+    const result = await handlers.get("createEmbeddings")(
+        {
+            input: "hello",
+            model: "embedding-model",
+            provider_options: { kept: true },
+        },
+        context,
+    );
+    assert.deepEqual(requestBody, {
+        input: "hello",
+        model: "embedding-model",
+        provider_options: { kept: true },
+    });
+    assert.match(result.content[0].text, /provider_extension/);
+});
+
+test("generate3D preserves Gen parameters and wraps inline GLB", async (t) => {
+    let requestedUrl;
+    mockFetch(t, async (input) => {
+        requestedUrl = String(input);
+        return new Response(new Uint8Array([7, 8, 9]), {
+            headers: { "Content-Type": "model/gltf-binary" },
+        });
+    });
+    const result = await handlers.get("generate3D")(
+        {
+            prompt: "a robot",
+            model: "trellis-2",
+            output: "inline",
+            provider_extension: "kept",
+        },
+        context,
+    );
+    assert.equal(
+        requestedUrl,
+        "https://gen.pollinations.ai/3d/a%20robot?model=trellis-2&provider_extension=kept",
+    );
+    assert.deepEqual(result.content, [
+        {
+            type: "resource",
+            resource: {
+                uri: requestedUrl,
+                mimeType: "model/gltf-binary",
+                blob: "BwgJ",
+            },
+        },
+    ]);
+});
+
+test("generateAudio preserves music parameters", async (t) => {
+    let requestedUrl;
+    mockFetch(t, async (input) => {
+        requestedUrl = String(input);
+        return new Response(new Uint8Array([10, 11, 12]), {
+            headers: { "Content-Type": "audio/mpeg" },
+        });
+    });
+    const result = await handlers.get("generateAudio")(
+        {
+            text: "upbeat jazz",
+            model: "elevenmusic",
+            duration: 30,
+            instrumental: true,
+            output: "inline",
+        },
+        context,
+    );
+    assert.equal(
+        requestedUrl,
+        "https://gen.pollinations.ai/audio/upbeat%20jazz?model=elevenmusic&duration=30&instrumental=true",
+    );
+    assert.deepEqual(result.content, [
+        { type: "audio", data: "CgsM", mimeType: "audio/mpeg" },
+    ]);
+});
+
+test("getModelStatus returns raw status data", async (t) => {
+    let requestedUrl;
+    mockFetch(t, async (input) => {
+        requestedUrl = String(input);
+        return Response.json({
+            models: [{ name: "openai", p95_ms: 123 }],
+            new_field: "kept",
+        });
+    });
+    const result = await handlers.get("getModelStatus")(
+        { minutes: 15 },
+        context,
+    );
+    assert.equal(
+        requestedUrl,
+        "https://gen.pollinations.ai/v1/models/status?minutes=15",
+    );
+    assert.match(result.content[0].text, /new_field/);
 });

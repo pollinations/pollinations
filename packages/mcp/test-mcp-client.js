@@ -29,9 +29,13 @@ if (!apiKey) {
 
 const expectedTools = [
     "chatCompletion",
+    "createEmbeddings",
+    "generate3D",
+    "generateAudio",
     "generateImage",
     "generateVideo",
     "getBalance",
+    "getModelStatus",
     "getUsage",
     "listModels",
     "textToSpeech",
@@ -73,7 +77,7 @@ async function step(name, run) {
 
 const modern = await connect({ versionNegotiation: { mode: "auto" } });
 let modernTools;
-await step("modern protocol and eight tools", async () => {
+await step("modern protocol and complete tool surface", async () => {
     assert.equal(modern.getProtocolEra(), "modern");
     modernTools = (await modern.listTools()).tools;
     assert.deepEqual(modernTools.map(({ name }) => name).sort(), expectedTools);

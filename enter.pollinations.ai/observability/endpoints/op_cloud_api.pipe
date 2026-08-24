@@ -4,44 +4,49 @@ NODE endpoint
 SQL >
     SELECT
         entry_id,
-        source,
-        start,
-        end,
-        vendor,
-        account_id,
-        account_name,
-        type,
-        model,
-        credit,
-        paid,
-        currency,
-        evidence,
-        formatDateTime(latest_recorded_at, '%F %T') AS recorded_at,
-        resource_sku,
-        resource_count,
-        resource_id,
-        resource_name
+        tupleElement(latest, 1) AS source,
+        tupleElement(latest, 2) AS start,
+        tupleElement(latest, 3) AS end,
+        tupleElement(latest, 4) AS vendor,
+        ifNull(tupleElement(latest, 5), '') AS account_id,
+        ifNull(tupleElement(latest, 6), '') AS account_name,
+        tupleElement(latest, 7) AS type,
+        tupleElement(latest, 8) AS model,
+        tupleElement(latest, 9) AS credit,
+        tupleElement(latest, 10) AS paid,
+        tupleElement(latest, 11) AS currency,
+        tupleElement(latest, 12) AS evidence,
+        formatDateTime(tupleElement(latest, 17), '%F %T') AS recorded_at,
+        tupleElement(latest, 13) AS resource_sku,
+        tupleElement(latest, 14) AS resource_count,
+        tupleElement(latest, 15) AS resource_id,
+        tupleElement(latest, 16) AS resource_name
     FROM
     (
         SELECT
             entry_id,
-            argMax(source, recorded_at) AS source,
-            argMax(start, recorded_at) AS start,
-            argMax(end, recorded_at) AS end,
-            argMax(vendor, recorded_at) AS vendor,
-            ifNull(argMax(account_id, recorded_at), '') AS account_id,
-            ifNull(argMax(account_name, recorded_at), '') AS account_name,
-            argMax(type, recorded_at) AS type,
-            argMax(model, recorded_at) AS model,
-            argMax(credit, recorded_at) AS credit,
-            argMax(paid, recorded_at) AS paid,
-            argMax(currency, recorded_at) AS currency,
-            argMax(evidence, recorded_at) AS evidence,
-            argMax(resource_sku, recorded_at) AS resource_sku,
-            argMax(resource_count, recorded_at) AS resource_count,
-            argMax(resource_id, recorded_at) AS resource_id,
-            argMax(resource_name, recorded_at) AS resource_name,
-            max(recorded_at) AS latest_recorded_at
+            argMax(
+                tuple(
+                    source,
+                    start,
+                    end,
+                    vendor,
+                    account_id,
+                    account_name,
+                    type,
+                    model,
+                    credit,
+                    paid,
+                    currency,
+                    evidence,
+                    resource_sku,
+                    resource_count,
+                    resource_id,
+                    resource_name,
+                    recorded_at
+                ),
+                recorded_at
+            ) AS latest
         FROM op_cloud
         GROUP BY entry_id
     )

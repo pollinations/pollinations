@@ -57,56 +57,61 @@ SQL >
         UNION ALL
 
         SELECT
-            month,
+            tupleElement(latest, 1) AS month,
             if(
-                month = '2026-03'
-                AND provider = 'io.net'
-                AND model IN ('flux', 'zimage'),
+                tupleElement(latest, 1) = '2026-03'
+                AND tupleElement(latest, 2) = 'io.net'
+                AND tupleElement(latest, 3) IN ('flux', 'zimage'),
                 'vast.ai',
-                provider
+                tupleElement(latest, 2)
             ) AS vendor,
-            model,
-            toUInt8(reason = 'workspace_snapshot') AS replaces_base,
-            cost_paid,
-            cost_quests,
-            price_paid,
-            price_quests,
-            byop_paid,
-            byop_quests,
-            model_paid,
-            model_quests,
-            requests_paid,
-            requests_quests
+            tupleElement(latest, 3) AS model,
+            toUInt8(tupleElement(latest, 4) = 'workspace_snapshot') AS replaces_base,
+            tupleElement(latest, 5) AS cost_paid,
+            tupleElement(latest, 6) AS cost_quests,
+            tupleElement(latest, 7) AS price_paid,
+            tupleElement(latest, 8) AS price_quests,
+            tupleElement(latest, 9) AS byop_paid,
+            tupleElement(latest, 10) AS byop_quests,
+            tupleElement(latest, 11) AS model_paid,
+            tupleElement(latest, 12) AS model_quests,
+            tupleElement(latest, 13) AS requests_paid,
+            tupleElement(latest, 14) AS requests_quests
         FROM
         (
             SELECT
                 entry_id,
-                argMax(month, recorded_at) AS month,
-                argMax(provider, recorded_at) AS provider,
-                argMax(model, recorded_at) AS model,
-                argMax(reason, recorded_at) AS reason,
-                argMax(cost_paid, recorded_at) AS cost_paid,
-                argMax(cost_quests, recorded_at) AS cost_quests,
-                argMax(price_paid, recorded_at) AS price_paid,
-                argMax(price_quests, recorded_at) AS price_quests,
-                argMax(byop_paid, recorded_at) AS byop_paid,
-                argMax(byop_quests, recorded_at) AS byop_quests,
-                argMax(model_paid, recorded_at) AS model_paid,
-                argMax(model_quests, recorded_at) AS model_quests,
-                argMax(requests_paid, recorded_at) AS requests_paid,
-                argMax(requests_quests, recorded_at) AS requests_quests,
-                argMax(evidence, recorded_at) AS evidence
+                argMax(
+                    tuple(
+                        month,
+                        provider,
+                        model,
+                        reason,
+                        cost_paid,
+                        cost_quests,
+                        price_paid,
+                        price_quests,
+                        byop_paid,
+                        byop_quests,
+                        model_paid,
+                        model_quests,
+                        requests_paid,
+                        requests_quests,
+                        evidence
+                    ),
+                    recorded_at
+                ) AS latest
             FROM op_pollen_history
             GROUP BY entry_id
         )
         WHERE NOT (
-            cost_paid = 0
-            AND cost_quests = 0
-            AND price_paid = 0
-            AND price_quests = 0
-            AND requests_paid = 0
-            AND requests_quests = 0
-            AND positionCaseInsensitive(evidence, 'superseded') > 0
+            tupleElement(latest, 5) = 0
+            AND tupleElement(latest, 6) = 0
+            AND tupleElement(latest, 7) = 0
+            AND tupleElement(latest, 8) = 0
+            AND tupleElement(latest, 13) = 0
+            AND tupleElement(latest, 14) = 0
+            AND positionCaseInsensitive(tupleElement(latest, 15), 'superseded') > 0
         )
     )
     GROUP BY month, vendor, model

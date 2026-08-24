@@ -305,24 +305,13 @@ function sendTextStreamResponse(
         headers.set(FALLBACK_TARGET_HEADER, completion.fallbackTarget);
     }
 
-    if (completion.responseStream instanceof ReadableStream) {
-        return new Response(completion.responseStream, { headers });
+    if (!completion.responseStream) {
+        throw new UpstreamError(502, {
+            message: "Text model returned an empty stream",
+            requestUrl: completion.upstreamRequestUrl,
+        });
     }
-
-    // Defensive: upstream produced a null stream body.
-    const encoder = new TextEncoder();
-    const fallbackStream = new ReadableStream<Uint8Array>({
-        start(controller) {
-            controller.enqueue(
-                encoder.encode(
-                    `data: ${JSON.stringify({ choices: [{ delta: { content: "Streaming response could not be processed." }, finish_reason: "stop", index: 0 }] })}\n\n`,
-                ),
-            );
-            controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-            controller.close();
-        },
-    });
-    return new Response(fallbackStream, { headers });
+    return new Response(completion.responseStream, { headers });
 }
 
 function base64ToArrayBuffer(value: string): ArrayBuffer {
@@ -392,9 +381,9 @@ async function generateTextResponse(
         );
         c.set("upstreamRequestUrl", completion.upstreamRequestUrl);
         completion.id = completion.id || generatePollinationsId();
-        // Same "config.targets[N]" shape a Portkey strategy would report, so
-        // the response header and tracking's parsing cover both. Non-enumerable
-        // so JSON.stringify / R2 cache snapshots never leak the field.
+        // Keep the internal "config.targets[N]" marker stable for response
+        // headers and cached tracking data. Non-enumerable so JSON.stringify /
+        // R2 cache snapshots never leak the field.
         attachFallbackTarget(completion, index);
 
         // The successful candidate always carries the canonical registry id,

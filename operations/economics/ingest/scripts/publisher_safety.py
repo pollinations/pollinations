@@ -76,3 +76,9 @@ def assert_immutable_fields(rows, current_rows, fields):
         raise RuntimeError(
             "Corrections cannot change immutable fields: " + ", ".join(changed)
         )
+
+
+def canonical_pollen_provider(month, provider, model):
+    if month == "2026-03" and provider == "io.net" and model in {"flux", "zimage"}:
+        return "vast.ai"
+    return provider

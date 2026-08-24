@@ -3,6 +3,7 @@ import unittest
 from publisher_safety import (
     assert_immutable_fields,
     assert_newer_versions,
+    canonical_pollen_provider,
     latest_version_query,
     validate_recorded_at,
 )
@@ -44,6 +45,16 @@ class PublisherSafetyTest(unittest.TestCase):
                 current,
                 ["reason"],
             )
+
+    def test_matches_the_endpoint_pollen_provider_relabel(self):
+        self.assertEqual(
+            canonical_pollen_provider("2026-03", "io.net", "flux"),
+            "vast.ai",
+        )
+        self.assertEqual(
+            canonical_pollen_provider("2026-04", "io.net", "flux"),
+            "io.net",
+        )
 
 
 if __name__ == "__main__":

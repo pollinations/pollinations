@@ -10,6 +10,7 @@ from tinybird.tb.client import TinyB
 from publisher_safety import (
     assert_immutable_fields,
     assert_newer_versions,
+    canonical_pollen_provider,
     latest_version_query,
     validate_recorded_at,
 )
@@ -146,13 +147,9 @@ def verify_exact_rows(expected, actual, fields, key):
 def endpoint_snapshot(rows):
     grouped = {}
     for row in rows:
-        provider = row["provider"]
-        if (
-            row["month"] == "2026-03"
-            and provider == "io.net"
-            and row["model"] in {"flux", "zimage"}
-        ):
-            provider = "vast.ai"
+        provider = canonical_pollen_provider(
+            row["month"], row["provider"], row["model"]
+        )
         row_key = (row["month"], provider, row["model"])
         aggregate = grouped.setdefault(
             row_key,
@@ -188,8 +185,17 @@ def main():
     if any(row["reason"] == "workspace_snapshot" for row in expected) and not snapshot_mode:
         raise RuntimeError("workspace_snapshot input cannot mix with additive history rows")
     expected_keys = {
-        (row["month"], row["provider"], row["model"]) for row in expected
+        (
+            row["month"],
+            canonical_pollen_provider(row["month"], row["provider"], row["model"]),
+            row["model"],
+        )
+        for row in expected
     }
+    if len(expected_keys) != len(expected):
+        raise RuntimeError(
+            "Input contains rows that collide after endpoint provider normalization"
+        )
     endpoint_before = admin.pipe_data("op_pollen_api").get("data", [])
     collisions = [
         row
@@ -267,7 +273,15 @@ def main():
             lambda row: (row["month"], row["vendor"], row["model"]),
         )
     else:
-        endpoint_expected = [{**row, "vendor": row["provider"]} for row in expected]
+        endpoint_expected = [
+            {
+                **row,
+                "vendor": canonical_pollen_provider(
+                    row["month"], row["provider"], row["model"]
+                ),
+            }
+            for row in expected
+        ]
         verify_rows(
             endpoint_expected,
             endpoint_after,

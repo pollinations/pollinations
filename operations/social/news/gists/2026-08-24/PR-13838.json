@@ -1,0 +1,34 @@
+{
+  "pr_number": 13838,
+  "title": "fix: exclude Mistral ZDR pricing variant",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13838",
+  "merged_at": "2026-08-24T12:58:23Z",
+  "labels": [],
+  "pr_body_excerpt": "- Excludes the 10%-higher `mistral/zdr` endpoint from the existing OpenRouter Mistral pin.\n- Keeps `mistralai/mistral-small-2603`, provider fallback disabled, and the verified standard sheet at $0.15/$0.015/$0.60 per 1M input/cache/output tokens.\n- Preserves the canonical name, aliases, capabilities, paid-only access, multiplier, GPU status, and no Pollinations fallback.\n- Direct OpenRouter probe selected Mistral and reconciled the standard sheet exactly; the [endpoint catalog](https://openrouter.ai/api/v1/models/mistralai/mistral-small-2603/endpoints) still lists the ZDR sheet at $0.165/$0.0165/$0.66.\n- Local E2E passed text, vision, tools, reasoning, JSON, streaming, every alias, five-request burst, prompt cache, output-cache HIT, wallet/tracking settlement, 41 resolver tests, typecheck, and Biome.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The pricier branch got pruned",
+    "blurb": "Mistral Small now stays pinned to its verified standard OpenRouter endpoint, rather than wandering into the 10%-higher ZDR variant. The hive checked the receipt twice.",
+    "summary": "Updated the OpenRouter pin for `mistralai/mistral-small-2603` to exclude the `mistral/zdr` endpoint and consistently use the verified standard $0.15/$0.015/$0.60-per-1M input/cache/output-token pricing sheet.",
+    "impact": "Paid users and aliases for Mistral Small retain the same capabilities, streaming, tools, vision, reasoning, JSON, and no-fallback behavior while receiving consistent standard-endpoint billing.",
+    "keywords": [
+      "mistral",
+      "openrouter",
+      "pricing",
+      "model-routing",
+      "billing",
+      "text-api"
+    ],
+    "visual_concept": "Depict Polli as a careful garden keeper pruning a clearly labeled, slightly overgrown `ZDR` branch from a Mistral model-routing plant, leaving a healthy standard-price blossom with a tidy token-price ledger. A cozy retro terminal can show the stable Mistral Small pin and a tiny verified checkmark, with code-plants and flowers reinforcing that routing and pricing have been reconciled.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny gardener glasses and carefully pruning a branch labeled `ZDR` from a thriving code-plant while a retro terminal displays `Mistral Small` and a pixel checkmark beside a neat token ledger. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm cream garden shed, chunky retro sprites, soft lighting, lo-fi vibes like Stardew Valley or A Short Hike, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-24/PR-13838.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny gardener glasses and carefully pruning a branch labeled `ZDR` from a thriving code-plant while a retro terminal displays `Mistral Small` and a pixel checkmark beside a neat token ledger. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm cream garden shed, chunky retro sprites, soft lighting, lo-fi vibes like Stardew Valley or A Short Hike, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-24T12:59:21.067937+00:00"
+}

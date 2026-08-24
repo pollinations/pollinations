@@ -79,9 +79,12 @@ test("returns 404 for models excluded by API key permissions", async ({
 
     // Allowed models retrieve fine with the same key
     for (const allowedModel of RESTRICTED_TEST_MODELS) {
-        const allowedResponse = await fetchWorker(`/v1/models/${allowedModel}`, {
-            headers: authHeaders,
-        });
+        const allowedResponse = await fetchWorker(
+            `/v1/models/${allowedModel}`,
+            {
+                headers: authHeaders,
+            },
+        );
         expect(allowedResponse.status).toBe(200);
         const body = (await allowedResponse.json()) as { id: string };
         expect(body.id).toBe(allowedModel);

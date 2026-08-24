@@ -324,7 +324,7 @@ export const proxyRoutes = new Hono<Env>()
     // Edge rate limiter: first line of defense (10 req/s per IP)
     .use("*", edgeRateLimit)
     // Optional auth for models endpoints - doesn't require auth but uses it if provided
-.use("/v1/models", auth())
+    .use("/v1/models", auth())
     .use("/v1/models/*", auth())
     .use("/image/models", auth())
     .use("/3d/models", auth())
@@ -383,7 +383,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "Retrieve Model (OpenAI-compatible)",
             description:
-                'Returns a single model in the OpenAI-compatible format, using the same model shape as `GET /v1/models`. Aliases resolve to the canonical model ID. Missing or inaccessible models return 404. The same visibility, key-permission, community, and paid-balance rules as the list endpoint apply.',
+                "Returns a single model in the OpenAI-compatible format, using the same model shape as `GET /v1/models`. Aliases resolve to the canonical model ID. Missing or inaccessible models return 404. The same visibility, key-permission, community, and paid-balance rules as the list endpoint apply.",
             responses: {
                 200: {
                     description: "Success",

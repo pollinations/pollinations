@@ -608,3 +608,57 @@ describe("Pollinations model discovery", () => {
         );
     });
 });
+
+describe("Pollinations API error handling", () => {
+    it("sets requestId from the X-Request-Id header if omitted from the body", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValueOnce(
+            makeResponse(
+                { error: { message: "Something went wrong" } },
+                {
+                    ok: false,
+                    status: 500,
+                    headers: { "x-request-id": "header-req-id" },
+                },
+            ),
+        );
+
+        let caughtError: PollinationsError | undefined;
+        try {
+            await client.image("test");
+        } catch (err) {
+            if (err instanceof PollinationsError) {
+                caughtError = err;
+            }
+        }
+
+        expect(caughtError).toBeInstanceOf(PollinationsError);
+        expect(caughtError?.requestId).toBe("header-req-id");
+    });
+
+    it("prioritizes requestId from the body over the X-Request-Id header", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValueOnce(
+            makeResponse(
+                { error: { message: "Failed", requestId: "body-req-id" } },
+                {
+                    ok: false,
+                    status: 400,
+                    headers: { "x-request-id": "header-req-id" },
+                },
+            ),
+        );
+
+        let caughtError: PollinationsError | undefined;
+        try {
+            await client.image("test");
+        } catch (err) {
+            if (err instanceof PollinationsError) {
+                caughtError = err;
+            }
+        }
+
+        expect(caughtError).toBeInstanceOf(PollinationsError);
+        expect(caughtError?.requestId).toBe("body-req-id");
+    });
+});

@@ -1,8 +1,3 @@
-import { getUserBalance, payerBucketToMeter } from "@shared/billing/balance.ts";
-import {
-    handleBalanceDeduction,
-    type MarkupResolution,
-} from "@shared/billing/track-helpers.ts";
 import {
     bytesToHex,
     getRealClientIp,
@@ -10,7 +5,6 @@ import {
     stripIPv4MappedPrefix,
     truncateIpToSubnet,
 } from "@shared/client-ip.ts";
-import { sendToTinybird } from "@shared/events.ts";
 import { redactCredentialQueryParams } from "@shared/observability/request-inputs.ts";
 import {
     type BillingAdjustment,
@@ -24,13 +18,13 @@ import {
     type UsagePrice,
     type UsageType,
 } from "@shared/registry/registry.ts";
+import type { BillableEvent } from "@shared/schemas/billable-event.ts";
 import {
     priceToEventParams,
     type TinybirdEvent,
     usageToEventParams,
 } from "@shared/schemas/generation-event.ts";
 import { getRoutePath } from "@shared/util.ts";
-import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
@@ -42,9 +36,9 @@ import {
 import { RealtimeUsageSchema } from "@/schemas/realtime.ts";
 import { generateRandomId } from "@/util.ts";
 import {
+    authorizeGenerationBilling,
+    cancelGenerationAuthorization,
     checkBalance,
-    releaseApiKeyBudgetReservation,
-    reserveApiKeyBudget,
 } from "@/utils/generation-access.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 
@@ -95,7 +89,6 @@ const UNSUPPORTED_TRANSCRIPTION_MESSAGE =
     "Realtime input transcription is not supported yet.";
 type WebSocketResponse = Response & { webSocket?: WebSocket };
 type WebSocketResponseInit = ResponseInit & { webSocket?: WebSocket };
-type RealtimeDeduction = Awaited<ReturnType<typeof handleBalanceDeduction>>;
 type RealtimeCacheUsage = {
     audioTokens: number;
     imageTokens: number;
@@ -104,9 +97,8 @@ type RealtimeBillingContext = {
     // Spread verbatim into the event, so an identity column added to UserData
     // reaches a realtime row without touching this file.
     identity: UserData & { userId: string };
-    apiKeyPollenBalance?: number | null;
-    apiKeyReservedAmount?: number;
-    byopClientKeyId?: string | null;
+    authorizationId: string;
+    eventId: string;
     modelRequested: string;
     resolvedModelRequested: string;
     modelDefinition: ModelDefinition;
@@ -124,10 +116,7 @@ type RealtimeBillingContext = {
     cacheUsage: RealtimeCacheUsage;
     missingCacheDetailsWarned: boolean;
     settlementInFlight: boolean;
-    settlementAttempts: number;
     settled: boolean;
-    deduction?: RealtimeDeduction;
-    deductionAttempted: boolean;
     rateLimitConsumed: boolean;
 };
 
@@ -733,22 +722,6 @@ function extractReferrerHeader(c: Context<Env>): {
     }
 }
 
-function getPostDeductionBalances(
-    payerBucket: "tier" | "pack" | null,
-    balances: { tierBalance: number; packBalance: number },
-) {
-    if (!payerBucket) {
-        return {};
-    }
-    return {
-        ...payerBucketToMeter(payerBucket),
-        balances: {
-            "v1:meter:tier": balances.tierBalance,
-            "v1:meter:pack": balances.packBalance,
-        },
-    };
-}
-
 function createRealtimeTrackingEvent(args: {
     tracking: RealtimeBillingContext;
     startTime: Date;
@@ -757,12 +730,9 @@ function createRealtimeTrackingEvent(args: {
     cost: UsageCost;
     price: UsagePrice;
     adjustments: BillingAdjustment[];
-    markup: MarkupResolution | null;
-    payerBucket: "tier" | "pack" | null;
-    balances: { tierBalance: number; packBalance: number };
 }): TinybirdEvent {
     return {
-        id: generateRandomId(),
+        id: args.tracking.eventId,
         requestId: args.tracking.requestId,
         requestPath: args.tracking.requestPath,
         startTime: args.startTime,
@@ -781,14 +751,13 @@ function createRealtimeTrackingEvent(args: {
         modelUsed: args.tracking.resolvedModelRequested,
         modelProviderUsed: args.tracking.modelDefinition.provider,
         isBilledUsage: true,
-        ...getPostDeductionBalances(args.payerBucket, args.balances),
         ...priceToEventParams(args.tracking.modelPriceDefinition),
         ...usageToEventParams(args.usage),
         ...reduceAdjustmentsToEventFields(args.adjustments),
         totalCost: args.cost.totalCost,
-        totalPrice: args.tracking.deduction?.billedPrice ?? 0,
+        totalPrice: 0,
         devPrice: args.price.totalPrice,
-        markupRate: args.markup?.markupRate ?? 0,
+        markupRate: 0,
     };
 }
 
@@ -797,22 +766,10 @@ async function settleRealtimeSession(
     tracking: RealtimeBillingContext,
 ): Promise<void> {
     if (tracking.settled) return;
-    tracking.settlementAttempts += 1;
 
     const usage = positiveEntries(tracking.usage);
     if (!hasPositiveUsage(usage)) {
-        if (!tracking.deductionAttempted) {
-            await handleBalanceDeduction({
-                db: drizzle(c.env.DB),
-                isBilledUsage: false,
-                userId: tracking.identity.userId,
-                apiKeyId: tracking.identity.apiKeyId,
-                apiKeyPollenBalance: tracking.apiKeyPollenBalance,
-                apiKeyReservedAmount: tracking.apiKeyReservedAmount,
-            });
-            tracking.deductionAttempted = true;
-            c.var.balance.apiKeyReservation = undefined;
-        }
+        await cancelGenerationAuthorization(c.var, c.env);
         tracking.settled = true;
         return;
     }
@@ -824,67 +781,50 @@ async function settleRealtimeSession(
         output: { realtimeCache: tracking.cacheUsage },
     });
     if (price.totalPrice <= 0) {
-        if (!tracking.deductionAttempted) {
-            await handleBalanceDeduction({
-                db: drizzle(c.env.DB),
-                isBilledUsage: false,
-                userId: tracking.identity.userId,
-                apiKeyId: tracking.identity.apiKeyId,
-                apiKeyPollenBalance: tracking.apiKeyPollenBalance,
-                apiKeyReservedAmount: tracking.apiKeyReservedAmount,
-            });
-            tracking.deductionAttempted = true;
-            c.var.balance.apiKeyReservation = undefined;
-        }
+        await cancelGenerationAuthorization(c.var, c.env);
         tracking.settled = true;
         return;
     }
 
     const eventEndTime = new Date();
-    const db = drizzle(c.env.DB) as unknown as Parameters<
-        typeof handleBalanceDeduction
-    >[0]["db"];
-
-    if (!tracking.deduction) {
-        if (tracking.deductionAttempted) return;
-        tracking.deductionAttempted = true;
-        tracking.deduction = await handleBalanceDeduction({
-            db,
-            isBilledUsage: true,
-            totalPrice: price.totalPrice,
-            userId: tracking.identity.userId,
-            apiKeyId: tracking.identity.apiKeyId,
-            apiKeyPollenBalance: tracking.apiKeyPollenBalance,
-            apiKeyReservedAmount: tracking.apiKeyReservedAmount,
-            byopClientKeyId: tracking.byopClientKeyId,
-            modelPaidOnly: tracking.modelDefinition.paidOnly,
-        });
-        c.var.balance.apiKeyReservation = undefined;
-    }
-
     if (!tracking.rateLimitConsumed) {
         await c.var.frontendKeyRateLimit?.consumePollen(price.totalPrice);
         tracking.rateLimitConsumed = true;
     }
 
-    const balances = await getUserBalance(db, tracking.identity.userId);
-    await sendToTinybird(
-        createRealtimeTrackingEvent({
-            tracking,
-            startTime: tracking.sessionStartTime,
-            endTime: eventEndTime,
-            usage,
-            cost,
-            price,
-            adjustments,
-            markup: tracking.deduction.markup,
-            payerBucket: tracking.deduction.payerBucket,
-            balances,
-        }),
-        c.env.TINYBIRD_INGEST_URL,
-        c.env.TINYBIRD_INGEST_TOKEN,
-        c.get("log").getChild("realtime"),
+    const telemetry = createRealtimeTrackingEvent({
+        tracking,
+        startTime: tracking.sessionStartTime,
+        endTime: eventEndTime,
+        usage,
+        cost,
+        price,
+        adjustments,
+    });
+    const event: BillableEvent = {
+        id: tracking.eventId,
+        requestId: tracking.requestId,
+        meter: "generate.realtime",
+        price: price.totalPrice,
+        paidOnly: tracking.modelDefinition.paidOnly ?? false,
+        occurredAt: eventEndTime.getTime(),
+        telemetry: JSON.parse(
+            JSON.stringify(telemetry),
+        ) as BillableEvent["telemetry"],
+    };
+    const result = await c.env.ENTER_BILLING.settle(tracking.authorizationId, [
+        event,
+    ]);
+    if (!result.ok) throw new Error(result.error);
+    const rejected = result.events.find(
+        (item) => item.status === "rejected" || item.status === "conflict",
     );
+    if (rejected) {
+        throw new Error(
+            `Realtime billing event ${rejected.id} was ${rejected.status}`,
+        );
+    }
+    c.var.balance.billingAuthorizationId = undefined;
     tracking.settled = true;
 }
 
@@ -953,26 +893,7 @@ function scheduleRealtimeSettlement(
                     error:
                         error instanceof Error ? error.message : String(error),
                 });
-                if (
-                    tracking.settled ||
-                    tracking.settlementAttempts >= 2 ||
-                    (tracking.deductionAttempted && !tracking.deduction)
-                ) {
-                    return;
-                }
-                return settleRealtimeSession(c, tracking).catch(
-                    (retryError) => {
-                        log.error(
-                            "Realtime session billing retry failed: {error}",
-                            {
-                                error:
-                                    retryError instanceof Error
-                                        ? retryError.message
-                                        : String(retryError),
-                            },
-                        );
-                    },
-                );
+                return cancelGenerationAuthorization(c.var, c.env);
             })
             .finally(() => {
                 tracking.settlementInFlight = false;
@@ -1394,12 +1315,16 @@ async function createRealtimeBillingContext(
             `Failed to get price definition for model: ${modelInfo.resolved}`,
         );
     }
+    const authorizationId = c.var.balance.billingAuthorizationId;
+    if (!authorizationId) {
+        throw new Error("Realtime billing authorization is missing");
+    }
 
     return {
         // requireUser() above proves the id, which the optional field cannot.
         identity: { ...requestIdentity(c.var.auth), userId: user.id },
-        apiKeyPollenBalance: c.var.auth.apiKey?.pollenBalance,
-        byopClientKeyId: c.var.auth.apiKey?.byopClientKeyId,
+        authorizationId,
+        eventId: generateRandomId(),
         modelRequested: modelInfo.requested,
         resolvedModelRequested: modelInfo.resolved,
         modelDefinition: modelInfo.definition,
@@ -1416,9 +1341,7 @@ async function createRealtimeBillingContext(
         cacheUsage: { audioTokens: 0, imageTokens: 0 },
         missingCacheDetailsWarned: false,
         settlementInFlight: false,
-        settlementAttempts: 0,
         settled: false,
-        deductionAttempted: false,
         rateLimitConsumed: false,
     };
 }
@@ -1448,37 +1371,39 @@ export async function handleRealtimeWebSocket(
         definition: c.var.model.definition,
         communityEndpoint: c.var.model.communityEndpoint,
     });
-    const tracking = await createRealtimeBillingContext(c);
     if (c.var.model.resolved === "scribe-realtime") {
         if (!c.env.ELEVENLABS_API_KEY) {
             throw new HTTPException(503, {
                 message: "ElevenLabs realtime provider is not configured.",
             });
         }
-        await reserveApiKeyBudget(c.var, c.env);
-        tracking.apiKeyReservedAmount = c.var.balance.apiKeyReservation?.amount;
-        try {
-            return proxyScribeOpenAIRealtime(c, tracking);
-        } catch (error) {
-            await releaseApiKeyBudgetReservation(c.var, c.env);
-            throw error;
-        }
     }
 
-    const upstream = await connectAzureRealtime(
-        c,
-        userId,
-        c.var.model.resolved as AzureRealtimeModelName,
-    );
-    if (upstream instanceof Response) return upstream;
-
-    await reserveApiKeyBudget(c.var, c.env);
-    tracking.apiKeyReservedAmount = c.var.balance.apiKeyReservation?.amount;
+    await authorizeGenerationBilling(c.var, c.env, c.get("requestId"));
     try {
-        return proxyRealtimeWebSockets(c, upstream, tracking);
+        const tracking = await createRealtimeBillingContext(c);
+        if (c.var.model.resolved === "scribe-realtime") {
+            return proxyScribeOpenAIRealtime(c, tracking);
+        }
+
+        const upstream = await connectAzureRealtime(
+            c,
+            userId,
+            c.var.model.resolved as AzureRealtimeModelName,
+        );
+        if (upstream instanceof Response) {
+            await cancelGenerationAuthorization(c.var, c.env);
+            return upstream;
+        }
+
+        try {
+            return proxyRealtimeWebSockets(c, upstream, tracking);
+        } catch (error) {
+            closeSocket(upstream, 1011, "Unable to start realtime session");
+            throw error;
+        }
     } catch (error) {
-        await releaseApiKeyBudgetReservation(c.var, c.env);
-        closeSocket(upstream, 1011, "Unable to start realtime session");
+        await cancelGenerationAuthorization(c.var, c.env);
         throw error;
     }
 }

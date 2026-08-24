@@ -233,14 +233,31 @@ async function waitForPackBalanceBelow(userId: string, maxBalance: number) {
     return getUserBalances(userId);
 }
 
-async function waitForTinybirdRequests(
-    upstream: ReturnType<typeof mockRealtimeProvider>,
-    count = 1,
-) {
-    for (let attempt = 0; attempt < 20; attempt++) {
-        if (upstream.tinybirdRequests.length >= count) return;
-        await new Promise((resolve) => setTimeout(resolve, 10));
-    }
+async function getRealtimeTelemetry(
+    userId: string,
+): Promise<Record<string, unknown>> {
+    const row = await env.DB.prepare(
+        `SELECT telemetry_json AS telemetryJson
+         FROM billable_event
+         WHERE user_id = ? AND meter = 'generate.realtime'
+         ORDER BY created_at DESC
+         LIMIT 1`,
+    )
+        .bind(userId)
+        .first<{ telemetryJson: string }>();
+    if (!row) throw new Error("Expected settled realtime billing event");
+    return JSON.parse(row.telemetryJson) as Record<string, unknown>;
+}
+
+async function countRealtimeEvents(userId: string): Promise<number> {
+    const row = await env.DB.prepare(
+        `SELECT COUNT(*) AS count
+         FROM billable_event
+         WHERE user_id = ? AND meter = 'generate.realtime'`,
+    )
+        .bind(userId)
+        .first<{ count: number }>();
+    return row?.count ?? 0;
 }
 
 async function openPaidRealtimeSession({
@@ -344,18 +361,19 @@ type PaidRealtimeSession = Awaited<ReturnType<typeof openPaidRealtimeSession>>;
 type RealtimeSession = Pick<PaidRealtimeSession, "client" | "ctx" | "upstream">;
 
 async function closeRealtimeSession(session: RealtimeSession) {
-    session.client.close();
-    session.upstream.maybeServer?.close();
+    session.client.close(1000, "test complete");
+    session.upstream.maybeServer?.close(1000, "test complete");
+    // WebSocket close handlers run in a later workerd task and register the
+    // financial settlement with this request's execution context.
+    await new Promise((resolve) => setTimeout(resolve, 0));
     await waitOnExecutionContext(session.ctx);
 }
 
-async function closeAndReadTelemetry(session: RealtimeSession) {
+async function closeAndReadTelemetry(
+    session: RealtimeSession & { userId: string },
+) {
     await closeRealtimeSession(session);
-    await waitForTinybirdRequests(session.upstream);
-    expect(session.upstream.tinybirdRequests).toHaveLength(1);
-    return JSON.parse(
-        await session.upstream.tinybirdRequests[0].text(),
-    ) as Record<string, unknown>;
+    return getRealtimeTelemetry(session.userId);
 }
 
 const cachedModalityUsageEvent = JSON.stringify({
@@ -469,9 +487,7 @@ test("proxies OpenAI-compatible realtime WebSockets on both public routes", asyn
         upstream.server.send(serverEvent);
         await expect(downstreamMessage).resolves.toBe(serverEvent);
 
-        client.close();
-        upstream.server.close();
-        await waitOnExecutionContext(ctx);
+        await closeRealtimeSession({ client, ctx, upstream });
         vi.restoreAllMocks();
     }
 });
@@ -504,7 +520,7 @@ test("completes both sides of the Azure close handshake", async () => {
     await expect(clientClose).resolves.toMatchObject({ code: 1000 });
     await expect(upstreamClose).resolves.toMatchObject({ code: 1000 });
     await waitOnExecutionContext(session.ctx);
-    expect(session.upstream.tinybirdRequests).toHaveLength(0);
+    expect(await countRealtimeEvents(session.userId)).toBe(0);
 });
 
 test("does not reply to an abnormal Azure close", async () => {
@@ -544,9 +560,8 @@ test("routes the mini model through the working East US 2 deployment", async ({
 
     response.webSocket?.accept();
     upstream.server.accept();
-    response.webSocket?.close();
-    upstream.server.close();
-    await waitOnExecutionContext(ctx);
+    if (!response.webSocket) throw new Error("Expected downstream WebSocket");
+    await closeRealtimeSession({ client: response.webSocket, ctx, upstream });
 });
 
 test("serves GPT Live Transcribe through Azure and bills streamed duration", async () => {
@@ -648,14 +663,8 @@ test("serves GPT Live Transcribe through Azure and bills streamed duration", asy
         transcript: "hello",
     });
 
-    client.close();
-    upstream.server.close();
-    await waitOnExecutionContext(ctx);
-    await waitForTinybirdRequests(upstream);
-    expect(upstream.tinybirdRequests).toHaveLength(1);
-    const telemetry = JSON.parse(
-        await upstream.tinybirdRequests[0].text(),
-    ) as Record<string, unknown>;
+    await closeRealtimeSession({ client, ctx, upstream });
+    const telemetry = await getRealtimeTelemetry(userId);
     const balances = await getUserBalances(userId);
     const expectedCost = 0.017;
     const expectedPrice = roundPollenLedgerAmount(expectedCost * 0.75);
@@ -687,9 +696,8 @@ test("accepts publishable keys through the query string for thin clients", async
     expect(upstream.request.url).toContain("azure.com/openai/v1/realtime");
     response.webSocket?.accept();
     upstream.server.accept();
-    response.webSocket?.close();
-    upstream.server.close();
-    await waitOnExecutionContext(ctx);
+    if (!response.webSocket) throw new Error("Expected downstream WebSocket");
+    await closeRealtimeSession({ client: response.webSocket, ctx, upstream });
 });
 
 test.each([
@@ -977,7 +985,7 @@ test("returns OpenAI errors for invalid Scribe events without billing", async ()
     });
     await closeRealtimeSession(session);
     expect(session.upstream.maybeServer).toBeUndefined();
-    expect(session.upstream.tinybirdRequests).toHaveLength(0);
+    expect(await countRealtimeEvents(session.userId)).toBe(0);
     expect((await getUserBalances(session.userId))?.packBalance).toBe(1);
 });
 
@@ -1015,10 +1023,7 @@ test("sanitizes Scribe provider errors and settles accepted audio", async () => 
     });
     await expect(clientClose).resolves.toMatchObject({ code: 1011 });
     await waitOnExecutionContext(session.ctx);
-    await waitForTinybirdRequests(session.upstream);
-    const telemetry = JSON.parse(
-        await session.upstream.tinybirdRequests[0].text(),
-    ) as Record<string, unknown>;
+    const telemetry = await getRealtimeTelemetry(session.userId);
     expect(telemetry.tokenCountPromptAudioSeconds).toBe(1);
 });
 
@@ -1236,15 +1241,11 @@ test("closes instead of forwarding upstream input transcription events", async (
     });
     expect(clientReceived).toBe(false);
     session.upstream.server.close();
-    await waitForTinybirdRequests(session.upstream);
     await waitOnExecutionContext(session.ctx);
 
     const user = await waitForPackBalanceBelow(session.userId, 1);
     expect(user?.packBalance).toBeLessThan(1);
-    expect(session.upstream.tinybirdRequests).toHaveLength(1);
-    const telemetry = JSON.parse(
-        await session.upstream.tinybirdRequests[0].text(),
-    ) as Record<string, unknown>;
+    const telemetry = await getRealtimeTelemetry(session.userId);
     expect(telemetry.tokenCountPromptText).toBe(10);
 });
 
@@ -1335,9 +1336,10 @@ test("settles realtime usage against the API key reservation", async () => {
     );
 });
 
-test("does not retry a partially completed realtime deduction", async () => {
+test("settles within a reservation after API key deletion exactly once", async () => {
     const session = await openPaidRealtimeSession({
         name: "realtime-partial-deduction-key",
+        estimatedCost: 0.01,
     });
     const usageEvent = JSON.stringify({
         type: "response.done",
@@ -1370,8 +1372,7 @@ test("does not retry a partially completed realtime deduction", async () => {
     await drizzle(env.DB)
         .delete(apiKeyTable)
         .where(eq(apiKeyTable.id, session.apiKeyId));
-    session.client.close();
-    await waitOnExecutionContext(session.ctx);
+    await closeRealtimeSession(session);
 
     const user = await waitForPackBalanceBelow(session.userId, 1);
     expect(user?.packBalance).toBeCloseTo(1 - 0.003553 * 0.75, 8);
@@ -1381,7 +1382,7 @@ test("does not retry a partially completed realtime deduction", async () => {
         user?.packBalance ?? 0,
         8,
     );
-    expect(session.upstream.tinybirdRequests).toHaveLength(0);
+    expect(await countRealtimeEvents(session.userId)).toBe(1);
 });
 
 test.each([

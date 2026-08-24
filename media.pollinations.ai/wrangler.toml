@@ -10,6 +10,12 @@ name = "pollinations-media-dev"
 
 [env.development.vars]
 MAX_FILE_SIZE = "104857600"  # 100MB in bytes
+ENVIRONMENT = "development"
+
+[[env.development.services]]
+binding = "ENTER_BILLING"
+service = "pollinations-enter"
+entrypoint = "BillingService"
 
 [[env.development.r2_buckets]]
 binding = "MEDIA_BUCKET"
@@ -27,6 +33,7 @@ name = "pollinations-media-prod"
 
 [env.production.vars]
 MAX_FILE_SIZE = "104857600"  # 100MB in bytes
+ENVIRONMENT = "production"
 
 [[env.production.routes]]
 pattern = "media.myceli.ai"
@@ -49,8 +56,14 @@ database_name = "production-pollinations-enter-db"
 database_id = "fc771b05-4e24-48bf-980c-d09f21279bd1"
 migrations_dir = "../enter.pollinations.ai/drizzle"
 
+[[env.production.services]]
+binding = "ENTER_BILLING"
+service = "pollinations-enter-production"
+entrypoint = "BillingService"
+
 [vars]
 MAX_FILE_SIZE = "104857600"  # 100MB in bytes
+ENVIRONMENT = "development"
 
 [[r2_buckets]]
 binding = "MEDIA_BUCKET"
@@ -61,6 +74,11 @@ binding = "DB"
 database_name = "development-pollinations-enter-db"
 database_id = "2b844596-9890-4a2e-9da9-6c65681fa24d"
 migrations_dir = "../enter.pollinations.ai/drizzle"
+
+[[services]]
+binding = "ENTER_BILLING"
+service = "pollinations-enter"
+entrypoint = "BillingService"
 
 # Dev server settings
 [dev]

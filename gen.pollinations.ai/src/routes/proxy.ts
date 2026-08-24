@@ -74,7 +74,7 @@ import {
 import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import {
-    apiKeyBudgetReservation,
+    billingAuthorization,
     generationAccess,
 } from "@/utils/generation-access.ts";
 import {
@@ -147,7 +147,7 @@ const imageVideoHandlers = factory.createHandlers(
     imageCache,
     generationAccess,
     deduplicateGeneration,
-    apiKeyBudgetReservation,
+    billingAuthorization,
     generateImageVideo,
 );
 
@@ -158,7 +158,7 @@ const model3dHandlers = factory.createHandlers(
     model3dCache,
     generationAccess,
     deduplicateGeneration,
-    apiKeyBudgetReservation,
+    billingAuthorization,
     generateModel3d,
 );
 
@@ -170,7 +170,7 @@ const chatCompletionHandlers = factory.createHandlers(
     textCache,
     generationAccess,
     deduplicateGeneration,
-    apiKeyBudgetReservation,
+    billingAuthorization,
     generateChatCompletion,
 );
 
@@ -632,8 +632,8 @@ export const proxyRoutes = new Hono<Env>()
         prepareGenerationRequest,
         textCache,
         generationAccess,
-        deduplicateGeneration,
-        every(apiKeyBudgetReservation, generateEmbeddingsResponse),
+        every(deduplicateGeneration, billingAuthorization),
+        generateEmbeddingsResponse,
     )
     .post(
         "/text",
@@ -660,7 +660,7 @@ export const proxyRoutes = new Hono<Env>()
         textCache,
         generationAccess,
         deduplicateGeneration,
-        apiKeyBudgetReservation,
+        billingAuthorization,
         generateTextContent,
     )
     .get(
@@ -700,7 +700,7 @@ export const proxyRoutes = new Hono<Env>()
         textCache,
         generationAccess,
         deduplicateGeneration,
-        apiKeyBudgetReservation,
+        billingAuthorization,
         generateSimpleText,
     )
     .get(
@@ -893,8 +893,8 @@ export const proxyRoutes = new Hono<Env>()
         track("generate.image"),
         every(prepareGenerationRequest, model3dCache),
         generationAccess,
-        deduplicateGeneration,
-        every(apiKeyBudgetReservation, generateModel3d),
+        every(deduplicateGeneration, billingAuthorization),
+        generateModel3d,
     )
     .get(
         "/audio/:text",
@@ -944,7 +944,7 @@ export const proxyRoutes = new Hono<Env>()
         audioCache,
         generationAccess,
         deduplicateGeneration,
-        apiKeyBudgetReservation,
+        billingAuthorization,
         handleSimpleAudio,
     )
     .post(
@@ -978,8 +978,8 @@ export const proxyRoutes = new Hono<Env>()
         every(prepareOpenAIImageGeneration, formatOpenAIImageGeneration),
         prepareGenerationRequest,
         imageCache,
-        deduplicateGeneration,
-        every(apiKeyBudgetReservation, handleImageGeneration),
+        every(deduplicateGeneration, billingAuthorization),
+        handleImageGeneration,
     )
     .post(
         "/v1/images/edits",
@@ -1013,6 +1013,6 @@ export const proxyRoutes = new Hono<Env>()
         textCache,
         generationAccess,
         deduplicateGeneration,
-        apiKeyBudgetReservation,
+        billingAuthorization,
         handleImageEdit,
     );

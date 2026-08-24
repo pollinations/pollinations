@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "f14fb838-50e4-4ec7-9c81-2cdb03c48be1",
+  "id": "e014d63d-cb5d-4da9-9e03-9007ad5c03c2",
   "prevId": "e139f3f2-7a00-4878-b145-95c3ce0e28fb",
   "tables": {
     "account": {
@@ -436,6 +436,43 @@
           "autoincrement": false,
           "default": 0
         },
+        "community_user_id": {
+          "name": "community_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "community_reward_rate": {
+          "name": "community_reward_rate",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "community_credit": {
+          "name": "community_credit",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "event_fingerprint": {
+          "name": "event_fingerprint",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "telemetry_json": {
+          "name": "telemetry_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
         "occurred_at": {
           "name": "occurred_at",
           "type": "integer",
@@ -446,6 +483,43 @@
         "settled_at": {
           "name": "settled_at",
           "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "auto_top_up_required": {
+          "name": "auto_top_up_required",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        },
+        "auto_top_up_processed_at": {
+          "name": "auto_top_up_processed_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "auto_top_up_attempts": {
+          "name": "auto_top_up_attempts",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "auto_top_up_next_attempt_at": {
+          "name": "auto_top_up_next_attempt_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "auto_top_up_error": {
+          "name": "auto_top_up_error",
+          "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
@@ -474,6 +548,15 @@
             "occurred_at"
           ],
           "isUnique": false
+        },
+        "idx_billable_event_pending_auto_top_up": {
+          "name": "idx_billable_event_pending_auto_top_up",
+          "columns": [
+            "auto_top_up_next_attempt_at",
+            "created_at"
+          ],
+          "isUnique": false,
+          "where": "\"billable_event\".\"auto_top_up_required\" = 1 AND \"billable_event\".\"auto_top_up_processed_at\" IS NULL"
         }
       },
       "foreignKeys": {},
@@ -513,6 +596,13 @@
           "notNull": true,
           "autoincrement": false
         },
+        "model": {
+          "name": "model",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "api_key_id": {
           "name": "api_key_id",
           "type": "text",
@@ -520,11 +610,60 @@
           "notNull": true,
           "autoincrement": false
         },
+        "api_key_name": {
+          "name": "api_key_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "api_key_type": {
+          "name": "api_key_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "api_key_created_via": {
+          "name": "api_key_created_via",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "api_key_client_name": {
+          "name": "api_key_client_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "api_key_client_user_id": {
+          "name": "api_key_client_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "user_id": {
           "name": "user_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false
+        },
+        "user_tier": {
+          "name": "user_tier",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "parent_request_id": {
+          "name": "parent_request_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
           "autoincrement": false
         },
         "estimated_price": {
@@ -563,6 +702,21 @@
           "notNull": false,
           "autoincrement": false
         },
+        "dev_user_id": {
+          "name": "dev_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "markup_rate": {
+          "name": "markup_rate",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
         "key_budget_limited": {
           "name": "key_budget_limited",
           "type": "integer",
@@ -593,6 +747,13 @@
           "notNull": false,
           "autoincrement": false
         },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "integer",
@@ -610,6 +771,13 @@
             "request_id"
           ],
           "isUnique": true
+        },
+        "idx_billing_authorization_expiry": {
+          "name": "idx_billing_authorization_expiry",
+          "columns": [
+            "expires_at"
+          ],
+          "isUnique": false
         }
       },
       "foreignKeys": {},

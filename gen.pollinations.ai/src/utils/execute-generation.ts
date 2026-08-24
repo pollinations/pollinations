@@ -57,7 +57,7 @@ function generationExecutor(
     auth: GenerationAuthSnapshot,
     requestId: string,
     balanceCheckResult: BalanceCheckResult,
-    apiKeyBudgetEstimate: number | undefined,
+    billingAuthorizationId: string,
     registerGenerationCacheWrite: (promise: Promise<void>) => void,
 ): Hono<Env> {
     const executor = new Hono<Env>()
@@ -76,7 +76,7 @@ function generationExecutor(
         .use("*", balance)
         .use("*", async (c, next) => {
             c.var.balance.balanceCheckResult = balanceCheckResult;
-            c.var.balance.apiKeyBudgetEstimate = apiKeyBudgetEstimate;
+            c.var.balance.billingAuthorizationId = billingAuthorizationId;
             await next();
         })
         .route("/", generationExecutorRoutes);
@@ -90,14 +90,21 @@ export async function executeGeneration(
     auth: GenerationAuthSnapshot,
     requestId: string,
     balanceCheckResult: BalanceCheckResult,
-    apiKeyBudgetEstimate: number | undefined,
+    billingAuthorizationId: string,
     env: CloudflareBindings,
 ): Promise<DetachedGeneration> {
-    const promises: Promise<unknown>[] = [];
+    const observe = (
+        promise: Promise<unknown>,
+    ): Promise<PromiseSettledResult<unknown>> =>
+        promise.then(
+            (value) => ({ status: "fulfilled", value }),
+            (reason) => ({ status: "rejected", reason }),
+        );
+    const promises: Promise<PromiseSettledResult<unknown>>[] = [];
     let cacheWrite: Promise<void> | undefined;
     const executionCtx = {
         waitUntil(promise: Promise<unknown>) {
-            promises.push(promise);
+            promises.push(observe(promise));
         },
         passThroughOnException() {},
     } as ExecutionContext;
@@ -106,12 +113,21 @@ export async function executeGeneration(
         auth,
         requestId,
         balanceCheckResult,
-        apiKeyBudgetEstimate,
+        billingAuthorizationId,
         (promise) => {
             cacheWrite = promise;
         },
     ).fetch(request, env, executionCtx);
-    const settlement = Promise.allSettled(promises).then(() => {});
+    const background = cacheWrite
+        ? [...promises, observe(cacheWrite)]
+        : promises;
+    const settlement = Promise.all(background).then((results) => {
+        const failed = results.find(
+            (result): result is PromiseRejectedResult =>
+                result.status === "rejected",
+        );
+        if (failed) throw failed.reason;
+    });
 
     try {
         const failed = !response.ok;
@@ -119,6 +135,7 @@ export async function executeGeneration(
         if (!failed) await drainResponse(response);
 
         if (response.headers.get("x-cache") === "HIT") {
+            await env.ENTER_BILLING.cancel(billingAuthorizationId);
             return { result: { status: "cached" }, settlement };
         }
         if (error) {

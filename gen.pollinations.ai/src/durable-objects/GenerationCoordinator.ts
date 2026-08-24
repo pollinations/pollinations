@@ -11,8 +11,9 @@ const JOB_KEY = "job";
 const BODY_KEY_PREFIX = "body:";
 const BODY_CHUNK_BYTES = 1_000_000;
 
-type PersistedJob = Omit<GenerationJob, "request"> & {
+type PersistedJob = Omit<GenerationJob, "request" | "billingRequest"> & {
     request: Omit<GenerationRequestSnapshot, "body">;
+    billingAuthorizationId: string;
     bodyChunks: number;
     started: boolean;
 };
@@ -33,6 +34,15 @@ async function cacheExists(
     return (await bucket.head(cache.key)) !== null;
 }
 
+async function deleteCache(
+    env: CloudflareBindings,
+    cache: GenerationCacheIdentity,
+): Promise<void> {
+    const bucket =
+        cache.storage === "media" ? env.IMAGE_BUCKET : env.TEXT_BUCKET;
+    await bucket.delete(cache.key);
+}
+
 function unavailable(message: string): GenerationOutcome {
     return {
         status: "failed",
@@ -40,6 +50,36 @@ function unavailable(message: string): GenerationOutcome {
             httpStatus: 503,
             headers: [["content-type", "text/plain; charset=UTF-8"]],
             body: new TextEncoder().encode(message),
+        },
+    };
+}
+
+function authorizationDenied(error: string): GenerationOutcome {
+    const status =
+        error === "invalid_api_key"
+            ? 401
+            : error === "insufficient_balance_or_budget"
+              ? 402
+              : error === "forbidden" || error === "model_not_allowed"
+                ? 403
+                : error === "authorization_conflict" ||
+                    error === "authorization_closed"
+                  ? 409
+                  : 500;
+    return {
+        status: "failed",
+        error: {
+            httpStatus: status,
+            headers: [["content-type", "text/plain; charset=UTF-8"]],
+            body: new TextEncoder().encode(
+                status === 402
+                    ? "Insufficient balance or API key budget for this request"
+                    : status === 401
+                      ? "A valid API key is required"
+                      : status === 403
+                        ? "This API key cannot use the requested model"
+                        : "Unable to authorize billing for this request",
+            ),
         },
     };
 }
@@ -55,16 +95,26 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
             const cachePresent = await cacheExists(this.env, job.cache);
             const stored = await this.ctx.storage.get<PersistedJob>(JOB_KEY);
 
-            if (cachePresent) {
-                if (stored) {
-                    await this.clear(stored.bodyChunks, true);
-                }
+            if (!stored && cachePresent) {
                 immediate = { status: "cached" };
                 return;
             }
 
             if (!stored) {
-                await this.persist(job);
+                const authorization = await this.env.ENTER_BILLING.authorize(
+                    job.billingRequest.token,
+                    job.billingRequest.authorization,
+                );
+                if (!authorization.ok) {
+                    immediate = authorizationDenied(authorization.error);
+                    return;
+                }
+                try {
+                    await this.persist(job, authorization.grant.id);
+                } catch (error) {
+                    await this.env.ENTER_BILLING.cancel(authorization.grant.id);
+                    throw error;
+                }
             }
 
             wait = new Promise<GenerationOutcome>((resolve) => {
@@ -97,6 +147,10 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
         });
 
         if (interrupted) {
+            await deleteCache(this.env, interrupted.cache);
+            await this.env.ENTER_BILLING.cancel(
+                interrupted.billingAuthorizationId,
+            );
             await this.finish(
                 unavailable("Detached generation was interrupted"),
                 interrupted.bodyChunks,
@@ -105,40 +159,50 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
         }
         if (!stored) return;
 
-        let settlement: Promise<void> | undefined;
         try {
             if (await cacheExists(this.env, stored.cache)) {
+                await this.env.ENTER_BILLING.cancel(
+                    stored.billingAuthorizationId,
+                );
                 await this.finish({ status: "cached" }, stored.bodyChunks);
                 return;
             }
 
-            const job = await this.restore(stored);
+            const request = await this.restoreRequest(stored);
             const execution = await executeGeneration(
-                new Request(job.request.url, {
-                    method: job.request.method,
-                    headers: job.request.headers,
-                    body: job.request.body?.slice().buffer,
+                new Request(request.url, {
+                    method: request.method,
+                    headers: request.headers,
+                    body: request.body?.slice().buffer,
                 }),
-                job.auth,
-                job.requestId,
-                job.balanceCheckResult,
-                job.apiKeyBudgetEstimate,
+                stored.auth,
+                stored.requestId,
+                stored.balanceCheckResult,
+                stored.billingAuthorizationId,
                 this.env,
             );
-            settlement = execution.settlement;
+            await execution.settlement;
+            if (execution.result.status === "failed") {
+                await this.env.ENTER_BILLING.cancel(
+                    stored.billingAuthorizationId,
+                );
+            }
             await this.finish(execution.result, stored.bodyChunks);
         } catch (error) {
             console.error("Detached generation failed", error);
+            await deleteCache(this.env, stored.cache);
+            await this.env.ENTER_BILLING.cancel(stored.billingAuthorizationId);
             await this.finish(
                 unavailable("Detached generation failed"),
                 stored.bodyChunks,
             );
-        } finally {
-            if (settlement) await settlement;
         }
     }
 
-    private async persist(job: GenerationJob): Promise<void> {
+    private async persist(
+        job: GenerationJob,
+        billingAuthorizationId: string,
+    ): Promise<void> {
         const body = job.request.body;
         const chunks: Uint8Array[] = [];
         if (body !== undefined) {
@@ -159,7 +223,7 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
             auth: job.auth,
             requestId: job.requestId,
             balanceCheckResult: job.balanceCheckResult,
-            apiKeyBudgetEstimate: job.apiKeyBudgetEstimate,
+            billingAuthorizationId,
             request,
             bodyChunks: chunks.length,
             started: false,
@@ -172,7 +236,9 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
         await this.ctx.storage.setAlarm(Date.now());
     }
 
-    private async restore(job: PersistedJob): Promise<GenerationJob> {
+    private async restoreRequest(
+        job: PersistedJob,
+    ): Promise<GenerationRequestSnapshot> {
         let body: Uint8Array | undefined;
         if (job.bodyChunks > 0) {
             const keys = bodyChunkKeys(job.bodyChunks);
@@ -198,14 +264,7 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
             }
             body = bytes;
         }
-        return {
-            cache: job.cache,
-            auth: job.auth,
-            requestId: job.requestId,
-            balanceCheckResult: job.balanceCheckResult,
-            apiKeyBudgetEstimate: job.apiKeyBudgetEstimate,
-            request: { ...job.request, ...(body !== undefined && { body }) },
-        };
+        return { ...job.request, ...(body !== undefined && { body }) };
     }
 
     private async finish(

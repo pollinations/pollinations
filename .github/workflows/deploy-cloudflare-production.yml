@@ -195,11 +195,13 @@ jobs:
         run: npm run deploy:production --workspace pollinations-enter
 
   deploy-gen:
-    needs: [changes, migrate, deploy-mcp-apps]
+    needs: [changes, migrate, deploy-enter, deploy-mcp-apps]
     if: >-
       always() &&
       needs.changes.outputs.gen == 'true' &&
       needs.migrate.result == 'success' &&
+      (needs.deploy-enter.result == 'success' ||
+       needs.deploy-enter.result == 'skipped') &&
       (needs.deploy-mcp-apps.result == 'success' ||
        needs.deploy-mcp-apps.result == 'skipped')
     runs-on: ubuntu-latest
@@ -249,8 +251,13 @@ jobs:
         run: npm run apply-lifecycle:production --workspace pollinations-gen
 
   deploy-media:
-    needs: [changes, migrate]
-    if: needs.changes.outputs.media == 'true'
+    needs: [changes, migrate, deploy-enter]
+    if: >-
+      always() &&
+      needs.changes.outputs.media == 'true' &&
+      needs.migrate.result == 'success' &&
+      (needs.deploy-enter.result == 'success' ||
+       needs.deploy-enter.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code

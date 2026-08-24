@@ -51,10 +51,7 @@ describe("summarizeEarnings", () => {
     });
 
     it("handles an empty earnings response", () => {
-        const summary = summarizeEarnings(
-            { daily: [], perEntity: [] },
-            30,
-        );
+        const summary = summarizeEarnings({ daily: [], perEntity: [] }, 30);
         expect(summary.totalPollen).toBe(0);
         expect(summary.totalRequests).toBe(0);
         expect(summary.entities).toEqual([]);

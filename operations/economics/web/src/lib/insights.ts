@@ -2112,8 +2112,10 @@ export function providerBalanceRows(
                     : null
                 : (credit?.depletionReason ?? null),
             finished:
-                (cashBalanceUsd == null || cashBalanceUsd <= POOL_EPS_USD) &&
-                (creditBalanceUsd == null || creditBalanceUsd <= POOL_EPS_USD),
+                (cashBalanceUsd == null ||
+                    Math.abs(cashBalanceUsd) <= POOL_EPS_USD) &&
+                (creditBalanceUsd == null ||
+                    Math.abs(creditBalanceUsd) <= POOL_EPS_USD),
             history,
         });
     }

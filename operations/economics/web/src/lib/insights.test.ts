@@ -1780,6 +1780,34 @@ describe("providerBalanceRows", () => {
         expect(row.creditBalanceUsd).toBe(900);
     });
 
+    it("keeps an overdrawn prepaid balance active for attention", () => {
+        const [row] = providerBalanceRows(
+            emptyData({
+                opTransactions: [
+                    opTxn({
+                        entry_id: "vast-topup",
+                        date: "2026-01-01",
+                        vendor: "vast.ai",
+                        amount: -100,
+                    }),
+                ],
+                opCloud: [
+                    opCloud({
+                        entry_id: "vast-usage",
+                        start: "2026-01-02 00:00:00",
+                        vendor: "vast.ai",
+                        type: "gpu",
+                        paid: -150,
+                    }),
+                ],
+            }),
+            NOW,
+        );
+
+        expect(row.cashBalanceUsd).toBe(-50);
+        expect(row.finished).toBe(false);
+    });
+
     it("anchors the current roll-forward to an OP Cloud balance snapshot", () => {
         const now = new Date("2026-08-22T12:00:00Z");
         const [row] = providerBalanceRows(

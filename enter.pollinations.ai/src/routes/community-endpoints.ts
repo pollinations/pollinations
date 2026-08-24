@@ -1,4 +1,5 @@
 import {
+    COMMUNITY_ENDPOINT_PRICE_FIELDS,
     type CommunityEndpointVisibility,
     communityModelId,
     type EndpointAgentListingPayload,
@@ -709,9 +710,14 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 update.hiddenReason = input.hidden ? "Hidden by owner" : null;
                 update.hiddenBy = input.hidden ? "owner" : null;
             }
-            const effectiveVisibility = input.visibility ?? endpoint.visibility;
-            await enforcePublishingAccess(db, user.id, effectiveVisibility);
-            update.visibility = effectiveVisibility;
+            const resolvedVisibility = input.visibility ?? endpoint.visibility;
+            await enforcePublishingAccess(db, user.id, resolvedVisibility);
+            const isGoingPublic =
+                resolvedVisibility === "public" &&
+                endpoint.visibility === "private";
+            const isGoingPrivate =
+                resolvedVisibility === "private" &&
+                endpoint.visibility === "public";
             if (endpoint.type === "prompt_agent") {
                 // Prompt configuration is edited through /account/agents.
                 // This route only updates shared listing state such as hidden.
@@ -732,6 +738,17 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         perUserRpm: input.perUserRpm,
                     });
                 }
+                if (isGoingPublic) {
+                    update.pendingVisibility = "public";
+                    update.pendingAt = new Date();
+                } else {
+                    update.visibility = resolvedVisibility;
+                    if (isGoingPrivate) {
+                        update.pendingPayload = null;
+                        update.pendingVisibility = null;
+                        update.pendingAt = null;
+                    }
+                }
             } else {
                 const stored = parseListingPayload("proxy", endpoint.payload);
                 if (!stored) {
@@ -740,7 +757,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 const policy = deriveUpdatedProxyPolicy(
                     stored,
                     input,
-                    effectiveVisibility,
+                    resolvedVisibility,
                 );
                 const fallbacks =
                     input.fallbacks === undefined
@@ -773,7 +790,33 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         ...policy,
                         fallbacks,
                     };
-                    update.payload = JSON.stringify(payload);
+                    const priceChangedOnPublic =
+                        endpoint.visibility === "public" &&
+                        !isGoingPrivate &&
+                        (input.paidOnly !== undefined ||
+                            COMMUNITY_ENDPOINT_PRICE_FIELDS.some(
+                                ({ key }) => input[key] !== undefined,
+                            ));
+                    if (isGoingPublic || priceChangedOnPublic) {
+                        // Queue for 12 hours; the current price/visibility
+                        // stays effective until the deadline passes.
+                        update.pendingPayload = JSON.stringify(payload);
+                        update.pendingVisibility = isGoingPublic
+                            ? "public"
+                            : null;
+                        update.pendingAt = new Date();
+                    } else {
+                        update.payload = JSON.stringify(payload);
+                        update.pendingPayload = null;
+                        update.pendingVisibility = null;
+                        update.pendingAt = null;
+                    }
+                } else if (isGoingPublic) {
+                    // Visibility-only transition to public also gets the delay.
+                    update.pendingVisibility = "public";
+                    update.pendingAt = new Date();
+                } else {
+                    update.visibility = resolvedVisibility;
                 }
             }
             const [row] = await db

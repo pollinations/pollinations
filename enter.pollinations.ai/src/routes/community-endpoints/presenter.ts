@@ -3,6 +3,7 @@ import {
     communityModelId,
     normalizeCommunityEndpointAdvertised,
     parseListingPayload,
+    PRICE_CHANGE_DELAY_MS,
 } from "@shared/community-endpoints.ts";
 import type * as schema from "@shared/db/better-auth.ts";
 import {
@@ -18,6 +19,11 @@ export function toCommunityEndpointResponse(
     agentRuntimeUrl: string,
 ): CommunityEndpointResponse {
     const modelId = communityModelId(ownerGithubUsername, row.name);
+    const ready =
+        row.pendingAt !== null &&
+        Date.now() >= row.pendingAt.getTime() + PRICE_CHANGE_DELAY_MS;
+    const effectiveVisibility =
+        ready && row.pendingVisibility ? row.pendingVisibility : row.visibility;
     const common = {
         id: row.id,
         modelId,
@@ -30,7 +36,7 @@ export function toCommunityEndpointResponse(
         description: row.description,
         baseUrl: row.type === "prompt_agent" ? agentRuntimeUrl : row.baseUrl,
         upstreamModel: row.upstreamModel,
-        visibility: row.visibility,
+        visibility: effectiveVisibility,
         hidden: row.hiddenAt !== null,
         hiddenReason: row.hiddenReason,
         hiddenAt: row.hiddenAt?.toISOString() ?? null,
@@ -56,9 +62,31 @@ export function toCommunityEndpointResponse(
         });
     }
 
-    const payload = parseListingPayload("proxy", row.payload);
+    const payload = parseListingPayload(
+        "proxy",
+        ready && row.pendingPayload ? row.pendingPayload : row.payload,
+    );
     if (!payload) throw new Error(`Invalid proxy payload for ${row.id}`);
     const { bearerTokenCiphertext: _credential, prices, ...proxy } = payload;
+
+    let pending = null;
+    if (!ready && row.pendingAt && row.pendingPayload) {
+        const pendingPayload = parseListingPayload("proxy", row.pendingPayload);
+        if (pendingPayload) {
+            const effectiveAt = new Date(
+                row.pendingAt.getTime() + PRICE_CHANGE_DELAY_MS,
+            );
+            pending = {
+                effectiveAt: effectiveAt.toISOString(),
+                ...(row.pendingVisibility === "public"
+                    ? { visibility: "public" as const }
+                    : {}),
+                paidOnly: pendingPayload.paidOnly,
+                ...pendingPayload.prices,
+            };
+        }
+    }
+
     return CommunityEndpointResponseSchema.parse({
         ...common,
         type: row.type,
@@ -68,5 +96,6 @@ export function toCommunityEndpointResponse(
             payload.modality,
         ),
         ...prices,
+        pending,
     });
 }

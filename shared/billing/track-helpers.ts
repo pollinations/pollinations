@@ -1,6 +1,10 @@
 import { getLogger } from "@logtape/logtape";
 import { and, eq, gt, isNull, or } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
+import {
+    COMMUNITY_MODEL_REWARD_RATE,
+    type CommunityEndpointRuntime,
+} from "../community-endpoints.ts";
 import { apikey as apikeyTable } from "../db/better-auth.ts";
 import {
     atomicCreditUserBalance,
@@ -40,6 +44,35 @@ export type CommunityModelRewardInput = {
      */
     basePrice?: number;
 };
+
+export function selectCommunityModelReward(
+    requestedCommunityEndpoint: CommunityEndpointRuntime | null | undefined,
+    servedCommunityEndpoint: CommunityEndpointRuntime | null | undefined,
+    servedPrice: number | undefined,
+): CommunityModelRewardInput | null {
+    if (servedCommunityEndpoint?.visibility === "public") {
+        return {
+            userId: servedCommunityEndpoint.ownerUserId,
+            rewardRate: COMMUNITY_MODEL_REWARD_RATE,
+            basePrice: servedPrice,
+        };
+    }
+
+    if (
+        requestedCommunityEndpoint?.visibility === "public" &&
+        servedCommunityEndpoint?.visibility === "private" &&
+        servedCommunityEndpoint.ownerUserId ===
+            requestedCommunityEndpoint.ownerUserId
+    ) {
+        return {
+            userId: requestedCommunityEndpoint.ownerUserId,
+            rewardRate: COMMUNITY_MODEL_REWARD_RATE,
+            basePrice: servedPrice,
+        };
+    }
+
+    return null;
+}
 
 interface DeductionParams {
     db: DrizzleD1Database;
@@ -177,13 +210,13 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
     }
 
     // 1. Resolve the two independent "who else gets money" inputs.
-    const markup = await resolveDevMarkup(
+    let markup = await resolveDevMarkup(
         db,
         byopClientKeyId,
         totalPrice,
         userId,
     );
-    const communityModelReward = resolveCommunityModelReward(
+    let communityModelReward = resolveCommunityModelReward(
         communityModelRewardInput,
         totalPrice,
         userId,
@@ -208,6 +241,20 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
             );
             payerBucket = deduction.bucket;
             postDeductionPackBalance = deduction.postDeductionPackBalance;
+            if (
+                deduction.postDeductionBalance != null &&
+                deduction.postDeductionBalance < 0
+            ) {
+                markup = null;
+                communityModelReward = null;
+                log.warn(
+                    "Suppressed generation credits because the payer's {bucket} balance is negative after deduction ({balance})",
+                    {
+                        bucket: payerBucket,
+                        balance: deduction.postDeductionBalance,
+                    },
+                );
+            }
         }
 
         // API key budgets are decremented by the amount the user authorized the
@@ -391,14 +438,16 @@ async function deductUserBalance(
 ): Promise<{
     bucket: Bucket | null;
     postDeductionPackBalance: number | null;
+    postDeductionBalance: number | null;
 }> {
     try {
-        const { ok, bucket, packBalance } = await atomicDeductUserBalance(
-            db,
-            userId,
-            amount,
-            modelPaidOnly ?? false,
-        );
+        const { ok, bucket, packBalance, postDeductionBalance } =
+            await atomicDeductUserBalance(
+                db,
+                userId,
+                amount,
+                modelPaidOnly ?? false,
+            );
         if (!ok) {
             throw new Error(
                 `User balance deduction affected 0 rows for ${userId}`,
@@ -420,6 +469,7 @@ async function deductUserBalance(
         return {
             bucket,
             postDeductionPackBalance: bucket === "pack" ? packBalance : null,
+            postDeductionBalance,
         };
     } catch (error) {
         log.error("Failed to decrement user balance for {userId}: {error}", {

@@ -1,5 +1,4 @@
-import assert from "node:assert/strict";
-import test from "node:test";
+import { expect, test } from "vitest";
 import {
     checkTinybirdContract,
     REQUIRED_PIPES,
@@ -16,22 +15,21 @@ test("accepts only when every required pipe returns a data array", async () => {
         },
     });
 
-    assert.deepEqual(
-        requested.map(({ url }) => url),
+    expect(requested.map(({ url }) => url)).toEqual(
         REQUIRED_PIPES.map(
             (pipe) => `https://tinybird.test/v0/pipes/${pipe}.json`,
         ),
     );
-    assert.ok(
+    expect(
         requested.every(
             ({ options }) =>
                 options.headers.Authorization === "Bearer redacted",
         ),
-    );
+    ).toBe(true);
 });
 
 test("blocks deployment when a pipe is absent or malformed", async () => {
-    await assert.rejects(
+    await expect(
         checkTinybirdContract({
             api: "https://tinybird.test",
             token: "redacted",
@@ -45,6 +43,7 @@ test("blocks deployment when a pipe is absent or malformed", async () => {
                 return Response.json({ data: [] });
             },
         }),
+    ).rejects.toThrow(
         /op_pollen_api: invalid shape; op_forecast_api: HTTP 404/,
     );
 });

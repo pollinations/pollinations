@@ -790,6 +790,11 @@ const usageResponseSchema = z.object({
  * Supports both session cookies and API keys with permission checks.
  */
 export const accountRoutes = new Hono<Env>()
+    .use(async (c, next) => {
+        await next();
+        c.header("Cache-Control", "private, no-store, max-age=0");
+        c.header("Pragma", "no-cache");
+    })
     .use(auth({ allowApiKey: true, allowSessionCookie: true }))
     .route("/agents", agentsRoutes)
     .route("/my-models", communityEndpointsRoutes)
@@ -1398,7 +1403,6 @@ export const accountRoutes = new Hono<Env>()
                 ? await getVisibleModelIdsForUser(c.env.DB, user.id)
                 : null;
 
-            c.header("Cache-Control", "private, no-store, max-age=0");
             return c.json({
                 data: keys.map((key, index) => ({
                     id: key.id,

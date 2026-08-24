@@ -88,4 +88,38 @@ describe("GET /api/account/profile", () => {
         expect(data).toHaveProperty("name");
         expect(data).toHaveProperty("email");
     });
+
+    test("returns Cache-Control: private, no-store, max-age=0 and Pragma: no-cache on top-level and nested account routes", async ({
+        sessionToken,
+    }) => {
+        const topLevelResponse = await SELF.fetch(
+            "http://localhost:3000/api/account/profile",
+            {
+                headers: {
+                    Cookie: `better-auth.session_token=${sessionToken}`,
+                },
+            },
+        );
+
+        expect(topLevelResponse.status).toBe(200);
+        expect(topLevelResponse.headers.get("Cache-Control")).toBe(
+            "private, no-store, max-age=0",
+        );
+        expect(topLevelResponse.headers.get("Pragma")).toBe("no-cache");
+
+        const nestedResponse = await SELF.fetch(
+            "http://localhost:3000/api/account/my-models",
+            {
+                headers: {
+                    Cookie: `better-auth.session_token=${sessionToken}`,
+                },
+            },
+        );
+
+        expect(nestedResponse.status).toBe(200);
+        expect(nestedResponse.headers.get("Cache-Control")).toBe(
+            "private, no-store, max-age=0",
+        );
+        expect(nestedResponse.headers.get("Pragma")).toBe("no-cache");
+    });
 });

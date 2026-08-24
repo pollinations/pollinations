@@ -7,6 +7,7 @@ import {
     gpuResourceSummary,
     gpuSummary,
     gpuWorkloadRows,
+    gpuWorkloadSummary,
     visibleGpuResourceRows,
     visibleGpuRows,
 } from "./GpuTab";
@@ -625,6 +626,29 @@ describe("gpuWorkloadRows", () => {
         expect(
             (rows[0].currentResultUsd ?? 0) - (rows[0].fullCostResultUsd ?? 0),
         ).toBe(rows[0].creditCostUsd);
+    });
+});
+
+describe("gpuWorkloadSummary", () => {
+    it("uses the same workload rows as the GPU table", () => {
+        const rows = gpuWorkloadRows(
+            {
+                ...baseData,
+                opCloud: [cloud({ paid: -50, credit: -100 })],
+                opPollen: [pollen({})],
+            },
+            "2026-06",
+        );
+
+        expect(gpuWorkloadSummary(rows)).toMatchObject({
+            paidUsd: 160,
+            questUsd: 40,
+            retainedUsd: 130,
+            paidCostUsd: 50,
+            creditCostUsd: 100,
+            currentResultUsd: 80,
+            fullCostResultUsd: -20,
+        });
     });
 });
 

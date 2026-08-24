@@ -115,6 +115,18 @@ export type GpuWorkloadRow = {
     flags: string[];
 };
 
+type GpuWorkloadSummary = {
+    paidUsd: number;
+    questUsd: number;
+    retainedUsd: number;
+    paidCostUsd: number;
+    creditCostUsd: number;
+    currentResultUsd: number;
+    currentPerformancePct: number | null;
+    fullCostResultUsd: number;
+    fullCostPerformancePct: number | null;
+};
+
 type GpuResourceSummary = {
     gpuCount: number;
     overheadCostUsd: number;
@@ -755,6 +767,44 @@ export function gpuWorkloadRows(
     });
 }
 
+export function gpuWorkloadSummary(
+    rows: readonly GpuWorkloadRow[],
+): GpuWorkloadSummary {
+    const summary = rows.reduce(
+        (total, row) => {
+            total.paidUsd += row.paidUsd ?? 0;
+            total.questUsd += row.questUsd ?? 0;
+            total.retainedUsd += row.retainedUsd ?? 0;
+            total.paidCostUsd += row.paidCostUsd;
+            total.creditCostUsd += row.creditCostUsd;
+            return total;
+        },
+        {
+            paidUsd: 0,
+            questUsd: 0,
+            retainedUsd: 0,
+            paidCostUsd: 0,
+            creditCostUsd: 0,
+        },
+    );
+    const currentResultUsd = summary.retainedUsd - summary.paidCostUsd;
+    const fullCostResultUsd =
+        summary.retainedUsd - summary.paidCostUsd - summary.creditCostUsd;
+    return {
+        ...summary,
+        currentResultUsd,
+        currentPerformancePct:
+            summary.retainedUsd > 0
+                ? (currentResultUsd / summary.retainedUsd) * 100
+                : null,
+        fullCostResultUsd,
+        fullCostPerformancePct:
+            summary.retainedUsd > 0
+                ? (fullCostResultUsd / summary.retainedUsd) * 100
+                : null,
+    };
+}
+
 export function gpuSummary(rows: GpuEconomicsRow[]): GpuSummary {
     const summary: GpuSummary = {
         paidUsd: 0,
@@ -997,10 +1047,6 @@ export function GpuTab({
     month?: MonthFilterValue;
     vendor?: ValueFilter;
 }) {
-    const poolRows = useMemo(
-        () => visibleGpuRows(gpuEconomics(data, month), vendor),
-        [data, month, vendor],
-    );
     const resourceRows = useMemo(
         () => visibleGpuResourceRows(gpuResourceRows(data, month), vendor),
         [data, month, vendor],
@@ -1009,7 +1055,7 @@ export function GpuTab({
         () => gpuWorkloadRows(data, month, vendor),
         [data, month, vendor],
     );
-    const stats = useMemo(() => gpuSummary(poolRows), [poolRows]);
+    const stats = useMemo(() => gpuWorkloadSummary(rows), [rows]);
     const resourceStats = useMemo(
         () => gpuResourceSummary(resourceRows),
         [resourceRows],
@@ -1092,36 +1138,28 @@ export function GpuTab({
                         value: fmtUsd(resourceStats.totalCostUsd),
                         detail: (
                             <GaugeSummary
-                                left={stats.paidRentUsd}
+                                left={stats.paidCostUsd}
                                 leftLabel="cash"
                                 palette="neutral"
-                                right={stats.creditRentUsd}
+                                right={stats.creditCostUsd}
                                 rightLabel="credit"
                             />
                         ),
                     },
                     {
                         label: "Current result",
-                        value: fmtSignedUsd(stats.cashMarginUsd),
-                        tone: marginTone(stats.cashMarginUsd),
-                        detail: `with credits · ${fmtMarginPct(stats.cashMarginPct)}`,
+                        value: fmtSignedUsd(stats.currentResultUsd),
+                        tone: marginTone(stats.currentResultUsd),
+                        detail: `with credits · ${fmtMarginPct(stats.currentPerformancePct)}`,
                     },
                     {
                         label: "Full-cost result",
-                        value: fmtSignedUsd(stats.marginUsd),
-                        tone: marginTone(stats.marginUsd),
-                        detail: `without credits · ${fmtMarginPct(stats.marginPct)}`,
+                        value: fmtSignedUsd(stats.fullCostResultUsd),
+                        tone: marginTone(stats.fullCostResultUsd),
+                        detail: `without credits · ${fmtMarginPct(stats.fullCostPerformancePct)}`,
                     },
                 ]}
             />
-            {stats.mixedRows > 0 && (
-                <div className="flex flex-wrap items-center gap-2">
-                    <Chip intent="warning" size="sm">
-                        {stats.mixedRows} mixed month
-                        {stats.mixedRows === 1 ? "" : "s"} unallocated
-                    </Chip>
-                </div>
-            )}
             <TableScroller>
                 <DataTable className="min-w-[1360px]">
                     <TableHead>

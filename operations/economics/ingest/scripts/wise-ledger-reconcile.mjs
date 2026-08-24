@@ -173,7 +173,13 @@ export function buildStatementSettlements(rows, activities) {
     const unresolved = [];
     for (const row of rows) {
         const rawId = String(row["TransferWise ID"] ?? "").trim();
-        if (!rawId || rawId.startsWith("BALANCE-")) continue;
+        if (
+            !rawId ||
+            rawId.startsWith("BALANCE-") ||
+            rawId.startsWith("FEE-BALANCE-")
+        ) {
+            continue;
+        }
         const fee = rawId.startsWith("FEE-");
         const sourceRow = fee
             ? { ...row, "TransferWise ID": rawId.slice("FEE-".length) }
@@ -220,6 +226,41 @@ export function buildStatementSettlements(rows, activities) {
         }
     }
     return { byEntryId, unresolved };
+}
+
+export function buildStatementConversionRows(rows, recordedAt, evidence) {
+    return rows.flatMap((row) => {
+        const rawId = String(row["TransferWise ID"] ?? "").trim();
+        const fee = rawId.startsWith("FEE-BALANCE-");
+        if (!rawId.startsWith("BALANCE-") && !fee) return [];
+
+        const amount = Number(row.Amount);
+        const currency = String(row.Currency ?? "").trim();
+        if (!Number.isFinite(amount) || !currency) {
+            throw new Error(`Invalid Wise conversion statement row: ${rawId}`);
+        }
+
+        const conversionId = fee ? rawId.slice("FEE-".length) : rawId;
+        return [
+            {
+                entry_id: fee ? rawId : `${conversionId}-${currency}`,
+                kind: "transaction",
+                source: "wise",
+                date: isoStatementDate(row.Date),
+                vendor: "wise",
+                category: fee ? "admin" : "balance_sheet",
+                amount,
+                currency,
+                description:
+                    String(row.Description ?? "").trim() ||
+                    (fee
+                        ? "Wise balance conversion fee"
+                        : "Wise balance conversion"),
+                evidence,
+                recorded_at: recordedAt,
+            },
+        ];
+    });
 }
 
 async function readStatements(directory) {
@@ -423,7 +464,11 @@ async function main() {
         historyActivities.activities,
         transactions,
     );
-    const proposals = [];
+    const proposals = buildStatementConversionRows(
+        statements.rows,
+        recordedAt,
+        evidence,
+    ).filter((row) => !existingIds.has(row.entry_id));
     const review = [];
     const consumedSettlementIds = new Set();
     for (const activity of period.activities) {

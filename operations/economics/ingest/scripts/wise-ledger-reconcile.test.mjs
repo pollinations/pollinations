@@ -3,6 +3,7 @@ import test from "node:test";
 import {
     activityQueryStart,
     buildMerchantHistory,
+    buildStatementConversionRows,
     buildStatementSettlements,
     coveredWiseEntryIds,
     defaultSettledAmount,
@@ -209,6 +210,88 @@ test("keeps multi-balance settlements as separate currency rows", () => {
             .map(({ outputEntryId }) => outputEntryId),
         ["CARD_TRANSACTION-123-EUR", "CARD_TRANSACTION-123-USD"],
     );
+});
+
+test("books both balance-conversion legs without treating them as profit or loss", () => {
+    const rows = buildStatementConversionRows(
+        [
+            {
+                "TransferWise ID": "BALANCE-3550456544",
+                Date: "09-06-2025",
+                Amount: "891.55",
+                Currency: "EUR",
+                Description: "Converted CAD to EUR",
+            },
+            {
+                "TransferWise ID": "BALANCE-3550456544",
+                Date: "09-06-2025",
+                Amount: "-1392.79",
+                Currency: "CAD",
+                Description: "Converted CAD to EUR",
+            },
+            {
+                "TransferWise ID": "FEE-BALANCE-3550456544",
+                Date: "09-06-2025",
+                Amount: "-6.13",
+                Currency: "CAD",
+                Description: "Wise conversion fee",
+            },
+        ],
+        "2026-08-24 12:00:00.000",
+        "statements",
+    );
+
+    assert.deepEqual(
+        rows.map(({ entry_id, category, amount, currency }) => ({
+            entry_id,
+            category,
+            amount,
+            currency,
+        })),
+        [
+            {
+                entry_id: "BALANCE-3550456544-EUR",
+                category: "balance_sheet",
+                amount: 891.55,
+                currency: "EUR",
+            },
+            {
+                entry_id: "BALANCE-3550456544-CAD",
+                category: "balance_sheet",
+                amount: -1392.79,
+                currency: "CAD",
+            },
+            {
+                entry_id: "FEE-BALANCE-3550456544",
+                category: "admin",
+                amount: -6.13,
+                currency: "CAD",
+            },
+        ],
+    );
+});
+
+test("does not fold conversion fees into activity settlements", () => {
+    const { byEntryId, unresolved } = buildStatementSettlements(
+        [
+            {
+                "TransferWise ID": "BALANCE-1",
+                Date: "09-06-2025",
+                Amount: "10",
+                Currency: "EUR",
+            },
+            {
+                "TransferWise ID": "FEE-BALANCE-1",
+                Date: "09-06-2025",
+                Amount: "-0.10",
+                Currency: "USD",
+            },
+        ],
+        [],
+    );
+
+    assert.equal(byEntryId.size, 0);
+    assert.deepEqual(unresolved, []);
 });
 
 test("refuses to book an activity without a statement settlement", () => {

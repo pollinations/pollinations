@@ -103,10 +103,11 @@ Entry mapping rules for Wise activity payment evidence:
   (`data/reconcile/2026-07-13-ledger-completeness-backfill/build_rebuild.py`):
   statement `FEE-` legs fold into the parent amount (all-in cash cost);
   same-id reversal pairs net out and zero-net groups are dropped; internal
-  balance conversions are excluded with their fees booked as `wise`/`admin`
-  rows keyed `FEE-BALANCE-<id>`; a reimbursement lump split into per-provider
-  rows keys them `TRANSFER-<lump-id>-<n>`; a charge settled from two balances
-  suffixes the currency (`...-EUR`/`...-USD`).
+  balance conversions book one `wise`/`balance_sheet` row per currency leg,
+  keyed `BALANCE-<id>-<currency>`, while their fees book separately as
+  `wise`/`admin` rows keyed `FEE-BALANCE-<id>`; a reimbursement lump split into
+  per-provider rows keys them `TRANSFER-<lump-id>-<n>`; a charge settled from
+  two balances suffixes the currency (`...-EUR`/`...-USD`).
 - `kind`: `transaction` for every settled movement. Use `opening_balance` only
   for the one statement-backed anchor set described above.
 - `date`: use the Wise settlement date. Invoice or service dates belong in the

@@ -1,3 +1,8 @@
+import {
+    collectUpstreamHeaders,
+    ensureUpstreamOk,
+    UpstreamError,
+} from "@shared/error.ts";
 import { HttpError } from "@shared/http-error.ts";
 import debug from "debug";
 import type {
@@ -11,6 +16,12 @@ import {
     analyzeImageSafety,
     requireSafePrompt,
 } from "../utils/azureContentSafety.ts";
+import {
+    CONTENT_POLICY_ERROR_CODE,
+    CONTENT_POLICY_STATUS,
+    contentPolicyMessage,
+    firstContentPolicyMessage,
+} from "../utils/contentModeration.ts";
 import { logGptImageError } from "../utils/gptImageLogger.ts";
 import { base64ToBuffer, downloadUserImage } from "../utils/imageDownload.ts";
 
@@ -18,6 +29,93 @@ const logError = debug("pollinations:error");
 const logCloudflare = debug("pollinations:cloudflare");
 const AZURE_FLUX_KONTEXT_ENDPOINT =
     "https://myceli-prod-eastus.cognitiveservices.azure.com/providers/blackforestlabs/v1/flux-kontext-pro?api-version=preview";
+
+type AzureFluxKontextResponse = {
+    data?: Array<{
+        b64_json?: string;
+        content_filter_results?: unknown;
+        error?: unknown;
+        finish_reason?: unknown;
+        message?: unknown;
+    }>;
+    error?: unknown;
+    message?: unknown;
+};
+
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+    return value !== null && typeof value === "object" && !Array.isArray(value)
+        ? (value as Record<string, unknown>)
+        : undefined;
+}
+
+function shortString(value: unknown): string | undefined {
+    return typeof value === "string" ? value.slice(0, 500) : undefined;
+}
+
+function errorSummary(value: unknown): Record<string, string> | undefined {
+    if (typeof value === "string") return { message: value.slice(0, 500) };
+    const error = asRecord(value);
+    if (!error) return undefined;
+
+    const summary = {
+        code: shortString(error.code),
+        message: shortString(error.message),
+        type: shortString(error.type),
+    };
+    const entries = Object.entries(summary).filter(
+        (entry): entry is [string, string] => Boolean(entry[1]),
+    );
+    return entries.length > 0 ? Object.fromEntries(entries) : undefined;
+}
+
+function filteredCategories(value: unknown): string[] {
+    const filters = asRecord(value);
+    if (!filters) return [];
+    return Object.entries(filters)
+        .filter(([, result]) => asRecord(result)?.filtered === true)
+        .map(([category]) => category)
+        .sort();
+}
+
+function summarizeUnexpectedResponse(data: AzureFluxKontextResponse): string {
+    const first = data.data?.[0];
+    const root = data as Record<string, unknown>;
+    const firstRecord = asRecord(first);
+    const summary = {
+        responseKeys: Object.keys(root).sort(),
+        dataCount: Array.isArray(data.data) ? data.data.length : undefined,
+        firstDataKeys: firstRecord
+            ? Object.keys(firstRecord).sort()
+            : undefined,
+        finishReason: shortString(first?.finish_reason),
+        message: shortString(data.message) || shortString(first?.message),
+        error: errorSummary(data.error) || errorSummary(first?.error),
+        filteredCategories: filteredCategories(first?.content_filter_results),
+    };
+    return JSON.stringify(summary);
+}
+
+function contentPolicyReason(
+    data: AzureFluxKontextResponse,
+): string | undefined {
+    const first = data.data?.[0];
+    const categories = filteredCategories(first?.content_filter_results);
+    if (categories.length > 0) {
+        return `Content filter blocked categories: ${categories.join(", ")}`;
+    }
+
+    const rootError = errorSummary(data.error);
+    const itemError = errorSummary(first?.error);
+    return firstContentPolicyMessage([
+        shortString(first?.finish_reason)?.replaceAll("_", " "),
+        shortString(data.message),
+        shortString(first?.message),
+        rootError?.message,
+        rootError?.code?.replaceAll("_", " "),
+        itemError?.message,
+        itemError?.code?.replaceAll("_", " "),
+    ]);
+}
 
 function greatestCommonDivisor(a: number, b: number): number {
     while (b !== 0) {
@@ -118,32 +216,34 @@ export async function callAzureFluxKontext(
 
     logCloudflare(`Kontext request response status: ${response.status}`);
 
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new HttpError(
-            errorText,
-            response.status,
-            undefined,
-            AZURE_FLUX_KONTEXT_ENDPOINT,
-        );
-    }
+    await ensureUpstreamOk(response, AZURE_FLUX_KONTEXT_ENDPOINT);
 
-    const data = (await response.json()) as {
-        data?: Array<{
-            b64_json?: string;
-            content_filter_results?: {
-                sexual?: { filtered?: boolean };
-            };
-        }>;
-    };
+    const data = (await response.json()) as AzureFluxKontextResponse;
 
-    if (!data.data || !data.data[0] || !data.data[0].b64_json) {
-        throw new HttpError(
-            "Invalid response from Azure Flux Kontext API",
-            500,
-            undefined,
-            AZURE_FLUX_KONTEXT_ENDPOINT,
-        );
+    if (!data.data?.[0]?.b64_json) {
+        const requestUrl = new URL(AZURE_FLUX_KONTEXT_ENDPOINT);
+        const responseBody = summarizeUnexpectedResponse(data);
+        const upstreamHeaders = collectUpstreamHeaders(response.headers);
+        const rejectionReason = contentPolicyReason(data);
+
+        if (rejectionReason) {
+            throw new UpstreamError(CONTENT_POLICY_STATUS, {
+                message: contentPolicyMessage(rejectionReason),
+                errorCode: CONTENT_POLICY_ERROR_CODE,
+                requestUrl,
+                upstreamStatus: response.status,
+                responseBody,
+                upstreamHeaders,
+            });
+        }
+
+        throw new UpstreamError(502, {
+            message: "Azure Flux Kontext returned no image",
+            requestUrl,
+            upstreamStatus: response.status,
+            responseBody,
+            upstreamHeaders,
+        });
     }
 
     // Convert base64 to buffer
@@ -153,7 +253,8 @@ export async function callAzureFluxKontext(
     return {
         buffer: imageBuffer,
         isMature:
-            data.data[0].content_filter_results?.sexual?.filtered || false,
+            asRecord(asRecord(data.data[0].content_filter_results)?.sexual)
+                ?.filtered === true,
         isChild: false, // Azure doesn't provide child detection
         trackingData: {
             actualModel: "kontext",

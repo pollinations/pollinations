@@ -109,7 +109,10 @@ describe("callAzureFluxKontext", () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             Response.json(
                 { error: { message: "aspect ratio is out of range" } },
-                { status: 400 },
+                {
+                    status: 400,
+                    headers: { "x-ms-request-id": "azure-request-400" },
+                },
             ),
         );
 
@@ -117,7 +120,88 @@ describe("callAzureFluxKontext", () => {
             callAzureFluxKontext("bad ratio", baseParams, USER_INFO),
         ).rejects.toMatchObject({
             status: 400,
-            upstreamUrl: ENDPOINT,
+            upstreamStatus: 400,
+            requestUrl: new URL(ENDPOINT),
+            upstreamHeaders: { "x-ms-request-id": "azure-request-400" },
         });
+    });
+
+    it("maps a filtered successful response to a safe client error", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            Response.json(
+                {
+                    prompt: "private prompt must not be logged",
+                    data: [
+                        {
+                            finish_reason: "content_filter",
+                            content_filter_results: {
+                                sexual: { filtered: true, severity: "high" },
+                            },
+                            revised_prompt: "private rewritten prompt",
+                        },
+                    ],
+                },
+                { headers: { "x-ms-request-id": "azure-request-filtered" } },
+            ),
+        );
+
+        const error = await callAzureFluxKontext(
+            "filtered request",
+            baseParams,
+            USER_INFO,
+        ).catch((caught) => caught);
+
+        expect(error).toMatchObject({
+            status: 422,
+            upstreamStatus: 200,
+            errorCode: "content_policy_violation",
+            requestUrl: new URL(ENDPOINT),
+            upstreamHeaders: {
+                "x-ms-request-id": "azure-request-filtered",
+            },
+        });
+        expect(JSON.parse(error.responseBody)).toMatchObject({
+            dataCount: 1,
+            finishReason: "content_filter",
+            filteredCategories: ["sexual"],
+        });
+        expect(error.responseBody).not.toContain("private");
+    });
+
+    it("records a safe response summary when Azure returns no image", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            Response.json(
+                {
+                    data: [
+                        {
+                            source_url: "https://private.example/source.png",
+                            unexpected: "metadata only",
+                        },
+                    ],
+                    message: "generation completed without an image",
+                },
+                { headers: { "x-ms-request-id": "azure-request-empty" } },
+            ),
+        );
+
+        const error = await callAzureFluxKontext(
+            "unexpected response",
+            baseParams,
+            USER_INFO,
+        ).catch((caught) => caught);
+
+        expect(error).toMatchObject({
+            status: 502,
+            message: "Azure Flux Kontext returned no image",
+            upstreamStatus: 200,
+            requestUrl: new URL(ENDPOINT),
+            upstreamHeaders: { "x-ms-request-id": "azure-request-empty" },
+        });
+        expect(JSON.parse(error.responseBody)).toMatchObject({
+            dataCount: 1,
+            message: "generation completed without an image",
+        });
+        expect(error.responseBody).not.toContain("private.example");
+        expect(error.responseBody).not.toContain("metadata only");
     });
 });

@@ -11,6 +11,10 @@ export const SAFETY_FEATURES = [
 export type SafetyFeature = (typeof SAFETY_FEATURES)[number];
 export type SafeValue = string | boolean | undefined | null;
 export const SAFETY_HEADER_NAME = "Pollinations-Safe";
+export const HARMFUL_CONTENT_SAFETY_FEATURES = [
+    "sexual",
+    "violence",
+] as const satisfies readonly SafetyFeature[];
 
 const SAFETY_ALIASES: Record<string, SafetyFeature[]> = {
     true: ["privacy", "secrets"],

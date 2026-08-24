@@ -43,6 +43,15 @@ describe("modelBody", () => {
         });
     });
 
+    it("maps required safety flags to the shared feature list", () => {
+        expect(modelBody({ requiredSafety: true }, false)).toEqual({
+            requiredSafetyFeatures: ["sexual", "violence"],
+        });
+        expect(modelBody({ requiredSafety: false }, false)).toEqual({
+            requiredSafetyFeatures: [],
+        });
+    });
+
     it("keeps modality out of updates while allowing image pricing changes", () => {
         expect(
             modelBody(

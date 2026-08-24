@@ -16,6 +16,7 @@ import {
 } from "@pollinations/ui";
 import { MAX_FALLBACK_TARGETS } from "@shared/community-endpoints.ts";
 import type { ModelInputModality } from "@shared/registry/registry.ts";
+import { HARMFUL_CONTENT_SAFETY_FEATURES } from "@shared/schemas/safety.ts";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
@@ -670,6 +671,59 @@ export function CommunityEndpointDialog({
                                         <CheckIcon className="h-3.5 w-3.5" />
                                     )}
                                     Paid only
+                                </TabButton>
+                            </ButtonGroup>
+                        </FieldStack>
+                    )}
+                    {!isEndpointAgent && (
+                        <FieldStack
+                            label="Prompt safety"
+                            helper={
+                                form.requiredSafetyFeatures.length > 0
+                                    ? "Sexual, violent, hateful, and insulting prompts are blocked before they reach your endpoint. Callers cannot turn this off."
+                                    : "Prompt safety remains optional for callers."
+                            }
+                            alignLabelRow
+                        >
+                            <ButtonGroup aria-label="Required prompt safety">
+                                <TabButton
+                                    active={
+                                        form.requiredSafetyFeatures.length === 0
+                                    }
+                                    onClick={() =>
+                                        setForm((current) => ({
+                                            ...current,
+                                            requiredSafetyFeatures: [],
+                                        }))
+                                    }
+                                    size="sm"
+                                    className="min-w-20 gap-1.5"
+                                >
+                                    {form.requiredSafetyFeatures.length ===
+                                        0 && (
+                                        <CheckIcon className="h-3.5 w-3.5" />
+                                    )}
+                                    Off
+                                </TabButton>
+                                <TabButton
+                                    active={
+                                        form.requiredSafetyFeatures.length > 0
+                                    }
+                                    onClick={() =>
+                                        setForm((current) => ({
+                                            ...current,
+                                            requiredSafetyFeatures: [
+                                                ...HARMFUL_CONTENT_SAFETY_FEATURES,
+                                            ],
+                                        }))
+                                    }
+                                    size="sm"
+                                    className="min-w-36 gap-1.5"
+                                >
+                                    {form.requiredSafetyFeatures.length > 0 && (
+                                        <CheckIcon className="h-3.5 w-3.5" />
+                                    )}
+                                    Block harmful content
                                 </TabButton>
                             </ButtonGroup>
                         </FieldStack>

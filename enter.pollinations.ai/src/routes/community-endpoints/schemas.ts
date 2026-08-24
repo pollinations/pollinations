@@ -15,6 +15,7 @@ import {
 } from "@shared/community-endpoints.ts";
 import { ValidationError } from "@shared/http/validation-error.ts";
 import { MODEL_INPUT_MODALITIES } from "@shared/registry/registry.ts";
+import { SAFETY_FEATURES } from "@shared/schemas/safety.ts";
 import { z } from "zod";
 
 const ModalitySchema = z
@@ -33,6 +34,12 @@ const InputModalitiesSchema = z
     .min(1)
     .describe(
         "Input types accepted by the model. Select every supported modality so the model catalog can advertise them accurately.",
+    );
+const RequiredSafetyFeaturesSchema = z
+    .array(z.enum(SAFETY_FEATURES))
+    .max(SAFETY_FEATURES.length)
+    .describe(
+        "Input safety checks callers cannot disable. Use sexual and violence to block harmful prompts before they reach the provider.",
     );
 const AdvertisedSchema = z
     .object(CommunityEndpointAdvertisedSchema.shape)
@@ -124,6 +131,9 @@ const ProxyCreateSchema = z
         modality: ModalitySchema.optional().default("text"),
         imagePricing: ImagePricingSchema.optional().default("request"),
         inputModalities: InputModalitiesSchema.optional(),
+        requiredSafetyFeatures: RequiredSafetyFeaturesSchema.optional().default(
+            [],
+        ),
         advertised: AdvertisedSchema.optional(),
         perUserRpm: PerUserRpmSchema.optional(),
         paidOnly: PaidOnlySchema.optional().default(false),
@@ -163,6 +173,7 @@ const ProxyUpdateSchema = z
         paidOnly: PaidOnlySchema.optional(),
         imagePricing: ImagePricingSchema.optional(),
         inputModalities: InputModalitiesSchema.optional(),
+        requiredSafetyFeatures: RequiredSafetyFeaturesSchema.optional(),
         advertised: AdvertisedSchema.optional(),
         fallbacks: FallbacksSchema.optional(),
         ...UpdatePriceFieldsSchema,
@@ -237,6 +248,7 @@ const ProxyEndpointResponseSchema = z
         modality: ModalitySchema,
         imagePricing: ImagePricingSchema,
         inputModalities: z.array(InputModalitySchema),
+        requiredSafetyFeatures: RequiredSafetyFeaturesSchema,
         advertised: AdvertisedSchema,
         perUserRpm: PerUserRpmSchema,
         paidOnly: z.boolean(),

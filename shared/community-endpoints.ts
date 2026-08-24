@@ -14,6 +14,7 @@ import {
     type OpenAIChatUsageType,
 } from "./registry/usage-headers.ts";
 import { readResponseBytes } from "./response-bytes.ts";
+import { SAFETY_FEATURES, type SafetyFeature } from "./schemas/safety.ts";
 
 export const LEGACY_COMMUNITY_MODEL_PREFIX = "community/";
 export const COMMUNITY_MODEL_REWARD_RATE = 0.75;
@@ -429,6 +430,7 @@ export type ProxyListingPayload = {
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
     inputModalities: ModelInputModality[];
+    requiredSafetyFeatures: SafetyFeature[];
     perUserRpm: number | null;
     fallbacks: string[];
     advertised?: CommunityEndpointAdvertised;
@@ -522,6 +524,13 @@ export function parseListingPayload<K extends ListingType>(
                 : undefined,
             modality,
         ),
+        requiredSafetyFeatures: Array.isArray(source.requiredSafetyFeatures)
+            ? source.requiredSafetyFeatures.filter(
+                  (feature): feature is SafetyFeature =>
+                      typeof feature === "string" &&
+                      (SAFETY_FEATURES as readonly string[]).includes(feature),
+              )
+            : [],
         perUserRpm:
             typeof source.perUserRpm === "number" ? source.perUserRpm : null,
         fallbacks: Array.isArray(source.fallbacks)
@@ -576,6 +585,7 @@ type CommunityEndpointRuntimeBase = {
 export type ProxyCommunityEndpointRuntime = CommunityEndpointRuntimeBase & {
     type: "proxy";
     bearerTokenCiphertext: string;
+    requiredSafetyFeatures?: SafetyFeature[];
     advertised?: CommunityEndpointAdvertised;
 };
 
@@ -619,6 +629,7 @@ export type CommunityModelDefinitionInput = {
     modality?: CommunityEndpointModality;
     imagePricing?: CommunityEndpointImagePricing;
     inputModalities?: ModelInputModality[] | null;
+    requiredSafetyFeatures?: SafetyFeature[];
     fallbacks?: string[];
     advertised?: CommunityEndpointAdvertised | null;
     hidden?: boolean;
@@ -981,6 +992,7 @@ export function communityModelDefinition(
         description: description || undefined,
         inputModalities,
         outputModalities: isImage ? ["image"] : ["text"],
+        requiredSafetyFeatures: endpoint.requiredSafetyFeatures,
         hidden: endpoint.hidden,
         ...(endpoint.fallbacks?.length
             ? { fallbacks: endpoint.fallbacks }

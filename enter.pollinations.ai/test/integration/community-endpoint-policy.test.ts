@@ -120,6 +120,7 @@ describe("community endpoint configuration policy", () => {
                 modality: "image",
                 imagePricing: "request",
                 inputModalities: ["audio"],
+                requiredSafetyFeatures: [],
                 advertised: { contextLength: 32000 },
                 paidOnly: false,
             }),
@@ -139,6 +140,7 @@ describe("community endpoint configuration policy", () => {
             modality: "image",
             imagePricing: "request",
             inputModalities: ["text", "image"],
+            requiredSafetyFeatures: ["sexual", "violence"],
             paidOnly: true,
             perUserRpm: 2.5,
             completionImagePrice: 0.2,
@@ -148,6 +150,7 @@ describe("community endpoint configuration policy", () => {
             modality: "image",
             imagePricing: "request",
             inputModalities: ["text", "image"],
+            requiredSafetyFeatures: ["sexual", "violence"],
             paidOnly: true,
             perUserRpm: 2.5,
             completionImagePrice: 0.2,
@@ -167,7 +170,15 @@ describe("community endpoint configuration policy", () => {
             promptImagePrice: 0.000001,
             completionImagePrice: 0,
             paidOnly: true,
+            requiredSafetyFeatures: ["sexual", "violence"],
         });
+
+        const safetyDisabled = await postModel(
+            sessionToken,
+            `/${created.id as string}/update`,
+            { requiredSafetyFeatures: [] },
+        );
+        expect(safetyDisabled.requiredSafetyFeatures).toEqual([]);
 
         const privateModel = await postModel(
             sessionToken,

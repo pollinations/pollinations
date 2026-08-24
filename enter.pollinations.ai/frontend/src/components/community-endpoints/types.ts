@@ -17,6 +17,7 @@ import {
     normalizeCommunityEndpointInputModalities,
 } from "@shared/community-endpoints.ts";
 import type { ModelInputModality, Usage } from "@shared/registry/registry.ts";
+import type { SafetyFeature } from "@shared/schemas/safety.ts";
 
 type EndpointFormPrices = Record<CommunityEndpointPriceKey, string>;
 
@@ -72,6 +73,7 @@ export type ProxyCommunityEndpoint = CommunityEndpointBase &
         modality: CommunityEndpointModality;
         imagePricing: CommunityEndpointImagePricing;
         inputModalities: ModelInputModality[];
+        requiredSafetyFeatures: SafetyFeature[];
         advertised: CommunityEndpointAdvertised;
         perUserRpm: number | null;
         paidOnly: boolean;
@@ -157,6 +159,7 @@ export type EndpointFormState = ModelListingFormState & {
     bearerToken: string;
     // Callers may only spend Paid Pollen. Useful for pay-as-you-go upstreams.
     paidOnly: boolean;
+    requiredSafetyFeatures: SafetyFeature[];
     // Public community model ids, tried in the order listed.
     fallbacks: string[];
 } & EndpointFormPrices;
@@ -177,6 +180,7 @@ export type EndpointPayload = ModelListingPayload & {
     baseUrl: string;
     upstreamModel: string;
     paidOnly: boolean;
+    requiredSafetyFeatures: SafetyFeature[];
     fallbacks: string[];
 } & CommunityEndpointPrices;
 
@@ -228,6 +232,7 @@ export const emptyForm: EndpointFormState = {
     upstreamModel: "",
     bearerToken: "",
     paidOnly: false,
+    requiredSafetyFeatures: [],
     fallbacks: [],
     ...emptyPriceForm,
 };
@@ -339,6 +344,7 @@ export function endpointToForm(endpoint: EditableEndpoint): EndpointFormState {
         upstreamModel: endpoint.upstreamModel,
         bearerToken: "",
         paidOnly: endpoint.paidOnly,
+        requiredSafetyFeatures: endpoint.requiredSafetyFeatures,
         fallbacks: endpoint.fallbacks ?? [],
         ...(Object.fromEntries(
             COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => {
@@ -493,6 +499,7 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
         baseUrl: form.baseUrl.trim(),
         upstreamModel: form.upstreamModel.trim() || form.name.trim(),
         paidOnly: form.visibility === "public" ? form.paidOnly : false,
+        requiredSafetyFeatures: form.requiredSafetyFeatures,
         // Private models carry no public pricing, so their fallbacks cannot be
         // validated against a quoted price.
         fallbacks: form.visibility === "public" ? form.fallbacks : [],

@@ -63,6 +63,7 @@ interface ProxyMyModel extends MyModelBase {
     completionImagePrice: number;
     // /account/my-models/test detects edit support from endpoint probes.
     inputModalities: string[];
+    requiredSafetyFeatures: string[];
     fallbacks: string[];
 }
 
@@ -159,6 +160,12 @@ export function modelBody(
             .split(",")
             .map((modality) => modality.trim())
             .filter((modality) => modality.length > 0);
+    }
+
+    if (opts.requiredSafety !== undefined) {
+        body.requiredSafetyFeatures = opts.requiredSafety
+            ? ["sexual", "violence"]
+            : [];
     }
 
     if (includeRequired) {
@@ -268,6 +275,11 @@ const create = addPriceOptions(
             "Comma-separated accepted inputs: text,image,audio,video",
         )
         .option(
+            "--required-safety",
+            "Block harmful prompts before they reach the provider",
+        )
+        .option("--no-required-safety", "Leave prompt safety optional")
+        .option(
             "--modality <modality>",
             "Model family: text (default), image, or transcription",
         )
@@ -320,6 +332,11 @@ const update = addPriceOptions(
             "--input-modalities <types>",
             "Comma-separated accepted inputs: text,image,audio,video",
         )
+        .option(
+            "--required-safety",
+            "Block harmful prompts before they reach the provider",
+        )
+        .option("--no-required-safety", "Leave prompt safety optional")
         // No --modality here on purpose: UpdateEndpointSchema has no modality
         // field, so a registered model's family is fixed at creation.
         .option(

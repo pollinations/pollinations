@@ -1,4 +1,5 @@
 import { roundPollenLedgerAmount } from "../billing/precision.ts";
+import type { SafetyFeature } from "../schemas/safety.ts";
 import { AUDIO_SERVICES, type AudioModelName } from "./audio";
 import type { CostVariantContext, PricingInput } from "./cost-variants";
 
@@ -152,6 +153,8 @@ export type ModelDefinition = {
     fallbacks?: string[];
     /** Override the shared fallback status list for this model. Network failures always retry. */
     fallbackOnStatusCodes?: number[];
+    /** Input safety features callers cannot disable for this model. */
+    requiredSafetyFeatures?: SafetyFeature[];
     brand: string;
     category: Category;
     cost: CostDefinition;

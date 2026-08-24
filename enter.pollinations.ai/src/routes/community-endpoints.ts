@@ -822,8 +822,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         // change, so rewrite the payload for the private state and
                         // clear the pending fields.
                         update.payload = JSON.stringify({
-                            bearerTokenCiphertext:
-                                stored.bearerTokenCiphertext,
+                            bearerTokenCiphertext: stored.bearerTokenCiphertext,
                             ...policy,
                             fallbacks,
                         });

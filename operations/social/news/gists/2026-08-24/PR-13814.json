@@ -1,0 +1,33 @@
+{
+  "pr_number": 13814,
+  "title": "fix: add endpoint agent request example",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13814",
+  "merged_at": "2026-08-24T06:06:16Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds the missing JSON body to the generated Endpoint Agent POST example.\n- Fixes the API-reference validator failure after production deployment.\n- Keeps generated APIDOCS.md out of the feature PR.\n\nValidation:\n- Biome\n- Gen typecheck\n\nThe live docs workflow will pass after this sample reaches Gen production.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The POST got its pollen",
+    "blurb": "The Endpoint Agent example was sending visitors toward a POST request with no body. It now carries the JSON payload it was always meant to bring.",
+    "summary": "Added the missing JSON request body to the generated Endpoint Agent POST example in Gen's API documentation, allowing the production API-reference validator to pass.",
+    "impact": "Developers now get a complete Endpoint Agent POST sample they can copy into a working request, and the live docs can validate successfully after deployment.",
+    "keywords": [
+      "api-docs",
+      "endpoint-agent",
+      "post",
+      "json",
+      "gen"
+    ],
+    "visual_concept": "Depict a cozy API garden workbench where Polli is delivering a small labeled JSON parcel into a retro terminal's POST-request mailbox. The terminal shows a neat Endpoint Agent request, with code-plants and flowers growing around it to represent documentation becoming usable; Polli wears a tiny courier cap.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, black oval eyes, pink rectangular cheek blushes, translucent light-blue wings, and a tiny courier cap, placing a glowing JSON parcel into a retro terminal labeled \"POST\" while neat code-plants and small flowers grow around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, chunky retro sprites, subtle CRT glow, pixel-font text \"JSON READY\", lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-24/PR-13814.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, black oval eyes, pink rectangular cheek blushes, translucent light-blue wings, and a tiny courier cap, placing a glowing JSON parcel into a retro terminal labeled \"POST\" while neat code-plants and small flowers grow around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, chunky retro sprites, subtle CRT glow, pixel-font text \"JSON READY\", lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-24T06:07:14.222953+00:00"
+}

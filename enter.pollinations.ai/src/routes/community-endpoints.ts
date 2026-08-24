@@ -817,6 +817,20 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     update.pendingAt = new Date();
                 } else {
                     update.visibility = resolvedVisibility;
+                    if (isGoingPrivate) {
+                        // Going private applies immediately and cancels any queued
+                        // change, so rewrite the payload for the private state and
+                        // clear the pending fields.
+                        update.payload = JSON.stringify({
+                            bearerTokenCiphertext:
+                                stored.bearerTokenCiphertext,
+                            ...policy,
+                            fallbacks,
+                        });
+                        update.pendingPayload = null;
+                        update.pendingVisibility = null;
+                        update.pendingAt = null;
+                    }
                 }
             }
             const [row] = await db

@@ -1,0 +1,34 @@
+{
+  "pr_number": 13809,
+  "title": "feat: add audio transcription to MCP",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13809",
+  "merged_at": "2026-08-24T05:47:24Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `transcribeAudio` to the existing Pollinations MCP instead of deploying another Worker\n- Fetches a direct public HTTPS audio URL and forwards it unchanged as multipart to `/v1/audio/transcriptions`\n- Leaves model validation, provider limits, and request timing to Gen; adds no MCP timeout, size cap, retry, or fallback\n- Publishes `@pollinations/mcp` 2.5.0 and covers hosted and stdio registration\n\nTests: focused audio tests, modern/legacy stdio suite, hosted MCP Worker suite",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive has ears",
+    "blurb": "Pollinations MCP can now take a public audio URL and turn the buzzing into text. No extra Worker habitat required.",
+    "summary": "Added a transcribeAudio tool to @pollinations/mcp 2.5.0, which fetches a direct public HTTPS audio URL and forwards it unchanged as multipart to Gen's /v1/audio/transcriptions endpoint.",
+    "impact": "MCP agents using either hosted or stdio registration can now request audio transcription through the existing Pollinations MCP server.",
+    "keywords": [
+      "mcp",
+      "audio",
+      "transcription",
+      "transcribeAudio",
+      "api",
+      "agents"
+    ],
+    "visual_concept": "Depict the existing Pollinations MCP as a cozy retro terminal receiving a small audio cassette or sound-wave postcard from a public URL, then printing a neat transcription page. Polli, wearing tiny studio headphones, listens warmly beside the terminal while a code-plant grows text-shaped leaves, representing audio passing through the existing MCP path rather than needing a separate service.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and rounded light blue translucent wings, wearing tiny studio headphones as she listens beside a chunky retro MCP terminal; the terminal receives a little sound-wave postcard and prints a transcription page while text-shaped code-plants bloom from lime green (#ecf874) pots. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, pixel-font text: \"TRANSCRIBE\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-24/PR-13809.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and rounded light blue translucent wings, wearing tiny studio headphones as she listens beside a chunky retro MCP terminal; the terminal receives a little sound-wave postcard and prints a transcription page while text-shaped code-plants bloom from lime green (#ecf874) pots. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, pixel-font text: \"TRANSCRIBE\"."
+  },
+  "generated_at": "2026-08-24T05:49:37.935063+00:00"
+}

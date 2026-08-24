@@ -38,16 +38,7 @@ export type ProviderAccountDefinition = {
 
 type ProviderRegistryFile = {
     version: number;
-    auditTargets: ProviderAuditTarget[];
     providers: ProviderDefinition[];
-};
-
-export type ProviderAuditTarget = {
-    provider: string;
-    accountId?: string;
-    loginEmail: string | null;
-    url: string;
-    pending?: boolean;
 };
 
 export type PollenWitnessExplanation = {
@@ -90,8 +81,6 @@ type ProviderReconciliationFile = {
 
 export const PROVIDER_REGISTRY = (registryJson as ProviderRegistryFile)
     .providers;
-export const PROVIDER_AUDIT_TARGETS = (registryJson as ProviderRegistryFile)
-    .auditTargets;
 export const POLLEN_WITNESS_EXPLANATIONS = (
     reconciliationJson as ProviderReconciliationFile
 ).pollenWitnessExplanations;
@@ -114,39 +103,6 @@ export function normalizeProviderName(value: string): string {
 
 export function resolveProvider(value: string): ProviderDefinition | undefined {
     return providerByAlias.get(normalizeProviderName(value));
-}
-
-export function providerAuditUrl(value: string): string | null {
-    const provider = resolveProvider(value);
-    return provider
-        ? (PROVIDER_AUDIT_TARGETS.find(
-              (target) => target.provider === provider.id && !target.pending,
-          )?.url ??
-              PROVIDER_AUDIT_TARGETS.find(
-                  (target) => target.provider === provider.id,
-              )?.url ??
-              null)
-        : null;
-}
-
-export function providerAuditTargets(value: string): ProviderAuditTarget[] {
-    const provider = resolveProvider(value);
-    return provider
-        ? PROVIDER_AUDIT_TARGETS.filter(
-              (target) => target.provider === provider.id,
-          )
-        : [];
-}
-
-export function providerAccountLabel(
-    value: string,
-    accountId: string,
-): string | null {
-    return (
-        resolveProvider(value)?.accounts?.find(
-            (account) => account.id === accountId,
-        )?.label ?? null
-    );
 }
 
 export function providerMeteringBasis(value: string): MeteringBasis {

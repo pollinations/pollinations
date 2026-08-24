@@ -1,16 +1,21 @@
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
-const registry = JSON.parse(
-    readFileSync(
-        resolve(scriptDirectory, "../../provider-registry.json"),
-        "utf8",
-    ),
+const targetsPath = resolve(
+    scriptDirectory,
+    "../data/provider-audit-targets.json",
 );
-const targets = registry.auditTargets ?? [];
+if (!existsSync(targetsPath)) {
+    throw new Error(
+        `Private provider dashboard checklist is missing: ${targetsPath}`,
+    );
+}
+const { auditTargets: targets = [] } = JSON.parse(
+    readFileSync(targetsPath, "utf8"),
+);
 const urls = [...new Set(targets.map((target) => target.url))];
 
 if (urls.length === 0) throw new Error("No provider dashboard URLs registered");

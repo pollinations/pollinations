@@ -8,6 +8,14 @@ const repositoryDirectory = resolve(economicsDirectory, "../..");
 const registry = JSON.parse(
     readFileSync(resolve(economicsDirectory, "provider-registry.json"), "utf8"),
 );
+const auditTargetsPath = resolve(
+    economicsDirectory,
+    "ingest/data/provider-audit-targets.json",
+);
+const auditTargets = existsSync(auditTargetsPath)
+    ? (JSON.parse(readFileSync(auditTargetsPath, "utf8")).auditTargets ?? [])
+    : [];
+const hasPrivateAuditTargets = existsSync(auditTargetsPath);
 const reconciliation = JSON.parse(
     readFileSync(
         resolve(economicsDirectory, "provider-reconciliation.json"),
@@ -77,10 +85,9 @@ for (const provider of registry.providers) {
             );
         }
         if (
+            hasPrivateAuditTargets &&
             provider.meteringBasis !== "internal" &&
-            !(registry.auditTargets ?? []).some(
-                (target) => target.provider === provider.id,
-            )
+            !auditTargets.some((target) => target.provider === provider.id)
         ) {
             errors.push(
                 `Monthly provider ${provider.id} has no dashboard audit URL`,
@@ -89,7 +96,7 @@ for (const provider of registry.providers) {
     }
 }
 
-for (const target of registry.auditTargets ?? []) {
+for (const target of auditTargets) {
     const providerId = target.provider;
     if (providerByName.get(providerId)?.id !== providerId) {
         errors.push(`Dashboard audit URL ${providerId} is not canonical`);
@@ -127,10 +134,12 @@ for (const target of registry.auditTargets ?? []) {
 }
 
 for (const provider of registry.providers) {
-    const targets = (registry.auditTargets ?? []).filter(
+    const targets = auditTargets.filter(
         (target) => target.provider === provider.id,
     );
-    for (const account of provider.accounts ?? []) {
+    for (const account of hasPrivateAuditTargets
+        ? (provider.accounts ?? [])
+        : []) {
         if (!targets.some((target) => target.accountId === account.id)) {
             errors.push(
                 `Provider ${provider.id} account ${account.id} has no dashboard audit target`,
@@ -140,7 +149,7 @@ for (const provider of registry.providers) {
 }
 
 const auditTargetKeys = new Set();
-for (const target of registry.auditTargets ?? []) {
+for (const target of auditTargets) {
     const key = `${target.provider}|${target.accountId ?? ""}|${target.url}`;
     if (auditTargetKeys.has(key)) {
         errors.push(`Duplicate dashboard audit target ${key}`);
@@ -231,10 +240,9 @@ const result = {
         (sum, provider) => sum + (provider.accounts ?? []).length,
         0,
     ),
-    dashboard_audit_targets: (registry.auditTargets ?? []).length,
-    dashboard_audit_urls: new Set(
-        (registry.auditTargets ?? []).map((target) => target.url),
-    ).size,
+    dashboard_audit_targets: auditTargets.length,
+    dashboard_audit_urls: new Set(auditTargets.map((target) => target.url))
+        .size,
     reviewed_provider_gaps: providerCheckKeys.size,
     explained_meter_drifts: meterDriftKeys.size,
     metering_bases: Object.fromEntries(

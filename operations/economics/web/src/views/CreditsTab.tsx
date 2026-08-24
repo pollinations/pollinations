@@ -20,10 +20,6 @@ import {
 import { StatCards } from "../components/StatCards";
 import { fmtPeriod, fmtUsd } from "../lib/format";
 import { type ProviderBalanceRow, providerBalanceRows } from "../lib/insights";
-import {
-    providerAccountLabel,
-    providerAuditTargets,
-} from "../lib/providerRegistry";
 import type { Data } from "../types";
 
 // Urgency color for a depletion date: red under 30 days, amber under 90.
@@ -51,64 +47,6 @@ function balanceTone(value: number | null) {
 
 function optionalUsd(value: number | null) {
     return value == null ? "–" : fmtUsd(value);
-}
-
-function auditTargetLabel(
-    vendor: string,
-    target: ReturnType<typeof providerAuditTargets>[number],
-    targetCount: number,
-) {
-    if (target.accountId) {
-        return (
-            providerAccountLabel(vendor, target.accountId) ?? target.accountId
-        );
-    }
-    if (targetCount === 1) return "Dashboard";
-    const hostname = new URL(target.url).hostname;
-    if (hostname.includes("amazon.com")) return "AWS credits";
-    if (hostname.includes("automat-it.com")) return "Glass";
-    if (hostname.includes("umbrellacost.io")) return "Umbrella";
-    return hostname.replace(/^www\./, "");
-}
-
-function VendorAccess({ vendor }: { vendor: string }) {
-    const targets = providerAuditTargets(vendor);
-    if (targets.length === 0) {
-        return <span className="text-sm text-intent-danger-text">Missing</span>;
-    }
-    return (
-        <div className="flex min-w-52 flex-col gap-1">
-            {targets.map((target, index) => (
-                <div
-                    key={`${target.accountId ?? "default"}|${target.url}|${index}`}
-                    className="flex flex-wrap items-baseline gap-x-2 text-sm"
-                >
-                    <a
-                        href={target.url}
-                        target="_blank"
-                        rel="noreferrer noopener"
-                        className="text-theme-accent underline decoration-dotted underline-offset-4"
-                    >
-                        {auditTargetLabel(vendor, target, targets.length)}
-                    </a>
-                    <span
-                        className={cn(
-                            "text-theme-text-soft",
-                            target.loginEmail == null &&
-                                "text-intent-danger-text",
-                        )}
-                    >
-                        {target.loginEmail ?? "login missing"}
-                    </span>
-                    {target.pending && (
-                        <span className="text-xs text-intent-warning-text">
-                            verify
-                        </span>
-                    )}
-                </div>
-            ))}
-        </div>
-    );
 }
 
 function BalanceStatus({ row }: { row: ProviderBalanceRow }) {
@@ -315,9 +253,6 @@ export function BalancesTab({ data }: { data: Data }) {
                                 Vendor
                             </TableHeaderCell>
                             <TableHeaderCell rowSpan={2}>
-                                Access
-                            </TableHeaderCell>
-                            <TableHeaderCell rowSpan={2}>
                                 Balance checked
                             </TableHeaderCell>
                             <TableHeaderCell
@@ -402,11 +337,6 @@ export function BalancesTab({ data }: { data: Data }) {
                                                 </button>
                                             </TableCell>
                                             <TableCell>
-                                                <VendorAccess
-                                                    vendor={row.vendor}
-                                                />
-                                            </TableCell>
-                                            <TableCell>
                                                 <BalanceStatus row={row} />
                                             </TableCell>
                                             <TableCell
@@ -448,7 +378,7 @@ export function BalancesTab({ data }: { data: Data }) {
                                         {isExpanded && (
                                             <TableRow>
                                                 <TableCell
-                                                    colSpan={6}
+                                                    colSpan={5}
                                                     className="bg-theme-bg-active/40"
                                                 >
                                                     <BalanceHistory row={row} />

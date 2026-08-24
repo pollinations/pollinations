@@ -9,12 +9,9 @@ import {
     missingProviderMappings,
     normalizeProviderName,
     POLLEN_WITNESS_EXPLANATIONS,
-    PROVIDER_AUDIT_TARGETS,
     PROVIDER_CHECK_EXPLANATIONS,
     PROVIDER_REGISTRY,
     pollenWitnessExplanation,
-    providerAuditTargets,
-    providerAuditUrl,
     providerCheckExplanation,
     providerMeteringBasis,
     providerReviewRows,
@@ -147,30 +144,6 @@ describe("provider registry", () => {
                 (account) => account.id,
             ),
         ).toEqual(["myceli"]);
-    });
-
-    it("keeps audit dashboards canonical and available for external monthly vendors", () => {
-        for (const target of PROVIDER_AUDIT_TARGETS) {
-            expect(resolveProvider(target.provider)?.id).toBe(target.provider);
-            expect(new URL(target.url).protocol).toBe("https:");
-            if (!target.pending) expect(target.loginEmail).toContain("@");
-        }
-
-        for (const provider of PROVIDER_REGISTRY) {
-            if (
-                provider.monthlyReview &&
-                provider.meteringBasis !== "internal"
-            ) {
-                expect(providerAuditUrl(provider.id)).not.toBeNull();
-            }
-        }
-
-        expect(providerAuditUrl("bedrock")).toBe(
-            providerAuditTargets("aws")[0].url,
-        );
-        expect(providerAuditTargets("fireworks")).toHaveLength(5);
-        expect(providerAuditTargets("openrouter")).toHaveLength(2);
-        expect(providerAuditUrl("pointsflyer")).toBeNull();
     });
 
     it("keeps source-backed Pollen witness explanations unique and canonical", () => {

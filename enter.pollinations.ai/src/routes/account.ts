@@ -791,6 +791,11 @@ const usageResponseSchema = z.object({
  */
 export const accountRoutes = new Hono<Env>()
     .use(auth({ allowApiKey: true, allowSessionCookie: true }))
+    .use(async (c, next) => {
+        await next();
+        c.header("Cache-Control", "private, no-store, max-age=0");
+        c.header("Pragma", "no-cache");
+    })
     .route("/agents", agentsRoutes)
     .route("/my-models", communityEndpointsRoutes)
     .get(

@@ -69,20 +69,21 @@ describe("whisper through the shared transcription formatter", () => {
         ]);
     });
 
-    it.each(["srt", "vtt", "diarized_json"])(
-        "rejects %s, which whisper cannot produce",
-        (responseFormat) => {
-            // OVH answers segments: [] on every request, so subtitles could
-            // only be invented here; #13552 was that they came back empty.
-            expect(() =>
-                assertTranscriptionResponseFormat(
-                    responseFormat,
-                    "whisper model",
-                    UNDIARIZED_TRANSCRIPTION_RESPONSE_FORMATS,
-                ),
-            ).toThrow(
-                `Unsupported response_format for whisper model: ${responseFormat}`,
-            );
-        },
-    );
+    it.each([
+        "srt",
+        "vtt",
+        "diarized_json",
+    ])("rejects %s, which whisper cannot produce", (responseFormat) => {
+        // OVH answers segments: [] on every request, so subtitles could
+        // only be invented here; #13552 was that they came back empty.
+        expect(() =>
+            assertTranscriptionResponseFormat(
+                responseFormat,
+                "whisper model",
+                UNDIARIZED_TRANSCRIPTION_RESPONSE_FORMATS,
+            ),
+        ).toThrow(
+            `Unsupported response_format for whisper model: ${responseFormat}`,
+        );
+    });
 });

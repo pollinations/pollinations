@@ -29,13 +29,16 @@ and no network calls.
 ## Data Contract
 
 Reads OP pipes from `enter.pollinations.ai/observability/endpoints/`:
-`op_transactions_api`, `op_cloud_api`, `op_pollen_api`, and `op_runway_api`.
+`op_transactions_api`, `op_cloud_api`, `op_pollen_api`, and `op_forecast_api`.
 Write-side conventions (entry_id, idempotent corrections) live in the
 Economics ingest agent's own system prompt.
 
 The app is a read-only mirror; all reads go through the Worker proxy.
 
-Runway keeps the open month as two independent columns: Current Wise cash and
-the agent-authored full-month Forecast. Closed months are actuals; future months
-are explicit forecast facts. Forecast methods (`last` or `zero`) are
-materialized by the Economics ingest agent and never evaluated in the browser.
+Runway reconstructs cash from one statement-backed opening-balance row in
+`op_transactions` plus later bank movements. Closed months are actuals. The
+open month shows actual cash to date beside the explicit full-month OP Forecast
+plan; month-end cash applies only the unspent/unreceived remainder of that plan.
+Future months use explicit forecast facts with structured methods (`fixed`,
+`funded`, `last`, or `one_off`). Current Wise balance snapshots are verification
+only and are not stored as a second balance ledger.

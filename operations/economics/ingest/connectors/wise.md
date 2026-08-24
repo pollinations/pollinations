@@ -45,9 +45,9 @@ Collection steps:
 2. For a missing or live period, request Wise activities with explicit ISO 8601
    `since` and `until` bounds, `size=100`, and follow `cursor` with
    `nextCursor` until it is null.
-3. For cash now, list `STANDARD` balances and convert each balance to the chosen
-   reporting currency with an explicit dated FX source. Do not include Jars
-   unless the user asks.
+3. For cash-now verification, list `STANDARD` balances and convert each balance
+   to the chosen reporting currency with an explicit dated FX source. Do not
+   persist the snapshot and do not include Jars unless the user asks.
 4. Save raw API/export JSON, CSV, or screenshots to `data/inbox/` when the
    result will become durable evidence.
 5. Use `agent.system.txt` with `mode: extract` when exported transaction
@@ -58,18 +58,21 @@ Repeatable monthly pull:
 
 ```bash
 sops exec-env ingest/secrets/env.json \
-  'sops exec-env secrets/web.json "node ingest/scripts/wise-ledger-reconcile.mjs \
+  'sops exec-env secrets/web.dev.json "node ingest/scripts/wise-ledger-reconcile.mjs \
   --from=YYYY-MM-01 --until=YYYY-MM-DD \
   --archive=ingest/data/inbox/wise/wise-activities-YYYY-MM.json \
-  --transactions=ingest/data/reconcile/proposals/wise-YYYY-MM-transactions.ndjson \
-  --runway=ingest/data/reconcile/proposals/wise-YYYY-MM-balance.ndjson"'
+  --transactions=ingest/data/reconcile/proposals/wise-YYYY-MM-transactions.ndjson"'
 ```
 
 `--until` is exclusive. The script follows every activity cursor, skips
 cancelled/card-check activity, reuses classifications already proven by prior
-Wise rows, and stops for genuinely new merchants. It also emits one dated
-`current_balance` fact per STANDARD currency so Runway can show exact spendable
-cash without treating a live snapshot as a historical transaction.
+Wise rows, and stops for genuinely new merchants. Every proposal is a
+`kind: transaction` bank movement.
+
+Runway requires one separate `kind: opening_balance` row per non-zero statement
+currency, all on the same first-of-month anchor date. Derive those anchors only
+from statement running balances; never from a current API snapshot or by
+back-solving a dashboard total.
 
 Expected entry:
 
@@ -99,6 +102,12 @@ Entry mapping rules for Wise activity payment evidence:
   rows keyed `FEE-BALANCE-<id>`; a reimbursement lump split into per-provider
   rows keys them `TRANSFER-<lump-id>-<n>`; a charge settled from two balances
   suffixes the currency (`...-EUR`/`...-USD`).
+- `kind`: `transaction` for every settled movement. Use `opening_balance` only
+  for the one statement-backed anchor set described above.
+- `date`: use the Wise settlement date. Invoice or service dates belong in the
+  description/evidence and never move cash into a different month. For a
+  reimbursement lump split across vendors, every split keeps the lump's Wise
+  settlement date.
 - `provider`: use the counterparty/provider vendor, such as `openai`, `vast.ai`, or `cloudflare`. Use canonical vendor `wise` for Wise's own fees, cashback, or statements.
 - Wise cashback maps to canonical vendor `wise`, category `revenue`. Never map
   it to `admin` or `others`.
@@ -130,8 +139,9 @@ Known traps:
   complete period.
 - A current-month activity range is partial and must not be used as a full-month
   forecast baseline.
-- A balance response is a current snapshot. It does not replace bounded Wise
-  activities or statements as historical cash evidence.
+- A balance response is a current verification snapshot. It is not persisted
+  and does not replace bounded Wise activities, statements, or the opening
+  anchor as historical cash evidence.
 - Do not expose account tokens or personal banking details in entry notes.
 
 Reconciliation notes:

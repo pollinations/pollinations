@@ -79,7 +79,7 @@ Economics use:
 - Stripe payout cash belongs in `op_transactions`, category `revenue`, and
   should reconcile to Wise.
 - Stripe balance activity is supporting evidence for reconciliation or an
-  explicit `op_runway` assumption. Do not write it to `op_cloud`.
+  explicit `op_forecast` assumption. Do not write it to `op_cloud`.
 - Until Economics has a dedicated earned-revenue ledger, do not replace Wise
   cash rows with Stripe activity-month totals.
 

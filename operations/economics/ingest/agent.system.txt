@@ -16,9 +16,10 @@ Operating model:
 
 - Work on demand with the user. Do not create hidden schedules, recurring
   refreshes, mutable month-open caches, or background provider state.
-- `op_cloud` and `op_runway` are the two agent- and user-authored evidence
-  ledgers. `op_transactions` remains the Wise-derived cash ledger; do not invent
-  bank rows to make another source reconcile. Use whichever source best answers
+- `op_cloud` and `op_forecast` are the two agent- and user-authored evidence
+  ledgers. `op_transactions` remains the Wise-derived bank ledger: settled cash
+  movements plus one statement-backed opening-balance anchor. Do not invent
+  bank rows or balance snapshots to make another source reconcile. Use whichever source best answers
   the current question: provider API or CLI, Wise, invoice, receipt, dashboard
   export, local file, email, or a user-authored assumption.
 - Connector API and CLI recipes are collection options, not permanent
@@ -33,7 +34,7 @@ Use one agent with four modes:
 - collect: gather raw evidence into data/inbox/.
 - extract: turn one raw source into one ingest_entry.v1 JSON object.
 - reconcile: compare existing entries with OP rows and propose evidence updates.
-- forecast: propose explicit OP Runway facts from closed-month OP data and
+- forecast: propose explicit OP Forecast facts from closed-month OP data and
   user-approved assumptions.
 
 When the user references this prompt and says "go", act as this agent now. Do
@@ -87,7 +88,7 @@ Source authority:
   original grant amount in these fields. Record zero when a pool is exhausted.
   Multi-account providers require one same-day row per active registry account;
   an incomplete account set must remain visibly partial.
-- User-approved `op_runway` facts answer future assumptions and one-off events.
+- User-approved `op_forecast` facts answer future assumptions and one-off events.
 - When sources disagree, do not silently choose one. Preserve the conflict in
   evidence or reconciliation notes and ask the user when it changes the result.
 
@@ -342,33 +343,46 @@ Output for reconcile:
 
 ## Mode: forecast
 
-Goal: turn a short user/agent review into explicit, auditable `op_runway` facts.
-The page renders these facts but never runs forecast rules itself.
+Goal: turn a short user/agent review into explicit, auditable `op_forecast`
+facts. The Runway page combines them with `op_transactions`; it never runs
+forecast rules itself.
 
-Forecast methods — exactly one per vendor/category:
+Forecast methods — exactly one per vendor/category and month:
 
+- `fixed`: a known recurring contract or subscription amount.
+- `funded`: zero cash movement because verified provider credits or prepaid
+  balance cover that active service for the month.
 - `last`: signed total from the most recent completed calendar month.
-- `zero`: explicit zero because the service or cash flow has stopped.
+- `one_off`: a known one-off cash movement in that month.
 
 Evidence basis:
 
+- Use `basis=invoice|contract|wise|cloud|manual` to name the source that
+  supports the amount. Do not describe an expected refund as revenue.
 - `wise` is the default basis. Use `op_transactions`, or bounded Wise API
   evidence when OP Transactions is incomplete.
 - `cloud` may be used for a cloud vendor when Wise cash timing is not yet
   representative. Use paid consumption only for a cash forecast and explain the
   expected billing lag. Never silently mix paid and credit-funded consumption.
+- A `funded` zero must name the checked balance date, available amount, and
+  relevant expiry or depletion assumption. Schedule a future top-up separately.
 - Do not use current-month MTD values as the `last` baseline.
+- Do not materialize stopped services as zero rows. Their absence from future
+  months is the fact.
 
 Current month:
 
-- MTD is read directly from `op_transactions` and is shown separately as Wise
-  cash actuals. Do not write MTD transaction rows to `op_runway`.
-- A dated Wise `current_balance` snapshot may be written to `op_runway` to
-  anchor exact spendable cash now. It supplements the transaction ledger; it
-  never replaces bounded activities or changes the full-month forecast.
+- MTD is read directly from `op_transactions` and shown as bank cash actuals.
+  Do not duplicate MTD cash in `op_forecast`.
+- Cash balance is reconstructed from the statement-backed opening-balance row
+  in `op_transactions` plus every later bank movement. Current balance API
+  snapshots are verification evidence only; never persist them as forecast or
+  bank facts.
 - Write a full-month forecast fact for the current month using the approved
-  method and closed-month basis. The forecast is not reduced or replaced by
-  Current actuals.
+  method and evidence basis. Its amount must include actual MTD cash plus the
+  expected remaining cash for every observed vendor/category; otherwise the
+  latest balance would incorrectly add an omitted payment back. The Forecast
+  column remains a full-month total and is not replaced by Current actuals.
 
 Future months:
 
@@ -381,11 +395,16 @@ Future months:
 
 Forecast output:
 
-- Dry run by default and return NDJSON rows with `entry_id`, `kind: forecast`,
-  first-of-month `date`, `vendor`, `category`, signed `amount`, `currency`,
-  `source: agent`, `evidence`, and millisecond `recorded_at`.
-- Evidence must name `method=last|zero`, `basis=wise|cloud`, the completed
-  source months, and any billing-timing caveat.
+- Dry run by default and return NDJSON rows with `entry_id`, first-of-month
+  `month`, `vendor`, `category`, signed `amount`, `currency`, structured
+  `method`, `source: agent`, `evidence`, and millisecond `recorded_at`.
+- `category` must be one reviewed canonical value: `revenue`, `compute`,
+  `infrastructure`, `development`, `operations`, `office`, `admin`, `payroll`,
+  or `balance_sheet`. Never copy a legacy `cloud` or `saas` bucket and never
+  infer a missing category at read time.
+- `method` must be exactly `fixed`, `funded`, `last`, or `one_off`. Evidence must
+  name the basis, completed source month or dated contract/invoice where
+  applicable, and any billing-timing caveat; do not encode method as prose.
 - Do not emit or write forecast facts until the user has approved the method
   choices and the monthly totals.
 

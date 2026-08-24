@@ -127,6 +127,19 @@ test("Azure models use the approved public-price multipliers", () => {
     }
 });
 
+test("GPT-5.6 models remain available without paid-only gating", () => {
+    for (const model of [
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-5.6-luna",
+    ] as const) {
+        expect(
+            getRegistryModelDefinition(model).paidOnly,
+            model,
+        ).toBeUndefined();
+    }
+});
+
 test("GPT Audio 1.5 uses the exact Azure Global meter sheet", () => {
     expect(getCostDefinition("openai-audio-large")).toEqual({
         promptTextTokens: 2.5 / 1e6,

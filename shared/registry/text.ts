@@ -219,9 +219,9 @@ export const TEXT_SERVICES = {
         brand: "OpenAI",
         category: "text",
         addedDate: new Date("2026-07-10").getTime(),
-        // OpenRouter's promotion discounts Azure output more deeply than
-        // input/cache. One third matches its output rate and keeps the other
-        // dimensions below OpenRouter under the registry's uniform multiplier.
+        // OpenRouter's standard OpenAI endpoint discounts Azure output more
+        // deeply than input/cache. One third matches its output rate and keeps
+        // the other dimensions below that endpoint under a uniform multiplier.
         priceMultiplier: 1 / 3,
         cost: {
             promptTextTokens: perMillion(5.0),
@@ -801,8 +801,6 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2026-05-26").getTime(),
         priceMultiplier: 0.75,
-        // xAI applies a higher price tier above 200K tokens; currently absorbed
-        // by Pollinations — see _local/model-changes-2026-06-02.md.
         cost: {
             promptTextTokens: perMillion(1.25),
             promptCachedTokens: perMillion(0.2),
@@ -817,7 +815,9 @@ export const TEXT_SERVICES = {
         maxReferenceImages: 100, // xAI publishes no hard image-count limit; Pollinations cap.
         tools: true,
         reasoning: true,
-        contextLength: 1048576, // xAI Grok 4.3 context window.
+        // The selected Azure deployment caps prompts at 200K; xAI direct's 1M
+        // window and 200K+ price tier do not apply to this route.
+        contextLength: 200000,
         isSpecialized: false,
     },
     "grok-4.6": {

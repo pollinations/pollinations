@@ -138,7 +138,3 @@ export const GenerateVideoRequestQueryParamsSchema =
     GenerateImageRequestQueryParamsBaseSchema.extend({
         model: modelSchema("veo"),
     }).superRefine(validateDuration);
-
-export type GenerateImageRequestQueryParams = z.infer<
-    typeof GenerateImageRequestQueryParamsSchema
->;

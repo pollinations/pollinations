@@ -63,8 +63,14 @@ export async function pollinationsErrorFromResponse(
         nested.details && typeof nested.details === "object"
             ? (nested.details as Record<string, unknown>)
             : undefined;
+    // The server always emits X-Request-Id (see shared/middleware/request-id.ts).
+    // The body's own requestId wins when present; otherwise fall back to the
+    // header so callers can still report the id when a handler's error body
+    // omits it (e.g. an upstream 5xx that never reaches our JSON envelope).
     const requestId =
-        typeof nested.requestId === "string" ? nested.requestId : undefined;
+        typeof nested.requestId === "string"
+            ? nested.requestId
+            : (response.headers.get("X-Request-Id") ?? undefined);
     const retryAfter = parseRetryAfter(response);
 
     return new PollinationsError(

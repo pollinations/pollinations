@@ -1,3 +1,4 @@
+import { AGENT_RUN_TOKEN_PREFIX } from "@shared/auth/agent-run-token.ts";
 import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
 import type {
     BillableEvent,
@@ -88,7 +89,8 @@ function extractApiKey(req: Request): string | null {
         .get("authorization")
         ?.match(/^Bearer (.+)$/)?.[1];
     if (bearer) return bearer;
-    return new URL(req.url).searchParams.get("key");
+    const queryKey = new URL(req.url).searchParams.get("key");
+    return queryKey?.startsWith(AGENT_RUN_TOKEN_PREFIX) ? null : queryKey;
 }
 
 function fileTooLargeError(maxSize: number): { error: string } {

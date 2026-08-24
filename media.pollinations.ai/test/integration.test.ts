@@ -1064,14 +1064,18 @@ describe("media.pollinations.ai", () => {
                 parentRequestId: crypto.randomUUID(),
                 managedAgentId: "third-party-agent",
             });
+            const url = `https://media.pollinations.ai/media/${upload.id}`;
 
-            const response = await SELF.fetch(
-                `https://media.pollinations.ai/media/${upload.id}`,
-                {
-                    method: "DELETE",
-                    headers: { Authorization: `Bearer ${token}` },
-                },
+            const queryResponse = await SELF.fetch(
+                `${url}?key=${encodeURIComponent(token)}`,
+                { method: "DELETE" },
             );
+            expect(queryResponse.status).toBe(401);
+
+            const response = await SELF.fetch(url, {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${token}` },
+            });
 
             expect(response.status).toBe(403);
             const remaining = await SELF.fetch(

@@ -38,10 +38,6 @@ export const COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH = 42;
 export const COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH = 160;
 export const COMMUNITY_PROVIDER_NAME_MAX_LENGTH = 42;
 export const COMMUNITY_PROVIDER_URL_MAX_LENGTH = 2048;
-// How long a public community model's price or public visibility change stays
-// pending before it becomes effective. A model's first price is immediate; later
-// price changes and private->public transitions are queued until this delay passes.
-export const PRICE_CHANGE_DELAY_MS = 12 * 60 * 60 * 1000;
 // Zero is free; positive owner-declared prices start at this floor.
 export const MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS = 0.000001;
 export const MIN_COMMUNITY_PRICE_PER_TOKEN =

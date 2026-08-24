@@ -3,7 +3,6 @@ import {
     communityEndpointPrices,
     communityModelDefinition,
     communityModelId,
-    PRICE_CHANGE_DELAY_MS,
     parseListingPayload,
     usesAgentRunToken,
 } from "@shared/community-endpoints.ts";
@@ -22,8 +21,8 @@ import type { AgentCatalogConfig } from "./agent-catalog.ts";
 
 const COMMUNITY_TEXT_ENDPOINTS = [
     "/v1/chat/completions",
-    "/v1/text",
-    "/v1/text/{prompt}",
+    "/text",
+    "/text/{prompt}",
 ];
 export function communityTextSupportedEndpoints(): string[] {
     return COMMUNITY_TEXT_ENDPOINTS;
@@ -39,7 +38,7 @@ export function communityImageSupportedEndpoints(
     return [
         "/v1/images/generations",
         ...(inputModalities.includes("image") ? ["/v1/images/edits"] : []),
-        "/v1/image/{prompt}",
+        "/image/{prompt}",
     ];
 }
 
@@ -77,9 +76,6 @@ export async function getCommunityModelRegistryEntries(
             baseUrl: schema.communityEndpoint.baseUrl,
             upstreamModel: schema.communityEndpoint.upstreamModel,
             payload: schema.communityEndpoint.payload,
-            pendingPayload: schema.communityEndpoint.pendingPayload,
-            pendingVisibility: schema.communityEndpoint.pendingVisibility,
-            pendingAt: schema.communityEndpoint.pendingAt,
             visibility: schema.communityEndpoint.visibility,
             hiddenAt: schema.communityEndpoint.hiddenAt,
             hiddenReason: schema.communityEndpoint.hiddenReason,
@@ -92,7 +88,6 @@ export async function getCommunityModelRegistryEntries(
         )
         .where(isNotNull(schema.user.githubUsername));
 
-    const now = Date.now();
     return rows.flatMap((row): CommunityModelRegistryEntry[] => {
         if (!row.ownerGithubUsername) return [];
         const baseUrl =
@@ -101,18 +96,6 @@ export async function getCommunityModelRegistryEntries(
                 : row.baseUrl;
         if (!baseUrl || !row.upstreamModel) return [];
         const modelId = communityModelId(row.ownerGithubUsername, row.name);
-        // A queued change becomes effective once its 12-hour deadline passes.
-        const pendingReady =
-            row.pendingAt !== null &&
-            now >= row.pendingAt.getTime() + PRICE_CHANGE_DELAY_MS;
-        const effectiveVisibility =
-            pendingReady && row.pendingVisibility
-                ? row.pendingVisibility
-                : row.visibility;
-        const effectivePayload =
-            pendingReady && row.pendingPayload
-                ? row.pendingPayload
-                : row.payload;
         const identity = {
             id: row.id,
             ownerUserId: row.ownerUserId,
@@ -124,7 +107,7 @@ export async function getCommunityModelRegistryEntries(
             providerUrl: row.providerUrl,
             baseUrl,
             upstreamModel: row.upstreamModel,
-            visibility: effectiveVisibility,
+            visibility: row.visibility,
             hiddenAt: row.hiddenAt ? row.hiddenAt.getTime() : null,
             hiddenReason: row.hiddenReason,
         };
@@ -180,7 +163,7 @@ export async function getCommunityModelRegistryEntries(
                 break;
             }
             case "proxy": {
-                const payload = parseListingPayload("proxy", effectivePayload);
+                const payload = parseListingPayload("proxy", row.payload);
                 if (!payload) return [];
                 communityEndpoint = {
                     ...identity,

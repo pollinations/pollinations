@@ -224,14 +224,6 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   // kind does not have simply have nowhere to live, which is what replaced the
   // per-field rejections the write path used to carry.
   payload: text("payload").notNull().default("{}"),
-  // A price or visibility change queued for a public model. It stays pending
-  // for PRICE_CHANGE_DELAY_MS so callers get 12 hours of notice before
-  // the model's price or public visibility changes. Read the pending payload
-  // with parseListingPayload; readers treat it as effective once pendingAt is
-  // old enough.
-  pendingPayload: text("pending_payload"),
-  pendingVisibility: text("pending_visibility"),
-  pendingAt: integer("pending_at", { mode: "timestamp" }),
   // Models default to private (owner-only and free). Public visibility is
   // allowlist-gated and may be free or owner-priced.
   visibility: text("visibility", { enum: ["private", "public"] })

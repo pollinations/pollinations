@@ -32,6 +32,7 @@ FIELDS = [
     "evidence",
 ]
 FORECAST_METHODS = {"fixed", "funded", "last", "one_off", "canceled"}
+FORECAST_CURRENCIES = {"EUR", "USD"}
 FORECAST_CATEGORIES = {
     "revenue",
     "compute",
@@ -81,6 +82,16 @@ def read_ndjson(path):
         raise RuntimeError(
             "Forecast rows require a structured method: "
             + ", ".join(invalid_methods)
+        )
+    invalid_currencies = [
+        row["entry_id"]
+        for row in rows
+        if str(row.get("currency", "")).strip().upper() not in FORECAST_CURRENCIES
+    ]
+    if invalid_currencies:
+        raise RuntimeError(
+            "Forecast rows require EUR or USD currency: "
+            + ", ".join(invalid_currencies)
         )
     invalid_months = []
     for row in rows:

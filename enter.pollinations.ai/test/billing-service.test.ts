@@ -253,7 +253,7 @@ test("settles multiple events and makes retries no-ops", async ({
     });
 });
 
-test("finite key budget is reserved before service work", async ({
+test("wallet and finite key budget are reserved before service work", async ({
     budgetedApiKey,
 }) => {
     const auth = await authenticate(budgetedApiKey.key);
@@ -281,8 +281,47 @@ test("finite key budget is reserved before service work", async ({
         error: "insufficient_balance_or_budget",
     });
     expect(await balances(auth.user.id, auth.apiKey.id)).toEqual({
-        user: { tier: 10, pack: 10 },
+        user: { tier: 8.5, pack: 10 },
         key: { budget: 0.5 },
+    });
+});
+
+test("concurrent grants cannot oversubscribe an exact wallet balance", async ({
+    budgetedApiKey,
+}) => {
+    const auth = await authenticate(budgetedApiKey.key);
+    await env.DB.batch([
+        env.DB.prepare(
+            "UPDATE user SET tier_balance = 1, pack_balance = 0 WHERE id = ?",
+        ).bind(auth.user.id),
+        env.DB.prepare(
+            "UPDATE apikey SET pollen_balance = 2 WHERE id = ?",
+        ).bind(auth.apiKey.id),
+    ]);
+
+    const first = await service().authorize(
+        budgetedApiKey.key,
+        authorization("wallet-reservation-1", 1),
+    );
+    expect(first).toMatchObject({ ok: true });
+    await expect(
+        service().authorize(
+            budgetedApiKey.key,
+            authorization("wallet-reservation-2", 1),
+        ),
+    ).resolves.toEqual({
+        ok: false,
+        error: "insufficient_balance_or_budget",
+    });
+    expect(await balances(auth.user.id, auth.apiKey.id)).toEqual({
+        user: { tier: 0, pack: 0 },
+        key: { budget: 1 },
+    });
+    if (!first.ok) throw new Error("Expected first authorization to succeed");
+    await service().cancel(first.grant.id);
+    expect(await balances(auth.user.id, auth.apiKey.id)).toEqual({
+        user: { tier: 1, pack: 0 },
+        key: { budget: 2 },
     });
 });
 
@@ -355,8 +394,13 @@ test("actual cost cannot exceed the remaining finite key budget", async ({
         ],
     });
     expect(await balances(auth.user.id, auth.apiKey.id)).toEqual({
-        user: { tier: 10, pack: 10 },
+        user: { tier: 9, pack: 10 },
         key: { budget: 0.5 },
+    });
+    await service().cancel(grantId);
+    expect(await balances(auth.user.id, auth.apiKey.id)).toEqual({
+        user: { tier: 10, pack: 10 },
+        key: { budget: 1.5 },
     });
 });
 
@@ -421,7 +465,14 @@ test("revoked keys cannot spend above their reserved budget", async ({
     )
         .bind(auth.user.id)
         .first<{ tier: number; pack: number }>();
-    expect(user).toEqual({ tier: 10, pack: 10 });
+    expect(user).toEqual({ tier: 9, pack: 10 });
+    await service().cancel(grantId);
+    const restored = await env.DB.prepare(
+        "SELECT tier_balance AS tier, pack_balance AS pack FROM user WHERE id = ?",
+    )
+        .bind(auth.user.id)
+        .first<{ tier: number; pack: number }>();
+    expect(restored).toEqual({ tier: 10, pack: 10 });
 });
 
 test("paid-only events debit paid balance", async ({
@@ -640,13 +691,17 @@ test("events cannot escape their authorization request", async ({
         ],
     });
     expect(await balances(auth.user.id, auth.apiKey.id)).toEqual({
-        user: { tier: 10, pack: 10 },
+        user: { tier: 8, pack: 10 },
         key: { budget: 98 },
     });
     await service().cancel(grantId);
+    expect(await balances(auth.user.id, auth.apiKey.id)).toEqual({
+        user: { tier: 10, pack: 10 },
+        key: { budget: 100 },
+    });
 });
 
-test("cancelling unused work releases the finite-key reservation", async ({
+test("cancelling unused work releases wallet and key reservations", async ({
     budgetedApiKey,
 }) => {
     const auth = await authenticate(budgetedApiKey.key);
@@ -659,8 +714,9 @@ test("cancelling unused work releases the finite-key reservation", async ({
         budgetedApiKey.key,
         authorization("cancel-request", 3),
     );
-    expect((await balances(auth.user.id, auth.apiKey.id)).key).toEqual({
-        budget: 97,
+    expect(await balances(auth.user.id, auth.apiKey.id)).toEqual({
+        user: { tier: 7, pack: 10 },
+        key: { budget: 97 },
     });
 
     await expect(service().cancel(grantId)).resolves.toEqual({
@@ -669,8 +725,9 @@ test("cancelling unused work releases the finite-key reservation", async ({
     await expect(service().cancel(grantId)).resolves.toEqual({
         cancelled: false,
     });
-    expect((await balances(auth.user.id, auth.apiKey.id)).key).toEqual({
-        budget: 100,
+    expect(await balances(auth.user.id, auth.apiKey.id)).toEqual({
+        user: { tier: 10, pack: 10 },
+        key: { budget: 100 },
     });
     await expect(
         service().settle(grantId, [event("cancelled-event", 1)]),
@@ -709,8 +766,9 @@ test("maintenance expires open grants through the atomic cancellation path", asy
     await expect(runBillingMaintenance(env, now)).resolves.toMatchObject({
         expiredAuthorizations: 1,
     });
-    expect((await balances(auth.user.id, auth.apiKey.id)).key).toEqual({
-        budget: 100,
+    expect(await balances(auth.user.id, auth.apiKey.id)).toEqual({
+        user: { tier: 10, pack: 0 },
+        key: { budget: 100 },
     });
     const grant = await env.DB.prepare(
         `SELECT cancelled_at AS cancelledAt FROM billing_authorization WHERE id = ?`,
@@ -848,7 +906,7 @@ test("settlement durably hands low paid balance to auto top-up", async ({
     });
 });
 
-test("multi-event settlement hands off the event that actually used paid balance", async ({
+test("multi-event settlement uses the authorization's reserved bucket", async ({
     budgetedApiKey,
     mocks,
 }) => {
@@ -891,12 +949,65 @@ test("multi-event settlement hands off the event that actually used paid balance
         {
             id: "paid-event",
             payerBucket: "pack",
-            autoTopUpRequired: 1,
+            autoTopUpRequired: 0,
         },
         {
             id: "tier-event",
-            payerBucket: "tier",
-            autoTopUpRequired: 0,
+            payerBucket: "pack",
+            autoTopUpRequired: 1,
         },
     ]);
+    expect((await balances(auth.user.id, auth.apiKey.id)).user).toEqual({
+        tier: 1,
+        pack: 0,
+    });
+});
+
+test("equal totals use the same bucket when split into reordered events", async ({
+    budgetedApiKey,
+    mocks,
+}) => {
+    const auth = await authenticate(budgetedApiKey.key);
+    await mocks.enable("tinybird");
+    const resetBalances = () =>
+        env.DB.batch([
+            env.DB.prepare(
+                "UPDATE user SET tier_balance = 1, pack_balance = 3 WHERE id = ?",
+            ).bind(auth.user.id),
+            env.DB.prepare(
+                "UPDATE apikey SET pollen_balance = 100 WHERE id = ?",
+            ).bind(auth.apiKey.id),
+        ]);
+
+    await resetBalances();
+    const single = await authorize(
+        budgetedApiKey.key,
+        authorization("single-total", 3),
+    );
+    const singleResult = await service().settle(single, [
+        event("single-event", 3, { requestId: "single-total" }),
+    ]);
+    expect(singleResult).toMatchObject({
+        events: [{ payerBucket: "pack", billedPrice: 3 }],
+    });
+    const singleBalances = await balances(auth.user.id, auth.apiKey.id);
+
+    await resetBalances();
+    const split = await authorize(
+        budgetedApiKey.key,
+        authorization("split-total", 3),
+    );
+    const splitResult = await service().settle(split, [
+        event("split-small", 1, { requestId: "split-total" }),
+        event("split-large", 2, { requestId: "split-total" }),
+    ]);
+    expect(splitResult).toMatchObject({
+        events: [
+            { payerBucket: "pack", billedPrice: 1 },
+            { payerBucket: "pack", billedPrice: 2 },
+        ],
+    });
+    expect(await balances(auth.user.id, auth.apiKey.id)).toEqual(
+        singleBalances,
+    );
 });

@@ -32,6 +32,7 @@ type StoredAuthorization = {
     userId: string;
     estimatedPrice: number;
     reservedPrice: number;
+    reservedBucket: "tier" | "pack";
     actualPrice: number | null;
     paidOnly: number;
     devUserId: string | null;
@@ -96,6 +97,7 @@ const AUTHORIZATION_SELECT = `SELECT
     user_id AS userId,
     estimated_price AS estimatedPrice,
     reserved_price AS reservedPrice,
+    reserved_bucket AS reservedBucket,
     actual_price AS actualPrice,
     paid_only AS paidOnly,
     dev_user_id AS devUserId,
@@ -185,13 +187,21 @@ export async function authorizeBillingRequest(
                     id, producer, request_id, model, api_key_id, api_key_name,
                     api_key_type, api_key_created_via, api_key_client_name,
                     api_key_client_user_id, user_id, user_tier, parent_request_id,
-                    estimated_price, reserved_price, paid_only,
+                    estimated_price, reserved_price, reserved_bucket, paid_only,
                     byop_client_key_id, dev_user_id, markup_rate,
                     key_budget_limited, expires_at
                 )
                 SELECT
                     ?, ?, ?, ?, api_key.id, ?, ?, ?, ?, ?, payer.id, payer.tier,
-                    ?, ?, ?, ?, ?, ?, ?, api_key.pollen_balance IS NOT NULL, ?
+                    ?, ?, ?,
+                    CASE
+                        WHEN ? = 1 THEN 'pack'
+                        WHEN COALESCE(payer.tier_balance, 0) >= ?
+                             AND (? > 0 OR COALESCE(payer.tier_balance, 0) > 0)
+                        THEN 'tier'
+                        ELSE 'pack'
+                    END,
+                    ?, ?, ?, ?, api_key.pollen_balance IS NOT NULL, ?
                 FROM apikey AS api_key
                 JOIN user AS payer ON payer.id = api_key.user_id
                 WHERE api_key.id = ?
@@ -228,6 +238,9 @@ export async function authorizeBillingRequest(
                 input.estimatedPrice,
                 reservedPrice,
                 input.paidOnly ? 1 : 0,
+                reservedPrice,
+                reservedPrice,
+                input.paidOnly ? 1 : 0,
                 identity.clientId,
                 markupApplies ? identity.clientUserId : null,
                 markupRate,
@@ -241,6 +254,25 @@ export async function authorizeBillingRequest(
                 reservedPrice,
                 reservedPrice,
             ),
+        db
+            .prepare(
+                `UPDATE user
+                 SET tier_balance = CASE
+                         WHEN grant.reserved_bucket = 'tier'
+                         THEN ROUND(COALESCE(tier_balance, 0) - grant.reserved_price, 8)
+                         ELSE tier_balance
+                     END,
+                     pack_balance = CASE
+                         WHEN grant.reserved_bucket = 'pack'
+                         THEN ROUND(COALESCE(pack_balance, 0) - grant.reserved_price, 8)
+                         ELSE pack_balance
+                     END
+                 FROM billing_authorization AS grant
+                 WHERE user.id = grant.user_id
+                   AND grant.id = ?
+                   AND grant.reservation_applied = 0`,
+            )
+            .bind(id),
         db
             .prepare(
                 `UPDATE apikey
@@ -288,7 +320,7 @@ export async function authorizeBillingRequest(
     ) {
         return { ok: false, error: "authorization_closed" };
     }
-    const balances = writes[3]?.results?.[0] as StoredBalances | undefined;
+    const balances = writes[4]?.results?.[0] as StoredBalances | undefined;
     if (!balances) {
         throw new Error(`Authorization ${stored.id} has no payer balances`);
     }
@@ -359,13 +391,10 @@ function insertEvent(
                 ?, grant.id, ?, grant.api_key_id, grant.user_id, ?, ?, ?, ?,
                 CASE
                     WHEN ? <= 0 THEN NULL
-                    WHEN ? = 1 THEN 'pack'
-                    WHEN COALESCE(payer.tier_balance, 0) >= ? THEN 'tier'
-                    ELSE 'pack'
+                    ELSE grant.reserved_bucket
                 END,
                 ?, ?, ?, ?, ?, ?, ?, ?
             FROM billing_authorization AS grant
-            JOIN user AS payer ON payer.id = grant.user_id
             WHERE grant.id = ?
               AND grant.request_id = ?
               AND grant.paid_only = ?
@@ -382,8 +411,6 @@ function insertEvent(
             event.billedPrice,
             event.paidOnly ? 1 : 0,
             event.billedPrice,
-            event.paidOnly ? 1 : 0,
-            event.billedPrice,
             event.devUserId,
             event.devCredit,
             event.communityUserId,
@@ -396,51 +423,6 @@ function insertEvent(
             event.requestId,
             event.paidOnly ? 1 : 0,
             actualPrice,
-        );
-}
-
-function deductUser(db: D1Database, authorizationId: string, eventId: string) {
-    return db
-        .prepare(
-            `UPDATE user
-             SET tier_balance = CASE
-                     WHEN (
-                         SELECT payer_bucket FROM billable_event
-                         WHERE authorization_id = ? AND id = ? AND settled_at IS NULL
-                     ) = 'tier'
-                     THEN ROUND(COALESCE(tier_balance, 0) - (
-                         SELECT billed_price FROM billable_event
-                         WHERE authorization_id = ? AND id = ?
-                     ), 8)
-                     ELSE tier_balance
-                 END,
-                 pack_balance = CASE
-                     WHEN (
-                         SELECT payer_bucket FROM billable_event
-                         WHERE authorization_id = ? AND id = ? AND settled_at IS NULL
-                     ) = 'pack'
-                     THEN ROUND(COALESCE(pack_balance, 0) - (
-                         SELECT billed_price FROM billable_event
-                         WHERE authorization_id = ? AND id = ?
-                     ), 8)
-                     ELSE pack_balance
-                 END
-             WHERE id = (
-                 SELECT user_id FROM billable_event
-                 WHERE authorization_id = ? AND id = ? AND settled_at IS NULL
-             )`,
-        )
-        .bind(
-            authorizationId,
-            eventId,
-            authorizationId,
-            eventId,
-            authorizationId,
-            eventId,
-            authorizationId,
-            eventId,
-            authorizationId,
-            eventId,
         );
 }
 
@@ -626,13 +608,14 @@ function approveActualPrice(
                    SELECT 1 FROM user AS payer
                    WHERE payer.id = billing_authorization.user_id
                      AND (
-                         (billing_authorization.paid_only = 1 AND COALESCE(payer.pack_balance, 0) >= ?)
+                         ? <= billing_authorization.reserved_price
                          OR (
-                             billing_authorization.paid_only = 0
-                             AND (
-                                 COALESCE(payer.tier_balance, 0) >= ?
-                                 OR COALESCE(payer.pack_balance, 0) >= ?
-                             )
+                             billing_authorization.reserved_bucket = 'tier'
+                             AND COALESCE(payer.tier_balance, 0) >= ? - billing_authorization.reserved_price
+                         )
+                         OR (
+                             billing_authorization.reserved_bucket = 'pack'
+                             AND COALESCE(payer.pack_balance, 0) >= ? - billing_authorization.reserved_price
                          )
                      )
                )
@@ -658,6 +641,35 @@ function approveActualPrice(
             actualPrice,
             actualPrice,
         );
+}
+
+function reconcileWalletReservation(
+    db: D1Database,
+    authorization: StoredAuthorization,
+    actualPrice: number,
+) {
+    return db
+        .prepare(
+            `UPDATE user
+             SET tier_balance = CASE
+                     WHEN grant.reserved_bucket = 'tier'
+                     THEN ROUND(COALESCE(tier_balance, 0) - (? - grant.reserved_price), 8)
+                     ELSE tier_balance
+                 END,
+                 pack_balance = CASE
+                     WHEN grant.reserved_bucket = 'pack'
+                     THEN ROUND(COALESCE(pack_balance, 0) - (? - grant.reserved_price), 8)
+                     ELSE pack_balance
+                 END
+             FROM billing_authorization AS grant
+             WHERE user.id = grant.user_id
+               AND grant.id = ?
+               AND grant.reservation_applied = 1
+               AND grant.actual_price = ?
+               AND grant.settled_at IS NULL
+               AND grant.cancelled_at IS NULL`,
+        )
+        .bind(actualPrice, actualPrice, authorization.id, actualPrice);
 }
 
 function reconcileApiKeyReservation(
@@ -792,6 +804,7 @@ export async function settleBillableEvents(
     );
     const statements: D1PreparedStatement[] = [
         approveActualPrice(db, authorization, actualPrice, now),
+        reconcileWalletReservation(db, authorization, actualPrice),
         reconcileApiKeyReservation(db, authorization, actualPrice),
     ];
     const insertIndexes: number[] = [];
@@ -799,7 +812,6 @@ export async function settleBillableEvents(
         insertIndexes.push(statements.length);
         statements.push(
             insertEvent(db, event, authorization, actualPrice),
-            deductUser(db, authorization.id, event.id),
             suppressUnavailableCredits(db, authorization.id, event.id),
             creditDeveloper(db, authorization.id, event.id),
             creditCommunityOwner(db, authorization.id, event.id),
@@ -873,6 +885,27 @@ export async function cancelBillingAuthorization(
     const writes = await db.batch([
         db
             .prepare(
+                `UPDATE user
+                 SET tier_balance = CASE
+                         WHEN grant.reserved_bucket = 'tier'
+                         THEN ROUND(COALESCE(tier_balance, 0) + grant.reserved_price, 8)
+                         ELSE tier_balance
+                     END,
+                     pack_balance = CASE
+                         WHEN grant.reserved_bucket = 'pack'
+                         THEN ROUND(COALESCE(pack_balance, 0) + grant.reserved_price, 8)
+                         ELSE pack_balance
+                     END
+                 FROM billing_authorization AS grant
+                 WHERE user.id = grant.user_id
+                   AND grant.id = ?
+                   AND grant.reservation_applied = 1
+                   AND grant.settled_at IS NULL
+                   AND grant.cancelled_at IS NULL`,
+            )
+            .bind(authorizationId),
+        db
+            .prepare(
                 `UPDATE apikey
                  SET pollen_balance = ROUND(pollen_balance + (
                      SELECT reserved_price FROM billing_authorization WHERE id = ?
@@ -895,7 +928,7 @@ export async function cancelBillingAuthorization(
             )
             .bind(now, authorizationId),
     ]);
-    return writes[1]?.meta.changes === 1;
+    return writes[2]?.meta.changes === 1;
 }
 
 export async function writeBillingTelemetry(

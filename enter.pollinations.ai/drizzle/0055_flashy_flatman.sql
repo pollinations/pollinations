@@ -46,6 +46,7 @@ CREATE TABLE `billing_authorization` (
 	`parent_request_id` text,
 	`estimated_price` real NOT NULL,
 	`reserved_price` real NOT NULL,
+	`reserved_bucket` text NOT NULL,
 	`actual_price` real,
 	`paid_only` integer DEFAULT false NOT NULL,
 	`byop_client_key_id` text,

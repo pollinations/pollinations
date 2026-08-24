@@ -680,6 +680,13 @@
           "notNull": true,
           "autoincrement": false
         },
+        "reserved_bucket": {
+          "name": "reserved_bucket",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
         "actual_price": {
           "name": "actual_price",
           "type": "real",

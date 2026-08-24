@@ -215,6 +215,7 @@ export const billingAuthorization = sqliteTable("billing_authorization", {
   parentRequestId: text("parent_request_id"),
   estimatedPrice: real("estimated_price").notNull(),
   reservedPrice: real("reserved_price").notNull(),
+  reservedBucket: text("reserved_bucket", { enum: ["tier", "pack"] }).notNull(),
   actualPrice: real("actual_price"),
   paidOnly: integer("paid_only", { mode: "boolean" }).default(false).notNull(),
   byopClientKeyId: text("byop_client_key_id"),

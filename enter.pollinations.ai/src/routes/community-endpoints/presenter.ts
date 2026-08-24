@@ -2,8 +2,8 @@ import {
     communityEndpointTitle,
     communityModelId,
     normalizeCommunityEndpointAdvertised,
-    parseListingPayload,
     PRICE_CHANGE_DELAY_MS,
+    parseListingPayload,
 } from "@shared/community-endpoints.ts";
 import type * as schema from "@shared/db/better-auth.ts";
 import {

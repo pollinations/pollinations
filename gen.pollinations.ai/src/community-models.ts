@@ -3,8 +3,8 @@ import {
     communityEndpointPrices,
     communityModelDefinition,
     communityModelId,
-    parseListingPayload,
     PRICE_CHANGE_DELAY_MS,
+    parseListingPayload,
     usesAgentRunToken,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
@@ -110,7 +110,9 @@ export async function getCommunityModelRegistryEntries(
                 ? row.pendingVisibility
                 : row.visibility;
         const effectivePayload =
-            pendingReady && row.pendingPayload ? row.pendingPayload : row.payload;
+            pendingReady && row.pendingPayload
+                ? row.pendingPayload
+                : row.payload;
         const identity = {
             id: row.id,
             ownerUserId: row.ownerUserId,

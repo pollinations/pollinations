@@ -1,16 +1,13 @@
-import { describe, expect, it } from "vitest";
 import { sql } from "drizzle-orm";
+import { describe, expect, it } from "vitest";
 
 describe("community endpoint price/visibility delay", () => {
     it("queues a public price change and keeps the old price until the deadline passes", async () => {
         const { db } = await import("@/db/db.js");
-        const {
-            communityEndpoint,
-        } = await import("@/db/better-auth.ts");
-        const {
-            PRICE_CHANGE_DELAY_MS,
-            parseListingPayload,
-        } = await import("@shared/community-endpoints.ts");
+        const { communityEndpoint } = await import("@/db/better-auth.ts");
+        const { PRICE_CHANGE_DELAY_MS, parseListingPayload } = await import(
+            "@shared/community-endpoints.ts"
+        );
 
         const now = Date.now();
         const oldPayload = JSON.stringify({

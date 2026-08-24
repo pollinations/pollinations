@@ -418,6 +418,13 @@ export function ProviderCloseTab({
                                                         }
                                                     />
                                                 ) : row.closeStatus ===
+                                                      "ready" &&
+                                                  row.fundingStatus ===
+                                                      "unknown" ? (
+                                                    <span className="text-sm text-theme-text-soft">
+                                                        Documented gap
+                                                    </span>
+                                                ) : row.closeStatus ===
                                                   "ready" ? (
                                                     <span className="text-sm text-theme-text-soft">
                                                         Not required

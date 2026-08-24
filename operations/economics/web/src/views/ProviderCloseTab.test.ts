@@ -65,4 +65,49 @@ describe("ProviderCloseTab", () => {
         expect(html).not.toContain("Wise matched");
         expect(html).not.toContain("payment unmatched");
     });
+
+    it("labels a documented historical gap honestly", () => {
+        const sourceRow = data.opCloud?.[0];
+        if (!sourceRow) throw new Error("Missing provider test fixture");
+        const html = renderToStaticMarkup(
+            createElement(ProviderCloseTab, {
+                data: {
+                    opTransactions: [],
+                    opCloud: [
+                        {
+                            ...sourceRow,
+                            entry_id: "pruna-march",
+                            vendor: "pruna",
+                            start: "2026-03-01 00:00:00",
+                            end: "2026-04-01 00:00:00",
+                            evidence: "source data/inbox/pruna-history.json",
+                        },
+                    ],
+                    opPollen: [
+                        {
+                            month: "2026-03",
+                            vendor: "pruna",
+                            model: "recraft",
+                            currency: "USD",
+                            cost_paid: 1,
+                            cost_quests: 0,
+                            price_paid: 1,
+                            price_quests: 0,
+                            byop_paid: 0,
+                            byop_quests: 0,
+                            model_paid: 0,
+                            model_quests: 0,
+                            requests_paid: 1,
+                            requests_quests: 0,
+                        },
+                    ],
+                    opForecast: [],
+                },
+                month: "2026-03",
+            }),
+        );
+
+        expect(html).toContain("Documented gap");
+        expect(html).not.toContain("Not required");
+    });
 });

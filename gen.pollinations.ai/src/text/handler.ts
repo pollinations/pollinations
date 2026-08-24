@@ -387,7 +387,7 @@ async function generateTextResponse(
                         ? (input, init) => portkey.fetch(input, init)
                         : undefined,
                 ),
-            c.var.track?.failedCalls,
+            c.var.track?.attempts,
             (attempt) => enforceModelRateLimit(c, attempt),
         );
         c.set("upstreamRequestUrl", completion.upstreamRequestUrl);
@@ -396,12 +396,6 @@ async function generateTextResponse(
         // the response header and tracking's parsing cover both. Non-enumerable
         // so JSON.stringify / R2 cache snapshots never leak the field.
         attachFallbackTarget(completion, index);
-
-        // Cost and the owner reward follow what actually served, so record the
-        // serving entry before the response (streaming included) leaves the
-        // handler.
-        const servedEntry = candidate.entry;
-        if (servedEntry) c.set("servedModelEntry", servedEntry);
 
         // The successful candidate always carries the canonical registry id,
         // including aliases, community models, and fallback targets.

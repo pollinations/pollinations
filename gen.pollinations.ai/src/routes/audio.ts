@@ -155,14 +155,12 @@ async function withAudioFallback(
     c: AudioContext,
     attempt: (candidate: FallbackCandidate) => Promise<Response>,
 ): Promise<Response> {
-    const { response, servedEntry } = await withModelFallbackResponse(
+    return withModelFallbackResponse(
         c.var.model,
         attempt,
-        c.var.track?.failedCalls,
+        c.var.track?.attempts,
         (candidate) => enforceModelRateLimit(c, candidate),
     );
-    if (servedEntry) c.set("servedModelEntry", servedEntry);
-    return response;
 }
 type AudioRefChunk = {
     song_id: string;

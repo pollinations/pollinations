@@ -17,6 +17,7 @@ const EXPECTED_TOOLS = [
     "getBalance",
     "getModelStatus",
     "listModels",
+    "transcribeAudio",
 ];
 
 function localFetch(input, init) {

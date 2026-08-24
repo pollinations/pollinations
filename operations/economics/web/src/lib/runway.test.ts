@@ -347,4 +347,25 @@ describe("buildRunway", () => {
             "No opening bank balance; cash balance and runway are unavailable.",
         );
     });
+
+    it("stops cash projection when a reconstructed native balance is impossible", () => {
+        const result = buildRunway(
+            [opening(50), transaction({ amount: -100 })],
+            [
+                forecast(),
+                forecast({
+                    entry_id: "forecast-2026-09-aws",
+                    month: "2026-09-01",
+                }),
+            ],
+            NOW,
+        );
+
+        expect(result.currentCashUsd).toBeNull();
+        expect(result.projectedMonthEndCashUsd).toBeNull();
+        expect(result.runwayMonths).toBeNull();
+        expect(result.flags).toContain(
+            "Native bank balance becomes negative in USD (2026-08); add missing statement movements before calculating cash.",
+        );
+    });
 });

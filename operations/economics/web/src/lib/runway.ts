@@ -337,6 +337,7 @@ export function buildRunway(
     if (openingBalanceDate) {
         const nativeBalances = new Map(openingBalances);
         const openingMonth = openingBalanceDate.slice(0, 7);
+        let nativeBalanceIntegrityLost = false;
         for (const month of months) {
             if (month < openingMonth) continue;
             for (const row of bankRows) {
@@ -347,7 +348,22 @@ export function buildRunway(
                     addAmount(nativeBalances, row.currency, Number(row.amount));
                 }
             }
-            cashBalanceByMonth.set(month, balancesInUsd(nativeBalances, month));
+            const negativeCurrencies = [...nativeBalances]
+                .filter(([, amount]) => amount < -0.005)
+                .map(([currency]) => currency)
+                .sort();
+            if (negativeCurrencies.length > 0 && !nativeBalanceIntegrityLost) {
+                nativeBalanceIntegrityLost = true;
+                flags.push(
+                    `Native bank balance becomes negative in ${negativeCurrencies.join(", ")} (${month}); add missing statement movements before calculating cash.`,
+                );
+            }
+            if (!nativeBalanceIntegrityLost) {
+                cashBalanceByMonth.set(
+                    month,
+                    balancesInUsd(nativeBalances, month),
+                );
+            }
         }
     }
 

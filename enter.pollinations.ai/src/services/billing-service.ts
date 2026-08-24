@@ -689,21 +689,21 @@ function reconcileApiKeyReservation(
         );
 }
 
-function markAutoTopUpRequired(
-    db: D1Database,
-    authorizationId: string,
-    eventId: string | undefined,
-) {
-    if (!eventId) return null;
+function markAutoTopUpRequired(db: D1Database, authorizationId: string) {
     return db
         .prepare(
             `UPDATE billable_event
              SET auto_top_up_required = 1,
                  auto_top_up_next_attempt_at = 0
              WHERE authorization_id = ?
-               AND id = ?
-               AND payer_bucket = 'pack'
-               AND billed_price > 0
+               AND id = (
+                   SELECT id FROM billable_event
+                   WHERE authorization_id = ?
+                     AND payer_bucket = 'pack'
+                     AND billed_price > 0
+                   ORDER BY occurred_at DESC, id DESC
+                   LIMIT 1
+               )
                AND EXISTS (
                    SELECT 1 FROM user
                    WHERE id = billable_event.user_id
@@ -712,7 +712,7 @@ function markAutoTopUpRequired(
                      AND COALESCE(pack_balance, 0) <= ?
                )`,
         )
-        .bind(authorizationId, eventId, AUTO_TOP_UP_THRESHOLD_POLLEN);
+        .bind(authorizationId, authorizationId, AUTO_TOP_UP_THRESHOLD_POLLEN);
 }
 
 function markAuthorizationSettled(
@@ -807,15 +807,7 @@ export async function settleBillableEvents(
             markEventSettled(db, authorization.id, event.id, now),
         );
     }
-    const lastBilledEventId = prepared.findLast(
-        (event) => event.billedPrice > 0,
-    )?.id;
-    const autoTopUp = markAutoTopUpRequired(
-        db,
-        authorization.id,
-        lastBilledEventId,
-    );
-    if (autoTopUp) statements.push(autoTopUp);
+    statements.push(markAutoTopUpRequired(db, authorization.id));
     statements.push(markAuthorizationSettled(db, authorization.id, now));
 
     // D1 batches are transactions: receipts, wallet/key updates, credits, and

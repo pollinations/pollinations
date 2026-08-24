@@ -847,3 +847,56 @@ test("settlement durably hands low paid balance to auto top-up", async ({
         autoTopUpsProcessed: 0,
     });
 });
+
+test("multi-event settlement hands off the event that actually used paid balance", async ({
+    budgetedApiKey,
+    mocks,
+}) => {
+    const auth = await authenticate(budgetedApiKey.key);
+    await mocks.enable("tinybird");
+    await env.DB.prepare(
+        `UPDATE user
+         SET tier_balance = 1,
+             pack_balance = 3,
+             auto_top_up_enabled = 1,
+             auto_top_up_amount_usd = 10
+         WHERE id = ?`,
+    )
+        .bind(auth.user.id)
+        .run();
+    const grantId = await authorize(
+        budgetedApiKey.key,
+        authorization("request-1", 3),
+    );
+
+    await service().settle(grantId, [
+        event("paid-event", 2),
+        event("tier-event", 1),
+    ]);
+
+    const { results } = await env.DB.prepare(
+        `SELECT id, payer_bucket AS payerBucket,
+                auto_top_up_required AS autoTopUpRequired
+         FROM billable_event
+         WHERE authorization_id = ?
+         ORDER BY id`,
+    )
+        .bind(grantId)
+        .all<{
+            id: string;
+            payerBucket: string;
+            autoTopUpRequired: number;
+        }>();
+    expect(results).toEqual([
+        {
+            id: "paid-event",
+            payerBucket: "pack",
+            autoTopUpRequired: 1,
+        },
+        {
+            id: "tier-event",
+            payerBucket: "tier",
+            autoTopUpRequired: 0,
+        },
+    ]);
+});

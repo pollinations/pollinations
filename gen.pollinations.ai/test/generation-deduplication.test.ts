@@ -423,53 +423,54 @@ describe("generation request deduplication", () => {
         { boundary: "just below", waitMs: 299_000 },
         { boundary: "at", waitMs: 300_000 },
         { boundary: "just above", waitMs: 301_000 },
-    ])("keeps connected callers waiting $boundary 300 seconds", async ({
-        waitMs,
-    }) => {
-        vi.useFakeTimers();
-        let coordinatorName = "";
-        const cache = new Map<string, string>();
-        let finish!: (result: { status: "cached" }) => void;
-        const generation = createApp(createAdapter(cache));
-        const bindings = {
-            GENERATION_COORDINATOR: {
-                getByName: (name: string) => {
-                    coordinatorName = name;
-                    return {
-                        startAndWait: () =>
-                            new Promise((resolve) => {
-                                finish = resolve;
-                            }),
-                    };
+    ])(
+        "keeps connected callers waiting $boundary 300 seconds",
+        async ({ waitMs }) => {
+            vi.useFakeTimers();
+            let coordinatorName = "";
+            const cache = new Map<string, string>();
+            let finish!: (result: { status: "cached" }) => void;
+            const generation = createApp(createAdapter(cache));
+            const bindings = {
+                GENERATION_COORDINATOR: {
+                    getByName: (name: string) => {
+                        coordinatorName = name;
+                        return {
+                            startAndWait: () =>
+                                new Promise((resolve) => {
+                                    finish = resolve;
+                                }),
+                        };
+                    },
                 },
-            },
-        } as unknown as CloudflareBindings;
+            } as unknown as CloudflareBindings;
 
-        let settled = false;
-        const responsePromise = Promise.resolve(
-            generation.app.fetch(
-                new Request("https://gen.pollinations.ai/generate"),
-                bindings,
-                executionContext(),
-            ),
-        );
-        void responsePromise.then(() => {
-            settled = true;
-        });
-        await vi.waitFor(() => {
-            expect(finish).toBeTypeOf("function");
-        });
-        await vi.advanceTimersByTimeAsync(waitMs);
-        expect(settled).toBe(false);
+            let settled = false;
+            const responsePromise = Promise.resolve(
+                generation.app.fetch(
+                    new Request("https://gen.pollinations.ai/generate"),
+                    bindings,
+                    executionContext(),
+                ),
+            );
+            void responsePromise.then(() => {
+                settled = true;
+            });
+            await vi.waitFor(() => {
+                expect(finish).toBeTypeOf("function");
+            });
+            await vi.advanceTimersByTimeAsync(waitMs);
+            expect(settled).toBe(false);
 
-        cache.set("same-request", "generated-after-long-request");
-        finish({ status: "cached" });
-        const response = await responsePromise;
+            cache.set("same-request", "generated-after-long-request");
+            finish({ status: "cached" });
+            const response = await responsePromise;
 
-        expect(response.status).toBe(200);
-        expect(await response.text()).toBe("generated-after-long-request");
-        expect(coordinatorName).toMatch(/^[0-9a-f]{64}$/);
-    });
+            expect(response.status).toBe(200);
+            expect(await response.text()).toBe("generated-after-long-request");
+            expect(coordinatorName).toMatch(/^[0-9a-f]{64}$/);
+        },
+    );
 
     it("returns 503 when coordination fails without starting a direct generation", async () => {
         const generation = createApp(createAdapter(new Map()));

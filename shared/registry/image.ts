@@ -1171,9 +1171,27 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 1,
+        // AWS Cost Explorer Nova Canvas Standard meters, verified 2026-08-24.
         cost: {
             completionImageTokens: 0.04, // per image
         },
+        ...defineCostVariants(
+            {
+                "2048": {
+                    completionImageTokens: 0.06, // per image when either side exceeds 1024px
+                },
+            },
+            ({ input }) =>
+                (input?.maxImageDimension ?? 0) > 1024 ? "2048" : undefined,
+            {
+                "2048": {
+                    label: "2048 tier",
+                    description:
+                        "Applies when either output dimension exceeds 1024 pixels.",
+                },
+            },
+            "1024 tier",
+        ),
         title: "Nova Canvas",
         description: "Image generation with editing and inpainting tools",
         inputModalities: ["text", "image"],

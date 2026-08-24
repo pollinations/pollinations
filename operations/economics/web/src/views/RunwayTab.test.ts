@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { Data } from "../types";
 import {
+    forecastMethodHint,
     forecastMethodLabel,
     RunwayTab,
     runwayText,
@@ -16,10 +17,26 @@ describe("RunwayTab labels", () => {
         expect(runwayText(null, false)).toBe("–");
     });
 
-    it("uses compact labels for the two forecast methods", () => {
-        expect(forecastMethodLabel("last")).toBe("LAST");
-        expect(forecastMethodLabel("zero")).toBe("0");
+    it("uses plain labels for the forecast methods", () => {
+        expect(forecastMethodLabel("fixed")).toBe("FIXED");
+        expect(forecastMethodLabel("funded")).toBe("FUNDED");
+        expect(forecastMethodLabel("last")).toBe("LAST MONTH");
+        expect(forecastMethodLabel("one_off")).toBe("ONE-OFF");
         expect(forecastMethodLabel(null)).toBeNull();
+    });
+
+    it("explains forecast methods on vendor hover", () => {
+        expect(forecastMethodHint("fixed")).toBe(
+            "Uses a fixed monthly amount.",
+        );
+        expect(forecastMethodHint("funded")).toBe("Covered by vendor credits.");
+        expect(forecastMethodHint("last")).toBe(
+            "Repeats the latest closed month.",
+        );
+        expect(forecastMethodHint("one_off")).toBe(
+            "Included only in this month.",
+        );
+        expect(forecastMethodHint(null)).toBeNull();
     });
 
     it("colors cash values without overemphasizing zeroes", () => {
@@ -33,7 +50,21 @@ describe("RunwayTab labels", () => {
         const data: Data = {
             opTransactions: [
                 {
+                    entry_id: "opening",
+                    kind: "opening_balance",
+                    source: "wise",
+                    date: "2026-01-01",
+                    vendor: "wise",
+                    category: "balance_sheet",
+                    amount: 1_000,
+                    currency: "USD",
+                    description: "Opening balance",
+                    evidence: "Statement",
+                    recorded_at: "2026-07-02 00:00:00",
+                },
+                {
                     entry_id: "revenue",
+                    kind: "transaction",
                     source: "wise",
                     date: "2026-07-01",
                     vendor: "stripe",
@@ -46,6 +77,7 @@ describe("RunwayTab labels", () => {
                 },
                 {
                     entry_id: "expense",
+                    kind: "transaction",
                     source: "wise",
                     date: "2026-07-02",
                     vendor: "aws",
@@ -57,13 +89,17 @@ describe("RunwayTab labels", () => {
                     recorded_at: "2026-07-03 00:00:00",
                 },
             ],
+            opForecast: [],
         };
 
         const html = renderToStaticMarkup(createElement(RunwayTab, { data }));
         expect(html).toContain("Revenue");
         expect(html).toContain("Compute");
+        expect(html).not.toContain("<span>mode</span>");
         expect(html).toContain('aria-expanded="false"');
         expect(html).not.toContain(">stripe<");
         expect(html).not.toContain(">aws<");
+        expect(html).toContain("Cash change");
+        expect(html).toContain("Cash balance");
     });
 });

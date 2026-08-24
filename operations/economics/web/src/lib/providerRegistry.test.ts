@@ -25,6 +25,7 @@ const transaction = (
     overrides: Partial<OpTransactionRow> = {},
 ): OpTransactionRow => ({
     entry_id: "wise-test",
+    kind: "transaction",
     source: "wise",
     date: "2026-07-10",
     vendor: "aws",
@@ -81,7 +82,7 @@ const data = (overrides: Partial<Data> = {}): Data => ({
     opTransactions: [],
     opCloud: [],
     opPollen: [],
-    opRunway: [],
+    opForecast: [],
     ...overrides,
 });
 
@@ -111,6 +112,9 @@ describe("provider registry", () => {
         expect(providerMeteringBasis("lambda")).toBe("capacity");
         expect(providerMeteringBasis("bedrock")).toBe("mixed");
         expect(providerMeteringBasis("inferenceport")).toBe("internal");
+        expect(() => providerMeteringBasis("new-provider")).toThrow(
+            'Vendor "new-provider" has no reviewed metering basis',
+        );
     });
 
     it("resolves manually approved aliases and leaves unknown names visible", () => {

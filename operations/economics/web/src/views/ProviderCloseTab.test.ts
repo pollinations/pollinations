@@ -8,6 +8,7 @@ const data: Data = {
     opTransactions: [
         {
             entry_id: "wise-openai-january",
+            kind: "transaction",
             source: "wise",
             date: "2026-01-22",
             vendor: "openai",
@@ -41,7 +42,7 @@ const data: Data = {
         },
     ],
     opPollen: [],
-    opRunway: [],
+    opForecast: [],
 };
 
 describe("ProviderCloseTab", () => {

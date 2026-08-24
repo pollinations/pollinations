@@ -1,4 +1,4 @@
-import type { OpCloudRow, OpRunwayRow, OpTransactionRow } from "../types";
+import type { OpCloudRow, OpForecastRow, OpTransactionRow } from "../types";
 
 export const CATEGORY_IDS = [
     "revenue",
@@ -34,7 +34,7 @@ const CATEGORY_LABELS: Record<CategoryValue, string> = {
     office: "Office",
     admin: "Admin",
     payroll: "Payroll",
-    balance_sheet: "Balance Sheet",
+    balance_sheet: "Cash adjustments",
     uncategorized: "Uncategorized",
 };
 
@@ -122,9 +122,11 @@ export function isComputeOrInfrastructureCategory(category: string): boolean {
 export function transactionCategory(
     row: Pick<
         OpTransactionRow,
-        "amount" | "category" | "description" | "vendor"
+        "amount" | "category" | "description" | "kind" | "vendor"
     >,
 ): CategoryValue {
+    if (row.kind === "opening_balance") return "balance_sheet";
+
     const vendor = normalize(row.vendor);
     const description = normalize(row.description);
 
@@ -162,6 +164,10 @@ export function transactionCategory(
     return isCategory(supplied) ? supplied : "uncategorized";
 }
 
+export function isBankMovement(row: Pick<OpTransactionRow, "kind">): boolean {
+    return row.kind === "transaction";
+}
+
 export function cloudCategory(row: Pick<OpCloudRow, "type">): CategoryValue {
     const type = normalize(row.type);
     if (type === "gpu" || type === "inference") return "compute";
@@ -169,13 +175,9 @@ export function cloudCategory(row: Pick<OpCloudRow, "type">): CategoryValue {
     return isCategory(type) ? type : "uncategorized";
 }
 
-export function runwayCategory(
-    row: Pick<OpRunwayRow, "amount" | "category" | "evidence" | "vendor">,
+export function forecastCategory(
+    row: Pick<OpForecastRow, "category">,
 ): CategoryValue {
-    return transactionCategory({
-        amount: row.amount,
-        category: row.category,
-        description: row.evidence,
-        vendor: row.vendor,
-    });
+    const supplied = normalize(row.category);
+    return isCategory(supplied) ? supplied : "uncategorized";
 }

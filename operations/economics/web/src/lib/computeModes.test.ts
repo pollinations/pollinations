@@ -88,17 +88,17 @@ describe("compute modes", () => {
         expect(result.opPollen?.map((row) => row.vendor)).toEqual(["openai"]);
     });
 
-    it("uses the reviewed provider basis when a month has no cloud row", () => {
+    it("keeps a month unclassified when it has no cloud row", () => {
         const data: Data = {
             opPollen: [pollen("openai"), pollen("vast.ai")],
         };
         const index = computeModeIndex(data);
 
         expect(providerMonthComputeMode(index, "2026-07", "openai")).toBe(
-            "managed-inference",
+            "unclassified",
         );
         expect(providerMonthComputeMode(index, "2026-07", "vast.ai")).toBe(
-            "gpu-capacity",
+            "unclassified",
         );
     });
 

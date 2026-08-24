@@ -97,7 +97,7 @@ const INSIGHT_TABS: {
     {
         id: "runway",
         label: "Runway",
-        note: "Cash runway from signed Wise-derived actuals plus explicit OP Runway forecast facts and visible assumption flags.",
+        note: "Cash runway from the Wise-derived bank ledger plus explicit OP Forecast assumptions.",
         icon: WalletIcon,
     },
     {
@@ -167,7 +167,7 @@ const TABS: {
         label: "Bank",
         codes: ["WISE"],
         pipe: "op_transactions_api",
-        note: "Signed Wise-derived cash entries in native currency: money in is positive, money out is negative, and Drive evidence links to transaction documents.",
+        note: "Wise-derived bank ledger in native currency: signed cash movements plus one statement-backed opening-balance anchor. Drive evidence links to transaction documents.",
         icon: DatabaseIcon,
         rows: (data) =>
             (data.opTransactions ?? []).filter(
@@ -683,11 +683,11 @@ function viewInfoContent(
                 <strong>Runway</strong>
                 <InfoLine>
                     Actual cash comes from OP Transactions; future cash comes
-                    from explicit OP Runway facts.
+                    from explicit OP Forecast assumptions.
                 </InfoLine>
                 <InfoLine>
-                    The current month keeps Current Wise actuals and the
-                    authored full-month Forecast in separate columns.
+                    The current month keeps bank movements and the authored
+                    full-month plan in separate columns.
                 </InfoLine>
                 <InfoLine>
                     Revenue and expense-category rows are cash P&amp;L totals;

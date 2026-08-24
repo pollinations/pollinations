@@ -1,6 +1,5 @@
 import {
     Alert,
-    Chip,
     cn,
     TableBody,
     TableCell,
@@ -44,9 +43,41 @@ export function runwayText(months: number | null, capped: boolean): string {
 }
 
 export function forecastMethodLabel(method: RunwayMatrixRow["forecastMethod"]) {
-    if (method === "last") return "LAST";
-    if (method === "zero") return "0";
+    if (method === "fixed") return "FIXED";
+    if (method === "funded") return "FUNDED";
+    if (method === "last") return "LAST MONTH";
+    if (method === "one_off") return "ONE-OFF";
     return null;
+}
+
+export function forecastMethodHint(method: RunwayMatrixRow["forecastMethod"]) {
+    if (method === "fixed") return "Uses a fixed monthly amount.";
+    if (method === "funded") return "Covered by vendor credits.";
+    if (method === "last") return "Repeats the latest closed month.";
+    if (method === "one_off") return "Included only in this month.";
+    return null;
+}
+
+function ForecastVendor({ row }: { row: RunwayMatrixRow }) {
+    const label = forecastMethodLabel(row.forecastMethod);
+    const hint = forecastMethodHint(row.forecastMethod);
+    if (!label || !hint) return row.vendor;
+
+    return (
+        <Tooltip
+            triggerAs="span"
+            content={
+                <span className="block max-w-64">
+                    <strong>{label}</strong>
+                    <span className="block">{hint}</span>
+                </span>
+            }
+        >
+            <span className="underline decoration-dotted decoration-theme-border underline-offset-2">
+                {row.vendor}
+            </span>
+        </Tooltip>
+    );
 }
 
 function ForecastValue({
@@ -88,8 +119,9 @@ function monthColumnClass(column: RunwayColumn, first: boolean) {
 }
 
 function monthKindLabel(kind: RunwayColumn["kind"]) {
-    if (kind === "current") return "Current";
-    return kind;
+    if (kind === "actual") return "Actual";
+    if (kind === "current") return "To date";
+    return "Plan";
 }
 
 function startsMonthGroup(columns: RunwayColumn[], index: number) {
@@ -161,21 +193,14 @@ export function RunwayTab({ data }: { data: Data }) {
         () =>
             buildRunway(
                 data.opTransactions ?? [],
-                data.opRunway ?? [],
+                data.opForecast ?? [],
                 new Date(),
             ),
-        [data.opRunway, data.opTransactions],
+        [data.opForecast, data.opTransactions],
     );
     const groups = useMemo(
         () => groupRows(runway.rows, runway.columns),
         [runway.columns, runway.rows],
-    );
-    const currentMtd = runway.columns.find(
-        (column) => column.kind === "current",
-    );
-    const currentForecast = runway.columns.find(
-        (column) =>
-            column.month === runway.currentMonth && column.kind === "forecast",
     );
     const next = runway.columns.find(
         (column) =>
@@ -194,7 +219,7 @@ export function RunwayTab({ data }: { data: Data }) {
     return (
         <div className="flex flex-col gap-4">
             {runway.flags.length > 0 && (
-                <Alert intent="warning" title="Runway caveats">
+                <Alert intent="warning" title="Needs attention">
                     <ul className="list-disc space-y-1 pl-5">
                         {runway.flags.map((flag) => (
                             <li key={flag}>{flag}</li>
@@ -206,26 +231,30 @@ export function RunwayTab({ data }: { data: Data }) {
                 items={[
                     {
                         label: "Current cash",
-                        value: fmtUsd(runway.mtdCashUsd),
+                        value: fmtUsd(runway.currentCashUsd),
                         tone:
-                            runway.mtdCashUsd != null && runway.mtdCashUsd < 0
+                            runway.currentCashUsd != null &&
+                            runway.currentCashUsd < 0
                                 ? "neg"
                                 : "base",
-                        detail: runway.currentBalanceDate
-                            ? `Wise STANDARD balances · ${fmtPeriod(runway.currentBalanceDate)}`
-                            : runway.openingBalanceDate
-                              ? `opening + ${fmtUsd(currentMtd?.netUsd)} Current Wise · ${fmtPeriod(runway.openingBalanceDate)}`
-                              : "opening balance missing",
+                        detail:
+                            runway.latestTransactionDate &&
+                            runway.openingBalanceDate
+                                ? `bank movements through ${fmtPeriod(runway.latestTransactionDate)} · anchored ${fmtPeriod(runway.openingBalanceDate)}`
+                                : "opening balance missing",
                     },
                     {
-                        label: "Month-end forecast",
+                        label: "Month-end cash",
                         value: fmtUsd(runway.projectedMonthEndCashUsd),
                         tone:
                             runway.projectedMonthEndCashUsd != null &&
                             runway.projectedMonthEndCashUsd < 0
                                 ? "neg"
                                 : "base",
-                        detail: `opening + ${fmtUsd(currentForecast?.netUsd)} full-month forecast`,
+                        detail:
+                            runway.remainingCurrentPlanUsd == null
+                                ? "plan unavailable"
+                                : `${fmtUsd(runway.remainingCurrentPlanUsd)} remaining plan`,
                     },
                     {
                         label: "Runway",
@@ -241,7 +270,7 @@ export function RunwayTab({ data }: { data: Data }) {
                               : "forecast unavailable",
                     },
                     {
-                        label: "Next month net",
+                        label: "Next full month change",
                         value: fmtUsd(next?.netUsd),
                         tone: valueTone(next?.netUsd ?? null),
                         detail: `${runway.assumptions.length} explicit forecast fact${runway.assumptions.length === 1 ? "" : "s"}`,
@@ -276,17 +305,17 @@ export function RunwayTab({ data }: { data: Data }) {
                     </TableHead>
                     <TableBody>
                         <SummaryRow
-                            label="Total expenses"
+                            label="Expenses"
                             columns={runway.columns}
                             value={(column) => column.totalExpensesUsd}
                         />
                         <SummaryRow
-                            label="Net cash"
+                            label="Cash change"
                             columns={runway.columns}
                             value={(column) => column.netUsd}
                         />
                         <SummaryRow
-                            label="Running cash"
+                            label="Cash balance"
                             columns={runway.columns}
                             value={(column) => column.runningCashUsd}
                         />
@@ -318,7 +347,7 @@ function RunwayCategoryRows({
             <TableRow className="bg-theme-bg-subtle font-semibold">
                 <TableCell
                     className={cn(
-                        "sticky left-0 z-10 whitespace-nowrap bg-theme-bg-subtle",
+                        "sticky left-0 z-10 whitespace-nowrap bg-surface-opaque",
                         group.category === "revenue" &&
                             "text-outcome-positive-text",
                     )}
@@ -356,23 +385,7 @@ function RunwayCategoryRows({
                 group.rows.map((row) => (
                     <TableRow key={`${row.category}|${row.vendor}`}>
                         <TableCell className="sticky left-0 z-10 whitespace-nowrap bg-surface-opaque pl-6 text-theme-text-soft">
-                            <span className="inline-flex items-center gap-2">
-                                <span>{row.vendor}</span>
-                                {forecastMethodLabel(row.forecastMethod) && (
-                                    <Chip
-                                        intent={
-                                            row.forecastMethod === "zero"
-                                                ? "warning"
-                                                : "neutral"
-                                        }
-                                        size="sm"
-                                    >
-                                        {forecastMethodLabel(
-                                            row.forecastMethod,
-                                        )}
-                                    </Chip>
-                                )}
-                            </span>
+                            <ForecastVendor row={row} />
                         </TableCell>
                         {columns.map((column, index) => (
                             <TableCell

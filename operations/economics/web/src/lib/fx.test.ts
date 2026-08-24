@@ -45,6 +45,7 @@ describe("toUsd", () => {
 describe("fxEstimatedMonths", () => {
     const eurTxn = (date: string) => ({
         entry_id: `wise-${date}`,
+        kind: "transaction" as const,
         source: "wise",
         date,
         vendor: "google",

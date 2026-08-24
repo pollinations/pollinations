@@ -1,5 +1,4 @@
 import type { Data } from "../types";
-import { providerMeteringBasis } from "./providerRegistry";
 import { canonicalVendor } from "./tb";
 
 export type ComputeMode =
@@ -17,7 +16,6 @@ export type ComputeModeProviderMonth = {
 export type ComputeModeIndex = {
     providerMonths: ComputeModeProviderMonth[];
     modeByProviderMonth: Map<string, ComputeMode>;
-    fallbackByProvider: Map<string, ComputeMode>;
 };
 
 function providerMonthKey(month: string, provider: string): string {
@@ -33,23 +31,8 @@ function classifiedMode(types: ReadonlySet<string>): ComputeMode {
     return "unclassified";
 }
 
-function fallbackMode(
-    provider: string,
-    types: ReadonlySet<string>,
-): ComputeMode {
-    const observed = classifiedMode(types);
-    if (observed !== "unclassified") {
-        return observed === "mixed" ? "unclassified" : observed;
-    }
-    const basis = providerMeteringBasis(provider);
-    if (basis === "direct") return "managed-inference";
-    if (basis === "capacity") return "gpu-capacity";
-    return "unclassified";
-}
-
 export function computeModeIndex(data: Data): ComputeModeIndex {
     const typesByProviderMonth = new Map<string, Set<string>>();
-    const typesByProvider = new Map<string, Set<string>>();
 
     for (const row of data.opCloud ?? []) {
         const type = row.type.trim().toLowerCase();
@@ -66,9 +49,6 @@ export function computeModeIndex(data: Data): ComputeModeIndex {
                 new Set([type]),
             );
         }
-        const providerTypes = typesByProvider.get(provider);
-        if (providerTypes) providerTypes.add(type);
-        else typesByProvider.set(provider, new Set([type]));
     }
 
     const modeByProviderMonth = new Map<string, ComputeMode>();
@@ -87,19 +67,7 @@ export function computeModeIndex(data: Data): ComputeModeIndex {
                 a.provider.localeCompare(b.provider),
         );
 
-    const providers = new Set([
-        ...typesByProvider.keys(),
-        ...(data.opPollen ?? []).map((row) => canonicalVendor(row.vendor)),
-    ]);
-    const fallbackByProvider = new Map<string, ComputeMode>();
-    for (const provider of providers) {
-        fallbackByProvider.set(
-            provider,
-            fallbackMode(provider, typesByProvider.get(provider) ?? new Set()),
-        );
-    }
-
-    return { fallbackByProvider, modeByProviderMonth, providerMonths };
+    return { modeByProviderMonth, providerMonths };
 }
 
 export function providerMonthComputeMode(
@@ -110,7 +78,6 @@ export function providerMonthComputeMode(
     const canonical = canonicalVendor(provider);
     return (
         index.modeByProviderMonth.get(providerMonthKey(month, canonical)) ??
-        index.fallbackByProvider.get(canonical) ??
         "unclassified"
     );
 }

@@ -1,7 +1,11 @@
-import type { OpRunwayRow, OpTransactionRow } from "../types";
+import type {
+    OpForecastMethod,
+    OpForecastRow,
+    OpTransactionRow,
+} from "../types";
 import {
     EXPENSE_CATEGORY_ORDER,
-    runwayCategory,
+    forecastCategory,
     transactionCategory,
 } from "./categories";
 import { toUsd } from "./fx";
@@ -9,18 +13,26 @@ import { monthShift } from "./insights";
 import { WINDOW_START } from "./months";
 
 const MONTH_RE = /^\d{4}-\d{2}$/;
-const RUNWAY_CATEGORY_ORDER = ["revenue", ...EXPENSE_CATEGORY_ORDER];
+const FORECAST_METHODS = new Set<OpForecastMethod>([
+    "fixed",
+    "funded",
+    "last",
+    "one_off",
+]);
+const RUNWAY_CATEGORY_ORDER = [
+    "revenue",
+    "balance_sheet",
+    ...EXPENSE_CATEGORY_ORDER,
+];
 
-export type RunwayAssumption = OpRunwayRow & {
+export type RunwayAssumption = OpForecastRow & {
     amountUsd: number;
 };
-
-export type RunwayForecastMethod = "last" | "zero";
 
 export type RunwayMatrixRow = {
     category: string;
     vendor: string;
-    forecastMethod: RunwayForecastMethod | null;
+    forecastMethod: OpForecastMethod | null;
     values: Record<string, number>;
     assumptions: Record<string, RunwayAssumption[]>;
 };
@@ -42,8 +54,9 @@ export type RunwayResult = {
     assumptions: RunwayAssumption[];
     openingBalanceDate: string | null;
     openingBalanceUsd: number | null;
-    currentBalanceDate: string | null;
-    mtdCashUsd: number | null;
+    latestTransactionDate: string | null;
+    currentCashUsd: number | null;
+    remainingCurrentPlanUsd: number | null;
     projectedMonthEndCashUsd: number | null;
     runwayMonths: number | null;
     runwayExhaustedMonth: string | null;
@@ -74,51 +87,34 @@ function categoryRank(category: string) {
     return rank === -1 ? RUNWAY_CATEGORY_ORDER.length : rank;
 }
 
-export function forecastMethodFromEvidence(
-    evidence: string,
-): RunwayForecastMethod | null {
-    const match = evidence.match(/(?:^|[;\s])method=(last|zero)(?=$|[;\s])/i);
-    return (
-        (match?.[1]?.toLowerCase() as RunwayForecastMethod | undefined) ?? null
+function addAmount(map: Map<string, number>, key: string, amount: number) {
+    map.set(key, (map.get(key) ?? 0) + amount);
+}
+
+function balancesInUsd(balances: Map<string, number>, month: string) {
+    return [...balances].reduce(
+        (sum, [currency, amount]) =>
+            sum + (amount === 0 ? 0 : toUsd(amount, currency, month)),
+        0,
     );
 }
 
-function latestOpeningBalance(facts: OpRunwayRow[]) {
-    return facts
-        .filter((fact) => fact.kind === "opening_balance")
-        .sort(
-            (a, b) =>
-                b.date.localeCompare(a.date) ||
-                b.recorded_at.localeCompare(a.recorded_at) ||
-                b.entry_id.localeCompare(a.entry_id),
-        )[0];
-}
-
-function latestCurrentBalance(facts: OpRunwayRow[]) {
-    const balances = facts.filter((fact) => fact.kind === "current_balance");
-    const date = balances
-        .map((fact) => fact.date)
-        .sort()
-        .at(-1);
-    if (!date) return null;
-    return {
-        date,
-        amountUsd: balances
-            .filter((fact) => fact.date === date)
-            .reduce(
-                (sum, fact) =>
-                    sum +
-                    (Number(fact.amount) === 0
-                        ? 0
-                        : toUsd(fact.amount, fact.currency, fact.date)),
-                0,
-            ),
-    };
+function remainingPlanUsd(
+    plan: Map<string, number>,
+    actual: Map<string, number> | undefined,
+) {
+    let remaining = 0;
+    for (const [key, target] of plan) {
+        const spent = actual?.get(key) ?? 0;
+        if (target > 0) remaining += Math.max(0, target - spent);
+        if (target < 0) remaining += Math.min(0, target - spent);
+    }
+    return remaining;
 }
 
 export function buildRunway(
     transactions: OpTransactionRow[],
-    facts: OpRunwayRow[],
+    forecastFacts: OpForecastRow[],
     now: Date = new Date(),
 ): RunwayResult {
     const currentMonth = now.toISOString().slice(0, 7);
@@ -129,37 +125,58 @@ export function buildRunway(
     const identities = new Map<string, { category: string; vendor: string }>();
     const observedMonths = new Set<string>([currentMonth]);
 
-    for (const row of transactions) {
+    const invalidKinds = transactions.filter(
+        (row) => row.kind !== "transaction" && row.kind !== "opening_balance",
+    ).length;
+    if (invalidKinds > 0) {
+        flags.push(
+            `${invalidKinds} bank ${invalidKinds === 1 ? "row has" : "rows have"} an invalid kind; ignored until corrected.`,
+        );
+    }
+
+    const bankRows = transactions.filter((row) => row.kind === "transaction");
+    for (const row of bankRows) {
         const month = row.date.slice(0, 7);
         if (!MONTH_RE.test(month) || month < WINDOW_START) continue;
         const category = transactionCategory(row);
         const vendor = normalizedVendor(row.vendor);
         const key = matrixKey(category, vendor);
-        const months = actualByMonth.get(month) ?? new Map<string, number>();
-        months.set(
-            key,
-            (months.get(key) ?? 0) + toUsd(row.amount, row.currency, row.date),
-        );
-        actualByMonth.set(month, months);
+        const monthValues =
+            actualByMonth.get(month) ?? new Map<string, number>();
+        addAmount(monthValues, key, toUsd(row.amount, row.currency, row.date));
+        actualByMonth.set(month, monthValues);
         identities.set(key, { category, vendor });
         observedMonths.add(month);
     }
 
+    const invalidForecastCategoryVendors = new Set<string>();
+    const invalidForecastMethodVendors = new Set<string>();
     const assumptions: RunwayAssumption[] = [];
-    for (const fact of facts) {
-        if (fact.kind !== "forecast") continue;
-        const month = fact.date.slice(0, 7);
+    for (const fact of forecastFacts) {
+        const month = fact.month.slice(0, 7);
         if (!MONTH_RE.test(month) || month < WINDOW_START) continue;
-        const category = runwayCategory(fact);
+        const category = forecastCategory(fact);
         const vendor = normalizedVendor(fact.vendor);
+        const invalidCategory = category === "uncategorized";
+        const invalidMethod = !FORECAST_METHODS.has(fact.method);
+        if (invalidCategory) {
+            invalidForecastCategoryVendors.add(vendor);
+        }
+        if (invalidMethod) {
+            invalidForecastMethodVendors.add(vendor);
+        }
+        if (invalidCategory || invalidMethod) {
+            continue;
+        }
         const key = matrixKey(category, vendor);
-        const amountUsd = toUsd(fact.amount, fact.currency, fact.date);
+        const amountUsd = toUsd(fact.amount, fact.currency, fact.month);
         const assumption = { ...fact, category, vendor, amountUsd };
         assumptions.push(assumption);
 
-        const months = forecastByMonth.get(month) ?? new Map<string, number>();
-        months.set(key, (months.get(key) ?? 0) + amountUsd);
-        forecastByMonth.set(month, months);
+        const monthValues =
+            forecastByMonth.get(month) ?? new Map<string, number>();
+        addAmount(monthValues, key, amountUsd);
+        forecastByMonth.set(month, monthValues);
         const cellKey = `${month}\u0000${key}`;
         const cellAssumptions = assumptionsByCell.get(cellKey) ?? [];
         cellAssumptions.push(assumption);
@@ -168,30 +185,42 @@ export function buildRunway(
         observedMonths.add(month);
     }
 
-    const openingFacts = facts.filter(
-        (fact) => fact.kind === "opening_balance",
-    );
-    const opening = latestOpeningBalance(facts);
-    const currentBalance = latestCurrentBalance(facts);
-    if (!opening) {
+    if (invalidForecastCategoryVendors.size > 0) {
         flags.push(
-            "No opening balance fact; running cash and runway are unavailable.",
+            `Forecast categories need correction for ${[...invalidForecastCategoryVendors].sort().join(", ")}.`,
         );
-    } else {
-        observedMonths.add(opening.date.slice(0, 7));
-        if (openingFacts.length > 1) {
-            flags.push(
-                `${openingFacts.length} opening balance facts found; using the latest effective date.`,
-            );
+    }
+    if (invalidForecastMethodVendors.size > 0) {
+        flags.push(
+            `Forecast methods need correction for ${[...invalidForecastMethodVendors].sort().join(", ")}.`,
+        );
+    }
+
+    const openingRows = transactions.filter(
+        (row) => row.kind === "opening_balance",
+    );
+    const openingDates = [
+        ...new Set(openingRows.map((row) => row.date)),
+    ].sort();
+    const openingBalanceDate =
+        openingDates.length === 1 ? openingDates[0] : null;
+    const openingBalances = new Map<string, number>();
+    if (openingDates.length === 0) {
+        flags.push(
+            "No opening bank balance; cash balance and runway are unavailable.",
+        );
+    } else if (openingDates.length > 1) {
+        flags.push(
+            `${openingDates.length} opening-balance dates found; keep one statement-backed anchor before calculating cash.`,
+        );
+    } else if (openingBalanceDate) {
+        for (const row of openingRows) {
+            addAmount(openingBalances, row.currency, Number(row.amount));
         }
-        if (opening.date.slice(8, 10) !== "01") {
+        observedMonths.add(openingBalanceDate.slice(0, 7));
+        if (openingBalanceDate.slice(8, 10) !== "01") {
             flags.push(
-                `Opening balance date ${opening.date} is not the first day of its month; the full month net is still applied.`,
-            );
-        }
-        if (opening.date.slice(0, 7) < WINDOW_START) {
-            flags.push(
-                `Opening balance ${opening.date} predates the ${WINDOW_START} Economics window; running cash and runway are unavailable.`,
+                `Opening balance ${openingBalanceDate} is not the first day of a month.`,
             );
         }
     }
@@ -203,28 +232,26 @@ export function buildRunway(
         (month) => month > currentMonth,
     );
     const lastFutureForecastMonth = futureForecastMonths.at(-1);
-    if (forecastMonths.length === 0) {
+    const missingFutureMonths: string[] = [];
+    if (!forecastByMonth.has(currentMonth)) {
         flags.push(
-            "No current or future forecast facts; runway is unavailable.",
+            "No current-month plan; month-end cash and runway are unavailable.",
         );
-    } else if (!lastFutureForecastMonth) {
-        flags.push("No future forecast facts; runway is unavailable.");
+    }
+    if (!lastFutureForecastMonth) {
+        flags.push("No future plan; runway is unavailable.");
     } else {
         for (const month of monthRange(
             monthShift(currentMonth, 1),
             lastFutureForecastMonth,
         )) {
-            if (!forecastByMonth.has(month)) {
-                flags.push(
-                    `No forecast facts for ${month}; that month is treated as zero.`,
-                );
-            }
+            if (!forecastByMonth.has(month)) missingFutureMonths.push(month);
         }
-    }
-    if (!forecastByMonth.has(currentMonth)) {
-        flags.push(
-            "No current-month forecast facts; the Forecast column is treated as zero.",
-        );
+        if (missingFutureMonths.length > 0) {
+            flags.push(
+                `Forecast gap: ${missingFutureMonths.join(", ")}; runway is unavailable.`,
+            );
+        }
     }
 
     const sortedObserved = [...observedMonths]
@@ -250,73 +277,108 @@ export function buildRunway(
         }
         return [{ id: `${month}:forecast`, month, kind: "forecast" as const }];
     });
-    const identityEntries = [...identities.entries()].sort(
-        ([, a], [, b]) =>
-            categoryRank(a.category) - categoryRank(b.category) ||
-            a.category.localeCompare(b.category) ||
-            a.vendor.localeCompare(b.vendor),
-    );
 
-    const rows: RunwayMatrixRow[] = identityEntries.map(([key, identity]) => {
-        const values: Record<string, number> = {};
-        const cellAssumptions: Record<string, RunwayAssumption[]> = {};
-        for (const column of columnSpecs) {
-            const isActual =
-                column.kind === "actual" || column.kind === "current";
-            values[column.id] = isActual
-                ? (actualByMonth.get(column.month)?.get(key) ?? 0)
-                : (forecastByMonth.get(column.month)?.get(key) ?? 0);
-            if (!isActual) {
-                const found = assumptionsByCell.get(
-                    `${column.month}\u0000${key}`,
-                );
-                if (found?.length) cellAssumptions[column.id] = found;
+    const rows: RunwayMatrixRow[] = [...identities.entries()]
+        .sort(
+            ([, a], [, b]) =>
+                categoryRank(a.category) - categoryRank(b.category) ||
+                a.category.localeCompare(b.category) ||
+                a.vendor.localeCompare(b.vendor),
+        )
+        .map(([key, identity]) => {
+            const values: Record<string, number> = {};
+            const cellAssumptions: Record<string, RunwayAssumption[]> = {};
+            for (const column of columnSpecs) {
+                const actual =
+                    column.kind === "actual" || column.kind === "current";
+                values[column.id] = actual
+                    ? (actualByMonth.get(column.month)?.get(key) ?? 0)
+                    : (forecastByMonth.get(column.month)?.get(key) ?? 0);
+                if (!actual) {
+                    const found = assumptionsByCell.get(
+                        `${column.month}\u0000${key}`,
+                    );
+                    if (found?.length) cellAssumptions[column.id] = found;
+                }
             }
-        }
-        return {
-            ...identity,
-            forecastMethod: (() => {
-                const methods = new Set(
-                    Object.values(cellAssumptions)
-                        .flat()
-                        .map((assumption) =>
-                            forecastMethodFromEvidence(assumption.evidence),
-                        )
-                        .filter((method) => method != null),
-                );
-                return methods.size === 1 ? [...methods][0] : null;
-            })(),
-            values,
-            assumptions: cellAssumptions,
-        };
-    });
+            const methods = new Set(
+                Object.values(cellAssumptions)
+                    .flat()
+                    .map((assumption) => assumption.method),
+            );
+            return {
+                ...identity,
+                forecastMethod: methods.size === 1 ? [...methods][0] : null,
+                values,
+                assumptions: cellAssumptions,
+            };
+        });
 
-    const openingBalanceUsd = opening
-        ? toUsd(opening.amount, opening.currency, opening.date)
+    const openingBalanceUsd =
+        openingBalanceDate == null
+            ? null
+            : balancesInUsd(openingBalances, openingBalanceDate.slice(0, 7));
+    const cashBalanceByMonth = new Map<string, number>();
+    if (openingBalanceDate) {
+        const nativeBalances = new Map(openingBalances);
+        const openingMonth = openingBalanceDate.slice(0, 7);
+        for (const month of months) {
+            if (month < openingMonth) continue;
+            for (const row of bankRows) {
+                if (
+                    row.date >= openingBalanceDate &&
+                    row.date.slice(0, 7) === month
+                ) {
+                    addAmount(nativeBalances, row.currency, Number(row.amount));
+                }
+            }
+            cashBalanceByMonth.set(month, balancesInUsd(nativeBalances, month));
+        }
+    }
+
+    const latestTransactionDate = bankRows
+        .map((row) => row.date)
+        .sort()
+        .at(-1);
+    const currentCashUsd = cashBalanceByMonth.get(currentMonth) ?? null;
+    const currentPlan = forecastByMonth.get(currentMonth);
+    const remainingCurrentPlanUsd = currentPlan
+        ? remainingPlanUsd(currentPlan, actualByMonth.get(currentMonth))
         : null;
-    const openingBalanceDate = opening?.date ?? null;
-    const openingMonth = openingBalanceDate?.slice(0, 7) ?? null;
-    let plannedRunningCashUsd = openingBalanceUsd;
-    let runningStarted = false;
+    const projectedMonthEndCashUsd =
+        currentCashUsd != null && remainingCurrentPlanUsd != null
+            ? currentCashUsd + remainingCurrentPlanUsd
+            : null;
+
+    let projectedCash = projectedMonthEndCashUsd;
+    let projectionGap = false;
     const columns: RunwayColumn[] = columnSpecs.map((column) => {
         const totalExpensesUsd = rows
-            .filter((row) => row.category !== "revenue")
+            .filter(
+                (row) =>
+                    row.category !== "revenue" &&
+                    row.category !== "balance_sheet",
+            )
             .reduce((sum, row) => sum + (row.values[column.id] ?? 0), 0);
         const netUsd = rows.reduce(
             (sum, row) => sum + (row.values[column.id] ?? 0),
             0,
         );
-        if (openingMonth === column.month) runningStarted = true;
-
         let runningCashUsd: number | null = null;
-        if (runningStarted && plannedRunningCashUsd != null) {
-            if (column.kind === "current") {
-                runningCashUsd =
-                    currentBalance?.amountUsd ?? plannedRunningCashUsd + netUsd;
-            } else {
-                plannedRunningCashUsd += netUsd;
-                runningCashUsd = plannedRunningCashUsd;
-            }
+        if (column.kind === "actual" || column.kind === "current") {
+            runningCashUsd = cashBalanceByMonth.get(column.month) ?? null;
+        } else if (column.month === currentMonth) {
+            runningCashUsd = projectedMonthEndCashUsd;
+        } else if (
+            projectionGap ||
+            projectedCash == null ||
+            !forecastByMonth.has(column.month)
+        ) {
+            projectionGap = true;
+            projectedCash = null;
+        } else {
+            projectedCash += netUsd;
+            runningCashUsd = projectedCash;
         }
         return {
             ...column,
@@ -326,30 +388,35 @@ export function buildRunway(
         };
     });
 
-    const mtdCashUsd =
-        columns.find((column) => column.kind === "current")?.runningCashUsd ??
-        null;
-    const projectedMonthEndCashUsd =
-        columns.find(
-            (column) =>
-                column.month === currentMonth && column.kind === "forecast",
-        )?.runningCashUsd ?? null;
     let runwayMonths: number | null = null;
     let runwayExhaustedMonth: string | null = null;
     let runwayCapped = false;
-    if (projectedMonthEndCashUsd != null && futureForecastMonths.length > 0) {
+    if (
+        projectedMonthEndCashUsd != null &&
+        futureForecastMonths.length > 0 &&
+        missingFutureMonths.length === 0
+    ) {
         runwayMonths = 0;
-        const runwayWindow = columns.filter(
-            (column) => column.kind === "forecast",
-        );
-        for (const column of runwayWindow) {
-            if (column.runningCashUsd == null || column.runningCashUsd <= 0) {
-                runwayExhaustedMonth = column.month;
-                break;
+        if (projectedMonthEndCashUsd <= 0) {
+            runwayExhaustedMonth = currentMonth;
+        } else {
+            const futureColumns = columns.filter(
+                (column) =>
+                    column.kind === "forecast" && column.month > currentMonth,
+            );
+            for (const column of futureColumns) {
+                if (
+                    column.runningCashUsd == null ||
+                    column.runningCashUsd <= 0
+                ) {
+                    runwayExhaustedMonth = column.month;
+                    break;
+                }
+                runwayMonths += 1;
             }
-            runwayMonths += 1;
+            runwayCapped =
+                runwayExhaustedMonth == null && futureColumns.length > 0;
         }
-        runwayCapped = runwayExhaustedMonth == null && runwayWindow.length > 0;
     }
 
     return {
@@ -360,8 +427,9 @@ export function buildRunway(
         assumptions,
         openingBalanceDate,
         openingBalanceUsd,
-        currentBalanceDate: currentBalance?.date ?? null,
-        mtdCashUsd,
+        latestTransactionDate: latestTransactionDate ?? null,
+        currentCashUsd,
+        remainingCurrentPlanUsd,
         projectedMonthEndCashUsd,
         runwayMonths,
         runwayExhaustedMonth,

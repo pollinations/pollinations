@@ -3,6 +3,7 @@ import {
     categoryLabel,
     cloudCategory,
     EXPENSE_CATEGORY_ORDER,
+    isBankMovement,
     isComputeOrInfrastructureCategory,
     transactionCategory,
 } from "./categories";
@@ -82,7 +83,7 @@ export function pnlByMonth(data: Data, now: Date): PnlMonth[] {
     const currentMonth = now.toISOString().slice(0, 7);
 
     const months = new Set<string>();
-    for (const row of data.opTransactions ?? []) {
+    for (const row of (data.opTransactions ?? []).filter(isBankMovement)) {
         months.add(row.date.slice(0, 7));
     }
 
@@ -93,7 +94,9 @@ export function pnlByMonth(data: Data, now: Date): PnlMonth[] {
             const categories: Record<string, number> = {};
             let revenue = 0;
             let hasRevenue = false;
-            for (const row of data.opTransactions ?? []) {
+            for (const row of (data.opTransactions ?? []).filter(
+                isBankMovement,
+            )) {
                 if (row.date.slice(0, 7) !== month) continue;
                 const amountUsd = opTransactionUsd(row);
                 const category = transactionCategory(row);
@@ -361,7 +364,7 @@ function pnlVendorLines(
     const monthSet = new Set(monthKeys);
     // category → vendor → month → usd
     const byCategory = new Map<string, Map<string, Map<string, number>>>();
-    for (const row of data.opTransactions ?? []) {
+    for (const row of (data.opTransactions ?? []).filter(isBankMovement)) {
         const category = transactionCategory(row);
         if (category === "revenue" || category === "balance_sheet") continue;
         const month = row.date.slice(0, 7);
@@ -663,7 +666,7 @@ export function vendorPlanes(data: Data): VendorPlanes[] {
     const cumulativeKeys = new Set<string>();
     const infraCloudKeys = new Set<string>();
     const nonInfraCloudKeys = new Set<string>();
-    for (const row of data.opTransactions ?? []) {
+    for (const row of (data.opTransactions ?? []).filter(isBankMovement)) {
         if (transactionCategory(row) !== "compute") continue;
         const month = row.date.slice(0, 7);
         if (!MONTH_KEY_RE.test(month)) continue;
@@ -852,7 +855,7 @@ export function insightVendorOptions(
     month: MonthFilterValue = "",
 ): string[] {
     const vendors = new Set<string>();
-    for (const row of data.opTransactions ?? []) {
+    for (const row of (data.opTransactions ?? []).filter(isBankMovement)) {
         if (
             matchesMonth(row.date, month) &&
             isComputeOrInfrastructureCategory(transactionCategory(row)) &&
@@ -1933,7 +1936,7 @@ export function providerBalanceRows(
     const creditFlows = new Map<string, Map<string, BalanceFlow>>();
     const cashVendors = new Set<string>();
 
-    for (const row of data.opTransactions ?? []) {
+    for (const row of (data.opTransactions ?? []).filter(isBankMovement)) {
         if (!PREPAID_VENDORS.has(row.vendor)) continue;
         if (!isComputeOrInfrastructureCategory(transactionCategory(row))) {
             continue;

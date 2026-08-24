@@ -150,10 +150,13 @@ export function providerAccountLabel(
 }
 
 export function providerMeteringBasis(value: string): MeteringBasis {
-    // Unknown providers are already surfaced as missing registry mappings. A
-    // conservative mixed basis avoids additionally presenting their ratio as
-    // a verified direct-price alarm before we classify them manually.
-    return resolveProvider(value)?.meteringBasis ?? "mixed";
+    const provider = resolveProvider(value);
+    if (!provider) {
+        throw new Error(
+            `Vendor "${normalizeProviderName(value)}" has no reviewed metering basis`,
+        );
+    }
+    return provider.meteringBasis;
 }
 
 export function activeProviderAccounts(
@@ -284,7 +287,9 @@ export function collectProviderObservations(
         });
     };
 
-    for (const row of data.opTransactions ?? []) {
+    for (const row of (data.opTransactions ?? []).filter(
+        (item) => item.kind === "transaction",
+    )) {
         if (!isComputeOrInfrastructureCategory(transactionCategory(row))) {
             continue;
         }

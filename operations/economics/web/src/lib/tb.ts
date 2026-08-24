@@ -2,8 +2,8 @@ import { FIXTURES } from "../fixtures";
 import type {
     Data,
     OpCloudRow,
+    OpForecastRow,
     OpPollenRow,
-    OpRunwayRow,
     OpTransactionRow,
 } from "../types";
 import {
@@ -100,11 +100,11 @@ export function canonicalPollenRows(
 export async function loadAll(): Promise<Data> {
     // All four pipes are required contracts. A missing pipe (404) must surface
     // as an error, never render as plausible-but-empty economics data.
-    const [opTransactions, opCloud, opPollen, opRunway] = await Promise.all([
+    const [opTransactions, opCloud, opPollen, opForecast] = await Promise.all([
         fetchPipe<OpTransactionRow>("op_transactions_api"),
         fetchPipe<OpCloudRow>("op_cloud_api"),
         fetchPipe<OpPollenRow>("op_pollen_api"),
-        fetchPipe<OpRunwayRow>("op_runway_api"),
+        fetchPipe<OpForecastRow>("op_forecast_api"),
     ]);
 
     const canonicalize = <T extends { vendor: string }>(row: T): T => ({
@@ -122,7 +122,7 @@ export async function loadAll(): Promise<Data> {
         opTransactions: opTransactions.map(canonicalize),
         opCloud: opCloud.map(canonicalize),
         opPollen: canonicalPollenRows(opPollen),
-        opRunway: opRunway.map(canonicalize),
+        opForecast: opForecast.map(canonicalize),
         providerObservations,
     };
 }

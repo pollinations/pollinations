@@ -6,6 +6,7 @@ const transaction = (
     over: Partial<OpTransactionRow> = {},
 ): OpTransactionRow => ({
     entry_id: "wise-1",
+    kind: "transaction",
     source: "wise",
     date: "2026-07-10",
     vendor: "aws",
@@ -62,7 +63,7 @@ const data = (over: Partial<Data> = {}): Data => ({
     opTransactions: [],
     opCloud: [],
     opPollen: [],
-    opRunway: [],
+    opForecast: [],
     ...over,
 });
 

@@ -19,9 +19,16 @@ const data: Data = {
 describe("collectMonths", () => {
     it("unions months across OP month-grained tables, sorted", () => {
         const months = collectMonths(data);
-        expect(months).toEqual([...months].sort());
-        expect(new Set(months).size).toBe(months.length);
-        expect(months).toContain("2026-05");
+        expect(months).toEqual([
+            "2026-01",
+            "2026-02",
+            "2026-03",
+            "2026-04",
+            "2026-05",
+            "2026-06",
+            "2026-07",
+            "2026-08",
+        ]);
     });
 
     it("skips empty and non-month values (undated invoices)", () => {

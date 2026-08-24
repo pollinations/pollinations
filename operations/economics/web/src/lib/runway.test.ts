@@ -1,419 +1,307 @@
 import { describe, expect, it } from "vitest";
-import type { OpRunwayRow, OpTransactionRow } from "../types";
-import { buildRunway, forecastMethodFromEvidence } from "./runway";
+import type { OpForecastRow, OpTransactionRow } from "../types";
+import { buildRunway } from "./runway";
 
-const NOW = new Date("2026-07-10T12:00:00Z");
+const NOW = new Date("2026-08-24T12:00:00.000Z");
 
 const transaction = (
-    overrides: Partial<OpTransactionRow>,
+    overrides: Partial<OpTransactionRow> = {},
 ): OpTransactionRow => ({
-    entry_id: "wise-test-transaction",
+    entry_id: "wise-transaction",
+    kind: "transaction",
     source: "wise",
-    date: "2026-07-05",
+    date: "2026-08-10",
     vendor: "aws",
     category: "cloud",
-    amount: 0,
+    amount: -100,
     currency: "USD",
-    description: "",
-    evidence: "",
-    recorded_at: "2026-07-10 00:00:00",
+    description: "AWS",
+    evidence: "Wise statement",
+    recorded_at: "2026-08-24 00:00:00.000",
     ...overrides,
 });
 
-const fact = (overrides: Partial<OpRunwayRow>): OpRunwayRow => ({
-    entry_id: "fact",
-    kind: "forecast",
-    date: "2026-07-01",
-    vendor: "aws",
-    category: "cloud",
-    amount: 0,
-    currency: "USD",
-    source: "agent",
-    evidence: "",
-    recorded_at: "2026-07-10 00:00:00.000",
-    ...overrides,
-});
-
-const opening = (amount = 10_000): OpRunwayRow =>
-    fact({
-        entry_id: "opening",
+const opening = (
+    amount = 1_000,
+    overrides: Partial<OpTransactionRow> = {},
+): OpTransactionRow =>
+    transaction({
+        entry_id: "wise-opening-usd",
         kind: "opening_balance",
-        vendor: "",
-        category: "",
+        date: "2026-01-01",
+        vendor: "wise",
+        category: "balance_sheet",
         amount,
-        source: "manual",
+        description: "Statement opening balance",
+        ...overrides,
     });
+
+const forecast = (overrides: Partial<OpForecastRow> = {}): OpForecastRow => ({
+    entry_id: "forecast-2026-08-aws",
+    month: "2026-08-01",
+    vendor: "aws",
+    category: "compute",
+    amount: -300,
+    currency: "USD",
+    method: "last",
+    source: "agent",
+    evidence: "July bank total",
+    recorded_at: "2026-08-24 00:00:00.000",
+    ...overrides,
+});
 
 describe("buildRunway", () => {
-    it("reads only the two supported forecast methods from evidence", () => {
-        expect(
-            forecastMethodFromEvidence(
-                "method=last; basis=wise; month=2026-06",
-            ),
-        ).toBe("last");
-        expect(forecastMethodFromEvidence("basis=wise; method=zero")).toBe(
-            "zero",
-        );
-        expect(forecastMethodFromEvidence("method=avg3")).toBeNull();
-    });
-
-    it("keeps current actuals separate from the full-month forecast", () => {
+    it("adds only the remaining current-month plan to current cash", () => {
         const result = buildRunway(
             [
+                opening(),
+                transaction(),
                 transaction({
-                    date: "2026-06-05",
-                    vendor: "stripe",
-                    category: "revenue",
-                    amount: 1_000,
+                    entry_id: "oss",
+                    vendor: "estonia",
+                    category: "admin",
+                    amount: -50,
                 }),
-                transaction({ amount: -500 }),
             ],
             [
-                opening(),
-                fact({
-                    entry_id: "jul-aws",
-                    amount: -1_000,
-                    evidence: "method=last; basis=wise; month=2026-06",
-                }),
-                fact({
-                    entry_id: "jul-stripe",
-                    vendor: "stripe",
-                    category: "revenue",
-                    amount: 2_000,
-                }),
-                fact({
-                    entry_id: "aug-aws",
-                    date: "2026-08-01",
-                    amount: -1_000,
-                }),
-                fact({
-                    entry_id: "aug-stripe",
-                    date: "2026-08-01",
-                    vendor: "stripe",
-                    category: "revenue",
-                    amount: 2_000,
+                forecast(),
+                forecast({
+                    entry_id: "forecast-2026-09-aws",
+                    month: "2026-09-01",
                 }),
             ],
             NOW,
         );
 
-        const aws = result.rows.find((row) => row.vendor === "aws");
-        const stripe = result.rows.find((row) => row.vendor === "stripe");
-        expect(
-            result.columns
-                .filter((column) => column.month === "2026-07")
-                .map((column) => column.kind),
-        ).toEqual(["current", "forecast"]);
-        expect(stripe?.values["2026-06:actual"]).toBe(1_000);
-        expect(aws?.values["2026-07:current"]).toBe(-500);
-        expect(aws?.values["2026-07:forecast"]).toBe(-1_000);
-        expect(aws?.assumptions["2026-07:current"]).toBeUndefined();
-        expect(aws?.assumptions["2026-07:forecast"]?.[0].source).toBe("agent");
-        expect(aws?.forecastMethod).toBe("last");
-        expect(stripe?.values["2026-07:current"]).toBe(0);
-        expect(stripe?.values["2026-07:forecast"]).toBe(2_000);
-        expect(aws?.values["2026-08:forecast"]).toBe(-1_000);
-        expect(result.mtdCashUsd).toBe(9_500);
-        expect(result.currentBalanceDate).toBeNull();
-        expect(result.projectedMonthEndCashUsd).toBe(11_000);
-        expect(
-            result.columns.find((column) => column.id === "2026-08:forecast"),
-        ).toMatchObject({
-            totalExpensesUsd: -1_000,
-            netUsd: 1_000,
-            runningCashUsd: 12_000,
-        });
+        expect(result.currentCashUsd).toBe(850);
+        expect(result.remainingCurrentPlanUsd).toBe(-200);
+        expect(result.projectedMonthEndCashUsd).toBe(650);
+        expect(result.flags).not.toEqual(
+            expect.arrayContaining([expect.stringContaining("observed")]),
+        );
     });
 
-    it("uses the latest Wise balance snapshot for current cash only", () => {
+    it("does not invent a refund when an expense already exceeds plan", () => {
         const result = buildRunway(
-            [transaction({ amount: -500 })],
+            [opening(), transaction({ amount: -400 })],
+            [
+                forecast(),
+                forecast({
+                    entry_id: "forecast-2026-09-aws",
+                    month: "2026-09-01",
+                }),
+            ],
+            NOW,
+        );
+
+        expect(result.currentCashUsd).toBe(600);
+        expect(result.remainingCurrentPlanUsd).toBe(0);
+        expect(result.projectedMonthEndCashUsd).toBe(600);
+    });
+
+    it("does not subtract revenue that already exceeds plan", () => {
+        const result = buildRunway(
             [
                 opening(),
-                fact({ entry_id: "jul", amount: -1_000 }),
-                fact({
-                    entry_id: "wise-current-balance-usd",
-                    kind: "current_balance",
-                    date: "2026-07-10",
-                    vendor: "wise",
-                    category: "cash",
-                    amount: 8_750,
-                    source: "wise",
+                transaction({
+                    vendor: "stripe",
+                    category: "revenue",
+                    amount: 500,
                 }),
-                fact({
-                    entry_id: "wise-current-balance-eur",
-                    kind: "current_balance",
-                    date: "2026-07-10",
-                    vendor: "wise",
-                    category: "cash",
-                    amount: 100,
+            ],
+            [
+                forecast({
+                    vendor: "stripe",
+                    category: "revenue",
+                    amount: 300,
+                }),
+                forecast({
+                    entry_id: "forecast-2026-09-stripe",
+                    month: "2026-09-01",
+                    vendor: "stripe",
+                    category: "revenue",
+                    amount: 300,
+                }),
+            ],
+            NOW,
+        );
+
+        expect(result.currentCashUsd).toBe(1_500);
+        expect(result.remainingCurrentPlanUsd).toBe(0);
+    });
+
+    it("uses every same-date opening currency and excludes anchors from cash change", () => {
+        const result = buildRunway(
+            [
+                opening(1_000, { currency: "EUR" }),
+                opening(100, {
+                    entry_id: "wise-opening-usd",
+                    currency: "USD",
+                }),
+                transaction({
+                    entry_id: "january-cost",
+                    date: "2026-01-10",
+                    amount: -100,
                     currency: "EUR",
-                    source: "wise",
+                }),
+            ],
+            [
+                forecast(),
+                forecast({
+                    entry_id: "forecast-2026-09-aws",
+                    month: "2026-09-01",
                 }),
             ],
             NOW,
         );
+        const january = result.columns.find(
+            (column) => column.id === "2026-01:actual",
+        );
 
-        expect(result.currentBalanceDate).toBe("2026-07-10");
-        expect(result.mtdCashUsd).toBeCloseTo(8_864.11, 2);
-        expect(result.projectedMonthEndCashUsd).toBe(9_000);
+        expect(result.openingBalanceUsd).toBeCloseTo(1_273.8, 2);
+        expect(january?.netUsd).toBeCloseTo(-117.38, 2);
+        expect(january?.runningCashUsd).toBeCloseTo(1_156.42, 2);
     });
 
-    it("ignores older currencies and accepts zero unsupported balances", () => {
+    it("rejects multiple opening dates instead of choosing one", () => {
         const result = buildRunway(
-            [],
             [
                 opening(),
-                fact({
-                    entry_id: "old-usd",
-                    kind: "current_balance",
-                    date: "2026-07-09",
-                    vendor: "wise",
-                    category: "cash",
-                    amount: 99_000,
-                    source: "wise",
-                }),
-                fact({
-                    entry_id: "current-usd",
-                    kind: "current_balance",
-                    date: "2026-07-10",
-                    vendor: "wise",
-                    category: "cash",
-                    amount: 1_000,
-                    source: "wise",
-                }),
-                fact({
-                    entry_id: "current-gbp",
-                    kind: "current_balance",
-                    date: "2026-07-10",
-                    vendor: "wise",
-                    category: "cash",
-                    amount: 0,
-                    currency: "GBP",
-                    source: "wise",
-                }),
-            ],
-            NOW,
-        );
-
-        expect(result.mtdCashUsd).toBe(1_000);
-    });
-
-    it("counts positive displayed months until cash reaches zero", () => {
-        const result = buildRunway(
-            [],
-            [
-                opening(2_000),
-                fact({ entry_id: "jul", amount: -500 }),
-                fact({ entry_id: "aug", date: "2026-08-01", amount: -800 }),
-                fact({ entry_id: "sep", date: "2026-09-01", amount: -800 }),
-            ],
-            NOW,
-        );
-
-        expect(result.projectedMonthEndCashUsd).toBe(1_500);
-        expect(result.runwayMonths).toBe(2);
-        expect(result.runwayExhaustedMonth).toBe("2026-09");
-        expect(result.runwayCapped).toBe(false);
-    });
-
-    it("marks runway as capped when cash stays positive through the horizon", () => {
-        const result = buildRunway(
-            [],
-            [
-                opening(2_000),
-                fact({ entry_id: "jul", amount: -100 }),
-                fact({ entry_id: "aug", date: "2026-08-01", amount: -100 }),
-            ],
-            NOW,
-        );
-
-        expect(result.runwayMonths).toBe(2);
-        expect(result.runwayCapped).toBe(true);
-        expect(result.runwayExhaustedMonth).toBeNull();
-    });
-
-    it("keeps running cash unavailable without an opening balance", () => {
-        const result = buildRunway(
-            [],
-            [fact({ entry_id: "jul", amount: -100 })],
-            NOW,
-        );
-
-        expect(result.projectedMonthEndCashUsd).toBeNull();
-        expect(result.runwayMonths).toBeNull();
-        expect(result.flags[0]).toContain("No opening balance");
-    });
-
-    it("selects the latest opening balance and flags multiple anchors", () => {
-        const result = buildRunway(
-            [],
-            [
-                opening(1_000),
-                fact({
-                    entry_id: "new-opening",
-                    kind: "opening_balance",
-                    vendor: "",
-                    category: "",
-                    amount: 3_000,
-                    source: "manual",
-                    recorded_at: "2026-07-10 01:00:00.000",
-                }),
-                fact({ entry_id: "jul", amount: -500 }),
-            ],
-            NOW,
-        );
-
-        expect(result.openingBalanceUsd).toBe(3_000);
-        expect(result.projectedMonthEndCashUsd).toBe(2_500);
-        expect(result.flags).toContain(
-            "2 opening balance facts found; using the latest effective date.",
-        );
-    });
-
-    it("selects the latest effective opening date before its revision timestamp", () => {
-        const result = buildRunway(
-            [],
-            [
-                fact({
-                    entry_id: "current-opening",
-                    kind: "opening_balance",
+                opening(900, {
+                    entry_id: "later-opening",
                     date: "2026-07-01",
-                    vendor: "",
-                    category: "",
-                    amount: 3_000,
-                    source: "manual",
                 }),
-                fact({
-                    entry_id: "late-backfill",
-                    kind: "opening_balance",
-                    date: "2026-06-01",
-                    vendor: "",
-                    category: "",
-                    amount: 1_000,
-                    source: "manual",
-                    recorded_at: "2026-07-10 02:00:00.000",
-                }),
-                fact({ entry_id: "jul", amount: -500 }),
-                fact({ entry_id: "aug", date: "2026-08-01", amount: -500 }),
             ],
+            [forecast()],
             NOW,
         );
 
-        expect(result.openingBalanceDate).toBe("2026-07-01");
-        expect(result.projectedMonthEndCashUsd).toBe(2_500);
-    });
-
-    it("defines expenses by category so refunds and revenue adjustments stay signed", () => {
-        const result = buildRunway(
-            [],
-            [
-                opening(),
-                fact({ entry_id: "cloud-cost", amount: -1_000 }),
-                fact({
-                    entry_id: "cloud-refund",
-                    vendor: "gcp refund",
-                    amount: 200,
-                }),
-                fact({
-                    entry_id: "revenue-adjustment",
-                    vendor: "stripe",
-                    category: "revenue",
-                    amount: -100,
-                }),
-                fact({ entry_id: "aug", date: "2026-08-01", amount: 0 }),
-            ],
-            NOW,
-        );
-
-        const july = result.columns.find(
-            (column) => column.id === "2026-07:forecast",
-        );
-        expect(july?.totalExpensesUsd).toBe(-800);
-        expect(july?.netUsd).toBe(-900);
-    });
-
-    it("converts explicit EUR assumptions with the Economics FX table", () => {
-        const result = buildRunway(
-            [],
-            [
-                opening(),
-                fact({
-                    entry_id: "jul-eur",
-                    amount: -100,
-                    currency: "EUR",
-                }),
-            ],
-            NOW,
-        );
-
-        expect(result.rows[0].values["2026-07:forecast"]).toBeCloseTo(
-            -114.11,
-            2,
-        );
-    });
-
-    it("treats absent vendor forecasts as zero while flagging whole-month gaps", () => {
-        const result = buildRunway(
-            [],
-            [
-                opening(),
-                fact({ entry_id: "jul", amount: -100 }),
-                fact({ entry_id: "sep", date: "2026-09-01", amount: -100 }),
-            ],
-            NOW,
-        );
-
-        expect(result.rows[0].values["2026-08:forecast"]).toBe(0);
+        expect(result.currentCashUsd).toBeNull();
         expect(result.flags).toContain(
-            "No forecast facts for 2026-08; that month is treated as zero.",
+            "2 opening-balance dates found; keep one statement-backed anchor before calculating cash.",
         );
     });
 
-    it("flags a non-month-start opening balance while preserving parity math", () => {
+    it("requires a continuous future forecast before calculating runway", () => {
         const result = buildRunway(
-            [],
+            [opening()],
             [
-                fact({
-                    entry_id: "opening",
-                    kind: "opening_balance",
-                    date: "2026-07-10",
-                    vendor: "",
-                    category: "",
-                    amount: 1_000,
+                forecast({ amount: -100 }),
+                forecast({
+                    entry_id: "forecast-2026-10-aws",
+                    month: "2026-10-01",
+                    amount: -100,
                 }),
-                fact({ entry_id: "jul", amount: -100 }),
+            ],
+            NOW,
+        );
+
+        expect(result.runwayMonths).toBeNull();
+        expect(result.flags).toContain(
+            "Forecast gap: 2026-09; runway is unavailable.",
+        );
+    });
+
+    it("counts only complete future months, excluding the partial current month", () => {
+        const result = buildRunway(
+            [opening()],
+            [
+                forecast({ amount: -100 }),
+                forecast({
+                    entry_id: "forecast-2026-09-aws",
+                    month: "2026-09-01",
+                    amount: -100,
+                }),
+                forecast({
+                    entry_id: "forecast-2026-10-aws",
+                    month: "2026-10-01",
+                    amount: -100,
+                }),
             ],
             NOW,
         );
 
         expect(result.projectedMonthEndCashUsd).toBe(900);
-        expect(
-            result.flags.some((flag) => flag.includes("not the first day")),
-        ).toBe(true);
+        expect(result.runwayMonths).toBe(2);
+        expect(result.runwayCapped).toBe(true);
     });
 
-    it("flags a pre-window opening balance instead of silently losing it", () => {
+    it("includes cash adjustments in cash change but not expenses", () => {
         const result = buildRunway(
-            [],
+            [opening()],
             [
-                fact({
-                    entry_id: "opening",
-                    kind: "opening_balance",
-                    date: "2025-12-01",
-                    vendor: "",
-                    category: "",
-                    amount: 1_000,
+                forecast({ amount: -100 }),
+                forecast({
+                    entry_id: "deel-refund",
+                    vendor: "deel",
+                    category: "balance_sheet",
+                    amount: 400,
+                    method: "one_off",
                 }),
-                fact({ entry_id: "jul", amount: -100 }),
-                fact({ entry_id: "aug", date: "2026-08-01", amount: -100 }),
+                forecast({
+                    entry_id: "forecast-2026-09-aws",
+                    month: "2026-09-01",
+                    amount: -100,
+                }),
+            ],
+            NOW,
+        );
+        const augustPlan = result.columns.find(
+            (column) => column.id === "2026-08:forecast",
+        );
+
+        expect(augustPlan?.totalExpensesUsd).toBe(-100);
+        expect(augustPlan?.netUsd).toBe(300);
+    });
+
+    it("uses the structured forecast method", () => {
+        const result = buildRunway(
+            [opening()],
+            [
+                forecast({ method: "one_off" }),
+                forecast({
+                    entry_id: "forecast-2026-09-aws",
+                    month: "2026-09-01",
+                    method: "one_off",
+                }),
             ],
             NOW,
         );
 
+        expect(result.rows[0]?.forecastMethod).toBe("one_off");
+    });
+
+    it("surfaces invalid categories and methods without guessing", () => {
+        const result = buildRunway(
+            [opening()],
+            [
+                forecast({ category: "saas", method: "mystery" as never }),
+                forecast({
+                    entry_id: "forecast-2026-09-aws",
+                    month: "2026-09-01",
+                    category: "saas",
+                    method: "mystery" as never,
+                }),
+            ],
+            NOW,
+        );
+
+        expect(result.rows).toEqual([]);
+        expect(result.flags).toEqual(
+            expect.arrayContaining([
+                "Forecast categories need correction for aws.",
+                "Forecast methods need correction for aws.",
+            ]),
+        );
+    });
+
+    it("keeps cash unavailable without an opening balance", () => {
+        const result = buildRunway([transaction()], [forecast()], NOW);
+
+        expect(result.currentCashUsd).toBeNull();
         expect(result.projectedMonthEndCashUsd).toBeNull();
-        expect(result.flags.some((flag) => flag.includes("predates"))).toBe(
-            true,
+        expect(result.flags).toContain(
+            "No opening bank balance; cash balance and runway are unavailable.",
         );
     });
 });

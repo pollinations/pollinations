@@ -53,6 +53,7 @@ function finite(value: unknown): boolean {
 function invalidTransaction(row: OpTransactionRow): boolean {
     return (
         !present(row.entry_id) ||
+        (row.kind !== "transaction" && row.kind !== "opening_balance") ||
         !isTransactionSource(row.source) ||
         !DATE_RE.test(row.date) ||
         !present(row.vendor) ||
@@ -154,8 +155,11 @@ export function monthlyLedgerAuditRows(
     return collectMonths(data)
         .filter((month) => matchesMonth(month, filter))
         .map((month) => {
-            const transactions = (data.opTransactions ?? []).filter(
+            const bankRows = (data.opTransactions ?? []).filter(
                 (row) => row.date.slice(0, 7) === month,
+            );
+            const transactions = bankRows.filter(
+                (row) => row.kind === "transaction",
             );
             const cloud = (data.opCloud ?? []).filter(
                 (row) => row.start.slice(0, 7) === month,
@@ -170,7 +174,7 @@ export function monthlyLedgerAuditRows(
             const missingMappingProviders = [
                 ...new Set(mappingGaps.map((row) => row.provider)),
             ].sort((a, b) => a.localeCompare(b));
-            const invalidTransactions = transactions.filter(invalidTransaction);
+            const invalidTransactions = bankRows.filter(invalidTransaction);
             const invalidCloudRows = cloud.filter(invalidCloud);
             const invalidPollenRows = pollen.filter(invalidPollen);
             const partial = month >= currentMonth;
@@ -199,12 +203,12 @@ export function monthlyLedgerAuditRows(
                 // legitimate source rows may share the display key and must be
                 // summed rather than reported as duplicates.
                 duplicateRows:
-                    duplicateExtras(transactions, (row) => row.entry_id) +
+                    duplicateExtras(bankRows, (row) => row.entry_id) +
                     duplicateExtras(cloud, (row) => row.entry_id),
                 duplicateProviders: [
                     ...new Set([
                         ...providersWithDuplicateKeys(
-                            transactions,
+                            bankRows,
                             (row) => row.entry_id,
                         ),
                         ...providersWithDuplicateKeys(

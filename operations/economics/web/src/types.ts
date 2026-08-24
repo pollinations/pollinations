@@ -1,5 +1,6 @@
 export type OpTransactionRow = {
     entry_id: string;
+    kind: "transaction" | "opening_balance";
     source: string;
     date: string;
     vendor: string;
@@ -52,14 +53,16 @@ export type OpPollenRow = {
     requests_quests: number;
 };
 
-export type OpRunwayRow = {
+export type OpForecastMethod = "fixed" | "funded" | "last" | "one_off";
+
+export type OpForecastRow = {
     entry_id: string;
-    kind: "opening_balance" | "forecast" | string;
-    date: string;
+    month: string;
     vendor: string;
     category: string;
     amount: number;
     currency: string;
+    method: OpForecastMethod;
     source: string;
     evidence: string;
     recorded_at: string;
@@ -81,6 +84,6 @@ export type Data = {
     opTransactions?: OpTransactionRow[];
     opCloud?: OpCloudRow[];
     opPollen?: OpPollenRow[];
-    opRunway?: OpRunwayRow[];
+    opForecast?: OpForecastRow[];
     providerObservations?: ProviderObservation[];
 };

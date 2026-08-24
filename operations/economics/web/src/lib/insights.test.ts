@@ -17,6 +17,7 @@ import {
 
 const opTxn = (over: Partial<OpTransactionRow>): OpTransactionRow => ({
     entry_id: "wise-test-transaction",
+    kind: "transaction",
     source: "wise",
     date: "2026-05-10",
     vendor: "aws",

@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
-import type { OpTransactionRow } from "../types";
+import type { OpForecastRow, OpTransactionRow } from "../types";
 import {
     categoryLabel,
     cloudCategory,
+    forecastCategory,
     transactionCategory,
 } from "./categories";
 
@@ -13,6 +14,7 @@ const transaction = (
     amount = -10,
 ): OpTransactionRow => ({
     entry_id: `${vendor}-${description}`,
+    kind: "transaction",
     source: "wise",
     date: "2026-07-01",
     vendor,
@@ -100,7 +102,16 @@ describe("canonical categories", () => {
                 transaction("self-issued", "cloud", "Personal Pollen pack"),
             ),
         ).toBe("balance_sheet");
-        expect(categoryLabel("balance_sheet")).toBe("Balance Sheet");
+        expect(categoryLabel("balance_sheet")).toBe("Cash adjustments");
+    });
+
+    it("treats the bank opening anchor as a non-movement", () => {
+        expect(
+            transactionCategory({
+                ...transaction("wise", "revenue", "Opening balance", 10_000),
+                kind: "opening_balance",
+            }),
+        ).toBe("balance_sheet");
     });
 
     it("collapses technical cloud types into the shared business category", () => {
@@ -108,6 +119,48 @@ describe("canonical categories", () => {
         expect(cloudCategory({ type: "gpu" })).toBe("compute");
         expect(cloudCategory({ type: "infra" })).toBe("infrastructure");
         expect(cloudCategory({ type: "mystery" })).toBe("uncategorized");
+    });
+
+    it("trusts the reviewed category on forecast facts", () => {
+        const fact: OpForecastRow = {
+            entry_id: "deel-refund",
+            month: "2026-08-01",
+            vendor: "deel",
+            category: "balance_sheet",
+            amount: 12_036.42,
+            currency: "EUR",
+            method: "one_off",
+            source: "agent",
+            evidence: "Deel deposit refund",
+            recorded_at: "2026-08-24 00:00:00",
+        };
+        const openAiFact: OpForecastRow = {
+            ...fact,
+            vendor: "openai",
+            category: "development",
+            amount: -200,
+            evidence: "Subscription invoice",
+        };
+
+        expect(forecastCategory(fact)).toBe("balance_sheet");
+        expect(forecastCategory(openAiFact)).toBe("development");
+    });
+
+    it("does not infer a forecast category from vendor or evidence", () => {
+        const fact: OpForecastRow = {
+            entry_id: "legacy-openai",
+            month: "2026-08-01",
+            vendor: "openai",
+            category: "saas",
+            amount: -200,
+            currency: "USD",
+            method: "fixed",
+            source: "agent",
+            evidence: "Subscription invoice",
+            recorded_at: "2026-08-24 00:00:00",
+        };
+
+        expect(forecastCategory(fact)).toBe("uncategorized");
     });
 
     it("labels only the canonical vocabulary", () => {

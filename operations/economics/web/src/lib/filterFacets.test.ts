@@ -8,6 +8,7 @@ const transaction = (
     date = "2026-07-10",
 ): OpTransactionRow => ({
     entry_id: `${date}-${vendor}-${category}`,
+    kind: "transaction",
     source: "wise",
     date,
     vendor,

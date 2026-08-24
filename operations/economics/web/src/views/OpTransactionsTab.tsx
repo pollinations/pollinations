@@ -121,7 +121,7 @@ export function OpTransactionsTab({
                             <HeaderHint
                                 hint={{
                                     meaning:
-                                        "Signed Wise cash movement. Revenue/inflows are positive; spend/outflows are negative.",
+                                        "Signed Wise value. Ordinary rows are cash movements; the opening-balance row is a non-movement anchor used only to reconstruct cash.",
                                     tables: "op_transactions_api",
                                     sources: "WISE",
                                 }}

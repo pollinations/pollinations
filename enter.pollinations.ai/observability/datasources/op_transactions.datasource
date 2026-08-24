@@ -18,4 +18,4 @@ ENGINE MergeTree
 ENGINE_SORTING_KEY entry_id, recorded_at
 
 FORWARD_QUERY >
-    SELECT source, date, vendor, category, amount, currency, description, evidence, toDateTime64(recorded_at, 3) AS recorded_at, entry_id, CAST('transaction', 'String') AS kind
+    SELECT source, date, vendor, category, amount, currency, description, evidence, toDateTime64(recorded_at, 3) AS recorded_at, entry_id, kind

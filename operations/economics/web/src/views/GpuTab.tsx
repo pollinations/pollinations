@@ -42,12 +42,6 @@ import { signedToneOrSoft } from "../lib/tone";
 import { isCreditSupported } from "../lib/unitEconomics";
 import type { Data, OpCloudRow } from "../types";
 
-const REGISTRY_UNIT_PRICES: Record<string, { price: number; unit: string }> = {
-    zimage: { price: 0.002, unit: "img" },
-    klein: { price: 0.01, unit: "img" },
-    "ltx-2": { price: 0.005, unit: "s" },
-};
-
 export type GpuEconomicsRow = {
     vendor: string;
     models: string;
@@ -65,7 +59,6 @@ export type GpuEconomicsRow = {
     marginUsd: number;
     marginPct: number | null;
     effUsdPerReq: number | null;
-    breakEven: { model: string; unit: string; volume: number }[];
     flags: string[];
 };
 
@@ -186,24 +179,6 @@ function splitModels(model: string): string[] {
         .filter(Boolean);
 }
 
-function computeBreakEven(
-    models: string[],
-    rentUsd: number,
-): { model: string; unit: string; volume: number }[] {
-    if (rentUsd <= 0) return [];
-    const result: { model: string; unit: string; volume: number }[] = [];
-    for (const model of models) {
-        const entry = REGISTRY_UNIT_PRICES[model];
-        if (!entry) continue;
-        result.push({
-            model,
-            unit: entry.unit,
-            volume: rentUsd / entry.price,
-        });
-    }
-    return result;
-}
-
 export function demandCoveragePct(
     pollenDemandUsd: number,
     gpuCostUsd: number,
@@ -259,7 +234,6 @@ export function gpuEconomics(data: Data, monthFilter: MonthFilterValue) {
             marginUsd: 0,
             marginPct: null,
             effUsdPerReq: null,
-            breakEven: [],
             flags: [],
             cloudModelSet: new Set<string>(),
             pollenModelSet: new Set<string>(),
@@ -348,7 +322,6 @@ export function gpuEconomics(data: Data, monthFilter: MonthFilterValue) {
                         : null,
                 effUsdPerReq:
                     row.requests > 0 ? row.rentUsd / row.requests : null,
-                breakEven: computeBreakEven(models, row.rentUsd),
                 flags,
             };
         })

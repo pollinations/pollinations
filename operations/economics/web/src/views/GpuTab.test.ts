@@ -98,9 +98,6 @@ describe("gpuEconomics", () => {
             effUsdPerReq: 1,
             flags: [],
         });
-        expect(rows[0].breakEven).toEqual([
-            { model: "zimage", unit: "img", volume: 50_000 },
-        ]);
     });
 
     it("shows models served in Pollen instead of stale cloud labels", () => {

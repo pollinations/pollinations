@@ -244,10 +244,11 @@ export function RunwayTab({ data }: { data: Data }) {
                                 ? "neg"
                                 : "base",
                         detail:
-                            runway.latestTransactionDate &&
-                            runway.openingBalanceDate
-                                ? `bank movements through ${fmtPeriod(runway.latestTransactionDate)} · anchored ${fmtPeriod(runway.openingBalanceDate)}`
-                                : "opening balance missing",
+                            runway.openingBalanceDate == null
+                                ? "opening balance missing"
+                                : runway.latestTransactionDate
+                                  ? `bank movements through ${fmtPeriod(runway.latestTransactionDate)} · anchored ${fmtPeriod(runway.openingBalanceDate)}`
+                                  : `anchored ${fmtPeriod(runway.openingBalanceDate)} · no bank movements`,
                     },
                     {
                         label: "Month-end cash",

@@ -154,5 +154,7 @@ describe("RunwayTab labels", () => {
 
         expect(html).toContain("Next full month change");
         expect(html).toContain("plan unavailable");
+        expect(html).toContain("no bank movements");
+        expect(html).not.toContain("opening balance missing");
     });
 });

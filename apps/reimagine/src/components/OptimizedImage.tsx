@@ -39,7 +39,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
     useEffect(() => {
         setIsLoading(true);
         setError(false);
-    }, [source.uri]);
+    }, [source]);
 
     useEffect(() => {
         const checkIfBanned = async () => {

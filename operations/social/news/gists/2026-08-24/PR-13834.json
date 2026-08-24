@@ -1,0 +1,34 @@
+{
+  "pr_number": 13834,
+  "title": "fix: align Qwen3.8 27B pricing",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13834",
+  "merged_at": "2026-08-24T12:18:34Z",
+  "labels": [],
+  "pr_body_excerpt": "- Updates the pinned OpenRouter Chutes FP8 cost sheet from $0.40/$0.04/$3.00 to $0.35/$0.035/$2.75 per 1M input/cache-read/output tokens.\n- Applies the same verified input rate to text, image, and video inputs; `priceMultiplier: 1` keeps user pricing aligned exactly.\n- Preserves the canonical name, paid-only status, Chutes pin, disabled provider fallback, capabilities, and no Pollinations fallback.\n- Verified against the [exact OpenRouter endpoint listing](https://openrouter.ai/api/v1/models/qwen/qwen3.8-27b/endpoints) and direct Chutes responses for text, image, video, and cache-read usage.\n- Local E2E verified `/v1/models`, non-streaming and streaming usage, output-cache HIT, exact wallet debit/tracking, 51 pricing tests, both service typechecks, and Biome.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The price tags stopped drifting",
+    "blurb": "Qwen3.8 27B's Chutes price tags have been replanted at their verified rates. The meter now counts text, images, video, and cached tokens from the same honest little ruler.",
+    "summary": "Corrected Qwen3.8 27B's pinned Chutes FP8 pricing to $0.35/$0.035/$2.75 per million input, cache-read, and output tokens, with the same $0.35 input rate applied to text, image, and video inputs.",
+    "impact": "Qwen3.8 27B usage now debits wallets and reports costs at the verified Chutes rates across normal, streaming, multimodal, and cache-hit requests.",
+    "keywords": [
+      "Qwen3.8 27B",
+      "Chutes",
+      "OpenRouter",
+      "pricing",
+      "wallets",
+      "token accounting"
+    ],
+    "visual_concept": "A cozy garden-market price correction for the Qwen3.8 27B model: Polli carefully replaces mismatched token price tags on a small CRT terminal and three labeled jars representing text, image, and video inputs. Tiny code-plants and a cache jar make the accounting theme readable, while the monitor robot checks the numbers with eager pixel eyes.",
+    "image_prompt": "Cozy pixel art scene in a warm garden market where Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wears tiny accountant glasses while correcting price tags beside a lime green (#ecf874) CRT terminal; three neat jars labeled TEXT, IMAGE, and VIDEO share the same input tag, and a small cache jar sits nearby. A chunky monitor robot happily verifies the figures beside flowering code-plants and vines, with subtle pixel-font text \"VERIFIED RATES\"; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-24/PR-13834.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden market where Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wears tiny accountant glasses while correcting price tags beside a lime green (#ecf874) CRT terminal; three neat jars labeled TEXT, IMAGE, and VIDEO share the same input tag, and a small cache jar sits nearby. A chunky monitor robot happily verifies the figures beside flowering code-plants and vines, with subtle pixel-font text \"VERIFIED RATES\"; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-24T12:20:05.416853+00:00"
+}

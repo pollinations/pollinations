@@ -230,6 +230,14 @@ const CommunityEndpointResponseFieldsSchema = {
     createdAt: z.string(),
     updatedAt: z.string(),
 } as const;
+const PendingChangeSchema = z
+    .object({
+        effectiveAt: z.string(),
+        visibility: z.literal("public").optional(),
+        paidOnly: z.boolean(),
+        ...ResponsePriceFieldsSchema,
+    })
+    .strict();
 const ProxyEndpointResponseSchema = z
     .object({
         ...CommunityEndpointResponseFieldsSchema,
@@ -242,6 +250,7 @@ const ProxyEndpointResponseSchema = z
         paidOnly: z.boolean(),
         fallbacks: z.array(z.string()),
         ...ResponsePriceFieldsSchema,
+        pending: PendingChangeSchema.nullable(),
     })
     .strict();
 const PromptAgentEndpointResponseSchema = z

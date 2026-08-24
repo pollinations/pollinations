@@ -72,7 +72,7 @@ export function InventoryGrid({
 
             {Array.from({ length: emptySlots }).map((_, index) => (
                 <div
-                    key={`empty-${index}`}
+                    key={`empty-slot-${index}`}
                     className={`bg-[#2c1e12] border-2 border-[#5a4332] rounded-lg opacity-50 ${
                         compact ? "p-2" : "p-3"
                     }`}

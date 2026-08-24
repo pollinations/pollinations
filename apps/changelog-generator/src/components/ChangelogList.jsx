@@ -70,6 +70,7 @@ const ChangelogList = ({ entries }) => {
 
                 <div className="flex gap-2">
                     <button
+                        type="button"
                         onClick={() => setGroupBy("date")}
                         className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
                             groupBy === "date"
@@ -81,6 +82,7 @@ const ChangelogList = ({ entries }) => {
                         By Date
                     </button>
                     <button
+                        type="button"
                         onClick={() => setGroupBy("category")}
                         className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
                             groupBy === "category"

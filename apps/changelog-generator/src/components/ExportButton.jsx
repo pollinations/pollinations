@@ -112,6 +112,7 @@ const ExportButton = ({ entries, repoName }) => {
     return (
         <div className="w-full max-w-4xl mx-auto mt-6 flex justify-end gap-3">
             <button
+                type="button"
                 onClick={() => handleExport("text")}
                 className="px-4 py-2 bg-slate-600 text-white rounded-lg font-medium hover:bg-slate-700 transition-colors flex items-center gap-2"
             >
@@ -119,6 +120,7 @@ const ExportButton = ({ entries, repoName }) => {
                 Export as Text
             </button>
             <button
+                type="button"
                 onClick={() => handleExport("markdown")}
                 className="px-4 py-2 bg-slate-800 text-white rounded-lg font-medium hover:bg-slate-900 transition-colors flex items-center gap-2"
             >

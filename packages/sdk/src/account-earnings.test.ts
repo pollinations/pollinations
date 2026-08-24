@@ -63,9 +63,7 @@ describe("accountEarnings", () => {
     });
 
     it("passes time-window query options through", async () => {
-        fetchMock.mockResolvedValue(
-            makeResponse({ daily: [], perEntity: [] }),
-        );
+        fetchMock.mockResolvedValue(makeResponse({ daily: [], perEntity: [] }));
 
         const client = newClient();
         await client.accountEarnings({

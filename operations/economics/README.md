@@ -29,3 +29,22 @@ domains and verifies both session endpoints.
 
 The OP Tinybird datasource and pipe definitions (`op_*`) live in
 [`enter.pollinations.ai/observability/`](../../enter.pollinations.ai/observability/).
+
+## Legacy runway retirement
+
+`op_runway` and `op_runway_api` remain deployed only for the currently live
+legacy Economics Worker. The current app derives runway from
+`op_transactions_api` and `op_forecast_api` and does not read either legacy
+object.
+
+Keep both legacy objects until all of the following are true:
+
+1. the new transaction and forecast schemas and reviewed facts are present in
+   production Tinybird;
+2. all four current production pipes pass the Worker contract check;
+3. the new Worker has been deployed and verified on both custom domains; and
+4. rollback to the legacy Worker is no longer required.
+
+Remove the legacy datasource and pipe only in a later, explicitly approved
+destructive Tinybird deployment. Their removal is not part of the current app
+promotion.

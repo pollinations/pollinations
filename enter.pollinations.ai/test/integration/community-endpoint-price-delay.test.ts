@@ -68,7 +68,7 @@ describe("community endpoint price/visibility delay", () => {
             effectiveAt: expect.any(String),
             promptTextPrice: 0.000004,
         });
-        expect(pending.promptTextPrice).toBe(0.000001);
+        expect(pending.promptTextPrice).toBe(0.000004);
 
         const row = await drizzle(env.DB, {
             schema,

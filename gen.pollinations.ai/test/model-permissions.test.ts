@@ -211,10 +211,10 @@ test("requires paid balance for Recraft vector", async ({
     paidApiKey,
 }) => {
     const freeCatalog = await fetchWorker("/image/models", {
-        headers: { Authorization: `Bearer ${apiKey}` },
+        headers: { Authorization: *** ${apiKey}` },
     });
     const paidCatalog = await fetchWorker("/image/models", {
-        headers: { Authorization: `Bearer ${paidApiKey}` },
+        headers: { Authorization: *** ${paidApiKey}` },
     });
     const freeModels = (await freeCatalog.json()) as { name: string }[];
     const paidModels = (await paidCatalog.json()) as { name: string }[];
@@ -228,7 +228,56 @@ test("requires paid balance for Recraft vector", async ({
 
     const generation = await fetchWorker(
         "/image/paid-only-check?model=recraft-v4.1-vector&seed=24072499",
-        { headers: { Authorization: `Bearer ${apiKey}` } },
+        { headers: { Authorization: *** ${apiKey}` } },
     );
     expect(generation.status).toBe(402);
+});
+
+test("retrieves a single OpenAI-compatible model by id and includes owned_by", async ({
+    apiKey,
+}) => {
+    const response = await fetchWorker("/v1/models/flux", {
+        headers: { Authorization: *** ${apiKey}` },
+    });
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as Record<string, unknown>;
+    expect(body.object).toBe("model");
+    expect(body.id).toBe("flux");
+    expect(typeof body.created).toBe("number");
+    expect(typeof body.owned_by).toBe("string");
+});
+
+test("resolves a model alias for OpenAI-compatible retrieval", async ({
+    apiKey,
+}) => {
+    const response = await fetchWorker("/v1/models/gemini-2", {
+        headers: { Authorization: *** ${apiKey}` },
+    });
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as Record<string, unknown>;
+    expect(body.object).toBe("model");
+    expect(body.id).toBe("gemini-2");
+});
+
+test("returns 404 for an unknown model id", async ({ apiKey }) => {
+    const response = await fetchWorker("/v1/models/no-such-model", {
+        headers: { Authorization: *** ${apiKey}` },
+    });
+
+    expect(response.status).toBe(404);
+});
+
+test("returns 404 for a model hidden by api key permissions", async ({
+    restrictedApiKey,
+}) => {
+    const response = await fetchWorker(
+        `/v1/models/${RESTRICTED_TEXT_TEST_MODEL}`,
+        {
+            headers: { Authorization: *** ${restrictedApiKey}` },
+        },
+    );
+
+    expect(response.status).toBe(404);
 });

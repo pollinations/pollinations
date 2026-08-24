@@ -382,6 +382,75 @@ export const proxyRoutes = new Hono<Env>()
         ...modelsListHandler(getVisibleModelEntries),
     )
     .get(
+        "/v1/models/:model",
+        describeRoute({
+            tags: ["🤖 Models"],
+            summary: "Retrieve Model (OpenAI-compatible)",
+            description:
+                "Returns a single model in the same OpenAI-compatible shape as `GET /v1/models`. Aliases resolve to the canonical model ID. Missing or inaccessible models return `404`. List and retrieve responses share the same stable registry creation timestamp.",
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(OpenAIModelSchema),
+                        },
+                    },
+                },
+                404: {
+                    description: "Model not found",
+                },
+                ...errorResponseDescriptions(400, 401, 403, 500),
+            },
+        }),
+        validator(
+            "param",
+            z.object({
+                model: z.string().meta({
+                    description: "Model ID or alias to retrieve",
+                    example: "flux",
+                }),
+            }),
+        ),
+        async (c: Context<Env>) => {
+            const { model } = c.req.valid("param" as never) as {
+                model: string;
+            };
+            const registry = await getGenerationModelRegistry(c.env);
+            const entry = registry.resolve(model);
+            if (!entry) return c.json({ object: "error", message: "Model not found" }, 404);
+            const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+            const paidBalance = hasPaidBalance(c);
+            const visible = filterEntriesByPermissions(
+                [entry],
+                allowedModels,
+                paidBalance,
+            );
+            if (visible.length === 0) {
+                return c.json({ object: "error", message: "Model not found" }, 404);
+            }
+            const now = Date.now();
+            const toModelEntry = (entry: GenerationModelEntry) => ({
+                id: entry.info.name,
+                object: "model" as const,
+                created: now,
+                owned_by: entry.communityEndpoint?.ownerUserId ?? "pollinations",
+                input_modalities: entry.info.input_modalities,
+                output_modalities: entry.info.output_modalities,
+                supported_endpoints: entry.supportedEndpoints,
+                ...(entry.info.agent && { agent: true }),
+                ...(entry.info.base_model && { base_model: entry.info.base_model }),
+                pricing: entry.info.pricing,
+                capabilities: entry.info.capabilities,
+                ...(entry.info.tools && { tools: entry.info.tools }),
+                ...(entry.info.reasoning && { reasoning: entry.info.reasoning }),
+                ...(entry.info.context_length && { context_length: entry.info.context_length }),
+                ...(entry.info.per_user_rpm !== undefined && { per_user_rpm: entry.info.per_user_rpm }),
+            });
+            return c.json(toModelEntry(entry));
+        },
+    )
+    .get(
         "/3d/models",
         describeRoute({
             tags: ["🤖 Models"],

@@ -50,6 +50,7 @@ import {
     CreateImageRequestSchema,
     CreateImageResponseSchema,
     GetModelsResponseSchema,
+    OpenAIModelSchema,
 } from "@shared/schemas/openai.ts";
 import { SafeSchema } from "@shared/schemas/safety.ts";
 import { errorResponseDescriptions } from "@shared/utils/api-docs.ts";
@@ -244,6 +245,49 @@ async function getVisibleModelEntries(c: Context<Env>) {
     );
 }
 
+// Stable registry creation timestamp: community models are created when their
+// endpoint row is, static models when the catalog added them.
+function modelCreatedMs(entry: GenerationModelEntry): number {
+    return entry.definition.addedDate;
+}
+
+// "pollinations" for official models; the owning GitHub username (from the
+// `owner/name` community model id) for community models.
+function modelOwnedBy(entry: GenerationModelEntry): string {
+    if (entry.communityEndpoint) {
+        return entry.id.includes("/")
+            ? entry.id.slice(0, entry.id.indexOf("/"))
+            : entry.communityEndpoint.ownerUserId;
+    }
+    return "pollinations";
+}
+
+// One mapper shared by the list and retrieve OpenAI-compatible endpoints so
+// both always return the same model shape with stable metadata.
+function toOpenAiModelEntry(entry: GenerationModelEntry, now: number) {
+    return {
+        id: entry.info.name,
+        object: "model" as const,
+        created: modelCreatedMs(entry) || now,
+        owned_by: modelOwnedBy(entry),
+        input_modalities: entry.info.input_modalities,
+        output_modalities: entry.info.output_modalities,
+        supported_endpoints: entry.supportedEndpoints,
+        ...(entry.info.agent && { agent: true }),
+        ...(entry.info.base_model && { base_model: entry.info.base_model }),
+        pricing: entry.info.pricing,
+        capabilities: entry.info.capabilities,
+        ...(entry.info.tools && { tools: entry.info.tools }),
+        ...(entry.info.reasoning && { reasoning: entry.info.reasoning }),
+        ...(entry.info.context_length && {
+            context_length: entry.info.context_length,
+        }),
+        ...(entry.info.per_user_rpm !== undefined && {
+            per_user_rpm: entry.info.per_user_rpm,
+        }),
+    };
+}
+
 async function getVisibleModelEntriesForEventType(
     c: Context<Env>,
     eventType: GenerationModelEntry["eventType"],
@@ -280,7 +324,8 @@ export const proxyRoutes = new Hono<Env>()
     // Edge rate limiter: first line of defense (10 req/s per IP)
     .use("*", edgeRateLimit)
     // Optional auth for models endpoints - doesn't require auth but uses it if provided
-    .use("/v1/models", auth())
+.use("/v1/models", auth())
+    .use("/v1/models/*", auth())
     .use("/image/models", auth())
     .use("/3d/models", auth())
     .use("/video/models", auth())
@@ -324,35 +369,60 @@ export const proxyRoutes = new Hono<Env>()
             );
             const now = Date.now();
 
-            const toModelEntry = (entry: GenerationModelEntry) => ({
-                id: entry.info.name,
-                object: "model" as const,
-                created: now,
-                input_modalities: entry.info.input_modalities,
-                output_modalities: entry.info.output_modalities,
-                supported_endpoints: entry.supportedEndpoints,
-                ...(entry.info.agent && { agent: true }),
-                ...(entry.info.base_model && {
-                    base_model: entry.info.base_model,
-                }),
-                pricing: entry.info.pricing,
-                capabilities: entry.info.capabilities,
-                ...(entry.info.tools && { tools: entry.info.tools }),
-                ...(entry.info.reasoning && {
-                    reasoning: entry.info.reasoning,
-                }),
-                ...(entry.info.context_length && {
-                    context_length: entry.info.context_length,
-                }),
-                ...(entry.info.per_user_rpm !== undefined && {
-                    per_user_rpm: entry.info.per_user_rpm,
-                }),
-            });
-
             return c.json({
                 object: "list" as const,
-                data: modelEntries.map(toModelEntry),
+                data: modelEntries.map((entry) =>
+                    toOpenAiModelEntry(entry, now),
+                ),
             });
+        },
+    )
+    .get(
+        "/v1/models/:model",
+        describeRoute({
+            tags: ["🤖 Models"],
+            summary: "Retrieve Model (OpenAI-compatible)",
+            description:
+                'Returns a single model in the OpenAI-compatible format, using the same model shape as `GET /v1/models`. Aliases resolve to the canonical model ID. Missing or inaccessible models return 404. The same visibility, key-permission, community, and paid-balance rules as the list endpoint apply.',
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(OpenAIModelSchema),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 404, 500),
+            },
+        }),
+        async (c) => {
+            const requestedId = c.req.param("model");
+            const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+            const paidBalance = hasPaidBalance(c);
+            const entry = filterEntriesByPermissions(
+                await getVisibleModelEntries(c),
+                allowedModels,
+                paidBalance,
+            ).find(
+                (candidate) =>
+                    candidate.id === requestedId ||
+                    candidate.aliases.includes(requestedId),
+            );
+
+            if (!entry) {
+                return c.json(
+                    {
+                        error: {
+                            message: `The model '${requestedId}' does not exist or you do not have access to it.`,
+                            code: "NOT_FOUND",
+                        },
+                    },
+                    404,
+                );
+            }
+
+            return c.json(toOpenAiModelEntry(entry, Date.now()));
         },
     )
     .get(

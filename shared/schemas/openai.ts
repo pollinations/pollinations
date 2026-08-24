@@ -527,11 +527,12 @@ export type CreateChatCompletionResponse = z.infer<
     typeof CreateChatCompletionResponseSchema
 >;
 
-const OpenAIModelSchema = z
+export const OpenAIModelSchema = z
     .object({
         id: z.string(),
         object: z.literal("model"),
         created: z.number(),
+        owned_by: z.string(),
         input_modalities: z.array(z.string()).optional(),
         output_modalities: z.array(z.string()).optional(),
         supported_endpoints: z.array(z.string()).optional(),

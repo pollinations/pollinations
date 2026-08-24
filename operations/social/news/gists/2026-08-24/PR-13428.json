@@ -1,0 +1,34 @@
+{
+  "pr_number": 13428,
+  "title": "fix: shorten dashboard announcements",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13428",
+  "merged_at": "2026-08-24T01:27:33Z",
+  "labels": [],
+  "pr_body_excerpt": "- Puts the managed-agent announcement first without changing its copy.\n- Condenses the new quests card while retaining all three launched rewards.\n- Removes the obsolete \"Quests are live\" card and shortens the GPT-5.6 promotion.\n- Adds a `3 new!` badge to the Quests navigation entry.\n- Validated with Biome, Enter typecheck, and `git diff --check`.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Less scroll, more pollen",
+    "blurb": "The dashboard noticeboard got a small pruning. Managed agents now lead the way, fresh Quests are easier to spot, and the old sign has finally been taken down.",
+    "summary": "Reordered and condensed dashboard announcements, removed the obsolete \"Quests are live\" card, shortened the GPT-5.6 promotion, and added a \"3 new!\" badge to Quests navigation.",
+    "impact": "Dashboard visitors can spot managed agents and the three newly launched Quest rewards faster, with less announcement clutter.",
+    "keywords": [
+      "dashboard",
+      "announcements",
+      "quests",
+      "managed-agents",
+      "navigation",
+      "frontend"
+    ],
+    "visual_concept": "Depict Polli as a cheerful garden keeper wearing a tiny tool belt, pruning an overgrown dashboard noticeboard into a neat set of short pinned cards. A prominently glowing Quests sign carries a small \"3 new!\" pixel badge, while three reward flowers bloom beneath it and a retro terminal card for managed agents sits at the top.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener tool belt, tidying a garden-like dashboard noticeboard: a managed-agents terminal card sits first, three Quest reward flowers bloom below a Quests sign with pixel-font text \"3 new!\", and an old card is gently composted beside the board. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, nature vines and code-plants, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-24/PR-13428.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener tool belt, tidying a garden-like dashboard noticeboard: a managed-agents terminal card sits first, three Quest reward flowers bloom below a Quests sign with pixel-font text \"3 new!\", and an old card is gently composted beside the board. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, nature vines and code-plants, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-24T01:28:45.852889+00:00"
+}

@@ -328,6 +328,8 @@ export const proxyRoutes = new Hono<Env>()
                 id: entry.info.name,
                 object: "model" as const,
                 created: now,
+                owned_by:
+                    entry.communityEndpoint?.providerName ?? "pollinations",
                 input_modalities: entry.info.input_modalities,
                 output_modalities: entry.info.output_modalities,
                 supported_endpoints: entry.supportedEndpoints,
@@ -352,6 +354,117 @@ export const proxyRoutes = new Hono<Env>()
             return c.json({
                 object: "list" as const,
                 data: modelEntries.map(toModelEntry),
+            });
+        },
+    )
+    .get(
+        "/v1/models/:model",
+        describeRoute({
+            tags: ["🤖 Models"],
+            summary: "Retrieve Model (OpenAI-compatible)",
+            description:
+                "Returns a single model by ID or alias in the OpenAI-compatible format. The response uses the same shape as each element in `GET /v1/models` data array. Missing or inaccessible models return 404.",
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(GetModelsResponseSchema),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(404, 500),
+            },
+        }),
+        async (c) => {
+            const modelParam = c.req.param("model");
+            const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+            const paidBalance = hasPaidBalance(c);
+            const registry = await getGenerationModelRegistry(c.env);
+            const entry = registry.resolve(modelParam);
+
+            if (!entry) {
+                return c.json(
+                    {
+                        error: {
+                            message: `Model "${modelParam}" not found`,
+                            type: "invalid_request_error",
+                        },
+                    },
+                    404,
+                );
+            }
+
+            if (allowedModels && !allowedModels.includes(entry.id)) {
+                return c.json(
+                    {
+                        error: {
+                            message: `Model "${modelParam}" not found`,
+                            type: "invalid_request_error",
+                        },
+                    },
+                    404,
+                );
+            }
+
+            if (entry.info.paid_only && paidBalance === false) {
+                return c.json(
+                    {
+                        error: {
+                            message: `Model "${modelParam}" not found`,
+                            type: "invalid_request_error",
+                        },
+                    },
+                    404,
+                );
+            }
+
+            if (!entry.visible) {
+                const endpoint = entry.communityEndpoint;
+                const userId = c.var.auth?.user?.id;
+                if (
+                    !endpoint ||
+                    endpoint.visibility !== "private" ||
+                    endpoint.ownerUserId !== userId
+                ) {
+                    return c.json(
+                        {
+                            error: {
+                                message: `Model "${modelParam}" not found`,
+                                type: "invalid_request_error",
+                            },
+                        },
+                        404,
+                    );
+                }
+            }
+
+            const now = Date.now();
+            return c.json({
+                id: entry.info.name,
+                object: "model" as const,
+                created: now,
+                owned_by:
+                    entry.communityEndpoint?.providerName ?? "pollinations",
+                input_modalities: entry.info.input_modalities,
+                output_modalities: entry.info.output_modalities,
+                supported_endpoints: entry.supportedEndpoints,
+                ...(entry.info.agent && { agent: true }),
+                ...(entry.info.base_model && {
+                    base_model: entry.info.base_model,
+                }),
+                pricing: entry.info.pricing,
+                capabilities: entry.info.capabilities,
+                ...(entry.info.tools && { tools: entry.info.tools }),
+                ...(entry.info.reasoning && {
+                    reasoning: entry.info.reasoning,
+                }),
+                ...(entry.info.context_length && {
+                    context_length: entry.info.context_length,
+                }),
+                ...(entry.info.per_user_rpm !== undefined && {
+                    per_user_rpm: entry.info.per_user_rpm,
+                }),
             });
         },
     )

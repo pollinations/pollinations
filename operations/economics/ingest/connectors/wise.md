@@ -61,13 +61,15 @@ sops exec-env ingest/secrets/env.json \
   'sops exec-env secrets/web.dev.json "node ingest/scripts/wise-ledger-reconcile.mjs \
   --from=YYYY-MM-01 --until=YYYY-MM-DD \
   --archive=ingest/data/inbox/wise/wise-activities-YYYY-MM.json \
+  --statement-dir=/absolute/path/to/wise-statement-csvs \
   --transactions=ingest/data/reconcile/proposals/wise-YYYY-MM-transactions.ndjson"'
 ```
 
 `--until` is exclusive. The script follows every activity cursor, skips
 cancelled/card-check activity, reuses classifications already proven by prior
-Wise rows, and stops for genuinely new merchants. Every proposal is a
-`kind: transaction` bank movement.
+Wise rows, and stops for genuinely new merchants. It uses statement dates,
+amounts, currencies, and fees for every proposal and refuses activity-only
+bookings. Every proposal is a `kind: transaction` bank movement.
 
 Runway requires one separate `kind: opening_balance` row per non-zero statement
 currency, all on the same first-of-month anchor date. Derive those anchors only

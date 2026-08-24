@@ -97,11 +97,11 @@ describe("monthlyLedgerAuditRows", () => {
             data({
                 opTransactions: [
                     transaction({ evidence: "" }),
-                    transaction({ evidence: "" }),
+                    transaction({ entry_id: "wise-2", evidence: "" }),
                 ],
                 opCloud: [
                     cloud({ type: "unknown" }),
-                    cloud({ type: "unknown" }),
+                    cloud({ entry_id: "cloud-2", type: "unknown" }),
                 ],
                 opPollen: [
                     pollen({

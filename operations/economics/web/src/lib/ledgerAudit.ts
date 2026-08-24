@@ -137,6 +137,41 @@ function providersWithDuplicateKeys<T extends { vendor: string }>(
     );
 }
 
+function transactionDuplicateKey(row: OpTransactionRow): string {
+    return JSON.stringify([
+        row.kind,
+        row.source,
+        row.date,
+        row.vendor,
+        row.category,
+        row.amount,
+        row.currency,
+        row.description,
+        row.evidence,
+    ]);
+}
+
+function cloudDuplicateKey(row: OpCloudRow): string {
+    return JSON.stringify([
+        row.source,
+        row.start,
+        row.end,
+        row.vendor,
+        row.account_id ?? "",
+        row.account_name ?? "",
+        row.type,
+        row.model,
+        row.credit,
+        row.paid,
+        row.currency,
+        row.evidence,
+        row.resource_sku,
+        row.resource_count,
+        row.resource_id,
+        row.resource_name,
+    ]);
+}
+
 function statusFor(
     row: Omit<MonthlyLedgerAuditRow, "status">,
 ): MonthlyLedgerAuditStatus {
@@ -210,19 +245,19 @@ export function monthlyLedgerAuditRows(
                 // canonical aliases merge (for example bedrock -> aws), two
                 // legitimate source rows may share the display key and must be
                 // summed rather than reported as duplicates.
+                // The effective Tinybird endpoints already expose one row per
+                // entry_id. Detect distinct IDs that repeat the same complete
+                // financial fact instead of re-counting correction history.
                 duplicateRows:
-                    duplicateExtras(bankRows, (row) => row.entry_id) +
-                    duplicateExtras(cloud, (row) => row.entry_id),
+                    duplicateExtras(bankRows, transactionDuplicateKey) +
+                    duplicateExtras(cloud, cloudDuplicateKey),
                 duplicateProviders: [
                     ...new Set([
                         ...providersWithDuplicateKeys(
                             bankRows,
-                            (row) => row.entry_id,
+                            transactionDuplicateKey,
                         ),
-                        ...providersWithDuplicateKeys(
-                            cloud,
-                            (row) => row.entry_id,
-                        ),
+                        ...providersWithDuplicateKeys(cloud, cloudDuplicateKey),
                     ]),
                 ].sort((a, b) => a.localeCompare(b)),
             };

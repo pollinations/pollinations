@@ -14,7 +14,7 @@ test("retrieves a single OpenAI-compatible model by id and includes owned_by", a
     apiKey,
 }) => {
     const response = await fetchWorker("/v1/models/flux", {
-        headers: { Authorization: "Bearer " + apiKey },
+        headers: { Authorization: `Bearer ${apiKey}` },
     });
 
     expect(response.status).toBe(200);
@@ -29,7 +29,7 @@ test("resolves a model alias for OpenAI-compatible retrieval", async ({
     apiKey,
 }) => {
     const response = await fetchWorker("/v1/models/gemini-2", {
-        headers: { Authorization: "Bearer " + apiKey },
+        headers: { Authorization: `Bearer ${apiKey}` },
     });
 
     expect(response.status).toBe(200);
@@ -40,7 +40,7 @@ test("resolves a model alias for OpenAI-compatible retrieval", async ({
 
 test("returns 404 for an unknown model id", async ({ apiKey }) => {
     const response = await fetchWorker("/v1/models/no-such-model", {
-        headers: { Authorization: "Bearer " + apiKey },
+        headers: { Authorization: `Bearer ${apiKey}` },
     });
 
     expect(response.status).toBe(404);
@@ -54,7 +54,7 @@ test("returns 404 for a model hidden by api key permissions", async () => {
     const response = await fetchWorker(
         `/v1/models/${RESTRICTED_TEXT_TEST_MODEL}`,
         {
-            headers: { Authorization: "Bearer " + key },
+            headers: { Authorization: `Bearer ${key}` },
         },
     );
 

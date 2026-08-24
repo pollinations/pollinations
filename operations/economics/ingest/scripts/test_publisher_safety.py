@@ -1,6 +1,7 @@
 import unittest
 
 from publisher_safety import (
+    assert_immutable_fields,
     assert_newer_versions,
     latest_version_query,
     validate_recorded_at,
@@ -29,6 +30,20 @@ class PublisherSafetyTest(unittest.TestCase):
         self.assertIn("'quote''id'", query)
         with self.assertRaisesRegex(RuntimeError, "Unsupported"):
             latest_version_query("secret_table", ["a"])
+
+    def test_rejects_immutable_field_changes(self):
+        current = [{"entry_id": "a", "reason": "workspace_snapshot"}]
+        assert_immutable_fields(
+            [{"entry_id": "a", "reason": "workspace_snapshot"}],
+            current,
+            ["reason"],
+        )
+        with self.assertRaisesRegex(RuntimeError, "a.reason"):
+            assert_immutable_fields(
+                [{"entry_id": "a", "reason": "manual_correction"}],
+                current,
+                ["reason"],
+            )
 
 
 if __name__ == "__main__":

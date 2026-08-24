@@ -60,3 +60,19 @@ def assert_newer_versions(rows, current_rows):
             "Corrections require recorded_at later than the stored version: "
             + ", ".join(stale)
         )
+
+
+def assert_immutable_fields(rows, current_rows, fields):
+    current_by_id = {row["entry_id"]: row for row in current_rows}
+    changed = []
+    for row in rows:
+        current = current_by_id.get(row["entry_id"])
+        if current is None:
+            continue
+        for field in fields:
+            if row.get(field) != current.get(field):
+                changed.append(f"{row['entry_id']}.{field}")
+    if changed:
+        raise RuntimeError(
+            "Corrections cannot change immutable fields: " + ", ".join(changed)
+        )

@@ -8,6 +8,7 @@ from pathlib import Path
 from tinybird.tb.client import TinyB
 
 from publisher_safety import (
+    assert_immutable_fields,
     assert_newer_versions,
     latest_version_query,
     validate_recorded_at,
@@ -233,6 +234,7 @@ def main():
         expected,
         current_versions(admin, [row["entry_id"] for row in expected]),
     )
+    assert_immutable_fields(expected, before, ["reason"])
 
     result = append.datasource_append_data(
         "op_pollen_history", args.input.resolve(), mode="append", format="ndjson"

@@ -187,14 +187,10 @@ function filterEntriesByPermissions(
     });
 }
 
-// Check if authenticated user has paid balance (pack > 0)
-// Auth middleware already fetches the full user row (SELECT *), so no extra DB query needed.
-// Returns undefined if no user (unauthenticated), true/false otherwise.
-// biome-ignore lint/suspicious/noExplicitAny: User type doesn't include balance fields from SELECT *
-function hasPaidBalance(c: any): boolean | undefined {
-    const user = c.var?.auth?.user;
-    if (!user) return undefined;
-    return (user.packBalance ?? 0) > 0;
+// Returns undefined if unauthenticated, true/false otherwise.
+function hasPaidBalance(c: Context<Env>): boolean | undefined {
+    if (!c.var.auth.user) return undefined;
+    return (c.var.auth.balances?.packBalance ?? 0) > 0;
 }
 
 // Optionally filter entries by the validated `?community` query parameter.

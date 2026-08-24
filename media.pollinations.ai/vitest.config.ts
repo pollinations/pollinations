@@ -32,6 +32,8 @@ export default defineWorkersConfig(async () => {
                     },
                     miniflare: {
                         bindings: {
+                            BETTER_AUTH_SECRET:
+                                "media-billing-integration-test-secret",
                             TEST_MIGRATIONS: migrations,
                             TINYBIRD_INGEST_TOKEN: "test-token",
                             TINYBIRD_INGEST_URL:

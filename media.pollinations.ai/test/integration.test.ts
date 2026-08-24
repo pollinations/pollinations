@@ -5,6 +5,7 @@ import {
     SELF,
     waitOnExecutionContext,
 } from "cloudflare:test";
+import { signAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import { createApiKeyAuth } from "@shared/auth/api-key.ts";
 import {
     apikey as apiKeyTable,
@@ -53,6 +54,7 @@ interface MediaPageResponse {
 let VALID_KEY: string;
 let ALICE_PUBLISHABLE_KEY: string;
 let ALICE_SECRET_KEY: string;
+let ALICE_SECRET_KEY_ID: string;
 let BOB_SECRET_KEY: string;
 let APP_KEY_ID: string;
 
@@ -125,6 +127,7 @@ async function seedUsers() {
     VALID_KEY = alicePublishable.key;
     ALICE_PUBLISHABLE_KEY = alicePublishable.key;
     ALICE_SECRET_KEY = aliceSecret.key;
+    ALICE_SECRET_KEY_ID = aliceSecret.id;
     BOB_SECRET_KEY = bobSecret.key;
 }
 
@@ -1042,6 +1045,40 @@ describe("media.pollinations.ai", () => {
             );
             expect(getRes.status).toBe(200);
             await getRes.arrayBuffer();
+        });
+
+        it("rejects delegated agent-run tokens backed by the owner's secret key", async () => {
+            const { status, body } = await uploadViaForm(
+                ALICE_PUBLISHABLE_KEY,
+                {
+                    fileName: "delete-agent-run.png",
+                    bytes: variant(43),
+                    tags: ["delete-agent-run-tag"],
+                },
+            );
+            expect(status).toBe(200);
+            const upload = body as UploadResponse;
+            const token = await signAgentRunToken({
+                secret: env.BETTER_AUTH_SECRET,
+                parentApiKeyId: ALICE_SECRET_KEY_ID,
+                parentRequestId: crypto.randomUUID(),
+                managedAgentId: "third-party-agent",
+            });
+
+            const response = await SELF.fetch(
+                `https://media.pollinations.ai/media/${upload.id}`,
+                {
+                    method: "DELETE",
+                    headers: { Authorization: `Bearer ${token}` },
+                },
+            );
+
+            expect(response.status).toBe(403);
+            const remaining = await SELF.fetch(
+                `https://media.pollinations.ai/${upload.id}`,
+            );
+            expect(remaining.status).toBe(200);
+            await remaining.arrayBuffer();
         });
 
         it("unknown and uncataloged (untagged) ids answer 404", async () => {

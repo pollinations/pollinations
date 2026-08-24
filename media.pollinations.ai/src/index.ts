@@ -49,6 +49,7 @@ interface AuthResult {
     name: string | null;
     userId: string;
     byopClientKeyId: string | null;
+    delegated: boolean;
 }
 
 function authResult(identity: BillingIdentity): AuthResult {
@@ -57,6 +58,7 @@ function authResult(identity: BillingIdentity): AuthResult {
         name: identity.apiKey.name,
         userId: identity.userId,
         byopClientKeyId: identity.apiKey.clientId,
+        delegated: identity.agentRun !== undefined,
     };
 }
 
@@ -714,7 +716,7 @@ api.delete(
         // Publishable keys ship inside public clients — anyone holding one
         // could delete the owner's published media, so deletion is
         // secret-key only.
-        if (auth.type !== "secret") {
+        if (auth.type !== "secret" || auth.delegated) {
             return c.json(
                 { error: "Deleting media requires a secret (sk_) API key" },
                 403,

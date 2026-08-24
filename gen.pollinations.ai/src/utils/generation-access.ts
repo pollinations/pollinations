@@ -84,12 +84,15 @@ export async function checkBalance(
         auth.apiKey.pollenBalance < estimatedPrice
     ) {
         throw new HTTPException(402, {
-            message: "API key budget is too low for this request",
+            message: `API key budget too low. This request costs ~${estimatedPrice.toFixed(4)} pollen, but this key has ${Math.max(0, auth.apiKey.pollenBalance).toFixed(4)}.`,
         });
     }
     if (!canCoverEstimatedCharge(auth.balances, estimatedPrice, paidOnly)) {
+        const available = paidOnly
+            ? auth.balances.packBalance
+            : Math.max(auth.balances.tierBalance, auth.balances.packBalance);
         throw new HTTPException(402, {
-            message: "Insufficient balance for this request",
+            message: `Insufficient balance. This request costs ~${estimatedPrice.toFixed(4)} pollen, but your available balance is ${Math.max(0, available).toFixed(4)}.`,
         });
     }
 

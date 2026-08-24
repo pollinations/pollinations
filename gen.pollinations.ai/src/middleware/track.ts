@@ -273,6 +273,11 @@ export const track = (eventType: EventType) =>
         // caller only receives that captured result and must not emit it again.
         if (c.var.track.detachedExecutionTracked) return;
 
+        // Access and permission checks run before billing authorization. If
+        // one rejects, Hono has already produced the client error response;
+        // there is no grant or provider work to settle.
+        if (c.get("error") && !c.var.balance.billingAuthorizationId) return;
+
         const settlement = (async () => {
             if (!userTracking.userId) {
                 return;

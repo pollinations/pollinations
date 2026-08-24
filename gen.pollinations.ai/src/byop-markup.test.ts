@@ -69,6 +69,39 @@ function testModel(model: ModelName = "openai") {
     };
 }
 
+function preflightVars({
+    model = testModel(),
+    tierBalance,
+    packBalance,
+    pollenBalance,
+    apiKey = {},
+}: {
+    model?: ReturnType<typeof testModel> | Record<string, unknown>;
+    tierBalance: number;
+    packBalance: number;
+    pollenBalance: number;
+    apiKey?: Record<string, unknown>;
+}) {
+    const user = { id: "preflight-payer", tier: "seed" };
+    return {
+        auth: {
+            user,
+            balances: { tierBalance, packBalance },
+            apiKey: {
+                id: "sk-test",
+                rawKey: "sk_test",
+                pollenBalance,
+                ...apiKey,
+            },
+            requireUser: () => user,
+            requireModelAccess: () => undefined,
+        },
+        balance: {},
+        model,
+        log: fakeLog(),
+    } as unknown as Parameters<typeof checkBalance>[0];
+}
+
 async function setupPayerAndDev() {
     const suffix = crypto.randomUUID();
     const payerId = `payer-${suffix}`;
@@ -238,23 +271,11 @@ describe("BYOP markup", () => {
     });
 
     it("allows regular preflight when one bucket is above the model estimate", async () => {
-        const vars = {
-            auth: {
-                user: { id: "preflight-payer" },
-                apiKey: {
-                    id: "sk-test",
-                    pollenBalance: 2,
-                },
-            },
-            balance: {
-                getBalance: async () => ({
-                    tierBalance: 1,
-                    packBalance: 2,
-                }),
-            },
-            model: testModel(),
-            log: fakeLog(),
-        } as unknown as Parameters<typeof checkBalance>[0];
+        const vars = preflightVars({
+            tierBalance: 1,
+            packBalance: 2,
+            pollenBalance: 2,
+        });
 
         await checkBalance(vars, {
             ...fakeStatsEnv(1.25),
@@ -272,23 +293,11 @@ describe("BYOP markup", () => {
     });
 
     it("rejects regular preflight when both buckets are below the model estimate", async () => {
-        const vars = {
-            auth: {
-                user: { id: "preflight-payer" },
-                apiKey: {
-                    id: "sk-test",
-                    pollenBalance: 2,
-                },
-            },
-            balance: {
-                getBalance: async () => ({
-                    tierBalance: 0.5,
-                    packBalance: 0.5,
-                }),
-            },
-            model: testModel(),
-            log: fakeLog(),
-        } as unknown as Parameters<typeof checkBalance>[0];
+        const vars = preflightVars({
+            tierBalance: 0.5,
+            packBalance: 0.5,
+            pollenBalance: 2,
+        });
 
         await expect(checkBalance(vars, fakeStatsEnv(1))).rejects.toMatchObject(
             {
@@ -298,20 +307,11 @@ describe("BYOP markup", () => {
     });
 
     it("uses positive balance as the fallback when model estimate is zero", async () => {
-        const vars = {
-            auth: {
-                user: { id: "preflight-payer" },
-                apiKey: { id: "sk-test", pollenBalance: 2 },
-            },
-            balance: {
-                getBalance: async () => ({
-                    tierBalance: 0,
-                    packBalance: 0.01,
-                }),
-            },
-            model: testModel(),
-            log: fakeLog(),
-        } as unknown as Parameters<typeof checkBalance>[0];
+        const vars = preflightVars({
+            tierBalance: 0,
+            packBalance: 0.01,
+            pollenBalance: 2,
+        });
 
         await checkBalance(vars, fakeStatsEnv(0));
 
@@ -322,20 +322,11 @@ describe("BYOP markup", () => {
     });
 
     it("allows a zero-cost model when every balance is zero", async () => {
-        const vars = {
-            auth: {
-                user: { id: "preflight-payer" },
-                apiKey: { id: "sk-test", pollenBalance: 0 },
-            },
-            balance: {
-                getBalance: async () => ({
-                    tierBalance: 0,
-                    packBalance: 0,
-                }),
-            },
-            model: testModel(),
-            log: fakeLog(),
-        } as unknown as Parameters<typeof checkBalance>[0];
+        const vars = preflightVars({
+            tierBalance: 0,
+            packBalance: 0,
+            pollenBalance: 0,
+        });
 
         await checkBalance(vars, fakeStatsEnv(0));
 
@@ -346,20 +337,12 @@ describe("BYOP markup", () => {
     });
 
     it("requires paid-only preflight to have pack balance above the model estimate", async () => {
-        const vars = {
-            auth: {
-                user: { id: "preflight-payer" },
-                apiKey: { id: "sk-test", pollenBalance: 2 },
-            },
-            balance: {
-                getBalance: async () => ({
-                    tierBalance: 10,
-                    packBalance: 1,
-                }),
-            },
+        const vars = preflightVars({
             model: testModel("llama-maverick"),
-            log: fakeLog(),
-        } as unknown as Parameters<typeof checkBalance>[0];
+            tierBalance: 10,
+            packBalance: 1,
+            pollenBalance: 2,
+        });
 
         await expect(
             checkBalance(vars, fakeStatsEnv(1, "llama-maverick")),
@@ -369,20 +352,11 @@ describe("BYOP markup", () => {
     });
 
     it("rejects finite API key budgets below the model estimate", async () => {
-        const vars = {
-            auth: {
-                user: { id: "preflight-payer" },
-                apiKey: { id: "sk-test", pollenBalance: 0.5 },
-            },
-            balance: {
-                getBalance: async () => ({
-                    tierBalance: 10,
-                    packBalance: 10,
-                }),
-            },
-            model: testModel(),
-            log: fakeLog(),
-        } as unknown as Parameters<typeof checkBalance>[0];
+        const vars = preflightVars({
+            tierBalance: 10,
+            packBalance: 10,
+            pollenBalance: 0.5,
+        });
 
         await expect(checkBalance(vars, fakeStatsEnv(1))).rejects.toMatchObject(
             {
@@ -392,25 +366,15 @@ describe("BYOP markup", () => {
     });
 
     it("uses the baseline estimate when BYOP markup does not apply", async () => {
-        const vars = {
-            auth: {
-                user: { id: "preflight-payer" },
-                apiKey: {
-                    id: "sk-test",
-                    byopClientKeyId: "pk-test",
-                    byopMarkupApplies: false,
-                    pollenBalance: 1.1,
-                },
+        const vars = preflightVars({
+            tierBalance: 10,
+            packBalance: 10,
+            pollenBalance: 1.1,
+            apiKey: {
+                byopClientKeyId: "pk-test",
+                byopMarkupApplies: false,
             },
-            balance: {
-                getBalance: async () => ({
-                    tierBalance: 10,
-                    packBalance: 10,
-                }),
-            },
-            model: testModel(),
-            log: fakeLog(),
-        } as unknown as Parameters<typeof checkBalance>[0];
+        });
 
         await checkBalance(vars, {
             ...fakeStatsEnv(1),
@@ -422,62 +386,31 @@ describe("BYOP markup", () => {
         } as CloudflareBindings);
     });
 
-    it("rejects a BYOP API key budget that covers baseline but not markup", async () => {
-        const vars = {
-            auth: {
-                user: { id: "preflight-payer" },
-                apiKey: {
-                    id: "sk-test",
-                    byopClientKeyId: "pk-test",
-                    byopMarkupApplies: true,
-                    pollenBalance: 1.1,
-                },
+    it("leaves BYOP markup enforcement to Enter authorization", async () => {
+        const vars = preflightVars({
+            tierBalance: 10,
+            packBalance: 10,
+            pollenBalance: 1.1,
+            apiKey: {
+                byopClientKeyId: "pk-test",
+                byopMarkupApplies: true,
             },
-            balance: {
-                getBalance: async () => ({
-                    tierBalance: 10,
-                    packBalance: 10,
-                }),
-            },
-            model: testModel(),
-            log: fakeLog(),
-        } as unknown as Parameters<typeof checkBalance>[0];
-
-        await expect(
-            checkBalance(vars, {
-                ...fakeStatsEnv(1),
-                DB: {
-                    prepare: () => {
-                        throw new Error("DB should not be used in preflight");
-                    },
-                } as unknown as D1Database,
-            } as CloudflareBindings),
-        ).rejects.toMatchObject({
-            status: 402,
-            message: expect.stringContaining("1.2500"),
         });
+
+        await checkBalance(vars, fakeStatsEnv(1));
+        expect(vars.balance.billingEstimatePrice).toBe(1);
     });
 
     it("admits a BYOP API key budget that covers baseline plus markup", async () => {
-        const vars = {
-            auth: {
-                user: { id: "preflight-payer" },
-                apiKey: {
-                    id: "sk-test",
-                    byopClientKeyId: "pk-test",
-                    byopMarkupApplies: true,
-                    pollenBalance: 1.25,
-                },
+        const vars = preflightVars({
+            tierBalance: 10,
+            packBalance: 10,
+            pollenBalance: 1.25,
+            apiKey: {
+                byopClientKeyId: "pk-test",
+                byopMarkupApplies: true,
             },
-            balance: {
-                getBalance: async () => ({
-                    tierBalance: 10,
-                    packBalance: 10,
-                }),
-            },
-            model: testModel(),
-            log: fakeLog(),
-        } as unknown as Parameters<typeof checkBalance>[0];
+        });
 
         await checkBalance(vars, {
             ...fakeStatsEnv(1),
@@ -489,62 +422,30 @@ describe("BYOP markup", () => {
         } as CloudflareBindings);
     });
 
-    it("rejects a BYOP user balance that covers baseline but not markup", async () => {
-        const vars = {
-            auth: {
-                user: { id: "preflight-payer" },
-                apiKey: {
-                    id: "sk-test",
-                    byopClientKeyId: "pk-test",
-                    byopMarkupApplies: true,
-                    pollenBalance: 10,
-                },
+    it("admits a baseline user balance before Enter applies BYOP markup", async () => {
+        const vars = preflightVars({
+            tierBalance: 1.1,
+            packBalance: 0,
+            pollenBalance: 10,
+            apiKey: {
+                byopClientKeyId: "pk-test",
+                byopMarkupApplies: true,
             },
-            balance: {
-                getBalance: async () => ({
-                    tierBalance: 1.1,
-                    packBalance: 0,
-                }),
-            },
-            model: testModel(),
-            log: fakeLog(),
-        } as unknown as Parameters<typeof checkBalance>[0];
-
-        await expect(
-            checkBalance(vars, {
-                ...fakeStatsEnv(1),
-                DB: {
-                    prepare: () => {
-                        throw new Error("DB should not be used in preflight");
-                    },
-                } as unknown as D1Database,
-            } as CloudflareBindings),
-        ).rejects.toMatchObject({
-            status: 402,
-            message: expect.stringContaining("1.2500"),
         });
+
+        await checkBalance(vars, fakeStatsEnv(1));
     });
 
     it("admits a BYOP user balance that covers baseline plus markup", async () => {
-        const vars = {
-            auth: {
-                user: { id: "preflight-payer" },
-                apiKey: {
-                    id: "sk-test",
-                    byopClientKeyId: "pk-test",
-                    byopMarkupApplies: true,
-                    pollenBalance: 10,
-                },
+        const vars = preflightVars({
+            tierBalance: 1.25,
+            packBalance: 0,
+            pollenBalance: 10,
+            apiKey: {
+                byopClientKeyId: "pk-test",
+                byopMarkupApplies: true,
             },
-            balance: {
-                getBalance: async () => ({
-                    tierBalance: 1.25,
-                    packBalance: 0,
-                }),
-            },
-            model: testModel(),
-            log: fakeLog(),
-        } as unknown as Parameters<typeof checkBalance>[0];
+        });
 
         await checkBalance(vars, {
             ...fakeStatsEnv(1),
@@ -587,24 +488,16 @@ describe("BYOP markup", () => {
             ),
         ).toBe(0.012);
 
-        const vars = {
-            auth: {
-                user: { id: "preflight-payer" },
-                apiKey: { id: "sk-test", pollenBalance: 5 },
-            },
-            balance: {
-                getBalance: async () => ({
-                    tierBalance: 5,
-                    packBalance: 0,
-                }),
-            },
+        const vars = preflightVars({
+            tierBalance: 5,
+            packBalance: 0,
+            pollenBalance: 5,
             model: {
                 requested: "vendouple/zimage",
                 resolved: "vendouple/zimage",
                 definition,
             },
-            log: fakeLog(),
-        } as unknown as Parameters<typeof checkBalance>[0];
+        });
 
         await checkBalance(vars, fakeStatsEnv(33.3433, "vendouple/zimage"));
     });
@@ -617,24 +510,16 @@ describe("BYOP markup", () => {
             imagePricing: "request",
             ...communityEndpointPrices({ completionImagePrice: 0.01 }),
         });
-        const vars = {
-            auth: {
-                user: { id: "preflight-payer" },
-                apiKey: { id: "sk-test", pollenBalance: 0.005 },
-            },
-            balance: {
-                getBalance: async () => ({
-                    tierBalance: 0.005,
-                    packBalance: 0,
-                }),
-            },
+        const vars = preflightVars({
+            tierBalance: 0.005,
+            packBalance: 0,
+            pollenBalance: 0.005,
             model: {
                 requested: "vendouple/zimage",
                 resolved: "vendouple/zimage",
                 definition,
             },
-            log: fakeLog(),
-        } as unknown as Parameters<typeof checkBalance>[0];
+        });
 
         await expect(
             checkBalance(vars, fakeStatsEnv(33.3433, "vendouple/zimage")),

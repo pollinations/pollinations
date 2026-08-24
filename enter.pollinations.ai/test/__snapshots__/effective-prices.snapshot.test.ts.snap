@@ -1231,6 +1231,11 @@ exports[`effective cost and price per model — snapshot 1`] = `
     "cost": {
       "completionImageTokens": 0.04,
     },
+    "costVariants": {
+      "2048": {
+        "completionImageTokens": 0.06,
+      },
+    },
     "price": {
       "completionImageTokens": 0.04,
     },

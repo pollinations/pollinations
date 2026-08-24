@@ -415,6 +415,21 @@ describe("callAzureResponses", () => {
         ).rejects.toThrow("Azure Responses API key is not configured");
     });
 
+    it("rejects an empty upstream stream as a retryable failure", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response(null));
+
+        await expect(
+            callAzureResponses([{ role: "user", content: "Hi" }], {
+                model: "gpt-5.6-sol",
+                modelConfig,
+                stream: true,
+            }),
+        ).rejects.toMatchObject({
+            status: 502,
+            requestUrl: new URL(ENDPOINT),
+        });
+    });
+
     it("clears the request timeout after response headers arrive", async () => {
         vi.useFakeTimers();
         let signal: AbortSignal | null | undefined;
@@ -445,18 +460,21 @@ describe("callAzureResponses", () => {
         ["logit bias", { logit_bias: { "1": 1 } }, "logit_bias"],
         ["logprobs", { logprobs: true }, "logprobs are not supported"],
         ["top logprobs", { top_logprobs: 2 }, "logprobs are not supported"],
-    ])("returns a client error for unsupported %s", async (_name, extra, message) => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
-        await expect(
-            callAzureResponses([{ role: "user", content: "Hi" }], {
-                model: "gpt-5.6-sol",
-                modelConfig,
-                ...extra,
-            }),
-        ).rejects.toMatchObject({
-            status: 400,
-            message: expect.stringContaining(message),
-        });
-        expect(fetchSpy).not.toHaveBeenCalled();
-    });
+    ])(
+        "returns a client error for unsupported %s",
+        async (_name, extra, message) => {
+            const fetchSpy = vi.spyOn(globalThis, "fetch");
+            await expect(
+                callAzureResponses([{ role: "user", content: "Hi" }], {
+                    model: "gpt-5.6-sol",
+                    modelConfig,
+                    ...extra,
+                }),
+            ).rejects.toMatchObject({
+                status: 400,
+                message: expect.stringContaining(message),
+            });
+            expect(fetchSpy).not.toHaveBeenCalled();
+        },
+    );
 });

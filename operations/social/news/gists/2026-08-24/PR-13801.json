@@ -1,0 +1,33 @@
+{
+  "pr_number": 13801,
+  "title": "fix: revoke community model publishing access",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13801",
+  "merged_at": "2026-08-24T00:48:12Z",
+  "labels": [],
+  "pr_body_excerpt": "- Removes rodrigookk from the community-model publisher allowlist\n- Prevents the account from making private endpoints public again\n- Existing public listings were separately changed to private in production",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The garden gate closes",
+    "blurb": "A community-model publishing permission has been tidied up. The hive's public shelves stay intentionally curated.",
+    "summary": "Removed the rodrigookk account from the community-model publisher allowlist, preventing its private endpoints from being republished publicly.",
+    "impact": "Public community-model listings remain curated, while the affected account's endpoints stay private after their production listings were moved back behind the garden fence.",
+    "keywords": [
+      "community-models",
+      "publishing",
+      "access-control",
+      "endpoints",
+      "github-auth"
+    ],
+    "visual_concept": "Depict Polli as a careful garden keeper closing a small wooden gate beside a cozy community model garden, with private code-plants safely behind the fence and approved public flowers blooming outside. A tiny allowlist clipboard and a retro terminal can show that publishing access is being managed deliberately.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing a tiny gardener hat and gently closing a wooden garden gate beside private code-plants and a retro terminal with an allowlist clipboard. Lime green (#ecf874) flowers bloom around the curated public garden, with soft mint, lavender, peach, and warm cream gradients; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-24/PR-13801.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing a tiny gardener hat and gently closing a wooden garden gate beside private code-plants and a retro terminal with an allowlist clipboard. Lime green (#ecf874) flowers bloom around the curated public garden, with soft mint, lavender, peach, and warm cream gradients; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, emotionally warm."
+  },
+  "generated_at": "2026-08-24T00:49:26.422587+00:00"
+}

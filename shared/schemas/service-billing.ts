@@ -1,6 +1,6 @@
 import type { AgentRunClaims } from "../auth/agent-run-token.ts";
 import type { AuthenticatedApiKey, AuthUser } from "../auth/api-key.ts";
-import type { EventType } from "./generation-event.ts";
+import type { EventType, TinybirdEvent } from "./generation-event.ts";
 
 /**
  * Wire contract between Enter's ServiceGateway RPC entrypoint and trusted
@@ -12,7 +12,8 @@ import type { EventType } from "./generation-event.ts";
 
 /** Why a credential or authorization was refused, in HTTP terms. */
 export type ServiceDenial = {
-    status: 401 | 402 | 403;
+    /** 409: the request id was already authorized for a different request. */
+    status: 401 | 402 | 403 | 409;
     message: string;
 };
 
@@ -64,6 +65,17 @@ export type ServiceAuthorizeResult =
     | ServiceAuthorization
     | { ok: false; denial: ServiceDenial };
 
+/**
+ * Community model owner reward for one event: the owner is credited
+ * `rewardRate` of the price (or of `basePrice` when the served listing is
+ * cheaper than what the caller bought).
+ */
+export type ServiceCommunityReward = {
+    ownerUserId: string;
+    rewardRate: number;
+    basePrice?: number;
+};
+
 export type ServiceBillableEvent = {
     /**
      * Idempotency key, unique within the authorization. Retries and batched
@@ -74,6 +86,14 @@ export type ServiceBillableEvent = {
     /** Actual pollen price of this event. Zero-price events are observability-only. */
     price: number;
     modelUsed?: string;
+    communityReward?: ServiceCommunityReward;
+    /**
+     * Extra Tinybird fields for this event (usage sheets, error details,
+     * request identity extras). Merged into the delivered row; money fields
+     * (totalPrice, markupRate, billed meter, isBilledUsage) always come from
+     * the ledger and cannot be overridden.
+     */
+    telemetry?: Partial<TinybirdEvent>;
 };
 
 export type ServiceSettleInput = {
@@ -89,7 +109,24 @@ export type ServiceSettleResult =
           /** Event ids already settled by an earlier call (skipped). */
           duplicates: string[];
       }
-    | { ok: false; error: "unknown_authorization" };
+    | { ok: false; error: ServiceSettleError };
+
+/**
+ * Why nothing was settled: the authorization is unknown, was canceled or
+ * expired before settlement (late settlements never charge), or an event id
+ * was reused with a different financial payload.
+ */
+export type ServiceSettleError =
+    | "unknown_authorization"
+    | "authorization_canceled"
+    | "authorization_expired"
+    | "event_conflict";
+
+export type ServiceCancelResult = {
+    ok: true;
+    /** Whether this call released an outstanding reservation. */
+    released: boolean;
+};
 
 /**
  * Structural type of Enter's ServiceGateway RPC entrypoint, for services that
@@ -100,4 +137,9 @@ export type ServiceGatewayBinding = {
     introspect(token: string): Promise<TokenIntrospectionResult>;
     authorize(input: ServiceAuthorizeInput): Promise<ServiceAuthorizeResult>;
     settle(input: ServiceSettleInput): Promise<ServiceSettleResult>;
+    /**
+     * Abandon an authorization whose work failed: releases any outstanding
+     * reservation. Idempotent; a no-op once settled, canceled, or expired.
+     */
+    cancel(authorizationId: string): Promise<ServiceCancelResult>;
 };

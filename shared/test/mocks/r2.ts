@@ -63,6 +63,11 @@ export function createTestR2Bucket(): TestR2Bucket {
             });
             return null;
         },
+        delete: async (keys: string | string[]) => {
+            for (const key of Array.isArray(keys) ? keys : [keys]) {
+                objects.delete(key);
+            }
+        },
         getObject: (key: string) => objects.get(key),
         get putCount() {
             return putCount;

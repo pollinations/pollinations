@@ -334,23 +334,6 @@ api.post(
                 401,
             );
         }
-        // Authorize with Enter before any storage work: bans, staging locks
-        // and (for finite-budget keys) an upfront reservation all happen
-        // here. Uploads are currently free, so the estimate is zero and the
-        // settlement below is an observability-only billing event.
-        const requestId = crypto.randomUUID();
-        const authorization = await c.env.ENTER.authorize({
-            token: apiKey,
-            service: DOMAIN,
-            requestId,
-            requestPath: "/upload",
-            estimatedPrice: 0,
-        });
-        if (!authorization.ok) {
-            return denialResponse(c, authorization.denial);
-        }
-        const authResult = toAuthResult(authorization);
-
         const maxSize = parseInt(c.env.MAX_FILE_SIZE, 10) || DEFAULT_MAX_SIZE;
 
         let fileBuffer: ArrayBuffer;
@@ -456,40 +439,74 @@ api.post(
             }
 
             // One id for everything: the R2 storage key, the retrieval id,
-            // and (for user uploads) the catalog row id.
+            // (for user uploads) the catalog row id, and the billing request
+            // identity — so retries and settlement all reference the same
+            // stable name for this piece of work.
             const id = crypto.randomUUID();
+
+            // Authorize with Enter after validation, before any storage
+            // work: bans, staging locks and (for finite-budget keys) an
+            // upfront reservation all happen here. Uploads are currently
+            // free, so the estimate is zero and the settlement below is an
+            // observability-only billing event.
+            const authorization = await c.env.ENTER.authorize({
+                token: apiKey,
+                service: DOMAIN,
+                requestId: id,
+                requestPath: "/upload",
+                estimatedPrice: 0,
+            });
+            if (!authorization.ok) {
+                return denialResponse(c, authorization.denial);
+            }
+            const authResult = toAuthResult(authorization);
+
             const cacheControl =
                 tags.length > 0
                     ? PUBLISHED_CACHE_CONTROL
                     : IMMUTABLE_CACHE_CONTROL;
 
-            await c.env.MEDIA_BUCKET.put(id, fileBuffer, {
-                httpMetadata: {
-                    contentType,
-                    cacheControl,
-                },
-                customMetadata: {
-                    uploadedAt: new Date().toISOString(),
-                    originalName: fileName || "",
-                    uploadedBy: authResult.name || "",
-                    keyType: authResult.type,
-                },
-            });
-
-            // Tags are the publish action: only tagged uploads get catalog
-            // rows (untagged uploads stay uncataloged blobs behind their
-            // unguessable id). The write is awaited inline (not waitUntil):
-            // a D1 failure must surface as a 500, not be silently swallowed.
-            if (tags.length > 0) {
-                const db = getDb(c.env.DB);
-                await insertUploadCatalogItem(db, {
-                    id,
-                    ownerUserId: authResult.userId,
-                    appKeyId: authResult.byopClientKeyId,
-                    contentType,
-                    size: fileBuffer.byteLength,
-                    tags,
+            try {
+                await c.env.MEDIA_BUCKET.put(id, fileBuffer, {
+                    httpMetadata: {
+                        contentType,
+                        cacheControl,
+                    },
+                    customMetadata: {
+                        uploadedAt: new Date().toISOString(),
+                        originalName: fileName || "",
+                        uploadedBy: authResult.name || "",
+                        keyType: authResult.type,
+                    },
                 });
+
+                // Tags are the publish action: only tagged uploads get
+                // catalog rows (untagged uploads stay uncataloged blobs
+                // behind their unguessable id). The write is awaited inline
+                // (not waitUntil): a D1 failure must surface as a 500, not
+                // be silently swallowed.
+                if (tags.length > 0) {
+                    const db = getDb(c.env.DB);
+                    await insertUploadCatalogItem(db, {
+                        id,
+                        ownerUserId: authResult.userId,
+                        appKeyId: authResult.byopClientKeyId,
+                        contentType,
+                        size: fileBuffer.byteLength,
+                        tags,
+                    });
+                }
+            } catch (error) {
+                // The authorized work failed: release the authorization so
+                // any reservation returns immediately (the gateway's expiry
+                // sweep is the backstop if this cancel is lost too).
+                c.executionCtx.waitUntil(
+                    c.env.ENTER.cancel(authorization.authorizationId).then(
+                        () => undefined,
+                        () => undefined,
+                    ),
+                );
+                throw error;
             }
 
             console.log(
@@ -503,22 +520,28 @@ api.post(
                 }),
             );
 
-            // Settle the completed work with Enter. The event id is stable
-            // within the authorization, so a redelivered settlement records
-            // (and would bill) exactly once. Zero price: uploads are free —
-            // this row is the Tinybird observability trail.
-            c.executionCtx.waitUntil(
-                c.env.ENTER.settle({
-                    authorizationId: authorization.authorizationId,
-                    events: [
-                        {
-                            eventId: "upload",
-                            eventType: "media.upload",
-                            price: 0,
-                        },
-                    ],
-                }),
-            );
+            // Settle the completed work with Enter before answering:
+            // success means the financial settlement is committed.
+            // Idempotent per (authorization, eventId), so a repeated
+            // settlement bills once.
+            const settled = await c.env.ENTER.settle({
+                authorizationId: authorization.authorizationId,
+                events: [
+                    { eventId: "upload", eventType: "media.upload", price: 0 },
+                ],
+            }).catch((error) => {
+                console.error("Upload settlement failed:", error);
+                return null;
+            });
+            if (!settled?.ok) {
+                c.executionCtx.waitUntil(
+                    c.env.ENTER.cancel(authorization.authorizationId).then(
+                        () => undefined,
+                        () => undefined,
+                    ),
+                );
+                return c.json({ error: "Upload failed" }, 500);
+            }
 
             return c.json({
                 id,

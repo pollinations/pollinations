@@ -31,21 +31,11 @@ export default defineWorkersConfig(async () => {
                     miniflare: {
                         bindings: {
                             TEST_MIGRATIONS: migrations,
+                            // Enter's gateway functions run in-process during
+                            // tests (see test/gateway.ts) and read these from
+                            // the env the tests hand them.
+                            ENVIRONMENT: "test",
                         },
-                        workers: [
-                            // Satisfies the ENTER service binding
-                            // (entrypoint = "ServiceGateway") declared in
-                            // wrangler.toml; see enter-stub.mjs.
-                            {
-                                name: "pollinations-enter",
-                                modules: true,
-                                scriptPath: path.join(
-                                    __dirname,
-                                    "test/setup/enter-stub.mjs",
-                                ),
-                                compatibilityDate: "2025-11-12",
-                            },
-                        ],
                     },
                 },
             },

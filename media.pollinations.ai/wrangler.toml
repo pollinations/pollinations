@@ -72,10 +72,10 @@ database_name = "development-pollinations-enter-db"
 database_id = "2b844596-9890-4a2e-9da9-6c65681fa24d"
 migrations_dir = "../enter.pollinations.ai/drizzle"
 
-[[services]]
-binding = "ENTER"
-service = "pollinations-enter"
-entrypoint = "ServiceGateway"
+# The ENTER service binding is declared per-environment only: local dev runs
+# `wrangler dev --env development` next to enter's dev server, and vitest
+# (which reads this top-level config) injects the real gateway functions
+# directly instead of resolving a second worker.
 
 # Dev server settings
 [dev]

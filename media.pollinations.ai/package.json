@@ -4,7 +4,7 @@
   "description": "Media upload service for Pollinations - unique-id storage for images, audio, and video",
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
+    "dev": "wrangler dev --env development",
     "deploy": "wrangler deploy",
     "deploy:production": "wrangler deploy --env production",
     "migrate:production": "wrangler d1 migrations apply DB --remote --env production",

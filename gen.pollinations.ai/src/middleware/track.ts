@@ -896,7 +896,9 @@ export type UserData = {
     apiKeyClientId?: string;
 };
 
-export function requestIdentity(auth: AuthVariables["auth"]): UserData {
+export function requestIdentity(
+    auth: Pick<AuthVariables["auth"], "user" | "apiKey" | "agentRun">,
+): UserData {
     const apiKeyMetadata = auth.apiKey?.metadata as
         | Record<string, unknown>
         | undefined;

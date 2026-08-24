@@ -1936,6 +1936,11 @@ export function providerBalanceRows(
     const creditFlows = new Map<string, Map<string, BalanceFlow>>();
     const cashVendors = new Set<string>();
 
+    const afterAnchor = (vendor: string, date: string) => {
+        const observedOn = anchors.get(vendor)?.observedOn;
+        return observedOn != null && date > observedOn;
+    };
+
     for (const row of (data.opTransactions ?? []).filter(isBankMovement)) {
         if (!PREPAID_VENDORS.has(row.vendor)) continue;
         if (!isComputeOrInfrastructureCategory(transactionCategory(row))) {
@@ -1943,6 +1948,7 @@ export function providerBalanceRows(
         }
         const month = row.date.slice(0, 7);
         if (!MONTH_KEY_RE.test(month) || month > currentMonth) continue;
+        if (afterAnchor(row.vendor, row.date)) continue;
         const addedUsd = -opTransactionUsd(row);
         if (Math.abs(addedUsd) <= 0.005) continue;
         balanceFlow(cashFlows, row.vendor, month).addedUsd += addedUsd;
@@ -1953,6 +1959,7 @@ export function providerBalanceRows(
         if (isOpCloudBalanceRow(row)) continue;
         const month = opCloudMonth(row);
         if (!MONTH_KEY_RE.test(month) || month > currentMonth) continue;
+        if (afterAnchor(row.vendor, row.start.slice(0, 10))) continue;
         const cashUsedUsd = opCloudPaidBurnUsd(row);
         if (PREPAID_VENDORS.has(row.vendor) && Math.abs(cashUsedUsd) > 0.005) {
             balanceFlow(cashFlows, row.vendor, month).usedUsd += cashUsedUsd;
@@ -1967,12 +1974,18 @@ export function providerBalanceRows(
 
     for (const credit of creditRows) {
         for (const grant of credit.grants) {
-            balanceFlow(
-                creditFlows,
-                credit.vendor,
-                grant.startDate.slice(0, 7),
-            ).addedUsd += grant.grantedUsd;
-            if (grant.lapsedUsd > 0.005 && grant.expires) {
+            if (!afterAnchor(credit.vendor, grant.startDate)) {
+                balanceFlow(
+                    creditFlows,
+                    credit.vendor,
+                    grant.startDate.slice(0, 7),
+                ).addedUsd += grant.grantedUsd;
+            }
+            if (
+                grant.lapsedUsd > 0.005 &&
+                grant.expires &&
+                !afterAnchor(credit.vendor, grant.expires)
+            ) {
                 balanceFlow(
                     creditFlows,
                     credit.vendor,

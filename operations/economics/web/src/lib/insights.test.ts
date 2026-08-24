@@ -1847,6 +1847,63 @@ describe("providerBalanceRows", () => {
         ).toEqual([]);
     });
 
+    it("does not roll post-snapshot flows backward through the anchor", () => {
+        const now = new Date("2026-08-24T12:00:00Z");
+        const [row] = providerBalanceRows(
+            emptyData({
+                opTransactions: [
+                    opTxn({
+                        entry_id: "vast-before",
+                        date: "2026-08-20",
+                        vendor: "vast.ai",
+                        amount: -100,
+                    }),
+                    opTxn({
+                        entry_id: "vast-after",
+                        date: "2026-08-23",
+                        vendor: "vast.ai",
+                        amount: -500,
+                    }),
+                ],
+                opCloud: [
+                    opCloud({
+                        entry_id: "vast-before-usage",
+                        vendor: "vast.ai",
+                        type: "gpu",
+                        start: "2026-08-21 00:00:00",
+                        paid: -20,
+                    }),
+                    opCloud({
+                        entry_id: "vast-after-usage",
+                        vendor: "vast.ai",
+                        type: "gpu",
+                        start: "2026-08-23 00:00:00",
+                        paid: -50,
+                    }),
+                    opCloud({
+                        entry_id: "vast-balance",
+                        source: "dashboard",
+                        vendor: "vast.ai",
+                        type: "balance",
+                        start: "2026-08-22 10:00:00",
+                        paid: 400,
+                        resource_sku: "current-balance",
+                    }),
+                ],
+            }),
+            now,
+        );
+        const august = row.history.find((month) => month.month === "2026-08");
+
+        expect(row.cashBalanceUsd).toBe(400);
+        expect(august).toMatchObject({
+            cashAddedUsd: 100,
+            cashUsedUsd: 20,
+            cashClosingUsd: 400,
+            cashOpeningUsd: 320,
+        });
+    });
+
     it("requires every active account before anchoring a multi-account vendor", () => {
         const now = new Date("2026-08-22T12:00:00Z");
         const base = emptyData({

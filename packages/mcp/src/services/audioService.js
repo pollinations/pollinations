@@ -1,12 +1,35 @@
 import { z } from "zod";
 import { requireApiKey } from "../utils/authUtils.js";
 import {
+    arrayBufferToBase64,
     buildUrl,
     createMCPResponse,
     createTextContent,
-    fetchAndUploadMedia,
-    fetchJsonWithAuth,
+    fetchResponseWithAuth,
 } from "../utils/coreUtils.js";
+
+async function textToSpeech(params, context) {
+    requireApiKey(context);
+    const response = await fetchResponseWithAuth(
+        buildUrl("/v1/audio/speech"),
+        {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(params),
+            timeoutMs: 300000,
+        },
+        context,
+    );
+    return createMCPResponse([
+        {
+            type: "audio",
+            data: arrayBufferToBase64(await response.arrayBuffer()),
+            mimeType:
+                response.headers.get("content-type") ||
+                "application/octet-stream",
+        },
+    ]);
+}
 
 function publicAudioUrl(source) {
     let url;
@@ -39,159 +62,81 @@ function publicAudioUrl(source) {
 
 export async function transcribeAudio(params, context) {
     requireApiKey(context);
-    const source = publicAudioUrl(params.source);
-    let response;
+    const { source: sourceValue, ...requestParams } = params;
+    const source = publicAudioUrl(sourceValue);
+    let sourceResponse;
     try {
-        response = await fetch(source, {
+        sourceResponse = await fetch(source, {
             redirect: "error",
+            signal: AbortSignal.timeout(60000),
         });
     } catch {
         throw new Error(
             "Could not fetch source audio. Use a directly accessible public HTTPS URL.",
         );
     }
-    if (!response.ok) {
-        throw new Error(`Source returned HTTP ${response.status}`);
+    if (!sourceResponse.ok) {
+        throw new Error(`Source returned HTTP ${sourceResponse.status}`);
     }
 
     const form = new FormData();
     form.append(
         "file",
-        await response.blob(),
+        await sourceResponse.blob(),
         source.pathname.split("/").pop() || "audio",
     );
-    if (params.model) form.append("model", params.model);
-    if (params.language) form.append("language", params.language);
-    if (params.prompt) form.append("prompt", params.prompt);
-
-    const result = await fetchJsonWithAuth(
-        buildUrl("/v1/audio/transcriptions"),
-        { method: "POST", body: form },
-        context,
-    );
-    if (typeof result?.text !== "string") {
-        throw new Error("Transcription returned no text");
+    for (const [key, value] of Object.entries(requestParams)) {
+        if (value !== undefined && value !== null) {
+            form.append(key, String(value));
+        }
     }
-    return createMCPResponse([createTextContent(result.text)]);
-}
 
-async function generateAudio(params, context) {
-    requireApiKey(context);
-
-    const { text, ...options } = params;
-    const { contentType, mediaUrl } = await fetchAndUploadMedia(
-        buildUrl(`/audio/${encodeURIComponent(text)}`, options),
-        {},
+    const response = await fetchResponseWithAuth(
+        buildUrl("/v1/audio/transcriptions"),
+        { method: "POST", body: form, timeoutMs: 300000 },
         context,
     );
-    return createMCPResponse([
-        {
-            type: "resource_link",
-            uri: mediaUrl,
-            name: "Generated audio",
-            mimeType: contentType,
-        },
-        createTextContent(
-            { url: mediaUrl, text, ...options, mimeType: contentType },
-            true,
-        ),
-    ]);
+    const contentType = response.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+        return createMCPResponse([
+            createTextContent(await response.json(), true),
+        ]);
+    }
+    return createMCPResponse([createTextContent(await response.text())]);
 }
 
 export const audioTools = [
     [
-        "generateAudio",
-        "Generate speech, music, or sound and return an unlisted media.pollinations.ai resource link.",
-        {
-            text: z
-                .string()
-                .min(1)
-                .describe("Text to speak or a music/sound description"),
-            voice: z
-                .string()
-                .optional()
-                .describe(
-                    "Voice for speech generation. Use listModels with type=audio for voice metadata",
-                ),
-            response_format: z
-                .enum(["mp3", "opus", "aac", "flac", "wav", "pcm"])
-                .optional()
-                .describe("Audio output format (default: mp3)"),
-            model: z
-                .string()
-                .optional()
-                .describe("Audio model. Use listModels with type=audio"),
-            duration: z
-                .number()
-                .optional()
-                .describe("Duration in seconds where supported"),
-            seconds: z
-                .number()
-                .min(1)
-                .max(380)
-                .optional()
-                .describe("Duration for stable-audio models"),
-            steps: z
-                .number()
-                .int()
-                .min(1)
-                .max(100)
-                .optional()
-                .describe("Sampling steps for stable-audio models"),
-            negative_prompt: z
-                .string()
-                .optional()
-                .describe("Negative prompt for stable-audio models"),
-            instrumental: z
-                .boolean()
-                .optional()
-                .describe("Generate instrumental music where supported"),
-            instruct: z
-                .string()
-                .optional()
-                .describe("Emotion or style instruction where supported"),
-            loop: z
-                .boolean()
-                .optional()
-                .describe("Loop the generated sound effect where supported"),
-            prompt_influence: z
-                .number()
-                .min(0)
-                .max(1)
-                .optional()
-                .describe("Prompt influence for sound effects"),
-            seed: z.number().int().optional().describe("Random seed"),
-            safe: z
-                .union([z.string(), z.boolean()])
-                .optional()
-                .describe("Pollinations safety options"),
-        },
-        generateAudio,
+        "textToSpeech",
+        "Convert text to speech through Gen's OpenAI-compatible audio endpoint.",
+        z
+            .object({
+                input: z.string().min(1),
+                model: z
+                    .string()
+                    .optional()
+                    .describe("TTS model; omit for the Gen default"),
+                voice: z.string().optional(),
+                response_format: z.string().optional(),
+            })
+            .passthrough(),
+        textToSpeech,
     ],
     [
         "transcribeAudio",
-        "Transcribe spoken audio from a public HTTPS URL. Use listModels with type=audio for transcription models.",
-        {
-            source: z
-                .url()
-                .describe("Direct public HTTPS URL for an audio file"),
-            model: z
-                .string()
-                .optional()
-                .describe(
-                    "Transcription model. Use listModels with type=audio for the live list",
-                ),
-            language: z
-                .string()
-                .optional()
-                .describe("Optional ISO-639-1 language hint, such as en or fr"),
-            prompt: z
-                .string()
-                .optional()
-                .describe(
-                    "Optional text to guide transcription style or spelling",
-                ),
-        },
+        "Download a public HTTPS audio file and proxy it to Gen's OpenAI-compatible transcription endpoint.",
+        z
+            .object({
+                source: z.url().describe("Direct public HTTPS audio URL"),
+                model: z
+                    .string()
+                    .optional()
+                    .describe("STT model; omit for the Gen default"),
+                language: z.string().optional(),
+                prompt: z.string().optional(),
+                response_format: z.string().optional(),
+            })
+            .passthrough(),
         transcribeAudio,
     ],
 ];

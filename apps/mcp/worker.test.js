@@ -8,21 +8,20 @@ import worker from "./worker.js";
 
 const TOKEN = "sk_test_request_scoped";
 const EXPECTED_TOOLS = [
-    "createEmbeddings",
-    "generate3D",
-    "generateAudio",
+    "chatCompletion",
     "generateImage",
-    "generateText",
     "generateVideo",
     "getBalance",
-    "getModelStatus",
+    "getUsage",
     "listModels",
+    "textToSpeech",
     "transcribeAudio",
 ];
 
 function localFetch(input, init) {
-    const request = input instanceof Request ? input : new Request(input, init);
-    return worker.fetch(request);
+    return worker.fetch(
+        input instanceof Request ? input : new Request(input, init),
+    );
 }
 
 async function connectClient(options = {}, token = TOKEN) {
@@ -30,16 +29,17 @@ async function connectClient(options = {}, token = TOKEN) {
         { name: "mcp-worker-test", version: "0.0.1" },
         { capabilities: {}, ...options },
     );
-    const transport = new StreamableHTTPClientTransport(
-        new URL("https://mcp.pollinations.ai"),
-        {
-            fetch: localFetch,
-            requestInit: {
-                headers: { Authorization: `Bearer ${token}` },
+    await client.connect(
+        new StreamableHTTPClientTransport(
+            new URL("https://mcp.pollinations.ai"),
+            {
+                fetch: localFetch,
+                requestInit: {
+                    headers: { Authorization: `Bearer ${token}` },
+                },
             },
-        },
+        ),
     );
-    await client.connect(transport);
     return client;
 }
 
@@ -48,7 +48,7 @@ test("serves health and requires bearer auth", async () => {
         new Request("https://mcp.pollinations.ai/health"),
     );
     assert.equal(health.status, 200);
-    assert.equal((await health.json()).endpoint, "/");
+    assert.equal((await health.json()).stateless, true);
 
     const unauthorized = await worker.fetch(
         new Request("https://mcp.pollinations.ai", {
@@ -62,14 +62,9 @@ test("serves health and requires bearer auth", async () => {
         unauthorized.headers.get("www-authenticate"),
         'Bearer realm="mcp.pollinations.ai"',
     );
-
-    const oldEndpoint = await worker.fetch(
-        new Request("https://mcp.pollinations.ai/mcp"),
-    );
-    assert.equal(oldEndpoint.status, 404);
 });
 
-test("serves modern and legacy clients without sessions", async () => {
+test("serves exactly eight tools to modern and legacy clients", async () => {
     const modern = await connectClient({
         versionNegotiation: { mode: "auto" },
     });
@@ -90,142 +85,108 @@ test("serves modern and legacy clients without sessions", async () => {
     await legacy.close();
 });
 
-test("keeps bearer tokens scoped to each request", async (t) => {
+test("keeps bearer tokens request-scoped and returns raw balances", async (t) => {
     const originalFetch = globalThis.fetch;
-    const seenAuthorizations = new Set();
+    const seen = new Set();
     t.after(() => {
         globalThis.fetch = originalFetch;
     });
-
     globalThis.fetch = async (input, init) => {
         assert.equal(
             String(input),
             "https://gen.pollinations.ai/account/balance",
         );
         const authorization = new Headers(init?.headers).get("authorization");
-        seenAuthorizations.add(authorization);
+        seen.add(authorization);
         return Response.json({
             balance: authorization === "Bearer pk_first" ? 1 : 2,
+            accountBalance: { paid: 3 },
         });
     };
 
     const options = { versionNegotiation: { mode: "auto" } };
-    const firstClient = await connectClient(options, "pk_first");
-    const secondClient = await connectClient(options, "sk_second");
-
-    const [first, second] = await Promise.all([
-        firstClient.callTool({ name: "getBalance", arguments: {} }),
-        secondClient.callTool({ name: "getBalance", arguments: {} }),
+    const first = await connectClient(options, "pk_first");
+    const second = await connectClient(options, "sk_second");
+    const [firstResult, secondResult] = await Promise.all([
+        first.callTool({ name: "getBalance", arguments: {} }),
+        second.callTool({ name: "getBalance", arguments: {} }),
     ]);
-    assert.match(first.content[0].text, /"pollen": 1/);
-    assert.match(second.content[0].text, /"pollen": 2/);
-    assert.deepEqual(
-        seenAuthorizations,
-        new Set(["Bearer pk_first", "Bearer sk_second"]),
-    );
-
-    await Promise.all([firstClient.close(), secondClient.close()]);
+    assert.match(firstResult.content[0].text, /"balance": 1/);
+    assert.match(firstResult.content[0].text, /"accountBalance"/);
+    assert.match(secondResult.content[0].text, /"balance": 2/);
+    assert.deepEqual(seen, new Set(["Bearer pk_first", "Bearer sk_second"]));
+    await Promise.all([first.close(), second.close()]);
 });
 
-test("generateText uses the non-streaming chat completion contract", async (t) => {
+test("passes chat requests and responses through without reconstruction", async (t) => {
     const originalFetch = globalThis.fetch;
-    let completionBody;
+    let requestBody;
     t.after(() => {
         globalThis.fetch = originalFetch;
     });
-
-    globalThis.fetch = async (input, init = {}) => {
-        const url = String(input);
-        if (url === "https://gen.pollinations.ai/text/models") {
-            return Response.json([{ name: "openai" }]);
-        }
-        if (url === "https://gen.pollinations.ai/v1/chat/completions") {
-            completionBody = JSON.parse(init.body);
-            return Response.json({
-                model: "openai",
-                choices: [
-                    {
-                        message: { role: "assistant", content: "hello" },
-                        finish_reason: "stop",
-                    },
-                ],
-                usage: { completion_tokens: 1 },
-            });
-        }
-        throw new Error(`Unexpected URL: ${url}`);
+    globalThis.fetch = async (input, init) => {
+        assert.equal(
+            String(input),
+            "https://gen.pollinations.ai/v1/chat/completions",
+        );
+        requestBody = JSON.parse(init.body);
+        return Response.json({
+            id: "chatcmpl-test",
+            choices: [
+                { index: 0, message: { role: "assistant", content: "one" } },
+                { index: 1, message: { role: "assistant", content: "two" } },
+            ],
+            provider_extension: { trace: "kept" },
+        });
     };
 
     const client = await connectClient({
         versionNegotiation: { mode: "auto" },
     });
-    const generateTextTool = (await client.listTools()).tools.find(
-        ({ name }) => name === "generateText",
-    );
-    assert.ok(generateTextTool);
-    assert.equal(generateTextTool.inputSchema.properties.stream, undefined);
-    assert.equal(
-        generateTextTool.inputSchema.properties.stream_options,
-        undefined,
-    );
-
     const result = await client.callTool({
-        name: "generateText",
+        name: "chatCompletion",
         arguments: {
             model: "openai",
-            messages: [{ role: "user", content: "hi" }],
+            messages: [{ role: "user", content: "hello" }],
+            provider_options: { custom: true },
         },
     });
-
-    assert.equal(result.content[0].text, "hello");
-    assert.deepEqual(completionBody, {
-        messages: [{ role: "user", content: "hi" }],
+    assert.deepEqual(requestBody, {
         model: "openai",
+        messages: [{ role: "user", content: "hello" }],
+        provider_options: { custom: true },
     });
+    assert.match(result.content[0].text, /"index": 1/);
+    assert.match(result.content[0].text, /"provider_extension"/);
     await client.close();
 });
 
-test("uploads generated images and returns an MCP resource link", async (t) => {
+test("validates then cancels URL-mode media bodies", async (t) => {
     const originalFetch = globalThis.fetch;
-    let generationBody;
+    let cancelled = false;
     t.after(() => {
         globalThis.fetch = originalFetch;
     });
-
     globalThis.fetch = async (input, init) => {
-        const url = String(input);
+        assert.equal(
+            String(input),
+            "https://gen.pollinations.ai/image/a%20bee?model=flux",
+        );
         assert.equal(
             new Headers(init?.headers).get("authorization"),
             `Bearer ${TOKEN}`,
         );
-        if (url === "https://gen.pollinations.ai/v1/images/generations") {
-            generationBody = JSON.parse(init.body);
-            return Response.json({
-                created: 1,
-                data: [
-                    {
-                        url: "https://gen.pollinations.ai/image/a%20bee",
-                    },
-                ],
-            });
-        }
-        if (url === "https://gen.pollinations.ai/image/a%20bee") {
-            return new Response(new Uint8Array([1, 2, 3]), {
-                headers: { "Content-Type": "image/png" },
-            });
-        }
-        if (url === "https://media.pollinations.ai/upload") {
-            const file = init.body.get("file");
-            assert.equal(file.type, "image/png");
-            assert.deepEqual(
-                new Uint8Array(await file.arrayBuffer()),
-                new Uint8Array([1, 2, 3]),
-            );
-            assert.equal(init.body.get("tags"), null);
-            return Response.json({
-                url: "https://media.pollinations.ai/generated-image",
-            });
-        }
-        throw new Error(`Unexpected URL: ${url}`);
+        return new Response(
+            new ReadableStream({
+                pull(controller) {
+                    controller.enqueue(new Uint8Array([1, 2, 3]));
+                },
+                cancel() {
+                    cancelled = true;
+                },
+            }),
+            { headers: { "Content-Type": "image/png" } },
+        );
     };
 
     const client = await connectClient({
@@ -233,78 +194,32 @@ test("uploads generated images and returns an MCP resource link", async (t) => {
     });
     const result = await client.callTool({
         name: "generateImage",
-        arguments: { prompt: "a bee" },
+        arguments: { prompt: "a bee", model: "flux" },
     });
-    assert.deepEqual(result.content[0], {
-        type: "resource_link",
-        uri: "https://media.pollinations.ai/generated-image",
-        name: "Generated image",
-        mimeType: "image/png",
-    });
-    assert.deepEqual(generationBody, {
-        prompt: "a bee",
-        response_format: "url",
-    });
-
+    assert.equal(
+        result.content[0].text,
+        "https://gen.pollinations.ai/image/a%20bee?model=flux",
+    );
+    assert.equal(cancelled, true);
     await client.close();
 });
 
-test("proxies discovery and uploads generated audio, video, and 3D", async (t) => {
+test("proxies raw model and key-usage data", async (t) => {
     const originalFetch = globalThis.fetch;
-    const seen = [];
-    const uploadedTypes = [];
+    const urls = [];
     t.after(() => {
         globalThis.fetch = originalFetch;
     });
-
-    globalThis.fetch = async (input, init = {}) => {
+    globalThis.fetch = async (input) => {
         const url = String(input);
-        seen.push({
-            url,
-            authorization: new Headers(init.headers).get("authorization"),
-        });
-
-        if (url.endsWith("/audio/models?community=false")) {
-            return Response.json([
-                { name: "speech-test" },
-                { name: "audio-agent", agent: true },
-            ]);
+        urls.push(url);
+        if (url.endsWith("/models")) {
+            return Response.json([{ name: "openai", new_field: "kept" }]);
         }
-        if (url.endsWith("/video/models")) {
-            return Response.json([{ name: "veo" }]);
-        }
-        if (url.endsWith("/v1/models/status?minutes=15")) {
-            return Response.json({ data: [{ model: "speech-test" }] });
-        }
-        if (url.endsWith("/v1/embeddings")) {
-            assert.deepEqual(JSON.parse(init.body), { input: "hello" });
+        if (url.endsWith("/account/key/usage?days=7&limit=5")) {
             return Response.json({
-                object: "list",
-                data: [{ object: "embedding", embedding: [0.5], index: 0 }],
-                model: "embedding-test",
-                usage: { prompt_tokens: 1, total_tokens: 1 },
-            });
-        }
-        if (url.endsWith("/3d/a%20bee")) {
-            return new Response(new Uint8Array([1, 2, 3]), {
-                headers: { "Content-Type": "model/gltf-binary" },
-            });
-        }
-        if (url.endsWith("/video/a%20bee?model=veo")) {
-            return new Response(new Uint8Array([4, 5, 6]), {
-                headers: { "Content-Type": "video/mp4" },
-            });
-        }
-        if (url.endsWith("/audio/hello?model=speech-test")) {
-            return new Response(new Uint8Array([7, 8, 9]), {
-                headers: { "Content-Type": "audio/mpeg" },
-            });
-        }
-        if (url === "https://media.pollinations.ai/upload") {
-            const file = init.body.get("file");
-            uploadedTypes.push(file.type);
-            return Response.json({
-                url: `https://media.pollinations.ai/${uploadedTypes.length}`,
+                events: [{ id: "event-1" }],
+                next: "cursor",
             });
         }
         throw new Error(`Unexpected URL: ${url}`);
@@ -313,72 +228,16 @@ test("proxies discovery and uploads generated audio, video, and 3D", async (t) =
     const client = await connectClient({
         versionNegotiation: { mode: "auto" },
     });
-    const models = await client.callTool({
-        name: "listModels",
-        arguments: { type: "audio", community: false },
+    const models = await client.callTool({ name: "listModels", arguments: {} });
+    const usage = await client.callTool({
+        name: "getUsage",
+        arguments: { days: 7, limit: 5 },
     });
-    assert.match(models.content[0].text, /speech-test/);
-
-    const agents = await client.callTool({
-        name: "listModels",
-        arguments: { type: "audio", community: false, agent: true },
-    });
-    assert.match(agents.content[0].text, /audio-agent/);
-    assert.match(agents.content[0].text, /"agent": true/);
-    assert.doesNotMatch(agents.content[0].text, /speech-test/);
-
-    const status = await client.callTool({
-        name: "getModelStatus",
-        arguments: { minutes: 15 },
-    });
-    assert.match(status.content[0].text, /speech-test/);
-
-    const embeddings = await client.callTool({
-        name: "createEmbeddings",
-        arguments: { input: "hello" },
-    });
-    assert.match(embeddings.content[0].text, /embedding-test/);
-
-    const model3d = await client.callTool({
-        name: "generate3D",
-        arguments: { prompt: "a bee" },
-    });
-    assert.deepEqual(model3d.content[0], {
-        type: "resource_link",
-        uri: "https://media.pollinations.ai/1",
-        name: "Generated 3D model",
-        mimeType: "model/gltf-binary",
-    });
-
-    const video = await client.callTool({
-        name: "generateVideo",
-        arguments: { prompt: "a bee" },
-    });
-    assert.deepEqual(video.content[0], {
-        type: "resource_link",
-        uri: "https://media.pollinations.ai/2",
-        name: "Generated video",
-        mimeType: "video/mp4",
-    });
-
-    const audio = await client.callTool({
-        name: "generateAudio",
-        arguments: { text: "hello", model: "speech-test" },
-    });
-    assert.deepEqual(audio.content[0], {
-        type: "resource_link",
-        uri: "https://media.pollinations.ai/3",
-        name: "Generated audio",
-        mimeType: "audio/mpeg",
-    });
-    assert.deepEqual(uploadedTypes, [
-        "model/gltf-binary",
-        "video/mp4",
-        "audio/mpeg",
+    assert.match(models.content[0].text, /"new_field": "kept"/);
+    assert.match(usage.content[0].text, /"next": "cursor"/);
+    assert.deepEqual(urls, [
+        "https://gen.pollinations.ai/models",
+        "https://gen.pollinations.ai/account/key/usage?days=7&limit=5",
     ]);
-
-    assert.ok(
-        seen.every(({ authorization }) => authorization === `Bearer ${TOKEN}`),
-    );
     await client.close();
 });

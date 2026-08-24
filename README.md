@@ -230,7 +230,7 @@ Browser clients pass the key as a query parameter (`?key=`); server clients can 
 
 ### MCP Server for AI Assistants
 
-Our MCP (Model Context Protocol) server enables AI assistants like Claude to generate images and audio directly. [Learn more](./packages/mcp/README.md)
+Our stateless MCP (Model Context Protocol) server gives AI assistants eight low-level tools for model discovery, generation, transcription, and account usage. [Learn more](./packages/mcp/README.md)
 
 #### Configuration
 
@@ -241,7 +241,10 @@ Add this to your MCP client configuration:
   "mcpServers": {
     "pollinations": {
       "command": "npx",
-      "args": ["@pollinations/mcp"]
+      "args": ["@pollinations/mcp"],
+      "env": {
+        "POLLINATIONS_API_KEY": "sk_your_key"
+      }
     }
   }
 }
@@ -255,13 +258,7 @@ npx @pollinations/mcp
 
 A community alternative, [MCPollinations](https://github.com/pinkpixel-dev/MCPollinations), is also available.
 
-AI assistants can:
-
-- Generate images from text descriptions
-- Create text-to-speech audio with various voice options
-- Play audio responses through the system speakers
-- Access all pollinations.ai models and services
-- List available models, voices, and capabilities
+The MCP forwards requests to `gen.pollinations.ai`; model discovery, defaults, validation, pricing, and errors remain owned by the API.
 
 **For more advanced usage, check out our full API docs — [APIDOCS.md](./APIDOCS.md) or the live docs at [gen.pollinations.ai/docs](https://gen.pollinations.ai/docs).**
 

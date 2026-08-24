@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { requireApiKey } from "../utils/authUtils.js";
 import {
     buildUrl,
@@ -6,19 +7,11 @@ import {
     fetchJsonWithAuth,
 } from "../utils/coreUtils.js";
 
-async function getBalance(_params, context) {
+async function proxyAccount(path, params, context) {
     requireApiKey(context);
-    const data = await fetchJsonWithAuth(
-        buildUrl("/account/balance"),
-        {},
-        context,
-    );
     return createMCPResponse([
         createTextContent(
-            {
-                pollen: data.balance,
-                note: "Pollen balance for the authenticated key. Key-scoped when the key has its own budget, otherwise account-wide.",
-            },
+            await fetchJsonWithAuth(buildUrl(path, params), {}, context),
             true,
         ),
     ]);
@@ -27,10 +20,20 @@ async function getBalance(_params, context) {
 export const accountTools = [
     [
         "getBalance",
-        "Get the current Pollen balance for the authenticated API key. " +
-            "Returns key-scoped balance if the key has its own budget, otherwise account-wide. " +
-            "Requires an API key with 'account:usage' permission.",
-        {},
-        getBalance,
+        "Return the raw balance response for the authenticated API key.",
+        z.object({}),
+        (params, context) => proxyAccount("/account/balance", params, context),
+    ],
+    [
+        "getUsage",
+        "Return raw usage history for the authenticated API key.",
+        z
+            .object({
+                days: z.number().int().optional(),
+                limit: z.number().int().optional(),
+            })
+            .passthrough(),
+        (params, context) =>
+            proxyAccount("/account/key/usage", params, context),
     ],
 ];

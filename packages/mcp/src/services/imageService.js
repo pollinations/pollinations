@@ -1,219 +1,108 @@
 import { z } from "zod";
 import { requireApiKey } from "../utils/authUtils.js";
 import {
+    arrayBufferToBase64,
     buildUrl,
     createMCPResponse,
     createTextContent,
-    fetchAndUploadMedia,
-    fetchJsonWithAuth,
+    fetchResponseWithAuth,
 } from "../utils/coreUtils.js";
-import { validateImageModel, validateVideoModel } from "../utils/models.js";
 
-async function generateImage(params, context) {
-    requireApiKey(context);
-
-    if (params.model) {
-        const validation = await validateImageModel(params.model, context);
-        if (!validation.valid) {
-            throw new Error(
-                `${validation.error} Did you mean: ${validation.suggestions.join(", ")}? ` +
-                    "Use listModels with type=image to see all available models.",
-            );
-        }
-    }
-
-    const body = {
-        prompt: params.prompt,
-        model: params.model,
-        n: params.n,
-        size: params.size,
-        quality: params.quality,
-        response_format: "url",
-        user: params.user,
-        image: params.image,
-        safe: params.safe,
-        seed: params.seed,
-        transparent: params.transparent,
-        guidance_scale: params.guidance_scale,
-    };
-    const result = await fetchJsonWithAuth(
-        buildUrl("/v1/images/generations"),
-        {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-        },
-        context,
-    );
-    const image = result.data?.[0];
-    if (!image?.url) throw new Error("Image API returned no image URL");
-    const { contentType, mediaUrl } = await fetchAndUploadMedia(
-        image.url,
-        {},
-        context,
-    );
-
-    return createMCPResponse([
-        {
-            type: "resource_link",
-            uri: mediaUrl,
-            name: "Generated image",
-            mimeType: image.media_type || contentType,
-        },
-        createTextContent(
-            {
-                ...result,
-                data: result.data.map(({ url: _url, ...entry }) => ({
-                    ...entry,
-                    url: mediaUrl,
-                })),
-            },
-            true,
-        ),
-    ]);
+function mediaUrl({ prompt, output: _output, ...params }) {
+    return buildUrl(`/image/${encodeURIComponent(prompt)}`, params);
 }
 
-async function prepareVideoRequest(params, context) {
-    const {
-        prompt,
-        model = "veo",
-        duration,
-        aspectRatio,
-        audio,
-        image,
-        seed,
-        safe,
-    } = params;
-
-    const validation = await validateVideoModel(model, context);
-    if (!validation.valid) {
+async function fetchMedia(url, expectedType, context) {
+    const response = await fetchResponseWithAuth(
+        url,
+        { timeoutMs: expectedType === "video" ? 600000 : 300000 },
+        context,
+    );
+    const contentType = response.headers.get("content-type") || "";
+    if (!contentType.startsWith(`${expectedType}/`)) {
+        await response.body?.cancel();
         throw new Error(
-            `${validation.error} Did you mean: ${validation.suggestions.join(", ")}? ` +
-                "Use listModels with type=video to see all available models.",
+            `Expected ${expectedType} response, received ${contentType || "no content type"}`,
         );
     }
-
-    return {
-        encodedPrompt: encodeURIComponent(prompt),
-        queryParams: {
-            model,
-            duration,
-            aspectRatio,
-            audio,
-            image,
-            seed,
-            safe,
-        },
-    };
+    return { response, contentType };
 }
 
-async function generateVideo(params, context) {
+async function generateMedia(params, expectedType, context) {
     requireApiKey(context);
+    const url = mediaUrl(params);
+    const { response, contentType } = await fetchMedia(
+        url,
+        expectedType,
+        context,
+    );
+    if ((params.output || "url") === "url") {
+        await response.body?.cancel();
+        return createMCPResponse([createTextContent(url)]);
+    }
 
-    const { encodedPrompt, queryParams } = await prepareVideoRequest(
-        params,
-        context,
-    );
-    const { contentType, mediaUrl } = await fetchAndUploadMedia(
-        buildUrl(`/video/${encodedPrompt}`, queryParams),
-        {},
-        context,
-    );
+    const data = arrayBufferToBase64(await response.arrayBuffer());
+    if (expectedType === "image") {
+        return createMCPResponse([
+            { type: "image", data, mimeType: contentType },
+        ]);
+    }
     return createMCPResponse([
         {
-            type: "resource_link",
-            uri: mediaUrl,
-            name: "Generated video",
-            mimeType: contentType || "video/mp4",
+            type: "resource",
+            resource: { uri: url, mimeType: contentType, blob: data },
         },
-        createTextContent(
-            {
-                prompt: params.prompt,
-                ...queryParams,
-                url: mediaUrl,
-            },
-            true,
-        ),
     ]);
 }
 
-const imageParamsSchema = {
-    prompt: z.string().min(1).max(32000).describe("Image prompt"),
+const output = z
+    .enum(["url", "inline"])
+    .optional()
+    .describe("Return the Gen URL (default) or inline MCP binary content");
+
+const sharedMediaParams = {
+    prompt: z.string().min(1),
     model: z
         .string()
         .optional()
-        .describe(
-            "Canonical image model name or alias returned by listModels with type=image",
-        ),
-    n: z
-        .literal(1)
-        .optional()
-        .describe("Number of images (the API currently supports 1)"),
-    size: z
-        .string()
-        .optional()
-        .describe("Image size as WIDTHxHEIGHT, for example 1024x1024"),
-    quality: z
-        .enum(["standard", "hd", "low", "medium", "high"])
-        .optional()
-        .describe("Image quality"),
-    user: z.string().optional().describe("End-user identifier"),
-    image: z
-        .union([z.string(), z.array(z.string())])
-        .optional()
-        .describe("HTTP(S) image URL or URLs to edit or use as references"),
-    safe: z
-        .union([z.string(), z.boolean()])
-        .optional()
-        .describe("Pollinations safety options"),
-    seed: z.number().int().optional().describe("Random seed"),
-    transparent: z
-        .boolean()
-        .optional()
-        .describe("Request a transparent background where supported"),
-    guidance_scale: z
-        .number()
-        .optional()
-        .describe("Guidance scale where supported"),
+        .describe("Model or alias; use listModels for the live registry"),
+    image: z.union([z.string(), z.array(z.string())]).optional(),
+    seed: z.number().int().optional(),
+    safe: z.union([z.boolean(), z.string()]).optional(),
+    output,
 };
 
-const videoParamsSchema = {
-    prompt: z.string().min(1).describe("Video prompt"),
-    model: z
-        .string()
-        .optional()
-        .describe("Video model (default: veo). Use listModels with type=video"),
-    duration: z.number().optional().describe("Video duration in seconds"),
-    aspectRatio: z
-        .string()
-        .optional()
-        .describe("Aspect ratio, for example 16:9 or 9:16"),
-    audio: z
-        .boolean()
-        .optional()
-        .describe("Generate audio where the model supports it"),
-    image: z
-        .union([z.string(), z.array(z.string())])
-        .optional()
-        .describe("Reference image URL or URLs for image-to-video generation"),
-    seed: z.number().int().optional().describe("Random seed"),
-    safe: z
-        .union([z.string(), z.boolean()])
-        .optional()
-        .describe("Pollinations safety options"),
-};
+const imageParamsSchema = z
+    .object({
+        ...sharedMediaParams,
+        width: z.number().int().optional(),
+        height: z.number().int().optional(),
+        guidance_scale: z.number().optional(),
+        quality: z.string().optional(),
+        transparent: z.boolean().optional(),
+    })
+    .passthrough();
+
+const videoParamsSchema = z
+    .object({
+        ...sharedMediaParams,
+        duration: z.number().optional(),
+        aspectRatio: z.string().optional(),
+        audio: z.boolean().optional(),
+    })
+    .passthrough();
 
 export const imageTools = [
     [
         "generateImage",
-        "Generate or edit one image using any image model in the live Pollinations registry and return an unlisted media.pollinations.ai resource link. If the user requests a named model or provider, call listModels with type=image first and pass the matched canonical model name. To edit, provide an HTTP(S) reference in image.",
+        "Generate an image and return its Gen URL or inline MCP image content.",
         imageParamsSchema,
-        generateImage,
+        (params, context) => generateMedia(params, "image", context),
     ],
     [
         "generateVideo",
-        "Generate one video and return an unlisted media.pollinations.ai resource link.",
+        "Generate a video and return its Gen URL or inline MCP resource.",
         videoParamsSchema,
-        generateVideo,
+        (params, context) => generateMedia(params, "video", context),
     ],
 ];

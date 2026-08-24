@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "💬",
+    "name": "App Submission: FreeChat CLI",
+    "url": "https://github.com/xiaotian1171/freechat-cli",
+    "description": "A zero-config command-line chat tool powered by the Pollinations free API. No API key required. Features include multi-model switching, streaming responses, conversation history, and save/load. Uses t",
+    "language": "en",
+    "category": "chat",
+    "platform": "cli",
+    "githubUsername": "xiaotian1171",
+    "githubUserId": "63298614",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-05-31",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/11438",
+    "approvedDate": "2026-08-24",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "✍️",
     "name": "StoryForge",
     "url": "https://storyforge.wiradifit-makmur-sejahtera.duckdns.org",

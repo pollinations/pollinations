@@ -261,7 +261,6 @@ describe("resolveModelConfig", () => {
         ["gemma-4-31b", "google/gemma-4-31b-it", "novita/bf16"],
         ["mimo-v2.5", "xiaomi/mimo-v2.5", "xiaomi/fp8"],
         ["mimo-v2.5-pro", "xiaomi/mimo-v2.5-pro", "xiaomi/fp8"],
-        ["mistral", "mistralai/mistral-small-2603", "mistral"],
         ["llama-scout", "meta-llama/llama-4-scout", "deepinfra/fp8"],
     ])("pins %s to %s through %s without fallback", (model, route, provider) => {
         const result = resolveModelConfig(messages, { model });
@@ -269,6 +268,17 @@ describe("resolveModelConfig", () => {
         expect(result.options.model).toBe(route);
         expect(result.options.provider).toEqual({
             only: [provider],
+            allow_fallbacks: false,
+        });
+    });
+
+    it("excludes Mistral's higher-priced ZDR variant", () => {
+        const result = resolveModelConfig(messages, { model: "mistral" });
+
+        expect(result.options.model).toBe("mistralai/mistral-small-2603");
+        expect(result.options.provider).toEqual({
+            only: ["mistral"],
+            ignore: ["mistral/zdr"],
             allow_fallbacks: false,
         });
     });

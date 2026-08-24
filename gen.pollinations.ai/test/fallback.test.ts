@@ -257,7 +257,7 @@ describe("formatFallbackTarget", () => {
 });
 
 describe("attachFallbackTarget", () => {
-    it("stores the Portkey-shaped marker without making it enumerable", () => {
+    it("stores the target marker without making it enumerable", () => {
         const completion = { id: "chatcmpl_test", model: "openai" };
         attachFallbackTarget(completion, 1);
         expect((completion as { fallbackTarget?: string }).fallbackTarget).toBe(

@@ -24,8 +24,11 @@ function InfoSection() {
             <div className="use-cases">
                 <h3>💡 Use Cases</h3>
                 <div className="use-case-grid">
-                    {useCases.map((useCase, index) => (
-                        <div key={`usecase-${index}`} className="use-case-item">
+                    {useCases.map((useCase, _index) => (
+                        <div
+                            key={`usecase-${useCase}`}
+                            className="use-case-item"
+                        >
                             {useCase}
                         </div>
                     ))}
@@ -36,8 +39,11 @@ function InfoSection() {
                 <h4>💭 Prompt Ideas</h4>
                 <p>Try these creative prompts for different styles:</p>
                 <div className="tips-grid">
-                    {promptIdeas.map((idea, index) => (
-                        <div key={`idea-${index}`} className="tip-item">
+                    {promptIdeas.map((idea, _index) => (
+                        <div
+                            key={`idea-${idea.slice(0, 10)}`}
+                            className="tip-item"
+                        >
                             "{idea}"
                         </div>
                     ))}

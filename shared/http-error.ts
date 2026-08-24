@@ -15,14 +15,14 @@
  */
 export class HttpError extends Error {
     status: number;
-    details?: any;
+    details?: unknown;
     upstreamUrl?: string;
     errorCode?: string;
 
     constructor(
         message: string,
         status: number = 500,
-        details?: any,
+        details?: unknown,
         upstreamUrl?: string,
         errorCode?: string,
     ) {

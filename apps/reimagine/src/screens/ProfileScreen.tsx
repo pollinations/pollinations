@@ -187,14 +187,7 @@ export default function ProfileScreen({
     const { width } = useWindowDimensions();
     const imageWidth = (width - 20) / 2;
 
-    useFocusEffect(
-        React.useCallback(() => {
-            console.log("ProfileScreen: Focus effect triggered");
-            loadData();
-        }, []),
-    );
-
-    const loadData = async () => {
+    const loadData = useCallback(async () => {
         try {
             setLoading(true);
 
@@ -216,7 +209,14 @@ export default function ProfileScreen({
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    useFocusEffect(
+        React.useCallback(() => {
+            console.log("ProfileScreen: Focus effect triggered");
+            loadData();
+        }, [loadData]),
+    );
 
     const handleRefresh = async () => {
         setRefreshing(true);
@@ -308,7 +308,7 @@ export default function ProfileScreen({
                 />
             );
         },
-        [imageWidth, handleChainPress, handleDeleteChain, theme],
+        [imageWidth, handleChainPress, handleDeleteChain, theme, isDark],
     );
 
     const EmptyComponent = useMemo(

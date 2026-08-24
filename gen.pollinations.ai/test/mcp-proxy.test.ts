@@ -26,6 +26,26 @@ test("lists the MCP servers exposed through Gen", async () => {
                     "Access Pollinations models and API capabilities through agent tools.",
                 url: "https://gen.pollinations.ai/mcp/pollinations",
             },
+            {
+                id: "web-search",
+                name: "Web Search",
+                description:
+                    "Search the live web and return answers with citations.",
+                url: "https://gen.pollinations.ai/mcp/web-search",
+            },
+            {
+                id: "transcription",
+                name: "Transcription",
+                description: "Transcribe spoken audio from public HTTPS media.",
+                url: "https://gen.pollinations.ai/mcp/transcription",
+            },
+            {
+                id: "vision",
+                name: "Vision",
+                description:
+                    "Analyze images, answer visual questions, and extract text.",
+                url: "https://gen.pollinations.ai/mcp/vision",
+            },
         ],
     });
 });
@@ -53,6 +73,99 @@ test("routes Pollinations MCP with caller authorization for downstream billing",
         id: 1,
         result: {
             content: [{ type: "text", text: "pollinations proxied" }],
+        },
+    });
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 1,
+        packBalance: 0,
+    });
+});
+
+test("routes Web Search MCP with caller authorization for downstream billing", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1 },
+    });
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/web-search",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                Cookie: "session=private",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(MCP_REQUEST),
+        },
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+        jsonrpc: "2.0",
+        id: 1,
+        result: {
+            content: [{ type: "text", text: "search proxied" }],
+        },
+    });
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 1,
+        packBalance: 0,
+    });
+});
+
+test("routes Transcription MCP with caller authorization for downstream billing", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1 },
+    });
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/transcription",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                Cookie: "session=private",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(MCP_REQUEST),
+        },
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+        jsonrpc: "2.0",
+        id: 1,
+        result: {
+            content: [{ type: "text", text: "transcription proxied" }],
+        },
+    });
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 1,
+        packBalance: 0,
+    });
+});
+
+test("routes Vision MCP with caller authorization for downstream billing", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1 },
+    });
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/vision",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                Cookie: "session=private",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(MCP_REQUEST),
+        },
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+        jsonrpc: "2.0",
+        id: 1,
+        result: {
+            content: [{ type: "text", text: "vision proxied" }],
         },
     });
     expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({

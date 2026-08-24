@@ -1,0 +1,8 @@
+{
+  "target": "worker",
+  "credentials": "myceli",
+  "install": "npm ci",
+  "build": "npm test",
+  "deploy": "npm run deploy",
+  "watch": ["shared/user-media-url.ts"]
+}

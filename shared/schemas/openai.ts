@@ -336,7 +336,7 @@ export const CreateChatCompletionRequestSchema = z
                 search_context_size: z.enum(["low", "medium", "high"]),
             })
             .describe(
-                "Controls Perplexity Sonar search context. Pollinations currently supports low and high.",
+                "Controls how much web-search context is provided to supported search models.",
             )
             .optional(),
         temperature: z.number().min(0).max(2).nullable().optional(),
@@ -374,6 +374,16 @@ const ChatCompletionMessageContentBlockSchema = z.union([
         .passthrough(),
 ]);
 
+const ChatCompletionMessageAnnotationSchema = z.object({
+    type: z.literal("url_citation"),
+    url_citation: z.object({
+        start_index: z.number().int().nonnegative(),
+        end_index: z.number().int().nonnegative(),
+        title: z.string(),
+        url: z.url(),
+    }),
+});
+
 const ChatCompletionResponseMessageSchema = z.object({
     content: z.string().nullish(),
     tool_calls: ChatCompletionMessageToolCallsSchema.nullish(),
@@ -395,6 +405,7 @@ const ChatCompletionResponseMessageSchema = z.object({
         .nullish(),
     // DeepSeek reasoning format
     reasoning_content: z.string().nullish(),
+    annotations: z.array(ChatCompletionMessageAnnotationSchema).nullish(),
 });
 
 const ChatCompletionTokenTopLogprobSchema = z.object({

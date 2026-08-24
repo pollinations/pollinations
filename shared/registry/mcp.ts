@@ -16,7 +16,11 @@ type McpServerDefinitionBase = {
     binding: McpBindingName;
 };
 
-export type McpBindingName = "POLLINATIONS_MCP";
+export type McpBindingName =
+    | "POLLINATIONS_MCP"
+    | "WEB_SEARCH_MCP"
+    | "TRANSCRIPTION_MCP"
+    | "VISION_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -35,6 +39,28 @@ export const MCP_SERVERS = [
         description:
             "Access Pollinations models and API capabilities through agent tools.",
         binding: "POLLINATIONS_MCP",
+        billing: "downstream",
+    },
+    {
+        id: "web-search",
+        name: "Web Search",
+        description: "Search the live web and return answers with citations.",
+        binding: "WEB_SEARCH_MCP",
+        billing: "downstream",
+    },
+    {
+        id: "transcription",
+        name: "Transcription",
+        description: "Transcribe spoken audio from public HTTPS media.",
+        binding: "TRANSCRIPTION_MCP",
+        billing: "downstream",
+    },
+    {
+        id: "vision",
+        name: "Vision",
+        description:
+            "Analyze images, answer visual questions, and extract text.",
+        binding: "VISION_MCP",
         billing: "downstream",
     },
 ] as const satisfies readonly McpServerDefinition[];

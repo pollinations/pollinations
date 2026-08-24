@@ -31,8 +31,21 @@ interface ResponseItem {
     call_id?: string;
     name?: string;
     arguments?: string;
-    content?: Array<{ type?: string; text?: string; refusal?: string }>;
+    content?: Array<{
+        type?: string;
+        text?: string;
+        refusal?: string;
+        annotations?: ResponseCitation[];
+    }>;
     summary?: Array<{ text?: string }>;
+}
+
+interface ResponseCitation {
+    type?: string;
+    start_index?: number;
+    end_index?: number;
+    title?: string;
+    url?: string;
 }
 
 interface ResponsesUsage {
@@ -55,6 +68,29 @@ interface ResponsesData {
     output?: ResponseItem[];
     usage?: ResponsesUsage;
     error?: { message?: string; status?: number };
+}
+
+function chatAnnotation(value: unknown): Json | null {
+    if (!value || typeof value !== "object") return null;
+    const citation = value as ResponseCitation;
+    if (
+        citation.type !== "url_citation" ||
+        typeof citation.start_index !== "number" ||
+        typeof citation.end_index !== "number" ||
+        typeof citation.title !== "string" ||
+        typeof citation.url !== "string"
+    ) {
+        return null;
+    }
+    return {
+        type: "url_citation",
+        url_citation: {
+            start_index: citation.start_index,
+            end_index: citation.end_index,
+            title: citation.title,
+            url: citation.url,
+        },
+    };
 }
 
 function contentParts(
@@ -188,7 +224,20 @@ function buildBody(messages: ChatMessage[], options: TransformOptions): Json {
     ) {
         body.reasoning = { effort: options.reasoning_effort, summary: "auto" };
     }
-    if (Array.isArray(options.tools) && options.tools.length) {
+    if (options.azureWebSearch === true) {
+        body.tools = [
+            {
+                type: "web_search",
+                ...(options.web_search_options?.search_context_size
+                    ? {
+                          search_context_size:
+                              options.web_search_options.search_context_size,
+                      }
+                    : {}),
+            },
+        ];
+        body.tool_choice = "required";
+    } else if (Array.isArray(options.tools) && options.tools.length) {
         body.tools = options.tools.flatMap((raw) => {
             if (!raw || typeof raw !== "object") return [];
             const tool = raw as Json;
@@ -205,7 +254,7 @@ function buildBody(messages: ChatMessage[], options: TransformOptions): Json {
             ];
         });
     }
-    if (options.tool_choice !== undefined) {
+    if (options.azureWebSearch !== true && options.tool_choice !== undefined) {
         const choice = options.tool_choice as Json;
         body.tool_choice =
             choice?.type === "function"
@@ -215,7 +264,10 @@ function buildBody(messages: ChatMessage[], options: TransformOptions): Json {
                   }
                 : options.tool_choice;
     }
-    if (typeof options.parallel_tool_calls === "boolean") {
+    if (
+        options.azureWebSearch !== true &&
+        typeof options.parallel_tool_calls === "boolean"
+    ) {
         body.parallel_tool_calls = options.parallel_tool_calls;
     }
     const maxTokens = options.max_completion_tokens ?? options.max_tokens;
@@ -233,7 +285,7 @@ function buildBody(messages: ChatMessage[], options: TransformOptions): Json {
     return body;
 }
 
-function chatUsage(usage: ResponsesUsage): Json {
+function chatUsage(usage: ResponsesUsage, output: ResponseItem[] = []): Json {
     const result: Json = {
         prompt_tokens: usage.input_tokens ?? 0,
         completion_tokens: usage.output_tokens ?? 0,
@@ -249,6 +301,14 @@ function chatUsage(usage: ResponsesUsage): Json {
     if (usage.output_tokens_details) {
         result.completion_tokens_details = {
             reasoning_tokens: usage.output_tokens_details.reasoning_tokens ?? 0,
+        };
+    }
+    const webSearchRequests = output.filter(
+        (item) => item.type === "web_search_call",
+    ).length;
+    if (webSearchRequests > 0) {
+        result.server_tool_use_details = {
+            web_search_requests: webSearchRequests,
         };
     }
     return result;
@@ -275,6 +335,7 @@ function parseResponse(data: ResponsesData, requestedModel: string) {
     const refusals: string[] = [];
     const reasoning: string[] = [];
     const toolCalls: Json[] = [];
+    const annotations: Json[] = [];
 
     for (const item of data.output ?? []) {
         if (item.type === "reasoning") {
@@ -288,6 +349,10 @@ function parseResponse(data: ResponsesData, requestedModel: string) {
             for (const part of item.content ?? []) {
                 if (part.type === "output_text" && part.text) {
                     texts.push(part.text);
+                    for (const raw of part.annotations ?? []) {
+                        const annotation = chatAnnotation(raw);
+                        if (annotation) annotations.push(annotation);
+                    }
                 } else if (part.type === "refusal" && part.refusal) {
                     refusals.push(part.refusal);
                 }
@@ -311,6 +376,7 @@ function parseResponse(data: ResponsesData, requestedModel: string) {
     };
     if (toolCalls.length) message.tool_calls = toolCalls;
     if (reasoning.length) message.reasoning_content = reasoning.join("\n");
+    if (annotations.length) message.annotations = annotations;
 
     const completion: ChatCompletion = {
         id: data.id,
@@ -325,7 +391,7 @@ function parseResponse(data: ResponsesData, requestedModel: string) {
             },
         ],
     };
-    if (data.usage) completion.usage = chatUsage(data.usage);
+    if (data.usage) completion.usage = chatUsage(data.usage, data.output);
     return completion;
 }
 
@@ -371,14 +437,14 @@ function convertStream(
             choices: [{ index: 0, delta, finish_reason }],
             ...(includeUsage ? { usage: null } : {}),
         });
-    const usageChunk = (usage: ResponsesUsage) =>
+    const usageChunk = (response: ResponsesData) =>
         dataEvent({
             id,
             object: "chat.completion.chunk",
             created,
             model,
             choices: [],
-            usage: chatUsage(usage),
+            usage: chatUsage(response.usage ?? {}, response.output),
         });
 
     return source
@@ -447,6 +513,13 @@ function convertStream(
                         }
                         return;
                     }
+                    if (type === "response.output_text.annotation.added") {
+                        const annotation = chatAnnotation(payload.annotation);
+                        if (annotation) {
+                            emit(chatChunk({ annotations: [annotation] }));
+                        }
+                        return;
+                    }
                     if (type === "response.refusal.delta") {
                         if (typeof payload.delta === "string") {
                             emit(chatChunk({ refusal: payload.delta }));
@@ -492,7 +565,7 @@ function convertStream(
                             {}) as ResponsesData;
                         emit(chatChunk({}, finishReason(response)));
                         if (includeUsage && response.usage) {
-                            emit(usageChunk(response.usage));
+                            emit(usageChunk(response));
                         }
                         emit(dataEvent("[DONE]"));
                         terminal = true;

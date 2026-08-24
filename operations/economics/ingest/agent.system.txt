@@ -402,7 +402,9 @@ Forecast output:
   `infrastructure`, `development`, `operations`, `office`, `admin`, `payroll`,
   or `balance_sheet`. Never copy a legacy `cloud` or `saas` bucket and never
   infer a missing category at read time.
-- `method` must be exactly `fixed`, `funded`, `last`, or `one_off`. Evidence must
+- `method` must be exactly `fixed`, `funded`, `last`, `one_off`, or `canceled`.
+  Re-appending an existing entry with `method=canceled` and `amount=0` retracts
+  it from the effective forecast. Evidence must
   name the basis, completed source month or dated contract/invoice where
   applicable, and any billing-timing caveat; do not encode method as prose.
 - Do not emit or write forecast facts until the user has approved the method

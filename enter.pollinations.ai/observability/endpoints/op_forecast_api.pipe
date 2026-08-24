@@ -34,6 +34,7 @@ SQL >
         FROM op_forecast
         GROUP BY entry_id
     )
+    WHERE tupleElement(latest, 6) != 'canceled'
     ORDER BY month, vendor, category, entry_id
 
 TYPE ENDPOINT

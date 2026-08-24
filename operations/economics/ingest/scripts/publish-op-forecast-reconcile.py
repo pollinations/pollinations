@@ -31,7 +31,7 @@ FIELDS = [
     "source",
     "evidence",
 ]
-FORECAST_METHODS = {"fixed", "funded", "last", "one_off"}
+FORECAST_METHODS = {"fixed", "funded", "last", "one_off", "canceled"}
 FORECAST_CATEGORIES = {
     "revenue",
     "compute",
@@ -100,12 +100,23 @@ def read_ndjson(path):
         row["entry_id"]
         for row in rows
         if abs(float(row.get("amount", 0))) < 0.000000001
-        and row.get("method") != "funded"
+        and row.get("method") not in {"funded", "canceled"}
     ]
     if invalid_zeroes:
         raise RuntimeError(
-            "Only funded forecast rows may carry a zero amount: "
+            "Only funded or canceled forecast rows may carry a zero amount: "
             + ", ".join(invalid_zeroes)
+        )
+    invalid_cancellations = [
+        row["entry_id"]
+        for row in rows
+        if row.get("method") == "canceled"
+        and abs(float(row.get("amount", 0))) >= 0.000000001
+    ]
+    if invalid_cancellations:
+        raise RuntimeError(
+            "Canceled forecast rows must carry a zero amount: "
+            + ", ".join(invalid_cancellations)
         )
     validate_recorded_at(rows)
     return rows

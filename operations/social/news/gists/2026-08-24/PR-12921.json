@@ -1,0 +1,35 @@
+{
+  "pr_number": 12921,
+  "title": "refactor: remove obsolete Gen and registry plumbing",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12921",
+  "merged_at": "2026-08-24T05:37:51Z",
+  "labels": [],
+  "pr_body_excerpt": "- Reconstructs the useful part of the stale branch on current main; keeps schema types and logging that now have real callers.\\n- Removes the unused Portkey multi-target request path and success-header reconstruction; the Worker fallback loop remains the sole retry owner.\\n- Rejects empty generic and Azure response streams as retryable 502s instead of fabricating successful SSE output.\\n- Removes unused internal exports and duplicate registry billing entry points: 132 fewer production lines, 264 fewer lines overall.\\n\\nValidation:\\n- Biome and Gen typecheck\\n- 109 focused fallback, text-client, tracking, and observability tests\\n- Full Gen run: 104 files / 1,248 tests passed; the remaining community file passed 80/80 after supplying its Enter-only Stripe test dependency",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "One retry loop to rule them",
+    "blurb": "The Gen worker swept out some retired fallback plumbing and kept one clear path through the garden. Empty provider streams now get a proper retry instead of being dressed up as successful output.",
+    "summary": "Removed the unused Portkey multi-target fallback and duplicate registry billing paths, while treating empty generic OpenAI and Azure response streams as retryable 502 errors handled by the Worker fallback loop.",
+    "impact": "Text requests now have a single retry owner, so empty upstream streams are retried cleanly rather than returning fabricated successful SSE responses.",
+    "keywords": [
+      "gen",
+      "text-api",
+      "fallbacks",
+      "azure",
+      "openai",
+      "reliability",
+      "refactor"
+    ],
+    "visual_concept": "A cozy garden-shed server room where Polli tidies away tangled, obsolete routing pipes while one sturdy lime-green watering channel carries response droplets to a retro terminal. The monitor robot watches a small empty stream jar get redirected into a clearly marked retry loop; code-plants and flowers show that the simplified path keeps the system healthy.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny mechanic tool belt, tidying tangled old server pipes in a garden shed while guiding a small empty data stream into one sturdy lime green (#ecf874) retry loop feeding a retro terminal. A cheerful CRT monitor robot holds a sign reading \"RETRY\" beside code-plants and pastel flowers; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-24/PR-12921.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny mechanic tool belt, tidying tangled old server pipes in a garden shed while guiding a small empty data stream into one sturdy lime green (#ecf874) retry loop feeding a retro terminal. A cheerful CRT monitor robot holds a sign reading \"RETRY\" beside code-plants and pastel flowers; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-24T05:38:50.338437+00:00"
+}

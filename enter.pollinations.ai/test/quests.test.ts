@@ -341,7 +341,7 @@ test("catalog returns quest definitions without ledger stats", async ({
         rewardAmount: 10,
         balanceBucket: "tier",
     });
-    expectStableCatalogFields("grant:youtube_tutorial", {
+    expectStableCatalogFields("youtube_tutorial", {
         state: "available",
         rewardAmount: 10,
         balanceBucket: "tier",
@@ -1044,7 +1044,7 @@ test("app growth quests record connection, paid usage, and ten-user reach", asyn
         },
     ];
     mocks.tinybird.state.appDirectoryResponse = [
-        { github_user_id: String(user.githubId) },
+        { github_user_id: String(user.githubId), platform: "web" },
     ];
 
     const [externalUserId] = await seedByopConnections(user.id, 11, "byop");
@@ -1107,6 +1107,27 @@ test("app growth quests record connection, paid usage, and ten-user reach", asyn
     expect(externalRewards).toEqual([
         { questId: "use_app", userId: externalUserId },
     ]);
+});
+
+test("a listed YouTube tutorial earns its own quest instead of app listed", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    await mocks.enable("github", "tinybird");
+    mocks.tinybird.state.appDirectoryResponse = [
+        { github_user_id: String(user.githubId), platform: "youtube" },
+    ];
+
+    await checkQuestsForUser(env, user.id);
+
+    const rewards = await db
+        .select({ questId: schema.rewards.questId })
+        .from(schema.rewards);
+    const questIds = rewards.map((reward) => reward.questId);
+    expect(questIds).toContain("youtube_tutorial");
+    expect(questIds).not.toContain("app_listed");
 });
 
 test("app milestones use inclusive thresholds while coming-soon Pollen stays inert", async ({

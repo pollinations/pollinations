@@ -38,6 +38,7 @@ function getRepoName(url: string) {
 // Map from platform id to copy key in APPS_PAGE
 const PLATFORM_COPY_KEY: Record<string, keyof typeof APPS_PAGE> = {
     web: "platformWeb",
+    youtube: "platformYoutube",
     android: "platformAndroid",
     ios: "platformIos",
     windows: "platformWindows",

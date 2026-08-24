@@ -1,14 +1,32 @@
-name: YouTube Tutorial Quest
-description: Submit an original Pollinations tutorial for a 10 Pollen reward
-title: "[CREATOR-QUEST][YOUTUBE-TUTORIAL]: "
-labels: [".REQUEST"]
+name: Submit a YouTube tutorial
+description: Submit a Pollinations tutorial for the Learn catalog and a 10 Pollen reward
+title: "[Tutorial Submission] "
+labels: [APP-SUBMISSION]
 body:
   - type: markdown
     attributes:
       value: |
         Publish an original, useful YouTube tutorial showing people how to build or create with Pollinations. Include `POLLEN-YOUR_GITHUB_USERNAME` in the video description so maintainers can verify that you control it.
 
-        Approved submissions earn **10 Pollen**. Rewards are based on the tutorial itself, not views, likes, or subscriber counts. One reward is available per GitHub user.
+        Approved submissions are published in the **Learn** category of the Pollinations app catalog and earn **10 Pollen**. Rewards are based on the tutorial itself, not views, likes, or subscriber counts. One reward is available per GitHub user.
+
+  - type: dropdown
+    id: submission-type
+    attributes:
+      label: Submission Type
+      options:
+        - YouTube tutorial
+    validations:
+      required: true
+
+  - type: input
+    id: tutorial-title
+    attributes:
+      label: Tutorial Title
+      description: Use the public title of the YouTube video.
+      placeholder: Build an AI image app with Pollinations
+    validations:
+      required: true
 
   - type: input
     id: video
@@ -24,6 +42,15 @@ body:
     attributes:
       label: What does the tutorial teach?
       description: Briefly describe the Pollinations workflow and what viewers will build or learn.
+    validations:
+      required: true
+
+  - type: input
+    id: tutorial-language
+    attributes:
+      label: Tutorial Language
+      description: ISO language code for the video's primary language.
+      value: en
     validations:
       required: true
 
@@ -46,4 +73,4 @@ body:
   - type: markdown
     attributes:
       value: |
-        A maintainer will review the video. If approved, a claimable reward will appear on [Enter Quests](https://enter.pollinations.ai/quests).
+        The normal app-submission review will check the video. If approved, it will be listed in Learn and a claimable reward will appear on [Enter Quests](https://enter.pollinations.ai/quests).

@@ -51,16 +51,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-08-23** – **🤖 Agents can delegate to agents** MCP-connected agents can discover agent models and call them directly, inheriting permissions and billing through the parent key.
+- **2026-08-23** – **🚀 Register endpoint agents by API** Create private endpoint agents directly with `POST /account/my-models/endpoint-agents`; public publishing follows the existing allowlist.
+- **2026-08-23** – **🎯 Find models usable with Quest Pollen** The Models page now has a local filter for models your Quest-earned Pollen can actually use. Less botanical guesswork.
+- **2026-08-23** – **✨ Turn an idea into an illustrated micro-story** StoryForge lets you pick a genre and Pollen budget, then make a short illustrated story with BYOP sign-in. [Try it](https://storyforge.wiradifit-makmur-sejahtera.duckdns.org) <!-- app -->
 - **2026-08-21** – **🎥 Videos learn to count** Video model endpoints and SDK types now expose supported minimum, maximum, default, and stepped durations—so apps can offer controls that match the model instead of asking nicely and hoping. [API Docs](https://gen.pollinations.ai/docs)
 - **2026-08-21** – **🔗 OpenRouter takes the direct path** Chat requests to OpenRouter models now preserve requested provider routing plus OpenRouter’s raw usage and cost data, in streaming and non-streaming calls. [Chat API](https://gen.pollinations.ai/v1/chat/completions)
 - **2026-08-21** – **🎨 One garden, many brushes** REKTY GENERATOR joins the app directory: an open-source image workspace with Pollinations generation alongside 57+ models. [Try it](https://visualaiartwork.pages.dev) <!-- app -->
 - **2026-08-21** – **🌟 A new canvas blooms** ArtScape Studio brings a bilingual AI art workspace with idea, aspect-ratio, style, and seed controls for Pollinations-powered images. [Try it](https://creatneworld.github.io/artscape-studio) <!-- app -->
 - **2026-08-20** – **🎵 GPT transcription, including live** Send uploaded audio to `gpt-transcribe` or transcribe a live session with `gpt-live-transcribe` through the existing audio and realtime APIs. [API Docs](https://gen.pollinations.ai/docs)
 - **2026-08-20** – **✨ Community model labels that answer useful questions** Browse community text models with declared tool calling, reasoning support, and context length before handing them your prompt.
-- **2026-08-20** – **🔗 MCP tools now discover themselves** Enabled Pollinations MCP servers can advertise tools directly to managed agents. One less allowlist to forget in a drawer somewhere. [MCP Server Docs](https://gen.pollinations.ai/docs#tag/mcp-server)
-- **2026-08-20** – **🤖 The Mita joins chat** A Roblox character AI for spoken roleplay that keeps the conversation context, now discoverable through Pollinations chat. [Try it](https://www.roblox.com/games/98105867888961/The-Mita) <!-- app -->
-- **2026-08-20** – **🎨 Make a cursor from a sentence** Cursor Maker turns prompts such as “glowing blue crystal arrow” into custom Windows cursor art using the Pollinations image API. [Try it](https://hk.1r.gs) <!-- app -->
-- **2026-08-19** – **🚀 Qwen3.8 27B** `qwen3.8-27b` is now available for multimodal chat, reasoning, tool calls, structured output, and streaming. [See available models](https://gen.pollinations.ai/v1/models)
 ---
 
 ## 🌱 Introduction

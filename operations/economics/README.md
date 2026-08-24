@@ -48,3 +48,9 @@ Keep both legacy objects until all of the following are true:
 Remove the legacy datasource and pipe only in a later, explicitly approved
 destructive Tinybird deployment. Their removal is not part of the current app
 promotion.
+
+Before deploying the explicit `source=tombstone` filter in `op_cloud_api`, run
+`ingest/scripts/prepare-op-cloud-tombstone-migration.py` against a fresh raw
+`op_cloud` export, publish its reviewed corrections, and verify the effective
+endpoint is unchanged. This data migration must precede the pipe deployment;
+the old evidence-text filter currently hides legacy tombstones.

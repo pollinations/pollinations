@@ -263,6 +263,73 @@ export function buildStatementConversionRows(rows, recordedAt, evidence) {
     });
 }
 
+function settlementDiffers(row, settlement) {
+    return (
+        row.date !== settlement.date ||
+        Number(row.amount) !== settlement.amount ||
+        row.currency !== settlement.currency
+    );
+}
+
+export function buildExistingStatementCorrections(
+    settlementsByEntryId,
+    transactions,
+    recordedAt,
+    evidence,
+) {
+    const currentById = new Map(transactions.map((row) => [row.entry_id, row]));
+    const corrections = [];
+
+    for (const [entryId, settlements] of settlementsByEntryId) {
+        const current = currentById.get(entryId);
+        if (!current) continue;
+
+        const primary =
+            settlements.find(
+                (settlement) => settlement.currency === current.currency,
+            ) ?? settlements[0];
+        const assignments = [
+            { outputEntryId: entryId, settlement: primary, current },
+            ...settlements
+                .filter((settlement) => settlement !== primary)
+                .map((settlement) => {
+                    const outputEntryId = `${entryId}-${settlement.currency}`;
+                    return {
+                        outputEntryId,
+                        settlement,
+                        current: currentById.get(outputEntryId),
+                    };
+                }),
+        ];
+
+        for (const assignment of assignments) {
+            const existing = assignment.current;
+            if (
+                existing &&
+                !settlementDiffers(existing, assignment.settlement)
+            ) {
+                continue;
+            }
+            corrections.push({
+                entry_id: assignment.outputEntryId,
+                kind: "transaction",
+                source: "wise",
+                date: assignment.settlement.date,
+                vendor: current.vendor,
+                category: current.category,
+                amount: assignment.settlement.amount,
+                currency: assignment.settlement.currency,
+                description: current.description,
+                evidence,
+                ...(existing ? { base_recorded_at: existing.recorded_at } : {}),
+                recorded_at: recordedAt,
+            });
+        }
+    }
+
+    return corrections;
+}
+
 async function readStatements(directory) {
     const paths = (await readdir(directory))
         .filter((name) => name.toLowerCase().endsWith(".csv"))
@@ -464,11 +531,19 @@ async function main() {
         historyActivities.activities,
         transactions,
     );
-    const proposals = buildStatementConversionRows(
-        statements.rows,
-        recordedAt,
-        evidence,
-    ).filter((row) => !existingIds.has(row.entry_id));
+    const proposals = [
+        ...buildStatementConversionRows(
+            statements.rows,
+            recordedAt,
+            evidence,
+        ).filter((row) => !existingIds.has(row.entry_id)),
+        ...buildExistingStatementCorrections(
+            settlementFacts.byEntryId,
+            transactions,
+            recordedAt,
+            evidence,
+        ),
+    ];
     const review = [];
     const consumedSettlementIds = new Set();
     for (const activity of period.activities) {

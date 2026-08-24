@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
     activityQueryStart,
+    buildExistingStatementCorrections,
     buildMerchantHistory,
     buildStatementConversionRows,
     buildStatementSettlements,
@@ -209,6 +210,100 @@ test("keeps multi-balance settlements as separate currency rows", () => {
             .get("CARD_TRANSACTION-123")
             .map(({ outputEntryId }) => outputEntryId),
         ["CARD_TRANSACTION-123-EUR", "CARD_TRANSACTION-123-USD"],
+    );
+});
+
+test("corrects an existing activity to its statement balance currency", () => {
+    const corrections = buildExistingStatementCorrections(
+        new Map([
+            [
+                "CARD_TRANSACTION-123",
+                [
+                    settlement({
+                        amount: -10,
+                        currency: "USD",
+                    }),
+                ],
+            ],
+        ]),
+        [
+            {
+                entry_id: "CARD_TRANSACTION-123",
+                kind: "transaction",
+                source: "wise",
+                date: "2026-08-09",
+                vendor: "known",
+                category: "cloud",
+                amount: -8.6,
+                currency: "EUR",
+                description: "Known vendor",
+                evidence: "activity archive",
+                recorded_at: "2026-08-22 12:00:00.000",
+            },
+        ],
+        "2026-08-24 12:00:00.000",
+        "statement",
+    );
+
+    assert.deepEqual(corrections, [
+        {
+            entry_id: "CARD_TRANSACTION-123",
+            kind: "transaction",
+            source: "wise",
+            date: "2026-08-09",
+            vendor: "known",
+            category: "cloud",
+            amount: -10,
+            currency: "USD",
+            description: "Known vendor",
+            evidence: "statement",
+            base_recorded_at: "2026-08-22 12:00:00.000",
+            recorded_at: "2026-08-24 12:00:00.000",
+        },
+    ]);
+});
+
+test("preserves the parent ID when a statement splits an existing payment", () => {
+    const corrections = buildExistingStatementCorrections(
+        new Map([
+            [
+                "CARD_TRANSACTION-123",
+                [
+                    settlement({ amount: -2, currency: "EUR" }),
+                    settlement({ amount: -8, currency: "USD" }),
+                ],
+            ],
+        ]),
+        [
+            {
+                entry_id: "CARD_TRANSACTION-123",
+                date: "2026-08-09",
+                vendor: "known",
+                category: "cloud",
+                amount: -8.6,
+                currency: "EUR",
+                description: "Known vendor",
+                recorded_at: "2026-08-22 12:00:00.000",
+            },
+        ],
+        "2026-08-24 12:00:00.000",
+        "statement",
+    );
+
+    assert.deepEqual(
+        corrections.map(({ entry_id, amount, currency }) => ({
+            entry_id,
+            amount,
+            currency,
+        })),
+        [
+            { entry_id: "CARD_TRANSACTION-123", amount: -2, currency: "EUR" },
+            {
+                entry_id: "CARD_TRANSACTION-123-USD",
+                amount: -8,
+                currency: "USD",
+            },
+        ],
     );
 });
 

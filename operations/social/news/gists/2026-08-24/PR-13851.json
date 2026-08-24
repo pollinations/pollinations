@@ -1,0 +1,36 @@
+{
+  "pr_number": 13851,
+  "title": "Add App Submission: FreeChat CLI to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13851",
+  "merged_at": "2026-08-24T16:37:04Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [App Submission: FreeChat CLI](https://github.com/xiaotian1171/freechat-cli) to chat\n- A zero-config command-line chat tool powered by the Pollinations free API. No API key required. Features include multi-model switching, streaming responses, conversation history, and save/load. Uses t\n\nFixes #11438",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Chat from the shell",
+    "blurb": "FreeChat CLI has joined the garden: a zero-config terminal chat tool running on the Pollinations free API. Pick a model, keep your history, stream the answer, and avoid hunting for an API key.",
+    "summary": "Added FreeChat CLI to the community app directory, a zero-config Pollinations-powered command-line chat client with multi-model switching, streaming responses, conversation history, and save/load support without an API key.",
+    "impact": "Developers can now discover a ready-to-use terminal chat client for trying Pollinations models, carrying conversations forward, and saving sessions from the shell.",
+    "keywords": [
+      "community",
+      "FreeChat CLI",
+      "terminal",
+      "chat",
+      "streaming",
+      "open source"
+    ],
+    "visual_concept": "Depict FreeChat CLI as a cozy retro terminal in a small garden shed, with chat messages and model tabs on its CRT screen. Polli, wearing tiny developer headphones, hovers beside the keyboard tending a code-plant that grows from the command prompt, showing that terminal chat can be friendly, persistent, and ready without setup.",
+    "image_prompt": "A cozy pixel art garden-shed hackerspace with a retro CRT terminal glowing prominently lime green (#ecf874), showing simple pixel text \"freechat\" and flowing chat lines with small model tabs; code-plants sprout from pots around the keyboard. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny developer headphones and warmly tends the terminal's code-plant. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle scanlines, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-24/PR-13851.jpg",
+    "prompt": "A cozy pixel art garden-shed hackerspace with a retro CRT terminal glowing prominently lime green (#ecf874), showing simple pixel text \"freechat\" and flowing chat lines with small model tabs; code-plants sprout from pots around the keyboard. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny developer headphones and warmly tends the terminal's code-plant. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle scanlines, emotionally warm."
+  },
+  "generated_at": "2026-08-24T16:38:08.457873+00:00",
+  "app_name": "App Submission: FreeChat CLI",
+  "app_url": "https://github.com/xiaotian1171/freechat-cli"
+}

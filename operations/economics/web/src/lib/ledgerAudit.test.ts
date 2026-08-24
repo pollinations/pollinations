@@ -221,4 +221,26 @@ describe("monthlyLedgerAuditRows", () => {
             estimatedFx: true,
         });
     });
+
+    it("surfaces malformed dates even when they cannot form a month", () => {
+        const rows = monthlyLedgerAuditRows(
+            data({
+                opTransactions: [transaction({ date: "2026-02-31" })],
+                opCloud: [cloud({ start: "missing" })],
+                opPollen: [pollen({ month: "2026-99" })],
+            }),
+            "",
+            "2026-08",
+        );
+
+        expect(rows).toHaveLength(1);
+        expect(rows[0]).toMatchObject({
+            month: "Invalid date",
+            status: "structural",
+            transactionRows: 1,
+            cloudRows: 1,
+            pollenRows: 1,
+            invalidRows: 3,
+        });
+    });
 });

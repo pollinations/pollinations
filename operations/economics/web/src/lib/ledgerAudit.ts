@@ -2,12 +2,16 @@ import type { Data, OpCloudRow, OpPollenRow, OpTransactionRow } from "../types";
 import { cloudCategory, transactionCategory } from "./categories";
 import { hasReconciledTransactionEvidence } from "./documents";
 import { fxEstimatedMonths } from "./fx";
-import { collectMonths, type MonthFilterValue, matchesMonth } from "./months";
+import {
+    collectMonths,
+    isDateKey,
+    isMonthKey,
+    type MonthFilterValue,
+    matchesMonth,
+} from "./months";
 import { isCloudSource, isTransactionSource } from "./provenance";
 import { missingProviderMappings } from "./providerRegistry";
 
-const MONTH_RE = /^\d{4}-\d{2}$/;
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const CURRENCY_RE = /^[A-Z]{3}$/;
 const POLLEN_MEASURES: (keyof OpPollenRow)[] = [
     "cost_paid",
@@ -55,7 +59,7 @@ function invalidTransaction(row: OpTransactionRow): boolean {
         !present(row.entry_id) ||
         (row.kind !== "transaction" && row.kind !== "opening_balance") ||
         !isTransactionSource(row.source) ||
-        !DATE_RE.test(row.date) ||
+        !isDateKey(row.date) ||
         !present(row.vendor) ||
         transactionCategory(row) === "uncategorized" ||
         !finite(row.amount) ||
@@ -71,7 +75,7 @@ function invalidCloud(row: OpCloudRow): boolean {
         !isCloudSource(row.source) ||
         !present(row.vendor) ||
         (!balance && cloudCategory(row) === "uncategorized") ||
-        !MONTH_RE.test(row.start.slice(0, 7)) ||
+        !isMonthKey(String(row.start ?? "").slice(0, 7)) ||
         !finite(row.credit) ||
         !finite(row.paid) ||
         (balance && (Number(row.credit) < 0 || Number(row.paid) < 0)) ||
@@ -82,7 +86,7 @@ function invalidCloud(row: OpCloudRow): boolean {
 
 function invalidPollen(row: OpPollenRow): boolean {
     return (
-        !MONTH_RE.test(row.month) ||
+        !isMonthKey(row.month) ||
         !present(row.vendor) ||
         !present(row.model) ||
         row.currency !== "USD" ||
@@ -107,7 +111,11 @@ function duplicateExtras<T>(rows: readonly T[], key: (row: T) => string) {
 
 function providerNames(rows: readonly { vendor: string }[]): string[] {
     return [
-        ...new Set(rows.map((row) => row.vendor.trim() || "missing vendor")),
+        ...new Set(
+            rows.map(
+                (row) => String(row.vendor ?? "").trim() || "missing vendor",
+            ),
+        ),
     ].sort((a, b) => a.localeCompare(b));
 }
 
@@ -152,7 +160,7 @@ export function monthlyLedgerAuditRows(
 ): MonthlyLedgerAuditRow[] {
     const estimatedFxMonths = new Set(fxEstimatedMonths(data));
 
-    return collectMonths(data)
+    const rows = collectMonths(data)
         .filter((month) => matchesMonth(month, filter))
         .map((month) => {
             const bankRows = (data.opTransactions ?? []).filter(
@@ -219,6 +227,47 @@ export function monthlyLedgerAuditRows(
                 ].sort((a, b) => a.localeCompare(b)),
             };
             return { ...base, status: statusFor(base) };
-        })
-        .sort((a, b) => b.month.localeCompare(a.month));
+        });
+
+    const invalidDateTransactions = (data.opTransactions ?? []).filter(
+        (row) => !isDateKey(String(row.date ?? "")),
+    );
+    const invalidDateCloud = (data.opCloud ?? []).filter(
+        (row) => !isMonthKey(String(row.start ?? "").slice(0, 7)),
+    );
+    const invalidDatePollen = (data.opPollen ?? []).filter(
+        (row) => !isMonthKey(String(row.month ?? "")),
+    );
+    const broadFilter =
+        typeof filter === "string"
+            ? filter === "" || filter.length === 4
+            : filter.length === 0;
+    const invalidDateRows = [
+        ...invalidDateTransactions,
+        ...invalidDateCloud,
+        ...invalidDatePollen,
+    ];
+    if (broadFilter && invalidDateRows.length > 0) {
+        rows.push({
+            month: "Invalid date",
+            status: "structural",
+            partial: false,
+            transactionRows: invalidDateTransactions.filter(
+                (row) => row.kind === "transaction",
+            ).length,
+            cloudRows: invalidDateCloud.length,
+            pollenRows: invalidDatePollen.length,
+            transactionEvidenceGaps: 0,
+            transactionEvidenceProviders: [],
+            missingMappings: 0,
+            missingMappingProviders: [],
+            estimatedFx: false,
+            invalidRows: invalidDateRows.length,
+            invalidProviders: providerNames(invalidDateRows),
+            duplicateRows: 0,
+            duplicateProviders: [],
+        });
+    }
+
+    return rows.sort((a, b) => b.month.localeCompare(a.month));
 }

@@ -3,6 +3,7 @@ import type {
     AccountBalance,
     AccountKey,
     AccountProfile,
+    AccountQuestsResponse,
     AudioBinaryResponse,
     AudioGenerateOptions,
     AuthorizeDeviceOptions,
@@ -1484,6 +1485,21 @@ export class Pollinations {
         const url = `${this.baseUrl}/account/key/usage${qs ? `?${qs}` : ""}`;
 
         return this.getJson<UsageResponse>(url);
+    }
+
+    /**
+     * Get the quest catalog with this account's read-only status
+     *
+     * @example
+     * ```ts
+     * const { quests } = await pollinations.accountQuests();
+     * quests.forEach(q => console.log(q.id, q.status));
+     * ```
+     */
+    async accountQuests(): Promise<AccountQuestsResponse> {
+        return this.getJson<AccountQuestsResponse>(
+            `${this.baseUrl}/account/quests`,
+        );
     }
 
     // ============================================================================

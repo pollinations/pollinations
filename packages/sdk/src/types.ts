@@ -680,6 +680,36 @@ export interface DailyUsageResponse {
     count: number;
 }
 
+/** Reward earned by the account for a quest */
+export interface AccountQuestReward {
+    id: string;
+    questId: string | null;
+    title: string;
+    pollenAmount: number;
+    balanceBucket: string;
+    earnedAt: string;
+    claimedAt: string | null;
+}
+
+/** Quest with the authenticated account's read-only status */
+export interface AccountQuest {
+    id: string;
+    title: string;
+    description: string;
+    category: string;
+    state: "available" | "completed" | "coming_soon";
+    status: "open" | "completed" | "coming_soon";
+    rewardAmount: number;
+    balanceBucket: "tier" | "pack";
+    url: string | null;
+    reward: AccountQuestReward | null;
+}
+
+/** Response for GET /account/quests */
+export interface AccountQuestsResponse {
+    quests: AccountQuest[];
+}
+
 /** API key validation response */
 export interface KeyInfo {
     valid: boolean;

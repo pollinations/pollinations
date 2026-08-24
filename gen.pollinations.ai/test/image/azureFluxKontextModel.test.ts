@@ -126,6 +126,32 @@ describe("callAzureFluxKontext", () => {
         });
     });
 
+    it("maps moderation-worded upstream client errors to content policy", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            Response.json(
+                { error: { message: "Request blocked by content filter" } },
+                {
+                    status: 400,
+                    headers: {
+                        "x-ms-request-id": "azure-request-filtered-400",
+                    },
+                },
+            ),
+        );
+
+        await expect(
+            callAzureFluxKontext("blocked output", baseParams, USER_INFO),
+        ).rejects.toMatchObject({
+            status: 422,
+            upstreamStatus: 400,
+            errorCode: "content_policy_violation",
+            requestUrl: new URL(ENDPOINT),
+            upstreamHeaders: {
+                "x-ms-request-id": "azure-request-filtered-400",
+            },
+        });
+    });
+
     it("maps a filtered successful response to a safe client error", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             Response.json(

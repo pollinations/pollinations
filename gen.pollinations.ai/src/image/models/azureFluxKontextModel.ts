@@ -117,6 +117,30 @@ function contentPolicyReason(
     ]);
 }
 
+async function ensureAzureFluxKontextOk(response: Response): Promise<void> {
+    try {
+        await ensureUpstreamOk(response, AZURE_FLUX_KONTEXT_ENDPOINT);
+    } catch (error) {
+        if (!(error instanceof UpstreamError)) throw error;
+
+        const rejectionReason = firstContentPolicyMessage([
+            error.message,
+            error.responseBody,
+        ]);
+        if (!rejectionReason) throw error;
+
+        throw new UpstreamError(CONTENT_POLICY_STATUS, {
+            message: contentPolicyMessage(rejectionReason),
+            errorCode: CONTENT_POLICY_ERROR_CODE,
+            requestUrl: error.requestUrl,
+            upstreamStatus: error.upstreamStatus,
+            responseBody: error.responseBody,
+            upstreamHeaders: error.upstreamHeaders,
+            cause: error,
+        });
+    }
+}
+
 function greatestCommonDivisor(a: number, b: number): number {
     while (b !== 0) {
         [a, b] = [b, a % b];
@@ -216,7 +240,7 @@ export async function callAzureFluxKontext(
 
     logCloudflare(`Kontext request response status: ${response.status}`);
 
-    await ensureUpstreamOk(response, AZURE_FLUX_KONTEXT_ENDPOINT);
+    await ensureAzureFluxKontextOk(response);
 
     const data = (await response.json()) as AzureFluxKontextResponse;
 

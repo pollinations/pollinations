@@ -101,6 +101,8 @@ export type {
     DeviceAuthorization,
     DeviceCodeResponse,
     DeviceTokenResponse,
+    EarningsOptions,
+    EarningsResponse,
     FileContentPart,
     FunctionDefinition,
     ImageContentPart,

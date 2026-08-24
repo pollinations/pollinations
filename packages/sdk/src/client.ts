@@ -17,6 +17,8 @@ import type {
     DeviceAuthorization,
     DeviceCodeResponse,
     DeviceTokenResponse,
+    EarningsOptions,
+    EarningsResponse,
     ImageEditOptions,
     ImageGenerateOptions,
     ImageGenerateV1Options,
@@ -1446,6 +1448,21 @@ export class Pollinations {
         const url = `${this.baseUrl}/account/usage/daily${qs ? `?${qs}` : ""}`;
 
         return this.getJson<DailyUsageResponse>(url);
+    }
+
+    /**
+     * Get developer earnings.
+     */
+    async accountEarnings(
+        options: EarningsOptions = {},
+    ): Promise<EarningsResponse> {
+        const params = new URLSearchParams();
+        if (options.days !== undefined) {
+            params.set("days", String(options.days));
+        }
+        const qs = params.toString() ? `?${params.toString()}` : "";
+        const url = `${this.baseUrl}/account/earnings${qs}`;
+        return this.getJson<EarningsResponse>(url);
     }
 
     /**

@@ -680,6 +680,26 @@ export interface DailyUsageResponse {
     count: number;
 }
 
+export interface EarningsOptions {
+    days?: number;
+}
+
+export interface EarningsRow {
+    date: string;
+    source: string;
+    entity_id: string;
+    entity_name: string;
+    requests: number;
+    baseline_price: number;
+    cost_usd: number;
+    reward_rate: number;
+}
+
+export interface EarningsResponse {
+    daily: EarningsRow[];
+    perEntity: EarningsRow[];
+}
+
 /** API key validation response */
 export interface KeyInfo {
     valid: boolean;

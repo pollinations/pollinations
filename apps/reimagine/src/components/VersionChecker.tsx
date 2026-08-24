@@ -20,6 +20,96 @@ interface VersionCheckerProps {
     forceUpdate?: boolean;
 }
 
+const styles = StyleSheet.create({
+    loadingContainer: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        justifyContent: "center",
+        alignItems: "center",
+        padding: 16,
+    },
+    loadingText: {
+        marginTop: 16,
+        fontSize: 16,
+        textAlign: "center",
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: "rgba(0, 0, 0, 0.8)",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: 16,
+    },
+    modalContent: {
+        borderRadius: 16,
+        padding: 24,
+        width: "100%",
+        maxWidth: 400,
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
+    },
+    modalTitle: {
+        fontSize: 24,
+        fontWeight: "bold",
+        textAlign: "center",
+        marginBottom: 16,
+    },
+    modalMessage: {
+        fontSize: 16,
+        textAlign: "center",
+        marginBottom: 16,
+        lineHeight: 24,
+    },
+    modalDescription: {
+        fontSize: 14,
+        textAlign: "center",
+        marginBottom: 24,
+        lineHeight: 20,
+    },
+    modalButtons: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        gap: 12,
+    },
+    skipButton: {
+        flex: 1,
+        paddingVertical: 14,
+        paddingHorizontal: 16,
+        borderRadius: 8,
+        borderWidth: 1,
+        alignItems: "center",
+    },
+    skipButtonText: {
+        fontSize: 16,
+        fontWeight: "500",
+    },
+    updateButton: {
+        flex: 1,
+        paddingVertical: 14,
+        paddingHorizontal: 16,
+        borderRadius: 8,
+        alignItems: "center",
+    },
+    fullWidthButton: {
+        flex: 0,
+        width: "100%",
+    },
+    updateButtonText: {
+        color: "#fff",
+        fontSize: 16,
+        fontWeight: "bold",
+    },
+});
+
 export default function VersionChecker({
     children,
     packageName = "com.ismafly.promptexploratorapp",
@@ -37,26 +127,26 @@ export default function VersionChecker({
     useEffect(() => {
         if (!checkOnEveryRender && hasChecked) return;
 
+        const checkVersion = async () => {
+            setIsChecking(true);
+
+            try {
+                const result = await VersionService.checkForUpdate();
+                setVersionCheck(result);
+                setHasChecked(true);
+
+                if (result.needsUpdate) {
+                    setShowUpdateModal(true);
+                }
+            } catch (error) {
+                console.error("Erreur vérification version:", error);
+            } finally {
+                setIsChecking(false);
+            }
+        };
+
         checkVersion();
     }, [checkOnEveryRender, hasChecked]);
-
-    const checkVersion = async () => {
-        setIsChecking(true);
-
-        try {
-            const result = await VersionService.checkForUpdate();
-            setVersionCheck(result);
-            setHasChecked(true);
-
-            if (result.needsUpdate) {
-                setShowUpdateModal(true);
-            }
-        } catch (error) {
-            console.error("Erreur vérification version:", error);
-        } finally {
-            setIsChecking(false);
-        }
-    };
 
     const handleUpdate = () => {
         VersionService.openPlayStore(packageName);
@@ -186,89 +276,3 @@ export default function VersionChecker({
         </>
     );
 }
-
-const styles = StyleSheet.create({
-    loadingContainer: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        padding: 16,
-    },
-    loadingText: {
-        marginTop: 16,
-        fontSize: 16,
-        textAlign: "center",
-    },
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: "rgba(0, 0, 0, 0.8)",
-        justifyContent: "center",
-        alignItems: "center",
-        padding: 16,
-    },
-    modalContent: {
-        borderRadius: 16,
-        padding: 24,
-        width: "100%",
-        maxWidth: 400,
-        shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
-        elevation: 5,
-    },
-    modalTitle: {
-        fontSize: 24,
-        fontWeight: "bold",
-        textAlign: "center",
-        marginBottom: 16,
-    },
-    modalMessage: {
-        fontSize: 16,
-        textAlign: "center",
-        marginBottom: 16,
-        lineHeight: 24,
-    },
-    modalDescription: {
-        fontSize: 14,
-        textAlign: "center",
-        marginBottom: 24,
-        lineHeight: 20,
-    },
-    modalButtons: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        gap: 12,
-    },
-    skipButton: {
-        flex: 1,
-        paddingVertical: 14,
-        paddingHorizontal: 16,
-        borderRadius: 8,
-        borderWidth: 1,
-        alignItems: "center",
-    },
-    skipButtonText: {
-        fontSize: 16,
-        fontWeight: "500",
-    },
-    updateButton: {
-        flex: 1,
-        paddingVertical: 14,
-        paddingHorizontal: 16,
-        borderRadius: 8,
-        alignItems: "center",
-    },
-    fullWidthButton: {
-        flex: 0,
-        width: "100%",
-    },
-    updateButtonText: {
-        color: "#fff",
-        fontSize: 16,
-        fontWeight: "bold",
-    },
-});

@@ -344,9 +344,25 @@ export function buildRunway(
             ? null
             : balancesInUsd(openingBalances, openingBalanceDate.slice(0, 7));
     const cashBalanceByMonth = new Map<string, number>();
+    let preWindowMovementsUsd = 0;
     if (openingBalanceDate) {
         const nativeBalances = new Map(openingBalances);
         const openingMonth = openingBalanceDate.slice(0, 7);
+        if (openingMonth < WINDOW_START) {
+            for (const row of bankRows) {
+                if (
+                    row.date >= openingBalanceDate &&
+                    row.date < `${WINDOW_START}-01`
+                ) {
+                    addAmount(nativeBalances, row.currency, Number(row.amount));
+                    preWindowMovementsUsd += toUsd(
+                        row.amount,
+                        row.currency,
+                        `${WINDOW_START}-01`,
+                    );
+                }
+            }
+        }
         let nativeBalanceIntegrityLost = false;
         for (const month of months) {
             if (month < openingMonth) continue;
@@ -375,6 +391,23 @@ export function buildRunway(
                 );
             }
         }
+    }
+
+    if (Math.abs(preWindowMovementsUsd) > 0.005) {
+        rows.push({
+            category: "balance_sheet",
+            vendor: "pre-window movements",
+            forecastMethod: null,
+            values: Object.fromEntries(
+                columnSpecs.map((column) => [
+                    column.id,
+                    column.month === WINDOW_START && column.kind === "actual"
+                        ? preWindowMovementsUsd
+                        : 0,
+                ]),
+            ),
+            assumptions: {},
+        });
     }
 
     const fxRevaluationValues: Record<string, number> = {};
@@ -421,13 +454,13 @@ export function buildRunway(
             ),
             assumptions: {},
         });
-        rows.sort(
-            (a, b) =>
-                categoryRank(a.category) - categoryRank(b.category) ||
-                a.category.localeCompare(b.category) ||
-                a.vendor.localeCompare(b.vendor),
-        );
     }
+    rows.sort(
+        (a, b) =>
+            categoryRank(a.category) - categoryRank(b.category) ||
+            a.category.localeCompare(b.category) ||
+            a.vendor.localeCompare(b.vendor),
+    );
 
     const latestTransactionDate = bankRows
         .map((row) => row.date)

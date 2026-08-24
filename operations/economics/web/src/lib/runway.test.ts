@@ -235,6 +235,44 @@ describe("buildRunway", () => {
         expect(fxRow?.values["2026-02:actual"]).toBeCloseTo(8.6, 2);
     });
 
+    it("carries post-anchor movements into the accounting window", () => {
+        const result = buildRunway(
+            [
+                opening(1_000, { date: "2025-12-30" }),
+                transaction({
+                    entry_id: "december-inflow",
+                    date: "2025-12-31",
+                    vendor: "stripe",
+                    category: "revenue",
+                    amount: 200,
+                }),
+                transaction({
+                    entry_id: "january-cost",
+                    date: "2026-01-10",
+                    amount: -100,
+                }),
+            ],
+            [
+                forecast(),
+                forecast({
+                    entry_id: "forecast-2026-09-aws",
+                    month: "2026-09-01",
+                }),
+            ],
+            NOW,
+        );
+        const january = result.columns.find(
+            (column) => column.id === "2026-01:actual",
+        );
+        const adjustment = result.rows.find(
+            (row) => row.vendor === "pre-window movements",
+        );
+
+        expect(january?.netUsd).toBe(100);
+        expect(january?.runningCashUsd).toBe(1_100);
+        expect(adjustment?.values["2026-01:actual"]).toBe(200);
+    });
+
     it("rejects multiple opening dates instead of choosing one", () => {
         const result = buildRunway(
             [

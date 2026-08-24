@@ -155,6 +155,46 @@ def assert_pollen_reason_transitions(rows, current_rows, metric_fields):
         )
 
 
+def assert_opening_balance_integrity(rows, current_rows):
+    current_by_id = {row["entry_id"]: row for row in current_rows}
+    current_openings = [
+        row for row in current_rows if row.get("kind") == "opening_balance"
+    ]
+    current_dates = {row.get("date") for row in current_openings}
+    current_currencies = [row.get("currency") for row in current_openings]
+    if len(current_dates) > 1 or len(current_currencies) != len(
+        set(current_currencies)
+    ):
+        raise RuntimeError("Stored opening balances already violate ledger integrity")
+
+    invalid = []
+    existing_by_currency = {row.get("currency"): row for row in current_openings}
+    for row in rows:
+        current = current_by_id.get(row["entry_id"])
+        if current is not None and row.get("kind") != current.get("kind"):
+            invalid.append(f"{row['entry_id']}.kind")
+            continue
+        if row.get("kind") != "opening_balance":
+            continue
+        if current is not None:
+            if any(
+                row.get(field) != current.get(field)
+                for field in ("date", "currency")
+            ):
+                invalid.append(f"{row['entry_id']}.anchor")
+            continue
+        existing = existing_by_currency.get(row.get("currency"))
+        if existing is not None:
+            invalid.append(f"{row['entry_id']}.currency")
+        if current_dates and row.get("date") not in current_dates:
+            invalid.append(f"{row['entry_id']}.date")
+    if invalid:
+        raise RuntimeError(
+            "Opening-balance corrections violate ledger integrity: "
+            + ", ".join(invalid)
+        )
+
+
 def canonical_pollen_provider(month, provider, model):
     if month == "2026-03" and provider == "io.net" and model in {"flux", "zimage"}:
         return "vast.ai"

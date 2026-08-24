@@ -10,6 +10,7 @@ from tinybird.client import TinyB
 
 from publisher_safety import (
     assert_newer_versions,
+    assert_opening_balance_integrity,
     latest_version_query,
     validate_recorded_at,
 )
@@ -213,6 +214,7 @@ async def main():
 
     result = {}
     if not args.verify_only:
+        assert_opening_balance_integrity(expected, before)
         assert_newer_versions(
             expected,
             await current_versions(admin, [row["entry_id"] for row in expected]),

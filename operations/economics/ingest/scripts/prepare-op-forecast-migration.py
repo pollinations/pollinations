@@ -127,8 +127,17 @@ def opening_balances(rows):
             continue
         current = by_currency.get(currency)
         timestamp = datetime.strptime(row["Date Time"], "%d-%m-%Y %H:%M:%S.%f")
+        balance = parse_number(row["Running Balance"])
+        if (
+            current is not None
+            and timestamp == current[0]
+            and abs(balance - current[1]) > 0.000000001
+        ):
+            raise RuntimeError(
+                f"Conflicting {currency} running balances at {row['Date Time']}"
+            )
         if current is None or timestamp > current[0]:
-            by_currency[currency] = (timestamp, parse_number(row["Running Balance"]))
+            by_currency[currency] = (timestamp, balance)
     return {
         currency: balance
         for currency, (_, balance) in by_currency.items()

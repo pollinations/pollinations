@@ -6,6 +6,7 @@ from publisher_safety import (
     assert_immutable_fields,
     assert_no_new_duplicates,
     assert_newer_versions,
+    assert_opening_balance_integrity,
     assert_pollen_reason_transitions,
     canonical_pollen_provider,
     latest_version_query,
@@ -108,6 +109,19 @@ class PublisherSafetyTest(unittest.TestCase):
                 ],
                 ["credit", "paid"],
             )
+        with self.assertRaisesRegex(RuntimeError, "source=tombstone"):
+            assert_explicit_tombstones(
+                [
+                    {
+                        "entry_id": "a",
+                        "source": "manual",
+                        "credit": 0,
+                        "paid": 0,
+                        "evidence": "superseded by detail rows",
+                    }
+                ],
+                ["credit", "paid"],
+            )
 
     def test_allows_only_safe_pollen_retractions(self):
         current = [
@@ -157,18 +171,40 @@ class PublisherSafetyTest(unittest.TestCase):
                 current,
                 ["price_paid"],
             )
-        with self.assertRaisesRegex(RuntimeError, "source=tombstone"):
-            assert_explicit_tombstones(
+
+    def test_guards_opening_balances_across_publish_runs(self):
+        current = [
+            {
+                "entry_id": "opening-eur",
+                "kind": "opening_balance",
+                "date": "2026-01-01",
+                "currency": "EUR",
+            },
+            {
+                "entry_id": "bank-a",
+                "kind": "transaction",
+                "date": "2026-01-02",
+                "currency": "EUR",
+            },
+        ]
+        assert_opening_balance_integrity(
+            [{**current[0], "amount": 100}], current
+        )
+        with self.assertRaisesRegex(RuntimeError, "new-opening.currency"):
+            assert_opening_balance_integrity(
                 [
                     {
-                        "entry_id": "a",
-                        "source": "manual",
-                        "credit": 0,
-                        "paid": 0,
-                        "evidence": "superseded by detail rows",
+                        "entry_id": "new-opening",
+                        "kind": "opening_balance",
+                        "date": "2026-01-01",
+                        "currency": "EUR",
                     }
                 ],
-                ["credit", "paid"],
+                current,
+            )
+        with self.assertRaisesRegex(RuntimeError, "bank-a.kind"):
+            assert_opening_balance_integrity(
+                [{**current[1], "kind": "opening_balance"}], current
             )
 
     def test_matches_the_endpoint_pollen_provider_relabel(self):

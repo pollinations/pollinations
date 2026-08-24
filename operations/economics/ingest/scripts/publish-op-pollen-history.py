@@ -2,12 +2,14 @@
 
 import argparse
 import json
+import tempfile
 import time
 from pathlib import Path
 
 from tinybird.tb.client import TinyB
 
 from publisher_safety import (
+    assert_base_versions,
     assert_newer_versions,
     assert_pollen_reason_transitions,
     canonical_pollen_provider,
@@ -208,6 +210,19 @@ def write_snapshot(path, rows):
     path.write_text(json.dumps({"data": rows}, indent=2) + "\n")
 
 
+def append_input_path(rows, temporary_directory):
+    path = Path(temporary_directory) / "op-pollen-history.ndjson"
+    fields = {*HISTORY_FIELDS, "recorded_at"}
+    path.write_text(
+        "".join(
+            json.dumps({key: value for key, value in row.items() if key in fields})
+            + "\n"
+            for row in rows
+        )
+    )
+    return path
+
+
 def main():
     args = arguments()
     expected = read_ndjson(args.input.resolve())
@@ -272,10 +287,9 @@ def main():
                 if float(row[field]) < 0:
                     raise RuntimeError(f"{row['entry_id']} has negative {field}")
 
-    assert_newer_versions(
-        expected,
-        current_versions(admin, [row["entry_id"] for row in expected]),
-    )
+    versions = current_versions(admin, [row["entry_id"] for row in expected])
+    assert_base_versions(expected, versions)
+    assert_newer_versions(expected, versions)
     assert_pollen_reason_transitions(expected, before, METRICS)
 
     tombstone_expected = []
@@ -285,9 +299,11 @@ def main():
             endpoint_before, expected, before
         )
 
-    result = append.datasource_append_data(
-        "op_pollen_history", args.input.resolve(), mode="append", format="ndjson"
-    )
+    with tempfile.TemporaryDirectory() as temporary_directory:
+        append_path = append_input_path(expected, temporary_directory)
+        result = append.datasource_append_data(
+            "op_pollen_history", append_path, mode="append", format="ndjson"
+        )
     if result.get("error"):
         raise RuntimeError(f"Tinybird append failed: {result['error']}")
 

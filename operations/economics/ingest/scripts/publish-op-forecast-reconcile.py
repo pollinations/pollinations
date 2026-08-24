@@ -3,12 +3,14 @@
 import argparse
 import asyncio
 import json
+import tempfile
 from datetime import datetime
 from pathlib import Path
 
 from tinybird.client import TinyB
 
 from publisher_safety import (
+    assert_base_versions,
     assert_no_new_duplicates,
     assert_newer_versions,
     latest_version_query,
@@ -32,6 +34,7 @@ FIELDS = [
     "source",
     "evidence",
 ]
+DATASOURCE_FIELDS = [*FIELDS, "recorded_at"]
 FORECAST_METHODS = {"fixed", "funded", "last", "one_off", "canceled"}
 FORECAST_CURRENCIES = {"EUR", "USD"}
 FORECAST_IDENTITY_FIELDS = [
@@ -245,6 +248,18 @@ def write_snapshot(path, rows):
     path.write_text(json.dumps({"data": rows}, indent=2) + "\n")
 
 
+def append_input_path(rows, temporary_directory):
+    path = Path(temporary_directory) / "op-forecast.ndjson"
+    path.write_text(
+        "".join(
+            json.dumps({key: value for key, value in row.items() if key in DATASOURCE_FIELDS})
+            + "\n"
+            for row in rows
+        )
+    )
+    return path
+
+
 async def main():
     args = arguments()
     expected = read_ndjson(args.input.resolve())
@@ -256,14 +271,20 @@ async def main():
     result = {}
     if not args.verify_only:
         assert_no_new_duplicates(expected, before, FORECAST_IDENTITY_FIELDS)
+        versions = await current_versions(
+            admin, [row["entry_id"] for row in expected]
+        )
+        assert_base_versions(expected, versions)
         assert_newer_versions(
             expected,
-            await current_versions(admin, [row["entry_id"] for row in expected]),
+            versions,
         )
         append = await client_for(workspace_name, append=True)
-        result = await append.datasource_append_data(
-            "op_forecast", args.input.resolve(), mode="append", format="ndjson"
-        )
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            append_path = append_input_path(expected, temporary_directory)
+            result = await append.datasource_append_data(
+                "op_forecast", append_path, mode="append", format="ndjson"
+            )
         if result.get("error"):
             raise RuntimeError(f"Tinybird append failed: {result['error']}")
 

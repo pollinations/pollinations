@@ -49,7 +49,7 @@ jobs:
         run: |
           echo "Running Biome on changed files:"
           echo "${{ steps.changed-files.outputs.files }}"
-          echo "${{ steps.changed-files.outputs.files }}" | xargs npx biome check --write
+          echo "${{ steps.changed-files.outputs.files }}" | xargs npx biome check
 
       - name: Check for formatting changes
         if: steps.changed-files.outputs.any_changed == 'true'

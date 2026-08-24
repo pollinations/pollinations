@@ -12,6 +12,7 @@ from publisher_safety import (
     assert_base_versions,
     assert_explicit_tombstones,
     assert_newer_versions,
+    assert_production_confirmation,
     latest_version_query,
     validate_recorded_at,
 )
@@ -53,6 +54,7 @@ def arguments():
     parser.add_argument("before_snapshot", type=Path)
     parser.add_argument("after_snapshot", type=Path)
     parser.add_argument("--verify-only", action="store_true")
+    parser.add_argument("--confirm-production", action="store_true")
     return parser.parse_args()
 
 
@@ -221,6 +223,9 @@ def append_input_path(rows, fields, temporary_directory):
 
 def main():
     args = arguments()
+    assert_production_confirmation(
+        args.environment, args.verify_only, args.confirm_production
+    )
     input_path = args.input.resolve()
     expected = read_ndjson(input_path)
     workspace_name = WORKSPACES[args.environment]

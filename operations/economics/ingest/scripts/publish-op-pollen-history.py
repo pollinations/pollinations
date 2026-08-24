@@ -12,6 +12,7 @@ from publisher_safety import (
     assert_base_versions,
     assert_newer_versions,
     assert_pollen_reason_transitions,
+    assert_production_confirmation,
     canonical_pollen_provider,
     latest_version_query,
     validate_recorded_at,
@@ -54,6 +55,7 @@ def arguments():
     parser.add_argument("input", type=Path)
     parser.add_argument("before_snapshot", type=Path)
     parser.add_argument("after_snapshot", type=Path)
+    parser.add_argument("--confirm-production", action="store_true")
     return parser.parse_args()
 
 
@@ -225,6 +227,9 @@ def append_input_path(rows, temporary_directory):
 
 def main():
     args = arguments()
+    assert_production_confirmation(
+        args.environment, False, args.confirm_production
+    )
     expected = read_ndjson(args.input.resolve())
     admin, append = clients(WORKSPACES[args.environment])
     before = effective_history(admin)

@@ -12,6 +12,7 @@ from tinybird.client import TinyB
 from publisher_safety import (
     assert_base_versions,
     assert_newer_versions,
+    assert_production_confirmation,
     assert_opening_balance_integrity,
     latest_version_query,
     validate_recorded_at,
@@ -48,6 +49,7 @@ def arguments():
     parser.add_argument("before_snapshot", type=Path)
     parser.add_argument("after_snapshot", type=Path)
     parser.add_argument("--verify-only", action="store_true")
+    parser.add_argument("--confirm-production", action="store_true")
     return parser.parse_args()
 
 
@@ -221,6 +223,9 @@ def append_input_path(rows, temporary_directory):
 
 async def main():
     args = arguments()
+    assert_production_confirmation(
+        args.environment, args.verify_only, args.confirm_production
+    )
     expected = read_ndjson(args.input.resolve())
     workspace_name = WORKSPACES[args.environment]
     admin = await client_for(workspace_name)

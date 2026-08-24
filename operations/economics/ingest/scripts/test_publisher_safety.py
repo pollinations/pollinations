@@ -8,6 +8,7 @@ from publisher_safety import (
     assert_newer_versions,
     assert_opening_balance_integrity,
     assert_pollen_reason_transitions,
+    assert_production_confirmation,
     canonical_pollen_provider,
     latest_version_query,
     validate_recorded_at,
@@ -15,6 +16,14 @@ from publisher_safety import (
 
 
 class PublisherSafetyTest(unittest.TestCase):
+    def test_requires_an_explicit_production_append_confirmation(self):
+        with self.assertRaisesRegex(RuntimeError, "confirm-production"):
+            assert_production_confirmation("production", False, False)
+
+        assert_production_confirmation("production", True, False)
+        assert_production_confirmation("production", False, True)
+        assert_production_confirmation("staging", False, False)
+
     def test_rejects_missing_or_invalid_recorded_at(self):
         with self.assertRaisesRegex(RuntimeError, "valid recorded_at"):
             validate_recorded_at([{"entry_id": "a"}])

@@ -1,6 +1,13 @@
 from datetime import datetime
 
 
+def assert_production_confirmation(environment, verify_only, confirmed):
+    if environment == "production" and not verify_only and not confirmed:
+        raise RuntimeError(
+            "Production append requires the explicit --confirm-production flag"
+        )
+
+
 def parse_recorded_at(value):
     try:
         return datetime.fromisoformat(str(value))

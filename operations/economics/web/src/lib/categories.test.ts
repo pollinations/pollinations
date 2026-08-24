@@ -4,6 +4,7 @@ import {
     categoryLabel,
     cloudCategory,
     forecastCategory,
+    runwayLineItem,
     transactionCategory,
 } from "./categories";
 
@@ -49,6 +50,10 @@ describe("canonical categories", () => {
         expect(transactionCategory(transaction("perplexity", "cloud"))).toBe(
             "compute",
         );
+        expect(transactionCategory(transaction("tele2", "office"))).toBe(
+            "operations",
+        );
+        expect(runwayLineItem("operations", "tele2")).toBe("Telecom");
     });
 
     it("separates human subscriptions from provider usage", () => {

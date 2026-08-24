@@ -88,7 +88,7 @@ const TRANSACTION_VENDOR_CATEGORIES: Record<string, Category> = {
     "space-berlin": "office",
     stability: "compute",
     stripe: "revenue",
-    tele2: "office",
+    tele2: "operations",
     thot: "payroll",
     tinybird: "infrastructure",
     tools: "operations",
@@ -166,6 +166,13 @@ export function transactionCategory(
 
 export function isBankMovement(row: Pick<OpTransactionRow, "kind">): boolean {
     return row.kind === "transaction";
+}
+
+export function runwayLineItem(category: string, vendor: string): string {
+    if (category === "operations" && normalize(vendor) === "tele2") {
+        return "Telecom";
+    }
+    return vendor;
 }
 
 export function cloudCategory(row: Pick<OpCloudRow, "type">): CategoryValue {

@@ -6,6 +6,7 @@ import type {
 import {
     EXPENSE_CATEGORY_ORDER,
     forecastCategory,
+    runwayLineItem,
     transactionCategory,
 } from "./categories";
 import { canConvertToUsd, toUsd } from "./fx";
@@ -168,8 +169,9 @@ export function buildRunway(
         if (!MONTH_RE.test(month) || month < WINDOW_START) continue;
         const category = transactionCategory(row);
         const vendor = normalizedVendor(row.vendor);
+        const lineItem = runwayLineItem(category, vendor);
         const amountUsd = toUsd(row.amount, row.currency, row.date);
-        const key = matrixKey(category, vendor);
+        const key = matrixKey(category, lineItem);
         const monthValues =
             actualByMonth.get(month) ?? new Map<string, number>();
         addAmount(monthValues, key, amountUsd);
@@ -178,7 +180,7 @@ export function buildRunway(
             actualPlanMatchByMonth.get(month) ?? new Map<string, number>();
         addAmount(planMatchValues, planMatchKey(vendor, amountUsd), amountUsd);
         actualPlanMatchByMonth.set(month, planMatchValues);
-        identities.set(key, { category, vendor });
+        identities.set(key, { category, vendor: lineItem });
         observedMonths.add(month);
     }
 
@@ -195,6 +197,7 @@ export function buildRunway(
         const category = forecastCategory({
             category: String(fact.category ?? ""),
         });
+        const lineItem = runwayLineItem(category, vendor);
         const invalidCategory = category === "uncategorized";
         const invalidMethod = !FORECAST_METHODS.has(fact.method);
         const invalidAmount = !Number.isFinite(Number(fact.amount));
@@ -215,7 +218,7 @@ export function buildRunway(
             if (invalidCurrency) invalidForecastReasons.add("currency");
             continue;
         }
-        const key = matrixKey(category, vendor);
+        const key = matrixKey(category, lineItem);
         const amountUsd = toUsd(fact.amount, fact.currency, fact.month);
         const assumption = { ...fact, category, vendor, amountUsd };
         assumptions.push(assumption);
@@ -232,7 +235,7 @@ export function buildRunway(
         const cellAssumptions = assumptionsByCell.get(cellKey) ?? [];
         cellAssumptions.push(assumption);
         assumptionsByCell.set(cellKey, cellAssumptions);
-        identities.set(key, { category, vendor });
+        identities.set(key, { category, vendor: lineItem });
         observedMonths.add(month);
     }
 

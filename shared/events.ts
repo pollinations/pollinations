@@ -33,6 +33,40 @@ export type TinybirdErrorEvent = {
     api_key_id?: string;
 };
 
+/**
+ * Exactly one best-effort delivery: no retry, no backoff. For analytics
+ * derived from an already-committed financial settlement, where a lost row
+ * is logged and accepted rather than re-sent.
+ */
+export async function sendToTinybirdOnce(
+    event: TinybirdEvent,
+    tinybirdIngestUrl: string,
+    tinybirdIngestToken: string,
+    log: Logger,
+): Promise<void> {
+    try {
+        const response = await fetch(tinybirdIngestUrl, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${tinybirdIngestToken}`,
+                "Content-Type": "application/x-ndjson",
+            },
+            body: JSON.stringify(removeUnset(event)),
+        });
+        if (!response.ok) {
+            log.warn("Tinybird rejected billing event {id}: status={status}", {
+                id: event.id,
+                status: response.status,
+            });
+        }
+    } catch (error) {
+        log.warn("Tinybird billing event {id} not delivered: {error}", {
+            id: event.id,
+            error: error instanceof Error ? error.message : String(error),
+        });
+    }
+}
+
 export async function sendToTinybird(
     event: TinybirdEvent,
     tinybirdIngestUrl: string,

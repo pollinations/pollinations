@@ -39,12 +39,13 @@ import {
  */
 
 /**
- * How long an unclaimed reservation survives before the expiry sweep releases
- * it back to the key. Must comfortably exceed the durable media coordinator's
- * 300-second request lifetime: a settlement that arrives late but in time is
- * reconciled against its reservation, never double-reserved.
+ * How long an authorization stays settleable (and its reservation held)
+ * before the expiry sweep releases it. 48 hours: services may emit their
+ * settlements once a day, and the durable media coordinator's 300-second
+ * request lifetime fits with room to spare. After this, settlement is
+ * rejected and nothing is charged.
  */
-export const SERVICE_AUTHORIZATION_TTL_SECONDS = 900;
+export const SERVICE_AUTHORIZATION_TTL_SECONDS = 48 * 60 * 60;
 
 const P = POLLEN_BILLING_PRECISION;
 
@@ -70,7 +71,7 @@ export type SettledEventOutcome = {
     billedPrice: number;
     payerBucket: Bucket | null;
     postDeductionPackBalance: number | null;
-    /** The derived analytics row for this settlement; send once, best effort. */
+    /** The derived analytics row for this settlement: one best-effort write, never retried. */
     tinybirdEvent: TinybirdEvent;
 };
 
@@ -350,10 +351,20 @@ export async function settleServiceBillingEvents(
     );
     const duplicates: string[] = [];
     const pending: ServiceBillableEvent[] = [];
-    const seen = new Set<string>();
+    // Within one call, a repeated event id is one semantic event only if
+    // its financial payload is identical; otherwise the whole call is a
+    // conflict.
+    const seen = new Map<string, string>();
     for (const event of input.events) {
-        if (seen.has(event.eventId)) continue;
-        seen.add(event.eventId);
+        const fingerprint = eventFingerprint(event);
+        const earlier = seen.get(event.eventId);
+        if (earlier !== undefined) {
+            if (earlier !== fingerprint) {
+                return { ok: false, error: "event_conflict" };
+            }
+            continue;
+        }
+        seen.set(event.eventId, fingerprint);
         const known = existing.get(event.eventId);
         if (known === undefined) {
             pending.push(event);

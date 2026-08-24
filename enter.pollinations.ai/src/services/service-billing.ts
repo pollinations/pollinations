@@ -13,7 +13,7 @@ import {
     expireServiceAuthorizations,
     settleServiceBillingEvents,
 } from "@shared/billing/service-billing.ts";
-import { sendToTinybird } from "@shared/events.ts";
+import { sendToTinybirdOnce } from "@shared/events.ts";
 import type {
     ServiceAuthorizeInput,
     ServiceAuthorizeResult,
@@ -155,8 +155,9 @@ export async function authorizeServiceRequest(
 
 /**
  * Settle billable events. Money moves atomically in the engine; the Tinybird
- * row per newly settled event is one derived write afterwards (a failure is
- * logged, never retried), backgrounded through `waitUntil` when given one.
+ * row per newly settled event is exactly one best-effort fetch afterwards
+ * (a failure is logged, never retried), backgrounded through `waitUntil`
+ * when given one.
  */
 export async function settleServiceEvents(
     env: CloudflareBindings,
@@ -174,7 +175,7 @@ export async function settleServiceEvents(
 
     for (const outcome of result.outcomes) {
         background(
-            sendToTinybird(
+            sendToTinybirdOnce(
                 outcome.tinybirdEvent,
                 env.TINYBIRD_INGEST_URL,
                 env.TINYBIRD_INGEST_TOKEN,

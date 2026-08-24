@@ -13,7 +13,9 @@ import {
     serviceAuthorization,
     serviceBillingEvent,
 } from "@shared/db/service-billing.ts";
+import { createFetchMock } from "@shared/test/mocks/fetch.ts";
 import { createTestR2Bucket } from "@shared/test/mocks/r2.ts";
+import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
@@ -220,7 +222,13 @@ async function uploadViaForm(
 }
 
 describe("media.pollinations.ai", () => {
+    // Enter's settlement writes one analytics row to Tinybird after each
+    // upload; the shared Tinybird mock absorbs it (and asserts nothing else
+    // leaves the worker) instead of a dropped connection to localhost.
+    const mocks = createFetchMock({ tinybird: createMockTinybird() });
+
     beforeAll(async () => {
+        await mocks.enable("tinybird");
         await seedIdentities();
     });
 

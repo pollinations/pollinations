@@ -4,7 +4,7 @@ import {
     createServiceAuthorization,
     settleServiceBillingEvents,
 } from "@shared/billing/service-billing.ts";
-import { sendToTinybird } from "@shared/events.ts";
+import { sendToTinybirdOnce } from "@shared/events.ts";
 import {
     type McpUsageReceipt,
     parseMcpUsageHeaders,
@@ -85,7 +85,7 @@ export async function authorizeMcpUsage(
     return created.authorizationId;
 }
 
-/** Settle the tool's receipt; the Tinybird row is one derived write after. */
+/** Settle the tool's receipt; then exactly one best-effort Tinybird write. */
 export async function settleMcpUsage(
     env: CloudflareBindings,
     caller: McpCaller,
@@ -139,7 +139,7 @@ export async function settleMcpUsage(
     }
     for (const outcome of result.outcomes) {
         waitUntil(
-            sendToTinybird(
+            sendToTinybirdOnce(
                 outcome.tinybirdEvent,
                 env.TINYBIRD_INGEST_URL,
                 env.TINYBIRD_INGEST_TOKEN,

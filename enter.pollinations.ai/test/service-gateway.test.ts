@@ -473,6 +473,32 @@ describe("ServiceGateway", () => {
         );
         expect(authorized.ok).toBe(true);
         if (!authorized.ok) return;
+        const untouched = await userBalances();
+
+        // Within one call too: a repeated id with a different payload
+        // settles nothing, an identical repeat is one event.
+        const inCall = await settleServiceEvents(env, {
+            authorizationId: authorized.authorizationId,
+            events: [
+                { eventId: "gen", eventType: "media.upload", price: 2 },
+                { eventId: "gen", eventType: "media.upload", price: 3 },
+            ],
+        });
+        expect(inCall).toEqual({ ok: false, error: "event_conflict" });
+        expect(await userBalances()).toEqual(untouched);
+        const repeated = await settleServiceEvents(env, {
+            authorizationId: authorized.authorizationId,
+            events: [
+                { eventId: "dup", eventType: "media.upload", price: 1 },
+                { eventId: "dup", eventType: "media.upload", price: 1 },
+            ],
+        });
+        expect(repeated).toEqual({
+            ok: true,
+            settled: ["dup"],
+            duplicates: [],
+        });
+        expect(untouched.pack - (await userBalances()).pack).toBeCloseTo(1);
         const first = await settleServiceEvents(env, {
             authorizationId: authorized.authorizationId,
             events: [{ eventId: "gen", eventType: "media.upload", price: 2 }],
@@ -491,7 +517,7 @@ describe("ServiceGateway", () => {
         });
         expect(conflicting).toEqual({ ok: false, error: "event_conflict" });
         expect(await userBalances()).toEqual(after);
-        expect(await db().select().from(serviceBillingEvent)).toHaveLength(1);
+        expect(await db().select().from(serviceBillingEvent)).toHaveLength(2);
     });
 
     test("a key deleted after authorize settles within its reservation", async ({

@@ -114,7 +114,8 @@ export type ServiceSettleResult =
 /**
  * Why nothing was settled: the authorization is unknown, was canceled or
  * expired before settlement (late settlements never charge), or an event id
- * was reused with a different financial payload.
+ * was reused — within the call or against the ledger — with a different
+ * financial payload. Identical repeats of an event id are one event.
  */
 export type ServiceSettleError =
     | "unknown_authorization"

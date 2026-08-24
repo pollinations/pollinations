@@ -368,4 +368,37 @@ describe("buildRunway", () => {
             "Native bank balance becomes negative in USD (2026-08); add missing statement movements before calculating cash.",
         );
     });
+
+    it("does not treat bank rows beyond the forecast horizon as exhaustion", () => {
+        const result = buildRunway(
+            [
+                opening(),
+                transaction({
+                    entry_id: "future-refund",
+                    date: "2027-05-01",
+                    vendor: "deel",
+                    category: "balance_sheet",
+                    amount: 500,
+                }),
+            ],
+            [
+                forecast({ amount: -100 }),
+                forecast({
+                    entry_id: "forecast-2026-09-aws",
+                    month: "2026-09-01",
+                    amount: -100,
+                }),
+                forecast({
+                    entry_id: "forecast-2026-10-aws",
+                    month: "2026-10-01",
+                    amount: -100,
+                }),
+            ],
+            NOW,
+        );
+
+        expect(result.runwayMonths).toBe(2);
+        expect(result.runwayExhaustedMonth).toBeNull();
+        expect(result.runwayCapped).toBe(true);
+    });
 });

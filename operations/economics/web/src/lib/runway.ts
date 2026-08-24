@@ -436,7 +436,9 @@ export function buildRunway(
         } else {
             const futureColumns = columns.filter(
                 (column) =>
-                    column.kind === "forecast" && column.month > currentMonth,
+                    column.kind === "forecast" &&
+                    column.month > currentMonth &&
+                    column.month <= (lastFutureForecastMonth ?? currentMonth),
             );
             for (const column of futureColumns) {
                 if (

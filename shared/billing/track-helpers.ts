@@ -210,13 +210,13 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
     }
 
     // 1. Resolve the two independent "who else gets money" inputs.
-    const markup = await resolveDevMarkup(
+    let markup = await resolveDevMarkup(
         db,
         byopClientKeyId,
         totalPrice,
         userId,
     );
-    const communityModelReward = resolveCommunityModelReward(
+    let communityModelReward = resolveCommunityModelReward(
         communityModelRewardInput,
         totalPrice,
         userId,
@@ -241,6 +241,20 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
             );
             payerBucket = deduction.bucket;
             postDeductionPackBalance = deduction.postDeductionPackBalance;
+            if (
+                deduction.postDeductionBalance != null &&
+                deduction.postDeductionBalance < 0
+            ) {
+                markup = null;
+                communityModelReward = null;
+                log.warn(
+                    "Suppressed generation credits because the payer's {bucket} balance is negative after deduction ({balance})",
+                    {
+                        bucket: payerBucket,
+                        balance: deduction.postDeductionBalance,
+                    },
+                );
+            }
         }
 
         // API key budgets are decremented by the amount the user authorized the
@@ -424,14 +438,16 @@ async function deductUserBalance(
 ): Promise<{
     bucket: Bucket | null;
     postDeductionPackBalance: number | null;
+    postDeductionBalance: number | null;
 }> {
     try {
-        const { ok, bucket, packBalance } = await atomicDeductUserBalance(
-            db,
-            userId,
-            amount,
-            modelPaidOnly ?? false,
-        );
+        const { ok, bucket, packBalance, postDeductionBalance } =
+            await atomicDeductUserBalance(
+                db,
+                userId,
+                amount,
+                modelPaidOnly ?? false,
+            );
         if (!ok) {
             throw new Error(
                 `User balance deduction affected 0 rows for ${userId}`,
@@ -453,6 +469,7 @@ async function deductUserBalance(
         return {
             bucket,
             postDeductionPackBalance: bucket === "pack" ? packBalance : null,
+            postDeductionBalance,
         };
     } catch (error) {
         log.error("Failed to decrement user balance for {userId}: {error}", {

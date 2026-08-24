@@ -9,6 +9,7 @@ from pathlib import Path
 from tinybird.tb.client import TinyB
 
 from publisher_safety import (
+    assert_base_versions,
     assert_newer_versions,
     latest_version_query,
     validate_recorded_at,
@@ -107,7 +108,7 @@ def effective_rows(client, fields):
         SELECT
             entry_id, source, start, end, vendor{account_outer},
             type, model, credit, paid, currency, evidence,
-            formatDateTime(latest_recorded_at, '%F %T') AS recorded_at,
+            formatDateTime(latest_recorded_at, '%F %T.%f') AS recorded_at,
             resource_sku, resource_count, resource_id, resource_name
         FROM
         (
@@ -232,9 +233,13 @@ def main():
 
     result = {}
     if not args.verify_only:
+        versions = current_versions(
+            admin, [row["entry_id"] for row in expected]
+        )
+        assert_base_versions(expected, versions)
         assert_newer_versions(
             expected,
-            current_versions(admin, [row["entry_id"] for row in expected]),
+            versions,
         )
         append = client_for(workspace_name, append=True)
         with tempfile.TemporaryDirectory() as temporary_directory:

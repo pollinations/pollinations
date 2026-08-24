@@ -210,6 +210,7 @@ for (const row of rows) {
     counts[row.vendor] = (counts[row.vendor] ?? 0) + 1;
     updates.push({
         ...row,
+        base_recorded_at: row.recorded_at,
         account_id: row.account_id ?? null,
         account_name: row.account_name ?? null,
         evidence,

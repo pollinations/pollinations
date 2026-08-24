@@ -1,6 +1,7 @@
 import unittest
 
 from publisher_safety import (
+    assert_base_versions,
     assert_immutable_fields,
     assert_no_new_duplicates,
     assert_newer_versions,
@@ -24,6 +25,39 @@ class PublisherSafetyTest(unittest.TestCase):
             )
         assert_newer_versions(
             [{"entry_id": "a", "recorded_at": "2026-08-24 10:00:00.001"}],
+            current,
+        )
+
+    def test_requires_corrections_to_match_the_source_snapshot(self):
+        current = [{"entry_id": "a", "recorded_at": "2026-08-24 10:00:00.123"}]
+        with self.assertRaisesRegex(RuntimeError, "base_recorded_at"):
+            assert_base_versions(
+                [{"entry_id": "a", "recorded_at": "2026-08-24 11:00:00.000"}],
+                current,
+            )
+        with self.assertRaisesRegex(RuntimeError, "snapshot is stale"):
+            assert_base_versions(
+                [
+                    {
+                        "entry_id": "a",
+                        "base_recorded_at": "2026-08-24 10:00:00.122",
+                        "recorded_at": "2026-08-24 11:00:00.000",
+                    }
+                ],
+                current,
+            )
+        assert_base_versions(
+            [
+                {
+                    "entry_id": "a",
+                    "base_recorded_at": "2026-08-24 10:00:00.123",
+                    "recorded_at": "2026-08-24 11:00:00.000",
+                },
+                {
+                    "entry_id": "new",
+                    "recorded_at": "2026-08-24 11:00:00.000",
+                },
+            ],
             current,
         )
 

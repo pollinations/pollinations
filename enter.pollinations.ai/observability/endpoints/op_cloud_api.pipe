@@ -16,7 +16,7 @@ SQL >
         tupleElement(latest, 10) AS paid,
         tupleElement(latest, 11) AS currency,
         tupleElement(latest, 12) AS evidence,
-        formatDateTime(tupleElement(latest, 17), '%F %T') AS recorded_at,
+        formatDateTime(tupleElement(latest, 17), '%F %T.%f') AS recorded_at,
         tupleElement(latest, 13) AS resource_sku,
         tupleElement(latest, 14) AS resource_count,
         tupleElement(latest, 15) AS resource_id,

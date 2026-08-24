@@ -62,6 +62,34 @@ def assert_newer_versions(rows, current_rows):
         )
 
 
+def assert_base_versions(rows, current_rows):
+    current_by_id = {row["entry_id"]: row for row in current_rows}
+    missing = []
+    stale = []
+    for row in rows:
+        current = current_by_id.get(row["entry_id"])
+        if current is None:
+            continue
+        base_recorded_at = row.get("base_recorded_at")
+        if not base_recorded_at:
+            missing.append(row["entry_id"])
+            continue
+        if parse_recorded_at(base_recorded_at) != parse_recorded_at(
+            current["recorded_at"]
+        ):
+            stale.append(row["entry_id"])
+    if missing:
+        raise RuntimeError(
+            "Corrections require base_recorded_at from the source snapshot: "
+            + ", ".join(missing)
+        )
+    if stale:
+        raise RuntimeError(
+            "Correction source snapshot is stale; regenerate these rows: "
+            + ", ".join(stale)
+        )
+
+
 def assert_immutable_fields(rows, current_rows, fields):
     current_by_id = {row["entry_id"]: row for row in current_rows}
     changed = []

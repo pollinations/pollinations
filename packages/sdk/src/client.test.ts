@@ -226,6 +226,49 @@ describe("Pollinations request attempts", () => {
         expect(error).toBeInstanceOf(PollinationsError);
         expect(error?.retryAfter).toBeUndefined();
     });
+
+    it("prefers the error body's requestId over the response header", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValue(
+            makeResponse(
+                {
+                    error: {
+                        message: "bad request",
+                        code: "BAD_REQUEST",
+                        requestId: "body-req-id",
+                    },
+                },
+                {
+                    ok: false,
+                    status: 400,
+                    headers: { "X-Request-Id": "header-req-id" },
+                },
+            ),
+        );
+
+        await expect(client.image("a cat")).rejects.toMatchObject({
+            requestId: "body-req-id",
+        });
+    });
+
+    it("falls back to the X-Request-Id header when the body omits requestId", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValue(
+            makeResponse(
+                { error: { message: "server error", code: "UNKNOWN_ERROR" } },
+                {
+                    ok: false,
+                    status: 500,
+                    headers: { "X-Request-Id": "header-req-id" },
+                },
+            ),
+        );
+
+        await expect(client.image("a cat")).rejects.toMatchObject({
+            requestId: "header-req-id",
+        });
+    });
+    });
 });
 
 describe("Pollinations media upload", () => {

@@ -109,9 +109,7 @@ describe("provider registry", () => {
         expect(providerMeteringBasis("lambda")).toBe("capacity");
         expect(providerMeteringBasis("bedrock")).toBe("mixed");
         expect(providerMeteringBasis("inferenceport")).toBe("internal");
-        expect(() => providerMeteringBasis("new-provider")).toThrow(
-            'Vendor "new-provider" has no reviewed metering basis',
-        );
+        expect(providerMeteringBasis("new-provider")).toBe("unmapped");
     });
 
     it("resolves manually approved aliases and leaves unknown names visible", () => {

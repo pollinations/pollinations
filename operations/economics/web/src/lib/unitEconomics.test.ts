@@ -260,5 +260,8 @@ describe("providerCostCheck", () => {
         expect(providerCostCheck(economicsRow({ grain: "model" })).kind).toBe(
             "provider-level",
         );
+        expect(
+            providerCostCheck(economicsRow({ vendor: "new-provider" })).kind,
+        ).toBe("missing-mapping");
     });
 });

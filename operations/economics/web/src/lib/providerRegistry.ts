@@ -27,7 +27,8 @@ export type MeteringBasis =
     | "capacity"
     | "mixed"
     | "internal"
-    | "not_applicable";
+    | "not_applicable"
+    | "unmapped";
 
 export type ProviderAccountDefinition = {
     id: string;
@@ -107,12 +108,7 @@ export function resolveProvider(value: string): ProviderDefinition | undefined {
 
 export function providerMeteringBasis(value: string): MeteringBasis {
     const provider = resolveProvider(value);
-    if (!provider) {
-        throw new Error(
-            `Vendor "${normalizeProviderName(value)}" has no reviewed metering basis`,
-        );
-    }
-    return provider.meteringBasis;
+    return provider?.meteringBasis ?? "unmapped";
 }
 
 export function activeProviderAccounts(

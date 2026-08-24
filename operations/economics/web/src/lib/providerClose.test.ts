@@ -282,6 +282,18 @@ describe("providerCloseRows", () => {
         expect(row.fundingStatus).toBe("not applicable");
     });
 
+    it("keeps an unmapped vendor visible for correction", () => {
+        const [row] = providerCloseRows(
+            data({
+                opPollen: [pollen({ vendor: "new-provider" })],
+            }),
+            "2026-08",
+        );
+
+        expect(row.vendor).toBe("new-provider");
+        expect(row.closeStatus).toBe("needs provider check");
+    });
+
     it("accepts a documented historical provider gap", () => {
         const [row] = providerCloseRows(
             data({

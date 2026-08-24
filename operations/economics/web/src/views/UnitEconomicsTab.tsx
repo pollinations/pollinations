@@ -103,19 +103,23 @@ function VendorCostStatus({ row }: { row: UnitEconomicsRow }) {
     const label =
         check.kind === "provider-level"
             ? "Vendor-level"
-            : check.kind === "missing-source"
-              ? row.sourceStatus === "pollen only"
-                  ? "Missing vendor"
-                  : "Missing meter"
-              : check.kind === "not-applicable"
-                ? "Not applicable"
-                : check.kind === "utilization"
-                  ? `Utilization · ${fmtUnsignedPct(check.value)}`
-                  : check.kind === "calibration"
-                    ? `Calibration · ${check.value == null ? "–" : `${check.value.toFixed(2)}×`}`
-                    : `${check.kind === "review" ? "Review" : "Healthy"} · ${fmtUnsignedPct(check.value)}`;
+            : check.kind === "missing-mapping"
+              ? "Unmapped vendor"
+              : check.kind === "missing-source"
+                ? row.sourceStatus === "pollen only"
+                    ? "Missing vendor"
+                    : "Missing meter"
+                : check.kind === "not-applicable"
+                  ? "Not applicable"
+                  : check.kind === "utilization"
+                    ? `Utilization · ${fmtUnsignedPct(check.value)}`
+                    : check.kind === "calibration"
+                      ? `Calibration · ${check.value == null ? "–" : `${check.value.toFixed(2)}×`}`
+                      : `${check.kind === "review" ? "Review" : "Healthy"} · ${fmtUnsignedPct(check.value)}`;
     const className =
-        check.kind === "review" || check.kind === "missing-source"
+        check.kind === "review" ||
+        check.kind === "missing-source" ||
+        check.kind === "missing-mapping"
             ? "text-outcome-negative-text"
             : check.kind === "provider-level" || check.kind === "not-applicable"
               ? "text-theme-text-soft"
@@ -123,17 +127,19 @@ function VendorCostStatus({ row }: { row: UnitEconomicsRow }) {
     const explanation =
         check.kind === "provider-level"
             ? "Model costs are allocations. Check the vendor row against the vendor statement."
-            : check.kind === "missing-source"
-              ? "One side of the vendor-month comparison is missing."
-              : check.kind === "not-applicable"
-                ? "This row has no external vendor cost to reconcile."
-                : check.kind === "utilization"
-                  ? "Capacity vendors compare metered demand with reserved capacity cost."
-                  : check.kind === "calibration"
-                    ? "Mixed vendors use this ratio for calibration, not pass/fail reconciliation."
-                    : check.kind === "review"
-                      ? "Direct vendor drift exceeds both 25% and $100."
-                      : "Direct vendor drift is within the materiality threshold.";
+            : check.kind === "missing-mapping"
+              ? "Add this vendor to the canonical registry before interpreting its economics."
+              : check.kind === "missing-source"
+                ? "One side of the vendor-month comparison is missing."
+                : check.kind === "not-applicable"
+                  ? "This row has no external vendor cost to reconcile."
+                  : check.kind === "utilization"
+                    ? "Capacity vendors compare metered demand with reserved capacity cost."
+                    : check.kind === "calibration"
+                      ? "Mixed vendors use this ratio for calibration, not pass/fail reconciliation."
+                      : check.kind === "review"
+                        ? "Direct vendor drift exceeds both 25% and $100."
+                        : "Direct vendor drift is within the materiality threshold.";
 
     return (
         <Tooltip

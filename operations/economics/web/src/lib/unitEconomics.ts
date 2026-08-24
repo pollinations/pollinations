@@ -42,6 +42,7 @@ export type ProviderCostCheckKind =
     | "utilization"
     | "calibration"
     | "not-applicable"
+    | "missing-mapping"
     | "missing-source"
     | "provider-level";
 
@@ -119,6 +120,9 @@ export function providerCostCheck(
     >,
 ): ProviderCostCheck {
     const basis = providerMeteringBasis(row.vendor);
+    if (basis === "unmapped") {
+        return { kind: "missing-mapping", basis, value: null };
+    }
     if (row.grain === "model") {
         return { kind: "provider-level", basis, value: null };
     }

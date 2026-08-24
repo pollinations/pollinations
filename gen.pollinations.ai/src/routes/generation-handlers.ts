@@ -148,7 +148,7 @@ export async function generateEmbeddingsResponse(
     const requestBody = c.req.valid("json" as never) as z.infer<
         typeof CreateEmbeddingRequestSchema
     >;
-    const { response, servedEntry } = await withModelFallbackResponse(
+    return withModelFallbackResponse(
         c.var.model,
         (candidate) =>
             generateEmbeddings(
@@ -160,11 +160,9 @@ export async function generateEmbeddingsResponse(
                 candidate.definition ?? c.var.model.definition,
                 candidate.id,
             ),
-        c.var.track?.failedCalls,
+        c.var.track?.attempts,
         (candidate) => enforceModelRateLimit(c, candidate),
     );
-    if (servedEntry) c.set("servedModelEntry", servedEntry);
-    return response;
 }
 
 export async function generateChatCompletion(

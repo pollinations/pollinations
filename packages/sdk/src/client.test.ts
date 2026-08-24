@@ -226,6 +226,63 @@ describe("Pollinations request attempts", () => {
         expect(error).toBeInstanceOf(PollinationsError);
         expect(error?.retryAfter).toBeUndefined();
     });
+
+    it("prefers nested requestId when present on the error body", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValue(
+            makeResponse(
+                { error: { message: "bad request", code: "BAD_REQUEST", requestId: "body-123" } },
+                { ok: false, status: 400 },
+            ),
+        );
+
+        let error: PollinationsError | undefined;
+        try {
+            await client.image("a cat");
+        } catch (caught) {
+            if (caught instanceof PollinationsError) error = caught;
+        }
+
+        expect(error?.requestId).toBe("body-123");
+    });
+
+    it("falls back to X-Request-Id header when the body omits requestId", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValue(
+            makeResponse(
+                { error: { message: "server error", code: "INTERNAL" } },
+                { ok: false, status: 500, headers: { "x-request-id": "header-abc" } },
+            ),
+        );
+
+        let error: PollinationsError | undefined;
+        try {
+            await client.image("a cat");
+        } catch (caught) {
+            if (caught instanceof PollinationsError) error = caught;
+        }
+
+        expect(error?.requestId).toBe("header-abc");
+    });
+
+    it("leaves requestId undefined when neither body nor header provides one", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValue(
+            makeResponse(
+                { error: { message: "fail", code: "UNKNOWN" } },
+                { ok: false, status: 500 },
+            ),
+        );
+
+        let error: PollinationsError | undefined;
+        try {
+            await client.image("a cat");
+        } catch (caught) {
+            if (caught instanceof PollinationsError) error = caught;
+        }
+
+        expect(error?.requestId).toBeUndefined();
+    });
 });
 
 describe("Pollinations media upload", () => {

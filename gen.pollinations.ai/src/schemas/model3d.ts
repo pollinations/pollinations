@@ -58,10 +58,6 @@ export const Generate3dRequestQueryParamsSchema = z.object({
     safe: SafeSchema,
 });
 
-export type Generate3dRequestQueryParams = z.infer<
-    typeof Generate3dRequestQueryParamsSchema
->;
-
 export const Generate3dRequestBodySchema = z
     .object({
         model: z

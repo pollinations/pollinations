@@ -122,6 +122,7 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
                 job.auth,
                 job.requestId,
                 job.balanceCheckResult,
+                job.apiKeyBudgetEstimate,
                 this.env,
             );
             settlement = execution.settlement;
@@ -158,6 +159,7 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
             auth: job.auth,
             requestId: job.requestId,
             balanceCheckResult: job.balanceCheckResult,
+            apiKeyBudgetEstimate: job.apiKeyBudgetEstimate,
             request,
             bodyChunks: chunks.length,
             started: false,
@@ -201,6 +203,7 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
             auth: job.auth,
             requestId: job.requestId,
             balanceCheckResult: job.balanceCheckResult,
+            apiKeyBudgetEstimate: job.apiKeyBudgetEstimate,
             request: { ...job.request, ...(body !== undefined && { body }) },
         };
     }

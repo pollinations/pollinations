@@ -130,6 +130,11 @@ describe("canonical categories", () => {
         );
     });
 
+    it("names admin runway lines by purpose instead of counterparty", () => {
+        expect(runwayLineItem("admin", "enty")).toBe("Accounting & filings");
+        expect(runwayLineItem("admin", "estonia")).toBe("Taxes");
+    });
+
     it("keeps grants and investments out of operating revenue", () => {
         expect(
             transactionCategory(

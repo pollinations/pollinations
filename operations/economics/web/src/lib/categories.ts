@@ -180,6 +180,10 @@ export function isBankMovement(row: Pick<OpTransactionRow, "kind">): boolean {
 
 export function runwayLineItem(category: string, vendor: string): string {
     const normalized = normalize(vendor);
+    if (category === "admin") {
+        if (normalized === "enty") return "Accounting & filings";
+        if (normalized === "estonia") return "Taxes";
+    }
     if (category === "office") {
         return OFFICE_RUNWAY_LINE_ITEMS[normalized] ?? vendor;
     }

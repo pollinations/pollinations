@@ -608,3 +608,46 @@ describe("Pollinations model discovery", () => {
         );
     });
 });
+
+describe("Pollinations account earnings", () => {
+    it("passes the time window through and returns daily and perEntity as-is", async () => {
+        const client = newClient();
+        const row = {
+            date: "2026-04-14",
+            entity_id: "key_byop_app_1",
+            entity_name: "BYOP App",
+            source: "byop_markup",
+            requests: 5,
+            paid_requests: 3,
+            tier_requests: 2,
+            baseline_price: 0.4,
+            pollen_earned: 0.1,
+            paid_earned: 0.08,
+            tier_earned: 0.02,
+            cost_usd: 0.5,
+            reward_rate: 0.25,
+        };
+        const payload = { daily: [row], perEntity: [{ ...row, date: "" }] };
+        fetchMock.mockResolvedValueOnce(makeResponse(payload));
+
+        const result = await client.accountEarnings({ days: 30 });
+
+        expect(fetchMock.mock.calls[0]?.[0]).toBe(
+            "https://example.test/account/earnings?days=30",
+        );
+        expect(result).toEqual(payload);
+    });
+
+    it("requests the bare endpoint when no options are given", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValueOnce(
+            makeResponse({ daily: [], perEntity: [] }),
+        );
+
+        await client.accountEarnings();
+
+        expect(fetchMock.mock.calls[0]?.[0]).toBe(
+            "https://example.test/account/earnings",
+        );
+    });
+});

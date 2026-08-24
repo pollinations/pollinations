@@ -1,0 +1,83 @@
+{
+  "date": "2026-08-23",
+  "period_start": "2026-08-23",
+  "period_end": "2026-08-23",
+  "title": "Agents can now find, call, and register other agents",
+  "summary": "A busy day for agents, community models, and the small but important work of making the docs match reality.\n\nMCP-connected agents can discover agent-capable models, delegate work through inherited permissions, and return complete text-tool results through the normal terminal response flow. Developers can also register endpoint agents directly through the account API, with the existing publishing rules doing their quiet bureaucratic duty.\n\nThe Models page now has a local Quest Pollen filter for finding usable models quickly, alongside a tidier local filter layout. A production migration also preserves restricted-key access as MIDIjourney moves to its canonical model ID, because renaming a model should not become an access-control adventure.\n\nCommunity model owners can use their own public endpoints without consuming their own budget, while private fallback handling now attributes owner rewards correctly and keeps caller-facing totals predictable. Realtime usage telemetry matches ledger-rounded debits, and shared checkout logic gained regression coverage so the payment plumbing has fewer places to disagree with itself.",
+  "pr_count": 18,
+  "prs": [
+    {
+      "number": 13496,
+      "date": "2026-08-23"
+    },
+    {
+      "number": 13612,
+      "date": "2026-08-23"
+    },
+    {
+      "number": 13714,
+      "date": "2026-08-23"
+    },
+    {
+      "number": 13734,
+      "date": "2026-08-23"
+    },
+    {
+      "number": 13736,
+      "date": "2026-08-23"
+    },
+    {
+      "number": 13737,
+      "date": "2026-08-23"
+    },
+    {
+      "number": 13738,
+      "date": "2026-08-23"
+    },
+    {
+      "number": 13740,
+      "date": "2026-08-23"
+    },
+    {
+      "number": 13748,
+      "date": "2026-08-23"
+    },
+    {
+      "number": 13751,
+      "date": "2026-08-23"
+    },
+    {
+      "number": 13755,
+      "date": "2026-08-23"
+    },
+    {
+      "number": 13757,
+      "date": "2026-08-23"
+    },
+    {
+      "number": 13758,
+      "date": "2026-08-23"
+    },
+    {
+      "number": 13759,
+      "date": "2026-08-23"
+    },
+    {
+      "number": 13762,
+      "date": "2026-08-23"
+    },
+    {
+      "number": 13779,
+      "date": "2026-08-23"
+    },
+    {
+      "number": 13781,
+      "date": "2026-08-23"
+    },
+    {
+      "number": 13793,
+      "date": "2026-08-23"
+    }
+  ],
+  "generated_at": "2026-08-24T06:21:07.838787+00:00"
+}

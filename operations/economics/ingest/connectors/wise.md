@@ -58,6 +58,9 @@ Collection steps:
 
 Repeatable monthly pull:
 
+Run this from `operations/economics/`; every relative path below is anchored to
+that directory.
+
 ```bash
 sops exec-env ingest/secrets/env.json \
   'sops exec-env secrets/web.dev.json "node ingest/scripts/wise-ledger-reconcile.mjs \

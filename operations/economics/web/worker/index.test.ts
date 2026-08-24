@@ -25,6 +25,7 @@ async function authenticatedCookie() {
 }
 
 afterEach(() => {
+    vi.useRealTimers();
     vi.unstubAllGlobals();
 });
 
@@ -61,6 +62,21 @@ describe("economics Worker auth", () => {
             headers: { Cookie: cookie || "" },
         });
         await expect(session.json()).resolves.toEqual({ authenticated: true });
+    });
+
+    it("rejects an expired signed session", async () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date("2026-08-24T10:00:00.000Z"));
+        const cookie = await authenticatedCookie();
+        vi.setSystemTime(new Date("2026-08-24T22:00:01.000Z"));
+
+        const session = await request("/api/auth/session", {
+            headers: { Cookie: cookie },
+        });
+
+        await expect(session.json()).resolves.toEqual({
+            authenticated: false,
+        });
     });
 
     it("rejects pipe reads without a session", async () => {

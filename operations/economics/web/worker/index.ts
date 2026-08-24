@@ -1,5 +1,6 @@
 const SESSION_COOKIE = "economics_session";
 const SESSION_PAYLOAD = "economics";
+const SESSION_MAX_AGE_SECONDS = 43_200;
 const PASSWORD_CHECK_PAYLOAD = "economics-password-check";
 const READ_PIPES = new Set([
     "op_transactions_api",
@@ -83,11 +84,18 @@ function cookieValue(request: Request, name: string) {
 
 async function isAuthenticated(request: Request, password: string) {
     const token = cookieValue(request, SESSION_COOKIE);
-    const separator = token.indexOf(".");
-    if (separator === -1 || token.slice(0, separator) !== SESSION_PAYLOAD) {
+    const [payload, expiresAtValue, signature, extra] = token.split(".");
+    const expiresAt = Number(expiresAtValue);
+    if (
+        extra !== undefined ||
+        payload !== SESSION_PAYLOAD ||
+        !Number.isInteger(expiresAt) ||
+        expiresAt <= Math.floor(Date.now() / 1000) ||
+        !signature
+    ) {
         return false;
     }
-    return verify(password, SESSION_PAYLOAD, token.slice(separator + 1));
+    return verify(password, `${payload}.${expiresAt}`, signature);
 }
 
 async function validPassword(candidate: string, password: string) {
@@ -142,11 +150,14 @@ async function handleApi(request: Request, env: Env) {
             return json({ error: "Unauthorized" }, 401);
         }
 
-        const signature = await sign(env.ECONOMICS_PASSWORD, SESSION_PAYLOAD);
+        const expiresAt =
+            Math.floor(Date.now() / 1000) + SESSION_MAX_AGE_SECONDS;
+        const sessionPayload = `${SESSION_PAYLOAD}.${expiresAt}`;
+        const signature = await sign(env.ECONOMICS_PASSWORD, sessionPayload);
         return new Response(null, {
             status: 204,
             headers: {
-                "Set-Cookie": `${SESSION_COOKIE}=${SESSION_PAYLOAD}.${signature}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=43200`,
+                "Set-Cookie": `${SESSION_COOKIE}=${sessionPayload}.${signature}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${SESSION_MAX_AGE_SECONDS}`,
             },
         });
     }

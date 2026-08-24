@@ -12,14 +12,24 @@ import {
     requireSafePrompt,
 } from "../utils/azureContentSafety.ts";
 import { logGptImageError } from "../utils/gptImageLogger.ts";
-import {
-    base64ToBuffer,
-    bufferToUint8Array,
-    downloadUserImage,
-} from "../utils/imageDownload.ts";
+import { base64ToBuffer, downloadUserImage } from "../utils/imageDownload.ts";
 
 const logError = debug("pollinations:error");
 const logCloudflare = debug("pollinations:cloudflare");
+const AZURE_FLUX_KONTEXT_ENDPOINT =
+    "https://myceli-prod-eastus.cognitiveservices.azure.com/providers/blackforestlabs/v1/flux-kontext-pro?api-version=preview";
+
+function greatestCommonDivisor(a: number, b: number): number {
+    while (b !== 0) {
+        [a, b] = [b, a % b];
+    }
+    return a || 1;
+}
+
+function toAspectRatio(width: number, height: number): string {
+    const divisor = greatestCommonDivisor(width, height);
+    return `${width / divisor}:${height / divisor}`;
+}
 
 /**
  * Calls the Azure Flux Kontext API to generate or edit images
@@ -35,8 +45,6 @@ export async function callAzureFluxKontext(
     userInfo: AuthResult,
 ): Promise<ImageGenerationResult> {
     const apiKey = getImageEnv("AZURE_MYCELI_PROD_API_KEY");
-    const baseUrl =
-        "https://myceli-prod-eastus.services.ai.azure.com/openai/deployments/FLUX.1-Kontext-pro";
 
     if (!apiKey) {
         throw new Error(
@@ -44,52 +52,27 @@ export async function callAzureFluxKontext(
         );
     }
 
-    // Check if we need to use the edits endpoint instead of generations
     const isEditMode = safeParams.image.length > 0;
-
-    // Add the appropriate endpoint path and API version
-    let endpoint: string;
-    if (isEditMode) {
-        endpoint = `${baseUrl}/images/edits?api-version=2025-04-01-preview`;
-        logCloudflare("Using Azure Flux Kontext in edit mode");
-    } else {
-        endpoint = `${baseUrl}/images/generations?api-version=2025-04-01-preview`;
-        logCloudflare("Using Azure Flux Kontext in generation mode");
-    }
+    logCloudflare(
+        `Using Azure Flux Kontext in ${isEditMode ? "edit" : "generation"} mode`,
+    );
 
     logCloudflare("Checking prompt safety...");
     await requireSafePrompt(prompt, safeParams, userInfo);
 
-    // Map safeParams to Azure API parameters
-    const size = `${safeParams.width}x${safeParams.height}`;
-
-    // Build request body for generation mode
-    const requestBody = {
+    const requestBody: Record<string, unknown> = {
         prompt: sanitizeString(prompt),
-        size: size,
-        n: 1,
         model: "FLUX.1-Kontext-pro",
+        output_format: "png",
+        num_images: 1,
     };
 
-    logCloudflare("Calling Azure Flux Kontext API with params:", requestBody);
-
-    let response = null;
-
     if (isEditMode) {
-        // For edit mode, use FormData (multipart/form-data)
-        const formData = new FormData();
-
-        // Add the prompt
-        formData.append("prompt", sanitizeString(prompt));
-        formData.append("model", "FLUX.1-Kontext-pro");
-
-        // Handle images based on their type
         try {
-            // Process the first image (Flux Kontext typically uses single image)
             const imageUrl = safeParams.image[0];
             logCloudflare(`Fetching image from URL: ${imageUrl}`);
 
-            const { buffer, mimeType } = await downloadUserImage(imageUrl);
+            const { buffer } = await downloadUserImage(imageUrl);
 
             logCloudflare("Checking safety of input image");
             const imageSafetyResult = await analyzeImageSafety(buffer);
@@ -106,50 +89,43 @@ export async function callAzureFluxKontext(
                 );
                 throw error;
             }
-
-            // Create a Blob and append to FormData
-            const extension = `.${mimeType.split("/")[1]}`;
-            const imageBlob = new Blob([bufferToUint8Array(buffer)], {
-                type: mimeType,
-            });
-            formData.append("image", imageBlob, `image${extension}`);
+            requestBody.input_image = buffer.toString("base64");
         } catch (error) {
             logError("Error processing image for editing:", error);
             if (error instanceof HttpError) throw error;
             throw new Error(`Failed to process image: ${error.message}`);
         }
-
-        // Log the endpoint for debugging
-        logCloudflare(`Sending edit request to endpoint: ${endpoint}`);
-
-        // Send the edit request
-        response = await fetch(endpoint, {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${apiKey}`,
-            },
-            // biome-ignore lint: linter is confused here
-            body: formData as any,
-        });
-
-        logCloudflare(`Edit request response status: ${response.status}`);
     } else {
-        // Standard JSON request for generation
-        response = await fetch(endpoint, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${apiKey}`,
-            },
-            body: JSON.stringify(requestBody),
-        });
-
-        logCloudflare(`Generation request response status: ${response.status}`);
+        requestBody.aspect_ratio = toAspectRatio(
+            safeParams.width,
+            safeParams.height,
+        );
     }
+
+    logCloudflare("Calling Azure Flux Kontext API with params:", {
+        ...requestBody,
+        input_image: requestBody.input_image ? "[base64]" : undefined,
+    });
+
+    const response = await fetch(AZURE_FLUX_KONTEXT_ENDPOINT, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify(requestBody),
+    });
+
+    logCloudflare(`Kontext request response status: ${response.status}`);
 
     if (!response.ok) {
         const errorText = await response.text();
-        throw new HttpError(errorText, response.status, undefined, endpoint);
+        throw new HttpError(
+            errorText,
+            response.status,
+            undefined,
+            AZURE_FLUX_KONTEXT_ENDPOINT,
+        );
     }
 
     const data = (await response.json()) as {
@@ -166,7 +142,7 @@ export async function callAzureFluxKontext(
             "Invalid response from Azure Flux Kontext API",
             500,
             undefined,
-            endpoint,
+            AZURE_FLUX_KONTEXT_ENDPOINT,
         );
     }
 

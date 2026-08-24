@@ -146,9 +146,7 @@ export class BillingService
             authorizationId,
             events.data,
         );
-        this.ctx.waitUntil(
-            writeBillingTelemetry(this.env, authorizationId, settled),
-        );
+        await writeBillingTelemetry(this.env, authorizationId, settled);
         return {
             ok: true,
             events: settled,

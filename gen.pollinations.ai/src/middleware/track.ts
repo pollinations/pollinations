@@ -273,11 +273,6 @@ export const track = (eventType: EventType) =>
         // caller only receives that captured result and must not emit it again.
         if (c.var.track.detachedExecutionTracked) return;
 
-        // Access and permission checks run before billing authorization. If
-        // one rejects, Hono has already produced the client error response;
-        // there is no grant or provider work to settle.
-        if (c.get("error") && !c.var.balance.billingAuthorizationId) return;
-
         const settlement = (async () => {
             if (!userTracking.userId) {
                 return;
@@ -358,6 +353,41 @@ export const track = (eventType: EventType) =>
 
             const authorizationId = c.var.balance.billingAuthorizationId;
             if (!authorizationId) {
+                // Access and request validation can reject before an
+                // authorization exists. Preserve the established unbilled
+                // telemetry with one best-effort write, without inventing a
+                // financial grant for work that never reached a provider.
+                if (c.get("error")) {
+                    try {
+                        const telemetryResponse = await fetch(
+                            c.env.TINYBIRD_INGEST_URL,
+                            {
+                                method: "POST",
+                                headers: {
+                                    Authorization: `Bearer ${c.env.TINYBIRD_INGEST_TOKEN}`,
+                                    "Content-Type": "application/x-ndjson",
+                                },
+                                body: billableEvents
+                                    .map((event) =>
+                                        JSON.stringify(event.telemetry),
+                                    )
+                                    .join("\n"),
+                            },
+                        );
+                        if (!telemetryResponse.ok) {
+                            log.warn(
+                                "Unbilled generation telemetry write failed: {status}",
+                                { status: telemetryResponse.status },
+                            );
+                        }
+                    } catch (error) {
+                        log.warn(
+                            "Unbilled generation telemetry write failed: {error}",
+                            { error },
+                        );
+                    }
+                    return;
+                }
                 throw new Error("Generation billing authorization is missing");
             }
             let result: BillingSettlementResponse;
@@ -383,7 +413,7 @@ export const track = (eventType: EventType) =>
             );
             if (rejected) {
                 throw new Error(
-                    `Billing event ${rejected.id} was ${rejected.status}`,
+                    `Billing event ${rejected.id} was ${rejected.status}: ${rejected.reason}`,
                 );
             }
             c.var.balance.billingAuthorizationId = undefined;

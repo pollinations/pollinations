@@ -80,7 +80,11 @@ import type { ModelVariables } from "@/middleware/model.ts";
 import type { FrontendKeyRateLimitVariables } from "@/middleware/rate-limit-durable.ts";
 import { generateRandomId, parseBooleanLike } from "@/util.ts";
 import { releaseApiKeyBudgetReservation } from "@/utils/generation-access.ts";
-import type { FailedCall } from "../fallback.ts";
+import {
+    type FallbackAttempt,
+    type FallbackCandidate,
+    fallbackCandidates,
+} from "../fallback.ts";
 
 export type ModelUsage = {
     model: string;
@@ -139,12 +143,8 @@ export type TrackVariables = {
         // Service layers register normalized request facts that affect
         // pricing. Consumed once at billing time by selectCostVariant.
         setPricingInput: (input: PricingInput) => void;
-        /**
-         * Handed to the fallback loop to append to. Nothing is written as the
-         * calls fail: the block after next() owns every row this request
-         * emits, so it can see the whole sequence at once.
-         */
-        failedCalls: FailedCall[];
+        /** Ordered upstream calls; one is marked when it settles the request. */
+        attempts: FallbackAttempt[];
     };
 };
 
@@ -179,13 +179,8 @@ export const track = (eventType: EventType) =>
 
         let responseOverride: Response | null = null;
         let pricingInput: PricingInput | undefined;
-        /**
-         * Every upstream call that failed, in the order they were tried.
-         *
-         * Filled by the fallback loop, which knows only how to retry; this
-         * middleware is what turns the list into rows.
-         */
-        const failedCalls: FailedCall[] = [];
+        /** Filled by the fallback loop; this middleware turns it into rows. */
+        const attempts: FallbackAttempt[] = [];
 
         // Read at emit time: balanceCheckResult is only set once the balance
         // middleware has run.
@@ -265,7 +260,7 @@ export const track = (eventType: EventType) =>
             setPricingInput: (input: PricingInput) => {
                 pricingInput = input;
             },
-            failedCalls,
+            attempts,
         });
 
         await next();
@@ -280,10 +275,9 @@ export const track = (eventType: EventType) =>
                 const userId = userTracking.userId;
                 if (!userId) return;
 
-                const terminalAttempt = failedCalls.find(
-                    (call) => call.terminal,
-                );
-                const terminalAttemptModel = terminalAttempt?.candidate.id;
+                const finalCandidate =
+                    attempts.find((attempt) => attempt.settled)?.candidate ??
+                    fallbackCandidates(modelInfo)[0];
 
                 // Routes attach telemetry headers (x-moderation-*, cache
                 // status) to the final response AFTER the override is
@@ -303,13 +297,13 @@ export const track = (eventType: EventType) =>
                 // ended the request is not among them: it is the response, and
                 // the settlement row below carries it — under the name only the
                 // loop can supply. So a request emits one row per upstream call.
-                for (const call of failedCalls) {
-                    if (call.terminal) continue;
-                    const model = call.candidate.id;
-                    const status = failedAttemptStatus(call.error);
+                for (const attempt of attempts) {
+                    if (attempt.settled) continue;
+                    const model = attempt.candidate.id;
+                    const status = failedAttemptStatus(attempt.error);
                     await emitRow({
-                        startTime: call.startedAt,
-                        endTime: call.endedAt,
+                        startTime: attempt.startedAt,
+                        endTime: attempt.endedAt,
                         balanceTracking: balanceTracking(),
                         responseTracking: {
                             responseStatus: status,
@@ -321,25 +315,22 @@ export const track = (eventType: EventType) =>
                                 requestTracking.resolvedModelRequested,
                             modelUsed: model,
                             modelProviderUsed:
-                                call.candidate.definition?.provider ??
+                                attempt.candidate.definition?.provider ??
                                 requestTracking.modelProvider,
                         },
                         errorTracking: collectErrorData(
                             status,
-                            call.error instanceof Error
-                                ? call.error
+                            attempt.error instanceof Error
+                                ? attempt.error
                                 : undefined,
                         ),
                     });
                 }
-                const servedEntry = c.var.servedModelEntry;
                 const responseTracking = await trackResponse(
                     eventType,
                     requestTracking,
                     response,
-                    servedEntry?.definition ??
-                        terminalAttempt?.candidate.definition,
-                    terminalAttemptModel ?? servedEntry?.id,
+                    finalCandidate,
                     pricingInput,
                 );
                 if (responseTracking.cacheHit) {
@@ -370,9 +361,8 @@ export const track = (eventType: EventType) =>
                 try {
                     const requestedCommunityEndpoint =
                         c.var.model?.communityEndpoint;
-                    const servedCommunityEndpoint = servedEntry
-                        ? servedEntry.communityEndpoint
-                        : requestedCommunityEndpoint;
+                    const servedCommunityEndpoint =
+                        finalCandidate.communityEndpoint;
                     const deduction = await handleBalanceDeduction({
                         db: balanceDb,
                         isBilledUsage: responseTracking.isBilledUsage,
@@ -590,19 +580,17 @@ export async function trackResponse(
     eventType: EventType,
     requestTracking: RequestTrackingData,
     response: Response,
-    servedModelDefinition?: ModelDefinition,
-    terminalAttemptModel?: string,
+    candidate: FallbackCandidate,
     pricingInput?: PricingInput,
 ): Promise<ResponseTrackingData> {
     const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
-    // The model this row is actually about. Defaults to the one asked for,
-    // which is right until a fallback moves the request to a different id.
-    const modelCalled = terminalAttemptModel ?? resolvedModelRequested;
+    const modelCalled = candidate.id || resolvedModelRequested;
     const modelProviderUsed =
-        servedModelDefinition?.provider ?? requestTracking.modelProvider;
+        candidate.definition?.provider ?? requestTracking.modelProvider;
     const cacheHit = response.headers.get("x-cache") === "HIT";
-    const fallbackUsed = parseFallbackUsed(response);
+    const fallbackUsed =
+        modelCalled !== resolvedModelRequested || parseFallbackUsed(response);
     const notBilled = (
         extra?: Partial<ResponseTrackingData>,
     ): ResponseTrackingData => ({
@@ -631,8 +619,6 @@ export async function trackResponse(
     if (!response.ok) {
         return notBilled({
             modelUsed: modelCalled,
-            fallbackUsed:
-                fallbackUsed || modelCalled !== resolvedModelRequested,
         });
     }
 
@@ -681,7 +667,7 @@ export async function trackResponse(
                 model: resolvedModelRequested,
                 usage,
                 servedBy:
-                    servedModelDefinition ?? requestTracking.modelDefinition,
+                    candidate.definition ?? requestTracking.modelDefinition,
                 quotedBy: requestTracking.modelDefinition,
                 output,
                 input: pricingInput,
@@ -707,7 +693,7 @@ export async function trackResponse(
         const adjustmentOnlyBilling = calculateUsageBilling({
             model: resolvedModelRequested,
             usage: {},
-            servedBy: servedModelDefinition ?? requestTracking.modelDefinition,
+            servedBy: candidate.definition ?? requestTracking.modelDefinition,
             quotedBy: requestTracking.modelDefinition,
             output,
             input: pricingInput,
@@ -753,7 +739,7 @@ export async function trackResponse(
     } = calculateUsageBilling({
         model: resolvedModelRequested,
         usage: modelUsage.usage,
-        servedBy: servedModelDefinition ?? requestTracking.modelDefinition,
+        servedBy: candidate.definition ?? requestTracking.modelDefinition,
         quotedBy: requestTracking.modelDefinition,
         output: modelUsage.output,
         input: pricingInput,

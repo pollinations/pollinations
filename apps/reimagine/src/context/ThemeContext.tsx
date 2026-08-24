@@ -1,6 +1,7 @@
-import React, {
+import {
     createContext,
     type ReactNode,
+    useCallback,
     useContext,
     useEffect,
     useState,
@@ -104,11 +105,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     const [themeMode, setThemeModeState] = useState<ThemeMode>("dark");
     const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        loadTheme();
-    }, []);
-
-    const loadTheme = async () => {
+    const loadTheme = useCallback(async () => {
         try {
             const savedTheme = await ThemeService.getThemeMode();
             setThemeModeState(savedTheme);
@@ -117,7 +114,11 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        loadTheme();
+    }, [loadTheme]);
 
     const setThemeMode = async (mode: ThemeMode) => {
         try {

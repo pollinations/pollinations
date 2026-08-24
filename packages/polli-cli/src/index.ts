@@ -11,6 +11,7 @@ import { modelsCommand } from "./commands/models.js";
 import { myModelsCommand } from "./commands/my-models.js";
 import { questsCommand } from "./commands/quests.js";
 import { uploadCommand } from "./commands/upload.js";
+import { earningsCommand } from "./commands/earnings.js";
 import { usageCommand } from "./commands/usage.js";
 
 import { setKeyOverride } from "./lib/config.js";
@@ -62,6 +63,7 @@ program
 // Auth & account
 program.addCommand(authCommand);
 program.addCommand(keysCommand);
+program.addCommand(earningsCommand);
 program.addCommand(usageCommand);
 program.addCommand(questsCommand);
 program.addCommand(agentsCommand);

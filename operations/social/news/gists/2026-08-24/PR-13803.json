@@ -1,0 +1,34 @@
+{
+  "pr_number": 13803,
+  "title": "fix: suppress credits from overdrawn requests",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13803",
+  "merged_at": "2026-08-24T01:15:58Z",
+  "labels": [],
+  "pr_body_excerpt": "- Suppresses community-owner rewards when the payer bucket goes negative\n- Applies the same rule to BYOP developer credits\n- Keeps the completed request charge and negative-balance behavior unchanged\n- Preserves credits when the payer reaches exactly zero",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Credits mind the balance",
+    "blurb": "The billing garden now checks whether the watering can is empty before handing out extra seeds. Completed requests still run as before; reward credits simply wait for funded balance.",
+    "summary": "Billing now suppresses community-owner rewards and BYOP developer credits when a completed request pushes its payer bucket below zero, while preserving the request charge, negative-balance handling, and credits at an exact zero balance.",
+    "impact": "Community owners and BYOP developers get credit rewards only from funded requests, with exactly-zero payer balances still qualifying normally.",
+    "keywords": [
+      "billing",
+      "credits",
+      "BYOP",
+      "community rewards",
+      "balance",
+      "accounting"
+    ],
+    "visual_concept": "Depict a cozy billing garden where Polli carefully checks a small lime-green balance meter before placing reward pollen into two labeled jars for a community gardener and a BYOP builder. A completed-request receipt is safely filed nearby, while a code-plant remains healthy, representing unchanged request completion and charges.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing tiny accountant glasses as she checks a lime green (#ecf874) balance meter before placing pollen rewards into two small jars beside a retro terminal and blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike; simple pixel-font text on the meter: \"BALANCE 0\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-24/PR-13803.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing tiny accountant glasses as she checks a lime green (#ecf874) balance meter before placing pollen rewards into two small jars beside a retro terminal and blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike; simple pixel-font text on the meter: \"BALANCE 0\"."
+  },
+  "generated_at": "2026-08-24T01:17:14.017865+00:00"
+}

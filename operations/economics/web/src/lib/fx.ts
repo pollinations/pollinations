@@ -87,7 +87,8 @@ export function toUsd(
     currency: string,
     period: string,
 ): number {
-    switch (currency.toUpperCase()) {
+    const normalizedCurrency = String(currency ?? "").toUpperCase();
+    switch (normalizedCurrency) {
         case "EUR":
         case "CAD":
             return (
@@ -95,8 +96,10 @@ export function toUsd(
             );
         case "USD":
         case "POLLEN":
-        case "":
             return amount;
+        case "":
+            if (amount === 0) return 0;
+            throw new Error("Missing currency for non-zero amount");
         default:
             throw new Error(`Unknown currency: ${currency}`);
     }

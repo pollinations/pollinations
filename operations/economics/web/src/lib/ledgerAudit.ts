@@ -11,7 +11,7 @@ import {
     transactionCategory,
 } from "./categories";
 import { hasReconciledTransactionEvidence } from "./documents";
-import { fxEstimatedMonths } from "./fx";
+import { canConvertToUsd, fxEstimatedMonths } from "./fx";
 import {
     collectMonths,
     isDateKey,
@@ -79,6 +79,7 @@ function invalidTransaction(row: OpTransactionRow): boolean {
         transactionCategory(row) === "uncategorized" ||
         !finite(row.amount) ||
         !CURRENCY_RE.test(row.currency) ||
+        !canConvertToUsd(row.currency) ||
         !present(row.recorded_at)
     );
 }

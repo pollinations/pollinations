@@ -139,6 +139,20 @@ describe("monthlyLedgerAuditRows", () => {
         });
     });
 
+    it("treats unsupported bank currencies as structural errors", () => {
+        const [row] = monthlyLedgerAuditRows(
+            data({ opTransactions: [transaction({ currency: "GBP" })] }),
+            "2026-07",
+            "2026-08",
+        );
+
+        expect(row).toMatchObject({
+            status: "structural",
+            invalidRows: 1,
+            invalidProviders: ["aws"],
+        });
+    });
+
     it("surfaces duplicates, invalid facts, evidence gaps, and unmapped providers", () => {
         const [row] = monthlyLedgerAuditRows(
             data({

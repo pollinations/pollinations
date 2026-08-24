@@ -140,7 +140,29 @@ export function buildRunway(
         );
     }
 
-    const bankRows = transactions.filter((row) => row.kind === "transaction");
+    const unsupportedBankRows = transactions.filter(
+        (row) =>
+            !canConvertToUsd(row.currency) ||
+            (String(row.currency ?? "").trim() === "" && row.amount !== 0),
+    );
+    const bankCurrenciesUsable = unsupportedBankRows.length === 0;
+    if (!bankCurrenciesUsable) {
+        const currencies = [
+            ...new Set(
+                unsupportedBankRows.map(
+                    (row) => String(row.currency ?? "").trim() || "missing",
+                ),
+            ),
+        ].sort();
+        flags.push(
+            `${unsupportedBankRows.length} bank ${unsupportedBankRows.length === 1 ? "row uses" : "rows use"} unsupported currency (${currencies.join(", ")}); cash balance and runway are unavailable.`,
+        );
+    }
+
+    const bankRows = transactions.filter(
+        (row) =>
+            row.kind === "transaction" && !unsupportedBankRows.includes(row),
+    );
     for (const row of bankRows) {
         const month = row.date.slice(0, 7);
         if (!MONTH_RE.test(month) || month < WINDOW_START) continue;
@@ -222,7 +244,9 @@ export function buildRunway(
     }
 
     const openingRows = transactions.filter(
-        (row) => row.kind === "opening_balance",
+        (row) =>
+            row.kind === "opening_balance" &&
+            !unsupportedBankRows.includes(row),
     );
     const openingDates = [
         ...new Set(openingRows.map((row) => row.date)),
@@ -340,12 +364,12 @@ export function buildRunway(
         });
 
     const openingBalanceUsd =
-        openingBalanceDate == null
+        openingBalanceDate == null || !bankCurrenciesUsable
             ? null
             : balancesInUsd(openingBalances, openingBalanceDate.slice(0, 7));
     const cashBalanceByMonth = new Map<string, number>();
     let preWindowMovementsUsd = 0;
-    if (openingBalanceDate) {
+    if (openingBalanceDate && bankCurrenciesUsable) {
         const nativeBalances = new Map(openingBalances);
         const openingMonth = openingBalanceDate.slice(0, 7);
         if (openingMonth < WINDOW_START) {

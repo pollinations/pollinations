@@ -426,6 +426,34 @@ describe("buildRunway", () => {
         );
     });
 
+    it("does not crash or project around an unsupported bank currency", () => {
+        const result = buildRunway(
+            [
+                opening(),
+                transaction({
+                    entry_id: "bank-gbp",
+                    amount: -10,
+                    currency: "GBP",
+                }),
+            ],
+            [
+                forecast(),
+                forecast({
+                    entry_id: "forecast-2026-09-aws",
+                    month: "2026-09-01",
+                }),
+            ],
+            NOW,
+        );
+
+        expect(result.currentCashUsd).toBeNull();
+        expect(result.projectedMonthEndCashUsd).toBeNull();
+        expect(result.runwayMonths).toBeNull();
+        expect(result.flags).toContain(
+            "1 bank row uses unsupported currency (GBP); cash balance and runway are unavailable.",
+        );
+    });
+
     it("keeps cash unavailable without an opening balance", () => {
         const result = buildRunway([transaction()], [forecast()], NOW);
 

@@ -35,6 +35,7 @@ describe("toUsd", () => {
 
     it("treats a blank currency as USD (rows without that leg carry 0)", () => {
         expect(toUsd(0, "", "2026-06")).toBe(0);
+        expect(() => toUsd(1, "", "2026-06")).toThrow(/Missing currency/);
     });
 
     it("throws on an unknown currency instead of guessing", () => {

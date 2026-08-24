@@ -79,6 +79,7 @@ for (const [month, expected] of Object.entries(expectedMonthlyTotals)) {
 const recordedAt = new Date().toISOString().replace("T", " ").replace("Z", "");
 const corrections = duplicates.map((row) => ({
     ...row,
+    base_recorded_at: row.recorded_at,
     source: "tombstone",
     account_id: ACCOUNT_ID,
     account_name: ACCOUNT_NAME,

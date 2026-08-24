@@ -123,6 +123,7 @@ const updates = [];
 for (const group of groups) {
     updates.push({
         ...group.legacy,
+        base_recorded_at: group.legacy.recorded_at,
         source: "tombstone",
         credit: 0,
         paid: 0,

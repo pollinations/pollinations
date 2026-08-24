@@ -207,6 +207,7 @@ for (const row of rows) {
     }
     updates.push({
         ...row,
+        base_recorded_at: row.recorded_at,
         account_id: accountId,
         account_name: account.label,
         recorded_at: recordedAt,

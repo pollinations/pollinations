@@ -228,6 +228,7 @@ const tombstones = legacyEntryIds.flatMap((entryId) => {
         ? [
               {
                   ...row,
+                  base_recorded_at: row.recorded_at,
                   source: "tombstone",
                   credit: 0,
                   paid: 0,
@@ -244,6 +245,7 @@ const grant = rowsById.get(grantEntryId);
 if (!grant) throw new Error(`Missing Scaleway grant row ${grantEntryId}`);
 const grantUpdate = {
     ...grant,
+    base_recorded_at: grant.recorded_at,
     account_id: ORGANIZATION_ID,
     account_name: ORGANIZATION_NAME,
     evidence: `${DISCOUNT_EVIDENCE} · January application ${evidenceByMonth["2026-01"].invoice}`,

@@ -194,6 +194,7 @@ if (!evidenceUrl.startsWith("https://drive.google.com/")) {
 const recordedAt = generatedAt.replace("T", " ").replace("Z", "");
 const updates = cloudRows.map((row) => ({
     ...row,
+    base_recorded_at: row.recorded_at,
     evidence: evidenceUrl,
     recorded_at: recordedAt,
 }));

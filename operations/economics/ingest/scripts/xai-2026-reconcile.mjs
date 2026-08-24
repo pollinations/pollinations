@@ -211,6 +211,7 @@ for (const [month, expected] of Object.entries(expectedInvoiceTotals)) {
 
 const updates = closedRows.map((row) => ({
     ...row,
+    base_recorded_at: row.recorded_at,
     account_id: ACCOUNT_ID,
     account_name: ACCOUNT_NAME,
     evidence: `${RAW_BILLING_EVIDENCE}${reportSuffix}`,
@@ -231,6 +232,7 @@ if (provisionalAugustRows.length !== 3) {
 for (const row of provisionalAugustRows) {
     updates.push({
         ...row,
+        base_recorded_at: row.recorded_at,
         source: "tombstone",
         account_id: ACCOUNT_ID,
         account_name: ACCOUNT_NAME,

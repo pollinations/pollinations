@@ -92,6 +92,7 @@ if (!legacyJanuary) {
 }
 updates.push({
     ...legacyJanuary,
+    base_recorded_at: legacyJanuary.recorded_at,
     source: "tombstone",
     credit: 0,
     paid: 0,
@@ -122,6 +123,7 @@ for (const [month, models] of exportsByMonth) {
 
         const row = {
             ...(existing ?? {}),
+            ...(existing ? { base_recorded_at: existing.recorded_at } : {}),
             entry_id: entryId,
             source: "dashboard",
             start: `${month}-01 00:00:00`,

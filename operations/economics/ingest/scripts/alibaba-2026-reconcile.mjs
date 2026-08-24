@@ -118,6 +118,7 @@ for (const row of existingAlibabaRows) {
     );
     updates.push({
         ...row,
+        base_recorded_at: row.recorded_at,
         account_id: ACCOUNT_ID,
         account_name: ACCOUNT_NAME,
         credit:

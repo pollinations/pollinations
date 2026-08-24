@@ -21,6 +21,7 @@ TRANSACTION_FIELDS = [
     "currency",
     "description",
     "evidence",
+    "base_recorded_at",
     "recorded_at",
 ]
 FORECAST_FIELDS = [
@@ -187,6 +188,7 @@ def main():
     for source in read_snapshot(args.transactions_json.resolve()):
         row = dict(source)
         row["kind"] = "transaction"
+        row["base_recorded_at"] = source.get("recorded_at", "")
         row["recorded_at"] = args.recorded_at
         parent_id = parent_statement_id(row["entry_id"])
         if parent_id in ambiguous_statement_ids:

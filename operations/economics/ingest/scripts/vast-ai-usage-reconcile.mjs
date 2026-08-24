@@ -16,10 +16,11 @@ if (
     !/^\d{4}-\d{2}$/.test(month ?? "") ||
     !evidence ||
     !expectedArgument ||
-    !outputArgument
+    !outputArgument ||
+    !effectiveSnapshotArgument
 ) {
     throw new Error(
-        "Usage: node vast-ai-usage-reconcile.mjs <invoices.json> <YYYY-MM> <evidence-url> <expected-total-usd> <output.ndjson> [effective-op-cloud-snapshot.json]",
+        "Usage: node vast-ai-usage-reconcile.mjs <invoices.json> <YYYY-MM> <evidence-url> <expected-total-usd> <output.ndjson> <effective-op-cloud-snapshot.json>",
     );
 }
 
@@ -170,31 +171,27 @@ const detailEntryIds = new Set(
         (detail) => `cli:vast.ai:${detail.kind}:${month}:${detail.instanceId}`,
     ),
 );
-let supersededEntryIds = [`cli:vast.ai:gpu:${periodStart}:account-396700:mtd`];
-if (effectiveSnapshotArgument) {
-    const snapshot = JSON.parse(
-        readFileSync(resolve(effectiveSnapshotArgument), "utf8"),
-    );
-    if (!Array.isArray(snapshot.data)) {
-        throw new Error(
-            "Effective op_cloud snapshot must contain a data array",
-        );
-    }
-    supersededEntryIds = snapshot.data
-        .filter(
-            (row) =>
-                row.vendor === "vast.ai" &&
-                row.type === "gpu" &&
-                String(row.start ?? "").slice(0, 7) === month &&
-                !detailEntryIds.has(row.entry_id),
-        )
-        .map((row) => row.entry_id)
-        .sort();
+const snapshot = JSON.parse(
+    readFileSync(resolve(effectiveSnapshotArgument), "utf8"),
+);
+if (!Array.isArray(snapshot.data)) {
+    throw new Error("Effective op_cloud snapshot must contain a data array");
 }
+const snapshotById = new Map(snapshot.data.map((row) => [row.entry_id, row]));
+const supersededRows = snapshot.data
+    .filter(
+        (row) =>
+            row.vendor === "vast.ai" &&
+            row.type === "gpu" &&
+            String(row.start ?? "").slice(0, 7) === month &&
+            !detailEntryIds.has(row.entry_id),
+    )
+    .sort((left, right) => left.entry_id.localeCompare(right.entry_id));
 const rows = [
-    ...supersededEntryIds.map((entryId) => ({
+    ...supersededRows.map((sourceRow) => ({
         ...shared,
-        entry_id: entryId,
+        entry_id: sourceRow.entry_id,
+        base_recorded_at: sourceRow.recorded_at,
         source: "tombstone",
         paid: 0,
         evidence: `Superseded by instance-level Vast.ai ${month} usage rows; ${evidence}`,
@@ -203,21 +200,26 @@ const rows = [
         resource_id: "396700",
         resource_name: `Superseded Vast.ai ${month} account total`,
     })),
-    ...details.map((detail) => ({
-        ...shared,
-        entry_id: `cli:vast.ai:${detail.kind}:${month}:${detail.instanceId}`,
-        source: "cli",
-        model: workloadByInstance.get(detail.instanceId) ?? "",
-        paid: -detail.amount,
-        evidence,
-        resource_sku:
-            detail.kind === "download" || detail.kind === "upload"
-                ? `${detail.kind}-gb`
-                : `${detail.kind}-hours`,
-        resource_count: detail.quantity,
-        resource_id: detail.instanceId,
-        resource_name: `Vast.ai instance ${detail.instanceId} · ${detail.kind}`,
-    })),
+    ...details.map((detail) => {
+        const entryId = `cli:vast.ai:${detail.kind}:${month}:${detail.instanceId}`;
+        const existing = snapshotById.get(entryId);
+        return {
+            ...shared,
+            entry_id: entryId,
+            ...(existing ? { base_recorded_at: existing.recorded_at } : {}),
+            source: "cli",
+            model: workloadByInstance.get(detail.instanceId) ?? "",
+            paid: -detail.amount,
+            evidence,
+            resource_sku:
+                detail.kind === "download" || detail.kind === "upload"
+                    ? `${detail.kind}-gb`
+                    : `${detail.kind}-hours`,
+            resource_count: detail.quantity,
+            resource_id: detail.instanceId,
+            resource_name: `Vast.ai instance ${detail.instanceId} · ${detail.kind}`,
+        };
+    }),
 ];
 
 writeFileSync(
@@ -227,7 +229,7 @@ writeFileSync(
 console.log(
     JSON.stringify({
         month,
-        superseded_rows: supersededEntryIds.length,
+        superseded_rows: supersededRows.length,
         detail_rows: details.length,
         billed_resources: new Set(details.map((row) => row.instanceId)).size,
         mapped_billed_resources: new Set(

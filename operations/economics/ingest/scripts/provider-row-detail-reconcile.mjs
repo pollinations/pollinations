@@ -68,6 +68,7 @@ const fireworksUpdates = fireworksSpecs.map((spec) => {
     }
     return {
         ...row,
+        base_recorded_at: row.recorded_at,
         resource_id: `myceli-${spec.month}-account-total`,
         resource_name: "Myceli account usage total",
         resource_sku: "account total",
@@ -112,6 +113,7 @@ const googleUpdates = googleSpecs.map((spec) => {
     });
     return {
         ...row,
+        base_recorded_at: row.recorded_at,
         resource_id: spec.resourceId,
         resource_name: spec.resourceName,
         resource_sku: spec.resourceSku,
@@ -125,6 +127,7 @@ const stability = requiredRow(stabilityEntryId);
 assertAmount(stability, { credit: 0, paid: -30, currency: "USD" });
 const stabilityTombstone = {
     ...stability,
+    base_recorded_at: stability.recorded_at,
     source: "tombstone",
     credit: 0,
     paid: 0,
@@ -180,6 +183,7 @@ if (Math.abs(replicateTotal - 6.06) > 1e-9) {
 }
 const replicateTombstone = {
     ...replicateAggregate,
+    base_recorded_at: replicateAggregate.recorded_at,
     source: "tombstone",
     credit: 0,
     paid: 0,

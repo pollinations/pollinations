@@ -89,6 +89,7 @@ for (const row of legacyRows) {
 
 const cloudUpdates = legacyRows.map((row) => ({
     ...row,
+    base_recorded_at: row.recorded_at,
     resource_name: "Unallocated historical prepaid burn",
     resource_count: 1,
     evidence:

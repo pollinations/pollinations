@@ -81,6 +81,7 @@ const updates = modalRows.map((row) => {
     const month = monthOf(row);
     const updated = {
         ...row,
+        base_recorded_at: row.recorded_at,
         account_id: PRIMARY_ACCOUNT_ID,
         account_name: PRIMARY_ACCOUNT_NAME,
         recorded_at: recordedAt,

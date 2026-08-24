@@ -136,6 +136,7 @@ for (const month of Object.keys(dashboardByMonth).slice(0, 5)) {
     for (const row of rows) {
         updates.push({
             ...row,
+            base_recorded_at: row.recorded_at,
             account_id: ACCOUNT_ID,
             account_name: ACCOUNT_NAME,
             evidence: reportEvidenceUrl
@@ -180,6 +181,7 @@ for (const month of ["2026-06", "2026-07", "2026-08"]) {
 
 updates.push({
     ...grant,
+    base_recorded_at: grant.recorded_at,
     account_id: ACCOUNT_ID,
     account_name: ACCOUNT_NAME,
     evidence: reportEvidenceUrl || grant.evidence,

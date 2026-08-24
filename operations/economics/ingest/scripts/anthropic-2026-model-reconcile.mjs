@@ -214,6 +214,7 @@ const zeroRows = ["2026-05", "2026-06", "2026-07"].map((month) => {
 
 const tombstones = [...LEGACY_IDS.values()].map((entryId) => ({
     ...rowById.get(entryId),
+    base_recorded_at: rowById.get(entryId).recorded_at,
     source: "tombstone",
     credit: 0,
     paid: 0,
@@ -222,6 +223,7 @@ const tombstones = [...LEGACY_IDS.values()].map((entryId) => ({
 }));
 const grantUpdate = {
     ...grant,
+    base_recorded_at: grant.recorded_at,
     resource_id: "startup-grant-2026-02",
     resource_name: "Anthropic startup grant",
     resource_sku: "promotional credit",

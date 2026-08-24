@@ -383,6 +383,9 @@ const recordedAt = generatedAt.replace("T", " ").replace("Z", "");
 const zeroMetrics = Object.fromEntries(metricFields.map((field) => [field, 0]));
 const historyRowsById = new Map();
 const existingByRawKey = new Map();
+const existingHistoryById = new Map(
+    existingHistoryRows.map((row) => [row.entry_id, row]),
+);
 for (const existing of existingHistoryRows) {
     const rowKey = key(existing);
     const rows = existingByRawKey.get(rowKey) ?? [];
@@ -390,6 +393,7 @@ for (const existing of existingHistoryRows) {
     existingByRawKey.set(rowKey, rows);
     historyRowsById.set(existing.entry_id, {
         entry_id: existing.entry_id,
+        base_recorded_at: existing.recorded_at,
         month: existing.month,
         provider: existing.vendor,
         model: existing.model,
@@ -404,8 +408,10 @@ for (const currentRow of currentRawRows) {
     const rowKey = key(currentRow);
     if (existingByRawKey.has(rowKey)) continue;
     const entryId = `history:workspace-suppress:2026:${rowKey}`;
+    const reusable = existingHistoryById.get(entryId);
     historyRowsById.set(entryId, {
         entry_id: entryId,
+        ...(reusable ? { base_recorded_at: reusable.recorded_at } : {}),
         month: currentRow.month,
         provider: currentRow.vendor,
         model: currentRow.model,
@@ -423,6 +429,7 @@ for (const desired of desiredRows) {
         reusable?.entry_id ?? `history:workspace-snapshot:2026:${rowKey}`;
     historyRowsById.set(entryId, {
         entry_id: entryId,
+        ...(reusable ? { base_recorded_at: reusable.recorded_at } : {}),
         month: desired.month,
         provider: desired.vendor,
         model: desired.model,

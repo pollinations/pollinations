@@ -244,6 +244,7 @@ for (const [month, entryId] of LEGACY_MYCELI_ENTRY_BY_MONTH) {
     });
     updates.push({
         ...row,
+        base_recorded_at: row.recorded_at,
         account_id: "myceli",
         account_name: ACCOUNT_LABEL.get("myceli"),
         resource_id: `myceli-${month}-account-total`,
@@ -264,6 +265,7 @@ const unassignedNeoglyph = rows.find(
 if (unassignedNeoglyph) {
     updates.push({
         ...unassignedNeoglyph,
+        base_recorded_at: unassignedNeoglyph.recorded_at,
         account_id: "neoglyph",
         account_name: ACCOUNT_LABEL.get("neoglyph"),
         recorded_at: recordedAt,
@@ -322,6 +324,7 @@ for (const [accountId, activeFrom] of ACCOUNT_ACTIVE_FROM) {
     if (row.start !== correctedStart) reBucketedGrants += 1;
     updates.push({
         ...row,
+        base_recorded_at: row.recorded_at,
         account_id: accountId,
         account_name: ACCOUNT_LABEL.get(accountId),
         start: correctedStart,

@@ -62,6 +62,7 @@ const legacyPollinationsUpdates = rows
     )
     .map((row) => ({
         ...row,
+        base_recorded_at: row.recorded_at,
         account_id: "pollinations",
         account_name: "Pollinations.ai (legacy)",
         recorded_at: recordedAt,

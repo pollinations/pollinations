@@ -203,6 +203,7 @@ const cloudUpdates = [];
 for (const group of groups) {
     cloudUpdates.push({
         ...group.legacy_cloud,
+        base_recorded_at: group.legacy_cloud.recorded_at,
         source: "tombstone",
         credit: 0,
         paid: 0,

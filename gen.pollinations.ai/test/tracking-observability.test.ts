@@ -5,6 +5,7 @@ import {
 } from "cloudflare:test";
 import type { AgentRunClaims } from "@shared/auth/agent-run-token.ts";
 import type { AuthUser } from "@shared/auth/api-key.ts";
+import { selectCommunityModelReward } from "@shared/billing/track-helpers.ts";
 import {
     COMMUNITY_MODEL_REWARD_RATE,
     type CommunityEndpointRuntime,
@@ -28,6 +29,7 @@ import { Hono } from "hono";
 import { requestId } from "hono/request-id";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
+import type { FallbackAttempt, FallbackCandidate } from "@/fallback.ts";
 import type {
     GenerationCacheAdapter,
     GenerationCacheVariables,
@@ -55,7 +57,7 @@ function createTestApp(
         resolved: "openai",
         definition: getRegistryModelDefinition("openai"),
     },
-    servedModelEntry?: ModelVariables["servedModelEntry"],
+    finalEntry?: GenerationModelEntry,
     responseHeaders: Record<string, string> = {},
     generationCache?: GenerationCacheVariables["generationCache"],
     agentRun?: AgentRunClaims,
@@ -82,37 +84,34 @@ function createTestApp(
         });
         c.set("frontendKeyRateLimit", { consumePollen });
         c.set("model", model);
-        if (servedModelEntry) c.set("servedModelEntry", servedModelEntry);
         if (generationCache) c.set("generationCache", generationCache);
         await next();
     });
-    app.post(
-        "/v1/chat/completions",
-        track("generate.text"),
-        () =>
-            new Response(
-                JSON.stringify({
-                    id: "chatcmpl_test",
-                    object: "chat.completion",
-                    choices: [
-                        {
-                            index: 0,
-                            message: { role: "assistant", content: "ok" },
-                            finish_reason: "stop",
-                        },
-                    ],
-                }),
-                {
-                    headers: {
-                        "content-type": "application/json",
-                        "x-model-used": "gpt-5-nano-2025-08-07",
-                        "x-usage-prompt-text-tokens": "1000",
-                        "x-usage-completion-text-tokens": "500",
-                        ...responseHeaders,
+    app.post("/v1/chat/completions", track("generate.text"), (c) => {
+        recordSettledEntry(c.var.track.attempts, finalEntry);
+        return new Response(
+            JSON.stringify({
+                id: "chatcmpl_test",
+                object: "chat.completion",
+                choices: [
+                    {
+                        index: 0,
+                        message: { role: "assistant", content: "ok" },
+                        finish_reason: "stop",
                     },
+                ],
+            }),
+            {
+                headers: {
+                    "content-type": "application/json",
+                    "x-model-used": "gpt-5-nano-2025-08-07",
+                    "x-usage-prompt-text-tokens": "1000",
+                    "x-usage-completion-text-tokens": "500",
+                    ...responseHeaders,
                 },
-            ),
-    );
+            },
+        );
+    });
 
     return app;
 }
@@ -286,7 +285,7 @@ function createHeaderApp(
     status = 200,
     consumePollen: (amount: number) => Promise<void> = async () => {},
     model: ModelName = "openai",
-    servedModelEntry?: GenerationModelEntry,
+    finalEntry?: GenerationModelEntry,
 ) {
     const app = new Hono<Env>();
 
@@ -310,24 +309,21 @@ function createHeaderApp(
             resolved: model,
             definition: getRegistryModelDefinition(model),
         });
-        if (servedModelEntry) c.set("servedModelEntry", servedModelEntry);
         await next();
     });
-    app.post(
-        "/v1/chat/completions",
-        track("generate.text"),
-        () =>
-            new Response(JSON.stringify({ choices: [{ message: {} }] }), {
-                status,
-                headers: {
-                    "content-type": "application/json",
-                    "x-model-used": "gpt-5-nano-2025-08-07",
-                    "x-usage-prompt-text-tokens": "10",
-                    "x-usage-completion-text-tokens": "5",
-                    ...extraHeaders,
-                },
-            }),
-    );
+    app.post("/v1/chat/completions", track("generate.text"), (c) => {
+        recordSettledEntry(c.var.track.attempts, finalEntry);
+        return new Response(JSON.stringify({ choices: [{ message: {} }] }), {
+            status,
+            headers: {
+                "content-type": "application/json",
+                "x-model-used": "gpt-5-nano-2025-08-07",
+                "x-usage-prompt-text-tokens": "10",
+                "x-usage-completion-text-tokens": "5",
+                ...extraHeaders,
+            },
+        });
+    });
 
     return app;
 }
@@ -343,6 +339,25 @@ function createStaticEntry(model: ModelName): GenerationModelEntry {
         info: modelInfoFromDefinition(model, definition),
         visible: true,
     };
+}
+
+function recordSettledEntry(
+    attempts: FallbackAttempt[],
+    entry?: GenerationModelEntry,
+): void {
+    if (!entry) return;
+    const now = new Date();
+    attempts.push({
+        candidate: {
+            id: entry.id,
+            definition: entry.definition,
+            communityEndpoint: entry.communityEndpoint,
+            entry,
+        },
+        startedAt: now,
+        endedAt: now,
+        settled: true,
+    });
 }
 
 async function captureFallbackEvent(extraHeaders: Record<string, string>) {
@@ -380,6 +395,20 @@ async function captureFallbackEvent(extraHeaders: Record<string, string>) {
     expect(tinybirdRequests).toHaveLength(1);
     return (await tinybirdRequests[0].json()) as { fallbackUsed?: boolean };
 }
+
+describe("selectCommunityModelReward", () => {
+    it("preserves an undefined served price for an eligible public endpoint", () => {
+        const endpoint = createCommunityEndpoint("community-owner");
+
+        expect(
+            selectCommunityModelReward(undefined, endpoint, undefined),
+        ).toStrictEqual({
+            userId: endpoint.ownerUserId,
+            rewardRate: COMMUNITY_MODEL_REWARD_RATE,
+            basePrice: undefined,
+        });
+    });
+});
 
 describe("tracking observability", () => {
     beforeEach(async () => {
@@ -2118,14 +2147,14 @@ describe("tracking observability", () => {
         expect(after?.tierBalance).toBe(1);
     });
 
-    it("records fallbackUsed=true when Portkey served a non-primary target", async () => {
+    it("records fallbackUsed=true for a non-primary target", async () => {
         const event = await captureFallbackEvent({
             "x-fallback-target": "config.targets[1]",
         });
         expect(event.fallbackUsed).toBe(true);
     });
 
-    it("records fallbackUsed=false when Portkey served the primary target", async () => {
+    it("records fallbackUsed=false for the primary target", async () => {
         const event = await captureFallbackEvent({
             "x-fallback-target": "config.targets[0]",
         });
@@ -2160,12 +2189,20 @@ function requestTrackingFixture(
     };
 }
 
+function candidateFixture(model: ModelName = "openai"): FallbackCandidate {
+    return {
+        id: model,
+        definition: getRegistryModelDefinition(model),
+    };
+}
+
 describe("trackResponse modelUsed", () => {
     it("attributes a failed generation to the resolved model", async () => {
         const tracking = await trackResponse(
             "generate.text",
             requestTrackingFixture(),
             new Response("upstream exploded", { status: 502 }),
+            candidateFixture(),
         );
         expect(tracking).toMatchObject({
             responseStatus: 502,
@@ -2181,6 +2218,7 @@ describe("trackResponse modelUsed", () => {
             requestTrackingFixture(),
             // A JSON error body served with HTTP 200 instead of an image.
             Response.json({ error: "boom" }),
+            candidateFixture(),
         );
         expect(tracking).toMatchObject({
             responseStatus: 200,
@@ -2199,6 +2237,7 @@ describe("trackResponse modelUsed", () => {
                 'data: {"model":"gpt-5-nano","choices":[{"delta":{"content":"hi"}}]}\n\ndata: [DONE]\n\n',
                 { headers: { "content-type": "text/event-stream" } },
             ),
+            candidateFixture(),
         );
         expect(tracking).toMatchObject({
             responseStatus: 200,
@@ -2213,6 +2252,7 @@ describe("trackResponse modelUsed", () => {
             "generate.text",
             requestTrackingFixture(),
             Response.json({ choices: [] }, { headers: { "x-cache": "HIT" } }),
+            candidateFixture(),
         );
         expect(tracking.cacheHit).toBe(true);
         expect(tracking.isBilledUsage).toBe(false);
@@ -2231,6 +2271,7 @@ describe("trackResponse missing usage", () => {
             "generate.text",
             requestTrackingFixture(true),
             emptyStream(),
+            candidateFixture(),
         );
         expect(tracking.isBilledUsage).toBe(false);
         expect(tracking.errorTracking).toMatchObject({
@@ -2245,6 +2286,7 @@ describe("trackResponse missing usage", () => {
             "generate.text",
             requestTrackingFixture(true, "perplexity-fast"),
             emptyStream(),
+            candidateFixture("perplexity-fast"),
         );
         expect(tracking.isBilledUsage).toBe(true);
         expect(tracking.errorTracking).toBeUndefined();

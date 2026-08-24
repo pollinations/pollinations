@@ -10,15 +10,11 @@ import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import { firstContentPolicyMessage } from "./image/utils/contentModeration.ts";
 import type { GenerationModelEntry } from "./model-registry.ts";
 
-/**
- * Upstream statuses that make a request move on to the model's next fallback
- * target.
- *
- * 400 and 422 are left out on purpose: those are caller errors and retrying
- * them elsewhere cannot succeed. 401/402/403/404 are included because they mean
- * the primary's credentials or upstream model are broken, which the fallback may
- * survive.
- */
+/** Formats the served target marker in Portkey's header shape. */
+export function formatFallbackTarget(index: number): string {
+    return `config.targets[${index}]`;
+}
+
 /**
  * Internal-only marker: which declared target served. Must stay
  * non-enumerable so JSON bodies and R2 cache snapshots never leak it.
@@ -29,7 +25,7 @@ export function attachFallbackTarget<T extends object>(
 ): T {
     if (index <= 0) return value;
     Object.defineProperty(value, "fallbackTarget", {
-        value: `config.targets[${index}]`,
+        value: formatFallbackTarget(index),
         enumerable: false,
         configurable: true,
         writable: true,
@@ -37,6 +33,15 @@ export function attachFallbackTarget<T extends object>(
     return value;
 }
 
+/**
+ * Upstream statuses that make a request move on to the model's next fallback
+ * target.
+ *
+ * 400 and 422 are left out on purpose: those are caller errors and retrying
+ * them elsewhere cannot succeed. 401/402/403/404 are included because they mean
+ * the primary's credentials or upstream model are broken, which the fallback may
+ * survive.
+ */
 export const FALLBACK_ON_STATUS_CODES = [
     401, 402, 403, 404, 408, 429, 500, 502, 503, 504,
 ];
@@ -295,19 +300,14 @@ export function linkFallbackEntries(
     }
 }
 
-/**
- * One upstream call that failed, as the loop saw it.
- *
- * `terminal` marks the failure that ended the request — the only thing about a
- * failed generation that the error response cannot say for itself, since it
- * carries no candidate name.
- */
-export type FailedCall = {
+/** One upstream call in the fallback loop, in order. */
+export type FallbackAttempt = {
     candidate: FallbackCandidate;
-    error: unknown;
     startedAt: Date;
     endedAt: Date;
-    terminal: boolean;
+    error?: unknown;
+    /** True when this call served or ended the request. */
+    settled: boolean;
 };
 
 /**
@@ -320,10 +320,10 @@ export type FailedCall = {
  * exhausted quota, and asking the same endpoint again would only spend more of
  * a budget that is already gone.
  *
- * Every failed call is appended to `failures`, including the one that ends the
- * request. Recording is not the same as retrying: this loop decides only which
- * candidate to try next, and leaves what any of it means to whoever reads the
- * list.
+ * Every upstream call is appended to `attempts`, including the one that serves
+ * or ends the request. Recording is not the same as retrying: this loop decides
+ * only which candidate to try next, and leaves what any of it means to whoever
+ * reads the ordered trace.
  *
  * Safe for streaming: the clients throw before returning a body, so a failed
  * attempt has sent the caller nothing.
@@ -331,7 +331,7 @@ export type FailedCall = {
 export async function withModelFallback<T>(
     candidates: FallbackCandidate[],
     attempt: (candidate: FallbackCandidate) => Promise<T>,
-    failures?: FailedCall[],
+    attempts?: FallbackAttempt[],
     beforeAttempt?: (candidate: FallbackCandidate) => Promise<void>,
 ): Promise<{ result: T; candidate: FallbackCandidate; index: number }> {
     const allowedStatusCodes = candidates[0]?.definition?.fallbackOnStatusCodes;
@@ -344,17 +344,24 @@ export async function withModelFallback<T>(
         // own latency.
         const startedAt = new Date();
         try {
-            return { result: await attempt(candidate), candidate, index };
+            const result = await attempt(candidate);
+            attempts?.push({
+                candidate,
+                startedAt,
+                endedAt: new Date(),
+                settled: true,
+            });
+            return { result, candidate, index };
         } catch (error) {
             const terminal =
                 index === candidates.length - 1 ||
                 !isRetryableFallbackError(error, allowedStatusCodes);
-            failures?.push({
+            attempts?.push({
                 candidate,
                 error,
                 startedAt,
                 endedAt: new Date(),
-                terminal,
+                settled: terminal,
             });
             if (terminal) throw error;
         }
@@ -368,17 +375,17 @@ export async function withModelFallback<T>(
 export async function withModelFallbackResponse(
     model: PrimaryModel,
     attempt: (candidate: FallbackCandidate) => Promise<Response>,
-    failures?: FailedCall[],
+    attempts?: FallbackAttempt[],
     beforeAttempt?: (candidate: FallbackCandidate) => Promise<void>,
-): Promise<{ response: Response; servedEntry?: GenerationModelEntry }> {
-    const { result, candidate, index } = await withModelFallback(
+): Promise<Response> {
+    const { result, index } = await withModelFallback(
         fallbackCandidates(model),
         attempt,
-        failures,
+        attempts,
         beforeAttempt,
     );
     if (index > 0) {
-        result.headers.set(FALLBACK_TARGET_HEADER, `config.targets[${index}]`);
+        result.headers.set(FALLBACK_TARGET_HEADER, formatFallbackTarget(index));
     }
-    return { response: result, servedEntry: candidate.entry };
+    return result;
 }

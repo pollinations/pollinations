@@ -274,6 +274,8 @@ export interface ChatOptions extends RequestOptions {
     stop?: string | string[];
     /** Seed for reproducible generation */
     seed?: number;
+    /** Keep generation private (default: false) */
+    private?: boolean;
     /** Enable streaming response (default: false) */
     stream?: boolean;
     /** Include usage stats in streaming response */

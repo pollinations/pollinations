@@ -6,8 +6,11 @@ import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
-import { fallbackCandidates, withModelFallback } from "../fallback.ts";
-import type { GenerationModelEntry } from "../model-registry.ts";
+import {
+    fallbackCandidates,
+    formatFallbackTarget,
+    withModelFallback,
+} from "../fallback.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 import {
     getRegisteredServers,
@@ -415,10 +418,9 @@ async function generateMediaWithFallback(
 ): Promise<{
     result: ImageGenerationResult | VideoGenerationResult;
     params: RuntimeImageParams;
-    servedEntry?: GenerationModelEntry;
     servedIndex: number;
 }> {
-    const { result, candidate, index } = await withModelFallback(
+    const { result, index } = await withModelFallback(
         fallbackCandidates(c.var.model),
         async (attempt) => {
             const params = { ...safeParams, model: attempt.id };
@@ -444,12 +446,11 @@ async function generateMediaWithFallback(
             assertNonEmptyMedia(generated.buffer, "Image provider");
             return { result: generated, params };
         },
-        c.var.track?.failedCalls,
+        c.var.track?.attempts,
         (attempt) => enforceModelRateLimit(c, attempt),
     );
     return {
         ...result,
-        servedEntry: candidate.entry,
         servedIndex: index,
     };
 }
@@ -527,20 +528,22 @@ export async function generateImageOrVideoResponse(
     });
 
     try {
-        const { result, params, servedEntry, servedIndex } =
-            await generateMediaWithFallback(c, originalPrompt, safeParams);
+        const { result, params, servedIndex } = await generateMediaWithFallback(
+            c,
+            originalPrompt,
+            safeParams,
+        );
         const headers = mediaHeaders(
             originalPrompt,
             params,
             result,
             result.mimeType || detectMimeType(result.buffer),
         );
-        if (servedEntry) c.set("servedModelEntry", servedEntry);
         if (servedIndex > 0) {
             // Same shape text emits, so tracking has one fallback marker.
             headers.set(
                 FALLBACK_TARGET_HEADER,
-                `config.targets[${servedIndex}]`,
+                formatFallbackTarget(servedIndex),
             );
         }
         return new Response(bufferToUint8Array(result.buffer), { headers });

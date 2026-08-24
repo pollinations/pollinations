@@ -1,6 +1,7 @@
 import {
     type CommunityEndpointVisibility,
     communityModelId,
+    type EndpointAgentListingPayload,
     isCommunityEndpointOwnerAllowed,
     normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
@@ -46,7 +47,9 @@ import {
     CommunityEndpointTestResponseSchema,
     CommunityProviderProfileInputSchema,
     CommunityProviderProfileResponseSchema,
+    CreateEndpointAgentSchema,
     CreateEndpointSchema,
+    EndpointAgentResponseSchema,
     FallbackCandidatesResponseSchema,
     ModelListSchema,
     TestEndpointSchema,
@@ -405,6 +408,68 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 })
                 .sort();
             return c.json({ data });
+        },
+    )
+    .post(
+        "/endpoint-agents",
+        describeRoute({
+            tags: ["🤖 Community Agents"],
+            summary: "Create Endpoint Agent",
+            description:
+                "Register an agent running on an external OpenAI-compatible endpoint. Pollinations sends a short-lived agent run token instead of a stored bearer credential. Private is the default; public agents require an allowlisted account. API keys require `account:keys`.",
+            responses: {
+                200: {
+                    description: "Created endpoint agent",
+                    content: {
+                        "application/json": {
+                            schema: resolver(EndpointAgentResponseSchema),
+                        },
+                    },
+                },
+                400: { description: "Invalid endpoint agent configuration" },
+                401: { description: "Unauthorized" },
+                403: { description: "Permission denied" },
+            },
+        }),
+        validator("json", CreateEndpointAgentSchema),
+        async (c) => {
+            const user = c.var.auth.requireUser();
+            const input = c.req.valid("json");
+            const db = drizzle(c.env.DB, { schema });
+            requireAccountPermission(c.var.auth.apiKey, "keys");
+            const ownerGithubUsername = await requireOwnerGithubUsername(
+                db,
+                user.id,
+            );
+            await ensureModelNameAvailable(db, user.id, input.name);
+            await enforcePublishingAccess(db, user.id, input.visibility);
+            const payload: EndpointAgentListingPayload = {
+                perUserRpm: input.perUserRpm,
+            };
+            const [row] = await db
+                .insert(schema.communityEndpoint)
+                .values({
+                    id: crypto.randomUUID(),
+                    ownerUserId: user.id,
+                    name: input.name,
+                    title: input.title,
+                    description: input.description || null,
+                    visibility: input.visibility,
+                    type: "endpoint_agent",
+                    baseUrl: normalizeInputBaseUrl(input.baseUrl),
+                    upstreamModel: input.upstreamModel ?? input.name,
+                    payload: JSON.stringify(payload),
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                })
+                .returning();
+            return c.json(
+                toCommunityEndpointResponse(
+                    row,
+                    ownerGithubUsername,
+                    c.env.AGENT_RUNTIME_BASE_URL,
+                ),
+            );
         },
     )
     .post(

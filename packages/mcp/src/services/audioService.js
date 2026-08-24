@@ -7,10 +7,6 @@ import {
     fetchAndUploadMedia,
     fetchJsonWithAuth,
 } from "../utils/coreUtils.js";
-import { validateTranscriptionModel } from "../utils/models.js";
-
-const MAX_TRANSCRIPTION_BYTES = 50 * 1024 * 1024;
-const TRANSCRIPTION_FETCH_TIMEOUT_MS = 30_000;
 
 function publicAudioUrl(source) {
     let url;
@@ -41,63 +37,13 @@ function publicAudioUrl(source) {
     return url;
 }
 
-async function readAudio(response) {
-    const contentLength = Number(response.headers.get("content-length"));
-    if (
-        Number.isFinite(contentLength) &&
-        contentLength > MAX_TRANSCRIPTION_BYTES
-    ) {
-        throw new Error("source exceeds the 50 MB transcription limit");
-    }
-
-    const reader = response.body?.getReader();
-    if (!reader) {
-        const bytes = new Uint8Array(await response.arrayBuffer());
-        if (bytes.byteLength > MAX_TRANSCRIPTION_BYTES) {
-            throw new Error("source exceeds the 50 MB transcription limit");
-        }
-        return [bytes];
-    }
-
-    const chunks = [];
-    let total = 0;
-    try {
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            total += value.byteLength;
-            if (total > MAX_TRANSCRIPTION_BYTES) {
-                await reader.cancel();
-                throw new Error("source exceeds the 50 MB transcription limit");
-            }
-            chunks.push(value);
-        }
-    } finally {
-        reader.releaseLock();
-    }
-    return chunks;
-}
-
 export async function transcribeAudio(params, context) {
     requireApiKey(context);
-    if (params.model) {
-        const validation = await validateTranscriptionModel(
-            params.model,
-            context,
-        );
-        if (!validation.valid) {
-            throw new Error(
-                `${validation.error} Use listModels with type=audio for the live registry.`,
-            );
-        }
-    }
-
     const source = publicAudioUrl(params.source);
     let response;
     try {
         response = await fetch(source, {
             redirect: "error",
-            signal: AbortSignal.timeout(TRANSCRIPTION_FETCH_TIMEOUT_MS),
         });
     } catch {
         throw new Error(
@@ -111,9 +57,7 @@ export async function transcribeAudio(params, context) {
     const form = new FormData();
     form.append(
         "file",
-        new Blob(await readAudio(response), {
-            type: response.headers.get("content-type") || "audio/mpeg",
-        }),
+        await response.blob(),
         source.pathname.split("/").pop() || "audio",
     );
     if (params.model) form.append("model", params.model);
@@ -230,7 +174,7 @@ export const audioTools = [
         {
             source: z
                 .url()
-                .describe("Direct public HTTPS URL for an audio file up to 50 MB"),
+                .describe("Direct public HTTPS URL for an audio file"),
             model: z
                 .string()
                 .optional()
@@ -244,7 +188,9 @@ export const audioTools = [
             prompt: z
                 .string()
                 .optional()
-                .describe("Optional text to guide transcription style or spelling"),
+                .describe(
+                    "Optional text to guide transcription style or spelling",
+                ),
         },
         transcribeAudio,
     ],

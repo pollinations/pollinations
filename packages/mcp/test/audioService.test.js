@@ -14,14 +14,6 @@ test("transcribes public audio through the Pollinations API", async (t) => {
     globalThis.fetch = async (input, init = {}) => {
         const url = String(input);
         calls.push({ url, init });
-        if (url.endsWith("/audio/models")) {
-            return Response.json([
-                {
-                    name: "gpt-transcribe",
-                    supported_endpoints: ["/v1/audio/transcriptions"],
-                },
-            ]);
-        }
         if (url === SOURCE) {
             return new Response(new Uint8Array([1, 2, 3]), {
                 headers: {
@@ -52,10 +44,10 @@ test("transcribes public audio through the Pollinations API", async (t) => {
     assert.deepEqual(result, {
         content: [{ type: "text", text: "Hello from the recording." }],
     });
-    assert.equal(calls.length, 3);
+    assert.equal(calls.length, 2);
 });
 
-test("rejects unsafe or oversized audio before transcription", async (t) => {
+test("rejects private audio URLs before fetching", async (t) => {
     const originalFetch = globalThis.fetch;
     let calls = 0;
     t.after(() => {
@@ -63,23 +55,12 @@ test("rejects unsafe or oversized audio before transcription", async (t) => {
     });
     globalThis.fetch = async () => {
         calls += 1;
-        return new Response(new Uint8Array([1]), {
-            headers: { "Content-Length": String(50 * 1024 * 1024 + 1) },
-        });
+        return new Response(new Uint8Array([1]));
     };
 
     await assert.rejects(
-        transcribeAudio(
-            { source: "https://127.0.0.1/audio.mp3" },
-            CONTEXT,
-        ),
+        transcribeAudio({ source: "https://127.0.0.1/audio.mp3" }, CONTEXT),
         /public HTTPS URL/,
     );
     assert.equal(calls, 0);
-
-    await assert.rejects(
-        transcribeAudio({ source: SOURCE }, CONTEXT),
-        /exceeds the 50 MB transcription limit/,
-    );
-    assert.equal(calls, 1);
 });

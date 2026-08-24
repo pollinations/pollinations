@@ -80,7 +80,7 @@ Use `generateText` with the appropriate model and message content for simple tex
 | `generateAudio`   | `/audio/{text}`           | Generate speech, music, or sound       |
 | `transcribeAudio` | `/v1/audio/transcriptions` | Transcribe audio from a public HTTPS URL |
 
-`generateAudio` returns an unlisted media resource link. `transcribeAudio` accepts a directly accessible audio URL up to 50 MB and returns text. Call `listModels` with `type=audio` for live model and voice metadata.
+`generateAudio` returns an unlisted media resource link. `transcribeAudio` accepts a directly accessible audio URL and returns text. Call `listModels` with `type=audio` for live model and voice metadata.
 
 ### Discovery
 

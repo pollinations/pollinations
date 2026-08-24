@@ -46,7 +46,6 @@ export function getModels(type = "all", context, community) {
 export const getImageModels = (context) => getModels("image", context);
 export const getTextModels = (context) => getModels("text", context);
 export const getVideoModels = (context) => getModels("video", context);
-export const getAudioModels = (context) => getModels("audio", context);
 export const getEmbeddingModels = (context) => getModels("embedding", context);
 export const getModel3dModels = (context) => getModels("3d", context);
 
@@ -84,26 +83,6 @@ export const validateTextModel = (name, context) =>
 
 export const validateVideoModel = (name, context) =>
     validateAgainstRegistry(name, getVideoModels, "video", context);
-
-export async function validateTranscriptionModel(name, context) {
-    const result = await validateAgainstRegistry(
-        name,
-        getAudioModels,
-        "transcription",
-        context,
-    );
-    if (
-        result.valid &&
-        result.model &&
-        !result.model.supported_endpoints?.includes("/v1/audio/transcriptions")
-    ) {
-        return {
-            valid: false,
-            error: `Model "${name}" does not support audio transcription.`,
-        };
-    }
-    return result;
-}
 
 export const validateEmbeddingModel = (name, context) =>
     validateAgainstRegistry(name, getEmbeddingModels, "embedding", context);

@@ -206,6 +206,35 @@ describe("buildRunway", () => {
         expect(january?.runningCashUsd).toBeCloseTo(1_156.42, 2);
     });
 
+    it("shows native-currency revaluation as an explicit cash adjustment", () => {
+        const result = buildRunway(
+            [opening(1_000, { currency: "EUR" })],
+            [
+                forecast(),
+                forecast({
+                    entry_id: "forecast-2026-09-aws",
+                    month: "2026-09-01",
+                }),
+            ],
+            NOW,
+        );
+        const january = result.columns.find(
+            (column) => column.id === "2026-01:actual",
+        );
+        const february = result.columns.find(
+            (column) => column.id === "2026-02:actual",
+        );
+        const fxRow = result.rows.find(
+            (row) => row.vendor === "fx revaluation",
+        );
+
+        expect(january?.netUsd).toBeCloseTo(0, 2);
+        expect(february?.netUsd).toBeCloseTo(8.6, 2);
+        expect(february?.runningCashUsd).toBeCloseTo(1_182.4, 2);
+        expect(fxRow).toMatchObject({ category: "balance_sheet" });
+        expect(fxRow?.values["2026-02:actual"]).toBeCloseTo(8.6, 2);
+    });
+
     it("rejects multiple opening dates instead of choosing one", () => {
         const result = buildRunway(
             [

@@ -377,6 +377,58 @@ export function buildRunway(
         }
     }
 
+    const fxRevaluationValues: Record<string, number> = {};
+    if (openingBalanceUsd != null && openingBalanceDate) {
+        const openingMonth = openingBalanceDate.slice(0, 7);
+        let priorCashUsd: number | null = openingBalanceUsd;
+        for (const column of columnSpecs) {
+            if (
+                column.kind === "forecast" ||
+                column.month < openingMonth ||
+                priorCashUsd == null
+            ) {
+                continue;
+            }
+            const closingCashUsd = cashBalanceByMonth.get(column.month);
+            if (closingCashUsd == null) {
+                priorCashUsd = null;
+                continue;
+            }
+            const cashMovementsUsd = rows.reduce(
+                (total, row) => total + (row.values[column.id] ?? 0),
+                0,
+            );
+            const revaluationUsd =
+                closingCashUsd - priorCashUsd - cashMovementsUsd;
+            fxRevaluationValues[column.id] = revaluationUsd;
+            priorCashUsd = closingCashUsd;
+        }
+    }
+    if (
+        Object.values(fxRevaluationValues).some(
+            (value) => Math.abs(value) > 0.005,
+        )
+    ) {
+        rows.push({
+            category: "balance_sheet",
+            vendor: "fx revaluation",
+            forecastMethod: null,
+            values: Object.fromEntries(
+                columnSpecs.map((column) => [
+                    column.id,
+                    fxRevaluationValues[column.id] ?? 0,
+                ]),
+            ),
+            assumptions: {},
+        });
+        rows.sort(
+            (a, b) =>
+                categoryRank(a.category) - categoryRank(b.category) ||
+                a.category.localeCompare(b.category) ||
+                a.vendor.localeCompare(b.vendor),
+        );
+    }
+
     const latestTransactionDate = bankRows
         .map((row) => row.date)
         .sort()

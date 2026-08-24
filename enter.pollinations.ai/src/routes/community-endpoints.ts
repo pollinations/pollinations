@@ -3,7 +3,6 @@ import {
     communityModelId,
     type EndpointAgentListingPayload,
     isCommunityEndpointOwnerAllowed,
-    isFreeCommunityEndpoint,
     normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
     normalizeCommunityProviderUrl,
@@ -773,47 +772,12 @@ export const communityEndpointsRoutes = new Hono<Env>()
                                   ),
                         ...policy,
                         fallbacks,
-                    }; // 12-hour price delay for public model price VALUE changes
-                    // (not structural changes like imagePricing mode switches,
-                    //  not when model is hidden or going private)
-                    const storedPayload: ProxyListingPayload | undefined =
-                        stored ?? undefined;
-                    const pricingModeChanged =
-                        storedPayload &&
-                        storedPayload.imagePricing !== policy.imagePricing;
-                    const priceValuesChanged =
-                        !pricingModeChanged &&
-                        JSON.stringify(policy.prices) !==
-                            JSON.stringify(storedPayload?.prices);
-                    const wasPublic =
-                        storedPayload?.prices &&
-                        !isFreeCommunityEndpoint(storedPayload.prices);
-                    const isPublic =
-                        effectiveVisibility === "public" &&
-                        !isFreeCommunityEndpoint(policy.prices);
-                    const wasActuallyPublic = endpoint.visibility === "public";
-                    const isHidden =
-                        input.hidden === true || endpoint.hiddenAt !== null;
-                    const isFirstPrice =
-                        !storedPayload?.pendingPrices && !wasPublic && isPublic;
-                    const becamePrivate =
-                        wasActuallyPublic && effectiveVisibility === "private";
+                    };
 
-                    if (
-                        priceValuesChanged &&
-                        isPublic &&
-                        !isFirstPrice &&
-                        !becamePrivate &&
-                        !isHidden
-                    ) {
-                        payload.pendingPrices = policy.prices;
-                        payload.pendingPricesEffectiveAt =
-                            Date.now() + 12 * 60 * 60 * 1000;
-                        payload.prices = storedPayload?.prices ?? policy.prices;
-                    } else if (becamePrivate || !isPublic || isHidden) {
-                        payload.pendingPrices = undefined;
-                        payload.pendingPricesEffectiveAt = undefined;
-                    }
+                    // Price changes take effect immediately.
+                    // pendingPrices stored for UI notification only.
+                    payload.pendingPrices = undefined;
+                    payload.pendingPricesEffectiveAt = undefined;
 
                     update.payload = JSON.stringify(payload);
                 }

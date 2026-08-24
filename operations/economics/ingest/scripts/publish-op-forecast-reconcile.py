@@ -8,6 +8,12 @@ from pathlib import Path
 
 from tinybird.client import TinyB
 
+from publisher_safety import (
+    assert_newer_versions,
+    latest_version_query,
+    validate_recorded_at,
+)
+
 
 HOST = "https://api.europe-west2.gcp.tinybird.co"
 WORKSPACES = {
@@ -101,6 +107,7 @@ def read_ndjson(path):
             "Only funded forecast rows may carry a zero amount: "
             + ", ".join(invalid_zeroes)
         )
+    validate_recorded_at(rows)
     return rows
 
 
@@ -173,6 +180,12 @@ async def latest_rows(client, entry_ids):
     return (await client.query(query))["data"]
 
 
+async def current_versions(client, entry_ids):
+    return (
+        await client.query(latest_version_query("op_forecast", entry_ids))
+    )["data"]
+
+
 def equal_value(expected, actual):
     if isinstance(expected, (int, float)):
         return abs(float(expected) - float(actual)) < 0.000000001
@@ -211,6 +224,10 @@ async def main():
 
     result = {}
     if not args.verify_only:
+        assert_newer_versions(
+            expected,
+            await current_versions(admin, [row["entry_id"] for row in expected]),
+        )
         append = await client_for(workspace_name, append=True)
         result = await append.datasource_append_data(
             "op_forecast", args.input.resolve(), mode="append", format="ndjson"

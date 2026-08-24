@@ -7,6 +7,12 @@ from pathlib import Path
 
 from tinybird.tb.client import TinyB
 
+from publisher_safety import (
+    assert_newer_versions,
+    latest_version_query,
+    validate_recorded_at,
+)
+
 
 HOST = "https://api.europe-west2.gcp.tinybird.co"
 WORKSPACES = {
@@ -52,6 +58,7 @@ def read_ndjson(path):
     ids = [row["entry_id"] for row in rows]
     if not rows or len(ids) != len(set(ids)):
         raise RuntimeError("Input must contain unique op_pollen_history entry IDs")
+    validate_recorded_at(rows)
     return rows
 
 
@@ -92,6 +99,10 @@ def effective_history(client):
         FORMAT JSON
     """
     return client.query(query)["data"]
+
+
+def current_versions(client, entry_ids):
+    return client.query(latest_version_query("op_pollen_history", entry_ids))["data"]
 
 
 def equal_value(expected, actual):
@@ -217,6 +228,11 @@ def main():
             for field in METRICS:
                 if float(row[field]) < 0:
                     raise RuntimeError(f"{row['entry_id']} has negative {field}")
+
+    assert_newer_versions(
+        expected,
+        current_versions(admin, [row["entry_id"] for row in expected]),
+    )
 
     result = append.datasource_append_data(
         "op_pollen_history", args.input.resolve(), mode="append", format="ndjson"

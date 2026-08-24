@@ -8,6 +8,12 @@ from pathlib import Path
 
 from tinybird.tb.client import TinyB
 
+from publisher_safety import (
+    assert_newer_versions,
+    latest_version_query,
+    validate_recorded_at,
+)
+
 
 HOST = "https://api.europe-west2.gcp.tinybird.co"
 WORKSPACES = {
@@ -53,6 +59,7 @@ def read_ndjson(path):
     ids = [row["entry_id"] for row in rows]
     if not rows or len(ids) != len(set(ids)):
         raise RuntimeError("Input must contain unique op_cloud entry IDs")
+    validate_recorded_at(rows)
     return rows
 
 
@@ -166,6 +173,10 @@ def latest_rows(client, entry_ids, fields):
     return client.query(query)["data"]
 
 
+def current_versions(client, entry_ids):
+    return client.query(latest_version_query("op_cloud", entry_ids))["data"]
+
+
 def equal_value(expected, actual):
     if isinstance(expected, (int, float)):
         return abs(float(expected) - float(actual)) < 0.000000001
@@ -221,6 +232,10 @@ def main():
 
     result = {}
     if not args.verify_only:
+        assert_newer_versions(
+            expected,
+            current_versions(admin, [row["entry_id"] for row in expected]),
+        )
         append = client_for(workspace_name, append=True)
         with tempfile.TemporaryDirectory() as temporary_directory:
             append_path = append_input_path(expected, fields, temporary_directory)

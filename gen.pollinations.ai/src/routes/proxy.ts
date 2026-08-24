@@ -418,7 +418,11 @@ export const proxyRoutes = new Hono<Env>()
             };
             const registry = await getGenerationModelRegistry(c.env);
             const entry = registry.resolve(model);
-            if (!entry) return c.json({ object: "error", message: "Model not found" }, 404);
+            if (!entry)
+                return c.json(
+                    { object: "error", message: "Model not found" },
+                    404,
+                );
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
             const paidBalance = hasPaidBalance(c);
             const visible = filterEntriesByPermissions(
@@ -427,25 +431,37 @@ export const proxyRoutes = new Hono<Env>()
                 paidBalance,
             );
             if (visible.length === 0) {
-                return c.json({ object: "error", message: "Model not found" }, 404);
+                return c.json(
+                    { object: "error", message: "Model not found" },
+                    404,
+                );
             }
             const now = Date.now();
             const toModelEntry = (entry: GenerationModelEntry) => ({
                 id: entry.info.name,
                 object: "model" as const,
                 created: now,
-                owned_by: entry.communityEndpoint?.ownerUserId ?? "pollinations",
+                owned_by:
+                    entry.communityEndpoint?.ownerUserId ?? "pollinations",
                 input_modalities: entry.info.input_modalities,
                 output_modalities: entry.info.output_modalities,
                 supported_endpoints: entry.supportedEndpoints,
                 ...(entry.info.agent && { agent: true }),
-                ...(entry.info.base_model && { base_model: entry.info.base_model }),
+                ...(entry.info.base_model && {
+                    base_model: entry.info.base_model,
+                }),
                 pricing: entry.info.pricing,
                 capabilities: entry.info.capabilities,
                 ...(entry.info.tools && { tools: entry.info.tools }),
-                ...(entry.info.reasoning && { reasoning: entry.info.reasoning }),
-                ...(entry.info.context_length && { context_length: entry.info.context_length }),
-                ...(entry.info.per_user_rpm !== undefined && { per_user_rpm: entry.info.per_user_rpm }),
+                ...(entry.info.reasoning && {
+                    reasoning: entry.info.reasoning,
+                }),
+                ...(entry.info.context_length && {
+                    context_length: entry.info.context_length,
+                }),
+                ...(entry.info.per_user_rpm !== undefined && {
+                    per_user_rpm: entry.info.per_user_rpm,
+                }),
             });
             return c.json(toModelEntry(entry));
         },

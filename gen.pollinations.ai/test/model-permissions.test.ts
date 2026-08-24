@@ -1,7 +1,7 @@
 import { SELF } from "cloudflare:test";
 import {
-    RESTRICTED_TEXT_TEST_MODEL,
     createTestApiKey,
+    RESTRICTED_TEXT_TEST_MODEL,
     test,
 } from "@shared/test/fixtures/index.ts";
 import { expect } from "vitest";

@@ -10,6 +10,17 @@ import type { ModelVariables } from "./middleware/model.ts";
 import type { TrackVariables } from "./middleware/track.ts";
 import type { TextVariables } from "./text/types.ts";
 
+export type A2aJsonRpcRequest = {
+    jsonrpc: "2.0";
+    id: string | number | null;
+    method: string;
+    params?: unknown;
+};
+
+export type A2aVariables = {
+    a2aRequest: A2aJsonRpcRequest;
+};
+
 export type Env = {
     Bindings: CloudflareBindings;
     Variables: RequestIdVariables &
@@ -22,5 +33,6 @@ export type Env = {
         SafetyVariables &
         TrackVariables &
         ModelVariables &
-        TextVariables;
+        TextVariables &
+        A2aVariables;
 };

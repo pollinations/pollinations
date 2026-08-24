@@ -4,6 +4,7 @@ import {
     SELF,
     waitOnExecutionContext,
 } from "cloudflare:test";
+import { AgentCard, Message, Role } from "@a2a-js/sdk";
 import type { Logger } from "@logtape/logtape";
 import { verifyAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import { COMMUNITY_MODEL_ALLOWED_GITHUB_IDS } from "@shared/auth/github-id-list.ts";
@@ -2703,6 +2704,144 @@ fixtureTest(
         for (const r of invalidResponses) {
             expect(r.status).toBe(400);
         }
+    },
+);
+
+fixtureTest(
+    "publishes agent cards and accepts stateless A2A messages",
+    async ({ apiKey }) => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `a2a-${crypto.randomUUID().slice(0, 8)}`;
+        const modelId = communityModelId(ownerGithubUsername, modelName);
+        const ownerUserId = await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: ownerGithubUsername,
+        });
+        await insertCommunityEndpoints({
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId,
+            type: "endpoint_agent",
+            visibility: "public",
+            name: modelName,
+            title: "A2A Test Agent",
+            description: "Answers concise test questions.",
+            baseUrl: "https://agent.example.com/v1",
+            upstreamModel: "test-agent",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            if (isPortkeyChatCompletionsRequest(request)) {
+                await expect(request.json()).resolves.toMatchObject({
+                    model: "test-agent",
+                    messages: [{ role: "user", content: "Hello agent" }],
+                    stream: false,
+                });
+                return Response.json({
+                    id: "chatcmpl_a2a",
+                    object: "chat.completion",
+                    model: "test-agent",
+                    choices: [
+                        {
+                            index: 0,
+                            message: {
+                                role: "assistant",
+                                content: "Hello from A2A",
+                            },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    usage: {
+                        prompt_tokens: 2,
+                        completion_tokens: 3,
+                        total_tokens: 5,
+                    },
+                });
+            }
+            if (isBillingFetch(request)) return Response.json({ data: [] });
+            throw new Error(`Unexpected fetch: ${request.url}`);
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const cardUrl = `https://gen.pollinations.ai/a2a/agents/${ownerGithubUsername}/${modelName}/agent-card.json`;
+        const cardResponse = await fetchGen(cardUrl);
+        expect(cardResponse.status).toBe(200);
+        expect(cardResponse.headers.get("content-type")).toContain(
+            "application/a2a+json",
+        );
+        const card = AgentCard.fromJSON(await cardResponse.json());
+        expect(card).toMatchObject({
+            name: "A2A Test Agent",
+            description: "Answers concise test questions.",
+            supportedInterfaces: [
+                {
+                    url: "https://gen.pollinations.ai/a2a",
+                    protocolBinding: "JSONRPC",
+                    protocolVersion: "1.0",
+                    tenant: modelId,
+                },
+            ],
+            capabilities: { streaming: false, pushNotifications: false },
+            defaultInputModes: ["text/plain"],
+            defaultOutputModes: ["text/plain"],
+        });
+
+        const modelsResponse = await fetchGen(
+            "https://gen.pollinations.ai/v1/models?community=true",
+        );
+        const models = (await modelsResponse.json()) as {
+            data: { id: string; agent_card_url?: string }[];
+        };
+        expect(models.data.find((model) => model.id === modelId)).toMatchObject(
+            {
+                agent_card_url: cardUrl,
+            },
+        );
+
+        const response = await fetchGen(
+            new Request("https://gen.pollinations.ai/a2a", {
+                method: "POST",
+                headers: {
+                    "A2A-Version": "1.0",
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/a2a+json",
+                },
+                body: JSON.stringify({
+                    jsonrpc: "2.0",
+                    id: "request-1",
+                    method: "SendMessage",
+                    params: {
+                        tenant: modelId,
+                        message: {
+                            messageId: "message-1",
+                            contextId: "context-1",
+                            role: "ROLE_USER",
+                            parts: [{ text: "Hello agent" }],
+                        },
+                    },
+                }),
+            }),
+        );
+        expect(response.status).toBe(200);
+        expect(response.headers.get("a2a-version")).toBe("1.0");
+        const body = (await response.json()) as {
+            jsonrpc: string;
+            id: string;
+            result: { message: unknown };
+        };
+        expect(body).toMatchObject({ jsonrpc: "2.0", id: "request-1" });
+        expect(Message.fromJSON(body.result.message)).toMatchObject({
+            contextId: "context-1",
+            role: Role.ROLE_AGENT,
+            parts: [
+                {
+                    content: { $case: "text", value: "Hello from A2A" },
+                    mediaType: "text/plain",
+                },
+            ],
+        });
     },
 );
 

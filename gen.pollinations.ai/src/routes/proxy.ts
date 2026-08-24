@@ -30,6 +30,7 @@ const resolver = <T extends Parameters<typeof baseResolver>[0]>(schema: T) =>
     baseResolver(schema, { reused: "ref" });
 
 import { validator } from "@shared/middleware/validator.ts";
+import { getPublicOrigin } from "@shared/public-origin.ts";
 import { AUDIO_VOICES } from "@shared/registry/audio.ts";
 import {
     DEFAULT_IMAGE_MODEL,
@@ -78,6 +79,7 @@ import {
     type GenerationModelEntry,
     getGenerationModelRegistry,
 } from "../model-registry.ts";
+import { agentCardUrl } from "./a2a.ts";
 import { handleSimpleAudio } from "./audio.ts";
 import {
     generateChatCompletion,
@@ -227,7 +229,15 @@ const modelsListHandler = (
                         paidBalance,
                     ),
                     community,
-                ).map((entry) => entry.info),
+                ).map((entry) => ({
+                    ...entry.info,
+                    ...(entry.info.agent && {
+                        agent_card_url: agentCardUrl(
+                            getPublicOrigin(c),
+                            entry.id,
+                        ),
+                    }),
+                })),
             );
         },
     ] as const;
@@ -326,6 +336,9 @@ export const proxyRoutes = new Hono<Env>()
                 output_modalities: entry.info.output_modalities,
                 supported_endpoints: entry.supportedEndpoints,
                 ...(entry.info.agent && { agent: true }),
+                ...(entry.info.agent && {
+                    agent_card_url: agentCardUrl(getPublicOrigin(c), entry.id),
+                }),
                 ...(entry.info.base_model && {
                     base_model: entry.info.base_model,
                 }),

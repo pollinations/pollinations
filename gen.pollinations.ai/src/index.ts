@@ -25,6 +25,7 @@ import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
 import { logger } from "@/middleware/logger.ts";
+import { a2aRoutes } from "./routes/a2a.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import { buildMergedOpenApiSpec, createDocsRoutes } from "./routes/docs.ts";
 import { modelStatusRoutes } from "./routes/model-status.ts";
@@ -145,6 +146,7 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     })
     .route("/docs", createDocsRoutes(app))
     .route("/v1/audio", audioRoutes)
+    .route("/a2a", a2aRoutes)
     // Conventional, discoverable alias for the merged OpenAPI spec. JSON-only;
     // the ?format=yaml passthrough stays on /docs/open-api/generate-schema.
     // Must be registered before the "/" proxy catch-all or it gets shadowed.

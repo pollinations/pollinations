@@ -28,6 +28,7 @@ import {
     Generate3dRequestQueryParamsSchema,
 } from "@/schemas/model3d.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
+import { apiKeyBudgetReservation } from "@/utils/generation-access.ts";
 import {
     handleSimpleAudio,
     handleSpeech,
@@ -58,6 +59,7 @@ const factory = createFactory<Env>();
 const imageVideoHandlers = factory.createHandlers(
     track("generate.image"),
     imageExecutionCache,
+    apiKeyBudgetReservation,
     generateImageVideo,
 );
 
@@ -65,6 +67,7 @@ const model3dHandlers = factory.createHandlers(
     resolveModel("generate.image", { defaultModel: DEFAULT_3D_MODEL }),
     track("generate.image"),
     model3dExecutionCache,
+    apiKeyBudgetReservation,
     generateModel3d,
 );
 
@@ -77,6 +80,7 @@ generationExecutorRoutes.post(
     resolveModel("generate.text"),
     track("generate.text"),
     textExecutionCache,
+    apiKeyBudgetReservation,
     generateChatCompletion,
 );
 
@@ -88,6 +92,7 @@ generationExecutorRoutes.post(
     track("generate.embedding"),
     prepareGenerationRequest,
     textExecutionCache,
+    apiKeyBudgetReservation,
     generateEmbeddingsResponse,
 );
 
@@ -98,6 +103,7 @@ generationExecutorRoutes.post(
     resolveModel("generate.text"),
     track("generate.text"),
     textExecutionCache,
+    apiKeyBudgetReservation,
     generateTextContent,
 );
 
@@ -108,6 +114,7 @@ generationExecutorRoutes.get(
     resolveModel("generate.text"),
     track("generate.text"),
     textExecutionCache,
+    apiKeyBudgetReservation,
     generateSimpleText,
 );
 
@@ -123,6 +130,7 @@ generationExecutorRoutes.post(
     track("generate.image"),
     prepareGenerationRequest,
     model3dExecutionCache,
+    apiKeyBudgetReservation,
     generateModel3d,
 );
 
@@ -158,6 +166,7 @@ generationExecutorRoutes.get(
     }),
     track("generate.audio"),
     audioExecutionCache,
+    apiKeyBudgetReservation,
     handleSimpleAudio,
 );
 
@@ -170,6 +179,7 @@ generationExecutorRoutes.post(
     formatOpenAIImageGeneration,
     prepareGenerationRequest,
     imageExecutionCache,
+    apiKeyBudgetReservation,
     handleImageGeneration,
 );
 
@@ -179,6 +189,7 @@ generationExecutorRoutes.post(
     track("generate.image"),
     prepareGenerationRequest,
     textExecutionCache,
+    apiKeyBudgetReservation,
     handleImageEdit,
 );
 
@@ -191,6 +202,7 @@ generationExecutorRoutes.post(
     track("generate.audio"),
     prepareGenerationRequest,
     audioExecutionCache,
+    apiKeyBudgetReservation,
     handleVoiceChanger,
 );
 
@@ -203,6 +215,7 @@ generationExecutorRoutes.post(
     track("generate.audio"),
     prepareGenerationRequest,
     audioExecutionCache,
+    apiKeyBudgetReservation,
     handleVoiceIsolator,
 );
 
@@ -214,6 +227,7 @@ generationExecutorRoutes.post(
     track("generate.audio"),
     prepareGenerationRequest,
     audioExecutionCache,
+    apiKeyBudgetReservation,
     handleSpeech,
 );
 
@@ -226,6 +240,7 @@ generationExecutorRoutes.post(
     track("generate.audio"),
     prepareGenerationRequest,
     textExecutionCache,
+    apiKeyBudgetReservation,
     handleSpeechWithTimestamps,
 );
 
@@ -238,5 +253,6 @@ generationExecutorRoutes.post(
     track("generate.audio"),
     prepareGenerationRequest,
     textExecutionCache,
+    apiKeyBudgetReservation,
     handleTranscription,
 );

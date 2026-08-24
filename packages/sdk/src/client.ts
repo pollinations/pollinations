@@ -680,51 +680,43 @@ export class Pollinations {
             );
         }
 
-        const messages: Message[] = [];
+        const response = await this.chat(
+            this.buildTextMessages(prompt, options.systemPrompt),
+            {
+                ...this.buildTextChatOptions(options),
+                signal: options.signal,
+            },
+        );
+        return response.choices[0]?.message?.content || "";
+    }
 
-        if (options.systemPrompt) {
-            messages.push({
-                role: "system",
-                content: options.systemPrompt,
-            });
-        }
-        messages.push({ role: "user", content: prompt });
+    /** Adapt the simple text facade to the canonical chat-completions request. */
+    private buildTextMessages(
+        prompt: string,
+        systemPrompt?: string,
+    ): Message[] {
+        return [
+            ...(systemPrompt
+                ? [{ role: "system" as const, content: systemPrompt }]
+                : []),
+            { role: "user", content: prompt },
+        ];
+    }
 
-        const body: Record<string, unknown> = {
-            messages,
+    /** Map simple text options without introducing SDK-owned defaults. */
+    private buildTextChatOptions(
+        options: Omit<TextGenerateOptions, "stream">,
+    ): Omit<ChatOptions, "stream" | "signal"> {
+        return {
             model: options.model,
             temperature: options.temperature,
-            max_tokens: options.maxTokens,
-            frequency_penalty: options.frequencyPenalty,
-            presence_penalty: options.presencePenalty,
+            maxTokens: options.maxTokens,
+            frequencyPenalty: options.frequencyPenalty,
+            presencePenalty: options.presencePenalty,
             seed: options.seed,
-            stream: false,
             private: options.private,
+            responseFormat: options.json ? { type: "json_object" } : undefined,
         };
-
-        if (options.json) {
-            body.response_format = { type: "json_object" };
-        }
-
-        this.stripUndefined(body);
-
-        const response = await fetchWithTimeout(
-            `${this.baseUrl}/v1/chat/completions`,
-            {
-                method: "POST",
-                headers: this.getHeaders("application/json"),
-                body: JSON.stringify(body),
-            },
-            this.textTimeout,
-            options.signal,
-        );
-
-        if (!response.ok) {
-            await this.handleErrorResponse(response);
-        }
-
-        const data = (await response.json()) as ChatResponse;
-        return data.choices[0]?.message?.content || "";
     }
 
     /**
@@ -749,72 +741,16 @@ export class Pollinations {
             );
         }
 
-        const messages: Message[] = [];
-
-        if (options.systemPrompt) {
-            messages.push({ role: "system", content: options.systemPrompt });
-        }
-        messages.push({ role: "user", content: prompt });
-
-        const body: Record<string, unknown> = {
-            messages,
-            model: options.model,
-            temperature: options.temperature,
-            max_tokens: options.maxTokens,
-            frequency_penalty: options.frequencyPenalty,
-            presence_penalty: options.presencePenalty,
-            seed: options.seed,
-            stream: true,
-            private: options.private,
-        };
-
-        if (options.json) {
-            body.response_format = { type: "json_object" };
-        }
-
-        this.stripUndefined(body);
-
-        const response = await fetchWithTimeout(
-            `${this.baseUrl}/v1/chat/completions`,
+        const chunks = this.chatStream(
+            this.buildTextMessages(prompt, options.systemPrompt),
             {
-                method: "POST",
-                headers: this.getHeaders("application/json"),
-                body: JSON.stringify(body),
+                ...this.buildTextChatOptions(options),
+                signal: options.signal,
             },
-            this.textTimeout,
-            options.signal,
         );
-
-        if (!response.ok) {
-            await this.handleErrorResponse(response);
-        }
-
-        const reader = response.body?.getReader();
-        if (!reader) {
-            throw new PollinationsError("No response body", "NO_BODY", 500);
-        }
-
-        const decoder = new TextDecoder();
-        let buffer = "";
-
-        try {
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                buffer += decoder.decode(value, { stream: true });
-                const result = parseSSEBuffer<string>(buffer, (data) => {
-                    const json = JSON.parse(data) as ChatStreamChunk;
-                    return json.choices[0]?.delta?.content || null;
-                });
-
-                buffer = result.remainingBuffer;
-                for (const content of result.chunks) {
-                    yield content;
-                }
-            }
-        } finally {
-            reader.releaseLock();
+        for await (const chunk of chunks) {
+            const content = chunk.choices[0]?.delta?.content;
+            if (content) yield content;
         }
     }
 
@@ -839,6 +775,7 @@ export class Pollinations {
             repetition_penalty: options.repetitionPenalty,
             stop: options.stop,
             seed: options.seed,
+            private: options.private,
             stream,
             stream_options: options.streamOptions,
             response_format: options.responseFormat,

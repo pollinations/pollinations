@@ -5,6 +5,7 @@ import {
     verifyAgentRunToken,
 } from "@shared/auth/agent-run-token.ts";
 import { getUserBalance } from "@shared/billing/balance.ts";
+import { atomicReserveApiKeyBalance } from "@shared/billing/deduction.ts";
 import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
 import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
 import { apikey as apiKeyTable } from "@shared/db/better-auth.ts";
@@ -207,6 +208,11 @@ test("spends the parent key's budget and the parent user's wallet", async () => 
     };
 
     const db = drizzle(env.DB);
+    const { reserved } = await atomicReserveApiKeyBalance(
+        db,
+        probed.apiKeyId,
+        1,
+    );
     await handleBalanceDeduction({
         db,
         isBilledUsage: true,
@@ -214,6 +220,7 @@ test("spends the parent key's budget and the parent user's wallet", async () => 
         userId: probed.userId,
         apiKeyId: probed.apiKeyId,
         apiKeyPollenBalance: probed.pollenBalance,
+        apiKeyReservedAmount: reserved,
     });
 
     expect((await getUserBalance(db, parent.userId)).tierBalance).toBeCloseTo(

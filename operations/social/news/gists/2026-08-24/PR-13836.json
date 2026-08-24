@@ -1,0 +1,35 @@
+{
+  "pr_number": 13836,
+  "title": "fix: restore Azure Kontext generation",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13836",
+  "merged_at": "2026-08-24T12:31:36Z",
+  "labels": [],
+  "pr_body_excerpt": "- Replaces the Azure OpenAI deployment URL that now rejects Kontext with Azure's supported Black Forest Labs provider route.\n- Restores both text-to-image and single-reference image editing without adding aliases, fallback, or a Pollinations GPU route.\n- Keeps Azure cost at $0.04/image and applies the approved `0.75` multiplier, making the public price $0.03/image.\n- Adds focused route, request-shape, edit, tracking, and upstream-error tests; focused tests and both service typechecks pass.\n- Verified direct Azure generation/edit plus local end-to-end generation, editing, catalog pricing, one-time billing, identical-request cache hits, and a 5/5 safe burst.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Kontext finds its way home",
+    "blurb": "Azure moved the flower bed, so Kontext briefly lost the path. The route now leads through Azure's Black Forest Labs provider, and image generation plus single-reference edits are blooming again.",
+    "summary": "Restored Azure Flux Kontext text-to-image and single-reference editing by replacing the rejected Azure OpenAI deployment URL with Azure's supported Black Forest Labs provider route, priced publicly at $0.03 per image from a $0.04 Azure cost with the 0.75 multiplier.",
+    "impact": "Users can again generate and edit Kontext images through Azure, with working billing, request caching, upstream error handling, and safe burst behavior at $0.03 per image.",
+    "keywords": [
+      "azure",
+      "flux-kontext",
+      "image-generation",
+      "image-editing",
+      "pricing",
+      "routing",
+      "bfl"
+    ],
+    "visual_concept": "Depict a cozy garden path being rerouted from a blocked old signpost labeled “Azure OpenAI” toward a welcoming Black Forest Labs greenhouse, representing the corrected Azure provider route. Polli, wearing a tiny explorer hat and carrying a route map, guides a glowing Kontext image seed into the greenhouse while a retro terminal shows a simple image and edit panel; code-plants and flowers represent restored generation, editing, cache, and billing flow.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings, wearing a tiny explorer hat and guiding a glowing image seed along a garden path from a faded “Azure OpenAI” sign toward a friendly Black Forest Labs greenhouse, while a retro terminal shows image generation and editing panels; lime green (#ecf874) code-plants, flowers, and warm cream pastels bloom around the route. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, emotionally warm and nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-24/PR-13836.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings, wearing a tiny explorer hat and guiding a glowing image seed along a garden path from a faded “Azure OpenAI” sign toward a friendly Black Forest Labs greenhouse, while a retro terminal shows image generation and editing panels; lime green (#ecf874) code-plants, flowers, and warm cream pastels bloom around the route. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, emotionally warm and nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-24T12:32:30.384148+00:00"
+}

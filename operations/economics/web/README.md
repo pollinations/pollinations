@@ -2,8 +2,11 @@
 
 Economics UI for `economics.myceli.ai` and `economics.pollinations.ai`, backed
 by OP Tinybird pipe outputs in `enter.pollinations.ai/observability/`.
-Insights include cash P&L, cash runway, credit runway, and unit economics. Raw
-tabs: Data Quality, Transactions, Pollen, and Cloud.
+The app has three operating views:
+
+- **Insights:** Runway, Close, and Balances.
+- **Unit economics:** Vendors, Inference, GPUs, and Community.
+- **Ledgers:** Bank, Compute & Infra, and Pollen.
 
 ## Run
 

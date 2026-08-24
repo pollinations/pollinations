@@ -24,51 +24,51 @@ describe("generateXaiSpeech", () => {
         vi.clearAllMocks();
     });
 
-    it.each(voiceFormatCases)(
-        "forwards voice=$voice format=$format with exact character billing",
-        async ({ voice, format }) => {
-            const fetchMock = vi.fn().mockResolvedValueOnce(
-                new Response(new Uint8Array([1, 2, 3]), {
-                    headers: { "Content-Type": contentTypes[format] },
-                }),
-            );
-            vi.stubGlobal("fetch", fetchMock);
+    it.each(
+        voiceFormatCases,
+    )("forwards voice=$voice format=$format with exact character billing", async ({
+        voice,
+        format,
+    }) => {
+        const fetchMock = vi.fn().mockResolvedValueOnce(
+            new Response(new Uint8Array([1, 2, 3]), {
+                headers: { "Content-Type": contentTypes[format] },
+            }),
+        );
+        vi.stubGlobal("fetch", fetchMock);
 
-            const response = await generateXaiSpeech({
+        const response = await generateXaiSpeech({
+            text: "Hi 🌻你好",
+            voice,
+            responseFormat: format,
+            apiKey: "test-key",
+            log,
+        });
+
+        expect(fetchMock).toHaveBeenCalledWith("https://api.x.ai/v1/tts", {
+            method: "POST",
+            headers: {
+                Authorization: "Bearer test-key",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
                 text: "Hi 🌻你好",
-                voice,
-                responseFormat: format,
-                apiKey: "test-key",
-                log,
-            });
-
-            expect(fetchMock).toHaveBeenCalledWith("https://api.x.ai/v1/tts", {
-                method: "POST",
-                headers: {
-                    Authorization: "Bearer test-key",
-                    "Content-Type": "application/json",
+                voice_id: voice,
+                language: "auto",
+                output_format: {
+                    codec: format,
+                    sample_rate: 24000,
+                    ...(format === "mp3" ? { bit_rate: 128000 } : {}),
                 },
-                body: JSON.stringify({
-                    text: "Hi 🌻你好",
-                    voice_id: voice,
-                    language: "auto",
-                    output_format: {
-                        codec: format,
-                        sample_rate: 24000,
-                        ...(format === "mp3" ? { bit_rate: 128000 } : {}),
-                    },
-                }),
-            });
-            expect(response.headers.get("content-type")).toBe(
-                contentTypes[format],
-            );
-            expect(response.headers.get("x-model-used")).toBe("grok-tts");
-            expect(response.headers.get("x-tts-voice")).toBe(voice);
-            expect(
-                response.headers.get("x-usage-completion-audio-tokens"),
-            ).toBe("6");
-        },
-    );
+            }),
+        });
+        expect(response.headers.get("content-type")).toBe(contentTypes[format]);
+        expect(response.headers.get("x-model-used")).toBe("grok-tts");
+        expect(response.headers.get("x-tts-voice")).toBe(voice);
+        expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
+            "6",
+        );
+    });
 
     it("maps the existing default voice to Eve", async () => {
         const fetchMock = vi.fn().mockResolvedValueOnce(

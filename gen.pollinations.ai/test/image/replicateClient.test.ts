@@ -213,31 +213,31 @@ describe("runReplicatePrediction", () => {
         });
     });
 
-    it.each(["aborted", "canceled"] as const)(
-        "classifies deadline terminal status %s as 504",
-        async (status) => {
-            vi.spyOn(globalThis, "fetch").mockResolvedValue(
-                new Response(
-                    JSON.stringify({
-                        id: `pred_${status}`,
-                        status,
-                        error: `Prediction ${status}`,
-                    }),
-                    { status: 201 },
-                ),
-            );
-
-            await expect(
-                runReplicatePrediction({
-                    model: MODEL,
-                    input: { prompt: "x" },
+    it.each([
+        "aborted",
+        "canceled",
+    ] as const)("classifies deadline terminal status %s as 504", async (status) => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(
+                JSON.stringify({
+                    id: `pred_${status}`,
+                    status,
+                    error: `Prediction ${status}`,
                 }),
-            ).rejects.toMatchObject({
-                name: "ReplicateError",
-                status: 504,
-            });
-        },
-    );
+                { status: 201 },
+            ),
+        );
+
+        await expect(
+            runReplicatePrediction({
+                model: MODEL,
+                input: { prompt: "x" },
+            }),
+        ).rejects.toMatchObject({
+            name: "ReplicateError",
+            status: 504,
+        });
+    });
 
     it("classifies deadline failure messages as 504", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(

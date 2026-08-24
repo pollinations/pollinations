@@ -58,19 +58,16 @@ describe("image edit dimensions", () => {
         [1536, 1024, 1024, 688],
         [4032, 3024, 1024, 768],
         [100, 10_000, 256, 1024],
-    ])(
-        "fits a %ix%i source into safe defaults as %ix%i",
-        async (sourceWidth, sourceHeight, width, height) => {
-            const resolved = await resolveEditDimensionsForImage(
-                makeParams({
-                    image: [pngDataUri(sourceWidth, sourceHeight)],
-                }),
-            );
+    ])("fits a %ix%i source into safe defaults as %ix%i", async (sourceWidth, sourceHeight, width, height) => {
+        const resolved = await resolveEditDimensionsForImage(
+            makeParams({
+                image: [pngDataUri(sourceWidth, sourceHeight)],
+            }),
+        );
 
-            expect(resolved).toMatchObject({ width, height });
-            expect(resolved.dimensionsExplicit).toBe(false);
-        },
-    );
+        expect(resolved).toMatchObject({ width, height });
+        expect(resolved.dimensionsExplicit).toBe(false);
+    });
 
     it("leaves an explicit size unchanged", async () => {
         const params = makeParams({

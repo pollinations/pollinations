@@ -16,6 +16,7 @@ function PromptEditor({ prompt, setPrompt, onGenerate, isLoading, error }) {
             />
 
             <button
+                type="button"
                 onClick={onGenerate}
                 disabled={isLoading}
                 className="generate-button"

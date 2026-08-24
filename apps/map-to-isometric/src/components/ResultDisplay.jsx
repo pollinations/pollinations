@@ -21,10 +21,18 @@ function ResultDisplay({
                 />
             </div>
             <div className="action-buttons">
-                <button onClick={onDownload} className="download-button">
+                <button
+                    type="button"
+                    onClick={onDownload}
+                    className="download-button"
+                >
                     ⬇️ Download Image
                 </button>
-                <button onClick={onReset} className="reset-button">
+                <button
+                    type="button"
+                    onClick={onReset}
+                    className="reset-button"
+                >
                     🔄 Create Another
                 </button>
             </div>

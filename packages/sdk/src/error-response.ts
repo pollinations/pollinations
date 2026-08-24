@@ -63,8 +63,11 @@ export async function pollinationsErrorFromResponse(
         nested.details && typeof nested.details === "object"
             ? (nested.details as Record<string, unknown>)
             : undefined;
+    // Prefer body requestId, fall back to X-Request-Id header
     const requestId =
-        typeof nested.requestId === "string" ? nested.requestId : undefined;
+        typeof nested.requestId === "string"
+            ? nested.requestId
+            : (response.headers.get("X-Request-Id") ?? undefined);
     const retryAfter = parseRetryAfter(response);
 
     return new PollinationsError(

@@ -159,6 +159,11 @@ export function CommunityEndpointCard({
                     search={{
                         ...currentPeriod(),
                         earningsModels: [endpoint.modelId],
+                        usageMetric: undefined,
+                        usageKeys: undefined,
+                        usageModels: undefined,
+                        earningsMetric: undefined,
+                        earningsApps: undefined,
                     }}
                     className="polli-control polli:inline-flex polli:items-center polli:gap-1 polli:rounded-sm polli:font-medium polli:text-theme-text-soft polli:underline polli:underline-offset-2 polli:transition-colors polli:hover:text-theme-text-strong"
                 >

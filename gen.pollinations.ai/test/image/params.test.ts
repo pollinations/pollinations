@@ -194,9 +194,9 @@ describe("ImageParamsSchema", () => {
             }
         });
 
-        it("accepts input_references for seedance-2.0-mini", () => {
+        it("accepts comma-separated input_references for seedance-2.0", () => {
             const result = ImageParamsSchema.safeParse({
-                model: "seedance-2.0-mini",
+                model: "seedance-2.0",
                 input_references:
                     "https://example.com/ref1.png,https://example.com/ref2.png",
             });
@@ -212,7 +212,7 @@ describe("ImageParamsSchema", () => {
 
         it("rejects input_references combined with frame images", () => {
             const result = ImageParamsSchema.safeParse({
-                model: "seedance-2.0-mini",
+                model: "seedance-2.0",
                 image: "https://example.com/start.png",
                 input_references: "https://example.com/ref1.png",
             });

@@ -5,6 +5,7 @@ import {
     verifyAgentRunToken,
 } from "@shared/auth/agent-run-token.ts";
 import { getUserBalance } from "@shared/billing/balance.ts";
+import { atomicReserveApiKeyBalance } from "@shared/billing/deduction.ts";
 import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
 import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
 import { apikey as apiKeyTable } from "@shared/db/better-auth.ts";
@@ -128,7 +129,7 @@ test("surfaces the parent request id", async () => {
     expect(body).toMatchObject({ agentRun: { parentRequestId: "req-abc" } });
 });
 
-test("agent run tokens can call community models but cannot recurse into agent models", async () => {
+test("agent run tokens can call community models and agents", async () => {
     const parent = await createTestApiKey({ user: { tierBalance: 100 } });
     const token = await runTokenFor(parent.id);
 
@@ -144,14 +145,14 @@ test("agent run tokens can call community models but cannot recurse into agent m
         "https://gen.pollinations.ai/",
         token,
     );
-    expect(agentResponse.status).toBe(403);
+    expect(agentResponse.status).toBe(200);
 
     const delegatedAgentResponse = await probe(
         communityProbe("endpoint_agent"),
         "https://gen.pollinations.ai/",
         token,
     );
-    expect(delegatedAgentResponse.status).toBe(403);
+    expect(delegatedAgentResponse.status).toBe(200);
 });
 
 test("is rejected as a query parameter", async () => {
@@ -207,6 +208,11 @@ test("spends the parent key's budget and the parent user's wallet", async () => 
     };
 
     const db = drizzle(env.DB);
+    const { reserved } = await atomicReserveApiKeyBalance(
+        db,
+        probed.apiKeyId,
+        1,
+    );
     await handleBalanceDeduction({
         db,
         isBilledUsage: true,
@@ -214,6 +220,7 @@ test("spends the parent key's budget and the parent user's wallet", async () => 
         userId: probed.userId,
         apiKeyId: probed.apiKeyId,
         apiKeyPollenBalance: probed.pollenBalance,
+        apiKeyReservedAmount: reserved,
     });
 
     expect((await getUserBalance(db, parent.userId)).tierBalance).toBeCloseTo(
@@ -257,7 +264,6 @@ test("rejects tampered, expired and malformed agent run tokens", async () => {
             expiresIn: AGENT_RUN_TOKEN_TTL_SECONDS + 1,
         }),
     ).rejects.toThrow("Invalid agent run token lifetime");
-
     // Correctly signed but missing the subject: the signature proves origin, it
     // does not prove the payload has the shape the auth layer reads.
     const malformedJwt = await new SignJWT({ version: 1 })

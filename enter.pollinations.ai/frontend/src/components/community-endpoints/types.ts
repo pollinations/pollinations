@@ -16,6 +16,7 @@ import {
     normalizeCommunityEndpointAdvertised,
     normalizeCommunityEndpointInputModalities,
 } from "@shared/community-endpoints.ts";
+import type { McpServerId } from "@shared/registry/mcp.ts";
 import type { ModelInputModality, Usage } from "@shared/registry/registry.ts";
 
 type EndpointFormPrices = Record<CommunityEndpointPriceKey, string>;
@@ -30,7 +31,7 @@ export type ManagedAgent = {
     upstreamModel: string;
     systemPrompt: string;
     baseModel: string;
-    mcpServers: "pollinations"[];
+    mcpServers: McpServerId[];
     createdAt: string;
     updatedAt: string;
 };

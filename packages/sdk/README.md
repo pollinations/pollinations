@@ -21,7 +21,7 @@ Alpha (in-progress rebuild — pin an exact version):
 
 ```bash
 npm install @pollinations/sdk@alpha
-# or pin exactly: npm install @pollinations/sdk@5.1.0-alpha.5
+# or pin exactly: npm install @pollinations/sdk@5.1.0-alpha.6
 ```
 
 ### CDN / `<script>` tag
@@ -508,9 +508,10 @@ try {
   const image = await generateImage('test');
 } catch (err) {
   if (err instanceof PollinationsError) {
-    console.error(err.message);  // Error message
-    console.error(err.code);     // Error code (BAD_REQUEST, UNAUTHORIZED, INSUFFICIENT_BALANCE, etc.)
-    console.error(err.status);   // HTTP status (400, 401, 402, 403, 500)
+    console.error(err.message);    // Error message
+    console.error(err.code);       // Error code (BAD_REQUEST, UNAUTHORIZED, INSUFFICIENT_BALANCE, etc.)
+    console.error(err.status);     // HTTP status (400, 401, 402, 403, 500)
+    console.error(err.requestId);  // Server request ID — include it in support reports
   }
 }
 ```

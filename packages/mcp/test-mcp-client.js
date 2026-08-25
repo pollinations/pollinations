@@ -55,6 +55,7 @@ const EXPECTED_TOOLS = [
     "getModelStatus",
     "listModels",
     "setApiKey",
+    "transcribeAudio",
 ];
 
 const createTransport = () =>
@@ -133,11 +134,15 @@ await step("model discovery guidance", () => {
     const tools = new Map(modernTools.map((tool) => [tool.name, tool]));
     assert.match(
         tools.get("listModels").description,
-        /before claiming that a named model is unavailable/,
+        /before claiming that a named model or agent is unavailable/,
+    );
+    assert.match(
+        tools.get("listModels").inputSchema.properties.agent.description,
+        /True for agents only/,
     );
     assert.match(
         tools.get("generateText").description,
-        /any text model in the live Pollinations registry/,
+        /any text model or agent in the live Pollinations registry/,
     );
     assert.match(
         tools.get("generateImage").description,
@@ -145,7 +150,7 @@ await step("model discovery guidance", () => {
     );
     assert.match(
         tools.get("generateText").inputSchema.properties.model.description,
-        /Canonical text model name or alias returned by listModels/,
+        /Canonical text model or agent name returned by listModels/,
     );
     assert.match(
         tools.get("generateImage").inputSchema.properties.model.description,

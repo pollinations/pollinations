@@ -1,0 +1,33 @@
+{
+  "pr_number": 13871,
+  "title": "chore: update app metrics 2026-08-25",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13871",
+  "merged_at": "2026-08-25T04:18:48Z",
+  "labels": [],
+  "pr_body_excerpt": "Daily automated update of app request and repository metrics",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The garden count changed",
+    "blurb": "The hive’s daily clipboard got a fresh set of numbers. Apps and repositories have been counted, as is tradition.",
+    "summary": "Updated the daily app request and repository metrics snapshot in operations/app-management/app.json for 2026-08-25.",
+    "impact": "Internal app-management reporting now reflects the latest recorded request and repository metrics.",
+    "keywords": [
+      "metrics",
+      "app-management",
+      "automation",
+      "reporting",
+      "daily-update"
+    ],
+    "visual_concept": "Polli, wearing a tiny accountant visor, reviews a cozy garden ledger beside a retro terminal showing gentle bar charts and request counters; small code-plants have numbered tags, representing the automated daily metrics refresh.",
+    "image_prompt": "Cozy pixel art scene of Polli the cute yellow-and-brown striped bee mascot wearing a tiny green accountant visor, calmly counting numbered code-flowers beside a retro CRT terminal with soft lime green (#ecf874) request charts; warm cream, mint, lavender, and peach garden shed setting with glowing vines. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle pixel-font text: 'DAILY METRICS', nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-25/PR-13871.jpg",
+    "prompt": "Cozy pixel art scene of Polli the cute yellow-and-brown striped bee mascot wearing a tiny green accountant visor, calmly counting numbered code-flowers beside a retro CRT terminal with soft lime green (#ecf874) request charts; warm cream, mint, lavender, and peach garden shed setting with glowing vines. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle pixel-font text: 'DAILY METRICS', nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-25T04:19:50.263385+00:00"
+}

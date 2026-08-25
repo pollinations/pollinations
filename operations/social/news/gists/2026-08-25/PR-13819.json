@@ -1,0 +1,34 @@
+{
+  "pr_number": 13819,
+  "title": "fix(sdk): preserve request IDs in errors via X-Request-Id fallback",
+  "author": "wiradifit",
+  "url": "https://github.com/pollinations/pollinations/pull/13819",
+  "merged_at": "2026-08-25T09:44:04Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n- `PollinationsError.requestId` now uses the error body's request ID when present (unchanged behavior)\n- Falls back to the response's `X-Request-Id` header when the body omits it — including non-JSON error bodies (HTML gateway errors) where no body field can exist\n\nCloses #13794\n\n## Reproduction / evidence\n- Before: a 502 with an HTML body and `X-Request-Id: abc` produced `err.requestId === undefined` — users had nothing to include in support reports even though the server emitted the ID on every response\n- After: same response produces `err.requestId === \"abc\"`\n\n| Case | Body requestId | Header | Result |\n|---|---|---|---|\n| body present | req-body-123 | req-header-456 | req-body-123 (body wins) |\n| body omits | - | req-header-456 | req-header-456 |\n| non-JSON body | - | req-header-789 | req-header-789 |\n| neither | - | - | undefined |\n\n## Changes\n- `packages/sdk/src/error-response.ts` — 4-line fallback + comment\n- `packages/sdk/src/error-response.test.ts` — 4 focused tests\n- `packages/sdk/README.md` — short usage example (`err.requestId`)\n\n## Verification\n```\n✓ src/error-response.test.ts (4 tests)\nTest Files  6 passed (6) — full SDK suite: 43 passed\nnpx tsc --noEmit → clean\n```\n\nNo server changes, no success metadata, no interceptors/logging/tracing/compat layers added.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The trail stays warm",
+    "blurb": "Error reports now keep their little breadcrumb. When a gateway sends back an HTML shrug, the SDK still carries its X-Request-Id home for support debugging.",
+    "summary": "The SDK now populates PollinationsError.requestId from the X-Request-Id response header when an error body has no request ID, while preserving the body requestId as the preferred value.",
+    "impact": "A 502 or other non-JSON gateway error with X-Request-Id: abc now gives developers err.requestId === \"abc\", so support reports retain the server-side trace ID.",
+    "keywords": [
+      "sdk",
+      "error-handling",
+      "request-id",
+      "debugging",
+      "typescript",
+      "support"
+    ],
+    "visual_concept": "A cozy debugging scene: Polli follows a glowing request-ID breadcrumb from a retro terminal displaying an HTML gateway-error page to a labeled header envelope. The request ID is a small but important trail marker, with code-plants and flowers making the technical support path feel cared for rather than lost.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny detective glasses as she follows a glowing lime green (#ecf874) breadcrumb labeled \"X-Request-Id\" from a retro terminal showing a simple HTML error page to a neat support-report envelope; code-plants and small flowers grow beside the terminal. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow and scanlines, pixel-font text: \"REQUEST ID FOUND\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-25/PR-13819.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny detective glasses as she follows a glowing lime green (#ecf874) breadcrumb labeled \"X-Request-Id\" from a retro terminal showing a simple HTML error page to a neat support-report envelope; code-plants and small flowers grow beside the terminal. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow and scanlines, pixel-font text: \"REQUEST ID FOUND\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-25T09:45:05.689686+00:00"
+}

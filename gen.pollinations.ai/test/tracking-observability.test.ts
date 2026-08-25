@@ -2308,7 +2308,7 @@ describe("reduceAdjustmentsToEventFields", () => {
     });
 
     it("survives the JSON.stringify(removeUnset(event)) ingestion round-trip", () => {
-        // Mirror shared/events.ts sendToTinybird: body = JSON.stringify(removeUnset(event)).
+        // Mirror the one-shot generation event write after financial commit.
         const withAdjustments = {
             id: "evt_with",
             isBilledUsage: true,

@@ -23,6 +23,45 @@ const testLog = {
 } as unknown as Logger;
 
 describe("OpenAI image cache", () => {
+    it("includes input reference URLs in the normalized media cache URL", async () => {
+        const references = [
+            "https://media.pollinations.ai/reference-1.png",
+            "https://media.pollinations.ai/reference-2.png",
+        ];
+        const app = new Hono<Env>()
+            .use("*", async (c, next) => {
+                c.set("model", {
+                    requested: "seedance-2.5",
+                    resolved: "seedance-2.5",
+                    definition: {} as Env["Variables"]["model"]["definition"],
+                });
+                c.req.addValidatedData("json", await c.req.json());
+                await next();
+            })
+            .post("/v1/images/generations", prepareOpenAIImageGeneration, (c) =>
+                c.json({ url: c.var.generationCacheUrl?.toString() }),
+            );
+
+        const response = await app.request("/v1/images/generations", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                prompt: "a paper boat",
+                model: "seedance-2.5",
+                input_references: references.map((url) => ({
+                    type: "image_url",
+                    image_url: { url },
+                })),
+            }),
+        });
+        const result = await response.json<{ url: string }>();
+        const cacheUrl = new URL(result.url);
+
+        expect(cacheUrl.searchParams.get("input_references")).toBe(
+            references.join("|"),
+        );
+    });
+
     it("serves objects cached before model metadata was stored", async () => {
         const bucket = createTestR2Bucket();
         const cacheUrl = new URL(

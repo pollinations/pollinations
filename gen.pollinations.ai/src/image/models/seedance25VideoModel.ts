@@ -27,6 +27,7 @@ interface Seedance25Input {
     seed?: number;
     image?: string;
     last_frame_image?: string;
+    reference_images?: string[];
 }
 
 function resolveAspectRatio(safeParams: ImageParams): Seedance25AspectRatio {
@@ -71,9 +72,22 @@ export async function callSeedance25API(
     }
 
     const images = safeParams.image ?? [];
+    const referenceImages = safeParams.input_references ?? [];
     if (images.length > 2) {
         throw new HttpError(
             "Seedance 2.5 supports at most two images: image[0] as first frame and image[1] as last frame.",
+            400,
+        );
+    }
+    if (referenceImages.length > 30) {
+        throw new HttpError(
+            "Seedance 2.5 supports at most 30 reference images.",
+            400,
+        );
+    }
+    if (images.length > 0 && referenceImages.length > 0) {
+        throw new HttpError(
+            "Seedance 2.5 cannot combine reference images with first/last-frame images.",
             400,
         );
     }
@@ -90,6 +104,11 @@ export async function callSeedance25API(
     }
     if (images[0]) input.image = await toDataUri(images[0]);
     if (images[1]) input.last_frame_image = await toDataUri(images[1]);
+    if (referenceImages.length > 0) {
+        input.reference_images = await Promise.all(
+            referenceImages.map(toDataUri),
+        );
+    }
 
     let videoUrl: string;
     let actualDurationSeconds: number | undefined;

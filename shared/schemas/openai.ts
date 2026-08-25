@@ -599,6 +599,15 @@ const imageResolutionField = z
             "Output resolution for resolution-priced image and video models (Pollinations extension)",
     });
 
+export const ImageInputReferenceSchema = z
+    .object({
+        type: z.literal("image_url"),
+        image_url: z.object({
+            url: z.string().url(),
+        }),
+    })
+    .strict();
+
 export const CreateImageRequestSchema = z
     .object({
         prompt: z.string().min(1).max(32000).meta({
@@ -625,6 +634,14 @@ export const CreateImageRequestSchema = z
             .meta({
                 description:
                     "Reference image URL(s) for image-to-image generation (Pollinations extension)",
+            }),
+        input_references: z
+            .array(ImageInputReferenceSchema)
+            .max(30)
+            .optional()
+            .meta({
+                description:
+                    "Reference images that guide supported video models without fixing the first or last frame (OpenRouter-compatible extension)",
             }),
         resolution: imageResolutionField,
         safe: SafeSchema,

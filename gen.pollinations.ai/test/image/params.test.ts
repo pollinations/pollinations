@@ -103,6 +103,66 @@ describe("ImageParamsSchema", () => {
         ).toBe(false);
     });
 
+    it("normalizes Seedance 2.5 input references from both public surfaces", () => {
+        const urls = [
+            "https://media.pollinations.ai/reference-1.png",
+            "https://media.pollinations.ai/reference-2.png",
+        ];
+
+        expect(
+            ImageParamsSchema.parse({
+                model: "seedance-2.5",
+                input_references: urls.join("|"),
+            }).input_references,
+        ).toEqual(urls);
+        expect(
+            ImageParamsSchema.parse({
+                model: "seedance-2.5",
+                input_references: urls.map((url) => ({
+                    type: "image_url",
+                    image_url: { url },
+                })),
+            }).input_references,
+        ).toEqual(urls);
+    });
+
+    it("rejects unsupported or conflicting input references", () => {
+        const references = [
+            {
+                type: "image_url",
+                image_url: {
+                    url: "https://media.pollinations.ai/reference.png",
+                },
+            },
+        ];
+
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "flux",
+                input_references: references,
+            }).success,
+        ).toBe(false);
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "seedance-2.5",
+                image: "https://media.pollinations.ai/frame.png",
+                input_references: references,
+            }).success,
+        ).toBe(false);
+        expect(
+            CreateImageRequestSchema.safeParse({
+                model: "seedance-2.5",
+                prompt: "a paper boat",
+                input_references: Array.from({ length: 31 }, (_, index) => ({
+                    type: "image_url",
+                    image_url: {
+                        url: `https://media.pollinations.ai/reference-${index}.png`,
+                    },
+                })),
+            }).success,
+        ).toBe(false);
+    });
+
     it("rejects unsupported Grok Imagine Image 2.0 quality", () => {
         const result = ImageParamsSchema.safeParse({
             model: "grok-imagine-image-2.0",

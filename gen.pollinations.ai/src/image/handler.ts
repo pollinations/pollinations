@@ -528,7 +528,9 @@ export async function generateImageOrVideoResponse(
     c.var.track.setPricingInput({
         resolution: safeParams.resolution,
         quality: safeParams.quality,
-        hasImage: (safeParams.image?.length ?? 0) > 0,
+        hasImage:
+            (safeParams.image?.length ?? 0) > 0 ||
+            (safeParams.input_references?.length ?? 0) > 0,
         maxImageDimension: Math.max(
             pricingDimensions.width,
             pricingDimensions.height,

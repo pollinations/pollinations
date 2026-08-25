@@ -235,6 +235,9 @@ export const prepareOpenAIImageGeneration = createMiddleware<Env>(
         const body = c.req.valid("json" as never) as CreateImageRequest &
             Record<string, unknown>;
         const model = c.var.model.resolved;
+        const inputReferenceUrls = body.input_references?.map(
+            (reference) => reference.image_url.url,
+        );
 
         const resolved = resolveParams(body);
         const safePrompt = await applySafety(
@@ -253,6 +256,9 @@ export const prepareOpenAIImageGeneration = createMiddleware<Env>(
             model,
             ...resolved,
             ...collectPassthrough(body, ...CACHE_PARAMS),
+            ...(inputReferenceUrls?.length
+                ? { input_references: inputReferenceUrls }
+                : {}),
         })) {
             setUrlParam(imageUrl, name, value);
         }

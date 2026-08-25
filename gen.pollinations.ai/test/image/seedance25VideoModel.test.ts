@@ -10,6 +10,11 @@ const IMAGE_URLS = [
     "https://image.example.com/start.png",
     "https://image.example.com/end.png",
 ];
+const REFERENCE_IMAGE_URLS = [
+    "https://media.pollinations.ai/reference-1.png",
+    "https://media.pollinations.ai/reference-2.png",
+    "https://media.pollinations.ai/reference-3.png",
+];
 const PNG_BYTES = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
 
 const baseParams: ImageParams = {
@@ -34,9 +39,10 @@ afterEach(() => {
 
 describe("Seedance 2.5 via Replicate", () => {
     it.each([
-        [undefined, "480p", undefined, "16:9"],
-        ["720p", "720p", "4:3", "4:3"],
-    ] as const)("routes resolution %s as %s with aspect ratio %s", async (resolution, expected, aspectRatio, expectedAspectRatio) => {
+        [undefined, "480p", undefined, "16:9", IMAGE_URLS, undefined],
+        ["720p", "720p", "4:3", "4:3", IMAGE_URLS, undefined],
+        ["480p", "480p", "16:9", "16:9", [], REFERENCE_IMAGE_URLS],
+    ] as const)("routes resolution %s as %s with aspect ratio %s", async (resolution, expected, aspectRatio, expectedAspectRatio, images, inputReferences) => {
         syncImageEnv(
             {
                 REPLICATE_API_TOKEN: "replicate-test-key",
@@ -46,7 +52,7 @@ describe("Seedance 2.5 via Replicate", () => {
         const inputs: Record<string, unknown>[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
             const href = typeof url === "string" ? url : url.toString();
-            if (IMAGE_URLS.includes(href)) {
+            if ([...IMAGE_URLS, ...REFERENCE_IMAGE_URLS].includes(href)) {
                 return new Response(PNG_BYTES, {
                     headers: { "Content-Type": "image/png" },
                 });
@@ -81,8 +87,24 @@ describe("Seedance 2.5 via Replicate", () => {
             ...baseParams,
             resolution,
             aspectRatio,
+            image: [...images],
+            input_references: inputReferences
+                ? [...inputReferences]
+                : undefined,
         });
 
+        const imageFields = inputReferences
+            ? {
+                  reference_images: inputReferences.map(() =>
+                      expect.stringMatching(/^data:image\/png;base64,/),
+                  ),
+              }
+            : {
+                  image: expect.stringMatching(/^data:image\/png;base64,/),
+                  last_frame_image: expect.stringMatching(
+                      /^data:image\/png;base64,/,
+                  ),
+              };
         expect(inputs).toEqual([
             {
                 prompt: "a paper boat",
@@ -91,10 +113,7 @@ describe("Seedance 2.5 via Replicate", () => {
                 aspect_ratio: expectedAspectRatio,
                 generate_audio: true,
                 seed: 42,
-                image: expect.stringMatching(/^data:image\/png;base64,/),
-                last_frame_image: expect.stringMatching(
-                    /^data:image\/png;base64,/,
-                ),
+                ...imageFields,
             },
         ]);
         expect(result).toMatchObject({
@@ -114,6 +133,18 @@ describe("Seedance 2.5 via Replicate", () => {
             callSeedance25API("a paper boat", {
                 ...baseParams,
                 duration: 5,
+            }),
+        ).rejects.toMatchObject({ status: 400 });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it("rejects frame and reference images together before submitting", async () => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+        await expect(
+            callSeedance25API("a paper boat", {
+                ...baseParams,
+                input_references: REFERENCE_IMAGE_URLS,
             }),
         ).rejects.toMatchObject({ status: 400 });
         expect(fetchSpy).not.toHaveBeenCalled();

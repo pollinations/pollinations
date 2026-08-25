@@ -1,5 +1,6 @@
 import { IMAGE_SERVICES, type ImageModelName } from "@shared/registry/image.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
+import { ImageInputReferenceSchema } from "@shared/schemas/openai.ts";
 import { z } from "zod";
 import { normalizeSeed, SENTINEL_SEED } from "@/util.ts";
 import { getDefaultSideLength } from "./models.js";
@@ -30,6 +31,30 @@ const sanitizedSideLength = z.preprocess((v) => {
     const parsed = Number.parseInt(v as string, 10);
     return Number.isInteger(parsed) ? parsed : undefined;
 }, z.int().optional());
+
+const httpImageUrl = z
+    .string()
+    .refine(
+        (url) => url.startsWith("http://") || url.startsWith("https://"),
+        "Reference images must use HTTP(S) URLs.",
+    );
+
+const inputReferences = z
+    .union([
+        z.string(),
+        z.array(z.string()),
+        z.array(ImageInputReferenceSchema),
+    ])
+    .transform((value) => {
+        if (typeof value === "string") {
+            return value.includes("|") ? value.split("|") : value.split(",");
+        }
+        return value.map((reference) =>
+            typeof reference === "string" ? reference : reference.image_url.url,
+        );
+    })
+    .pipe(z.array(httpImageUrl).max(30))
+    .optional();
 
 function adjustImageSizeForModel(
     model: ImageModelName,
@@ -71,6 +96,7 @@ export const ImageParamsSchema = z
                     : value.split(",");
             })
             .catch([]),
+        input_references: inputReferences,
         transparent: sanitizedBoolean.catch(false),
         reasoning: z
             .union([z.string(), z.boolean()])
@@ -152,6 +178,23 @@ export const ImageParamsSchema = z
                     code: z.ZodIssueCode.custom,
                     path: ["image"],
                     message: "minimax-h3 currently supports text input only.",
+                });
+            }
+        }
+        if ((data.input_references?.length ?? 0) > 0) {
+            if (data.model !== "seedance-2.5") {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["input_references"],
+                    message:
+                        "input_references is currently supported only by seedance-2.5.",
+                });
+            } else if (data.image.length > 0) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["input_references"],
+                    message:
+                        "seedance-2.5 cannot combine input_references with first/last-frame images.",
                 });
             }
         }

@@ -608,3 +608,67 @@ describe("Pollinations model discovery", () => {
         );
     });
 });
+
+describe("Pollinations request ID preservation", () => {
+    it("uses requestId from the error body when present", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValueOnce(
+            makeResponse(
+                {
+                    error: {
+                        message: "bad",
+                        code: "BAD_REQUEST",
+                        requestId: "body-req-id",
+                    },
+                },
+                {
+                    ok: false,
+                    status: 400,
+                    headers: { "X-Request-Id": "hdr-1" },
+                },
+            ),
+        );
+
+        await expect(client.image("a cat")).rejects.toMatchObject({
+            requestId: "body-req-id",
+        });
+    });
+
+    it("falls back to the X-Request-Id header when the body omits it", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValueOnce(
+            makeResponse(
+                { error: { message: "bad", code: "BAD_REQUEST" } },
+                {
+                    ok: false,
+                    status: 400,
+                    headers: { "X-Request-Id": "hdr-2" },
+                },
+            ),
+        );
+
+        await expect(client.image("a cat")).rejects.toMatchObject({
+            requestId: "hdr-2",
+        });
+    });
+
+    it("leaves requestId undefined when neither body nor header has one", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValueOnce(
+            makeResponse(
+                { error: { message: "bad", code: "BAD_REQUEST" } },
+                { ok: false, status: 400 },
+            ),
+        );
+
+        let error: PollinationsError | undefined;
+        try {
+            await client.image("a cat");
+        } catch (caught) {
+            if (caught instanceof PollinationsError) error = caught;
+        }
+
+        expect(error).toBeInstanceOf(PollinationsError);
+        expect(error?.requestId).toBeUndefined();
+    });
+});

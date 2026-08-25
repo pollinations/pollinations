@@ -517,6 +517,20 @@ try {
 
 Common error codes: `400` invalid params, `401` missing/invalid key, `402` insufficient balance, `403` permission denied, `500` server error.
 
+The error carries the server-generated request ID when available (from the
+error body, falling back to the `X-Request-Id` response header), so you can
+include it in support reports:
+
+```javascript
+try {
+  await generateImage('test');
+} catch (err) {
+  if (err instanceof PollinationsError && err.requestId) {
+    console.error('requestId:', err.requestId); // e.g. "req_abc123"
+  }
+}
+```
+
 ## Advanced: Client Class
 
 ```javascript

@@ -159,6 +159,75 @@ describe("buildRunway", () => {
         ).toContain("2026-07");
     });
 
+    it("does not repeat a stale currency after a billing-currency switch", () => {
+        const result = buildRunway(
+            [
+                opening(),
+                transaction({
+                    entry_id: "github-may-eur",
+                    date: "2026-05-02",
+                    vendor: "github",
+                    category: "development",
+                    amount: -147.81,
+                    currency: "EUR",
+                }),
+                transaction({
+                    entry_id: "github-july-usd",
+                    date: "2026-07-02",
+                    vendor: "github",
+                    category: "development",
+                    amount: -189,
+                    currency: "USD",
+                }),
+            ],
+            NOW,
+        );
+        const github = result.rows.find(
+            (row) => row.vendor === "github" && row.category === "development",
+        );
+
+        expect(github?.values["2026-09:forecast"]).toBe(-189);
+        expect(github?.assumptions["2026-09:forecast"]).toHaveLength(1);
+        expect(github?.assumptions["2026-09:forecast"]?.[0]).toMatchObject({
+            currency: "USD",
+            amount: -189,
+        });
+    });
+
+    it("keeps multiple currencies when both occur in the latest month", () => {
+        const result = buildRunway(
+            [
+                opening(),
+                transaction({
+                    entry_id: "github-july-eur",
+                    date: "2026-07-02",
+                    vendor: "github",
+                    category: "development",
+                    amount: -100,
+                    currency: "EUR",
+                }),
+                transaction({
+                    entry_id: "github-july-usd",
+                    date: "2026-07-03",
+                    vendor: "github",
+                    category: "development",
+                    amount: -50,
+                    currency: "USD",
+                }),
+            ],
+            NOW,
+        );
+        const github = result.rows.find(
+            (row) => row.vendor === "github" && row.category === "development",
+        );
+
+        expect(github?.values["2026-09:forecast"]).toBeCloseTo(
+            -100 * 1.1411 - 50,
+            6,
+        );
+        expect(github?.assumptions["2026-09:forecast"]).toHaveLength(2);
+    });
+
     it("keeps only reviewed scheduled events and lifecycle boundaries", () => {
         const result = buildRunway([opening()], NOW);
         const refund = result.rows.find(

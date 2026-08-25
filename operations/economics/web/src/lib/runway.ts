@@ -150,7 +150,7 @@ function ruleBasedForecasts(
     const currentMonth = now.toISOString().slice(0, 7);
     const horizon = `${now.getUTCFullYear() + 1}-12`;
     const recordedAt = now.toISOString().replace("T", " ").replace("Z", "");
-    const closedTotals = new Map<string, Map<string, number>>();
+    const closedTotals = new Map<string, Map<string, Map<string, number>>>();
 
     for (const row of transactions) {
         if (row.kind !== "transaction") continue;
@@ -158,10 +158,17 @@ function ruleBasedForecasts(
         if (!MONTH_RE.test(month) || month >= currentMonth) continue;
         const category = transactionCategory(row);
         const vendor = normalizedVendor(row.vendor);
-        const key = `${vendor}\u0000${category}\u0000${row.currency}`;
-        const totals = closedTotals.get(key) ?? new Map<string, number>();
-        totals.set(month, (totals.get(month) ?? 0) + Number(row.amount));
-        closedTotals.set(key, totals);
+        const key = matrixKey(category, vendor);
+        const monthTotals =
+            closedTotals.get(key) ?? new Map<string, Map<string, number>>();
+        const currencyTotals =
+            monthTotals.get(month) ?? new Map<string, number>();
+        currencyTotals.set(
+            row.currency,
+            (currencyTotals.get(row.currency) ?? 0) + Number(row.amount),
+        );
+        monthTotals.set(month, currencyTotals);
+        closedTotals.set(key, monthTotals);
     }
 
     const facts: DerivedForecastFact[] = [];
@@ -219,16 +226,17 @@ function ruleBasedForecasts(
         }));
         const inferredAmounts = amounts ?? [];
         if (!amounts) {
-            const prefix = `${vendor}\u0000${category}\u0000`;
-            for (const [key, totals] of closedTotals) {
-                if (!key.startsWith(prefix)) continue;
-                const sourceMonth = [...totals.keys()].sort().at(-1);
-                if (!sourceMonth) continue;
-                inferredAmounts.push({
-                    amount: totals.get(sourceMonth) ?? 0,
-                    currency: key.slice(prefix.length) as "EUR" | "USD",
-                    sourceMonth,
-                });
+            const monthTotals = closedTotals.get(matrixKey(category, vendor));
+            const sourceMonth = [...(monthTotals?.keys() ?? [])].sort().at(-1);
+            if (sourceMonth) {
+                const currencyTotals = monthTotals?.get(sourceMonth);
+                for (const [currency, amount] of currencyTotals ?? []) {
+                    inferredAmounts.push({
+                        amount,
+                        currency: currency as "EUR" | "USD",
+                        sourceMonth,
+                    });
+                }
             }
         }
         if (inferredAmounts.length === 0) continue;

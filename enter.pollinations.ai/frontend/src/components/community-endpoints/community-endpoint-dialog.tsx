@@ -360,7 +360,19 @@ export function CommunityEndpointDialog({
                     <div className="grid gap-4 sm:grid-cols-2">
                         <FieldStack
                             label="Model ID"
-                            helper="Public id: {username}/{model-id}."
+                            helper={
+                                <>
+                                    {"Public ID: {username}/{model-id}. "}
+                                    <a
+                                        href="https://github.com/pollinations/pollinations/blob/main/COMMUNITY_MODEL_NAMING.md"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="polli:underline"
+                                    >
+                                        Naming guide
+                                    </a>
+                                </>
+                            }
                             alignLabelRow
                         >
                             <Input

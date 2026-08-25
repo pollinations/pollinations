@@ -78,6 +78,9 @@ export type {
     AccountKey,
     AccountPermission,
     AccountProfile,
+    AccountQuest,
+    AccountQuestReward,
+    AccountQuestsResponse,
     AudioBinaryResponse,
     AudioContentPart,
     AudioFormat,
@@ -126,6 +129,9 @@ export type {
     PollinationsConfig,
     // Errors
     PollinationsErrorDetails,
+    // Quests
+    QuestCategory,
+    QuestStatus,
     RequestOptions,
     ResponseFormat,
     TextContentPart,

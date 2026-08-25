@@ -3,6 +3,7 @@ import type {
     AccountBalance,
     AccountKey,
     AccountProfile,
+    AccountQuestsResponse,
     AudioBinaryResponse,
     AudioGenerateOptions,
     AuthorizeDeviceOptions,
@@ -1446,6 +1447,23 @@ export class Pollinations {
         const url = `${this.baseUrl}/account/usage/daily${qs ? `?${qs}` : ""}`;
 
         return this.getJson<DailyUsageResponse>(url);
+    }
+
+    /**
+     * Get quest status for the authenticated account
+     *
+     * Requires `account:usage` permission when using API keys.
+     *
+     * @example
+     * ```ts
+     * const { quests } = await pollinations.accountQuests();
+     * quests.forEach(q => console.log(q.title, q.status, q.rewardAmount));
+     * ```
+     */
+    async accountQuests(): Promise<AccountQuestsResponse> {
+        return this.getJson<AccountQuestsResponse>(
+            `${this.baseUrl}/account/quests`,
+        );
     }
 
     /**

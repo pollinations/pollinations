@@ -608,3 +608,54 @@ describe("Pollinations model discovery", () => {
         );
     });
 });
+
+describe("Pollinations.accountQuests", () => {
+    const quest = {
+        id: "q1",
+        title: "Use an audio model",
+        description: "Send one audio request",
+        category: "setup",
+        state: "completed",
+        status: "completed",
+        rewardAmount: 0.25,
+        balanceBucket: "tier",
+        url: null,
+        reward: {
+            id: "r1",
+            questId: "q1",
+            title: "Use an audio model",
+            pollenAmount: 0.25,
+            balanceBucket: "tier",
+            earnedAt: "2026-08-25T00:00:00Z",
+            claimedAt: null,
+        },
+    };
+
+    it("calls GET /account/quests and returns quests untransformed", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValueOnce(makeResponse({ quests: [quest] }));
+
+        const { quests } = await client.accountQuests();
+
+        expect(fetchMock.mock.calls[0]?.[0]).toBe(
+            "https://example.test/account/quests",
+        );
+        expect(quests).toHaveLength(1);
+        expect(quests[0]).toEqual(quest);
+        expect(quests[0].reward?.pollenAmount).toBe(0.25);
+    });
+
+    it("surfaces auth failures through PollinationsError", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValueOnce(
+            makeResponse(
+                { error: { message: "unauthorized", code: "UNAUTHORIZED" } },
+                { ok: false, status: 401 },
+            ),
+        );
+
+        await expect(client.accountQuests()).rejects.toBeInstanceOf(
+            PollinationsError,
+        );
+    });
+});

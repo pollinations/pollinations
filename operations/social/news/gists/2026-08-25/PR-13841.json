@@ -1,0 +1,34 @@
+{
+  "pr_number": 13841,
+  "title": "fix: align Azure model pricing",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13841",
+  "merged_at": "2026-08-25T23:35:20Z",
+  "labels": [],
+  "pr_body_excerpt": "- Sets Azure public pricing to 0.75×, except GPT-5.6 Sol at 1/3×; exact provider costs remain separate.\n- Raises Terra from 0.625× to 0.75× and lowers Luna from 1× to 0.75×; both remain 25% below OpenRouter standard. Sol output matches OpenRouter standard while input/cache remain cheaper.\n- Corrects GPT Audio 1.5 Global provider cost from $40/$80 to the account-billed $32/$64 per million audio input/output tokens.\n- Corrects grok-large advertised context from 1M to the selected Azure route maximum of 200K. Direct probes accepted 199,005 prompt tokens and rejected a 200,193-token request. No xAI-direct 200K+ cost variant is added because this Azure route cannot enter that tier and Azure publishes only flat Grok meters.\n- Restores the GPT-5.6 quest-access regression guard and preserves routes, aliases, fallbacks, and paidOnly behavior.\n\nEvidence: [Azure Retail Prices](https://prices.azure.com/api/retail/prices); [Azure Grok 4.3 catalog](https://ai.azure.com/catalog/models/grok-4.3); [xAI pricing](https://docs.x.ai/developers/pricing); [OpenRouter Sol endpoints](https://openrouter.ai/api/v1/models/openai/gpt-5.6-sol/endpoints).\n\nTests: 399 focused Enter pricing/access/catalog tests; 70 Gen catalog/permission tests; direct Azure boundary probes; Biome.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The price tags got audited",
+    "blurb": "Polli took a tiny clipboard to the Azure model shelf. The labels now match the meters, including a less imaginary Grok context window.",
+    "summary": "Aligned advertised Azure pricing to 0.75× public pricing for most models, set GPT-5.6 Sol to one-third pricing, corrected GPT Audio 1.5 Global costs to $32/$64 per million audio input/output tokens, and set grok-large context to Azure's 200K-token route limit.",
+    "impact": "Developers now get Azure model prices and grok-large context metadata that match the selected Azure routes, while GPT-5.6 quest access and existing aliases, fallbacks, and paidOnly behavior remain intact.",
+    "keywords": [
+      "azure",
+      "pricing",
+      "model-registry",
+      "gpt-5.6",
+      "grok-large",
+      "audio"
+    ],
+    "visual_concept": "A cozy model garden has carefully corrected price tags beside Azure-blue cloud-shaped planters and a retro terminal showing a 200K context gauge. Polli, wearing a tiny accountant visor and holding a clipboard, checks the labels while code-plants bloom; the scene represents accurate public prices and route-specific model limits.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny accountant visor, checking price tags on cloud-shaped Azure model planters with a clipboard; a retro CRT terminal displays a simple pixel gauge reading \"200K\", while code-plants and small flowers bloom around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-25/PR-13841.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny accountant visor, checking price tags on cloud-shaped Azure model planters with a clipboard; a retro CRT terminal displays a simple pixel gauge reading \"200K\", while code-plants and small flowers bloom around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-25T23:36:27.929266+00:00"
+}

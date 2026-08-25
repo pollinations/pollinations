@@ -8,6 +8,7 @@ import type { Logger } from "@logtape/logtape";
 import { verifyAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import { COMMUNITY_MODEL_ALLOWED_GITHUB_IDS } from "@shared/auth/github-id-list.ts";
 import {
+    COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     type CommunityEndpointImagePricing,
     type CommunityEndpointModality,
@@ -4179,13 +4180,27 @@ fixtureTest(
         await expect(updateResponse.json()).resolves.toMatchObject({
             title: "Updated Model Title",
             description: "Updated description",
-            visibility: "public",
-            paidOnly: true,
-            promptTextPrice: 0.00001,
-            completionTextPrice: 0.00002,
+            visibility: "private",
+            paidOnly: false,
+            promptTextPrice: 0,
+            completionTextPrice: 0,
+            pending: {
+                visibility: "public",
+                paidOnly: true,
+                promptTextPrice: 0.00001,
+                completionTextPrice: 0.00002,
+            },
             hidden: true,
             hiddenReason: "was failing",
         });
+        await db
+            .update(communityEndpointTable)
+            .set({
+                pendingAt: new Date(
+                    Date.now() - COMMUNITY_ENDPOINT_CHANGE_DELAY_MS - 1,
+                ),
+            })
+            .where(eq(communityEndpointTable.id, createdId));
 
         const relistResponse = await fetchEnterApi(
             enterApi,
@@ -4248,7 +4263,8 @@ fixtureTest(
         );
         expect(tinyPriceResponse.status).toBe(200);
         await expect(tinyPriceResponse.json()).resolves.toMatchObject({
-            promptTextPrice: 1e-12,
+            promptTextPrice: 0.00001,
+            pending: { promptTextPrice: 1e-12 },
         });
 
         const negativePriceResponse = await fetchEnterApi(
@@ -4291,9 +4307,27 @@ fixtureTest(
         await expect(priceOnlyResponse.json()).resolves.toMatchObject({
             visibility: "public",
             paidOnly: true,
-            promptTextPrice: 0.00003,
+            promptTextPrice: 0.00001,
             completionTextPrice: 0.00002,
+            pending: {
+                promptTextPrice: 0.00003,
+                completionTextPrice: 0.00002,
+            },
         });
+        const pendingRegistryEntry = (
+            await getCommunityModelRegistryEntries(env)
+        ).find((entry) => entry.id === `${ownerGithubUsername}/my-test-model`);
+        expect(pendingRegistryEntry?.info.pending_change).toMatchObject({
+            paid_only: true,
+            pricing: {
+                currency: "pollen",
+                promptTextTokens: "0.00003",
+                completionTextTokens: "0.00002",
+            },
+        });
+        expect(pendingRegistryEntry?.info.pending_change?.effective_at).toEqual(
+            expect.any(String),
+        );
 
         // Making the model private clears all owner-set prices, and with them
         // the paid-only choice: a free listing that still demanded paid balance
@@ -4322,8 +4356,8 @@ fixtureTest(
             completionTextPrice: 0,
         });
 
-        // Republishing without prices is allowed: zero makes the public model
-        // explicitly free while publishing remains allowlist-gated.
+        // Republishing remains free, but becomes visible after the notice
+        // period rather than immediately.
         const republishResponse = await fetchEnterApi(
             enterApi,
             new Request(
@@ -4342,9 +4376,10 @@ fixtureTest(
         );
         expect(republishResponse.status).toBe(200);
         await expect(republishResponse.json()).resolves.toMatchObject({
-            visibility: "public",
+            visibility: "private",
             promptTextPrice: 0,
             completionTextPrice: 0,
+            pending: { visibility: "public" },
         });
 
         const secondListResponse = await fetchEnterApi(
@@ -4472,7 +4507,10 @@ fixtureTest(
         );
         expect(minimumResponse.status).toBe(200);
         await expect(minimumResponse.json()).resolves.toMatchObject({
-            promptTextPrice: MIN_COMMUNITY_PRICE_PER_TOKEN,
+            promptTextPrice: 0,
+            pending: {
+                promptTextPrice: MIN_COMMUNITY_PRICE_PER_TOKEN,
+            },
         });
 
         const maximumResponse = await updatePrice(
@@ -4480,7 +4518,10 @@ fixtureTest(
         );
         expect(maximumResponse.status).toBe(200);
         await expect(maximumResponse.json()).resolves.toMatchObject({
-            promptTextPrice: MAX_COMMUNITY_PRICE_PER_TOKEN,
+            promptTextPrice: 0,
+            pending: {
+                promptTextPrice: MAX_COMMUNITY_PRICE_PER_TOKEN,
+            },
         });
 
         const aboveMaximumResponse = await updatePrice(

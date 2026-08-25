@@ -1055,7 +1055,7 @@ const IMAGE_BASE_SERVICES = {
             "audio_output",
             "reference_image",
         ],
-        maxReferenceImages: 32, // 2 keyframes + up to 30 reference images via input_references
+        maxReferenceImages: 2, // 2 keyframe slots: start + end (reference images via separate param)
         minDuration: 4,
         maxDuration: 4,
         defaultDuration: 4,

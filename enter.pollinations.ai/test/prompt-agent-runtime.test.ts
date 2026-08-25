@@ -534,7 +534,7 @@ describe("prompt-agent runtime", () => {
         expect(body.usage.tool_call_counts.mcp_call).toBe(17);
     });
 
-    it("keeps running when the Pollinations MCP fails to load", async () => {
+    it("fails when a selected MCP cannot load", async () => {
         let modelCalls = 0;
         vi.stubGlobal(
             "fetch",
@@ -570,9 +570,8 @@ describe("prompt-agent runtime", () => {
         );
 
         const text = await res.text();
-        expect(res.status, text).toBe(200);
-        expect(modelCalls).toBeGreaterThan(0);
-        expect(JSON.parse(text).choices[0].message.content).toBe("still here");
+        expect(res.status, text).toBe(502);
+        expect(modelCalls).toBe(0);
     });
 
     it("passes the caller token and exposes the Pollinations MCP tools", async () => {

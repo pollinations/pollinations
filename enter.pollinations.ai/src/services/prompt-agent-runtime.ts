@@ -83,36 +83,27 @@ async function loadMcpTools(
     tools: Record<string, McpTool>;
     close: () => Promise<void>;
 }> {
-    let client: McpClient | undefined;
+    const client = await createMCPClient({
+        clientName: `pollinations-prompt-agent-${serverId}`,
+        initializationOptions: {
+            signal,
+            timeout: MCP_INITIALIZATION_TIMEOUT_MS,
+        },
+        transport: {
+            type: "http",
+            url,
+            headers: { Authorization: `Bearer ${apiKey}` },
+            // The MCP client asks for redirect "error", which workerd does
+            // not support. Use a valid fetch mode for the hosted endpoint.
+            fetch: async (input, init) =>
+                globalThis.fetch.call(globalThis, input, {
+                    ...init,
+                    redirect: "follow",
+                }),
+        },
+    });
     const tools: Record<string, McpTool> = {};
-    let closed = false;
-
-    const close = async () => {
-        if (closed) return;
-        closed = true;
-        await client?.close();
-    };
-
     try {
-        client = await createMCPClient({
-            clientName: `pollinations-prompt-agent-${serverId}`,
-            initializationOptions: {
-                signal,
-                timeout: MCP_INITIALIZATION_TIMEOUT_MS,
-            },
-            transport: {
-                type: "http",
-                url,
-                headers: { Authorization: `Bearer ${apiKey}` },
-                // The MCP client asks for redirect "error", which workerd does
-                // not support. Use a valid fetch mode for the hosted endpoint.
-                fetch: async (input, init) =>
-                    globalThis.fetch.call(globalThis, input, {
-                        ...init,
-                        redirect: "follow",
-                    }),
-            },
-        });
         for (const [name, definition] of Object.entries(await client.tools())) {
             tools[`mcp__${serverId}__${name}`] = definition;
         }
@@ -122,15 +113,11 @@ async function loadMcpTools(
             tools: Object.keys(tools).length,
         });
     } catch (error) {
-        // Tool availability is recoverable; the base model can still answer.
-        log.error("MCP_SERVER_FAILED: name={name} url={url} error={error}", {
-            name: serverId,
-            url,
-            error: error instanceof Error ? error.message : String(error),
-        });
+        await client.close();
+        throw error;
     }
 
-    return { tools, close };
+    return { tools, close: () => client.close() };
 }
 
 async function createAgent(runtime: PromptAgentRuntime, signal: AbortSignal) {

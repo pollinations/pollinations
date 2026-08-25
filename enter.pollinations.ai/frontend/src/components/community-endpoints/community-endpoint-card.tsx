@@ -6,6 +6,7 @@ import {
     Chip,
     ClipboardIcon,
     CopyButton,
+    currentPeriod,
     ExternalLinkIcon,
     GlobeIcon,
     IconButton,
@@ -17,6 +18,7 @@ import {
     XIcon,
 } from "@pollinations/ui";
 import { communityEndpointPriceFieldsForModality } from "@shared/community-endpoints.ts";
+import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { PriceBadge, type PriceBadgeConfig } from "../models/price-badge.tsx";
 import type { PriceKind } from "../models/types.ts";
@@ -133,6 +135,29 @@ export function CommunityEndpointCard({
                     value={endpoint.modelId}
                     copyLabel="Copy model id"
                 />
+                <div className="grid min-w-0 gap-1 text-xs text-theme-text-muted sm:grid-cols-[8.5rem_minmax(0,1fr)] sm:items-center">
+                    <span className="inline-flex items-center gap-1.5 font-medium text-theme-text-muted">
+                        View activity
+                    </span>
+                    <Link
+                        to="/activity"
+                        search={{
+                            ...currentPeriod(),
+                            usageMetric: undefined,
+                            usageKeys: undefined,
+                            usageModels: undefined,
+                            earningsMetric: undefined,
+                            earningsApps: undefined,
+                            earningsModels: [endpoint.modelId],
+                        }}
+                        className="inline-flex min-w-0 items-center gap-1.5 font-medium text-theme-text-muted underline-offset-2 hover:text-theme-text-strong hover:underline"
+                    >
+                        <ExternalLinkIcon className="h-3.5 w-3.5 shrink-0" />
+                        <span className="truncate">
+                            Earnings for {endpoint.modelId}
+                        </span>
+                    </Link>
+                </div>
                 {endpoint.type !== "prompt_agent" && (
                     <CommunityDetailRow
                         icon={<ExternalLinkIcon className="h-3.5 w-3.5" />}

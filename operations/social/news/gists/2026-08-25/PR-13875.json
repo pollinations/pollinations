@@ -1,0 +1,34 @@
+{
+  "pr_number": 13875,
+  "title": "Add OpenAI-compatible GET /v1/models/:model",
+  "author": "xiaotian1171",
+  "url": "https://github.com/pollinations/pollinations/pull/13875",
+  "merged_at": "2026-08-25T09:39:04Z",
+  "labels": [],
+  "pr_body_excerpt": "Retrieve a single model by ID or alias through the same registry view\nas the list endpoint. Extract one shared mapper so both routes return\nidentical payloads, now including owned_by and stable created\ntimestamps derived from the registry addedDate instead of per-request\nwall-clock values. Unknown, hidden, permission-filtered, and\npaid-only-inaccessible models all collapse to the same 404. Add 404 to\nthe known error status codes and cover the endpoint with route tests\nfor alias resolution, mapper parity with the list payload, permission\nand paid-balance rules.\n\nCloses #13795",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "One model, right this way",
+    "blurb": "The model registry grew a front desk. Ask for a model by ID or alias, and it hands back the same tidy record as the full catalog.",
+    "summary": "Added an OpenAI-compatible GET /v1/models/:model endpoint that resolves model IDs and aliases through the shared registry mapper, returning list-parity payloads with owned_by and stable created timestamps from addedDate.",
+    "impact": "OpenAI-compatible clients can now inspect one accessible model directly, while unknown, hidden, permission-filtered, and unavailable paid models consistently return 404.",
+    "keywords": [
+      "openai-compatible",
+      "models",
+      "api",
+      "model-registry",
+      "aliases",
+      "404"
+    ],
+    "visual_concept": "Polli acts as a cozy library clerk in a garden-like model registry, retrieving one labeled model card from a neatly organized catalog drawer while a CRT monitor robot checks that the card matches the catalog. Model ID and alias signposts lead to the same card, representing shared lookup and payload parity.",
+    "image_prompt": "A cozy pixel-art model registry garden where Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black oval eyes, bright pink rectangular cheek blushes, a happy smile, and rounded light-blue translucent wings, wears tiny librarian glasses and retrieves one glowing model card from a catalog drawer marked “/v1/models/:model”; an eager CRT monitor robot compares it to a matching catalog page, with ID and alias signposts pointing to the same card and code-plants growing nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes, subtle scanlines, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-25/PR-13875.jpg",
+    "prompt": "A cozy pixel-art model registry garden where Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black oval eyes, bright pink rectangular cheek blushes, a happy smile, and rounded light-blue translucent wings, wears tiny librarian glasses and retrieves one glowing model card from a catalog drawer marked “/v1/models/:model”; an eager CRT monitor robot compares it to a matching catalog page, with ID and alias signposts pointing to the same card and code-plants growing nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes, subtle scanlines, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-08-25T09:40:59.436096+00:00"
+}

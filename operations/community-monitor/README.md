@@ -18,7 +18,7 @@ Committed (source of truth — edit here, then deploy):
   or better in the freshest 24h/48h window with at least 20 requests are
   protected from a delayed hide after a fix or new fallback.
 - `community-monitor.service` + `loop.sh` — the deployed systemd path. Each
-  cycle gets a fresh Claude process and systemd starts the next one 30 minutes
+  cycle gets a fresh Claude process and systemd starts the next one 60 minutes
   after completion. Headless cycles cannot be remote-controlled; a separate
   persistent `claude --remote-control community-monitor` session runs alongside
   as a phone-accessible console.

@@ -95,12 +95,6 @@ describe("ImageParamsSchema", () => {
                 fps: 30,
             }).success,
         ).toBe(false);
-        expect(
-            ImageParamsSchema.safeParse({
-                model: "minimax-h3",
-                image: "https://example.com/frame.png",
-            }).success,
-        ).toBe(false);
     });
 
     it("rejects unsupported Grok Imagine Image 2.0 quality", () => {

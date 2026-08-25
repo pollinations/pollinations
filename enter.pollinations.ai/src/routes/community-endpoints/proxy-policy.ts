@@ -218,6 +218,24 @@ export function deriveUpdatedProxyPolicy(
     );
 }
 
+/** Whether a public model's deferred-facing policy differs between the
+ * currently serving payload and a proposed one. */
+export function sameProxyPolicy(
+    serving: ProxyListingPayload,
+    proposed: ProxyPolicy,
+): boolean {
+    return (
+        serving.paidOnly === proposed.paidOnly &&
+        serving.imagePricing === proposed.imagePricing &&
+        serving.perUserRpm === proposed.perUserRpm &&
+        JSON.stringify(serving.inputModalities) ===
+            JSON.stringify(proposed.inputModalities) &&
+        JSON.stringify(serving.advertised ?? null) ===
+            JSON.stringify(proposed.advertised ?? null) &&
+        JSON.stringify(serving.prices) === JSON.stringify(proposed.prices)
+    );
+}
+
 export function changesProxyPayload(input: ProxyUpdateInput): boolean {
     return [
         input.bearerToken,

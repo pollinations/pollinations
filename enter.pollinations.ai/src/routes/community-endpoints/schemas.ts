@@ -242,6 +242,12 @@ const ProxyEndpointResponseSchema = z
         paidOnly: z.boolean(),
         fallbacks: z.array(z.string()),
         ...ResponsePriceFieldsSchema,
+        pending: z
+            .object({
+                visibility: z.literal("public").optional(),
+                effectiveAt: z.string(),
+            })
+            .nullable(),
     })
     .strict();
 const PromptAgentEndpointResponseSchema = z

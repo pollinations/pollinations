@@ -1,7 +1,9 @@
 import {
     communityEndpointTitle,
     communityModelId,
+    isPendingChangeDue,
     normalizeCommunityEndpointAdvertised,
+    PRICE_CHANGE_DELAY_MS,
     parseListingPayload,
 } from "@shared/community-endpoints.ts";
 import type * as schema from "@shared/db/better-auth.ts";
@@ -59,14 +61,36 @@ export function toCommunityEndpointResponse(
     const payload = parseListingPayload("proxy", row.payload);
     if (!payload) throw new Error(`Invalid proxy payload for ${row.id}`);
     const { bearerTokenCiphertext: _credential, prices, ...proxy } = payload;
+
+    // Responses always reflect the stored policy; a change that is still
+    // waiting out its notice window surfaces only as a pending notice.
+    const duePending = isPendingChangeDue(row.pendingAt);
+    const pending =
+        row.pendingAt !== null && !duePending
+            ? {
+                  ...(row.pendingVisibility === "public" && {
+                      visibility: "public" as const,
+                  }),
+                  effectiveAt: new Date(
+                      row.pendingAt.getTime() + PRICE_CHANGE_DELAY_MS,
+                  ).toISOString(),
+              }
+            : null;
+
     return CommunityEndpointResponseSchema.parse({
         ...common,
         type: row.type,
+        // Owner-facing responses present the submitted target: a queued
+        // private-to-public flip reads as public immediately, while the
+        // pending notice below tells the owner when model users switch.
+        visibility:
+            row.pendingVisibility === "public" ? "public" : row.visibility,
         ...proxy,
         advertised: normalizeCommunityEndpointAdvertised(
             payload.advertised,
             payload.modality,
         ),
         ...prices,
+        pending,
     });
 }

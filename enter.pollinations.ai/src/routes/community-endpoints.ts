@@ -1,13 +1,17 @@
 import {
+    applyProxyPolicyFields,
     type CommunityEndpointVisibility,
     communityModelId,
     type EndpointAgentListingPayload,
     isCommunityEndpointOwnerAllowed,
+    isPendingChangeDue,
     normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
     normalizeCommunityProviderUrl,
     type ProxyListingPayload,
     parseListingPayload,
+    parsePendingProxyPolicy,
+    pickProxyPolicyFields,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
@@ -37,6 +41,7 @@ import {
     changesProxyPayload,
     deriveCreateProxyPolicy,
     deriveUpdatedProxyPolicy,
+    sameProxyPolicy,
 } from "./community-endpoints/proxy-policy.ts";
 import {
     assertValidUpdate,
@@ -709,9 +714,21 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 update.hiddenReason = input.hidden ? "Hidden by owner" : null;
                 update.hiddenBy = input.hidden ? "owner" : null;
             }
-            const effectiveVisibility = input.visibility ?? endpoint.visibility;
+            // An immature pending change means model users still see the
+            // snapshotted policy rather than the stored payload values.
+            const livePending =
+                endpoint.pendingAt !== null &&
+                !isPendingChangeDue(endpoint.pendingAt);
+            // Later edits compose against the submitted target state: once
+            // a private-to-public flip is queued the listing counts as
+            // public for the owner, while model users stay on the private
+            // listing until the notice window ends.
+            const servingVisibility =
+                endpoint.pendingVisibility === "public"
+                    ? "public"
+                    : endpoint.visibility;
+            const effectiveVisibility = input.visibility ?? servingVisibility;
             await enforcePublishingAccess(db, user.id, effectiveVisibility);
-            update.visibility = effectiveVisibility;
             if (endpoint.type === "prompt_agent") {
                 // Prompt configuration is edited through /account/agents.
                 // This route only updates shared listing state such as hidden.
@@ -737,8 +754,16 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 if (!stored) {
                     throw new Error(`Invalid proxy payload for ${endpoint.id}`);
                 }
+                // What model users currently see while a change is waiting
+                // out its window; identical to the stored policy otherwise.
+                const serving = livePending
+                    ? applyProxyPolicyFields(
+                          stored,
+                          parsePendingProxyPolicy(endpoint.pendingPayload),
+                      )
+                    : stored;
                 const policy = deriveUpdatedProxyPolicy(
-                    stored,
+                    serving,
                     input,
                     effectiveVisibility,
                 );
@@ -759,21 +784,94 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 if (input.upstreamModel !== undefined) {
                     update.upstreamModel = input.upstreamModel;
                 }
-                if (changesProxyPayload(input)) {
-                    const payload: ProxyListingPayload = {
-                        bearerTokenCiphertext:
-                            input.bearerToken === undefined
-                                ? stored.bearerTokenCiphertext
-                                : await encryptSecret(
-                                      normalizeInputBearerToken(
-                                          input.bearerToken,
+
+                // Public-facing policy (pricing and the private-to-public
+                // flip) waits out the notice window; everything else lands
+                // immediately.
+                if (effectiveVisibility !== "public") {
+                    // Private target: private edits and public-to-private are
+                    // immediate, and any queued change is superseded.
+                    update.visibility = effectiveVisibility;
+                    update.pendingPayload = null;
+                    update.pendingVisibility = null;
+                    update.pendingAt = null;
+                    if (changesProxyPayload(input)) {
+                        const payload: ProxyListingPayload = {
+                            bearerTokenCiphertext:
+                                input.bearerToken === undefined
+                                    ? stored.bearerTokenCiphertext
+                                    : await encryptSecret(
+                                          normalizeInputBearerToken(
+                                              input.bearerToken,
+                                          ),
+                                          c.env.BETTER_AUTH_SECRET,
                                       ),
-                                      c.env.BETTER_AUTH_SECRET,
-                                  ),
-                        ...policy,
-                        fallbacks,
-                    };
-                    update.payload = JSON.stringify(payload);
+                            ...policy,
+                            fallbacks,
+                        };
+                        update.payload = JSON.stringify(payload);
+                    }
+                } else if (servingVisibility !== "public") {
+                    // private-to-public: the listing goes live once the
+                    // window elapses. The edits themselves land immediately.
+                    update.pendingVisibility = "public";
+                    update.pendingPayload = null;
+                    update.pendingAt = new Date();
+                    if (changesProxyPayload(input)) {
+                        update.payload = JSON.stringify({
+                            bearerTokenCiphertext:
+                                input.bearerToken === undefined
+                                    ? stored.bearerTokenCiphertext
+                                    : await encryptSecret(
+                                          normalizeInputBearerToken(
+                                              input.bearerToken,
+                                          ),
+                                          c.env.BETTER_AUTH_SECRET,
+                                      ),
+                            ...policy,
+                            fallbacks,
+                        });
+                    }
+                } else {
+                    update.visibility = "public";
+                    const policyChanged = !sameProxyPolicy(serving, policy);
+                    if (policyChanged) {
+                        // The submitted policy lands in the payload right
+                        // away, but model users keep the current one until
+                        // the notice window ends - the snapshot preserves it.
+                        update.pendingPayload = JSON.stringify(
+                            pickProxyPolicyFields(serving),
+                        );
+                        // A queued publication outlives a price edit; its
+                        // window just restarts alongside the price one.
+                        update.pendingVisibility = endpoint.pendingVisibility;
+                        update.pendingAt = new Date();
+                    } else if (
+                        livePending &&
+                        endpoint.pendingVisibility === null
+                    ) {
+                        // Matches what users already see: treat it as
+                        // withdrawing the queued change.
+                        update.pendingPayload = null;
+                        update.pendingVisibility = null;
+                        update.pendingAt = null;
+                    }
+                    if (changesProxyPayload(input)) {
+                        const payload: ProxyListingPayload = {
+                            bearerTokenCiphertext:
+                                input.bearerToken === undefined
+                                    ? stored.bearerTokenCiphertext
+                                    : await encryptSecret(
+                                          normalizeInputBearerToken(
+                                              input.bearerToken,
+                                          ),
+                                          c.env.BETTER_AUTH_SECRET,
+                                      ),
+                            ...policy,
+                            fallbacks,
+                        };
+                        update.payload = JSON.stringify(payload);
+                    }
                 }
             }
             const [row] = await db

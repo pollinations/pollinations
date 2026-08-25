@@ -1,9 +1,12 @@
 import {
+    applyProxyPolicyFields,
     type CommunityEndpointRuntime,
     communityEndpointPrices,
     communityModelDefinition,
     communityModelId,
+    isPendingChangeDue,
     parseListingPayload,
+    parsePendingProxyPolicy,
     usesAgentRunToken,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
@@ -77,6 +80,9 @@ export async function getCommunityModelRegistryEntries(
             upstreamModel: schema.communityEndpoint.upstreamModel,
             payload: schema.communityEndpoint.payload,
             visibility: schema.communityEndpoint.visibility,
+            pendingPayload: schema.communityEndpoint.pendingPayload,
+            pendingVisibility: schema.communityEndpoint.pendingVisibility,
+            pendingAt: schema.communityEndpoint.pendingAt,
             hiddenAt: schema.communityEndpoint.hiddenAt,
             hiddenReason: schema.communityEndpoint.hiddenReason,
             createdAt: schema.communityEndpoint.createdAt,
@@ -163,11 +169,26 @@ export async function getCommunityModelRegistryEntries(
                 break;
             }
             case "proxy": {
-                const payload = parseListingPayload("proxy", row.payload);
+                let payload = parseListingPayload("proxy", row.payload);
                 if (!payload) return [];
+                let visibility = row.visibility;
+                if (row.pendingAt !== null) {
+                    if (!isPendingChangeDue(row.pendingAt)) {
+                        // Notice window still running: keep serving the
+                        // previously public policy to model users.
+                        payload = applyProxyPolicyFields(
+                            payload,
+                            parsePendingProxyPolicy(row.pendingPayload),
+                        );
+                    } else if (row.pendingVisibility === "public") {
+                        // A matured private-to-public flip reads as live.
+                        visibility = row.pendingVisibility;
+                    }
+                }
                 communityEndpoint = {
                     ...identity,
                     type: "proxy",
+                    visibility,
                     bearerTokenCiphertext: payload.bearerTokenCiphertext,
                     paidOnly: payload.paidOnly,
                     modality: payload.modality,

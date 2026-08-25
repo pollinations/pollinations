@@ -485,6 +485,94 @@ export type ListingPayloadByType = {
  * missing what its type requires returns null, which leaves the listing out of
  * the catalog rather than in it half-populated.
  */
+/**
+ * How long a submitted public-facing change waits before taking effect,
+ * giving a public community model's users predictable notice before its
+ * price changes or the model becomes public. Private-only edits stay
+ * immediate and need no notice window.
+ */
+export const PRICE_CHANGE_DELAY_MS = 12 * 60 * 60 * 1000;
+
+/** The proxy payload fields captured in a pending snapshot: everything that
+ * shapes what a caller pays or sees about pricing. Credentials and routing
+ * are not part of it - those updates stay immediate. */
+export type ProxyPolicyFields = Pick<
+    ProxyListingPayload,
+    | "paidOnly"
+    | "modality"
+    | "imagePricing"
+    | "inputModalities"
+    | "perUserRpm"
+    | "advertised"
+    | "prices"
+>;
+
+const PROXY_POLICY_FIELD_KEYS = [
+    "paidOnly",
+    "modality",
+    "imagePricing",
+    "inputModalities",
+    "perUserRpm",
+    "advertised",
+    "prices",
+] as const;
+
+/** Read back the stored pendingPayload JSON into its typed policy fields.
+ * Returns null when absent or malformed, mirroring parseListingPayload. */
+export function parsePendingProxyPolicy(
+    raw: string | null,
+): ProxyPolicyFields | null {
+    if (!raw) return null;
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(raw);
+    } catch {
+        return null;
+    }
+    if (!parsed || typeof parsed !== "object") return null;
+    const source = parsed as Record<string, unknown>;
+    const fields: Record<string, unknown> = {};
+    for (const key of PROXY_POLICY_FIELD_KEYS) {
+        if (source[key] !== undefined) fields[key] = source[key];
+    }
+    return Object.keys(fields).length > 0
+        ? (fields as ProxyPolicyFields)
+        : null;
+}
+
+/** Overlay deferred policy fields onto the serving payload. */
+export function applyProxyPolicyFields(
+    payload: ProxyListingPayload,
+    fields: Partial<ProxyPolicyFields> | null,
+): ProxyListingPayload {
+    if (!fields) return payload;
+    return { ...payload, ...fields };
+}
+
+/** A stored pending change has matured once its submission time plus the
+ * notice delay has passed. Readers stop applying the snapshot lazily from
+ * then on. */
+export function isPendingChangeDue(pendingAt: Date | null): boolean {
+    return (
+        pendingAt !== null &&
+        Date.now() >= pendingAt.getTime() + PRICE_CHANGE_DELAY_MS
+    );
+}
+
+/** Capture the policy fields of a payload so they can be stored as the
+ * previous publicly serving values while a newer submission waits out the
+ * notice window. */
+export function pickProxyPolicyFields(
+    payload: ProxyListingPayload,
+): ProxyPolicyFields {
+    const source = payload as unknown as Record<string, unknown>;
+    const fields: Record<string, unknown> = {};
+    for (const key of PROXY_POLICY_FIELD_KEYS) {
+        if (source[key] !== undefined) fields[key] = source[key];
+    }
+    return fields as ProxyPolicyFields;
+}
+
 export function parseListingPayload<K extends ListingType>(
     type: K,
     raw: string | null,

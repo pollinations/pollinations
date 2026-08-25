@@ -673,7 +673,7 @@ export function buildRunway(
     }
 
     const ruleBased = ruleBasedForecasts(transactions, now);
-    const balanceAware = balanceAwareForecasts(transactions, cloudRows, now);
+    const balanceAware = balanceAwareForecasts(bankRows, cloudRows, now);
     flags.push(...balanceAware.flags);
     const effectiveForecastFacts = [...ruleBased, ...balanceAware.facts];
 

@@ -406,6 +406,7 @@ describe("buildRunway", () => {
         const result = buildRunway(
             [opening(), transaction({ currency: "GBP" })],
             NOW,
+            [cloud(), balance("google", 0)],
         );
 
         expect(result.currentCashUsd).toBeNull();

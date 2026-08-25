@@ -9,6 +9,7 @@ import {
     apikey as apiKeyTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
+import type { BillingServiceBinding } from "@shared/schemas/billable-event.ts";
 import { createTestApiKey, test } from "@shared/test/fixtures/index.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -45,7 +46,7 @@ async function fetchWorker(
 async function fetchWorkerWithContext(
     path: string,
     init: RequestInit = {},
-    bindings = env,
+    bindings: CloudflareBindings = env,
 ) {
     const ctx = createExecutionContext();
     const response = await worker.fetch(
@@ -107,6 +108,7 @@ function mockRealtimeProvider(initialMessage?: string, estimatedCost = 0) {
     let upstreamClient: WebSocket | undefined;
     let upstreamServer: WebSocket | undefined;
     let upstreamServerAccepted = false;
+    let providerRequests = 0;
     const tinybirdRequests: Request[] = [];
 
     const fetchMock = vi
@@ -133,6 +135,7 @@ function mockRealtimeProvider(initialMessage?: string, estimatedCost = 0) {
             }
 
             upstreamRequest = request;
+            providerRequests += 1;
             const pair = new WebSocketPair();
             const [client, server] = Object.values(pair) as [
                 WebSocket,
@@ -174,6 +177,9 @@ function mockRealtimeProvider(initialMessage?: string, estimatedCost = 0) {
         },
         get serverAccepted() {
             return upstreamServerAccepted;
+        },
+        get providerRequests() {
+            return providerRequests;
         },
         get maybeServer() {
             return upstreamServer;
@@ -267,6 +273,7 @@ async function openPaidRealtimeSession({
     initialProviderMessage,
     byopClientKeyId,
     estimatedCost = 0,
+    bindings,
 }: {
     name: string;
     model?: string;
@@ -274,6 +281,7 @@ async function openPaidRealtimeSession({
     initialProviderMessage?: string;
     byopClientKeyId?: string;
     estimatedCost?: number;
+    bindings?: CloudflareBindings;
 }) {
     const {
         key,
@@ -303,6 +311,7 @@ async function openPaidRealtimeSession({
     const { response, ctx } = await fetchWorkerWithContext(
         `/v1/realtime?model=${model}`,
         { headers },
+        bindings ?? env,
     );
 
     expect(response.status).toBe(101);
@@ -508,16 +517,18 @@ test("forwards the initial Azure session event after listeners are attached", as
     await closeRealtimeSession(session);
 });
 
-test("completes both sides of the Azure close handshake", async () => {
+test("keeps Azure open until the provider completes its close", async () => {
     const session = await openPaidRealtimeSession({
         name: "azure-realtime-close-key",
     });
     const clientClose = nextClose(session.client);
-    const upstreamClose = nextClose(session.upstream.server);
+    const upstreamClose = nextClose(session.upstream.client);
 
     session.client.close(1000, "done");
 
     await expect(clientClose).resolves.toMatchObject({ code: 1000 });
+    expect(session.upstream.server.readyState).toBe(WebSocket.OPEN);
+    session.upstream.server.close(1000, "provider done");
     await expect(upstreamClose).resolves.toMatchObject({ code: 1000 });
     await waitOnExecutionContext(session.ctx);
     expect(await countRealtimeEvents(session.userId)).toBe(0);
@@ -1334,6 +1345,73 @@ test("settles realtime usage against the API key reservation", async () => {
         1 - expectedCharge,
         7,
     );
+});
+
+test("waits for provider-final usage after the realtime client closes", async () => {
+    const session = await openPaidRealtimeSession({
+        name: "provider-final-realtime-key",
+    });
+
+    session.client.close(1000, "client done");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(await countRealtimeEvents(session.userId)).toBe(0);
+    expect((await getUserBalances(session.userId))?.packBalance).toBe(1);
+
+    session.upstream.server.send(cachedModalityUsageEvent);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(await countRealtimeEvents(session.userId)).toBe(0);
+
+    session.upstream.server.close(1000, "provider done");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await waitOnExecutionContext(session.ctx);
+
+    const telemetry = await getRealtimeTelemetry(session.userId);
+    const user = await waitForPackBalanceBelow(session.userId, 1);
+    expect(telemetry.tokenCountPromptText).toBe(30);
+    expect(user?.packBalance).toBeCloseTo(
+        1 - (telemetry.totalPrice as number),
+        8,
+    );
+    expect(session.upstream.providerRequests).toBe(1);
+    expect(session.upstream.tinybirdRequests).toHaveLength(1);
+});
+
+test("retries only a lost realtime settlement acknowledgement", async () => {
+    const realBilling = env.ENTER_BILLING;
+    let settlementCalls = 0;
+    const billing: BillingServiceBinding = {
+        introspect: (token) => realBilling.introspect(token),
+        authorize: (token, input) => realBilling.authorize(token, input),
+        cancel: (id) => realBilling.cancel(id),
+        settle: async (id, events) => {
+            settlementCalls += 1;
+            const result = await realBilling.settle(id, events);
+            if (settlementCalls === 1) {
+                throw new Error("settlement acknowledgement lost");
+            }
+            return result;
+        },
+    };
+    const session = await openPaidRealtimeSession({
+        name: "lost-settlement-ack-realtime-key",
+        bindings: { ...env, ENTER_BILLING: billing },
+    });
+
+    session.upstream.server.send(cachedModalityUsageEvent);
+    session.upstream.server.close(1000, "provider done");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await waitOnExecutionContext(session.ctx);
+
+    const telemetry = await getRealtimeTelemetry(session.userId);
+    const user = await waitForPackBalanceBelow(session.userId, 1);
+    expect(settlementCalls).toBe(2);
+    expect(await countRealtimeEvents(session.userId)).toBe(1);
+    expect(user?.packBalance).toBeCloseTo(
+        1 - (telemetry.totalPrice as number),
+        8,
+    );
+    expect(session.upstream.providerRequests).toBe(1);
+    expect(session.upstream.tinybirdRequests).toHaveLength(1);
 });
 
 test("settles within a reservation after API key deletion exactly once", async () => {

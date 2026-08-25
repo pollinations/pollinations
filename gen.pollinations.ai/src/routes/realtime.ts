@@ -18,7 +18,10 @@ import {
     type UsagePrice,
     type UsageType,
 } from "@shared/registry/registry.ts";
-import type { BillableEvent } from "@shared/schemas/billable-event.ts";
+import type {
+    BillableEvent,
+    BillingSettlementResponse,
+} from "@shared/schemas/billable-event.ts";
 import {
     priceToEventParams,
     type TinybirdEvent,
@@ -307,7 +310,6 @@ function forwardMessage(
     source: WebSocket,
     target: WebSocket,
     validate?: (data: unknown) => string | null,
-    onReject?: () => void,
     transform?: (data: unknown) => unknown,
 ): void {
     source.addEventListener("message", (event) => {
@@ -315,7 +317,6 @@ function forwardMessage(
         if (error) {
             closeSocket(source, 1008, error);
             closeSocket(target, 1008, error);
-            onReject?.();
             return;
         }
         if (isOpen(target)) target.send(transform?.(event.data) ?? event.data);
@@ -812,9 +813,22 @@ async function settleRealtimeSession(
             JSON.stringify(telemetry),
         ) as BillableEvent["telemetry"],
     };
-    const result = await c.env.ENTER_BILLING.settle(tracking.authorizationId, [
-        event,
-    ]);
+    let result: BillingSettlementResponse;
+    try {
+        result = await c.env.ENTER_BILLING.settle(tracking.authorizationId, [
+            event,
+        ]);
+    } catch (error) {
+        c.get("log")
+            .getChild("realtime")
+            .warn(
+                "Realtime billing settlement acknowledgement was lost; retrying the same idempotent event",
+                { error },
+            );
+        result = await c.env.ENTER_BILLING.settle(tracking.authorizationId, [
+            event,
+        ]);
+    }
     if (!result.ok) throw new Error(result.error);
     const rejected = result.events.find(
         (item) => item.status === "rejected" || item.status === "conflict",
@@ -901,31 +915,29 @@ function scheduleRealtimeSettlement(
     );
 }
 
-function wireClose(
+function settleAfterProviderClose(
     c: Context<Env>,
-    source: WebSocket,
-    target: WebSocket,
+    upstream: WebSocket,
+    downstream: WebSocket,
     tracking: RealtimeBillingContext,
 ): void {
-    source.addEventListener("close", (event) => {
+    downstream.addEventListener("close", (event) => {
+        if (downstream.readyState !== WebSocket.CLOSED) {
+            const closeCode = normalizeCloseCode(event.code);
+            if (closeCode) downstream.close(closeCode, event.reason);
+            else downstream.close();
+        }
+    });
+    upstream.addEventListener("close", (event) => {
         try {
-            closeSocket(target, event.code, event.reason);
-            if (event.wasClean && source.readyState !== WebSocket.CLOSED) {
-                const closeCode = normalizeCloseCode(event.code);
-                if (closeCode) source.close(closeCode, event.reason);
-                else source.close();
-            }
+            closeSocket(downstream, event.code, event.reason);
         } finally {
             scheduleRealtimeSettlement(c, tracking);
         }
     });
-    source.addEventListener("error", () => {
-        try {
-            closeSocket(target, 1011, "Realtime proxy error");
-            closeSocket(source, 1011, "Realtime proxy error");
-        } finally {
-            scheduleRealtimeSettlement(c, tracking);
-        }
+    upstream.addEventListener("error", () => {
+        closeSocket(downstream, 1011, "Realtime proxy error");
+        closeSocket(upstream, 1011, "Realtime proxy error");
     });
 }
 
@@ -945,7 +957,6 @@ function proxyRealtimeWebSockets(
         downstream,
         upstream,
         (data) => validateClientRealtimeEvent(data, allowTranscription),
-        () => scheduleRealtimeSettlement(c, tracking),
         allowTranscription
             ? (data) =>
                   rewriteLiveTranscriptionModel(
@@ -959,7 +970,6 @@ function proxyRealtimeWebSockets(
         upstream,
         downstream,
         (data) => validateUpstreamRealtimeEvent(data, allowTranscription),
-        () => scheduleRealtimeSettlement(c, tracking),
         allowTranscription
             ? (data) =>
                   rewriteLiveTranscriptionModel(
@@ -969,8 +979,7 @@ function proxyRealtimeWebSockets(
                   )
             : undefined,
     );
-    wireClose(c, downstream, upstream, tracking);
-    wireClose(c, upstream, downstream, tracking);
+    settleAfterProviderClose(c, upstream, downstream, tracking);
     downstream.accept({ allowHalfOpen: true });
     upstream.accept({ allowHalfOpen: true });
 

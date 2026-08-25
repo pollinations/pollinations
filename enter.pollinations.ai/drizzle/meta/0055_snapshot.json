@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "a638ce01-a86a-4316-9983-a14cda36371a",
+  "id": "e7b41d50-6fc0-4d0b-ad01-b1851b38b20b",
   "prevId": "e139f3f2-7a00-4878-b145-95c3ce0e28fb",
   "tables": {
     "account": {
@@ -1699,13 +1699,12 @@
           "autoincrement": false,
           "default": false
         },
-        "estimated_price": {
-          "name": "estimated_price",
-          "type": "real",
+        "payer_bucket": {
+          "name": "payer_bucket",
+          "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false,
-          "default": 0
+          "autoincrement": false
         },
         "reserved_price": {
           "name": "reserved_price",
@@ -1715,12 +1714,21 @@
           "autoincrement": false,
           "default": 0
         },
-        "reservation_holder": {
-          "name": "reservation_holder",
-          "type": "text",
+        "charged_price": {
+          "name": "charged_price",
+          "type": "real",
           "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "settled_price": {
+          "name": "settled_price",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
         },
         "created_at": {
           "name": "created_at",
@@ -1745,6 +1753,13 @@
         },
         "canceled_at": {
           "name": "canceled_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "expired_at": {
+          "name": "expired_at",
           "type": "integer",
           "primaryKey": false,
           "notNull": false,
@@ -1820,13 +1835,6 @@
           "notNull": true,
           "autoincrement": false,
           "default": 0
-        },
-        "payer_bucket": {
-          "name": "payer_bucket",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
         },
         "model_used": {
           "name": "model_used",

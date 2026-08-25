@@ -14,7 +14,7 @@ import {
     remapUpstreamStatus,
     UpstreamError,
 } from "@shared/error.ts";
-import { sendToTinybird } from "@shared/events.ts";
+import { sendToTinybirdOnce } from "@shared/events.ts";
 import {
     type BillingAdjustment,
     type CostDefinition,
@@ -223,9 +223,12 @@ export const track = (eventType: EventType) =>
                 cacheKey: await cacheKeyForTracking(),
                 errorTracking: row.errorTracking,
             });
-        /** Records a request that has no Enter authorization to settle under. */
+        /**
+         * Records a request that has no Enter authorization to settle under:
+         * one best-effort write, never retried.
+         */
         const emitRow = async (row: TrackingRow): Promise<void> => {
-            await sendToTinybird(
+            await sendToTinybirdOnce(
                 await buildRow(row),
                 c.env.TINYBIRD_INGEST_URL,
                 c.env.TINYBIRD_INGEST_TOKEN,

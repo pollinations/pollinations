@@ -11,13 +11,15 @@ CREATE TABLE `service_authorization` (
 	`byop_client_key_id` text,
 	`paid_only` integer DEFAULT false NOT NULL,
 	`api_key_has_budget` integer DEFAULT false NOT NULL,
-	`estimated_price` real DEFAULT 0 NOT NULL,
+	`payer_bucket` text NOT NULL,
 	`reserved_price` real DEFAULT 0 NOT NULL,
-	`reservation_holder` text,
+	`charged_price` real DEFAULT 0 NOT NULL,
+	`settled_price` real DEFAULT 0 NOT NULL,
 	`created_at` integer NOT NULL,
 	`expires_at` integer NOT NULL,
 	`settled_at` integer,
-	`canceled_at` integer
+	`canceled_at` integer,
+	`expired_at` integer
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `idx_service_authorization_request` ON `service_authorization` (`service`,`request_id`);--> statement-breakpoint
@@ -29,7 +31,6 @@ CREATE TABLE `service_billing_event` (
 	`fingerprint` text DEFAULT '' NOT NULL,
 	`price` real DEFAULT 0 NOT NULL,
 	`billed_price` real DEFAULT 0 NOT NULL,
-	`payer_bucket` text,
 	`model_used` text,
 	`dev_user_id` text,
 	`dev_credit` real DEFAULT 0 NOT NULL,

@@ -67,7 +67,7 @@ export function createBalanceCheckResult(
     isPaidOnly = false,
 ): BalanceCheckResult {
     // Which bucket the charge is expected to land in, for the reported meter.
-    // The authoritative choice is the payer ladder in settleServiceBillingEvents.
+    // The authoritative choice is selectWalletBucket at authorize time.
     const source: BalanceBucket = isPaidOnly
         ? "pack"
         : balances.tierBalance > 0

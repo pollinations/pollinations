@@ -2,10 +2,12 @@
 // that bill through Enter's ServiceGateway instead of holding their own
 // billing pipeline. An authorization snapshots the identity a settlement
 // needs (so settling never re-authenticates the raw token — revoking a key
-// after authorization cannot make completed authorized work free) and holds a
-// finite API-key budget reservation until exactly one event, a cancel, or the
-// expiry sweep claims it. Billing events are the idempotency ledger: one row
-// per (authorization, eventId), and money moves atomically with the claim.
+// after authorization cannot make completed authorized work free), fixes the
+// wallet bucket the whole request pays from, and holds the estimate reserved
+// from that bucket (and from a finite API-key budget) until the first
+// settlement, a cancel, or the expiry sweep reconciles it. Billing events are
+// the idempotency ledger: one row per (authorization, eventId), and money
+// moves atomically with the claim.
 
 import {
     integer,
@@ -15,11 +17,6 @@ import {
     text,
     uniqueIndex,
 } from "drizzle-orm/sqlite-core";
-
-/** `reservationHolder` sentinel: the reservation was released by a cancel. */
-export const RESERVATION_CANCELED = "__canceled__";
-/** `reservationHolder` sentinel: the reservation was released by the expiry sweep. */
-export const RESERVATION_EXPIRED = "__expired__";
 
 export const serviceAuthorization = sqliteTable(
     "service_authorization",
@@ -41,27 +38,37 @@ export const serviceAuthorization = sqliteTable(
         paidOnly: integer("paid_only", { mode: "boolean" })
             .notNull()
             .default(false),
-        // Whether the key had a finite pollen budget: settlement must then
-        // reconcile against the reservation instead of debiting the key raw.
+        // Whether the key had a finite pollen budget: the reserve was then
+        // also taken from the key, and settlement reconciles the key with
+        // the wallet so the two never disagree.
         apiKeyHasBudget: integer("api_key_has_budget", { mode: "boolean" })
             .notNull()
             .default(false),
-        // Amount reserved from the key budget at authorize time (immutable).
-        // Estimate the caller authorized (after BYOP markup); a retried
-        // authorize must repeat it exactly to reuse the authorization.
-        estimatedPrice: real("estimated_price").notNull().default(0),
+        // The one wallet bucket ('tier' | 'pack') every event of this
+        // request is billed from, chosen at authorize time.
+        payerBucket: text("payer_bucket").notNull(),
+        // Estimate the caller authorized (after BYOP markup), debited from
+        // the wallet bucket and the key budget at authorize time. Immutable:
+        // a retried authorize must repeat it exactly to reuse the
+        // authorization.
         reservedPrice: real("reserved_price").notNull().default(0),
-        // Who claimed the reservation: the settling event's id, or a release
-        // sentinel. NULL means the reservation is still outstanding. Set
-        // atomically (compare-and-set on NULL) so exactly one claimer wins.
-        reservationHolder: text("reservation_holder"),
+        // Amount currently collected from the wallet (and the key). Starts
+        // at the reserve; the first settlement reconciles it down to the
+        // settled total, later ones raise both together.
+        chargedPrice: real("charged_price").notNull().default(0),
+        // Running total of settled billed prices across all events.
+        settledPrice: real("settled_price").notNull().default(0),
         createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
-        // After this, the expiry sweep may release an unclaimed reservation
-        // (the service died without settling or canceling). Settlement still
-        // works afterwards — it just reconciles against a zero reservation.
+        // After this, the expiry sweep may release an unreconciled reserve
+        // (the service died without settling or canceling) and settlement
+        // is refused.
         expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+        // Set by the first settlement, once the reserve is reconciled.
         settledAt: integer("settled_at", { mode: "timestamp" }),
         canceledAt: integer("canceled_at", { mode: "timestamp" }),
+        // Set when the reserve was released as expired, by the sweep or by
+        // a late settlement.
+        expiredAt: integer("expired_at", { mode: "timestamp" }),
     },
     (table) => [
         uniqueIndex("idx_service_authorization_request").on(
@@ -88,7 +95,6 @@ export const serviceBillingEvent = sqliteTable(
         // payer (price + BYOP markup, capped by a finite key budget).
         price: real("price").notNull().default(0),
         billedPrice: real("billed_price").notNull().default(0),
-        payerBucket: text("payer_bucket"),
         modelUsed: text("model_used"),
         // BYOP markup / community reward actually credited (zeroed when
         // suppressed or capped, so the ledger matches the money that moved).

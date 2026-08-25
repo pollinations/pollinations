@@ -43,8 +43,10 @@ export type ServiceAuthorizeInput = {
     /** Request path recorded on the settled events. */
     requestPath: string;
     /**
-     * Estimated pollen price of the work. Reserved from a finite API-key
-     * budget atomically before the service does anything expensive.
+     * Estimated pollen price of the work. Reserved from the caller's wallet
+     * bucket (and a finite API-key budget) atomically before the service
+     * does anything expensive; settlement reconciles the actual total
+     * against it.
      */
     estimatedPrice: number;
     /** Model to enforce API-key model permissions against, when relevant. */
@@ -125,7 +127,7 @@ export type ServiceSettleError =
 
 export type ServiceCancelResult = {
     ok: true;
-    /** Whether this call released an outstanding reservation. */
+    /** Whether this call released an outstanding reserve. */
     released: boolean;
 };
 
@@ -140,7 +142,7 @@ export type ServiceGatewayBinding = {
     settle(input: ServiceSettleInput): Promise<ServiceSettleResult>;
     /**
      * Abandon an authorization whose work failed: releases any outstanding
-     * reservation. Idempotent; a no-op once settled, canceled, or expired.
+     * reserve. Idempotent; a no-op once settled, canceled, or expired.
      */
     cancel(authorizationId: string): Promise<ServiceCancelResult>;
 };

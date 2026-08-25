@@ -91,7 +91,12 @@ export type TinybirdEvent = {
      * Defaults to true, matching every row written before fallback existed.
      */
     isFinal?: boolean;
-    isBilledUsage: boolean;
+    /**
+     * Whether the row carries a charge. A settled row with a positive ledger
+     * charge always says true; with nothing charged, the producer's own
+     * verdict is kept — or left unset for the datasource default.
+     */
+    isBilledUsage?: boolean;
 
     // Pricing
     tokenPricePromptText: number;

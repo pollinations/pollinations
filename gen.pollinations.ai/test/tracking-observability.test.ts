@@ -1324,6 +1324,76 @@ describe("tracking observability", () => {
         expect(tinybirdFetch).not.toHaveBeenCalled();
     });
 
+    it("writes the analytics row exactly once when Tinybird answers 500", async () => {
+        const tinybirdFetch = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementation(
+                async () => new Response("boom", { status: 500 }),
+            );
+        const bindings = {
+            DB: env.DB,
+            ENVIRONMENT: "test",
+            LOG_LEVEL: "debug",
+            LOG_FORMAT: "text",
+            BETTER_AUTH_SECRET: "test_secret",
+            TINYBIRD_INGEST_URL:
+                "https://tinybird.test/v0/events?name=generation_event_v2",
+            TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            ENTER_GATEWAY: tinybirdGateway,
+        } as CloudflareBindings;
+        const request = () =>
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai",
+                    stream: false,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            });
+
+        // A settled request: Enter's ledger row is one best-effort write.
+        const settledCtx = createExecutionContext();
+        const settled = await createTestApp(async () => {}).fetch(
+            request(),
+            bindings,
+            settledCtx,
+        );
+        await waitOnExecutionContext(settledCtx);
+        expect(settled.status).toBe(200);
+        expect(tinybirdFetch).toHaveBeenCalledTimes(1);
+
+        // A request refused before Enter authorized it: gen writes the row
+        // itself, once, and never retries.
+        const refused = new Hono<Env>();
+        refused.use("*", requestId());
+        refused.use("*", logger);
+        refused.use("*", async (c, next) => {
+            c.set("auth", {
+                user: trackingUser,
+                requireUser: () => trackingUser,
+                requireModelAccess: () => {},
+            });
+            c.set("balance", {
+                getBalance: async () => ({ tierBalance: 1, packBalance: 0 }),
+            });
+            c.set("model", {
+                requested: "openai",
+                resolved: "openai",
+                definition: getRegistryModelDefinition("openai"),
+            });
+            await next();
+        });
+        refused.post("/v1/chat/completions", track("generate.text"), () =>
+            Response.json({ error: "rate limited" }, { status: 429 }),
+        );
+        const refusedCtx = createExecutionContext();
+        const response = await refused.fetch(request(), bindings, refusedCtx);
+        await waitOnExecutionContext(refusedCtx);
+        expect(response.status).toBe(429);
+        expect(tinybirdFetch).toHaveBeenCalledTimes(2);
+    });
+
     it("does not trigger auto top-up while post-deduction pack balance is above threshold", async () => {
         const db = drizzle(env.DB);
         const userId = `track-auto-top-up-${crypto.randomUUID()}`;
@@ -1974,8 +2044,7 @@ describe("tracking observability", () => {
             headers: {
                 "content-type": "model/gltf-binary",
                 "x-model-used": "triposr",
-                // Priced usage: Enter derives isBilledUsage from the ledger.
-                "x-usage-completion-text-tokens": "500",
+                "x-usage-completion-image-tokens": "1",
             },
         });
 

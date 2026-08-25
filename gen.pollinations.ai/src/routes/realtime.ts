@@ -10,7 +10,7 @@ import {
     stripIPv4MappedPrefix,
     truncateIpToSubnet,
 } from "@shared/client-ip.ts";
-import { sendToTinybird } from "@shared/events.ts";
+import { sendToTinybirdOnce } from "@shared/events.ts";
 import { redactCredentialQueryParams } from "@shared/observability/request-inputs.ts";
 import {
     type BillingAdjustment,
@@ -868,7 +868,7 @@ async function settleRealtimeSession(
     }
 
     const balances = await getUserBalance(db, tracking.identity.userId);
-    await sendToTinybird(
+    await sendToTinybirdOnce(
         createRealtimeTrackingEvent({
             tracking,
             startTime: tracking.sessionStartTime,

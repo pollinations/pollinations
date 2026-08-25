@@ -17,7 +17,6 @@ import {
     XIcon,
 } from "@pollinations/ui";
 import { communityEndpointPriceFieldsForModality } from "@shared/community-endpoints.ts";
-import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { PriceBadge, type PriceBadgeConfig } from "../models/price-badge.tsx";
 import type { PriceKind } from "../models/types.ts";
@@ -177,16 +176,12 @@ export function CommunityEndpointCard({
                     icon={<TokensIcon className="h-3.5 w-3.5" />}
                     label="Earnings"
                     value={
-                        <Link
-                            to="/activity"
-                            search={(prev) => ({
-                                ...prev,
-                                earningsModels: [endpoint.modelId],
-                            })}
+                        <a
+                            href={`/activity?earningsModels=${encodeURIComponent(endpoint.modelId)}`}
                             className="font-medium text-theme-text-soft underline underline-offset-2 transition-colors hover:text-theme-text-strong text-xs"
                         >
                             View activity
-                        </Link>
+                        </a>
                     }
                 />
             </div>

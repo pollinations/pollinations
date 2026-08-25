@@ -608,3 +608,38 @@ describe("Pollinations model discovery", () => {
         );
     });
 });
+
+describe("Pollinations account quests", () => {
+    it("returns quest data from GET /account/quests", async () => {
+        const client = newClient();
+        const quests = [
+            {
+                id: "q1",
+                title: "First Quest",
+                description: "A quest",
+                category: "setup" as const,
+                state: "completed" as const,
+                status: "completed" as const,
+                rewardAmount: 100,
+                balanceBucket: "tier" as const,
+                url: null,
+                reward: null,
+            },
+        ];
+        fetchMock.mockResolvedValueOnce(makeResponse({ quests }));
+
+        const result = await client.accountQuests();
+        expect(result.quests).toEqual(quests);
+        expect(fetchMock.mock.calls[0]?.[0]).toBe(
+            "https://example.test/account/quests",
+        );
+    });
+
+    it("returns an empty quests array when no quests exist", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValueOnce(makeResponse({ quests: [] }));
+
+        const result = await client.accountQuests();
+        expect(result.quests).toEqual([]);
+    });
+});

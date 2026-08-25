@@ -49,6 +49,7 @@ export {
     generateVideo,
     getBalance,
     getDailyUsage,
+    getQuests,
     getImageModels,
     getKeyUsage,
     getModels,
@@ -75,6 +76,7 @@ export {
 // Export all types
 export type {
     AccountBalance,
+    AccountQuestsResponse,
     AccountKey,
     AccountPermission,
     AccountProfile,

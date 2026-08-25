@@ -39,6 +39,7 @@ Install: `npm i -g @pollinations/cli@latest` (provides the `polli` binary).
 | Filter models by type | `polli models --type image` |
 | Model health + latency | `polli models --stats` (default 60m, `--window <min>`) |
 | Check balance | `polli usage` |
+| Show developer earnings | `polli earnings` (`--days <n>`, default 30) |
 | List your quests + claim state | `polli quests` (filters: `--open --claimable --claimed --coming-soon`) |
 | Manage prompt agents | `polli agents list` |
 | Manage invite-only community models | `polli my-models list` |
@@ -149,8 +150,11 @@ polli usage --history    # recent individual requests
 polli usage --daily      # daily cost summary
 polli quests             # your quests + claim state (open/claimable/claimed/coming)
 polli quests --claimable # only rewards ready to claim
+polli earnings           # developer earnings total + per-entity breakdown
 ```
 **History is eventually consistent** — a request you just made may not appear for 30–60s. When matching costs to freshly-generated media, use `--limit 50` and filter by timestamp, and retry if the expected entry is missing. `polli usage --json` returns `{"pollen": <number>}` — the current balance only; use `--history --json` or `--daily --json` for cost breakdowns.
+
+**Developer earnings** (`polli earnings`) reads `GET /account/earnings`: a per-entity rollup for BYOP apps and community models with additive totals. `--days <n>` sets the rolling window (1–90, default 30). `--json` returns `{days, totals, perEntity}`; API keys need `account:usage`.
 
 ### Manage my-models
 ```bash

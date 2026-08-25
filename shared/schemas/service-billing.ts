@@ -115,15 +115,21 @@ export type ServiceSettleResult =
 
 /**
  * Why nothing was settled: the authorization is unknown, was canceled or
- * expired before settlement (late settlements never charge), or an event id
+ * expired before settlement (late settlements never charge), an event id
  * was reused — within the call or against the ledger — with a different
- * financial payload. Identical repeats of an event id are one event.
+ * financial payload (identical repeats of an event id are one event), or
+ * the call's total beyond the reserve is not covered by the payer's live
+ * wallet bucket (insufficient_balance) or finite key budget
+ * (insufficient_budget). A rejected call moves no money and writes nothing;
+ * the reserve stays held until the service cancels or it expires.
  */
 export type ServiceSettleError =
     | "unknown_authorization"
     | "authorization_canceled"
     | "authorization_expired"
-    | "event_conflict";
+    | "event_conflict"
+    | "insufficient_balance"
+    | "insufficient_budget";
 
 export type ServiceCancelResult = {
     ok: true;

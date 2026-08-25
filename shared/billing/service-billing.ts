@@ -133,29 +133,83 @@ function bucketColumn(bucket: Bucket): "tier_balance" | "pack_balance" {
  * The authorization row and both debits are one atomic batch, and the row
  * only lands while the bucket and the budget cover the estimate at that
  * moment — concurrent requests against one exact balance admit only the
- * funded ones. A unique-index conflict (retried request) aborts the batch
- * before any debit, so retries can never stack reserves.
+ * funded ones.
+ *
+ * A request id already authorized is resolved before any affordability or
+ * reservation work: the identical request gets its open
+ * authorization back without another debit (so an exact retry after the
+ * original reserved the caller's entire balance still succeeds), a
+ * different request under the same id is a conflict, and a canceled or
+ * expired authorization is never handed back as usable. The unique index
+ * covers the race between two first-time authorizes the same way.
  */
 export async function createServiceAuthorization(
     d1: D1Database,
     identity: ServiceAuthorizationIdentity,
     input: Omit<ServiceAuthorizeInput, "token" | "model">,
 ): Promise<CreateServiceAuthorizationResult> {
+    const db = drizzle(d1);
     const estimatedCost = withByopMarkup(
         Math.max(0, input.estimatedPrice),
         identity.byopMarkupApplies,
     );
     const isPaidOnly = input.paidOnly ?? false;
+    const now = new Date();
+
+    const resolveExisting = (
+        existing: AuthorizationRow,
+    ): CreateServiceAuthorizationResult => {
+        // An authorization never binds anyone but the credential that
+        // created it, for the request it was created for.
+        const identical =
+            existing.userId === identity.userId &&
+            existing.apiKeyId === identity.apiKeyId &&
+            existing.requestPath === input.requestPath &&
+            existing.paidOnly === isPaidOnly &&
+            Math.abs(existing.reservedPrice - estimatedCost) < 1e-9;
+        if (!identical) {
+            return {
+                ok: false,
+                denial: {
+                    status: 409,
+                    message: `Request ${input.requestId} was already authorized for a different request.`,
+                },
+            };
+        }
+        const closed = closedReason(existing, now);
+        if (closed) {
+            return {
+                ok: false,
+                denial: {
+                    status: 409,
+                    message: `Request ${input.requestId} was already authorized and is ${closed === "authorization_canceled" ? "canceled" : "expired"}.`,
+                },
+            };
+        }
+        return { ok: true, authorizationId: existing.id };
+    };
+
+    const findExisting = () =>
+        db
+            .select()
+            .from(serviceAuthorization)
+            .where(
+                and(
+                    eq(serviceAuthorization.service, input.service),
+                    eq(serviceAuthorization.requestId, input.requestId),
+                ),
+            )
+            .get();
+    // Release this user's expired reserves (on any key) before anything
+    // else, so an abandoned request can never cause a false denial and a
+    // retry of an expired request releases what it held.
+    await expireUserServiceAuthorizations(d1, identity.userId, now);
+
+    const existing = await findExisting();
+    if (existing) return resolveExisting(existing);
 
     const hasBudget = typeof identity.apiKeyPollenBalance === "number";
-    const now = new Date();
-    if (hasBudget) {
-        // Release this key's expired reserves before reserving again, so an
-        // abandoned request can never cause a false budget denial.
-        await expireServiceAuthorizations(d1, now, 20, identity.apiKeyId);
-    }
-
-    const balances = await getUserBalance(drizzle(d1), identity.userId);
+    const balances = await getUserBalance(db, identity.userId);
     const bucket = selectWalletBucket(balances, estimatedCost, isPaidOnly);
     if (!bucket) {
         return {
@@ -249,38 +303,11 @@ export async function createServiceAuthorization(
         }
     } catch (error) {
         if (!isUniqueConstraintError(error)) throw error;
-        // A retried authorize for the same (service, requestId) hands back
-        // the existing authorization — but only for the identical request.
-        // A different payer, key, path, estimate or paid-only rule under a
-        // reused request id is a conflict: an authorization never binds
-        // anyone but the credential that created it.
-        const existing = await drizzle(d1)
-            .select()
-            .from(serviceAuthorization)
-            .where(
-                and(
-                    eq(serviceAuthorization.service, input.service),
-                    eq(serviceAuthorization.requestId, input.requestId),
-                ),
-            )
-            .get();
-        if (!existing) throw error;
-        const identical =
-            existing.userId === identity.userId &&
-            existing.apiKeyId === identity.apiKeyId &&
-            existing.requestPath === input.requestPath &&
-            existing.paidOnly === isPaidOnly &&
-            Math.abs(existing.reservedPrice - estimatedCost) < 1e-9;
-        if (!identical) {
-            return {
-                ok: false,
-                denial: {
-                    status: 409,
-                    message: `Request ${input.requestId} was already authorized for a different request.`,
-                },
-            };
-        }
-        return { ok: true, authorizationId: existing.id };
+        // Lost the race to a concurrent first-time authorize of the same
+        // request: the batch aborted before any debit.
+        const raced = await findExisting();
+        if (!raced) throw error;
+        return resolveExisting(raced);
     }
 
     return { ok: true, authorizationId };
@@ -318,20 +345,25 @@ function closedReason(
 
 /**
  * Settle billable events against an authorization. All events of one call
- * form a single atomic D1 batch. Per event, in delivery order, the batch
- * claims the idempotency row and moves money against the authorization's
- * running total:
+ * form a single atomic D1 batch. The call is approved as a whole or not at
+ * all: what its total adds beyond the reserve the request still holds must
+ * be covered by the live, non-negative balance of the request's wallet
+ * bucket and — for a finite key — by the key's live budget (a deleted key
+ * covers nothing beyond the reserve; a budget lifted to NULL covers
+ * everything). That check is part of every event's claim, evaluated inside
+ * the batch against live state, so it serializes with concurrent
+ * settlements: two calls cannot both spend one headroom, and an underfunded
+ * call lands no claim, moves no money, and is rejected as
+ * insufficient_balance / insufficient_budget. Nothing is ever capped or
+ * partially settled, and a wallet bucket never goes into debt.
  *
- *   - a finite key budget caps the event's charge at what is still covered
- *     by the reserve plus the key's live budget — charges can never exceed
- *     the key's authorization, and a key deleted after authorize settles
- *     within its reserve (the wallet is charged identically, so wallet and
- *     key never disagree),
+ * Per approved event, in delivery order, the batch claims the idempotency
+ * row and moves money against the authorization's running total:
+ *
  *   - the part of the charge the reserve does not cover is debited from the
  *     request's wallet bucket and from the key,
  *   - BYOP markup and community rewards are credited into the payer's
- *     bucket, suppressed when that bucket went negative or the charge was
- *     capped (paying credits out of a shortfall would mint pollen).
+ *     bucket.
  *
  * Then, on the first settle call only, the unused reserve is refunded to the
  * wallet and the key — so a leading zero-price event can neither consume
@@ -430,8 +462,27 @@ export async function settleServiceBillingEvents(
         SELECT settled_price + ${eventField("billed_price", false)} - charged_price
         FROM service_authorization WHERE id = ?1)), ${P})`;
 
-    for (const event of pending) {
-        const eid = event.eventId;
+    // Whole-call approval, evaluated against live state by every claim in
+    // this batch (claims come before any money moves, so all of them see
+    // the same state): the call's total billed price (?15) beyond the
+    // reserve the request still holds must be covered by the payer's live
+    // non-negative bucket balance and by a finite key's live budget.
+    const callOverage = `ROUND(MAX(0, ?15 - (
+        SELECT charged_price - settled_price
+        FROM service_authorization WHERE id = ?1)), ${P})`;
+    const walletCovers = `ROUND(MAX(0, COALESCE(
+        (SELECT ${column} FROM user WHERE id = ?16), 0)), ${P}) >= ${callOverage}`;
+    const keyCovers = `(CASE
+        WHEN NOT EXISTS (SELECT 1 FROM apikey WHERE id = ?17) THEN 0
+        WHEN (SELECT pollen_balance FROM apikey WHERE id = ?17) IS NULL THEN ?15
+        ELSE ROUND(MAX(0, (SELECT pollen_balance FROM apikey WHERE id = ?17)), ${P})
+    END) >= ${callOverage}`;
+    const approved = [
+        walletCovers,
+        ...(authorization.apiKeyHasBudget ? [keyCovers] : []),
+    ].join(" AND ");
+
+    const billedFor = async (event: ServiceBillableEvent) => {
         const price = Math.max(0, event.price);
         // The caller already bears the upstream cost of their own community
         // endpoint: don't charge them through Pollinations or pay them back
@@ -439,7 +490,6 @@ export async function settleServiceBillingEvents(
         const isSelfReward =
             event.communityReward?.ownerUserId === authorization.userId;
         const billable = price > 0 && !isSelfReward;
-
         const markup = billable
             ? await resolveDevMarkup(
                   db,
@@ -462,11 +512,26 @@ export async function settleServiceBillingEvents(
               )
             : null;
         const billed = billable ? price + (markup?.devCredit ?? 0) : 0;
+        return { price, markup, community, billed };
+    };
+    const priced = await Promise.all(
+        pending.map(async (event) => ({
+            event,
+            ...(await billedFor(event)),
+        })),
+    );
+    const callTotal = Number(
+        priced.reduce((sum, { billed }) => sum + billed, 0).toFixed(P),
+    );
+
+    for (const { event, price, markup, community, billed } of priced) {
+        const eid = event.eventId;
 
         // 1. Claim the idempotency row — only while the authorization is
-        // still open. Zero changes means an earlier settlement owns this
-        // event or the authorization closed underneath us; every later
-        // statement is then inert.
+        // still open and the whole call is approved. Zero changes means an
+        // earlier settlement owns this event, the authorization closed
+        // underneath us, or the call is underfunded; every later statement
+        // is then inert.
         plan.push({ event, claimIndex: statements.length });
         statements.push(
             d1
@@ -484,6 +549,7 @@ export async function settleServiceBillingEvents(
                         SELECT 1 FROM service_authorization
                         WHERE id = ?1 AND canceled_at IS NULL
                           AND expired_at IS NULL AND expires_at > ?13)
+                      AND ${approved}
                     ON CONFLICT (authorization_id, event_id) DO NOTHING`,
                 )
                 .bind(
@@ -501,50 +567,17 @@ export async function settleServiceBillingEvents(
                     community?.rewardRate ?? 0,
                     toDbTime(now),
                     eventFingerprint(event),
+                    callTotal,
+                    authorization.userId,
+                    ...(authorization.apiKeyHasBudget
+                        ? [authorization.apiKeyId]
+                        : []),
                 ),
         );
 
-        if (billed > 0 && authorization.apiKeyHasBudget) {
-            // 2. Cap the charge at what the key authorized: the reserve
-            // still covering this request plus the key's live budget. A
-            // deleted key covers nothing beyond the reserve; a budget lifted
-            // to NULL since authorize covers everything. When the cap binds
-            // we collected less than the full price, so the credits it
-            // would have funded are dropped with it.
-            const headroom = `CASE
-                WHEN NOT EXISTS (SELECT 1 FROM apikey WHERE id = ?3) THEN 0
-                WHEN (SELECT pollen_balance FROM apikey WHERE id = ?3) IS NULL
-                    THEN billed_price
-                ELSE MAX(0, (SELECT pollen_balance FROM apikey WHERE id = ?3))
-            END`;
-            const cap = `ROUND((SELECT charged_price - settled_price
-                                FROM service_authorization WHERE id = ?1)
-                               + ${headroom}, ${P})`;
-            statements.push(
-                d1
-                    .prepare(
-                        `UPDATE service_billing_event
-                         SET dev_user_id = NULL, dev_credit = 0, markup_rate = 0,
-                             community_reward_user_id = NULL,
-                             community_reward_credit = 0, community_reward_rate = 0
-                         WHERE authorization_id = ?1 AND event_id = ?2
-                           AND status = 'claimed' AND billed_price > ${cap}`,
-                    )
-                    .bind(aid, eid, authorization.apiKeyId),
-                d1
-                    .prepare(
-                        `UPDATE service_billing_event
-                         SET billed_price = MIN(billed_price, ${cap})
-                         WHERE authorization_id = ?1 AND event_id = ?2
-                           AND status = 'claimed'`,
-                    )
-                    .bind(aid, eid, authorization.apiKeyId),
-            );
-        }
-
         if (billed > 0) {
-            // 3. Debit the payer's wallet bucket for what the reserve does
-            // not already cover.
+            // 2. Debit the payer's wallet bucket for what the reserve does
+            // not already cover (approved above, so the bucket stays >= 0).
             statements.push(
                 d1
                     .prepare(
@@ -554,28 +587,9 @@ export async function settleServiceBillingEvents(
                     )
                     .bind(aid, eid, authorization.userId),
             );
-            // 4. Suppress credits when the payer's bucket went negative:
-            // there is nothing real to fund them from.
-            if (markup || community) {
-                statements.push(
-                    d1
-                        .prepare(
-                            `UPDATE service_billing_event
-                             SET dev_user_id = NULL, dev_credit = 0, markup_rate = 0,
-                                 community_reward_user_id = NULL,
-                                 community_reward_credit = 0,
-                                 community_reward_rate = 0
-                             WHERE authorization_id = ?1 AND event_id = ?2
-                               AND status = 'claimed'
-                               AND (SELECT COALESCE(${column}, 0) FROM user
-                                    WHERE id = ?3) < 0`,
-                        )
-                        .bind(aid, eid, authorization.userId),
-                );
-            }
-            // 5./6. Credit dev markup and community reward into the bucket
-            // the payer drew from. A zeroed (suppressed/capped) credit or a
-            // settled row makes the WHERE false — nothing moves.
+            // 3./4. Credit dev markup and community reward into the bucket
+            // the payer drew from. A zero credit or a settled row makes the
+            // WHERE false — nothing moves.
             const creditStatement = (field: string, targetUserId: string) =>
                 d1
                     .prepare(
@@ -598,7 +612,7 @@ export async function settleServiceBillingEvents(
                     ),
                 );
             }
-            // 7. Move the key budget by exactly what the wallet moved.
+            // 5. Move the key budget by exactly what the wallet moved.
             if (authorization.apiKeyHasBudget) {
                 statements.push(
                     d1
@@ -613,7 +627,7 @@ export async function settleServiceBillingEvents(
             }
         }
 
-        // 8./9. Add the event to the running total and flip it to 'settled'
+        // 6./7. Add the event to the running total and flip it to 'settled'
         // — from here on, every guard above is permanently false.
         statements.push(
             d1
@@ -637,14 +651,23 @@ export async function settleServiceBillingEvents(
     }
 
     if (!authorization.settledAt) {
-        // 10. First settlement: reconcile the reserve against the total —
+        // 8. First settlement: reconcile the reserve against the total —
         // whatever the wallet still holds beyond it goes back to the wallet
         // and the key. Later calls start from a reconciled authorization
-        // and charge only what they add.
+        // and charge only what they add. A call with events that landed
+        // nothing (rejected as underfunded) leaves the reserve held: the
+        // service cancels it, or it expires.
+        const landed =
+            pending.length > 0
+                ? ` AND EXISTS (
+            SELECT 1 FROM service_billing_event
+            WHERE authorization_id = ?1 AND event_id = ?4)`
+                : "";
         const unreconciled = `EXISTS (
             SELECT 1 FROM service_authorization
             WHERE id = ?1 AND settled_at IS NULL AND canceled_at IS NULL
-              AND expired_at IS NULL AND expires_at > ?3)`;
+              AND expired_at IS NULL AND expires_at > ?3)${landed}`;
+        const landedBind = pending.length > 0 ? [pending[0].eventId] : [];
         const refund = `(SELECT ROUND(charged_price - settled_price, ${P})
                          FROM service_authorization WHERE id = ?1)`;
         statements.push(
@@ -654,7 +677,7 @@ export async function settleServiceBillingEvents(
                      SET ${column} = ROUND(COALESCE(${column}, 0) + ${refund}, ${P})
                      WHERE id = ?2 AND ${unreconciled}`,
                 )
-                .bind(aid, authorization.userId, toDbTime(now)),
+                .bind(aid, authorization.userId, toDbTime(now), ...landedBind),
         );
         if (authorization.apiKeyHasBudget) {
             statements.push(
@@ -665,18 +688,24 @@ export async function settleServiceBillingEvents(
                          WHERE id = ?2 AND pollen_balance IS NOT NULL
                            AND ${unreconciled}`,
                     )
-                    .bind(aid, authorization.apiKeyId, toDbTime(now)),
+                    .bind(
+                        aid,
+                        authorization.apiKeyId,
+                        toDbTime(now),
+                        ...landedBind,
+                    ),
             );
         }
         statements.push(
             d1
                 .prepare(
                     `UPDATE service_authorization
-                     SET charged_price = settled_price, settled_at = ?2
-                     WHERE id = ?1 AND settled_at IS NULL AND canceled_at IS NULL
-                       AND expired_at IS NULL AND expires_at > ?2`,
+                     SET charged_price = settled_price, settled_at = ?3
+                     WHERE id = ?1 AND ${unreconciled}`,
                 )
-                .bind(aid, toDbTime(now)),
+                // ?2 is the payer/key slot of the refund statements above;
+                // unused here, bound so the guard's ?3/?4 keep their numbers.
+                .bind(aid, null, toDbTime(now), ...landedBind),
         );
     }
 
@@ -703,11 +732,16 @@ export async function settleServiceBillingEvents(
                     .from(serviceAuthorization)
                     .where(eq(serviceAuthorization.id, aid))
                     .get();
+                if (!current)
+                    return { ok: false, error: "unknown_authorization" };
+                const closedNow = closedReason(current, now);
+                if (closedNow) return { ok: false, error: closedNow };
+                // Open, unclaimed: the whole-call approval failed. Name
+                // the side that fell short (the batch is committed either
+                // way; this only picks the error code).
                 return {
                     ok: false,
-                    error:
-                        (current && closedReason(current, now)) ??
-                        "authorization_canceled",
+                    error: await insufficiencyReason(db, current, callTotal),
                 };
             }
             if (claimed.fingerprint !== eventFingerprint(event)) {
@@ -720,9 +754,8 @@ export async function settleServiceBillingEvents(
     }
 
     if (settled.length > 0) {
-        // Report what the batch committed — after the cap, the credit
-        // suppression and the reserve reconciliation — not what was planned
-        // before it ran.
+        // Report what the batch committed, after the reserve reconciliation,
+        // not what was planned before it ran.
         const ledger = new Map(
             (
                 await db
@@ -774,6 +807,27 @@ export async function settleServiceBillingEvents(
         duplicates,
         outcomes,
     };
+}
+
+/**
+ * Which side of the whole-call approval fell short for a call adding
+ * `callTotal` to an open authorization: the wallet bucket (checked first)
+ * or the finite key budget.
+ */
+async function insufficiencyReason(
+    db: Parameters<typeof getUserBalance>[0],
+    authorization: AuthorizationRow,
+    callTotal: number,
+): Promise<"insufficient_balance" | "insufficient_budget"> {
+    const remaining = authorization.chargedPrice - authorization.settledPrice;
+    const callOverage = Math.max(0, callTotal - remaining);
+    const balances = await getUserBalance(db, authorization.userId);
+    const bucketBalance =
+        authorization.payerBucket === "tier"
+            ? balances.tierBalance
+            : balances.packBalance;
+    if (Math.max(0, bucketBalance) < callOverage) return "insufficient_balance";
+    return "insufficient_budget";
 }
 
 /**
@@ -918,14 +972,23 @@ function toTinybirdEvent(
 /**
  * Release reserves whose authorization expired unreconciled — the service
  * died without settling or canceling. Run opportunistically (waitUntil)
- * after gateway calls; Enter runs no crons.
+ * after gateway calls; Enter runs no crons. Returns the number released.
  */
 export async function expireServiceAuthorizations(
     d1: D1Database,
     now = new Date(),
     limit = 20,
-    apiKeyId?: string,
+    userId?: string,
 ): Promise<number> {
+    return (await expireBatch(d1, now, limit, userId)).released;
+}
+
+async function expireBatch(
+    d1: D1Database,
+    now: Date,
+    limit: number,
+    userId?: string,
+): Promise<{ selected: number; released: number }> {
     const expiredAuthorizations = await drizzle(d1)
         .select()
         .from(serviceAuthorization)
@@ -936,20 +999,36 @@ export async function expireServiceAuthorizations(
                 isNull(serviceAuthorization.expiredAt),
                 gt(serviceAuthorization.reservedPrice, 0),
                 lte(serviceAuthorization.expiresAt, now),
-                apiKeyId
-                    ? eq(serviceAuthorization.apiKeyId, apiKeyId)
-                    : undefined,
+                userId ? eq(serviceAuthorization.userId, userId) : undefined,
             ),
         )
         .limit(limit);
-    let expired = 0;
+    let released = 0;
     for (const authorization of expiredAuthorizations) {
         const results = await d1.batch(
             releaseStatements(d1, authorization, "expired", now),
         );
-        if ((results[results.length - 1].meta.changes ?? 0) > 0) expired++;
+        if ((results[results.length - 1].meta.changes ?? 0) > 0) released++;
     }
-    return expired;
+    return { selected: expiredAuthorizations.length, released };
+}
+
+/**
+ * Release every expired reserve of one user before a new authorization
+ * checks their affordability. Batched, but continued until this user's
+ * expired rows are exhausted: a bound that left some held would falsely
+ * deny the very request that triggered the sweep.
+ */
+async function expireUserServiceAuthorizations(
+    d1: D1Database,
+    userId: string,
+    now: Date,
+): Promise<void> {
+    const limit = 20;
+    let selected = limit;
+    while (selected === limit) {
+        selected = (await expireBatch(d1, now, limit, userId)).selected;
+    }
 }
 
 /**

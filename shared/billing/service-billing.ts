@@ -435,7 +435,7 @@ export async function settleServiceBillingEvents(
         const price = Math.max(0, event.price);
         // The caller already bears the upstream cost of their own community
         // endpoint: don't charge them through Pollinations or pay them back
-        // a partial reward (mirrors handleBalanceDeduction).
+        // a partial reward.
         const isSelfReward =
             event.communityReward?.ownerUserId === authorization.userId;
         const billable = price > 0 && !isSelfReward;

@@ -1,19 +1,12 @@
 import { env } from "cloudflare:test";
-import { getUserBalance } from "@shared/billing/balance.ts";
-import { atomicCreditUserBalance } from "@shared/billing/deduction.ts";
 import {
     byopClientAllowsMarkup,
     computeDevCredit,
     MARKUP_PCT,
     withByopMarkup,
 } from "@shared/billing/markup.ts";
-import { roundPollenLedgerAmount } from "@shared/billing/precision.ts";
+import { resolveDevMarkup } from "@shared/billing/track-helpers.ts";
 import {
-    handleBalanceDeduction,
-    resolveDevMarkup,
-} from "@shared/billing/track-helpers.ts";
-import {
-    COMMUNITY_MODEL_REWARD_RATE,
     communityEndpointPrices,
     communityModelDefinition,
 } from "@shared/community-endpoints.ts";
@@ -111,23 +104,6 @@ async function setupPayerAndDev() {
     return { payerId, devId, pkId };
 }
 
-async function createBalanceUser(
-    prefix: string,
-    balances = { tier: 0, pack: 0 },
-) {
-    const userId = `${prefix}-${crypto.randomUUID()}`;
-    await db.insert(userTable).values({
-        id: userId,
-        email: `${userId}@test.local`,
-        name: userId,
-        tierBalance: balances.tier,
-        packBalance: balances.pack,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-    });
-    return userId;
-}
-
 describe("BYOP markup", () => {
     it("computes the dev credit from the baseline price", () => {
         expect(computeDevCredit(0)).toBe(0);
@@ -185,56 +161,6 @@ describe("BYOP markup", () => {
             .set({ metadata: JSON.stringify({ earningsEnabled: false }) })
             .where(sql`${apikeyTable.id} = ${pkId}`);
         expect(await resolveDevMarkup(db, pkId, 4, payerId)).toBeNull();
-    });
-
-    it("credits creator Quest Pollen when payer spends Quest Pollen", async () => {
-        const { payerId, devId, pkId } = await setupPayerAndDev();
-
-        const { markup } = await handleBalanceDeduction({
-            db,
-            isBilledUsage: true,
-            totalPrice: 1,
-            userId: payerId,
-            byopClientKeyId: pkId,
-        });
-
-        expect(markup?.devUserId).toBe(devId);
-        expect(markup?.devCredit).toBeCloseTo(MARKUP_PCT, 10);
-
-        expect((await getUserBalance(db, payerId)).tierBalance).toBeCloseTo(
-            2 - 1 - MARKUP_PCT,
-            10,
-        );
-        const creatorBalances = await getUserBalance(db, devId);
-        expect(creatorBalances.tierBalance).toBeCloseTo(MARKUP_PCT, 10);
-        expect(creatorBalances.packBalance).toBe(0);
-    });
-
-    it("credits creator pack balance when payer spends pack balance", async () => {
-        const { payerId, devId, pkId } = await setupPayerAndDev();
-        await db
-            .update(userTable)
-            .set({ tierBalance: 0.5, packBalance: 2 })
-            .where(sql`${userTable.id} = ${payerId}`);
-
-        const { markup } = await handleBalanceDeduction({
-            db,
-            isBilledUsage: true,
-            totalPrice: 1,
-            userId: payerId,
-            byopClientKeyId: pkId,
-        });
-
-        expect(markup?.devUserId).toBe(devId);
-        expect(markup?.devCredit).toBeCloseTo(MARKUP_PCT, 10);
-
-        const payerBalances = await getUserBalance(db, payerId);
-        expect(payerBalances.tierBalance).toBeCloseTo(0.5, 10);
-        expect(payerBalances.packBalance).toBeCloseTo(2 - 1 - MARKUP_PCT, 10);
-
-        const creatorBalances = await getUserBalance(db, devId);
-        expect(creatorBalances.tierBalance).toBe(0);
-        expect(creatorBalances.packBalance).toBeCloseTo(MARKUP_PCT, 10);
     });
 
     it("allows regular preflight when one bucket is above the model estimate", async () => {
@@ -654,219 +580,5 @@ describe("BYOP markup", () => {
                 definition,
             ),
         ).toBe(1.25);
-    });
-
-    it("does not credit or deduct for unbilled requests", async () => {
-        const { payerId, devId, pkId } = await setupPayerAndDev();
-
-        const { markup } = await handleBalanceDeduction({
-            db,
-            isBilledUsage: false,
-            totalPrice: 1,
-            userId: payerId,
-            byopClientKeyId: pkId,
-        });
-
-        expect(markup).toBeNull();
-        expect((await getUserBalance(db, payerId)).tierBalance).toBe(2);
-        expect((await getUserBalance(db, devId)).tierBalance).toBe(0);
-    });
-
-    it("reverts dev credit when payer deduction fails", async () => {
-        const { devId, pkId } = await setupPayerAndDev();
-
-        await expect(
-            handleBalanceDeduction({
-                db,
-                isBilledUsage: true,
-                totalPrice: 1,
-                userId: "missing-payer-row",
-                byopClientKeyId: pkId,
-            }),
-        ).rejects.toThrow(/affected 0 rows/);
-
-        expect((await getUserBalance(db, devId)).tierBalance).toBe(0);
-    });
-
-    it("returns ok=false when crediting a missing user", async () => {
-        const { ok, newBalance } = await atomicCreditUserBalance(
-            db,
-            "missing-credit-user",
-            "tier",
-            1,
-        );
-
-        expect(ok).toBe(false);
-        expect(newBalance).toBeNull();
-    });
-
-    it("returns a rounded billedPrice that matches what the ledger was charged", async () => {
-        const { payerId, devId, pkId } = await setupPayerAndDev();
-
-        const totalPrice = 1.23456789;
-        const { markup, billedPrice } = await handleBalanceDeduction({
-            db,
-            isBilledUsage: true,
-            totalPrice,
-            userId: payerId,
-            byopClientKeyId: pkId,
-        });
-
-        expect(markup).not.toBeNull();
-        // billedPrice is totalPrice + devCredit, snapped to ledger precision.
-        expect(billedPrice).toBe(
-            roundPollenLedgerAmount(totalPrice + (markup?.devCredit ?? 0)),
-        );
-
-        // Dev credit lands on the ledger at the same precision.
-        const creditBalance = (await getUserBalance(db, devId)).tierBalance;
-        expect(creditBalance).toBe(
-            roundPollenLedgerAmount(markup?.devCredit ?? 0),
-        );
-    });
-
-    it("credits a community model owner without increasing the payer bill", async () => {
-        const { payerId } = await setupPayerAndDev();
-        const ownerId = await createBalanceUser("community-owner");
-
-        const { communityModelReward, billedPrice } =
-            await handleBalanceDeduction({
-                db,
-                isBilledUsage: true,
-                totalPrice: 1,
-                userId: payerId,
-                communityModelReward: {
-                    userId: ownerId,
-                    rewardRate: COMMUNITY_MODEL_REWARD_RATE,
-                },
-            });
-
-        expect(billedPrice).toBe(1);
-        expect(communityModelReward).toEqual({
-            userId: ownerId,
-            rewardRate: COMMUNITY_MODEL_REWARD_RATE,
-            credit: COMMUNITY_MODEL_REWARD_RATE,
-        });
-        expect((await getUserBalance(db, payerId)).tierBalance).toBeCloseTo(
-            1,
-            10,
-        );
-        expect((await getUserBalance(db, ownerId)).tierBalance).toBeCloseTo(
-            COMMUNITY_MODEL_REWARD_RATE,
-            10,
-        );
-    });
-
-    it("can credit BYOP and community model rewards on the same generation", async () => {
-        const { payerId, devId, pkId } = await setupPayerAndDev();
-        const ownerId = await createBalanceUser("community-owner");
-
-        const { markup, communityModelReward, billedPrice } =
-            await handleBalanceDeduction({
-                db,
-                isBilledUsage: true,
-                totalPrice: 1,
-                userId: payerId,
-                byopClientKeyId: pkId,
-                communityModelReward: {
-                    userId: ownerId,
-                    rewardRate: COMMUNITY_MODEL_REWARD_RATE,
-                },
-            });
-
-        expect(markup?.devCredit).toBeCloseTo(MARKUP_PCT, 10);
-        expect(communityModelReward?.credit).toBeCloseTo(
-            COMMUNITY_MODEL_REWARD_RATE,
-            10,
-        );
-        expect(billedPrice).toBe(1 + MARKUP_PCT);
-        expect((await getUserBalance(db, payerId)).tierBalance).toBeCloseTo(
-            2 - 1 - MARKUP_PCT,
-            10,
-        );
-        expect((await getUserBalance(db, devId)).tierBalance).toBeCloseTo(
-            MARKUP_PCT,
-            10,
-        );
-        expect((await getUserBalance(db, ownerId)).tierBalance).toBeCloseTo(
-            COMMUNITY_MODEL_REWARD_RATE,
-            10,
-        );
-    });
-
-    it("suppresses generation credits when the payer goes negative", async () => {
-        const { payerId, devId, pkId } = await setupPayerAndDev();
-        const ownerId = await createBalanceUser("community-owner");
-
-        const { markup, communityModelReward, billedPrice } =
-            await handleBalanceDeduction({
-                db,
-                isBilledUsage: true,
-                totalPrice: 2,
-                userId: payerId,
-                byopClientKeyId: pkId,
-                communityModelReward: {
-                    userId: ownerId,
-                    rewardRate: COMMUNITY_MODEL_REWARD_RATE,
-                },
-            });
-
-        expect(billedPrice).toBe(
-            roundPollenLedgerAmount(2 + computeDevCredit(2)),
-        );
-        expect(markup).toBeNull();
-        expect(communityModelReward).toBeNull();
-        expect((await getUserBalance(db, payerId)).tierBalance).toBeLessThan(0);
-        expect((await getUserBalance(db, devId)).tierBalance).toBe(0);
-        expect((await getUserBalance(db, ownerId)).tierBalance).toBe(0);
-    });
-
-    it("still credits a community owner when the payer reaches zero", async () => {
-        const payerId = await createBalanceUser("payer", {
-            tier: 1,
-            pack: 0,
-        });
-        const ownerId = await createBalanceUser("community-owner");
-
-        const { communityModelReward } = await handleBalanceDeduction({
-            db,
-            isBilledUsage: true,
-            totalPrice: 1,
-            userId: payerId,
-            communityModelReward: {
-                userId: ownerId,
-                rewardRate: COMMUNITY_MODEL_REWARD_RATE,
-            },
-        });
-
-        expect(communityModelReward).not.toBeNull();
-        expect((await getUserBalance(db, payerId)).tierBalance).toBe(0);
-        expect((await getUserBalance(db, ownerId)).tierBalance).toBeCloseTo(
-            COMMUNITY_MODEL_REWARD_RATE,
-            10,
-        );
-    });
-
-    it("does not charge or reward a community model owner for their own request", async () => {
-        const ownerId = await createBalanceUser("community-owner", {
-            tier: 2,
-            pack: 0,
-        });
-
-        const { communityModelReward, billedPrice } =
-            await handleBalanceDeduction({
-                db,
-                isBilledUsage: true,
-                totalPrice: 1,
-                userId: ownerId,
-                communityModelReward: {
-                    userId: ownerId,
-                    rewardRate: COMMUNITY_MODEL_REWARD_RATE,
-                },
-            });
-
-        expect(billedPrice).toBe(0);
-        expect(communityModelReward).toBeNull();
-        expect((await getUserBalance(db, ownerId)).tierBalance).toBe(2);
     });
 });

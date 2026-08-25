@@ -1,7 +1,7 @@
 import { claimReward } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { rewards as rewardsTable } from "@shared/db/better-auth.ts";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, isNotNull, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -297,7 +297,82 @@ export const questsRoutes = new Hono<Env>()
                 },
             });
         },
+    )
+    .get(
+        "/leaderboard",
+        describeRoute({
+            tags: ["✨ Quests"],
+            summary: "Quest Leaderboard",
+            security: [],
+            description:
+                "Public aggregate of quest completions ranked by total Quest Pollen earned. Only GitHub identity and aggregate totals are exposed.",
+            responses: {
+                200: {
+                    description: "Quest leaderboard",
+                    content: {
+                        "application/json": {
+                            schema: resolver(leaderboardResponseSchema),
+                        },
+                    },
+                },
+            },
+        }),
+        async (c) => {
+            const kvKey = "quests:leaderboard:v1";
+            const cached = await c.env.KV.get<
+                z.infer<typeof leaderboardResponseSchema>
+            >(kvKey, "json");
+            if (cached) return c.json(cached);
+
+            const db = drizzle(c.env.DB);
+            const rows = await db
+                .select({
+                    githubUsername: schema.user.githubUsername,
+                    githubId: schema.user.githubId,
+                    questCount: sql<number>`count(*)`.as("quest_count"),
+                    totalPollen:
+                        sql<number>`round(sum(${rewardsTable.pollenAmount}), 2)`.as(
+                            "total_pollen",
+                        ),
+                })
+                .from(rewardsTable)
+                .innerJoin(schema.user, eq(rewardsTable.userId, schema.user.id))
+                .where(isNotNull(rewardsTable.questId))
+                .groupBy(
+                    schema.user.id,
+                    schema.user.githubUsername,
+                    schema.user.githubId,
+                )
+                .orderBy(sql`total_pollen desc`)
+                .limit(50);
+
+            const entries = rows
+                .filter((r) => r.githubUsername !== null && r.githubId !== null)
+                .map((r) => ({
+                    githubUsername: r.githubUsername!,
+                    githubId: r.githubId!,
+                    questCount: r.questCount,
+                    totalPollen: r.totalPollen,
+                }));
+
+            const result = { entries };
+            await c.env.KV.put(kvKey, JSON.stringify(result), {
+                expirationTtl: 300,
+            });
+            return c.json(result);
+        },
     );
+
+const leaderboardEntrySchema = z.object({
+    githubUsername: z.string(),
+    githubId: z.number(),
+    questCount: z.number(),
+    totalPollen: z.number(),
+});
+
+const leaderboardResponseSchema = z.object({
+    entries: z.array(leaderboardEntrySchema),
+});
 
 async function readCached(
     kv: KVNamespace,

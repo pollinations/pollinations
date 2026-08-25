@@ -40,6 +40,8 @@ import type {
     DailyUsageOptions,
     DailyUsageResponse,
     DeviceAuthorization,
+    EarningsOptions,
+    EarningsResponse,
     ImageEditOptions,
     ImageGenerateOptions,
     ImageGenerateV1Options,
@@ -495,6 +497,16 @@ export async function getProfile(): Promise<AccountProfile> {
  */
 export async function getBalance(): Promise<AccountBalance> {
     return getClient().accountBalance();
+}
+
+/**
+/**
+ * Get developer earnings (BYOP app markup and community model rewards)
+ */
+export async function getEarnings(
+    options?: EarningsOptions,
+): Promise<EarningsResponse> {
+    return getClient().accountEarnings(options);
 }
 
 /**

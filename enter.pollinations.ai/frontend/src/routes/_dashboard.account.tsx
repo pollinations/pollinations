@@ -53,40 +53,51 @@ function AccountPage() {
 
     useEffect(() => {
         if (!discordAvailable) return;
-        void authClient.listAccounts().then(async ({ data, error }) => {
-            if (error) {
-                setConnectionError("Could not load connected accounts.");
-                return;
-            }
-            const account = data?.find(
-                (account) => account.providerId === "discord",
-            );
-            if (!account) {
-                setDiscordConnection(null);
-                return;
-            }
+        void (async () => {
+            try {
+                const { data, error } = await authClient.listAccounts();
+                if (error) throw error;
 
-            const [{ data: info }, membershipResponse] = await Promise.all([
-                authClient.accountInfo({
-                    query: { accountId: account.accountId },
-                }),
-                apiClient.account["discord-membership"].$get(),
-            ]);
-            const membership = membershipResponse.ok
-                ? await membershipResponse.json()
-                : null;
-            const profile = info?.data as { username?: unknown } | undefined;
-            setDiscordConnection({
-                id: account.accountId,
-                username:
-                    typeof profile?.username === "string"
-                        ? profile.username
-                        : null,
-                displayName: info?.user.name || null,
-                avatarUrl: info?.user.image || null,
-                isPollinationsMember: membership?.member ?? null,
-            });
-        });
+                const account = data?.find(
+                    (account) => account.providerId === "discord",
+                );
+                if (!account) {
+                    setDiscordConnection(null);
+                    return;
+                }
+
+                const [infoResponse, membershipResponse] = await Promise.all([
+                    authClient
+                        .accountInfo({
+                            query: { accountId: account.accountId },
+                        })
+                        .catch(() => null),
+                    apiClient.account["discord-membership"]
+                        .$get()
+                        .catch(() => null),
+                ]);
+                const info = infoResponse?.data;
+                const membership = membershipResponse?.ok
+                    ? await membershipResponse.json().catch(() => null)
+                    : null;
+                const profile = info?.data as
+                    | { username?: unknown }
+                    | undefined;
+                setDiscordConnection({
+                    id: account.accountId,
+                    username:
+                        typeof profile?.username === "string"
+                            ? profile.username
+                            : null,
+                    displayName: info?.user.name || null,
+                    avatarUrl: info?.user.image || null,
+                    isPollinationsMember: membership?.member ?? null,
+                });
+            } catch {
+                setConnectionError("Could not load connected accounts.");
+                setDiscordConnection(null);
+            }
+        })();
     }, [discordAvailable]);
 
     if (!user) return null;
@@ -97,25 +108,33 @@ function AccountPage() {
         setConnectionPending(true);
         setConnectionError(null);
 
-        if (discordConnection) {
-            const { error } = await authClient.unlinkAccount({
-                providerId: "discord",
-            });
-            if (error) {
-                setConnectionError("Could not disconnect Discord.");
-            } else {
-                setDiscordConnection(null);
+        try {
+            if (discordConnection) {
+                const { error } = await authClient.unlinkAccount({
+                    providerId: "discord",
+                });
+                if (error) {
+                    setConnectionError("Could not disconnect Discord.");
+                } else {
+                    setDiscordConnection(null);
+                }
+                return;
             }
-            setConnectionPending(false);
-            return;
-        }
 
-        const { error } = await authClient.linkSocial({
-            provider: "discord",
-            callbackURL: "/account",
-        });
-        if (error) setConnectionError("Could not connect Discord.");
-        setConnectionPending(false);
+            const { error } = await authClient.linkSocial({
+                provider: "discord",
+                callbackURL: "/account",
+            });
+            if (error) setConnectionError("Could not connect Discord.");
+        } catch {
+            setConnectionError(
+                discordConnection
+                    ? "Could not disconnect Discord."
+                    : "Could not connect Discord.",
+            );
+        } finally {
+            setConnectionPending(false);
+        }
     }
 
     return (

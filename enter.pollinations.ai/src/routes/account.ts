@@ -31,6 +31,7 @@ import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import {
     type DiscordMembership,
+    DiscordRateLimitError,
     discordConfigFromEnv,
     getPollinationsDiscordMembership,
 } from "../services/discord.ts";
@@ -823,12 +824,20 @@ export const accountRoutes = new Hono<Env>()
                     },
                 },
                 401: { description: "Unauthorized" },
+                403: { description: "Dashboard session required" },
                 404: { description: "Discord account not connected" },
+                429: { description: "Discord membership check rate limited" },
                 502: { description: "Discord membership check failed" },
             },
         }),
         async (c) => {
             await c.var.auth.requireAuthorization();
+            if (!c.var.auth.session) {
+                throw new HTTPException(403, {
+                    message:
+                        "Discord membership checks require a dashboard session",
+                });
+            }
             const user = c.var.auth.requireUser();
             let membership: DiscordMembership | null;
             try {
@@ -836,7 +845,19 @@ export const accountRoutes = new Hono<Env>()
                     c.env,
                     user.id,
                 );
-            } catch {
+            } catch (error) {
+                if (error instanceof DiscordRateLimitError) {
+                    return c.json(
+                        {
+                            error: "rate_limited",
+                            message: "Discord membership check rate limited",
+                        },
+                        429,
+                        {
+                            "Retry-After": String(error.retryAfterSeconds),
+                        },
+                    );
+                }
                 throw new HTTPException(502, {
                     message: "Discord membership check failed",
                 });

@@ -12,6 +12,19 @@ import { discordConfigFromEnv } from "../../src/services/discord.ts";
 import { checkQuestsForUser } from "../../src/services/quest-checker.ts";
 import { test } from "../fixtures.ts";
 
+async function seedDiscordAccount(accountId: string): Promise<string> {
+    const db = drizzle(env.DB);
+    const [user] = await db.select({ id: userTable.id }).from(userTable);
+    if (!user) throw new Error("Expected fixture user");
+    await db.insert(accountTable).values({
+        id: crypto.randomUUID(),
+        accountId,
+        providerId: "discord",
+        userId: user.id,
+    });
+    return user.id;
+}
+
 test("requires complete Discord configuration", () => {
     expect(
         discordConfigFromEnv({
@@ -35,6 +48,7 @@ test("requires complete Discord configuration", () => {
 });
 
 test("links a Discord identity to the signed-in GitHub account", async ({
+    apiKey,
     mocks,
     sessionToken,
 }) => {
@@ -99,6 +113,35 @@ test("links a Discord identity to the signed-in GitHub account", async ({
     expect(discordAccount?.refreshToken).toBeTruthy();
     expect(discordAccount?.refreshToken).not.toBe("mock_discord_refresh_token");
 
+    const secondLinkResponse = await SELF.fetch(
+        "http://localhost:3000/api/auth/link-social",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({
+                provider: "discord",
+                callbackURL: "/account",
+            }),
+        },
+    );
+    expect(secondLinkResponse.status).toBe(400);
+    await expect(secondLinkResponse.json()).resolves.toMatchObject({
+        code: "DISCORD_ACCOUNT_ALREADY_CONNECTED",
+    });
+    const discordAccounts = await db
+        .select()
+        .from(accountTable)
+        .where(
+            and(
+                eq(accountTable.userId, user.id),
+                eq(accountTable.providerId, "discord"),
+            ),
+        );
+    expect(discordAccounts).toHaveLength(1);
+
     const accountInfoResponse = await SELF.fetch(
         `http://localhost:3000/api/auth/account-info?accountId=${discordAccount?.accountId}`,
         {
@@ -129,8 +172,28 @@ test("links a Discord identity to the signed-in GitHub account", async ({
         member: true,
         joinedAt: "2021-09-10T11:09:04.586000+00:00",
     });
+    expect(mocks.discord.state.membershipRequestCount).toBe(1);
+
+    const cachedMembershipResponse = await SELF.fetch(
+        "http://localhost:3000/api/account/discord-membership",
+        {
+            headers: {
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+        },
+    );
+    expect(cachedMembershipResponse.status).toBe(200);
+    expect(mocks.discord.state.membershipRequestCount).toBe(1);
+
+    const apiKeyResponse = await SELF.fetch(
+        "http://localhost:3000/api/account/discord-membership",
+        { headers: { Authorization: `Bearer ${apiKey}` } },
+    );
+    expect(apiKeyResponse.status).toBe(403);
+    expect(mocks.discord.state.membershipRequestCount).toBe(1);
 
     await checkQuestsForUser(env, user.id);
+    expect(mocks.discord.state.membershipRequestCount).toBe(1);
     const [reward] = await db
         .select({
             questId: rewardsTable.questId,
@@ -144,6 +207,74 @@ test("links a Discord identity to the signed-in GitHub account", async ({
             ),
         );
     expect(reward).toEqual({ questId: "join_discord", pollenAmount: 1 });
+});
+
+test("treats Discord error 10007 as a missing member", async ({
+    mocks,
+    sessionToken,
+}) => {
+    await mocks.enable("discord");
+    await seedDiscordAccount(mocks.discord.state.userId);
+    mocks.discord.state.membershipStatus = 404;
+    mocks.discord.state.membershipErrorCode = 10007;
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/account/discord-membership",
+        {
+            headers: {
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+        },
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+        member: false,
+        joinedAt: null,
+    });
+});
+
+test("surfaces Discord 404 errors other than unknown member", async ({
+    mocks,
+    sessionToken,
+}) => {
+    await mocks.enable("discord");
+    await seedDiscordAccount(mocks.discord.state.userId);
+    mocks.discord.state.membershipStatus = 404;
+    mocks.discord.state.membershipErrorCode = 10004;
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/account/discord-membership",
+        {
+            headers: {
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+        },
+    );
+
+    expect(response.status).toBe(502);
+});
+
+test("forwards Discord membership rate limits", async ({
+    mocks,
+    sessionToken,
+}) => {
+    await mocks.enable("discord");
+    await seedDiscordAccount(mocks.discord.state.userId);
+    mocks.discord.state.membershipStatus = 429;
+    mocks.discord.state.retryAfterSeconds = 12;
+
+    const firstResponse = await SELF.fetch(
+        "http://localhost:3000/api/account/discord-membership",
+        {
+            headers: {
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+        },
+    );
+    expect(firstResponse.status).toBe(429);
+    expect(firstResponse.headers.get("Retry-After")).toBe("12");
+    expect(mocks.discord.state.membershipRequestCount).toBe(1);
 });
 
 test("rejects Discord as a standalone sign-in provider", async () => {

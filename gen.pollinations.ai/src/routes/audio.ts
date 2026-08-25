@@ -39,12 +39,16 @@ import { textCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
 import googleCloudAuth from "@/text/auth/googleCloudAuth.ts";
 import { arrayBufferToBase64, normalizeSeed } from "@/util.ts";
-import { generationAccess } from "@/utils/generation-access.ts";
+import {
+    apiKeyBudgetReservation,
+    generationAccess,
+} from "@/utils/generation-access.ts";
 import { callCommunityTranscriptionEndpoint } from "../audio/communityEndpoint.ts";
 import {
     type FallbackCandidate,
     withModelFallbackResponse,
 } from "../fallback.ts";
+import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 import { validateUserMediaUrl } from "../utils/user-media-url.ts";
 import { transcribeWithAssemblyAi } from "./assemblyai-transcription.ts";
 import type { SimpleAudioQuery } from "./generation-handlers.ts";
@@ -154,13 +158,12 @@ async function withAudioFallback(
     c: AudioContext,
     attempt: (candidate: FallbackCandidate) => Promise<Response>,
 ): Promise<Response> {
-    const { response, servedEntry } = await withModelFallbackResponse(
+    return withModelFallbackResponse(
         c.var.model,
         attempt,
-        c.var.track?.failedCalls,
+        c.var.track?.attempts,
+        (candidate) => enforceModelRateLimit(c, candidate),
     );
-    if (servedEntry) c.set("servedModelEntry", servedEntry);
-    return response;
 }
 type AudioRefChunk = {
     song_id: string;
@@ -3009,6 +3012,11 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
         });
     }
 
+    c.var.track.setPricingInput({
+        hasDiarization: responseFormat === "diarized_json",
+        hasPrompt: Boolean(prompt),
+    });
+
     const result = await withAudioFallback(c, async (candidate) => {
         if (candidate.communityEndpoint) {
             return callCommunityTranscriptionEndpoint(
@@ -3216,6 +3224,7 @@ export const audioRoutes = new Hono<Env>()
         audioCache,
         generationAccess,
         deduplicateGeneration,
+        apiKeyBudgetReservation,
         handleVoiceChanger,
     )
     .post(
@@ -3270,6 +3279,7 @@ export const audioRoutes = new Hono<Env>()
         audioCache,
         generationAccess,
         deduplicateGeneration,
+        apiKeyBudgetReservation,
         handleVoiceIsolator,
     )
     .post(
@@ -3414,6 +3424,7 @@ export const audioRoutes = new Hono<Env>()
         audioCache,
         generationAccess,
         deduplicateGeneration,
+        apiKeyBudgetReservation,
         handleSpeech,
     )
     .post(
@@ -3535,6 +3546,7 @@ export const audioRoutes = new Hono<Env>()
         textCache,
         generationAccess,
         deduplicateGeneration,
+        apiKeyBudgetReservation,
         handleSpeechWithTimestamps,
     )
     .post(
@@ -3663,6 +3675,7 @@ export const audioRoutes = new Hono<Env>()
         textCache,
         generationAccess,
         deduplicateGeneration,
+        apiKeyBudgetReservation,
         handleTranscription,
     );
 

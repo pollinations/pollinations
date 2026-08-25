@@ -243,8 +243,8 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             ),
         },
         {
-            label: "BYOP",
-            href: `${genDocsUrl()}#tag/byop`,
+            label: "Connect User Wallets",
+            href: `${genDocsUrl()}#tag/connect-user-wallets`,
             icon: (
                 <WalletIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />
             ),
@@ -436,13 +436,13 @@ const DashboardRail: FC<DashboardRailProps> = ({
                         onClick={onNavigate}
                     >
                         {item.label}
-                        {item.id === "my-models" && (
+                        {(item.id === "my-models" || item.id === "quests") && (
                             <Chip
                                 intent="neutral"
                                 size="sm"
                                 className="ml-auto bg-transparent text-theme-text-soft"
                             >
-                                New!
+                                {item.id === "quests" ? "3 new!" : "New!"}
                             </Chip>
                         )}
                     </NavItem>

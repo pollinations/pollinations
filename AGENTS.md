@@ -167,6 +167,7 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - Before model changes, read and follow `.claude/skills/model-management/SKILL.md`.
 - Don't request PR reviews or comment `polli` unless the user explicitly asks.
 - Model descriptions must describe only capabilities or differentiators; never repeat the model title or name.
+- `packages/sdk` keeps its own `package-lock.json` because it is published standalone. After changing `packages/sdk/package.json`, regenerate it with `npm install --prefix packages/sdk --workspaces=false --package-lock-only`; a plain workspace install updates only the root lockfile.
 
 ## Testing
 

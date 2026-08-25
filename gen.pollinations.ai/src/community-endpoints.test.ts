@@ -8,6 +8,7 @@ import type { Logger } from "@logtape/logtape";
 import { verifyAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import { COMMUNITY_MODEL_ALLOWED_GITHUB_IDS } from "@shared/auth/github-id-list.ts";
 import {
+    COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     type CommunityEndpointImagePricing,
     type CommunityEndpointModality,
@@ -1561,17 +1562,18 @@ describe("community endpoint helpers", () => {
         };
         const modelDefinition = communityModelDefinition(endpoint);
 
-        const context = await communityEndpointGatewayContext(
+        const context = await communityEndpointGatewayContext({
             endpoint,
             modelDefinition,
-            {
+            requestData: {
                 messages: [{ role: "user", content: "hello" }],
                 max_tokens: 5,
             },
             secret,
-            "https://portkey.test",
-            "sk_user_key",
-        );
+            portkeyGatewayUrl: "https://portkey.test",
+            userApiKey: "sk_user_key",
+            parentRequestId: "parent-request-id",
+        });
 
         expect(context).toMatchObject({
             max_tokens: 5,
@@ -1622,16 +1624,20 @@ describe("community endpoint helpers", () => {
         async function contextFor(
             endpoint: CommunityEndpointRuntime,
             parentApiKeyId?: string,
+            parentRequestId = "parent-request-id",
         ) {
-            return communityEndpointGatewayContext(
+            return communityEndpointGatewayContext({
                 endpoint,
-                communityModelDefinition(endpoint),
-                { messages: [{ role: "user", content: "make a video" }] },
+                modelDefinition: communityModelDefinition(endpoint),
+                requestData: {
+                    messages: [{ role: "user", content: "make a video" }],
+                },
                 secret,
-                "https://portkey.test",
-                "sk_user_key",
+                portkeyGatewayUrl: "https://portkey.test",
+                userApiKey: "sk_user_key",
+                parentRequestId,
                 parentApiKeyId,
-            );
+            });
         }
 
         it("authenticates as a run token, not the caller's key", async () => {
@@ -1644,6 +1650,37 @@ describe("community endpoint helpers", () => {
 
             const claims = await verifyAgentRunToken(token, secret);
             expect(claims).toMatchObject({ parentApiKeyId: "parent-key-id" });
+        });
+
+        it("carries the parent request id so a run's generations can be grouped", async () => {
+            const endpoint = endpointAgent();
+            const context = await contextFor(
+                endpoint,
+                "parent-key-id",
+                "req-abc",
+            );
+
+            const claims = await verifyAgentRunToken(
+                String(context.modelConfig?.authKey),
+                secret,
+            );
+            expect(claims.parentRequestId).toBe("req-abc");
+
+            // Fallback attempts share the parent request but still receive
+            // distinct signed credentials.
+            const second = await contextFor(
+                endpoint,
+                "parent-key-id",
+                "req-abc",
+            );
+            const secondClaims = await verifyAgentRunToken(
+                String(second.modelConfig?.authKey),
+                secret,
+            );
+            expect(secondClaims.parentRequestId).toBe("req-abc");
+            expect(String(second.modelConfig?.authKey)).not.toBe(
+                String(context.modelConfig?.authKey),
+            );
         });
 
         // The complement of the test above, and the reason an agent listing
@@ -1675,6 +1712,7 @@ describe("community endpoint helpers", () => {
             const claims = await verifyAgentRunToken(token, secret);
             expect(claims).toMatchObject({
                 parentApiKeyId: "parent-key-id",
+                parentRequestId: "parent-request-id",
                 managedAgentId: "managed-agent-id",
             });
         });
@@ -4142,13 +4180,27 @@ fixtureTest(
         await expect(updateResponse.json()).resolves.toMatchObject({
             title: "Updated Model Title",
             description: "Updated description",
-            visibility: "public",
-            paidOnly: true,
-            promptTextPrice: 0.00001,
-            completionTextPrice: 0.00002,
+            visibility: "private",
+            paidOnly: false,
+            promptTextPrice: 0,
+            completionTextPrice: 0,
+            pending: {
+                visibility: "public",
+                paidOnly: true,
+                promptTextPrice: 0.00001,
+                completionTextPrice: 0.00002,
+            },
             hidden: true,
             hiddenReason: "was failing",
         });
+        await db
+            .update(communityEndpointTable)
+            .set({
+                pendingAt: new Date(
+                    Date.now() - COMMUNITY_ENDPOINT_CHANGE_DELAY_MS - 1,
+                ),
+            })
+            .where(eq(communityEndpointTable.id, createdId));
 
         const relistResponse = await fetchEnterApi(
             enterApi,
@@ -4211,7 +4263,8 @@ fixtureTest(
         );
         expect(tinyPriceResponse.status).toBe(200);
         await expect(tinyPriceResponse.json()).resolves.toMatchObject({
-            promptTextPrice: 1e-12,
+            promptTextPrice: 0.00001,
+            pending: { promptTextPrice: 1e-12 },
         });
 
         const negativePriceResponse = await fetchEnterApi(
@@ -4254,9 +4307,27 @@ fixtureTest(
         await expect(priceOnlyResponse.json()).resolves.toMatchObject({
             visibility: "public",
             paidOnly: true,
-            promptTextPrice: 0.00003,
+            promptTextPrice: 0.00001,
             completionTextPrice: 0.00002,
+            pending: {
+                promptTextPrice: 0.00003,
+                completionTextPrice: 0.00002,
+            },
         });
+        const pendingRegistryEntry = (
+            await getCommunityModelRegistryEntries(env)
+        ).find((entry) => entry.id === `${ownerGithubUsername}/my-test-model`);
+        expect(pendingRegistryEntry?.info.pending_change).toMatchObject({
+            paid_only: true,
+            pricing: {
+                currency: "pollen",
+                promptTextTokens: "0.00003",
+                completionTextTokens: "0.00002",
+            },
+        });
+        expect(pendingRegistryEntry?.info.pending_change?.effective_at).toEqual(
+            expect.any(String),
+        );
 
         // Making the model private clears all owner-set prices, and with them
         // the paid-only choice: a free listing that still demanded paid balance
@@ -4285,8 +4356,8 @@ fixtureTest(
             completionTextPrice: 0,
         });
 
-        // Republishing without prices is allowed: zero makes the public model
-        // explicitly free while publishing remains allowlist-gated.
+        // Republishing remains free, but becomes visible after the notice
+        // period rather than immediately.
         const republishResponse = await fetchEnterApi(
             enterApi,
             new Request(
@@ -4305,9 +4376,10 @@ fixtureTest(
         );
         expect(republishResponse.status).toBe(200);
         await expect(republishResponse.json()).resolves.toMatchObject({
-            visibility: "public",
+            visibility: "private",
             promptTextPrice: 0,
             completionTextPrice: 0,
+            pending: { visibility: "public" },
         });
 
         const secondListResponse = await fetchEnterApi(
@@ -4435,7 +4507,10 @@ fixtureTest(
         );
         expect(minimumResponse.status).toBe(200);
         await expect(minimumResponse.json()).resolves.toMatchObject({
-            promptTextPrice: MIN_COMMUNITY_PRICE_PER_TOKEN,
+            promptTextPrice: 0,
+            pending: {
+                promptTextPrice: MIN_COMMUNITY_PRICE_PER_TOKEN,
+            },
         });
 
         const maximumResponse = await updatePrice(
@@ -4443,7 +4518,10 @@ fixtureTest(
         );
         expect(maximumResponse.status).toBe(200);
         await expect(maximumResponse.json()).resolves.toMatchObject({
-            promptTextPrice: MAX_COMMUNITY_PRICE_PER_TOKEN,
+            promptTextPrice: 0,
+            pending: {
+                promptTextPrice: MAX_COMMUNITY_PRICE_PER_TOKEN,
+            },
         });
 
         const aboveMaximumResponse = await updatePrice(
@@ -4848,21 +4926,23 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         promptTextTokens: 0,
         completionTextTokens: 0,
     });
-    const gatewayContext = await communityEndpointGatewayContext(
-        registryEntry.communityEndpoint,
-        registryEntry.definition,
-        { messages: [{ role: "user", content: "hello" }] },
-        env.BETTER_AUTH_SECRET,
-        env.PORTKEY_GATEWAY_URL,
-        "sk_user_key",
-        "caller-api-key-id",
-    );
+    const gatewayContext = await communityEndpointGatewayContext({
+        endpoint: registryEntry.communityEndpoint,
+        modelDefinition: registryEntry.definition,
+        requestData: { messages: [{ role: "user", content: "hello" }] },
+        secret: env.BETTER_AUTH_SECRET,
+        portkeyGatewayUrl: env.PORTKEY_GATEWAY_URL,
+        userApiKey: "sk_user_key",
+        parentRequestId: "caller-request-id",
+        parentApiKeyId: "caller-api-key-id",
+    });
     const runtimeToken = String(gatewayContext.modelConfig?.authKey);
     expect(runtimeToken).toMatch(/^ag_/);
     await expect(
         verifyAgentRunToken(runtimeToken, env.BETTER_AUTH_SECRET),
     ).resolves.toMatchObject({
         parentApiKeyId: "caller-api-key-id",
+        parentRequestId: "caller-request-id",
         managedAgentId: agent.id,
     });
     expect(gatewayContext.modelConfig).toMatchObject({

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { isCommunityModelAllowedGithubId } from "./auth/github-id-list.ts";
 import { HttpError } from "./http-error.ts";
+import { MCP_SERVER_IDS } from "./registry/mcp.ts";
 import type { ModelCapability } from "./registry/model-info.ts";
 import {
     MODEL_INPUT_MODALITIES,
@@ -17,6 +18,7 @@ import { readResponseBytes } from "./response-bytes.ts";
 
 export const LEGACY_COMMUNITY_MODEL_PREFIX = "community/";
 export const COMMUNITY_MODEL_REWARD_RATE = 0.75;
+export const COMMUNITY_ENDPOINT_CHANGE_DELAY_MS = 12 * 60 * 60 * 1000;
 export const COMMUNITY_ENDPOINT_MODALITIES = [
     "text",
     "image",
@@ -439,11 +441,18 @@ export type ProxyListingPayload = {
  * An agent Enter runs itself. Its row id is also the model sent to the shared
  * runtime, which loads this configuration from the same row.
  */
-export const BuiltinMcpServerIdSchema = z.literal("pollinations");
+export const BuiltinMcpServerIdSchema = z.enum(MCP_SERVER_IDS);
 export const PromptAgentConfigSchema = z.object({
     systemPrompt: z.string().trim().min(1).max(8000),
     baseModel: z.string().trim().min(1).max(253),
-    mcpServers: z.array(BuiltinMcpServerIdSchema).max(1).optional().default([]),
+    mcpServers: z
+        .array(BuiltinMcpServerIdSchema)
+        .max(MCP_SERVER_IDS.length)
+        .refine((servers) => new Set(servers).size === servers.length, {
+            message: "Duplicate MCP servers are not allowed",
+        })
+        .optional()
+        .default([]),
 });
 export const PromptAgentInputSchema = PromptAgentConfigSchema.strict();
 
@@ -541,6 +550,31 @@ export function parseListingPayload<K extends ListingType>(
     } as ListingPayloadByType[K];
 }
 
+export function pendingCommunityEndpointChangeIsReady(
+    pendingAt: Date | null,
+    now = Date.now(),
+): boolean {
+    return (
+        pendingAt !== null &&
+        now >= pendingAt.getTime() + COMMUNITY_ENDPOINT_CHANGE_DELAY_MS
+    );
+}
+
+/** Apply only the delayed price policy, preserving newer credentials/settings. */
+export function applyPendingProxyPricing(
+    current: ProxyListingPayload,
+    pending: ProxyListingPayload | null,
+): ProxyListingPayload {
+    return pending
+        ? {
+              ...current,
+              paidOnly: pending.paidOnly,
+              imagePricing: pending.imagePricing,
+              prices: pending.prices,
+          }
+        : current;
+}
+
 type CommunityEndpointRuntimeBase = {
     id: string;
     ownerUserId: string;
@@ -611,6 +645,7 @@ export function usesAgentRunToken(endpoint: CommunityEndpointRuntime): boolean {
 export type CommunityModelDefinitionInput = {
     modelId: string;
     addedDate?: number;
+    perUserRpm?: number | null;
     title?: string | null;
     description: string | null;
     providerName?: string | null;
@@ -969,6 +1004,7 @@ export function communityModelDefinition(
     return {
         aliases,
         provider: "community",
+        perUserRpm: endpoint.perUserRpm,
         brand: providerName || "Community",
         brandUrl: providerName && providerUrl ? providerUrl : undefined,
         category: isImage ? "image" : isTranscription ? "audio" : "text",

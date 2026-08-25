@@ -32,11 +32,17 @@ import type { RequestData, TransformOptions } from "./types.js";
  * saved bearer would quietly move the cost of the agent's work onto the
  * endpoint owner.
  */
-async function mintDelegatedToken(
-    endpoint: CommunityEndpointRuntime,
-    parentApiKeyId: string | undefined,
-    secret: string,
-): Promise<string | undefined> {
+async function mintDelegatedToken({
+    endpoint,
+    parentApiKeyId,
+    parentRequestId,
+    secret,
+}: {
+    endpoint: CommunityEndpointRuntime;
+    parentApiKeyId: string | undefined;
+    parentRequestId: string;
+    secret: string;
+}): Promise<string | undefined> {
     if (!usesAgentRunToken(endpoint)) return undefined;
     if (!isFreeCommunityEndpoint(endpoint)) {
         throw new Error(
@@ -51,7 +57,7 @@ async function mintDelegatedToken(
     return signAgentRunToken({
         secret,
         parentApiKeyId,
-        runId: crypto.randomUUID(),
+        parentRequestId,
         // The managed runtime uses the listing id (also its upstream model) to
         // select the prompt config. An external agent only needs spend scope.
         managedAgentId:
@@ -59,17 +65,32 @@ async function mintDelegatedToken(
     });
 }
 
-export async function communityEndpointGatewayContext(
-    endpoint: CommunityEndpointRuntime,
-    modelDefinition: ModelDefinition,
-    requestData: RequestData,
-    secret: string,
-    portkeyGatewayUrl: string,
-    userApiKey: string,
-    parentApiKeyId?: string,
-): Promise<TransformOptions> {
+export async function communityEndpointGatewayContext({
+    endpoint,
+    modelDefinition,
+    requestData,
+    secret,
+    portkeyGatewayUrl,
+    userApiKey,
+    parentRequestId,
+    parentApiKeyId,
+}: {
+    endpoint: CommunityEndpointRuntime;
+    modelDefinition: ModelDefinition;
+    requestData: RequestData;
+    secret: string;
+    portkeyGatewayUrl: string;
+    userApiKey: string;
+    parentRequestId: string;
+    parentApiKeyId?: string;
+}): Promise<TransformOptions> {
     const { messages: _messages, ...requestDataWithoutMessages } = requestData;
-    const runToken = await mintDelegatedToken(endpoint, parentApiKeyId, secret);
+    const runToken = await mintDelegatedToken({
+        endpoint,
+        parentApiKeyId,
+        parentRequestId,
+        secret,
+    });
     // Only a proxy stores and receives its registered upstream bearer secret.
     // Neither agent kind receives a Pollinations API key: each gets a
     // short-lived run token instead. mintDelegatedToken always returns one for

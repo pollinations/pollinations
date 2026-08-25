@@ -18,6 +18,9 @@ import { readResponseBytes } from "./response-bytes.ts";
 
 export const LEGACY_COMMUNITY_MODEL_PREFIX = "community/";
 export const COMMUNITY_MODEL_REWARD_RATE = 0.75;
+// A new price or private→public transition on a public model is queued for
+// 12 hours before it takes effect. First price on a new model is immediate.
+export const PRICE_CHANGE_DELAY_MS = 12 * 60 * 60 * 1000;
 export const COMMUNITY_ENDPOINT_MODALITIES = [
     "text",
     "image",

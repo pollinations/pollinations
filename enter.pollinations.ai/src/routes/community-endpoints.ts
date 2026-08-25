@@ -1,4 +1,5 @@
 import {
+    PRICE_CHANGE_DELAY_MS,
     type CommunityEndpointVisibility,
     communityModelId,
     type EndpointAgentListingPayload,
@@ -37,6 +38,7 @@ import {
     changesProxyPayload,
     deriveCreateProxyPolicy,
     deriveUpdatedProxyPolicy,
+    pricesOrPaidOnlyChanged,
 } from "./community-endpoints/proxy-policy.ts";
 import {
     assertValidUpdate,
@@ -709,13 +711,14 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 update.hiddenReason = input.hidden ? "Hidden by owner" : null;
                 update.hiddenBy = input.hidden ? "owner" : null;
             }
-            const effectiveVisibility = input.visibility ?? endpoint.visibility;
-            await enforcePublishingAccess(db, user.id, effectiveVisibility);
-            update.visibility = effectiveVisibility;
+            const desiredVisibility = input.visibility ?? endpoint.visibility;
+            await enforcePublishingAccess(db, user.id, desiredVisibility);
             if (endpoint.type === "prompt_agent") {
                 // Prompt configuration is edited through /account/agents.
                 // This route only updates shared listing state such as hidden.
+                update.visibility = desiredVisibility;
             } else if (endpoint.type === "endpoint_agent") {
+                update.visibility = desiredVisibility;
                 if (!parseListingPayload("endpoint_agent", endpoint.payload)) {
                     throw new Error(
                         `Invalid endpoint_agent payload for ${endpoint.id}`,
@@ -733,14 +736,39 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     });
                 }
             } else {
-                const stored = parseListingPayload("proxy", endpoint.payload);
+                // Proxy: apply 12-hour delay for price/visibility changes on
+                // public-facing models. Pending is stored separately and used
+                // as the effective state once its deadline passes.
+                const pendingReady =
+                    endpoint.pendingAt !== null &&
+                    Date.now() >=
+                        endpoint.pendingAt.getTime() + PRICE_CHANGE_DELAY_MS;
+
+                // Effective current state: apply pending if its deadline passed.
+                const effectivePayloadStr =
+                    pendingReady && endpoint.pendingPayload
+                        ? endpoint.pendingPayload
+                        : endpoint.payload;
+                const effectiveVisibility = (
+                    pendingReady && endpoint.pendingVisibility
+                        ? endpoint.pendingVisibility
+                        : endpoint.visibility
+                ) as CommunityEndpointVisibility;
+
+                const stored = parseListingPayload(
+                    "proxy",
+                    effectivePayloadStr,
+                );
                 if (!stored) {
                     throw new Error(`Invalid proxy payload for ${endpoint.id}`);
                 }
+
+                const resolvedVisibility =
+                    input.visibility ?? effectiveVisibility;
                 const policy = deriveUpdatedProxyPolicy(
                     stored,
                     input,
-                    effectiveVisibility,
+                    resolvedVisibility,
                 );
                 const fallbacks =
                     input.fallbacks === undefined
@@ -753,27 +781,95 @@ export const communityEndpointsRoutes = new Hono<Env>()
                               ownerUserId: user.id,
                               ...policy,
                           });
+
                 if (input.baseUrl !== undefined) {
                     update.baseUrl = normalizeInputBaseUrl(input.baseUrl);
                 }
                 if (input.upstreamModel !== undefined) {
                     update.upstreamModel = input.upstreamModel;
                 }
-                if (changesProxyPayload(input)) {
-                    const payload: ProxyListingPayload = {
-                        bearerTokenCiphertext:
-                            input.bearerToken === undefined
-                                ? stored.bearerTokenCiphertext
-                                : await encryptSecret(
-                                      normalizeInputBearerToken(
-                                          input.bearerToken,
-                                      ),
-                                      c.env.BETTER_AUTH_SECRET,
-                                  ),
-                        ...policy,
-                        fallbacks,
-                    };
-                    update.payload = JSON.stringify(payload);
+
+                // Always build the new payload when any proxy field changes.
+                const newPayload: ProxyListingPayload = {
+                    bearerTokenCiphertext:
+                        input.bearerToken === undefined
+                            ? stored.bearerTokenCiphertext
+                            : await encryptSecret(
+                                  normalizeInputBearerToken(input.bearerToken),
+                                  c.env.BETTER_AUTH_SECRET,
+                              ),
+                    ...policy,
+                    fallbacks,
+                };
+                const newPayloadJson = JSON.stringify(newPayload);
+
+                // Determine whether this update requires a 12-hour notice period.
+                // Rule: public model price/paidOnly change, or private→public.
+                const isGoingPublic =
+                    resolvedVisibility === "public" &&
+                    effectiveVisibility === "private";
+                const isPriceChangingOnPublicModel =
+                    effectiveVisibility === "public" &&
+                    changesProxyPayload(input) &&
+                    pricesOrPaidOnlyChanged(
+                        policy.prices,
+                        stored.prices,
+                        policy.paidOnly,
+                        stored.paidOnly,
+                        policy.imagePricing,
+                        stored.imagePricing,
+                    );
+                const needsDelay =
+                    isGoingPublic || isPriceChangingOnPublicModel;
+
+                if (needsDelay) {
+                    // If the previous pending is now ready, apply it to the
+                    // payload column before storing the new pending on top.
+                    if (pendingReady) {
+                        update.payload = effectivePayloadStr;
+                        update.visibility = effectiveVisibility;
+                    }
+                    update.pendingPayload = newPayloadJson;
+                    update.pendingVisibility = isGoingPublic ? "public" : null;
+                    update.pendingAt = new Date();
+                } else {
+                    // Immediate update: apply payload and visibility directly.
+                    if (changesProxyPayload(input)) {
+                        update.payload = newPayloadJson;
+                    }
+                    update.visibility = resolvedVisibility;
+
+                    // If the model is private with a queued public transition,
+                    // preserve that transition and fold any proxy changes into
+                    // the pending payload so they fire together when the deadline
+                    // passes.
+                    const hasPendingPublicVisibility =
+                        !pendingReady &&
+                        endpoint.pendingAt !== null &&
+                        endpoint.pendingVisibility === "public";
+                    if (
+                        hasPendingPublicVisibility &&
+                        input.visibility === undefined
+                    ) {
+                        if (changesProxyPayload(input)) {
+                            const pendingPolicy = deriveUpdatedProxyPolicy(
+                                stored,
+                                input,
+                                "public",
+                            );
+                            update.pendingPayload = JSON.stringify({
+                                bearerTokenCiphertext:
+                                    newPayload.bearerTokenCiphertext,
+                                ...pendingPolicy,
+                                fallbacks,
+                            } satisfies ProxyListingPayload);
+                        }
+                        // pendingAt and pendingVisibility remain unchanged.
+                    } else {
+                        update.pendingPayload = null;
+                        update.pendingVisibility = null;
+                        update.pendingAt = null;
+                    }
                 }
             }
             const [row] = await db

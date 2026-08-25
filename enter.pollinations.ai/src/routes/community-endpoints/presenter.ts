@@ -1,4 +1,5 @@
 import {
+    PRICE_CHANGE_DELAY_MS,
     communityEndpointTitle,
     communityModelId,
     normalizeCommunityEndpointAdvertised,
@@ -11,6 +12,10 @@ import {
 } from "./schemas.ts";
 
 type CommunityEndpointRow = typeof schema.communityEndpoint.$inferSelect;
+
+function pendingIsReady(pendingAt: Date | null): boolean {
+    return pendingAt !== null && Date.now() >= pendingAt.getTime() + PRICE_CHANGE_DELAY_MS;
+}
 
 export function toCommunityEndpointResponse(
     row: CommunityEndpointRow,
@@ -56,11 +61,34 @@ export function toCommunityEndpointResponse(
         });
     }
 
-    const payload = parseListingPayload("proxy", row.payload);
+    const ready = pendingIsReady(row.pendingAt);
+
+    // If pending is ready, use pending values as the effective current state.
+    const effectivePayloadStr = ready && row.pendingPayload ? row.pendingPayload : row.payload;
+    const effectiveVisibility = ready && row.pendingVisibility ? row.pendingVisibility : row.visibility;
+
+    const payload = parseListingPayload("proxy", effectivePayloadStr);
     if (!payload) throw new Error(`Invalid proxy payload for ${row.id}`);
     const { bearerTokenCiphertext: _credential, prices, ...proxy } = payload;
+
+    // Include pending info when a change is queued but not yet effective.
+    let pending = null;
+    if (!ready && row.pendingAt && row.pendingPayload) {
+        const pendingPayload = parseListingPayload("proxy", row.pendingPayload);
+        if (pendingPayload) {
+            const effectiveAt = new Date(row.pendingAt.getTime() + PRICE_CHANGE_DELAY_MS);
+            pending = {
+                effectiveAt: effectiveAt.toISOString(),
+                ...(row.pendingVisibility === "public" ? { visibility: "public" as const } : {}),
+                paidOnly: pendingPayload.paidOnly,
+                ...pendingPayload.prices,
+            };
+        }
+    }
+
     return CommunityEndpointResponseSchema.parse({
         ...common,
+        visibility: effectiveVisibility,
         type: row.type,
         ...proxy,
         advertised: normalizeCommunityEndpointAdvertised(
@@ -68,5 +96,6 @@ export function toCommunityEndpointResponse(
             payload.modality,
         ),
         ...prices,
+        pending,
     });
 }

@@ -231,3 +231,18 @@ export function changesProxyPayload(input: ProxyUpdateInput): boolean {
         ...COMMUNITY_ENDPOINT_PRICE_FIELDS.map(({ key }) => input[key]),
     ].some((value) => value !== undefined);
 }
+
+export function pricesOrPaidOnlyChanged(
+    newPrices: CommunityEndpointPrices,
+    oldPrices: CommunityEndpointPrices,
+    newPaidOnly: boolean,
+    oldPaidOnly: boolean,
+    newImagePricing: CommunityEndpointImagePricing,
+    oldImagePricing: CommunityEndpointImagePricing,
+): boolean {
+    if (newPaidOnly !== oldPaidOnly) return true;
+    if (newImagePricing !== oldImagePricing) return true;
+    return COMMUNITY_ENDPOINT_PRICE_FIELDS.some(
+        ({ key }) => newPrices[key] !== oldPrices[key],
+    );
+}

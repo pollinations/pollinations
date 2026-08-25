@@ -19,8 +19,6 @@ Local-only:
   into per-category or per-model entries) plus every raw evidence file,
   original filenames preserved. Duplicates of an already-registered document
   move into the existing folder instead of creating new entries.
-- `data/processed/forecast/entries/` - NDJSON batches of approved forecast facts
-  (not invoice-backed; see forecast mode in `agent.system.txt`).
 - `data/processed/gmbh/` - documents of the predecessor entity Pollinations
   GmbH (2022-2024 German era), kept out of Myceli OP matching.
 - `data/other/` - non-billing keepers (contracts, decks, financial models,

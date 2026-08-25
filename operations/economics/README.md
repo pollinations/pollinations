@@ -33,15 +33,15 @@ The OP Tinybird datasource and pipe definitions (`op_*`) live in
 ## Legacy runway retirement
 
 `op_runway` and `op_runway_api` remain deployed only for the currently live
-legacy Economics Worker. The current app derives runway from
-`op_transactions_api` and `op_forecast_api` and does not read either legacy
-object.
+legacy Economics Worker. The current app derives runway mathematically from
+`op_transactions_api`, `op_cloud_api`, checked balances, and the reviewed
+calculation rules in `web/src/lib/forecastTerms.ts`. It does not read
+`op_runway_api` or `op_forecast_api`.
 
 Keep both legacy objects until all of the following are true:
 
-1. the new transaction and forecast schemas and reviewed facts are present in
-   production Tinybird;
-2. all four current production pipes pass the Worker contract check;
+1. the transaction and provider ledgers are present in production Tinybird;
+2. all three current production pipes pass the Worker contract check;
 3. the new Worker has been deployed and verified on both custom domains; and
 4. rollback to the legacy Worker is no longer required.
 

@@ -218,7 +218,7 @@
     {
       "id": "inferenceport",
       "label": "InferencePort",
-      "meteringBasis": "internal",
+      "meteringBasis": "direct",
       "aliases": [],
       "connector": "inferenceport",
       "monthlyReview": true

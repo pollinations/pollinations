@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
 import argparse
+import asyncio
 import json
 import tempfile
-import time
 from pathlib import Path
 
-from tinybird.tb.client import TinyB
+from tinybird.client import TinyB
 
 from publisher_safety import (
     assert_base_versions,
@@ -68,27 +68,27 @@ def read_ndjson(path):
     return rows
 
 
-def client_for(workspace_name, *, append=False):
+async def client_for(workspace_name, *, append=False):
     repo = Path(__file__).resolve().parents[4]
     config = json.loads((repo / "enter.pollinations.ai/observability/.tinyb").read_text())
     user = TinyB(token=config["user_token"], host=HOST)
-    workspaces = user.user_workspaces_and_branches(version="v1")["workspaces"]
+    workspaces = (await user.user_workspaces_and_branches(version="v1"))["workspaces"]
     workspace = next(item for item in workspaces if item["name"] == workspace_name)
     admin = TinyB(token=workspace["token"], host=HOST)
     if not append:
         return admin
-    token = admin.get_token_by_name("operations_ingest")["token"]
+    token = (await admin.get_token_by_name("operations_ingest"))["token"]
     return TinyB(token=token, host=HOST)
 
 
-def datasource_fields(client):
+async def datasource_fields(client):
     query = """
         SELECT name
         FROM system.columns
         WHERE table = 'op_cloud'
         FORMAT JSON
     """
-    fields = {row["name"] for row in client.query(query)["data"]}
+    fields = {row["name"] for row in (await client.query(query))["data"]}
     missing = set(FIELDS) - OPTIONAL_FIELDS - fields
     if missing:
         raise RuntimeError(f"op_cloud is missing required fields: {sorted(missing)}")
@@ -106,7 +106,7 @@ def account_selects(fields):
     return outer, inner
 
 
-def effective_rows(client, fields):
+async def effective_rows(client, fields):
     account_outer, account_inner = account_selects(fields)
     query = f"""
         SELECT
@@ -140,10 +140,10 @@ def effective_rows(client, fields):
         ORDER BY start DESC, vendor, type, resource_name, resource_id
         FORMAT JSON
     """
-    return client.query(query)["data"]
+    return (await client.query(query))["data"]
 
 
-def latest_rows(client, entry_ids, fields):
+async def latest_rows(client, entry_ids, fields):
     quoted = ",".join("'" + value.replace("'", "''") + "'" for value in entry_ids)
     account_fields = "".join(
         f",\n            ifNull(argMax({field}, recorded_at), '') AS {field}"
@@ -172,11 +172,13 @@ def latest_rows(client, entry_ids, fields):
         GROUP BY entry_id
         FORMAT JSON
     """
-    return client.query(query)["data"]
+    return (await client.query(query))["data"]
 
 
-def current_versions(client, entry_ids):
-    return client.query(latest_version_query("op_cloud", entry_ids))["data"]
+async def current_versions(client, entry_ids):
+    return (
+        await client.query(latest_version_query("op_cloud", entry_ids))
+    )["data"]
 
 
 def equal_value(expected, actual):
@@ -221,7 +223,7 @@ def append_input_path(rows, fields, temporary_directory):
     return path
 
 
-def main():
+async def main():
     args = arguments()
     assert_production_confirmation(
         args.environment, args.verify_only, args.confirm_production
@@ -229,15 +231,15 @@ def main():
     input_path = args.input.resolve()
     expected = read_ndjson(input_path)
     workspace_name = WORKSPACES[args.environment]
-    admin = client_for(workspace_name)
-    fields = datasource_fields(admin)
+    admin = await client_for(workspace_name)
+    fields = await datasource_fields(admin)
 
-    before = effective_rows(admin, fields)
+    before = await effective_rows(admin, fields)
     write_snapshot(args.before_snapshot.resolve(), before)
 
     result = {}
     if not args.verify_only:
-        versions = current_versions(
+        versions = await current_versions(
             admin, [row["entry_id"] for row in expected]
         )
         assert_base_versions(expected, versions)
@@ -245,10 +247,10 @@ def main():
             expected,
             versions,
         )
-        append = client_for(workspace_name, append=True)
+        append = await client_for(workspace_name, append=True)
         with tempfile.TemporaryDirectory() as temporary_directory:
             append_path = append_input_path(expected, fields, temporary_directory)
-            result = append.datasource_append_data(
+            result = await append.datasource_append_data(
                 "op_cloud", append_path, mode="append", format="ndjson"
             )
         if result.get("error"):
@@ -256,7 +258,7 @@ def main():
 
     actual = []
     for attempt in range(6):
-        actual = latest_rows(
+        actual = await latest_rows(
             admin, [row["entry_id"] for row in expected], fields
         )
         try:
@@ -265,8 +267,8 @@ def main():
         except RuntimeError:
             if attempt == 5:
                 raise
-            time.sleep(1)
-    after = effective_rows(admin, fields)
+            await asyncio.sleep(1)
+    after = await effective_rows(admin, fields)
     write_snapshot(args.after_snapshot.resolve(), after)
     print(
         json.dumps(
@@ -284,4 +286,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

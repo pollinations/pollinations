@@ -2,12 +2,17 @@
 
 Canonical vendor: `google`
 
-## Verified — 2026-08-22
+## Verified — 2026-08-25
 
 - Status: service-account OAuth and bounded BigQuery billing export work.
 - Preserve native EUR.
+- Billing account: `0180E5-574541-B8F8FD` (`My Billing Account`).
+- Charged project: `stellar-verve-465920-b7` (`Research`). The `Test`
+  project and non-project scope had no August cost when checked.
 - Balance scope: include only credits usable for compute, infrastructure, or
   model usage. Exclude support-only and other operational-benefit credits.
+- Current-month rows are snapshots. Refresh the bounded BigQuery export before
+  using them for Runway; `recorded_at` must identify the data-through date.
 
 Use when:
 

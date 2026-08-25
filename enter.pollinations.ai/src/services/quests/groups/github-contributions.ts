@@ -6,10 +6,10 @@ import { graphql } from "@shared/github/client.ts";
 import type { QuestDefinition, QuestState } from "../definitions.ts";
 import {
     type QuestCard,
+    type QuestEvaluation,
     type QuestEvaluationContext,
     type QuestUser,
     questToCard,
-    type RewardProposal,
 } from "../types.ts";
 
 /**
@@ -44,7 +44,7 @@ const solveGithubIssueQuest: QuestDefinition = {
     id: "solve_github_issue",
     title: "Solve a quest issue in GitHub",
     description:
-        "Pick an open POLLEN-QUEST issue, get assigned, and ship a PR. Claim your reward after merge.",
+        "Pick an open POLLEN-QUEST issue and submit a focused PR. Multiple contributors may submit; maintainers select and assign the best solution before merge.",
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",
     rewardAmount: 0,
@@ -210,10 +210,11 @@ async function loadQuestIssues(token: string): Promise<DerivedQuestIssue[]> {
 
 // State is a two-state BOARD concept: "available" = an open bounty
 // anyone can take; "completed" = off the open board. Only a genuinely open
-// issue (not completed, nobody assigned) is shown; the moment it's claimed
-// (someone's working it) or completed it leaves the board — it reappears only
-// for the user who earned it, via their reward (see the frontend). So both
-// claimed and completed map to "completed" (off-board).
+// issue (not completed, nobody assigned) is shown; the moment a maintainer
+// selects and assigns the winning contributor, or the issue is completed, it
+// leaves the board. It reappears only for the user who earned it, via their
+// reward (see the frontend). So selected and completed both map to "completed"
+// (off-board).
 function issueState(issue: DerivedQuestIssue): QuestState {
     const open = issue.state === "available" && issue.assigneeGithubId === null;
     return open ? "available" : "completed";
@@ -260,11 +261,11 @@ async function hasMergedPr(token: string, user: QuestUser): Promise<boolean> {
     return data.search.nodes.some((pr) => pr.mergedAt !== null);
 }
 
-export async function findRewardProposalsForUser(
+export async function evaluateUser(
     ctx: QuestEvaluationContext,
     user: QuestUser,
-): Promise<RewardProposal[]> {
-    if (user.githubId === null) return [];
+): Promise<QuestEvaluation> {
+    if (user.githubId === null) return { proposals: [] };
 
     const token = await githubToken(ctx.env);
     const [issues, mergedPr] = await Promise.all([
@@ -287,8 +288,12 @@ export async function findRewardProposalsForUser(
             userId: user.id,
         }));
 
-    return [
-        ...issueProposals,
-        ...(mergedPr ? [{ quest: firstMergedPrQuest, userId: user.id }] : []),
-    ];
+    return {
+        proposals: [
+            ...issueProposals,
+            ...(mergedPr
+                ? [{ quest: firstMergedPrQuest, userId: user.id }]
+                : []),
+        ],
+    };
 }

@@ -1,5 +1,6 @@
 import {
     Alert,
+    BotIcon,
     Button,
     ChevronIcon,
     Chip,
@@ -8,6 +9,7 @@ import {
     DropdownItem,
     ExternalLinkButton,
     GitHubIcon,
+    InlineLink,
     Input,
     SearchIcon,
     Section,
@@ -28,10 +30,6 @@ import {
     useState,
 } from "react";
 import {
-    CommunityEndpoints,
-    publicCommunityFallbackOptions,
-} from "../community-endpoints";
-import {
     type ApiModelInfo,
     fetchModelCatalog,
     getModelPricesFromCatalog,
@@ -47,14 +45,6 @@ import {
 import type { ModelPrice } from "./types.ts";
 import { useModelStats } from "./use-model-stats.ts";
 
-type ModelsProps = {
-    // Render the owner-scoped "My Models" section (logged-in dashboard only).
-    showCommunityEndpoints?: boolean;
-    // Allowlisted owners can make their models public; everyone else is limited
-    // to private, owner-only models.
-    canPublish?: boolean;
-};
-
 const POLLINATIONS_SECTION_ORDER: SectionType[] = [
     "all",
     "text",
@@ -66,7 +56,12 @@ const POLLINATIONS_SECTION_ORDER: SectionType[] = [
     "embedding",
 ];
 
-const COMMUNITY_SECTION_ORDER: SectionType[] = ["all", "text", "image"];
+const COMMUNITY_SECTION_ORDER: SectionType[] = [
+    "all",
+    "text",
+    "image",
+    "agent",
+];
 const SCOPE_ORDER: ModelScope[] = ["pollinations", "community"];
 
 const SCOPE_LABELS: Record<ModelScope, string> = {
@@ -80,18 +75,33 @@ const SORT_OPTIONS: Array<{
     accessibleLabel: string;
 }> = [
     { value: "newest", label: "Newest", accessibleLabel: "Newest" },
+    { value: "oldest", label: "Oldest", accessibleLabel: "Oldest" },
     {
         value: "price-low",
-        label: "Price ↑",
-        accessibleLabel: "Price: Low to high",
+        label: "Price: Low",
+        accessibleLabel: "Lowest price first",
     },
     {
         value: "price-high",
-        label: "Price ↓",
-        accessibleLabel: "Price: High to low",
+        label: "Price: High",
+        accessibleLabel: "Highest price first",
     },
-    { value: "title", label: "Title", accessibleLabel: "Title: A to Z" },
-    { value: "brand", label: "Brand", accessibleLabel: "Brand: A to Z" },
+    { value: "title", label: "Name: A–Z", accessibleLabel: "Name: A to Z" },
+    {
+        value: "title-desc",
+        label: "Name: Z–A",
+        accessibleLabel: "Name: Z to A",
+    },
+    {
+        value: "brand",
+        label: "Publisher: A–Z",
+        accessibleLabel: "Publisher: A to Z",
+    },
+    {
+        value: "brand-desc",
+        label: "Publisher: Z–A",
+        accessibleLabel: "Publisher: Z to A",
+    },
 ];
 
 const SEARCH_LABELS: Record<SectionType, string> = {
@@ -103,6 +113,7 @@ const SEARCH_LABELS: Record<SectionType, string> = {
     realtime: "realtime",
     text: "text",
     embedding: "embedding",
+    agent: "agent",
 };
 
 function matchesQuery(model: ModelPrice, query: string): boolean {
@@ -124,10 +135,11 @@ function categorizeModels(
         realtime: [],
         text: [],
         embedding: [],
+        agent: [],
     };
 
     for (const model of models) {
-        categorized[model.type].push(model);
+        categorized[model.agent ? "agent" : model.type].push(model);
     }
     return categorized;
 }
@@ -163,10 +175,7 @@ function handleSortMenuKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     items[nextIndex]?.focus();
 }
 
-export const Models: FC<ModelsProps> = ({
-    showCommunityEndpoints = false,
-    canPublish = false,
-}) => {
+export const Models: FC = () => {
     const navigate = useNavigate({ from: "/models" });
     const modelSearch = useSearch({ from: "/_dashboard/models" });
     const activeScope = modelSearch.scope ?? "pollinations";
@@ -200,8 +209,8 @@ export const Models: FC<ModelsProps> = ({
     );
 
     const loadModelCatalog = useCallback(
-        (options: { refresh?: boolean } = {}) =>
-            fetchModelCatalog(options)
+        () =>
+            fetchModelCatalog()
                 .then((models) => {
                     setCatalogModels(models);
                     setCatalogError(null);
@@ -226,6 +235,7 @@ export const Models: FC<ModelsProps> = ({
         activeScope === "community"
             ? COMMUNITY_SECTION_ORDER
             : POLLINATIONS_SECTION_ORDER;
+    const hasAgents = scopedModels.some((model) => model.agent);
     const scopeLabel = SCOPE_LABELS[activeScope];
     const searchLabel = SEARCH_LABELS[activeTab];
     const searchTarget =
@@ -282,11 +292,15 @@ export const Models: FC<ModelsProps> = ({
                 ...previous,
                 scope: scope === "pollinations" ? undefined : scope,
                 category:
-                    scope === "community" &&
-                    previous.category !== "text" &&
-                    previous.category !== "image"
-                        ? undefined
-                        : previous.category,
+                    scope === "community"
+                        ? previous.category === "text" ||
+                          previous.category === "image" ||
+                          previous.category === "agent"
+                            ? previous.category
+                            : undefined
+                        : previous.category === "agent"
+                          ? undefined
+                          : previous.category,
             }),
         });
     };
@@ -363,15 +377,31 @@ export const Models: FC<ModelsProps> = ({
                             ))}
                         </div>
                         <div className="flex flex-wrap gap-1.5">
-                            {sectionOrder.map((section) => (
-                                <TabButton
-                                    key={section}
-                                    active={activeTab === section}
-                                    onClick={() => setActiveTab(section)}
-                                >
-                                    {sectionLabels[section]}
-                                </TabButton>
-                            ))}
+                            {sectionOrder.map((section) => {
+                                const showAgentsNew =
+                                    section === "agent" && hasAgents;
+                                return (
+                                    <TabButton
+                                        key={section}
+                                        active={activeTab === section}
+                                        onClick={() => setActiveTab(section)}
+                                        ariaLabel={
+                                            showAgentsNew
+                                                ? "Agents, new"
+                                                : undefined
+                                        }
+                                    >
+                                        <span className="inline-flex items-center gap-1.5">
+                                            {sectionLabels[section]}
+                                            {showAgentsNew && (
+                                                <Chip intent="new" size="sm">
+                                                    New
+                                                </Chip>
+                                            )}
+                                        </span>
+                                    </TabButton>
+                                );
+                            })}
                         </div>
                     </div>
                     <div className="flex w-full items-center justify-between gap-2">
@@ -399,8 +429,9 @@ export const Models: FC<ModelsProps> = ({
                             trigger={(open) => (
                                 <Button
                                     type="button"
+                                    size="md"
                                     aria-label={`Sort models by ${activeSortAccessibleLabel}`}
-                                    className="h-[42px] shrink-0 justify-end gap-2 px-3 text-sm"
+                                    className="shrink-0 justify-end gap-2"
                                 >
                                     <span className="text-right">
                                         {activeSortLabel}
@@ -444,6 +475,37 @@ export const Models: FC<ModelsProps> = ({
                         </Dropdown>
                     </div>
                 </div>
+                {activeScope === "community" && (
+                    <Alert
+                        intent="warning"
+                        title="Community model privacy"
+                        className="mb-4"
+                    >
+                        <p>
+                            Requests go to independent providers and configured
+                            fallbacks, which handle your data under their own
+                            policies.
+                        </p>
+                        <p className="mt-2">
+                            <strong>Avoid sensitive data.</strong> For text
+                            input, you can use our optional{" "}
+                            <InlineLink
+                                href="https://gen.pollinations.ai/docs#tag/Safety"
+                                showIcon={false}
+                            >
+                                privacy filter
+                            </InlineLink>
+                            . See our{" "}
+                            <InlineLink
+                                href="https://pollinations.ai/privacy"
+                                showIcon={false}
+                            >
+                                Privacy Policy
+                            </InlineLink>
+                            .
+                        </p>
+                    </Alert>
+                )}
                 {catalogError && (
                     <Alert intent="danger" className="mb-4">
                         {catalogError}
@@ -465,11 +527,22 @@ export const Models: FC<ModelsProps> = ({
                             realtimeModels={sectionModels.realtime}
                             textModels={sectionModels.text}
                             embeddingModels={sectionModels.embedding}
+                            agentModels={sectionModels.agent}
                             activeTab={activeTab}
                         />
                     </div>
                 )}
                 <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
+                    {activeTab === "agent" && (
+                        <p className="flex items-start gap-1.5">
+                            <BotIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>
+                                <strong>agent pricing</strong> — listed rates
+                                are for the agent&apos;s base model running its
+                                saved instructions.
+                            </span>
+                        </p>
+                    )}
                     <p className="flex items-start gap-1.5">
                         <SparklesIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
@@ -494,22 +567,12 @@ export const Models: FC<ModelsProps> = ({
                     <p className="flex items-start gap-1.5">
                         <UsageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
-                            <strong>gen /pollen</strong> — how many generations
-                            you can make with 1 Pollen, estimated from average
-                            usage over the last 7 days.
+                            <strong>requests /pollen</strong> — estimated from
+                            the median observed cost over the last 7 days.
                         </span>
                     </p>
                 </div>
             </Section>
-            {showCommunityEndpoints && (
-                <CommunityEndpoints
-                    canPublish={canPublish}
-                    fallbackOptions={publicCommunityFallbackOptions(allModels)}
-                    onChange={() => {
-                        void loadModelCatalog({ refresh: true });
-                    }}
-                />
-            )}
         </div>
     );
 };

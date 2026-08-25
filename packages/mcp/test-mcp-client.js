@@ -55,6 +55,7 @@ const EXPECTED_TOOLS = [
     "getModelStatus",
     "listModels",
     "setApiKey",
+    "transcribeAudio",
 ];
 
 const createTransport = () =>
@@ -119,6 +120,45 @@ await step("modern listTools", async () => {
     return `${tools.length} tools`;
 });
 
+await step("model discovery guidance", () => {
+    const instructions = client.getInstructions();
+    assert.match(
+        instructions,
+        /Never decide that a requested model is unavailable based on prior knowledge/,
+    );
+    assert.match(
+        instructions,
+        /call listModels with the relevant modality first/,
+    );
+
+    const tools = new Map(modernTools.map((tool) => [tool.name, tool]));
+    assert.match(
+        tools.get("listModels").description,
+        /before claiming that a named model or agent is unavailable/,
+    );
+    assert.match(
+        tools.get("listModels").inputSchema.properties.agent.description,
+        /True for agents only/,
+    );
+    assert.match(
+        tools.get("generateText").description,
+        /any text model or agent in the live Pollinations registry/,
+    );
+    assert.match(
+        tools.get("generateImage").description,
+        /any image model in the live Pollinations registry/,
+    );
+    assert.match(
+        tools.get("generateText").inputSchema.properties.model.description,
+        /Canonical text model or agent name returned by listModels/,
+    );
+    assert.match(
+        tools.get("generateImage").inputSchema.properties.model.description,
+        /Canonical image model name or alias returned by listModels/,
+    );
+    return "instructions and tool descriptions";
+});
+
 await step("listModels (unauthenticated)", () =>
     call("listModels", { type: "text" }),
 );
@@ -168,15 +208,24 @@ if (!KEY) {
         return out;
     });
     await step("generateImage (url)", async () => {
-        const out = await call("generateImage", {
-            prompt: "a small red apple",
-            model: "flux",
-            size: "256x256",
-            response_format: "url",
+        const result = await client.callTool({
+            name: "generateImage",
+            arguments: {
+                prompt: "a small red apple",
+                model: "flux",
+                size: "256x256",
+            },
         });
-        if (!/pollinations\.ai/.test(out))
-            throw new Error(`no URL: ${trim(out)}`);
-        return out;
+        if (result.isError) {
+            throw new Error(result.content?.[0]?.text || "tool error");
+        }
+        const link = result.content?.find(
+            (part) => part.type === "resource_link",
+        );
+        if (!link || !/pollinations\.ai/.test(link.uri)) {
+            throw new Error(`no resource link: ${trim(result.content)}`);
+        }
+        return link.uri;
     });
     await step("getBalance", () => call("getBalance"));
     await step("clearApiKey", () => call("clearApiKey"));

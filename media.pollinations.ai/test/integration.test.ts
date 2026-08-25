@@ -12,6 +12,7 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import app from "../src/index";
+import { uploadUnlistedMedia } from "../src/media-upload.ts";
 
 // 1x1 red PNG (67 bytes)
 const TINY_PNG = new Uint8Array([
@@ -56,7 +57,7 @@ const KEY_IDENTITIES: Record<
         type?: string;
         name?: string | null;
         userId?: string | null;
-        byopClientKeyId?: string | null;
+        byopApp?: { clientKeyId: string } | null;
     }
 > = {
     pk_alice: {
@@ -64,21 +65,21 @@ const KEY_IDENTITIES: Record<
         type: "publishable",
         name: "alice-key",
         userId: "user_alice",
-        byopClientKeyId: "pk_app_1",
+        byopApp: { clientKeyId: "pk_app_1" },
     },
     pk_bob: {
         valid: true,
         type: "publishable",
         name: "bob-key",
         userId: "user_bob",
-        byopClientKeyId: null,
+        byopApp: null,
     },
     pk_nouser: {
         valid: true,
         type: "publishable",
         name: "service-key",
         userId: null,
-        byopClientKeyId: null,
+        byopApp: null,
     },
     // Deleting media is secret-key only, so delete tests use these.
     sk_alice: {
@@ -86,17 +87,17 @@ const KEY_IDENTITIES: Record<
         type: "secret",
         name: "alice-secret",
         userId: "user_alice",
-        byopClientKeyId: null,
+        byopApp: null,
     },
     sk_bob: {
         valid: true,
         type: "secret",
         name: "bob-secret",
         userId: "user_bob",
-        byopClientKeyId: null,
+        byopApp: null,
     },
     // The response shape of an enter deployment that predates the identity
-    // fields — userId/byopClientKeyId entirely absent, not null.
+    // fields — userId/byopApp entirely absent, not null.
     sk_legacy: {
         valid: true,
         type: "secret",
@@ -220,6 +221,47 @@ describe("media.pollinations.ai", () => {
         const body = (await res.json()) as Record<string, unknown>;
         expect(res.status).toBe(200);
         expect(body.service).toBe("media.pollinations.ai");
+    });
+
+    it("stores streamed unlisted media for internal services", async () => {
+        const bucket = createTestR2Bucket();
+        const upload = await uploadUnlistedMedia(
+            createMediaEnv(bucket),
+            new Blob([TINY_PNG]).stream(),
+            {
+                contentType: "image/png",
+                fileName: "ffmpeg.png",
+                size: TINY_PNG.length,
+            },
+        );
+
+        expect(upload.url).toBe(`https://media.pollinations.ai/${upload.id}`);
+        const object = bucket.getObject(upload.id);
+        expect(object?.body).toEqual(TINY_PNG);
+        expect(object?.httpMetadata?.contentType).toBe("image/png");
+        expect(object?.customMetadata?.uploadedBy).toBe("pollinations-service");
+    });
+
+    it("rejects invalid internal upload sizes before writing to R2", async () => {
+        const bucket = createTestR2Bucket();
+        const mediaEnv = {
+            ...createMediaEnv(bucket),
+            MAX_FILE_SIZE: "10",
+        };
+
+        await expect(
+            uploadUnlistedMedia(mediaEnv, new Blob([TINY_PNG]).stream(), {
+                contentType: "image/png",
+                size: 0,
+            }),
+        ).rejects.toThrow("Media size must be a positive integer");
+        await expect(
+            uploadUnlistedMedia(mediaEnv, new Blob([TINY_PNG]).stream(), {
+                contentType: "image/png",
+                size: 11,
+            }),
+        ).rejects.toThrow("Media exceeds 10 bytes");
+        expect(bucket.putCount).toBe(0);
     });
 
     it("POST /upload without key returns 401", async () => {

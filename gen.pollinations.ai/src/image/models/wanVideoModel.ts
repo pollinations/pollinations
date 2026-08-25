@@ -17,7 +17,6 @@
 
 import debug from "debug";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
-import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import { closestRatioLogSpace } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
@@ -207,12 +206,6 @@ async function generateWanVideo(
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> {
     const images = safeParams.image ?? [];
-    if (images.length > 2) {
-        throw new HttpError(
-            `${config.displayName} supports at most two frames: image[0] as first frame and image[1] as last frame.`,
-            400,
-        );
-    }
     const mode: "t2v" | "i2v" = images.length > 0 ? "i2v" : "t2v";
     const model = mode === "i2v" ? config.i2vModel : config.t2vModel;
 

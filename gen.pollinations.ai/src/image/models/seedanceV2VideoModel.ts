@@ -6,11 +6,11 @@
  * reference_videos, which would trigger Replicate's "video_in" price tier.
  */
 
+import { HttpError } from "@shared/http-error.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import debug from "debug";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
-import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { toDataUri } from "../utils/imageDownload.ts";
@@ -95,16 +95,7 @@ export async function callSeedanceV2API(
         Math.min(config.maxDuration, Math.floor(safeParams.duration ?? 5)),
     );
 
-    // Positional image[] contract:
-    //   length=1 → first-frame only (I2V)
-    //   length=2 → image[0] first frame, image[1] last frame
     const images = safeParams.image ?? [];
-    if (images.length > 2) {
-        throw new HttpError(
-            `${definition.title} supports at most two images: image[0] as first frame and image[1] as last frame.`,
-            400,
-        );
-    }
 
     const input: SeedanceV2Input = {
         prompt,

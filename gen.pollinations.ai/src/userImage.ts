@@ -1,8 +1,8 @@
 import type { ImageInputErrorCode } from "@shared/error.ts";
+import { HttpError } from "@shared/http-error.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
-import { HttpError } from "./image/httpError.ts";
-import { readResponseBytes } from "./utils/response-bytes.ts";
-import { validateUserMediaUrl } from "./utils/user-media-url.ts";
+import { readResponseBytes } from "@shared/response-bytes.ts";
+import { validateUserMediaUrl } from "@shared/user-media-url.ts";
 
 /**
  * A user-supplied image we could not use.

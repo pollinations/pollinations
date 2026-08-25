@@ -114,19 +114,17 @@ test("GPT-5.5 is available without paid-only gating", () => {
     expect(definition.paidOnly).toBeUndefined();
 });
 
-test("GPT-5.6 models are quest-eligible at the promotional multiplier", () => {
-    for (const model of [
-        "gpt-5.6-sol",
-        "gpt-5.6-terra",
-        "gpt-5.6-luna",
+test("GPT-5.6 models are quest-eligible at their approved multipliers", () => {
+    for (const [model, multiplier] of [
+        ["gpt-5.6-sol", 0.5],
+        ["gpt-5.6-terra", 0.625],
+        ["gpt-5.6-luna", 1],
     ] as const) {
         const definition = getRegistryModelDefinition(model);
 
         expect(definition.provider).toBe("azure");
         expect(definition.paidOnly).toBeUndefined();
-        expect(definition.priceMultiplier).toBe(
-            model === "gpt-5.6-luna" ? 0.2 : 0.5,
-        );
+        expect(definition.priceMultiplier).toBe(multiplier);
     }
 });
 

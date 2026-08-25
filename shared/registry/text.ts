@@ -261,20 +261,20 @@ export const TEXT_SERVICES = {
         brand: "OpenAI",
         category: "text",
         addedDate: new Date("2026-07-10").getTime(),
-        priceMultiplier: 0.5,
+        priceMultiplier: 0.625,
         cost: {
-            promptTextTokens: perMillion(2.5),
-            promptCachedTokens: perMillion(0.25),
-            promptCacheWriteTokens: perMillion(3.125),
-            completionTextTokens: perMillion(15.0),
+            promptTextTokens: perMillion(2.0),
+            promptCachedTokens: perMillion(0.2),
+            promptCacheWriteTokens: perMillion(2.5),
+            completionTextTokens: perMillion(12.0),
         },
         ...defineCostVariants(
             {
                 long_context: {
-                    promptTextTokens: perMillion(5.0),
-                    promptCachedTokens: perMillion(0.5),
-                    promptCacheWriteTokens: perMillion(6.25),
-                    completionTextTokens: perMillion(22.5),
+                    promptTextTokens: perMillion(4.0),
+                    promptCachedTokens: perMillion(0.4),
+                    promptCacheWriteTokens: perMillion(5.0),
+                    completionTextTokens: perMillion(18.0),
                 },
             },
             longContextAbove(272_000),
@@ -303,20 +303,20 @@ export const TEXT_SERVICES = {
         brand: "OpenAI",
         category: "text",
         addedDate: new Date("2026-07-10").getTime(),
-        priceMultiplier: 0.2,
+        priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(1.0),
-            promptCachedTokens: perMillion(0.1),
-            promptCacheWriteTokens: perMillion(1.25),
-            completionTextTokens: perMillion(6.0),
+            promptTextTokens: perMillion(0.2),
+            promptCachedTokens: perMillion(0.02),
+            promptCacheWriteTokens: perMillion(0.25),
+            completionTextTokens: perMillion(1.2),
         },
         ...defineCostVariants(
             {
                 long_context: {
-                    promptTextTokens: perMillion(2.0),
-                    promptCachedTokens: perMillion(0.2),
-                    promptCacheWriteTokens: perMillion(2.5),
-                    completionTextTokens: perMillion(9.0),
+                    promptTextTokens: perMillion(0.4),
+                    promptCachedTokens: perMillion(0.04),
+                    promptCacheWriteTokens: perMillion(0.5),
+                    completionTextTokens: perMillion(1.8),
                 },
             },
             longContextAbove(272_000),
@@ -394,8 +394,9 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(0.06),
-            completionTextTokens: perMillion(0.22),
+            // OVHcloud USD list price for Qwen3-Coder-30B-A3B-Instruct.
+            promptTextTokens: perMillion(0.07),
+            completionTextTokens: perMillion(0.26),
         },
         title: "Qwen3 Coder 30B",
         description:
@@ -446,6 +447,7 @@ export const TEXT_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
+            // OpenRouter Mistral endpoint, verified 2026-08-22.
             promptTextTokens: perMillion(0.15),
             promptCachedTokens: perMillion(0.015),
             completionTextTokens: perMillion(0.6),
@@ -455,7 +457,7 @@ export const TEXT_SERVICES = {
             "Compact all-rounder that combines reasoning with image understanding",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 10, // Mistral image count varies by model/token budget; Pollinations cap.
+        maxReferenceImages: 8, // Exact OpenRouter Mistral route limit.
         tools: true,
         reasoning: true,
         contextLength: 262144,
@@ -565,7 +567,7 @@ export const TEXT_SERVICES = {
             completionTextTokens: perMillion(1.875),
         },
         billing: openRouterGeminiBilling({
-            searchCostPerThousandRequests: 7,
+            searchCostPerThousandRequests: 14,
             storageCostPerMillionTokenHours: 0.25,
         }),
         title: "Gemini 3.7 Flash",
@@ -666,9 +668,9 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2025-10-10").getTime(),
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(0.14),
-            promptCachedTokens: perMillion(0.028),
-            completionTextTokens: perMillion(0.28),
+            promptTextTokens: perMillion(0.22),
+            promptCachedTokens: perMillion(0.007),
+            completionTextTokens: perMillion(0.66),
         },
         title: "DeepSeek V4 Flash 0731",
         description: "Fast reasoning and coding at bargain prices",
@@ -693,10 +695,9 @@ export const TEXT_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter google/gemma-4-26b-a4b-it posted rates (2026-06-02):
-            // prompt $0.06/M, completion $0.33/M. No prompt caching upstream.
-            promptTextTokens: perMillion(0.06),
-            completionTextTokens: perMillion(0.33),
+            // OpenRouter Novita BF16 preserves remote image URLs; verified 2026-08-22.
+            promptTextTokens: perMillion(0.13),
+            completionTextTokens: perMillion(0.4),
         },
         title: "Gemma 4 26B A4B",
         description:
@@ -718,8 +719,9 @@ export const TEXT_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(0.12),
-            completionTextTokens: perMillion(0.37),
+            // OpenRouter Novita BF16 endpoint, verified 2026-08-22.
+            promptTextTokens: perMillion(0.14),
+            completionTextTokens: perMillion(0.4),
         },
         title: "Gemma 4 31B",
         description: "Dense multimodal reasoning with configurable thinking",
@@ -1287,10 +1289,10 @@ export const TEXT_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Poolside route rates (2026-07-22).
-            promptTextTokens: perMillion(0.1),
-            promptCachedTokens: perMillion(0.01),
-            completionTextTokens: perMillion(0.2),
+            // OpenRouter Poolside route rates (2026-08-22).
+            promptTextTokens: perMillion(0.09),
+            promptCachedTokens: perMillion(0.009),
+            completionTextTokens: perMillion(0.18),
         },
         title: "Laguna S 2.1",
         description:
@@ -1381,6 +1383,30 @@ export const TEXT_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
+    "nemotron-3.5-lightning": {
+        aliases: [],
+        provider: "fireworks",
+        brand: "NVIDIA",
+        category: "text",
+        addedDate: new Date("2026-08-19").getTime(),
+        paidOnly: false,
+        priceMultiplier: 1,
+        cost: {
+            // Fireworks, verified 2026-08-19: $0.05/$0.01/$0.20 per million.
+            promptTextTokens: perMillion(0.05),
+            promptCachedTokens: perMillion(0.01),
+            completionTextTokens: perMillion(0.2),
+        },
+        title: "NVIDIA Nemotron 3.5 Lightning",
+        description:
+            "Fast open-weight reasoning for high-volume agent tasks, tool use and structured output",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 262144,
+        isSpecialized: false,
+    },
     "mimo-v2.5": {
         aliases: ["mimo", "mimo-2.5"],
         provider: "openrouter",
@@ -1413,6 +1439,7 @@ export const TEXT_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
+            // OpenRouter Xiaomi FP8 endpoint, verified 2026-08-22.
             promptTextTokens: perMillion(0.435),
             promptCachedTokens: perMillion(0.0036),
             completionTextTokens: perMillion(0.87),
@@ -1559,6 +1586,29 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "glm-5.3": {
+        aliases: [],
+        provider: "openrouter",
+        brand: "Z.ai",
+        category: "text",
+        addedDate: new Date("2026-08-19").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            promptTextTokens: perMillion(1.4),
+            promptCachedTokens: perMillion(0.26),
+            completionTextTokens: perMillion(4.4),
+        },
+        title: "Z.ai GLM-5.3",
+        description:
+            "Mandatory-reasoning model for complex software engineering and long-horizon agent workflows",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
     "llama": {
         aliases: ["llama-3.3", "llama-3.3-70b", "llama-v3p3-70b-instruct"],
         provider: "azure",
@@ -1619,6 +1669,7 @@ export const TEXT_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
+            // OpenRouter DeepInfra FP8 endpoint, verified 2026-08-22.
             promptTextTokens: perMillion(0.1),
             completionTextTokens: perMillion(0.3),
         },
@@ -1627,7 +1678,7 @@ export const TEXT_SERVICES = {
             "Open-source long-context specialist for digging through big documents",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 10, // OpenRouter image count varies by provider/model; Pollinations cap.
+        maxReferenceImages: 10, // Verified on the pinned DeepInfra FP8 route; Pollinations cap.
         tools: true,
         contextLength: 327680,
         isSpecialized: false,
@@ -1756,10 +1807,9 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-03-22").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // Moved off Alibaba DashScope ($0.30/$1.50) to OpenRouter — same SKU,
-        // ~2.5x cheaper. OpenRouter routes to the cheapest live endpoint.
+        // OpenRouter Parasail BF16 endpoint, verified 2026-08-22.
         cost: {
-            promptTextTokens: perMillion(0.11), // per 1M tokens
+            promptTextTokens: perMillion(0.12), // per 1M tokens
             promptCachedTokens: perMillion(0.07), // per 1M cached input tokens
             completionTextTokens: perMillion(0.8), // per 1M tokens
         },
@@ -1867,6 +1917,34 @@ export const TEXT_SERVICES = {
             "Open-weight sparse frontier reasoning for long-horizon coding and autonomous agents",
         inputModalities: ["text"],
         outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 262144,
+        isSpecialized: false,
+    },
+    "qwen3.8-27b": {
+        aliases: [],
+        provider: "openrouter",
+        brand: "Qwen",
+        category: "text",
+        addedDate: new Date("2026-08-18").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter Chutes FP8 route rates (2026-08-24).
+            promptTextTokens: perMillion(0.35),
+            promptCachedTokens: perMillion(0.035),
+            promptImageTokens: perMillion(0.35),
+            promptVideoTokens: perMillion(0.35),
+            completionTextTokens: perMillion(2.75),
+        },
+        title: "Qwen3.8 27B",
+        description:
+            "Dense multimodal reasoning for coding, tool use, and structured generation",
+        inputModalities: ["text", "image", "video"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10,
+        maxReferenceVideos: 10,
         tools: true,
         reasoning: true,
         contextLength: 262144,
@@ -2012,8 +2090,9 @@ export const TEXT_SERVICES = {
         priceMultiplier: 1,
         category: "text",
         cost: {
-            promptTextTokens: perMillion(0.26),
-            completionTextTokens: perMillion(2.6),
+            // OpenRouter Alibaba endpoint, verified 2026-08-22.
+            promptTextTokens: perMillion(0.4),
+            completionTextTokens: perMillion(4),
         },
         title: "Qwen3 VL 235B A22B Thinking",
         description:

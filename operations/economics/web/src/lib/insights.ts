@@ -683,6 +683,8 @@ export function vendorPlanes(data: Data): VendorPlanes[] {
     const pollen = new Map<string, OpPollenWitness>();
     for (const row of data.opPollen ?? []) {
         if (!MONTH_KEY_RE.test(row.month) || row.month < WINDOW_START) continue;
+        // Community has no external provider bill to reconcile on this tab.
+        if (row.vendor === "community") continue;
         const key = `${row.month}|${row.vendor}`;
         const entry = getOrInit(pollen, key, () => ({
             paidCostUsd: 0,
@@ -816,9 +818,9 @@ export function insightVendorOptions(data: Data): string[] {
 
 // ------------------------------------------------------------- economics
 
-// Vendors whose provider_monthly rows are our own pollen numbers booked back
-// (community mirror + meter-less free partners) — their calib is 1.00 by
-// construction, a definition rather than a measurement.
+// Vendors priced from our own pollen records rather than an external bill.
+// Their calib is 1.00 by construction, a definition rather than a measurement.
+// Community has no provider cost; op_pollen_api normalizes its cost fields to 0.
 const POLLEN_PRICED_VENDORS = new Set([
     "airforce",
     "community",

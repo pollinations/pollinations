@@ -23,6 +23,8 @@ import {
     tagsForItems,
 } from "./catalog.ts";
 
+export { MediaUpload } from "./media-upload.ts";
+
 const DOMAIN = "media.pollinations.ai";
 // gen.pollinations.ai proxies /account/* to enter — using the public path
 // keeps internal services consistent with the documented SDK/external usage.
@@ -40,6 +42,18 @@ interface Env {
     DB: D1Database;
 }
 
+/**
+ * Wire shape of `GET /account/key`. BYOP attribution arrives nested under
+ * `byopApp`, which is null for keys not minted through the BYOP flow.
+ */
+interface KeyVerifyResponse {
+    valid: boolean;
+    type: string;
+    name: string | null;
+    userId: string | null;
+    byopApp: { clientKeyId: string } | null;
+}
+
 interface AuthResult {
     valid: boolean;
     type: string;
@@ -54,7 +68,7 @@ async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
             headers: { Authorization: `Bearer ${apiKey}` },
         });
         if (!res.ok) return null;
-        const data = await res.json<AuthResult>();
+        const data = await res.json<KeyVerifyResponse>();
         if (!data.valid) return null;
         // Normalize: an enter deployment that predates the identity fields
         // omits them, and `undefined` would slip past the `=== null` guards
@@ -64,7 +78,7 @@ async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
             type: data.type,
             name: data.name ?? null,
             userId: data.userId ?? null,
-            byopClientKeyId: data.byopClientKeyId ?? null,
+            byopClientKeyId: data.byopApp?.clientKeyId ?? null,
         };
     } catch {
         return null;

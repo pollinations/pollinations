@@ -274,6 +274,8 @@ export interface ChatOptions extends RequestOptions {
     stop?: string | string[];
     /** Seed for reproducible generation */
     seed?: number;
+    /** Keep generation private (default: false) */
+    private?: boolean;
     /** Enable streaming response (default: false) */
     stream?: boolean;
     /** Include usage stats in streaming response */
@@ -585,7 +587,50 @@ export interface AccountProfile {
 
 /** Account balance */
 export interface AccountBalance {
+    /**
+     * Pollen remaining for this caller. Budgeted API keys see the key budget
+     * here, not the account total.
+     */
     balance: number;
+    /**
+     * Full account balances. Present only when the caller can view account
+     * usage (session or `account:usage`).
+     */
+    accountBalance?: {
+        total: number;
+        tier: number;
+        paid: number;
+    };
+}
+
+/** Quest reward earned by the authenticated account */
+export interface AccountQuestReward {
+    id: string;
+    questId: string | null;
+    title: string;
+    pollenAmount: number;
+    balanceBucket: string;
+    earnedAt: string;
+    claimedAt: string | null;
+}
+
+/** Quest catalog entry with the authenticated account's status */
+export interface AccountQuest {
+    id: string;
+    title: string;
+    description: string;
+    category: string;
+    state: "available" | "completed" | "coming_soon";
+    status: "open" | "completed" | "coming_soon";
+    rewardAmount: number;
+    balanceBucket: "tier" | "pack";
+    url: string | null;
+    reward: AccountQuestReward | null;
+}
+
+/** Quest status response */
+export interface AccountQuestsResponse {
+    quests: AccountQuest[];
 }
 
 /** Usage record */
@@ -664,6 +709,37 @@ export interface DailyUsageResponse {
     usage: DailyUsageRecord[];
     count: number;
 }
+
+/** Developer earnings row for one (date, earning entity) bucket */
+export interface DeveloperEarningsRow {
+    /** Date bucket (YYYY-MM-DD); empty string on rollup rows */
+    date: string;
+    /** Earning entity id (BYOP app key or community model) */
+    entity_id: string;
+    entity_name: string;
+    source: "byop_markup" | "community_model";
+    requests: number;
+    paid_requests: number;
+    tier_requests: number;
+    baseline_price: number;
+    pollen_earned: number;
+    paid_earned: number;
+    tier_earned: number;
+    cost_usd: number;
+    reward_rate: number;
+}
+
+/** Response for GET /account/earnings */
+export interface DeveloperEarningsResponse {
+    daily: DeveloperEarningsRow[];
+    perEntity: DeveloperEarningsRow[];
+}
+
+/** Options for fetching developer earnings (time-window selection) */
+export type EarningsOptions = Pick<
+    DailyUsageOptions,
+    "days" | "granularity" | "period"
+>;
 
 /** API key validation response */
 export interface KeyInfo {
@@ -786,7 +862,8 @@ export type ModelCapability =
     | "tool_calling"
     | "reasoning"
     | "web_search"
-    | "code_execution";
+    | "code_execution"
+    | "pollinations_models";
 
 /** Model information */
 export interface ModelInfo {
@@ -801,9 +878,16 @@ export interface ModelInfo {
     description?: string;
     aliases?: string[];
     community?: boolean;
+    agent?: boolean;
+    base_model?: string;
     input_modalities?: string[];
     output_modalities?: string[];
     video_capabilities?: VideoCapability[];
+    min_duration?: number;
+    max_duration?: number;
+    default_duration?: number;
+    allowed_durations?: number[];
+    duration_step?: number;
     max_reference_images?: number;
     max_reference_videos?: number;
     capabilities?: ModelCapability[];

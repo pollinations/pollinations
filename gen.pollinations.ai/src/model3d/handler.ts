@@ -1,11 +1,12 @@
 import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { HttpError } from "@shared/http-error.ts";
 import { buildUsageHeaders } from "@shared/registry/usage-headers.ts";
 import type { Context } from "hono";
 import type { Env } from "@/env.ts";
 import { withModelFallbackResponse } from "../fallback.ts";
-import { HttpError } from "../image/httpError.ts";
 import { bufferToUint8Array } from "../image/utils/imageDownload.ts";
+import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 import {
     createAndReturnModel3d,
     type Model3dGenerationResult,
@@ -26,7 +27,7 @@ export async function generate3dResponse(
     c.var.track.setPricingInput({ resolution: safeParams.resolution });
 
     try {
-        const { response, servedEntry } = await withModelFallbackResponse(
+        return await withModelFallbackResponse(
             c.var.model,
             async (candidate) => {
                 const params = { ...safeParams, model: candidate.id };
@@ -39,10 +40,9 @@ export async function generate3dResponse(
                     headers: mediaHeaders(originalPrompt, params, result),
                 });
             },
-            c.var.track?.failedCalls,
+            c.var.track?.attempts,
+            (candidate) => enforceModelRateLimit(c, candidate),
         );
-        if (servedEntry) c.set("servedModelEntry", servedEntry);
-        return response;
     } catch (error) {
         throw3dError(error);
     }

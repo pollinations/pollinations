@@ -49,11 +49,13 @@ import {
     CreateChatCompletionResponseSchema,
     CreateImageRequestSchema,
     CreateImageResponseSchema,
+    GetModelResponseSchema,
     GetModelsResponseSchema,
 } from "@shared/schemas/openai.ts";
 import { SafeSchema } from "@shared/schemas/safety.ts";
 import { errorResponseDescriptions } from "@shared/utils/api-docs.ts";
 import { createFactory } from "hono/factory";
+import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 import {
     CreateEmbeddingRequestSchema,
@@ -73,7 +75,10 @@ import {
 } from "@/schemas/models.ts";
 import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
-import { generationAccess } from "@/utils/generation-access.ts";
+import {
+    apiKeyBudgetReservation,
+    generationAccess,
+} from "@/utils/generation-access.ts";
 import {
     type GenerationModelEntry,
     getGenerationModelRegistry,
@@ -144,6 +149,7 @@ const imageVideoHandlers = factory.createHandlers(
     imageCache,
     generationAccess,
     deduplicateGeneration,
+    apiKeyBudgetReservation,
     generateImageVideo,
 );
 
@@ -154,6 +160,7 @@ const model3dHandlers = factory.createHandlers(
     model3dCache,
     generationAccess,
     deduplicateGeneration,
+    apiKeyBudgetReservation,
     generateModel3d,
 );
 
@@ -165,6 +172,7 @@ const chatCompletionHandlers = factory.createHandlers(
     textCache,
     generationAccess,
     deduplicateGeneration,
+    apiKeyBudgetReservation,
     generateChatCompletion,
 );
 
@@ -270,11 +278,63 @@ async function getVisibleVideoModelEntries(c: Context<Env>) {
     ).filter((entry) => entry.definition.category === "video");
 }
 
+// Single OpenAI-compatible mapper shared by /v1/models (list) and
+// /v1/models/:model (retrieve). `created` derives from the registry addedDate
+// so both endpoints return stable timestamps instead of per-request wall-clock
+// values.
+function toOpenAIModelEntry(entry: GenerationModelEntry) {
+    return {
+        id: entry.info.name,
+        object: "model" as const,
+        created: Math.floor(entry.definition.addedDate / 1000),
+        owned_by: entry.info.brand,
+        input_modalities: entry.info.input_modalities,
+        output_modalities: entry.info.output_modalities,
+        supported_endpoints: entry.supportedEndpoints,
+        ...(entry.info.agent && { agent: true }),
+        ...(entry.info.base_model && {
+            base_model: entry.info.base_model,
+        }),
+        pricing: entry.info.pricing,
+        capabilities: entry.info.capabilities,
+        ...(entry.info.tools && { tools: entry.info.tools }),
+        ...(entry.info.reasoning && { reasoning: entry.info.reasoning }),
+        ...(entry.info.context_length && {
+            context_length: entry.info.context_length,
+        }),
+        ...(entry.info.per_user_rpm !== undefined && {
+            per_user_rpm: entry.info.per_user_rpm,
+        }),
+    };
+}
+
+// Resolve one model by ID or alias against the caller-visible registry view.
+// Returns null when unknown, hidden, or a private community model owned by
+// someone else.
+async function resolveVisibleModelEntry(
+    c: Context<Env>,
+    modelId: string,
+): Promise<GenerationModelEntry | null> {
+    const entry = (await getGenerationModelRegistry(c.env)).resolve(modelId);
+    if (!entry) return null;
+    if (!entry.visible) {
+        const endpoint = entry.communityEndpoint;
+        if (
+            endpoint?.visibility !== "private" ||
+            endpoint.ownerUserId !== c.var.auth?.user?.id
+        ) {
+            return null;
+        }
+    }
+    return entry;
+}
+
 export const proxyRoutes = new Hono<Env>()
     // Edge rate limiter: first line of defense (10 req/s per IP)
     .use("*", edgeRateLimit)
     // Optional auth for models endpoints - doesn't require auth but uses it if provided
     .use("/v1/models", auth())
+    .use("/v1/models/:model", auth())
     .use("/image/models", auth())
     .use("/3d/models", auth())
     .use("/video/models", auth())
@@ -288,7 +348,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Models (OpenAI-compatible)",
             description:
-                "Returns available models in the OpenAI-compatible format (`{object: \"list\", data: [...]}`). Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. Use this endpoint if you're using an OpenAI SDK. For richer metadata including pricing and capabilities, use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` instead. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
+                'Returns available models in the OpenAI-compatible format (`{object: "list", data: [...]}`), with Pollinations pricing and capability extensions. Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. Use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` for richer metadata. When authenticated: the owner\'s private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.',
             responses: {
                 200: {
                     description: "Success",
@@ -316,31 +376,54 @@ export const proxyRoutes = new Hono<Env>()
                 ),
                 community,
             );
-            const now = Date.now();
-
-            const toModelEntry = (entry: GenerationModelEntry) => ({
-                id: entry.info.name,
-                object: "model" as const,
-                created: now,
-                input_modalities: entry.info.input_modalities,
-                output_modalities: entry.info.output_modalities,
-                supported_endpoints: entry.supportedEndpoints,
-                ...(entry.info.tools && { tools: entry.info.tools }),
-                ...(entry.info.reasoning && {
-                    reasoning: entry.info.reasoning,
-                }),
-                ...(entry.info.context_length && {
-                    context_length: entry.info.context_length,
-                }),
-                ...(entry.info.community && {
-                    per_user_rpm: entry.info.per_user_rpm ?? null,
-                }),
-            });
-
             return c.json({
                 object: "list" as const,
-                data: modelEntries.map(toModelEntry),
+                data: modelEntries.map(toOpenAIModelEntry),
             });
+        },
+    )
+    .get(
+        "/v1/models/:model",
+        describeRoute({
+            tags: ["🤖 Models"],
+            summary: "Retrieve Model (OpenAI-compatible)",
+            description:
+                "Returns a single model by ID or alias in the OpenAI-compatible format, resolved to its canonical ID with stable created timestamps and Pollinations pricing and capability extensions. Visibility, API-key model permissions, and paid-only rules match the list endpoint. Returns 404 when the model does not exist or is not accessible to the caller.",
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(GetModelResponseSchema),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 404, 500),
+            },
+        }),
+        async (c) => {
+            // Unknown, hidden, permission-filtered, and unaffordable models
+            // all collapse to the same 404 so the endpoint does not leak
+            // existence information.
+            const modelId = c.req.param("model");
+            const visible = await resolveVisibleModelEntry(c, modelId);
+            if (!visible) {
+                throw new HTTPException(404, {
+                    message: `Model '${modelId}' not found`,
+                });
+            }
+            // Same permission and paid-only semantics as the list endpoint.
+            const [entry] = filterEntriesByPermissions(
+                [visible],
+                c.var.auth?.apiKey?.permissions?.models,
+                hasPaidBalance(c),
+            );
+            if (!entry) {
+                throw new HTTPException(404, {
+                    message: `Model '${modelId}' not found`,
+                });
+            }
+            return c.json(toOpenAIModelEntry(entry));
         },
     )
     .get(
@@ -621,7 +704,7 @@ export const proxyRoutes = new Hono<Env>()
         textCache,
         generationAccess,
         deduplicateGeneration,
-        generateEmbeddingsResponse,
+        every(apiKeyBudgetReservation, generateEmbeddingsResponse),
     )
     .post(
         "/text",
@@ -648,6 +731,7 @@ export const proxyRoutes = new Hono<Env>()
         textCache,
         generationAccess,
         deduplicateGeneration,
+        apiKeyBudgetReservation,
         generateTextContent,
     )
     .get(
@@ -687,6 +771,7 @@ export const proxyRoutes = new Hono<Env>()
         textCache,
         generationAccess,
         deduplicateGeneration,
+        apiKeyBudgetReservation,
         generateSimpleText,
     )
     .get(
@@ -880,7 +965,7 @@ export const proxyRoutes = new Hono<Env>()
         every(prepareGenerationRequest, model3dCache),
         generationAccess,
         deduplicateGeneration,
-        generateModel3d,
+        every(apiKeyBudgetReservation, generateModel3d),
     )
     .get(
         "/audio/:text",
@@ -930,6 +1015,7 @@ export const proxyRoutes = new Hono<Env>()
         audioCache,
         generationAccess,
         deduplicateGeneration,
+        apiKeyBudgetReservation,
         handleSimpleAudio,
     )
     .post(
@@ -940,7 +1026,7 @@ export const proxyRoutes = new Hono<Env>()
             description: [
                 "OpenAI-compatible image generation endpoint.",
                 "",
-                'Generate images from text prompts. Supports `response_format: "url"` (returns a pollinations.ai URL) or `"b64_json"` (returns base64-encoded image data, default). Community image models support `"b64_json"` only.',
+                'Generate images from text prompts. Supports `response_format: "url"` (returns a pollinations.ai URL) or `"b64_json"` (returns base64-encoded image data, default).',
                 "",
                 "**Authentication:** Include your API key as `Authorization: Bearer YOUR_API_KEY`.",
             ].join("\n"),
@@ -959,12 +1045,12 @@ export const proxyRoutes = new Hono<Env>()
         validator("json", CreateImageRequestSchema),
         resolveModel("generate.image"),
         track("generate.image"),
-        generationAccess,
         every(prepareOpenAIImageGeneration, formatOpenAIImageGeneration),
         prepareGenerationRequest,
         imageCache,
+        generationAccess,
         deduplicateGeneration,
-        handleImageGeneration,
+        every(apiKeyBudgetReservation, handleImageGeneration),
     )
     .post(
         "/v1/images/edits",
@@ -998,5 +1084,6 @@ export const proxyRoutes = new Hono<Env>()
         textCache,
         generationAccess,
         deduplicateGeneration,
+        apiKeyBudgetReservation,
         handleImageEdit,
     );

@@ -44,6 +44,13 @@ jobs:
             echo "any_changed=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: Verify SDK package lock
+        run: |
+          if ! git diff --quiet "origin/${{ github.base_ref }}...HEAD" -- \
+            packages/sdk/package.json packages/sdk/package-lock.json; then
+            npm ci --ignore-scripts --prefix packages/sdk
+          fi
+
       - name: Run Biome on changed files
         if: steps.changed-files.outputs.any_changed == 'true'
         run: |
@@ -85,10 +92,10 @@ jobs:
             echo "any_changed=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Build shared SDK/UI packages for typecheck
+      - name: Test enter.pollinations.ai
         if: steps.enter-ts-files.outputs.any_changed == 'true'
         working-directory: enter.pollinations.ai
-        run: npm run build:ui
+        run: npm test
 
       - name: Typecheck changed files only
         if: steps.enter-ts-files.outputs.any_changed == 'true'
@@ -121,13 +128,6 @@ jobs:
           else
             echo "✅ No type errors in changed files"
           fi
-
-      - name: Test Enter billing registry
-        if: steps.enter-ts-files.outputs.any_changed == 'true'
-        working-directory: enter.pollinations.ai
-        run: |
-          mkdir -p dist/client
-          npx vitest run test/cost-variants.test.ts test/effective-prices.snapshot.test.ts test/pricing-data.test.ts
 
       - name: Get changed files that affect gen.pollinations.ai
         id: gen-files

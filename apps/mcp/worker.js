@@ -41,21 +41,39 @@ export default {
     async fetch(request) {
         const url = new URL(request.url);
 
-        if (url.pathname === "/" && request.method === "GET") {
+        if (url.pathname === "/health" && request.method === "GET") {
             return Response.json({
                 name: "pollinations-mcp",
                 transport: "streamable-http",
-                endpoint: "/mcp",
+                endpoint: "/",
                 stateless: true,
             });
         }
 
-        if (url.pathname !== "/mcp") {
+        if (url.pathname !== "/") {
             return new Response("Not found", { status: 404 });
         }
 
         const token = readBearerToken(request);
         if (!token) return unauthorizedResponse();
+
+        if (
+            request.method === "POST" &&
+            Array.isArray(
+                await request
+                    .clone()
+                    .json()
+                    .catch(() => null),
+            )
+        ) {
+            return Response.json(
+                {
+                    error: "invalid_request",
+                    message: "Batch requests are not supported.",
+                },
+                { status: 400 },
+            );
+        }
 
         return mcpHandler.fetch(request, {
             authInfo: {

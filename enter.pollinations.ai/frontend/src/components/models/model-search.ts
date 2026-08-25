@@ -7,6 +7,7 @@ export const MODEL_CATEGORIES = [
     "realtime",
     "text",
     "embedding",
+    "agent",
 ] as const;
 
 export type ModelCategory = (typeof MODEL_CATEGORIES)[number];
@@ -16,10 +17,13 @@ export type ModelScope = (typeof MODEL_SCOPES)[number];
 
 export const MODEL_SORTS = [
     "newest",
+    "oldest",
     "price-low",
     "price-high",
     "title",
+    "title-desc",
     "brand",
+    "brand-desc",
 ] as const;
 export type ModelSort = (typeof MODEL_SORTS)[number];
 
@@ -53,9 +57,11 @@ export function validateModelSearch(
         scope: scope === "community" ? scope : undefined,
         category:
             category !== "all" &&
-            (scope !== "community" ||
-                category === "text" ||
-                category === "image")
+            (scope === "community"
+                ? category === "text" ||
+                  category === "image" ||
+                  category === "agent"
+                : category !== "agent")
                 ? category
                 : undefined,
         q: query || undefined,

@@ -1,6 +1,6 @@
+import { HttpError } from "@shared/http-error.ts";
 import debug from "debug";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
-import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import { closestRatioLogSpace } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
@@ -71,12 +71,6 @@ export async function callSeedance25API(
     }
 
     const images = safeParams.image ?? [];
-    if (images.length > 2) {
-        throw new HttpError(
-            "Seedance 2.5 supports at most two images: image[0] as first frame and image[1] as last frame.",
-            400,
-        );
-    }
 
     const input: Seedance25Input = {
         prompt,

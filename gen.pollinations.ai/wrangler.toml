@@ -6,7 +6,9 @@ account_id = "b6ec751c0862027ba269faf7029b2501"
 
 # Service binding to enter worker (zero latency - same V8 isolate)
 services = [
-    { binding = "ENTER", service = "pollinations-enter" }
+    { binding = "ENTER", service = "pollinations-enter" },
+    { binding = "POLLINATIONS_MCP", service = "pollinations-mcp" },
+    { binding = "FFMPEG_MCP", service = "pollinations-ffmpeg-mcp" }
 ]
 
 [images]
@@ -58,6 +60,7 @@ new_classes = ["CommunityModelRateLimiter"]
 ENVIRONMENT = "development"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
+AGENT_RUNTIME_BASE_URL = "https://dev.enter.myceli.ai/api/agent-runtime/v1"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event_v2"
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
@@ -91,6 +94,14 @@ custom_domain = true
 [[env.production.services]]
 binding = "ENTER"
 service = "pollinations-enter-production"
+
+[[env.production.services]]
+binding = "POLLINATIONS_MCP"
+service = "pollinations-mcp"
+
+[[env.production.services]]
+binding = "FFMPEG_MCP"
+service = "pollinations-ffmpeg-mcp"
 
 [[env.production.vpc_networks]]
 binding = "KLEIN_VPC"
@@ -147,6 +158,7 @@ new_classes = ["CommunityModelRateLimiter"]
 
 [env.production.vars]
 ENVIRONMENT = "production"
+AGENT_RUNTIME_BASE_URL = "https://enter.myceli.ai/api/agent-runtime/v1"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event_v2"
@@ -173,6 +185,14 @@ custom_domain = true
 [[env.staging.services]]
 binding = "ENTER"
 service = "pollinations-enter-staging"
+
+[[env.staging.services]]
+binding = "POLLINATIONS_MCP"
+service = "pollinations-mcp"
+
+[[env.staging.services]]
+binding = "FFMPEG_MCP"
+service = "pollinations-ffmpeg-mcp-staging"
 
 [[env.staging.d1_databases]]
 binding = "DB"
@@ -223,6 +243,7 @@ new_classes = ["CommunityModelRateLimiter"]
 
 [env.staging.vars]
 ENVIRONMENT = "staging"
+AGENT_RUNTIME_BASE_URL = "https://staging.enter.myceli.ai/api/agent-runtime/v1"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event_v2"
@@ -241,6 +262,14 @@ binding = "IMAGES"
 [[env.test.services]]
 binding = "ENTER"
 service = "pollinations-enter"
+
+[[env.test.services]]
+binding = "POLLINATIONS_MCP"
+service = "pollinations-mcp"
+
+[[env.test.services]]
+binding = "FFMPEG_MCP"
+service = "pollinations-ffmpeg-mcp"
 
 [[env.test.d1_databases]]
 binding = "DB"
@@ -291,6 +320,7 @@ new_classes = ["CommunityModelRateLimiter"]
 
 [env.test.vars]
 ENVIRONMENT = "test"
+AGENT_RUNTIME_BASE_URL = "https://enter-runtime.test/api/agent-runtime/v1"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
 BETTER_AUTH_SECRET = "not-a-secret-workers-test-only"

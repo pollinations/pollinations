@@ -1,8 +1,14 @@
 import {
+    communityEndpointPrices,
+    communityModelDefinition,
+    type ProxyCommunityEndpointRuntime,
+} from "@shared/community-endpoints.ts";
+import {
     parseSafeFeatures,
     SAFETY_HEADER_NAME,
     SafeSchema,
 } from "@shared/schemas/safety.ts";
+import { encryptSecret } from "@shared/secret-encryption.ts";
 import { Hono } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
@@ -22,6 +28,7 @@ import {
     generateCacheKey as generateTextCacheKey,
     prepareMetadata as prepareTextCacheMetadata,
 } from "@/utils/text-cache.ts";
+import { generateChatCompletion } from "../src/routes/generation-handlers.ts";
 import { prepareOpenAIImageGeneration } from "../src/routes/images.ts";
 
 const testLog = {
@@ -531,6 +538,124 @@ describe("applySafetyToChatRequest", { timeout: 30000 }, () => {
                 },
             ],
         });
+    });
+
+    it("redacts PII before sending a community model request upstream", async () => {
+        guardrailResponse = intervened(
+            {
+                sensitiveInformationPolicy: {
+                    piiEntities: [
+                        {
+                            action: "ANONYMIZED",
+                            match: "a@example.com",
+                            type: "EMAIL",
+                        },
+                    ],
+                },
+            },
+            [{ text: "email {EMAIL}" }],
+        );
+
+        const secret = "community-safety-test-secret";
+        const endpoint: ProxyCommunityEndpointRuntime = {
+            type: "proxy",
+            id: "community-endpoint-id",
+            ownerUserId: "owner-id",
+            modelId: "owner/community-model",
+            name: "community-model",
+            title: "Community Model",
+            description: null,
+            modality: "text",
+            imagePricing: "request",
+            inputModalities: ["text"],
+            baseUrl: "https://community.example.test/v1",
+            upstreamModel: "upstream-model",
+            visibility: "public",
+            paidOnly: false,
+            perUserRpm: null,
+            fallbacks: [],
+            hiddenAt: null,
+            hiddenReason: null,
+            bearerTokenCiphertext: await encryptSecret("sk_saved", secret),
+            ...communityEndpointPrices({
+                promptTextPrice: 0.1,
+                completionTextPrice: 0.1,
+            }),
+        };
+        const definition = communityModelDefinition(endpoint);
+        const upstreamFetch = vi.fn(
+            async (_input: RequestInfo | URL, init?: RequestInit) => {
+                expect(JSON.parse(String(init?.body))).toMatchObject({
+                    model: "upstream-model",
+                    messages: [{ role: "user", content: "email {EMAIL}" }],
+                });
+                expect(String(init?.body)).not.toContain("a@example.com");
+                return Response.json({
+                    model: "upstream-model",
+                    choices: [
+                        {
+                            index: 0,
+                            message: { role: "assistant", content: "ok" },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    usage: {
+                        prompt_tokens: 2,
+                        completion_tokens: 1,
+                        total_tokens: 3,
+                    },
+                });
+            },
+        );
+        const app = new Hono<Env>()
+            .use("*", async (c, next) => {
+                c.set("log", testLog);
+                c.set("requestId", "community-safety-request");
+                c.set("track", {
+                    modelRequested: endpoint.modelId,
+                    resolvedModelRequested: endpoint.modelId,
+                    streamRequested: false,
+                    overrideResponseTracking() {},
+                    setPricingInput() {},
+                    attempts: [],
+                });
+                c.set("model", {
+                    requested: endpoint.modelId,
+                    resolved: endpoint.modelId,
+                    definition,
+                    communityEndpoint: endpoint,
+                });
+                const body = await c.req.json();
+                c.req.addValidatedData("json", body);
+                await next();
+            })
+            .post("/v1/chat/completions", generateChatCompletion);
+
+        const response = await app.request(
+            "/v1/chat/completions",
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    model: endpoint.modelId,
+                    safe: "privacy",
+                    messages: [
+                        { role: "user", content: "email a@example.com" },
+                    ],
+                }),
+            },
+            {
+                ...configuredEnv,
+                BETTER_AUTH_SECRET: secret,
+                PORTKEY_GATEWAY_URL: "https://portkey.test",
+                PORTKEY: { fetch: upstreamFetch },
+            } as unknown as CloudflareBindings,
+        );
+
+        expect(response.status, await response.clone().text()).toBe(200);
+        expect(upstreamFetch).toHaveBeenCalledOnce();
+        expect(response.headers.get("X-Safety-Applied")).toBe("privacy");
+        expect(response.headers.get("X-Safety-Redacted")).toBe("EMAIL");
     });
 
     it("checks only the latest chat parts when a safe chat request has too many text parts", async () => {

@@ -17,6 +17,7 @@ const EXPECTED_TOOLS = [
     "getBalance",
     "getModelStatus",
     "listModels",
+    "transcribeAudio",
 ];
 
 function localFetch(input, init) {
@@ -30,7 +31,7 @@ async function connectClient(options = {}, token = TOKEN) {
         { capabilities: {}, ...options },
     );
     const transport = new StreamableHTTPClientTransport(
-        new URL("https://mcp.pollinations.ai/mcp"),
+        new URL("https://mcp.pollinations.ai"),
         {
             fetch: localFetch,
             requestInit: {
@@ -44,13 +45,13 @@ async function connectClient(options = {}, token = TOKEN) {
 
 test("serves health and requires bearer auth", async () => {
     const health = await worker.fetch(
-        new Request("https://mcp.pollinations.ai/"),
+        new Request("https://mcp.pollinations.ai/health"),
     );
     assert.equal(health.status, 200);
-    assert.equal((await health.json()).endpoint, "/mcp");
+    assert.equal((await health.json()).endpoint, "/");
 
     const unauthorized = await worker.fetch(
-        new Request("https://mcp.pollinations.ai/mcp", {
+        new Request("https://mcp.pollinations.ai", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: "{}",
@@ -61,6 +62,11 @@ test("serves health and requires bearer auth", async () => {
         unauthorized.headers.get("www-authenticate"),
         'Bearer realm="mcp.pollinations.ai"',
     );
+
+    const oldEndpoint = await worker.fetch(
+        new Request("https://mcp.pollinations.ai/mcp"),
+    );
+    assert.equal(oldEndpoint.status, 404);
 });
 
 test("serves modern and legacy clients without sessions", async () => {
@@ -82,6 +88,22 @@ test("serves modern and legacy clients without sessions", async () => {
         EXPECTED_TOOLS,
     );
     await legacy.close();
+});
+
+test("rejects JSON-RPC batches", async () => {
+    const response = await worker.fetch(
+        new Request("https://mcp.pollinations.ai", {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${TOKEN}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify([
+                { jsonrpc: "2.0", id: 1, method: "tools/list" },
+            ]),
+        }),
+    );
+    assert.equal(response.status, 400);
 });
 
 test("keeps bearer tokens scoped to each request", async (t) => {
@@ -121,70 +143,132 @@ test("keeps bearer tokens scoped to each request", async (t) => {
     await Promise.all([firstClient.close(), secondClient.close()]);
 });
 
-test("maps the image API response format to MCP media blocks", async (t) => {
+test("generateText uses the non-streaming chat completion contract", async (t) => {
     const originalFetch = globalThis.fetch;
-    const requestBodies = [];
+    let completionBody;
     t.after(() => {
         globalThis.fetch = originalFetch;
     });
 
-    globalThis.fetch = async (input, init) => {
-        assert.equal(
-            String(input),
-            "https://gen.pollinations.ai/v1/images/generations",
-        );
-        assert.equal(
-            new Headers(init?.headers).get("authorization"),
-            `Bearer ${TOKEN}`,
-        );
-        const body = JSON.parse(init.body);
-        requestBodies.push(body);
-
-        if (body.response_format === "url") {
+    globalThis.fetch = async (input, init = {}) => {
+        const url = String(input);
+        if (url === "https://gen.pollinations.ai/text/models") {
+            return Response.json([{ name: "openai" }]);
+        }
+        if (url === "https://gen.pollinations.ai/v1/chat/completions") {
+            completionBody = JSON.parse(init.body);
             return Response.json({
-                created: 1,
-                data: [{ url: "https://pollinations.ai/generated/image.jpg" }],
+                model: "openai",
+                choices: [
+                    {
+                        message: { role: "assistant", content: "hello" },
+                        finish_reason: "stop",
+                    },
+                ],
+                usage: { completion_tokens: 1 },
             });
         }
-        return Response.json({
-            created: 2,
-            data: [{ b64_json: "iVBORw0KGgo=" }],
-        });
+        throw new Error(`Unexpected URL: ${url}`);
     };
 
     const client = await connectClient({
         versionNegotiation: { mode: "auto" },
     });
-    const linked = await client.callTool({
-        name: "generateImage",
-        arguments: { prompt: "a bee", response_format: "url" },
-    });
-    assert.deepEqual(linked.content[0], {
-        type: "resource_link",
-        uri: "https://pollinations.ai/generated/image.jpg",
-        name: "Generated image",
+    const generateTextTool = (await client.listTools()).tools.find(
+        ({ name }) => name === "generateText",
+    );
+    assert.ok(generateTextTool);
+    assert.equal(generateTextTool.inputSchema.properties.stream, undefined);
+    assert.equal(
+        generateTextTool.inputSchema.properties.stream_options,
+        undefined,
+    );
+
+    const result = await client.callTool({
+        name: "generateText",
+        arguments: {
+            model: "openai",
+            messages: [{ role: "user", content: "hi" }],
+        },
     });
 
-    const embedded = await client.callTool({
-        name: "generateImage",
-        arguments: { prompt: "a flower", response_format: "b64_json" },
+    assert.equal(result.content[0].text, "hello");
+    assert.deepEqual(completionBody, {
+        messages: [{ role: "user", content: "hi" }],
+        model: "openai",
     });
-    assert.deepEqual(embedded.content[0], {
-        type: "image",
-        data: "iVBORw0KGgo=",
+    await client.close();
+});
+
+test("uploads generated images and returns an MCP resource link", async (t) => {
+    const originalFetch = globalThis.fetch;
+    let generationBody;
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+
+    globalThis.fetch = async (input, init) => {
+        const url = String(input);
+        assert.equal(
+            new Headers(init?.headers).get("authorization"),
+            `Bearer ${TOKEN}`,
+        );
+        if (url === "https://gen.pollinations.ai/v1/images/generations") {
+            generationBody = JSON.parse(init.body);
+            return Response.json({
+                created: 1,
+                data: [
+                    {
+                        url: "https://gen.pollinations.ai/image/a%20bee",
+                    },
+                ],
+            });
+        }
+        if (url === "https://gen.pollinations.ai/image/a%20bee") {
+            return new Response(new Uint8Array([1, 2, 3]), {
+                headers: { "Content-Type": "image/png" },
+            });
+        }
+        if (url === "https://media.pollinations.ai/upload") {
+            const file = init.body.get("file");
+            assert.equal(file.type, "image/png");
+            assert.deepEqual(
+                new Uint8Array(await file.arrayBuffer()),
+                new Uint8Array([1, 2, 3]),
+            );
+            assert.equal(init.body.get("tags"), null);
+            return Response.json({
+                url: "https://media.pollinations.ai/generated-image",
+            });
+        }
+        throw new Error(`Unexpected URL: ${url}`);
+    };
+
+    const client = await connectClient({
+        versionNegotiation: { mode: "auto" },
+    });
+    const result = await client.callTool({
+        name: "generateImage",
+        arguments: { prompt: "a bee" },
+    });
+    assert.deepEqual(result.content[0], {
+        type: "resource_link",
+        uri: "https://media.pollinations.ai/generated-image",
+        name: "Generated image",
         mimeType: "image/png",
     });
-    assert.deepEqual(requestBodies, [
-        { prompt: "a bee", response_format: "url" },
-        { prompt: "a flower", response_format: "b64_json" },
-    ]);
+    assert.deepEqual(generationBody, {
+        prompt: "a bee",
+        response_format: "url",
+    });
 
     await client.close();
 });
 
-test("proxies discovery, embeddings, 3D, and video", async (t) => {
+test("proxies discovery and uploads generated audio, video, and 3D", async (t) => {
     const originalFetch = globalThis.fetch;
     const seen = [];
+    const uploadedTypes = [];
     t.after(() => {
         globalThis.fetch = originalFetch;
     });
@@ -197,7 +281,10 @@ test("proxies discovery, embeddings, 3D, and video", async (t) => {
         });
 
         if (url.endsWith("/audio/models?community=false")) {
-            return Response.json([{ name: "speech-test" }]);
+            return Response.json([
+                { name: "speech-test" },
+                { name: "audio-agent", agent: true },
+            ]);
         }
         if (url.endsWith("/video/models")) {
             return Response.json([{ name: "veo" }]);
@@ -224,6 +311,18 @@ test("proxies discovery, embeddings, 3D, and video", async (t) => {
                 headers: { "Content-Type": "video/mp4" },
             });
         }
+        if (url.endsWith("/audio/hello?model=speech-test")) {
+            return new Response(new Uint8Array([7, 8, 9]), {
+                headers: { "Content-Type": "audio/mpeg" },
+            });
+        }
+        if (url === "https://media.pollinations.ai/upload") {
+            const file = init.body.get("file");
+            uploadedTypes.push(file.type);
+            return Response.json({
+                url: `https://media.pollinations.ai/${uploadedTypes.length}`,
+            });
+        }
         throw new Error(`Unexpected URL: ${url}`);
     };
 
@@ -235,6 +334,14 @@ test("proxies discovery, embeddings, 3D, and video", async (t) => {
         arguments: { type: "audio", community: false },
     });
     assert.match(models.content[0].text, /speech-test/);
+
+    const agents = await client.callTool({
+        name: "listModels",
+        arguments: { type: "audio", community: false, agent: true },
+    });
+    assert.match(agents.content[0].text, /audio-agent/);
+    assert.match(agents.content[0].text, /"agent": true/);
+    assert.doesNotMatch(agents.content[0].text, /speech-test/);
 
     const status = await client.callTool({
         name: "getModelStatus",
@@ -252,14 +359,39 @@ test("proxies discovery, embeddings, 3D, and video", async (t) => {
         name: "generate3D",
         arguments: { prompt: "a bee" },
     });
-    assert.equal(model3d.content[0].resource.mimeType, "model/gltf-binary");
-    assert.equal(model3d.content[0].resource.blob, "AQID");
+    assert.deepEqual(model3d.content[0], {
+        type: "resource_link",
+        uri: "https://media.pollinations.ai/1",
+        name: "Generated 3D model",
+        mimeType: "model/gltf-binary",
+    });
 
     const video = await client.callTool({
         name: "generateVideo",
         arguments: { prompt: "a bee" },
     });
-    assert.equal(video.content[0].resource.mimeType, "video/mp4");
+    assert.deepEqual(video.content[0], {
+        type: "resource_link",
+        uri: "https://media.pollinations.ai/2",
+        name: "Generated video",
+        mimeType: "video/mp4",
+    });
+
+    const audio = await client.callTool({
+        name: "generateAudio",
+        arguments: { text: "hello", model: "speech-test" },
+    });
+    assert.deepEqual(audio.content[0], {
+        type: "resource_link",
+        uri: "https://media.pollinations.ai/3",
+        name: "Generated audio",
+        mimeType: "audio/mpeg",
+    });
+    assert.deepEqual(uploadedTypes, [
+        "model/gltf-binary",
+        "video/mp4",
+        "audio/mpeg",
+    ]);
 
     assert.ok(
         seen.every(({ authorization }) => authorization === `Bearer ${TOKEN}`),

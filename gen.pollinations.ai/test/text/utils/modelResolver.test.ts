@@ -96,6 +96,21 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
+    it("routes Nemotron 3.5 Lightning directly to Fireworks without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "nemotron-3.5-lightning",
+        });
+
+        expect(result.options.model).toBe(
+            "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b",
+        );
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.fireworks.ai/inference/v1",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
     it("routes Step Flash directly to DeepInfra without fallback", () => {
         const result = resolveModelConfig(messages, { model: "step-flash" });
 
@@ -114,8 +129,8 @@ describe("resolveModelConfig", () => {
 
         expect(result.options.model).toBe("qwen/qwen3.7-flash");
         expect(result.options.modelConfig).toMatchObject({
-            provider: "openai",
-            "custom-host": "https://openrouter.ai/api/v1",
+            provider: "openrouter",
+            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
         });
         expect(result.options.provider).toEqual({
             only: ["Alibaba"],
@@ -128,8 +143,8 @@ describe("resolveModelConfig", () => {
 
         expect(result.options.model).toBe("qwen/qwen3.8-max");
         expect(result.options.modelConfig).toMatchObject({
-            provider: "openai",
-            "custom-host": "https://openrouter.ai/api/v1",
+            provider: "openrouter",
+            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
         });
         expect(result.options.provider).toEqual({
             only: ["Alibaba"],
@@ -150,6 +165,22 @@ describe("resolveModelConfig", () => {
             "custom-host": "https://api.fireworks.ai/inference/v1",
         });
         expect(result.options.provider).toBeUndefined();
+    });
+
+    it("pins Qwen3.8 27B to Chutes on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "qwen3.8-27b",
+        });
+
+        expect(result.options.model).toBe("qwen/qwen3.8-27b");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openrouter",
+            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
+        });
+        expect(result.options.provider).toEqual({
+            only: ["Chutes"],
+            allow_fallbacks: false,
+        });
     });
 
     it("routes Kimi K3 directly to Fireworks without fallback", () => {
@@ -194,11 +225,60 @@ describe("resolveModelConfig", () => {
 
         expect(result.options.model).toBe("x-ai/grok-4.6");
         expect(result.options.modelConfig).toMatchObject({
-            provider: "openai",
-            "custom-host": "https://openrouter.ai/api/v1",
+            provider: "openrouter",
+            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
         });
         expect(result.options.provider).toEqual({
             only: ["xai/zdr"],
+            allow_fallbacks: false,
+        });
+    });
+
+    it("pins GLM-5.3 to Z.AI FP8 on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, { model: "glm-5.3" });
+
+        expect(result.options.model).toBe("z-ai/glm-5.3");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openrouter",
+            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
+        });
+        expect(result.options.provider).toEqual({
+            only: ["z-ai/fp8"],
+            allow_fallbacks: false,
+        });
+    });
+
+    it.each([
+        ["qwen-coder-large", "qwen/qwen3-coder-next", "parasail/bf16"],
+        ["qwen-vision", "qwen/qwen3-vl-30b-a3b-instruct", "alibaba"],
+        ["qwen-vision-pro", "qwen/qwen3-vl-235b-a22b-thinking", "alibaba"],
+        [
+            "mistral-small-3.2",
+            "mistralai/mistral-small-3.2-24b-instruct",
+            "deepinfra/fp8",
+        ],
+        ["gemma", "google/gemma-4-26b-a4b-it", "novita/bf16"],
+        ["gemma-4-31b", "google/gemma-4-31b-it", "novita/bf16"],
+        ["mimo-v2.5", "xiaomi/mimo-v2.5", "xiaomi/fp8"],
+        ["mimo-v2.5-pro", "xiaomi/mimo-v2.5-pro", "xiaomi/fp8"],
+        ["llama-scout", "meta-llama/llama-4-scout", "deepinfra/fp8"],
+    ])("pins %s to %s through %s without fallback", (model, route, provider) => {
+        const result = resolveModelConfig(messages, { model });
+
+        expect(result.options.model).toBe(route);
+        expect(result.options.provider).toEqual({
+            only: [provider],
+            allow_fallbacks: false,
+        });
+    });
+
+    it("excludes Mistral's non-standard endpoint variants", () => {
+        const result = resolveModelConfig(messages, { model: "mistral" });
+
+        expect(result.options.model).toBe("mistralai/mistral-small-2603");
+        expect(result.options.provider).toEqual({
+            only: ["mistral"],
+            ignore: ["mistral/zdr", "mistral/us", "mistral/eu"],
             allow_fallbacks: false,
         });
     });

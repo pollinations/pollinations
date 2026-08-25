@@ -24,7 +24,6 @@ export type AuthVariables = {
     auth: {
         user?: AuthUser;
         apiKey?: AuthenticatedApiKey;
-        requireAuthorization: (options?: { message?: string }) => Promise<void>;
         requireUser: () => AuthUser;
         requireModelAccess: () => void;
         agentRun?: AgentRunClaims;
@@ -42,6 +41,9 @@ export type AuthEnv = {
     Variables: LoggerVariables & AuthVariables & Partial<ModelVariables>;
 };
 
+const AUTHENTICATION_REQUIRED_MESSAGE =
+    "A valid API key is required. Get one at https://enter.pollinations.ai/keys";
+
 function installAuth(
     c: Context<AuthEnv>,
     authResult: {
@@ -52,30 +54,18 @@ function installAuth(
 ): void {
     const { user, apiKey, agentRun } = authResult;
 
-    const requireAuthorization = async (options?: {
-        message?: string;
-    }): Promise<void> => {
+    const requireUser = (): AuthUser => {
         if (!user) {
             throw new HTTPException(401, {
-                message: options?.message,
+                message: AUTHENTICATION_REQUIRED_MESSAGE,
             });
         }
-    };
-
-    const requireUser = (): AuthUser => {
-        if (!user) throw new HTTPException(401);
         return user;
     };
 
     function requireModelAccess(): void {
         const model = c.var.model;
         if (!model) return;
-
-        if (agentRun && model.communityEndpoint) {
-            throw new HTTPException(403, {
-                message: "Agent run tokens cannot call community models",
-            });
-        }
 
         if (!apiKey?.permissions?.models) return;
 
@@ -89,7 +79,6 @@ function installAuth(
     c.set("auth", {
         user,
         apiKey,
-        requireAuthorization,
         requireUser,
         requireModelAccess,
         ...(agentRun && { agentRun }),

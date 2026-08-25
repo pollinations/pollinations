@@ -36,6 +36,11 @@ export const COMMUNITY_MODEL_ALLOWED_GITHUB_IDS = [
     240205932, // pollinations-router
     57826942, // guus6457
     36392751, // chigwell
+    228795921, //novastardev
+    30191185, // rekty
+    85689068, // pegalink
+    147928812, // iotserver24
+    24752658, // zero2launch
 ] as const;
 
 const COMMUNITY_MODEL_ALLOWED_GITHUB_ID_SET = new Set<number>(

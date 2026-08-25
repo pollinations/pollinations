@@ -57,6 +57,7 @@ function generationExecutor(
     auth: GenerationAuthSnapshot,
     requestId: string,
     balanceCheckResult: BalanceCheckResult,
+    apiKeyBudgetEstimate: number | undefined,
     registerGenerationCacheWrite: (promise: Promise<void>) => void,
 ): Hono<Env> {
     const executor = new Hono<Env>()
@@ -75,6 +76,7 @@ function generationExecutor(
         .use("*", balance)
         .use("*", async (c, next) => {
             c.var.balance.balanceCheckResult = balanceCheckResult;
+            c.var.balance.apiKeyBudgetEstimate = apiKeyBudgetEstimate;
             await next();
         })
         .route("/", generationExecutorRoutes);
@@ -88,6 +90,7 @@ export async function executeGeneration(
     auth: GenerationAuthSnapshot,
     requestId: string,
     balanceCheckResult: BalanceCheckResult,
+    apiKeyBudgetEstimate: number | undefined,
     env: CloudflareBindings,
 ): Promise<DetachedGeneration> {
     const promises: Promise<unknown>[] = [];
@@ -103,6 +106,7 @@ export async function executeGeneration(
         auth,
         requestId,
         balanceCheckResult,
+        apiKeyBudgetEstimate,
         (promise) => {
             cacheWrite = promise;
         },

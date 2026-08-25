@@ -146,34 +146,40 @@ const ChatCompletionMessageContentPartRedactedThinkingSchema = z.object({
     data: z.string(),
 });
 
-const ChatCompletionRequestSystemMessageSchema = z.object({
-    content: z.union([
-        z.string(),
-        z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
-    ]),
-    role: z.literal("system"),
-    name: z.string().optional(),
-    cache_control: CacheControlSchema,
-});
+const ChatCompletionRequestSystemMessageSchema = z
+    .object({
+        content: z.union([
+            z.string(),
+            z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
+        ]),
+        role: z.literal("system"),
+        name: z.string().optional(),
+        cache_control: CacheControlSchema,
+    })
+    .passthrough();
 
-const ChatCompletionRequestDeveloperMessageSchema = z.object({
-    content: z.union([
-        z.string(),
-        z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
-    ]),
-    role: z.literal("developer"),
-    name: z.string().optional(),
-    cache_control: CacheControlSchema,
-});
+const ChatCompletionRequestDeveloperMessageSchema = z
+    .object({
+        content: z.union([
+            z.string(),
+            z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
+        ]),
+        role: z.literal("developer"),
+        name: z.string().optional(),
+        cache_control: CacheControlSchema,
+    })
+    .passthrough();
 
-const ChatCompletionRequestUserMessageSchema = z.object({
-    content: z.union([
-        z.string(),
-        z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
-    ]),
-    role: z.literal("user"),
-    name: z.string().optional(),
-});
+const ChatCompletionRequestUserMessageSchema = z
+    .object({
+        content: z.union([
+            z.string(),
+            z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
+        ]),
+        role: z.literal("user"),
+        name: z.string().optional(),
+    })
+    .passthrough();
 
 const ChatCompletionMessageToolCallSchema = z.object({
     id: z.string(),
@@ -188,44 +194,51 @@ const ChatCompletionMessageToolCallsSchema = z.array(
     ChatCompletionMessageToolCallSchema,
 );
 
-const ChatCompletionRequestAssistantMessageSchema = z.object({
-    content: z
-        .union([
-            z.string(),
-            z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
-        ])
-        .nullable()
-        .optional(),
-    role: z.literal("assistant"),
-    name: z.string().optional(),
-    tool_calls: ChatCompletionMessageToolCallsSchema.optional(),
-    function_call: z
-        .object({
-            arguments: z.string(),
-            name: z.string(),
-        })
-        .nullable()
-        .optional(),
-    cache_control: CacheControlSchema,
-});
+const ChatCompletionRequestAssistantMessageSchema = z
+    .object({
+        content: z
+            .union([
+                z.string(),
+                z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
+            ])
+            .nullable()
+            .optional(),
+        role: z.literal("assistant"),
+        name: z.string().optional(),
+        tool_calls: ChatCompletionMessageToolCallsSchema.optional(),
+        function_call: z
+            .object({
+                arguments: z.string(),
+                name: z.string(),
+            })
+            .nullable()
+            .optional(),
+        cache_control: CacheControlSchema,
+    })
+    .passthrough();
 
-const ChatCompletionRequestToolMessageSchema = z.object({
-    role: z.literal("tool"),
-    content: z
-        .union([
-            z.string(),
-            z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
-        ])
-        .nullable(),
-    tool_call_id: z.string(),
-    cache_control: CacheControlSchema,
-});
+const ChatCompletionRequestToolMessageSchema = z
+    .object({
+        role: z.literal("tool"),
+        content: z
+            .union([
+                z.string(),
+                z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
+            ])
+            .nullable(),
+        tool_call_id: z.string(),
+        name: z.string().optional(),
+        cache_control: CacheControlSchema,
+    })
+    .passthrough();
 
-const ChatCompletionRequestFunctionMessageSchema = z.object({
-    role: z.literal("function"),
-    content: z.string().nullable(),
-    name: z.string(),
-});
+const ChatCompletionRequestFunctionMessageSchema = z
+    .object({
+        role: z.literal("function"),
+        content: z.string().nullable(),
+        name: z.string(),
+    })
+    .passthrough();
 
 const ChatCompletionRequestMessageSchema = z.union([
     ChatCompletionRequestSystemMessageSchema,
@@ -514,14 +527,19 @@ export type CreateChatCompletionResponse = z.infer<
     typeof CreateChatCompletionResponseSchema
 >;
 
-const OpenAIModelSchema = z
+export const OpenAIModelSchema = z
     .object({
         id: z.string(),
         object: z.literal("model"),
         created: z.number(),
+        owned_by: z.string().optional(),
         input_modalities: z.array(z.string()).optional(),
         output_modalities: z.array(z.string()).optional(),
         supported_endpoints: z.array(z.string()).optional(),
+        agent: z.boolean().optional(),
+        base_model: z.string().optional(),
+        pricing: z.record(z.string(), z.string()).optional(),
+        capabilities: z.array(z.string()).optional(),
         tools: z.boolean().optional(),
         reasoning: z.boolean().optional(),
         context_length: z.number().optional(),
@@ -530,6 +548,8 @@ const OpenAIModelSchema = z
     .meta({
         description: "OpenAI-compatible model object with capability metadata",
     });
+
+export const GetModelResponseSchema = OpenAIModelSchema;
 
 export const GetModelsResponseSchema = z
     .object({
@@ -554,9 +574,15 @@ const imageNField = z
     .optional()
     .default(1)
     .meta({ description: "Number of images to generate (currently max 1)" });
-const imageSizeField = z.string().optional().default("1024x1024").meta({
+const imageSizeMeta = {
     description: "Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512)",
-});
+};
+const imageSizeField = z
+    .string()
+    .optional()
+    .default("1024x1024")
+    .meta(imageSizeMeta);
+const imageEditSizeField = z.string().optional().meta(imageSizeMeta);
 const imageQualityField = z
     .enum(["standard", "hd", "low", "medium", "high"])
     .optional()
@@ -660,7 +686,7 @@ export const CreateImageEditRequestSchema = z
             }),
         model: imageModelField,
         n: imageNField,
-        size: imageSizeField,
+        size: imageEditSizeField,
         quality: imageQualityField,
         resolution: imageResolutionField,
         safe: SafeSchema,

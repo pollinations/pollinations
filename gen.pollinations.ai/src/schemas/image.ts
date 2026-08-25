@@ -109,7 +109,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
     }),
     audio: z.coerce.boolean().optional().default(false).meta({
         description:
-            "Generate audio for the video. Only applies to video models. `wan`, `wan-3.0`, and `minimax-h3` always generate audio regardless of this flag. For `veo`, set to `true` to enable audio.",
+            "Generate audio for the video. Only applies to video models. `wan` and `minimax-h3` always generate audio regardless of this flag. For `veo` and `wan-3.0`, set to `true` to enable audio.",
     }),
 });
 

@@ -663,21 +663,44 @@ const IMAGE_BASE_SERVICES = {
     },
     "wan-3.0": {
         aliases: [],
-        provider: "openrouter",
+        provider: "fal",
         brand: "Alibaba",
         category: "video",
         addedDate: new Date("2026-08-25").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // OpenRouter Alibaba endpoint, discounted rate verified by direct
-        // billed requests on 2026-08-25. The provider has a 5-second minimum.
+        // Fal Prime rates verified against live endpoints on 2026-08-25.
         cost: {
-            completionVideoSeconds: 0.0425,
+            completionVideoSeconds: 0.068, // per sec at 480p
         },
-        resolutions: ["480p"],
+        ...defineCostVariants(
+            {
+                "720p": {
+                    completionVideoSeconds: 0.14,
+                },
+                "1080p": {
+                    completionVideoSeconds: 0.28,
+                },
+            },
+            matchResolution("720p", "1080p"),
+            {
+                "720p": {
+                    label: "720p",
+                    description:
+                        "Applies when the requested video resolution is 720p.",
+                },
+                "1080p": {
+                    label: "1080p",
+                    description:
+                        "Applies when the requested video resolution is 1080p.",
+                },
+            },
+            "480p",
+        ),
+        resolutions: ["480p", "720p", "1080p"],
         title: "Wan 3.0",
         description:
-            "Five-second video with synchronized audio from text or a start image at 480p",
+            "Five-second video from text or a start image with optional audio at 480p, 720p, or 1080p",
         inputModalities: ["text", "image"],
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "audio_output"],

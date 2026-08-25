@@ -18,12 +18,10 @@ const OPENROUTER_VIDEO_URL = "https://openrouter.ai/api/v1/videos";
 const HAPPYHORSE_MODEL = "alibaba/happyhorse-1.1";
 const GROK_VIDEO_MODEL = "x-ai/grok-imagine-video";
 const GROK_VIDEO_15_MODEL = "x-ai/grok-imagine-video-1.5";
-const WAN_3_MODEL = "alibaba/wan-3.0";
 const POLL_INTERVAL_MS = 3000;
 const MAX_POLL_DELAY_MS = 30000;
 const HAPPYHORSE_POLL_TIMEOUT_MS = 5 * 60 * 1000;
 const GROK_POLL_TIMEOUT_MS = 3 * 60 * 1000;
-const WAN_3_POLL_TIMEOUT_MS = 5 * 60 * 1000;
 const HAPPYHORSE_ASPECT_RATIOS = [
     "16:9",
     "9:16",
@@ -33,7 +31,6 @@ const HAPPYHORSE_ASPECT_RATIOS = [
     "21:9",
     "9:21",
 ] as const;
-const WAN_3_ASPECT_RATIOS = ["16:9", "4:3", "1:1", "3:4", "9:16"] as const;
 
 interface OpenRouterVideoResponse {
     id: string;
@@ -193,69 +190,6 @@ export async function callOpenRouterGrokVideoAPI(
                 ...(safeParams.image?.[0] ? { promptImageTokens: 1 } : {}),
                 completionVideoSeconds: duration,
             },
-        },
-    };
-}
-
-export async function callOpenRouterWan3API(
-    prompt: string,
-    safeParams: ImageParams,
-): Promise<VideoGenerationResult> {
-    const duration = safeParams.duration ?? 5;
-    if (duration !== 5) {
-        throw new HttpError(
-            "Wan 3.0 currently supports exactly 5 seconds",
-            400,
-        );
-    }
-
-    const resolution = safeParams.resolution ?? "480p";
-    const requestBody: Record<string, unknown> = {
-        model: WAN_3_MODEL,
-        prompt,
-        resolution,
-        duration,
-        aspect_ratio: closestRatioLogSpace(
-            safeParams.width,
-            safeParams.height,
-            WAN_3_ASPECT_RATIOS,
-        ),
-        generate_audio: true,
-        seed: safeParams.seed,
-        provider: {
-            only: ["Alibaba"],
-            allow_fallbacks: false,
-        },
-    };
-
-    if (safeParams.image?.[0]) {
-        requestBody.frame_images = [
-            {
-                type: "image_url",
-                image_url: { url: safeParams.image[0] },
-                frame_type: "first_frame",
-            },
-        ];
-    }
-
-    const { buffer, providerCost } = await generateOpenRouterVideo(
-        requestBody,
-        WAN_3_POLL_TIMEOUT_MS,
-    );
-
-    logOps("Wan 3.0 generation complete", {
-        duration,
-        providerCost,
-        bufferSize: buffer.length,
-    });
-
-    return {
-        buffer,
-        mimeType: "video/mp4",
-        durationSeconds: duration,
-        trackingData: {
-            actualModel: "wan-3.0",
-            usage: { completionVideoSeconds: duration },
         },
     };
 }

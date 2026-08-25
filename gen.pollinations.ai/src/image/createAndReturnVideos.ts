@@ -12,7 +12,6 @@ import { callNovaReelAPI } from "./models/novaReelModel.ts";
 import {
     callHappyHorseAPI,
     callOpenRouterGrokVideoAPI,
-    callOpenRouterWan3API,
 } from "./models/openRouterVideoModel.ts";
 import { callPrunaVideoAPI } from "./models/prunaModel.ts";
 import { callSeedance25API } from "./models/seedance25VideoModel.ts";
@@ -22,6 +21,7 @@ import {
     callVeoAPI,
     type VideoGenerationResult,
 } from "./models/veoVideoModel.ts";
+import { callWan3FalAPI } from "./models/wan3FalVideoModel.ts";
 import {
     callWanAPI,
     callWanFastAPI,
@@ -85,7 +85,7 @@ export async function createAndReturnVideo(
             result = await callWanProAPI(prompt, safeParams);
             break;
         case "wan-3.0":
-            result = await callOpenRouterWan3API(prompt, safeParams);
+            result = await callWan3FalAPI(prompt, safeParams);
             break;
         case "p-video":
             result = await callPrunaVideoAPI(prompt, safeParams);

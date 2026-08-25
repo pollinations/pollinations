@@ -1858,10 +1858,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "wan-3.0": {
     "cost": {
-      "completionVideoSeconds": 0.0425,
+      "completionVideoSeconds": 0.068,
+    },
+    "costVariants": {
+      "1080p": {
+        "completionVideoSeconds": 0.28,
+      },
+      "720p": {
+        "completionVideoSeconds": 0.14,
+      },
     },
     "price": {
-      "completionVideoSeconds": 0.0425,
+      "completionVideoSeconds": 0.068,
     },
   },
   "wan-fast": {

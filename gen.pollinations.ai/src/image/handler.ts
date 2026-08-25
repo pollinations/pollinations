@@ -20,8 +20,10 @@ import {
     setServerRegistryBinding,
     VALID_TYPES,
 } from "./availableServers.ts";
-import { callCommunityImageEndpoint } from "./communityEndpoint.ts";
-import { callCommunityVideoEndpoint } from "./communityEndpoint.ts";
+import {
+    callCommunityImageEndpoint,
+    callCommunityVideoEndpoint,
+} from "./communityEndpoint.ts";
 import {
     type AuthResult,
     createAndReturnImageCached,

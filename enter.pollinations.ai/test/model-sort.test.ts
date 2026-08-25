@@ -62,6 +62,40 @@ describe("model sorting", () => {
         ).toEqual(["free-but-measured", "expensive", "cheap", "unknown"]);
     });
 
+    it("sorts measured text speed fastest first with limited data last", () => {
+        const speedModels = [
+            model("unknown"),
+            model("limited", {
+                health: {
+                    eligibleRequests: 4,
+                    successfulRequests: 4,
+                    successRate: 100,
+                    tokensPerSecond: 200,
+                },
+            }),
+            model("slow", {
+                health: {
+                    eligibleRequests: 10,
+                    successfulRequests: 10,
+                    successRate: 100,
+                    tokensPerSecond: 20,
+                },
+            }),
+            model("fast", {
+                health: {
+                    eligibleRequests: 10,
+                    successfulRequests: 10,
+                    successRate: 100,
+                    tokensPerSecond: 80,
+                },
+            }),
+        ];
+
+        expect(
+            sortModels(speedModels, "speed").map(({ name }) => name),
+        ).toEqual(["fast", "slow", "unknown", "limited"]);
+    });
+
     it("sorts by display title or groups by brand and then title", () => {
         const namedModels = [
             model("zeta", { displayName: "Zulu", brand: "openai" }),

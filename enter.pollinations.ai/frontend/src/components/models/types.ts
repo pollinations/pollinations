@@ -1,3 +1,5 @@
+import type { ModelHealth } from "./model-health.tsx";
+
 export type ModelCategory =
     | "text"
     | "image"
@@ -91,4 +93,6 @@ export type ModelPrice = {
     priceAdjustments?: ModelPriceAdjustment[];
     // Real usage data from Tinybird (rolling 7-day average)
     realAvgCost?: number;
+    // Recent success and speed data when available.
+    health?: ModelHealth;
 };

@@ -1,5 +1,6 @@
 import { Tooltip } from "@pollinations/ui";
 import { type FC, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { ModelHealthSummary } from "./model-health.tsx";
 import {
     CAPABILITY_ICON,
     getCommunityModelIcon,
@@ -239,6 +240,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                         )}
                     </div>
                     <ModelId name={model.name} showCopyIcon />
+                    <ModelHealthSummary health={model.health} />
                     {model.brandUrl && model.brand && (
                         <a
                             href={model.brandUrl}

@@ -20,6 +20,7 @@ export const MODEL_SORTS = [
     "oldest",
     "price-low",
     "price-high",
+    "speed",
     "title",
     "title-desc",
     "brand",

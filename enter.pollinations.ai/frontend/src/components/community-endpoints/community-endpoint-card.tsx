@@ -18,6 +18,10 @@ import {
 } from "@pollinations/ui";
 import { communityEndpointPriceFieldsForModality } from "@shared/community-endpoints.ts";
 import type { ReactNode } from "react";
+import {
+    type ModelHealth,
+    ModelHealthSummary,
+} from "../models/model-health.tsx";
 import { PriceBadge, type PriceBadgeConfig } from "../models/price-badge.tsx";
 import type { PriceKind } from "../models/types.ts";
 import {
@@ -29,6 +33,7 @@ import {
 
 type CommunityEndpointCardProps = {
     endpoint: CommunityEndpoint;
+    health?: ModelHealth;
     isToggling: boolean;
     onToggle: () => void;
     onEdit: () => void;
@@ -37,6 +42,7 @@ type CommunityEndpointCardProps = {
 
 export function CommunityEndpointCard({
     endpoint,
+    health,
     isToggling,
     onToggle,
     onEdit,
@@ -113,6 +119,10 @@ export function CommunityEndpointCard({
                     </IconButton>
                 </div>
             </div>
+
+            {!endpoint.hidden && (
+                <ModelHealthSummary health={health} className="mt-3" />
+            )}
 
             {endpoint.hidden && (
                 <Alert intent="danger" className="mt-3">

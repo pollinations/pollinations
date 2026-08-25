@@ -1,0 +1,35 @@
+{
+  "pr_number": 13863,
+  "title": "Add EAS AI STUDIO to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13863",
+  "merged_at": "2026-08-25T01:26:16Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [EAS AI STUDIO](https://www.ekin-ai-studio.my.id) to image\n- Create collaborative images using the Pollinations image API\n\nFixes #13857",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A new canvas blooms",
+    "blurb": "EAS AI STUDIO joined the garden. Bring collaborators, bring prompts, and let the pixels sort out the rest.",
+    "summary": "Added EAS AI STUDIO to the app directory, highlighting a collaborative image-making tool built with the Pollinations image API.",
+    "impact": "People browsing Pollinations-powered projects can now find EAS AI STUDIO and use it to create images together.",
+    "keywords": [
+      "community",
+      "apps",
+      "image-api",
+      "collaboration",
+      "EAS AI STUDIO"
+    ],
+    "visual_concept": "Depict EAS AI STUDIO as a cozy shared art desk: Polli, wearing a tiny painter's beret, helps several floating pixel canvases grow from a flower-filled workspace while a retro monitor shows collaborators placing colorful image tiles. The scene represents collaborative image generation through the Pollinations API, with code-plants and a prominently lime-green canvas glow.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny painter's beret as she arranges shared pixel-art canvases with friendly hands reaching in from a cozy studio desk; a retro monitor displays simple pixel text: 'EAS AI STUDIO', with code-plants, flowers, and a prominent lime green (#ecf874) glowing canvas. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, chunky sprites, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-25/PR-13863.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny painter's beret as she arranges shared pixel-art canvases with friendly hands reaching in from a cozy studio desk; a retro monitor displays simple pixel text: 'EAS AI STUDIO', with code-plants, flowers, and a prominent lime green (#ecf874) glowing canvas. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, chunky sprites, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-08-25T01:27:17.170157+00:00",
+  "app_name": "EAS AI STUDIO",
+  "app_url": "https://www.ekin-ai-studio.my.id"
+}

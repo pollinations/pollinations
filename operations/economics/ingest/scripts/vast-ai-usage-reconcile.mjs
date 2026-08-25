@@ -178,14 +178,28 @@ if (!Array.isArray(snapshot.data)) {
     throw new Error("Effective op_cloud snapshot must contain a data array");
 }
 const snapshotById = new Map(snapshot.data.map((row) => [row.entry_id, row]));
-const supersededRows = snapshot.data
-    .filter(
-        (row) =>
-            row.vendor === "vast.ai" &&
-            row.type === "gpu" &&
-            String(row.start ?? "").slice(0, 7) === month &&
-            !detailEntryIds.has(row.entry_id),
-    )
+const managedEntryIdPattern = /^cli:vast\.ai:(?:gpu|storage|download|upload):/;
+const managedRows = snapshot.data.filter(
+    (row) =>
+        row.vendor === "vast.ai" &&
+        row.type === "gpu" &&
+        String(row.start ?? "").slice(0, 7) === month &&
+        managedEntryIdPattern.test(String(row.entry_id ?? "")) &&
+        (row.account_id == null ||
+            row.account_id === "" ||
+            String(row.account_id) === shared.account_id) &&
+        !detailEntryIds.has(row.entry_id),
+);
+const unexpectedManagedRow = managedRows.find(
+    (row) => row.source !== "cli" && row.source !== "dashboard",
+);
+if (unexpectedManagedRow) {
+    throw new Error(
+        `Refusing to supersede Vast.ai row ${unexpectedManagedRow.entry_id} with unexpected source ${unexpectedManagedRow.source}`,
+    );
+}
+const supersededRows = managedRows
+    .filter((row) => row.source === "cli" || row.source === "dashboard")
     .sort((left, right) => left.entry_id.localeCompare(right.entry_id));
 const rows = [
     ...supersededRows.map((sourceRow) => ({

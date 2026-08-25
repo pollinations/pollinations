@@ -3,6 +3,7 @@ import type {
     AccountBalance,
     AccountKey,
     AccountProfile,
+    AccountQuestsResponse,
     AudioBinaryResponse,
     AudioGenerateOptions,
     AuthorizeDeviceOptions,
@@ -1484,6 +1485,23 @@ export class Pollinations {
         const url = `${this.baseUrl}/account/key/usage${qs ? `?${qs}` : ""}`;
 
         return this.getJson<UsageResponse>(url);
+    }
+
+    /**
+     * Get the quest catalog with the authenticated account's read-only
+     * status. Requires the `usage` account permission. Claiming rewards
+     * remains dashboard-only.
+     *
+     * @example
+     * ```ts
+     * const { quests } = await pollinations.accountQuests();
+     * const open = quests.filter(q => q.status === "open");
+     * ```
+     */
+    async accountQuests(): Promise<AccountQuestsResponse> {
+        return this.getJson<AccountQuestsResponse>(
+            `${this.baseUrl}/account/quests`,
+        );
     }
 
     // ============================================================================

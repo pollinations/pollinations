@@ -14,7 +14,6 @@ import {
     SearchIcon,
     Section,
     SparklesIcon,
-    Switch,
     TabButton,
     TokensIcon,
     TrendUpIcon,
@@ -35,7 +34,7 @@ import {
     fetchModelCatalog,
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
-import { getModelDisplayName, isPaidOnly } from "./model-info.ts";
+import { getModelDisplayName } from "./model-info.ts";
 import type { ModelScope, ModelSort } from "./model-search.ts";
 import { sortModels } from "./model-sort.ts";
 import {
@@ -184,7 +183,6 @@ export const Models: FC = () => {
     const activeSort = modelSearch.sort ?? "newest";
     const urlSearch = modelSearch.q ?? "";
     const [search, setSearch] = useState(urlSearch);
-    const [hidePaid, setHidePaid] = useState(false);
     const lastPushedSearchRef = useRef(urlSearch);
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
     const [catalogError, setCatalogError] = useState<string | null>(null);
@@ -204,12 +202,10 @@ export const Models: FC = () => {
     );
     const filteredModels = useMemo(
         () =>
-            scopedModels.filter(
-                (model) =>
-                    (!hidePaid || !isPaidOnly(model)) &&
-                    matchesQuery(model, query),
-            ),
-        [hidePaid, query, scopedModels],
+            query
+                ? scopedModels.filter((model) => matchesQuery(model, query))
+                : scopedModels,
+        [query, scopedModels],
     );
 
     const loadModelCatalog = useCallback(
@@ -408,7 +404,7 @@ export const Models: FC = () => {
                             })}
                         </div>
                     </div>
-                    <div className="grid w-full grid-cols-[minmax(0,28rem)_auto] items-start justify-between gap-x-2 gap-y-1.5">
+                    <div className="flex w-full items-center justify-between gap-2">
                         <div className="relative min-w-0 max-w-md flex-1">
                             <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />
                             <Input
@@ -477,16 +473,6 @@ export const Models: FC = () => {
                                 </div>
                             )}
                         </Dropdown>
-                        <div className="col-start-2 flex items-center gap-2 justify-self-end">
-                            <span className="text-xs font-medium text-theme-text-muted">
-                                Hide paid
-                            </span>
-                            <Switch
-                                checked={hidePaid}
-                                onChange={setHidePaid}
-                                ariaLabel="Hide paid models"
-                            />
-                        </div>
                     </div>
                 </div>
                 {activeScope === "community" && (
@@ -525,13 +511,9 @@ export const Models: FC = () => {
                         {catalogError}
                     </Alert>
                 )}
-                {sectionModels[activeTab].length === 0 ? (
+                {query && sectionModels[activeTab].length === 0 ? (
                     <p className="py-8 text-center text-sm text-theme-text-muted">
-                        {query
-                            ? `No ${searchTarget.toLowerCase()} match “${search.trim()}”.`
-                            : hidePaid
-                              ? `No ${searchTarget.toLowerCase()} available with Quest Pollen in this category.`
-                              : `No ${searchTarget.toLowerCase()} available.`}
+                        No {searchTarget.toLowerCase()} match “{search.trim()}”.
                     </p>
                 ) : (
                     <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">

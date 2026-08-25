@@ -608,3 +608,31 @@ describe("Pollinations model discovery", () => {
         );
     });
 });
+
+describe("Pollinations.accountQuests", () => {
+    it("fetches the quest catalog and returns it typed", async () => {
+        const client = newClient();
+        const questsResponse = {
+            quests: [
+                {
+                    id: "quest-sdk-methods",
+                    title: "Ship an SDK method",
+                    description: "Add a new account method to the SDK",
+                    category: "sdk",
+                    state: "available",
+                    status: "open",
+                    rewardAmount: 5,
+                    balanceBucket: "tier",
+                    url: null,
+                    reward: null,
+                },
+            ],
+        };
+        fetchMock.mockResolvedValueOnce(makeResponse(questsResponse));
+
+        await expect(client.accountQuests()).resolves.toEqual(questsResponse);
+        expect(fetchMock.mock.calls[0]?.[0]).toBe(
+            "https://example.test/account/quests",
+        );
+    });
+});

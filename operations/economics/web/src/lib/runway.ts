@@ -287,6 +287,30 @@ function balanceAwareForecasts(
     const currentPaidBurnByKey = new Map<string, number>();
     const coverageDayByKey = new Map<string, number>();
     const today = now.toISOString().slice(0, 10);
+
+    const usageCoverageDate = (row: OpCloudRow): string | null => {
+        const endDate = row.end.slice(0, 10);
+        let coverageDate: string | null = null;
+        if (/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
+            const endIsExclusive = row.end.slice(11, 19) === "00:00:00";
+            coverageDate = endIsExclusive
+                ? new Date(
+                      Date.parse(`${endDate}T00:00:00Z`) - 24 * 60 * 60 * 1_000,
+                  )
+                      .toISOString()
+                      .slice(0, 10)
+                : endDate;
+        }
+        if (coverageDate?.startsWith(currentMonth) && coverageDate <= today) {
+            return coverageDate;
+        }
+
+        const recordedDate = row.recorded_at.slice(0, 10);
+        return recordedDate.startsWith(currentMonth) && recordedDate <= today
+            ? recordedDate
+            : null;
+    };
+
     for (const row of cloudRows) {
         if (isOpCloudBalanceRow(row)) continue;
         const category = cloudCategory(row);
@@ -306,14 +330,7 @@ function balanceAwareForecasts(
                 key,
                 (currentPaidBurnByKey.get(key) ?? 0) + paidBurn,
             );
-            const endDate = row.end.slice(0, 10);
-            const recordedDate = row.recorded_at.slice(0, 10);
-            const coverageDate =
-                recordedDate.startsWith(currentMonth) && recordedDate <= today
-                    ? recordedDate
-                    : endDate.startsWith(currentMonth) && endDate <= today
-                      ? endDate
-                      : null;
+            const coverageDate = usageCoverageDate(row);
             if (coverageDate) {
                 coverageDayByKey.set(
                     key,

@@ -42,7 +42,7 @@ const cloud = (overrides: Partial<OpCloudRow> = {}): OpCloudRow => ({
     vendor: "google",
     type: "inference",
     start: "2026-08-01 00:00:00",
-    end: "2026-08-22 00:00:00",
+    end: "2026-08-23 00:00:00",
     credit: 0,
     paid: -220,
     currency: "USD",
@@ -271,6 +271,21 @@ describe("buildRunway", () => {
         expect(google?.values["2026-09:forecast"]).toBeCloseTo(-310, 6);
         expect(google?.values["2026-10:forecast"]).toBeCloseTo(-310, 6);
         expect(google?.forecastPaymentTiming).toBe("postpaid");
+    });
+
+    it("uses the usage boundary instead of a later ingestion date", () => {
+        const result = buildRunway([opening()], NOW, [
+            cloud({
+                vendor: "xai",
+                paid: -200,
+                end: "2026-08-21 00:00:00",
+                recorded_at: "2026-08-25 00:00:00.000",
+            }),
+            balance("xai", 0),
+        ]);
+        const xai = result.rows.find((row) => row.vendor === "xai");
+
+        expect(xai?.values["2026-09:forecast"]).toBeCloseTo(-310, 6);
     });
 
     it("treats xAI as postpaid when its checked balance is zero", () => {

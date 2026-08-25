@@ -602,6 +602,39 @@ export interface AccountBalance {
         paid: number;
     };
 }
+/** Quest category */
+export type QuestCategory = "setup" | "grow" | "build" | "contribute" | "community" | "easteregg";
+
+/** Quest reward information */
+export interface AccountQuestReward {
+    id: string;
+    questId: string | null;
+    title: string;
+    pollenAmount: number;
+    balanceBucket: "tier" | "pack";
+    earnedAt: string;
+    claimedAt: string | null;
+}
+
+/** A single quest with status and optional reward */
+export interface AccountQuest {
+    id: string;
+    title: string;
+    description: string;
+    category: QuestCategory;
+    state: "available" | "completed" | "coming_soon";
+    status: "open" | "completed" | "coming_soon";
+    rewardAmount: number;
+    balanceBucket: "tier" | "pack";
+    url: string | null;
+    reward: AccountQuestReward | null;
+}
+
+/** Response from GET /account/quests */
+export interface AccountQuestsResponse {
+    quests: AccountQuest[];
+}
+
 
 /** Usage record */
 export interface UsageRecord {

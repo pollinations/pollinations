@@ -29,6 +29,7 @@ import {
 } from "./extras.js";
 import type {
     AccountBalance,
+    AccountQuestsResponse,
     AccountKey,
     AccountProfile,
     AudioGenerateOptions,
@@ -495,6 +496,13 @@ export async function getProfile(): Promise<AccountProfile> {
  */
 export async function getBalance(): Promise<AccountBalance> {
     return getClient().accountBalance();
+}
+
+/**
+ * Get quest status
+ */
+export async function getQuests(): Promise<AccountQuestsResponse> {
+    return getClient().accountQuests();
 }
 
 /**

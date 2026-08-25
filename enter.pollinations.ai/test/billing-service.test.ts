@@ -482,7 +482,7 @@ test("paid-only events debit paid balance", async ({
     await mocks.enable("tinybird");
     const auth = await authenticate(budgetedApiKey.key);
     await env.DB.prepare(
-        "UPDATE user SET tier_balance = 10, pack_balance = 5 WHERE id = ?",
+        "UPDATE user SET tier_balance = 10, pack_balance = 2 WHERE id = ?",
     )
         .bind(auth.user.id)
         .run();
@@ -499,8 +499,29 @@ test("paid-only events debit paid balance", async ({
         payerBucket: "pack",
     });
     expect(await balances(auth.user.id, auth.apiKey.id)).toEqual({
-        user: { tier: 10, pack: 3 },
+        user: { tier: 10, pack: 0 },
         key: { budget: 98 },
+    });
+});
+
+test("zero-cost paid-only authorization still requires paid balance", async ({
+    budgetedApiKey,
+}) => {
+    const auth = await authenticate(budgetedApiKey.key);
+    await env.DB.prepare(
+        "UPDATE user SET tier_balance = 10, pack_balance = 0 WHERE id = ?",
+    )
+        .bind(auth.user.id)
+        .run();
+
+    await expect(
+        service().authorize(
+            budgetedApiKey.key,
+            authorization("zero-paid-only", 0, { paidOnly: true }),
+        ),
+    ).resolves.toEqual({
+        ok: false,
+        error: "insufficient_balance_or_budget",
     });
 });
 

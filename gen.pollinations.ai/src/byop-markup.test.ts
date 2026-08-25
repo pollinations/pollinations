@@ -336,7 +336,7 @@ describe("BYOP markup", () => {
         });
     });
 
-    it("requires paid-only preflight to have pack balance above the model estimate", async () => {
+    it("allows paid-only preflight when pack exactly covers a positive estimate", async () => {
         const vars = preflightVars({
             model: testModel("llama-maverick"),
             tierBalance: 10,
@@ -344,11 +344,25 @@ describe("BYOP markup", () => {
             pollenBalance: 2,
         });
 
-        await expect(
-            checkBalance(vars, fakeStatsEnv(1, "llama-maverick")),
-        ).rejects.toMatchObject({
-            status: 402,
+        await checkBalance(vars, fakeStatsEnv(1, "llama-maverick"));
+
+        expect(vars.balance.balanceCheckResult?.balances).toEqual({
+            "v1:meter:tier": 0,
+            "v1:meter:pack": 1,
         });
+    });
+
+    it("still requires paid balance for a zero-cost paid-only model", async () => {
+        const vars = preflightVars({
+            model: testModel("llama-maverick"),
+            tierBalance: 10,
+            packBalance: 0,
+            pollenBalance: 2,
+        });
+
+        await expect(
+            checkBalance(vars, fakeStatsEnv(0, "llama-maverick")),
+        ).rejects.toMatchObject({ status: 402 });
     });
 
     it("rejects finite API key budgets below the model estimate", async () => {

@@ -213,7 +213,11 @@ export async function authorizeBillingRequest(
                       OR api_key.pollen_balance >= ?
                   )
                   AND (
-                      (? = 1 AND COALESCE(payer.pack_balance, 0) >= ?)
+                      (
+                          ? = 1
+                          AND COALESCE(payer.pack_balance, 0) > 0
+                          AND COALESCE(payer.pack_balance, 0) >= ?
+                      )
                       OR (
                           ? = 0
                           AND (

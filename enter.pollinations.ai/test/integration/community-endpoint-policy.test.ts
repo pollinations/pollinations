@@ -162,11 +162,16 @@ describe("community endpoint configuration policy", () => {
             },
         );
         expect(tokenPriced).toMatchObject({
-            imagePricing: "tokens",
+            imagePricing: "request",
             promptTextPrice: 0,
-            promptImagePrice: 0.000001,
-            completionImagePrice: 0,
+            promptImagePrice: 0,
+            completionImagePrice: 0.2,
             paidOnly: true,
+            pending: {
+                imagePricing: "tokens",
+                promptImagePrice: 0.000001,
+                completionImagePrice: 0,
+            },
         });
 
         const privateModel = await postModel(

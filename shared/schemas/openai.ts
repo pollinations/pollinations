@@ -527,11 +527,12 @@ export type CreateChatCompletionResponse = z.infer<
     typeof CreateChatCompletionResponseSchema
 >;
 
-const OpenAIModelSchema = z
+export const OpenAIModelSchema = z
     .object({
         id: z.string(),
         object: z.literal("model"),
         created: z.number(),
+        owned_by: z.string().optional(),
         input_modalities: z.array(z.string()).optional(),
         output_modalities: z.array(z.string()).optional(),
         supported_endpoints: z.array(z.string()).optional(),
@@ -547,6 +548,8 @@ const OpenAIModelSchema = z
     .meta({
         description: "OpenAI-compatible model object with capability metadata",
     });
+
+export const GetModelResponseSchema = OpenAIModelSchema;
 
 export const GetModelsResponseSchema = z
     .object({

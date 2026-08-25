@@ -1,5 +1,6 @@
 import { IMAGE_SERVICES, type ImageModelName } from "@shared/registry/image.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
+import { validateUserMediaUrl } from "@shared/user-media-url.ts";
 import { z } from "zod";
 import { normalizeSeed, SENTINEL_SEED } from "@/util.ts";
 import { getDefaultSideLength } from "./models.js";
@@ -30,6 +31,31 @@ const sanitizedSideLength = z.preprocess((v) => {
     const parsed = Number.parseInt(v as string, 10);
     return Number.isInteger(parsed) ? parsed : undefined;
 }, z.int().optional());
+
+const publicReferenceUrl = z
+    .string()
+    .trim()
+    .superRefine((value, ctx) => {
+        if (!validateUserMediaUrl(value).ok) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message:
+                    "Reference images must use public HTTP(S) URLs without credentials or literal IP hosts.",
+            });
+        }
+    });
+
+const sanitizedInputReferences = z
+    .union([z.array(z.string()), z.string(), z.null(), z.undefined()])
+    .transform((value?: string[] | string | null) => {
+        const references = Array.isArray(value)
+            ? value
+            : typeof value === "string"
+              ? value.split("|")
+              : [];
+        return references.map((reference) => reference.trim()).filter(Boolean);
+    })
+    .pipe(z.array(publicReferenceUrl));
 
 function adjustImageSizeForModel(
     model: ImageModelName,
@@ -71,6 +97,7 @@ export const ImageParamsSchema = z
                     : value.split(",");
             })
             .catch([]),
+        input_references: sanitizedInputReferences.optional(),
         transparent: sanitizedBoolean.catch(false),
         reasoning: z
             .union([z.string(), z.boolean()])
@@ -145,6 +172,35 @@ export const ImageParamsSchema = z
                     code: z.ZodIssueCode.custom,
                     path: ["fps"],
                     message: "minimax-h3 outputs 24 FPS.",
+                });
+            }
+        }
+        if ((data.input_references?.length ?? 0) > 0) {
+            const definition = IMAGE_SERVICES[data.model] as ModelDefinition;
+            const maxInputReferences = definition.maxInputReferences ?? 0;
+            if (
+                !definition.videoCapabilities?.includes("reference_images") ||
+                maxInputReferences === 0
+            ) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["input_references"],
+                    message: `${data.model} does not support input_references.`,
+                });
+            } else if (
+                (data.input_references?.length ?? 0) > maxInputReferences
+            ) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["input_references"],
+                    message: `${data.model} supports at most ${maxInputReferences} input references.`,
+                });
+            }
+            if (data.image.length > 0) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["input_references"],
+                    message: `${data.model} cannot combine input_references with first/last-frame images.`,
                 });
             }
         }

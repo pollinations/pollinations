@@ -99,6 +99,8 @@ export interface VideoGenerateOptions extends RequestOptions {
     audio?: boolean;
     /** Reference image URL(s) for image-to-video. For video, image[0] is the start frame and image[1] is the end frame when supported. */
     referenceImage?: string | string[];
+    /** Visual reference URL(s) that guide supported models without fixing the first or last frame. */
+    inputReferences?: string | string[];
     /** Enable safety content filters (default: false) */
     safe?: boolean;
 }
@@ -850,11 +852,12 @@ export const MODEL_CATEGORIES = [
 /** Model category */
 export type ModelCategory = (typeof MODEL_CATEGORIES)[number];
 
-/** Per-model video frame-control capabilities (video models only) */
+/** Per-model video input and output capabilities */
 export type VideoCapability =
     | "start_frame"
     | "end_frame"
     | "keyframes"
+    | "reference_images"
     | "audio_output";
 
 /** Per-model agentic/text capabilities */
@@ -889,6 +892,7 @@ export interface ModelInfo {
     allowed_durations?: number[];
     duration_step?: number;
     max_reference_images?: number;
+    max_input_references?: number;
     max_reference_videos?: number;
     capabilities?: ModelCapability[];
     tools?: boolean;

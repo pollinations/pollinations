@@ -1,6 +1,7 @@
 import { CreateImageRequestSchema } from "@shared/schemas/openai.ts";
 import { describe, expect, it } from "vitest";
 import { ImageParamsSchema } from "../../src/image/params.ts";
+import { GenerateVideoRequestQueryParamsSchema } from "../../src/schemas/image.ts";
 import { SENTINEL_SEED } from "../../src/util.ts";
 
 describe("ImageParamsSchema", () => {
@@ -93,6 +94,72 @@ describe("ImageParamsSchema", () => {
             ImageParamsSchema.safeParse({
                 model: "minimax-h3",
                 fps: 30,
+            }).success,
+        ).toBe(false);
+    });
+
+    it("normalizes Seedance 2.5 input references using only pipe separators", () => {
+        expect(
+            ImageParamsSchema.parse({
+                model: "seedance-2.5",
+                input_references:
+                    "https://media.pollinations.ai/first||https://example.com/reference.png?crop=1,2|",
+            }).input_references,
+        ).toEqual([
+            "https://media.pollinations.ai/first",
+            "https://example.com/reference.png?crop=1,2",
+        ]);
+    });
+
+    it("uses the same pipe-only contract on the public video query", () => {
+        expect(
+            GenerateVideoRequestQueryParamsSchema.parse({
+                model: "seedance-2.5",
+                input_references:
+                    "https://media.pollinations.ai/first||https://example.com/reference.png?crop=1,2|",
+            }).input_references,
+        ).toEqual([
+            "https://media.pollinations.ai/first",
+            "https://example.com/reference.png?crop=1,2",
+        ]);
+    });
+
+    it("rejects unsupported, excessive, conflicting, and private input references", () => {
+        const references = [
+            "https://media.pollinations.ai/first",
+            "https://example.com/second.png",
+            "https://example.com/third.png",
+        ];
+
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "seedance-2.5",
+                input_references: references,
+            }).success,
+        ).toBe(true);
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "flux",
+                input_references: references[0],
+            }).success,
+        ).toBe(false);
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "seedance-2.5",
+                input_references: [...references, "https://example.com/4.png"],
+            }).success,
+        ).toBe(false);
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "seedance-2.5",
+                image: "https://example.com/frame.png",
+                input_references: references[0],
+            }).success,
+        ).toBe(false);
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "seedance-2.5",
+                input_references: "http://127.0.0.1/reference.png",
             }).success,
         ).toBe(false);
     });

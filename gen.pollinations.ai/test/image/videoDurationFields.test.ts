@@ -53,4 +53,20 @@ describe("video duration registry fields", () => {
         );
         expect(info.duration_step).toBe(6);
     });
+
+    it("keeps Seedance reference guidance separate from frame controls", () => {
+        const info = modelInfoFromDefinition(
+            "seedance-2.5",
+            IMAGE_SERVICES["seedance-2.5"],
+        );
+
+        expect(info.video_capabilities).toEqual([
+            "start_frame",
+            "end_frame",
+            "reference_images",
+            "audio_output",
+        ]);
+        expect(info.max_reference_images).toBe(2);
+        expect(info.max_input_references).toBe(3);
+    });
 });

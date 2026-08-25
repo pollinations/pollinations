@@ -137,6 +137,28 @@ describe("Convenience helpers", () => {
             undefined,
         ]);
     });
+
+    it("serializes video input references with the native pipe separator", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse(null, {
+                kind: "binary",
+                contentType: "video/mp4",
+            }),
+        );
+
+        await generateVideo("combine the references", {
+            model: "seedance-2.5",
+            inputReferences: [
+                "https://media.pollinations.ai/first",
+                "https://example.com/reference.png?crop=1,2",
+            ],
+        });
+
+        const url = new URL(fetchMock.mock.calls[0][0] as string);
+        expect(url.searchParams.get("input_references")).toBe(
+            "https://media.pollinations.ai/first|https://example.com/reference.png?crop=1,2",
+        );
+    });
 });
 
 // Helper: pull the seed query param from an image/video GET URL.

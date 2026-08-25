@@ -10,6 +10,11 @@ const IMAGE_URLS = [
     "https://image.example.com/start.png",
     "https://image.example.com/end.png",
 ];
+const INPUT_REFERENCES = [
+    "https://media.pollinations.ai/reference-one",
+    "https://example.com/reference-two.png",
+    "https://example.com/reference-three.png?crop=1,2",
+];
 const PNG_BYTES = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
 
 const baseParams: ImageParams = {
@@ -117,5 +122,58 @@ describe("Seedance 2.5 via Replicate", () => {
             }),
         ).rejects.toMatchObject({ status: 400 });
         expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it("forwards reference URLs directly without downloading or encoding them", async () => {
+        syncImageEnv(
+            {
+                REPLICATE_API_TOKEN: "replicate-test-key",
+            } as CloudflareBindings,
+            ["REPLICATE_API_TOKEN"],
+        );
+        const inputs: Record<string, unknown>[] = [];
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementation(async (url, init) => {
+                const href = typeof url === "string" ? url : url.toString();
+                if (href === PREDICTIONS_URL) {
+                    inputs.push(
+                        (
+                            JSON.parse(init?.body as string) as {
+                                input: Record<string, unknown>;
+                            }
+                        ).input,
+                    );
+                    return new Response(
+                        JSON.stringify({
+                            id: "pred-seedance-25-references",
+                            status: "succeeded",
+                            output: VIDEO_URL,
+                            metrics: { video_output_duration_seconds: 4 },
+                        }),
+                        { status: 201 },
+                    );
+                }
+                if (href === VIDEO_URL) {
+                    return new Response(new Uint8Array([0, 0, 0, 24]), {
+                        headers: { "Content-Type": "video/mp4" },
+                    });
+                }
+                return new Response("unexpected URL", { status: 404 });
+            });
+
+        await callSeedance25API("combine [Image1], [Image2], and [Image3]", {
+            ...baseParams,
+            image: [],
+            input_references: INPUT_REFERENCES,
+        });
+
+        expect(inputs[0]).toMatchObject({
+            reference_images: INPUT_REFERENCES,
+        });
+        expect(fetchSpy.mock.calls.map(([url]) => String(url))).toEqual([
+            PREDICTIONS_URL,
+            VIDEO_URL,
+        ]);
     });
 });

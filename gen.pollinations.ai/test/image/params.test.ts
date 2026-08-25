@@ -155,4 +155,82 @@ describe("ImageParamsSchema", () => {
             });
         }
     });
+
+    describe("reference_image", () => {
+        it("parses reference_image as array of URLs", () => {
+            const result = ImageParamsSchema.parse({
+                model: "seedance-2.5",
+                reference_image:
+                    "https://example.com/ref1.jpg|https://example.com/ref2.jpg",
+            });
+            expect(result.reference_image).toEqual([
+                "https://example.com/ref1.jpg",
+                "https://example.com/ref2.jpg",
+            ]);
+        });
+
+        it("parses single reference_image URL", () => {
+            const result = ImageParamsSchema.parse({
+                model: "seedance-2.5",
+                reference_image: "https://example.com/ref.jpg",
+            });
+            expect(result.reference_image).toEqual([
+                "https://example.com/ref.jpg",
+            ]);
+        });
+
+        it("accepts reference_image on seedance-2.5", () => {
+            expect(
+                ImageParamsSchema.safeParse({
+                    model: "seedance-2.5",
+                    reference_image: ["https://example.com/ref.jpg"],
+                }).success,
+            ).toBe(true);
+        });
+
+        it("rejects reference_image on non-seedance-2.5 models", () => {
+            const result = ImageParamsSchema.safeParse({
+                model: "flux",
+                reference_image: ["https://example.com/ref.jpg"],
+            });
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error.issues[0]).toMatchObject({
+                    path: ["reference_image"],
+                });
+            }
+        });
+    });
+
+    describe("reference_video", () => {
+        it("rejects reference_video (reserved for future)", () => {
+            const result = ImageParamsSchema.safeParse({
+                model: "seedance-2.5",
+                reference_video: "https://example.com/ref.mp4",
+            });
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error.issues[0]).toMatchObject({
+                    path: ["reference_video"],
+                    message: expect.stringContaining("reserved"),
+                });
+            }
+        });
+    });
+
+    describe("reference_audio", () => {
+        it("rejects reference_audio (reserved for future)", () => {
+            const result = ImageParamsSchema.safeParse({
+                model: "seedance-2.5",
+                reference_audio: "https://example.com/ref.mp3",
+            });
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error.issues[0]).toMatchObject({
+                    path: ["reference_audio"],
+                    message: expect.stringContaining("reserved"),
+                });
+            }
+        });
+    });
 });

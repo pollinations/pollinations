@@ -111,6 +111,21 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         description:
             "Generate audio for the video. Only applies to video models. `wan` and `minimax-h3` always generate audio regardless of this flag. For `veo` and `wan-3.0`, set to `true` to enable audio.",
     }),
+    reference_image: z
+        .union([z.array(z.string()), z.string()])
+        .optional()
+        .meta({
+            description:
+                "Reference image URL(s) for style or character consistency, distinct from start/end frames. Pipe-separated for multiple. Currently supported by: `seedance-2.5` (via `input_references`, up to 30 images). Other video models ignore this parameter.",
+        }),
+    reference_video: z.string().optional().meta({
+        description:
+            "Reference video URL for style or motion guidance. Currently supported by: none (reserved for future video-to-video models). Other models ignore this parameter.",
+    }),
+    reference_audio: z.string().optional().meta({
+        description:
+            "Reference audio URL for audio-driven video generation. Currently supported by: none (reserved for future audio-to-video models). Other models ignore this parameter.",
+    }),
 });
 
 const validateDuration = (

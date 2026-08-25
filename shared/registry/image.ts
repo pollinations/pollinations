@@ -1049,8 +1049,13 @@ const IMAGE_BASE_SERVICES = {
             "Four-second video with synchronized audio and first/last-frame control at 480p or 720p",
         inputModalities: ["text", "image"],
         outputModalities: ["video", "audio"],
-        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
-        maxReferenceImages: 2, // Video keyframe slots: start + end.
+        videoCapabilities: [
+            "start_frame",
+            "end_frame",
+            "audio_output",
+            "reference_image",
+        ],
+        maxReferenceImages: 32, // 2 keyframes + up to 30 reference images via input_references
         minDuration: 4,
         maxDuration: 4,
         defaultDuration: 4,

@@ -73,6 +73,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
             null,
         pollenBudget: apiKey.pollenBalance ?? null,
         pollenType: (apiKey.pollenType as "quest" | "paid" | null) ?? null,
+        questPollenOnly: apiKey.questPollenOnly ?? null,
         accountPermissions: (apiKey.permissions?.account as string[]) ?? null,
         expiryDays,
     });

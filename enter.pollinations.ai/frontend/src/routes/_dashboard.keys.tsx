@@ -48,6 +48,8 @@ function KeysPage() {
             permissions: {
                 allowedModels: formState.allowedModels,
                 pollenBudget: formState.pollenBudget,
+                pollenType: formState.pollenType,
+                questPollenOnly: formState.questPollenOnly,
                 accountPermissions: formState.accountPermissions?.length
                     ? formState.accountPermissions
                     : undefined,

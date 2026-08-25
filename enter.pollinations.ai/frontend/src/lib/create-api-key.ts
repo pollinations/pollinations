@@ -6,6 +6,7 @@ type Permissions = {
     allowedModels?: (string | ModelPermissionEntry)[] | null;
     pollenBudget?: number | null;
     pollenType?: "quest" | "paid" | null;
+    questPollenOnly?: boolean | null;
     accountPermissions?: string[] | null;
 };
 
@@ -45,6 +46,7 @@ export async function createKeyWithPermissions({
         allowedModels: permissions?.allowedModels ?? null,
         pollenBudget: permissions?.pollenBudget,
         pollenType: permissions?.pollenType,
+        questPollenOnly: permissions?.questPollenOnly,
         accountPermissions: permissions?.accountPermissions,
     };
 

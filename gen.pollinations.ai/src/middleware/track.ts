@@ -1,4 +1,5 @@
 import { getLogger } from "@logtape/logtape";
+import { resolveModelPollenType } from "@shared/auth/api-key.ts";
 import type { ApiKeyType } from "@shared/auth/api-key-creation.ts";
 import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
 import { payerBucketToMeter } from "@shared/billing/balance.ts";
@@ -374,7 +375,19 @@ export const track = (eventType: EventType) =>
                             c.var.balance.apiKeyReservation?.amount,
                         byopClientKeyId: c.var.auth?.apiKey?.byopClientKeyId,
                         modelPaidOnly: c.var.model?.definition.paidOnly,
-                        keyPollenType: c.var.auth?.apiKey?.pollenType,
+                        keyPollenType: (() => {
+                            const isPaidOnly =
+                                c.var.model?.definition.paidOnly ?? false;
+                            const questPollenOnly =
+                                c.var.auth?.apiKey?.questPollenOnly ?? false;
+                            if (isPaidOnly) return null;
+                            if (questPollenOnly) return "quest" as const;
+                            return resolveModelPollenType(
+                                c.var.auth?.apiKey?.permissions,
+                                c.var.model?.resolved,
+                                c.var.auth?.apiKey?.pollenType,
+                            );
+                        })(),
                         // A private endpoint only earns a reward when it backs
                         // its owner's public listing. Cross-owner private
                         // fallbacks are rejected when the fallback is linked.

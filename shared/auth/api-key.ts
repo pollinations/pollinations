@@ -29,6 +29,7 @@ export interface AuthenticatedApiKey {
     metadata?: Record<string, unknown>;
     pollenBalance?: number | null;
     pollenType?: "quest" | "paid" | null;
+    questPollenOnly?: boolean | null;
     byopClientKeyId?: string | null;
     byopClientName?: string | null;
     byopClientUserId?: string | null;

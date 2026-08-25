@@ -6,25 +6,30 @@ import { AccountPermissionsInput } from "./account-permissions-input.tsx";
 import { ExpiryDaysInput } from "./expiry-days-input.tsx";
 import { PollenBudgetInput } from "./pollen-budget-input.tsx";
 import { PollenTypeInput } from "./pollen-type-input.tsx";
+import { QuestPollenOnlyToggle } from "./quest-pollen-only-toggle.tsx";
 import type { ModelPermissionEntry } from "./types.ts";
 
 export interface KeyPermissions {
     allowedModels: (string | ModelPermissionEntry)[] | null;
     pollenBudget: number | null;
     pollenType: "quest" | "paid" | null;
+    questPollenOnly: boolean | null;
     expiryDays: number | null;
     accountPermissions: string[] | null;
 }
 
 export function useKeyPermissions(initial: Partial<KeyPermissions> = {}) {
-    const [allowedModels, setAllowedModels] = useState(
-        initial.allowedModels ?? null,
-    );
+    const [allowedModels, setAllowedModels] = useState<
+        (string | ModelPermissionEntry)[] | null
+    >(initial.allowedModels ?? null);
     const [pollenBudget, setPollenBudget] = useState(
         initial.pollenBudget ?? null,
     );
     const [pollenType, setPollenType] = useState<"quest" | "paid" | null>(
         initial.pollenType ?? null,
+    );
+    const [questPollenOnly, setQuestPollenOnly] = useState<boolean | null>(
+        initial.questPollenOnly ?? null,
     );
     const [expiryDays, setExpiryDays] = useState(initial.expiryDays ?? null);
     const [accountPermissions, setAccountPermissions] = useState<
@@ -36,12 +41,14 @@ export function useKeyPermissions(initial: Partial<KeyPermissions> = {}) {
             allowedModels,
             pollenBudget,
             pollenType,
+            questPollenOnly,
             expiryDays,
             accountPermissions,
         },
         setAllowedModels,
         setPollenBudget,
         setPollenType,
+        setQuestPollenOnly,
         setExpiryDays,
         setAccountPermissions,
     };
@@ -68,6 +75,7 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
         setAllowedModels,
         setPollenBudget,
         setPollenType,
+        setQuestPollenOnly,
         setExpiryDays,
         setAccountPermissions,
     } = value;
@@ -88,6 +96,12 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
             <PollenTypeInput
                 value={permissions.pollenType}
                 onChange={setPollenType}
+                disabled={disabled}
+                inline={inline}
+            />
+            <QuestPollenOnlyToggle
+                value={permissions.questPollenOnly}
+                onChange={setQuestPollenOnly}
                 disabled={disabled}
                 inline={inline}
             />

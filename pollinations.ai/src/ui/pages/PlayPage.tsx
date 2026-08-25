@@ -14,7 +14,8 @@ import { PageContainer } from "../components/ui/page-container";
 import { Body, Title } from "../components/ui/typography";
 
 function PlayPage() {
-    const [selectedModel, setSelectedModel] = useState("flux");
+    const urlModel = new URLSearchParams(window.location.search).get("model");
+    const [selectedModel, setSelectedModel] = useState(urlModel || "flux");
     const [prompt, setPrompt] = useState("");
     const { apiKey, isLoggedIn, login } = useAuth();
     const {

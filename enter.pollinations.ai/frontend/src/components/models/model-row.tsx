@@ -286,6 +286,29 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             {model.brand}
                         </a>
                     )}
+                    {model.contextLength && (
+                        <span className="text-[11px] text-theme-text-muted">
+                            {model.contextLength >= 1000000
+                                ? `${(model.contextLength / 1000000).toFixed(1)}M`
+                                : model.contextLength >= 1000
+                                  ? `${Math.round(model.contextLength / 1000)}K`
+                                  : model.contextLength}{" "}
+                            context
+                        </span>
+                    )}
+
+                    {model.type !== "embedding" && model.type !== "agent" && (
+                        <a
+                            href={`https://pollinations.ai/play?model=${encodeURIComponent(model.name)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[11px] text-theme-text-muted hover:text-theme-text-soft transition-colors"
+                            title="Try in Play"
+                            aria-label={`Try ${model.displayName ?? model.name} in Play`}
+                        >
+                            ▶ Play
+                        </a>
+                    )}
                     <div className="flex min-w-0 flex-col gap-0.5">
                         {(inputModalities.length > 0 ||
                             capabilities.length > 0 ||

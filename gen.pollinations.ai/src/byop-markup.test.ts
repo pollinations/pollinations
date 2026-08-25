@@ -794,7 +794,60 @@ describe("BYOP markup", () => {
         );
     });
 
-    it("credits a community model owner for their own request", async () => {
+    it("suppresses generation credits when the payer goes negative", async () => {
+        const { payerId, devId, pkId } = await setupPayerAndDev();
+        const ownerId = await createBalanceUser("community-owner");
+
+        const { markup, communityModelReward, billedPrice } =
+            await handleBalanceDeduction({
+                db,
+                isBilledUsage: true,
+                totalPrice: 2,
+                userId: payerId,
+                byopClientKeyId: pkId,
+                communityModelReward: {
+                    userId: ownerId,
+                    rewardRate: COMMUNITY_MODEL_REWARD_RATE,
+                },
+            });
+
+        expect(billedPrice).toBe(
+            roundPollenLedgerAmount(2 + computeDevCredit(2)),
+        );
+        expect(markup).toBeNull();
+        expect(communityModelReward).toBeNull();
+        expect((await getUserBalance(db, payerId)).tierBalance).toBeLessThan(0);
+        expect((await getUserBalance(db, devId)).tierBalance).toBe(0);
+        expect((await getUserBalance(db, ownerId)).tierBalance).toBe(0);
+    });
+
+    it("still credits a community owner when the payer reaches zero", async () => {
+        const payerId = await createBalanceUser("payer", {
+            tier: 1,
+            pack: 0,
+        });
+        const ownerId = await createBalanceUser("community-owner");
+
+        const { communityModelReward } = await handleBalanceDeduction({
+            db,
+            isBilledUsage: true,
+            totalPrice: 1,
+            userId: payerId,
+            communityModelReward: {
+                userId: ownerId,
+                rewardRate: COMMUNITY_MODEL_REWARD_RATE,
+            },
+        });
+
+        expect(communityModelReward).not.toBeNull();
+        expect((await getUserBalance(db, payerId)).tierBalance).toBe(0);
+        expect((await getUserBalance(db, ownerId)).tierBalance).toBeCloseTo(
+            COMMUNITY_MODEL_REWARD_RATE,
+            10,
+        );
+    });
+
+    it("does not charge or reward a community model owner for their own request", async () => {
         const ownerId = await createBalanceUser("community-owner", {
             tier: 2,
             pack: 0,
@@ -812,15 +865,8 @@ describe("BYOP markup", () => {
                 },
             });
 
-        expect(billedPrice).toBe(1);
-        expect(communityModelReward).toEqual({
-            userId: ownerId,
-            rewardRate: COMMUNITY_MODEL_REWARD_RATE,
-            credit: COMMUNITY_MODEL_REWARD_RATE,
-        });
-        expect((await getUserBalance(db, ownerId)).tierBalance).toBeCloseTo(
-            2 - 1 + COMMUNITY_MODEL_REWARD_RATE,
-            10,
-        );
+        expect(billedPrice).toBe(0);
+        expect(communityModelReward).toBeNull();
+        expect((await getUserBalance(db, ownerId)).tierBalance).toBe(2);
     });
 });

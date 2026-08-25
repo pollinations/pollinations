@@ -102,7 +102,7 @@ function zeroAudioBase64(byteLength: number): string {
     return btoa("\0".repeat(byteLength));
 }
 
-function mockRealtimeProvider(initialMessage?: string) {
+function mockRealtimeProvider(initialMessage?: string, estimatedCost = 0) {
     let upstreamRequest: Request | undefined;
     let upstreamClient: WebSocket | undefined;
     let upstreamServer: WebSocket | undefined;
@@ -119,7 +119,17 @@ function mockRealtimeProvider(initialMessage?: string) {
             }
             // checkBalance fetches the model-stats pipe for estimated pricing.
             if (request.url.includes("public_model_stats.json")) {
-                return Response.json({ data: [] });
+                return Response.json({
+                    data:
+                        estimatedCost > 0
+                            ? [
+                                  {
+                                      model: "gpt-realtime-2",
+                                      avg_cost_usd: estimatedCost,
+                                  },
+                              ]
+                            : [],
+                });
             }
 
             upstreamRequest = request;
@@ -193,6 +203,25 @@ async function getUserBalances(userId: string) {
     return user;
 }
 
+async function getApiKeyBalance(apiKeyId: string) {
+    const [row] = await drizzle(env.DB)
+        .select({ pollenBalance: apiKeyTable.pollenBalance })
+        .from(apiKeyTable)
+        .where(eq(apiKeyTable.id, apiKeyId));
+    return row?.pollenBalance;
+}
+
+async function waitForApiKeyBalanceAbove(apiKeyId: string, minBalance: number) {
+    for (let attempt = 0; attempt < 20; attempt++) {
+        const pollenBalance = await getApiKeyBalance(apiKeyId);
+        if (pollenBalance != null && pollenBalance > minBalance) {
+            return pollenBalance;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+    return getApiKeyBalance(apiKeyId);
+}
+
 async function waitForPackBalanceBelow(userId: string, maxBalance: number) {
     for (let attempt = 0; attempt < 20; attempt++) {
         const user = await getUserBalances(userId);
@@ -219,11 +248,15 @@ async function openPaidRealtimeSession({
     model = "gpt-realtime-2",
     referrer,
     initialProviderMessage,
+    byopClientKeyId,
+    estimatedCost = 0,
 }: {
     name: string;
     model?: string;
     referrer?: string;
     initialProviderMessage?: string;
+    byopClientKeyId?: string;
+    estimatedCost?: number;
 }) {
     const {
         key,
@@ -234,7 +267,16 @@ async function openPaidRealtimeSession({
         pollenBudget: 1,
         user: { tierBalance: 0, packBalance: 1 },
     });
-    const upstream = mockRealtimeProvider(initialProviderMessage);
+    if (byopClientKeyId) {
+        await drizzle(env.DB)
+            .update(apiKeyTable)
+            .set({ byopClientKeyId })
+            .where(eq(apiKeyTable.id, apiKeyId));
+    }
+    const upstream = mockRealtimeProvider(
+        initialProviderMessage,
+        estimatedCost,
+    );
     const headers: Record<string, string> = {
         Authorization: `Bearer ${key}`,
         Upgrade: "websocket",
@@ -1260,6 +1302,39 @@ test("deducts aggregate session usage from paid pack balance on close", async ()
     expect(telemetry.totalPrice).toBeCloseTo(expectedCharge, 8);
 });
 
+test("releases a realtime API key reservation when the session has no usage", async () => {
+    const session = await openPaidRealtimeSession({
+        name: "unused-budgeted-realtime-key",
+        estimatedCost: 0.2,
+    });
+
+    expect(await getApiKeyBalance(session.apiKeyId)).toBeCloseTo(0.8, 8);
+    await closeRealtimeSession(session);
+
+    expect(await waitForApiKeyBalanceAbove(session.apiKeyId, 0.9)).toBeCloseTo(
+        1,
+        8,
+    );
+});
+
+test("settles realtime usage against the API key reservation", async () => {
+    const session = await openPaidRealtimeSession({
+        name: "reserved-budgeted-realtime-key",
+        estimatedCost: 0.2,
+    });
+
+    const forwardedEvent = nextMessage(session.client);
+    session.upstream.server.send(cachedModalityUsageEvent);
+    await expect(forwardedEvent).resolves.toBe(cachedModalityUsageEvent);
+    await closeAndReadTelemetry(session);
+
+    const expectedCharge = 0.0023975 * 0.75;
+    expect(await waitForApiKeyBalanceAbove(session.apiKeyId, 0.9)).toBeCloseTo(
+        1 - expectedCharge,
+        7,
+    );
+});
+
 test("does not retry a partially completed realtime deduction", async () => {
     const session = await openPaidRealtimeSession({
         name: "realtime-partial-deduction-key",
@@ -1654,4 +1729,70 @@ test("rejects realtime access for empty model permissions", async () => {
     });
 
     expect(response.status).toBe(403);
+});
+
+test("Tinybird event total equals actual wallet debit with BYOP markup and ledger rounding", async () => {
+    const suffix = `rounding-test-${Date.now()}`;
+    const devId = `dev-${suffix}`;
+    const pkId = `pk_rounding_${suffix}`;
+
+    const db = drizzle(env.DB);
+    await db.insert(userTable).values({
+        id: devId,
+        email: `${devId}@test.local`,
+        name: devId,
+        tierBalance: 0,
+        packBalance: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    });
+    await db.insert(apiKeyTable).values({
+        id: pkId,
+        userId: devId,
+        name: "markup-app",
+        prefix: "pk",
+        key: `hashed-${pkId}`,
+        enabled: true,
+        metadata: JSON.stringify({ earningsEnabled: true }),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    });
+
+    const session = await openPaidRealtimeSession({
+        name: `byop-rounding-realtime-key-${suffix}`,
+        byopClientKeyId: pkId,
+    });
+
+    const usageEvent = JSON.stringify({
+        type: "response.done",
+        response: {
+            usage: {
+                input_tokens: 135,
+                output_tokens: 75,
+                input_token_details: {
+                    text_tokens: 100,
+                    audio_tokens: 10,
+                    image_tokens: 5,
+                    cached_tokens: 20,
+                    cached_tokens_details: {
+                        text_tokens: 20,
+                        audio_tokens: 0,
+                        image_tokens: 0,
+                    },
+                },
+                output_token_details: {
+                    text_tokens: 50,
+                    audio_tokens: 25,
+                },
+            },
+        },
+    });
+
+    session.upstream.server.send(usageEvent);
+    const telemetry = await closeAndReadTelemetry(session);
+    const userBalances = await getUserBalances(session.userId);
+    const actualDebit = 1 - (userBalances?.packBalance ?? 1);
+
+    expect(telemetry.markupRate).toBeGreaterThan(0);
+    expect(telemetry.totalPrice).toBe(roundPollenLedgerAmount(actualDebit));
 });

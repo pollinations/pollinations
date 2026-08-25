@@ -9,11 +9,16 @@ import {
     apikey as apiKeyTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
+import {
+    serviceAuthorization,
+    serviceBillingEvent,
+} from "@shared/db/service-billing.ts";
 import { createTestApiKey, test } from "@shared/test/fixtures/index.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, expect, vi } from "vitest";
 import worker from "../src/index.ts";
+import { enterGateway } from "./gateway.ts";
 
 type WebSocketResponse = Response & { webSocket?: WebSocket };
 type WebSocketResponseInit = ResponseInit & { webSocket?: WebSocket };
@@ -107,6 +112,7 @@ function mockRealtimeProvider(initialMessage?: string, estimatedCost = 0) {
     let upstreamClient: WebSocket | undefined;
     let upstreamServer: WebSocket | undefined;
     let upstreamServerAccepted = false;
+    let realtimeConnections = 0;
     const tinybirdRequests: Request[] = [];
 
     const fetchMock = vi
@@ -133,6 +139,7 @@ function mockRealtimeProvider(initialMessage?: string, estimatedCost = 0) {
             }
 
             upstreamRequest = request;
+            realtimeConnections += 1;
             const pair = new WebSocketPair();
             const [client, server] = Object.values(pair) as [
                 WebSocket,
@@ -178,6 +185,9 @@ function mockRealtimeProvider(initialMessage?: string, estimatedCost = 0) {
         get maybeServer() {
             return upstreamServer;
         },
+        get realtimeConnections() {
+            return realtimeConnections;
+        },
     };
 }
 
@@ -201,6 +211,27 @@ async function getUserBalances(userId: string) {
         .from(userTable)
         .where(eq(userTable.id, userId));
     return user;
+}
+
+/** Enter's ledger for every authorization the key opened. */
+async function getLedger(apiKeyId: string) {
+    const db = drizzle(env.DB);
+    const authorizations = await db
+        .select()
+        .from(serviceAuthorization)
+        .where(eq(serviceAuthorization.apiKeyId, apiKeyId));
+    const events = [];
+    for (const authorization of authorizations) {
+        events.push(
+            ...(await db
+                .select()
+                .from(serviceBillingEvent)
+                .where(
+                    eq(serviceBillingEvent.authorizationId, authorization.id),
+                )),
+        );
+    }
+    return { authorizations, events };
 }
 
 async function getApiKeyBalance(apiKeyId: string) {
@@ -250,6 +281,7 @@ async function openPaidRealtimeSession({
     initialProviderMessage,
     byopClientKeyId,
     estimatedCost = 0,
+    bindings = env,
 }: {
     name: string;
     model?: string;
@@ -257,6 +289,7 @@ async function openPaidRealtimeSession({
     initialProviderMessage?: string;
     byopClientKeyId?: string;
     estimatedCost?: number;
+    bindings?: typeof env;
 }) {
     const {
         key,
@@ -286,6 +319,7 @@ async function openPaidRealtimeSession({
     const { response, ctx } = await fetchWorkerWithContext(
         `/v1/realtime?model=${model}`,
         { headers },
+        bindings,
     );
 
     expect(response.status).toBe(101);
@@ -343,9 +377,16 @@ async function openPaidScribeSession({
 type PaidRealtimeSession = Awaited<ReturnType<typeof openPaidRealtimeSession>>;
 type RealtimeSession = Pick<PaidRealtimeSession, "client" | "ctx" | "upstream">;
 
+/**
+ * Closes both ends at once; the proxy's close handlers run only after the
+ * client observes its own close, so waiting on it keeps the finalization
+ * inside the execution context.
+ */
 async function closeRealtimeSession(session: RealtimeSession) {
+    const closed = nextClose(session.client);
     session.client.close();
     session.upstream.maybeServer?.close();
+    await closed;
     await waitOnExecutionContext(session.ctx);
 }
 
@@ -469,8 +510,10 @@ test("proxies OpenAI-compatible realtime WebSockets on both public routes", asyn
         upstream.server.send(serverEvent);
         await expect(downstreamMessage).resolves.toBe(serverEvent);
 
+        const closed = nextClose(client);
         client.close();
         upstream.server.close();
+        await closed;
         await waitOnExecutionContext(ctx);
         vi.restoreAllMocks();
     }
@@ -542,10 +585,14 @@ test("routes the mini model through the working East US 2 deployment", async ({
     );
     expect(upstream.request.headers.get("api-key")).toBeTruthy();
 
-    response.webSocket?.accept();
+    const client = response.webSocket;
+    if (!client) throw new Error("Expected downstream WebSocket");
+    client.accept();
     upstream.server.accept();
-    response.webSocket?.close();
+    const closed = nextClose(client);
+    client.close();
     upstream.server.close();
+    await closed;
     await waitOnExecutionContext(ctx);
 });
 
@@ -648,8 +695,10 @@ test("serves GPT Live Transcribe through Azure and bills streamed duration", asy
         transcript: "hello",
     });
 
+    const closed = nextClose(client);
     client.close();
     upstream.server.close();
+    await closed;
     await waitOnExecutionContext(ctx);
     await waitForTinybirdRequests(upstream);
     expect(upstream.tinybirdRequests).toHaveLength(1);
@@ -685,10 +734,14 @@ test("accepts publishable keys through the query string for thin clients", async
     expect(response.status).toBe(101);
     // One fetch for the model-stats balance check + one upstream WS connect.
     expect(upstream.request.url).toContain("azure.com/openai/v1/realtime");
-    response.webSocket?.accept();
+    const client = response.webSocket;
+    if (!client) throw new Error("Expected downstream WebSocket");
+    client.accept();
     upstream.server.accept();
-    response.webSocket?.close();
+    const closed = nextClose(client);
+    client.close();
     upstream.server.close();
+    await closed;
     await waitOnExecutionContext(ctx);
 });
 
@@ -1284,11 +1337,21 @@ test("deducts aggregate session usage from paid pack balance on close", async ()
     await new Promise((resolve) => setTimeout(resolve, 10));
     expect(session.upstream.tinybirdRequests).toHaveLength(0);
 
+    // Client and upstream close at the same time: one owner finalizes.
     const telemetry = await closeAndReadTelemetry(session);
     const user = await waitForPackBalanceBelow(session.userId, 1);
 
     const expectedCharge = 0.003553 * 2 * 0.75;
     expect(user?.packBalance).toBeCloseTo(1 - expectedCharge, 8);
+    expect(await getApiKeyBalance(session.apiKeyId)).toBeCloseTo(
+        1 - expectedCharge,
+        8,
+    );
+    const ledger = await getLedger(session.apiKeyId);
+    expect(ledger.authorizations).toHaveLength(1);
+    expect(ledger.events.map((event) => event.eventId)).toEqual(["session"]);
+    expect(ledger.events[0].billedPrice).toBeCloseTo(expectedCharge, 8);
+    expect(session.upstream.realtimeConnections).toBe(1);
     expect(telemetry.eventType).toBe("generate.realtime");
     expect(telemetry.responseStatus).toBe(200);
     expect(telemetry.resolvedModelRequested).toBe("gpt-realtime-2");
@@ -1300,6 +1363,41 @@ test("deducts aggregate session usage from paid pack balance on close", async ()
     expect(telemetry.tokenCountCompletionText).toBe(100);
     expect(telemetry.tokenCountCompletionAudio).toBe(50);
     expect(telemetry.totalPrice).toBeCloseTo(expectedCharge, 8);
+});
+
+test("bills a final provider response that lands after the client closes", async () => {
+    const session = await openPaidRealtimeSession({
+        name: "late-usage-realtime-key",
+    });
+    const clientClosed = nextClose(session.client);
+    const upstreamServerClosed = nextClose(session.upstream.server);
+
+    // The client hangs up while the provider's final turn is still in flight.
+    session.client.close(1000, "done");
+    await upstreamServerClosed;
+    session.upstream.server.send(cachedModalityUsageEvent);
+    session.upstream.server.close(1000, "done");
+    await clientClosed;
+    await waitOnExecutionContext(session.ctx);
+    await waitForTinybirdRequests(session.upstream);
+
+    const expectedCharge = 0.0023975 * 0.75;
+    const ledger = await getLedger(session.apiKeyId);
+    expect(ledger.authorizations).toHaveLength(1);
+    expect(ledger.events.map((event) => event.eventId)).toEqual(["session"]);
+    expect(ledger.events[0].billedPrice).toBeCloseTo(expectedCharge, 8);
+    expect(session.upstream.realtimeConnections).toBe(1);
+    expect(session.upstream.tinybirdRequests).toHaveLength(1);
+    const telemetry = JSON.parse(
+        await session.upstream.tinybirdRequests[0].text(),
+    ) as Record<string, unknown>;
+    expect(telemetry.tokenCountPromptCached).toBe(30);
+    expect(telemetry.tokenCountCompletionAudio).toBe(10);
+    expect(telemetry.totalPrice).toBeCloseTo(expectedCharge, 8);
+    expect(await getApiKeyBalance(session.apiKeyId)).toBeCloseTo(
+        1 - expectedCharge,
+        8,
+    );
 });
 
 test("releases a realtime API key reservation when the session has no usage", async () => {
@@ -1315,6 +1413,15 @@ test("releases a realtime API key reservation when the session has no usage", as
         1,
         8,
     );
+    // A second close on the already finalized session changes nothing.
+    session.upstream.client.dispatchEvent(new Event("error"));
+    await waitOnExecutionContext(session.ctx);
+    const ledger = await getLedger(session.apiKeyId);
+    expect(ledger.authorizations).toHaveLength(1);
+    expect(ledger.authorizations[0].canceledAt).not.toBeNull();
+    expect(ledger.events).toHaveLength(0);
+    expect(session.upstream.tinybirdRequests).toHaveLength(0);
+    expect((await getUserBalances(session.userId))?.packBalance).toBe(1);
 });
 
 test("settles realtime usage against the API key reservation", async () => {
@@ -1335,53 +1442,120 @@ test("settles realtime usage against the API key reservation", async () => {
     );
 });
 
-test("does not retry a partially completed realtime deduction", async () => {
+test("a refused realtime settlement charges nothing and never replays the provider", async () => {
     const session = await openPaidRealtimeSession({
-        name: "realtime-partial-deduction-key",
-    });
-    const usageEvent = JSON.stringify({
-        type: "response.done",
-        response: {
-            usage: {
-                input_tokens: 135,
-                output_tokens: 75,
-                input_token_details: {
-                    text_tokens: 100,
-                    audio_tokens: 10,
-                    image_tokens: 5,
-                    cached_tokens: 20,
-                    cached_tokens_details: {
-                        text_tokens: 20,
-                        audio_tokens: 0,
-                        image_tokens: 0,
-                    },
-                },
-                output_token_details: {
-                    text_tokens: 50,
-                    audio_tokens: 25,
-                },
-            },
-        },
+        name: "realtime-refused-settlement-key",
     });
     const forwardedEvent = nextMessage(session.client);
-    session.upstream.server.send(usageEvent);
-    await expect(forwardedEvent).resolves.toBe(usageEvent);
+    session.upstream.server.send(cachedModalityUsageEvent);
+    await expect(forwardedEvent).resolves.toBe(cachedModalityUsageEvent);
 
-    await drizzle(env.DB)
-        .delete(apiKeyTable)
-        .where(eq(apiKeyTable.id, session.apiKeyId));
-    session.client.close();
-    await waitOnExecutionContext(session.ctx);
+    // The reserve is gone by the time the session settles.
+    const [authorization] = (await getLedger(session.apiKeyId)).authorizations;
+    await enterGateway.cancel(authorization.id);
 
-    const user = await waitForPackBalanceBelow(session.userId, 1);
-    expect(user?.packBalance).toBeCloseTo(1 - 0.003553 * 0.75, 8);
+    await closeRealtimeSession(session);
     session.upstream.client.dispatchEvent(new Event("error"));
     await waitOnExecutionContext(session.ctx);
-    expect((await getUserBalances(session.userId))?.packBalance).toBeCloseTo(
-        user?.packBalance ?? 0,
+
+    const ledger = await getLedger(session.apiKeyId);
+    expect(ledger.authorizations).toHaveLength(1);
+    expect(ledger.events).toHaveLength(0);
+    expect((await getUserBalances(session.userId))?.packBalance).toBe(1);
+    expect(await getApiKeyBalance(session.apiKeyId)).toBe(1);
+    expect(session.upstream.tinybirdRequests).toHaveLength(0);
+    expect(session.upstream.realtimeConnections).toBe(1);
+});
+
+test("re-delivers a realtime settlement whose acknowledgement was lost, charging once", async () => {
+    let settles = 0;
+    const settle = vi.fn(
+        async (input: Parameters<typeof enterGateway.settle>[0]) => {
+            settles += 1;
+            const result = await enterGateway.settle(input);
+            // Enter commits the first delivery; only its acknowledgement is
+            // lost in transit.
+            if (settles === 1) throw new Error("acknowledgement lost");
+            return result;
+        },
+    );
+    const session = await openPaidRealtimeSession({
+        name: "realtime-lost-ack-settlement-key",
+        bindings: { ...env, ENTER_GATEWAY: { ...enterGateway, settle } },
+    });
+    const forwardedEvent = nextMessage(session.client);
+    session.upstream.server.send(cachedModalityUsageEvent);
+    await expect(forwardedEvent).resolves.toBe(cachedModalityUsageEvent);
+
+    const telemetry = await closeAndReadTelemetry(session);
+
+    expect(settle).toHaveBeenCalledTimes(2);
+    // Both deliveries carry the identical input; the second is a duplicate.
+    expect(settle.mock.calls[1][0]).toEqual(settle.mock.calls[0][0]);
+    await expect(settle.mock.results[1].value).resolves.toEqual({
+        ok: true,
+        settled: [],
+        duplicates: ["session"],
+    });
+    const expectedCharge = 0.0023975 * 0.75;
+    const ledger = await getLedger(session.apiKeyId);
+    expect(ledger.authorizations).toHaveLength(1);
+    expect(ledger.authorizations[0].canceledAt).toBeNull();
+    expect(ledger.events.map((event) => event.eventId)).toEqual(["session"]);
+    expect(ledger.events[0].billedPrice).toBeCloseTo(expectedCharge, 8);
+    const user = await waitForPackBalanceBelow(session.userId, 1);
+    expect(user?.packBalance).toBeCloseTo(1 - expectedCharge, 8);
+    expect(await getApiKeyBalance(session.apiKeyId)).toBeCloseTo(
+        1 - expectedCharge,
         8,
     );
-    expect(session.upstream.tinybirdRequests).toHaveLength(0);
+    expect(session.upstream.tinybirdRequests).toHaveLength(1);
+    expect(telemetry.totalPrice).toBeCloseTo(expectedCharge, 8);
+    expect(session.upstream.realtimeConnections).toBe(1);
+});
+
+test("cancels the authorization once when session setup fails after it", async () => {
+    const { key, id: apiKeyId } = await createTestApiKey({
+        name: "realtime-setup-failure-key",
+        pollenBudget: 1,
+        user: { tierBalance: 0, packBalance: 1 },
+    });
+    const upstream = mockRealtimeProvider(undefined, 0.2);
+    const cancel = vi.fn(enterGateway.cancel);
+    // Fail only the session's client IP hash, which runs after Enter
+    // authorizes and before any provider connection.
+    const digest = crypto.subtle.digest.bind(crypto.subtle);
+    vi.spyOn(crypto.subtle, "digest").mockImplementation(
+        async (algorithm, data) => {
+            const text = new TextDecoder().decode(data as ArrayBuffer);
+            if (text.endsWith(":203.0.113.7")) {
+                throw new Error("digest unavailable");
+            }
+            return digest(algorithm, data);
+        },
+    );
+
+    const response = await fetchWorker(
+        "/v1/realtime?model=gpt-realtime-2",
+        {
+            headers: {
+                Authorization: `Bearer ${key}`,
+                Upgrade: "websocket",
+                "cf-connecting-ip": "203.0.113.7",
+            },
+        },
+        { ...env, ENTER_GATEWAY: { ...enterGateway, cancel } },
+    );
+
+    expect(response.status).toBe(500);
+    expect(cancel).toHaveBeenCalledTimes(1);
+    // The failure's own error telemetry is the only non-Tinybird fetch.
+    expect(upstream.request.url).not.toContain("azure.com");
+    const ledger = await getLedger(apiKeyId);
+    expect(ledger.authorizations).toHaveLength(1);
+    expect(ledger.authorizations[0].canceledAt).not.toBeNull();
+    expect(ledger.events).toHaveLength(0);
+    expect(await getApiKeyBalance(apiKeyId)).toBe(1);
 });
 
 test.each([

@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🖼️",
+    "name": "EAS AI STUDIO",
+    "url": "https://www.ekin-ai-studio.my.id",
+    "description": "Create collaborative images using the Pollinations image API",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "EkinLiu",
+    "githubUserId": "269455751",
+    "repositoryUrl": "https://github.com/EkinLiu/ekin-ai-studio",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-08-24",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/13857",
+    "approvedDate": "2026-08-25",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "💬",
     "name": "App Submission: FreeChat CLI",
     "url": "https://github.com/xiaotian1171/freechat-cli",

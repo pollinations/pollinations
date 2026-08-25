@@ -10,6 +10,7 @@ import {
     ExternalLinkIcon,
     GlobeIcon,
     IconButton,
+    InlineLink,
     LockIcon,
     PencilIcon,
     Surface,
@@ -174,6 +175,20 @@ export function CommunityEndpointCard({
                         value={<CommunityPriceBadges group={group} />}
                     />
                 ))}
+                <CommunityDetailRow
+                    icon={<TokensIcon className="h-3.5 w-3.5" />}
+                    label="Earnings"
+                    value={
+                        <InlineLink
+                            as={Link}
+                            to="/activity"
+                            search={{ earningsModels: [endpoint.modelId] }}
+                            className="text-xs"
+                        >
+                            View activity
+                        </InlineLink>
+                    }
+                />
             </div>
             <div className="mt-3">
                 <Link

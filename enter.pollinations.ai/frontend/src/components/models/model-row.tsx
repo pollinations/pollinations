@@ -297,7 +297,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                         </span>
                     )}
 
-                    {model.type !== "embedding" && model.type !== "agent" && (
+                    {model.type !== "embedding" && !model.agent && (
                         <a
                             href={`https://pollinations.ai/play?model=${encodeURIComponent(model.name)}`}
                             target="_blank"

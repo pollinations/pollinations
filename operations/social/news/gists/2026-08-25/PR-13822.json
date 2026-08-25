@@ -1,0 +1,34 @@
+{
+  "pr_number": 13822,
+  "title": "feat(sdk): expose developer earnings via accountEarnings()",
+  "author": "wiradifit",
+  "url": "https://github.com/pollinations/pollinations/pull/13822",
+  "merged_at": "2026-08-25T08:46:27Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\nThin typed client for the existing `GET /account/earnings` API:\n\n```ts\nconst { daily, perEntity } = await pollinations.accountEarnings({ days: 30 });\nperEntity.forEach(e => console.log(e.entity_name, e.pollen_earned));\n```\n\nCloses #13769\n\n## Changes\n- `packages/sdk/src/client.ts` — `accountEarnings(options?)`; existing time-window query options (`days`, `granularity`, `period`) pass through\n- `packages/sdk/src/types.ts` — `DeveloperEarningsRow` (all API fields incl. `paid_requests`, `tier_requests`, `reward_rate`), `DeveloperEarningsResponse`, `EarningsOptions`\n- `packages/sdk/src/index.ts` — exports\n- `packages/sdk/src/account-earnings.test.ts` — focused tests (URL construction, option passthrough, response pass-through)\n\n## Verification\n```\n✓ src/account-earnings.test.ts (2 tests)\nFull SDK suite: 41 passed · npx tsc --noEmit → clean\n```\n\nNo backend/Tinybird/CLI/React changes, no caching/aggregation/compat layers. The Enter dashboard consumer is untouched.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Show Me the Pollen",
+    "blurb": "The SDK can now count what your creations have earned. Ask for a time window, get daily totals and per-entity Pollen data, no dashboard tab safari required.",
+    "summary": "Added a typed `pollinations.accountEarnings(options?)` SDK client for `GET /account/earnings`, with `days`, `granularity`, and `period` query options plus daily and per-entity earnings fields including `paid_requests`, `tier_requests`, and `reward_rate`.",
+    "impact": "Developers can retrieve their Pollen earnings directly in TypeScript apps and inspect daily totals or each entity's earned Pollen without manually calling the account earnings endpoint.",
+    "keywords": [
+      "sdk",
+      "developer earnings",
+      "pollen",
+      "account API",
+      "TypeScript",
+      "analytics"
+    ],
+    "visual_concept": "A cozy developer earnings ledger: Polli reviews a retro terminal displaying a simple daily Pollen chart and small labeled jars representing per-entity earnings, while code-plants grow beside it. The scene makes accountEarnings() feel like checking a garden's harvest; Polli wears tiny accountant glasses and the eager monitor robot holds a receipt-like API printout.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing tiny accountant glasses while checking a retro terminal with a simple pixel chart labeled “POLLEN EARNED”; nearby, a cute CRT monitor robot holds an API receipt as code-plants and little Pollen jars bloom around them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-25/PR-13822.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing tiny accountant glasses while checking a retro terminal with a simple pixel chart labeled “POLLEN EARNED”; nearby, a cute CRT monitor robot holds an API receipt as code-plants and little Pollen jars bloom around them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-25T08:47:24.771552+00:00"
+}

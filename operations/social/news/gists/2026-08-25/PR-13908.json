@@ -1,0 +1,34 @@
+{
+  "pr_number": 13908,
+  "title": "fix: enforce video frame limits from registry",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13908",
+  "merged_at": "2026-08-25T16:34:57Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n\n- Enforces each video model’s `max_reference_images` centrally before provider dispatch.\n- Returns a clear 400 for unsupported extra frames instead of silently dropping them.\n- Removes inconsistent adapter-specific frame-count checks and updates the public schema description.\n- Adds an explicit matrix for all 15 deployed video models, covering registry/capability consistency, every allowed frame count, and pre-provider rejection.\n- Verifies each advertised start/end-frame capability in the actual outbound adapter payload.\n\n## Why\n\nThe API already advertises positional frames (`image[0]` start, `image[1]` end) and per-model limits, but runtime behavior varied by adapter: some rejected extra images while others ignored them. Using registry metadata as the runtime source of truth keeps behavior and `/models` synchronized. The exhaustive matrix also forces every future video model to define and test its frame contract.\n\nThe adapter tests separately prove that accepted frames reach the provider fields declared by the registry: Veo `image`/`lastFrame`, Seedance `image`/`last_frame_image`, Wan’s variant-specific first/last fields, OpenRouter `first_frame`, Pruna `image`, and Nova Reel’s Bedrock image input.\n\n## Verification\n\n- Full Gen suite: 111 test files, 1,393 tests passed, 6 skipped\n- Focused video adapter and registry suite: 10 files, 79 tests passed\n- `npx tsc --noEmit`\n- `npm run docs:validate`\n- Biome and `git diff --check`",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Every frame has a home",
+    "blurb": "Video models now follow the frame limits they advertise. Send a start frame, an end frame, or the allowed number of references; the hive will either deliver them properly or politely say no.",
+    "summary": "Video generation now centrally enforces each registry-defined model's max_reference_images limit before provider dispatch, returning a clear 400 for unsupported extra frames and verifying start/end-frame payloads across all 15 deployed video models.",
+    "impact": "Developers get consistent frame handling that matches /models metadata: accepted start and end frames reach the correct provider fields, while unsupported extra images receive an explicit 400 instead of being silently ignored.",
+    "keywords": [
+      "video",
+      "frame validation",
+      "model registry",
+      "API",
+      "providers",
+      "schema"
+    ],
+    "visual_concept": "A cozy video workshop where Polli acts as a careful film editor, placing exactly the allowed number of picture-frames into a blooming projector machine. A CRT robot can inspect a registry checklist while distinct start and end frames travel along labeled paths into a gentle film reel, representing consistent provider payloads and clear validation.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings, wearing tiny editor glasses while carefully placing a start frame and end frame into a lime green (#ecf874) film projector surrounded by flowering code-plants. A chunky CRT monitor robot holds a checked model-registry clipboard beside a small pixel sign reading “FRAME OK”; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-25/PR-13908.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings, wearing tiny editor glasses while carefully placing a start frame and end frame into a lime green (#ecf874) film projector surrounded by flowering code-plants. A chunky CRT monitor robot holds a checked model-registry clipboard beside a small pixel sign reading “FRAME OK”; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-08-25T16:36:04.050850+00:00"
+}

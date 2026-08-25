@@ -24,7 +24,8 @@ const testLog = {
 
 type TestEnv = {
     Bindings: CloudflareBindings;
-    Variables: LoggerVariables & RequestIdVariables;
+    Variables: LoggerVariables &
+        RequestIdVariables & { track?: { streamRequested: boolean } };
 };
 
 function createTextCacheApp() {
@@ -265,14 +266,17 @@ describe("text cache", () => {
         expect(cache.originHits).toBe(1);
     });
 
-    it("keeps cache headers authoritative on streaming misses", async () => {
+    it("does not publish streaming responses to the generation cache", async () => {
+        let originHits = 0;
         const app = new Hono<TestEnv>()
             .use("*", async (c, next) => {
                 c.set("log", testLog);
                 c.set("requestId", "test-request");
+                c.set("track", { streamRequested: true });
                 await next();
             })
             .post("/v1/chat/completions", textCache, () => {
+                originHits += 1;
                 return new Response("data: [DONE]\n\n", {
                     headers: {
                         "Content-Type": "text/event-stream",
@@ -291,10 +295,20 @@ describe("text cache", () => {
             }),
         );
         await consumeAndWait(result);
-
-        expect(result.response.headers.get("Cache-Control")).toBe(
-            IMMUTABLE_CACHE_CONTROL,
+        const repeated = await dispatch(
+            app,
+            "/v1/chat/completions",
+            chatInit({
+                model: "openai-fast",
+                messages: [{ role: "user", content: "stream" }],
+                stream: true,
+            }),
         );
+        await consumeAndWait(repeated);
+
+        expect(result.response.headers.get("Cache-Control")).toBe("no-cache");
+        expect(repeated.response.headers.get("X-Cache")).not.toBe("HIT");
+        expect(originHits).toBe(2);
     });
 
     it("does not cache accepted responses", async () => {

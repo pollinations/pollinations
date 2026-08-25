@@ -238,7 +238,9 @@ export const billingAuthorization = sqliteTable("billing_authorization", {
     table.producer,
     table.requestId,
   ),
-  index("idx_billing_authorization_expiry").on(table.expiresAt),
+  index("idx_billing_authorization_expiry")
+    .on(table.expiresAt)
+    .where(sql`${table.settledAt} IS NULL AND ${table.cancelledAt} IS NULL`),
 ]);
 
 export const billableEvent = sqliteTable("billable_event", {

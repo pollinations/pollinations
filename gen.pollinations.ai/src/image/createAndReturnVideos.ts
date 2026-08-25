@@ -21,6 +21,7 @@ import {
     callVeoAPI,
     type VideoGenerationResult,
 } from "./models/veoVideoModel.ts";
+import { callWan3FalAPI } from "./models/wan3FalVideoModel.ts";
 import {
     callWanAPI,
     callWanFastAPI,
@@ -82,6 +83,9 @@ export async function createAndReturnVideo(
             break;
         case "wan-pro":
             result = await callWanProAPI(prompt, safeParams);
+            break;
+        case "wan-3.0":
+            result = await callWan3FalAPI(prompt, safeParams);
             break;
         case "p-video":
             result = await callPrunaVideoAPI(prompt, safeParams);

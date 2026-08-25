@@ -1,0 +1,34 @@
+{
+  "pr_number": 13886,
+  "title": "revert: remove paid model filter",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13886",
+  "merged_at": "2026-08-25T07:35:33Z",
+  "labels": [],
+  "pr_body_excerpt": "- Removes the Hide paid control and local paid-model filtering.\n- Restores the previous search and empty-state behavior.\n- Preserves the later community-model privacy disclosure.\n\nReverts #13779 and #13755.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The model shelf is whole again",
+    "blurb": "The model browser has put its full catalog back on the shelf. Polli removed one overly enthusiastic filter drawer, while keeping the community-model privacy note where it belongs.",
+    "summary": "Removed the Hide paid control and local paid-model filtering in the Models UI, restoring the previous search behavior and empty states while retaining the community-model privacy disclosure.",
+    "impact": "Users can again search and browse the complete model catalog without a local paid-model filter changing results or producing the newer empty-state behavior.",
+    "keywords": [
+      "models",
+      "model-browser",
+      "search",
+      "frontend",
+      "privacy",
+      "ui"
+    ],
+    "visual_concept": "Depict a cozy model-library garden where every model seed packet is visible again on a retro terminal shelf, with the removed filter represented as a small closed drawer labeled \"HIDE PAID\" being gently set aside. Polli, wearing librarian glasses, helps the eager monitor robot browse the full collection; a small privacy-note sign remains beside a community flower bed.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, black antennae and oval eyes, pink rectangular cheek blush, a happy smile, light blue translucent wings, and tiny librarian glasses, helping a CRT monitor robot browse a full shelf of glowing model seed packets on a retro terminal; a small filter drawer labeled \"HIDE PAID\" rests neatly aside while a community flower bed keeps a tiny privacy-note sign. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-25/PR-13886.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, black antennae and oval eyes, pink rectangular cheek blush, a happy smile, light blue translucent wings, and tiny librarian glasses, helping a CRT monitor robot browse a full shelf of glowing model seed packets on a retro terminal; a small filter drawer labeled \"HIDE PAID\" rests neatly aside while a community flower bed keeps a tiny privacy-note sign. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-25T07:36:31.833893+00:00"
+}

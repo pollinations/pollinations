@@ -1,0 +1,34 @@
+{
+  "pr_number": 13913,
+  "title": "chore: add Discord production secrets",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13913",
+  "merged_at": "2026-08-25T15:14:30Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds the Discord OAuth client and bot bindings to the SOPS-encrypted production Enter configuration\n- Reuses the existing staging Discord application credentials\n- Enables production Discord account connection after merge and the production secret-sync deployment",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive joins Discord",
+    "blurb": "Polli found the production Discord keys and put them somewhere suitably encrypted. Discord account connections can now bloom in the real hive.",
+    "summary": "Added Discord OAuth client and bot bindings to Enter's SOPS-encrypted production configuration, enabling Discord account connection once the production secret sync deploys.",
+    "impact": "Users will be able to connect their Discord accounts in production, using the existing Discord application setup.",
+    "keywords": [
+      "discord",
+      "oauth",
+      "account-connection",
+      "enter",
+      "production",
+      "secrets"
+    ],
+    "visual_concept": "Depict Discord account linking as a friendly bridge between a cozy retro terminal and a small Discord-style chat window, with Polli carefully carrying a tiny key toward the connection. Use encrypted-lock and blooming code-plant symbols to convey securely activating the production integration.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny sysadmin keyring, connecting a glowing retro terminal to a friendly purple chat-window icon across a garden bridge; a small lock and code-plants bloom beside the connection. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, with subtle pixel text: 'CONNECTED'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-25/PR-13913.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny sysadmin keyring, connecting a glowing retro terminal to a friendly purple chat-window icon across a garden bridge; a small lock and code-plants bloom beside the connection. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, with subtle pixel text: 'CONNECTED'."
+  },
+  "generated_at": "2026-08-25T15:26:28.841936+00:00"
+}

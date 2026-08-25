@@ -1,3 +1,4 @@
+import { resolveModelPollenType } from "@shared/auth/api-key.ts";
 import { createBalanceCheckResult } from "@shared/billing/balance.ts";
 import { canCoverEstimatedCharge } from "@shared/billing/bucket-selection.ts";
 import {
@@ -34,6 +35,14 @@ export async function checkBalance(
 
     const isPaidOnly = model.definition.paidOnly ?? false;
     const keyPollenType = auth.apiKey?.pollenType ?? null;
+    // Resolve effective pollen type: per-model override > key-level restriction
+    const effectivePollenType = isPaidOnly
+        ? null // paidOnly models always use pack, ignore pollen type
+        : resolveModelPollenType(
+              auth.apiKey?.permissions,
+              model.resolved,
+              keyPollenType,
+          );
     const estimatedCost = withByopMarkup(
         getEstimatedPrice(
             await getModelStats(env.KV, log),
@@ -57,14 +66,14 @@ export async function checkBalance(
             userBalance,
             estimatedCost,
             isPaidOnly,
-            keyPollenType,
+            effectivePollenType,
         )
     ) {
         const available = isPaidOnly
             ? userBalance.packBalance
-            : keyPollenType === "quest"
+            : effectivePollenType === "quest"
               ? userBalance.tierBalance
-              : keyPollenType === "paid"
+              : effectivePollenType === "paid"
                 ? userBalance.packBalance
                 : Math.max(userBalance.tierBalance, userBalance.packBalance);
         throw new HTTPException(402, {

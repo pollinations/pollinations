@@ -4,6 +4,7 @@ import {
     type AuthUser,
     authenticateApiKeyRequest,
     BannedAccountError,
+    extractAllowedModelIds,
     StagingAccessDeniedError,
 } from "@shared/auth/api-key.ts";
 import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
@@ -69,7 +70,8 @@ function installAuth(
 
         if (!apiKey?.permissions?.models) return;
 
-        if (!apiKey.permissions.models.includes(model.resolved)) {
+        const allowedIds = extractAllowedModelIds(apiKey.permissions);
+        if (!allowedIds?.includes(model.resolved)) {
             throw new HTTPException(403, {
                 message: `Model '${model.requested}' is not allowed for this API key`,
             });

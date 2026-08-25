@@ -35,6 +35,8 @@ export default defineWorkersConfig(async () => {
                             // tests (see test/gateway.ts) and read these from
                             // the env the tests hand them.
                             ENVIRONMENT: "test",
+                            BETTER_AUTH_SECRET:
+                                "not-a-secret-workers-test-only",
                             TINYBIRD_INGEST_URL:
                                 "http://localhost:7181/v0/events?name=generation_event_v2",
                             TINYBIRD_INGEST_TOKEN:

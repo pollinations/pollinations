@@ -1,8 +1,10 @@
+import { extractApiKey } from "@shared/auth/api-key.ts";
 import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
 import type {
     ServiceAuthorization,
     ServiceDenial,
     ServiceGatewayBinding,
+    ServiceSettleResult,
     TokenIntrospectionResult,
 } from "@shared/schemas/service-billing.ts";
 import type { Context } from "hono";
@@ -71,12 +73,29 @@ function denialResponse(c: Context<{ Bindings: Env }>, denial: ServiceDenial) {
     return c.json({ error: denial.message }, denial.status);
 }
 
-function extractApiKey(req: Request): string | null {
-    const bearer = req.headers
-        .get("authorization")
-        ?.match(/^Bearer (.+)$/)?.[1];
-    if (bearer) return bearer;
-    return new URL(req.url).searchParams.get("key");
+/**
+ * Undo an upload whose storage, catalog or settlement failed so no unbilled
+ * media stays published: catalog rows, then the R2 object, then the
+ * authorization. Every step is idempotent and best-effort — the caller
+ * reports the original failure, which this never masks.
+ */
+async function rollbackUpload(
+    env: Env,
+    id: string,
+    authorizationId: string,
+): Promise<void> {
+    const steps = [
+        () => deleteCatalogItem(getDb(env.DB), id),
+        () => env.MEDIA_BUCKET.delete(id),
+        () => env.ENTER.cancel(authorizationId),
+    ];
+    for (const step of steps) {
+        try {
+            await step();
+        } catch (error) {
+            console.error("Upload rollback step failed:", error);
+        }
+    }
 }
 
 function fileTooLargeError(maxSize: number): { error: string } {
@@ -497,15 +516,7 @@ api.post(
                     });
                 }
             } catch (error) {
-                // The authorized work failed: release the authorization so
-                // any reservation returns immediately (the gateway's expiry
-                // sweep is the backstop if this cancel is lost too).
-                c.executionCtx.waitUntil(
-                    c.env.ENTER.cancel(authorization.authorizationId).then(
-                        () => undefined,
-                        () => undefined,
-                    ),
-                );
+                await rollbackUpload(c.env, id, authorization.authorizationId);
                 throw error;
             }
 
@@ -524,22 +535,37 @@ api.post(
             // success means the financial settlement is committed.
             // Idempotent per (authorization, eventId), so a repeated
             // settlement bills once.
-            const settled = await c.env.ENTER.settle({
+            const settlement = {
                 authorizationId: authorization.authorizationId,
                 events: [
-                    { eventId: "upload", eventType: "media.upload", price: 0 },
+                    {
+                        eventId: "upload",
+                        eventType: "media.upload" as const,
+                        price: 0,
+                    },
                 ],
-            }).catch((error) => {
-                console.error("Upload settlement failed:", error);
-                return null;
-            });
-            if (!settled?.ok) {
-                c.executionCtx.waitUntil(
-                    c.env.ENTER.cancel(authorization.authorizationId).then(
-                        () => undefined,
-                        () => undefined,
-                    ),
+            };
+            let settled: ServiceSettleResult | null;
+            try {
+                settled = await c.env.ENTER.settle(settlement);
+            } catch (error) {
+                // The binding call itself failed, so the ack may simply have
+                // been lost after Enter settled: deliver the identical
+                // settlement exactly once more. A refusal (ok: false) is
+                // final and is never retried.
+                console.error("Upload settlement ack lost:", error);
+                settled = await c.env.ENTER.settle(settlement).catch(
+                    (retryError) => {
+                        console.error("Upload settlement failed:", retryError);
+                        return null;
+                    },
                 );
+            }
+            if (!settled?.ok) {
+                if (settled) {
+                    console.error("Upload settlement refused:", settled.error);
+                }
+                await rollbackUpload(c.env, id, authorization.authorizationId);
                 return c.json({ error: "Upload failed" }, 500);
             }
 
@@ -662,7 +688,7 @@ api.delete(
             },
             403: {
                 description:
-                    "Key is not a secret (`sk_`) key, or the item belongs to someone else",
+                    "Key is not a secret (`sk_`) key, is a delegated agent run token, or the item belongs to someone else",
                 content: {
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
@@ -689,6 +715,15 @@ api.delete(
             await c.env.ENTER.introspect(apiKey);
         if (!introspection.valid) {
             return denialResponse(c, introspection.denial);
+        }
+        // A run token is handed to a third party mid-run and inherits only
+        // the parent key's generation access, never the owner's right to
+        // unpublish media.
+        if (introspection.agentRun) {
+            return c.json(
+                { error: "Agent run tokens cannot delete media" },
+                403,
+            );
         }
         const auth = toAuthResult(introspection);
         // Publishable keys ship inside public clients — anyone holding one

@@ -3,6 +3,7 @@ import {
     env,
     waitOnExecutionContext,
 } from "cloudflare:test";
+import { signAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import { createApiKeyAuth } from "@shared/auth/api-key.ts";
 import {
     apikey as apikeyTable,
@@ -13,6 +14,10 @@ import {
     serviceAuthorization,
     serviceBillingEvent,
 } from "@shared/db/service-billing.ts";
+import type {
+    ServiceGatewayBinding,
+    ServiceSettleResult,
+} from "@shared/schemas/service-billing.ts";
 import { createFetchMock } from "@shared/test/mocks/fetch.ts";
 import { createTestR2Bucket } from "@shared/test/mocks/r2.ts";
 import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
@@ -64,6 +69,8 @@ const keys = {
     /** The BYOP client (app) key pk_alice uploads are attributed to. */
     appKeyId: "",
     skAlice: "",
+    /** Row id of skAlice: the parent key agent run tokens are minted from. */
+    skAliceId: "",
     /** Secret key created before typed key metadata existed (no keyType). */
     skAliceLegacy: "",
     skBob: "",
@@ -78,12 +85,15 @@ const keys = {
 // across vitest's isolated-storage stack).
 let sharedBucket = createTestR2Bucket();
 
-function createMediaEnv(bucket: R2Bucket = sharedBucket) {
+function createMediaEnv(
+    bucket: R2Bucket = sharedBucket,
+    gateway: ServiceGatewayBinding = enterGateway,
+) {
     return {
         MEDIA_BUCKET: bucket,
         MAX_FILE_SIZE: "104857600",
         DB: env.DB,
-        ENTER: enterGateway,
+        ENTER: gateway,
     };
 }
 
@@ -95,11 +105,12 @@ function createMediaEnv(bucket: R2Bucket = sharedBucket) {
 async function fetchApp(
     input: string | URL,
     init?: RequestInit,
+    gateway: ServiceGatewayBinding = enterGateway,
 ): Promise<Response> {
     const ctx = createExecutionContext();
     const res = await app.fetch(
         new Request(input, init),
-        createMediaEnv(),
+        createMediaEnv(sharedBucket, gateway),
         ctx,
     );
     const buffered = new Response(await res.arrayBuffer(), res);
@@ -157,9 +168,11 @@ async function seedIdentities() {
         .update(apikeyTable)
         .set({ byopClientKeyId: app_.id })
         .where(eq(apikeyTable.id, pkAlice.id));
-    keys.skAlice = (
-        await create("alice-sk", "sk", "user_alice", { keyType: "secret" })
-    ).key;
+    const skAlice = await create("alice-sk", "sk", "user_alice", {
+        keyType: "secret",
+    });
+    keys.skAlice = skAlice.key;
+    keys.skAliceId = skAlice.id;
     keys.skAliceLegacy = (await create("alice-legacy", "sk", "user_alice")).key;
     keys.skBob = (
         await create("bob-sk", "sk", "user_bob", { keyType: "secret" })
@@ -198,6 +211,8 @@ async function uploadViaForm(
         bytes?: Uint8Array;
         tags?: string[];
         extraFields?: Record<string, string>;
+        gateway?: ServiceGatewayBinding;
+        query?: string;
     } = {},
 ): Promise<{ status: number; body: UploadResponse | { error: string } }> {
     const form = new FormData();
@@ -212,11 +227,17 @@ async function uploadViaForm(
         form.append(field, value);
     }
 
-    const res = await fetchApp("https://media.pollinations.ai/upload", {
-        method: "POST",
-        body: form,
-        headers: { Authorization: `Bearer ${key}` },
-    });
+    const res = await fetchApp(
+        `https://media.pollinations.ai/upload${options.query ?? ""}`,
+        {
+            method: "POST",
+            body: form,
+            ...(options.query
+                ? {}
+                : { headers: { Authorization: `Bearer ${key}` } }),
+        },
+        options.gateway,
+    );
     const body = (await res.json()) as UploadResponse | { error: string };
     return { status: res.status, body };
 }
@@ -782,6 +803,252 @@ describe("media.pollinations.ai", () => {
             status: "settled",
             price: 0,
             billedPrice: 0,
+        });
+
+        // And exactly one analytics row for it left Enter.
+        const rows = mocks.tinybird.state.events.filter(
+            (row) => row.requestId === upload.id,
+        );
+        expect(rows).toHaveLength(1);
+        expect(rows[0]).toMatchObject({
+            eventType: "media.upload",
+            userId: "user_alice",
+            totalPrice: 0,
+        });
+    });
+
+    describe("upload settlement", () => {
+        async function stateFor(id: string) {
+            const db = drizzle(env.DB);
+            const authorization = await db
+                .select()
+                .from(serviceAuthorization)
+                .where(eq(serviceAuthorization.requestId, id))
+                .get();
+            const events = authorization
+                ? await db
+                      .select()
+                      .from(serviceBillingEvent)
+                      .where(
+                          eq(
+                              serviceBillingEvent.authorizationId,
+                              authorization.id,
+                          ),
+                      )
+                : [];
+            const catalogRows = await db
+                .select({ id: mediaItem.id })
+                .from(mediaItem)
+                .where(eq(mediaItem.id, id));
+            const tagRows = await db
+                .select({ tag: mediaTag.tag })
+                .from(mediaTag)
+                .where(eq(mediaTag.itemId, id));
+            return {
+                authorization,
+                events,
+                catalogRows,
+                tagRows,
+                object: sharedBucket.getObject(id),
+                analyticsRows: mocks.tinybird.state.events.filter(
+                    (row) => row.requestId === id,
+                ),
+            };
+        }
+
+        // The only authorization this isolated test created: the failed
+        // upload never returns its id, so the ledger is how a test finds it.
+        async function onlyRequestId(): Promise<string> {
+            const rows = await drizzle(env.DB)
+                .select({ requestId: serviceAuthorization.requestId })
+                .from(serviceAuthorization);
+            expect(rows).toHaveLength(1);
+            return rows[0].requestId;
+        }
+
+        it("re-delivers the identical settlement once when the first ack is lost", async () => {
+            // Every delivery reaches Enter. The first one commits, then its
+            // acknowledgement is lost on the way back; the second identical
+            // delivery is Enter's real duplicate response.
+            let calls = 0;
+            const results: ServiceSettleResult[] = [];
+            const gateway: ServiceGatewayBinding = {
+                ...enterGateway,
+                settle: async (input) => {
+                    calls += 1;
+                    const result = await enterGateway.settle(input);
+                    results.push(result);
+                    if (calls === 1) throw new Error("rpc ack lost");
+                    return result;
+                },
+            };
+            const { status, body } = await uploadViaForm(keys.pkAlice, {
+                fileName: "ack-lost.png",
+                bytes: variant(50),
+                tags: ["ack-lost"],
+                gateway,
+            });
+            expect(status).toBe(200);
+            const upload = body as UploadResponse;
+            expect(calls).toBe(2);
+            expect(results).toHaveLength(2);
+            expect(results[0]).toEqual({
+                ok: true,
+                settled: ["upload"],
+                duplicates: [],
+            });
+            expect(results[1]).toEqual({
+                ok: true,
+                settled: [],
+                duplicates: ["upload"],
+            });
+
+            const state = await stateFor(upload.id);
+            expect(state.events).toHaveLength(1);
+            expect(state.events[0]).toMatchObject({ status: "settled" });
+            expect(state.analyticsRows).toHaveLength(1);
+            expect(state.catalogRows).toHaveLength(1);
+            expect(state.object).toBeDefined();
+        });
+
+        it("rolls back storage and catalog when Enter refuses the settlement", async () => {
+            // Enter's own engine refuses once the authorization is gone
+            // (canceled here): the refusal is final and never retried.
+            let calls = 0;
+            const gateway: ServiceGatewayBinding = {
+                ...enterGateway,
+                settle: async (input) => {
+                    calls += 1;
+                    await enterGateway.cancel(input.authorizationId);
+                    return enterGateway.settle(input);
+                },
+            };
+            const { status } = await uploadViaForm(keys.pkAlice, {
+                fileName: "refused.png",
+                bytes: variant(51),
+                tags: ["refused"],
+                gateway,
+            });
+            expect(status).toBe(500);
+            expect(calls).toBe(1);
+
+            const state = await stateFor(await onlyRequestId());
+            expect(state.authorization?.canceledAt).not.toBeNull();
+            expect(state.events).toHaveLength(0);
+            expect(state.analyticsRows).toHaveLength(0);
+            expect(state.catalogRows).toHaveLength(0);
+            expect(state.tagRows).toHaveLength(0);
+            expect(state.object).toBeUndefined();
+
+            const galleryRes = await fetchApp(
+                "https://media.pollinations.ai/media?tag=refused",
+            );
+            expect(
+                ((await galleryRes.json()) as MediaPageResponse).items,
+            ).toEqual([]);
+        });
+
+        it("rolls back and cancels when the settlement binding keeps failing", async () => {
+            let calls = 0;
+            const gateway: ServiceGatewayBinding = {
+                ...enterGateway,
+                settle: async () => {
+                    calls += 1;
+                    throw new Error("rpc unavailable");
+                },
+            };
+            const { status } = await uploadViaForm(keys.pkAlice, {
+                fileName: "unavailable.png",
+                bytes: variant(52),
+                tags: ["unavailable"],
+                gateway,
+            });
+            expect(status).toBe(500);
+            expect(calls).toBe(2);
+
+            const state = await stateFor(await onlyRequestId());
+            expect(state.authorization?.canceledAt).not.toBeNull();
+            expect(state.events).toHaveLength(0);
+            expect(state.catalogRows).toHaveLength(0);
+            expect(state.tagRows).toHaveLength(0);
+            expect(state.object).toBeUndefined();
+        });
+    });
+
+    describe("agent run tokens", () => {
+        const runToken = () =>
+            signAgentRunToken({
+                secret: gatewayEnv.BETTER_AUTH_SECRET,
+                parentApiKeyId: keys.skAliceId,
+                parentRequestId: crypto.randomUUID(),
+            });
+
+        it("rejects ag_ in the query string with 401 before consulting Enter", async () => {
+            const { status } = await uploadViaForm("", {
+                fileName: "query-ag.png",
+                bytes: variant(60),
+                query: `?key=${encodeURIComponent(await runToken())}`,
+            });
+            expect(status).toBe(401);
+
+            const authorizations = await drizzle(env.DB)
+                .select()
+                .from(serviceAuthorization);
+            expect(authorizations).toHaveLength(0);
+        });
+
+        it("uploads with a Bearer ag_ token on behalf of the parent key's owner", async () => {
+            const { status, body } = await uploadViaForm(await runToken(), {
+                fileName: "bearer-ag.png",
+                bytes: variant(61),
+            });
+            expect(status).toBe(200);
+            const upload = body as UploadResponse;
+
+            const authorization = await drizzle(env.DB)
+                .select()
+                .from(serviceAuthorization)
+                .where(eq(serviceAuthorization.requestId, upload.id))
+                .get();
+            expect(authorization).toMatchObject({
+                userId: "user_alice",
+                apiKeyId: keys.skAliceId,
+            });
+        });
+
+        it("cannot delete published media; the owner's secret key still can", async () => {
+            const { status, body } = await uploadViaForm(keys.skAlice, {
+                fileName: "delete-ag.png",
+                bytes: variant(62),
+                tags: ["delete-ag"],
+            });
+            expect(status).toBe(200);
+            const upload = body as UploadResponse;
+            const url = `https://media.pollinations.ai/media/${upload.id}`;
+
+            const delegated = await fetchApp(url, {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${await runToken()}` },
+            });
+            expect(delegated.status).toBe(403);
+
+            // Nothing was removed.
+            expect(sharedBucket.getObject(upload.id)).toBeDefined();
+            const galleryRes = await fetchApp(
+                "https://media.pollinations.ai/media?tag=delete-ag",
+            );
+            expect(
+                ((await galleryRes.json()) as MediaPageResponse).items.map(
+                    (item) => item.id,
+                ),
+            ).toEqual([upload.id]);
+
+            const owner = await fetchApp(url, {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${keys.skAlice}` },
+            });
+            expect(owner.status).toBe(200);
+            expect(sharedBucket.getObject(upload.id)).toBeUndefined();
         });
     });
 

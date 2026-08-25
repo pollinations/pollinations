@@ -180,7 +180,10 @@ export function CommunityEndpointCard({
                     value={
                         <Link
                             to="/activity"
-                            search={(prev) => ({ ...prev, earningsModels: [endpoint.modelId] })}
+                            search={(prev) => ({
+                                ...prev,
+                                earningsModels: [endpoint.modelId],
+                            })}
                             className="font-medium text-theme-text-soft underline underline-offset-2 transition-colors hover:text-theme-text-strong text-xs"
                         >
                             View activity

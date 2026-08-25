@@ -608,3 +608,56 @@ describe("Pollinations model discovery", () => {
         );
     });
 });
+
+describe("Pollinations.accountEarnings", () => {
+    it("fetches earnings and returns them typed", async () => {
+        const client = newClient();
+        const earningsResponse = {
+            daily: [
+                {
+                    date: "2026-08-01",
+                    entity_id: "model-x",
+                    entity_name: "Model X",
+                    source: "community_model",
+                    requests: 42,
+                    paid_requests: 10,
+                    tier_requests: 32,
+                    baseline_price: 1.5,
+                    pollen_earned: 3,
+                    paid_earned: 1,
+                    tier_earned: 2,
+                    cost_usd: 0.42,
+                    reward_rate: 0.1,
+                },
+            ],
+            perEntity: [],
+        };
+        fetchMock.mockResolvedValueOnce(makeResponse(earningsResponse));
+
+        await expect(client.accountEarnings()).resolves.toEqual(
+            earningsResponse,
+        );
+        expect(fetchMock.mock.calls[0]?.[0]).toBe(
+            "https://example.test/account/earnings",
+        );
+    });
+
+    it("serializes query options onto the request URL", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValueOnce(
+            makeResponse({ daily: [], perEntity: [] }),
+        );
+
+        await client.accountEarnings({
+            days: 30,
+            granularity: "week",
+            period: "2026-W30",
+        });
+
+        const url = new URL(fetchMock.mock.calls[0]?.[0] as string);
+        expect(url.pathname).toBe("/account/earnings");
+        expect(url.searchParams.get("days")).toBe("30");
+        expect(url.searchParams.get("granularity")).toBe("week");
+        expect(url.searchParams.get("period")).toBe("2026-W30");
+    });
+});

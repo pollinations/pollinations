@@ -680,6 +680,41 @@ export interface DailyUsageResponse {
     count: number;
 }
 
+/** Options for fetching developer earnings */
+export interface EarningsOptions {
+    /** Response format (default: 'json') */
+    format?: "json" | "csv";
+    /** Number of days to include, max 90 (default: 90) */
+    days?: number;
+    /** Exact period granularity */
+    granularity?: "day" | "week" | "month";
+    /** Exact period, e.g. YYYY-MM-DD, YYYY-WNN, or YYYY-MM */
+    period?: string;
+}
+
+/** Developer earnings bucket row (per-date or per-entity rollup) */
+export interface DeveloperEarningsRow {
+    date: string;
+    entity_id: string;
+    entity_name: string;
+    source: "byop_markup" | "community_model";
+    requests: number;
+    paid_requests: number;
+    tier_requests: number;
+    baseline_price: number;
+    pollen_earned: number;
+    paid_earned: number;
+    tier_earned: number;
+    cost_usd: number;
+    reward_rate: number;
+}
+
+/** Developer earnings response */
+export interface DeveloperEarningsResponse {
+    daily: DeveloperEarningsRow[];
+    perEntity: DeveloperEarningsRow[];
+}
+
 /** API key validation response */
 export interface KeyInfo {
     valid: boolean;

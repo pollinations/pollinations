@@ -1,0 +1,33 @@
+{
+  "pr_number": 13880,
+  "title": "fix: prevent /M tokens unit label from overflowing pricing card on mobile",
+  "author": "gggff123",
+  "url": "https://github.com/pollinations/pollinations/pull/13880",
+  "merged_at": "2026-08-25T12:05:25Z",
+  "labels": [],
+  "pr_body_excerpt": "Prevents the /M tokens unit label overflowing pricing card on mobile \r\nAffected page: models page showing pricing table (e.g. gen.pollinations.ai models/pricing route).\r\nDevice: mobile browser (narrow viewport).\r\nExpected: pricing rows fit within the card/container width, or unit label wraps/stacks.\r\nActual: /M tokens extends past the right edge of the container.\r\nCloses #13867",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Tokens stay in the garden",
+    "blurb": "The little “/M tokens” label has stopped wandering off the edge of mobile pricing cards. Even units deserve a container.",
+    "summary": "Fixed the models pricing badge so the “/M tokens” unit wraps within its card instead of overflowing on narrow mobile viewports.",
+    "impact": "Mobile users can now read model pricing rows cleanly without the token unit extending past the card edge.",
+    "keywords": [
+      "mobile",
+      "pricing",
+      "models",
+      "frontend",
+      "responsive-design"
+    ],
+    "visual_concept": "Depict Polli as a careful garden keeper wearing a tiny tool belt, gently tucking a small “/M tokens” sign back inside a cozy lime-green pricing-card planter. Include a narrow retro phone screen, neat stacked pricing rows, and small flowers or code-plants growing around the card to represent responsive layout behaving itself.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny tool belt, gently fitting a small pixel-font “/M tokens” sign neatly inside a lime green (#ecf874) pricing-card planter on a retro mobile phone screen; code-flowers bloom around tidy stacked price rows. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with dark purple (#110518) outlines and a warm cream background."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-25/PR-13880.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny tool belt, gently fitting a small pixel-font “/M tokens” sign neatly inside a lime green (#ecf874) pricing-card planter on a retro mobile phone screen; code-flowers bloom around tidy stacked price rows. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with dark purple (#110518) outlines and a warm cream background."
+  },
+  "generated_at": "2026-08-25T12:06:21.760066+00:00"
+}

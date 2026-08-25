@@ -107,10 +107,15 @@ export async function callSeedance25API(
     } catch (error) {
         logError("prediction failed", error);
         if (error instanceof ReplicateError) {
-            logError("Replicate error", {
-                message: error.message,
-                status: error.status,
-            });
+            logError(
+                error.status === 500
+                    ? "unclassified Replicate prediction failure"
+                    : "Replicate error",
+                {
+                    message: error.message,
+                    status: error.status,
+                },
+            );
         }
         throw toReplicateHttpError(error, "Seedance 2.5 generation failed");
     }

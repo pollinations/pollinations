@@ -23,6 +23,63 @@ const testLog = {
 } as unknown as Logger;
 
 describe("OpenAI image cache", () => {
+    it("strips native input references before OpenAI replay and caching", async () => {
+        const app = new Hono<Env>()
+            .use("*", async (c, next) => {
+                c.set("log", testLog);
+                c.set("requestId", "test-request");
+                c.set("model", {
+                    requested: "seedance-2.5",
+                    resolved: "seedance-2.5",
+                    definition: {} as Env["Variables"]["model"]["definition"],
+                });
+                c.req.addValidatedData("json", await c.req.json());
+                await next();
+            })
+            .post("/v1/images/generations", prepareOpenAIImageGeneration, (c) =>
+                c.json({
+                    cacheUrl: c.var.generationCacheUrl?.toString(),
+                    capturedBody: c.var.generationRequestBody,
+                    handlerBody: c.req.valid("json" as never),
+                }),
+            );
+
+        const request = async (inputReferences?: string[]) => {
+            const response = await app.request("/v1/images/generations", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    prompt: "combine these references",
+                    model: "seedance-2.5",
+                    seed: 7,
+                    input_references: inputReferences,
+                }),
+            });
+            return response.json<{
+                cacheUrl: string;
+                capturedBody: string;
+                handlerBody: Record<string, unknown>;
+            }>();
+        };
+
+        const withoutReferences = await request();
+        const withReferences = await request([
+            "https://media.pollinations.ai/first",
+            "https://media.pollinations.ai/second",
+        ]);
+
+        expect(withReferences.cacheUrl).toBe(withoutReferences.cacheUrl);
+        expect(withReferences.capturedBody).toBe(
+            withoutReferences.capturedBody,
+        );
+        expect(JSON.parse(withReferences.capturedBody)).not.toHaveProperty(
+            "input_references",
+        );
+        expect(withReferences.handlerBody).not.toHaveProperty(
+            "input_references",
+        );
+    });
+
     it("serves objects cached before model metadata was stored", async () => {
         const bucket = createTestR2Bucket();
         const cacheUrl = new URL(

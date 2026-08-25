@@ -124,44 +124,113 @@ describe("ImageParamsSchema", () => {
         ]);
     });
 
-    it("rejects unsupported, excessive, conflicting, and private input references", () => {
-        const references = [
-            "https://media.pollinations.ai/first",
-            "https://example.com/second.png",
-            "https://example.com/third.png",
-        ];
+    it("accepts the advertised Seedance 2.5 reference limit", () => {
+        const result = ImageParamsSchema.safeParse({
+            model: "seedance-2.5",
+            input_references: [
+                "https://media.pollinations.ai/first",
+                "https://example.com/second.png",
+                "https://example.com/third.png",
+            ],
+        });
 
-        expect(
-            ImageParamsSchema.safeParse({
-                model: "seedance-2.5",
-                input_references: references,
-            }).success,
-        ).toBe(true);
-        expect(
-            ImageParamsSchema.safeParse({
-                model: "flux",
-                input_references: references[0],
-            }).success,
-        ).toBe(false);
-        expect(
-            ImageParamsSchema.safeParse({
-                model: "seedance-2.5",
-                input_references: [...references, "https://example.com/4.png"],
-            }).success,
-        ).toBe(false);
-        expect(
-            ImageParamsSchema.safeParse({
-                model: "seedance-2.5",
-                image: "https://example.com/frame.png",
-                input_references: references[0],
-            }).success,
-        ).toBe(false);
-        expect(
-            ImageParamsSchema.safeParse({
-                model: "seedance-2.5",
-                input_references: "http://127.0.0.1/reference.png",
-            }).success,
-        ).toBe(false);
+        expect(result.success).toBe(true);
+    });
+
+    it("rejects input references on unsupported models", () => {
+        const result = ImageParamsSchema.safeParse({
+            model: "flux",
+            input_references: "https://media.pollinations.ai/first",
+        });
+
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error.issues[0]).toMatchObject({
+                path: ["input_references"],
+                message: "flux does not support input_references.",
+            });
+        }
+    });
+
+    it("rejects references above the registry-driven model limit", () => {
+        const result = ImageParamsSchema.safeParse({
+            model: "seedance-2.5",
+            input_references: Array.from(
+                { length: 4 },
+                (_, index) => `https://example.com/${index}.png`,
+            ),
+        });
+
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error.issues[0]).toMatchObject({
+                path: ["input_references"],
+                message: "seedance-2.5 supports at most 3 input references.",
+            });
+        }
+    });
+
+    it("bounds input-reference validation before checking the model limit", () => {
+        const result = ImageParamsSchema.safeParse({
+            model: "seedance-2.5",
+            input_references: Array.from(
+                { length: 100_000 },
+                (_, index) => `https://example.com/${index}.png`,
+            ),
+        });
+
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error.issues[0]?.message).toBe(
+                "input_references accepts at most 30 URLs.",
+            );
+        }
+    });
+
+    it("rejects reference guidance combined with a real frame", () => {
+        const result = ImageParamsSchema.safeParse({
+            model: "seedance-2.5",
+            image: "https://example.com/frame.png",
+            input_references: "https://media.pollinations.ai/first",
+        });
+
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error.issues[0]).toMatchObject({
+                path: ["input_references"],
+                message:
+                    "seedance-2.5 cannot combine input_references with first/last-frame images.",
+            });
+        }
+    });
+
+    it("ignores empty image fragments in the reference conflict check", () => {
+        const result = ImageParamsSchema.safeParse({
+            model: "seedance-2.5",
+            image: ",",
+            input_references: "https://media.pollinations.ai/first",
+        });
+
+        expect(result.success).toBe(true);
+    });
+
+    it.each([
+        "http://127.0.0.1/reference.png",
+        "https://user:password@example.com/reference.png",
+    ])("rejects non-public reference URL %s", (inputReference) => {
+        const result = ImageParamsSchema.safeParse({
+            model: "seedance-2.5",
+            input_references: inputReference,
+        });
+
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error.issues[0]).toMatchObject({
+                path: ["input_references", 0],
+                message:
+                    "Reference images must use public HTTP(S) URLs without credentials or literal IP hosts.",
+            });
+        }
     });
 
     it("rejects unsupported Grok Imagine Image 2.0 quality", () => {

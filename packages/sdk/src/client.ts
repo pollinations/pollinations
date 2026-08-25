@@ -585,6 +585,9 @@ export class Pollinations {
         prompt: string,
         options: VideoGenerateOptions = {},
     ): string {
+        const inputReferences = Array.isArray(options.inputReferences)
+            ? options.inputReferences.join("|")
+            : options.inputReferences;
         const params: Record<string, unknown> = {
             model: options.model,
             duration: options.duration,
@@ -592,9 +595,7 @@ export class Pollinations {
             seed: options.seed,
             audio: options.audio,
             image: options.referenceImage,
-            input_references: Array.isArray(options.inputReferences)
-                ? options.inputReferences.join("|")
-                : options.inputReferences,
+            input_references: inputReferences || undefined,
             safe: options.safe,
         };
 

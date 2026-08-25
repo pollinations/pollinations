@@ -70,6 +70,9 @@ describe("video frame validation", () => {
             expect(capabilities.includes("end_frame"), model).toBe(
                 maxFrames >= 2,
             );
+            expect(capabilities.includes("reference_images"), model).toBe(
+                definition.maxInputReferences !== undefined,
+            );
         }
     });
 

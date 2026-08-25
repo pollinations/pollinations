@@ -843,7 +843,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "You can pass reference images via the `image` parameter: `image[0]` is the start frame, and `image[1]` is the end frame for models with `end_frame` in `video_capabilities`.",
                 "",
-                "For models with `reference_images` in `video_capabilities`, use `input_references` for visual guidance without fixing the first or last frame. Uploads from `media.pollinations.ai` are recommended; other public HTTP(S) image URLs are accepted.",
+                "For models with `reference_images` in `video_capabilities`, use `input_references` for visual guidance without fixing the first or last frame. Uploads from `media.pollinations.ai` are recommended; other public HTTP(S) image URLs are accepted when the provider can fetch them.",
                 "",
                 "Browse all available models and their `video_capabilities` at [`/image/models`](https://gen.pollinations.ai/image/models).",
             ].join("\n"),

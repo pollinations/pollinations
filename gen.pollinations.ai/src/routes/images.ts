@@ -234,6 +234,9 @@ export const prepareOpenAIImageGeneration = createMiddleware<Env>(
     async (c, next) => {
         const body = c.req.valid("json" as never) as CreateImageRequest &
             Record<string, unknown>;
+        // input_references is native-route-only. Strip it before capturing the
+        // replay body so the durable executor cannot accidentally honor it.
+        delete body.input_references;
         const model = c.var.model.resolved;
 
         const resolved = resolveParams(body);

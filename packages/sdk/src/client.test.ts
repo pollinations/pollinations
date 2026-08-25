@@ -159,6 +159,43 @@ describe("Convenience helpers", () => {
             "https://media.pollinations.ai/first|https://example.com/reference.png?crop=1,2",
         );
     });
+
+    it("serializes one video input reference without changing it", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse(null, {
+                kind: "binary",
+                contentType: "video/mp4",
+            }),
+        );
+
+        await generateVideo("use the reference", {
+            model: "seedance-2.5",
+            inputReferences:
+                "https://example.com/reference.png?crop=1,2&version=3",
+        });
+
+        const url = new URL(fetchMock.mock.calls[0][0] as string);
+        expect(url.searchParams.get("input_references")).toBe(
+            "https://example.com/reference.png?crop=1,2&version=3",
+        );
+    });
+
+    it("omits empty video input references", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse(null, {
+                kind: "binary",
+                contentType: "video/mp4",
+            }),
+        );
+
+        await generateVideo("no references", {
+            model: "seedance-2.5",
+            inputReferences: [],
+        });
+
+        const url = new URL(fetchMock.mock.calls[0][0] as string);
+        expect(url.searchParams.has("input_references")).toBe(false);
+    });
 });
 
 // Helper: pull the seed query param from an image/video GET URL.

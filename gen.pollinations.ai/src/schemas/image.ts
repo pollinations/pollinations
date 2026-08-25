@@ -97,7 +97,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         .optional()
         .meta({
             description:
-                "Public HTTP(S) image URLs used as visual guidance without fixing the first or last frame. Separate multiple URLs with `|`. Empty values are ignored. Support and limits are advertised by `reference_images` and `max_input_references` in `/models`; cannot be combined with `image` frame controls.",
+                "Video models only: public HTTP(S) image URLs used as visual guidance without fixing the first or last frame. Separate multiple URLs with `|`. Empty values are ignored. Support and limits are advertised by `reference_images` and `max_input_references` in `/models`; cannot be combined with `image` frame controls. Use `media.pollinations.ai` for predictable access; other hosts must allow the provider to fetch the image.",
         }),
     transparent: z.coerce.boolean().optional().default(false).meta({
         description:

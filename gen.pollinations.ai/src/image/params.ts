@@ -32,6 +32,8 @@ const sanitizedSideLength = z.preprocess((v) => {
     return Number.isInteger(parsed) ? parsed : undefined;
 }, z.int().optional());
 
+const INPUT_REFERENCES_VALIDATION_CEILING = 30;
+
 const publicReferenceUrl = z
     .string()
     .trim()
@@ -45,17 +47,27 @@ const publicReferenceUrl = z
         }
     });
 
-const sanitizedInputReferences = z
-    .union([z.array(z.string()), z.string(), z.null(), z.undefined()])
-    .transform((value?: string[] | string | null) => {
+const sanitizedInputReferences = z.preprocess(
+    (value?: string[] | string | null) => {
         const references = Array.isArray(value)
             ? value
             : typeof value === "string"
               ? value.split("|")
               : [];
-        return references.map((reference) => reference.trim()).filter(Boolean);
-    })
-    .pipe(z.array(publicReferenceUrl));
+        const normalized = references
+            .map((reference) => reference.trim())
+            .filter(Boolean);
+        // Bound per-item URL validation before the registry-driven model cap
+        // runs below. Keep one extra item so the static ceiling still fails.
+        return normalized.slice(0, INPUT_REFERENCES_VALIDATION_CEILING + 1);
+    },
+    z
+        .array(publicReferenceUrl)
+        .max(
+            INPUT_REFERENCES_VALIDATION_CEILING,
+            `input_references accepts at most ${INPUT_REFERENCES_VALIDATION_CEILING} URLs.`,
+        ),
+);
 
 function adjustImageSizeForModel(
     model: ImageModelName,
@@ -90,11 +102,12 @@ export const ImageParamsSchema = z
             .transform((value?: string[] | string | null) => {
                 if (!value) return [];
                 // Already an array (from POST JSON body)
-                if (Array.isArray(value)) return value;
+                if (Array.isArray(value)) return value.filter(Boolean);
                 // String: support both pipe (|) and comma (,) separators
-                return value.includes("|")
+                const images = value.includes("|")
                     ? value.split("|")
                     : value.split(",");
+                return images.filter(Boolean);
             })
             .catch([]),
         input_references: sanitizedInputReferences.optional(),

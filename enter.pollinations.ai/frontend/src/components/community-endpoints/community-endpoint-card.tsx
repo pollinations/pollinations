@@ -9,11 +9,13 @@ import {
     ExternalLinkIcon,
     GlobeIcon,
     IconButton,
+    InlineLink,
     LockIcon,
     PencilIcon,
     Surface,
     TerminalIcon,
     TokensIcon,
+    TrendUpIcon,
     XIcon,
 } from "@pollinations/ui";
 import { communityEndpointPriceFieldsForModality } from "@shared/community-endpoints.ts";
@@ -132,6 +134,22 @@ export function CommunityEndpointCard({
                     label="Model ID"
                     value={endpoint.modelId}
                     copyLabel="Copy model id"
+                />
+                <CommunityDetailRow
+                    icon={<TrendUpIcon className="h-3.5 w-3.5" />}
+                    label="Activity"
+                    value={
+                        <InlineLink
+                            href={`/_dashboard/activity?earningsModels=${encodeURIComponent(endpoint.modelId)}`}
+                            as="a"
+                            external={false}
+                            className=""
+                            showIcon={false}
+                        >
+                            View activity
+                        </InlineLink>
+                    }
+                    copyLabel={undefined}
                 />
                 {endpoint.type !== "prompt_agent" && (
                     <CommunityDetailRow

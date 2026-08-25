@@ -4507,7 +4507,10 @@ fixtureTest(
         );
         expect(minimumResponse.status).toBe(200);
         await expect(minimumResponse.json()).resolves.toMatchObject({
-            promptTextPrice: MIN_COMMUNITY_PRICE_PER_TOKEN,
+            promptTextPrice: 0,
+            pending: {
+                promptTextPrice: MIN_COMMUNITY_PRICE_PER_TOKEN,
+            },
         });
 
         const maximumResponse = await updatePrice(
@@ -4515,7 +4518,10 @@ fixtureTest(
         );
         expect(maximumResponse.status).toBe(200);
         await expect(maximumResponse.json()).resolves.toMatchObject({
-            promptTextPrice: MAX_COMMUNITY_PRICE_PER_TOKEN,
+            promptTextPrice: 0,
+            pending: {
+                promptTextPrice: MAX_COMMUNITY_PRICE_PER_TOKEN,
+            },
         });
 
         const aboveMaximumResponse = await updatePrice(

@@ -69,6 +69,11 @@ export const serviceAuthorization = sqliteTable(
         // Set when the reserve was released as expired, by the sweep or by
         // a late settlement.
         expiredAt: integer("expired_at", { mode: "timestamp" }),
+        // Random token of the settle call that currently holds this
+        // authorization's approval gate: taken and released inside one
+        // atomic settlement batch, so it is NULL between calls and every
+        // money statement of a call can be guarded on its own token.
+        settlementToken: text("settlement_token"),
     },
     (table) => [
         uniqueIndex("idx_service_authorization_request").on(
@@ -85,14 +90,19 @@ export const serviceBillingEvent = sqliteTable(
         eventId: text("event_id").notNull(),
         eventType: text("event_type").notNull(),
         // 'claimed' while the settlement batch is moving money, 'settled'
-        // once it committed. Every money statement is guarded on 'claimed',
-        // so a retried settlement after commit cannot move money again.
+        // once it committed. A retried settlement after commit cannot move
+        // money again.
         status: text("status").notNull(),
+        // Random token of the settle call that tentatively claimed this row
+        // (NULL once settled). A call prices only the rows its own token
+        // owns and deletes them again, in the same batch, when its approval
+        // gate fails — so a claim never outlives its batch unsettled.
+        claimToken: text("claim_token"),
         // Financial payload fingerprint: reusing an event id with a different
         // price/type/model/reward is a conflict, not a duplicate.
         fingerprint: text("fingerprint").notNull().default(""),
         // Service-reported price and the amount actually debited from the
-        // payer (price + BYOP markup, capped by a finite key budget).
+        // payer (price + BYOP markup), stored at ledger precision.
         price: real("price").notNull().default(0),
         billedPrice: real("billed_price").notNull().default(0),
         modelUsed: text("model_used"),

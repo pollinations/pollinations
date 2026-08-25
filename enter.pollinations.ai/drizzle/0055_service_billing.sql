@@ -19,7 +19,8 @@ CREATE TABLE `service_authorization` (
 	`expires_at` integer NOT NULL,
 	`settled_at` integer,
 	`canceled_at` integer,
-	`expired_at` integer
+	`expired_at` integer,
+	`settlement_token` text
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `idx_service_authorization_request` ON `service_authorization` (`service`,`request_id`);--> statement-breakpoint
@@ -28,6 +29,7 @@ CREATE TABLE `service_billing_event` (
 	`event_id` text NOT NULL,
 	`event_type` text NOT NULL,
 	`status` text NOT NULL,
+	`claim_token` text,
 	`fingerprint` text DEFAULT '' NOT NULL,
 	`price` real DEFAULT 0 NOT NULL,
 	`billed_price` real DEFAULT 0 NOT NULL,

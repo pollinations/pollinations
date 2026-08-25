@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "e7b41d50-6fc0-4d0b-ad01-b1851b38b20b",
+  "id": "983cf3ab-dbc9-435c-ae3b-dc91f4c245a0",
   "prevId": "e139f3f2-7a00-4878-b145-95c3ce0e28fb",
   "tables": {
     "account": {
@@ -1764,6 +1764,13 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
+        },
+        "settlement_token": {
+          "name": "settlement_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         }
       },
       "indexes": {
@@ -1810,6 +1817,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false
+        },
+        "claim_token": {
+          "name": "claim_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
           "autoincrement": false
         },
         "fingerprint": {

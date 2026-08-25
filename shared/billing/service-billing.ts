@@ -345,36 +345,39 @@ function closedReason(
 
 /**
  * Settle billable events against an authorization. All events of one call
- * form a single atomic D1 batch. The call is approved as a whole or not at
- * all: what its total adds beyond the reserve the request still holds must
- * be covered by the live, non-negative balance of the request's wallet
- * bucket and — for a finite key — by the key's live budget (a deleted key
- * covers nothing beyond the reserve; a budget lifted to NULL covers
- * everything). That check is part of every event's claim, evaluated inside
- * the batch against live state, so it serializes with concurrent
- * settlements: two calls cannot both spend one headroom, and an underfunded
- * call lands no claim, moves no money, and is rejected as
- * insufficient_balance / insufficient_budget. Nothing is ever capped or
- * partially settled, and a wallet bucket never goes into debt.
+ * form a single atomic D1 batch, and the call is approved as a whole or not
+ * at all. The batch, in order:
  *
- * Per approved event, in delivery order, the batch claims the idempotency
- * row and moves money against the authorization's running total:
+ *   1. Tentatively claims every distinct event of the call: one ledger row
+ *      per event, owned by this call's random token, with its billed price
+ *      already rounded to ledger precision. An event another call has
+ *      already landed keeps that call's row (ON CONFLICT DO NOTHING).
+ *   2. Takes the authorization's approval gate (its settlement token) —
+ *      only while the authorization is open and no other call holds it,
+ *      only if every event of the call is now on the ledger with exactly
+ *      the expected financial fingerprint (an identical concurrent winner
+ *      is a duplicate; a different payload is a conflict), and only if the
+ *      cost of the rows this token actually owns — the sum of their stored
+ *      billed prices — beyond the reserve the request still holds is
+ *      covered by the payer's live non-negative wallet bucket and, for a
+ *      finite key, by the key's live budget (a deleted key covers nothing
+ *      beyond the reserve; a budget lifted to NULL covers everything).
+ *   3. Reads the classification of a failed gate from the same transaction
+ *      state the gate saw, so the error code never depends on a balance
+ *      read after the fact.
+ *   4. Guarded on the gate: debits the owned overage once from the wallet
+ *      bucket and the key, credits BYOP markup and community rewards per
+ *      owned event, adds the owned cost to the running totals, reconciles
+ *      the reserve on the first settlement, and flips the owned rows to
+ *      settled.
+ *   5. Deletes this token's tentative rows if the gate was not taken, and
+ *      releases the gate.
  *
- *   - the part of the charge the reserve does not cover is debited from the
- *     request's wallet bucket and from the key,
- *   - BYOP markup and community rewards are credited into the payer's
- *     bucket.
- *
- * Then, on the first settle call only, the unused reserve is refunded to the
- * wallet and the key — so a leading zero-price event can neither consume
- * nor refund the reserve before the charged event in the same call.
- *
- * The claim only lands while the authorization is open (not canceled, not
- * expired — checked again inside the batch, so a sweep racing a settlement
- * still yields one outcome), and every later statement is guarded on the
- * event row being 'claimed', which only this batch's own insert can make
- * true: a redelivered settlement is a pure no-op and a mid-batch failure
- * rolls every claim back with the money.
+ * So a rejected call commits no ledger row and moves no money (its reserve
+ * stays held until the service cancels or it expires), a redelivered call
+ * is a pure no-op, concurrent deliveries of one event charge it once, and
+ * a call racing an identical delivery of some of its events pays only for
+ * the events it won. Atomicity is per call: earlier calls stay committed.
  */
 export async function settleServiceBillingEvents(
     d1: D1Database,
@@ -405,82 +408,28 @@ export async function settleServiceBillingEvents(
         return { ok: false, error: closed };
     }
 
-    // Events already on the ledger: same fingerprint → duplicate (skipped),
-    // different fingerprint → conflict (nothing in this call settles).
-    const existing = new Map(
-        (
-            await db
-                .select({
-                    eventId: serviceBillingEvent.eventId,
-                    fingerprint: serviceBillingEvent.fingerprint,
-                })
-                .from(serviceBillingEvent)
-                .where(eq(serviceBillingEvent.authorizationId, aid))
-        ).map((row) => [row.eventId, row.fingerprint]),
-    );
-    const duplicates: string[] = [];
-    const pending: ServiceBillableEvent[] = [];
     // Within one call, a repeated event id is one semantic event only if
     // its financial payload is identical; otherwise the whole call is a
     // conflict.
-    const seen = new Map<string, string>();
+    const pending: ServiceBillableEvent[] = [];
+    const fingerprints = new Map<string, string>();
     for (const event of input.events) {
         const fingerprint = eventFingerprint(event);
-        const earlier = seen.get(event.eventId);
+        const earlier = fingerprints.get(event.eventId);
         if (earlier !== undefined) {
             if (earlier !== fingerprint) {
                 return { ok: false, error: "event_conflict" };
             }
             continue;
         }
-        seen.set(event.eventId, fingerprint);
-        const known = existing.get(event.eventId);
-        if (known === undefined) {
-            pending.push(event);
-        } else if (known === eventFingerprint(event)) {
-            duplicates.push(event.eventId);
-        } else {
-            return { ok: false, error: "event_conflict" };
-        }
+        fingerprints.set(event.eventId, fingerprint);
+        pending.push(event);
     }
 
     const payerBucket = authorization.payerBucket as Bucket;
     const column = bucketColumn(payerBucket);
-    const statements: D1PreparedStatement[] = [];
-    const plan: { event: ServiceBillableEvent; claimIndex: number }[] = [];
-
-    const claimedGuard = `EXISTS (
-        SELECT 1 FROM service_billing_event
-        WHERE authorization_id = ?1 AND event_id = ?2 AND status = 'claimed')`;
-    const eventField = (field: string, guarded: boolean) =>
-        `(SELECT ${field} FROM service_billing_event
-          WHERE authorization_id = ?1 AND event_id = ?2${
-              guarded ? " AND status = 'claimed'" : ""
-})`;
-    // What this event adds beyond what the wallet already holds.
-    const overage = `ROUND(MAX(0, (
-        SELECT settled_price + ${eventField("billed_price", false)} - charged_price
-        FROM service_authorization WHERE id = ?1)), ${P})`;
-
-    // Whole-call approval, evaluated against live state by every claim in
-    // this batch (claims come before any money moves, so all of them see
-    // the same state): the call's total billed price (?15) beyond the
-    // reserve the request still holds must be covered by the payer's live
-    // non-negative bucket balance and by a finite key's live budget.
-    const callOverage = `ROUND(MAX(0, ?15 - (
-        SELECT charged_price - settled_price
-        FROM service_authorization WHERE id = ?1)), ${P})`;
-    const walletCovers = `ROUND(MAX(0, COALESCE(
-        (SELECT ${column} FROM user WHERE id = ?16), 0)), ${P}) >= ${callOverage}`;
-    const keyCovers = `(CASE
-        WHEN NOT EXISTS (SELECT 1 FROM apikey WHERE id = ?17) THEN 0
-        WHEN (SELECT pollen_balance FROM apikey WHERE id = ?17) IS NULL THEN ?15
-        ELSE ROUND(MAX(0, (SELECT pollen_balance FROM apikey WHERE id = ?17)), ${P})
-    END) >= ${callOverage}`;
-    const approved = [
-        walletCovers,
-        ...(authorization.apiKeyHasBudget ? [keyCovers] : []),
-    ].join(" AND ");
+    const token = crypto.randomUUID();
+    const hasBudget = authorization.apiKeyHasBudget;
 
     const billedFor = async (event: ServiceBillableEvent) => {
         const price = Math.max(0, event.price);
@@ -520,41 +469,86 @@ export async function settleServiceBillingEvents(
             ...(await billedFor(event)),
         })),
     );
-    const callTotal = Number(
-        priced.reduce((sum, { billed }) => sum + billed, 0).toFixed(P),
+
+    // SQL fragments. Slots: ?1 authorization id, ?2 this call's token; the
+    // rest as each statement documents.
+    const open = `canceled_at IS NULL AND expired_at IS NULL AND expires_at > ?5`;
+    // Every event of the call is on the ledger with the expected payload.
+    const fingerprintsMatch = `NOT EXISTS (
+        SELECT 1 FROM json_each(?6) AS expected
+        WHERE NOT EXISTS (
+            SELECT 1 FROM service_billing_event
+            WHERE authorization_id = ?1
+              AND event_id = json_extract(expected.value, '$.id')
+              AND fingerprint = json_extract(expected.value, '$.fp')))`;
+    // Cost of the rows this call owns: the sum of their stored, already
+    // rounded billed prices — never a total computed before the batch.
+    const owned = `(SELECT ROUND(COALESCE(SUM(billed_price), 0), ${P})
+                    FROM service_billing_event
+                    WHERE authorization_id = ?1 AND claim_token = ?2)`;
+    // What the owned cost adds beyond the reserve the request still holds;
+    // `remaining` is evaluated against the authorization row.
+    const overageBeyond = (remaining: string) =>
+        `ROUND(MAX(0, ${owned} - (${remaining})), ${P})`;
+    const gateOverage = overageBeyond("charged_price - settled_price");
+    const walletCovers = `ROUND(MAX(0, COALESCE(
+        (SELECT ${column} FROM user WHERE id = ?3), 0)), ${P}) >= ${gateOverage}`;
+    const keyCovers = hasBudget
+        ? `(CASE
+            WHEN NOT EXISTS (SELECT 1 FROM apikey WHERE id = ?4) THEN 0
+            WHEN (SELECT pollen_balance FROM apikey WHERE id = ?4) IS NULL
+                THEN ${owned}
+            ELSE ROUND(MAX(0, (SELECT pollen_balance FROM apikey WHERE id = ?4)), ${P})
+        END) >= ${gateOverage}`
+        : "1";
+    const gateBinds = [
+        aid,
+        token,
+        authorization.userId,
+        hasBudget ? authorization.apiKeyId : null,
+        toDbTime(now),
+        JSON.stringify(
+            pending.map((event) => ({
+                id: event.eventId,
+                fp: fingerprints.get(event.eventId),
+            })),
+        ),
+    ];
+    // This call holds the authorization's approval gate.
+    const gated = `EXISTS (SELECT 1 FROM service_authorization
+                   WHERE id = ?1 AND settlement_token = ?2)`;
+    const moneyOverage = overageBeyond(
+        `SELECT charged_price - settled_price
+         FROM service_authorization WHERE id = ?1`,
     );
 
-    for (const { event, price, markup, community, billed } of priced) {
-        const eid = event.eventId;
+    const statements: D1PreparedStatement[] = [];
+    const claims: { event: ServiceBillableEvent; index: number }[] = [];
 
-        // 1. Claim the idempotency row — only while the authorization is
-        // still open and the whole call is approved. Zero changes means an
-        // earlier settlement owns this event, the authorization closed
-        // underneath us, or the call is underfunded; every later statement
-        // is then inert.
-        plan.push({ event, claimIndex: statements.length });
+    // 1. Tentative claims, before any money or totals.
+    for (const { event, price, markup, community, billed } of priced) {
+        claims.push({ event, index: statements.length });
         statements.push(
             d1
                 .prepare(
                     `INSERT INTO service_billing_event (
-                        authorization_id, event_id, event_type, status, fingerprint,
-                        price, billed_price, model_used,
-                        dev_user_id, dev_credit, markup_rate,
+                        authorization_id, event_id, event_type, status,
+                        claim_token, fingerprint, price, billed_price,
+                        model_used, dev_user_id, dev_credit, markup_rate,
                         community_reward_user_id, community_reward_credit,
                         community_reward_rate, created_at
                     )
-                    SELECT ?1, ?2, ?3, 'claimed', ?14, ?4, ROUND(?5, ${P}), ?6,
-                        ?7, ?8, ?9, ?10, ?11, ?12, ?13
+                    SELECT ?1, ?2, ?3, 'claimed', ?15, ?14, ?4, ROUND(?5, ${P}),
+                        ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13
                     WHERE EXISTS (
                         SELECT 1 FROM service_authorization
                         WHERE id = ?1 AND canceled_at IS NULL
                           AND expired_at IS NULL AND expires_at > ?13)
-                      AND ${approved}
                     ON CONFLICT (authorization_id, event_id) DO NOTHING`,
                 )
                 .bind(
                     aid,
-                    eid,
+                    event.eventId,
                     event.eventType,
                     price,
                     billed,
@@ -566,108 +560,111 @@ export async function settleServiceBillingEvents(
                     community?.credit ?? 0,
                     community?.rewardRate ?? 0,
                     toDbTime(now),
-                    eventFingerprint(event),
-                    callTotal,
-                    authorization.userId,
-                    ...(authorization.apiKeyHasBudget
-                        ? [authorization.apiKeyId]
-                        : []),
+                    fingerprints.get(event.eventId) as string,
+                    token,
                 ),
         );
+    }
 
-        if (billed > 0) {
-            // 2. Debit the payer's wallet bucket for what the reserve does
-            // not already cover (approved above, so the bucket stays >= 0).
+    // 2. The approval gate.
+    const gateIndex = statements.length;
+    statements.push(
+        d1
+            .prepare(
+                `UPDATE service_authorization SET settlement_token = ?2
+                 WHERE id = ?1 AND settlement_token IS NULL AND ${open}
+                   AND ${fingerprintsMatch}
+                   AND ${walletCovers} AND ${keyCovers}`,
+            )
+            .bind(...gateBinds),
+    );
+    // 3. Why the gate was refused, from the state it was evaluated on.
+    const verdictIndex = statements.length;
+    statements.push(
+        d1
+            .prepare(
+                `SELECT
+                    canceled_at IS NOT NULL AS canceled,
+                    (expired_at IS NOT NULL OR expires_at <= ?5) AS expired,
+                    ${fingerprintsMatch} AS fingerprints_match,
+                    ${walletCovers} AS wallet_covers,
+                    ${keyCovers} AS key_covers
+                 FROM service_authorization WHERE id = ?1`,
+            )
+            .bind(...gateBinds),
+    );
+
+    // 4. Money and totals, all guarded on the gate.
+    if (priced.some(({ billed }) => billed > 0)) {
+        statements.push(
+            d1
+                .prepare(
+                    `UPDATE user
+                     SET ${column} = ROUND(COALESCE(${column}, 0) - ${moneyOverage}, ${P})
+                     WHERE id = ?3 AND ${gated}`,
+                )
+                .bind(aid, token, authorization.userId),
+        );
+        if (hasBudget) {
             statements.push(
                 d1
                     .prepare(
-                        `UPDATE user
-                         SET ${column} = ROUND(COALESCE(${column}, 0) - ${overage}, ${P})
-                         WHERE id = ?3 AND ${claimedGuard}`,
+                        `UPDATE apikey
+                         SET pollen_balance = ROUND(pollen_balance - ${moneyOverage}, ${P})
+                         WHERE id = ?3 AND pollen_balance IS NOT NULL AND ${gated}`,
                     )
-                    .bind(aid, eid, authorization.userId),
+                    .bind(aid, token, authorization.apiKeyId),
             );
-            // 3./4. Credit dev markup and community reward into the bucket
-            // the payer drew from. A zero credit or a settled row makes the
-            // WHERE false — nothing moves.
-            const creditStatement = (field: string, targetUserId: string) =>
-                d1
-                    .prepare(
-                        `UPDATE user
-                         SET ${column} = ROUND(COALESCE(${column}, 0)
-                             + ${eventField(field, false)}, ${P})
-                         WHERE id = ?3 AND ${eventField(field, true)} > 0`,
-                    )
-                    .bind(aid, eid, targetUserId);
+        }
+        // Credits go into the bucket the payer drew from, per owned event.
+        // A row this token does not own (a concurrent identical winner)
+        // yields NULL here, so nothing moves for it.
+        const ownedField = (field: string) =>
+            `(SELECT ${field} FROM service_billing_event
+              WHERE authorization_id = ?1 AND event_id = ?3 AND claim_token = ?2)`;
+        const credit = (eventId: string, field: string, userId: string) =>
+            d1
+                .prepare(
+                    `UPDATE user
+                     SET ${column} = ROUND(COALESCE(${column}, 0) + ${ownedField(field)}, ${P})
+                     WHERE id = ?4 AND ${ownedField(field)} > 0 AND ${gated}`,
+                )
+                .bind(aid, token, eventId, userId);
+        for (const { event, markup, community } of priced) {
             if (markup) {
                 statements.push(
-                    creditStatement("dev_credit", markup.devUserId),
+                    credit(event.eventId, "dev_credit", markup.devUserId),
                 );
             }
             if (community) {
                 statements.push(
-                    creditStatement(
+                    credit(
+                        event.eventId,
                         "community_reward_credit",
                         community.userId,
                     ),
                 );
             }
-            // 5. Move the key budget by exactly what the wallet moved.
-            if (authorization.apiKeyHasBudget) {
-                statements.push(
-                    d1
-                        .prepare(
-                            `UPDATE apikey
-                             SET pollen_balance = ROUND(pollen_balance - ${overage}, ${P})
-                             WHERE id = ?3 AND pollen_balance IS NOT NULL
-                               AND ${claimedGuard}`,
-                        )
-                        .bind(aid, eid, authorization.apiKeyId),
-                );
-            }
         }
-
-        // 6./7. Add the event to the running total and flip it to 'settled'
-        // — from here on, every guard above is permanently false.
-        statements.push(
-            d1
-                .prepare(
-                    `UPDATE service_authorization
-                     SET settled_price = ROUND(settled_price
-                             + ${eventField("billed_price", false)}, ${P}),
-                         charged_price = ROUND(MAX(charged_price, settled_price
-                             + ${eventField("billed_price", false)}), ${P})
-                     WHERE id = ?1 AND ${claimedGuard}`,
-                )
-                .bind(aid, eid),
-            d1
-                .prepare(
-                    `UPDATE service_billing_event SET status = 'settled'
-                     WHERE authorization_id = ?1 AND event_id = ?2
-                       AND status = 'claimed'`,
-                )
-                .bind(aid, eid),
-        );
     }
-
+    statements.push(
+        d1
+            .prepare(
+                `UPDATE service_authorization
+                 SET settled_price = ROUND(settled_price + ${owned}, ${P}),
+                     charged_price = ROUND(MAX(charged_price, settled_price + ${owned}), ${P})
+                 WHERE id = ?1 AND settlement_token = ?2`,
+            )
+            .bind(aid, token),
+    );
     if (!authorization.settledAt) {
-        // 8. First settlement: reconcile the reserve against the total —
+        // First settlement: reconcile the reserve against the total —
         // whatever the wallet still holds beyond it goes back to the wallet
         // and the key. Later calls start from a reconciled authorization
-        // and charge only what they add. A call with events that landed
-        // nothing (rejected as underfunded) leaves the reserve held: the
-        // service cancels it, or it expires.
-        const landed =
-            pending.length > 0
-                ? ` AND EXISTS (
-            SELECT 1 FROM service_billing_event
-            WHERE authorization_id = ?1 AND event_id = ?4)`
-                : "";
+        // and charge only what they add.
         const unreconciled = `EXISTS (
             SELECT 1 FROM service_authorization
-            WHERE id = ?1 AND settled_at IS NULL AND canceled_at IS NULL
-              AND expired_at IS NULL AND expires_at > ?3)${landed}`;
-        const landedBind = pending.length > 0 ? [pending[0].eventId] : [];
+            WHERE id = ?1 AND settlement_token = ?2 AND settled_at IS NULL)`;
         const refund = `(SELECT ROUND(charged_price - settled_price, ${P})
                          FROM service_authorization WHERE id = ?1)`;
         statements.push(
@@ -675,25 +672,20 @@ export async function settleServiceBillingEvents(
                 .prepare(
                     `UPDATE user
                      SET ${column} = ROUND(COALESCE(${column}, 0) + ${refund}, ${P})
-                     WHERE id = ?2 AND ${unreconciled}`,
+                     WHERE id = ?3 AND ${unreconciled}`,
                 )
-                .bind(aid, authorization.userId, toDbTime(now), ...landedBind),
+                .bind(aid, token, authorization.userId),
         );
-        if (authorization.apiKeyHasBudget) {
+        if (hasBudget) {
             statements.push(
                 d1
                     .prepare(
                         `UPDATE apikey
                          SET pollen_balance = ROUND(pollen_balance + ${refund}, ${P})
-                         WHERE id = ?2 AND pollen_balance IS NOT NULL
+                         WHERE id = ?3 AND pollen_balance IS NOT NULL
                            AND ${unreconciled}`,
                     )
-                    .bind(
-                        aid,
-                        authorization.apiKeyId,
-                        toDbTime(now),
-                        ...landedBind,
-                    ),
+                    .bind(aid, token, authorization.apiKeyId),
             );
         }
         statements.push(
@@ -701,58 +693,77 @@ export async function settleServiceBillingEvents(
                 .prepare(
                     `UPDATE service_authorization
                      SET charged_price = settled_price, settled_at = ?3
-                     WHERE id = ?1 AND ${unreconciled}`,
+                     WHERE id = ?1 AND settlement_token = ?2 AND settled_at IS NULL`,
                 )
-                // ?2 is the payer/key slot of the refund statements above;
-                // unused here, bound so the guard's ?3/?4 keep their numbers.
-                .bind(aid, null, toDbTime(now), ...landedBind),
+                .bind(aid, token, toDbTime(now)),
+        );
+    }
+    statements.push(
+        d1
+            .prepare(
+                `UPDATE service_billing_event
+                 SET status = 'settled', claim_token = NULL
+                 WHERE authorization_id = ?1 AND claim_token = ?2 AND ${gated}`,
+            )
+            .bind(aid, token),
+        // 5. A refused call leaves no claim behind; the gate is released
+        // either way.
+        d1
+            .prepare(
+                `DELETE FROM service_billing_event
+                 WHERE authorization_id = ?1 AND claim_token = ?2 AND NOT ${gated}`,
+            )
+            .bind(aid, token),
+        d1
+            .prepare(
+                `UPDATE service_authorization SET settlement_token = NULL
+                 WHERE id = ?1 AND settlement_token = ?2`,
+            )
+            .bind(aid, token),
+    );
+
+    const results = await d1.batch(statements);
+    if ((results[gateIndex].meta.changes ?? 0) === 0) {
+        const verdict = results[verdictIndex].results[0] as
+            | {
+                  canceled: number;
+                  expired: number;
+                  fingerprints_match: number;
+                  wallet_covers: number;
+                  key_covers: number;
+              }
+            | undefined;
+        if (!verdict) return { ok: false, error: "unknown_authorization" };
+        if (verdict.canceled)
+            return { ok: false, error: "authorization_canceled" };
+        if (verdict.expired)
+            return { ok: false, error: "authorization_expired" };
+        if (!verdict.fingerprints_match) {
+            return { ok: false, error: "event_conflict" };
+        }
+        if (!verdict.wallet_covers) {
+            return { ok: false, error: "insufficient_balance" };
+        }
+        if (!verdict.key_covers)
+            return { ok: false, error: "insufficient_budget" };
+        throw new Error(
+            `Settlement gate of authorization ${aid} refused an approvable call`,
         );
     }
 
     const settled: string[] = [];
-    const outcomes: SettledEventOutcome[] = [];
-    const results = statements.length > 0 ? await d1.batch(statements) : [];
-    for (const { event, claimIndex } of plan) {
-        if ((results[claimIndex].meta.changes ?? 0) === 0) {
-            // Lost to a concurrent settlement of the same event, or the
-            // authorization closed under us (then no event claimed).
-            const claimed = await db
-                .select({ fingerprint: serviceBillingEvent.fingerprint })
-                .from(serviceBillingEvent)
-                .where(
-                    and(
-                        eq(serviceBillingEvent.authorizationId, aid),
-                        eq(serviceBillingEvent.eventId, event.eventId),
-                    ),
-                )
-                .get();
-            if (!claimed) {
-                const current = await db
-                    .select()
-                    .from(serviceAuthorization)
-                    .where(eq(serviceAuthorization.id, aid))
-                    .get();
-                if (!current)
-                    return { ok: false, error: "unknown_authorization" };
-                const closedNow = closedReason(current, now);
-                if (closedNow) return { ok: false, error: closedNow };
-                // Open, unclaimed: the whole-call approval failed. Name
-                // the side that fell short (the batch is committed either
-                // way; this only picks the error code).
-                return {
-                    ok: false,
-                    error: await insufficiencyReason(db, current, callTotal),
-                };
-            }
-            if (claimed.fingerprint !== eventFingerprint(event)) {
-                return { ok: false, error: "event_conflict" };
-            }
+    const duplicates: string[] = [];
+    for (const { event, index } of claims) {
+        // A claim that did not land was an identical delivery another call
+        // already settled (the gate verified its fingerprint).
+        if ((results[index].meta.changes ?? 0) === 0) {
             duplicates.push(event.eventId);
-            continue;
+        } else {
+            settled.push(event.eventId);
         }
-        settled.push(event.eventId);
     }
 
+    const outcomes: SettledEventOutcome[] = [];
     if (settled.length > 0) {
         // Report what the batch committed, after the reserve reconciliation,
         // not what was planned before it ran.
@@ -807,27 +818,6 @@ export async function settleServiceBillingEvents(
         duplicates,
         outcomes,
     };
-}
-
-/**
- * Which side of the whole-call approval fell short for a call adding
- * `callTotal` to an open authorization: the wallet bucket (checked first)
- * or the finite key budget.
- */
-async function insufficiencyReason(
-    db: Parameters<typeof getUserBalance>[0],
-    authorization: AuthorizationRow,
-    callTotal: number,
-): Promise<"insufficient_balance" | "insufficient_budget"> {
-    const remaining = authorization.chargedPrice - authorization.settledPrice;
-    const callOverage = Math.max(0, callTotal - remaining);
-    const balances = await getUserBalance(db, authorization.userId);
-    const bucketBalance =
-        authorization.payerBucket === "tier"
-            ? balances.tierBalance
-            : balances.packBalance;
-    if (Math.max(0, bucketBalance) < callOverage) return "insufficient_balance";
-    return "insufficient_budget";
 }
 
 /**

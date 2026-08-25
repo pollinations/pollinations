@@ -1295,4 +1295,434 @@ describe("ServiceGateway", () => {
         expect(silent.totalPrice).toBe(0);
         expect(Object.hasOwn(silent, "isBilledUsage")).toBe(false);
     });
+
+    /** No settle call may leave ownership state behind, whatever its outcome. */
+    async function ownershipResidue() {
+        const gates = (await db().select().from(serviceAuthorization)).filter(
+            (row) => row.settlementToken !== null,
+        );
+        const claims = (await db().select().from(serviceBillingEvent)).filter(
+            (row) => row.claimToken !== null || row.status !== "settled",
+        );
+        return gates.length + claims.length;
+    }
+
+    test("an underfunded call is refused whole in either event order", async ({
+        mocks,
+        paidApiKey,
+    }) => {
+        await mocks.enable("tinybird");
+        await seedUser("order_owner");
+        const cheap = {
+            eventId: "cheap",
+            eventType: "media.upload" as const,
+            price: 1,
+        };
+        const dear = {
+            eventId: "dear",
+            eventType: "media.upload" as const,
+            price: 7,
+            communityReward: { ownerUserId: "order_owner", rewardRate: 0.5 },
+        };
+        // Reserve 5 + live 2 covers 7, not 8: neither order may land the
+        // affordable event before refusing the other.
+        for (const events of [
+            [cheap, dear],
+            [dear, cheap],
+        ]) {
+            await db()
+                .update(userTable)
+                .set({ tierBalance: 0, packBalance: 7 });
+            const ownerBefore = await userBalances("order_owner");
+            const authorized = await authorizeServiceRequest(
+                env,
+                authorizeInput(paidApiKey, { estimatedPrice: 5 }),
+            );
+            expect(authorized.ok).toBe(true);
+            if (!authorized.ok) return;
+            expect((await userBalances()).pack).toBeCloseTo(2);
+
+            const settled = await settleServiceEvents(env, {
+                authorizationId: authorized.authorizationId,
+                events,
+            });
+            expect(settled).toEqual({
+                ok: false,
+                error: "insufficient_balance",
+            });
+            expect((await userBalances()).pack).toBeCloseTo(2);
+            expect(await userBalances("order_owner")).toEqual(ownerBefore);
+            expect(await db().select().from(serviceBillingEvent)).toHaveLength(
+                0,
+            );
+            expect(mocks.tinybird.state.events).toHaveLength(0);
+            expect(await ownershipResidue()).toBe(0);
+            // The reserve is still held, and comes back whole.
+            const canceled = await cancelServiceRequest(
+                env,
+                authorized.authorizationId,
+            );
+            expect(canceled.released).toBe(true);
+            expect((await userBalances()).pack).toBeCloseTo(7);
+        }
+    });
+
+    test("an exactly funded call settles identically in either event order", async ({
+        paidApiKey,
+    }) => {
+        const charged = {
+            eventId: "charged",
+            eventType: "media.upload" as const,
+            price: 5,
+        };
+        const free = {
+            eventId: "free",
+            eventType: "media.upload" as const,
+            price: 0,
+        };
+        const outcomes = [];
+        for (const events of [
+            [charged, free],
+            [free, charged],
+        ]) {
+            await db()
+                .update(userTable)
+                .set({ tierBalance: 0, packBalance: 5 });
+            const authorized = await authorizeServiceRequest(
+                env,
+                authorizeInput(paidApiKey, { estimatedPrice: 5 }),
+            );
+            expect(authorized.ok).toBe(true);
+            if (!authorized.ok) return;
+            expect((await userBalances()).pack).toBe(0);
+            const settled = await settleServiceEvents(env, {
+                authorizationId: authorized.authorizationId,
+                events,
+            });
+            const [row] = await db()
+                .select()
+                .from(serviceAuthorization)
+                .where(eq(serviceAuthorization.id, authorized.authorizationId));
+            outcomes.push({
+                ok: settled.ok,
+                settled: settled.ok ? [...settled.settled].sort() : null,
+                pack: (await userBalances()).pack,
+                settledPrice: row.settledPrice,
+                chargedPrice: row.chargedPrice,
+                reconciled: row.settledAt !== null,
+                residue: await ownershipResidue(),
+            });
+        }
+        expect(outcomes[0]).toEqual({
+            ok: true,
+            settled: ["charged", "free"],
+            pack: 0,
+            settledPrice: 5,
+            chargedPrice: 5,
+            reconciled: true,
+            residue: 0,
+        });
+        expect(outcomes[1]).toEqual(outcomes[0]);
+    });
+
+    test("sub-precision events are approved and charged as the sum of their stored rows", async ({
+        paidApiKey,
+    }) => {
+        const unit = 10 ** -8;
+        // Each 6e-9 rounds up to one ledger unit; their raw sum (1.2e-8)
+        // would round to a single unit — one unit less than the ledger
+        // rows add up to. Approval must follow the rows.
+        const events = [
+            { eventId: "a", eventType: "media.upload" as const, price: 6e-9 },
+            { eventId: "b", eventType: "media.upload" as const, price: 6e-9 },
+        ];
+
+        // One unit live: the two stored units are not covered.
+        await db().update(userTable).set({ tierBalance: 0, packBalance: unit });
+        const starved = await authorizeServiceRequest(
+            env,
+            authorizeInput(paidApiKey),
+        );
+        expect(starved.ok).toBe(true);
+        if (!starved.ok) return;
+        expect(
+            await settleServiceEvents(env, {
+                authorizationId: starved.authorizationId,
+                events,
+            }),
+        ).toEqual({ ok: false, error: "insufficient_balance" });
+        expect((await userBalances()).pack).toBeCloseTo(unit, 10);
+        expect(await db().select().from(serviceBillingEvent)).toHaveLength(0);
+
+        // Two units live: covered exactly, and the wallet ends at zero, not
+        // one unit in debt.
+        await db()
+            .update(userTable)
+            .set({ tierBalance: 0, packBalance: 2 * unit });
+        const funded = await authorizeServiceRequest(
+            env,
+            authorizeInput(paidApiKey),
+        );
+        expect(funded.ok).toBe(true);
+        if (!funded.ok) return;
+        const settled = await settleServiceEvents(env, {
+            authorizationId: funded.authorizationId,
+            events,
+        });
+        expect(settled).toMatchObject({ ok: true, settled: ["a", "b"] });
+        const rows = await db().select().from(serviceBillingEvent);
+        expect(rows.map((row) => row.billedPrice)).toEqual([unit, unit]);
+        const [authorization] = await db()
+            .select()
+            .from(serviceAuthorization)
+            .where(eq(serviceAuthorization.id, funded.authorizationId));
+        expect(authorization.settledPrice).toBeCloseTo(2 * unit, 10);
+        expect((await userBalances()).pack).toBe(0);
+
+        // Below half a unit every event stores as zero and nothing is
+        // charged — even from an empty wallet.
+        await db().update(userTable).set({ tierBalance: 0, packBalance: 0 });
+        const free = await authorizeServiceRequest(
+            env,
+            authorizeInput(paidApiKey),
+        );
+        expect(free.ok).toBe(true);
+        if (!free.ok) return;
+        const dust = await settleServiceEvents(env, {
+            authorizationId: free.authorizationId,
+            events: [
+                { eventId: "x", eventType: "media.upload", price: 4e-9 },
+                { eventId: "y", eventType: "media.upload", price: 4e-9 },
+                { eventId: "z", eventType: "media.upload", price: 4e-9 },
+            ],
+        });
+        expect(dust).toMatchObject({ ok: true, settled: ["x", "y", "z"] });
+        expect((await userBalances()).pack).toBe(0);
+        expect(await ownershipResidue()).toBe(0);
+    });
+
+    test("a concurrently redelivered call settles once and leaves no ownership behind", async ({
+        mocks,
+        budgetedApiKey,
+    }) => {
+        await mocks.enable("tinybird");
+        await db().update(userTable).set({ tierBalance: 0, packBalance: 100 });
+        await seedUser("dup_owner");
+        const authorized = await authorizeServiceRequest(
+            env,
+            authorizeInput(budgetedApiKey.key, { estimatedPrice: 5 }),
+        );
+        expect(authorized.ok).toBe(true);
+        if (!authorized.ok) return;
+        const events = [
+            {
+                eventId: "a",
+                eventType: "media.upload" as const,
+                price: 6,
+                communityReward: { ownerUserId: "dup_owner", rewardRate: 0.5 },
+            },
+            { eventId: "b", eventType: "media.upload" as const, price: 2 },
+        ];
+        const deliver = () =>
+            settleServiceEvents(env, {
+                authorizationId: authorized.authorizationId,
+                events,
+            });
+
+        const results = await Promise.all([deliver(), deliver()]);
+        expect(results.map((result) => result.ok)).toEqual([true, true]);
+        expect(
+            results.map((result) => (result.ok ? result.settled : null)).sort(),
+        ).toEqual([[], ["a", "b"]]);
+        expect(
+            results
+                .map((result) => (result.ok ? result.duplicates : null))
+                .sort(),
+        ).toEqual([[], ["a", "b"]]);
+        expect((await userBalances()).pack).toBeCloseTo(92);
+        expect(await keyBudget(budgetedApiKey.id)).toBeCloseTo(92);
+        expect((await userBalances("dup_owner")).pack).toBeCloseTo(3);
+        expect(await db().select().from(serviceBillingEvent)).toHaveLength(2);
+        expect(mocks.tinybird.state.events).toHaveLength(2);
+        expect(await ownershipResidue()).toBe(0);
+    });
+
+    test("a call overlapping a concurrent identical delivery pays only for the events it won", async ({
+        paidApiKey,
+    }) => {
+        const a = {
+            eventId: "a",
+            eventType: "media.upload" as const,
+            price: 5,
+        };
+        const b = {
+            eventId: "b",
+            eventType: "media.upload" as const,
+            price: 3,
+        };
+        const setUp = async () => {
+            // Reserve 5 + live 3 covers a and b together exactly; a call
+            // that priced a twice would be falsely refused.
+            await db()
+                .update(userTable)
+                .set({ tierBalance: 0, packBalance: 8 });
+            const authorized = await authorizeServiceRequest(
+                env,
+                authorizeInput(paidApiKey, { estimatedPrice: 5 }),
+            );
+            expect(authorized.ok).toBe(true);
+            if (!authorized.ok) throw new Error("not authorized");
+            return authorized.authorizationId;
+        };
+        const deliver = (
+            authorizationId: string,
+            events: (typeof a | typeof b)[],
+        ) => settleServiceEvents(env, { authorizationId, events });
+
+        // Deterministic: A has landed a before B, carrying a and b, runs.
+        const sequential = await setUp();
+        expect(await deliver(sequential, [a])).toEqual({
+            ok: true,
+            settled: ["a"],
+            duplicates: [],
+        });
+        expect((await userBalances()).pack).toBeCloseTo(3);
+        expect(await deliver(sequential, [a, b])).toEqual({
+            ok: true,
+            settled: ["b"],
+            duplicates: ["a"],
+        });
+        expect((await userBalances()).pack).toBe(0);
+        expect(await db().select().from(serviceBillingEvent)).toHaveLength(2);
+        await db().delete(serviceBillingEvent);
+
+        // Racing: whichever call lands a, each event settles exactly once
+        // and the wallet ends where the sequential run did.
+        const raced = await setUp();
+        const [resultA, resultB] = await Promise.all([
+            deliver(raced, [a]),
+            deliver(raced, [a, b]),
+        ]);
+        expect(resultA.ok && resultB.ok).toBe(true);
+        if (!resultA.ok || !resultB.ok) return;
+        expect([...resultA.settled, ...resultB.settled].sort()).toEqual([
+            "a",
+            "b",
+        ]);
+        expect(resultB.settled).toContain("b");
+        expect((await userBalances()).pack).toBe(0);
+        expect(await db().select().from(serviceBillingEvent)).toHaveLength(2);
+        expect(await ownershipResidue()).toBe(0);
+    });
+
+    test("a call overlapping a conflicting delivery changes nothing and reports the conflict", async ({
+        mocks,
+        paidApiKey,
+    }) => {
+        await mocks.enable("tinybird");
+        await db().update(userTable).set({ tierBalance: 0, packBalance: 8 });
+        const authorized = await authorizeServiceRequest(
+            env,
+            authorizeInput(paidApiKey, { estimatedPrice: 5 }),
+        );
+        expect(authorized.ok).toBe(true);
+        if (!authorized.ok) return;
+        const won = await settleServiceEvents(env, {
+            authorizationId: authorized.authorizationId,
+            events: [{ eventId: "a", eventType: "media.upload", price: 5 }],
+        });
+        expect(won).toMatchObject({ ok: true, settled: ["a"] });
+        const after = await userBalances();
+        const [before] = await db()
+            .select()
+            .from(serviceAuthorization)
+            .where(eq(serviceAuthorization.id, authorized.authorizationId));
+        mocks.tinybird.state.events.splice(0);
+
+        const conflicting = await settleServiceEvents(env, {
+            authorizationId: authorized.authorizationId,
+            events: [
+                { eventId: "a", eventType: "media.upload", price: 4 },
+                { eventId: "b", eventType: "media.upload", price: 3 },
+            ],
+        });
+        expect(conflicting).toEqual({ ok: false, error: "event_conflict" });
+        expect(await userBalances()).toEqual(after);
+        const rows = await db().select().from(serviceBillingEvent);
+        expect(rows.map((row) => [row.eventId, row.billedPrice])).toEqual([
+            ["a", 5],
+        ]);
+        const [authorization] = await db()
+            .select()
+            .from(serviceAuthorization)
+            .where(eq(serviceAuthorization.id, authorized.authorizationId));
+        expect(authorization).toEqual(before);
+        expect(mocks.tinybird.state.events).toHaveLength(0);
+        expect(await ownershipResidue()).toBe(0);
+    });
+
+    test("a refusal names the wallet before the key, and an unlimited key never the key", async ({
+        paidApiKey,
+        budgetedApiKey,
+    }) => {
+        const settleBig = (authorizationId: string) =>
+            settleServiceEvents(env, {
+                authorizationId,
+                events: [
+                    { eventId: "big", eventType: "media.upload", price: 500 },
+                ],
+            });
+
+        // Unlimited key, wallet short: the wallet, even with the key row
+        // gone (a deleted key covers nothing beyond the reserve — but it is
+        // still not a budget).
+        await db().update(userTable).set({ tierBalance: 0, packBalance: 10 });
+        const unlimited = await authorizeServiceRequest(
+            env,
+            authorizeInput(paidApiKey, { estimatedPrice: 5 }),
+        );
+        expect(unlimited.ok).toBe(true);
+        if (!unlimited.ok) return;
+        expect(await settleBig(unlimited.authorizationId)).toEqual({
+            ok: false,
+            error: "insufficient_balance",
+        });
+        await db()
+            .delete(apikeyTable)
+            .where(eq(apikeyTable.id, unlimited.apiKey.id));
+        expect(await settleBig(unlimited.authorizationId)).toEqual({
+            ok: false,
+            error: "insufficient_balance",
+        });
+
+        // Finite key: the wallet is named first when both fall short, the
+        // key only when the wallet alone would have covered the call.
+        await db().update(userTable).set({ tierBalance: 0, packBalance: 10 });
+        const both = await authorizeServiceRequest(
+            env,
+            authorizeInput(budgetedApiKey.key, { estimatedPrice: 5 }),
+        );
+        expect(both.ok).toBe(true);
+        if (!both.ok) return;
+        expect(await settleBig(both.authorizationId)).toEqual({
+            ok: false,
+            error: "insufficient_balance",
+        });
+        await db().update(userTable).set({ packBalance: 10000 });
+        expect(await settleBig(both.authorizationId)).toEqual({
+            ok: false,
+            error: "insufficient_budget",
+        });
+        // A budget lifted to unlimited after authorize covers everything.
+        await db()
+            .update(apikeyTable)
+            .set({ pollenBalance: null })
+            .where(eq(apikeyTable.id, budgetedApiKey.id));
+        expect(await settleBig(both.authorizationId)).toMatchObject({
+            ok: true,
+            settled: ["big"],
+        });
+        expect(await db().select().from(serviceBillingEvent)).toHaveLength(1);
+        expect(await ownershipResidue()).toBe(0);
+    });
 });

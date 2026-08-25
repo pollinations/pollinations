@@ -31,6 +31,7 @@ import type {
     AccountBalance,
     AccountKey,
     AccountProfile,
+    AccountQuestsResponse,
     AudioGenerateOptions,
     AuthorizeDeviceOptions,
     AuthorizeOptions,
@@ -495,6 +496,13 @@ export async function getProfile(): Promise<AccountProfile> {
  */
 export async function getBalance(): Promise<AccountBalance> {
     return getClient().accountBalance();
+}
+
+/**
+ * Get quest status for the authenticated account
+ */
+export async function getQuests(): Promise<AccountQuestsResponse> {
+    return getClient().accountQuests();
 }
 
 /**

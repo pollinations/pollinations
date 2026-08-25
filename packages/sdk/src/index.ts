@@ -49,6 +49,7 @@ export {
     generateVideo,
     getBalance,
     getDailyUsage,
+    getQuests,
     getImageModels,
     getKeyUsage,
     getModels,
@@ -78,6 +79,9 @@ export type {
     AccountKey,
     AccountPermission,
     AccountProfile,
+    AccountQuest,
+    AccountQuestReward,
+    AccountQuestsResponse,
     AudioBinaryResponse,
     AudioContentPart,
     AudioFormat,
@@ -122,6 +126,7 @@ export type {
     // Models
     ModelCategory,
     ModelInfo,
+    QuestCategory,
     // Config
     PollinationsConfig,
     // Errors

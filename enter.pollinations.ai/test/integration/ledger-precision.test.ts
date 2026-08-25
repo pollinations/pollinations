@@ -1,4 +1,4 @@
-import { env } from "cloudflare:test";
+import { createExecutionContext, env } from "cloudflare:test";
 import { getUserBalance } from "@shared/billing/balance.ts";
 import { claimReward, recordRewards } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
@@ -6,10 +6,7 @@ import { user as userTable } from "@shared/db/better-auth.ts";
 import { createTestApiKey } from "@shared/test/fixtures/index.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
-import {
-    authorizeServiceRequest,
-    settleServiceEvents,
-} from "@/services/service-billing.ts";
+import { BillingService } from "../../src/billing-entrypoint.ts";
 import { test } from "../fixtures.ts";
 
 async function seedUser(
@@ -80,21 +77,30 @@ test("quest rewards and usage charges keep the ledger at 8-decimal precision", a
     // Realistic usage charge, also within ledger precision but not exactly
     // representable in float64, settled through the service billing engine.
     const { key } = await createTestApiKey({ userId });
-    const authorized = await authorizeServiceRequest(env, {
-        token: key,
-        service: "gen.pollinations.ai",
-        requestId: crypto.randomUUID(),
-        requestPath: "/v1/chat/completions",
+    const billing = new BillingService(createExecutionContext(), env);
+    const requestId = crypto.randomUUID();
+    const authorized = await billing.authorize(key, {
+        producer: "gen.pollinations.ai",
+        requestId,
         estimatedPrice: 0,
+        paidOnly: false,
     });
     expect(authorized.ok).toBe(true);
     if (!authorized.ok) return;
-    const settled = await settleServiceEvents(env, {
-        authorizationId: authorized.authorizationId,
-        events: [
-            { eventId: "usage", eventType: "generate.text", price: 16.03 },
-        ],
-    });
+    const settled = await billing.settle(authorized.grant.id, [
+        {
+            id: "usage",
+            requestId,
+            meter: "generate.text",
+            price: 16.03,
+            paidOnly: false,
+            occurredAt: Date.now(),
+            telemetry: {
+                eventType: "generate.text",
+                startTime: new Date().toISOString(),
+            },
+        },
+    ]);
     expect(settled.ok).toBe(true);
 
     const balance = await getUserBalance(db, userId);

@@ -1,4 +1,4 @@
-import type { Bucket } from "@shared/billing/deduction.ts";
+import type { BalanceBucket as Bucket } from "@shared/billing/bucket-selection.ts";
 
 export const QUEST_CATEGORIES = [
     "setup",

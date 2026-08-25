@@ -1,22 +1,8 @@
-import { and, eq, gt, isNull, or } from "drizzle-orm";
-import type { DrizzleD1Database } from "drizzle-orm/d1";
 import {
     COMMUNITY_MODEL_REWARD_RATE,
     type CommunityEndpointRuntime,
 } from "../community-endpoints.ts";
-import { apikey as apikeyTable } from "../db/better-auth.ts";
-import {
-    byopClientAllowsMarkup,
-    computeDevCredit,
-    MARKUP_PCT,
-} from "./markup.ts";
 import { roundPollenLedgerAmount } from "./precision.ts";
-
-export type MarkupResolution = {
-    devUserId: string;
-    devCredit: number;
-    markupRate: number;
-};
 
 export type CommunityModelRewardResolution = {
     userId: string;
@@ -63,48 +49,6 @@ export function selectCommunityModelReward(
     }
 
     return null;
-}
-
-export async function resolveDevMarkup(
-    db: DrizzleD1Database,
-    byopClientKeyId: string | null | undefined,
-    baselinePrice: number,
-    payerUserId: string | undefined,
-): Promise<MarkupResolution | null> {
-    if (!byopClientKeyId || !payerUserId) return null;
-
-    const credit = computeDevCredit(baselinePrice);
-    if (credit <= 0) return null;
-
-    const [clientRow] = await db
-        .select({
-            userId: apikeyTable.userId,
-            metadata: apikeyTable.metadata,
-            prefix: apikeyTable.prefix,
-            enabled: apikeyTable.enabled,
-            expiresAt: apikeyTable.expiresAt,
-        })
-        .from(apikeyTable)
-        .where(
-            and(
-                eq(apikeyTable.id, byopClientKeyId),
-                eq(apikeyTable.prefix, "pk"),
-                eq(apikeyTable.enabled, true),
-                or(
-                    isNull(apikeyTable.expiresAt),
-                    gt(apikeyTable.expiresAt, new Date()),
-                ),
-            ),
-        )
-        .limit(1);
-
-    if (!byopClientAllowsMarkup(clientRow, payerUserId)) return null;
-
-    return {
-        devUserId: clientRow.userId,
-        devCredit: credit,
-        markupRate: MARKUP_PCT,
-    };
 }
 
 export function resolveCommunityModelReward(

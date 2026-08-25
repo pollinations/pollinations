@@ -5,29 +5,20 @@ import {
     MARKUP_PCT,
     withByopMarkup,
 } from "@shared/billing/markup.ts";
-import { resolveDevMarkup } from "@shared/billing/track-helpers.ts";
 import {
     communityEndpointPrices,
     communityModelDefinition,
 } from "@shared/community-endpoints.ts";
 import {
-    apikey as apikeyTable,
-    user as userTable,
-} from "@shared/db/better-auth.ts";
-import {
     getRegistryModelDefinition,
     type ModelName,
 } from "@shared/registry/registry.ts";
-import { sql } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/d1";
 import { describe, expect, it } from "vitest";
 import { checkBalance } from "@/utils/generation-access.ts";
 import {
     getDefinedRequestEstimate,
     getEstimatedPrice,
 } from "@/utils/model-stats.ts";
-
-const db = drizzle(env.DB);
 
 function fakeStatsEnv(price: number, model = "openai"): CloudflareBindings {
     return {
@@ -95,48 +86,6 @@ function preflightVars({
     } as unknown as Parameters<typeof checkBalance>[0];
 }
 
-async function setupPayerAndDev() {
-    const suffix = crypto.randomUUID();
-    const payerId = `payer-${suffix}`;
-    const devId = `dev-${suffix}`;
-    const pkId = `pk_markup_${suffix}`;
-
-    await db.insert(userTable).values([
-        {
-            id: payerId,
-            email: `${payerId}@test.local`,
-            name: payerId,
-            tierBalance: 2,
-            packBalance: 0,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        },
-        {
-            id: devId,
-            email: `${devId}@test.local`,
-            name: devId,
-            tierBalance: 0,
-            packBalance: 0,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        },
-    ]);
-
-    await db.insert(apikeyTable).values({
-        id: pkId,
-        userId: devId,
-        name: "markup-app",
-        prefix: "pk",
-        key: `hashed-${pkId}`,
-        enabled: true,
-        metadata: JSON.stringify({ earningsEnabled: true }),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-    });
-
-    return { payerId, devId, pkId };
-}
-
 describe("BYOP markup", () => {
     it("computes the dev credit from the baseline price", () => {
         expect(computeDevCredit(0)).toBe(0);
@@ -175,25 +124,6 @@ describe("BYOP markup", () => {
                 "payer",
             ),
         ).toBe(false);
-    });
-
-    it("resolves markup only for enabled publishable app keys with earnings enabled", async () => {
-        const { payerId, devId, pkId } = await setupPayerAndDev();
-
-        const resolved = await resolveDevMarkup(db, pkId, 4, payerId);
-        expect(resolved).toEqual({
-            devUserId: devId,
-            devCredit: 4 * MARKUP_PCT,
-            markupRate: MARKUP_PCT,
-        });
-
-        expect(await resolveDevMarkup(db, pkId, 4, devId)).toBeNull();
-
-        await db
-            .update(apikeyTable)
-            .set({ metadata: JSON.stringify({ earningsEnabled: false }) })
-            .where(sql`${apikeyTable.id} = ${pkId}`);
-        expect(await resolveDevMarkup(db, pkId, 4, payerId)).toBeNull();
     });
 
     it("allows regular preflight when one bucket is above the model estimate", async () => {

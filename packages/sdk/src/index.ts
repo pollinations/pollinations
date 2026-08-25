@@ -50,11 +50,11 @@ export {
     getBalance,
     getDailyUsage,
     getEarnings,
-    getQuests,
     getImageModels,
     getKeyUsage,
     getModels,
     getProfile,
+    getQuests,
     getTextModels,
     getUsage,
     imageGenerate,
@@ -130,11 +130,11 @@ export type {
     // Models
     ModelCategory,
     ModelInfo,
-    QuestCategory,
     // Config
     PollinationsConfig,
     // Errors
     PollinationsErrorDetails,
+    QuestCategory,
     RequestOptions,
     ResponseFormat,
     TextContentPart,

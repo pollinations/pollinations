@@ -17,9 +17,9 @@ import type {
     DailyUsageResponse,
     DeviceAuthorization,
     DeviceCodeResponse,
+    DeviceTokenResponse,
     EarningsOptions,
     EarningsResponse,
-    DeviceTokenResponse,
     ImageEditOptions,
     ImageGenerateOptions,
     ImageGenerateV1Options,
@@ -1479,7 +1479,9 @@ export class Pollinations {
      * perEntity.forEach(r => console.log(r.entity_name, r.pollen_earned));
      * ```
      */
-    async accountEarnings(options: EarningsOptions = {}): Promise<EarningsResponse> {
+    async accountEarnings(
+        options: EarningsOptions = {},
+    ): Promise<EarningsResponse> {
         const params = new URLSearchParams();
         if (options.format) params.set("format", options.format);
         if (options.days) params.set("days", String(options.days));

@@ -633,9 +633,7 @@ describe("Pollinations.accountQuests", () => {
 
     it("calls GET /account/quests and returns quests untransformed", async () => {
         const client = newClient();
-        fetchMock.mockResolvedValueOnce(
-            makeResponse({ quests: [quest] }),
-        );
+        fetchMock.mockResolvedValueOnce(makeResponse({ quests: [quest] }));
 
         const { quests } = await client.accountQuests();
 

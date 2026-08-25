@@ -1120,19 +1120,20 @@ describe("tracking observability", () => {
         expect(tinybirdRequests).toHaveLength(1);
         const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
         const expectedCost = 272_001 * (5 / 1e6) + 1_000 * (22.5 / 1e6);
+        const expectedPrice = expectedCost * 0.75;
         expect(event).toMatchObject({
             modelRequested: "gpt-5.4",
             resolvedModelRequested: "gpt-5.4",
             costVariant: "long_context",
-            tokenPricePromptText: 5 / 1e6,
-            tokenPriceCompletionText: 22.5 / 1e6,
+            tokenPricePromptText: (5 / 1e6) * 0.75,
+            tokenPriceCompletionText: (22.5 / 1e6) * 0.75,
             tokenCountPromptText: 272_001,
             tokenCountCompletionText: 1_000,
             totalCost: expectedCost,
-            totalPrice: expectedCost,
-            devPrice: expectedCost,
+            totalPrice: expectedPrice,
+            devPrice: expectedPrice,
         });
-        expect(consumePollen).toHaveBeenCalledWith(expectedCost);
+        expect(consumePollen).toHaveBeenCalledWith(expectedPrice);
     });
 
     it("does not emit Tinybird generation events for cache hits", async () => {

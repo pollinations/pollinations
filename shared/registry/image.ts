@@ -300,7 +300,7 @@ const IMAGE_BASE_SERVICES = {
         brand: "OpenAI",
         category: "image",
         addedDate: new Date("2025-12-23").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             // Official pricing: https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/introducing-openai%E2%80%99s-gpt-image-1-5-in-microsoft-foundry/4478139
             promptTextTokens: perMillion(5), // per 1M tokens

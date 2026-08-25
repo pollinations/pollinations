@@ -10,6 +10,8 @@ name = "pollinations-media-dev"
 
 [env.development.vars]
 MAX_FILE_SIZE = "104857600"  # 100MB in bytes
+R2_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
+R2_BUCKET_NAME = "pollinations-media-dev"
 
 [[env.development.r2_buckets]]
 binding = "MEDIA_BUCKET"
@@ -27,6 +29,8 @@ name = "pollinations-media-prod"
 
 [env.production.vars]
 MAX_FILE_SIZE = "104857600"  # 100MB in bytes
+R2_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
+R2_BUCKET_NAME = "pollinations-media"
 
 [[env.production.routes]]
 pattern = "media.myceli.ai"
@@ -51,6 +55,8 @@ migrations_dir = "../enter.pollinations.ai/drizzle"
 
 [vars]
 MAX_FILE_SIZE = "104857600"  # 100MB in bytes
+R2_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
+R2_BUCKET_NAME = "pollinations-media-dev"
 
 [[r2_buckets]]
 binding = "MEDIA_BUCKET"

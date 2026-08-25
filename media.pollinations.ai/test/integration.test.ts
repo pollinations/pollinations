@@ -57,6 +57,7 @@ const KEY_IDENTITIES: Record<
         name?: string | null;
         userId?: string | null;
         byopApp?: { clientKeyId: string } | null;
+        expiresIn?: number | null;
     }
 > = {
     pk_alice: {
@@ -109,7 +110,53 @@ function createMediaEnv(bucket = createTestR2Bucket()) {
         MEDIA_BUCKET: bucket,
         MAX_FILE_SIZE: "104857600",
         DB: env.DB,
+        R2_ACCOUNT_ID: "test-account",
+        R2_BUCKET_NAME: "test-media",
+        R2_PARENT_ACCESS_KEY_ID: "test-parent-access-key",
+        R2_TEMP_CREDENTIALS_API_TOKEN: "test-api-token",
     };
+}
+
+function mockR2Credentials(
+    inspect: (body: Record<string, unknown>) => void = () => undefined,
+) {
+    fetchMock
+        .get("https://api.cloudflare.com")
+        .intercept({
+            path: "/client/v4/accounts/test-account/r2/temp-access-credentials",
+            method: "POST",
+        })
+        .reply(({ body }) => {
+            inspect(JSON.parse(body as string) as Record<string, unknown>);
+            return {
+                statusCode: 200,
+                data: JSON.stringify({
+                    success: true,
+                    result: {
+                        accessKeyId: "temporary-access-key",
+                        secretAccessKey: "temporary-secret-key",
+                        sessionToken: "temporary-session-token",
+                    },
+                }),
+                responseOptions: {
+                    headers: { "content-type": "application/json" },
+                },
+            };
+        });
+}
+
+async function requestS3Credentials(token: string) {
+    const ctx = createExecutionContext();
+    const response = await app.fetch(
+        new Request("https://media.pollinations.ai/s3/credentials", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` },
+        }),
+        createMediaEnv(),
+        ctx,
+    );
+    await waitOnExecutionContext(ctx);
+    return response;
 }
 
 function mockAuth() {
@@ -220,6 +267,142 @@ describe("media.pollinations.ai", () => {
         const body = (await res.json()) as Record<string, unknown>;
         expect(res.status).toBe(200);
         expect(body.service).toBe("media.pollinations.ai");
+    });
+
+    describe("POST /s3/credentials", () => {
+        it("issues owner-scoped read/write credentials for secret keys", async () => {
+            let issued: Record<string, unknown> | undefined;
+            mockR2Credentials((body) => {
+                issued = body;
+            });
+
+            const response = await requestS3Credentials("sk_alice");
+            const body = (await response.json()) as {
+                endpoint: string;
+                publicEndpoint: string;
+                bucket: string;
+                prefix: string;
+                credentials: { sessionToken: string };
+            };
+
+            expect(response.status).toBe(200);
+            expect(response.headers.get("cache-control")).toBe(
+                "private, no-store",
+            );
+            expect(body).toMatchObject({
+                endpoint: "https://test-account.r2.cloudflarestorage.com",
+                publicEndpoint:
+                    "https://media.pollinations.ai/s3/user_alice/public",
+                bucket: "test-media",
+                prefix: "user_alice/",
+                credentials: {
+                    sessionToken: "temporary-session-token",
+                },
+            });
+            expect(issued).toEqual({
+                bucket: "test-media",
+                parentAccessKeyId: "test-parent-access-key",
+                permission: "object-read-write",
+                ttlSeconds: 900,
+                prefixes: ["user_alice/"],
+            });
+        });
+
+        it("does not issue credentials for public reads", async () => {
+            const response = await requestS3Credentials("pk_alice");
+            expect(response.status).toBe(403);
+        });
+
+        it("serves only the public S3 prefix without credentials", async () => {
+            const suffix = crypto.randomUUID();
+            const publicKey = `user_alice/public/${suffix}/file.txt`;
+            const privateKey = `user_alice/${suffix}/private.txt`;
+            await env.MEDIA_BUCKET.put(publicKey, "hello", {
+                httpMetadata: { contentType: "text/plain" },
+            });
+            await env.MEDIA_BUCKET.put(privateKey, "secret");
+            const mediaEnv = createMediaEnv(env.MEDIA_BUCKET);
+            const publicUrl = `https://media.pollinations.ai/s3/${publicKey}`;
+
+            const response = await app.fetch(new Request(publicUrl), mediaEnv);
+            const head = await app.fetch(
+                new Request(publicUrl, { method: "HEAD" }),
+                mediaEnv,
+            );
+            const range = await app.fetch(
+                new Request(publicUrl, { headers: { Range: "bytes=1-3" } }),
+                mediaEnv,
+            );
+            const privateResponse = await app.fetch(
+                new Request(`https://media.pollinations.ai/s3/${privateKey}`),
+                mediaEnv,
+            );
+
+            expect(response.status).toBe(200);
+            expect(await response.text()).toBe("hello");
+            expect(response.headers.get("content-type")).toBe("text/plain");
+            expect(head.status).toBe(200);
+            expect(head.headers.get("content-length")).toBe("5");
+            expect(range.status).toBe(206);
+            expect(range.headers.get("content-range")).toBe("bytes 1-3/5");
+            expect(await range.text()).toBe("ell");
+            expect(privateResponse.status).toBe(404);
+
+            await env.MEDIA_BUCKET.delete([publicKey, privateKey]);
+        });
+
+        it("does not outlive an agent run token", async () => {
+            const expiresAt = Math.floor(Date.now() / 1000) + 120;
+            const payload = btoa(JSON.stringify({ exp: expiresAt }))
+                .replaceAll("+", "-")
+                .replaceAll("/", "_")
+                .replaceAll("=", "");
+            const token = `ag_e30.${payload}.signature`;
+            KEY_IDENTITIES[token] = {
+                valid: true,
+                type: "secret",
+                name: "agent-run",
+                userId: "user_alice",
+                byopApp: null,
+            };
+            let issued: Record<string, unknown> | undefined;
+            mockR2Credentials((body) => {
+                issued = body;
+            });
+
+            const response = await requestS3Credentials(token);
+
+            expect(response.status).toBe(200);
+            expect(issued?.ttlSeconds).toBeGreaterThanOrEqual(119);
+            expect(issued?.ttlSeconds).toBeLessThanOrEqual(120);
+            delete KEY_IDENTITIES[token];
+        });
+
+        it("rejects missing identities and unconfigured issuers", async () => {
+            const noToken = await app.fetch(
+                new Request("https://media.pollinations.ai/s3/credentials", {
+                    method: "POST",
+                }),
+                createMediaEnv(),
+            );
+            expect(noToken.status).toBe(401);
+
+            const noUser = await requestS3Credentials("pk_nouser");
+            expect(noUser.status).toBe(403);
+
+            const unconfiguredEnv = {
+                ...createMediaEnv(),
+                R2_TEMP_CREDENTIALS_API_TOKEN: "",
+            };
+            const unconfigured = await app.fetch(
+                new Request("https://media.pollinations.ai/s3/credentials", {
+                    method: "POST",
+                    headers: { Authorization: "Bearer sk_alice" },
+                }),
+                unconfiguredEnv,
+            );
+            expect(unconfigured.status).toBe(503);
+        });
     });
 
     it("POST /upload without key returns 401", async () => {

@@ -22,6 +22,11 @@ import {
     TagError,
     tagsForItems,
 } from "./catalog.ts";
+import {
+    issueR2Credentials,
+    R2_CREDENTIAL_TTL_SECONDS,
+    type R2CredentialEnv,
+} from "./r2-credentials.ts";
 
 const DOMAIN = "media.pollinations.ai";
 // gen.pollinations.ai proxies /account/* to enter — using the public path
@@ -34,7 +39,7 @@ const IMMUTABLE_CACHE_CONTROL = "public, max-age=31536000, immutable";
 const PUBLISHED_CACHE_CONTROL = "no-store";
 const DEFAULT_MAX_SIZE = 104857600; // 100 MB
 
-interface Env {
+interface Env extends R2CredentialEnv {
     MEDIA_BUCKET: R2Bucket;
     MAX_FILE_SIZE: string;
     DB: D1Database;
@@ -50,6 +55,7 @@ interface KeyVerifyResponse {
     name: string | null;
     userId: string | null;
     byopApp: { clientKeyId: string } | null;
+    expiresIn: number | null;
 }
 
 interface AuthResult {
@@ -58,6 +64,7 @@ interface AuthResult {
     name: string | null;
     userId: string | null;
     byopClientKeyId: string | null;
+    expiresIn: number | null;
 }
 
 async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
@@ -77,6 +84,7 @@ async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
             name: data.name ?? null,
             userId: data.userId ?? null,
             byopClientKeyId: data.byopApp?.clientKeyId ?? null,
+            expiresIn: data.expiresIn ?? null,
         };
     } catch {
         return null;
@@ -89,6 +97,23 @@ function extractApiKey(req: Request): string | null {
         ?.match(/^Bearer (.+)$/)?.[1];
     if (bearer) return bearer;
     return new URL(req.url).searchParams.get("key");
+}
+
+function agentRunTokenTtl(token: string): number | null {
+    if (!token.startsWith("ag_")) return null;
+    try {
+        const payload = token.slice(3).split(".")[1];
+        if (!payload) return null;
+        const base64 = payload.replaceAll("-", "+").replaceAll("_", "/");
+        const claims = JSON.parse(
+            atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, "=")),
+        ) as { exp?: unknown };
+        return typeof claims.exp === "number"
+            ? claims.exp - Math.floor(Date.now() / 1000)
+            : null;
+    } catch {
+        return null;
+    }
 }
 
 function fileTooLargeError(maxSize: number): { error: string } {
@@ -231,6 +256,20 @@ const DeleteResponseSchema = z.object({
     id: z.string().describe("Id of the deleted media item"),
 });
 
+const R2CredentialsResponseSchema = z.object({
+    endpoint: z.string(),
+    publicEndpoint: z.string(),
+    region: z.literal("auto"),
+    bucket: z.string(),
+    prefix: z.string(),
+    expiresAt: z.string(),
+    credentials: z.object({
+        accessKeyId: z.string(),
+        secretAccessKey: z.string(),
+        sessionToken: z.string(),
+    }),
+});
+
 // Query-param schema for GET /media, used with validator("query", …): one
 // schema that both validates and documents. `limit` is a coerced integer
 // (query values arrive as strings) bounded to [1, MAX_LIMIT]; non-numeric,
@@ -258,6 +297,186 @@ const MediaListQuerySchema = z.object({
 });
 
 const api = new Hono<{ Bindings: Env }>();
+
+async function servePublicS3Object(
+    bucket: R2Bucket,
+    key: string,
+    request: Request,
+): Promise<Response> {
+    try {
+        const head = request.method === "HEAD";
+        const rangeHeader = request.headers.get("range");
+        const partial = !head && Boolean(rangeHeader);
+        const object = head
+            ? await bucket.head(key)
+            : await bucket.get(key, { range: request.headers });
+        if (!object) {
+            return Response.json({ error: "Not found" }, { status: 404 });
+        }
+
+        const headers = new Headers();
+        headers.set(
+            "Content-Type",
+            object.httpMetadata?.contentType || "application/octet-stream",
+        );
+        headers.set("Accept-Ranges", "bytes");
+        headers.set("Cache-Control", PUBLISHED_CACHE_CONTROL);
+        headers.set("ETag", object.httpEtag);
+        headers.set("Last-Modified", object.uploaded.toUTCString());
+
+        if (partial && object.range) {
+            const rangeLength =
+                "suffix" in object.range
+                    ? Math.min(object.range.suffix, object.size)
+                    : (object.range.length ??
+                      object.size - (object.range.offset ?? 0));
+            const rangeStart =
+                "suffix" in object.range
+                    ? object.size - rangeLength
+                    : (object.range.offset ?? 0);
+            headers.set(
+                "Content-Range",
+                `bytes ${rangeStart}-${rangeStart + rangeLength - 1}/${object.size}`,
+            );
+            headers.set("Content-Length", rangeLength.toString());
+        } else {
+            headers.set("Content-Length", object.size.toString());
+        }
+
+        return new Response(head ? null : (object as R2ObjectBody).body, {
+            status: partial ? 206 : 200,
+            headers,
+        });
+    } catch {
+        return Response.json({ error: "Retrieval failed" }, { status: 500 });
+    }
+}
+
+api.post(
+    "/s3/credentials",
+    describeRoute({
+        tags: ["media.pollinations.ai"],
+        summary: "Create a temporary S3 session",
+        description:
+            "Exchange a Pollinations secret key or agent run token for 15-minute Cloudflare R2 S3 credentials scoped to the owner's prefix. Public media retrieval does not require credentials.",
+        responses: {
+            200: {
+                description: "Temporary S3 credentials",
+                content: {
+                    "application/json": {
+                        schema: resolver(R2CredentialsResponseSchema),
+                    },
+                },
+            },
+            401: { description: "Missing, invalid, or expiring credential" },
+            403: { description: "Credential has no attached user" },
+            502: { description: "R2 credential service unavailable" },
+            503: { description: "R2 credential service not configured" },
+        },
+    }),
+    async (c) => {
+        const token = c.req
+            .header("authorization")
+            ?.match(/^Bearer (.+)$/)?.[1];
+        if (!token) return c.json({ error: "Bearer token required" }, 401);
+
+        const auth = await verifyApiKey(token);
+        if (!auth) {
+            return c.json({ error: "Invalid or expired credential" }, 401);
+        }
+        if (!auth.userId) {
+            return c.json({ error: "Credential has no attached user" }, 403);
+        }
+        if (auth.type !== "secret") {
+            return c.json({ error: "Secret key required" }, 403);
+        }
+        if (
+            !c.env.R2_ACCOUNT_ID ||
+            !c.env.R2_BUCKET_NAME ||
+            !c.env.R2_PARENT_ACCESS_KEY_ID ||
+            !c.env.R2_TEMP_CREDENTIALS_API_TOKEN
+        ) {
+            return c.json({ error: "S3 credentials are not configured" }, 503);
+        }
+
+        const prefix = `${auth.userId}/`;
+        const runTokenTtl = agentRunTokenTtl(token);
+        if (token.startsWith("ag_") && runTokenTtl === null) {
+            return c.json({ error: "Invalid agent run token" }, 401);
+        }
+        const remainingSeconds = runTokenTtl ?? auth.expiresIn;
+        const ttlSeconds = Math.min(
+            R2_CREDENTIAL_TTL_SECONDS,
+            remainingSeconds ?? R2_CREDENTIAL_TTL_SECONDS,
+        );
+        if (ttlSeconds < 1) {
+            return c.json({ error: "Credential is expiring" }, 401);
+        }
+
+        const expiresAt = new Date(
+            Date.now() + ttlSeconds * 1000,
+        ).toISOString();
+        const credentials = await issueR2Credentials(c.env, {
+            prefix,
+            ttlSeconds,
+        });
+        if (!credentials) {
+            return c.json(
+                { error: "Could not create temporary S3 credentials" },
+                502,
+            );
+        }
+
+        c.header("Cache-Control", "private, no-store");
+        return c.json({
+            endpoint: `https://${c.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+            publicEndpoint: `https://${DOMAIN}/s3/${auth.userId}/public`,
+            region: "auto" as const,
+            bucket: c.env.R2_BUCKET_NAME,
+            prefix,
+            expiresAt,
+            credentials,
+        });
+    },
+);
+
+api.get(
+    "/s3/:owner/public/:key{.+}",
+    describeRoute({
+        tags: ["media.pollinations.ai"],
+        summary: "Retrieve a public S3 object",
+        description:
+            "Read an object from an owner's public prefix without authentication.",
+        security: [],
+        responses: {
+            200: { description: "Object content" },
+            404: { description: "Object not found" },
+        },
+    }),
+    (c) => {
+        const owner = c.req.param("owner");
+        if (!/^[A-Za-z0-9_-]+$/.test(owner)) {
+            return c.json({ error: "Not found" }, 404);
+        }
+        return servePublicS3Object(
+            c.env.MEDIA_BUCKET,
+            `${owner}/public/${c.req.param("key")}`,
+            c.req.raw,
+        );
+    },
+);
+
+api.on("HEAD", "/s3/:owner/public/:key{.+}", (c) => {
+    const owner = c.req.param("owner");
+    if (!/^[A-Za-z0-9_-]+$/.test(owner)) {
+        return new Response(null, { status: 404 });
+    }
+    return servePublicS3Object(
+        c.env.MEDIA_BUCKET,
+        `${owner}/public/${c.req.param("key")}`,
+        c.req.raw,
+    );
+});
 
 api.post(
     "/upload",
@@ -888,6 +1107,9 @@ app.get("/", (c) => {
         service: DOMAIN,
         version: "1.0.0",
         endpoints: {
+            s3Credentials:
+                "POST /s3/credentials (temporary owner-scoped S3 credentials)",
+            s3Retrieve: "GET /s3/<owner>/public/<key> (public; no auth)",
             upload: "POST /upload (requires API key; optional tags — tags publish to public galleries)",
             retrieve: "GET /:id",
             metadata: "GET /:id/metadata",

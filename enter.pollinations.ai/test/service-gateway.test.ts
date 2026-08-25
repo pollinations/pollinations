@@ -830,6 +830,86 @@ describe("ServiceGateway", () => {
         expect(selfEvent.billedPrice).toBe(0);
     });
 
+    test("a Quest-funded BYOP call with a community reward settles every ledger amount at 8 decimals", async ({
+        paidApiKey,
+    }) => {
+        const introspected = await introspectServiceToken(env, paidApiKey);
+        expect(introspected.valid).toBe(true);
+        if (!introspected.valid) return;
+        const payerId = introspected.user.id;
+        // Quest Pollen covers the estimate, so the tier bucket pays and the
+        // pack fixture balance must stay untouched.
+        await db().update(userTable).set({ tierBalance: 1 });
+
+        await seedUser("byop_dev");
+        await seedUser("fractional_owner");
+        const clientKey = await createKey("byop_dev", "pk", {
+            keyType: "publishable",
+            earningsEnabled: true,
+        });
+        await db()
+            .update(apikeyTable)
+            .set({ byopClientKeyId: clientKey.id })
+            .where(eq(apikeyTable.id, introspected.apiKey.id));
+
+        // price × 1.25 = 0.15432098375 → billed 0.15432098 (rounds down);
+        // markup 0.03086419675 → dev credit 0.03086420 (rounds up);
+        // price × 0.75 = 0.09259259025 → reward 0.09259259 (rounds down).
+        const price = 0.123456787;
+        const authorized = await authorizeServiceRequest(
+            env,
+            authorizeInput(paidApiKey, { estimatedPrice: price }),
+        );
+        expect(authorized.ok).toBe(true);
+        if (!authorized.ok) return;
+
+        const settled = await settleServiceEvents(env, {
+            authorizationId: authorized.authorizationId,
+            events: [
+                {
+                    eventId: "gen",
+                    eventType: "media.upload",
+                    price,
+                    communityReward: {
+                        ownerUserId: "fractional_owner",
+                        rewardRate: 0.75,
+                    },
+                },
+            ],
+        });
+        expect(settled).toEqual({
+            ok: true,
+            settled: ["gen"],
+            duplicates: [],
+        });
+
+        expect(await userBalances(payerId)).toEqual({
+            tier: 0.84567902,
+            pack: 100,
+        });
+        expect(await userBalances("byop_dev")).toEqual({
+            tier: 0.0308642,
+            pack: 0,
+        });
+        expect(await userBalances("fractional_owner")).toEqual({
+            tier: 0.09259259,
+            pack: 0,
+        });
+
+        const rows = await db().select().from(serviceBillingEvent);
+        expect(rows).toHaveLength(1);
+        expect(rows[0]).toMatchObject({
+            price,
+            billedPrice: 0.15432098,
+            devUserId: "byop_dev",
+            devCredit: 0.03086419675,
+            markupRate: 0.25,
+            communityRewardUserId: "fractional_owner",
+            communityRewardCredit: 0.09259259,
+            communityRewardRate: 0.75,
+        });
+    });
+
     test("a charge the payer's bucket cannot cover is rejected whole, never as debt", async ({
         mocks,
         apiKey,

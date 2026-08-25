@@ -608,3 +608,45 @@ describe("Pollinations model discovery", () => {
         );
     });
 });
+
+    it("returns earnings data from /account/earnings", async () => {
+        const client = newClient();
+        const daily = [
+            {
+                date: "2026-08-01",
+                entity_id: "entity-1",
+                entity_name: "my-model",
+                source: "community_model" as const,
+                requests: 100,
+                paid_requests: 50,
+                tier_requests: 50,
+                baseline_price: 0.01,
+                pollen_earned: 5,
+                paid_earned: 3,
+                tier_earned: 2,
+                cost_usd: 1.0,
+                reward_rate: 0.5,
+            },
+        ];
+        const perEntity = [...daily];
+        fetchMock.mockResolvedValueOnce(makeResponse({ daily, perEntity }));
+
+        const result = await client.accountEarnings({ days: 30 });
+        expect(result.daily).toEqual(daily);
+        expect(result.perEntity).toEqual(perEntity);
+        expect(fetchMock.mock.calls[0]?.[0]).toBe(
+            "https://example.test/account/earnings?days=30",
+        );
+    });
+
+    it("uses /account/earnings without query when no options are provided", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValueOnce(makeResponse({ daily: [], perEntity: [] }));
+
+        const result = await client.accountEarnings();
+        expect(result.daily).toEqual([]);
+        expect(result.perEntity).toEqual([]);
+        expect(fetchMock.mock.calls[0]?.[0]).toBe(
+            "https://example.test/account/earnings",
+        );
+    });

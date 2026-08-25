@@ -603,6 +603,144 @@ export interface AccountBalance {
     };
 }
 
+/** Quest category */
+export type QuestCategory = "setup" | "grow" | "build" | "contribute" | "community" | "easteregg";
+
+/** Quest reward information */
+export interface AccountQuestReward {
+    id: string;
+    questId: string | null;
+    title: string;
+    pollenAmount: number;
+    balanceBucket: "tier" | "pack";
+    earnedAt: string;
+    claimedAt: string | null;
+}
+
+/** A single quest with status and optional reward */
+export interface AccountQuest {
+    id: string;
+    title: string;
+    description: string;
+    category: QuestCategory;
+    state: "available" | "completed" | "coming_soon";
+    status: "open" | "completed" | "coming_soon";
+    rewardAmount: number;
+    balanceBucket: "tier" | "pack";
+    url: string | null;
+    reward: AccountQuestReward | null;
+}
+
+/** Response from GET /account/quests */
+export interface AccountQuestsResponse {
+    quests: AccountQuest[];
+}
+
+/** Earnings row from GET /account/earnings */
+export interface DeveloperEarningsRow {
+    date: string;
+    entity_id: string;
+    entity_name: string;
+    source: "byop_markup" | "community_model";
+    requests: number;
+    paid_requests: number;
+    tier_requests: number;
+    baseline_price: number;
+    pollen_earned: number;
+    paid_earned: number;
+    tier_earned: number;
+    cost_usd: number;
+    reward_rate: number;
+}
+
+/** Options for GET /account/earnings */
+export interface EarningsOptions {
+    /** Response format (default: 'json') */
+    format?: "json" | "csv";
+    /** Number of days to include (default: 30) */
+    days?: number;
+    /** Exact period granularity */
+    granularity?: "day" | "week" | "month";
+    /** Exact period, e.g. YYYY-MM-DD, YYYY-WNN, or YYYY-MM */
+    period?: string;
+}
+
+/** Response from GET /account/earnings */
+export interface EarningsResponse {
+    daily: DeveloperEarningsRow[];
+    perEntity: DeveloperEarningsRow[];
+}
+
+/** Earnings row from GET /account/earnings */
+export interface DeveloperEarningsRow {
+    date: string;
+    entity_id: string;
+    entity_name: string;
+    source: "byop_markup" | "community_model";
+    requests: number;
+    paid_requests: number;
+    tier_requests: number;
+    baseline_price: number;
+    pollen_earned: number;
+    paid_earned: number;
+    tier_earned: number;
+    cost_usd: number;
+    reward_rate: number;
+}
+
+/** Options for GET /account/earnings */
+export interface EarningsOptions {
+    /** Response format (default: 'json') */
+    format?: "json" | "csv";
+    /** Number of days to include (default: 30) */
+    days?: number;
+    /** Exact period granularity */
+    granularity?: "day" | "week" | "month";
+    /** Exact period, e.g. YYYY-MM-DD, YYYY-WNN, or YYYY-MM */
+    period?: string;
+}
+
+/** Response from GET /account/earnings */
+export interface EarningsResponse {
+    daily: DeveloperEarningsRow[];
+    perEntity: DeveloperEarningsRow[];
+}
+
+/** Earnings row from GET /account/earnings */
+export interface DeveloperEarningsRow {
+    date: string;
+    entity_id: string;
+    entity_name: string;
+    source: "byop_markup" | "community_model";
+    requests: number;
+    paid_requests: number;
+    tier_requests: number;
+    baseline_price: number;
+    pollen_earned: number;
+    paid_earned: number;
+    tier_earned: number;
+    cost_usd: number;
+    reward_rate: number;
+}
+
+/** Options for GET /account/earnings */
+export interface EarningsOptions {
+    /** Response format (default: 'json') */
+    format?: "json" | "csv";
+    /** Number of days to include (default: 30) */
+    days?: number;
+    /** Exact period granularity */
+    granularity?: "day" | "week" | "month";
+    /** Exact period, e.g. YYYY-MM-DD, YYYY-WNN, or YYYY-MM */
+    period?: string;
+}
+
+/** Response from GET /account/earnings */
+export interface EarningsResponse {
+    daily: DeveloperEarningsRow[];
+    perEntity: DeveloperEarningsRow[];
+}
+
 /** Usage record */
 export interface UsageRecord {
     timestamp: string;

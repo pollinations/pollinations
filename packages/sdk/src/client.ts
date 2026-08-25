@@ -14,6 +14,9 @@ import type {
     CreateKeyOptions,
     DailyUsageOptions,
     DailyUsageResponse,
+    DeveloperEarningsRow,
+    EarningsOptions,
+    EarningsResponse,
     DeviceAuthorization,
     DeviceCodeResponse,
     DeviceTokenResponse,
@@ -1396,6 +1399,41 @@ export class Pollinations {
      */
     async accountBalance(): Promise<AccountBalance> {
         return this.getJson<AccountBalance>(`${this.baseUrl}/account/balance`);
+    }
+
+    /**
+     * Get authenticated quest status
+     *
+     * @example
+     * ```ts
+     * const { quests } = await pollinations.accountQuests();
+     * quests.forEach(q => console.log(q.title, q.status));
+     * ```
+     */
+    async accountQuests(): Promise<AccountQuestsResponse> {
+        return this.getJson<AccountQuestsResponse>(`${this.baseUrl}/account/quests`);
+    }
+
+    /**
+     * Get developer earnings
+     *
+     * @example
+     * ```ts
+     * const { daily, perEntity } = await pollinations.accountEarnings({ days: 30 });
+     * daily.forEach(r => console.log(r.date, r.pollen_earned));
+     * ```
+     */
+    async accountEarnings(options: EarningsOptions = {}): Promise<EarningsResponse> {
+        const params = new URLSearchParams();
+        if (options.format) params.set("format", options.format);
+        if (options.days) params.set("days", String(options.days));
+        if (options.granularity) params.set("granularity", options.granularity);
+        if (options.period) params.set("period", options.period);
+
+        const qs = params.toString();
+        const url = `${this.baseUrl}/account/earnings${qs ? `?${qs}` : ""}`;
+
+        return this.getJson<EarningsResponse>(url);
     }
 
     /**

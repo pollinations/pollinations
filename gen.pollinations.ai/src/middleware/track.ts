@@ -2,8 +2,6 @@ import { getLogger } from "@logtape/logtape";
 import type { ApiKeyType } from "@shared/auth/api-key-creation.ts";
 import {
     type CommunityModelRewardInput,
-    type CommunityModelRewardResolution,
-    type MarkupResolution,
     selectCommunityModelReward,
 } from "@shared/billing/track-helpers.ts";
 import {
@@ -233,8 +231,6 @@ export const track = (eventType: EventType) =>
                 responseTracking: row.responseTracking,
                 cacheKey: await cacheKeyForTracking(),
                 errorTracking: row.errorTracking,
-                markup: null,
-                communityModelReward: null,
                 billedPrice: 0,
             });
             billableEvents.push({
@@ -864,8 +860,6 @@ type TrackingEventInput = {
     balanceTracking: BalanceData;
     requestTracking: RequestTrackingData;
     responseTracking: ResponseTrackingData;
-    markup: MarkupResolution | null;
-    communityModelReward: CommunityModelRewardResolution | null;
     billedPrice: number;
     errorTracking?: ErrorData;
 };
@@ -906,8 +900,6 @@ function createTrackingEvent({
     balanceTracking,
     requestTracking,
     responseTracking,
-    markup,
-    communityModelReward,
     billedPrice,
     errorTracking,
 }: TrackingEventInput): InsertGenerationEvent {
@@ -958,10 +950,9 @@ function createTrackingEvent({
         totalCost: responseTracking.cost?.totalCost || 0,
         totalPrice: billedPrice,
         devPrice: responseTracking.price?.totalPrice || 0,
-        markupRate: markup?.markupRate ?? 0,
-        communityModelRewardUserId: communityModelReward?.userId,
-        communityModelRewardRate: communityModelReward?.rewardRate ?? 0,
-        communityModelRewardAmount: communityModelReward?.credit ?? 0,
+        markupRate: 0,
+        communityModelRewardRate: 0,
+        communityModelRewardAmount: 0,
 
         ...responseTracking.contentFilterResults,
         ...errorTracking,

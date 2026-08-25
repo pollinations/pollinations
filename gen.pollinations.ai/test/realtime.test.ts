@@ -517,28 +517,24 @@ test("forwards the initial Azure session event after listeners are attached", as
     await closeRealtimeSession(session);
 });
 
-test(
-    "signals Azure and bounds settlement when the provider stays open",
-    async () => {
-        const session = await openPaidRealtimeSession({
-            name: "azure-realtime-close-key",
-            estimatedCost: 0.2,
-        });
-        const providerCloseRequest = nextClose(session.upstream.server);
+test("signals Azure and bounds settlement when the provider stays open", async () => {
+    const session = await openPaidRealtimeSession({
+        name: "azure-realtime-close-key",
+        estimatedCost: 0.2,
+    });
+    const providerCloseRequest = nextClose(session.upstream.server);
 
-        expect(await getApiKeyBalance(session.apiKeyId)).toBeCloseTo(0.8, 8);
-        session.client.close(1000, "done");
+    expect(await getApiKeyBalance(session.apiKeyId)).toBeCloseTo(0.8, 8);
+    session.client.close(1000, "done");
 
-        await expect(providerCloseRequest).resolves.toMatchObject({
-            code: 1000,
-        });
-        expect(session.upstream.server.readyState).toBe(WebSocket.CLOSING);
-        await waitOnExecutionContext(session.ctx);
-        expect(await countRealtimeEvents(session.userId)).toBe(0);
-        expect(await getApiKeyBalance(session.apiKeyId)).toBeCloseTo(1, 8);
-    },
-    7_000,
-);
+    await expect(providerCloseRequest).resolves.toMatchObject({
+        code: 1000,
+    });
+    expect(session.upstream.server.readyState).toBe(WebSocket.CLOSING);
+    await waitOnExecutionContext(session.ctx);
+    expect(await countRealtimeEvents(session.userId)).toBe(0);
+    expect(await getApiKeyBalance(session.apiKeyId)).toBeCloseTo(1, 8);
+}, 7_000);
 
 test("does not reply to an abnormal Azure close", async () => {
     const session = await openPaidRealtimeSession({

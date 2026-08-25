@@ -1045,10 +1045,10 @@ export const proxyRoutes = new Hono<Env>()
         validator("json", CreateImageRequestSchema),
         resolveModel("generate.image"),
         track("generate.image"),
-        generationAccess,
         every(prepareOpenAIImageGeneration, formatOpenAIImageGeneration),
         prepareGenerationRequest,
         imageCache,
+        generationAccess,
         deduplicateGeneration,
         every(apiKeyBudgetReservation, handleImageGeneration),
     )

@@ -5,6 +5,41 @@ name: CI / Pull request checks
     branches: [main, master]
 
 jobs:
+  sdk:
+    name: Verify SDK isolated install, build, test, typecheck
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # packages/sdk is published standalone (see release-publish-npm-packages.yml,
+      # which runs `npm ci` with working-directory: packages/sdk) so its
+      # package-lock.json must be self-consistent with its package.json at all
+      # times. `npm ci` fails fast (EUSAGE) if they've drifted — this is the
+      # cheapest possible check and it must run on every PR that touches the
+      # package, not just ones that happen to touch the lockfile.
+      - name: npm ci (isolated, no root install)
+        working-directory: packages/sdk
+        run: npm ci --ignore-scripts
+
+      - name: Build
+        working-directory: packages/sdk
+        run: npm run build
+
+      - name: Test
+        working-directory: packages/sdk
+        run: npm test
+
+      - name: Typecheck
+        working-directory: packages/sdk
+        run: npm run typecheck
+
   biome:
     name: Check formatting and linting
     runs-on: ubuntu-latest

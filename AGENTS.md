@@ -167,6 +167,7 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - Before model changes, read and follow `.claude/skills/model-management/SKILL.md`.
 - Don't request PR reviews or comment `polli` unless the user explicitly asks.
 - Model descriptions must describe only capabilities or differentiators; never repeat the model title or name.
+- `packages/sdk` is published standalone and keeps its own `package-lock.json` as the source of truth (like `packages/mcp`), even though it's also listed in the root `workspaces` array for local dev (`apps/react`, `packages/ui` symlink to it). After changing `packages/sdk/package.json`, regenerate its lockfile with `npm install --prefix packages/sdk --workspaces=false --package-lock-only` — a plain `npm install` run from inside the repo tree silently updates the *root* lockfile instead of the local one, leaving `packages/sdk/package-lock.json` stale. CI (`sdk` job in `ci-pull-request-checks.yml`) runs `npm ci --prefix packages/sdk` to catch this.
 
 ## Testing
 

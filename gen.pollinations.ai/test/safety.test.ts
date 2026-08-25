@@ -526,7 +526,7 @@ describe("applySafetyToChatRequest", { timeout: 30000 }, () => {
                     streamRequested: false,
                     overrideResponseTracking() {},
                     setPricingInput() {},
-                    failedCalls: [],
+                    attempts: [],
                 });
                 c.set("model", {
                     requested: endpoint.modelId,

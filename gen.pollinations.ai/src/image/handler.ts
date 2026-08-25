@@ -11,7 +11,6 @@ import {
     formatFallbackTarget,
     withModelFallback,
 } from "../fallback.ts";
-import type { GenerationModelEntry } from "../model-registry.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 import {
     getRegisteredServers,
@@ -34,6 +33,7 @@ import {
 } from "./createAndReturnVideos.ts";
 import { getImageEnv, syncImageEnv } from "./env.ts";
 import { setKleinVpcBinding } from "./models/fluxKleinModel.ts";
+import { clampNovaCanvasDimensions } from "./models/novaCanvasModel.ts";
 import { type ImageParams, ImageParamsSchema } from "./params.ts";
 import { sanitizeString, sleep } from "./util.ts";
 import {
@@ -419,10 +419,9 @@ async function generateMediaWithFallback(
 ): Promise<{
     result: ImageGenerationResult | VideoGenerationResult;
     params: RuntimeImageParams;
-    servedEntry?: GenerationModelEntry;
     servedIndex: number;
 }> {
-    const { result, candidate, index } = await withModelFallback(
+    const { result, index } = await withModelFallback(
         fallbackCandidates(c.var.model),
         async (attempt) => {
             const params = { ...safeParams, model: attempt.id };
@@ -448,12 +447,11 @@ async function generateMediaWithFallback(
             assertNonEmptyMedia(generated.buffer, "Image provider");
             return { result: generated, params };
         },
-        c.var.track?.failedCalls,
+        c.var.track?.attempts,
         (attempt) => enforceModelRateLimit(c, attempt),
     );
     return {
         ...result,
-        servedEntry: candidate.entry,
         servedIndex: index,
     };
 }
@@ -523,23 +521,33 @@ export async function generateImageOrVideoResponse(
         definition.inputModalities?.includes("image")
             ? await resolveEditDimensionsForImage(parsedParams)
             : parsedParams;
+    const pricingDimensions =
+        c.var.model.resolved === "nova-canvas"
+            ? clampNovaCanvasDimensions(safeParams.width, safeParams.height)
+            : safeParams;
     c.var.track.setPricingInput({
         resolution: safeParams.resolution,
         quality: safeParams.quality,
         hasImage: (safeParams.image?.length ?? 0) > 0,
+        maxImageDimension: Math.max(
+            pricingDimensions.width,
+            pricingDimensions.height,
+        ),
         megapixels: (safeParams.width * safeParams.height) / 1_000_000,
     });
 
     try {
-        const { result, params, servedEntry, servedIndex } =
-            await generateMediaWithFallback(c, originalPrompt, safeParams);
+        const { result, params, servedIndex } = await generateMediaWithFallback(
+            c,
+            originalPrompt,
+            safeParams,
+        );
         const headers = mediaHeaders(
             originalPrompt,
             params,
             result,
             result.mimeType || detectMimeType(result.buffer),
         );
-        if (servedEntry) c.set("servedModelEntry", servedEntry);
         if (servedIndex > 0) {
             // Same shape text emits, so tracking has one fallback marker.
             headers.set(

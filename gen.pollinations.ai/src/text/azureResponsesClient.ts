@@ -338,7 +338,7 @@ function terminalError(message: string) {
 }
 
 function convertStream(
-    source: ReadableStream<Uint8Array<ArrayBuffer>> | null,
+    source: ReadableStream<Uint8Array<ArrayBuffer>>,
     model: string,
     includeUsage: boolean,
 ) {
@@ -348,19 +348,6 @@ function convertStream(
     let terminal = false;
     let nextToolIndex = 0;
     const toolIndexes = new Map<string, number>();
-
-    if (!source) {
-        return new ReadableStream<Uint8Array>({
-            start(controller) {
-                controller.enqueue(
-                    encoder.encode(
-                        terminalError("The upstream response had no body."),
-                    ),
-                );
-                controller.close();
-            },
-        });
-    }
 
     const chatChunk = (delta: Json, finish_reason: string | null = null) =>
         dataEvent({
@@ -651,6 +638,12 @@ export async function callAzureResponses(
     }
 
     if (options.stream) {
+        if (!response.body) {
+            throw serviceError(
+                "Azure Responses returned an empty stream",
+                requestUrl,
+            );
+        }
         return withRequestUrl(
             {
                 id: `azure-responses-${requestId}`,

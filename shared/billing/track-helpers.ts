@@ -7,8 +7,8 @@ import {
 } from "../community-endpoints.ts";
 import { apikey as apikeyTable } from "../db/better-auth.ts";
 import {
+    atomicAdjustApiKeyBalance,
     atomicCreditUserBalance,
-    atomicDeductApiKeyBalance,
     atomicDeductUserBalance,
     type Bucket,
 } from "./deduction.ts";
@@ -81,6 +81,7 @@ interface DeductionParams {
     userId?: string;
     apiKeyId?: string;
     apiKeyPollenBalance?: number | null;
+    apiKeyReservedAmount?: number;
     byopClientKeyId?: string | null;
     modelPaidOnly?: boolean;
     communityModelReward?: CommunityModelRewardInput | null;
@@ -180,12 +181,30 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
         userId,
         apiKeyId,
         apiKeyPollenBalance,
+        apiKeyReservedAmount,
         byopClientKeyId,
         modelPaidOnly,
         communityModelReward: communityModelRewardInput,
     } = params;
 
+    if (
+        apiKeyId &&
+        hasApiKeyBudget(apiKeyPollenBalance) &&
+        apiKeyReservedAmount === undefined
+    ) {
+        throw new Error(
+            `API key budget reservation is missing for ${apiKeyId}`,
+        );
+    }
+
     if (!isBilledUsage || totalPrice == null || totalPrice === 0) {
+        await reconcileApiKeyBalance(
+            db,
+            apiKeyId,
+            apiKeyPollenBalance,
+            apiKeyReservedAmount,
+            0,
+        );
         return {
             markup: null,
             communityModelReward: null,
@@ -200,6 +219,13 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
     // partial reward. The reward input follows the endpoint that actually
     // served the request, so a fallback owned by somebody else is still billed.
     if (communityModelRewardInput?.userId === userId) {
+        await reconcileApiKeyBalance(
+            db,
+            apiKeyId,
+            apiKeyPollenBalance,
+            apiKeyReservedAmount,
+            0,
+        );
         return {
             markup: null,
             communityModelReward: null,
@@ -210,12 +236,24 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
     }
 
     // 1. Resolve the two independent "who else gets money" inputs.
-    let markup = await resolveDevMarkup(
-        db,
-        byopClientKeyId,
-        totalPrice,
-        userId,
-    );
+    let markup: MarkupResolution | null;
+    try {
+        markup = await resolveDevMarkup(
+            db,
+            byopClientKeyId,
+            totalPrice,
+            userId,
+        );
+    } catch (error) {
+        await reconcileApiKeyBalance(
+            db,
+            apiKeyId,
+            apiKeyPollenBalance,
+            apiKeyReservedAmount,
+            0,
+        );
+        throw error;
+    }
     let communityModelReward = resolveCommunityModelReward(
         communityModelRewardInput,
         totalPrice,
@@ -230,6 +268,7 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
     //    payer drew from, so they are only possible once that bucket is known.
     let payerBucket: Bucket | null = null;
     let postDeductionPackBalance: number | null = null;
+    let payerDeducted = !userId;
 
     try {
         if (userId) {
@@ -241,6 +280,7 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
             );
             payerBucket = deduction.bucket;
             postDeductionPackBalance = deduction.postDeductionPackBalance;
+            payerDeducted = true;
             if (
                 deduction.postDeductionBalance != null &&
                 deduction.postDeductionBalance < 0
@@ -260,7 +300,13 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
         // API key budgets are decremented by the amount the user authorized the
         // app to spend, including BYOP markup when it applies.
         if (apiKeyId && hasApiKeyBudget(apiKeyPollenBalance)) {
-            await deductApiKeyBalance(db, apiKeyId, billedPrice);
+            await reconcileApiKeyBalance(
+                db,
+                apiKeyId,
+                apiKeyPollenBalance,
+                apiKeyReservedAmount,
+                billedPrice,
+            );
         }
 
         // 4. Credits. Both require a payer bucket (nothing to net against
@@ -272,6 +318,27 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
             await creditCommunityOwner(db, communityModelReward, payerBucket);
         }
     } catch (error) {
+        if (!payerDeducted) {
+            try {
+                await reconcileApiKeyBalance(
+                    db,
+                    apiKeyId,
+                    apiKeyPollenBalance,
+                    apiKeyReservedAmount,
+                    0,
+                );
+            } catch (releaseError) {
+                log.error(
+                    "Failed to release API key reservation after payer deduction failed: {error}",
+                    {
+                        error:
+                            releaseError instanceof Error
+                                ? releaseError.message
+                                : String(releaseError),
+                    },
+                );
+            }
+        }
         logBillingFailure(error, markup, communityModelReward);
         throw error;
     }
@@ -405,24 +472,38 @@ function hasApiKeyBudget(
     return typeof balance === "number";
 }
 
-async function deductApiKeyBalance(
+async function reconcileApiKeyBalance(
     db: DrizzleD1Database,
-    apiKeyId: string,
-    amount: number,
+    apiKeyId: string | undefined,
+    apiKeyPollenBalance: number | null | undefined,
+    reservedAmount: number | undefined,
+    billedAmount: number,
 ): Promise<void> {
+    if (!apiKeyId || !hasApiKeyBudget(apiKeyPollenBalance)) return;
+    if (reservedAmount === undefined) {
+        throw new Error(
+            `API key budget reservation is missing for ${apiKeyId}`,
+        );
+    }
+
+    const adjustment = roundPollenLedgerAmount(billedAmount - reservedAmount);
     try {
-        const { ok } = await atomicDeductApiKeyBalance(db, apiKeyId, amount);
+        const { ok } = await atomicAdjustApiKeyBalance(
+            db,
+            apiKeyId,
+            adjustment,
+        );
         if (!ok) {
             throw new Error(
-                `API key budget deduction affected 0 rows for ${apiKeyId}`,
+                `API key budget reconciliation affected 0 rows for ${apiKeyId}`,
             );
         }
-        log.debug("Decremented {price} pollen from API key {keyId} budget", {
-            price: amount,
-            keyId: apiKeyId,
-        });
+        log.debug(
+            "Reconciled API key {keyId} budget from reserved={reserved} to billed={billed}",
+            { keyId: apiKeyId, reserved: reservedAmount, billed: billedAmount },
+        );
     } catch (error) {
-        log.error("Failed to decrement API key budget for {keyId}: {error}", {
+        log.error("Failed to reconcile API key budget for {keyId}: {error}", {
             keyId: apiKeyId,
             error: error instanceof Error ? error.message : error,
         });

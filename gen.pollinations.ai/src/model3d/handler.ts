@@ -27,7 +27,7 @@ export async function generate3dResponse(
     c.var.track.setPricingInput({ resolution: safeParams.resolution });
 
     try {
-        const { response, servedEntry } = await withModelFallbackResponse(
+        return await withModelFallbackResponse(
             c.var.model,
             async (candidate) => {
                 const params = { ...safeParams, model: candidate.id };
@@ -40,11 +40,9 @@ export async function generate3dResponse(
                     headers: mediaHeaders(originalPrompt, params, result),
                 });
             },
-            c.var.track?.failedCalls,
+            c.var.track?.attempts,
             (candidate) => enforceModelRateLimit(c, candidate),
         );
-        if (servedEntry) c.set("servedModelEntry", servedEntry);
-        return response;
     } catch (error) {
         throw3dError(error);
     }

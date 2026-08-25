@@ -10,7 +10,6 @@ import {
     ExternalLinkIcon,
     GlobeIcon,
     IconButton,
-    InlineLink,
     LockIcon,
     PencilIcon,
     Surface,
@@ -179,14 +178,13 @@ export function CommunityEndpointCard({
                     icon={<TokensIcon className="h-3.5 w-3.5" />}
                     label="Earnings"
                     value={
-                        <InlineLink
-                            as={Link}
+                        <Link
                             to="/activity"
                             search={{ earningsModels: [endpoint.modelId] }}
-                            className="text-xs"
+                            className="font-medium text-theme-text-soft underline underline-offset-2 transition-colors hover:text-theme-text-strong text-xs"
                         >
                             View activity
-                        </InlineLink>
+                        </Link>
                     }
                 />
             </div>

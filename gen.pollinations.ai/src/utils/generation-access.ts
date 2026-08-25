@@ -28,14 +28,30 @@ export async function checkBalance(
     if (!auth.user?.id) return;
 
     const isPaidOnly = model.definition.paidOnly ?? false;
-    const estimatedCost = getEstimatedPrice(
-        await getModelStats(env.KV, log),
-        model.resolved,
-    );
     const communityEndpoint = model.communityEndpoint;
     const isFreeCommunityModel =
         communityEndpoint !== undefined &&
         isFreeCommunityEndpoint(communityEndpoint);
+
+    // Fast-path: paid-only models require pack balance — check before the Tinybird stats call.
+    if (isPaidOnly && !isFreeCommunityModel) {
+        const userBalance = await balance.getBalance(auth.user.id);
+        if (!canCoverEstimatedCharge(userBalance, 0, true)) {
+            throw new HTTPException(402, {
+                message: `Insufficient balance. This model requires a paid balance.`,
+            });
+        }
+        balance.balanceCheckResult = createBalanceCheckResult(
+            userBalance,
+            true,
+        );
+        return;
+    }
+
+    const estimatedCost = getEstimatedPrice(
+        await getModelStats(env.KV, log),
+        model.resolved,
+    );
 
     const apiKeyBudget = auth.apiKey?.pollenBalance;
     const requiredBudget = Math.max(0, estimatedCost);

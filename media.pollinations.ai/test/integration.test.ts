@@ -57,6 +57,7 @@ let ALICE_SECRET_KEY: string;
 let ALICE_SECRET_KEY_ID: string;
 let BOB_SECRET_KEY: string;
 let APP_KEY_ID: string;
+let tinybirdWrites = 0;
 
 function createMediaEnv(bucket = createTestR2Bucket()) {
     return {
@@ -178,6 +179,7 @@ describe("media.pollinations.ai", () => {
     });
 
     beforeEach(() => {
+        tinybirdWrites = 0;
         fetchMock.activate();
         fetchMock.disableNetConnect();
         fetchMock
@@ -186,7 +188,13 @@ describe("media.pollinations.ai", () => {
                 path: "/v0/events?name=generation_event_v2",
                 method: "POST",
             })
-            .reply(200, { successful_rows: 1, quarantined_rows: 0 })
+            .reply(200, () => {
+                tinybirdWrites += 1;
+                return JSON.stringify({
+                    successful_rows: 1,
+                    quarantined_rows: 0,
+                });
+            })
             .persist();
     });
 
@@ -384,14 +392,96 @@ describe("media.pollinations.ai", () => {
         const bucket = createTestR2Bucket();
         const realBilling = env.ENTER_BILLING;
         let deletedId: string | undefined;
+        let authorizationId: string | undefined;
+        let catalogVisibleAtSettlement: boolean | undefined;
+        let settlementCalls = 0;
+        let cancellationCalls = 0;
         const deleteObject = bucket.delete.bind(bucket);
         bucket.delete = async (keys) => {
             deletedId = Array.isArray(keys) ? keys[0] : keys;
             await deleteObject(keys);
+            throw new Error("R2 deletion acknowledgement lost");
         };
         const form = new FormData();
         form.append("file", pngFile("rollback.png"));
         form.append("tags", "rollback-test");
+        const ctx = createExecutionContext();
+        const res = await app.fetch(
+            new Request("https://media.pollinations.ai/upload", {
+                method: "POST",
+                body: form,
+                headers: { Authorization: `Bearer ${VALID_KEY}` },
+            }),
+            {
+                ...createMediaEnv(bucket),
+                ENTER_BILLING: {
+                    introspect: (token) => realBilling.introspect(token),
+                    authorize: async (token, input) => {
+                        const result = await realBilling.authorize(
+                            token,
+                            input,
+                        );
+                        if (result.ok) authorizationId = result.grant.id;
+                        return result;
+                    },
+                    cancel: (id) => {
+                        cancellationCalls += 1;
+                        return realBilling.cancel(id);
+                    },
+                    settle: async (_authorizationId, events) => {
+                        settlementCalls += 1;
+                        const catalog = await drizzle(env.DB)
+                            .select({ id: mediaItem.id })
+                            .from(mediaItem)
+                            .where(
+                                eq(
+                                    mediaItem.id,
+                                    events[0]?.telemetry.id as string,
+                                ),
+                            );
+                        catalogVisibleAtSettlement = catalog.length > 0;
+                        return {
+                            ok: true,
+                            events: events.map((event) => ({
+                                id: event.id,
+                                status: "rejected" as const,
+                                reason: "authorization_unavailable" as const,
+                            })),
+                        };
+                    },
+                },
+            },
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        expect(res.status).toBe(500);
+        expect(settlementCalls).toBe(1);
+        expect(catalogVisibleAtSettlement).toBe(false);
+        expect(cancellationCalls).toBe(1);
+        expect(deletedId).toBeTypeOf("string");
+        expect(bucket.getObject(deletedId ?? "")).toBeUndefined();
+        const catalog = await drizzle(env.DB)
+            .select({ id: mediaItem.id })
+            .from(mediaItem)
+            .where(eq(mediaItem.id, deletedId ?? ""));
+        expect(catalog).toHaveLength(0);
+        const authorization = await env.DB.prepare(
+            "SELECT cancelled_at AS cancelledAt FROM billing_authorization WHERE id = ?",
+        )
+            .bind(authorizationId)
+            .first<{ cancelledAt: number | null }>();
+        expect(authorization?.cancelledAt).not.toBeNull();
+    });
+
+    it("retries a lost settlement acknowledgement without duplicating billing", async () => {
+        const bucket = createTestR2Bucket();
+        const realBilling = env.ENTER_BILLING;
+        const settlementInputs: string[] = [];
+        const settlementStatuses: string[] = [];
+        const form = new FormData();
+        form.append("file", pngFile("lost-ack.png"));
+
         const ctx = createExecutionContext();
         const res = await app.fetch(
             new Request("https://media.pollinations.ai/upload", {
@@ -408,8 +498,22 @@ describe("media.pollinations.ai", () => {
                     cancel: (authorizationId) =>
                         realBilling.cancel(authorizationId),
                     settle: async (authorizationId, events) => {
-                        await realBilling.cancel(authorizationId);
-                        return realBilling.settle(authorizationId, events);
+                        settlementInputs.push(
+                            JSON.stringify({ authorizationId, events }),
+                        );
+                        const result = await realBilling.settle(
+                            authorizationId,
+                            events,
+                        );
+                        if (result.ok) {
+                            settlementStatuses.push(
+                                result.events[0]?.status ?? "",
+                            );
+                        }
+                        if (settlementInputs.length === 1) {
+                            throw new Error("settlement acknowledgement lost");
+                        }
+                        return result;
                     },
                 },
             },
@@ -417,14 +521,18 @@ describe("media.pollinations.ai", () => {
         );
         await waitOnExecutionContext(ctx);
 
-        expect(res.status).toBe(500);
-        expect(deletedId).toBeTypeOf("string");
-        expect(bucket.getObject(deletedId ?? "")).toBeUndefined();
-        const catalog = await drizzle(env.DB)
-            .select({ id: mediaItem.id })
-            .from(mediaItem)
-            .where(eq(mediaItem.id, deletedId ?? ""));
-        expect(catalog).toHaveLength(0);
+        expect(res.status).toBe(200);
+        const upload = (await res.json()) as UploadResponse;
+        expect(settlementInputs).toHaveLength(2);
+        expect(settlementInputs[1]).toBe(settlementInputs[0]);
+        expect(settlementStatuses).toEqual(["settled", "duplicate"]);
+        const ledger = await env.DB.prepare(
+            "SELECT COUNT(*) AS count FROM billable_event WHERE id = ?",
+        )
+            .bind(`${upload.id}:upload`)
+            .first<{ count: number }>();
+        expect(ledger?.count).toBe(1);
+        expect(tinybirdWrites).toBe(1);
     });
 
     it("rejects empty files, invalid base64, and malformed JSON with 400", async () => {

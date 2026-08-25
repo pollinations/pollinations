@@ -1,0 +1,35 @@
+{
+  "pr_number": 13807,
+  "title": "feat: add 12-hour delay to community model price and visibility changes",
+  "author": "davealan74",
+  "url": "https://github.com/pollinations/pollinations/pull/13807",
+  "merged_at": "2026-08-25T09:27:49Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #13800\n\n## Summary\n\n- Delays price, paid-balance, and private-to-public changes by 12 hours\n- Keeps the current public terms active until the deadline\n- Exposes the pending terms and effective time to owners and model consumers\n- Applies only the queued pricing fields, preserving newer credentials, fallbacks, and RPM settings\n- Keeps first-time pricing and public-to-private changes immediate\n- Adds the generated D1 migration and focused Enter/Gen coverage\n\n## Verification\n\n- Enter price-delay integration: 10/10\n- Gen community registry integration: passed\n- Enter and Gen typechecks: passed\n- Biome and whitespace checks: passed",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Terms, With a Landing Pad",
+    "blurb": "Community model terms now get a 12-hour settling period before a public price or visibility change takes flight. Everyone can see the next bloom coming, while the current one keeps doing its job.",
+    "summary": "Community model price, paid-balance, and private-to-public updates now queue for 12 hours while exposing pending terms and their effective time to owners and consumers; first-time pricing and public-to-private changes remain immediate.",
+    "impact": "Model consumers keep the current public terms for 12 hours and can inspect what is changing and when, while unrelated newer credentials, fallbacks, and RPM settings remain intact.",
+    "keywords": [
+      "community models",
+      "pricing",
+      "visibility",
+      "model registry",
+      "API",
+      "Enter",
+      "Gen"
+    ],
+    "visual_concept": "A community-model garden has a clearly labeled current-price flower in bloom beside a smaller bud marked as pending, with a friendly 12-hour sand timer between them. Polli acts as the observant gardener, tending the still-active flower while a CRT monitor robot displays the upcoming terms and effective time; this represents transparent, gradual public-term changes rather than abrupt switches.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener scarf while tending a blooming code-flower labeled \"CURRENT TERMS\" beside a smaller bud labeled \"PENDING · 12H\" and a warm little hourglass; a cute chunky CRT monitor robot shows the upcoming price and clock, surrounded by vines and flower pots. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, dark purple (#110518) pixel outlines, chunky retro sprites, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-25/PR-13807.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener scarf while tending a blooming code-flower labeled \"CURRENT TERMS\" beside a smaller bud labeled \"PENDING · 12H\" and a warm little hourglass; a cute chunky CRT monitor robot shows the upcoming price and clock, surrounded by vines and flower pots. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, dark purple (#110518) pixel outlines, chunky retro sprites, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-08-25T09:28:51.355089+00:00"
+}

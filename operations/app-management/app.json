@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "✍️",
+    "name": "Descriptly",
+    "url": "https://github.com/g33ky00/descriptly",
+    "description": "## Descriptly v1.0.0 First public release. Descriptly scans images added or modified in a pull request and generates accessible alt-text suggestions using Pollinations vision models — posted directly ",
+    "language": "en",
+    "category": "writing",
+    "platform": "web",
+    "githubUsername": "g33ky00",
+    "githubUserId": "20044667",
+    "repositoryUrl": "https://github.com/g33ky00/descriptly",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-08-25",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/13889",
+    "approvedDate": "2026-08-25",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🖼️",
     "name": "EAS AI STUDIO",
     "url": "https://www.ekin-ai-studio.my.id",

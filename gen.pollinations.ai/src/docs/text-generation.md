@@ -37,3 +37,38 @@ On Gemini, Claude, and Nova models, a large static prompt prefix can be cached s
 **Claude** — all Claude models cache. The prefix must be at least 4,096 tokens (1,024 on `claude` and `claude-fable-5`); tools are fine. Cache creates bill at 1.25× the input rate (no storage fee); hits bill at 10% of input. The cache lives ~5 minutes, refreshed on each hit.
 
 **Nova** — `nova` and `nova-fast` cache. The prefix must be at least ~1,000 tokens (up to 20K tokens cacheable). Cache creates are free; hits bill at 25% of input. ~5-minute TTL.
+
+
+### Reasoning
+
+Reasoning-capable models can spend extra tokens thinking before answering. Request a thinking depth with `reasoning_effort`; use `"none"` to disable it. Check the [models list](https://gen.pollinations.ai/models) — each model's metadata reports whether it supports adjustable reasoning, so pick one that does before sending the parameter. Unsupported values on non-reasoning models are ignored.
+
+```bash
+# POST /v1/chat/completions — OpenAI-compatible endpoint
+curl https://gen.pollinations.ai/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $POLLINATIONS_API_KEY" \
+  -d '{
+    "model": "openai",
+    "reasoning_effort": "high",
+    "messages": [
+      { "role": "user", "content": "Prove that there are infinitely many prime numbers." }
+    ]
+  }'
+```
+
+```bash
+# POST /text — same request body as chat completions, returns plain text
+curl https://gen.pollinations.ai/text \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $POLLINATIONS_API_KEY" \
+  -d '{
+    "model": "openai",
+    "reasoning_effort": "medium",
+    "messages": [
+      { "role": "user", "content": "Design a URL shortener. Outline the key tradeoffs." }
+    ]
+  }'
+```
+
+Higher efforts produce more thorough (and slower, more expensive) answers; `"minimal"` keeps latency low while still letting the model think briefly.

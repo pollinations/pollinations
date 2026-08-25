@@ -1,4 +1,4 @@
-import { CopyButton, cn, Surface, Tooltip } from "@pollinations/ui";
+import { BeakerIcon, CopyButton, cn, Surface, Tooltip } from "@pollinations/ui";
 import { WalletKindIcon } from "@pollinations/ui/wallet";
 import type { FC } from "react";
 import { calculatePerPollen, unitLabels } from "./calculations.ts";
@@ -249,6 +249,25 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                     badges={outputPriceBadges}
                     className="flex flex-col gap-1 items-end"
                 />
+            </div>
+
+            <div className="shrink-0 py-3 pr-3 pl-1 flex items-center">
+                <Tooltip
+                    triggerAs="span"
+                    content="Try in Play"
+                    ariaLabel="Try in Play"
+                    displayContents
+                >
+                    <a
+                        href={`https://pollinations.ai/play?model=${encodeURIComponent(model.name)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="Try in Play"
+                        className="inline-flex h-6 w-6 items-center justify-center rounded text-theme-text-muted hover:text-theme-text-strong transition-colors"
+                    >
+                        <BeakerIcon className="h-4 w-4" />
+                    </a>
+                </Tooltip>
             </div>
         </Surface>
     );

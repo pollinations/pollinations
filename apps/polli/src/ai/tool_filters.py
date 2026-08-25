@@ -3,13 +3,12 @@
 from ..utils.regex import re
 from .tools import (
     CODE_SEARCH_TOOL,
-    DATA_VIZ_TOOL,
     DISCORD_SEARCH_TOOL,
-    GITHUB_TOOLS,
     RENDER_VISUAL_TOOL,
     WEB_SCRAPE_TOOL,
     WEB_SEARCH_TOOL,
 )
+
 
 def get_tools_with_embeddings(base_tools: list, code_search_enabled: bool) -> list:
     """Build the tool list, including code_search only when it is configured."""
@@ -25,7 +24,7 @@ def get_tools_with_embeddings(base_tools: list, code_search_enabled: bool) -> li
     tools.append(WEB_SEARCH_TOOL)
     tools.append(WEB_SCRAPE_TOOL)
     tools.append(DISCORD_SEARCH_TOOL)
-    tools.append(DATA_VIZ_TOOL)
+    tools.append(RENDER_VISUAL_TOOL)
 
     if code_search_enabled:
         tools.append(CODE_SEARCH_TOOL)
@@ -327,4 +326,3 @@ def filter_tools_by_intent(user_message: str, all_tools: list[dict], is_admin: b
 # =============================================================================
 # TOOL-BASED SYSTEM PROMPT - AI has FULL AUTONOMY
 # =============================================================================
-

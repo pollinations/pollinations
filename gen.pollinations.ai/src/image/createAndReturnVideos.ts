@@ -5,26 +5,23 @@
 
 import { getVideoModelIds } from "@shared/registry/image.ts";
 import debug from "debug";
+import { callMinimaxH3API } from "./models/minimaxH3Model.ts";
 import { callNovaReelAPI } from "./models/novaReelModel.ts";
 import {
     callHappyHorseAPI,
     callOpenRouterGrokVideoAPI,
 } from "./models/openRouterVideoModel.ts";
-import {
-    callPrunaVideo720API,
-    callPrunaVideo1080API,
-} from "./models/prunaModel.ts";
+import { callPrunaVideoAPI } from "./models/prunaModel.ts";
+import { callSeedance25API } from "./models/seedance25VideoModel.ts";
 import { callSeedanceProAPI } from "./models/seedanceReplicateVideoModel.ts";
 import { callSeedanceV2API } from "./models/seedanceV2VideoModel.ts";
 import {
-    callVeo1080pAPI,
     callVeoAPI,
     type VideoGenerationResult,
 } from "./models/veoVideoModel.ts";
 import {
     callWanAPI,
     callWanFastAPI,
-    callWanPro1080pAPI,
     callWanProAPI,
 } from "./models/wanVideoModel.ts";
 import type { ImageParams } from "./params.ts";
@@ -46,13 +43,12 @@ export async function createAndReturnVideo(
         case "veo":
             result = await callVeoAPI(prompt, safeParams);
             break;
-        case "veo-1080p":
-            result = await callVeo1080pAPI(prompt, safeParams);
-            break;
         case "seedance-pro":
             result = await callSeedanceProAPI(prompt, safeParams);
             break;
         case "seedance-2.0":
+        case "seedance-2.0-mini":
+        case "seedance-2.0-fast":
             result = await callSeedanceV2API(prompt, safeParams);
             break;
         case "wan":
@@ -64,23 +60,24 @@ export async function createAndReturnVideo(
         case "wan-pro":
             result = await callWanProAPI(prompt, safeParams);
             break;
-        case "wan-pro-1080p":
-            result = await callWanPro1080pAPI(prompt, safeParams);
-            break;
-        case "p-video-720p":
-            result = await callPrunaVideo720API(prompt, safeParams);
-            break;
-        case "p-video-1080p":
-            result = await callPrunaVideo1080API(prompt, safeParams);
+        case "p-video":
+            result = await callPrunaVideoAPI(prompt, safeParams);
             break;
         case "nova-reel":
             result = await callNovaReelAPI(prompt, safeParams, requestId);
             break;
         case "grok-video-pro":
+        case "grok-imagine-video-1.5":
             result = await callOpenRouterGrokVideoAPI(prompt, safeParams);
+            break;
+        case "seedance-2.5":
+            result = await callSeedance25API(prompt, safeParams);
             break;
         case "happyhorse-1.1":
             result = await callHappyHorseAPI(prompt, safeParams);
+            break;
+        case "minimax-h3":
+            result = await callMinimaxH3API(prompt, safeParams);
             break;
         default:
             throw new Error(

@@ -130,7 +130,6 @@ describe("community endpoint configuration policy", () => {
         sessionToken,
     }) => {
         await approveCommunityModels();
-        // Create as public — first price takes effect immediately.
         const created = await postModel(sessionToken, "", {
             name: "image-policy",
             title: "Image policy",
@@ -152,10 +151,8 @@ describe("community endpoint configuration policy", () => {
             paidOnly: true,
             perUserRpm: 2.5,
             completionImagePrice: 0.2,
-            pending: null,
         });
 
-        // Price/mode change on a public model is queued with a 12-hour delay.
         const tokenPriced = await postModel(
             sessionToken,
             `/${created.id as string}/update`,
@@ -164,29 +161,14 @@ describe("community endpoint configuration policy", () => {
                 promptImagePrice: 0.000001,
             },
         );
-        // Current state is still the original (pending not yet effective).
         expect(tokenPriced).toMatchObject({
-            imagePricing: "request",
-            completionImagePrice: 0.2,
-            paidOnly: true,
-        });
-        expect(tokenPriced.pending).toMatchObject({
-            paidOnly: true,
+            imagePricing: "tokens",
+            promptTextPrice: 0,
             promptImagePrice: 0.000001,
             completionImagePrice: 0,
+            paidOnly: true,
         });
-        expect(typeof (tokenPriced.pending as Record<string, unknown>).effectiveAt).toBe("string");
 
-        // Fast-forward the pending past the 12-hour deadline by rewriting pendingAt.
-        const db = drizzle(env.DB, { schema });
-        await db
-            .update(schema.communityEndpoint)
-            .set({
-                pendingAt: new Date(Date.now() - 13 * 60 * 60 * 1000),
-            })
-            .where(eq(schema.communityEndpoint.id, created.id as string));
-
-        // Going private is always immediate regardless of pending.
         const privateModel = await postModel(
             sessionToken,
             `/${created.id as string}/update`,
@@ -197,7 +179,6 @@ describe("community endpoint configuration policy", () => {
             inputModalities: ["text", "image"],
             perUserRpm: 2.5,
             paidOnly: false,
-            pending: null,
         });
         for (const { key } of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
             expect(privateModel[key]).toBe(0);

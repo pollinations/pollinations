@@ -146,34 +146,40 @@ const ChatCompletionMessageContentPartRedactedThinkingSchema = z.object({
     data: z.string(),
 });
 
-const ChatCompletionRequestSystemMessageSchema = z.object({
-    content: z.union([
-        z.string(),
-        z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
-    ]),
-    role: z.literal("system"),
-    name: z.string().optional(),
-    cache_control: CacheControlSchema,
-});
+const ChatCompletionRequestSystemMessageSchema = z
+    .object({
+        content: z.union([
+            z.string(),
+            z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
+        ]),
+        role: z.literal("system"),
+        name: z.string().optional(),
+        cache_control: CacheControlSchema,
+    })
+    .passthrough();
 
-const ChatCompletionRequestDeveloperMessageSchema = z.object({
-    content: z.union([
-        z.string(),
-        z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
-    ]),
-    role: z.literal("developer"),
-    name: z.string().optional(),
-    cache_control: CacheControlSchema,
-});
+const ChatCompletionRequestDeveloperMessageSchema = z
+    .object({
+        content: z.union([
+            z.string(),
+            z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
+        ]),
+        role: z.literal("developer"),
+        name: z.string().optional(),
+        cache_control: CacheControlSchema,
+    })
+    .passthrough();
 
-const ChatCompletionRequestUserMessageSchema = z.object({
-    content: z.union([
-        z.string(),
-        z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
-    ]),
-    role: z.literal("user"),
-    name: z.string().optional(),
-});
+const ChatCompletionRequestUserMessageSchema = z
+    .object({
+        content: z.union([
+            z.string(),
+            z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
+        ]),
+        role: z.literal("user"),
+        name: z.string().optional(),
+    })
+    .passthrough();
 
 const ChatCompletionMessageToolCallSchema = z.object({
     id: z.string(),
@@ -188,44 +194,51 @@ const ChatCompletionMessageToolCallsSchema = z.array(
     ChatCompletionMessageToolCallSchema,
 );
 
-const ChatCompletionRequestAssistantMessageSchema = z.object({
-    content: z
-        .union([
-            z.string(),
-            z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
-        ])
-        .nullable()
-        .optional(),
-    role: z.literal("assistant"),
-    name: z.string().optional(),
-    tool_calls: ChatCompletionMessageToolCallsSchema.optional(),
-    function_call: z
-        .object({
-            arguments: z.string(),
-            name: z.string(),
-        })
-        .nullable()
-        .optional(),
-    cache_control: CacheControlSchema,
-});
+const ChatCompletionRequestAssistantMessageSchema = z
+    .object({
+        content: z
+            .union([
+                z.string(),
+                z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
+            ])
+            .nullable()
+            .optional(),
+        role: z.literal("assistant"),
+        name: z.string().optional(),
+        tool_calls: ChatCompletionMessageToolCallsSchema.optional(),
+        function_call: z
+            .object({
+                arguments: z.string(),
+                name: z.string(),
+            })
+            .nullable()
+            .optional(),
+        cache_control: CacheControlSchema,
+    })
+    .passthrough();
 
-const ChatCompletionRequestToolMessageSchema = z.object({
-    role: z.literal("tool"),
-    content: z
-        .union([
-            z.string(),
-            z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
-        ])
-        .nullable(),
-    tool_call_id: z.string(),
-    cache_control: CacheControlSchema,
-});
+const ChatCompletionRequestToolMessageSchema = z
+    .object({
+        role: z.literal("tool"),
+        content: z
+            .union([
+                z.string(),
+                z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
+            ])
+            .nullable(),
+        tool_call_id: z.string(),
+        name: z.string().optional(),
+        cache_control: CacheControlSchema,
+    })
+    .passthrough();
 
-const ChatCompletionRequestFunctionMessageSchema = z.object({
-    role: z.literal("function"),
-    content: z.string().nullable(),
-    name: z.string(),
-});
+const ChatCompletionRequestFunctionMessageSchema = z
+    .object({
+        role: z.literal("function"),
+        content: z.string().nullable(),
+        name: z.string(),
+    })
+    .passthrough();
 
 const ChatCompletionRequestMessageSchema = z.union([
     ChatCompletionRequestSystemMessageSchema,
@@ -313,9 +326,17 @@ export const CreateChatCompletionRequestSchema = z
         stream_options: ChatCompletionStreamOptionsSchema,
         safe: SafeSchema,
         reasoning_effort: z
-            .enum(["none", "minimal", "low", "medium", "high", "xhigh"])
+            .enum(["none", "minimal", "low", "medium", "high", "xhigh", "max"])
             .describe(
                 'Requests reasoning depth for models that support adjustable reasoning. "none" requests no reasoning.',
+            )
+            .optional(),
+        web_search_options: z
+            .object({
+                search_context_size: z.enum(["low", "medium", "high"]),
+            })
+            .describe(
+                "Controls Perplexity Sonar search context. Pollinations currently supports low and high.",
             )
             .optional(),
         temperature: z.number().min(0).max(2).nullable().optional(),
@@ -514,9 +535,14 @@ const OpenAIModelSchema = z
         input_modalities: z.array(z.string()).optional(),
         output_modalities: z.array(z.string()).optional(),
         supported_endpoints: z.array(z.string()).optional(),
+        agent: z.boolean().optional(),
+        base_model: z.string().optional(),
+        pricing: z.record(z.string(), z.string()).optional(),
+        capabilities: z.array(z.string()).optional(),
         tools: z.boolean().optional(),
         reasoning: z.boolean().optional(),
         context_length: z.number().optional(),
+        per_user_rpm: z.number().positive().nullable().optional(),
     })
     .meta({
         description: "OpenAI-compatible model object with capability metadata",
@@ -545,9 +571,15 @@ const imageNField = z
     .optional()
     .default(1)
     .meta({ description: "Number of images to generate (currently max 1)" });
-const imageSizeField = z.string().optional().default("1024x1024").meta({
+const imageSizeMeta = {
     description: "Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512)",
-});
+};
+const imageSizeField = z
+    .string()
+    .optional()
+    .default("1024x1024")
+    .meta(imageSizeMeta);
+const imageEditSizeField = z.string().optional().meta(imageSizeMeta);
 const imageQualityField = z
     .enum(["standard", "hd", "low", "medium", "high"])
     .optional()
@@ -555,6 +587,13 @@ const imageQualityField = z
     .meta({
         description:
             "Image quality. OpenAI 'standard'/'hd' mapped to Pollinations equivalents",
+    });
+const imageResolutionField = z
+    .enum(["1k", "2k", "480p", "720p", "768p", "1080p"])
+    .optional()
+    .meta({
+        description:
+            "Output resolution for resolution-priced image and video models (Pollinations extension)",
     });
 
 export const CreateImageRequestSchema = z
@@ -584,6 +623,7 @@ export const CreateImageRequestSchema = z
                 description:
                     "Reference image URL(s) for image-to-image generation (Pollinations extension)",
             }),
+        resolution: imageResolutionField,
         safe: SafeSchema,
     })
     .passthrough() // Allow Pollinations extensions: seed, safe, etc.
@@ -643,8 +683,9 @@ export const CreateImageEditRequestSchema = z
             }),
         model: imageModelField,
         n: imageNField,
-        size: imageSizeField,
+        size: imageEditSizeField,
         quality: imageQualityField,
+        resolution: imageResolutionField,
         safe: SafeSchema,
     })
     .passthrough()

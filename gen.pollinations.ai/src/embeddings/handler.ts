@@ -15,7 +15,7 @@ import {
     inputToText,
     normalizeInputs,
 } from "./input.ts";
-import { callOpenAIEmbed, extractOpenAIUsage } from "./openai.ts";
+import { callAzureOpenAIEmbed, extractOpenAIUsage } from "./openai.ts";
 import type { EmbeddingRequest } from "./types.ts";
 import {
     callGeminiEmbed,
@@ -71,11 +71,17 @@ export async function generateEmbeddings(
         return await generateGeminiEmbeddings(env, request, responseModel);
     }
 
-    if (serviceDef.provider === "openai") {
-        return await generateOpenAIEmbeddings(env, request, responseModel);
-    }
-
     if (serviceDef.provider === "azure") {
+        if (
+            responseModel === "openai-3-small" ||
+            responseModel === "openai-3-large"
+        ) {
+            return await generateAzureOpenAIEmbeddings(
+                env,
+                request,
+                responseModel,
+            );
+        }
         return await generateCohereAzureEmbeddings(env, request, responseModel);
     }
 
@@ -210,7 +216,7 @@ async function generateGeminiEmbeddings(
     return embeddingsResponse(responseModel, data, aggregatedUsage);
 }
 
-async function generateOpenAIEmbeddings(
+async function generateAzureOpenAIEmbeddings(
     env: CloudflareBindings,
     request: EmbeddingRequest,
     responseModel: string,
@@ -228,7 +234,7 @@ async function generateOpenAIEmbeddings(
         return embeddingsResponse(responseModel, [], { promptTextTokens: 0 });
     }
 
-    const result = await callOpenAIEmbed(
+    const result = await callAzureOpenAIEmbed(
         env,
         request.model,
         textInputs,

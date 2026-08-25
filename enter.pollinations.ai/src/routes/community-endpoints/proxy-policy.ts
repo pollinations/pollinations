@@ -218,19 +218,39 @@ export function deriveUpdatedProxyPolicy(
     );
 }
 
-export function pricesOrPaidOnlyChanged(
-    newPrices: CommunityEndpointPrices,
-    oldPrices: CommunityEndpointPrices,
-    newPaidOnly: boolean,
-    oldPaidOnly: boolean,
-    newImagePricing: CommunityEndpointImagePricing,
-    oldImagePricing: CommunityEndpointImagePricing,
+export function proxyPricingChanged(
+    current: Pick<ProxyListingPayload, "paidOnly" | "imagePricing" | "prices">,
+    target: Pick<ProxyListingPayload, "paidOnly" | "imagePricing" | "prices">,
 ): boolean {
-    if (newPaidOnly !== oldPaidOnly) return true;
-    if (newImagePricing !== oldImagePricing) return true;
-    return COMMUNITY_ENDPOINT_PRICE_FIELDS.some(
-        ({ key }) => newPrices[key] !== oldPrices[key],
+    return (
+        current.paidOnly !== target.paidOnly ||
+        current.imagePricing !== target.imagePricing ||
+        COMMUNITY_ENDPOINT_PRICE_FIELDS.some(
+            ({ key }) => current.prices[key] !== target.prices[key],
+        )
     );
+}
+
+export function hasProxyPricingInput(input: ProxyUpdateInput): boolean {
+    return (
+        input.paidOnly !== undefined ||
+        input.imagePricing !== undefined ||
+        COMMUNITY_ENDPOINT_PRICE_FIELDS.some(
+            ({ key }) => input[key] !== undefined,
+        )
+    );
+}
+
+export function withoutProxyPricingChanges(
+    input: ProxyUpdateInput,
+): ProxyUpdateInput {
+    const immediate = { ...input };
+    delete immediate.paidOnly;
+    delete immediate.imagePricing;
+    for (const { key } of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
+        delete immediate[key];
+    }
+    return immediate;
 }
 
 export function changesProxyPayload(input: ProxyUpdateInput): boolean {

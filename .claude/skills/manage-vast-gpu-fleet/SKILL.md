@@ -7,7 +7,7 @@ description: "Inspect, price, canary, replace, and document Pollinations-operate
 
 Use one repository-owned workflow for every current and future Vast workload.
 Treat
-[`GPU_INSTANCES.md`](../../../image.pollinations.ai/GPU_INSTANCES.md) as the
+[`GPU_INSTANCES.md`](../../../operations/infrastructure/gpu/GPU_INSTANCES.md) as the
 live inventory and each model directory as the source of truth for its setup
 and verification commands.
 
@@ -192,7 +192,7 @@ are ready.
 After a successful cutover and old-instance destruction, create a focused
 repository PR:
 
-1. Update `image.pollinations.ai/GPU_INSTANCES.md` with the new instance,
+1. Update `operations/infrastructure/gpu/GPU_INSTANCES.md` with the new instance,
    machine/region, rate, status, total fleet burn, savings, validation evidence,
    and `Last updated` date.
 2. Update the model README only when deployment behavior, limits, commands,

@@ -1,9 +1,11 @@
 import {
-    PRICE_CHANGE_DELAY_MS,
+    applyPendingProxyPricing,
+    COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
     communityEndpointTitle,
     communityModelId,
     normalizeCommunityEndpointAdvertised,
     parseListingPayload,
+    pendingCommunityEndpointChangeIsReady,
 } from "@shared/community-endpoints.ts";
 import type * as schema from "@shared/db/better-auth.ts";
 import {
@@ -13,16 +15,28 @@ import {
 
 type CommunityEndpointRow = typeof schema.communityEndpoint.$inferSelect;
 
-function pendingIsReady(pendingAt: Date | null): boolean {
-    return pendingAt !== null && Date.now() >= pendingAt.getTime() + PRICE_CHANGE_DELAY_MS;
-}
-
 export function toCommunityEndpointResponse(
     row: CommunityEndpointRow,
     ownerGithubUsername: string,
     agentRuntimeUrl: string,
 ): CommunityEndpointResponse {
     const modelId = communityModelId(ownerGithubUsername, row.name);
+    const pendingReady = pendingCommunityEndpointChangeIsReady(row.pendingAt);
+    const pendingAt = row.pendingAt;
+    const hasPending =
+        !pendingReady &&
+        pendingAt !== null &&
+        (row.pendingVisibility !== null || row.pendingPayload !== null);
+    const pendingBase = hasPending
+        ? {
+              effectiveAt: new Date(
+                  pendingAt.getTime() + COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
+              ).toISOString(),
+              ...(row.pendingVisibility === "public"
+                  ? { visibility: "public" as const }
+                  : {}),
+          }
+        : null;
     const common = {
         id: row.id,
         modelId,
@@ -35,7 +49,11 @@ export function toCommunityEndpointResponse(
         description: row.description,
         baseUrl: row.type === "prompt_agent" ? agentRuntimeUrl : row.baseUrl,
         upstreamModel: row.upstreamModel,
-        visibility: row.visibility,
+        visibility:
+            pendingReady && row.pendingVisibility
+                ? row.pendingVisibility
+                : row.visibility,
+        pending: pendingBase,
         hidden: row.hiddenAt !== null,
         hiddenReason: row.hiddenReason,
         hiddenAt: row.hiddenAt?.toISOString() ?? null,
@@ -61,34 +79,17 @@ export function toCommunityEndpointResponse(
         });
     }
 
-    const ready = pendingIsReady(row.pendingAt);
-
-    // If pending is ready, use pending values as the effective current state.
-    const effectivePayloadStr = ready && row.pendingPayload ? row.pendingPayload : row.payload;
-    const effectiveVisibility = ready && row.pendingVisibility ? row.pendingVisibility : row.visibility;
-
-    const payload = parseListingPayload("proxy", effectivePayloadStr);
-    if (!payload) throw new Error(`Invalid proxy payload for ${row.id}`);
-    const { bearerTokenCiphertext: _credential, prices, ...proxy } = payload;
-
-    // Include pending info when a change is queued but not yet effective.
-    let pending = null;
-    if (!ready && row.pendingAt && row.pendingPayload) {
-        const pendingPayload = parseListingPayload("proxy", row.pendingPayload);
-        if (pendingPayload) {
-            const effectiveAt = new Date(row.pendingAt.getTime() + PRICE_CHANGE_DELAY_MS);
-            pending = {
-                effectiveAt: effectiveAt.toISOString(),
-                ...(row.pendingVisibility === "public" ? { visibility: "public" as const } : {}),
-                paidOnly: pendingPayload.paidOnly,
-                ...pendingPayload.prices,
-            };
-        }
+    const currentPayload = parseListingPayload("proxy", row.payload);
+    if (!currentPayload) {
+        throw new Error(`Invalid proxy payload for ${row.id}`);
     }
-
+    const pendingPayload = parseListingPayload("proxy", row.pendingPayload);
+    const payload = pendingReady
+        ? applyPendingProxyPricing(currentPayload, pendingPayload)
+        : currentPayload;
+    const { bearerTokenCiphertext: _credential, prices, ...proxy } = payload;
     return CommunityEndpointResponseSchema.parse({
         ...common,
-        visibility: effectiveVisibility,
         type: row.type,
         ...proxy,
         advertised: normalizeCommunityEndpointAdvertised(
@@ -96,6 +97,14 @@ export function toCommunityEndpointResponse(
             payload.modality,
         ),
         ...prices,
-        pending,
+        pending:
+            pendingBase && pendingPayload
+                ? {
+                      ...pendingBase,
+                      paidOnly: pendingPayload.paidOnly,
+                      imagePricing: pendingPayload.imagePricing,
+                      ...pendingPayload.prices,
+                  }
+                : pendingBase,
     });
 }

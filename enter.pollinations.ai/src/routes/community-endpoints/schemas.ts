@@ -215,16 +215,20 @@ export const TestEndpointSchema = z
 const ResponsePriceFieldsSchema = Object.fromEntries(
     COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [field.key, z.number()]),
 ) as unknown as Record<CommunityEndpointPriceKey, z.ZodType<number>>;
-const PendingResponsePriceFieldsSchema = Object.fromEntries(
-    COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [field.key, z.number()]),
-) as unknown as Record<CommunityEndpointPriceKey, z.ZodType<number>>;
-const PendingPublicChangeSchema = z
+const PendingCommunityEndpointChangeSchema = z
     .object({
-        effectiveAt: z.string(),
+        effectiveAt: z.string().datetime(),
         visibility: z.literal("public").optional(),
-        paidOnly: z.boolean(),
-        ...PendingResponsePriceFieldsSchema,
+        paidOnly: z.boolean().optional(),
+        imagePricing: ImagePricingSchema.optional(),
+        ...Object.fromEntries(
+            COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
+                field.key,
+                z.number().optional(),
+            ]),
+        ),
     })
+    .strict()
     .nullable();
 const CommunityEndpointResponseFieldsSchema = {
     id: z.string(),
@@ -235,6 +239,7 @@ const CommunityEndpointResponseFieldsSchema = {
     baseUrl: z.string().url(),
     upstreamModel: z.string().min(1),
     visibility: VisibilitySchema,
+    pending: PendingCommunityEndpointChangeSchema,
     hidden: z.boolean(),
     hiddenReason: z.string().nullable(),
     hiddenAt: z.string().nullable(),
@@ -253,7 +258,6 @@ const ProxyEndpointResponseSchema = z
         paidOnly: z.boolean(),
         fallbacks: z.array(z.string()),
         ...ResponsePriceFieldsSchema,
-        pending: PendingPublicChangeSchema,
     })
     .strict();
 const PromptAgentEndpointResponseSchema = z

@@ -1,6 +1,7 @@
 import { getLogger, type Logger, withContext } from "@logtape/logtape";
 import { getRealClientIp } from "@shared/client-ip.ts";
 import { ensureConfigured } from "@shared/logger.ts";
+import { redactCredentialQueryParams } from "@shared/observability/request-inputs.ts";
 import { getPublicUrl } from "@shared/public-origin.ts";
 import { createMiddleware } from "hono/factory";
 
@@ -13,22 +14,6 @@ type Env = {
     Bindings: CloudflareBindings;
     Variables: LoggerVariables;
 };
-
-function redactCredentialQueryParams(url: URL): string {
-    const redacted = new URL(url);
-    const credentialParams = new Set([
-        "access_token",
-        "api_key",
-        "key",
-        "token",
-    ]);
-    for (const param of redacted.searchParams.keys()) {
-        if (credentialParams.has(param.toLowerCase())) {
-            redacted.searchParams.set(param, "[redacted]");
-        }
-    }
-    return redacted.toString();
-}
 
 export const logger = createMiddleware<Env>(async (c, next) => {
     await ensureConfigured({

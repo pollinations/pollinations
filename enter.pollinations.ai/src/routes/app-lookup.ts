@@ -1,3 +1,7 @@
+import {
+    getRedirectUris,
+    parseMetadata,
+} from "@shared/auth/api-key-metadata.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { eq } from "drizzle-orm";
@@ -7,7 +11,6 @@ import { describeRoute } from "hono-openapi";
 import { z } from "zod";
 import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
-import { getRedirectUris, parseMetadata } from "./metadata-utils.ts";
 import { redirectUriMatchesAllowlist } from "./url-utils.ts";
 
 async function resolveAttribution(

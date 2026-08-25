@@ -1,10 +1,12 @@
 import {
+    applyPendingProxyPricing,
+    COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
     type CommunityEndpointRuntime,
     communityEndpointPrices,
     communityModelDefinition,
     communityModelId,
     parseListingPayload,
-    PRICE_CHANGE_DELAY_MS,
+    pendingCommunityEndpointChangeIsReady,
     usesAgentRunToken,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
@@ -92,27 +94,21 @@ export async function getCommunityModelRegistryEntries(
         )
         .where(isNotNull(schema.user.githubUsername));
 
-    const now = Date.now();
     return rows.flatMap((row): CommunityModelRegistryEntry[] => {
         if (!row.ownerGithubUsername) return [];
+        const pendingReady = pendingCommunityEndpointChangeIsReady(
+            row.pendingAt,
+        );
+        const effectiveVisibility =
+            pendingReady && row.pendingVisibility
+                ? row.pendingVisibility
+                : row.visibility;
         const baseUrl =
             row.type === "prompt_agent"
                 ? env.AGENT_RUNTIME_BASE_URL
                 : row.baseUrl;
         if (!baseUrl || !row.upstreamModel) return [];
         const modelId = communityModelId(row.ownerGithubUsername, row.name);
-
-        // Apply pending price/visibility change if its 12-hour deadline has passed.
-        const pendingReady =
-            row.pendingAt !== null &&
-            now >= row.pendingAt.getTime() + PRICE_CHANGE_DELAY_MS;
-        const effectivePayload =
-            pendingReady && row.pendingPayload ? row.pendingPayload : row.payload;
-        const effectiveVisibility =
-            pendingReady && row.pendingVisibility
-                ? row.pendingVisibility
-                : row.visibility;
-
         const identity = {
             id: row.id,
             ownerUserId: row.ownerUserId,
@@ -180,8 +176,18 @@ export async function getCommunityModelRegistryEntries(
                 break;
             }
             case "proxy": {
-                const payload = parseListingPayload("proxy", effectivePayload);
-                if (!payload) return [];
+                const currentPayload = parseListingPayload(
+                    "proxy",
+                    row.payload,
+                );
+                if (!currentPayload) return [];
+                const pendingPayload = parseListingPayload(
+                    "proxy",
+                    row.pendingPayload,
+                );
+                const payload = pendingReady
+                    ? applyPendingProxyPricing(currentPayload, pendingPayload)
+                    : currentPayload;
                 communityEndpoint = {
                     ...identity,
                     type: "proxy",
@@ -202,14 +208,38 @@ export async function getCommunityModelRegistryEntries(
             addedDate: row.createdAt.getTime(),
             hidden: communityEndpoint.hiddenAt !== null,
         });
+        const info = modelInfoFromDefinition(modelId, definition, {
+            community: true,
+            agent: usesAgentRunToken(communityEndpoint),
+        });
+        const pendingPayload = parseListingPayload("proxy", row.pendingPayload);
+        if (
+            !pendingReady &&
+            row.pendingAt &&
+            row.visibility === "public" &&
+            pendingPayload
+        ) {
+            const pendingDefinition = communityModelDefinition({
+                ...communityEndpoint,
+                paidOnly: pendingPayload.paidOnly,
+                imagePricing: pendingPayload.imagePricing,
+                ...pendingPayload.prices,
+            });
+            info.pending_change = {
+                effective_at: new Date(
+                    row.pendingAt.getTime() +
+                        COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
+                ).toISOString(),
+                paid_only: pendingPayload.paidOnly,
+                pricing: modelInfoFromDefinition(modelId, pendingDefinition)
+                    .pricing,
+            };
+        }
         return [
             {
                 id: modelId,
                 aliases: definition.aliases,
-                info: modelInfoFromDefinition(modelId, definition, {
-                    community: true,
-                    agent: usesAgentRunToken(communityEndpoint),
-                }),
+                info,
                 definition,
                 communityEndpoint,
                 agentConfig,

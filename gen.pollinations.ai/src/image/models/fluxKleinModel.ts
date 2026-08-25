@@ -1,7 +1,7 @@
+import { HttpError } from "@shared/http-error.ts";
 import debug from "debug";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { getImageEnv } from "../env.ts";
-import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { base64ToBuffer, downloadUserImage } from "../utils/imageDownload.ts";
@@ -36,23 +36,14 @@ export const callFluxKleinAPI = async (
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> => {
     try {
-        const hasReferenceImages =
-            safeParams.image && safeParams.image.length > 0;
-
         // Download and encode reference images if provided
-        let imagesB64: string[] = [];
-        if (hasReferenceImages) {
-            const imageUrls = (safeParams.image || []).slice(
-                0,
-                MAX_INPUT_IMAGES,
-            );
-            const downloads = await Promise.all(
-                imageUrls.map((url) => downloadUserImage(url)),
-            );
-            imagesB64 = downloads.map(({ buffer }) =>
-                buffer.toString("base64"),
-            );
-        }
+        const imageUrls = safeParams.image.slice(0, MAX_INPUT_IMAGES);
+        const downloads = await Promise.all(
+            imageUrls.map((url) => downloadUserImage(url)),
+        );
+        const imagesB64 = downloads.map(({ buffer }) =>
+            buffer.toString("base64"),
+        );
 
         const body: Record<string, unknown> = {
             prompts: [prompt],

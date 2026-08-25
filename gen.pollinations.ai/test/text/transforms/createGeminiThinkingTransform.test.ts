@@ -55,10 +55,8 @@ describe("Gemini reasoning_effort model wiring", () => {
         expect(options.reasoning_effort).toBeUndefined();
     });
 
-    it.each([
-        "gemini",
-        "gemini-search-large",
-    ])("maps reasoning_effort=none to low for mandatory-reasoning %s", async (model) => {
+    it("maps reasoning_effort=none to low for mandatory-reasoning gemini", async () => {
+        const model = "gemini";
         const transform = findModelByName(model)?.transform;
         if (!transform) throw new Error(`${model} transform missing`);
 

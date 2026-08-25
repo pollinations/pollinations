@@ -2,9 +2,9 @@ import { cn, Surface } from "@pollinations/ui";
 import { type FC, type ReactNode, useEffect, useState } from "react";
 
 const HIGHLIGHTS_RAW_URL =
-    "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/highlights.md";
+    "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/news/operations/social/news/highlights.md";
 export const HIGHLIGHTS_GITHUB_URL =
-    "https://github.com/pollinations/pollinations/blob/news/social/news/highlights.md";
+    "https://github.com/pollinations/pollinations/blob/news/operations/social/news/highlights.md";
 
 const DYNAMIC_NEWS_COUNT = 6;
 
@@ -25,28 +25,32 @@ interface Highlight {
  */
 const PINNED_NEWS: Highlight[] = [
     {
+        date: "2026-08-15",
+        dateLabel: "Alpha",
+        emoji: "🤖",
+        title: "Build your own agents",
+        description:
+            "Create managed prompt agents and call them through the Pollinations API like any other model.",
+        details: [
+            "Choose a base model, add instructions, and optionally enable Pollinations tools.",
+            "Create an agent from [My Models](/my-models).",
+        ],
+    },
+    {
+        date: "2026-08-15",
+        dateLabel: "New quests",
+        emoji: "🌱",
+        title: "More ways to earn Pollen",
+        description:
+            "Earn 15 Pollen for your first external Paid Pollen request, 15 for reaching ten external app users, and 3 for an eligible two-year-old GitHub account. [View quests](/quests).",
+    },
+    {
         date: "2026-07-15",
         dateLabel: "Limited time",
         emoji: "☀️",
         title: "GPT-5.6 launch promotion",
         description:
-            "Try GPT-5.6 Sol, Terra, and Luna at half the provider price for a limited time.",
-        details: [
-            "Per 1M input/output tokens: Sol 2.50/15 Pollen, Terra 1.25/7.50 Pollen, Luna 0.50/3 Pollen.",
-            "Choose a GPT-5.6 model from the [Models tab](/models) and start building.",
-        ],
-    },
-    {
-        date: "2026-06-30",
-        dateLabel: "Now live",
-        emoji: "🎯",
-        title: "Quests are live",
-        description: "Earn Quest Pollen by completing dashboard quests.",
-        details: [
-            "New quests are available for onboarding, app growth, community, and GitHub contributions.",
-            "Open the [Quests tab](/quests) to see available rewards and claim completed quests.",
-            "Tiers have stopped; previous Tier Pollen is now Quest Pollen and balances stay unchanged.",
-        ],
+            "Try GPT-5.6 Sol, Terra, and Luna at half price for a limited time. [View models](/models).",
     },
     {
         date: "2026-06-30",

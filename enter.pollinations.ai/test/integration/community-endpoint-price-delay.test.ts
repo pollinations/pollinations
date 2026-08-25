@@ -1,7 +1,7 @@
 import { env, SELF } from "cloudflare:test";
 import {
+    COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
-    PRICE_CHANGE_DELAY_MS,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { eq } from "drizzle-orm";
@@ -38,7 +38,11 @@ async function postModel(
 async function advancePendingPast12Hours(id: string): Promise<void> {
     await drizzle(env.DB)
         .update(schema.communityEndpoint)
-        .set({ pendingAt: new Date(Date.now() - PRICE_CHANGE_DELAY_MS - 1000) })
+        .set({
+            pendingAt: new Date(
+                Date.now() - COMMUNITY_ENDPOINT_CHANGE_DELAY_MS - 1000,
+            ),
+        })
         .where(eq(schema.communityEndpoint.id, id));
 }
 
@@ -113,7 +117,7 @@ describe("community endpoint 12-hour price-change delay", () => {
         await advancePendingPast12Hours(created.id as string);
 
         // Read the model list; the effective price should now reflect the pending change.
-        const listResponse = await SELF.fetch(`${endpointUrl}/`, {
+        const listResponse = await SELF.fetch(endpointUrl, {
             headers: { Cookie: `better-auth.session_token=${sessionToken}` },
         });
         const list = await listResponse.json<{
@@ -196,7 +200,7 @@ describe("community endpoint 12-hour price-change delay", () => {
 
         await advancePendingPast12Hours(created.id as string);
 
-        const listResponse = await SELF.fetch(`${endpointUrl}/`, {
+        const listResponse = await SELF.fetch(endpointUrl, {
             headers: { Cookie: `better-auth.session_token=${sessionToken}` },
         });
         const list = await listResponse.json<{
@@ -289,7 +293,7 @@ describe("community endpoint 12-hour price-change delay", () => {
         ).toBe(0.000005);
     });
 
-    test("non-pricing updates on public models are immediate", async ({
+    test("non-pricing updates are immediate without clearing a pending price", async ({
         sessionToken,
     }) => {
         await approveCommunityModels();
@@ -299,7 +303,16 @@ describe("community endpoint 12-hour price-change delay", () => {
             visibility: "public",
             baseUrl: "https://text.example.com/v1",
             bearerToken: "tok",
+            promptTextPrice: 0.000001,
         });
+
+        const queued = await postModel(
+            sessionToken,
+            `/${created.id as string}/update`,
+            { promptTextPrice: 0.000003 },
+        );
+        const effectiveAt = (queued.pending as Record<string, unknown>)
+            .effectiveAt;
 
         const updated = await postModel(
             sessionToken,
@@ -310,7 +323,34 @@ describe("community endpoint 12-hour price-change delay", () => {
         expect(updated).toMatchObject({
             title: "Renamed model",
             perUserRpm: 5,
-            pending: null,
+            promptTextPrice: 0.000001,
+        });
+        expect(updated.pending).toMatchObject({
+            effectiveAt,
+            promptTextPrice: 0.000003,
+        });
+    });
+
+    test("private endpoint agents use the same delayed publication rule", async ({
+        sessionToken,
+    }) => {
+        await approveCommunityModels();
+        const created = await postModel(sessionToken, "/endpoint-agents", {
+            name: "pending-endpoint-agent",
+            title: "Pending endpoint agent",
+            baseUrl: "https://agent.example.com/v1",
+        });
+
+        const published = await postModel(
+            sessionToken,
+            `/${created.id as string}/update`,
+            { visibility: "public" },
+        );
+
+        expect(published).toMatchObject({
+            type: "endpoint_agent",
+            visibility: "private",
+            pending: { visibility: "public" },
         });
     });
 });

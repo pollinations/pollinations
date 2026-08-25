@@ -6,6 +6,7 @@ import {
     communityEndpointErrorDetail,
     communityImageEditsUrl,
     communityImageGenerationsUrl,
+    communityVideoGenerationsUrl,
     communityOpenAIBaseUrl,
     communityTranscriptionSeconds,
     decodeCommunityBase64,
@@ -314,4 +315,42 @@ async function testCommunityImageEdits(
     } catch {
         return false;
     }
+}
+
+export async function testCommunityVideoEndpoint({
+    baseUrl,
+    bearerToken,
+    model,
+}: EndpointTestInput): Promise<CommunityEndpointTestResult> {
+    const body = await fetchJson(communityVideoGenerationsUrl(baseUrl), {
+        method: "POST",
+        headers: {
+            ...authorizationHeaders(bearerToken),
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            model,
+            prompt: "A simple animation of a green sprout growing.",
+            duration: 4,
+        }),
+    });
+
+    // Check that the response contains video data
+    const data = (body as Record<string, unknown>)?.data;
+    if (!Array.isArray(data) || data.length === 0) {
+        throw new Error("Endpoint did not return video data");
+    }
+    const first = data[0] as Record<string, unknown>;
+    if (!first.url && !first.b64_json) {
+        throw new Error("Endpoint did not return video data");
+    }
+
+    // Extract video duration from response if available
+    const videoDuration =
+        typeof first.duration === "number" ? first.duration : 4;
+
+    return {
+        usage: { video_duration: videoDuration },
+        billableUsage: { completionVideoSeconds: videoDuration },
+    };
 }

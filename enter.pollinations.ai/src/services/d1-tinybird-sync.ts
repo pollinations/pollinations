@@ -61,6 +61,7 @@ const TABLES = [
                        coalesce(json_extract(payload, '$.prices.completionReasoningPrice'), 0) AS completion_reasoning_price,
                        coalesce(json_extract(payload, '$.prices.completionAudioPrice'), 0) AS completion_audio_price,
                        coalesce(json_extract(payload, '$.prices.completionImagePrice'), 0) AS completion_image_price,
+                       coalesce(json_extract(payload, '$.prices.completionVideoPrice'), 0) AS completion_video_price,
                        hidden_at, hidden_reason, hidden_by,
                        created_at, updated_at
                 FROM community_endpoint

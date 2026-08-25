@@ -23,6 +23,7 @@ export const COMMUNITY_ENDPOINT_MODALITIES = [
     "text",
     "image",
     "transcription",
+    "video",
 ] as const;
 // How a community image endpoint is billed. "request" charges the fixed
 // per-image price once per generation; "tokens" charges the provider-returned
@@ -71,6 +72,7 @@ export const COMMUNITY_ENDPOINT_INPUT_MODALITIES = {
     text: MODEL_INPUT_MODALITIES,
     image: ["text", "image"],
     transcription: ["audio"],
+    video: ["text"],
 } as const satisfies Record<
     CommunityEndpointModality,
     readonly ModelInputModality[]
@@ -254,12 +256,19 @@ const COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS = [
     COMMUNITY_TRANSCRIPTION_PRICE_FIELD,
 ] as const;
 
+const COMMUNITY_VIDEO_ENDPOINT_PRICE_FIELDS = [
+    COMMUNITY_VIDEO_PRICE_FIELD,
+] as const;
+
 export function communityEndpointPriceFieldsForModality(
     modality: CommunityEndpointModality,
     imagePricing: CommunityEndpointImagePricing = "request",
 ) {
     if (modality === "transcription") {
         return COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS;
+    }
+    if (modality === "video") {
+        return COMMUNITY_VIDEO_ENDPOINT_PRICE_FIELDS;
     }
     if (modality !== "image") return COMMUNITY_TEXT_ENDPOINT_PRICE_FIELDS;
     return imagePricing === "tokens"
@@ -889,6 +898,10 @@ export function communityImageGenerationsUrl(baseUrl: string): string {
 
 export function communityImageEditsUrl(baseUrl: string): string {
     return `${communityOpenAIBaseUrl(baseUrl)}/images/edits`;
+}
+
+export function communityVideoGenerationsUrl(baseUrl: string): string {
+    return `${communityOpenAIBaseUrl(baseUrl)}/video/generations`;
 }
 
 export function communityAudioTranscriptionsUrl(baseUrl: string): string {

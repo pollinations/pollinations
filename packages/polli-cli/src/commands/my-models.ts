@@ -37,6 +37,7 @@ const PRICE_OPTION_KEYS = [
     "completionReasoningPrice",
     "completionAudioPrice",
     "completionImagePrice",
+    "completionVideoPrice",
 ] as const;
 
 type PriceOptionKey = (typeof PRICE_OPTION_KEYS)[number];
@@ -58,7 +59,7 @@ interface MyModelBase {
 interface ProxyMyModel extends MyModelBase {
     type: "proxy";
     paidOnly: boolean;
-    modality: "text" | "image" | "transcription";
+    modality: "text" | "image" | "transcription" | "video";
     imagePricing: "request" | "tokens";
     completionImagePrice: number;
     // /account/my-models/test detects edit support from endpoint probes.

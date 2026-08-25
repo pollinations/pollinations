@@ -142,6 +142,7 @@ describe("community endpoint configuration policy", () => {
             paidOnly: true,
             perUserRpm: 2.5,
             completionImagePrice: 0.2,
+            completionVideoPrice: 0,
         });
 
         expect(created).toMatchObject({
@@ -151,6 +152,7 @@ describe("community endpoint configuration policy", () => {
             paidOnly: true,
             perUserRpm: 2.5,
             completionImagePrice: 0.2,
+            completionVideoPrice: 0,
         });
 
         const tokenPriced = await postModel(
@@ -166,11 +168,13 @@ describe("community endpoint configuration policy", () => {
             promptTextPrice: 0,
             promptImagePrice: 0,
             completionImagePrice: 0.2,
+            completionVideoPrice: 0,
             paidOnly: true,
             pending: {
                 imagePricing: "tokens",
                 promptImagePrice: 0.000001,
                 completionImagePrice: 0,
+                completionVideoPrice: 0,
             },
         });
 

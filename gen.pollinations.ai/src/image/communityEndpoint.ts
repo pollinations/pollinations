@@ -5,6 +5,7 @@ import {
     communityEndpointErrorDetail,
     communityImageEditsUrl,
     communityImageGenerationsUrl,
+    communityVideoGenerationsUrl,
     firstCommunityImageBytes,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
@@ -208,4 +209,110 @@ function endpointErrorMessage(status: number, body: unknown): string {
     return message
         ? `Community image endpoint responded ${status}: ${message}`
         : `Community image endpoint responded ${status}`;
+}
+
+export type CommunityVideoOptions = {
+    prompt: string;
+    model?: string;
+    duration?: number;
+    resolution?: string;
+    aspectRatio?: string;
+};
+
+export async function callCommunityVideoEndpoint(
+    endpoint: CommunityEndpointRuntime,
+    prompt: string,
+    safeParams: {
+        model?: string;
+        duration?: number;
+        resolution?: string;
+        aspectRatio?: string;
+    },
+    secret: string,
+): Promise<VideoGenerationResult> {
+    if (endpoint.type !== "proxy") {
+        throw new Error(
+            `Community video endpoint '${endpoint.modelId}' is a managed agent`,
+        );
+    }
+    const bearerToken = await decryptSecret(
+        endpoint.bearerTokenCiphertext,
+        secret,
+    );
+    const upstreamUrl = communityVideoGenerationsUrl(endpoint.baseUrl);
+
+    const body = JSON.stringify({
+        model: endpoint.upstreamModel,
+        prompt,
+        ...(safeParams.duration ? { duration: safeParams.duration } : {}),
+        ...(safeParams.resolution ? { resolution: safeParams.resolution } : {}),
+        ...(safeParams.aspectRatio
+            ? { aspect_ratio: safeParams.aspectRatio }
+            : {}),
+    });
+
+    let response: Response;
+    try {
+        response = await fetch(upstreamUrl, {
+            method: "POST",
+            headers: {
+                ...authorizationHeaders(bearerToken),
+                "Content-Type": "application/json",
+            },
+            body,
+            redirect: "manual",
+            signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
+        });
+    } catch {
+        throw new Error(
+            "Community video endpoint timed out or could not connect",
+        );
+    }
+
+    if (!response.ok) {
+        const errBody = await response.json().catch(() => null);
+        throw new Error(endpointErrorMessage(response.status, errBody));
+    }
+
+    const result = await response.json();
+    const videoData = result.data?.[0];
+    const videoUrl = videoData?.url ?? videoData?.b64_json;
+
+    if (!videoUrl) {
+        throw new HttpError(
+            "Community video endpoint did not return video data",
+            502,
+        );
+    }
+
+    let videoBuffer: Buffer;
+    let durationSeconds = safeParams.duration ?? 4;
+
+    if (videoUrl.startsWith("http")) {
+        const videoResponse = await fetch(videoUrl, {
+            signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
+        });
+        if (!videoResponse.ok) {
+            throw new Error("Failed to download video from community endpoint");
+        }
+        videoBuffer = Buffer.from(await videoResponse.arrayBuffer());
+    } else {
+        videoBuffer = Buffer.from(videoUrl, "base64");
+    }
+
+    if (videoData?.duration) {
+        durationSeconds = videoData.duration;
+    }
+
+    return {
+        buffer: videoBuffer,
+        mimeType: "video/mp4",
+        durationSeconds,
+        trackingData: {
+            actualModel: endpoint.modelId,
+            usage: {
+                completionVideoSeconds: durationSeconds,
+            },
+        },
+    };
 }

@@ -24,6 +24,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { Hono } from "hono";
+import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
@@ -786,11 +787,24 @@ const usageResponseSchema = z.object({
 });
 
 /**
+ * Authenticated account data must never be cached by browsers or
+  * intermediary caches (shared proxies, CDNs). Applied once here so every
+   * route mounted under accountRoutes - including nested /agents and
+    * /my-models routers - gets it, instead of repeating it per handler.
+     */
+const setPrivateNoStoreHeaders = createMiddleware<Env>(async (c, next) => {
+        await next();
+        c.header("Cache-Control", "private, no-store, max-age=0");
+        c.header("Pragma", "no-cache");
+});
+
+/**
  * Account routes - profile, balance and usage endpoints.
  * Supports both session cookies and API keys with permission checks.
  */
 export const accountRoutes = new Hono<Env>()
     .use(auth({ allowApiKey: true, allowSessionCookie: true }))
+        .use(setPrivateNoStoreHeaders)
     .route("/agents", agentsRoutes)
     .route("/my-models", communityEndpointsRoutes)
     .get(
@@ -1398,7 +1412,6 @@ export const accountRoutes = new Hono<Env>()
                 ? await getVisibleModelIdsForUser(c.env.DB, user.id)
                 : null;
 
-            c.header("Cache-Control", "private, no-store, max-age=0");
             return c.json({
                 data: keys.map((key, index) => ({
                     id: key.id,

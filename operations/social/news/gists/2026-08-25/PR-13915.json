@@ -1,0 +1,35 @@
+{
+  "pr_number": 13915,
+  "title": "feat: add hosted FFmpeg MCP",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13915",
+  "merged_at": "2026-08-25T15:36:59Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds a stateless FFmpeg MCP backed by short-lived Cloudflare Containers\n- Routes it through the hosted MCP registry and Gen billing proxy\n- Streams public HTTPS inputs and stores outputs through the Media service\n- Makes FFmpeg selectable by prompt agents through the shared registry\n- Adds Worker, Media, gateway, billing, and deployment coverage",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive found FFmpeg",
+    "blurb": "FFmpeg now lives in the hosted MCP garden, ready for agents that need to trim, convert, remix, or otherwise persuade media into a new shape. Polli brought a tiny tool belt; the containers politely disappear when the work is done.",
+    "summary": "Added a stateless hosted FFmpeg MCP running in short-lived Cloudflare Containers, with public HTTPS input streaming, Media-service output storage, Gen billing-proxy routing, and shared-registry availability for prompt agents.",
+    "impact": "Prompt agents can now select the hosted FFmpeg tool to process media inputs and receive stored outputs without developers needing to operate an FFmpeg server themselves.",
+    "keywords": [
+      "ffmpeg",
+      "mcp",
+      "media",
+      "agents",
+      "cloudflare-containers",
+      "hosted-tools",
+      "billing"
+    ],
+    "visual_concept": "Depict FFmpeg as a friendly retro media-workshop machine: film reels, audio waveforms, and image frames travel through a small container-like processing station and emerge as neatly packed media files. Polli, wearing a tiny mechanic tool belt and safety goggles, adjusts the machine while a CRT monitor robot eagerly watches the transformation; code-plants and flowers make the infrastructure feel like a maintained garden rather than a server rack.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, tiny mechanic tool belt and safety goggles, tuning a friendly retro FFmpeg media-workshop machine as film reels, audio waveforms, and image frames stream through short-lived little container pods into a glowing output box; a chunky CRT monitor robot watches with curious square eyes beside sprouting code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font text: \"FFMPEG MCP\", nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-25/PR-13915.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, tiny mechanic tool belt and safety goggles, tuning a friendly retro FFmpeg media-workshop machine as film reels, audio waveforms, and image frames stream through short-lived little container pods into a glowing output box; a chunky CRT monitor robot watches with curious square eyes beside sprouting code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font text: \"FFMPEG MCP\", nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-08-25T15:38:02.635464+00:00"
+}

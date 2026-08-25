@@ -10,6 +10,7 @@ import {
     DropdownItem,
     EditableCombobox,
     FieldStack,
+    InlineLink,
     Input,
     ScrollArea,
     TabButton,
@@ -381,7 +382,15 @@ export function CommunityEndpointDialog({
                             <code>
                                 {"{username}"}/{"{model-id}"}
                             </code>{" "}
-                            model.
+                            model. See the{" "}
+                            <InlineLink
+                                href="https://github.com/pollinations/pollinations/blob/main/COMMUNITY_MODEL_NAMING.md"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                naming guide
+                            </InlineLink>{" "}
+                            for tips on choosing a stable ID and clear title.
                         </>
                     )}
                 </p>

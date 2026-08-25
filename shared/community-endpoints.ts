@@ -235,10 +235,19 @@ const COMMUNITY_TRANSCRIPTION_PRICE_FIELD = {
     rawUsagePaths: ["duration"],
 } as const;
 
+const COMMUNITY_VIDEO_PRICE_FIELD = {
+    key: "completionVideoPrice",
+    usageType: "completionVideoSeconds",
+    label: "Generated video",
+    priceUnit: "second",
+    rawUsagePaths: ["video_duration"],
+} as const;
+
 export const COMMUNITY_ENDPOINT_PRICE_FIELDS = [
     ...COMMUNITY_TEXT_PRICE_FIELDS,
     COMMUNITY_IMAGE_PRICE_FIELD,
     COMMUNITY_TRANSCRIPTION_PRICE_FIELD,
+    COMMUNITY_VIDEO_PRICE_FIELD,
 ] as const;
 
 const COMMUNITY_TEXT_ENDPOINT_PRICE_FIELDS =

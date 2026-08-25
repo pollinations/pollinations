@@ -1501,7 +1501,8 @@ export class Pollinations {
         options: EarningsOptions = {},
     ): Promise<DeveloperEarningsResponse> {
         const params = new URLSearchParams();
-        if (options.days) params.set("days", String(options.days));
+        if (options.days !== undefined)
+            params.set("days", String(options.days));
         if (options.granularity) params.set("granularity", options.granularity);
         if (options.period) params.set("period", options.period);
 

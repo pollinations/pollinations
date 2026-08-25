@@ -6,7 +6,6 @@ export const REQUIRED_PIPES = [
     "op_transactions_api",
     "op_cloud_api",
     "op_pollen_api",
-    "op_forecast_api",
 ];
 
 export async function checkTinybirdContract({ api, token, fetchImpl = fetch }) {

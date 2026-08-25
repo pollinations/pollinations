@@ -31,7 +31,7 @@ and no network calls.
 ## Data Contract
 
 Reads OP pipes from `enter.pollinations.ai/observability/endpoints/`:
-`op_transactions_api`, `op_cloud_api`, `op_pollen_api`, and `op_forecast_api`.
+`op_transactions_api`, `op_cloud_api`, and `op_pollen_api`.
 Write-side conventions (entry_id, idempotent corrections) live in the
 Economics ingest agent's own system prompt.
 

@@ -6,7 +6,6 @@ const READ_PIPES = new Set([
     "op_transactions_api",
     "op_cloud_api",
     "op_pollen_api",
-    "op_forecast_api",
 ]);
 
 interface Env {

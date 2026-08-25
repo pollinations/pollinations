@@ -1,27 +1,59 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { automaticForecastRule } from "../lib/forecastTerms";
 import type { Data } from "../types";
 import {
+    fmtRunwayTableValue,
+    fmtRunwayUsd,
     forecastMethodHint,
     forecastMethodLabel,
+    paymentTimingHint,
+    paymentTimingLabel,
     RunwayTab,
-    runwayText,
+    runwayMonthLabel,
+    runwayPeriodText,
     runwayValueClass,
 } from "./RunwayTab";
 
 describe("RunwayTab labels", () => {
-    it("marks a runway that extends beyond the authored horizon", () => {
-        expect(runwayText(6, true)).toBe("6+ months");
-        expect(runwayText(1, false)).toBe("1 month");
-        expect(runwayText(null, false)).toBe("–");
+    it("shows full rounded runway amounts without compact suffixes", () => {
+        expect(fmtRunwayUsd(12_036.42)).toBe("$12,036");
+        expect(fmtRunwayUsd(-1_648.62)).toBe("−$1,649");
+        expect(fmtRunwayUsd(0)).toBe("$0");
+        expect(fmtRunwayUsd(null)).toBe("–");
+    });
+
+    it("omits repeated currency symbols inside the runway table", () => {
+        expect(fmtRunwayTableValue(12_036.42)).toBe("12,036");
+        expect(fmtRunwayTableValue(-1_648.62)).toBe("−1,649");
+        expect(fmtRunwayTableValue(0)).toBe("0");
+        expect(fmtRunwayTableValue(null)).toBe("–");
+    });
+
+    it("uses explicit full month names for the runway horizon", () => {
+        expect(runwayMonthLabel("2027-12")).toBe("December 2027");
+        expect(
+            runwayPeriodText({
+                capped: true,
+                exhaustedMonth: null,
+                lastMonth: "2027-12",
+            }),
+        ).toBe("December 2027+");
+        expect(
+            runwayPeriodText({
+                capped: false,
+                exhaustedMonth: "2027-03",
+                lastMonth: "2027-12",
+            }),
+        ).toBe("March 2027");
     });
 
     it("uses plain labels for the forecast methods", () => {
         expect(forecastMethodLabel("fixed")).toBe("FIXED");
         expect(forecastMethodLabel("funded")).toBe("FUNDED");
-        expect(forecastMethodLabel("last")).toBe("LAST MONTH");
-        expect(forecastMethodLabel("one_off")).toBe("ONE-OFF");
+        expect(forecastMethodLabel("last")).toBe("RUN RATE");
+        expect(forecastMethodLabel("one_off")).toBe("ONE-TIME");
         expect(forecastMethodLabel(null)).toBeNull();
     });
 
@@ -33,12 +65,37 @@ describe("RunwayTab labels", () => {
             "Covered by verified vendor credits or prepaid balance.",
         );
         expect(forecastMethodHint("last")).toBe(
-            "Repeats the latest closed month.",
+            "Uses the latest reviewed monthly run rate.",
         );
         expect(forecastMethodHint("one_off")).toBe(
             "Included only in this month.",
         );
         expect(forecastMethodHint(null)).toBeNull();
+    });
+
+    it("explains when forecast cash moves", () => {
+        expect(paymentTimingLabel("direct")).toBe("DIRECT");
+        expect(paymentTimingLabel("prepaid")).toBe("PREPAID");
+        expect(paymentTimingLabel("postpaid")).toBe("POSTPAID");
+        expect(paymentTimingLabel(null)).toBeNull();
+        expect(paymentTimingHint("direct")).toBe(
+            "Cash moves in the projected month.",
+        );
+        expect(paymentTimingHint("prepaid")).toContain(
+            "existing balance is consumed first",
+        );
+        expect(paymentTimingHint("postpaid")).toBe(
+            "Usage is paid after the service period.",
+        );
+    });
+
+    it("uses the same projection rules for labels and calculations", () => {
+        for (const vendor of ["fal", "fireworks", "vast.ai"]) {
+            expect(automaticForecastRule(vendor, "compute")).toMatchObject({
+                method: "last",
+                paymentTiming: "prepaid",
+            });
+        }
     });
 
     it("colors cash values without overemphasizing zeroes", () => {
@@ -91,10 +148,11 @@ describe("RunwayTab labels", () => {
                     recorded_at: "2026-07-03 00:00:00",
                 },
             ],
-            opForecast: [],
         };
 
-        const html = renderToStaticMarkup(createElement(RunwayTab, { data }));
+        const html = renderToStaticMarkup(
+            createElement(RunwayTab, { data, year: "2026" }),
+        );
         expect(html).toContain("Revenue");
         expect(html).toContain("Compute");
         expect(html).not.toContain("<span>mode</span>");
@@ -103,11 +161,15 @@ describe("RunwayTab labels", () => {
         expect(html).not.toContain(">aws<");
         expect(html).toContain("Cash change");
         expect(html).toContain("Cash balance");
+        expect(html).toContain('class="sr-only">Line item</span>');
+        expect(html).not.toContain(">Actual</span>");
+        expect(html).toContain(">Plan</span>");
     });
 
-    it("does not present a missing next-month plan as zero change", () => {
+    it("derives the next-month plan without a forecast feed", () => {
         const html = renderToStaticMarkup(
             createElement(RunwayTab, {
+                year: "2026",
                 data: {
                     opTransactions: [
                         {
@@ -124,38 +186,14 @@ describe("RunwayTab labels", () => {
                             recorded_at: "2026-08-01 00:00:00",
                         },
                     ],
-                    opForecast: [
-                        {
-                            entry_id: "august",
-                            month: "2026-08-01",
-                            vendor: "aws",
-                            category: "compute",
-                            amount: -100,
-                            currency: "USD",
-                            method: "fixed",
-                            source: "reviewed",
-                            evidence: "plan",
-                            recorded_at: "2026-08-01 00:00:00",
-                        },
-                        {
-                            entry_id: "october",
-                            month: "2026-10-01",
-                            vendor: "aws",
-                            category: "compute",
-                            amount: -100,
-                            currency: "USD",
-                            method: "fixed",
-                            source: "reviewed",
-                            evidence: "plan",
-                            recorded_at: "2026-08-01 00:00:00",
-                        },
-                    ],
                 },
             }),
         );
 
-        expect(html).toContain("Next full month change");
-        expect(html).toContain("plan unavailable");
+        expect(html).toContain("Cash now");
+        expect(html).toContain("August month-end cash");
+        expect(html).toContain("September cash change");
+        expect(html).toContain("forecast lines");
         expect(html).toContain("no bank movements");
         expect(html).not.toContain("opening balance missing");
     });

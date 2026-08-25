@@ -53,21 +53,6 @@ export type OpPollenRow = {
     requests_quests: number;
 };
 
-export type OpForecastMethod = "fixed" | "funded" | "last" | "one_off";
-
-export type OpForecastRow = {
-    entry_id: string;
-    month: string;
-    vendor: string;
-    category: string;
-    amount: number;
-    currency: string;
-    method: OpForecastMethod;
-    source: string;
-    evidence: string;
-    recorded_at: string;
-};
-
 export type ProviderObservationSource = "transactions" | "cloud" | "pollen";
 
 // Captured before provider aliases are canonicalized so the registry can show
@@ -84,6 +69,5 @@ export type Data = {
     opTransactions?: OpTransactionRow[];
     opCloud?: OpCloudRow[];
     opPollen?: OpPollenRow[];
-    opForecast?: OpForecastRow[];
     providerObservations?: ProviderObservation[];
 };

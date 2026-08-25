@@ -1,5 +1,6 @@
 import {
     Alert,
+    Chip,
     cn,
     TableBody,
     TableCell,
@@ -16,8 +17,9 @@ import {
 } from "../components/DataTable";
 import { StatCards, type StatTone } from "../components/StatCards";
 import { categoryLabel } from "../lib/categories";
-import { fmtPeriod, fmtUsd } from "../lib/format";
-import { monthLabel } from "../lib/months";
+import type { ForecastPaymentTiming } from "../lib/forecastTerms";
+import { fmtPeriod } from "../lib/format";
+import { monthName } from "../lib/months";
 import {
     buildRunway,
     type RunwayAssumption,
@@ -37,16 +39,47 @@ export function runwayValueClass(value: number | null): string {
     return signedTone(value);
 }
 
-export function runwayText(months: number | null, capped: boolean): string {
-    if (months == null) return "–";
-    return `${months}${capped ? "+" : ""} month${months === 1 ? "" : "s"}`;
+export function runwayMonthLabel(month: string): string {
+    const match = month.match(/^(\d{4})-(0[1-9]|1[0-2])$/);
+    if (!match) return month;
+    return `${monthName(month)} ${match[1]}`;
+}
+
+export function runwayPeriodText({
+    capped,
+    exhaustedMonth,
+    lastMonth,
+}: {
+    capped: boolean;
+    exhaustedMonth: string | null;
+    lastMonth: string | null;
+}): string {
+    if (exhaustedMonth) return runwayMonthLabel(exhaustedMonth);
+    if (capped && lastMonth) return `${runwayMonthLabel(lastMonth)}+`;
+    return "–";
+}
+
+export function fmtRunwayUsd(value: number | null | undefined): string {
+    if (value == null || !Number.isFinite(value)) return "–";
+    const amount = new Intl.NumberFormat("en-US", {
+        maximumFractionDigits: 0,
+    }).format(Math.abs(value));
+    return value < 0 ? `−$${amount}` : `$${amount}`;
+}
+
+export function fmtRunwayTableValue(value: number | null | undefined): string {
+    if (value == null || !Number.isFinite(value)) return "–";
+    const amount = new Intl.NumberFormat("en-US", {
+        maximumFractionDigits: 0,
+    }).format(Math.abs(value));
+    return value < 0 ? `−${amount}` : amount;
 }
 
 export function forecastMethodLabel(method: RunwayMatrixRow["forecastMethod"]) {
     if (method === "fixed") return "FIXED";
     if (method === "funded") return "FUNDED";
-    if (method === "last") return "LAST MONTH";
-    if (method === "one_off") return "ONE-OFF";
+    if (method === "last") return "RUN RATE";
+    if (method === "one_off") return "ONE-TIME";
     return null;
 }
 
@@ -55,30 +88,58 @@ export function forecastMethodHint(method: RunwayMatrixRow["forecastMethod"]) {
     if (method === "funded") {
         return "Covered by verified vendor credits or prepaid balance.";
     }
-    if (method === "last") return "Repeats the latest closed month.";
+    if (method === "last") {
+        return "Uses the latest reviewed monthly run rate.";
+    }
     if (method === "one_off") return "Included only in this month.";
     return null;
 }
 
-function ForecastVendor({ row }: { row: RunwayMatrixRow }) {
-    const label = forecastMethodLabel(row.forecastMethod);
-    const hint = forecastMethodHint(row.forecastMethod);
-    if (!label || !hint) return row.vendor;
+export function paymentTimingLabel(timing: ForecastPaymentTiming | null) {
+    if (timing === "direct") return "DIRECT";
+    if (timing === "prepaid") return "PREPAID";
+    if (timing === "postpaid") return "POSTPAID";
+    return null;
+}
 
+export function paymentTimingHint(timing: ForecastPaymentTiming | null) {
+    if (timing === "direct") {
+        return "Cash moves in the projected month.";
+    }
+    if (timing === "prepaid") {
+        return "The existing balance is consumed first; cash moves when a top-up is needed.";
+    }
+    if (timing === "postpaid") {
+        return "Usage is paid after the service period.";
+    }
+    return null;
+}
+
+function ForecastBadge({ hint, label }: { hint: string; label: string }) {
     return (
-        <Tooltip
-            triggerAs="span"
-            content={
-                <span className="block max-w-64">
-                    <strong>{label}</strong>
-                    <span className="block">{hint}</span>
-                </span>
-            }
-        >
-            <span className="underline decoration-dotted decoration-theme-border underline-offset-2">
-                {row.vendor}
-            </span>
+        <Tooltip triggerAs="span" content={hint}>
+            <Chip intent="neutral" size="sm">
+                {label}
+            </Chip>
         </Tooltip>
+    );
+}
+
+function ForecastVendor({ row }: { row: RunwayMatrixRow }) {
+    const methodLabel = forecastMethodLabel(row.forecastMethod);
+    const methodHint = forecastMethodHint(row.forecastMethod);
+    const timingLabel = paymentTimingLabel(row.forecastPaymentTiming);
+    const timingHint = paymentTimingHint(row.forecastPaymentTiming);
+    return (
+        <span className="inline-flex items-center gap-1.5">
+            <span>{row.vendor}</span>
+            {methodLabel && methodHint && (
+                <ForecastBadge label={methodLabel} hint={methodHint} />
+            )}
+            {timingLabel && timingHint && (
+                <ForecastBadge label={timingLabel} hint={timingHint} />
+            )}
+        </span>
     );
 }
 
@@ -89,7 +150,7 @@ function ForecastValue({
     assumptions: RunwayAssumption[] | undefined;
     value: number;
 }) {
-    if (!assumptions?.length) return fmtUsd(value);
+    if (!assumptions?.length) return fmtRunwayTableValue(value);
     return (
         <Tooltip
             triggerAs="span"
@@ -105,7 +166,7 @@ function ForecastValue({
             }
         >
             <span className="underline decoration-dotted decoration-theme-border underline-offset-2">
-                {fmtUsd(value)}
+                {fmtRunwayTableValue(value)}
             </span>
         </Tooltip>
     );
@@ -120,8 +181,8 @@ function monthColumnClass(column: RunwayColumn, first: boolean) {
     );
 }
 
-function monthKindLabel(kind: RunwayColumn["kind"]) {
-    if (kind === "actual") return "Actual";
+function monthKindLabel(kind: RunwayColumn["kind"]): string | null {
+    if (kind === "actual") return null;
     if (kind === "current") return "To date";
     return "Plan";
 }
@@ -183,26 +244,30 @@ function SummaryRow({
                         runwayValueClass(value(column)),
                     )}
                 >
-                    {fmtUsd(value(column))}
+                    {fmtRunwayTableValue(value(column))}
                 </TableCell>
             ))}
         </TableRow>
     );
 }
 
-export function RunwayTab({ data }: { data: Data }) {
+export function RunwayTab({ data, year }: { data: Data; year: string }) {
     const runway = useMemo(
         () =>
             buildRunway(
                 data.opTransactions ?? [],
-                data.opForecast ?? [],
                 new Date(),
+                data.opCloud ?? [],
             ),
-        [data.opForecast, data.opTransactions],
+        [data.opCloud, data.opTransactions],
+    );
+    const columns = useMemo(
+        () => runway.columns.filter((column) => column.month.startsWith(year)),
+        [runway.columns, year],
     );
     const groups = useMemo(
-        () => groupRows(runway.rows, runway.columns),
-        [runway.columns, runway.rows],
+        () => groupRows(runway.rows, columns),
+        [columns, runway.rows],
     );
     const next = runway.columns.find(
         (column) =>
@@ -238,8 +303,8 @@ export function RunwayTab({ data }: { data: Data }) {
             <StatCards
                 items={[
                     {
-                        label: "Current cash",
-                        value: fmtUsd(runway.currentCashUsd),
+                        label: "Cash now",
+                        value: fmtRunwayUsd(runway.currentCashUsd),
                         tone:
                             runway.currentCashUsd != null &&
                             runway.currentCashUsd < 0
@@ -253,8 +318,8 @@ export function RunwayTab({ data }: { data: Data }) {
                                   : `anchored ${fmtPeriod(runway.openingBalanceDate)} · no bank movements`,
                     },
                     {
-                        label: "Month-end cash",
-                        value: fmtUsd(runway.projectedMonthEndCashUsd),
+                        label: `${monthName(runway.currentMonth)} month-end cash`,
+                        value: fmtRunwayUsd(runway.projectedMonthEndCashUsd),
                         tone:
                             runway.projectedMonthEndCashUsd != null &&
                             runway.projectedMonthEndCashUsd < 0
@@ -263,29 +328,32 @@ export function RunwayTab({ data }: { data: Data }) {
                         detail:
                             runway.remainingCurrentPlanUsd == null
                                 ? "plan unavailable"
-                                : `${fmtUsd(runway.remainingCurrentPlanUsd)} remaining plan`,
+                                : `${fmtRunwayUsd(runway.remainingCurrentPlanUsd)} remaining plan`,
                     },
                     {
-                        label: "Runway",
-                        value: runwayText(
-                            runway.runwayMonths,
-                            runway.runwayCapped,
-                        ),
-                        tone: runwayTone,
-                        detail: runway.runwayExhaustedMonth
-                            ? `runs out ${monthLabel(runway.runwayExhaustedMonth)}`
-                            : runway.runwayCapped && last
-                              ? `positive through ${monthLabel(last.month)}`
-                              : "forecast unavailable",
-                    },
-                    {
-                        label: "Next full month change",
-                        value: fmtUsd(nextChange),
+                        label: next
+                            ? `${monthName(next.month)} cash change`
+                            : "Next cash change",
+                        value: fmtRunwayUsd(nextChange),
                         tone: valueTone(nextChange),
                         detail:
                             nextPlanFacts > 0
-                                ? `${nextPlanFacts} explicit forecast fact${nextPlanFacts === 1 ? "" : "s"}`
+                                ? `${nextPlanFacts} forecast line${nextPlanFacts === 1 ? "" : "s"}`
                                 : "plan unavailable",
+                    },
+                    {
+                        label: "Cash runway",
+                        value: runwayPeriodText({
+                            capped: runway.runwayCapped,
+                            exhaustedMonth: runway.runwayExhaustedMonth,
+                            lastMonth: last?.month ?? null,
+                        }),
+                        tone: runwayTone,
+                        detail: runway.runwayExhaustedMonth
+                            ? "cash becomes negative during this month"
+                            : runway.runwayCapped && last
+                              ? `${runway.runwayMonths}+ forecast months · still positive at horizon`
+                              : "forecast unavailable",
                     },
                 ]}
             />
@@ -294,22 +362,24 @@ export function RunwayTab({ data }: { data: Data }) {
                     <TableHead>
                         <TableRow>
                             <TableHeaderCell className="sticky left-0 z-20 min-w-48 bg-surface-opaque">
-                                line item
+                                <span className="sr-only">Line item</span>
                             </TableHeaderCell>
-                            {runway.columns.map((column, index) => (
+                            {columns.map((column, index) => (
                                 <TableHeaderCell
                                     key={column.id}
                                     align="right"
                                     className={monthColumnClass(
                                         column,
-                                        startsMonthGroup(runway.columns, index),
+                                        startsMonthGroup(columns, index),
                                     )}
                                 >
                                     <span className="inline-flex flex-col items-end">
-                                        <span>{monthLabel(column.month)}</span>
-                                        <span className="text-[0.65rem] font-medium uppercase tracking-wide opacity-70">
-                                            {monthKindLabel(column.kind)}
-                                        </span>
+                                        <span>{monthName(column.month)}</span>
+                                        {monthKindLabel(column.kind) && (
+                                            <span className="text-[0.65rem] font-medium uppercase tracking-wide opacity-70">
+                                                {monthKindLabel(column.kind)}
+                                            </span>
+                                        )}
                                     </span>
                                 </TableHeaderCell>
                             ))}
@@ -318,24 +388,24 @@ export function RunwayTab({ data }: { data: Data }) {
                     <TableBody>
                         <SummaryRow
                             label="Expenses"
-                            columns={runway.columns}
+                            columns={columns}
                             value={(column) => column.totalExpensesUsd}
                         />
                         <SummaryRow
                             label="Cash change"
-                            columns={runway.columns}
+                            columns={columns}
                             value={(column) => column.netUsd}
                         />
                         <SummaryRow
                             label="Cash balance"
-                            columns={runway.columns}
+                            columns={columns}
                             value={(column) => column.runningCashUsd}
                         />
                         {groups.map((group) => (
                             <RunwayCategoryRows
                                 key={group.category}
                                 group={group}
-                                columns={runway.columns}
+                                columns={columns}
                             />
                         ))}
                     </TableBody>
@@ -389,7 +459,7 @@ function RunwayCategoryRows({
                             runwayValueClass(group.values[column.id]),
                         )}
                     >
-                        {fmtUsd(group.values[column.id])}
+                        {fmtRunwayTableValue(group.values[column.id])}
                     </TableCell>
                 ))}
             </TableRow>

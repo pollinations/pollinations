@@ -1,9 +1,4 @@
-import type {
-    OpCloudRow,
-    OpForecastRow,
-    OpPollenRow,
-    OpTransactionRow,
-} from "./types";
+import type { OpCloudRow, OpPollenRow, OpTransactionRow } from "./types";
 
 // Demo-only rows. Every amount is a deliberately round, invented value —
 // never copy real ledger figures in here: fixtures ship in the public bundle
@@ -469,82 +464,8 @@ const opPollen: OpPollenRow[] = [
         requests_quests: 250,
     },
 ];
-const forecastMonths = [
-    "2026-07",
-    "2026-08",
-    "2026-09",
-    "2026-10",
-    "2026-11",
-    "2026-12",
-];
-const opForecast: OpForecastRow[] = [
-    ...forecastMonths.flatMap((month) => [
-        {
-            entry_id: `forecast-${month}-stripe`,
-            month: `${month}-01`,
-            vendor: "stripe",
-            category: "revenue",
-            amount: 9_000,
-            currency: "USD",
-            method: "last" as const,
-            source: "agent",
-            evidence: "Base revenue plan",
-            recorded_at: "2026-07-10 09:00:00.000",
-        },
-        {
-            entry_id: `forecast-${month}-deel`,
-            month: `${month}-01`,
-            vendor: "deel",
-            category: "payroll",
-            amount: -8_000,
-            currency: "USD",
-            method: "fixed" as const,
-            source: "manual",
-            evidence: "Approved payroll plan",
-            recorded_at: "2026-07-10 09:00:00.000",
-        },
-        {
-            entry_id: `forecast-${month}-google`,
-            month: `${month}-01`,
-            vendor: "google",
-            category: "compute",
-            amount: -3_000,
-            currency: "USD",
-            method: "last" as const,
-            source: "agent",
-            evidence: "Approved cloud plan",
-            recorded_at: "2026-07-10 09:00:00.000",
-        },
-        {
-            entry_id: `forecast-${month}-tools`,
-            month: `${month}-01`,
-            vendor: "tools",
-            category: "operations",
-            amount: -1_000,
-            currency: "USD",
-            method: "fixed" as const,
-            source: "agent",
-            evidence: "Recurring software plan",
-            recorded_at: "2026-07-10 09:00:00.000",
-        },
-    ]),
-    {
-        entry_id: "forecast-2026-09-tax",
-        month: "2026-09-01",
-        vendor: "tax office",
-        category: "admin",
-        amount: -6_000,
-        currency: "USD",
-        method: "one_off",
-        source: "manual",
-        evidence: "One-time tax payment",
-        recorded_at: "2026-07-10 09:00:00.000",
-    },
-];
-
 export const FIXTURES: Record<string, unknown[]> = {
     op_transactions_api: opTransactions,
     op_cloud_api: opCloud,
     op_pollen_api: opPollen,
-    op_forecast_api: opForecast,
 };

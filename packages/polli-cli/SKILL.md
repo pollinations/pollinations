@@ -39,6 +39,7 @@ Install: `npm i -g @pollinations/cli@latest` (provides the `polli` binary).
 | Filter models by type | `polli models --type image` |
 | Model health + latency | `polli models --stats` (default 60m, `--window <min>`) |
 | Check balance | `polli usage` |
+| Developer earnings | `polli earnings` (`--days <n>`, max 90) |
 | List your quests + claim state | `polli quests` (filters: `--open --claimable --claimed --coming-soon`) |
 | Manage prompt agents | `polli agents list` |
 | Manage invite-only community models | `polli my-models list` |
@@ -147,6 +148,8 @@ Use `--stats` before choosing a model. **Caveat**: the `err%` column counts **5x
 polli usage              # current pollen balance
 polli usage --history    # recent individual requests
 polli usage --daily      # daily cost summary
+polli earnings           # developer earnings total + per-entity breakdown (default 30d)
+polli earnings --days 7  # rolling window, max 90
 polli quests             # your quests + claim state (open/claimable/claimed/coming)
 polli quests --claimable # only rewards ready to claim
 ```

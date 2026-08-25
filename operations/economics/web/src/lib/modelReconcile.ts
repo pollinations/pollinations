@@ -113,6 +113,8 @@ type ProviderMonth = {
     hasProvider: boolean;
     cashUsd: number;
     creditUsd: number;
+    providerModels: Map<string, { cashUsd: number; creditUsd: number }>;
+    hasUnmappedProviderUsage: boolean;
 };
 
 function getOrInit<K, V>(map: Map<K, V>, key: K, make: () => V): V {
@@ -137,6 +139,8 @@ function providerMonth(
         hasProvider: false,
         cashUsd: 0,
         creditUsd: 0,
+        providerModels: new Map(),
+        hasUnmappedProviderUsage: false,
     }));
 }
 
@@ -198,8 +202,92 @@ function nullFundingFields() {
     };
 }
 
+function hasCompleteModelFunding(entry: ProviderMonth): boolean {
+    const meteredModels = new Set(
+        [...entry.pollenModels.values()]
+            .filter((model) => pollenMeterUsd(model) > ACTIVE_USD)
+            .map((model) => model.model),
+    );
+    const fundedModels = [...entry.providerModels.entries()].filter(
+        ([, funding]) =>
+            Math.abs(funding.cashUsd) + Math.abs(funding.creditUsd) >
+            ACTIVE_USD,
+    );
+
+    return (
+        !entry.hasUnmappedProviderUsage &&
+        meteredModels.size > 0 &&
+        fundedModels.length > 0 &&
+        fundedModels.every(([model]) => meteredModels.has(model)) &&
+        [...meteredModels].every((model) => entry.providerModels.has(model))
+    );
+}
+
+function modelFundingAllocation(
+    model: PollenModel,
+    funding: { cashUsd: number; creditUsd: number },
+): ModelAllocationRow {
+    const meterUsd = pollenMeterUsd(model);
+    const paidWeight =
+        meterUsd > ACTIVE_USD ? Math.max(0, model.paidMeterUsd) / meterUsd : 0;
+    const questWeight =
+        meterUsd > ACTIVE_USD ? Math.max(0, model.questMeterUsd) / meterUsd : 0;
+    const paidCashUsd = funding.cashUsd * paidWeight;
+    const questCashUsd = funding.cashUsd * questWeight;
+    const paidCreditUsd = funding.creditUsd * paidWeight;
+    const questCreditUsd = funding.creditUsd * questWeight;
+    const providerUsageUsd = funding.cashUsd + funding.creditUsd;
+    const creditShare =
+        providerUsageUsd > ACTIVE_USD
+            ? Math.min(1, Math.max(0, funding.creditUsd / providerUsageUsd))
+            : 0;
+
+    return {
+        model: model.model,
+        status: "allocated",
+        paidPollenUsd: model.paidPollenUsd,
+        questPollenUsd: model.questPollenUsd,
+        retainedPaidUsd: model.retainedPaidUsd,
+        pollenMeterUsd: meterUsd,
+        providerCashUsd: funding.cashUsd,
+        providerCreditUsd: funding.creditUsd,
+        providerUsageUsd,
+        paidProviderCashUsd: paidCashUsd,
+        questProviderCashUsd: questCashUsd,
+        paidProviderCreditUsd: paidCreditUsd,
+        questProviderCreditUsd: questCreditUsd,
+        paidPollenOnCreditsUsd: model.paidPollenUsd * creditShare,
+        questPollenOnCreditsUsd: model.questPollenUsd * creditShare,
+        meterGapUsd: providerUsageUsd - meterUsd,
+        paidContributionUsd: model.retainedPaidUsd - paidCashUsd,
+        questCashSubsidyUsd: questCashUsd,
+        netCashContributionUsd:
+            model.retainedPaidUsd - paidCashUsd - questCashUsd,
+    };
+}
+
 function allocationRows(entry: ProviderMonth): ModelAllocationRow[] {
     const pollenModels = [...entry.pollenModels.values()];
+    if (hasCompleteModelFunding(entry)) {
+        return pollenModels
+            .map((model) =>
+                modelFundingAllocation(
+                    model,
+                    entry.providerModels.get(model.model) ?? {
+                        cashUsd: 0,
+                        creditUsd: 0,
+                    },
+                ),
+            )
+            .sort(
+                (a, b) =>
+                    (b.paidPollenUsd ?? 0) +
+                        (b.questPollenUsd ?? 0) -
+                        ((a.paidPollenUsd ?? 0) + (a.questPollenUsd ?? 0)) ||
+                    (b.providerUsageUsd ?? 0) - (a.providerUsageUsd ?? 0) ||
+                    a.model.localeCompare(b.model),
+            );
+    }
     const totalWeight = pollenModels.reduce(
         (sum, model) => sum + Math.max(0, pollenMeterUsd(model)),
         0,
@@ -320,9 +408,10 @@ function allocationRows(entry: ProviderMonth): ModelAllocationRow[] {
     );
 }
 
-// Provider-month is the trusted reconciliation grain. Provider model labels
-// are intentionally not joined to our registry model IDs; provider totals are
-// allocated to Pollen models by their share of metered cost.
+// Provider-month remains the trusted reconciliation grain. Exact model costs
+// are used only when every nonzero provider row carries a canonical Pollen
+// model ID and every metered Pollen model is covered. Any incomplete or raw
+// provider-label mapping falls back to provider-month proportional allocation.
 export function modelReconcileRows(data: Data): ModelReconcileRow[] {
     const entries = new Map<string, ProviderMonth>();
 
@@ -365,8 +454,23 @@ export function modelReconcileRows(data: Data): ModelReconcileRow[] {
         }
         const entry = providerMonth(entries, month, row.vendor);
         entry.hasProvider = true;
-        entry.cashUsd += opCloudPaidBurnUsd(row);
-        entry.creditUsd += opCloudCreditBurnUsd(row);
+        const cashUsd = opCloudPaidBurnUsd(row);
+        const creditUsd = opCloudCreditBurnUsd(row);
+        entry.cashUsd += cashUsd;
+        entry.creditUsd += creditUsd;
+        if (Math.abs(cashUsd) + Math.abs(creditUsd) > ACTIVE_USD) {
+            const model = row.model.trim();
+            if (!model) {
+                entry.hasUnmappedProviderUsage = true;
+            } else {
+                const funding = getOrInit(entry.providerModels, model, () => ({
+                    cashUsd: 0,
+                    creditUsd: 0,
+                }));
+                funding.cashUsd += cashUsd;
+                funding.creditUsd += creditUsd;
+            }
+        }
     }
 
     return [...entries.values()]
@@ -413,20 +517,35 @@ export function modelReconcileRows(data: Data): ModelReconcileRow[] {
                 ? entry.cashUsd + entry.creditUsd
                 : null;
             const both = entry.hasPollen && entry.hasProvider;
-            const canSplitFunding =
-                both &&
-                (Math.max(0, pollenMeterUsd ?? 0) > ACTIVE_USD ||
-                    Math.abs(providerUsageUsd ?? 0) <= ACTIVE_USD);
-            const allocationDenominator =
-                (pollenMeterUsd ?? 0) > ACTIVE_USD ? (pollenMeterUsd ?? 0) : 1;
-            const allocation = canSplitFunding
-                ? fundingAllocation(
-                      entry,
-                      (paidMeterUsd ?? 0) / allocationDenominator,
-                      (questMeterUsd ?? 0) / allocationDenominator,
-                  )
-                : null;
+            const models = allocationRows(entry);
+            const sumModelField = (
+                field:
+                    | "paidProviderCashUsd"
+                    | "questProviderCashUsd"
+                    | "paidProviderCreditUsd"
+                    | "questProviderCreditUsd"
+                    | "paidPollenOnCreditsUsd"
+                    | "questPollenOnCreditsUsd"
+                    | "paidContributionUsd"
+                    | "questCashSubsidyUsd",
+            ): number | null => {
+                if (!both || models.some((model) => model[field] == null)) {
+                    return null;
+                }
+                return models.reduce(
+                    (sum, model) => sum + (model[field] ?? 0),
+                    0,
+                );
+            };
+            const paidProviderCashUsd = sumModelField("paidProviderCashUsd");
+            const questProviderCashUsd = sumModelField("questProviderCashUsd");
             const creditShare = fundingCreditShare(entry);
+            const paidPollenOnCreditsUsd = sumModelField(
+                "paidPollenOnCreditsUsd",
+            );
+            const questPollenOnCreditsUsd = sumModelField(
+                "questPollenOnCreditsUsd",
+            );
             return {
                 month: entry.month,
                 vendor: entry.vendor,
@@ -442,32 +561,31 @@ export function modelReconcileRows(data: Data): ModelReconcileRow[] {
                 providerCashUsd,
                 providerCreditUsd,
                 providerUsageUsd,
-                paidProviderCashUsd: allocation?.paidCashUsd ?? null,
-                questProviderCashUsd: allocation?.questCashUsd ?? null,
-                paidProviderCreditUsd: allocation?.paidCreditUsd ?? null,
-                questProviderCreditUsd: allocation?.questCreditUsd ?? null,
+                paidProviderCashUsd,
+                questProviderCashUsd,
+                paidProviderCreditUsd: sumModelField("paidProviderCreditUsd"),
+                questProviderCreditUsd: sumModelField("questProviderCreditUsd"),
                 paidPollenOnCreditsUsd:
-                    both && creditShare != null && paidPollenUsd != null
+                    paidPollenOnCreditsUsd ??
+                    (both && creditShare != null && paidPollenUsd != null
                         ? paidPollenUsd * creditShare
-                        : null,
+                        : null),
                 questPollenOnCreditsUsd:
-                    both && creditShare != null && questPollenUsd != null
+                    questPollenOnCreditsUsd ??
+                    (both && creditShare != null && questPollenUsd != null
                         ? questPollenUsd * creditShare
-                        : null,
+                        : null),
                 meterGapUsd:
                     both && pollenMeterUsd != null && providerUsageUsd != null
                         ? providerUsageUsd - pollenMeterUsd
                         : null,
-                paidContributionUsd:
-                    retainedPaidUsd != null && allocation != null
-                        ? retainedPaidUsd - allocation.paidCashUsd
-                        : null,
-                questCashSubsidyUsd: allocation?.questCashUsd ?? null,
+                paidContributionUsd: sumModelField("paidContributionUsd"),
+                questCashSubsidyUsd: sumModelField("questCashSubsidyUsd"),
                 netCashContributionUsd:
                     both && retainedPaidUsd != null && providerCashUsd != null
                         ? retainedPaidUsd - providerCashUsd
                         : null,
-                models: allocationRows(entry),
+                models,
             };
         })
         .sort(

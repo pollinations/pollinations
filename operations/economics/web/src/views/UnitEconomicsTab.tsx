@@ -41,7 +41,6 @@ import {
 import type { MonthFilterValue } from "../lib/months";
 import { signedToneOrSoft } from "../lib/tone";
 import {
-    isCreditSupported,
     providerCostCheck,
     type UnitEconomicsGrain,
     type UnitEconomicsRow,
@@ -223,29 +222,6 @@ function CurrentResult({ row }: { row: UnitEconomicsRow }) {
                 {fmtSignedUsd(row.netCashContributionUsd)}
             </span>
         </Tooltip>
-    );
-}
-
-function CreditSupportedChip({ row }: { row: UnitEconomicsRow }) {
-    if (
-        !isCreditSupported(
-            row.netCashContributionUsd,
-            row.economicContributionUsd,
-        )
-    ) {
-        return null;
-    }
-    return (
-        <span className="ml-1 inline-flex">
-            <Tooltip
-                triggerAs="span"
-                content="Cash-positive only because vendor credits covered part of the full cost."
-            >
-                <Chip intent="warning" size="sm">
-                    credit-supported
-                </Chip>
-            </Tooltip>
-        </span>
     );
 }
 
@@ -450,9 +426,7 @@ function UnitEconomicsTable({
                 value:
                     knownCurrentRows.length === 0
                         ? "Unknown"
-                        : `${fmtSignedUsd(currentResultUsd)}${
-                              unknownCurrentVendorMonths > 0 ? " + unknown" : ""
-                          }`,
+                        : fmtSignedUsd(currentResultUsd),
                 tone:
                     knownCurrentRows.length === 0
                         ? "base"
@@ -463,7 +437,7 @@ function UnitEconomicsTable({
                             : "base",
                 detail:
                     unknownCurrentVendorMonths > 0
-                        ? "with credits · performance incomplete"
+                        ? "with credits"
                         : `with credits · ${fmtMarginPct(currentPerformancePct)}`,
             },
             {
@@ -471,11 +445,7 @@ function UnitEconomicsTable({
                 value:
                     knownFullCostRows.length === 0
                         ? "Unknown"
-                        : `${fmtSignedUsd(fullCostResultUsd)}${
-                              unknownFullCostVendorMonths > 0
-                                  ? " + unknown"
-                                  : ""
-                          }`,
+                        : fmtSignedUsd(fullCostResultUsd),
                 tone:
                     knownFullCostRows.length === 0
                         ? "base"
@@ -486,7 +456,7 @@ function UnitEconomicsTable({
                             : "base",
                 detail:
                     unknownFullCostVendorMonths > 0
-                        ? "without credits · performance incomplete"
+                        ? "without credits"
                         : `without credits · ${fmtMarginPct(fullCostPerformancePct)}`,
             },
         ],
@@ -730,7 +700,6 @@ function UnitEconomicsTable({
                                             allocationWarning(
                                                 row.allocationStatus,
                                             )}
-                                        <CreditSupportedChip row={row} />
                                     </TableCell>
                                     <TableCell
                                         align="right"

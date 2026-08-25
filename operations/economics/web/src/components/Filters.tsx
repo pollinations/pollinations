@@ -1,16 +1,7 @@
 import { MultiSelect, TabButton } from "@pollinations/ui";
 import type { ReactNode } from "react";
 import type { FacetOption } from "../lib/filterFacets";
-import { completedMonthsInYear, monthLabel, yearsOf } from "../lib/months";
-
-export type MonthFilterMode = "month" | "month-or-ytd";
-
-function sameMonths(left: string[], right: string[]) {
-    return (
-        left.length === right.length &&
-        left.every((month, index) => month === right[index])
-    );
-}
+import { monthName } from "../lib/months";
 
 export function FilterBar({ children }: { children: ReactNode }) {
     return (
@@ -18,67 +9,67 @@ export function FilterBar({ children }: { children: ReactNode }) {
     );
 }
 
-export function MonthFilter({
-    months,
-    mode = "month-or-ytd",
-    now = new Date(),
+export function YearFilter({
     onChange,
     value,
+    years,
 }: {
-    months: string[];
-    mode?: MonthFilterMode;
-    now?: Date;
-    onChange: (value: string[]) => void;
-    value: string[];
+    onChange: (value: string) => void;
+    value: string;
+    years: string[];
 }) {
-    if (months.length === 0) return null;
-    const currentYear = String(now.getUTCFullYear());
+    if (years.length === 0) return null;
 
     return (
         <fieldset
             className="flex min-w-0 flex-wrap items-center gap-1.5 text-sm text-theme-text-soft"
-            aria-label="date filter"
+            aria-label="year filter"
         >
-            {yearsOf(months).map((year) => {
-                const completedMonths = completedMonthsInYear(
-                    months,
-                    year,
-                    now,
-                );
-                return (
-                    <span
-                        key={year}
-                        className="inline-flex flex-wrap items-center gap-1.5"
-                    >
-                        {mode === "month-or-ytd" &&
-                            completedMonths.length > 0 && (
-                                <TabButton
-                                    active={sameMonths(value, completedMonths)}
-                                    onClick={() => onChange(completedMonths)}
-                                    size="md"
-                                    variant="soft"
-                                >
-                                    {year === currentYear ? "YTD" : year}
-                                </TabButton>
-                            )}
-                        {months
-                            .filter((month) => month.startsWith(year))
-                            .map((month) => (
-                                <TabButton
-                                    key={month}
-                                    active={
-                                        value.length === 1 && value[0] === month
-                                    }
-                                    onClick={() => onChange([month])}
-                                    size="sm"
-                                    variant="soft"
-                                >
-                                    {monthLabel(month)}
-                                </TabButton>
-                            ))}
-                    </span>
-                );
-            })}
+            {years.map((year) => (
+                <TabButton
+                    key={year}
+                    active={value === year}
+                    onClick={() => onChange(year)}
+                    size="md"
+                    variant="soft"
+                >
+                    {year}
+                </TabButton>
+            ))}
+        </fieldset>
+    );
+}
+
+export function MonthFilter({
+    months,
+    onChange,
+    value,
+    year,
+}: {
+    months: string[];
+    onChange: (value: string) => void;
+    value: string;
+    year: string;
+}) {
+    const visibleMonths = months.filter((month) => month.startsWith(year));
+    if (visibleMonths.length === 0) return null;
+
+    return (
+        <fieldset
+            className="flex min-w-0 flex-wrap items-center gap-1.5 text-sm text-theme-text-soft"
+            aria-label="month filter"
+        >
+            {visibleMonths.map((month) => (
+                <TabButton
+                    key={month}
+                    active={value === month}
+                    onClick={() => onChange(month)}
+                    size="sm"
+                    variant="soft"
+                >
+                    {monthName(month)}
+                </TabButton>
+            ))}
         </fieldset>
     );
 }

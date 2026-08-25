@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import type { Data, OpCloudRow, OpPollenRow } from "../types";
 import { modelReconcileRows } from "./modelReconcile";
 import {
-    isCreditSupported,
     meterMatchPct,
     providerCostCheck,
     type UnitEconomicsRow,
@@ -53,7 +52,6 @@ const data = (over: Partial<Data>): Data => ({
     opTransactions: [],
     opCloud: [],
     opPollen: [],
-    opForecast: [],
     ...over,
 });
 
@@ -205,13 +203,6 @@ describe("unit-economics outcomes", () => {
         expect(unitPerformancePct(-25, 0)).toBeNull();
         expect(unitPerformancePct(null, 100)).toBeNull();
     });
-
-    it("flags rows that are profitable only on a cash basis", () => {
-        expect(isCreditSupported(10, -5)).toBe(true);
-        expect(isCreditSupported(-1, -5)).toBe(false);
-        expect(isCreditSupported(10, 5)).toBe(false);
-        expect(isCreditSupported(null, -5)).toBe(false);
-    });
 });
 
 describe("providerCostCheck", () => {
@@ -228,7 +219,7 @@ describe("providerCostCheck", () => {
         ).toBe("review");
     });
 
-    it("describes capacity, mixed, and internal bases without false alarms", () => {
+    it("describes capacity, mixed, and direct bases without false alarms", () => {
         expect(
             providerCostCheck(
                 economicsRow({
@@ -245,7 +236,7 @@ describe("providerCostCheck", () => {
         ).toMatchObject({ kind: "calibration", value: 1.2 });
         expect(
             providerCostCheck(economicsRow({ vendor: "inferenceport" })).kind,
-        ).toBe("not-applicable");
+        ).toBe("healthy");
     });
 
     it("keeps source holes and model allocations distinct", () => {

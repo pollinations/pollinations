@@ -384,7 +384,7 @@ describe("gpuWorkloadRows", () => {
         });
     });
 
-    it("flags workloads that are profitable only while credits are available", () => {
+    it("keeps cash and full-cost workload results separate", () => {
         const rows = gpuWorkloadRows(
             {
                 ...baseData,
@@ -400,7 +400,7 @@ describe("gpuWorkloadRows", () => {
             creditCostUsd: 100,
             currentResultUsd: 80,
             fullCostResultUsd: -20,
-            flags: ["credit-supported"],
+            flags: [],
         });
         expect(
             (rows[0].currentResultUsd ?? 0) - (rows[0].fullCostResultUsd ?? 0),

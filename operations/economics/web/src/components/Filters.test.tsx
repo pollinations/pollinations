@@ -1,41 +1,39 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { FilterMultiSelect, MonthFilter } from "./Filters";
+import { FilterMultiSelect, MonthFilter, YearFilter } from "./Filters";
 
 const months = ["2026-06", "2026-07", "2026-08"];
-const now = new Date("2026-08-22T00:00:00Z");
 
 describe("MonthFilter", () => {
-    it("hides YTD in month-only views", () => {
+    it("shows only months from the selected year without repeating the year", () => {
         const html = renderToStaticMarkup(
             <MonthFilter
-                months={months}
-                mode="month"
-                now={now}
-                value={["2026-07"]}
+                months={[...months, "2027-01"]}
+                year="2026"
+                value="2026-07"
                 onChange={() => {}}
             />,
         );
 
         expect(html).not.toContain("YTD");
-        expect(html).toContain("July 26");
+        expect(html).toContain("July");
+        expect(html).not.toContain("July 26");
+        expect(html).not.toContain("January");
     });
+});
 
-    it("offers completed-month YTD in aggregate views", () => {
+describe("YearFilter", () => {
+    it("uses a separate larger tab row even when only one year exists", () => {
         const html = renderToStaticMarkup(
-            <MonthFilter
-                months={months}
-                mode="month-or-ytd"
-                now={now}
-                value={["2026-06", "2026-07"]}
-                onChange={() => {}}
-            />,
+            <YearFilter years={["2026"]} value="2026" onChange={() => {}} />,
         );
 
-        expect(html).toContain("YTD");
-        expect(html).not.toContain(">2026<");
+        expect(html).toContain('aria-label="year filter"');
+        expect(html).toContain(">2026<");
     });
+});
 
+describe("FilterMultiSelect", () => {
     it("uses the dropdown value instead of a visible label", () => {
         const allHtml = renderToStaticMarkup(
             <FilterMultiSelect

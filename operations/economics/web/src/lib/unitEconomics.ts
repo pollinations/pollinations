@@ -62,18 +62,6 @@ export function unitPerformancePct(
     return (resultUsd / retainedPaidUsd) * 100;
 }
 
-export function isCreditSupported(
-    cashResultUsd: number | null,
-    fullCostResultUsd: number | null,
-): boolean {
-    return (
-        cashResultUsd != null &&
-        fullCostResultUsd != null &&
-        cashResultUsd >= 0 &&
-        fullCostResultUsd < 0
-    );
-}
-
 function economicsValues(
     row: ModelReconcileRow | ModelAllocationRow,
 ): EconomicsValues {

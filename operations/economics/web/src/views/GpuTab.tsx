@@ -39,7 +39,6 @@ import {
 } from "../lib/months";
 import { canonicalVendor } from "../lib/tb";
 import { signedToneOrSoft } from "../lib/tone";
-import { isCreditSupported } from "../lib/unitEconomics";
 import type { Data, OpCloudRow } from "../types";
 
 export type GpuResourceRow = {
@@ -531,9 +530,6 @@ export function gpuWorkloadRows(
         }
         if (group.kind === "workload" && !group.hasCost) {
             flags.push("missing GPU cost");
-        }
-        if (isCreditSupported(currentResultUsd, fullCostResultUsd)) {
-            flags.push("credit-supported");
         }
         const vendors = new Set([...group.costVendors, ...group.pollenVendors]);
         return {

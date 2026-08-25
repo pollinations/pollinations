@@ -12,6 +12,14 @@ export function monthLabel(month: string): string {
     return fmtMonthYear(month.slice(0, 4), month.slice(5, 7));
 }
 
+export function monthName(month: string): string {
+    if (!MONTH_RE.test(month)) return month;
+    return new Intl.DateTimeFormat("en-US", {
+        month: "long",
+        timeZone: "UTC",
+    }).format(new Date(`${month}-01T00:00:00Z`));
+}
+
 export function isMonthKey(value: string): boolean {
     return MONTH_RE.test(value);
 }
@@ -78,21 +86,6 @@ export function latestClosedMonth(
         if (months[index] < currentMonth) return months[index];
     }
     return months.at(-1) ?? null;
-}
-
-export function completedMonthsInYear(
-    months: string[],
-    year: string,
-    now = new Date(),
-): string[] {
-    const currentYear = String(now.getUTCFullYear());
-    const currentMonth = `${currentYear}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
-    return months.filter(
-        (month) =>
-            month.startsWith(year) &&
-            (year < currentYear ||
-                (year === currentYear && month < currentMonth)),
-    );
 }
 
 export function yearsOf(months: string[]): string[] {

@@ -1877,6 +1877,34 @@ describe("providerBalanceRows", () => {
         ).toEqual([]);
     });
 
+    it("recognizes the external InferencePort wallet snapshot", () => {
+        const now = new Date("2026-08-25T12:00:00Z");
+        const [row] = providerBalanceRows(
+            emptyData({
+                opCloud: [
+                    opCloud({
+                        entry_id: "inferenceport-balance-2026-08-25",
+                        vendor: "inferenceport",
+                        type: "balance",
+                        start: "2026-08-25 10:21:59",
+                        paid: 29.4185,
+                        credit: 0,
+                        resource_sku: "current-balance",
+                    }),
+                ],
+            }),
+            now,
+        );
+
+        expect(row).toMatchObject({
+            vendor: "inferenceport",
+            cashBalanceUsd: 29.4185,
+            creditBalanceUsd: 0,
+            balanceAsOf: "2026-08-25",
+            balanceStatus: "checked",
+        });
+    });
+
     it("does not roll post-snapshot flows backward through the anchor", () => {
         const now = new Date("2026-08-24T12:00:00Z");
         const [row] = providerBalanceRows(

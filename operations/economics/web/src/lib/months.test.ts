@@ -3,10 +3,10 @@ import { FIXTURES } from "../fixtures";
 import type { Data } from "../types";
 import {
     collectMonths,
-    completedMonthsInYear,
     latestClosedMonth,
     matchesMonth,
     monthLabel,
+    monthName,
     yearsOf,
 } from "./months";
 
@@ -91,28 +91,6 @@ describe("latestClosedMonth", () => {
     });
 });
 
-describe("completedMonthsInYear", () => {
-    it("excludes the current partial month from YTD", () => {
-        expect(
-            completedMonthsInYear(
-                ["2026-06", "2026-07", "2026-08"],
-                "2026",
-                new Date("2026-08-22T00:00:00Z"),
-            ),
-        ).toEqual(["2026-06", "2026-07"]);
-    });
-
-    it("keeps every observed month for a completed year", () => {
-        expect(
-            completedMonthsInYear(
-                ["2025-11", "2025-12", "2026-01"],
-                "2025",
-                new Date("2026-08-22T00:00:00Z"),
-            ),
-        ).toEqual(["2025-11", "2025-12"]);
-    });
-});
-
 describe("monthLabel", () => {
     it("renders full month names with two-digit years", () => {
         expect(monthLabel("2006-06")).toBe("June 06");
@@ -123,6 +101,17 @@ describe("monthLabel", () => {
     it("falls back to the raw value when not a month", () => {
         expect(monthLabel("2026")).toBe("2026");
         expect(monthLabel("")).toBe("");
+    });
+});
+
+describe("monthName", () => {
+    it("renders the month without repeating the selected year", () => {
+        expect(monthName("2026-06")).toBe("June");
+        expect(monthName("2027-01")).toBe("January");
+    });
+
+    it("falls back to the raw value when not a month", () => {
+        expect(monthName("2026")).toBe("2026");
     });
 });
 

@@ -50,7 +50,6 @@ const data = (over: Partial<Data>): Data => ({
     opTransactions: [],
     opCloud: [],
     opPollen: [],
-    opForecast: [],
     ...over,
 });
 
@@ -133,6 +132,80 @@ describe("modelReconcileRows", () => {
                 0,
             ),
         ).toBe(row.providerCreditUsd);
+    });
+
+    it("uses complete canonical model funding instead of proportional allocation", () => {
+        const [row] = modelReconcileRows(
+            data({
+                opCloud: [
+                    cloud({
+                        entry_id: "claude-input",
+                        model: "claude",
+                        paid: -70,
+                    }),
+                    cloud({
+                        entry_id: "claude-output",
+                        model: "claude",
+                        paid: -20,
+                    }),
+                    cloud({
+                        entry_id: "nova",
+                        model: "nova",
+                        paid: -10,
+                    }),
+                ],
+                opPollen: [
+                    pollen({
+                        model: "claude",
+                        cost_paid: 60,
+                        price_paid: 120,
+                    }),
+                    pollen({
+                        model: "nova",
+                        cost_paid: 40,
+                        price_paid: 50,
+                    }),
+                ],
+            }),
+        );
+
+        const claude = row.models.find((model) => model.model === "claude");
+        const nova = row.models.find((model) => model.model === "nova");
+        if (!claude || !nova) throw new Error("direct models missing");
+        expect(claude.providerCashUsd).toBe(90);
+        expect(claude.meterGapUsd).toBe(30);
+        expect(nova.providerCashUsd).toBe(10);
+        expect(nova.meterGapUsd).toBe(-30);
+        expect(row.paidProviderCashUsd).toBe(100);
+    });
+
+    it("falls back to provider-month allocation when canonical model coverage is incomplete", () => {
+        const [row] = modelReconcileRows(
+            data({
+                opCloud: [
+                    cloud({
+                        model: "claude",
+                        paid: -100,
+                    }),
+                ],
+                opPollen: [
+                    pollen({
+                        model: "claude",
+                        cost_paid: 50,
+                    }),
+                    pollen({
+                        model: "nova",
+                        cost_paid: 50,
+                    }),
+                ],
+            }),
+        );
+
+        const claude = row.models.find((model) => model.model === "claude");
+        const nova = row.models.find((model) => model.model === "nova");
+        if (!claude || !nova) throw new Error("fallback models missing");
+        expect(claude.providerCashUsd).toBe(50);
+        expect(nova.providerCashUsd).toBe(50);
     });
 
     it("identifies paid and Quest Pollen spent on credit-funded usage", () => {

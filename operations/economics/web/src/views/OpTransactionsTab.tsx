@@ -105,7 +105,7 @@ export function OpTransactionsTab({
                     </TableRow>
                     <TableRow>
                         <TableHeaderCell {...headerProps("date")}>
-                            Date
+                            Day
                         </TableHeaderCell>
                         <TableHeaderCell {...headerProps("vendor")}>
                             Vendor
@@ -152,7 +152,9 @@ export function OpTransactionsTab({
                             return (
                                 <Fragment key={key}>
                                     <TableRow>
-                                        <TableCell>{row.date}</TableCell>
+                                        <TableCell>
+                                            {Number(row.date.slice(8, 10))}
+                                        </TableCell>
                                         <TableCell>
                                             {row.vendor || (
                                                 <Chip

@@ -23,7 +23,6 @@ import {
     type MonthFilterValue,
     matchesMonth,
     matchesValue,
-    monthLabel,
     type ValueFilter,
     WINDOW_START,
 } from "../lib/months";
@@ -117,9 +116,6 @@ export function OpCloudTab({
             <DataTable>
                 <TableHead>
                     <TableRow>
-                        <TableHeaderCell rowSpan={2} {...headerProps("start")}>
-                            Month
-                        </TableHeaderCell>
                         <TableHeaderCell rowSpan={2} {...headerProps("vendor")}>
                             Vendor
                         </TableHeaderCell>
@@ -187,9 +183,6 @@ export function OpCloudTab({
                             return (
                                 <Fragment key={key}>
                                     <TableRow>
-                                        <TableCell className="whitespace-nowrap">
-                                            {monthLabel(row.start.slice(0, 7))}
-                                        </TableCell>
                                         <TableCell>{row.vendor}</TableCell>
                                         <TableCell>
                                             {costTypeLabel(row.type)}
@@ -232,7 +225,7 @@ export function OpCloudTab({
                                     {isExpanded ? (
                                         <TableRow>
                                             <TableCell
-                                                colSpan={10}
+                                                colSpan={9}
                                                 className="bg-theme-bg-active/40"
                                             >
                                                 <dl className="grid gap-4 p-2 sm:grid-cols-2 lg:grid-cols-4">

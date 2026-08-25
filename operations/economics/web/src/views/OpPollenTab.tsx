@@ -14,7 +14,7 @@ import {
     TableScroller,
     useSortableRows,
 } from "../components/DataTable";
-import { fmtNumber, fmtPeriod } from "../lib/format";
+import { fmtNumber } from "../lib/format";
 import {
     type MonthFilterValue,
     matchesMonth,
@@ -90,9 +90,6 @@ export function OpPollenTab({
             <DataTable>
                 <TableHead>
                     <TableRow>
-                        <TableHeaderCell rowSpan={2} {...headerProps("month")}>
-                            Month
-                        </TableHeaderCell>
                         <TableHeaderCell rowSpan={2} {...headerProps("vendor")}>
                             Vendor
                         </TableHeaderCell>
@@ -180,9 +177,6 @@ export function OpPollenTab({
                         return (
                             <Fragment key={key}>
                                 <TableRow>
-                                    <TableCell>
-                                        {fmtPeriod(row.month)}
-                                    </TableCell>
                                     <TableCell>{row.vendor}</TableCell>
                                     <TableCell>{row.model}</TableCell>
                                     <TableCell
@@ -226,7 +220,7 @@ export function OpPollenTab({
                                 {isExpanded ? (
                                     <TableRow>
                                         <TableCell
-                                            colSpan={10}
+                                            colSpan={9}
                                             className="bg-theme-bg-active/40"
                                         >
                                             <dl className="grid gap-4 p-2 sm:grid-cols-3 lg:grid-cols-5">

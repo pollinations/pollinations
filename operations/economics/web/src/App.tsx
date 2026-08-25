@@ -39,7 +39,7 @@ import {
     FilterBar,
     FilterMultiSelect,
     MonthFilter,
-    type MonthFilterMode,
+    YearFilter,
 } from "./components/Filters";
 import type { ProvenanceCode } from "./components/Provenance";
 import {
@@ -50,8 +50,8 @@ import {
 import {
     collectMonths,
     latestClosedMonth,
-    type MonthFilterValue,
     WINDOW_START,
+    yearsOf,
 } from "./lib/months";
 import { fixturesMode, loadAll, TbError } from "./lib/tb";
 import type { Data } from "./types";
@@ -101,26 +101,6 @@ const INSIGHT_TABS: {
         icon: WalletIcon,
     },
     {
-        id: "close",
-        label: "Close",
-        note: "Monthly close readiness from vendor sources, account coverage, and ledger quality; tax filing confirmation remains separate.",
-        icon: EyeIcon,
-    },
-    {
-        id: "balances",
-        label: "Balances",
-        note: "Current cash-prepaid and free-credit vendor balances, with an expandable monthly roll-forward.",
-        icon: ClockIcon,
-    },
-] satisfies readonly DrawerItem<InsightTab>[];
-
-const UNIT_ECONOMICS_TABS: {
-    id: InsightTab;
-    label: string;
-    note: string;
-    icon: ComponentType<{ className?: string }>;
-}[] = [
-    {
         id: "vendors",
         label: "Vendors",
         note: "Direct AI-delivery economics by vendor-month across managed inference and GPU capacity; shared infrastructure is excluded.",
@@ -146,9 +126,29 @@ const UNIT_ECONOMICS_TABS: {
     },
 ] satisfies readonly DrawerItem<InsightTab>[];
 
+const LEDGER_INSIGHT_TABS: {
+    id: InsightTab;
+    label: string;
+    note: string;
+    icon: ComponentType<{ className?: string }>;
+}[] = [
+    {
+        id: "close",
+        label: "Close",
+        note: "Monthly close readiness from vendor sources, account coverage, and ledger quality; tax filing confirmation remains separate.",
+        icon: EyeIcon,
+    },
+    {
+        id: "balances",
+        label: "Balances",
+        note: "Current cash-prepaid and free-credit vendor balances, with an expandable monthly roll-forward.",
+        icon: ClockIcon,
+    },
+] satisfies readonly DrawerItem<InsightTab>[];
+
 const ALL_INSIGHT_TABS = [
     ...INSIGHT_TABS,
-    ...UNIT_ECONOMICS_TABS,
+    ...LEDGER_INSIGHT_TABS,
 ] satisfies readonly DrawerItem<InsightTab>[];
 
 // note + pipe surface as a hover tooltip on the tab button — the tab body
@@ -260,6 +260,19 @@ function EconomicsNav({
     onInsightTabChange: (value: InsightTab) => void;
     onRawTabChange: (value: Tab) => void;
 }) {
+    const insightItem = (item: DrawerItem<InsightTab>) => (
+        <NavItem
+            key={item.id}
+            type="button"
+            data-theme="accent"
+            icon={item.icon}
+            active={section === "insights" && insightTab === item.id}
+            title={item.note}
+            onClick={() => onInsightTabChange(item.id)}
+        >
+            {item.label}
+        </NavItem>
+    );
     const rawItem = (item: (typeof TABS)[number]) => {
         const count = data ? item.rows(data) : null;
         const title = `${codesLabel(item.codes)}${item.pipe}${data ? ` · ${count} rows` : ""}\n${item.note}`;
@@ -292,40 +305,12 @@ function EconomicsNav({
     return (
         <nav className="flex flex-col gap-5 pr-2" aria-label="Economics views">
             <DrawerGroup label="Insights">
-                {INSIGHT_TABS.map((item) => (
-                    <NavItem
-                        key={item.id}
-                        type="button"
-                        data-theme="accent"
-                        icon={item.icon}
-                        active={
-                            section === "insights" && insightTab === item.id
-                        }
-                        title={item.note}
-                        onClick={() => onInsightTabChange(item.id)}
-                    >
-                        {item.label}
-                    </NavItem>
-                ))}
+                {INSIGHT_TABS.map(insightItem)}
             </DrawerGroup>
-            <DrawerGroup label="Unit Economics">
-                {UNIT_ECONOMICS_TABS.map((item) => (
-                    <NavItem
-                        key={item.id}
-                        type="button"
-                        data-theme="accent"
-                        icon={item.icon}
-                        active={
-                            section === "insights" && insightTab === item.id
-                        }
-                        title={item.note}
-                        onClick={() => onInsightTabChange(item.id)}
-                    >
-                        {item.label}
-                    </NavItem>
-                ))}
+            <DrawerGroup label="Ledgers">
+                {LEDGER_INSIGHT_TABS.map(insightItem)}
+                {TABS.map(rawItem)}
             </DrawerGroup>
-            <DrawerGroup label="Ledgers">{TABS.map(rawItem)}</DrawerGroup>
         </nav>
     );
 }
@@ -584,8 +569,7 @@ function viewInfoContent(
                 </InfoLine>
                 <InfoLine>
                     Result and Performance use full vendor cost, including
-                    consumed credits. Credit-supported rows are cash-positive
-                    only while those credits remain.
+                    consumed credits.
                 </InfoLine>
             </span>
         );
@@ -747,34 +731,6 @@ async function login(password: string) {
     }
 }
 
-function activeMonthFilter(selected: readonly string[]): MonthFilterValue {
-    if (selected.length === 0) return "";
-    return selected.length === 1 ? selected[0] : selected;
-}
-
-const MONTH_ONLY_INSIGHT_TABS = new Set<InsightTab>([
-    "close",
-    "vendors",
-    "inference",
-    "community",
-    "gpu",
-]);
-
-function monthFilterMode(
-    section: EconomicsSection,
-    insightTab: InsightTab,
-): MonthFilterMode {
-    return section === "insights" && MONTH_ONLY_INSIGHT_TABS.has(insightTab)
-        ? "month"
-        : "month-or-ytd";
-}
-
-function selectOneMonth(selected: string[]): string[] {
-    if (selected.length <= 1) return selected;
-    const month = latestClosedMonth(selected);
-    return month ? [month] : [];
-}
-
 function PasswordGate({
     error,
     onSubmit,
@@ -825,7 +781,9 @@ export default function App() {
     const [tab, setTab] = useState<Tab>("op-transactions");
     const [section, setSection] = useState<EconomicsSection>("insights");
     const [insightTab, setInsightTab] = useState<InsightTab>("runway");
-    const [selectedMonths, setSelectedMonths] = useState<string[]>([]);
+    const [selectedYear, setSelectedYear] = useState("");
+    const [selectedMonth, setSelectedMonth] = useState("");
+    const [runwayYear, setRunwayYear] = useState("2026");
     const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     const [attempt, setAttempt] = useState(0);
@@ -892,11 +850,8 @@ export default function App() {
     }, [ready, attempt]);
 
     const months = useMemo(() => (data ? collectMonths(data) : []), [data]);
-    const dateMode = monthFilterMode(section, insightTab);
-    const monthFilter = useMemo(
-        () => activeMonthFilter(selectedMonths),
-        [selectedMonths],
-    );
+    const reportingYears = useMemo(() => yearsOf(months), [months]);
+    const monthFilter = selectedMonth;
     const rawFacets = useMemo(
         () =>
             data
@@ -917,22 +872,32 @@ export default function App() {
             insightTab !== "balances" &&
             insightTab !== "runway") ||
         section === "raw";
+    const showRunwayYearFilter =
+        section === "insights" && insightTab === "runway";
+    const showTopMonthFilter =
+        showPeriodFilter && !(section === "insights" && insightTab === "close");
     const showCategoryFilter = section === "raw" && tab === "op-transactions";
     const hasFilters =
-        showPeriodFilter || showVendorFilter || showCategoryFilter;
+        showPeriodFilter ||
+        showRunwayYearFilter ||
+        showVendorFilter ||
+        showCategoryFilter;
     const categoryOptions = rawFacets.categories;
 
     useEffect(() => {
         if (!monthFilterInitialized.current && months.length > 0) {
             monthFilterInitialized.current = true;
             const initialMonth = latestClosedMonth(months);
-            setSelectedMonths(initialMonth ? [initialMonth] : []);
+            setSelectedMonth(initialMonth ?? "");
+            setSelectedYear(initialMonth?.slice(0, 4) ?? "");
             return;
         }
-        setSelectedMonths((current) =>
-            current.filter((month) => months.includes(month)),
-        );
-    }, [months]);
+        if (selectedMonth && !months.includes(selectedMonth)) {
+            const fallback = latestClosedMonth(months);
+            setSelectedMonth(fallback ?? "");
+            setSelectedYear(fallback?.slice(0, 4) ?? "");
+        }
+    }, [months, selectedMonth]);
 
     if (!sessionChecked) {
         return (
@@ -989,12 +954,37 @@ export default function App() {
     const viewInfo = viewInfoContent(section, tab, insightTab);
     const filters = hasFilters ? (
         <FilterBar>
-            {showPeriodFilter && (
+            {(showPeriodFilter || showRunwayYearFilter) && (
+                <YearFilter
+                    years={
+                        showRunwayYearFilter ? ["2026", "2027"] : reportingYears
+                    }
+                    value={showRunwayYearFilter ? runwayYear : selectedYear}
+                    onChange={(year) => {
+                        if (showRunwayYearFilter) {
+                            setRunwayYear(year);
+                            return;
+                        }
+                        setSelectedYear(year);
+                        const yearMonths = months.filter((month) =>
+                            month.startsWith(year),
+                        );
+                        if (!selectedMonth.startsWith(year)) {
+                            setSelectedMonth(
+                                latestClosedMonth(yearMonths) ??
+                                    yearMonths.at(-1) ??
+                                    "",
+                            );
+                        }
+                    }}
+                />
+            )}
+            {showTopMonthFilter && (
                 <MonthFilter
                     months={months}
-                    mode={dateMode}
-                    value={selectedMonths}
-                    onChange={setSelectedMonths}
+                    year={selectedYear}
+                    value={selectedMonth}
+                    onChange={setSelectedMonth}
                 />
             )}
             <div className="flex flex-wrap items-center gap-3">
@@ -1034,7 +1024,7 @@ export default function App() {
             )}
             {!error && !data && <Text tone="soft">Loading pipes...</Text>}
             <ErrorBoundary
-                resetKey={`${section}:${tab}:${insightTab}:${selectedMonths.join(",")}:${selectedVendors.join(",")}:${selectedCategories.join(",")}`}
+                resetKey={`${section}:${tab}:${insightTab}:${selectedYear}:${selectedMonth}:${runwayYear}:${selectedVendors.join(",")}:${selectedCategories.join(",")}`}
             >
                 {data && section === "raw" && tab === "op-transactions" && (
                     <OpTransactionsTab
@@ -1059,10 +1049,16 @@ export default function App() {
                     />
                 )}
                 {data && section === "insights" && insightTab === "close" && (
-                    <ProviderCloseTab data={data} month={monthFilter} />
+                    <ProviderCloseTab
+                        data={data}
+                        month={monthFilter}
+                        months={months}
+                        year={selectedYear}
+                        onMonthChange={setSelectedMonth}
+                    />
                 )}
                 {data && section === "insights" && insightTab === "runway" && (
-                    <RunwayTab data={data} />
+                    <RunwayTab data={data} year={runwayYear} />
                 )}
                 {data && section === "insights" && insightTab === "vendors" && (
                     <VendorsTab data={data} month={monthFilter} />
@@ -1106,9 +1102,6 @@ export default function App() {
                 onInsightTabChange={(value) => {
                     setSelectedVendors([]);
                     setSelectedCategories([]);
-                    if (MONTH_ONLY_INSIGHT_TABS.has(value)) {
-                        setSelectedMonths(selectOneMonth);
-                    }
                     setSection("insights");
                     setInsightTab(value);
                 }}

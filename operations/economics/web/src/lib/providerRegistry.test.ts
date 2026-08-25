@@ -79,7 +79,6 @@ const data = (overrides: Partial<Data> = {}): Data => ({
     opTransactions: [],
     opCloud: [],
     opPollen: [],
-    opForecast: [],
     ...overrides,
 });
 
@@ -103,12 +102,15 @@ describe("provider registry", () => {
         ]);
         for (const provider of PROVIDER_REGISTRY) {
             expect(allowed.has(provider.meteringBasis)).toBe(true);
+            if (provider.meteringBasis === "internal") {
+                expect(provider.monthlyReview).toBe(false);
+            }
         }
 
         expect(providerMeteringBasis("perplexity")).toBe("direct");
         expect(providerMeteringBasis("lambda")).toBe("capacity");
         expect(providerMeteringBasis("bedrock")).toBe("mixed");
-        expect(providerMeteringBasis("inferenceport")).toBe("internal");
+        expect(providerMeteringBasis("inferenceport")).toBe("direct");
         expect(providerMeteringBasis("new-provider")).toBe("unmapped");
     });
 

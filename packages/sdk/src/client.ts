@@ -15,9 +15,11 @@ import type {
     CreateKeyOptions,
     DailyUsageOptions,
     DailyUsageResponse,
+    DeveloperEarningsResponse,
     DeviceAuthorization,
     DeviceCodeResponse,
     DeviceTokenResponse,
+    EarningsOptions,
     ImageEditOptions,
     ImageGenerateOptions,
     ImageGenerateV1Options,
@@ -1500,6 +1502,30 @@ export class Pollinations {
         const url = `${this.baseUrl}/account/key/usage${qs ? `?${qs}` : ""}`;
 
         return this.getJson<UsageResponse>(url);
+    }
+
+    /**
+     * Get developer earnings from BYOP apps and community models
+     *
+     * @example
+     * ```ts
+     * const { daily, perEntity } = await pollinations.accountEarnings({ days: 30 });
+     * perEntity.forEach(e => console.log(e.entity_name, e.pollen_earned));
+     * ```
+     */
+    async accountEarnings(
+        options: EarningsOptions = {},
+    ): Promise<DeveloperEarningsResponse> {
+        const params = new URLSearchParams();
+        if (options.days !== undefined)
+            params.set("days", String(options.days));
+        if (options.granularity) params.set("granularity", options.granularity);
+        if (options.period) params.set("period", options.period);
+
+        const qs = params.toString();
+        const url = `${this.baseUrl}/account/earnings${qs ? `?${qs}` : ""}`;
+
+        return this.getJson<DeveloperEarningsResponse>(url);
     }
 
     // ============================================================================

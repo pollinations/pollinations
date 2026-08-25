@@ -263,6 +263,7 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
             outputSortPrice === undefined,
         alpha: model.alpha,
         addedDate: model.added_date,
+        contextLength: model.context_length,
         inputSortPrice,
         outputSortPrice,
         prices: [],

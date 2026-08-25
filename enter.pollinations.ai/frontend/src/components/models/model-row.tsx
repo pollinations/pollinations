@@ -286,6 +286,17 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             {model.brand}
                         </a>
                     )}
+                    {model.contextLength && (
+                        <span className="text-[11px] text-theme-text-muted">
+                            {model.contextLength >= 1000000
+                                ? `${(model.contextLength / 1000000).toFixed(1)}M`
+                                : model.contextLength >= 1000
+                                  ? `${Math.round(model.contextLength / 1000)}K`
+                                  : model.contextLength}{" "}
+                            context
+                        </span>
+                    )}
+
                     <div className="flex min-w-0 flex-col gap-0.5">
                         {(inputModalities.length > 0 ||
                             capabilities.length > 0 ||

@@ -35,6 +35,7 @@ import {
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
 import { getModelDisplayName } from "./model-info.ts";
+import { modelMatchesFilters, parseModelFilters } from "./model-filters.ts";
 import type { ModelScope, ModelSort } from "./model-search.ts";
 import { sortModels } from "./model-sort.ts";
 import {
@@ -118,9 +119,8 @@ const SEARCH_LABELS: Record<SectionType, string> = {
 
 function matchesQuery(model: ModelPrice, query: string): boolean {
     if (!query) return true;
-    const displayName = getModelDisplayName(model) ?? "";
-    const haystack = `${displayName} ${model.brand ?? ""}`.toLowerCase();
-    return haystack.includes(query);
+    const filters = parseModelFilters(query);
+    return modelMatchesFilters(model, filters);
 }
 
 function categorizeModels(
@@ -422,6 +422,12 @@ export const Models: FC = () => {
                                 aria-label={`Search ${searchTarget}`}
                                 className="w-full pl-9"
                             />
+                            <p className="mt-1 text-[11px] text-theme-text-muted">
+                                Filters: <code>access:free</code>{" "}
+                                <code>type:image</code> <code>owner:user</code>{" "}
+                                <code>id:model</code>{" "}
+                                <code>capability:reasoning</code>
+                            </p>
                         </div>
                         <Dropdown
                             align="end"

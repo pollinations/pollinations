@@ -64,6 +64,18 @@ const response = await client.chat.completions.create({
 });
 console.log(response.choices[0].message.content);`,
         },
+        {
+            label: "Reasoning (cURL)",
+            lang: "Shell",
+            source: `curl https://gen.pollinations.ai/v1/chat/completions \\
+  -H "Authorization: Bearer YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "openai-large",
+    "messages": [{"role": "user", "content": "Explain quantum entanglement"}],
+    "reasoning_effort": "medium"
+  }'`,
+        },
     ],
     "get /text/{prompt}": [
         {
@@ -92,6 +104,12 @@ print(response.text)`,
   { headers: { Authorization: "Bearer YOUR_API_KEY" } },
 );
 console.log(await response.text());`,
+        },
+        {
+            label: "Reasoning (cURL)",
+            lang: "Shell",
+            source: `curl "https://gen.pollinations.ai/text/Explain%20quantum%20entanglement?model=openai-large&reasoning_effort=medium" \\
+  -H "Authorization: Bearer YOUR_API_KEY"`,
         },
     ],
     "get /image/{prompt}": [

@@ -37,3 +37,23 @@ On Gemini, Claude, and Nova models, a large static prompt prefix can be cached s
 **Claude** — all Claude models cache. The prefix must be at least 4,096 tokens (1,024 on `claude` and `claude-fable-5`); tools are fine. Cache creates bill at 1.25× the input rate (no storage fee); hits bill at 10% of input. The cache lives ~5 minutes, refreshed on each hit.
 
 **Nova** — `nova` and `nova-fast` cache. The prefix must be at least ~1,000 tokens (up to 20K tokens cacheable). Cache creates are free; hits bill at 25% of input. ~5-minute TTL.
+
+### Reasoning
+
+Pass `reasoning_effort` to control how much thinking a model invests before responding. Accepted values: `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max`. Only models with `"reasoning": true` in the model metadata honour the parameter — check `/text/models` or `/v1/models` for the `reasoning` field before choosing a model.
+
+**OpenAI-compatible endpoint:**
+
+```json
+{
+  "model": "openai-large",
+  "messages": [{"role": "user", "content": "Explain quantum entanglement"}],
+  "reasoning_effort": "medium"
+}
+```
+
+**Simple text endpoint** — pass `reasoning_effort` as a query parameter:
+
+```
+GET /text/Explain%20quantum%20entanglement?model=openai-large&reasoning_effort=medium
+```

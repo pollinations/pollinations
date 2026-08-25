@@ -178,9 +178,9 @@ describe("ImageParamsSchema", () => {
             }
         });
 
-        it("accepts input_references for seedance-2.5", () => {
+        it("accepts pipe-separated input_references for seedance-2.0", () => {
             const result = ImageParamsSchema.safeParse({
-                model: "seedance-2.5",
+                model: "seedance-2.0",
                 input_references:
                     "https://example.com/ref1.png|https://example.com/ref2.png",
             });

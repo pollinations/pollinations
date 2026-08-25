@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-08-24",
+  "period_start": "2026-08-24",
+  "period_end": "2026-08-24",
+  "generated_at": "2026-08-25T06:15:25.064469+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-08-24/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped: managed agents now get a hosted MCP registry, request proxy, and audio transcription. Kontext image generation is back. API-key budgets, fallbacks, and metering now settle closer to reality. 16 PRs; software remains a detailed argument with itself."
+}

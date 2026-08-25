@@ -511,10 +511,19 @@ function balanceAwareForecasts(
             for (const item of usageByCategory) {
                 const timing = forecastPaymentTiming(vendor, item.category);
                 if (timing !== "prepaid" && timing !== "postpaid") continue;
-                // The reviewed current-month prepaid fact already represents
-                // cash paid to date. Use the remaining current-month usage to
-                // reduce the live balance, but never add a second cash row.
+                // The reviewed current-month prepaid fact represents only cash
+                // paid to date. The live balance funds the remaining usage;
+                // forecast only the share that the balance cannot cover.
                 if (timing === "prepaid" && usageMonth === currentMonth) {
+                    if (cashRequired > 0.005) {
+                        addCash(
+                            vendor,
+                            item.category,
+                            usageMonth,
+                            cashRequired * (item.amount / totalUsage),
+                            `Remaining current-month prepaid shortfall; checked balance as of ${balance.balanceAsOf ?? "unknown"}`,
+                        );
+                    }
                     continue;
                 }
                 const paymentMonth =

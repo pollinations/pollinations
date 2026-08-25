@@ -170,11 +170,7 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
         paymentTiming: "prepaid",
         automaticUsage: true,
     },
-    "runpod|compute": {
-        method: "last",
-        paymentTiming: "prepaid",
-        automaticUsage: true,
-    },
+    "runpod|compute": { method: "one_off", paymentTiming: "prepaid" },
     "vast.ai|compute": {
         method: "last",
         paymentTiming: "prepaid",

@@ -304,6 +304,74 @@ describe("buildRunway", () => {
         expect(fal?.forecastPaymentTiming).toBe("prepaid");
     });
 
+    it("forecasts only the uncovered current-month prepaid shortfall", () => {
+        const result = buildRunway(
+            [
+                opening(),
+                transaction({
+                    entry_id: "replicate-august-topup",
+                    vendor: "replicate",
+                    category: "compute",
+                    amount: -50,
+                }),
+            ],
+            NOW,
+            [
+                cloud({
+                    vendor: "replicate",
+                    paid: -220,
+                    recorded_at: "2026-08-22 00:00:00.000",
+                }),
+                balance("replicate", 10),
+            ],
+        );
+        const replicate = result.rows.find(
+            (row) => row.vendor === "replicate" && row.category === "compute",
+        );
+
+        // $220 through August 22 projects to $310 for the month. The remaining
+        // $90 first consumes the $10 checked balance, leaving an $80 shortfall.
+        expect(replicate?.values["2026-08:forecast"]).toBeCloseTo(-130, 6);
+        expect(replicate?.values["2026-09:forecast"]).toBeCloseTo(-310, 6);
+        expect(replicate?.assumptions["2026-08:forecast"]).toHaveLength(2);
+        expect(
+            replicate?.assumptions["2026-08:forecast"]?.map(
+                (assumption) => assumption.amount,
+            ),
+        ).toEqual([-50, -80]);
+    });
+
+    it("does not forecast stopped RunPod usage", () => {
+        const result = buildRunway(
+            [
+                opening(),
+                transaction({
+                    entry_id: "runpod-july-topup",
+                    date: "2026-07-09",
+                    vendor: "runpod",
+                    category: "compute",
+                    amount: -300,
+                }),
+            ],
+            NOW,
+            [
+                cloud({
+                    vendor: "runpod",
+                    start: "2026-07-01 00:00:00",
+                    end: "2026-08-01 00:00:00",
+                    paid: -616,
+                    recorded_at: "2026-08-22 00:00:00.000",
+                }),
+                balance("runpod", 4.76),
+            ],
+        );
+        const runpod = result.rows.find((row) => row.vendor === "runpod");
+
+        expect(runpod?.values["2026-08:forecast"]).toBe(0);
+        expect(runpod?.values["2026-09:forecast"]).toBe(0);
+        expect(runpod?.forecastMethod).toBe("one_off");
+    });
+
     it("refuses a balance-aware projection without a checked balance", () => {
         const result = buildRunway([opening()], NOW, [
             cloud({ vendor: "vast.ai", type: "gpu" }),

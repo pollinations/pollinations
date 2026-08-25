@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { LINKS, SOCIAL_LINKS } from "../../copy/content/socialLinks";
 import { usePageCopy } from "../../hooks/usePageCopy";
-import { useTranslate } from "../../hooks/useTranslate";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { Divider } from "./ui/divider";
 import { Body, Heading } from "./ui/typography";
@@ -30,7 +29,6 @@ const LEADERBOARD_COPY = {
 };
 
 export function QuestLeaderboard() {
-    const { copy } = usePageCopy({ title: LEADERBOARD_COPY.title });
     const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
     const [loading, setLoading] = useState(true);
 

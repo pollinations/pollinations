@@ -157,7 +157,10 @@ export function CommunityEndpointCard({
                 <InlineLink
                     as={Link}
                     to="/activity"
-                    search={{ earningsModels: [endpoint.modelId] }}
+                    search={(prev) => ({
+                        ...prev,
+                        earningsModels: [endpoint.modelId],
+                    })}
                     external={false}
                 >
                     <EarningsIcon className="h-3.5 w-3.5" />

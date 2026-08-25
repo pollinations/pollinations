@@ -22,7 +22,7 @@ export type ByopClientMarkupFields = {
 };
 
 /**
- * Same eligibility `resolveDevMarkup` uses after its D1 lookup. Auth computes
+ * Same eligibility Enter auth uses after its D1 lookup. Auth computes
  * this from the already-joined publishable key so preflight can include markup
  * without a second query.
  */

@@ -4,6 +4,7 @@ import {
     defineWorkersConfig,
     readD1Migrations,
 } from "@cloudflare/vitest-pool-workers/config";
+import { kCurrentWorker } from "miniflare";
 import { loadEnv } from "vite";
 import { configDefaults, defineConfig } from "vitest/config";
 
@@ -104,6 +105,7 @@ export default defineWorkersConfig(async ({ mode }) => {
             exclude: [...configDefaults.exclude],
             poolOptions: {
                 workers: {
+                    main: "./test/setup/worker.ts",
                     singleWorker: true,
                     wrangler: {
                         configPath: "./wrangler.toml",
@@ -116,6 +118,10 @@ export default defineWorkersConfig(async ({ mode }) => {
                                 env.TEST_VCR_MODE || "replay-or-record",
                         },
                         serviceBindings: {
+                            ENTER_BILLING: {
+                                name: kCurrentWorker,
+                                entrypoint: "BillingService",
+                            },
                             ENTER: async (request: Request) => {
                                 const url = new URL(request.url);
                                 if (

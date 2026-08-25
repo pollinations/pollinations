@@ -10,6 +10,9 @@ import type { Env } from "./env.ts";
 import { logger } from "./middleware/logger.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
 import { wellKnownRoutes } from "./routes/well-known.ts";
+import { runBillingMaintenance } from "./services/billing-maintenance.ts";
+
+export { BillingService } from "./billing-entrypoint.ts";
 
 function stripTrailingSlash(path: string): string {
     return path.length > 1 ? path.replace(/\/+$/, "") : path;
@@ -87,4 +90,7 @@ app.onError(handleError);
 
 export default {
     fetch: app.fetch,
+    async scheduled(_controller, env) {
+        await runBillingMaintenance(env);
+    },
 } satisfies ExportedHandler<CloudflareBindings>;

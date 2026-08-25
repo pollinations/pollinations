@@ -5,8 +5,6 @@ import {
     verifyAgentRunToken,
 } from "@shared/auth/agent-run-token.ts";
 import { getUserBalance } from "@shared/billing/balance.ts";
-import { atomicReserveApiKeyBalance } from "@shared/billing/deduction.ts";
-import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
 import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
 import { apikey as apiKeyTable } from "@shared/db/better-auth.ts";
 import {
@@ -184,45 +182,44 @@ test("parent key revocation immediately invalidates an agent run token", async (
         "https://gen.pollinations.ai/",
         token,
     );
-    expect(await response.json()).toMatchObject({
-        userId: null,
-        apiKeyId: null,
-    });
+    expect(response.status).toBe(401);
 });
 
 test("spends the parent key's budget and the parent user's wallet", async () => {
-    // The design claim this file exists to prove: billing never learns run
-    // tokens exist. Resolving one has to move the same two balances a request
-    // with the parent key itself would have moved.
+    // Enter resolves the delegated token to its parent key and must move the
+    // same two balances a request with that parent key would have moved.
     const parent = await createTestApiKey({
         pollenBudget: 5,
         user: { tierBalance: 2 },
     });
     const token = await runTokenFor(parent.id);
-    const probed = (await (
-        await probe(authProbe, "https://gen.pollinations.ai/", token)
-    ).json()) as {
-        userId: string;
-        apiKeyId: string;
-        pollenBalance: number;
-    };
+    const requestId = crypto.randomUUID();
+
+    const authorized = await env.ENTER_BILLING.authorize(token, {
+        producer: "gen.pollinations.ai",
+        requestId,
+        estimatedPrice: 1,
+        paidOnly: false,
+    });
+    expect(authorized.ok).toBe(true);
+    if (!authorized.ok) return;
+    expect(authorized.identity.userId).toBe(parent.userId);
+    expect(authorized.identity.apiKey.id).toBe(parent.id);
+
+    const settled = await env.ENTER_BILLING.settle(authorized.grant.id, [
+        {
+            id: "usage",
+            requestId,
+            meter: "generate.text",
+            price: 1,
+            paidOnly: false,
+            occurredAt: Date.now(),
+            telemetry: { eventType: "generate.text" },
+        },
+    ]);
+    expect(settled.ok).toBe(true);
 
     const db = drizzle(env.DB);
-    const { reserved } = await atomicReserveApiKeyBalance(
-        db,
-        probed.apiKeyId,
-        1,
-    );
-    await handleBalanceDeduction({
-        db,
-        isBilledUsage: true,
-        totalPrice: 1,
-        userId: probed.userId,
-        apiKeyId: probed.apiKeyId,
-        apiKeyPollenBalance: probed.pollenBalance,
-        apiKeyReservedAmount: reserved,
-    });
-
     expect((await getUserBalance(db, parent.userId)).tierBalance).toBeCloseTo(
         1,
         10,

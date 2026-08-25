@@ -239,6 +239,11 @@ export function createGenerationCache(adapter: GenerationCacheAdapter) {
 
         await next();
 
+        // Streaming responses cannot wait for financial settlement before
+        // becoming visible in R2. Keep them uncached instead of publishing an
+        // unbilled result when settlement later fails.
+        if (!coordinate) return;
+
         const cacheWrite = capture(c, adapter, cacheKey);
         if (cacheWrite) {
             c.executionCtx.waitUntil(

@@ -7,6 +7,7 @@ account_id = "b6ec751c0862027ba269faf7029b2501"
 # Service binding to enter worker (zero latency - same V8 isolate)
 services = [
     { binding = "ENTER", service = "pollinations-enter" },
+    { binding = "ENTER_BILLING", service = "pollinations-enter", entrypoint = "BillingService" },
     { binding = "POLLINATIONS_MCP", service = "pollinations-mcp" }
 ]
 
@@ -93,6 +94,11 @@ custom_domain = true
 [[env.production.services]]
 binding = "ENTER"
 service = "pollinations-enter-production"
+
+[[env.production.services]]
+binding = "ENTER_BILLING"
+service = "pollinations-enter-production"
+entrypoint = "BillingService"
 
 [[env.production.services]]
 binding = "POLLINATIONS_MCP"
@@ -182,6 +188,11 @@ binding = "ENTER"
 service = "pollinations-enter-staging"
 
 [[env.staging.services]]
+binding = "ENTER_BILLING"
+service = "pollinations-enter-staging"
+entrypoint = "BillingService"
+
+[[env.staging.services]]
 binding = "POLLINATIONS_MCP"
 service = "pollinations-mcp"
 
@@ -253,6 +264,11 @@ binding = "IMAGES"
 [[env.test.services]]
 binding = "ENTER"
 service = "pollinations-enter"
+
+[[env.test.services]]
+binding = "ENTER_BILLING"
+service = "pollinations-enter"
+entrypoint = "BillingService"
 
 [[env.test.services]]
 binding = "POLLINATIONS_MCP"

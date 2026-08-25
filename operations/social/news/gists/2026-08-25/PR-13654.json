@@ -1,0 +1,34 @@
+{
+  "pr_number": 13654,
+  "title": "fix: reduce community monitor noise",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13654",
+  "merged_at": "2026-08-25T13:53:47Z",
+  "labels": [],
+  "pr_body_excerpt": "- Wait 60 minutes between monitor cycles instead of 30\n- Limit Discord output to two messages per cycle\n- Combine same-cycle leaderboards and include root cause in the initial official-model alert\n- Align healthcheck timing and operational documentation",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Less buzzing, more signal",
+    "blurb": "The community monitor now takes a calmer lap around the garden and brings back only the useful bits. Fewer pings, tidier leaderboards, happier humans.",
+    "summary": "The community monitor now runs every 60 minutes instead of 30, caps Discord output at two messages per cycle, combines same-cycle leaderboards, and adds root-cause context to official-model alerts.",
+    "impact": "Community operators will receive fewer, more consolidated Discord updates while retaining clearer context when an official model alert appears.",
+    "keywords": [
+      "community-monitor",
+      "discord",
+      "alerts",
+      "healthcheck",
+      "operations",
+      "noise-reduction"
+    ],
+    "visual_concept": "Depict Polli as a calm garden keeper with a tiny clipboard, tending a cozy notification garden where only two healthy message-flowers bloom from a retro terminal. A small clock set to 60 minutes, neatly bundled leaderboard scrolls, and a labeled root-cause plant convey slower monitor cycles, consolidated updates, and clearer alerts.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, calmly tending a lime green (#ecf874) notification garden beside a retro terminal; exactly two glowing message-flowers bloom while bundled leaderboard scrolls rest nearby and a small clock reads “60 MIN.” Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with code-plants and subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-25/PR-13654.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, calmly tending a lime green (#ecf874) notification garden beside a retro terminal; exactly two glowing message-flowers bloom while bundled leaderboard scrolls rest nearby and a small clock reads “60 MIN.” Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with code-plants and subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-25T13:54:57.443603+00:00"
+}

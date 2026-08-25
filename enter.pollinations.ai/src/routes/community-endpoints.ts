@@ -1,229 +1,69 @@
 import {
-    COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
-    COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES,
-    COMMUNITY_ENDPOINT_MODALITIES,
-    COMMUNITY_ENDPOINT_PRICE_FIELDS,
-    COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH,
-    COMMUNITY_ENDPOINT_VISIBILITIES,
-    type CommunityEndpointPriceKey,
+    applyPendingProxyPricing,
     type CommunityEndpointVisibility,
-    communityEndpointPriceFieldsForModality,
-    communityEndpointPrices,
-    communityEndpointPricesForModality,
-    communityEndpointTitle,
     communityModelId,
+    type EndpointAgentListingPayload,
     isCommunityEndpointOwnerAllowed,
-    MAX_COMMUNITY_PRICE_PER_IMAGE,
-    MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
-    MAX_COMMUNITY_PRICE_PER_TOKEN,
-    MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
-    MIN_COMMUNITY_PRICE_PER_TOKEN,
     normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
-    normalizeCommunityEndpointImagePricing,
-    normalizeCommunityEndpointModality,
+    normalizeCommunityProviderUrl,
+    type ProxyListingPayload,
+    parseListingPayload,
+    pendingCommunityEndpointChangeIsReady,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { describeRoute, resolver } from "hono-openapi";
-import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import {
     listCommunityEndpointModels,
     testCommunityEndpoint,
     testCommunityImageEndpoint,
+    testCommunityTranscriptionEndpoint,
+    testCommunityVideoEndpoint,
 } from "../services/community-endpoint-openai.ts";
-import { hasDirectAccountPermission } from "./account-permissions.ts";
+import { requireAccountPermission } from "./account-permissions.ts";
+import {
+    type FallbackPrimary,
+    fallbackTargetRejection,
+    resolveFallbacks,
+} from "./community-endpoints/fallbacks.ts";
+import { toCommunityEndpointResponse } from "./community-endpoints/presenter.ts";
+import {
+    changesProxyPayload,
+    deriveCreateProxyPolicy,
+    deriveUpdatedProxyPolicy,
+    hasProxyPricingInput,
+    proxyPricingChanged,
+    withoutProxyPricingChanges,
+} from "./community-endpoints/proxy-policy.ts";
+import {
+    assertValidUpdate,
+    CommunityEndpointDeleteResponseSchema,
+    CommunityEndpointListResponseSchema,
+    CommunityEndpointModelsResponseSchema,
+    CommunityEndpointResponseSchema,
+    CommunityEndpointTestResponseSchema,
+    CommunityProviderProfileInputSchema,
+    CommunityProviderProfileResponseSchema,
+    CreateEndpointAgentSchema,
+    CreateEndpointSchema,
+    EndpointAgentResponseSchema,
+    FallbackCandidatesResponseSchema,
+    ModelListSchema,
+    TestEndpointSchema,
+    UpdateEndpointSchema,
+} from "./community-endpoints/schemas.ts";
 
-const ModalitySchema = z
-    .enum(COMMUNITY_ENDPOINT_MODALITIES)
-    .describe(
-        'Upstream API family. "text" uses `/v1/chat/completions`; "image" uses `/v1/images/generations` and optionally `/v1/images/edits` when the endpoint test succeeds.',
-    );
-const ImagePricingSchema = z
-    .enum(COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES)
-    .describe(
-        'Image models only. "request": the generated-image price is charged once per generation. "tokens": provider-returned OpenAI image token usage is charged against per-token prices. Detected by the endpoint test.',
-    );
-const PriceSchema = z
-    .number()
-    .finite()
-    .min(0)
-    .refine((price) => price === 0 || price >= MIN_COMMUNITY_PRICE_PER_TOKEN, {
-        message: `Price must be 0 (free) or at least ${MIN_COMMUNITY_PRICE_PER_TOKEN} per token (${MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS} per 1M tokens)`,
-    })
-    .describe(
-        'Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request".',
-    );
-const UpdatePriceFieldsSchema = Object.fromEntries(
-    COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
-        field.key,
-        PriceSchema.optional(),
-    ]),
-) as unknown as Record<
-    CommunityEndpointPriceKey,
-    z.ZodOptional<z.ZodType<number>>
->;
-
-function enforceCommunityEndpointPriceLimits(
-    source: Partial<Record<CommunityEndpointPriceKey, number>>,
-    modality: (typeof COMMUNITY_ENDPOINT_MODALITIES)[number],
-    imagePricing: (typeof COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES)[number],
-): void {
-    for (const field of communityEndpointPriceFieldsForModality(
-        modality,
-        imagePricing,
-    )) {
-        const price = source[field.key];
-        const maxPrice =
-            field.priceUnit === "image"
-                ? MAX_COMMUNITY_PRICE_PER_IMAGE
-                : MAX_COMMUNITY_PRICE_PER_TOKEN;
-        if (price === undefined || price <= maxPrice) continue;
-
-        const limit =
-            field.priceUnit === "image"
-                ? `${MAX_COMMUNITY_PRICE_PER_IMAGE} Pollen per image`
-                : `${MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS} Pollen per 1M tokens`;
-        throw new HTTPException(400, {
-            message: `${field.label} price must not exceed ${limit}`,
-        });
-    }
-}
-
-const VisibilitySchema = z
-    .enum(COMMUNITY_ENDPOINT_VISIBILITIES)
-    .describe(
-        '"private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account.',
-    );
-const EndpointFieldsSchema = {
-    // No "/": the public model id is `<owner>/<name>`, so a slash in the name
-    // would inject a second separator and let one model spoof another's id.
-    name: z
-        .string()
-        .trim()
-        .min(1)
-        .max(120)
-        .regex(/^[^/]+$/, "Model name cannot contain '/'"),
-    title: z
-        .string()
-        .trim()
-        .min(1)
-        .max(COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH)
-        .describe("Display name shown in the model catalog."),
-    description: z
-        .string()
-        .trim()
-        .max(COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH)
-        .optional(),
-    baseUrl: z
-        .string()
-        .url()
-        .describe(
-            "OpenAI-compatible `/v1` base URL or full chat, image generation, or image edit URL.",
-        ),
-    upstreamModel: z.string().trim().min(1).max(253).optional(),
-    bearerToken: z.string().min(1),
-} as const;
-
-const CreateEndpointSchema = z.object({
-    ...EndpointFieldsSchema,
-    modality: ModalitySchema.optional().default("text"),
-    imagePricing: ImagePricingSchema.optional().default("request"),
-    supportsImageEdits: z.boolean().optional().default(false),
-    visibility: VisibilitySchema.optional().default("private"),
-    ...UpdatePriceFieldsSchema,
-});
-const UpdateEndpointSchema = z.object({
-    name: EndpointFieldsSchema.name.optional(),
-    title: EndpointFieldsSchema.title.optional(),
-    description: EndpointFieldsSchema.description,
-    baseUrl: EndpointFieldsSchema.baseUrl.optional(),
-    upstreamModel: EndpointFieldsSchema.upstreamModel,
-    bearerToken: EndpointFieldsSchema.bearerToken.optional(),
-    visibility: VisibilitySchema.optional(),
-    imagePricing: ImagePricingSchema.optional(),
-    supportsImageEdits: z.boolean().optional(),
-    active: z.boolean().optional(),
-    ...UpdatePriceFieldsSchema,
-});
-const ModelListSchema = z.object({
-    baseUrl: z.string().url(),
-    bearerToken: z.string().min(1),
-});
-const TestEndpointSchema = z.object({
-    baseUrl: z.string().url(),
-    bearerToken: z.string().min(1),
-    model: z.string().trim().min(1).max(253),
-    modality: ModalitySchema.optional().default("text"),
-});
-const ResponsePriceFieldsSchema = Object.fromEntries(
-    COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [field.key, z.number()]),
-) as unknown as Record<CommunityEndpointPriceKey, z.ZodType<number>>;
-const CommunityEndpointResponseSchema = z.object({
-    id: z.string(),
-    modelId: z.string(),
-    name: z.string(),
-    title: z.string(),
-    description: z.string().nullable(),
-    modality: ModalitySchema,
-    imagePricing: ImagePricingSchema,
-    supportsImageEdits: z.boolean(),
-    baseUrl: z.string(),
-    upstreamModel: z.string(),
-    visibility: VisibilitySchema,
-    ...ResponsePriceFieldsSchema,
-    disabled: z.boolean(),
-    disabledReason: z.string().nullable(),
-    disabledAt: z.string().nullable(),
-    createdAt: z.string(),
-    updatedAt: z.string(),
-});
-const CommunityEndpointListResponseSchema = z.object({
-    data: z.array(CommunityEndpointResponseSchema),
-});
-const CommunityEndpointModelsResponseSchema = z.object({
-    data: z.array(z.string()),
-});
-const CommunityEndpointTestResponseSchema = z
-    .object({
-        ok: z.boolean(),
-        message: z.string(),
-        usage: z
-            .record(z.string(), z.unknown())
-            .describe(
-                "Raw provider usage, or `{ images: 1 }` when an image provider returns no token usage.",
-            ),
-        billableUsage: z
-            .record(z.string(), z.number())
-            .describe(
-                "Normalized billable usage fields used to reveal applicable prices.",
-            ),
-        imagePricing: ImagePricingSchema.optional().describe(
-            "Image tests only: pricing mode detected from the provider response.",
-        ),
-        supportsImageEdits: z
-            .boolean()
-            .optional()
-            .describe(
-                "Image tests only: true when the derived `/images/edits` endpoint returned a valid image.",
-            ),
-    })
-    .passthrough();
-const CommunityEndpointDeleteResponseSchema = z.object({
-    id: z.string(),
-});
 const ENDPOINT_PROBE_THROTTLE_SECONDS = 30;
 type Db = ReturnType<typeof drizzle<typeof schema>>;
-type CommunityEndpointRow = typeof schema.communityEndpoint.$inferSelect;
-
 function normalizeInputBaseUrl(value: string): string {
     try {
         return normalizeCommunityEndpointBaseUrl(value);
@@ -248,8 +88,19 @@ function normalizeInputBearerToken(value: string): string {
     }
 }
 
-// Anyone may register private endpoints for their own use. Publishing and raw
-// upstream probes require an allowlisted account.
+function normalizeInputProviderUrl(value: string): string {
+    try {
+        return normalizeCommunityProviderUrl(value);
+    } catch (error) {
+        throw new HTTPException(400, {
+            message:
+                error instanceof Error ? error.message : "Invalid provider URL",
+        });
+    }
+}
+
+// Anyone may register private endpoints for their own use and probe their own
+// upstream. Publishing requires an allowlisted account.
 async function requireCommunityEndpointPublishAccess(
     db: Db,
     userId: string,
@@ -262,7 +113,7 @@ async function requireCommunityEndpointPublishAccess(
     if (!isCommunityEndpointOwnerAllowed(user)) {
         throw new HTTPException(403, {
             message:
-                "Community model publishing tools require approval. Models can stay private for your own use.",
+                "Community model publishing requires approval. Models can stay private for your own use.",
         });
     }
 }
@@ -280,33 +131,6 @@ async function requireOwnerGithubUsername(
         message:
             "A GitHub username is required to register community endpoints",
     });
-}
-
-function toResponse(row: CommunityEndpointRow, ownerGithubUsername: string) {
-    const modality = normalizeCommunityEndpointModality(row.modality);
-    return {
-        id: row.id,
-        modelId: communityModelId(ownerGithubUsername, row.name),
-        name: row.name,
-        title: communityEndpointTitle({
-            modelId: communityModelId(ownerGithubUsername, row.name),
-            title: row.title,
-            description: row.description,
-        }),
-        description: row.description,
-        modality,
-        imagePricing: normalizeCommunityEndpointImagePricing(row.imagePricing),
-        supportsImageEdits: row.supportsImageEdits,
-        baseUrl: row.baseUrl,
-        upstreamModel: row.upstreamModel,
-        visibility: row.visibility,
-        ...communityEndpointPrices(row),
-        disabled: row.disabledAt !== null,
-        disabledReason: row.disabledReason,
-        disabledAt: row.disabledAt,
-        createdAt: row.createdAt,
-        updatedAt: row.updatedAt,
-    };
 }
 
 async function requireOwnedEndpoint(db: Db, id: string, ownerUserId: string) {
@@ -351,18 +175,6 @@ function throwEndpointTestError(error: unknown): never {
 }
 
 type EndpointProbeKind = "models" | "test";
-
-function requireCommunityEndpointManagePermission(apiKey?: {
-    permissions?: Record<string, string[]>;
-    metadata?: Record<string, unknown>;
-}): void {
-    if (!apiKey) return;
-    if (!hasDirectAccountPermission(apiKey, "keys")) {
-        throw new HTTPException(403, {
-            message: "API key does not have 'account:keys' permission",
-        });
-    }
-}
 
 // Publishing is allowlist-gated. Pricing is independent: public endpoints may
 // be free or owner-priced.
@@ -409,7 +221,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
     .get(
         "/",
         describeRoute({
-            tags: ["👤 Account"],
+            tags: ["🧩 Community Models"],
             summary: "List My Models",
             description:
                 "List private and public community models owned by the authenticated account. API keys require `account:keys`.",
@@ -431,27 +243,248 @@ export const communityEndpointsRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const db = drizzle(c.env.DB, { schema });
-            requireCommunityEndpointManagePermission(c.var.auth.apiKey);
+            requireAccountPermission(c.var.auth.apiKey, "keys");
             const ownerGithubUsername = await requireOwnerGithubUsername(
                 db,
                 user.id,
             );
-            const rows = await db.query.communityEndpoint.findMany({
-                where: eq(schema.communityEndpoint.ownerUserId, user.id),
-                orderBy: (endpoint, { desc }) => [desc(endpoint.createdAt)],
+            const rows = await db
+                .select()
+                .from(schema.communityEndpoint)
+                .where(eq(schema.communityEndpoint.ownerUserId, user.id))
+                .orderBy(desc(schema.communityEndpoint.createdAt));
+            const owner = await db.query.user.findFirst({
+                columns: {
+                    communityProviderName: true,
+                    communityProviderUrl: true,
+                },
+                where: eq(schema.user.id, user.id),
             });
-            return c.json({
-                data: rows.map((row) => toResponse(row, ownerGithubUsername)),
+            return c.json(
+                CommunityEndpointListResponseSchema.parse({
+                    data: rows.map((endpoint) =>
+                        toCommunityEndpointResponse(
+                            endpoint,
+                            ownerGithubUsername,
+                            c.env.AGENT_RUNTIME_BASE_URL,
+                        ),
+                    ),
+                    provider: {
+                        name: owner?.communityProviderName ?? null,
+                        url: owner?.communityProviderUrl ?? null,
+                    },
+                }),
+            );
+        },
+    )
+    .post(
+        "/provider",
+        describeRoute({
+            tags: ["🧩 Community Models"],
+            summary: "Update Community Provider Profile",
+            description:
+                "Set the public provider name and HTTPS service link shared by all community models owned by the authenticated account. Send both fields empty to clear the profile. Publishing approval and `account:keys` are required.",
+            responses: {
+                200: {
+                    description: "Updated community provider profile",
+                    content: {
+                        "application/json": {
+                            schema: resolver(
+                                CommunityProviderProfileResponseSchema,
+                            ),
+                        },
+                    },
+                },
+                400: { description: "Invalid provider profile" },
+                401: { description: "Unauthorized" },
+                403: { description: "Permission denied" },
+            },
+        }),
+        validator("json", CommunityProviderProfileInputSchema),
+        async (c) => {
+            const user = c.var.auth.requireUser();
+            const input = c.req.valid("json");
+            const db = drizzle(c.env.DB, { schema });
+            requireAccountPermission(c.var.auth.apiKey, "keys");
+            await requireCommunityEndpointPublishAccess(db, user.id);
+
+            const name = input.name.trim();
+            const url = input.url.trim();
+            if (Boolean(name) !== Boolean(url)) {
+                throw new HTTPException(400, {
+                    message: "Provider name and URL must be set together",
+                });
+            }
+
+            const [profile] = await db
+                .update(schema.user)
+                .set({
+                    communityProviderName: name || null,
+                    communityProviderUrl: url
+                        ? normalizeInputProviderUrl(url)
+                        : null,
+                    updatedAt: new Date(),
+                })
+                .where(eq(schema.user.id, user.id))
+                .returning({
+                    name: schema.user.communityProviderName,
+                    url: schema.user.communityProviderUrl,
+                });
+            return c.json(profile);
+        },
+    )
+    .get(
+        "/:id/fallback-candidates",
+        describeRoute({
+            tags: ["🧩 Community Models"],
+            summary: "List Fallback Candidates",
+            description:
+                "Community models this model may declare as fallbacks: listed, public or owned by you, same modality, and priced at or below it on every price field. Computed with the same rule the update endpoint validates against, so every id listed here is accepted. Eligibility is re-checked when a request is routed, so a target repriced above this model afterwards stops serving without changing the stored list.",
+            responses: {
+                200: {
+                    description: "Eligible fallback model ids",
+                    content: {
+                        "application/json": {
+                            schema: resolver(FallbackCandidatesResponseSchema),
+                        },
+                    },
+                },
+                401: { description: "Unauthorized" },
+                403: { description: "Permission denied" },
+                404: { description: "Model not found" },
+            },
+        }),
+        async (c) => {
+            const user = c.var.auth.requireUser();
+            const db = drizzle(c.env.DB, { schema });
+            requireAccountPermission(c.var.auth.apiKey, "keys");
+            const ownerGithubUsername = await requireOwnerGithubUsername(
+                db,
+                user.id,
+            );
+            const endpoint = await db.query.communityEndpoint.findFirst({
+                where: and(
+                    eq(schema.communityEndpoint.id, c.req.param("id")),
+                    eq(schema.communityEndpoint.ownerUserId, user.id),
+                ),
             });
+            if (!endpoint) {
+                throw new HTTPException(404, { message: "Model not found" });
+            }
+            if (endpoint.type !== "proxy") return c.json({ data: [] });
+            const endpointPayload = parseListingPayload(
+                "proxy",
+                endpoint.payload,
+            );
+            if (!endpointPayload) {
+                throw new Error(`Invalid proxy payload for ${endpoint.id}`);
+            }
+            const primary: FallbackPrimary = {
+                modelId: communityModelId(ownerGithubUsername, endpoint.name),
+                ownerUserId: user.id,
+                modality: endpointPayload.modality,
+                imagePricing: endpointPayload.imagePricing,
+                paidOnly: endpointPayload.paidOnly,
+                prices: endpointPayload.prices,
+                inputModalities: endpointPayload.inputModalities,
+            };
+            const candidates = await db
+                .select({
+                    endpoint: schema.communityEndpoint,
+                    ownerGithubUsername: schema.user.githubUsername,
+                })
+                .from(schema.communityEndpoint)
+                .innerJoin(
+                    schema.user,
+                    eq(schema.communityEndpoint.ownerUserId, schema.user.id),
+                )
+                .where(
+                    or(
+                        eq(schema.communityEndpoint.visibility, "public"),
+                        eq(schema.communityEndpoint.ownerUserId, user.id),
+                    ),
+                );
+            const data = candidates
+                .flatMap(({ endpoint: row, ownerGithubUsername: owner }) => {
+                    if (!owner) return [];
+                    const modelId = communityModelId(owner, row.name);
+                    return fallbackTargetRejection(primary, modelId, row)
+                        ? []
+                        : [modelId];
+                })
+                .sort();
+            return c.json({ data });
+        },
+    )
+    .post(
+        "/endpoint-agents",
+        describeRoute({
+            tags: ["🤖 Community Agents"],
+            summary: "Create Endpoint Agent",
+            description:
+                "Register an agent running on an external OpenAI-compatible endpoint. Pollinations sends a short-lived agent run token instead of a stored bearer credential. Private is the default; public agents require an allowlisted account. API keys require `account:keys`.",
+            responses: {
+                200: {
+                    description: "Created endpoint agent",
+                    content: {
+                        "application/json": {
+                            schema: resolver(EndpointAgentResponseSchema),
+                        },
+                    },
+                },
+                400: { description: "Invalid endpoint agent configuration" },
+                401: { description: "Unauthorized" },
+                403: { description: "Permission denied" },
+            },
+        }),
+        validator("json", CreateEndpointAgentSchema),
+        async (c) => {
+            const user = c.var.auth.requireUser();
+            const input = c.req.valid("json");
+            const db = drizzle(c.env.DB, { schema });
+            requireAccountPermission(c.var.auth.apiKey, "keys");
+            const ownerGithubUsername = await requireOwnerGithubUsername(
+                db,
+                user.id,
+            );
+            await ensureModelNameAvailable(db, user.id, input.name);
+            await enforcePublishingAccess(db, user.id, input.visibility);
+            const payload: EndpointAgentListingPayload = {
+                perUserRpm: input.perUserRpm,
+            };
+            const [row] = await db
+                .insert(schema.communityEndpoint)
+                .values({
+                    id: crypto.randomUUID(),
+                    ownerUserId: user.id,
+                    name: input.name,
+                    title: input.title,
+                    description: input.description || null,
+                    visibility: input.visibility,
+                    type: "endpoint_agent",
+                    baseUrl: normalizeInputBaseUrl(input.baseUrl),
+                    upstreamModel: input.upstreamModel ?? input.name,
+                    payload: JSON.stringify(payload),
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                })
+                .returning();
+            return c.json(
+                toCommunityEndpointResponse(
+                    row,
+                    ownerGithubUsername,
+                    c.env.AGENT_RUNTIME_BASE_URL,
+                ),
+            );
         },
     )
     .post(
         "/",
         describeRoute({
-            tags: ["👤 Account"],
+            tags: ["🧩 Community Models"],
             summary: "Create My Model",
             description:
-                "Register a private or public community text or image model. Private is the default. Public models require an allowlisted account and may be free or priced. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
+                "Register a private or public community text, image, or transcription model. Private is the default. Public models require an allowlisted account and may be free or priced. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
             responses: {
                 200: {
                     description: "Created community model",
@@ -471,63 +504,62 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
             const db = drizzle(c.env.DB, { schema });
-            requireCommunityEndpointManagePermission(c.var.auth.apiKey);
+            requireAccountPermission(c.var.auth.apiKey, "keys");
             const ownerGithubUsername = await requireOwnerGithubUsername(
                 db,
                 user.id,
             );
             await ensureModelNameAvailable(db, user.id, input.name);
-            const imagePricing =
-                input.modality === "image" ? input.imagePricing : "request";
-            const prices =
-                input.visibility === "public"
-                    ? communityEndpointPricesForModality(
-                          input,
-                          input.modality,
-                          imagePricing,
-                      )
-                    : communityEndpointPrices({});
-            enforceCommunityEndpointPriceLimits(
-                prices,
-                input.modality,
-                imagePricing,
-            );
+            const policy = deriveCreateProxyPolicy(input);
+            const modelId = communityModelId(ownerGithubUsername, input.name);
+            const payload: ProxyListingPayload = {
+                bearerTokenCiphertext: await encryptSecret(
+                    normalizeInputBearerToken(input.bearerToken),
+                    c.env.BETTER_AUTH_SECRET,
+                ),
+                ...policy,
+                fallbacks: input.fallbacks
+                    ? await resolveFallbacks(db, input.fallbacks, {
+                          modelId,
+                          ownerUserId: user.id,
+                          ...policy,
+                      })
+                    : [],
+            };
             await enforcePublishingAccess(db, user.id, input.visibility);
-            const id = crypto.randomUUID();
             const [row] = await db
                 .insert(schema.communityEndpoint)
                 .values({
-                    id,
+                    id: crypto.randomUUID(),
                     ownerUserId: user.id,
                     name: input.name,
                     title: input.title,
                     description: input.description || null,
-                    modality: input.modality,
-                    imagePricing,
-                    supportsImageEdits:
-                        input.modality === "image" && input.supportsImageEdits,
+                    visibility: input.visibility,
+                    type: "proxy",
                     baseUrl: normalizeInputBaseUrl(input.baseUrl),
                     upstreamModel: input.upstreamModel ?? input.name,
-                    bearerTokenCiphertext: await encryptSecret(
-                        normalizeInputBearerToken(input.bearerToken),
-                        c.env.BETTER_AUTH_SECRET,
-                    ),
-                    visibility: input.visibility,
-                    ...prices,
+                    payload: JSON.stringify(payload),
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 })
                 .returning();
-            return c.json(toResponse(row, ownerGithubUsername));
+            return c.json(
+                toCommunityEndpointResponse(
+                    row,
+                    ownerGithubUsername,
+                    c.env.AGENT_RUNTIME_BASE_URL,
+                ),
+            );
         },
     )
     .post(
         "/models",
         describeRoute({
-            tags: ["👤 Account"],
+            tags: ["🧩 Community Models"],
             summary: "List Upstream Models",
             description:
-                "Fetch OpenAI-compatible upstream model IDs before publishing a My Models endpoint. Requires community model publishing approval; API keys also require `account:keys`.",
+                "Fetch OpenAI-compatible upstream model IDs from a provider before registering a My Models endpoint. Limited to one probe every 30 seconds per account. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Upstream model IDs",
@@ -549,9 +581,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
-            const db = drizzle(c.env.DB, { schema });
-            requireCommunityEndpointManagePermission(c.var.auth.apiKey);
-            await requireCommunityEndpointPublishAccess(db, user.id);
+            requireAccountPermission(c.var.auth.apiKey, "keys");
             const throttled = await enforceEndpointProbeThrottle(
                 c,
                 user.id,
@@ -569,10 +599,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
     .post(
         "/test",
         describeRoute({
-            tags: ["👤 Account"],
+            tags: ["🧩 Community Models"],
             summary: "Test My Model Endpoint",
             description:
-                "Test an OpenAI-compatible upstream model before publishing it. Image tests detect token pricing and probe the derived `/images/edits` endpoint. Requires community model publishing approval; API keys also require `account:keys`.",
+                "Test an OpenAI-compatible upstream model before registering it. Image tests detect the image pricing mode and probe the derived `/images/edits` endpoint. Limited to one probe every 30 seconds per account. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Endpoint test result",
@@ -594,9 +624,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
         async (c) => {
             const user = c.var.auth.requireUser();
             const input = c.req.valid("json");
-            const db = drizzle(c.env.DB, { schema });
-            requireCommunityEndpointManagePermission(c.var.auth.apiKey);
-            await requireCommunityEndpointPublishAccess(db, user.id);
+            requireAccountPermission(c.var.auth.apiKey, "keys");
             const throttled = await enforceEndpointProbeThrottle(
                 c,
                 user.id,
@@ -607,15 +635,23 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 const result =
                     input.modality === "image"
                         ? await testCommunityImageEndpoint(input)
-                        : await testCommunityEndpoint(input);
+                        : input.modality === "transcription"
+                          ? await testCommunityTranscriptionEndpoint(input)
+                          : input.modality === "video"
+                            ? await testCommunityVideoEndpoint(input)
+                            : await testCommunityEndpoint(input);
                 return c.json({
                     ok: true,
                     message:
                         input.modality === "image"
-                            ? result.supportsImageEdits
+                            ? result.inputModalities?.includes("image")
                                 ? "Generation and editing endpoints responded with image data"
                                 : "Generation endpoint responded; editing is not supported"
-                            : "Endpoint responded with usage",
+                            : input.modality === "transcription"
+                              ? "Endpoint responded with transcription text"
+                              : input.modality === "video"
+                                ? "Endpoint responded with video data"
+                                : "Endpoint responded with usage",
                     ...result,
                 });
             } catch (error) {
@@ -626,7 +662,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
     .post(
         "/:id/update",
         describeRoute({
-            tags: ["👤 Account"],
+            tags: ["🧩 Community Models"],
             summary: "Update My Model",
             description:
                 "Update a community model owned by the authenticated account. Changing visibility to public publishes it and requires an allowlisted account; public models may be free or priced. API keys require `account:keys`.",
@@ -651,15 +687,16 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const input = c.req.valid("json");
             const { id } = c.req.param();
             const db = drizzle(c.env.DB, { schema });
-            requireCommunityEndpointManagePermission(c.var.auth.apiKey);
+            requireAccountPermission(c.var.auth.apiKey, "keys");
             const ownerGithubUsername = await requireOwnerGithubUsername(
                 db,
                 user.id,
             );
             const endpoint = await requireOwnedEndpoint(db, id, user.id);
-            const modality = normalizeCommunityEndpointModality(
-                endpoint.modality,
-            );
+            // The row already owns its immutable type. Validate the external
+            // body against that exact strict Zod schema instead of asking
+            // every client to echo a redundant discriminator.
+            assertValidUpdate(endpoint.type, input);
             await ensureModelNameAvailable(
                 db,
                 user.id,
@@ -672,80 +709,154 @@ export const communityEndpointsRoutes = new Hono<Env>()
             > = {
                 updatedAt: new Date(),
             };
+            const pendingReady = pendingCommunityEndpointChangeIsReady(
+                endpoint.pendingAt,
+            );
+            const currentVisibility =
+                pendingReady && endpoint.pendingVisibility
+                    ? endpoint.pendingVisibility
+                    : endpoint.visibility;
+            let pendingPayload = pendingReady ? null : endpoint.pendingPayload;
+            let pendingVisibility = pendingReady
+                ? null
+                : endpoint.pendingVisibility;
+            let pendingAt = pendingReady ? null : endpoint.pendingAt;
             if (input.name !== undefined) update.name = input.name;
             if (input.title !== undefined) update.title = input.title;
             if (input.description !== undefined) {
                 update.description = input.description || null;
             }
-            if (input.baseUrl !== undefined) {
-                update.baseUrl = normalizeInputBaseUrl(input.baseUrl);
+            if (input.hidden !== undefined) {
+                update.hiddenAt = input.hidden ? new Date() : null;
+                update.hiddenReason = input.hidden ? "Hidden by owner" : null;
+                update.hiddenBy = input.hidden ? "owner" : null;
             }
-            if (input.upstreamModel !== undefined) {
-                update.upstreamModel = input.upstreamModel;
-            }
-            if (input.bearerToken !== undefined) {
-                update.bearerTokenCiphertext = await encryptSecret(
-                    normalizeInputBearerToken(input.bearerToken),
-                    c.env.BETTER_AUTH_SECRET,
-                );
-            }
-            if (input.visibility !== undefined) {
-                update.visibility = input.visibility;
-            }
-            if (input.supportsImageEdits !== undefined) {
-                update.supportsImageEdits =
-                    modality === "image" && input.supportsImageEdits;
-            }
-            if (input.active !== undefined) {
-                update.disabledAt = input.active ? null : new Date();
-                update.disabledReason = input.active
-                    ? null
-                    : "Deactivated by owner";
-                update.disabledBy = input.active ? null : "owner";
-            }
-            const storedImagePricing = normalizeCommunityEndpointImagePricing(
-                endpoint.imagePricing,
+            await enforcePublishingAccess(
+                db,
+                user.id,
+                input.visibility ?? currentVisibility,
             );
-            const effectiveImagePricing =
-                modality === "image" && input.imagePricing !== undefined
-                    ? input.imagePricing
-                    : storedImagePricing;
-            update.imagePricing = effectiveImagePricing;
-            for (const field of communityEndpointPriceFieldsForModality(
-                modality,
-                effectiveImagePricing,
-            )) {
-                if (input[field.key] !== undefined) {
-                    update[field.key] = input[field.key];
-                } else if (effectiveImagePricing !== storedImagePricing) {
-                    // Switching modes changes the unit of the shared price
-                    // columns (per image ↔ per token); stored values must not
-                    // be reinterpreted, so unsent prices reset to free.
-                    update[field.key] = 0;
+            let nextVisibility = currentVisibility;
+            if (input.visibility === "private") {
+                nextVisibility = "private";
+                pendingPayload = null;
+                pendingVisibility = null;
+                pendingAt = null;
+            } else if (
+                input.visibility === "public" &&
+                currentVisibility === "private"
+            ) {
+                pendingVisibility = "public";
+                pendingAt ??= new Date();
+            }
+            update.visibility = nextVisibility;
+            if (endpoint.type === "prompt_agent") {
+                // Prompt configuration is edited through /account/agents.
+                // This route only updates shared listing state such as hidden.
+            } else if (endpoint.type === "endpoint_agent") {
+                if (!parseListingPayload("endpoint_agent", endpoint.payload)) {
+                    throw new Error(
+                        `Invalid endpoint_agent payload for ${endpoint.id}`,
+                    );
+                }
+                if (input.baseUrl !== undefined) {
+                    update.baseUrl = normalizeInputBaseUrl(input.baseUrl);
+                }
+                if (input.upstreamModel !== undefined) {
+                    update.upstreamModel = input.upstreamModel;
+                }
+                if (input.perUserRpm !== undefined) {
+                    update.payload = JSON.stringify({
+                        perUserRpm: input.perUserRpm,
+                    });
+                }
+            } else {
+                const current = parseListingPayload("proxy", endpoint.payload);
+                if (!current) {
+                    throw new Error(`Invalid proxy payload for ${endpoint.id}`);
+                }
+                const maturedPending = pendingReady
+                    ? parseListingPayload("proxy", endpoint.pendingPayload)
+                    : null;
+                const stored = applyPendingProxyPricing(
+                    current,
+                    maturedPending,
+                );
+                const queued = parseListingPayload("proxy", pendingPayload);
+                const targetBase = queued ?? stored;
+                const targetVisibility = pendingVisibility ?? nextVisibility;
+                const targetPolicy = deriveUpdatedProxyPolicy(
+                    targetBase,
+                    input,
+                    targetVisibility,
+                );
+                const delayPricing =
+                    targetVisibility === "public" &&
+                    (currentVisibility === "public" ||
+                        pendingVisibility === "public") &&
+                    hasProxyPricingInput(input);
+                const pricingChanged = proxyPricingChanged(
+                    targetBase,
+                    targetPolicy,
+                );
+                const immediateInput = delayPricing
+                    ? withoutProxyPricingChanges(input)
+                    : input;
+                const policy = deriveUpdatedProxyPolicy(
+                    stored,
+                    immediateInput,
+                    nextVisibility,
+                );
+                const fallbacks =
+                    input.fallbacks === undefined
+                        ? stored.fallbacks
+                        : await resolveFallbacks(db, input.fallbacks, {
+                              modelId: communityModelId(
+                                  ownerGithubUsername,
+                                  input.name ?? endpoint.name,
+                              ),
+                              ownerUserId: user.id,
+                              ...policy,
+                          });
+                const bearerTokenCiphertext =
+                    input.bearerToken === undefined
+                        ? stored.bearerTokenCiphertext
+                        : await encryptSecret(
+                              normalizeInputBearerToken(input.bearerToken),
+                              c.env.BETTER_AUTH_SECRET,
+                          );
+                if (input.baseUrl !== undefined) {
+                    update.baseUrl = normalizeInputBaseUrl(input.baseUrl);
+                }
+                if (input.upstreamModel !== undefined) {
+                    update.upstreamModel = input.upstreamModel;
+                }
+                if (pendingReady || changesProxyPayload(input)) {
+                    const payload: ProxyListingPayload = {
+                        bearerTokenCiphertext,
+                        ...policy,
+                        fallbacks,
+                    };
+                    update.payload = JSON.stringify(payload);
+                }
+                const queuesPublication =
+                    input.visibility === "public" &&
+                    currentVisibility === "private";
+                if ((delayPricing && pricingChanged) || queuesPublication) {
+                    const targetPayload: ProxyListingPayload = {
+                        bearerTokenCiphertext,
+                        ...targetPolicy,
+                        fallbacks,
+                    };
+                    pendingPayload = JSON.stringify(targetPayload);
+                    if (currentVisibility === "public" && pricingChanged) {
+                        pendingAt = new Date();
+                    }
                 }
             }
-            const effectiveVisibility = input.visibility ?? endpoint.visibility;
-            // A private model is owner-only, so owner-declared public pricing
-            // does not apply; making a published model private clears prices.
-            const effectivePrices =
-                effectiveVisibility === "private"
-                    ? communityEndpointPrices({})
-                    : communityEndpointPricesForModality(
-                          { ...endpoint, ...update },
-                          modality,
-                          effectiveImagePricing,
-                      );
-            enforceCommunityEndpointPriceLimits(
-                effectivePrices,
-                modality,
-                effectiveImagePricing,
-            );
-            await enforcePublishingAccess(db, user.id, effectiveVisibility);
-            // Persist visibility together with the complete effective price
-            // set on every update, so concurrent partial updates cannot
-            // interleave into a public row with cleared prices.
-            update.visibility = effectiveVisibility;
-            Object.assign(update, effectivePrices);
+            update.pendingPayload = pendingPayload;
+            update.pendingVisibility = pendingVisibility;
+            update.pendingAt = pendingAt;
             const [row] = await db
                 .update(schema.communityEndpoint)
                 .set(update)
@@ -756,13 +867,19 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     ),
                 )
                 .returning();
-            return c.json(toResponse(row, ownerGithubUsername));
+            return c.json(
+                toCommunityEndpointResponse(
+                    row,
+                    ownerGithubUsername,
+                    c.env.AGENT_RUNTIME_BASE_URL,
+                ),
+            );
         },
     )
     .delete(
         "/:id",
         describeRoute({
-            tags: ["👤 Account"],
+            tags: ["🧩 Community Models"],
             summary: "Delete My Model",
             description:
                 "Delete a community model owned by the authenticated account. API keys require `account:keys`.",
@@ -786,7 +903,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const { id } = c.req.param();
             const db = drizzle(c.env.DB, { schema });
-            requireCommunityEndpointManagePermission(c.var.auth.apiKey);
+            requireAccountPermission(c.var.auth.apiKey, "keys");
             await requireOwnedEndpoint(db, id, user.id);
             await db
                 .delete(schema.communityEndpoint)

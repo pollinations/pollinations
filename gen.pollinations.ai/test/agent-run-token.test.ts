@@ -5,8 +5,6 @@ import {
     verifyAgentRunToken,
 } from "@shared/auth/agent-run-token.ts";
 import { getUserBalance } from "@shared/billing/balance.ts";
-import { atomicReserveApiKeyBalance } from "@shared/billing/deduction.ts";
-import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
 import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
 import { apikey as apiKeyTable } from "@shared/db/better-auth.ts";
 import {
@@ -20,6 +18,8 @@ import { Hono } from "hono";
 import { SignJWT } from "jose";
 import { expect } from "vitest";
 import { type AuthEnv, auth } from "@/middleware/auth.ts";
+import { BILLING_SERVICE } from "@/middleware/billing.ts";
+import { enterGateway } from "./gateway.ts";
 
 const authProbe = new Hono<AuthEnv>().use("*", auth()).get("/", (c) =>
     c.json({
@@ -188,38 +188,33 @@ test("parent key revocation immediately invalidates an agent run token", async (
 });
 
 test("spends the parent key's budget and the parent user's wallet", async () => {
-    // The design claim this file exists to prove: billing never learns run
-    // tokens exist. Resolving one has to move the same two balances a request
-    // with the parent key itself would have moved.
+    // Enter resolves the delegated token to its parent key and must move the
+    // same two balances a request with that parent key would have moved.
     const parent = await createTestApiKey({
         pollenBudget: 5,
         user: { tierBalance: 2 },
     });
     const token = await runTokenFor(parent.id);
-    const probed = (await (
-        await probe(authProbe, "https://gen.pollinations.ai/", token)
-    ).json()) as {
-        userId: string;
-        apiKeyId: string;
-        pollenBalance: number;
-    };
+
+    const authorized = await enterGateway.authorize({
+        token,
+        service: BILLING_SERVICE,
+        requestId: crypto.randomUUID(),
+        requestPath: "/v1/chat/completions",
+        estimatedPrice: 1,
+    });
+    expect(authorized.ok).toBe(true);
+    if (!authorized.ok) return;
+    expect(authorized.user.id).toBe(parent.userId);
+    expect(authorized.apiKey.id).toBe(parent.id);
+
+    const settled = await enterGateway.settle({
+        authorizationId: authorized.authorizationId,
+        events: [{ eventId: "usage", eventType: "generate.text", price: 1 }],
+    });
+    expect(settled.ok).toBe(true);
 
     const db = drizzle(env.DB);
-    const { reserved } = await atomicReserveApiKeyBalance(
-        db,
-        probed.apiKeyId,
-        1,
-    );
-    await handleBalanceDeduction({
-        db,
-        isBilledUsage: true,
-        totalPrice: 1,
-        userId: probed.userId,
-        apiKeyId: probed.apiKeyId,
-        apiKeyPollenBalance: probed.pollenBalance,
-        apiKeyReservedAmount: reserved,
-    });
-
     expect((await getUserBalance(db, parent.userId)).tierBalance).toBeCloseTo(
         1,
         10,

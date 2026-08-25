@@ -431,7 +431,7 @@ callers finds actual call relationships. For "where is this string", grep. For "
 actually calls this", callers.
 
 Typical flow: search("how are pollen deductions applied") -> read the top file ->
-impact("atomicDeductUserBalance") to see the blast radius.""",
+impact("settleServiceBillingEvents") to see the blast radius.""",
         "parameters": {
             "type": "object",
             "properties": {

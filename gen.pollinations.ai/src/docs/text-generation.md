@@ -69,3 +69,25 @@ On Gemini, Claude, and Nova models, a large static prompt prefix can be cached s
 **Claude** — all Claude models cache. The prefix must be at least 4,096 tokens (1,024 on `claude` and `claude-fable-5`); tools are fine. Cache creates bill at 1.25× the input rate (no storage fee); hits bill at 10% of input. The cache lives ~5 minutes, refreshed on each hit.
 
 **Nova** — `nova` and `nova-fast` cache. The prefix must be at least ~1,000 tokens (up to 20K tokens cacheable). Cache creates are free; hits bill at 25% of input. ~5-minute TTL.
+
+### Reasoning
+
+Models with `reasoning` capability (listed in model metadata) support the `reasoning_effort` parameter to control chain-of-thought depth.
+
+**Chat Completions** — add `reasoning_effort` to the request body:
+
+```bash
+curl https://gen.pollinations.ai/v1/chat/completions   -H "Content-Type: application/json"   -d '{
+    "model": "claude",
+    "reasoning_effort": "high",
+    "messages": [{"role": "user", "content": "Explain the P vs NP problem"}]
+  }'
+```
+
+**GET /text** — append `&reasoning_effort=high`:
+
+```bash
+curl "https://gen.pollinations.ai/text/Explain%20the%20P%20vs%20NP%20problem?model=claude&reasoning_effort=high"
+```
+
+Set `reasoning_effort` to `"none"` to disable reasoning, or use `"minimal"`, `"low"`, `"medium"`, `"high"`, `"max"` for increasing depth. Models without reasoning capability ignore this parameter.

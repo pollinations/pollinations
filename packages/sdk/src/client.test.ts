@@ -600,11 +600,48 @@ describe("Pollinations model discovery", () => {
     it("returns the model array from the registry endpoint", async () => {
         const client = newClient();
         const models = [{ name: "openai", title: "OpenAI" }];
+
         fetchMock.mockResolvedValueOnce(makeResponse(models));
 
         await expect(client.models()).resolves.toEqual(models);
         expect(fetchMock.mock.calls[0]?.[0]).toBe(
             "https://example.test/models",
+        );
+    });
+});
+
+describe("Pollinations account quests", () => {
+    it("returns the quest catalog from GET /account/quests", async () => {
+        const client = newClient();
+        const response = {
+            quests: [
+                {
+                    id: "setup-api-key",
+                    title: "Create your first API key",
+                    description: "Generate an API key in the dashboard.",
+                    category: "setup",
+                    state: "completed",
+                    status: "completed",
+                    rewardAmount: 0.25,
+                    balanceBucket: "tier",
+                    url: null,
+                    reward: {
+                        id: "reward-1",
+                        questId: "setup-api-key",
+                        title: "Create your first API key",
+                        pollenAmount: 0.25,
+                        balanceBucket: "tier",
+                        earnedAt: "2026-01-01T00:00:00.000Z",
+                        claimedAt: null,
+                    },
+                },
+            ],
+        };
+        fetchMock.mockResolvedValueOnce(makeResponse(response));
+
+        await expect(client.accountQuests()).resolves.toEqual(response);
+        expect(fetchMock.mock.calls[0]?.[0]).toBe(
+            "https://example.test/account/quests",
         );
     });
 });

@@ -550,6 +550,86 @@ describe("tracking observability", () => {
         expect(consumePollen.mock.calls[0]?.[0]).toBeGreaterThan(0);
     });
 
+    async function trackWithReferer(referer: string): Promise<{
+        status: number;
+        event: TinybirdEvent;
+        serialized: string;
+    }> {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const ctx = createExecutionContext();
+        const response = await createTestApp(async () => {}).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json", referer },
+                body: JSON.stringify({
+                    model: "openai",
+                    stream: false,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+                ENTER_GATEWAY: tinybirdGateway,
+            } as CloudflareBindings,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        expect(tinybirdRequests).toHaveLength(1);
+        const serialized = await tinybirdRequests[0].text();
+        return {
+            status: response.status,
+            event: JSON.parse(serialized) as TinybirdEvent,
+            serialized,
+        };
+    }
+
+    it("redacts credential query params from the referrer but keeps campaign params", async () => {
+        const { status, event, serialized } = await trackWithReferer(
+            "https://app.example/page?utm_source=newsletter&key=pk_secret_ref&token=tok_secret&api_key=ak_secret&Authorization=Bearer%20auth_secret&access_token=at_secret&ok=1",
+        );
+
+        expect(status).toBe(200);
+        expect(event.referrerDomain).toBe("app.example");
+        expect(event.referrerUrl).toBe(
+            "https://app.example/page?utm_source=newsletter&key=%5Bredacted%5D&token=%5Bredacted%5D&api_key=%5Bredacted%5D&Authorization=%5Bredacted%5D&access_token=%5Bredacted%5D&ok=1",
+        );
+        for (const secret of [
+            "pk_secret_ref",
+            "tok_secret",
+            "ak_secret",
+            "auth_secret",
+            "at_secret",
+        ]) {
+            expect(event.referrerUrl).not.toContain(secret);
+            expect(serialized).not.toContain(secret);
+        }
+    });
+
+    it("omits a malformed referrer instead of storing the raw header", async () => {
+        const { status, event, serialized } = await trackWithReferer(
+            "not a url?key=pk_secret_ref&token=tok_secret",
+        );
+
+        expect(status).toBe(200);
+        expect(event).not.toHaveProperty("referrerUrl");
+        expect(event).not.toHaveProperty("referrerDomain");
+        expect(serialized).not.toContain("pk_secret_ref");
+        expect(serialized).not.toContain("tok_secret");
+    });
+
     it("tracks provider work but not coalesced cache hits", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(

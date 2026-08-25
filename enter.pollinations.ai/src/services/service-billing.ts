@@ -10,8 +10,8 @@ import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
 import {
     cancelServiceAuthorization,
     createServiceAuthorization,
-    expireServiceAuthorizations,
     settleServiceBillingEvents,
+    sweepServiceBilling,
 } from "@shared/billing/service-billing.ts";
 import { sendToTinybirdOnce } from "@shared/events.ts";
 import type {
@@ -212,14 +212,17 @@ export async function cancelServiceRequest(
     return cancelServiceAuthorization(env.DB, authorizationId);
 }
 
-/** Release expired reservations; run in the background after gateway calls. */
+/**
+ * Release expired reservations and prune long-expired rows; run in the
+ * background after gateway calls.
+ */
 export async function sweepServiceGateway(
     env: CloudflareBindings,
 ): Promise<void> {
     try {
-        await expireServiceAuthorizations(env.DB);
+        await sweepServiceBilling(env.DB);
     } catch (error) {
-        log.warn("Service authorization expiry sweep failed: {error}", {
+        log.warn("Service billing sweep failed: {error}", {
             error: error instanceof Error ? error.message : String(error),
         });
     }

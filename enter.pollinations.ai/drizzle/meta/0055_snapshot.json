@@ -1781,6 +1781,21 @@
             "request_id"
           ],
           "isUnique": true
+        },
+        "idx_service_authorization_user_expires": {
+          "name": "idx_service_authorization_user_expires",
+          "columns": [
+            "user_id",
+            "expires_at"
+          ],
+          "isUnique": false
+        },
+        "idx_service_authorization_expires": {
+          "name": "idx_service_authorization_expires",
+          "columns": [
+            "expires_at"
+          ],
+          "isUnique": false
         }
       },
       "foreignKeys": {},

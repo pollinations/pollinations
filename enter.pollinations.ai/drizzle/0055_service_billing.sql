@@ -24,6 +24,8 @@ CREATE TABLE `service_authorization` (
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `idx_service_authorization_request` ON `service_authorization` (`service`,`request_id`);--> statement-breakpoint
+CREATE INDEX `idx_service_authorization_user_expires` ON `service_authorization` (`user_id`,`expires_at`);--> statement-breakpoint
+CREATE INDEX `idx_service_authorization_expires` ON `service_authorization` (`expires_at`);--> statement-breakpoint
 CREATE TABLE `service_billing_event` (
 	`authorization_id` text NOT NULL,
 	`event_id` text NOT NULL,

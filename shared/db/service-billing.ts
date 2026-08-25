@@ -10,6 +10,7 @@
 // moves atomically with the claim.
 
 import {
+    index,
     integer,
     primaryKey,
     real,
@@ -80,6 +81,13 @@ export const serviceAuthorization = sqliteTable(
             table.service,
             table.requestId,
         ),
+        // Per-user inline expiry before an authorize checks affordability.
+        index("idx_service_authorization_user_expires").on(
+            table.userId,
+            table.expiresAt,
+        ),
+        // Global expiry and pruning sweeps.
+        index("idx_service_authorization_expires").on(table.expiresAt),
     ],
 );
 

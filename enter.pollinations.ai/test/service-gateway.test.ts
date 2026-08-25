@@ -1,5 +1,6 @@
 import { env } from "cloudflare:test";
 import { createApiKeyAuth } from "@shared/auth/api-key.ts";
+import { SERVICE_AUTHORIZATION_TTL_SECONDS } from "@shared/billing/service-billing.ts";
 import {
     apikey as apikeyTable,
     user as userTable,
@@ -8,7 +9,7 @@ import {
     serviceAuthorization,
     serviceBillingEvent,
 } from "@shared/db/service-billing.ts";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect } from "vitest";
 import {
@@ -474,6 +475,50 @@ describe("ServiceGateway", () => {
         });
         expect(settled).toEqual({ ok: false, error: "authorization_expired" });
         expect(await keyBudget(budgetedApiKey.id)).toBeCloseTo(100);
+
+        // Pruning: a settled authorization (with its event) and the expired
+        // one are deleted once a full TTL past their expiry, while an open
+        // reservation with its expiry ahead is untouched.
+        const closed = await authorizeServiceRequest(
+            env,
+            authorizeInput(budgetedApiKey.key, { estimatedPrice: 5 }),
+        );
+        const open = await authorizeServiceRequest(
+            env,
+            authorizeInput(budgetedApiKey.key, { estimatedPrice: 5 }),
+        );
+        expect(closed.ok && open.ok).toBe(true);
+        if (!closed.ok || !open.ok) return;
+        const settledClosed = await settleServiceEvents(env, {
+            authorizationId: closed.authorizationId,
+            events: [{ eventId: "done", eventType: "media.upload", price: 2 }],
+        });
+        expect(settledClosed.ok).toBe(true);
+        const pruneCutoff = new Date(
+            Date.now() - (SERVICE_AUTHORIZATION_TTL_SECONDS + 1) * 1000,
+        );
+        const aged = [authorized.authorizationId, closed.authorizationId];
+        await db()
+            .update(serviceAuthorization)
+            .set({ expiresAt: pruneCutoff })
+            .where(inArray(serviceAuthorization.id, aged));
+        await sweepServiceGateway(env);
+        const authorizations = await db()
+            .select({ id: serviceAuthorization.id })
+            .from(serviceAuthorization);
+        expect(authorizations.map((row) => row.id)).toEqual([
+            open.authorizationId,
+        ]);
+        expect(
+            await db()
+                .select()
+                .from(serviceBillingEvent)
+                .where(inArray(serviceBillingEvent.authorizationId, aged)),
+        ).toEqual([]);
+        // Nothing moved: the pruned rows were already reconciled and the
+        // open reservation is still held.
+        expect(await keyBudget(budgetedApiKey.id)).toBeCloseTo(93);
+        expect((await userBalances()).pack).toBeCloseTo(93);
     });
 
     test("an expired authorization rejects settlement and returns its reservation", async ({
@@ -1039,6 +1084,33 @@ describe("ServiceGateway", () => {
         expect(await keyBudget(budgetedApiKey.id)).toBe(0);
         // The wallet moved exactly once for the one admitted request.
         expect((await userBalances()).pack).toBe(900);
+    });
+
+    test("concurrent identical authorizations share one reservation when it takes the whole balance", async ({
+        budgetedApiKey,
+    }) => {
+        // Wallet and finite key both hold exactly the estimate, so whichever
+        // call reserves second sees no funds left. It must still recognise
+        // the winner's authorization for the same request instead of
+        // denying an already-admitted request.
+        await db().update(userTable).set({ tierBalance: 0, packBalance: 100 });
+        const requestId = crypto.randomUUID();
+        const exact = () =>
+            authorizeServiceRequest(
+                env,
+                authorizeInput(budgetedApiKey.key, {
+                    requestId,
+                    estimatedPrice: 100,
+                }),
+            );
+        const [a, b] = await Promise.all([exact(), exact()]);
+        expect(a.ok).toBe(true);
+        expect(b.ok).toBe(true);
+        if (!a.ok || !b.ok) return;
+        expect(b.authorizationId).toBe(a.authorizationId);
+        expect((await userBalances()).pack).toBe(0);
+        expect(await keyBudget(budgetedApiKey.id)).toBe(0);
+        expect(await db().select().from(serviceAuthorization)).toHaveLength(1);
     });
 
     test("an overage the wallet cannot cover rejects the whole call", async ({

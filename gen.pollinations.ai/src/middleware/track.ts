@@ -15,6 +15,7 @@ import {
     UpstreamError,
 } from "@shared/error.ts";
 import { sendToTinybirdOnce } from "@shared/events.ts";
+import { redactCredentialQueryParams } from "@shared/observability/request-inputs.ts";
 import {
     type BillingAdjustment,
     type CostDefinition,
@@ -1269,16 +1270,16 @@ type ReferrerData = {
 };
 
 function extractReferrerHeader(request: HonoRequest): ReferrerData {
-    const referrerUrl = request.header("referer") || undefined;
-    const referrerDomain = referrerUrl && safeUrl(referrerUrl)?.hostname;
-    return { referrerUrl, referrerDomain };
-}
-
-function safeUrl(url: string): URL | null {
+    const referrer = request.header("referer") || undefined;
+    if (!referrer) return {};
     try {
-        return new URL(url);
+        const url = new URL(referrer);
+        return {
+            referrerUrl: redactCredentialQueryParams(url),
+            referrerDomain: url.hostname,
+        };
     } catch {
-        return null;
+        return {};
     }
 }
 

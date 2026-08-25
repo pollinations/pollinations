@@ -288,6 +288,11 @@ export async function createServiceAuthorization(
     try {
         const results = await d1.batch(statements);
         if ((results[0].meta.changes ?? 0) === 0) {
+            // A concurrent identical authorize may have reserved the exact
+            // remaining wallet or key budget between our findExisting and
+            // this batch; its row, not a 402, is the answer then.
+            const raced = await findExisting();
+            if (raced) return resolveExisting(raced);
             const keyTooLow =
                 hasBudget &&
                 (identity.apiKeyPollenBalance as number) < estimatedCost;

@@ -661,3 +661,54 @@ describe("Pollinations.accountQuests", () => {
         );
     });
 });
+
+describe("Pollinations.accountEarnings", () => {
+    const row = {
+        date: "2026-08-01",
+        entity_id: "pk_abc",
+        entity_name: "My App",
+        source: "byop_markup",
+        requests: 100,
+        paid_requests: 60,
+        tier_requests: 40,
+        baseline_price: 0.001,
+        pollen_earned: 5,
+        paid_earned: 3,
+        tier_earned: 2,
+        cost_usd: 0.05,
+        reward_rate: 0.1,
+    };
+
+    it("calls GET /account/earnings with no params by default", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValueOnce(
+            makeResponse({ daily: [row], perEntity: [row] }),
+        );
+
+        const { daily, perEntity } = await client.accountEarnings();
+
+        expect(fetchMock.mock.calls[0]?.[0]).toBe(
+            "https://example.test/account/earnings",
+        );
+        expect(daily).toEqual([row]);
+        expect(perEntity).toEqual([row]);
+    });
+
+    it("forwards days, granularity, and period as query params", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValueOnce(
+            makeResponse({ daily: [], perEntity: [] }),
+        );
+
+        await client.accountEarnings({
+            days: 7,
+            granularity: "week",
+            period: "2026-W34",
+        });
+
+        const url = fetchMock.mock.calls[0]?.[0] as string;
+        expect(url).toContain("days=7");
+        expect(url).toContain("granularity=week");
+        expect(url).toContain("period=2026-W34");
+    });
+});

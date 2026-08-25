@@ -722,6 +722,37 @@ export interface DailyUsageResponse {
     count: number;
 }
 
+/** Options for developer earnings queries */
+export type EarningsOptions = Omit<DailyUsageOptions, "api_key_ids">;
+
+/** One earnings bucket for a BYOP app or community model */
+export interface EarningsRow {
+    /** Date bucket (YYYY-MM-DD or hourly); empty string on rollup rows */
+    date: string;
+    entity_id: string;
+    entity_name: string;
+    source: "byop_markup" | "community_model";
+    requests: number;
+    paid_requests: number;
+    tier_requests: number;
+    /** Model cost before markup (sum over the bucket) */
+    baseline_price: number;
+    pollen_earned: number;
+    paid_earned: number;
+    tier_earned: number;
+    /** Reward basis total; BYOP rows use payer charge, community model rows use model price */
+    cost_usd: number;
+    reward_rate: number;
+}
+
+/** Response from GET /account/earnings */
+export interface EarningsResponse {
+    /** Per-(date, earning entity) buckets for the period */
+    daily: EarningsRow[];
+    /** Per-earning-entity rollups for the period */
+    perEntity: EarningsRow[];
+}
+
 /** API key validation response */
 export interface KeyInfo {
     valid: boolean;

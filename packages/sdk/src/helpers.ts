@@ -32,6 +32,8 @@ import type {
     AccountKey,
     AccountProfile,
     AccountQuestsResponse,
+    EarningsOptions,
+    EarningsResponse,
     AudioGenerateOptions,
     AuthorizeDeviceOptions,
     AuthorizeOptions,
@@ -503,6 +505,15 @@ export async function getBalance(): Promise<AccountBalance> {
  */
 export async function getQuests(): Promise<AccountQuestsResponse> {
     return getClient().accountQuests();
+}
+
+/**
+ * Get developer earnings (BYOP app markup and community model rewards)
+ */
+export async function getEarnings(
+    options?: EarningsOptions,
+): Promise<EarningsResponse> {
+    return getClient().accountEarnings(options);
 }
 
 /**

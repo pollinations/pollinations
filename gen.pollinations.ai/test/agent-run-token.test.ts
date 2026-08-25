@@ -184,10 +184,7 @@ test("parent key revocation immediately invalidates an agent run token", async (
         "https://gen.pollinations.ai/",
         token,
     );
-    expect(await response.json()).toMatchObject({
-        userId: null,
-        apiKeyId: null,
-    });
+    expect(response.status).toBe(401);
 });
 
 test("spends the parent key's budget and the parent user's wallet", async () => {

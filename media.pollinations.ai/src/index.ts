@@ -1,4 +1,10 @@
+import { AGENT_RUN_TOKEN_PREFIX } from "@shared/auth/agent-run-token.ts";
 import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
+import type {
+    BillableEvent,
+    BillingIdentity,
+    BillingServiceBinding,
+} from "@shared/schemas/billable-event.ts";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import {
@@ -24,9 +30,6 @@ import {
 } from "./catalog.ts";
 
 const DOMAIN = "media.pollinations.ai";
-// gen.pollinations.ai proxies /account/* to enter — using the public path
-// keeps internal services consistent with the documented SDK/external usage.
-const KEY_VERIFY_URL = "https://gen.pollinations.ai/account/key";
 // Untagged uploads cannot be deleted through the API, and each unique id always
 // maps to the same bytes, so they can be cached immutably. Tagged uploads are
 // deletable and must never be retained by downstream caches after deletion.
@@ -38,49 +41,47 @@ interface Env {
     MEDIA_BUCKET: R2Bucket;
     MAX_FILE_SIZE: string;
     DB: D1Database;
-}
-
-/**
- * Wire shape of `GET /account/key`. BYOP attribution arrives nested under
- * `byopApp`, which is null for keys not minted through the BYOP flow.
- */
-interface KeyVerifyResponse {
-    valid: boolean;
-    type: string;
-    name: string | null;
-    userId: string | null;
-    byopApp: { clientKeyId: string } | null;
+    ENVIRONMENT: string;
+    ENTER_BILLING: BillingServiceBinding;
 }
 
 interface AuthResult {
-    valid: boolean;
     type: string;
     name: string | null;
-    userId: string | null;
+    userId: string;
     byopClientKeyId: string | null;
+    delegated: boolean;
 }
 
-async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
-    try {
-        const res = await fetch(KEY_VERIFY_URL, {
-            headers: { Authorization: `Bearer ${apiKey}` },
-        });
-        if (!res.ok) return null;
-        const data = await res.json<KeyVerifyResponse>();
-        if (!data.valid) return null;
-        // Normalize: an enter deployment that predates the identity fields
-        // omits them, and `undefined` would slip past the `=== null` guards
-        // downstream — never treat an unattested key as user-attached.
-        return {
-            valid: true,
-            type: data.type,
-            name: data.name ?? null,
-            userId: data.userId ?? null,
-            byopClientKeyId: data.byopApp?.clientKeyId ?? null,
-        };
-    } catch {
-        return null;
+function authResult(identity: BillingIdentity): AuthResult {
+    return {
+        type: identity.apiKey.keyType ?? "secret",
+        name: identity.apiKey.name,
+        userId: identity.userId,
+        byopClientKeyId: identity.apiKey.clientId,
+        delegated: identity.agentRun !== undefined,
+    };
+}
+
+async function verifyApiKey(
+    env: Env,
+    apiKey: string,
+): Promise<AuthResult | null> {
+    const result = await env.ENTER_BILLING.introspect(apiKey);
+    return result.ok ? authResult(result.identity) : null;
+}
+
+function billingErrorStatus(error: string): 401 | 402 | 403 | 409 | 500 {
+    if (error === "invalid_api_key") return 401;
+    if (error === "insufficient_balance_or_budget") return 402;
+    if (error === "forbidden" || error === "model_not_allowed") return 403;
+    if (
+        error === "authorization_conflict" ||
+        error === "authorization_closed"
+    ) {
+        return 409;
     }
+    return 500;
 }
 
 function extractApiKey(req: Request): string | null {
@@ -88,7 +89,8 @@ function extractApiKey(req: Request): string | null {
         .get("authorization")
         ?.match(/^Bearer (.+)$/)?.[1];
     if (bearer) return bearer;
-    return new URL(req.url).searchParams.get("key");
+    const queryKey = new URL(req.url).searchParams.get("key");
+    return queryKey?.startsWith(AGENT_RUN_TOKEN_PREFIX) ? null : queryKey;
 }
 
 function fileTooLargeError(maxSize: number): { error: string } {
@@ -334,12 +336,17 @@ api.post(
                 401,
             );
         }
-        const authResult = await verifyApiKey(apiKey);
+        const authResult = await verifyApiKey(c.env, apiKey);
         if (!authResult) {
             return c.json({ error: "Invalid or expired API key" }, 401);
         }
 
         const maxSize = parseInt(c.env.MAX_FILE_SIZE, 10) || DEFAULT_MAX_SIZE;
+        const requestId = crypto.randomUUID();
+        const startedAt = new Date();
+        let billingAuthorizationId: string | undefined;
+        let storedUploadId: string | undefined;
+        let catalogedUpload = false;
 
         let fileBuffer: ArrayBuffer;
         let contentType: string;
@@ -443,18 +450,24 @@ api.post(
                 throw error;
             }
 
-            if (authResult.userId === null && tags.length > 0) {
+            const authorization = await c.env.ENTER_BILLING.authorize(apiKey, {
+                producer: "media.pollinations.ai",
+                requestId,
+                estimatedPrice: 0,
+                paidOnly: false,
+            });
+            if (!authorization.ok) {
                 return c.json(
-                    {
-                        error: "publishing (tags) requires a user-owned API key",
-                    },
-                    400,
+                    { error: authorization.error },
+                    billingErrorStatus(authorization.error),
                 );
             }
+            billingAuthorizationId = authorization.grant.id;
 
             // One id for everything: the R2 storage key, the retrieval id,
             // and (for user uploads) the catalog row id.
             const id = crypto.randomUUID();
+            storedUploadId = id;
             const cacheControl =
                 tags.length > 0
                     ? PUBLISHED_CACHE_CONTROL
@@ -477,9 +490,7 @@ api.post(
             // rows (untagged uploads stay uncataloged blobs behind their
             // unguessable id). The write is awaited inline (not waitUntil):
             // a D1 failure must surface as a 500, not be silently swallowed.
-            // `tags` non-empty implies a user-attached key (rejected above
-            // otherwise), so ownerUserId is always real here.
-            if (tags.length > 0 && authResult.userId !== null) {
+            if (tags.length > 0) {
                 const db = getDb(c.env.DB);
                 await insertUploadCatalogItem(db, {
                     id,
@@ -489,6 +500,7 @@ api.post(
                     size: fileBuffer.byteLength,
                     tags,
                 });
+                catalogedUpload = true;
             }
 
             console.log(
@@ -502,6 +514,45 @@ api.post(
                 }),
             );
 
+            const endedAt = new Date();
+            const event: BillableEvent = {
+                id: `${id}:upload`,
+                requestId,
+                meter: "media.upload",
+                price: 0,
+                paidOnly: false,
+                occurredAt: endedAt.getTime(),
+                telemetry: {
+                    id,
+                    requestId,
+                    requestPath: "/upload",
+                    startTime: startedAt.toISOString(),
+                    endTime: endedAt.toISOString(),
+                    responseTime: endedAt.getTime() - startedAt.getTime(),
+                    responseStatus: 200,
+                    environment: c.env.ENVIRONMENT,
+                    eventType: "media.upload",
+                    userId: authResult.userId,
+                    apiKeyId: authorization.identity.apiKey.id,
+                    contentType,
+                    size: fileBuffer.byteLength,
+                    tags,
+                },
+            };
+            const settlement = await c.env.ENTER_BILLING.settle(
+                billingAuthorizationId,
+                [event],
+            );
+            if (!settlement.ok) throw new Error(settlement.error);
+            const rejected = settlement.events.find(
+                (item) =>
+                    item.status === "rejected" || item.status === "conflict",
+            );
+            if (rejected) {
+                throw new Error(`Media billing event was ${rejected.status}`);
+            }
+            billingAuthorizationId = undefined;
+
             return c.json({
                 id,
                 url: mediaUrl(id),
@@ -510,6 +561,22 @@ api.post(
                 ...(tags.length > 0 ? { tags } : {}),
             });
         } catch (error) {
+            if (storedUploadId) {
+                try {
+                    await c.env.MEDIA_BUCKET.delete(storedUploadId);
+                    if (catalogedUpload) {
+                        await deleteCatalogItem(
+                            getDb(c.env.DB),
+                            storedUploadId,
+                        );
+                    }
+                } catch (cleanupError) {
+                    console.error("Upload rollback failed:", cleanupError);
+                }
+            }
+            if (billingAuthorizationId) {
+                await c.env.ENTER_BILLING.cancel(billingAuthorizationId);
+            }
             console.error("Upload error:", error);
             return c.json({ error: "Upload failed" }, 500);
         }
@@ -644,20 +711,14 @@ api.delete(
                 401,
             );
         }
-        const auth = await verifyApiKey(apiKey);
+        const auth = await verifyApiKey(c.env, apiKey);
         if (!auth) {
             return c.json({ error: "Invalid or expired API key" }, 401);
-        }
-        if (auth.userId === null) {
-            return c.json(
-                { error: "This API key is not attached to a user account" },
-                403,
-            );
         }
         // Publishable keys ship inside public clients — anyone holding one
         // could delete the owner's published media, so deletion is
         // secret-key only.
-        if (auth.type !== "secret") {
+        if (auth.type !== "secret" || auth.delegated) {
             return c.json(
                 { error: "Deleting media requires a secret (sk_) API key" },
                 403,

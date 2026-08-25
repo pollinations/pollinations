@@ -74,7 +74,7 @@ import {
 import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import {
-    apiKeyBudgetReservation,
+    billingAuthorization,
     generationAccess,
 } from "@/utils/generation-access.ts";
 import {
@@ -147,7 +147,7 @@ const imageVideoHandlers = factory.createHandlers(
     imageCache,
     generationAccess,
     deduplicateGeneration,
-    apiKeyBudgetReservation,
+    billingAuthorization,
     generateImageVideo,
 );
 
@@ -158,7 +158,7 @@ const model3dHandlers = factory.createHandlers(
     model3dCache,
     generationAccess,
     deduplicateGeneration,
-    apiKeyBudgetReservation,
+    billingAuthorization,
     generateModel3d,
 );
 
@@ -170,7 +170,7 @@ const chatCompletionHandlers = factory.createHandlers(
     textCache,
     generationAccess,
     deduplicateGeneration,
-    apiKeyBudgetReservation,
+    billingAuthorization,
     generateChatCompletion,
 );
 
@@ -187,14 +187,10 @@ function filterEntriesByPermissions(
     });
 }
 
-// Check if authenticated user has paid balance (pack > 0)
-// Auth middleware already fetches the full user row (SELECT *), so no extra DB query needed.
-// Returns undefined if no user (unauthenticated), true/false otherwise.
-// biome-ignore lint/suspicious/noExplicitAny: User type doesn't include balance fields from SELECT *
-function hasPaidBalance(c: any): boolean | undefined {
-    const user = c.var?.auth?.user;
-    if (!user) return undefined;
-    return (user.packBalance ?? 0) > 0;
+// Returns undefined if unauthenticated, true/false otherwise.
+function hasPaidBalance(c: Context<Env>): boolean | undefined {
+    if (!c.var.auth.user) return undefined;
+    return (c.var.auth.balances?.packBalance ?? 0) > 0;
 }
 
 // Optionally filter entries by the validated `?community` query parameter.
@@ -632,8 +628,8 @@ export const proxyRoutes = new Hono<Env>()
         prepareGenerationRequest,
         textCache,
         generationAccess,
-        deduplicateGeneration,
-        every(apiKeyBudgetReservation, generateEmbeddingsResponse),
+        every(deduplicateGeneration, billingAuthorization),
+        generateEmbeddingsResponse,
     )
     .post(
         "/text",
@@ -660,7 +656,7 @@ export const proxyRoutes = new Hono<Env>()
         textCache,
         generationAccess,
         deduplicateGeneration,
-        apiKeyBudgetReservation,
+        billingAuthorization,
         generateTextContent,
     )
     .get(
@@ -700,7 +696,7 @@ export const proxyRoutes = new Hono<Env>()
         textCache,
         generationAccess,
         deduplicateGeneration,
-        apiKeyBudgetReservation,
+        billingAuthorization,
         generateSimpleText,
     )
     .get(
@@ -893,8 +889,8 @@ export const proxyRoutes = new Hono<Env>()
         track("generate.image"),
         every(prepareGenerationRequest, model3dCache),
         generationAccess,
-        deduplicateGeneration,
-        every(apiKeyBudgetReservation, generateModel3d),
+        every(deduplicateGeneration, billingAuthorization),
+        generateModel3d,
     )
     .get(
         "/audio/:text",
@@ -944,7 +940,7 @@ export const proxyRoutes = new Hono<Env>()
         audioCache,
         generationAccess,
         deduplicateGeneration,
-        apiKeyBudgetReservation,
+        billingAuthorization,
         handleSimpleAudio,
     )
     .post(
@@ -978,8 +974,8 @@ export const proxyRoutes = new Hono<Env>()
         every(prepareOpenAIImageGeneration, formatOpenAIImageGeneration),
         prepareGenerationRequest,
         imageCache,
-        deduplicateGeneration,
-        every(apiKeyBudgetReservation, handleImageGeneration),
+        every(deduplicateGeneration, billingAuthorization),
+        handleImageGeneration,
     )
     .post(
         "/v1/images/edits",
@@ -1013,6 +1009,6 @@ export const proxyRoutes = new Hono<Env>()
         textCache,
         generationAccess,
         deduplicateGeneration,
-        apiKeyBudgetReservation,
+        billingAuthorization,
         handleImageEdit,
     );

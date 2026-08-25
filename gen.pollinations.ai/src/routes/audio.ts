@@ -40,7 +40,7 @@ import { track } from "@/middleware/track.ts";
 import googleCloudAuth from "@/text/auth/googleCloudAuth.ts";
 import { arrayBufferToBase64, normalizeSeed } from "@/util.ts";
 import {
-    apiKeyBudgetReservation,
+    billingAuthorization,
     generationAccess,
 } from "@/utils/generation-access.ts";
 import { callCommunityTranscriptionEndpoint } from "../audio/communityEndpoint.ts";
@@ -3224,7 +3224,7 @@ export const audioRoutes = new Hono<Env>()
         audioCache,
         generationAccess,
         deduplicateGeneration,
-        apiKeyBudgetReservation,
+        billingAuthorization,
         handleVoiceChanger,
     )
     .post(
@@ -3279,7 +3279,7 @@ export const audioRoutes = new Hono<Env>()
         audioCache,
         generationAccess,
         deduplicateGeneration,
-        apiKeyBudgetReservation,
+        billingAuthorization,
         handleVoiceIsolator,
     )
     .post(
@@ -3424,7 +3424,7 @@ export const audioRoutes = new Hono<Env>()
         audioCache,
         generationAccess,
         deduplicateGeneration,
-        apiKeyBudgetReservation,
+        billingAuthorization,
         handleSpeech,
     )
     .post(
@@ -3546,7 +3546,7 @@ export const audioRoutes = new Hono<Env>()
         textCache,
         generationAccess,
         deduplicateGeneration,
-        apiKeyBudgetReservation,
+        billingAuthorization,
         handleSpeechWithTimestamps,
     )
     .post(
@@ -3675,7 +3675,7 @@ export const audioRoutes = new Hono<Env>()
         textCache,
         generationAccess,
         deduplicateGeneration,
-        apiKeyBudgetReservation,
+        billingAuthorization,
         handleTranscription,
     );
 

@@ -1,12 +1,7 @@
 import { createBalanceCheckResult } from "@shared/billing/balance.ts";
 import { canCoverEstimatedCharge } from "@shared/billing/bucket-selection.ts";
-import {
-    atomicAdjustApiKeyBalance,
-    atomicReserveApiKeyBalance,
-} from "@shared/billing/deduction.ts";
-import { withByopMarkup } from "@shared/billing/markup.ts";
+import type { BillingAuthorization } from "@shared/schemas/billable-event.ts";
 import { getModelStats } from "@shared/utils/model-stats.ts";
-import { drizzle } from "drizzle-orm/d1";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import type { AuthVariables } from "@/middleware/auth.ts";
@@ -25,117 +20,158 @@ type GenerationAccessEnv = {
     Variables: GenerationAccessVariables;
 };
 
+export type GenerationBillingRequest = {
+    token: string;
+    authorization: BillingAuthorization;
+};
+
+export function authorizationFailure(error: string): HTTPException {
+    switch (error) {
+        case "invalid_api_key":
+            return new HTTPException(401, {
+                message:
+                    "A valid API key is required. Get one at https://enter.pollinations.ai/keys",
+            });
+        case "forbidden":
+        case "model_not_allowed":
+            return new HTTPException(403, {
+                message: "This API key cannot use the requested model",
+            });
+        case "insufficient_balance_or_budget":
+            return new HTTPException(402, {
+                message:
+                    "Insufficient balance or API key budget for this request",
+            });
+        case "authorization_conflict":
+        case "authorization_closed":
+            return new HTTPException(409, {
+                message:
+                    "This request id already belongs to closed billing work",
+            });
+        default:
+            return new HTTPException(500, {
+                message: "Unable to authorize billing for this request",
+            });
+    }
+}
+
+/** Read-only preflight. The execution owner reserves later, after deduplication. */
 export async function checkBalance(
     vars: GenerationAccessVariables,
     env: CloudflareBindings,
 ): Promise<void> {
     const { auth, balance, model, log } = vars;
-    if (!auth.user?.id) return;
+    const user = auth.requireUser();
+    auth.requireModelAccess();
+    if (!auth.apiKey?.rawKey || !auth.balances) {
+        throw new HTTPException(401, {
+            message:
+                "A valid API key is required. Get one at https://enter.pollinations.ai/keys",
+        });
+    }
 
-    const isPaidOnly = model.definition.paidOnly ?? false;
-    const estimatedCost = withByopMarkup(
+    const paidOnly = model.definition.paidOnly ?? false;
+    const estimatedPrice = Math.max(
+        0,
         getEstimatedPrice(
             await getModelStats(env.KV, log),
             model.resolved,
             model.definition,
         ),
-        Boolean(auth.apiKey?.byopMarkupApplies),
     );
-    const apiKeyBudget = auth.apiKey?.pollenBalance;
-    const requiredBudget = Math.max(0, estimatedCost);
-    if (typeof apiKeyBudget === "number" && apiKeyBudget < requiredBudget) {
+    if (
+        typeof auth.apiKey.pollenBalance === "number" &&
+        auth.apiKey.pollenBalance < estimatedPrice
+    ) {
         throw new HTTPException(402, {
-            message: `API key budget too low. This request costs ~${estimatedCost.toFixed(4)} pollen, but this key has ${Math.max(0, apiKeyBudget).toFixed(4)}.`,
+            message: `API key budget too low. This request costs ~${estimatedPrice.toFixed(4)} pollen, but this key has ${Math.max(0, auth.apiKey.pollenBalance).toFixed(4)}.`,
         });
     }
-
-    const userBalance = await balance.getBalance(auth.user.id);
-
-    if (!canCoverEstimatedCharge(userBalance, estimatedCost, isPaidOnly)) {
-        const available = isPaidOnly
-            ? userBalance.packBalance
-            : Math.max(userBalance.tierBalance, userBalance.packBalance);
+    if (!canCoverEstimatedCharge(auth.balances, estimatedPrice, paidOnly)) {
+        const available = paidOnly
+            ? auth.balances.packBalance
+            : Math.max(auth.balances.tierBalance, auth.balances.packBalance);
         throw new HTTPException(402, {
-            message: `Insufficient balance. This request costs ~${estimatedCost.toFixed(4)} pollen, but your available balance is ${Math.max(0, available).toFixed(4)}.`,
+            message: `Insufficient balance. This request costs ~${estimatedPrice.toFixed(4)} pollen, but your available balance is ${Math.max(0, available).toFixed(4)}.`,
         });
     }
 
     balance.balanceCheckResult = createBalanceCheckResult(
-        userBalance,
-        isPaidOnly,
+        auth.balances,
+        paidOnly,
     );
-    if (typeof apiKeyBudget === "number") {
-        balance.apiKeyBudgetEstimate = requiredBudget;
+    balance.billingEstimatePrice = estimatedPrice;
+    if (user.id !== auth.user?.id) {
+        throw new HTTPException(500, {
+            message: "Generation identity is inconsistent",
+        });
     }
 }
 
-export async function reserveApiKeyBudget(
+export function generationBillingRequest(
     vars: GenerationAccessVariables,
-    env: CloudflareBindings,
-): Promise<void> {
-    const apiKeyId = vars.auth.apiKey?.id;
-    const amount = vars.balance.apiKeyBudgetEstimate;
-    if (!apiKeyId || amount === undefined) return;
-
-    const db = drizzle(env.DB);
-    const reservation = await atomicReserveApiKeyBalance(db, apiKeyId, amount);
-    if (!reservation.ok) {
-        throw new HTTPException(402, {
-            message:
-                "API key budget was exhausted by another request. Increase the key budget or try again after the other request settles.",
-        });
+    requestId: string,
+): GenerationBillingRequest {
+    const token = vars.auth.apiKey?.rawKey;
+    const estimatedPrice = vars.balance.billingEstimatePrice;
+    if (!token || estimatedPrice === undefined) {
+        throw new Error("Generation billing preflight is missing");
     }
-    vars.balance.apiKeyReservation = {
-        apiKeyId,
-        amount: reservation.reserved,
+    return {
+        token,
+        authorization: {
+            producer: "gen.pollinations.ai",
+            requestId,
+            estimatedPrice,
+            paidOnly: vars.model.definition.paidOnly ?? false,
+            model: vars.model.resolved,
+        },
     };
 }
 
-export async function releaseApiKeyBudgetReservation(
+export async function authorizeGenerationBilling(
+    vars: GenerationAccessVariables,
+    env: CloudflareBindings,
+    requestId: string,
+): Promise<string> {
+    if (vars.balance.billingAuthorizationId) {
+        return vars.balance.billingAuthorizationId;
+    }
+    const request = generationBillingRequest(vars, requestId);
+    const result = await env.ENTER_BILLING.authorize(
+        request.token,
+        request.authorization,
+    );
+    if (!result.ok) throw authorizationFailure(result.error);
+    vars.balance.billingAuthorizationId = result.grant.id;
+    return result.grant.id;
+}
+
+export async function cancelGenerationAuthorization(
     vars: GenerationAccessVariables,
     env: CloudflareBindings,
 ): Promise<void> {
-    const reservation = vars.balance.apiKeyReservation;
-    if (!reservation) return;
-
-    const db = drizzle(env.DB);
-    const { ok } = await atomicAdjustApiKeyBalance(
-        db,
-        reservation.apiKeyId,
-        -reservation.amount,
-    );
-    if (!ok) {
-        throw new Error(
-            `API key budget release affected 0 rows for ${reservation.apiKeyId}`,
-        );
-    }
-    vars.balance.apiKeyReservation = undefined;
+    const authorizationId = vars.balance.billingAuthorizationId;
+    if (!authorizationId) return;
+    await env.ENTER_BILLING.cancel(authorizationId);
+    vars.balance.billingAuthorizationId = undefined;
 }
 
-export const apiKeyBudgetReservation = createMiddleware<GenerationAccessEnv>(
+export const billingAuthorization = createMiddleware<GenerationAccessEnv>(
     async (c, next) => {
-        await reserveApiKeyBudget(c.var, c.env);
+        await authorizeGenerationBilling(c.var, c.env, c.get("requestId"));
         try {
             await next();
         } catch (error) {
-            await releaseApiKeyBudgetReservation(c.var, c.env);
+            await cancelGenerationAuthorization(c.var, c.env);
             throw error;
         }
     },
 );
 
-export async function requireGenerationAccess(
-    vars: GenerationAccessVariables,
-    env: CloudflareBindings,
-): Promise<void> {
-    vars.auth.requireUser();
-    vars.auth.requireModelAccess();
-    await checkBalance(vars, env);
-}
-
 export const generationAccess = createMiddleware<GenerationAccessEnv>(
     async (c, next) => {
-        await requireGenerationAccess(c.var, c.env);
+        await checkBalance(c.var, c.env);
         await next();
     },
 );

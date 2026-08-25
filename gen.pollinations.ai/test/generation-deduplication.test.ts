@@ -15,6 +15,7 @@ import {
     type GenerationJob,
 } from "@/middleware/generation-deduplication.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
+import type { ModelVariables } from "@/middleware/model.ts";
 
 const testLog = {
     getChild: () => testLog,
@@ -30,6 +31,7 @@ type TestEnv = {
         RequestIdVariables &
         AuthVariables &
         BalanceVariables &
+        ModelVariables &
         GenerationCacheVariables & {
             track: { streamRequested: boolean };
             formData?: FormData;
@@ -85,8 +87,13 @@ function createApp(
                     selectedMeterSlug: "v1:meter:tier",
                     balances: { "v1:meter:tier": 1, "v1:meter:pack": 2 },
                 },
-                apiKeyBudgetEstimate: 0.25,
+                billingEstimatePrice: 0.25,
             });
+            c.set("model", {
+                requested: "test-model",
+                resolved: "test-model",
+                definition: { paidOnly: false },
+            } as never);
             c.set("track", { streamRequested: stream });
             if (executorBody) c.set("generationRequestBody", executorBody);
             c.set("auth", {
@@ -126,7 +133,7 @@ describe("generation request deduplication", () => {
         vi.useRealTimers();
     });
 
-    it("authorizes every caller but starts one detached generation", async () => {
+    it("passes credentials only to the coordinator owner path", async () => {
         const cache = new Map<string, string>();
         const jobs: GenerationJob[] = [];
         let active: Promise<void> | undefined;
@@ -166,6 +173,8 @@ describe("generation request deduplication", () => {
                         Authorization: "Bearer header-secret",
                         "CF-Connecting-IP": "203.0.113.42",
                         "Content-Type": "application/json",
+                        Referer:
+                            "https://app.example/?key=referer-secret&token=second-secret",
                         "X-Forwarded-Host": "gen.pollinations.ai",
                         "X-Original-Client-IP": "203.0.113.42",
                     },
@@ -201,6 +210,10 @@ describe("generation request deduplication", () => {
         expect(jobs[0].request.headers).toEqual(
             expect.arrayContaining([
                 ["cf-connecting-ip", "203.0.113.42"],
+                [
+                    "referer",
+                    "https://app.example/?key=%5Bredacted%5D&token=%5Bredacted%5D",
+                ],
                 ["x-forwarded-host", "gen.pollinations.ai"],
                 ["x-original-client-ip", "203.0.113.42"],
             ]),
@@ -211,7 +224,16 @@ describe("generation request deduplication", () => {
             "v1:meter:tier": 1,
             "v1:meter:pack": 2,
         });
-        expect(jobs[0].apiKeyBudgetEstimate).toBe(0.25);
+        expect(jobs[0].billingRequest).toEqual({
+            token: "pk-secret",
+            authorization: {
+                producer: "gen.pollinations.ai",
+                requestId: "request-1",
+                estimatedPrice: 0.25,
+                paidOnly: false,
+                model: "test-model",
+            },
+        });
         expect(new TextDecoder().decode(jobs[0].request.body)).toBe(
             JSON.stringify({
                 model: "resolved-model",
@@ -269,7 +291,13 @@ describe("generation request deduplication", () => {
                             "v1:meter:pack": 2,
                         },
                     },
+                    billingEstimatePrice: 0.25,
                 });
+                c.set("model", {
+                    requested: "test-model",
+                    resolved: "test-model",
+                    definition: { paidOnly: false },
+                } as never);
                 c.set("track", { streamRequested: false });
                 c.set("formData", await c.req.formData());
                 c.set("auth", {
@@ -391,7 +419,13 @@ describe("generation request deduplication", () => {
         expect(await response.json()).toEqual({ error: "blocked" });
     });
 
-    it("keeps connected callers waiting past 90 seconds", async () => {
+    it.each([
+        { boundary: "just below", waitMs: 299_000 },
+        { boundary: "at", waitMs: 300_000 },
+        { boundary: "just above", waitMs: 301_000 },
+    ])("keeps connected callers waiting $boundary 300 seconds", async ({
+        waitMs,
+    }) => {
         vi.useFakeTimers();
         let coordinatorName = "";
         const cache = new Map<string, string>();
@@ -425,15 +459,15 @@ describe("generation request deduplication", () => {
         await vi.waitFor(() => {
             expect(finish).toBeTypeOf("function");
         });
-        await vi.advanceTimersByTimeAsync(3 * 60_000);
+        await vi.advanceTimersByTimeAsync(waitMs);
         expect(settled).toBe(false);
 
-        cache.set("same-request", "generated-after-three-minutes");
+        cache.set("same-request", "generated-after-long-request");
         finish({ status: "cached" });
         const response = await responsePromise;
 
         expect(response.status).toBe(200);
-        expect(await response.text()).toBe("generated-after-three-minutes");
+        expect(await response.text()).toBe("generated-after-long-request");
         expect(coordinatorName).toMatch(/^[0-9a-f]{64}$/);
     });
 

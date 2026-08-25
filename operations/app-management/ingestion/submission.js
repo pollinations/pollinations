@@ -75,6 +75,7 @@ function inferPlatform(name, appUrl, description) {
 
     const hostIs = (domain) =>
         hostname === domain || hostname.endsWith(`.${domain}`);
+    if (hostIs("youtube.com") || hostIs("youtu.be")) return "youtube";
     if (hostIs("play.google.com")) return "android";
     if (hostIs("apps.apple.com") || hostIs("routinehub.co")) return "ios";
     if (hostIs("discord.com") || hostIs("discord.gg")) return "discord";
@@ -93,15 +94,37 @@ function inferPlatform(name, appUrl, description) {
 }
 
 function parseSubmission(body) {
-    const name = clean(section(body, "App Name"), 80);
-    const description = clean(section(body, "App Description"), 200);
-    const appUrl = normalizeUrl(section(body, "App URL"));
+    const submissionType =
+        clean(section(body, "Submission Type"), 30).toLowerCase() ===
+        "youtube tutorial"
+            ? "youtube_tutorial"
+            : "app";
+    const isTutorial = submissionType === "youtube_tutorial";
+    const name = clean(
+        section(body, isTutorial ? "Tutorial Title" : "App Name"),
+        80,
+    );
+    const description = clean(
+        section(
+            body,
+            isTutorial ? "What does the tutorial teach?" : "App Description",
+        ),
+        200,
+    );
+    const appUrl = normalizeUrl(
+        section(body, isTutorial ? "YouTube video" : "App URL"),
+    );
     const repoUrl = normalizeUrl(section(body, "GitHub Repository URL"));
-    const category = clean(section(body, "App Category"), 30).toLowerCase();
-    const language = normalizeLanguage(section(body, "App Language"));
+    const category = isTutorial
+        ? "learn"
+        : clean(section(body, "App Category"), 30).toLowerCase();
+    const language = normalizeLanguage(
+        section(body, isTutorial ? "Tutorial Language" : "App Language"),
+    );
     const discord = clean(section(body, "Discord Username"), 80);
 
     return {
+        submissionType,
         name,
         description,
         appUrl,
@@ -116,13 +139,27 @@ function parseSubmission(body) {
 
 function validateSubmission(submission) {
     const errors = [];
-    if (!submission.name) errors.push("App Name is required.");
+    const isTutorial = submission.submissionType === "youtube_tutorial";
+    if (!submission.name)
+        errors.push(
+            isTutorial
+                ? "Tutorial Title is required."
+                : "App Name is required.",
+        );
     if (submission.description.length < 20)
         errors.push(
-            "App Description must explain what the app does and how it uses Pollinations.",
+            isTutorial
+                ? "The tutorial description must explain what viewers will learn."
+                : "App Description must explain what the app does and how it uses Pollinations.",
         );
     if (!submission.appUrl)
-        errors.push("App URL must be a valid public HTTP(S) URL.");
+        errors.push(
+            isTutorial
+                ? "YouTube video must be a valid public HTTP(S) URL."
+                : "App URL must be a valid public HTTP(S) URL.",
+        );
+    if (isTutorial && submission.platform !== "youtube")
+        errors.push("YouTube video must use youtube.com or youtu.be.");
     if (!CATEGORIES.has(submission.category))
         errors.push("App Category must be selected from the submission form.");
     if (!submission.language)

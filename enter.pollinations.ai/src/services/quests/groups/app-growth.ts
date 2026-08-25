@@ -25,6 +25,12 @@ type QuestUserRow = {
 
 type AppDirectoryRow = {
     github_user_id: string;
+    platform: string;
+};
+
+type ListedSubmissions = {
+    app: boolean;
+    youtubeTutorial: boolean;
 };
 
 type AppUsageRow = QuestUserRow & {
@@ -94,12 +100,25 @@ const appListedQuest: QuestDefinition = {
     url: "https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml",
 };
 
+const youtubeTutorialQuest: QuestDefinition = {
+    id: "youtube_tutorial",
+    title: "Publish a YouTube tutorial",
+    description:
+        "Create an original Pollinations tutorial, submit it for review, and have it listed in [Learn](https://pollinations.ai/apps?filter=learn).",
+    category: "community",
+    scope: "perUser",
+    rewardAmount: 10,
+    balanceBucket: "tier",
+    url: "https://github.com/pollinations/pollinations/issues/new?template=youtube-tutorial.yml",
+};
+
 const QUESTS = [
     firstByopExternalUserQuest,
     firstPaidSpendInAppQuest,
     tenAppUsersQuest,
     tenPollenAppUsageQuest,
     appListedQuest,
+    youtubeTutorialQuest,
 ];
 
 export async function listQuestCards(
@@ -130,16 +149,18 @@ export async function evaluateUser(
         tenPollenAppUsageQuest.id,
     ];
     const reachQuestIds = [firstByopExternalUserQuest.id, tenAppUsersQuest.id];
-    const [appUsage, appReach, listedAppRows] = await Promise.all([
+    const [appUsage, appReach, listedSubmissions] = await Promise.all([
         usageQuestIds.some((id) => rewardableQuestIds.has(id))
             ? loadAppUsage(ctx, user)
             : null,
         reachQuestIds.some((id) => rewardableQuestIds.has(id))
             ? loadAppReach(ctx, user)
             : null,
-        rewardableQuestIds.has(appListedQuest.id)
-            ? loadListedAppOwner(ctx, user)
-            : [],
+        [appListedQuest.id, youtubeTutorialQuest.id].some((id) =>
+            rewardableQuestIds.has(id),
+        )
+            ? loadListedSubmissions(ctx, user)
+            : { app: false, youtubeTutorial: false },
     ]);
 
     const proposals = [
@@ -163,20 +184,24 @@ export async function evaluateUser(
         rewardableQuestIds.has(tenPollenAppUsageQuest.id)
             ? [{ quest: tenPollenAppUsageQuest, userId: user.id }]
             : []),
-        ...listedAppRows.map((row) => ({
-            quest: appListedQuest,
-            userId: row.userId,
-        })),
+        ...(listedSubmissions.app && rewardableQuestIds.has(appListedQuest.id)
+            ? [{ quest: appListedQuest, userId: user.id }]
+            : []),
+        ...(listedSubmissions.youtubeTutorial &&
+        rewardableQuestIds.has(youtubeTutorialQuest.id)
+            ? [{ quest: youtubeTutorialQuest, userId: user.id }]
+            : []),
     ];
     log.info(
-        "APP_GROWTH_PROPOSALS: userId={userId} byopOwnerRows={byop} externalUsers={externalUsers} pollenUsed={pollenUsed} paidRequests={paidRequests} listedAppRows={listed} questIds={questIds}",
+        "APP_GROWTH_PROPOSALS: userId={userId} byopOwnerRows={byop} externalUsers={externalUsers} pollenUsed={pollenUsed} paidRequests={paidRequests} appListed={appListed} tutorialListed={tutorialListed} questIds={questIds}",
         {
             userId: user.id,
             byop: appReach ? 1 : 0,
             externalUsers: appReach?.externalUsers ?? 0,
             pollenUsed: appUsage?.pollenUsed ?? 0,
             paidRequests: appUsage?.paidRequests ?? 0,
-            listed: listedAppRows.length,
+            appListed: listedSubmissions.app,
+            tutorialListed: listedSubmissions.youtubeTutorial,
             questIds: proposals.map((p) => p.quest.id),
         },
     );
@@ -214,11 +239,11 @@ async function loadAppUsage(
     return matched;
 }
 
-async function loadListedAppOwner(
+async function loadListedSubmissions(
     { env }: QuestEvaluationContext,
     user: QuestUser,
-): Promise<QuestUserRow[]> {
-    if (user.githubId === null) return [];
+): Promise<ListedSubmissions> {
+    if (user.githubId === null) return { app: false, youtubeTutorial: false };
 
     const githubUserId = String(user.githubId);
     const tinybirdOrigin = new URL(env.TINYBIRD_INGEST_URL).origin;
@@ -229,18 +254,23 @@ async function loadListedAppOwner(
         tinybirdToken,
         { limit: "5000" },
     );
-    const listed = rows.some((row) => row.github_user_id === githubUserId);
+    const ownerRows = rows.filter((row) => row.github_user_id === githubUserId);
+    const listed = {
+        app: ownerRows.some((row) => row.platform !== "youtube"),
+        youtubeTutorial: ownerRows.some((row) => row.platform === "youtube"),
+    };
     log.info(
-        "APP_GROWTH_APP_LISTED: userId={userId} githubId={githubId} directoryRows={rows} listed={listed}",
+        "APP_GROWTH_CATALOG_LISTED: userId={userId} githubId={githubId} directoryRows={rows} app={app} youtubeTutorial={youtubeTutorial}",
         {
             userId: user.id,
             githubId: user.githubId,
             rows: rows.length,
-            listed,
+            app: listed.app,
+            youtubeTutorial: listed.youtubeTutorial,
         },
     );
 
-    return listed ? [{ userId: user.id }] : [];
+    return listed;
 }
 
 async function loadAppReach(

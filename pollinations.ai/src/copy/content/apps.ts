@@ -48,6 +48,7 @@ export const APPS_PAGE = {
 
     // Platform display labels (emoji + name shown on app cards)
     platformWeb: "🌐 Web",
+    platformYoutube: "▶️ YouTube",
     platformAndroid: "📱 Android",
     platformIos: "🍎 iOS",
     platformWindows: "🖥️ Windows",

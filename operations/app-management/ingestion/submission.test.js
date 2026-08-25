@@ -32,6 +32,21 @@ en
 ### Discord Username
 sunflower`;
 
+const TUTORIAL_BODY = `### Submission Type
+YouTube tutorial
+
+### Tutorial Title
+Build an AI image app with Pollinations
+
+### YouTube video
+https://www.youtube.com/watch?v=example
+
+### What does the tutorial teach?
+Build and deploy an image application using the Pollinations API.
+
+### Tutorial Language
+en`;
+
 test("parses and validates the issue form", () => {
     const submission = parseSubmission(BODY);
     assert.equal(submission.name, "Sunflower Studio");
@@ -60,6 +75,40 @@ test("infers known distribution platforms", () => {
         "android",
     );
     assert.equal(inferPlatform("Example CLI", "", "command-line tool"), "cli");
+    assert.equal(
+        inferPlatform("Tutorial", "https://youtu.be/example", ""),
+        "youtube",
+    );
+});
+
+test("parses YouTube tutorials as Learn catalog entries", () => {
+    const submission = parseSubmission(TUTORIAL_BODY);
+    assert.equal(submission.submissionType, "youtube_tutorial");
+    assert.equal(submission.category, "learn");
+    assert.equal(submission.platform, "youtube");
+    assert.deepEqual(validateSubmission(submission), []);
+
+    const app = buildApp(submission, {
+        githubUsername: "example",
+        githubUserId: 123,
+        submittedDate: "2026-08-24",
+        issueUrl: "https://github.com/pollinations/pollinations/issues/2",
+        approvedDate: "2026-08-25",
+    });
+    assert.equal(app.category, "learn");
+    assert.equal(app.platform, "youtube");
+});
+
+test("rejects tutorial submissions that are not YouTube videos", () => {
+    const submission = parseSubmission(
+        TUTORIAL_BODY.replace(
+            "https://www.youtube.com/watch?v=example",
+            "https://example.com/tutorial",
+        ),
+    );
+    assert.deepEqual(validateSubmission(submission), [
+        "YouTube video must use youtube.com or youtu.be.",
+    ]);
 });
 
 test("builds the canonical catalog app", () => {

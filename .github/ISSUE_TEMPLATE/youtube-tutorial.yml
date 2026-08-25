@@ -1,0 +1,76 @@
+name: Submit a YouTube tutorial
+description: Submit a Pollinations tutorial for the Learn catalog and a 10 Pollen reward
+title: "[Tutorial Submission] "
+labels: [APP-SUBMISSION]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Publish an original, useful YouTube tutorial showing people how to build or create with Pollinations. Include `POLLEN-YOUR_GITHUB_USERNAME` in the video description so maintainers can verify that you control it.
+
+        Approved submissions are published in the **Learn** category of the Pollinations app catalog and earn **10 Pollen**. Rewards are based on the tutorial itself, not views, likes, or subscriber counts. One reward is available per GitHub user.
+
+  - type: dropdown
+    id: submission-type
+    attributes:
+      label: Submission Type
+      options:
+        - YouTube tutorial
+    validations:
+      required: true
+
+  - type: input
+    id: tutorial-title
+    attributes:
+      label: Tutorial Title
+      description: Use the public title of the YouTube video.
+      placeholder: Build an AI image app with Pollinations
+    validations:
+      required: true
+
+  - type: input
+    id: video
+    attributes:
+      label: YouTube video
+      description: Link to the public video on a channel you control.
+      placeholder: https://www.youtube.com/watch?v=...
+    validations:
+      required: true
+
+  - type: textarea
+    id: tutorial
+    attributes:
+      label: What does the tutorial teach?
+      description: Briefly describe the Pollinations workflow and what viewers will build or learn.
+    validations:
+      required: true
+
+  - type: input
+    id: tutorial-language
+    attributes:
+      label: Tutorial Language
+      description: ISO language code for the video's primary language.
+      value: en
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: requirements
+    attributes:
+      label: Requirements
+      options:
+        - label: I created this video and control the YouTube channel that published it.
+          required: true
+        - label: The video is public, original, and demonstrates a useful Pollinations workflow and its result.
+          required: true
+        - label: The video description includes `POLLEN-` followed by my GitHub username, links to Pollinations, and discloses that it is eligible for a creator-quest reward.
+          required: true
+        - label: I understand that views, likes, and subscriber counts do not affect approval or the reward.
+          required: true
+        - label: I have not previously claimed this quest.
+          required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        The normal app-submission review will check the video. If approved, it will be listed in Learn and a claimable reward will appear on [Enter Quests](https://enter.pollinations.ai/quests).

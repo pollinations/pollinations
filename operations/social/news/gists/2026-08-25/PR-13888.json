@@ -1,0 +1,34 @@
+{
+  "pr_number": 13888,
+  "title": "fix: exclude Mistral regional pricing variants",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13888",
+  "merged_at": "2026-08-25T10:43:12Z",
+  "labels": [],
+  "pr_body_excerpt": "- Excludes OpenRouter's `mistral/us` and `mistral/eu` endpoint variants, which cost 10% more than the configured Mistral sheet.\n- Keeps `mistral` pinned to the standard Mistral endpoint at $0.15/M input, $0.015/M cached input, and $0.60/M output with OpenRouter fallback disabled.\n- Preserves the canonical name, aliases, `paidOnly: true`, multiplier 1, capabilities, and no Pollinations fallback.\n- Adds a resolver assertion for the complete endpoint exclusion list.\n\nVerified against [OpenRouter's exact endpoint catalog](https://openrouter.ai/api/v1/models/mistralai/mistral-small-2603/endpoints) and direct/local E2E probes. Gen resolver tests, permissions tests, typecheck, cache/billing checks, all declared capabilities and aliases, and a fresh 5-request burst pass.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Mistral stays on the trail",
+    "blurb": "The Mistral route now skips its pricier regional detours. Same model, same aliases, fewer surprise toll booths in the flowerbed.",
+    "summary": "Excluded OpenRouter's `mistral/us` and `mistral/eu` variants so `mistral` remains pinned to the standard endpoint at $0.15/M input, $0.015/M cached input, and $0.60/M output, with OpenRouter fallback disabled.",
+    "impact": "Mistral requests keep their canonical configuration, capabilities, aliases, and multiplier while consistently resolving to the configured standard-priced endpoint.",
+    "keywords": [
+      "mistral",
+      "openrouter",
+      "model-routing",
+      "pricing",
+      "text-api",
+      "resolver"
+    ],
+    "visual_concept": "A cozy garden-path routing scene: Polli acts as a careful trail guide, placing a sign toward the standard Mistral terminal while two small regional side paths are gently marked as unavailable. A CRT monitor robot checks a route map beside code-plants, representing resolver assertions and reliable endpoint selection.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny explorer scarf as she points travelers toward a glowing standard Mistral terminal; two gentle garden side paths labeled `US` and `EU` have small wooden “not this route” signs, while a cute CRT monitor robot checks a route map beside sprouting code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-25/PR-13888.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny explorer scarf as she points travelers toward a glowing standard Mistral terminal; two gentle garden side paths labeled `US` and `EU` have small wooden “not this route” signs, while a cute CRT monitor robot checks a route map beside sprouting code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-25T10:44:18.098330+00:00"
+}

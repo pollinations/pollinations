@@ -90,6 +90,7 @@ const REALTIME_ROUTES = {
 type AzureRealtimeModelName = keyof typeof REALTIME_ROUTES;
 const UNSUPPORTED_TRANSCRIPTION_MESSAGE =
     "Realtime input transcription is not supported yet.";
+const REALTIME_PROVIDER_DRAIN_TIMEOUT_MS = 5_000;
 type WebSocketResponse = Response & { webSocket?: WebSocket };
 type WebSocketResponseInit = ResponseInit & { webSocket?: WebSocket };
 type RealtimeCacheUsage = {
@@ -921,23 +922,50 @@ function settleAfterProviderClose(
     downstream: WebSocket,
     tracking: RealtimeBillingContext,
 ): void {
-    downstream.addEventListener("close", (event) => {
-        if (downstream.readyState !== WebSocket.CLOSED) {
-            const closeCode = normalizeCloseCode(event.code);
-            if (closeCode) downstream.close(closeCode, event.reason);
-            else downstream.close();
+    let providerDrainTimeout: ReturnType<typeof setTimeout> | undefined;
+    let resolveProviderDrain: (() => void) | undefined;
+
+    const finishProviderDrain = () => {
+        if (providerDrainTimeout !== undefined) {
+            clearTimeout(providerDrainTimeout);
+            providerDrainTimeout = undefined;
         }
+        resolveProviderDrain?.();
+        resolveProviderDrain = undefined;
+    };
+
+    downstream.addEventListener("close", (event) => {
+        if (providerDrainTimeout === undefined) {
+            c.executionCtx.waitUntil(
+                new Promise<void>((resolve) => {
+                    resolveProviderDrain = resolve;
+                    providerDrainTimeout = setTimeout(() => {
+                        providerDrainTimeout = undefined;
+                        resolveProviderDrain = undefined;
+                        scheduleRealtimeSettlement(c, tracking);
+                        resolve();
+                    }, REALTIME_PROVIDER_DRAIN_TIMEOUT_MS);
+                }),
+            );
+        }
+        closeSocket(upstream, event.code, event.reason);
     });
     upstream.addEventListener("close", (event) => {
         try {
+            finishProviderDrain();
             closeSocket(downstream, event.code, event.reason);
         } finally {
             scheduleRealtimeSettlement(c, tracking);
         }
     });
     upstream.addEventListener("error", () => {
-        closeSocket(downstream, 1011, "Realtime proxy error");
-        closeSocket(upstream, 1011, "Realtime proxy error");
+        try {
+            finishProviderDrain();
+            closeSocket(downstream, 1011, "Realtime proxy error");
+            closeSocket(upstream, 1011, "Realtime proxy error");
+        } finally {
+            scheduleRealtimeSettlement(c, tracking);
+        }
     });
 }
 

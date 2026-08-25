@@ -365,6 +365,38 @@ test("reconciles the estimate with multiple actual events", async ({
     });
 });
 
+test("settlement selects the funded bucket from the measured total", async ({
+    budgetedApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+    const auth = await authenticate(budgetedApiKey.key);
+    await env.DB.prepare(
+        "UPDATE user SET tier_balance = 2, pack_balance = 5 WHERE id = ?",
+    )
+        .bind(auth.user.id)
+        .run();
+    const grantId = await authorize(
+        budgetedApiKey.key,
+        authorization("cross-bucket-actual", 1),
+    );
+
+    await expect(
+        service().settle(grantId, [
+            event("cross-bucket-event", 4, {
+                requestId: "cross-bucket-actual",
+            }),
+        ]),
+    ).resolves.toMatchObject({
+        ok: true,
+        events: [{ status: "settled", payerBucket: "pack" }],
+    });
+    expect(await balances(auth.user.id, auth.apiKey.id)).toEqual({
+        user: { tier: 2, pack: 1 },
+        key: { budget: 96 },
+    });
+});
+
 test("actual cost cannot exceed the remaining finite key budget", async ({
     budgetedApiKey,
 }) => {
@@ -878,6 +910,63 @@ test("maintenance bounds the closed ledger while retaining pending auto top-ups"
             .bind(grantId)
             .first<{ count: number }>(),
     ).toEqual({ count: 0 });
+});
+
+test("maintenance prunes more than the request-processing batch size", async ({
+    budgetedApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+    const grantId = await authorize(
+        budgetedApiKey.key,
+        authorization("prune-throughput", 0),
+    );
+    await service().settle(grantId, [
+        event("prune-throughput-event", 0, {
+            requestId: "prune-throughput",
+        }),
+    ]);
+    const now = Date.now();
+    const cutoff = now - BILLING_AUTHORIZATION_TTL_MS - 1;
+    await env.DB.prepare(
+        `UPDATE billing_authorization SET expires_at = ? WHERE id = ?`,
+    )
+        .bind(cutoff, grantId)
+        .run();
+    await env.DB.prepare(
+        `WITH RECURSIVE sequence(n) AS (
+             SELECT 1
+             UNION ALL
+             SELECT n + 1 FROM sequence WHERE n < 74
+         )
+         INSERT INTO billing_authorization (
+             id, producer, request_id, model, api_key_id, api_key_name,
+             api_key_type, api_key_created_via, api_key_client_name,
+             api_key_client_user_id, user_id, user_tier, parent_request_id,
+             estimated_price, reserved_price, reserved_bucket,
+             settlement_bucket, actual_price, paid_only, byop_client_key_id,
+             dev_user_id, markup_rate, key_budget_limited,
+             reservation_applied, settled_at, cancelled_at, expires_at,
+             created_at
+         )
+         SELECT
+             id || '-' || n, producer, request_id || '-' || n, model,
+             api_key_id, api_key_name, api_key_type, api_key_created_via,
+             api_key_client_name, api_key_client_user_id, user_id, user_tier,
+             parent_request_id, estimated_price, reserved_price,
+             reserved_bucket, settlement_bucket, actual_price, paid_only,
+             byop_client_key_id, dev_user_id, markup_rate,
+             key_budget_limited, reservation_applied, settled_at,
+             cancelled_at, expires_at, created_at
+         FROM billing_authorization, sequence
+         WHERE id = ?`,
+    )
+        .bind(grantId)
+        .run();
+
+    await expect(runBillingMaintenance(env, now)).resolves.toMatchObject({
+        prunedAuthorizations: 75,
+    });
 });
 
 test("settlement emits one derived Tinybird write after the ledger commit", async ({

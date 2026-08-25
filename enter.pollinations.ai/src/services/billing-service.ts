@@ -395,7 +395,7 @@ function insertEvent(
                 ?, grant.id, ?, grant.api_key_id, grant.user_id, ?, ?, ?, ?,
                 CASE
                     WHEN ? <= 0 THEN NULL
-                    ELSE grant.reserved_bucket
+                    ELSE grant.settlement_bucket
                 END,
                 ?, ?, ?, ?, ?, ?, ?, ?
             FROM billing_authorization AS grant
@@ -601,41 +601,51 @@ function approveActualPrice(
 ) {
     return db
         .prepare(
-            `UPDATE billing_authorization
-             SET actual_price = ?
-             WHERE id = ?
-               AND actual_price IS NULL
-               AND settled_at IS NULL
-               AND cancelled_at IS NULL
-               AND expires_at > ?
-               AND EXISTS (
-                   SELECT 1 FROM user AS payer
-                   WHERE payer.id = billing_authorization.user_id
-                     AND (
-                         ? <= billing_authorization.reserved_price
-                         OR (
-                             billing_authorization.reserved_bucket = 'tier'
-                             AND COALESCE(payer.tier_balance, 0) >= ? - billing_authorization.reserved_price
-                         )
-                         OR (
-                             billing_authorization.reserved_bucket = 'pack'
-                             AND COALESCE(payer.pack_balance, 0) >= ? - billing_authorization.reserved_price
-                         )
-                     )
+            `UPDATE billing_authorization AS grant
+             SET actual_price = ?,
+                 settlement_bucket = CASE
+                     WHEN ? <= 0 THEN grant.reserved_bucket
+                     WHEN grant.paid_only = 1 THEN 'pack'
+                     WHEN COALESCE(payer.tier_balance, 0) +
+                          CASE WHEN grant.reserved_bucket = 'tier'
+                               THEN grant.reserved_price ELSE 0 END >= ?
+                     THEN 'tier'
+                     ELSE 'pack'
+                 END
+             FROM user AS payer
+             WHERE grant.id = ?
+               AND grant.actual_price IS NULL
+               AND grant.settled_at IS NULL
+               AND grant.cancelled_at IS NULL
+               AND grant.expires_at > ?
+               AND payer.id = grant.user_id
+               AND (
+                   ? <= 0
+                   OR (
+                       grant.paid_only = 0
+                       AND COALESCE(payer.tier_balance, 0) +
+                           CASE WHEN grant.reserved_bucket = 'tier'
+                                THEN grant.reserved_price ELSE 0 END >= ?
+                   )
+                   OR COALESCE(payer.pack_balance, 0) +
+                      CASE WHEN grant.reserved_bucket = 'pack'
+                           THEN grant.reserved_price ELSE 0 END >= ?
                )
                AND (
-                   key_budget_limited = 0
-                   OR ? <= reserved_price
+                   grant.key_budget_limited = 0
+                   OR ? <= grant.reserved_price
                    OR EXISTS (
                        SELECT 1 FROM apikey
-                       WHERE id = billing_authorization.api_key_id
+                       WHERE id = grant.api_key_id
                          AND enabled = 1
                          AND (expires_at IS NULL OR expires_at > unixepoch())
-                         AND pollen_balance >= ? - billing_authorization.reserved_price
+                         AND pollen_balance >= ? - grant.reserved_price
                    )
                )`,
         )
         .bind(
+            actualPrice,
+            actualPrice,
             actualPrice,
             authorization.id,
             now,
@@ -655,25 +665,32 @@ function reconcileWalletReservation(
     return db
         .prepare(
             `UPDATE user
-             SET tier_balance = CASE
-                     WHEN grant.reserved_bucket = 'tier'
-                     THEN ROUND(COALESCE(tier_balance, 0) - (? - grant.reserved_price), 8)
-                     ELSE tier_balance
-                 END,
-                 pack_balance = CASE
-                     WHEN grant.reserved_bucket = 'pack'
-                     THEN ROUND(COALESCE(pack_balance, 0) - (? - grant.reserved_price), 8)
-                     ELSE pack_balance
-                 END
+             SET tier_balance = ROUND(
+                     COALESCE(tier_balance, 0)
+                     + CASE WHEN grant.reserved_bucket = 'tier'
+                            THEN grant.reserved_price ELSE 0 END
+                     - CASE WHEN grant.settlement_bucket = 'tier'
+                            THEN grant.actual_price ELSE 0 END,
+                     8
+                 ),
+                 pack_balance = ROUND(
+                     COALESCE(pack_balance, 0)
+                     + CASE WHEN grant.reserved_bucket = 'pack'
+                            THEN grant.reserved_price ELSE 0 END
+                     - CASE WHEN grant.settlement_bucket = 'pack'
+                            THEN grant.actual_price ELSE 0 END,
+                     8
+                 )
              FROM billing_authorization AS grant
              WHERE user.id = grant.user_id
                AND grant.id = ?
                AND grant.reservation_applied = 1
                AND grant.actual_price = ?
+               AND grant.settlement_bucket IS NOT NULL
                AND grant.settled_at IS NULL
                AND grant.cancelled_at IS NULL`,
         )
-        .bind(actualPrice, actualPrice, authorization.id, actualPrice);
+        .bind(authorization.id, actualPrice);
 }
 
 function reconcileApiKeyReservation(

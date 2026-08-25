@@ -216,6 +216,7 @@ export const billingAuthorization = sqliteTable("billing_authorization", {
   estimatedPrice: real("estimated_price").notNull(),
   reservedPrice: real("reserved_price").notNull(),
   reservedBucket: text("reserved_bucket", { enum: ["tier", "pack"] }).notNull(),
+  settlementBucket: text("settlement_bucket", { enum: ["tier", "pack"] }),
   actualPrice: real("actual_price"),
   paidOnly: integer("paid_only", { mode: "boolean" }).default(false).notNull(),
   byopClientKeyId: text("byop_client_key_id"),
@@ -238,7 +239,8 @@ export const billingAuthorization = sqliteTable("billing_authorization", {
     table.producer,
     table.requestId,
   ),
-  index("idx_billing_authorization_expiry")
+  index("idx_billing_authorization_expiry").on(table.expiresAt),
+  index("idx_billing_authorization_open_expiry")
     .on(table.expiresAt)
     .where(sql`${table.settledAt} IS NULL AND ${table.cancelledAt} IS NULL`),
 ]);

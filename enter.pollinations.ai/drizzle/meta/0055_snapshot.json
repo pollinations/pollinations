@@ -687,6 +687,13 @@
           "notNull": true,
           "autoincrement": false
         },
+        "settlement_bucket": {
+          "name": "settlement_bucket",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "actual_price": {
           "name": "actual_price",
           "type": "real",
@@ -781,6 +788,13 @@
         },
         "idx_billing_authorization_expiry": {
           "name": "idx_billing_authorization_expiry",
+          "columns": [
+            "expires_at"
+          ],
+          "isUnique": false
+        },
+        "idx_billing_authorization_open_expiry": {
+          "name": "idx_billing_authorization_open_expiry",
           "columns": [
             "expires_at"
           ],

@@ -1,0 +1,34 @@
+{
+  "pr_number": 13855,
+  "title": "feat(cli): add polli earnings command",
+  "author": "TRDEFI",
+  "url": "https://github.com/pollinations/pollinations/pull/13855",
+  "merged_at": "2026-08-25T08:41:47Z",
+  "labels": [],
+  "pr_body_excerpt": "﻿Closes #13768\n\n`polli earnings` hits the existing `/account/earnings` endpoint (the same one the Enter dashboard uses) and prints a total plus a per-entity breakdown table. `--days <n>` maps to the API's rolling window and is validated client-side - positive integer, capped at 90, which is the API max - with a clear error message otherwise. `--json` returns the raw `daily` / `perEntity` payload for scripts.\n\nFollows the existing `usage.ts` patterns for the request, table output and error handling. Documented in README and SKILL.md.\n\nTests cover the days-window parser (including the >90 rejection) and the total calculation. `vitest run` passes in `packages/polli-cli`.\r\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The pollen ledger blooms",
+    "blurb": "Polli can now count its own pollen. Ask the CLI what you earned, inspect the entity-by-entity breakdown, or hand the raw numbers to a script.",
+    "summary": "Added `polli earnings`, which reads the existing `/account/earnings` endpoint and prints total earnings plus a per-entity table, with validated rolling windows of up to 90 days and raw `daily`/`perEntity` JSON via `--json`.",
+    "impact": "CLI users can check and script against their earnings without opening the Enter dashboard, using `--days <n>` for a 1–90 day window or `--json` for the API payload.",
+    "keywords": [
+      "polli-cli",
+      "earnings",
+      "pollen",
+      "account",
+      "json",
+      "developer-tools"
+    ],
+    "visual_concept": "Polli is an accountant-gardener in a cozy terminal greenhouse, reviewing a glowing pollen ledger that branches into labeled jars or flower pots for each earning entity. A retro CRT shows a tidy earnings table and small JSON scroll, while code-plants and flowers make the accounting feel like tending a garden.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, black oval eyes, pink rectangular blush marks, light blue rounded wings, and a tiny green accountant visor, carefully tallying glowing pollen jars beside a retro CRT terminal showing a simple earnings table and `{ daily, perEntity }` JSON scroll. Code-plants sprout from flower pots around her in a warm cream, lavender, and prominently lime green (#ecf874) greenhouse; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-25/PR-13855.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, black oval eyes, pink rectangular blush marks, light blue rounded wings, and a tiny green accountant visor, carefully tallying glowing pollen jars beside a retro CRT terminal showing a simple earnings table and `{ daily, perEntity }` JSON scroll. Code-plants sprout from flower pots around her in a warm cream, lavender, and prominently lime green (#ecf874) greenhouse; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-25T08:42:56.123754+00:00"
+}

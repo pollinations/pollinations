@@ -1,0 +1,35 @@
+{
+  "pr_number": 13910,
+  "title": "feat: add Wan 3.0 via Fal Prime",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13910",
+  "merged_at": "2026-08-25T17:37:54Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds the paid-only `wan-3.0` canonical through Fal Prime text-to-video and image-to-video routes.\n- Supports exactly 5 seconds, an optional start image, optional audio, and 480p/720p/1080p with exact variable pricing of $0.068/$0.14/$0.28 per second.\n- Keeps aliases empty, multiplier at 1, and adds no provider fallback or Pollinations GPU.\n- Verifies direct Fal output and full local E2E across every resolution, start-image ingestion through media.pollinations.ai, audio on/off, catalog and error paths.\n- Verifies a three-client cold burst produces one upstream result and debit, with immediate anonymous R2 cache replay.\n\nTests:\n- `npx vitest run test/image/wan3FalVideoModel.test.ts test/image/params.test.ts test/image/videoFrameValidation.test.ts`\n- `npx vitest run test/cost-variants.test.ts test/effective-prices.snapshot.test.ts`\n- `npx tsc --noEmit`\n\nPost-deploy verification: confirm production provider settlement, cache behavior, and reliability before removing the model from the active plan.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Wan enters the video garden",
+    "blurb": "A new video seed has landed in the hive: Wan 3.0 now turns prompts, pictures, and optional audio into five-second clips. Pick a resolution, bring a starting frame if you have one, and let the pixels wander.",
+    "summary": "Added the paid-only `wan-3.0` canonical model through Fal Prime for 5-second text-to-video and image-to-video generation, with optional start images and audio plus 480p, 720p, and 1080p output priced at $0.068, $0.14, and $0.28 per second respectively.",
+    "impact": "Users can generate short Wan 3.0 videos in three resolutions, reuse a supplied image through `media.pollinations.ai` as the opening frame, and receive immediate anonymous cache replays for matching requests after the first generation.",
+    "keywords": [
+      "wan-3.0",
+      "video-generation",
+      "fal-prime",
+      "image-to-video",
+      "text-to-video",
+      "audio",
+      "caching"
+    ],
+    "visual_concept": "Depict Wan 3.0 as a cozy retro video garden: Polli directs a tiny CRT video workstation where a prompt scroll, a framed start image, and musical-note audio feed into a blooming filmstrip. Three softly glowing output reels labeled 480p, 720p, and 1080p show the model's resolution choices, while a small cache jar holds a duplicate finished reel for quick replay.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with black oval eyes, pink rectangular cheek blushes, light blue rounded wings, and a tiny director beret, warmly guiding a retro CRT video workstation as a prompt scroll, framed start image, and musical notes grow into a flowering five-second filmstrip; three little output reels read “480p”, “720p”, and “1080p”, with a cache jar holding a replay reel and pixel flowers sprouting around the desk. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-25/PR-13910.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with black oval eyes, pink rectangular cheek blushes, light blue rounded wings, and a tiny director beret, warmly guiding a retro CRT video workstation as a prompt scroll, framed start image, and musical notes grow into a flowering five-second filmstrip; three little output reels read “480p”, “720p”, and “1080p”, with a cache jar holding a replay reel and pixel flowers sprouting around the desk. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-25T17:39:32.188249+00:00"
+}

@@ -226,7 +226,8 @@ export async function createServiceAuthorization(
     // Paid-only stays strict (must hold paid balance); otherwise coverage.
     const funded = [
         `EXISTS (SELECT 1 FROM user WHERE id = ?5
-                 AND COALESCE(${column}, 0) ${isPaidOnly ? ">" : ">="} ?13)`,
+                 AND COALESCE(${column}, 0) >= ?13
+                 ${isPaidOnly ? `AND COALESCE(${column}, 0) > 0` : ""})`,
         ...(hasBudget
             ? [
                   `EXISTS (SELECT 1 FROM apikey WHERE id = ?7

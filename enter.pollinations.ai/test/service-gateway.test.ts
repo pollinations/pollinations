@@ -1055,6 +1055,29 @@ describe("ServiceGateway", () => {
         ]);
     });
 
+    test("paid-only admits a pack that exactly covers a positive estimate but never an empty pack", async ({
+        paidApiKey,
+    }) => {
+        await db().update(userTable).set({ tierBalance: 50, packBalance: 10 });
+        const exact = await authorizeServiceRequest(
+            env,
+            authorizeInput(paidApiKey, { estimatedPrice: 10, paidOnly: true }),
+        );
+        expect(exact.ok).toBe(true);
+        const [row] = await db().select().from(serviceAuthorization);
+        expect(row.payerBucket).toBe("pack");
+        expect(await userBalances()).toEqual({ tier: 50, pack: 0 });
+
+        // A zero estimate still needs paid balance to be held at all.
+        const empty = await authorizeServiceRequest(
+            env,
+            authorizeInput(paidApiKey, { estimatedPrice: 0, paidOnly: true }),
+        );
+        expect(empty.ok).toBe(false);
+        if (!empty.ok) expect(empty.denial.status).toBe(402);
+        expect(await db().select().from(serviceAuthorization)).toHaveLength(1);
+    });
+
     test("concurrent authorizations against one exact balance admit only funded work", async ({
         paidApiKey,
         budgetedApiKey,

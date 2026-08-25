@@ -271,7 +271,30 @@ describe("BYOP markup", () => {
         });
     });
 
-    it("requires paid-only preflight to have pack balance above the model estimate", async () => {
+    it("requires paid-only preflight to have pack balance covering the model estimate", async () => {
+        const vars = {
+            auth: {
+                user: { id: "preflight-payer" },
+                apiKey: { id: "sk-test", pollenBalance: 2 },
+            },
+            balance: {
+                getBalance: async () => ({
+                    tierBalance: 10,
+                    packBalance: 0.5,
+                }),
+            },
+            model: testModel("llama-maverick"),
+            log: fakeLog(),
+        } as unknown as Parameters<typeof checkBalance>[0];
+
+        await expect(
+            checkBalance(vars, fakeStatsEnv(1, "llama-maverick")),
+        ).rejects.toMatchObject({
+            status: 402,
+        });
+    });
+
+    it("admits paid-only preflight with pack balance exactly at the model estimate", async () => {
         const vars = {
             auth: {
                 user: { id: "preflight-payer" },
@@ -287,8 +310,32 @@ describe("BYOP markup", () => {
             log: fakeLog(),
         } as unknown as Parameters<typeof checkBalance>[0];
 
+        await checkBalance(vars, fakeStatsEnv(1, "llama-maverick"));
+
+        expect(vars.balance.balanceCheckResult?.balances).toEqual({
+            "v1:meter:tier": 0,
+            "v1:meter:pack": 1,
+        });
+    });
+
+    it("rejects paid-only preflight with no pack balance on a zero estimate", async () => {
+        const vars = {
+            auth: {
+                user: { id: "preflight-payer" },
+                apiKey: { id: "sk-test", pollenBalance: 2 },
+            },
+            balance: {
+                getBalance: async () => ({
+                    tierBalance: 10,
+                    packBalance: 0,
+                }),
+            },
+            model: testModel("llama-maverick"),
+            log: fakeLog(),
+        } as unknown as Parameters<typeof checkBalance>[0];
+
         await expect(
-            checkBalance(vars, fakeStatsEnv(1, "llama-maverick")),
+            checkBalance(vars, fakeStatsEnv(0, "llama-maverick")),
         ).rejects.toMatchObject({
             status: 402,
         });

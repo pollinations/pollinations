@@ -1013,16 +1013,11 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["480p", "720p"],
         title: "Seedance 2.5",
         description:
-            "Four-second video with synchronized audio, first/last-frame control, or reference images at 480p or 720p",
+            "Four-second video with synchronized audio and first/last-frame control at 480p or 720p",
         inputModalities: ["text", "image"],
         outputModalities: ["video", "audio"],
-        videoCapabilities: [
-            "start_frame",
-            "end_frame",
-            "audio_output",
-            "reference_images",
-        ],
-        maxReferenceImages: 32, // 30 reference images + 2 frame slots (per Replicate schema).
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2, // Video keyframe slots: start + end.
         minDuration: 4,
         maxDuration: 4,
         defaultDuration: 4,

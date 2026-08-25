@@ -49,7 +49,9 @@ export function parseModelFilters(query: string): ModelFilters {
     let match: RegExpExecArray | null;
     let remaining = query;
 
-    while ((match = tokenRegex.exec(query)) !== null) {
+    while (true) {
+        match = tokenRegex.exec(query);
+        if (match === null) break;
         const [, key, quotedVal, rawVal] = match;
         const value = (quotedVal ?? rawVal ?? "").toLowerCase();
         if (!KNOWN_FILTER_KEYS.has(key)) continue;

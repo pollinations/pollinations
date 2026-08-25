@@ -661,6 +661,31 @@ const IMAGE_BASE_SERVICES = {
         maxDuration: 15,
         defaultDuration: 5,
     },
+    "wan-3.0": {
+        aliases: [],
+        provider: "openrouter",
+        brand: "Alibaba",
+        category: "video",
+        addedDate: new Date("2026-08-25").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // OpenRouter Alibaba endpoint, discounted rate verified by direct
+        // billed requests on 2026-08-25. The provider has a 5-second minimum.
+        cost: {
+            completionVideoSeconds: 0.0425,
+        },
+        resolutions: ["480p"],
+        title: "Wan 3.0",
+        description:
+            "Five-second video with synchronized audio from text or a start image at 480p",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "audio_output"],
+        maxReferenceImages: 1, // Video keyframe slots: start only.
+        minDuration: 5,
+        maxDuration: 5,
+        defaultDuration: 5,
+    },
     "wan-image": {
         aliases: ["wan2.7-image", "wan-img"],
         provider: "replicate",

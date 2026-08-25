@@ -3,6 +3,7 @@ import { syncImageEnv } from "../../src/image/env.ts";
 import {
     callHappyHorseAPI,
     callOpenRouterGrokVideoAPI,
+    callOpenRouterWan3API,
 } from "../../src/image/models/openRouterVideoModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
 
@@ -171,7 +172,7 @@ describe("openRouterVideoModel", () => {
     });
 });
 
-function mockGrokFetch(requests: Record<string, unknown>[]) {
+function mockCompletedOpenRouterVideo(requests: Record<string, unknown>[]) {
     return vi
         .spyOn(globalThis, "fetch")
         .mockImplementation(async (url, init) => {
@@ -219,7 +220,7 @@ describe("OpenRouter Grok Video Pro", () => {
     it("submits the exact 720p route and honors an explicit aspect ratio", async () => {
         setOpenRouterEnv();
         const requests: Record<string, unknown>[] = [];
-        mockGrokFetch(requests);
+        mockCompletedOpenRouterVideo(requests);
 
         const result = await callOpenRouterGrokVideoAPI(
             "a calm ocean at sunrise",
@@ -260,7 +261,7 @@ describe("OpenRouter Grok Video Pro", () => {
     ] as const)("routes 1.5 resolution %s as %s", async (resolution, expectedResolution) => {
         setOpenRouterEnv();
         const requests: Record<string, unknown>[] = [];
-        mockGrokFetch(requests);
+        mockCompletedOpenRouterVideo(requests);
 
         const result = await callOpenRouterGrokVideoAPI(
             "a calm ocean at sunrise",
@@ -281,7 +282,7 @@ describe("OpenRouter Grok Video Pro", () => {
     it("forwards one start frame and derives ratio from explicit dimensions", async () => {
         setOpenRouterEnv();
         const requests: Record<string, unknown>[] = [];
-        mockGrokFetch(requests);
+        mockCompletedOpenRouterVideo(requests);
 
         const result = await callOpenRouterGrokVideoAPI(
             "animate this opening frame",
@@ -320,7 +321,7 @@ describe("OpenRouter Grok Video Pro", () => {
     it("keeps the existing 1-15 second duration clamping", async () => {
         setOpenRouterEnv();
         const requests: Record<string, unknown>[] = [];
-        mockGrokFetch(requests);
+        mockCompletedOpenRouterVideo(requests);
 
         const result = await callOpenRouterGrokVideoAPI(
             "a calm ocean at sunrise",
@@ -389,6 +390,98 @@ describe("OpenRouter Grok Video Pro", () => {
                 ...baseParams,
                 model: "grok-video-pro",
                 duration,
+            }),
+        ).rejects.toMatchObject({ status: 400 });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+});
+
+describe("OpenRouter Wan 3.0", () => {
+    it.each([
+        {
+            resolution: undefined,
+            expectedResolution: "480p",
+            width: 1280,
+            height: 720,
+            audio: false,
+            image: [],
+        },
+        {
+            resolution: "480p" as const,
+            expectedResolution: "480p",
+            width: 720,
+            height: 1280,
+            audio: true,
+            image: ["https://media.pollinations.ai/start.png"],
+        },
+    ])("forwards the $expectedResolution request and deterministic billing", async ({
+        resolution,
+        expectedResolution,
+        width,
+        height,
+        audio,
+        image,
+    }) => {
+        setOpenRouterEnv();
+        const requests: Record<string, unknown>[] = [];
+        mockCompletedOpenRouterVideo(requests);
+
+        const result = await callOpenRouterWan3API(
+            "a sailboat crossing a calm bay",
+            {
+                ...baseParams,
+                model: "wan-3.0",
+                resolution,
+                width,
+                height,
+                audio,
+                image,
+            },
+        );
+
+        expect(requests[0]).toEqual({
+            model: "alibaba/wan-3.0",
+            prompt: "a sailboat crossing a calm bay",
+            resolution: expectedResolution,
+            duration: 5,
+            aspect_ratio: width > height ? "16:9" : "9:16",
+            generate_audio: true,
+            seed: 42,
+            provider: {
+                only: ["Alibaba"],
+                allow_fallbacks: false,
+            },
+            ...(image[0]
+                ? {
+                      frame_images: [
+                          {
+                              type: "image_url",
+                              image_url: { url: image[0] },
+                              frame_type: "first_frame",
+                          },
+                      ],
+                  }
+                : {}),
+        });
+        expect(result).toMatchObject({
+            mimeType: "video/mp4",
+            durationSeconds: 5,
+            trackingData: {
+                actualModel: "wan-3.0",
+                usage: { completionVideoSeconds: 5 },
+            },
+        });
+    });
+
+    it("rejects durations outside the verified five-second billing floor", async () => {
+        setOpenRouterEnv();
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+        await expect(
+            callOpenRouterWan3API("a sailboat crossing a calm bay", {
+                ...baseParams,
+                model: "wan-3.0",
+                duration: 4,
             }),
         ).rejects.toMatchObject({ status: 400 });
         expect(fetchSpy).not.toHaveBeenCalled();

@@ -18,8 +18,6 @@ import { Hono } from "hono";
 import { SignJWT } from "jose";
 import { expect } from "vitest";
 import { type AuthEnv, auth } from "@/middleware/auth.ts";
-import { BILLING_SERVICE } from "@/middleware/billing.ts";
-import { enterGateway } from "./gateway.ts";
 
 const authProbe = new Hono<AuthEnv>().use("*", auth()).get("/", (c) =>
     c.json({
@@ -195,23 +193,30 @@ test("spends the parent key's budget and the parent user's wallet", async () => 
         user: { tierBalance: 2 },
     });
     const token = await runTokenFor(parent.id);
+    const requestId = crypto.randomUUID();
 
-    const authorized = await enterGateway.authorize({
-        token,
-        service: BILLING_SERVICE,
-        requestId: crypto.randomUUID(),
-        requestPath: "/v1/chat/completions",
+    const authorized = await env.ENTER_BILLING.authorize(token, {
+        producer: "gen.pollinations.ai",
+        requestId,
         estimatedPrice: 1,
+        paidOnly: false,
     });
     expect(authorized.ok).toBe(true);
     if (!authorized.ok) return;
-    expect(authorized.user.id).toBe(parent.userId);
-    expect(authorized.apiKey.id).toBe(parent.id);
+    expect(authorized.identity.userId).toBe(parent.userId);
+    expect(authorized.identity.apiKey.id).toBe(parent.id);
 
-    const settled = await enterGateway.settle({
-        authorizationId: authorized.authorizationId,
-        events: [{ eventId: "usage", eventType: "generate.text", price: 1 }],
-    });
+    const settled = await env.ENTER_BILLING.settle(authorized.grant.id, [
+        {
+            id: "usage",
+            requestId,
+            meter: "generate.text",
+            price: 1,
+            paidOnly: false,
+            occurredAt: Date.now(),
+            telemetry: { eventType: "generate.text" },
+        },
+    ]);
     expect(settled.ok).toBe(true);
 
     const db = drizzle(env.DB);

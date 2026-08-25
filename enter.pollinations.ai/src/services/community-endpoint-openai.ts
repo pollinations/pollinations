@@ -344,8 +344,8 @@ export async function testCommunityEmbeddingEndpoint({
     }
 
     return {
-        usage: { requests: 1 },
-        billableUsage: { completionTextTokens: 1 },
+        usage: { prompt_tokens: 0 },
+        billableUsage: { promptTextTokens: 0 },
     };
 }
 

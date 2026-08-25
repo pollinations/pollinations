@@ -102,17 +102,15 @@ export async function generateCommunityEmbeddings(
         );
     }
 
-    const usesFixedPrice = endpoint.completionTextPrice > 0;
-    if (!usesFixedPrice && endpoint.promptTextPrice > 0 && !usage) {
+    if (endpoint.promptTextPrice > 0 && !usage) {
         throw invalidResponse(
             upstreamUrl,
             "Community embedding endpoint did not return token usage required by its pricing",
         );
     }
-    const billableUsage: Usage =
-        !usesFixedPrice && usage
-            ? { promptTextTokens: usage.prompt_tokens }
-            : { completionTextTokens: 1 };
+    const billableUsage: Usage = usage
+        ? { promptTextTokens: usage.prompt_tokens }
+        : { promptTextTokens: 0 };
     return embeddingResponse(
         responseModel,
         data,

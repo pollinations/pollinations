@@ -97,7 +97,7 @@ const PriceSchema = z
         message: `Price must be 0 (free) or at least ${MIN_COMMUNITY_PRICE_PER_TOKEN} per token (${MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS} per 1M tokens)`,
     })
     .describe(
-        'Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request"; `completionTextPrice` is per request for "embedding" models.',
+        'Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request".',
     );
 const UpdatePriceFieldsSchema = Object.fromEntries(
     COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
@@ -158,23 +158,6 @@ function enforceCommunityEndpointMinimumPrice(
                 message: `${field.label} price must be 0 (free) or at least ${MIN_COMMUNITY_PRICE_PER_UNIT} Pollen per request`,
             });
         }
-    }
-}
-
-// Token pricing and a fixed per-request price are mutually exclusive: the
-// request handler bills one or the other depending on the stored price, so an
-// endpoint declaring both would be ambiguous.
-function validatePricingMode(
-    prices: Partial<Record<CommunityEndpointPriceKey, number | undefined>>,
-    modality: CommunityEndpointModality,
-): void {
-    if (modality !== "embedding") return;
-    const fixedPrice = prices.completionTextPrice ?? 0;
-    const hasTokenPrice = Boolean(prices.promptTextPrice);
-    if (fixedPrice > 0 && hasTokenPrice) {
-        throw new HTTPException(400, {
-            message: "Choose either token pricing or one fixed request price",
-        });
     }
 }
 
@@ -1088,9 +1071,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         ? await testCommunityImageEndpoint(input)
                         : input.modality === "transcription"
                           ? await testCommunityTranscriptionEndpoint(input)
-                        : input.modality === "embedding"
-                          ? await testCommunityEmbeddingEndpoint(input)
-                          : await testCommunityEndpoint(input);
+                          : input.modality === "embedding"
+                            ? await testCommunityEmbeddingEndpoint(input)
+                            : await testCommunityEndpoint(input);
                 return c.json({
                     ok: true,
                     message:
@@ -1100,9 +1083,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
                                 : "Generation endpoint responded; editing is not supported"
                             : input.modality === "transcription"
                               ? "Endpoint responded with transcription text"
-                            : input.modality === "embedding"
-                              ? "Endpoint responded with embedding data"
-                              : "Endpoint responded with usage",
+                              : input.modality === "embedding"
+                                ? "Endpoint responded with embedding data"
+                                : "Endpoint responded with usage",
                     ...result,
                 });
             } catch (error) {
@@ -1327,7 +1310,6 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 modality,
                 effectiveImagePricing,
             );
-            validatePricingMode(effectivePrices, modality);
             // Validate against the prices this update actually persists, not
             // the stored ones. An unsent field keeps the stored targets: if a
             // later price change makes one too expensive, the generation

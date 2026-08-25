@@ -261,9 +261,8 @@ const COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS = [
     COMMUNITY_TRANSCRIPTION_PRICE_FIELD,
 ] as const;
 
-// Embedding endpoints bill token usage per 1M like text, unless the owner
-// sets a fixed per-request price (completionTextPrice) — that mode charges
-// the fixed rate once per request regardless of token usage.
+// Embedding endpoints bill token usage per 1M like text models. Token-only
+// billing through promptTextPrice — no fixed per-request mode.
 const COMMUNITY_EMBEDDING_ENDPOINT_PRICE_FIELDS = [
     {
         key: "promptTextPrice",
@@ -271,13 +270,6 @@ const COMMUNITY_EMBEDDING_ENDPOINT_PRICE_FIELDS = [
         label: "Prompt text",
         priceUnit: "million",
         rawUsagePaths: OPENAI_EMBEDDING_USAGE_PATHS.promptTextTokens,
-    },
-    {
-        key: "completionTextPrice",
-        usageType: "completionTextTokens",
-        label: "Embedding request",
-        priceUnit: "request",
-        rawUsagePaths: ["requests"],
     },
 ] as const;
 
@@ -1047,9 +1039,6 @@ export function communityModelDefinition(
     // Token-priced image endpoints bill like text models (usage × per-token
     // rates), so only fixed per-request image endpoints are flat-rate.
     const isFlatRateImage = isImage && imagePricing === "request";
-    // Embedding endpoints with a fixed per-request price are flat-rate too;
-    // token-priced ones bill usage at the per-1M text rate.
-    const isFlatRateEmbedding = isEmbedding && endpoint.completionTextPrice > 0;
     const inputModalities = normalizeCommunityEndpointInputModalities(
         endpoint.inputModalities,
         modality,
@@ -1094,11 +1083,7 @@ export function communityModelDefinition(
         // Explicit false (not omitted) for token-priced image endpoints: the
         // catalog only renders per-1M prices when flat_rate === false or a
         // prompt token price is set.
-        ...(isImage
-            ? { flatRate: isFlatRateImage }
-            : isEmbedding && isFlatRateEmbedding
-              ? { flatRate: true }
-              : {}),
+        ...(isImage ? { flatRate: isFlatRateImage } : {}),
         ...(capabilities.includes("tool_calling") ? { tools: true } : {}),
         ...(capabilities.includes("reasoning") ? { reasoning: true } : {}),
         ...advertised,

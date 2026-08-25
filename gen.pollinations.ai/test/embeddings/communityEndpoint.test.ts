@@ -35,7 +35,6 @@ function buildRuntime(
         disabledReason: null,
         ...communityEndpointPrices({
             promptTextPrice: 0.00001,
-            completionTextPrice: 0,
         }),
         ...overrides,
     } as CommunityEndpointRuntime;
@@ -129,32 +128,6 @@ describe("generateCommunityEmbeddings", () => {
         expect(response.headers.get("x-usage-prompt-text-tokens")).toBe("7");
     });
 
-    it("charges a flat per-request price for fixed-price endpoints", async () => {
-        const endpoint = buildRuntime(
-            communityEndpointPrices({
-                promptTextPrice: 0,
-                completionTextPrice: 0.02,
-            }),
-        );
-        vi.stubGlobal("fetch", vi.fn().mockResolvedValue(upstreamResponse()));
-
-        const response = await generateCommunityEmbeddings(
-            endpoint,
-            {
-                model: "upstream-model",
-                encoding_format: "float",
-                input: "hello",
-            },
-            "owner/bge",
-            SECRET,
-        );
-
-        expect(response.headers.get("x-usage-completion-text-tokens")).toBe(
-            "1",
-        );
-        expect(response.headers.get("x-usage-prompt-text-tokens")).toBeNull();
-    });
-
     it("rejects task_type for community embedding models", async () => {
         const endpoint = buildRuntime();
         vi.stubGlobal("fetch", vi.fn());
@@ -230,5 +203,62 @@ describe("generateCommunityEmbeddings", () => {
                 SECRET,
             ),
         ).rejects.toMatchObject({ status: 502 });
+    });
+
+    it("bills promptTextTokens only (no completionTextTokens fallback)", async () => {
+        const endpoint = buildRuntime(
+            communityEndpointPrices({ promptTextPrice: 0.00001 }),
+        );
+        vi.stubGlobal(
+            "fetch",
+            vi
+                .fn()
+                .mockResolvedValue(
+                    upstreamResponse({ prompt_tokens: 12, total_tokens: 12 }),
+                ),
+        );
+
+        const response = await generateCommunityEmbeddings(
+            endpoint,
+            {
+                model: "upstream-model",
+                encoding_format: "float",
+                input: "hello",
+            },
+            "owner/bge",
+            SECRET,
+        );
+
+        expect(response.headers.get("x-usage-prompt-text-tokens")).toBe("12");
+        expect(
+            response.headers.get("x-usage-completion-text-tokens"),
+        ).toBeNull();
+    });
+
+    it("allows free endpoints to return no usage", async () => {
+        const endpoint = buildRuntime(
+            communityEndpointPrices({ promptTextPrice: 0 }),
+        );
+        vi.stubGlobal(
+            "fetch",
+            vi
+                .fn()
+                .mockResolvedValue(
+                    upstreamResponse({ prompt_tokens: 0, total_tokens: 0 }),
+                ),
+        );
+
+        const response = await generateCommunityEmbeddings(
+            endpoint,
+            {
+                model: "upstream-model",
+                encoding_format: "float",
+                input: "hello",
+            },
+            "owner/bge",
+            SECRET,
+        );
+
+        expect(response.status).toBe(200);
     });
 });

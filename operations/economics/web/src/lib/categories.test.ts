@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { OpForecastRow, OpTransactionRow } from "../types";
+import type { OpTransactionRow } from "../types";
 import {
     categoryLabel,
     cloudCategory,
@@ -105,6 +105,16 @@ describe("canonical categories", () => {
                 transaction("polar", "balance_sheet", "Polar Myceli-Ai", -5),
             ),
         ).toBe("balance_sheet");
+        expect(
+            transactionCategory(
+                transaction(
+                    "polar",
+                    "revenue",
+                    "Polar self-purchase checkout test",
+                    -5,
+                ),
+            ),
+        ).toBe("revenue");
     });
 
     it("keeps personal purchases paid by the company out of expenses", () => {
@@ -171,7 +181,7 @@ describe("canonical categories", () => {
     });
 
     it("trusts the reviewed category on forecast facts", () => {
-        const fact: OpForecastRow = {
+        const fact = {
             entry_id: "deel-refund",
             month: "2026-08-01",
             vendor: "deel",
@@ -183,7 +193,7 @@ describe("canonical categories", () => {
             evidence: "Deel deposit refund",
             recorded_at: "2026-08-24 00:00:00",
         };
-        const openAiFact: OpForecastRow = {
+        const openAiFact = {
             ...fact,
             vendor: "openai",
             category: "development",
@@ -196,7 +206,7 @@ describe("canonical categories", () => {
     });
 
     it("does not infer a forecast category from vendor or evidence", () => {
-        const fact: OpForecastRow = {
+        const fact = {
             entry_id: "legacy-openai",
             month: "2026-08-01",
             vendor: "openai",

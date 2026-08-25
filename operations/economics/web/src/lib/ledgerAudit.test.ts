@@ -1,11 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type {
-    Data,
-    OpCloudRow,
-    OpForecastRow,
-    OpPollenRow,
-    OpTransactionRow,
-} from "../types";
+import type { Data, OpCloudRow, OpPollenRow, OpTransactionRow } from "../types";
 import { monthlyLedgerAuditRows } from "./ledgerAudit";
 
 const transaction = (
@@ -65,25 +59,10 @@ const pollen = (over: Partial<OpPollenRow> = {}): OpPollenRow => ({
     ...over,
 });
 
-const forecast = (over: Partial<OpForecastRow> = {}): OpForecastRow => ({
-    entry_id: "forecast-1",
-    month: "2026-08-01",
-    vendor: "aws",
-    category: "compute",
-    amount: -100,
-    currency: "USD",
-    method: "fixed",
-    source: "reviewed",
-    evidence: "forecast batch",
-    recorded_at: "2026-08-01 00:00:00",
-    ...over,
-});
-
 const data = (over: Partial<Data> = {}): Data => ({
     opTransactions: [],
     opCloud: [],
     opPollen: [],
-    opForecast: [],
     ...over,
 });
 
@@ -104,38 +83,13 @@ describe("monthlyLedgerAuditRows", () => {
             transactionRows: 1,
             cloudRows: 1,
             pollenRows: 1,
-            forecastRows: 0,
             missingBankData: false,
             transactionEvidenceGaps: 0,
+            actionableTransactionEvidenceGaps: 0,
             missingMappings: 0,
             estimatedFx: false,
             invalidRows: 0,
             duplicateRows: 0,
-        });
-    });
-
-    it("audits forecast-only months and invalid forecast facts", () => {
-        const rows = monthlyLedgerAuditRows(
-            data({
-                opForecast: [
-                    forecast(),
-                    forecast({
-                        entry_id: "forecast-2",
-                        currency: "GBP",
-                    }),
-                ],
-            }),
-            "",
-            "2026-08",
-        );
-
-        expect(rows).toHaveLength(1);
-        expect(rows[0]).toMatchObject({
-            month: "2026-08",
-            forecastRows: 2,
-            invalidRows: 1,
-            invalidProviders: ["aws"],
-            status: "structural",
         });
     });
 
@@ -158,11 +112,11 @@ describe("monthlyLedgerAuditRows", () => {
             data({
                 opTransactions: [
                     transaction({ evidence: "" }),
-                    transaction({ entry_id: "wise-2", evidence: "" }),
+                    transaction({ evidence: "" }),
                 ],
                 opCloud: [
                     cloud({ type: "unknown" }),
-                    cloud({ entry_id: "cloud-2", type: "unknown" }),
+                    cloud({ type: "unknown" }),
                 ],
                 opPollen: [
                     pollen({
@@ -182,6 +136,7 @@ describe("monthlyLedgerAuditRows", () => {
         expect(row).toMatchObject({
             status: "structural",
             transactionEvidenceGaps: 2,
+            actionableTransactionEvidenceGaps: 2,
             transactionEvidenceProviders: ["aws"],
             missingMappings: 1,
             missingMappingProviders: ["new-provider"],
@@ -190,6 +145,26 @@ describe("monthlyLedgerAuditRows", () => {
             duplicateRows: 2,
             duplicateProviders: ["aws"],
         });
+    });
+
+    it("does not call distinct source transactions duplicates when their values match", () => {
+        const [row] = monthlyLedgerAuditRows(
+            data({
+                opTransactions: [
+                    transaction({ entry_id: "wise-1" }),
+                    transaction({ entry_id: "wise-2" }),
+                ],
+                opCloud: [
+                    cloud({ entry_id: "cloud-1" }),
+                    cloud({ entry_id: "cloud-2" }),
+                ],
+            }),
+            "2026-07",
+            "2026-08",
+        );
+
+        expect(row.duplicateRows).toBe(0);
+        expect(row.duplicateProviders).toEqual([]);
     });
 
     it("leaves provider statement readiness to Close", () => {
@@ -245,6 +220,61 @@ describe("monthlyLedgerAuditRows", () => {
 
         expect(row.status).toBe("attention");
         expect(row.transactionEvidenceGaps).toBe(1);
+        expect(row.actionableTransactionEvidenceGaps).toBe(1);
+    });
+
+    it("keeps acknowledged lost documents visible without blocking a clean month", () => {
+        const [row] = monthlyLedgerAuditRows(
+            data({
+                opTransactions: [
+                    transaction({
+                        entry_id: "wise-openai-lost",
+                        vendor: "openai",
+                        evidence: "",
+                        description:
+                            "OpenAI subscription · supplier invoice lost and unavailable",
+                    }),
+                    transaction({
+                        entry_id: "wise-space-lost",
+                        vendor: "space-berlin",
+                        evidence: "",
+                        description:
+                            "Space Berlin · receipt lost and unavailable",
+                    }),
+                ],
+            }),
+            "2026-07",
+            "2026-08",
+        );
+
+        expect(row).toMatchObject({
+            status: "clean",
+            transactionEvidenceGaps: 2,
+            actionableTransactionEvidenceGaps: 0,
+            transactionEvidenceProviders: ["openai", "space-berlin"],
+        });
+    });
+
+    it("keeps an acknowledged permanent provider loss visible but non-blocking", () => {
+        const [row] = monthlyLedgerAuditRows(
+            data({
+                opTransactions: [
+                    transaction({
+                        date: "2026-02-26",
+                        vendor: "pruna",
+                        evidence: "",
+                        description:
+                            "Provider cannot supply the historical receipt",
+                    }),
+                ],
+            }),
+            "2026-02",
+            "2026-08",
+        );
+
+        expect(row.status).toBe("clean");
+        expect(row.transactionEvidenceGaps).toBe(1);
+        expect(row.actionableTransactionEvidenceGaps).toBe(0);
     });
 
     it("marks the current month as partial without replacing its clean status", () => {
@@ -316,7 +346,6 @@ describe("monthlyLedgerAuditRows", () => {
             transactionRows: 1,
             cloudRows: 1,
             pollenRows: 1,
-            forecastRows: 0,
             missingBankData: false,
             invalidRows: 3,
         });

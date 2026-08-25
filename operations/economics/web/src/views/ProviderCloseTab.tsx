@@ -16,12 +16,13 @@ import {
     withUniqueRowKeys,
 } from "../components/DataTable";
 import { EvidenceAction, EvidencePreview } from "../components/Evidence";
+import { MonthFilter } from "../components/Filters";
 import { MonthlyLedgerAuditPanel } from "../components/MonthlyLedgerAuditPanel";
 import { StatCards, type StatItem } from "../components/StatCards";
 import type { DriveDocumentLink } from "../lib/documents";
 import { fmtUsd } from "../lib/format";
 import { monthlyLedgerAuditRows } from "../lib/ledgerAudit";
-import { type MonthFilterValue, monthLabel } from "../lib/months";
+import { monthName } from "../lib/months";
 import {
     attentionFirst,
     type ProviderCloseEvidence,
@@ -35,6 +36,8 @@ import type { Data } from "../types";
 
 const CLOSE_CLASS: Record<ProviderCloseRow["closeStatus"], string> = {
     ready: "bg-intent-success-bg-bright/15 text-intent-success-text ring-intent-success-bg-bright/30",
+    "missing document":
+        "bg-intent-warning-bg-light text-intent-warning-text ring-intent-warning-text/25",
     "needs provider check":
         "bg-intent-danger-bg-light text-intent-danger-text ring-intent-danger-border/40",
     "needs account check":
@@ -43,12 +46,15 @@ const CLOSE_CLASS: Record<ProviderCloseRow["closeStatus"], string> = {
 
 const CLOSE_LABEL: Record<ProviderCloseRow["closeStatus"], string> = {
     ready: "ready",
+    "missing document": "missing document",
     "needs provider check": "missing source",
     "needs account check": "account incomplete",
 };
 
 const CLOSE_HINT: Record<ProviderCloseRow["closeStatus"], string> = {
     ready: "Vendor source and account coverage checks are complete for this vendor-month.",
+    "missing document":
+        "A recoverable transaction invoice, receipt, or reconciliation document is not archived in Drive.",
     "needs provider check":
         "The vendor statement, dashboard export, or other archived source is missing. No vendor cost is inferred.",
     "needs account check":
@@ -157,7 +163,7 @@ function EvidenceListDialog({
             onOpenChange={(open) => {
                 if (!open) onClose();
             }}
-            title={`Vendor source · ${selection.vendor} · ${monthLabel(selection.month)}`}
+            title={`Vendor source · ${selection.vendor} · ${monthName(selection.month)}`}
             size="md"
         >
             <div className="flex max-h-[70vh] flex-col px-6 pb-6 pt-3">
@@ -205,9 +211,15 @@ function EvidenceListDialog({
 export function ProviderCloseTab({
     data,
     month = "",
+    months,
+    onMonthChange,
+    year,
 }: {
     data: Data;
-    month?: MonthFilterValue;
+    month?: string;
+    months: string[];
+    onMonthChange: (value: string) => void;
+    year: string;
 }) {
     const [evidenceSelection, setEvidenceSelection] =
         useState<EvidenceSelection | null>(null);
@@ -234,7 +246,7 @@ export function ProviderCloseTab({
     );
     const closedAuditRows = auditRows.filter((row) => !row.partial);
     const transactionEvidenceGaps = closedAuditRows.reduce(
-        (total, row) => total + row.transactionEvidenceGaps,
+        (total, row) => total + row.actionableTransactionEvidenceGaps,
         0,
     );
     const missingBankMonths = closedAuditRows.filter(
@@ -347,6 +359,12 @@ export function ProviderCloseTab({
                 <h3 className="text-lg font-semibold text-theme-text-strong">
                     Monthly close
                 </h3>
+                <MonthFilter
+                    months={months}
+                    year={year}
+                    value={month}
+                    onChange={onMonthChange}
+                />
                 <StatCards items={statusStats} />
                 <TableScroller>
                     <DataTable className="min-w-[900px]">
@@ -357,7 +375,6 @@ export function ProviderCloseTab({
                                         Status
                                     </HeaderHint>
                                 </TableHeaderCell>
-                                <TableHeaderCell>Month</TableHeaderCell>
                                 <TableHeaderCell>Vendor</TableHeaderCell>
                                 <TableHeaderCell>
                                     <HeaderHint hint="How the archived vendor source says this vendor-month was funded. Unknown means the historical gap is documented but not reconstructed.">
@@ -374,7 +391,7 @@ export function ProviderCloseTab({
                                         Credit / free
                                     </HeaderHint>
                                 </TableHeaderCell>
-                                <TableHeaderCell>Vendor source</TableHeaderCell>
+                                <TableHeaderCell>Evidence</TableHeaderCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -382,13 +399,17 @@ export function ProviderCloseTab({
                                 rows,
                                 (row) => `${row.month}|${row.vendor}`,
                             ).map(({ key, row }) => {
+                                const fallbackEvidenceLabel =
+                                    row.closeStatus === "ready" &&
+                                    row.fundingStatus === "unknown"
+                                        ? "Documented gap"
+                                        : row.closeStatus === "ready"
+                                          ? "Not required"
+                                          : "—";
                                 return (
                                     <TableRow key={key}>
                                         <TableCell>
                                             <StatusBadge row={row} />
-                                        </TableCell>
-                                        <TableCell>
-                                            {monthLabel(row.month)}
                                         </TableCell>
                                         <TableCell className="font-semibold">
                                             {row.vendor}
@@ -404,7 +425,7 @@ export function ProviderCloseTab({
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex min-w-40 flex-col items-start gap-1.5">
-                                                {row.evidence.length ? (
+                                                {row.evidence.length > 0 && (
                                                     <EvidenceGroupAction
                                                         items={row.evidence}
                                                         onBrowse={() =>
@@ -417,23 +438,33 @@ export function ProviderCloseTab({
                                                             )
                                                         }
                                                     />
-                                                ) : row.closeStatus ===
-                                                      "ready" &&
-                                                  row.fundingStatus ===
-                                                      "unknown" ? (
-                                                    <span className="text-sm text-theme-text-soft">
-                                                        Documented gap
-                                                    </span>
-                                                ) : row.closeStatus ===
-                                                  "ready" ? (
-                                                    <span className="text-sm text-theme-text-soft">
-                                                        Not required
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-sm text-theme-text-soft">
-                                                        —
+                                                )}
+                                                {row.transactionDocumentStatus !=
+                                                    null && (
+                                                    <span
+                                                        className={
+                                                            row.transactionDocumentStatus ===
+                                                            "missing"
+                                                                ? "text-sm text-intent-warning-text"
+                                                                : "text-sm text-theme-text-soft"
+                                                        }
+                                                    >
+                                                        Missing document
+                                                        {row.transactionDocumentStatus ===
+                                                        "acknowledged"
+                                                            ? " · acknowledged"
+                                                            : ""}
                                                     </span>
                                                 )}
+                                                {row.evidence.length === 0 &&
+                                                    row.transactionDocumentStatus ==
+                                                        null && (
+                                                        <span className="text-sm text-theme-text-soft">
+                                                            {
+                                                                fallbackEvidenceLabel
+                                                            }
+                                                        </span>
+                                                    )}
                                             </div>
                                         </TableCell>
                                     </TableRow>

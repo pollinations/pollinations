@@ -3,6 +3,7 @@ import {
     driveDocumentLink,
     hasArchivedEvidence,
     hasReconciledTransactionEvidence,
+    isAcknowledgedLostTransactionEvidence,
 } from "./documents";
 
 describe("driveDocumentLink", () => {
@@ -91,6 +92,32 @@ describe("driveDocumentLink", () => {
                     "Supplier invoice unavailable; standing exception retained",
                 evidence,
             }),
+        ).toBe(false);
+        expect(
+            hasReconciledTransactionEvidence({
+                description: "Polar self-purchase checkout test",
+                evidence,
+            }),
+        ).toBe(false);
+    });
+
+    it("distinguishes permanent document loss from an actionable gap", () => {
+        expect(
+            isAcknowledgedLostTransactionEvidence({
+                description:
+                    "Discord · supplier invoice unavailable; standing exception retained",
+            }),
         ).toBe(true);
+        expect(
+            isAcknowledgedLostTransactionEvidence({
+                description:
+                    "Pruna top-up · bank payment verified; exact supplier receipt unresolved",
+            }),
+        ).toBe(true);
+        expect(
+            isAcknowledgedLostTransactionEvidence({
+                description: "Polar self-purchase checkout test",
+            }),
+        ).toBe(false);
     });
 });

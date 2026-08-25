@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Data, OpCloudRow, OpPollenRow } from "../types";
+import type { Data, OpCloudRow, OpPollenRow, OpTransactionRow } from "../types";
 import {
     providerClosePeriodStatus,
     providerCloseRows,
@@ -45,15 +45,70 @@ const pollen = (over: Partial<OpPollenRow> = {}): OpPollenRow => ({
     ...over,
 });
 
+const transaction = (
+    over: Partial<OpTransactionRow> = {},
+): OpTransactionRow => ({
+    entry_id: "wise-buffer-july",
+    kind: "transaction",
+    source: "wise",
+    date: "2026-07-10",
+    vendor: "buffer",
+    category: "operations",
+    amount: -10,
+    currency: "USD",
+    description: "Buffer subscription",
+    evidence: "",
+    recorded_at: "2026-08-01 00:00:00",
+    ...over,
+});
+
 const data = (over: Partial<Data>): Data => ({
     opTransactions: [],
     opCloud: [],
     opPollen: [],
-    opForecast: [],
     ...over,
 });
 
 describe("providerCloseRows", () => {
+    it("shows an actionable bank-document gap in the monthly detail", () => {
+        const rows = providerCloseRows(
+            data({ opTransactions: [transaction()] }),
+            "2026-08",
+        );
+        const [row] = rows;
+
+        expect(row).toMatchObject({
+            month: "2026-07",
+            vendor: "buffer",
+            closeStatus: "missing document",
+            fundingStatus: "not applicable",
+            transactionDocumentStatus: "missing",
+        });
+        expect(providerCloseSummary(rows).blockers).toBe(0);
+    });
+
+    it("does not turn an acknowledged lost document into a close blocker", () => {
+        const rows = providerCloseRows(
+            data({
+                opTransactions: [
+                    transaction({
+                        vendor: "openai",
+                        description:
+                            "OpenAI subscription · supplier invoice lost and unavailable",
+                    }),
+                ],
+            }),
+            "2026-08",
+        );
+
+        expect(rows).toHaveLength(1);
+        expect(rows[0]).toMatchObject({
+            vendor: "openai",
+            closeStatus: "ready",
+            transactionDocumentStatus: "acknowledged",
+        });
+    });
+
     it("keeps a fully credit-funded provider at zero cash cost", () => {
         const [row] = providerCloseRows(
             data({

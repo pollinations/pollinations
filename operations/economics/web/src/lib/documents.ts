@@ -85,7 +85,8 @@ export function hasArchivedEvidence(evidence: string): boolean {
     return driveDocumentLink(evidence) != null;
 }
 
-const OPEN_EVIDENCE_WORDING = /\b(?:missing|unresolved|awaiting)\b/iu;
+const OPEN_EVIDENCE_WORDING =
+    /\b(?:missing|unresolved|awaiting|unavailable)\b|\bself-purchase checkout test\b/iu;
 
 export function hasReconciledTransactionEvidence({
     description,
@@ -96,4 +97,14 @@ export function hasReconciledTransactionEvidence({
 }): boolean {
     if (!hasArchivedEvidence(evidence)) return false;
     return !OPEN_EVIDENCE_WORDING.test(`${description} ${evidence}`);
+}
+
+export function isAcknowledgedLostTransactionEvidence({
+    description,
+}: {
+    description: string;
+}): boolean {
+    return /\b(?:invoice|receipt) lost and unavailable\b|\b(?:supplier|vendor) invoice unavailable\b|\bcannot supply the historical receipt\b|\bexact supplier receipt unresolved\b/iu.test(
+        description,
+    );
 }

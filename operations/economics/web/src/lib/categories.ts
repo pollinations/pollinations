@@ -1,4 +1,4 @@
-import type { OpCloudRow, OpForecastRow, OpTransactionRow } from "../types";
+import type { OpCloudRow, OpTransactionRow } from "../types";
 
 export const CATEGORY_IDS = [
     "revenue",
@@ -155,7 +155,9 @@ export function transactionCategory(
             : "compute";
     }
     if (vendor === "polar") {
-        return description.includes("hubben") || row.amount > 0
+        return description.includes("hubben") ||
+            description.includes("self-purchase checkout test") ||
+            row.amount > 0
             ? "revenue"
             : description.includes("myceli-ai")
               ? "balance_sheet"
@@ -200,9 +202,7 @@ export function cloudCategory(row: Pick<OpCloudRow, "type">): CategoryValue {
     return isCategory(type) ? type : "uncategorized";
 }
 
-export function forecastCategory(
-    row: Pick<OpForecastRow, "category">,
-): CategoryValue {
+export function forecastCategory(row: { category: string }): CategoryValue {
     const supplied = normalize(row.category);
     return isCategory(supplied) ? supplied : "uncategorized";
 }

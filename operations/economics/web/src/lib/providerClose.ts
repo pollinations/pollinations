@@ -1,6 +1,11 @@
 import type { Data, OpCloudRow } from "../types";
 import { cloudCategory } from "./categories";
-import { driveDocumentLink, hasArchivedEvidence } from "./documents";
+import {
+    driveDocumentLink,
+    hasArchivedEvidence,
+    hasReconciledTransactionEvidence,
+    isAcknowledgedLostTransactionEvidence,
+} from "./documents";
 import { type VendorPlanes, vendorPlanes } from "./insights";
 import {
     type MonthFilterValue,
@@ -27,8 +32,11 @@ export type ProviderFundingStatus =
 
 export type ProviderCloseStatus =
     | "ready"
+    | "missing document"
     | "needs provider check"
     | "needs account check";
+
+export type TransactionDocumentStatus = "missing" | "acknowledged" | null;
 
 export type ProviderCloseEvidence = {
     evidence: string;
@@ -44,6 +52,7 @@ export type ProviderCloseRow = {
     fundingStatus: ProviderFundingStatus;
     billedUsd: number | null;
     creditFreeUsd: number | null;
+    transactionDocumentStatus: TransactionDocumentStatus;
     evidence: ProviderCloseEvidence[];
 };
 
@@ -96,6 +105,7 @@ function closeStatus({
     hasProviderEvidence,
     providerCheckResolved,
     statementRequired,
+    transactionDocumentMissing,
 }: {
     accountStatus:
         | "complete"
@@ -106,7 +116,9 @@ function closeStatus({
     hasProviderEvidence: boolean;
     providerCheckResolved: boolean;
     statementRequired: boolean;
+    transactionDocumentMissing: boolean;
 }): ProviderCloseStatus {
+    if (transactionDocumentMissing) return "missing document";
     if (accountStatus === "partial" || accountStatus === "unassigned") {
         return "needs account check";
     }
@@ -170,9 +182,36 @@ export function providerCloseRows(
         ]),
     );
     const productKeys = new Set<string>();
+    const productActivityKeys = new Set<string>();
+    const transactionDocumentStatusByKey = new Map<
+        string,
+        Exclude<TransactionDocumentStatus, null>
+    >();
+    for (const row of data.opTransactions ?? []) {
+        const month = row.date.slice(0, 7);
+        if (
+            row.kind === "transaction" &&
+            month >= WINDOW_START &&
+            !hasReconciledTransactionEvidence(row)
+        ) {
+            const key = `${month}|${row.vendor}`;
+            const status = isAcknowledgedLostTransactionEvidence(row)
+                ? "acknowledged"
+                : "missing";
+            if (
+                status === "missing" ||
+                !transactionDocumentStatusByKey.has(key)
+            ) {
+                transactionDocumentStatusByKey.set(key, status);
+            }
+            productKeys.add(key);
+        }
+    }
     for (const row of data.opPollen ?? []) {
         if (row.month >= WINDOW_START) {
-            productKeys.add(`${row.month}|${row.vendor}`);
+            const key = `${row.month}|${row.vendor}`;
+            productKeys.add(key);
+            productActivityKeys.add(key);
         }
     }
     for (const row of cloudRows) {
@@ -182,7 +221,9 @@ export function providerCloseRows(
             cloudCategory(row) === "compute" &&
             !(row.credit > 0 && row.paid === 0)
         ) {
-            productKeys.add(`${month}|${row.vendor}`);
+            const key = `${month}|${row.vendor}`;
+            productKeys.add(key);
+            productActivityKeys.add(key);
         }
     }
     const planes = [...productKeys].sort().map((key): VendorPlanes => {
@@ -209,6 +250,7 @@ export function providerCloseRows(
         };
     });
     return planes.map((plane) => {
+        const planeKey = `${plane.month}|${plane.vendor}`;
         const providerRows = providerEvidenceFor(
             cloudRows,
             plane.month,
@@ -219,7 +261,9 @@ export function providerCloseRows(
         );
         const meteringBasis = providerMeteringBasis(plane.vendor);
         const statementRequired =
-            meteringBasis !== "internal" && meteringBasis !== "not_applicable";
+            productActivityKeys.has(planeKey) &&
+            meteringBasis !== "internal" &&
+            meteringBasis !== "not_applicable";
         const providerCheckResolved =
             providerCheckExplanation(plane.month, plane.vendor) != null;
         const billedUsd = hasProviderEvidence
@@ -235,12 +279,15 @@ export function providerCloseRows(
             providerCheckResolved,
             statementRequired,
         });
-        const review = reviewByKey.get(`${plane.month}|${plane.vendor}`);
+        const review = reviewByKey.get(planeKey);
+        const transactionDocumentStatus =
+            transactionDocumentStatusByKey.get(planeKey) ?? null;
         const status = closeStatus({
             accountStatus: review?.accountStatus ?? "not tracked",
             hasProviderEvidence,
             providerCheckResolved,
             statementRequired,
+            transactionDocumentMissing: transactionDocumentStatus === "missing",
         });
         return {
             month: plane.month,
@@ -250,6 +297,7 @@ export function providerCloseRows(
             fundingStatus: funding,
             billedUsd,
             creditFreeUsd,
+            transactionDocumentStatus,
             evidence: dedupeEvidence(providerRows),
         };
     });
@@ -295,8 +343,11 @@ export function providerCloseSummary(
         partialRows: rows.length - closedRows.length,
         closeReady: closedRows.filter((row) => row.closeStatus === "ready")
             .length,
-        blockers: closedRows.filter((row) => row.closeStatus !== "ready")
-            .length,
+        blockers: closedRows.filter(
+            (row) =>
+                row.closeStatus === "needs provider check" ||
+                row.closeStatus === "needs account check",
+        ).length,
         billedUsd: rows.reduce((sum, row) => sum + (row.billedUsd ?? 0), 0),
         creditFreeUsd: rows.reduce(
             (sum, row) => sum + (row.creditFreeUsd ?? 0),

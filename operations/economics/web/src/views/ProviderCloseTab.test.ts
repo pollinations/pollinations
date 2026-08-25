@@ -42,7 +42,6 @@ const data: Data = {
         },
     ],
     opPollen: [],
-    opForecast: [],
 };
 
 describe("ProviderCloseTab", () => {
@@ -51,6 +50,9 @@ describe("ProviderCloseTab", () => {
             createElement(ProviderCloseTab, {
                 data,
                 month: "2026-01",
+                months: ["2026-01"],
+                year: "2026",
+                onMonthChange: () => {},
             }),
         );
 
@@ -61,6 +63,9 @@ describe("ProviderCloseTab", () => {
         expect(html).toContain("Missing documents");
         expect(html.indexOf("Ledger integrity")).toBeLessThan(
             html.indexOf("Monthly close"),
+        );
+        expect(html.indexOf("Monthly close")).toBeLessThan(
+            html.indexOf('aria-label="month filter"'),
         );
         expect(html).not.toContain("Wise matched");
         expect(html).not.toContain("payment unmatched");
@@ -101,9 +106,11 @@ describe("ProviderCloseTab", () => {
                             requests_quests: 0,
                         },
                     ],
-                    opForecast: [],
                 },
                 month: "2026-03",
+                months: ["2026-03"],
+                year: "2026",
+                onMonthChange: () => {},
             }),
         );
 

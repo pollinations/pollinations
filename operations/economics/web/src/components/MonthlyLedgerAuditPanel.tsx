@@ -14,7 +14,7 @@ import {
     type MonthlyLedgerAuditStatus,
     monthlyLedgerAuditRows,
 } from "../lib/ledgerAudit";
-import { type MonthFilterValue, monthLabel } from "../lib/months";
+import { type MonthFilterValue, monthName } from "../lib/months";
 import type { Data } from "../types";
 import {
     DataTable,
@@ -43,7 +43,6 @@ const SORT_COLUMNS: SortColumn<MonthlyLedgerAuditRow>[] = [
     { key: "transactionRows", value: (row) => row.transactionRows },
     { key: "cloudRows", value: (row) => row.cloudRows },
     { key: "pollenRows", value: (row) => row.pollenRows },
-    { key: "forecastRows", value: (row) => row.forecastRows },
     {
         key: "transactionEvidenceGaps",
         value: (row) => row.transactionEvidenceGaps,
@@ -141,7 +140,7 @@ export function MonthlyLedgerAuditPanel({
                             Month
                         </TableHeaderCell>
                         <TableHeaderCell
-                            colSpan={4}
+                            colSpan={3}
                             align="center"
                             className={GROUP_BORDER}
                         >
@@ -153,7 +152,7 @@ export function MonthlyLedgerAuditPanel({
                             align="right"
                             className={GROUP_BORDER}
                         >
-                            <HeaderHint hint="Transactions whose invoice, receipt, statement, or reconciliation reference is not archived in Drive. Hover a non-zero count to see the affected vendors.">
+                            <HeaderHint hint="Transactions whose invoice, receipt, statement, or reconciliation reference is not archived in Drive. Explicitly acknowledged permanent losses remain visible here but do not block a clean month. Hover a non-zero count to see the affected vendors.">
                                 Missing documents
                             </HeaderHint>
                         </TableHeaderCell>
@@ -196,12 +195,6 @@ export function MonthlyLedgerAuditPanel({
                             Pollen
                         </TableHeaderCell>
                         <TableHeaderCell
-                            {...headerProps("forecastRows")}
-                            align="right"
-                        >
-                            Forecast
-                        </TableHeaderCell>
-                        <TableHeaderCell
                             {...headerProps("estimatedFx")}
                             className={GROUP_BORDER}
                         >
@@ -227,25 +220,23 @@ export function MonthlyLedgerAuditPanel({
                     {rows.map((row) => (
                         <TableRow key={row.month}>
                             <TableCell>
-                                <span className="flex flex-wrap gap-1">
+                                {row.partial ? (
+                                    <Chip intent="neutral" size="sm">
+                                        partial
+                                    </Chip>
+                                ) : (
                                     <Chip
                                         intent={STATUS_INTENT[row.status]}
                                         size="sm"
                                     >
                                         {row.status}
                                     </Chip>
-                                    {row.partial ? (
-                                        <Chip intent="neutral" size="sm">
-                                            partial
-                                        </Chip>
-                                    ) : null}
-                                </span>
+                                )}
                             </TableCell>
-                            <TableCell>{monthLabel(row.month)}</TableCell>
+                            <TableCell>{monthName(row.month)}</TableCell>
                             <BankRowsCell row={row} />
                             <NumberCell value={row.cloudRows} />
                             <NumberCell value={row.pollenRows} />
-                            <NumberCell value={row.forecastRows} />
                             <IssueCountCell
                                 value={row.transactionEvidenceGaps}
                                 vendors={row.transactionEvidenceProviders}

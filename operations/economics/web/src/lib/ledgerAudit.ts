@@ -1,16 +1,9 @@
-import type {
-    Data,
-    OpCloudRow,
-    OpForecastRow,
-    OpPollenRow,
-    OpTransactionRow,
-} from "../types";
+import type { Data, OpCloudRow, OpPollenRow, OpTransactionRow } from "../types";
+import { cloudCategory, transactionCategory } from "./categories";
 import {
-    cloudCategory,
-    forecastCategory,
-    transactionCategory,
-} from "./categories";
-import { hasReconciledTransactionEvidence } from "./documents";
+    hasReconciledTransactionEvidence,
+    isAcknowledgedLostTransactionEvidence,
+} from "./documents";
 import { canConvertToUsd, fxEstimatedMonths } from "./fx";
 import {
     collectMonths,
@@ -18,14 +11,11 @@ import {
     isMonthKey,
     type MonthFilterValue,
     matchesMonth,
-    WINDOW_START,
 } from "./months";
 import { isCloudSource, isTransactionSource } from "./provenance";
 import { missingProviderMappings } from "./providerRegistry";
 
 const CURRENCY_RE = /^[A-Z]{3}$/;
-const FORECAST_CURRENCIES = new Set(["EUR", "USD"]);
-const FORECAST_METHODS = new Set(["fixed", "funded", "last", "one_off"]);
 const POLLEN_MEASURES: (keyof OpPollenRow)[] = [
     "cost_paid",
     "cost_quests",
@@ -48,9 +38,9 @@ export type MonthlyLedgerAuditRow = {
     transactionRows: number;
     cloudRows: number;
     pollenRows: number;
-    forecastRows: number;
     missingBankData: boolean;
     transactionEvidenceGaps: number;
+    actionableTransactionEvidenceGaps: number;
     transactionEvidenceProviders: string[];
     missingMappings: number;
     missingMappingProviders: string[];
@@ -112,21 +102,6 @@ function invalidPollen(row: OpPollenRow): boolean {
     );
 }
 
-function invalidForecast(row: OpForecastRow): boolean {
-    return (
-        !present(row.entry_id) ||
-        !isDateKey(row.month) ||
-        !row.month.endsWith("-01") ||
-        !present(row.vendor) ||
-        forecastCategory(row) === "uncategorized" ||
-        !finite(row.amount) ||
-        !FORECAST_CURRENCIES.has(row.currency) ||
-        !FORECAST_METHODS.has(row.method) ||
-        !present(row.source) ||
-        !present(row.recorded_at)
-    );
-}
-
 function duplicateExtras<T>(rows: readonly T[], key: (row: T) => string) {
     const counts = new Map<string, number>();
     for (const row of rows) {
@@ -169,51 +144,15 @@ function providersWithDuplicateKeys<T extends { vendor: string }>(
 }
 
 function transactionDuplicateKey(row: OpTransactionRow): string {
-    return JSON.stringify([
-        row.kind,
-        row.source,
-        row.date,
-        row.vendor,
-        row.category,
-        row.amount,
-        row.currency,
-        row.description,
-        row.evidence,
-    ]);
+    return present(row.entry_id)
+        ? JSON.stringify([row.source, row.entry_id])
+        : "";
 }
 
 function cloudDuplicateKey(row: OpCloudRow): string {
-    return JSON.stringify([
-        row.source,
-        row.start,
-        row.end,
-        row.vendor,
-        row.account_id ?? "",
-        row.account_name ?? "",
-        row.type,
-        row.model,
-        row.credit,
-        row.paid,
-        row.currency,
-        row.evidence,
-        row.resource_sku,
-        row.resource_count,
-        row.resource_id,
-        row.resource_name,
-    ]);
-}
-
-function forecastDuplicateKey(row: OpForecastRow): string {
-    return JSON.stringify([
-        row.month,
-        row.vendor,
-        row.category,
-        row.amount,
-        row.currency,
-        row.method,
-        row.source,
-        row.evidence,
-    ]);
+    return present(row.entry_id)
+        ? JSON.stringify([row.source, row.entry_id])
+        : "";
 }
 
 function statusFor(
@@ -228,7 +167,7 @@ function statusFor(
     }
     if (
         row.missingBankData ||
-        row.transactionEvidenceGaps > 0 ||
+        row.actionableTransactionEvidenceGaps > 0 ||
         row.estimatedFx
     ) {
         return "attention";
@@ -244,10 +183,6 @@ export function monthlyLedgerAuditRows(
     const estimatedFxMonths = new Set(fxEstimatedMonths(data));
 
     const auditMonths = new Set(collectMonths(data));
-    for (const row of data.opForecast ?? []) {
-        const month = String(row.month ?? "").slice(0, 7);
-        if (isMonthKey(month) && month >= WINDOW_START) auditMonths.add(month);
-    }
 
     const rows = [...auditMonths]
         .sort((a, b) => a.localeCompare(b))
@@ -265,11 +200,11 @@ export function monthlyLedgerAuditRows(
             const pollen = (data.opPollen ?? []).filter(
                 (row) => row.month === month,
             );
-            const forecast = (data.opForecast ?? []).filter(
-                (row) => row.month.slice(0, 7) === month,
-            );
             const evidenceGaps = transactions.filter(
                 (row) => !hasReconciledTransactionEvidence(row),
+            );
+            const actionableEvidenceGaps = evidenceGaps.filter(
+                (row) => !isAcknowledgedLostTransactionEvidence(row),
             );
             const mappingGaps = missingProviderMappings(data, month);
             const missingMappingProviders = [
@@ -278,7 +213,6 @@ export function monthlyLedgerAuditRows(
             const invalidTransactions = bankRows.filter(invalidTransaction);
             const invalidCloudRows = cloud.filter(invalidCloud);
             const invalidPollenRows = pollen.filter(invalidPollen);
-            const invalidForecastRows = forecast.filter(invalidForecast);
             const partial = month >= currentMonth;
             const base = {
                 month,
@@ -286,9 +220,10 @@ export function monthlyLedgerAuditRows(
                 transactionRows: transactions.length,
                 cloudRows: cloud.length,
                 pollenRows: pollen.length,
-                forecastRows: forecast.length,
                 missingBankData: !partial && transactions.length === 0,
                 transactionEvidenceGaps: evidenceGaps.length,
+                actionableTransactionEvidenceGaps:
+                    actionableEvidenceGaps.length,
                 transactionEvidenceProviders: providerNames(evidenceGaps),
                 missingMappings: missingMappingProviders.length,
                 missingMappingProviders,
@@ -296,25 +231,22 @@ export function monthlyLedgerAuditRows(
                 invalidRows:
                     invalidTransactions.length +
                     invalidCloudRows.length +
-                    invalidPollenRows.length +
-                    invalidForecastRows.length,
+                    invalidPollenRows.length,
                 invalidProviders: providerNames([
                     ...invalidTransactions,
                     ...invalidCloudRows,
                     ...invalidPollenRows,
-                    ...invalidForecastRows,
                 ]),
                 // OP Pollen is unique at its raw provider/model grain. After
                 // canonical aliases merge (for example bedrock -> aws), two
                 // legitimate source rows may share the display key and must be
                 // summed rather than reported as duplicates.
-                // The effective Tinybird endpoints already expose one row per
-                // entry_id. Detect distinct IDs that repeat the same complete
-                // financial fact instead of re-counting correction history.
+                // Equal charges can be legitimate (for example several Polar
+                // subscriptions on the same day). Only a repeated source ID is
+                // a duplicate; matching financial values are not identity.
                 duplicateRows:
                     duplicateExtras(bankRows, transactionDuplicateKey) +
-                    duplicateExtras(cloud, cloudDuplicateKey) +
-                    duplicateExtras(forecast, forecastDuplicateKey),
+                    duplicateExtras(cloud, cloudDuplicateKey),
                 duplicateProviders: [
                     ...new Set([
                         ...providersWithDuplicateKeys(
@@ -322,10 +254,6 @@ export function monthlyLedgerAuditRows(
                             transactionDuplicateKey,
                         ),
                         ...providersWithDuplicateKeys(cloud, cloudDuplicateKey),
-                        ...providersWithDuplicateKeys(
-                            forecast,
-                            forecastDuplicateKey,
-                        ),
                     ]),
                 ].sort((a, b) => a.localeCompare(b)),
             };
@@ -341,11 +269,6 @@ export function monthlyLedgerAuditRows(
     const invalidDatePollen = (data.opPollen ?? []).filter(
         (row) => !isMonthKey(String(row.month ?? "")),
     );
-    const invalidDateForecast = (data.opForecast ?? []).filter(
-        (row) =>
-            !isDateKey(String(row.month ?? "")) ||
-            !String(row.month ?? "").endsWith("-01"),
-    );
     const broadFilter =
         typeof filter === "string"
             ? filter === "" || filter.length === 4
@@ -354,7 +277,6 @@ export function monthlyLedgerAuditRows(
         ...invalidDateTransactions,
         ...invalidDateCloud,
         ...invalidDatePollen,
-        ...invalidDateForecast,
     ];
     if (broadFilter && invalidDateRows.length > 0) {
         rows.push({
@@ -366,9 +288,9 @@ export function monthlyLedgerAuditRows(
             ).length,
             cloudRows: invalidDateCloud.length,
             pollenRows: invalidDatePollen.length,
-            forecastRows: invalidDateForecast.length,
             missingBankData: false,
             transactionEvidenceGaps: 0,
+            actionableTransactionEvidenceGaps: 0,
             transactionEvidenceProviders: [],
             missingMappings: 0,
             missingMappingProviders: [],

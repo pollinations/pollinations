@@ -1,4 +1,5 @@
 import type { BalanceCheckResult } from "@shared/billing/balance.ts";
+import { redactCredentialQueryParams } from "@shared/observability/request-inputs.ts";
 import { SAFETY_HEADER_NAME } from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
@@ -13,6 +14,11 @@ import type {
     GenerationCacheStorage,
 } from "@/middleware/generation-cache.ts";
 import { hashGenerationCacheIdentity } from "@/middleware/generation-cache.ts";
+import type { ModelVariables } from "@/middleware/model.ts";
+import {
+    type GenerationBillingRequest,
+    generationBillingRequest,
+} from "@/utils/generation-access.ts";
 
 const EXECUTOR_HEADERS = new Set([
     "accept",
@@ -49,7 +55,7 @@ export type GenerationJob = {
     auth: GenerationAuthSnapshot;
     requestId: string;
     balanceCheckResult: BalanceCheckResult;
-    apiKeyBudgetEstimate?: number;
+    billingRequest: GenerationBillingRequest;
 };
 
 export type GenerationOutcome =
@@ -61,6 +67,7 @@ type DeduplicationEnv = {
     Variables: GenerationCacheEnv["Variables"] &
         AuthVariables & {
             balance: BalanceVariables["balance"];
+            model: ModelVariables["model"];
             track?: {
                 streamRequested?: boolean;
                 detachedExecutionTracked?: boolean;
@@ -115,6 +122,7 @@ async function createJob(
     if (!balanceCheckResult) {
         throw new Error("Generation balance snapshot is missing");
     }
+    const requestId = c.get("requestId");
 
     let body: Uint8Array | undefined;
     if (c.req.method !== "GET" && c.req.method !== "HEAD") {
@@ -127,8 +135,16 @@ async function createJob(
                   );
     }
 
-    const headers = [...c.req.raw.headers.entries()].filter(([name]) =>
-        EXECUTOR_HEADERS.has(name.toLowerCase()),
+    const headers = [...c.req.raw.headers.entries()].flatMap(
+        ([name, value]): [string, string][] => {
+            if (!EXECUTOR_HEADERS.has(name.toLowerCase())) return [];
+            if (name.toLowerCase() !== "referer") return [[name, value]];
+            try {
+                return [[name, redactCredentialQueryParams(new URL(value))]];
+            } catch {
+                return [];
+            }
+        },
     );
     if (c.var.generationRequestContentType) {
         const contentType = c.var.generationRequestContentType;
@@ -148,9 +164,9 @@ async function createJob(
             ...(body !== undefined && { body }),
         },
         auth: createAuthSnapshot(c.var.auth),
-        requestId: c.get("requestId"),
+        requestId,
         balanceCheckResult,
-        apiKeyBudgetEstimate: c.var.balance.apiKeyBudgetEstimate,
+        billingRequest: generationBillingRequest(c.var, requestId),
     };
 }
 
@@ -167,7 +183,11 @@ function failedResponse(error: GenerationErrorSnapshot): Response {
     return new Response(body, { status, headers });
 }
 
-/** Runs after generationAccess, so every caller is authorized before joining. */
+function skipCallerTracking(c: Context<DeduplicationEnv>): void {
+    if (c.var.track) c.var.track.detachedExecutionTracked = true;
+}
+
+/** Runs after the read-only access check; the coordinator authorizes one owner. */
 export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
     async (c, next) => {
         if (c.var.track?.streamRequested === true) {
@@ -176,6 +196,7 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
 
         const cache = c.var.generationCache;
         if (!cache || !c.env.GENERATION_COORDINATOR) {
+            skipCallerTracking(c);
             c.get("log").error(
                 "Generation cache identity or coordinator binding is missing",
             );
@@ -194,6 +215,7 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
         try {
             outcome = (await stub.startAndWait(job)) as GenerationOutcome;
         } catch (error) {
+            skipCallerTracking(c);
             const rpcError = error as Error & {
                 durableObjectReset?: boolean;
                 overloaded?: boolean;
@@ -224,6 +246,7 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
                 cache.key,
             );
         } catch (error) {
+            skipCallerTracking(c);
             c.get("log").error(
                 "Error reading completed generation from cache: {error}",
                 { error },
@@ -233,6 +256,7 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
             });
         }
         if (!response) {
+            skipCallerTracking(c);
             return new Response(
                 "Generation completed without a durable cache entry",
                 { status: 503 },

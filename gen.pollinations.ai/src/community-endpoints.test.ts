@@ -2018,7 +2018,10 @@ fixtureTest(
 
 fixtureTest(
     "streams chat completions through a registered community endpoint",
-    async ({ apiKey }) => {
+    async () => {
+        const { key: apiKey } = await createTestApiKey({
+            user: { tierBalance: 1_000 },
+        });
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `stream-${crypto.randomUUID().slice(0, 8)}`;
         const modelId = communityModelId(ownerGithubUsername, modelName);

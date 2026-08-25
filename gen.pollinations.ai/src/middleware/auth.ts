@@ -2,11 +2,10 @@ import type { AgentRunClaims } from "@shared/auth/agent-run-token.ts";
 import {
     type AuthenticatedApiKey,
     type AuthUser,
-    authenticateApiKeyRequest,
-    BannedAccountError,
-    StagingAccessDeniedError,
+    extractApiKey,
 } from "@shared/auth/api-key.ts";
 import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
+import type { BillingIdentity } from "@shared/schemas/billable-event.ts";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
@@ -24,6 +23,7 @@ export type AuthVariables = {
     auth: {
         user?: AuthUser;
         apiKey?: AuthenticatedApiKey;
+        balances?: { tierBalance: number; packBalance: number };
         requireUser: () => AuthUser;
         requireModelAccess: () => void;
         agentRun?: AgentRunClaims;
@@ -49,10 +49,11 @@ function installAuth(
     authResult: {
         user?: AuthUser;
         apiKey?: AuthenticatedApiKey;
+        balances?: { tierBalance: number; packBalance: number };
         agentRun?: AgentRunClaims;
     },
 ): void {
-    const { user, apiKey, agentRun } = authResult;
+    const { user, apiKey, balances, agentRun } = authResult;
 
     const requireUser = (): AuthUser => {
         if (!user) {
@@ -79,6 +80,7 @@ function installAuth(
     c.set("auth", {
         user,
         apiKey,
+        balances,
         requireUser,
         requireModelAccess,
         ...(agentRun && { agentRun }),
@@ -87,27 +89,62 @@ function installAuth(
 
 export const auth = () =>
     createMiddleware<AuthEnv>(async (c, next) => {
-        let authResult: Awaited<ReturnType<typeof authenticateApiKeyRequest>>;
-        try {
-            authResult = await authenticateApiKeyRequest({
-                request: c.req.raw,
-                env: c.env,
-                ctx: c.executionCtx,
-            });
-        } catch (error) {
-            if (
-                error instanceof BannedAccountError ||
-                error instanceof StagingAccessDeniedError
-            ) {
-                throw new HTTPException(403, {
-                    message: error.message,
-                });
-            }
-            throw error;
+        const rawApiKey = extractApiKey(c.req.raw);
+        if (!rawApiKey) {
+            installAuth(c, {});
+            await next();
+            return;
         }
-        installAuth(c, authResult || {});
+
+        const result = await c.env.ENTER_BILLING.introspect(rawApiKey);
+        if (!result.ok) {
+            throw new HTTPException(result.error === "forbidden" ? 403 : 401, {
+                message:
+                    result.error === "forbidden"
+                        ? "This account is not allowed to use the API"
+                        : AUTHENTICATION_REQUIRED_MESSAGE,
+            });
+        }
+        installAuth(c, authFromBillingIdentity(result.identity, rawApiKey));
         await next();
     });
+
+function authFromBillingIdentity(
+    identity: BillingIdentity,
+    rawApiKey: string,
+): {
+    user: AuthUser;
+    apiKey: AuthenticatedApiKey;
+    balances: { tierBalance: number; packBalance: number };
+    agentRun?: AgentRunClaims;
+} {
+    return {
+        user: { id: identity.userId, tier: identity.tier } as AuthUser,
+        apiKey: {
+            id: identity.apiKey.id,
+            name: identity.apiKey.name ?? undefined,
+            permissions: identity.apiKey.permissions ?? undefined,
+            metadata: {
+                ...(identity.apiKey.keyType && {
+                    keyType: identity.apiKey.keyType,
+                }),
+                ...(identity.apiKey.createdVia && {
+                    createdVia: identity.apiKey.createdVia,
+                }),
+            },
+            pollenBalance: identity.balances.apiKey,
+            byopClientKeyId: identity.apiKey.clientId,
+            byopClientName: identity.apiKey.clientName,
+            byopClientUserId: identity.apiKey.clientUserId,
+            rawKey: rawApiKey,
+        },
+        balances: {
+            tierBalance: identity.balances.tier,
+            packBalance: identity.balances.pack,
+        },
+        agentRun: identity.agentRun,
+    };
+}
 
 export const authFromSnapshot = (snapshot: GenerationAuthSnapshot) =>
     createMiddleware<AuthEnv>(async (c, next) => {

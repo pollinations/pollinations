@@ -67,7 +67,7 @@ export function createBalanceCheckResult(
     isPaidOnly = false,
 ): BalanceCheckResult {
     // Which bucket the charge is expected to land in, for the reported meter.
-    // The authoritative choice is the SQL ladder in atomicDeductUserBalance.
+    // Enter makes the authoritative choice when it reserves the request.
     const source: BalanceBucket = isPaidOnly
         ? "pack"
         : balances.tierBalance > 0

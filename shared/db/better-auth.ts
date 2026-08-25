@@ -14,6 +14,7 @@ import {
   integer,
   real,
   index,
+  primaryKey,
   uniqueIndex,
 } from "drizzle-orm/sqlite-core";
 
@@ -196,6 +197,97 @@ export const stripeCardFingerprintAttempt = sqliteTable("stripe_card_fingerprint
     table.userId,
     table.cardFingerprint,
   ),
+]);
+
+export const billingAuthorization = sqliteTable("billing_authorization", {
+  id: text("id").primaryKey(),
+  producer: text("producer").notNull(),
+  requestId: text("request_id").notNull(),
+  model: text("model"),
+  apiKeyId: text("api_key_id").notNull(),
+  apiKeyName: text("api_key_name"),
+  apiKeyType: text("api_key_type"),
+  apiKeyCreatedVia: text("api_key_created_via"),
+  apiKeyClientName: text("api_key_client_name"),
+  apiKeyClientUserId: text("api_key_client_user_id"),
+  userId: text("user_id").notNull(),
+  userTier: text("user_tier").notNull(),
+  parentRequestId: text("parent_request_id"),
+  estimatedPrice: real("estimated_price").notNull(),
+  reservedPrice: real("reserved_price").notNull(),
+  reservedBucket: text("reserved_bucket", { enum: ["tier", "pack"] }).notNull(),
+  settlementBucket: text("settlement_bucket", { enum: ["tier", "pack"] }),
+  actualPrice: real("actual_price"),
+  paidOnly: integer("paid_only", { mode: "boolean" }).default(false).notNull(),
+  byopClientKeyId: text("byop_client_key_id"),
+  devUserId: text("dev_user_id"),
+  markupRate: real("markup_rate").default(0).notNull(),
+  keyBudgetLimited: integer("key_budget_limited", { mode: "boolean" })
+    .default(false)
+    .notNull(),
+  reservationApplied: integer("reservation_applied", { mode: "boolean" })
+    .default(false)
+    .notNull(),
+  settledAt: integer("settled_at", { mode: "timestamp_ms" }),
+  cancelledAt: integer("cancelled_at", { mode: "timestamp_ms" }),
+  expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" })
+    .defaultNow()
+    .notNull(),
+}, (table) => [
+  uniqueIndex("idx_billing_authorization_producer_request").on(
+    table.producer,
+    table.requestId,
+  ),
+  index("idx_billing_authorization_expiry").on(table.expiresAt),
+  index("idx_billing_authorization_open_expiry")
+    .on(table.expiresAt)
+    .where(sql`${table.settledAt} IS NULL AND ${table.cancelledAt} IS NULL`),
+]);
+
+export const billableEvent = sqliteTable("billable_event", {
+  id: text("id").notNull(),
+  authorizationId: text("authorization_id").notNull(),
+  requestId: text("request_id").notNull(),
+  apiKeyId: text("api_key_id").notNull(),
+  userId: text("user_id").notNull(),
+  meter: text("meter").notNull(),
+  price: real("price").notNull(),
+  billedPrice: real("billed_price").notNull(),
+  paidOnly: integer("paid_only", { mode: "boolean" }).default(false).notNull(),
+  payerBucket: text("payer_bucket", { enum: ["tier", "pack"] }),
+  devUserId: text("dev_user_id"),
+  devCredit: real("dev_credit").default(0).notNull(),
+  communityUserId: text("community_user_id"),
+  communityRewardRate: real("community_reward_rate").default(0).notNull(),
+  communityCredit: real("community_credit").default(0).notNull(),
+  eventFingerprint: text("event_fingerprint").notNull(),
+  telemetryJson: text("telemetry_json").notNull(),
+  occurredAt: integer("occurred_at", { mode: "timestamp_ms" }).notNull(),
+  settledAt: integer("settled_at", { mode: "timestamp_ms" }),
+  autoTopUpRequired: integer("auto_top_up_required", { mode: "boolean" })
+    .default(false)
+    .notNull(),
+  autoTopUpProcessedAt: integer("auto_top_up_processed_at", {
+    mode: "timestamp_ms",
+  }),
+  autoTopUpAttempts: integer("auto_top_up_attempts").default(0).notNull(),
+  autoTopUpNextAttemptAt: integer("auto_top_up_next_attempt_at", {
+    mode: "timestamp_ms",
+  }),
+  autoTopUpError: text("auto_top_up_error"),
+  createdAt: integer("created_at", { mode: "timestamp_ms" })
+    .defaultNow()
+    .notNull(),
+}, (table) => [
+  primaryKey({ columns: [table.authorizationId, table.id] }),
+  index("idx_billable_event_request_id").on(table.requestId),
+  index("idx_billable_event_user_occurred").on(table.userId, table.occurredAt),
+  index("idx_billable_event_pending_auto_top_up")
+    .on(table.autoTopUpNextAttemptAt, table.createdAt)
+    .where(
+      sql`${table.autoTopUpRequired} = 1 AND ${table.autoTopUpProcessedAt} IS NULL`,
+    ),
 ]);
 
 export const communityEndpoint = sqliteTable("community_endpoint", {

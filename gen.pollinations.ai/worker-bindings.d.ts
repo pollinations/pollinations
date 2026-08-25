@@ -1,5 +1,6 @@
 interface CloudflareBindings {
     ENTER: Fetcher;
+    ENTER_BILLING: import("../shared/schemas/billable-event.ts").BillingServiceBinding;
     POLLINATIONS_MCP: Fetcher;
     PORTKEY?: Fetcher;
     KLEIN_VPC?: Fetcher;

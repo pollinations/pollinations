@@ -1,9 +1,12 @@
 import {
     createExecutionContext,
     env,
-    waitOnExecutionContext,
+    waitOnExecutionContext as waitForExecutionContext,
 } from "cloudflare:test";
-import type { AgentRunClaims } from "@shared/auth/agent-run-token.ts";
+import {
+    type AgentRunClaims,
+    signAgentRunToken,
+} from "@shared/auth/agent-run-token.ts";
 import type { AuthUser } from "@shared/auth/api-key.ts";
 import { selectCommunityModelReward } from "@shared/billing/track-helpers.ts";
 import {
@@ -22,10 +25,11 @@ import {
     type ModelName,
 } from "@shared/registry/registry.ts";
 import type { TinybirdEvent } from "@shared/schemas/generation-event.ts";
+import { createTestApiKey } from "@shared/test/fixtures/index.ts";
 import { removeUnset } from "@shared/util.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { Hono } from "hono";
+import { type Context, Hono } from "hono";
 import { requestId } from "hono/request-id";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
@@ -44,10 +48,78 @@ import {
 import type { GenerationModelEntry } from "@/model-registry.ts";
 
 afterEach(() => {
+    capturedTinybirdRequests = null;
     vi.restoreAllMocks();
 });
 
 let trackingUser: AuthUser;
+let capturedTinybirdRequests: Request[] | null = null;
+const capturedBillingEvents = new Set<string>();
+
+function captureTinybird(requests: Request[]): void {
+    capturedTinybirdRequests = requests;
+    capturedBillingEvents.clear();
+}
+
+async function waitOnExecutionContext(ctx: ExecutionContext): Promise<void> {
+    await waitForExecutionContext(ctx);
+    if (!capturedTinybirdRequests) return;
+    const { results } = await env.DB.prepare(
+        `SELECT authorization_id AS authorizationId, id, telemetry_json AS telemetryJson
+         FROM billable_event
+         WHERE settled_at IS NOT NULL
+         ORDER BY created_at, authorization_id, id`,
+    ).all<{
+        authorizationId: string;
+        id: string;
+        telemetryJson: string;
+    }>();
+    const newRows = results.filter((row) => {
+        const key = `${row.authorizationId}:${row.id}`;
+        if (capturedBillingEvents.has(key)) return false;
+        capturedBillingEvents.add(key);
+        return true;
+    });
+    if (newRows.length === 0) return;
+    capturedTinybirdRequests.push(
+        new Request(env.TINYBIRD_INGEST_URL, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${env.TINYBIRD_INGEST_TOKEN}`,
+                "Content-Type": "application/x-ndjson",
+            },
+            body: newRows.map((row) => row.telemetryJson).join("\n"),
+        }),
+    );
+}
+
+async function authorizeTrackingRequest(
+    c: Context<Env>,
+    user: AuthUser | undefined,
+    model: ModelVariables["model"],
+    agentRun?: AgentRunClaims,
+): Promise<void> {
+    if (!user) return;
+    const apiKey = await createTestApiKey({ userId: user.id });
+    const token = agentRun
+        ? await signAgentRunToken({
+              secret: env.BETTER_AUTH_SECRET,
+              parentApiKeyId: apiKey.id,
+              parentRequestId: agentRun.parentRequestId,
+              managedAgentId: agentRun.managedAgentId,
+          })
+        : apiKey.key;
+    (c.env as CloudflareBindings).ENTER_BILLING = env.ENTER_BILLING;
+    const authorization = await env.ENTER_BILLING.authorize(token, {
+        producer: "gen.pollinations.ai",
+        requestId: c.get("requestId"),
+        estimatedPrice: 0,
+        paidOnly: model.definition.paidOnly ?? false,
+        model: model.resolved,
+    });
+    if (!authorization.ok) throw new Error(authorization.error);
+    c.var.balance.billingAuthorizationId = authorization.grant.id;
+}
 
 function createTestApp(
     consumePollen: (amount: number) => Promise<void>,
@@ -85,6 +157,7 @@ function createTestApp(
         c.set("frontendKeyRateLimit", { consumePollen });
         c.set("model", model);
         if (generationCache) c.set("generationCache", generationCache);
+        await authorizeTrackingRequest(c, user, model, agentRun);
         await next();
     });
     app.post("/v1/chat/completions", track("generate.text"), (c) => {
@@ -189,11 +262,13 @@ function createWrongContentTypeApp(
             getBalance: async () => ({ tierBalance: 1, packBalance: 0 }),
         });
         c.set("frontendKeyRateLimit", { consumePollen });
-        c.set("model", {
+        const modelInfo = {
             requested: model,
             resolved: model,
             definition: getRegistryModelDefinition(model),
-        });
+        };
+        c.set("model", modelInfo);
+        await authorizeTrackingRequest(c, trackingUser, modelInfo);
         await next();
     });
     app.all("/upstream", track(eventType), () => response.clone());
@@ -229,6 +304,7 @@ function createSseStreamApp(
         });
         c.set("frontendKeyRateLimit", { consumePollen: async () => {} });
         c.set("model", model);
+        await authorizeTrackingRequest(c, user, model);
         await next();
     });
     app.post("/v1/chat/completions", track("generate.text"), () => {
@@ -304,11 +380,13 @@ function createHeaderApp(
             getBalance: async () => ({ tierBalance: 1, packBalance: 0 }),
         });
         c.set("frontendKeyRateLimit", { consumePollen });
-        c.set("model", {
+        const modelInfo = {
             requested: model,
             resolved: model,
             definition: getRegistryModelDefinition(model),
-        });
+        };
+        c.set("model", modelInfo);
+        await authorizeTrackingRequest(c, user ?? undefined, modelInfo);
         await next();
     });
     app.post("/v1/chat/completions", track("generate.text"), (c) => {
@@ -362,10 +440,7 @@ function recordSettledEntry(
 
 async function captureFallbackEvent(extraHeaders: Record<string, string>) {
     const tinybirdRequests: Request[] = [];
-    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
-        tinybirdRequests.push(new Request(input, init));
-        return new Response("ok");
-    });
+    captureTinybird(tinybirdRequests);
 
     const ctx = createExecutionContext();
     await createHeaderApp(extraHeaders).fetch(
@@ -419,7 +494,7 @@ describe("tracking observability", () => {
             email: `${userId}@test.local`,
             name: "Tracking Observability Test",
             tierBalance: 10_000,
-            packBalance: 0,
+            packBalance: 10_000,
             createdAt: new Date(),
             updatedAt: new Date(),
         });
@@ -434,12 +509,7 @@ describe("tracking observability", () => {
 
     it("emits Tinybird generation events for successful gen requests", async () => {
         const tinybirdRequests: Request[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                tinybirdRequests.push(new Request(input, init));
-                return new Response("ok");
-            },
-        );
+        captureTinybird(tinybirdRequests);
         const consumePollen = vi.fn<(amount: number) => Promise<void>>(
             async () => {},
         );
@@ -476,11 +546,9 @@ describe("tracking observability", () => {
 
         expect(response.status).toBe(200);
         expect(tinybirdRequests).toHaveLength(1);
-        expect(tinybirdRequests[0].url).toBe(
-            "https://tinybird.test/v0/events?name=generation_event_v2",
-        );
+        expect(tinybirdRequests[0].url).toBe(env.TINYBIRD_INGEST_URL);
         expect(tinybirdRequests[0].headers.get("authorization")).toBe(
-            "Bearer test_tinybird_token",
+            `Bearer ${env.TINYBIRD_INGEST_TOKEN}`,
         );
         const event = await tinybirdRequests[0].json();
         expect(event).toMatchObject({
@@ -508,12 +576,7 @@ describe("tracking observability", () => {
 
     it("tracks provider work but not coalesced cache hits", async () => {
         const tinybirdRequests: Request[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                tinybirdRequests.push(new Request(input, init));
-                return new Response("ok");
-            },
-        );
+        captureTinybird(tinybirdRequests);
         const providerConsume = vi.fn<(amount: number) => Promise<void>>(
             async () => {},
         );
@@ -583,12 +646,7 @@ describe("tracking observability", () => {
 
     it("tags a run token's generation with the parent request id", async () => {
         const tinybirdRequests: Request[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                tinybirdRequests.push(new Request(input, init));
-                return new Response("ok");
-            },
-        );
+        captureTinybird(tinybirdRequests);
         const bindings = {
             DB: env.DB,
             ENVIRONMENT: "test",
@@ -639,12 +697,7 @@ describe("tracking observability", () => {
 
     it("leaves the parent request id unset for an ordinary call", async () => {
         const tinybirdRequests: Request[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                tinybirdRequests.push(new Request(input, init));
-                return new Response("ok");
-            },
-        );
+        captureTinybird(tinybirdRequests);
         const bindings = {
             DB: env.DB,
             ENVIRONMENT: "test",
@@ -685,12 +738,7 @@ describe("tracking observability", () => {
 
     it("does not bill a successful text response when upstream usage is missing", async () => {
         const tinybirdRequests: Request[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                tinybirdRequests.push(new Request(input, init));
-                return new Response("ok");
-            },
-        );
+        captureTinybird(tinybirdRequests);
         const consumePollen = vi.fn<(amount: number) => Promise<void>>(
             async () => {},
         );
@@ -742,12 +790,7 @@ describe("tracking observability", () => {
 
     it("records a stream ending with finish_reason error as failed", async () => {
         const tinybirdRequests: Request[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                tinybirdRequests.push(new Request(input, init));
-                return new Response("ok");
-            },
-        );
+        captureTinybird(tinybirdRequests);
         const consumePollen = vi.fn<(amount: number) => Promise<void>>(
             async () => {},
         );
@@ -814,12 +857,7 @@ describe("tracking observability", () => {
 
     it("tracks usage after a malformed SSE event", async () => {
         const tinybirdRequests: Request[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                tinybirdRequests.push(new Request(input, init));
-                return new Response("ok");
-            },
-        );
+        captureTinybird(tinybirdRequests);
         const consumePollen = vi.fn<(amount: number) => Promise<void>>(
             async () => {},
         );
@@ -880,12 +918,7 @@ describe("tracking observability", () => {
     });
     it("still bills a flat request fee when token usage is missing", async () => {
         const tinybirdRequests: Request[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                tinybirdRequests.push(new Request(input, init));
-                return new Response("ok");
-            },
-        );
+        captureTinybird(tinybirdRequests);
         const consumePollen = vi.fn<(amount: number) => Promise<void>>(
             async () => {},
         );
@@ -943,12 +976,7 @@ describe("tracking observability", () => {
 
     it("bills the quoted flat fee when a fallback without adjustments served", async () => {
         const tinybirdRequests: Request[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                tinybirdRequests.push(new Request(input, init));
-                return new Response("ok");
-            },
-        );
+        captureTinybird(tinybirdRequests);
         const consumePollen = vi.fn<(amount: number) => Promise<void>>(
             async () => {},
         );
@@ -1004,12 +1032,7 @@ describe("tracking observability", () => {
 
     it("records a served flat cost without marking a zero-price fallback as billed", async () => {
         const tinybirdRequests: Request[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                tinybirdRequests.push(new Request(input, init));
-                return new Response("ok");
-            },
-        );
+        captureTinybird(tinybirdRequests);
         const consumePollen = vi.fn<(amount: number) => Promise<void>>(
             async () => {},
         );
@@ -1065,12 +1088,7 @@ describe("tracking observability", () => {
 
     it("records and deducts the effective long-context price sheet", async () => {
         const tinybirdRequests: Request[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                tinybirdRequests.push(new Request(input, init));
-                return new Response("ok");
-            },
-        );
+        captureTinybird(tinybirdRequests);
         const consumePollen = vi.fn<(amount: number) => Promise<void>>(
             async () => {},
         );
@@ -1180,12 +1198,7 @@ describe("tracking observability", () => {
 
     it("records the resolved model on a failed generation", async () => {
         const tinybirdRequests: Request[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                tinybirdRequests.push(new Request(input, init));
-                return new Response("ok");
-            },
-        );
+        captureTinybird(tinybirdRequests);
         const consumePollen = vi.fn(async (_amount: number) => {});
 
         const ctx = createExecutionContext();
@@ -1288,7 +1301,7 @@ describe("tracking observability", () => {
             .limit(1);
         if (!user) throw new Error("Expected inserted user");
 
-        vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("ok"));
+        captureTinybird([]);
         const enterFetch = vi.fn<typeof env.ENTER.fetch>(async () =>
             Response.json({ status: "created" }),
         );
@@ -1372,12 +1385,7 @@ describe("tracking observability", () => {
         };
 
         const tinybirdRequests: Request[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                tinybirdRequests.push(new Request(input, init));
-                return new Response("ok");
-            },
-        );
+        captureTinybird(tinybirdRequests);
         const consumePollen = vi.fn<(amount: number) => Promise<void>>(
             async () => {},
         );
@@ -1477,12 +1485,7 @@ describe("tracking observability", () => {
         };
 
         const tinybirdRequests: Request[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                tinybirdRequests.push(new Request(input, init));
-                return new Response("ok");
-            },
-        );
+        captureTinybird(tinybirdRequests);
 
         const ctx = createExecutionContext();
         const response = await createTestApp(
@@ -1593,12 +1596,7 @@ describe("tracking observability", () => {
         };
 
         const tinybirdRequests: Request[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                tinybirdRequests.push(new Request(input, init));
-                return new Response("ok");
-            },
-        );
+        captureTinybird(tinybirdRequests);
 
         const ctx = createExecutionContext();
         const response = await createTestApp(
@@ -1655,12 +1653,7 @@ describe("tracking observability", () => {
 
     it("does not bill image generation that returns a JSON (non-image) content-type", async () => {
         const tinybirdRequests: Request[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                tinybirdRequests.push(new Request(input, init));
-                return new Response("ok");
-            },
-        );
+        captureTinybird(tinybirdRequests);
         const consumePollen = vi.fn<(amount: number) => Promise<void>>(
             async () => {},
         );
@@ -1707,12 +1700,7 @@ describe("tracking observability", () => {
 
     it("bills timestamped audio JSON without copying base64 audio into analytics", async () => {
         const tinybirdRequests: Request[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                tinybirdRequests.push(new Request(input, init));
-                return new Response("ok");
-            },
-        );
+        captureTinybird(tinybirdRequests);
         const consumePollen = vi.fn<(amount: number) => Promise<void>>(
             async () => {},
         );
@@ -1772,12 +1760,7 @@ describe("tracking observability", () => {
 
     it("bills plain-text speech-to-text responses from usage headers", async () => {
         const tinybirdRequests: Request[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                tinybirdRequests.push(new Request(input, init));
-                return new Response("ok");
-            },
-        );
+        captureTinybird(tinybirdRequests);
         const consumePollen = vi.fn<(amount: number) => Promise<void>>(
             async () => {},
         );
@@ -1828,12 +1811,7 @@ describe("tracking observability", () => {
 
     it("does not bill ordinary TTS when a provider returns JSON with HTTP 200", async () => {
         const tinybirdRequests: Request[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                tinybirdRequests.push(new Request(input, init));
-                return new Response("ok");
-            },
-        );
+        captureTinybird(tinybirdRequests);
         const consumePollen = vi.fn<(amount: number) => Promise<void>>(
             async () => {},
         );
@@ -1882,12 +1860,7 @@ describe("tracking observability", () => {
 
     it("bills 3D generation that returns a model/ content-type", async () => {
         const tinybirdRequests: Request[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                tinybirdRequests.push(new Request(input, init));
-                return new Response("ok");
-            },
-        );
+        captureTinybird(tinybirdRequests);
         const consumePollen = vi.fn<(amount: number) => Promise<void>>(
             async () => {},
         );
@@ -1897,7 +1870,7 @@ describe("tracking observability", () => {
         const upstream = new Response(new Uint8Array([1, 2, 3]), {
             headers: {
                 "content-type": "model/gltf-binary",
-                "x-model-used": "triposr",
+                "x-model-used": "trellis-2",
                 "x-usage-completion-image-tokens": "1",
             },
         });
@@ -1907,6 +1880,7 @@ describe("tracking observability", () => {
             consumePollen,
             "generate.image",
             upstream,
+            "trellis-2",
         ).fetch(
             new Request("https://gen.pollinations.ai/upstream", {
                 method: "GET",
@@ -1937,12 +1911,7 @@ describe("tracking observability", () => {
 
     it("does not bill a streamed text request that returns a non-SSE content-type", async () => {
         const tinybirdRequests: Request[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                tinybirdRequests.push(new Request(input, init));
-                return new Response("ok");
-            },
-        );
+        captureTinybird(tinybirdRequests);
         const consumePollen = vi.fn<(amount: number) => Promise<void>>(
             async () => {},
         );
@@ -1999,12 +1968,7 @@ describe("tracking observability", () => {
 
     it("captures endTime at stream completion so responseTime covers the whole request", async () => {
         const tinybirdRequests: Request[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                tinybirdRequests.push(new Request(input, init));
-                return new Response("ok");
-            },
-        );
+        captureTinybird(tinybirdRequests);
 
         // 4 chunks × 50ms upstream delay; first-byte capture would record ~0ms.
         const ctx = createExecutionContext();
@@ -2086,12 +2050,7 @@ describe("tracking observability", () => {
 
         const endpoint = createCommunityEndpoint(ownerId);
         const tinybirdRequests: Request[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                tinybirdRequests.push(new Request(input, init));
-                return new Response("ok");
-            },
-        );
+        captureTinybird(tinybirdRequests);
 
         const ctx = createExecutionContext();
         const response = await createSseStreamApp(
@@ -2349,7 +2308,7 @@ describe("reduceAdjustmentsToEventFields", () => {
     });
 
     it("survives the JSON.stringify(removeUnset(event)) ingestion round-trip", () => {
-        // Mirror shared/events.ts sendToTinybird: body = JSON.stringify(removeUnset(event)).
+        // Mirror the one-shot generation event write after financial commit.
         const withAdjustments = {
             id: "evt_with",
             isBilledUsage: true,

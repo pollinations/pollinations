@@ -784,7 +784,8 @@
           "columns": [
             "expires_at"
           ],
-          "isUnique": false
+          "isUnique": false,
+          "where": "\"billing_authorization\".\"settled_at\" IS NULL AND \"billing_authorization\".\"cancelled_at\" IS NULL"
         }
       },
       "foreignKeys": {},

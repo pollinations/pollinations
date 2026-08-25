@@ -1,5 +1,8 @@
 import { processAutoTopUpForUser } from "../utils/stripe-billing/auto-top-up.ts";
-import { cancelBillingAuthorization } from "./billing-service.ts";
+import {
+    BILLING_AUTHORIZATION_TTL_MS,
+    cancelBillingAuthorization,
+} from "./billing-service.ts";
 
 const BILLING_MAINTENANCE_BATCH_LIMIT = 50;
 
@@ -13,6 +16,7 @@ type AutoTopUpRow = {
 export type BillingMaintenanceResult = {
     expiredAuthorizations: number;
     autoTopUpsProcessed: number;
+    prunedAuthorizations: number;
 };
 
 async function cancelExpiredAuthorizations(
@@ -117,12 +121,72 @@ async function processAutoTopUps(
     return processed;
 }
 
+async function pruneClosedAuthorizations(
+    db: D1Database,
+    now: number,
+): Promise<number> {
+    const cutoff = now - BILLING_AUTHORIZATION_TTL_MS;
+    const { results } = await db
+        .prepare(
+            `SELECT authorization.id
+             FROM billing_authorization AS authorization
+             WHERE authorization.expires_at <= ?
+               AND (
+                   authorization.settled_at IS NOT NULL
+                   OR authorization.cancelled_at IS NOT NULL
+               )
+               AND NOT EXISTS (
+                   SELECT 1 FROM billable_event AS event
+                   WHERE event.authorization_id = authorization.id
+                     AND event.auto_top_up_required = 1
+                     AND event.auto_top_up_processed_at IS NULL
+               )
+             ORDER BY authorization.expires_at, authorization.id
+             LIMIT ?`,
+        )
+        .bind(cutoff, BILLING_MAINTENANCE_BATCH_LIMIT)
+        .all<{ id: string }>();
+    if (results.length === 0) return 0;
+
+    const placeholders = results.map(() => "?").join(", ");
+    const ids = results.map(({ id }) => id);
+    const batch = await db.batch([
+        db
+            .prepare(
+                `DELETE FROM billable_event
+                 WHERE authorization_id IN (${placeholders})`,
+            )
+            .bind(...ids),
+        db
+            .prepare(
+                `DELETE FROM billing_authorization
+                 WHERE id IN (${placeholders})
+                   AND (settled_at IS NOT NULL OR cancelled_at IS NOT NULL)
+                   AND NOT EXISTS (
+                       SELECT 1 FROM billable_event
+                       WHERE authorization_id = billing_authorization.id
+                         AND auto_top_up_required = 1
+                         AND auto_top_up_processed_at IS NULL
+                   )`,
+            )
+            .bind(...ids),
+    ]);
+    return batch[1].meta.changes ?? 0;
+}
+
 export async function runBillingMaintenance(
     env: CloudflareBindings,
     now = Date.now(),
 ): Promise<BillingMaintenanceResult> {
+    const expiredAuthorizations = await cancelExpiredAuthorizations(
+        env.DB,
+        now,
+    );
+    const autoTopUpsProcessed = await processAutoTopUps(env, now);
+    const prunedAuthorizations = await pruneClosedAuthorizations(env.DB, now);
     return {
-        expiredAuthorizations: await cancelExpiredAuthorizations(env.DB, now),
-        autoTopUpsProcessed: await processAutoTopUps(env, now),
+        expiredAuthorizations,
+        autoTopUpsProcessed,
+        prunedAuthorizations,
     };
 }

@@ -12,6 +12,7 @@ import type {
 import { expect } from "vitest";
 import { BillingService } from "../src/billing-entrypoint.ts";
 import { runBillingMaintenance } from "../src/services/billing-maintenance.ts";
+import { BILLING_AUTHORIZATION_TTL_MS } from "../src/services/billing-service.ts";
 import { test } from "./fixtures.ts";
 
 function service(ctx = createExecutionContext()) {
@@ -804,6 +805,79 @@ test("maintenance expires open grants through the atomic cancellation path", asy
     ).resolves.toMatchObject({
         events: [{ status: "rejected" }],
     });
+});
+
+test("maintenance bounds the closed ledger while retaining pending auto top-ups", async ({
+    budgetedApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+    const auth = await authenticate(budgetedApiKey.key);
+    await env.DB.prepare(
+        "UPDATE user SET tier_balance = 10, pack_balance = 0 WHERE id = ?",
+    )
+        .bind(auth.user.id)
+        .run();
+    const grantId = await authorize(
+        budgetedApiKey.key,
+        authorization("prunable-request", 1),
+    );
+    await service().settle(grantId, [
+        event("prunable-event", 1, { requestId: "prunable-request" }),
+    ]);
+    const now = Date.now();
+    await env.DB.batch([
+        env.DB.prepare(
+            `UPDATE billing_authorization
+             SET expires_at = ?
+             WHERE id = ?`,
+        ).bind(now - BILLING_AUTHORIZATION_TTL_MS - 1, grantId),
+        env.DB.prepare(
+            `UPDATE billable_event
+             SET auto_top_up_required = 1,
+                 auto_top_up_processed_at = NULL,
+                 auto_top_up_next_attempt_at = ?
+             WHERE authorization_id = ?`,
+        ).bind(now + 1, grantId),
+    ]);
+
+    await expect(runBillingMaintenance(env, now)).resolves.toMatchObject({
+        prunedAuthorizations: 0,
+    });
+    expect(
+        await env.DB.prepare(
+            "SELECT id FROM billing_authorization WHERE id = ?",
+        )
+            .bind(grantId)
+            .first(),
+    ).not.toBeNull();
+
+    await env.DB.prepare(
+        `UPDATE billable_event
+         SET auto_top_up_processed_at = ?
+         WHERE authorization_id = ?`,
+    )
+        .bind(now, grantId)
+        .run();
+    await expect(runBillingMaintenance(env, now)).resolves.toMatchObject({
+        prunedAuthorizations: 1,
+    });
+    expect(
+        await env.DB.prepare(
+            `SELECT COUNT(*) AS count FROM billing_authorization
+             WHERE id = ?`,
+        )
+            .bind(grantId)
+            .first<{ count: number }>(),
+    ).toEqual({ count: 0 });
+    expect(
+        await env.DB.prepare(
+            `SELECT COUNT(*) AS count FROM billable_event
+             WHERE authorization_id = ?`,
+        )
+            .bind(grantId)
+            .first<{ count: number }>(),
+    ).toEqual({ count: 0 });
 });
 
 test("settlement emits one derived Tinybird write after the ledger commit", async ({

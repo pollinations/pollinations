@@ -61,4 +61,4 @@ CREATE TABLE `billing_authorization` (
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `idx_billing_authorization_producer_request` ON `billing_authorization` (`producer`,`request_id`);--> statement-breakpoint
-CREATE INDEX `idx_billing_authorization_expiry` ON `billing_authorization` (`expires_at`);
+CREATE INDEX `idx_billing_authorization_expiry` ON `billing_authorization` (`expires_at`) WHERE "billing_authorization"."settled_at" IS NULL AND "billing_authorization"."cancelled_at" IS NULL;

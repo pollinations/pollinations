@@ -18,6 +18,7 @@ import { readResponseBytes } from "./response-bytes.ts";
 
 export const LEGACY_COMMUNITY_MODEL_PREFIX = "community/";
 export const COMMUNITY_MODEL_REWARD_RATE = 0.75;
+export const COMMUNITY_ENDPOINT_CHANGE_DELAY_MS = 12 * 60 * 60 * 1000;
 export const COMMUNITY_ENDPOINT_MODALITIES = [
     "text",
     "image",
@@ -547,6 +548,31 @@ export function parseListingPayload<K extends ListingType>(
                 : {}) as Partial<CommunityEndpointPrices>,
         ),
     } as ListingPayloadByType[K];
+}
+
+export function pendingCommunityEndpointChangeIsReady(
+    pendingAt: Date | null,
+    now = Date.now(),
+): boolean {
+    return (
+        pendingAt !== null &&
+        now >= pendingAt.getTime() + COMMUNITY_ENDPOINT_CHANGE_DELAY_MS
+    );
+}
+
+/** Apply only the delayed price policy, preserving newer credentials/settings. */
+export function applyPendingProxyPricing(
+    current: ProxyListingPayload,
+    pending: ProxyListingPayload | null,
+): ProxyListingPayload {
+    return pending
+        ? {
+              ...current,
+              paidOnly: pending.paidOnly,
+              imagePricing: pending.imagePricing,
+              prices: pending.prices,
+          }
+        : current;
 }
 
 type CommunityEndpointRuntimeBase = {

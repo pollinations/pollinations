@@ -26,7 +26,6 @@ const EXECUTOR_HEADERS = new Set([
     "accept",
     "cf-connecting-ip",
     "content-type",
-    "referer",
     "user-agent",
     "x-forwarded-host",
     "x-original-client-ip",

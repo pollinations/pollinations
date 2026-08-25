@@ -121,26 +121,44 @@ type MediaCacheEnv = {
     };
 };
 
-export async function putMediaResponse<TEnv extends MediaCacheEnv>(
+/**
+ * Buffers the response (`prepared`), then puts it in R2 once `publish`
+ * resolves true; a false publish drops the buffered body without a write.
+ */
+export function putMediaResponse<TEnv extends MediaCacheEnv>(
     bucket: R2Bucket,
     cacheKey: string,
     c: Context<TEnv>,
     defaultContentType: string,
     response: Response,
-): Promise<void> {
-    const body = await response.clone().arrayBuffer();
-    if (body.byteLength === 0) {
-        c.get("log").warn("Skipping empty media cache write for {cacheKey}", {
-            cacheKey,
-        });
-        throw new Error("Refusing to cache an empty media response");
-    }
-
-    await bucket.put(cacheKey, body, {
+    publish: Promise<boolean>,
+): { prepared: Promise<void>; write: Promise<void> } {
+    const options: R2PutOptions = {
         httpMetadata: removeUnset({
             contentType:
                 response.headers.get("content-type") || defaultContentType,
         } as R2HTTPMetadata),
         customMetadata: prepareCustomMetadata(response),
-    });
+    };
+    const prepared = response
+        .clone()
+        .arrayBuffer()
+        .then((body) => {
+            if (body.byteLength === 0) {
+                c.get("log").warn(
+                    "Skipping empty media cache write for {cacheKey}",
+                    { cacheKey },
+                );
+                throw new Error("Refusing to cache an empty media response");
+            }
+            return body;
+        });
+    // A preparation failure is reported through `prepared`.
+    const write = prepared.then(
+        async (body) => {
+            if (await publish) await bucket.put(cacheKey, body, options);
+        },
+        () => undefined,
+    );
+    return { prepared: prepared.then(() => undefined), write };
 }

@@ -8,6 +8,7 @@ import {
 } from "@/middleware/auth.ts";
 import { balance } from "@/middleware/balance.ts";
 import type { GenerationBilling } from "@/middleware/billing.ts";
+import type { GenerationCacheWrite } from "@/middleware/generation-cache.ts";
 import type {
     GenerationErrorSnapshot,
     GenerationOutcome,
@@ -70,7 +71,7 @@ function generationExecutor(
     requestId: string,
     balanceCheckResult: BalanceCheckResult,
     billing: GenerationBilling,
-    registerGenerationCacheWrite: (promise: Promise<void>) => void,
+    registerGenerationCacheWrite: (write: GenerationCacheWrite) => void,
 ): Hono<Env> {
     const executor = new Hono<Env>()
         .use("*", async (c, next) => {
@@ -99,9 +100,9 @@ function generationExecutor(
 /**
  * Runs a provider handler under the Durable Object alarm's lifetime, on the
  * Enter authorization the coordinator obtained. The result is only "cached"
- * once the durable write landed and Enter settled the request: a settlement
- * failure discards the cached output (see track) and fails the generation,
- * so nothing is ever served that was not paid for.
+ * once Enter settled the request and the durable write then landed: track
+ * holds the cache publication until settlement, so an unsettled response is
+ * never written and nothing is ever served that was not paid for.
  */
 export async function executeGeneration(
     request: Request,
@@ -112,7 +113,7 @@ export async function executeGeneration(
     env: CloudflareBindings,
 ): Promise<DetachedGeneration> {
     const promises: Promise<unknown>[] = [];
-    let cacheWrite: Promise<void> | undefined;
+    let cacheWrite: GenerationCacheWrite | undefined;
     const billing: GenerationBilling = { authorizationId };
     const executionCtx = {
         waitUntil(promise: Promise<unknown>) {
@@ -126,8 +127,8 @@ export async function executeGeneration(
         requestId,
         balanceCheckResult,
         billing,
-        (promise) => {
-            cacheWrite = promise;
+        (write) => {
+            cacheWrite = write;
         },
     ).fetch(request, env, executionCtx);
     const settlement = Promise.allSettled(promises).then(() => {});
@@ -154,10 +155,17 @@ export async function executeGeneration(
             throw new Error("Generation completed without a cacheable result");
         }
 
-        await cacheWrite;
         if (!(await billing.settlement)) {
             return {
                 result: failure(502, "Generation billing failed"),
+                settlement,
+            };
+        }
+        try {
+            await cacheWrite.write;
+        } catch {
+            return {
+                result: failure(503, "Generation cache write failed"),
                 settlement,
             };
         }

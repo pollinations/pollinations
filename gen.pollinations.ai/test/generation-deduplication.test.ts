@@ -59,6 +59,7 @@ function createAdapter(cache: Map<string, string>): GenerationCacheAdapter {
         shouldCache: (response) => response.ok,
         capture: (_c, key, response) => ({
             response,
+            prepared: Promise.resolve(),
             write: Promise.resolve().then(() => {
                 cache.set(key, "origin");
             }),
@@ -173,6 +174,8 @@ describe("generation request deduplication", () => {
                         Authorization: "Bearer header-secret",
                         "CF-Connecting-IP": "203.0.113.42",
                         "Content-Type": "application/json",
+                        Referer:
+                            "https://example.com/app?key=referer-secret&token=t",
                         "X-Forwarded-Host": "gen.pollinations.ai",
                         "X-Original-Client-IP": "203.0.113.42",
                     },
@@ -213,6 +216,10 @@ describe("generation request deduplication", () => {
             ]),
         );
         expect(jobs[0].auth.apiKey).not.toHaveProperty("rawKey");
+        // Nothing persisted by the coordinator may carry a credential: the
+        // Referer (which browsers fill with key-bearing app URLs) is dropped.
+        const { authorize: _authorize, ...persisted } = jobs[0];
+        expect(JSON.stringify(persisted)).not.toContain("secret");
         expect(jobs[0].requestId).toBe("request-1");
         expect(jobs[0].balanceCheckResult.balances).toEqual({
             "v1:meter:tier": 1,

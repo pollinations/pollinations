@@ -147,6 +147,10 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
                 this.env,
             );
             settlement = execution.settlement;
+            // Only clear the job once its settlement work has ended, so an
+            // identical retry keeps joining rather than starting a second
+            // execution while money is still moving.
+            await settlement;
             await this.finish(execution.result, stored.bodyChunks);
         } catch (error) {
             console.error("Detached generation failed", error);

@@ -33,9 +33,25 @@ export type GenerationCacheVariables = {
     /** Canonical body identity used by body-aware cache adapters. */
     generationCacheBody?: string;
     /** Executor callback used to await durable cache materialization. */
-    registerGenerationCacheWrite?: (promise: Promise<void>) => void;
+    registerGenerationCacheWrite?: (write: GenerationCacheWrite) => void;
     /** The in-flight durable write of this request's response, if any. */
-    generationCacheWrite?: Promise<void>;
+    generationCacheWrite?: GenerationCacheWrite;
+    /**
+     * Set by track before the handler runs: resolves true once Enter has
+     * durably accepted the settlement (publish), false when nothing may be
+     * served (drop). Adapters hold the R2 put until it resolves.
+     */
+    generationCachePublish?: Promise<boolean>;
+};
+
+/**
+ * A response on its way to the cache. `prepared` settles once the whole
+ * body is buffered and validated — before any money moves; `write` once the
+ * object is in R2 (or was dropped because publication was refused).
+ */
+export type GenerationCacheWrite = {
+    prepared: Promise<void>;
+    write: Promise<void>;
 };
 
 export function generationCacheBucket(
@@ -63,7 +79,8 @@ export type GenerationCacheAdapter = {
         c: Context<GenerationCacheEnv>,
         key: string,
         response: Response,
-    ) => { response: Response; write: Promise<void> };
+        publish: Promise<boolean>,
+    ) => { response: Response } & GenerationCacheWrite;
 };
 
 function normalizedJsonBody(body: string): string {
@@ -202,7 +219,7 @@ function capture(
     c: Context<GenerationCacheEnv>,
     adapter: GenerationCacheAdapter,
     cacheKey: string,
-): Promise<void> | undefined {
+): GenerationCacheWrite | undefined {
     if (
         !c.res ||
         c.res.headers.get("X-Cache") === "HIT" ||
@@ -212,9 +229,19 @@ function capture(
     }
 
     c.get("log").getChild(adapter.label).debug("Caching response");
-    const captured = adapter.capture(c, cacheKey, c.res);
-    replaceCapturedResponse(c, captured.response);
-    return captured.write;
+    // Without track in the chain nothing settles, so publish unconditionally.
+    const publish = c.var.generationCachePublish ?? Promise.resolve(true);
+    const { response, prepared, write } = adapter.capture(
+        c,
+        cacheKey,
+        c.res,
+        publish,
+    );
+    replaceCapturedResponse(c, response);
+    // Track observes the failure once settlement comes around; until then
+    // the rejection must not surface as unhandled.
+    prepared.catch(() => undefined);
+    return { prepared, write };
 }
 
 /** Shared cache lifecycle; storage and serialization stay adapter-owned. */
@@ -250,7 +277,7 @@ export function createGenerationCache(adapter: GenerationCacheAdapter) {
         if (cacheWrite) {
             c.set("generationCacheWrite", cacheWrite);
             c.executionCtx.waitUntil(
-                cacheWrite.catch((error) => {
+                cacheWrite.write.catch((error) => {
                     log.error("Error caching response: {error}", { error });
                 }),
             );

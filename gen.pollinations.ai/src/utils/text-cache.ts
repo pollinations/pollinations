@@ -195,72 +195,43 @@ export async function getCachedResponse<TEnv extends TextCacheEnv>(
 }
 
 /**
- * Create a transform stream that captures chunks for caching
- * Works for both streaming (SSE) and non-streaming (JSON) responses
- * Non-streaming responses just come through as one or a few chunks
+ * Captures a response body for caching. The body is teed: one branch goes
+ * back to the caller, the other is buffered into `prepared`, which rejects
+ * if the source stream errors. `write` puts the buffered body in R2 once
+ * `publish` resolves true; a false publish drops it without a write.
  */
-export function createCaptureStream<TEnv extends TextCacheEnv>(
+export function captureTextResponse<TEnv extends TextCacheEnv>(
     c: Context<TEnv>,
     cacheKey: string,
     response: Response,
-): {
-    stream: TransformStream<Uint8Array, Uint8Array>;
-    write: Promise<void>;
-} {
+    publish: Promise<boolean>,
+): { response: Response; prepared: Promise<void>; write: Promise<void> } {
     const log = c.get("log");
-    let chunks: Uint8Array[] = [];
-    let totalSize = 0;
-    let resolveWrite!: () => void;
-    let rejectWrite!: (error: unknown) => void;
-    const write = new Promise<void>((resolve, reject) => {
-        resolveWrite = resolve;
-        rejectWrite = reject;
-    });
-
-    const stream = new TransformStream({
-        transform(chunk, controller) {
-            // Save a copy of the chunk for caching later
-            chunks.push(chunk.slice());
-            totalSize += chunk.byteLength;
-
-            // Pass the chunk through unchanged to the client
-            controller.enqueue(chunk);
-        },
-        flush(_controller) {
-            // This runs when the stream is complete
-            log?.debug(
-                "[TEXT-CACHE] Response streaming complete ({chunks} chunks, {size} bytes)",
-                {
-                    chunks: chunks.length,
-                    size: totalSize,
-                },
+    if (!response.body)
+        throw new Error("Cannot capture a response without a body");
+    const [client, capture] = response.body.tee();
+    const prepared = new Response(capture).bytes();
+    // A preparation failure is reported through `prepared`.
+    const write = prepared.then(
+        async (body) => {
+            if (!(await publish)) return;
+            await c.env.TEXT_BUCKET.put(cacheKey, body, {
+                customMetadata: prepareMetadata(response),
+            });
+            log?.info(
+                "[TEXT-CACHE] Streaming response cached successfully ({size} bytes)",
+                { size: body.byteLength },
             );
-
-            void (async () => {
-                try {
-                    const completeResponse = new Uint8Array(totalSize);
-                    let offset = 0;
-                    for (const chunk of chunks) {
-                        completeResponse.set(chunk, offset);
-                        offset += chunk.byteLength;
-                    }
-
-                    await c.env.TEXT_BUCKET.put(cacheKey, completeResponse, {
-                        customMetadata: prepareMetadata(response),
-                    });
-                    log?.info(
-                        "[TEXT-CACHE] Streaming response cached successfully ({size} bytes)",
-                        { size: totalSize },
-                    );
-                    resolveWrite();
-                } catch (error) {
-                    rejectWrite(error);
-                } finally {
-                    chunks = [];
-                }
-            })();
         },
-    });
-
-    return { stream, write };
+        () => undefined,
+    );
+    return {
+        response: new Response(client, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: response.headers,
+        }),
+        prepared: prepared.then(() => undefined),
+        write,
+    };
 }

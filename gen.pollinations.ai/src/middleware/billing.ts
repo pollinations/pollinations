@@ -73,7 +73,21 @@ export const authorizeGeneration = createMiddleware<BillingEnv>(
                 message: authorization.denial.message,
             });
         }
-        c.set("billing", { authorizationId: authorization.authorizationId });
-        await next();
+        const billing: GenerationBilling = {
+            authorizationId: authorization.authorizationId,
+        };
+        c.set("billing", billing);
+        try {
+            await next();
+        } catch (error) {
+            // The handler threw before tracking could settle: release the
+            // reserve now instead of holding it until it expires.
+            if (!billing.settlement) {
+                await c.env.ENTER_GATEWAY.cancel(billing.authorizationId).catch(
+                    () => undefined,
+                );
+            }
+            throw error;
+        }
     },
 );

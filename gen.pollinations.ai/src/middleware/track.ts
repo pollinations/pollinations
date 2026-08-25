@@ -63,7 +63,6 @@ import type { BalanceVariables } from "@/middleware/balance.ts";
 import type { BillingVariables } from "@/middleware/billing.ts";
 import {
     type GenerationCacheVariables,
-    generationCacheBucket,
     hashGenerationCacheIdentity,
 } from "@/middleware/generation-cache.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
@@ -236,6 +235,16 @@ export const track = (eventType: EventType) =>
             );
         };
 
+        // The cache may buffer the response but must not publish it before
+        // Enter has durably accepted the settlement (or nothing is owed).
+        let publishCache: (publish: boolean) => void = () => {};
+        c.set(
+            "generationCachePublish",
+            new Promise<boolean>((resolve) => {
+                publishCache = resolve;
+            }),
+        );
+
         c.set("track", {
             modelRequested: requestTracking.modelRequested,
             resolvedModelRequested: requestTracking.resolvedModelRequested,
@@ -249,11 +258,19 @@ export const track = (eventType: EventType) =>
             attempts,
         });
 
-        await next();
+        try {
+            await next();
+        } catch (error) {
+            publishCache(false);
+            throw error;
+        }
 
         // Detached execution already tracked the provider failure. The outer
         // caller only receives that captured result and must not emit it again.
-        if (c.var.track.detachedExecutionTracked) return;
+        if (c.var.track.detachedExecutionTracked) {
+            publishCache(false);
+            return;
+        }
 
         const billing = c.var.billing;
         let resolveSettlement: (settled: boolean) => void = () => {};
@@ -262,178 +279,220 @@ export const track = (eventType: EventType) =>
                 resolveSettlement = resolve;
             });
         }
+        // Returns whether the request's money is resolved: nothing owed,
+        // or settled. Any other outcome, thrown or not, cancels the open
+        // authorization exactly once below.
+        const resolve = async (): Promise<boolean> => {
+            const userId = userTracking.userId;
+            if (!userId) {
+                publishCache(true);
+                return true;
+            }
+
+            const finalCandidate =
+                attempts.find((attempt) => attempt.settled)?.candidate ??
+                fallbackCandidates(modelInfo)[0];
+
+            // Routes attach telemetry headers (x-moderation-*, cache
+            // status) to the final response AFTER the override is
+            // captured, so read the body from the override but headers
+            // from c.res — keeping the override's content-type since it
+            // describes the body that usage extraction parses.
+            const response = responseOverride
+                ? withFinalResponseHeaders(responseOverride, c.res)
+                : responseForTracking(c.res);
+            // What a rescue changes: the generation's cost, and which owner
+            // earns the reward. Not the price — the caller is charged the
+            // listing they asked for either way.
+            // Captured only after the response above is cloned: any await
+            // before that clone lets the body start streaming, and cloning
+            // a locked stream throws.
+            // One row per call that was moved on from. The failure that
+            // ended the request is not among them: it is the response, and
+            // the settlement row below carries it — under the name only the
+            // loop can supply. So a request emits one row per upstream call.
+            const attemptRows: TrackingRow[] = [];
+            for (const attempt of attempts) {
+                if (attempt.settled) continue;
+                const model = attempt.candidate.id;
+                const status = failedAttemptStatus(attempt.error);
+                attemptRows.push({
+                    startTime: attempt.startedAt,
+                    endTime: attempt.endedAt,
+                    balanceTracking: balanceTracking(),
+                    responseTracking: {
+                        responseStatus: status,
+                        cacheHit: false,
+                        isBilledUsage: false,
+                        isFinal: false,
+                        fallbackUsed:
+                            model !== requestTracking.resolvedModelRequested,
+                        modelUsed: model,
+                        modelProviderUsed:
+                            attempt.candidate.definition?.provider ??
+                            requestTracking.modelProvider,
+                    },
+                    errorTracking: collectErrorData(
+                        status,
+                        attempt.error instanceof Error
+                            ? attempt.error
+                            : undefined,
+                    ),
+                });
+            }
+            const responseTracking = await trackResponse(
+                eventType,
+                requestTracking,
+                response,
+                finalCandidate,
+                pricingInput,
+            );
+            if (responseTracking.cacheHit) {
+                // Nothing was generated, so nothing is owed: the open
+                // authorization is released below and no row is left.
+                await c.var.frontendKeyRateLimit?.consumePollen(0);
+                return false;
+            }
+            // trackResponse consumes SSE text and JSON bodies, so for
+            // those endTime marks actual response completion — not
+            // time-to-first-byte. Binary bodies (image/audio) are never
+            // read by tracking, so their endTime stays ~header arrival.
+            const endTime = new Date();
+            const finalRow: TrackingRow = {
+                startTime,
+                endTime,
+                balanceTracking: balanceTracking(),
+                responseTracking,
+                errorTracking:
+                    responseTracking.errorTracking ??
+                    collectErrorData(response.status, c.get("error")),
+            };
+
+            if (!billing) {
+                // The request was refused before Enter authorized it
+                // (denied, rate limited, unavailable): no money moved, so
+                // the rows are recorded directly.
+                publishCache(true);
+                for (const row of attemptRows) await emitRow(row);
+                await emitRow(finalRow);
+                return true;
+            }
+
+            // Enter settles the request's whole event set as one
+            // financial batch: a zero-price row per abandoned upstream
+            // call, then the outcome with its price and owner reward.
+            const price = responseTracking.isBilledUsage
+                ? (responseTracking.price?.totalPrice ?? 0)
+                : 0;
+            const events: ServiceBillableEvent[] = [];
+            for (const [index, row] of attemptRows.entries()) {
+                events.push({
+                    eventId: `attempt-${index}`,
+                    eventType,
+                    price: 0,
+                    modelUsed: row.responseTracking.modelUsed,
+                    telemetry: await buildRow(row),
+                });
+            }
+            // A private endpoint only earns a reward when it backs its
+            // owner's public listing. Cross-owner private fallbacks are
+            // rejected when the fallback is linked.
+            const communityReward = selectCommunityModelReward(
+                c.var.model?.communityEndpoint,
+                finalCandidate.communityEndpoint,
+                responseTracking.servedPrice,
+            );
+            events.push({
+                eventId: "generation",
+                eventType,
+                price,
+                modelUsed: responseTracking.modelUsed,
+                ...(communityReward && {
+                    communityReward: {
+                        ownerUserId: communityReward.userId,
+                        rewardRate: communityReward.rewardRate,
+                        basePrice: communityReward.basePrice,
+                    },
+                }),
+                telemetry: await buildRow(finalRow),
+            });
+
+            // Nothing may be charged for a response the cache could not
+            // hold: the whole body is buffered and validated first.
+            await c.var.generationCacheWrite?.prepared;
+            const settled = await settleWithEnter(
+                c,
+                billing.authorizationId,
+                events,
+                log,
+            );
+            // Unpaid output is never published to the cache.
+            if (!settled) return false;
+            resolveSettlement(true);
+            publishCache(true);
+
+            await c.var.frontendKeyRateLimit?.consumePollen(price);
+            log.trace("Settled {price} pollen for request {requestId}", {
+                price,
+                requestId: c.get("requestId"),
+            });
+            return true;
+        };
         c.executionCtx.waitUntil(
             (async () => {
-                const userId = userTracking.userId;
-                if (!userId) return;
-
-                const finalCandidate =
-                    attempts.find((attempt) => attempt.settled)?.candidate ??
-                    fallbackCandidates(modelInfo)[0];
-
-                // Routes attach telemetry headers (x-moderation-*, cache
-                // status) to the final response AFTER the override is
-                // captured, so read the body from the override but headers
-                // from c.res — keeping the override's content-type since it
-                // describes the body that usage extraction parses.
-                const response = responseOverride
-                    ? withFinalResponseHeaders(responseOverride, c.res)
-                    : responseForTracking(c.res);
-                // What a rescue changes: the generation's cost, and which owner
-                // earns the reward. Not the price — the caller is charged the
-                // listing they asked for either way.
-                // Captured only after the response above is cloned: any await
-                // before that clone lets the body start streaming, and cloning
-                // a locked stream throws.
-                // One row per call that was moved on from. The failure that
-                // ended the request is not among them: it is the response, and
-                // the settlement row below carries it — under the name only the
-                // loop can supply. So a request emits one row per upstream call.
-                const attemptRows: TrackingRow[] = [];
-                for (const attempt of attempts) {
-                    if (attempt.settled) continue;
-                    const model = attempt.candidate.id;
-                    const status = failedAttemptStatus(attempt.error);
-                    attemptRows.push({
-                        startTime: attempt.startedAt,
-                        endTime: attempt.endedAt,
-                        balanceTracking: balanceTracking(),
-                        responseTracking: {
-                            responseStatus: status,
-                            cacheHit: false,
-                            isBilledUsage: false,
-                            isFinal: false,
-                            fallbackUsed:
-                                model !==
-                                requestTracking.resolvedModelRequested,
-                            modelUsed: model,
-                            modelProviderUsed:
-                                attempt.candidate.definition?.provider ??
-                                requestTracking.modelProvider,
-                        },
-                        errorTracking: collectErrorData(
-                            status,
-                            attempt.error instanceof Error
-                                ? attempt.error
-                                : undefined,
-                        ),
-                    });
-                }
-                const responseTracking = await trackResponse(
-                    eventType,
-                    requestTracking,
-                    response,
-                    finalCandidate,
-                    pricingInput,
-                );
-                if (responseTracking.cacheHit) {
-                    // Nothing was generated, so nothing is owed: release the
-                    // authorization and leave no row.
-                    if (billing) await cancelAuthorization(c, billing, log);
-                    await c.var.frontendKeyRateLimit?.consumePollen(0);
-                    return;
-                }
-                // trackResponse consumes SSE text and JSON bodies, so for
-                // those endTime marks actual response completion — not
-                // time-to-first-byte. Binary bodies (image/audio) are never
-                // read by tracking, so their endTime stays ~header arrival.
-                const endTime = new Date();
-                const finalRow: TrackingRow = {
-                    startTime,
-                    endTime,
-                    balanceTracking: balanceTracking(),
-                    responseTracking,
-                    errorTracking:
-                        responseTracking.errorTracking ??
-                        collectErrorData(response.status, c.get("error")),
-                };
-
-                if (!billing) {
-                    // The request was refused before Enter authorized it
-                    // (denied, rate limited, unavailable): no money moved, so
-                    // the rows are recorded directly.
-                    for (const row of attemptRows) await emitRow(row);
-                    await emitRow(finalRow);
-                    return;
-                }
-
-                // Enter settles the request's whole event set as one
-                // financial batch: a zero-price row per abandoned upstream
-                // call, then the outcome with its price and owner reward.
-                const price = responseTracking.isBilledUsage
-                    ? (responseTracking.price?.totalPrice ?? 0)
-                    : 0;
-                const events: ServiceBillableEvent[] = [];
-                for (const [index, row] of attemptRows.entries()) {
-                    events.push({
-                        eventId: `attempt-${index}`,
-                        eventType,
-                        price: 0,
-                        modelUsed: row.responseTracking.modelUsed,
-                        telemetry: await buildRow(row),
-                    });
-                }
-                // A private endpoint only earns a reward when it backs its
-                // owner's public listing. Cross-owner private fallbacks are
-                // rejected when the fallback is linked.
-                const communityReward = selectCommunityModelReward(
-                    c.var.model?.communityEndpoint,
-                    finalCandidate.communityEndpoint,
-                    responseTracking.servedPrice,
-                );
-                events.push({
-                    eventId: "generation",
-                    eventType,
-                    price,
-                    modelUsed: responseTracking.modelUsed,
-                    ...(communityReward && {
-                        communityReward: {
-                            ownerUserId: communityReward.userId,
-                            rewardRate: communityReward.rewardRate,
-                            basePrice: communityReward.basePrice,
-                        },
-                    }),
-                    telemetry: await buildRow(finalRow),
-                });
-
-                let settled = false;
+                let resolved = false;
                 try {
-                    const result = await c.env.ENTER_GATEWAY.settle({
-                        authorizationId: billing.authorizationId,
-                        events,
-                    });
-                    if (result.ok) {
-                        settled = true;
-                    } else {
-                        log.error("Enter refused the settlement: {error}", {
-                            error: result.error,
-                        });
-                    }
+                    resolved = await resolve();
                 } catch (error) {
-                    log.error("Settlement failed: {error}", {
+                    log.error("Tracking failed before settlement: {error}", {
                         error:
                             error instanceof Error
                                 ? error.message
                                 : String(error),
                     });
+                } finally {
+                    resolveSettlement(false);
+                    publishCache(false);
                 }
-                if (!settled) {
-                    // Unpaid output must not be served from cache, and the
-                    // provider is never called again for it.
-                    await discardCachedGeneration(c, log);
+                if (billing && !resolved) {
                     await cancelAuthorization(c, billing, log);
-                    return;
                 }
-                resolveSettlement(true);
-
-                await c.var.frontendKeyRateLimit?.consumePollen(price);
-                log.trace("Settled {price} pollen for request {requestId}", {
-                    price,
-                    requestId: c.get("requestId"),
-                });
-            })().finally(() => resolveSettlement(false)),
+            })(),
         );
     });
+
+/**
+ * One settlement, plus one immediate re-delivery of the identical call if
+ * the first lost its acknowledgement: Enter settles by (authorization,
+ * event id), so a committed first call answers the second as duplicates and
+ * writes no second analytics row. A refusal is final and never retried.
+ */
+async function settleWithEnter(
+    c: Context<TrackEnv>,
+    authorizationId: string,
+    events: ServiceBillableEvent[],
+    log: Logger,
+): Promise<boolean> {
+    for (let delivery = 1; delivery <= 2; delivery += 1) {
+        try {
+            const result = await c.env.ENTER_GATEWAY.settle({
+                authorizationId,
+                events,
+            });
+            if (result.ok) return true;
+            log.error("Enter refused the settlement: {error}", {
+                error: result.error,
+            });
+            return false;
+        } catch (error) {
+            log.error("Settlement delivery {delivery} failed: {error}", {
+                delivery,
+                error: error instanceof Error ? error.message : String(error),
+            });
+        }
+    }
+    return false;
+}
 
 type TrackingRow = {
     startTime: Date;
@@ -454,29 +513,6 @@ async function cancelAuthorization(
         log.error("Authorization cancel failed: {error}", {
             error: error instanceof Error ? error.message : String(error),
         });
-    }
-}
-
-/** Remove a response that was cached before its settlement failed. */
-async function discardCachedGeneration(
-    c: Context<TrackEnv>,
-    log: Logger,
-): Promise<void> {
-    const cache = c.var.generationCache;
-    if (!cache) return;
-    // The write's own failure is logged by the cache middleware.
-    await c.var.generationCacheWrite?.catch(() => undefined);
-    try {
-        await generationCacheBucket(c.env, cache.adapter.storage).delete(
-            cache.key,
-        );
-    } catch (error) {
-        log.error(
-            "Discarding the unsettled cached generation failed: {error}",
-            {
-                error: error instanceof Error ? error.message : String(error),
-            },
-        );
     }
 }
 

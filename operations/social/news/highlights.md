@@ -1,3 +1,7 @@
+- **2026-08-24** – **🤖 MCPs move into the hive** Managed agents can now discover and use registered MCP servers through a single authenticated Gen path, with Pollen handling the receipts. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-server)
+- **2026-08-24** – **🎵 The hive has ears** MCP agents can now transcribe audio from a public HTTPS URL with the new `transcribeAudio` tool.
+- **2026-08-24** – **🎨 Kontext finds its way home** Azure Flux Kontext is back for text-to-image generation and single-reference editing, at $0.03 per image. [Try it](https://pollinations.ai/play)
+- **2026-08-24** – **📱 Chat from the shell** FreeChat CLI brings zero-config, multi-model Pollinations chat, streaming, and saved conversations to the terminal. [View repo](https://github.com/xiaotian1171/freechat-cli) <!-- app -->
 - **2026-08-23** – **🤖 Agents can delegate to agents** MCP-connected agents can discover agent models and call them directly, inheriting permissions and billing through the parent key.
 - **2026-08-23** – **🚀 Register endpoint agents by API** Create private endpoint agents directly with `POST /account/my-models/endpoint-agents`; public publishing follows the existing allowlist.
 - **2026-08-23** – **🎯 Find models usable with Quest Pollen** The Models page now has a local filter for models your Quest-earned Pollen can actually use. Less botanical guesswork.

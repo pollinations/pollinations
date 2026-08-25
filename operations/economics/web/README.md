@@ -35,7 +35,12 @@ Reads OP pipes from `enter.pollinations.ai/observability/endpoints/`:
 Write-side conventions (entry_id, idempotent corrections) live in the
 Economics ingest agent's own system prompt.
 
-The app is a read-only mirror; all reads go through the Worker proxy.
+The app is a read-only mirror; all reads go through the Worker proxy. In
+deployed environments the Worker authenticates every request before serving
+the SPA shell or any static asset, so private forecast assumptions and
+reconciliation explanations cannot be downloaded before login. Localhost keeps
+direct asset access for development and fixture mode. The public workers.dev
+origin is disabled; only the two configured custom domains serve the app.
 Production deployment stops before changing the Worker unless all four required
 pipes already respond from the production Tinybird workspace. Deploy and verify
 Tinybird schema changes before promoting a Worker that reads them.

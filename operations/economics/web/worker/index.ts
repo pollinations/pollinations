@@ -9,6 +9,7 @@ const READ_PIPES = new Set([
 ]);
 
 interface Env {
+    ASSETS: Pick<Fetcher, "fetch">;
     ECONOMICS_PASSWORD: string;
     LOGIN_RATE_LIMITER: RateLimit;
     TINYBIRD_API: string;
@@ -16,6 +17,91 @@ interface Env {
 }
 
 const encoder = new TextEncoder();
+
+const LOGIN_PAGE = `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Economics</title>
+  <style>
+    :root { color-scheme: dark; font-family: ui-sans-serif, system-ui, sans-serif; background: #11110f; color: #f2f0ea; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: start center; }
+    main { width: min(28rem, calc(100% - 2rem)); margin-top: 6rem; }
+    h1 { font-family: Georgia, serif; font-size: 2.5rem; margin: 0 0 1rem; }
+    p { color: #b9b5aa; line-height: 1.5; }
+    form { display: flex; gap: .75rem; margin-top: 1.5rem; }
+    input, button { border: 1px solid #4a463d; border-radius: .75rem; padding: .8rem 1rem; font: inherit; }
+    input { min-width: 0; flex: 1; background: #24231f; color: inherit; }
+    button { background: #a87500; color: #fff; cursor: pointer; font-weight: 700; }
+    #error { color: #ffaaa5; min-height: 1.5rem; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Economics</h1>
+    <p>Enter the economics password.</p>
+    <form id="login-form">
+      <input id="password" name="password" type="password" autocomplete="current-password" autofocus required aria-label="Password">
+      <button type="submit">Connect</button>
+    </form>
+    <p id="error" role="alert"></p>
+  </main>
+  <script>
+    const form = document.getElementById("login-form");
+    const password = document.getElementById("password");
+    const error = document.getElementById("error");
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      error.textContent = "";
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: password.value }),
+      });
+      if (response.ok) {
+        location.reload();
+        return;
+      }
+      error.textContent = response.status === 429
+        ? "Too many login attempts. Try again shortly."
+        : "Wrong password.";
+      password.select();
+    });
+  </script>
+</body>
+</html>`;
+
+function loginPage() {
+    return new Response(LOGIN_PAGE, {
+        status: 401,
+        headers: {
+            "Cache-Control": "no-store",
+            "Content-Security-Policy":
+                "default-src 'none'; connect-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+            "Content-Type": "text/html; charset=utf-8",
+            "Referrer-Policy": "no-referrer",
+            "X-Content-Type-Options": "nosniff",
+        },
+    });
+}
+
+function isLocalDevelopment(url: URL) {
+    return url.hostname === "127.0.0.1" || url.hostname === "localhost";
+}
+
+async function protectedAsset(request: Request, env: Env) {
+    const response = await env.ASSETS.fetch(request);
+    const headers = new Headers(response.headers);
+    headers.set("Cache-Control", "private, no-store");
+    headers.set("Referrer-Policy", "no-referrer");
+    headers.set("X-Content-Type-Options", "nosniff");
+    return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers,
+    });
+}
 
 function json(body: unknown, status = 200) {
     return Response.json(body, {
@@ -202,8 +288,29 @@ async function handleApi(request: Request, env: Env) {
     return json({ error: "Not found" }, 404);
 }
 
+async function handleRequest(request: Request, env: Env) {
+    const url = new URL(request.url);
+    if (url.pathname.startsWith("/api/")) {
+        return handleApi(request, env);
+    }
+
+    try {
+        requiredSecrets(env);
+    } catch {
+        return json({ error: "Economics secrets unavailable" }, 500);
+    }
+
+    if (
+        !isLocalDevelopment(url) &&
+        !(await isAuthenticated(request, env.ECONOMICS_PASSWORD))
+    ) {
+        return loginPage();
+    }
+    return protectedAsset(request, env);
+}
+
 export default {
     async fetch(request, env) {
-        return handleApi(request, env);
+        return handleRequest(request, env);
     },
 } satisfies ExportedHandler<Env>;

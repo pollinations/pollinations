@@ -2,6 +2,15 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import worker from "./index";
 
 const env = {
+    ASSETS: {
+        fetch: vi.fn().mockImplementation(() =>
+            Promise.resolve(
+                new Response("private asset", {
+                    headers: { "Content-Type": "text/javascript" },
+                }),
+            ),
+        ),
+    },
     ECONOMICS_PASSWORD: "correct horse battery staple",
     LOGIN_RATE_LIMITER: {
         limit: vi.fn().mockResolvedValue({ success: true }),
@@ -31,6 +40,7 @@ afterEach(() => {
     vi.useRealTimers();
     vi.unstubAllGlobals();
     env.LOGIN_RATE_LIMITER.limit.mockResolvedValue({ success: true });
+    env.ASSETS.fetch.mockClear();
 });
 
 describe("economics Worker auth", () => {
@@ -146,5 +156,43 @@ describe("economics Worker auth", () => {
                 },
             },
         );
+    });
+
+    it("does not serve application assets before authentication", async () => {
+        const response = await request("/");
+
+        expect(response.status).toBe(401);
+        expect(response.headers.get("Cache-Control")).toBe("no-store");
+        expect(response.headers.get("Content-Security-Policy")).toContain(
+            "frame-ancestors 'none'",
+        );
+        await expect(response.text()).resolves.toContain(
+            "Enter the economics password",
+        );
+        expect(env.ASSETS.fetch).not.toHaveBeenCalled();
+    });
+
+    it("serves application assets only after authentication", async () => {
+        const cookie = await authenticatedCookie();
+        const response = await request("/assets/index.js", {
+            headers: { Cookie: cookie },
+        });
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("Cache-Control")).toBe("private, no-store");
+        await expect(response.text()).resolves.toBe("private asset");
+        expect(env.ASSETS.fetch).toHaveBeenCalledOnce();
+    });
+
+    it("keeps local development assets available without a session", async () => {
+        const response = await worker.fetch(
+            new Request("http://127.0.0.1:4180/?fixtures=1") as Parameters<
+                typeof worker.fetch
+            >[0],
+            env,
+        );
+
+        expect(response.status).toBe(200);
+        expect(env.ASSETS.fetch).toHaveBeenCalledOnce();
     });
 });

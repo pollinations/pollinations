@@ -4,6 +4,7 @@ import type {
     BillableEvent,
     BillingIdentity,
     BillingServiceBinding,
+    BillingSettlementResponse,
 } from "@shared/schemas/billable-event.ts";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -486,34 +487,6 @@ api.post(
                 },
             });
 
-            // Tags are the publish action: only tagged uploads get catalog
-            // rows (untagged uploads stay uncataloged blobs behind their
-            // unguessable id). The write is awaited inline (not waitUntil):
-            // a D1 failure must surface as a 500, not be silently swallowed.
-            if (tags.length > 0) {
-                const db = getDb(c.env.DB);
-                await insertUploadCatalogItem(db, {
-                    id,
-                    ownerUserId: authResult.userId,
-                    appKeyId: authResult.byopClientKeyId,
-                    contentType,
-                    size: fileBuffer.byteLength,
-                    tags,
-                });
-                catalogedUpload = true;
-            }
-
-            console.log(
-                JSON.stringify({
-                    event: "upload",
-                    id,
-                    size: fileBuffer.byteLength,
-                    contentType,
-                    keyType: authResult.type,
-                    uploadedBy: authResult.name || "unknown",
-                }),
-            );
-
             const endedAt = new Date();
             const event: BillableEvent = {
                 id: `${id}:upload`,
@@ -539,10 +512,19 @@ api.post(
                     tags,
                 },
             };
-            const settlement = await c.env.ENTER_BILLING.settle(
-                billingAuthorizationId,
-                [event],
-            );
+            const events = [event];
+            let settlement: BillingSettlementResponse;
+            try {
+                settlement = await c.env.ENTER_BILLING.settle(
+                    billingAuthorizationId,
+                    events,
+                );
+            } catch {
+                settlement = await c.env.ENTER_BILLING.settle(
+                    billingAuthorizationId,
+                    events,
+                );
+            }
             if (!settlement.ok) throw new Error(settlement.error);
             const rejected = settlement.events.find(
                 (item) =>
@@ -552,6 +534,33 @@ api.post(
                 throw new Error(`Media billing event was ${rejected.status}`);
             }
             billingAuthorizationId = undefined;
+
+            // The R2 id is unguessable, so storing bytes prepares the upload
+            // without publishing it. Tags become public only after Enter has
+            // durably accepted the billing event.
+            if (tags.length > 0) {
+                const db = getDb(c.env.DB);
+                catalogedUpload = true;
+                await insertUploadCatalogItem(db, {
+                    id,
+                    ownerUserId: authResult.userId,
+                    appKeyId: authResult.byopClientKeyId,
+                    contentType,
+                    size: fileBuffer.byteLength,
+                    tags,
+                });
+            }
+
+            console.log(
+                JSON.stringify({
+                    event: "upload",
+                    id,
+                    size: fileBuffer.byteLength,
+                    contentType,
+                    keyType: authResult.type,
+                    uploadedBy: authResult.name || "unknown",
+                }),
+            );
 
             return c.json({
                 id,
@@ -564,18 +573,32 @@ api.post(
             if (storedUploadId) {
                 try {
                     await c.env.MEDIA_BUCKET.delete(storedUploadId);
-                    if (catalogedUpload) {
+                } catch (cleanupError) {
+                    console.error("Upload R2 rollback failed:", cleanupError);
+                }
+                if (catalogedUpload) {
+                    try {
                         await deleteCatalogItem(
                             getDb(c.env.DB),
                             storedUploadId,
                         );
+                    } catch (cleanupError) {
+                        console.error(
+                            "Upload catalog rollback failed:",
+                            cleanupError,
+                        );
                     }
-                } catch (cleanupError) {
-                    console.error("Upload rollback failed:", cleanupError);
                 }
             }
             if (billingAuthorizationId) {
-                await c.env.ENTER_BILLING.cancel(billingAuthorizationId);
+                try {
+                    await c.env.ENTER_BILLING.cancel(billingAuthorizationId);
+                } catch (cleanupError) {
+                    console.error(
+                        "Upload billing rollback failed:",
+                        cleanupError,
+                    );
+                }
             }
             console.error("Upload error:", error);
             return c.json({ error: "Upload failed" }, 500);

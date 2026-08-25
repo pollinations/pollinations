@@ -35,7 +35,6 @@ import {
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
 import { modelMatchesFilters, parseModelFilters } from "./model-filters.ts";
-import { getModelDisplayName } from "./model-info.ts";
 import type { ModelScope, ModelSort } from "./model-search.ts";
 import { sortModels } from "./model-sort.ts";
 import {

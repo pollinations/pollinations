@@ -6,11 +6,11 @@ import {
     Chip,
     ClipboardIcon,
     CopyButton,
+    currentPeriod,
     EarningsIcon,
     ExternalLinkIcon,
     GlobeIcon,
     IconButton,
-    InlineLink,
     LockIcon,
     PencilIcon,
     Surface,
@@ -154,18 +154,17 @@ export function CommunityEndpointCard({
                 ))}
             </div>
             <div className="mt-3">
-                <InlineLink
-                    as={Link}
+                <Link
                     to="/activity"
-                    search={(prev) => ({
-                        ...prev,
+                    search={{
+                        ...currentPeriod(),
                         earningsModels: [endpoint.modelId],
-                    })}
-                    external={false}
+                    }}
+                    className="polli-control polli:inline-flex polli:items-center polli:gap-1 polli:rounded-sm polli:font-medium polli:text-theme-text-soft polli:underline polli:underline-offset-2 polli:transition-colors polli:hover:text-theme-text-strong"
                 >
                     <EarningsIcon className="h-3.5 w-3.5" />
                     View activity
-                </InlineLink>
+                </Link>
             </div>
         </Surface>
     );

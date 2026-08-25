@@ -24,6 +24,7 @@ import { z } from "zod";
 import type { Env } from "@/env.ts";
 import { auth } from "@/middleware/auth.ts";
 import { balance } from "@/middleware/balance.ts";
+import { authorizeGeneration } from "@/middleware/billing.ts";
 import { prepareGenerationRequest } from "@/middleware/generation-cache.ts";
 import { deduplicateGeneration } from "@/middleware/generation-deduplication.ts";
 import { audioCache } from "@/middleware/media-cache.ts";
@@ -39,10 +40,7 @@ import { textCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
 import googleCloudAuth from "@/text/auth/googleCloudAuth.ts";
 import { arrayBufferToBase64, normalizeSeed } from "@/util.ts";
-import {
-    apiKeyBudgetReservation,
-    generationAccess,
-} from "@/utils/generation-access.ts";
+import { generationAccess } from "@/utils/generation-access.ts";
 import { callCommunityTranscriptionEndpoint } from "../audio/communityEndpoint.ts";
 import {
     type FallbackCandidate,
@@ -3224,7 +3222,7 @@ export const audioRoutes = new Hono<Env>()
         audioCache,
         generationAccess,
         deduplicateGeneration,
-        apiKeyBudgetReservation,
+        authorizeGeneration,
         handleVoiceChanger,
     )
     .post(
@@ -3279,7 +3277,7 @@ export const audioRoutes = new Hono<Env>()
         audioCache,
         generationAccess,
         deduplicateGeneration,
-        apiKeyBudgetReservation,
+        authorizeGeneration,
         handleVoiceIsolator,
     )
     .post(
@@ -3424,7 +3422,7 @@ export const audioRoutes = new Hono<Env>()
         audioCache,
         generationAccess,
         deduplicateGeneration,
-        apiKeyBudgetReservation,
+        authorizeGeneration,
         handleSpeech,
     )
     .post(
@@ -3546,7 +3544,7 @@ export const audioRoutes = new Hono<Env>()
         textCache,
         generationAccess,
         deduplicateGeneration,
-        apiKeyBudgetReservation,
+        authorizeGeneration,
         handleSpeechWithTimestamps,
     )
     .post(
@@ -3675,7 +3673,7 @@ export const audioRoutes = new Hono<Env>()
         textCache,
         generationAccess,
         deduplicateGeneration,
-        apiKeyBudgetReservation,
+        authorizeGeneration,
         handleTranscription,
     );
 

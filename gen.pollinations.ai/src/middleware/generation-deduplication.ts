@@ -1,24 +1,31 @@
 import type { BalanceCheckResult } from "@shared/billing/balance.ts";
 import { SAFETY_HEADER_NAME } from "@shared/schemas/safety.ts";
+import type { ServiceDenial } from "@shared/schemas/service-billing.ts";
+import { getRoutePath } from "@shared/util.ts";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
+import { HTTPException } from "hono/http-exception";
 import type {
     AuthVariables,
     GenerationAuthSnapshot,
 } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
+import {
+    type GenerationAuthorizeInput,
+    generationAuthorizeInput,
+} from "@/middleware/billing.ts";
 import type {
     GenerationCacheAdapter,
     GenerationCacheEnv,
     GenerationCacheStorage,
 } from "@/middleware/generation-cache.ts";
 import { hashGenerationCacheIdentity } from "@/middleware/generation-cache.ts";
+import type { ModelVariables } from "@/middleware/model.ts";
 
 const EXECUTOR_HEADERS = new Set([
     "accept",
     "cf-connecting-ip",
     "content-type",
-    "referer",
     "user-agent",
     "x-forwarded-host",
     "x-original-client-ip",
@@ -49,17 +56,24 @@ export type GenerationJob = {
     auth: GenerationAuthSnapshot;
     requestId: string;
     balanceCheckResult: BalanceCheckResult;
-    apiKeyBudgetEstimate?: number;
+    /**
+     * What the execution owner hands Enter to authorize the generation. It
+     * carries the caller's raw credential and therefore lives only in memory:
+     * the coordinator persists the resulting authorization id, never this.
+     */
+    authorize: GenerationAuthorizeInput;
 };
 
 export type GenerationOutcome =
     | { status: "cached" }
+    | { status: "denied"; denial: ServiceDenial }
     | { status: "failed"; error: GenerationErrorSnapshot };
 
 type DeduplicationEnv = {
     Bindings: CloudflareBindings;
     Variables: GenerationCacheEnv["Variables"] &
-        AuthVariables & {
+        AuthVariables &
+        ModelVariables & {
             balance: BalanceVariables["balance"];
             track?: {
                 streamRequested?: boolean;
@@ -150,7 +164,7 @@ async function createJob(
         auth: createAuthSnapshot(c.var.auth),
         requestId: c.get("requestId"),
         balanceCheckResult,
-        apiKeyBudgetEstimate: c.var.balance.apiKeyBudgetEstimate,
+        authorize: generationAuthorizeInput(c.var, getRoutePath(c)),
     };
 }
 
@@ -210,6 +224,11 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
             );
             return new Response("Generation coordination is unavailable", {
                 status: 503,
+            });
+        }
+        if (outcome.status === "denied") {
+            throw new HTTPException(outcome.denial.status, {
+                message: outcome.denial.message,
             });
         }
         if (outcome.status === "failed") {

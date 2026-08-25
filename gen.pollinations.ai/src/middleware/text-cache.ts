@@ -6,7 +6,7 @@
 
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import {
-    createCaptureStream,
+    captureTextResponse,
     generateCacheKey,
     getCachedResponse,
 } from "@/utils/text-cache.ts";
@@ -52,18 +52,12 @@ const textCacheAdapter: GenerationCacheAdapter = {
     shouldCache(response) {
         return response.status === 200 && response.body !== null;
     },
-    capture(c, cacheKey, response) {
-        const capture = createCaptureStream(c, cacheKey, response);
-        const transformedBody = response.body?.pipeThrough(capture.stream);
-        const captured = new Response(transformedBody, {
-            status: response.status,
-            statusText: response.statusText,
-            headers: response.headers,
-        });
-        captured.headers.set("X-Cache", "MISS");
-        captured.headers.set("X-Cache-Key", cacheKey.substring(0, 16));
-        captured.headers.set("Cache-Control", IMMUTABLE_CACHE_CONTROL);
-        return { response: captured, write: capture.write };
+    capture(c, cacheKey, response, publish) {
+        const captured = captureTextResponse(c, cacheKey, response, publish);
+        captured.response.headers.set("X-Cache", "MISS");
+        captured.response.headers.set("X-Cache-Key", cacheKey.substring(0, 16));
+        captured.response.headers.set("Cache-Control", IMMUTABLE_CACHE_CONTROL);
+        return captured;
     },
 };
 

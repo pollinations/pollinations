@@ -11,6 +11,11 @@ name = "pollinations-media-dev"
 [env.development.vars]
 MAX_FILE_SIZE = "104857600"  # 100MB in bytes
 
+[[env.development.services]]
+binding = "ENTER"
+service = "pollinations-enter"
+entrypoint = "ServiceGateway"
+
 [[env.development.r2_buckets]]
 binding = "MEDIA_BUCKET"
 bucket_name = "pollinations-media-dev"
@@ -49,6 +54,11 @@ database_name = "production-pollinations-enter-db"
 database_id = "fc771b05-4e24-48bf-980c-d09f21279bd1"
 migrations_dir = "../enter.pollinations.ai/drizzle"
 
+[[env.production.services]]
+binding = "ENTER"
+service = "pollinations-enter-production"
+entrypoint = "ServiceGateway"
+
 [vars]
 MAX_FILE_SIZE = "104857600"  # 100MB in bytes
 
@@ -61,6 +71,11 @@ binding = "DB"
 database_name = "development-pollinations-enter-db"
 database_id = "2b844596-9890-4a2e-9da9-6c65681fa24d"
 migrations_dir = "../enter.pollinations.ai/drizzle"
+
+# The ENTER service binding is declared per-environment only: local dev runs
+# `wrangler dev --env development` next to enter's dev server, and vitest
+# (which reads this top-level config) injects the real gateway functions
+# directly instead of resolving a second worker.
 
 # Dev server settings
 [dev]

@@ -1,8 +1,4 @@
-import { getUserBalance, payerBucketToMeter } from "@shared/billing/balance.ts";
-import {
-    handleBalanceDeduction,
-    type MarkupResolution,
-} from "@shared/billing/track-helpers.ts";
+import type { Logger } from "@logtape/logtape";
 import {
     bytesToHex,
     getRealClientIp,
@@ -10,18 +6,13 @@ import {
     stripIPv4MappedPrefix,
     truncateIpToSubnet,
 } from "@shared/client-ip.ts";
-import { sendToTinybird } from "@shared/events.ts";
 import { redactCredentialQueryParams } from "@shared/observability/request-inputs.ts";
 import {
     type BillingAdjustment,
-    type CostDefinition,
     calculateUsageBilling,
-    getPriceDefinitionForModel,
     type ModelDefinition,
-    type PriceDefinition,
     type Usage,
     type UsageCost,
-    type UsagePrice,
     type UsageType,
 } from "@shared/registry/registry.ts";
 import {
@@ -29,11 +20,18 @@ import {
     type TinybirdEvent,
     usageToEventParams,
 } from "@shared/schemas/generation-event.ts";
+import type {
+    ServiceBillableEvent,
+    ServiceSettleInput,
+} from "@shared/schemas/service-billing.ts";
 import { getRoutePath } from "@shared/util.ts";
-import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
+import {
+    BILLING_SERVICE,
+    generationAuthorizeInput,
+} from "@/middleware/billing.ts";
 import {
     reduceAdjustmentsToEventFields,
     requestIdentity,
@@ -41,11 +39,7 @@ import {
 } from "@/middleware/track.ts";
 import { RealtimeUsageSchema } from "@/schemas/realtime.ts";
 import { generateRandomId } from "@/util.ts";
-import {
-    checkBalance,
-    releaseApiKeyBudgetReservation,
-    reserveApiKeyBudget,
-} from "@/utils/generation-access.ts";
+import { checkBalance } from "@/utils/generation-access.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 
 type AzureRealtimeApiKey =
@@ -95,7 +89,6 @@ const UNSUPPORTED_TRANSCRIPTION_MESSAGE =
     "Realtime input transcription is not supported yet.";
 type WebSocketResponse = Response & { webSocket?: WebSocket };
 type WebSocketResponseInit = ResponseInit & { webSocket?: WebSocket };
-type RealtimeDeduction = Awaited<ReturnType<typeof handleBalanceDeduction>>;
 type RealtimeCacheUsage = {
     audioTokens: number;
     imageTokens: number;
@@ -104,17 +97,11 @@ type RealtimeBillingContext = {
     // Spread verbatim into the event, so an identity column added to UserData
     // reaches a realtime row without touching this file.
     identity: UserData & { userId: string };
-    apiKeyPollenBalance?: number | null;
-    apiKeyReservedAmount?: number;
-    byopClientKeyId?: string | null;
+    /** The Enter authorization this session runs under; Enter moves money. */
+    authorizationId: string;
     modelRequested: string;
     resolvedModelRequested: string;
     modelDefinition: ModelDefinition;
-    modelCostDefinition: CostDefinition;
-    modelPriceDefinition: PriceDefinition;
-    requestId: string;
-    requestPath: string;
-    environment: string;
     referrerUrl?: string;
     referrerDomain?: string;
     ipSubnet?: string;
@@ -123,22 +110,12 @@ type RealtimeBillingContext = {
     usage: Usage;
     cacheUsage: RealtimeCacheUsage;
     missingCacheDetailsWarned: boolean;
-    settlementInFlight: boolean;
-    settlementAttempts: number;
-    settled: boolean;
-    deduction?: RealtimeDeduction;
-    deductionAttempted: boolean;
-    rateLimitConsumed: boolean;
+    /**
+     * Assigned synchronously by the first close/error path to reach it, so
+     * simultaneous client and upstream closes share one finalization.
+     */
+    finalization?: Promise<void>;
 };
-
-function requireAllowedModel(c: Context<Env>, model: string): void {
-    const allowedModels = c.var.auth.apiKey?.permissions?.models;
-    if (allowedModels && !allowedModels.includes(model)) {
-        throw new HTTPException(403, {
-            message: `Model '${model}' is not allowed for this API key`,
-        });
-    }
-}
 
 async function createSafetyIdentifier(
     userId: string,
@@ -318,7 +295,6 @@ function forwardMessage(
     source: WebSocket,
     target: WebSocket,
     validate?: (data: unknown) => string | null,
-    onReject?: () => void,
     transform?: (data: unknown) => unknown,
 ): void {
     source.addEventListener("message", (event) => {
@@ -326,7 +302,6 @@ function forwardMessage(
         if (error) {
             closeSocket(source, 1008, error);
             closeSocket(target, 1008, error);
-            onReject?.();
             return;
         }
         if (isOpen(target)) target.send(transform?.(event.data) ?? event.data);
@@ -733,159 +708,150 @@ function extractReferrerHeader(c: Context<Env>): {
     }
 }
 
-function getPostDeductionBalances(
-    payerBucket: "tier" | "pack" | null,
-    balances: { tierBalance: number; packBalance: number },
-) {
-    if (!payerBucket) {
-        return {};
-    }
-    return {
-        ...payerBucketToMeter(payerBucket),
-        balances: {
-            "v1:meter:tier": balances.tierBalance,
-            "v1:meter:pack": balances.packBalance,
-        },
-    };
-}
-
-function createRealtimeTrackingEvent(args: {
+function realtimeSessionTelemetry(args: {
     tracking: RealtimeBillingContext;
-    startTime: Date;
     endTime: Date;
     usage: Usage;
     cost: UsageCost;
-    price: UsagePrice;
+    priceDefinition: ReturnType<
+        typeof calculateUsageBilling
+    >["priceDefinition"];
     adjustments: BillingAdjustment[];
-    markup: MarkupResolution | null;
-    payerBucket: "tier" | "pack" | null;
-    balances: { tierBalance: number; packBalance: number };
-}): TinybirdEvent {
+}): Partial<TinybirdEvent> {
+    const { tracking } = args;
     return {
-        id: generateRandomId(),
-        requestId: args.tracking.requestId,
-        requestPath: args.tracking.requestPath,
-        startTime: args.startTime,
+        startTime: tracking.sessionStartTime,
         endTime: args.endTime,
-        responseTime: args.endTime.getTime() - args.startTime.getTime(),
+        responseTime:
+            args.endTime.getTime() - tracking.sessionStartTime.getTime(),
         responseStatus: 200,
-        environment: args.tracking.environment,
-        eventType: "generate.realtime",
-        ipSubnet: args.tracking.ipSubnet,
-        ipHash: args.tracking.ipHash,
-        ...args.tracking.identity,
-        referrerUrl: args.tracking.referrerUrl,
-        referrerDomain: args.tracking.referrerDomain,
-        modelRequested: args.tracking.modelRequested,
-        resolvedModelRequested: args.tracking.resolvedModelRequested,
-        modelUsed: args.tracking.resolvedModelRequested,
-        modelProviderUsed: args.tracking.modelDefinition.provider,
-        isBilledUsage: true,
-        ...getPostDeductionBalances(args.payerBucket, args.balances),
-        ...priceToEventParams(args.tracking.modelPriceDefinition),
+        ipSubnet: tracking.ipSubnet,
+        ipHash: tracking.ipHash,
+        ...tracking.identity,
+        referrerUrl: tracking.referrerUrl,
+        referrerDomain: tracking.referrerDomain,
+        modelRequested: tracking.modelRequested,
+        resolvedModelRequested: tracking.resolvedModelRequested,
+        modelUsed: tracking.resolvedModelRequested,
+        modelProviderUsed: tracking.modelDefinition.provider,
+        ...priceToEventParams(args.priceDefinition),
         ...usageToEventParams(args.usage),
         ...reduceAdjustmentsToEventFields(args.adjustments),
         totalCost: args.cost.totalCost,
-        totalPrice: args.tracking.deduction?.billedPrice ?? 0,
-        devPrice: args.price.totalPrice,
-        markupRate: args.markup?.markupRate ?? 0,
     };
 }
 
+async function cancelRealtimeAuthorization(
+    c: Context<Env>,
+    tracking: Pick<RealtimeBillingContext, "authorizationId">,
+): Promise<void> {
+    try {
+        await c.env.ENTER_GATEWAY.cancel(tracking.authorizationId);
+    } catch (error) {
+        c.get("log")
+            .getChild("realtime")
+            .error("Realtime authorization cancel failed: {error}", {
+                error: error instanceof Error ? error.message : String(error),
+            });
+    }
+}
+
+/**
+ * Settles the session's aggregate usage as one event against its Enter
+ * authorization. Nothing billable cancels the reserve instead. A settlement
+ * whose acknowledgement is lost is re-delivered once, identically, so a
+ * committed first call answers as a duplicate; a refusal is final and, like
+ * a second lost acknowledgement, is cleaned up with one cancel.
+ */
 async function settleRealtimeSession(
     c: Context<Env>,
     tracking: RealtimeBillingContext,
 ): Promise<void> {
-    if (tracking.settled) return;
-    tracking.settlementAttempts += 1;
-
+    const log = c.get("log").getChild("realtime");
     const usage = positiveEntries(tracking.usage);
     if (!hasPositiveUsage(usage)) {
-        if (!tracking.deductionAttempted) {
-            await handleBalanceDeduction({
-                db: drizzle(c.env.DB),
-                isBilledUsage: false,
-                userId: tracking.identity.userId,
-                apiKeyId: tracking.identity.apiKeyId,
-                apiKeyPollenBalance: tracking.apiKeyPollenBalance,
-                apiKeyReservedAmount: tracking.apiKeyReservedAmount,
-            });
-            tracking.deductionAttempted = true;
-            c.var.balance.apiKeyReservation = undefined;
-        }
-        tracking.settled = true;
+        await cancelRealtimeAuthorization(c, tracking);
         return;
     }
 
-    const { cost, price, adjustments } = calculateUsageBilling({
-        model: tracking.resolvedModelRequested,
-        usage,
-        servedBy: tracking.modelDefinition,
-        output: { realtimeCache: tracking.cacheUsage },
-    });
+    const { cost, price, priceDefinition, adjustments } = calculateUsageBilling(
+        {
+            model: tracking.resolvedModelRequested,
+            usage,
+            servedBy: tracking.modelDefinition,
+            output: { realtimeCache: tracking.cacheUsage },
+        },
+    );
     if (price.totalPrice <= 0) {
-        if (!tracking.deductionAttempted) {
-            await handleBalanceDeduction({
-                db: drizzle(c.env.DB),
-                isBilledUsage: false,
-                userId: tracking.identity.userId,
-                apiKeyId: tracking.identity.apiKeyId,
-                apiKeyPollenBalance: tracking.apiKeyPollenBalance,
-                apiKeyReservedAmount: tracking.apiKeyReservedAmount,
-            });
-            tracking.deductionAttempted = true;
-            c.var.balance.apiKeyReservation = undefined;
-        }
-        tracking.settled = true;
+        await cancelRealtimeAuthorization(c, tracking);
         return;
     }
 
-    const eventEndTime = new Date();
-    const db = drizzle(c.env.DB) as unknown as Parameters<
-        typeof handleBalanceDeduction
-    >[0]["db"];
-
-    if (!tracking.deduction) {
-        if (tracking.deductionAttempted) return;
-        tracking.deductionAttempted = true;
-        tracking.deduction = await handleBalanceDeduction({
-            db,
-            isBilledUsage: true,
-            totalPrice: price.totalPrice,
-            userId: tracking.identity.userId,
-            apiKeyId: tracking.identity.apiKeyId,
-            apiKeyPollenBalance: tracking.apiKeyPollenBalance,
-            apiKeyReservedAmount: tracking.apiKeyReservedAmount,
-            byopClientKeyId: tracking.byopClientKeyId,
-            modelPaidOnly: tracking.modelDefinition.paidOnly,
-        });
-        c.var.balance.apiKeyReservation = undefined;
-    }
-
-    if (!tracking.rateLimitConsumed) {
-        await c.var.frontendKeyRateLimit?.consumePollen(price.totalPrice);
-        tracking.rateLimitConsumed = true;
-    }
-
-    const balances = await getUserBalance(db, tracking.identity.userId);
-    await sendToTinybird(
-        createRealtimeTrackingEvent({
+    const event: ServiceBillableEvent = {
+        eventId: "session",
+        eventType: "generate.realtime",
+        price: price.totalPrice,
+        modelUsed: tracking.resolvedModelRequested,
+        telemetry: realtimeSessionTelemetry({
             tracking,
-            startTime: tracking.sessionStartTime,
-            endTime: eventEndTime,
+            endTime: new Date(),
             usage,
             cost,
-            price,
+            priceDefinition,
             adjustments,
-            markup: tracking.deduction.markup,
-            payerBucket: tracking.deduction.payerBucket,
-            balances,
         }),
-        c.env.TINYBIRD_INGEST_URL,
-        c.env.TINYBIRD_INGEST_TOKEN,
-        c.get("log").getChild("realtime"),
+    };
+    const settled = await settleWithEnter(
+        c,
+        { authorizationId: tracking.authorizationId, events: [event] },
+        log,
     );
-    tracking.settled = true;
+    if (!settled) {
+        await cancelRealtimeAuthorization(c, tracking);
+        return;
+    }
+
+    // Rate limiting is downstream of billing: its failure cannot undo it.
+    try {
+        await c.var.frontendKeyRateLimit?.consumePollen(price.totalPrice);
+    } catch (error) {
+        log.error("Realtime rate limit accounting failed: {error}", {
+            error: error instanceof Error ? error.message : String(error),
+        });
+    }
+}
+
+/**
+ * One settlement, plus one immediate re-delivery of the identical input if
+ * the first lost its acknowledgement: Enter settles by (authorization,
+ * event id), so a committed first call answers the second as a duplicate
+ * and emits no second analytics row. A refusal is final and never retried.
+ */
+async function settleWithEnter(
+    c: Context<Env>,
+    input: ServiceSettleInput,
+    log: Logger,
+): Promise<boolean> {
+    for (let delivery = 1; delivery <= 2; delivery += 1) {
+        try {
+            const result = await c.env.ENTER_GATEWAY.settle(input);
+            if (result.ok) return true;
+            log.error("Enter refused the realtime settlement: {error}", {
+                error: result.error,
+            });
+            return false;
+        } catch (error) {
+            log.error(
+                "Realtime settlement delivery {delivery} failed: {error}",
+                {
+                    delivery,
+                    error:
+                        error instanceof Error ? error.message : String(error),
+                },
+            );
+        }
+    }
+    return false;
 }
 
 function collectBillingEvents(
@@ -943,48 +909,31 @@ function scheduleRealtimeSettlement(
     c: Context<Env>,
     tracking: RealtimeBillingContext,
 ): void {
-    if (tracking.settled || tracking.settlementInFlight) return;
+    if (tracking.finalization) return;
     const log = c.get("log").getChild("realtime");
-    tracking.settlementInFlight = true;
-    c.executionCtx.waitUntil(
-        settleRealtimeSession(c, tracking)
-            .catch((error) => {
-                log.error("Realtime session billing failed: {error}", {
-                    error:
-                        error instanceof Error ? error.message : String(error),
-                });
-                if (
-                    tracking.settled ||
-                    tracking.settlementAttempts >= 2 ||
-                    (tracking.deductionAttempted && !tracking.deduction)
-                ) {
-                    return;
-                }
-                return settleRealtimeSession(c, tracking).catch(
-                    (retryError) => {
-                        log.error(
-                            "Realtime session billing retry failed: {error}",
-                            {
-                                error:
-                                    retryError instanceof Error
-                                        ? retryError.message
-                                        : String(retryError),
-                            },
-                        );
-                    },
-                );
-            })
-            .finally(() => {
-                tracking.settlementInFlight = false;
-            }),
+    // Only pre-settlement work (pricing, event construction) can throw out
+    // of settleRealtimeSession; everything from settle onward is caught
+    // inside it, so cancelling here never double-cancels.
+    tracking.finalization = settleRealtimeSession(c, tracking).catch(
+        (error) => {
+            log.error("Realtime session billing failed: {error}", {
+                error: error instanceof Error ? error.message : String(error),
+            });
+            return cancelRealtimeAuthorization(c, tracking);
+        },
     );
+    c.executionCtx.waitUntil(tracking.finalization);
 }
 
+/**
+ * Mirrors close and error from one socket to the other. Only the provider
+ * side finalizes billing: a client close merely closes the upstream, so the
+ * provider's final `response.done` still lands before the settlement snapshot.
+ */
 function wireClose(
-    c: Context<Env>,
     source: WebSocket,
     target: WebSocket,
-    tracking: RealtimeBillingContext,
+    finalize?: () => void,
 ): void {
     source.addEventListener("close", (event) => {
         try {
@@ -995,7 +944,7 @@ function wireClose(
                 else source.close();
             }
         } finally {
-            scheduleRealtimeSettlement(c, tracking);
+            finalize?.();
         }
     });
     source.addEventListener("error", () => {
@@ -1003,7 +952,7 @@ function wireClose(
             closeSocket(target, 1011, "Realtime proxy error");
             closeSocket(source, 1011, "Realtime proxy error");
         } finally {
-            scheduleRealtimeSettlement(c, tracking);
+            finalize?.();
         }
     });
 }
@@ -1024,7 +973,6 @@ function proxyRealtimeWebSockets(
         downstream,
         upstream,
         (data) => validateClientRealtimeEvent(data, allowTranscription),
-        () => scheduleRealtimeSettlement(c, tracking),
         allowTranscription
             ? (data) =>
                   rewriteLiveTranscriptionModel(
@@ -1038,7 +986,6 @@ function proxyRealtimeWebSockets(
         upstream,
         downstream,
         (data) => validateUpstreamRealtimeEvent(data, allowTranscription),
-        () => scheduleRealtimeSettlement(c, tracking),
         allowTranscription
             ? (data) =>
                   rewriteLiveTranscriptionModel(
@@ -1048,8 +995,10 @@ function proxyRealtimeWebSockets(
                   )
             : undefined,
     );
-    wireClose(c, downstream, upstream, tracking);
-    wireClose(c, upstream, downstream, tracking);
+    wireClose(downstream, upstream);
+    wireClose(upstream, downstream, () =>
+        scheduleRealtimeSettlement(c, tracking),
+    );
     downstream.accept({ allowHalfOpen: true });
     upstream.accept({ allowHalfOpen: true });
 
@@ -1363,6 +1312,12 @@ function proxyScribeOpenAIRealtime(
     downstream.addEventListener("close", (event) => {
         closed = true;
         if (upstream) closeSocket(upstream, event.code, event.reason);
+        // Complete the close handshake like the Azure proxy does.
+        if (event.wasClean && downstream.readyState !== WebSocket.CLOSED) {
+            const closeCode = normalizeCloseCode(event.code);
+            if (closeCode) downstream.close(closeCode, event.reason);
+            else downstream.close();
+        }
         scheduleRealtimeSettlement(c, tracking);
     });
     downstream.addEventListener("error", () => {
@@ -1379,6 +1334,7 @@ function proxyScribeOpenAIRealtime(
 
 async function createRealtimeBillingContext(
     c: Context<Env>,
+    authorizationId: string,
 ): Promise<RealtimeBillingContext> {
     const user = c.var.auth.requireUser();
     const rawIp = getRealClientIp(c);
@@ -1386,28 +1342,13 @@ async function createRealtimeBillingContext(
         rawIp !== "unknown" ? stripIPv4MappedPrefix(rawIp) : undefined;
     const referrer = extractReferrerHeader(c);
     const modelInfo = c.var.model;
-    const modelPriceDefinition = getPriceDefinitionForModel(
-        modelInfo.definition,
-    );
-    if (!modelInfo.definition.cost || !modelPriceDefinition) {
-        throw new Error(
-            `Failed to get price definition for model: ${modelInfo.resolved}`,
-        );
-    }
-
     return {
         // requireUser() above proves the id, which the optional field cannot.
         identity: { ...requestIdentity(c.var.auth), userId: user.id },
-        apiKeyPollenBalance: c.var.auth.apiKey?.pollenBalance,
-        byopClientKeyId: c.var.auth.apiKey?.byopClientKeyId,
+        authorizationId,
         modelRequested: modelInfo.requested,
         resolvedModelRequested: modelInfo.resolved,
         modelDefinition: modelInfo.definition,
-        modelCostDefinition: modelInfo.definition.cost,
-        modelPriceDefinition,
-        requestId: c.get("requestId"),
-        requestPath: getRoutePath(c),
-        environment: c.env.ENVIRONMENT,
         ...referrer,
         ipSubnet: truncateIpToSubnet(clientIp),
         ipHash: await hashIp(clientIp, c.env.BETTER_AUTH_SECRET),
@@ -1415,25 +1356,37 @@ async function createRealtimeBillingContext(
         usage: {},
         cacheUsage: { audioTokens: 0, imageTokens: 0 },
         missingCacheDetailsWarned: false,
-        settlementInFlight: false,
-        settlementAttempts: 0,
-        settled: false,
-        deductionAttempted: false,
-        rateLimitConsumed: false,
     };
 }
 
 async function authorizeRealtimeSession(c: Context<Env>): Promise<string> {
     const user = c.var.auth.requireUser();
 
-    const resolvedModel = c.var.model.resolved;
-    requireAllowedModel(c, resolvedModel);
+    c.var.auth.requireModelAccess();
 
     // Same model-independent, estimated-price balance gate as every other
     // generation route (tier or pack balance, paidOnly handled by the resolved
     // model definition). checkBalance reads c.var.model.
     await checkBalance(c.var, c.env);
     return user.id;
+}
+
+/**
+ * Reserves the session's estimated price with Enter. The raw credential
+ * stays inside this call; only the authorization id outlives it.
+ */
+async function authorizeWithEnter(c: Context<Env>): Promise<string> {
+    const authorization = await c.env.ENTER_GATEWAY.authorize({
+        ...generationAuthorizeInput(c.var, getRoutePath(c)),
+        service: BILLING_SERVICE,
+        requestId: c.get("requestId"),
+    });
+    if (!authorization.ok) {
+        throw new HTTPException(authorization.denial.status, {
+            message: authorization.denial.message,
+        });
+    }
+    return authorization.authorizationId;
 }
 
 export async function handleRealtimeWebSocket(
@@ -1448,37 +1401,37 @@ export async function handleRealtimeWebSocket(
         definition: c.var.model.definition,
         communityEndpoint: c.var.model.communityEndpoint,
     });
-    const tracking = await createRealtimeBillingContext(c);
-    if (c.var.model.resolved === "scribe-realtime") {
-        if (!c.env.ELEVENLABS_API_KEY) {
-            throw new HTTPException(503, {
-                message: "ElevenLabs realtime provider is not configured.",
-            });
-        }
-        await reserveApiKeyBudget(c.var, c.env);
-        tracking.apiKeyReservedAmount = c.var.balance.apiKeyReservation?.amount;
-        try {
-            return proxyScribeOpenAIRealtime(c, tracking);
-        } catch (error) {
-            await releaseApiKeyBudgetReservation(c.var, c.env);
-            throw error;
-        }
+    const scribe = c.var.model.resolved === "scribe-realtime";
+    if (scribe && !c.env.ELEVENLABS_API_KEY) {
+        throw new HTTPException(503, {
+            message: "ElevenLabs realtime provider is not configured.",
+        });
     }
 
-    const upstream = await connectAzureRealtime(
-        c,
-        userId,
-        c.var.model.resolved as AzureRealtimeModelName,
-    );
-    if (upstream instanceof Response) return upstream;
-
-    await reserveApiKeyBudget(c.var, c.env);
-    tracking.apiKeyReservedAmount = c.var.balance.apiKeyReservation?.amount;
+    // Authorize once, before any provider connection; every failure from
+    // here until the session is proxied cancels that one authorization.
+    const authorizationId = await authorizeWithEnter(c);
+    let upstream: WebSocket | undefined;
     try {
+        const tracking = await createRealtimeBillingContext(c, authorizationId);
+        if (scribe) return proxyScribeOpenAIRealtime(c, tracking);
+
+        const connection = await connectAzureRealtime(
+            c,
+            userId,
+            c.var.model.resolved as AzureRealtimeModelName,
+        );
+        if (connection instanceof Response) {
+            await cancelRealtimeAuthorization(c, tracking);
+            return connection;
+        }
+        upstream = connection;
         return proxyRealtimeWebSockets(c, upstream, tracking);
     } catch (error) {
-        await releaseApiKeyBudgetReservation(c.var, c.env);
-        closeSocket(upstream, 1011, "Unable to start realtime session");
+        await cancelRealtimeAuthorization(c, { authorizationId });
+        if (upstream) {
+            closeSocket(upstream, 1011, "Unable to start realtime session");
+        }
         throw error;
     }
 }

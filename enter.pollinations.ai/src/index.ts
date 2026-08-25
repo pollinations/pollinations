@@ -85,6 +85,8 @@ app.notFound(async (c: Context<Env>) => {
 
 app.onError(handleError);
 
+export { ServiceGateway } from "./service-gateway.ts";
+
 export default {
     fetch: app.fetch,
 } satisfies ExportedHandler<CloudflareBindings>;

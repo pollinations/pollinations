@@ -7,6 +7,8 @@ import {
     type GenerationAuthSnapshot,
 } from "@/middleware/auth.ts";
 import { balance } from "@/middleware/balance.ts";
+import type { GenerationBilling } from "@/middleware/billing.ts";
+import type { GenerationCacheWrite } from "@/middleware/generation-cache.ts";
 import type {
     GenerationErrorSnapshot,
     GenerationOutcome,
@@ -53,12 +55,23 @@ export type DetachedGeneration = {
     settlement: Promise<void>;
 };
 
+function failure(httpStatus: number, message: string): GenerationOutcome {
+    return {
+        status: "failed",
+        error: {
+            httpStatus,
+            headers: [["content-type", "text/plain; charset=UTF-8"]],
+            body: new TextEncoder().encode(message),
+        },
+    };
+}
+
 function generationExecutor(
     auth: GenerationAuthSnapshot,
     requestId: string,
     balanceCheckResult: BalanceCheckResult,
-    apiKeyBudgetEstimate: number | undefined,
-    registerGenerationCacheWrite: (promise: Promise<void>) => void,
+    billing: GenerationBilling,
+    registerGenerationCacheWrite: (write: GenerationCacheWrite) => void,
 ): Hono<Env> {
     const executor = new Hono<Env>()
         .use("*", async (c, next) => {
@@ -70,13 +83,13 @@ function generationExecutor(
         .use("*", authFromSnapshot(auth))
         .use("*", async (c, next) => {
             c.set("registerGenerationCacheWrite", registerGenerationCacheWrite);
+            c.set("billing", billing);
             await next();
         })
         .use("*", frontendKeyBilling)
         .use("*", balance)
         .use("*", async (c, next) => {
             c.var.balance.balanceCheckResult = balanceCheckResult;
-            c.var.balance.apiKeyBudgetEstimate = apiKeyBudgetEstimate;
             await next();
         })
         .route("/", generationExecutorRoutes);
@@ -84,17 +97,24 @@ function generationExecutor(
     return executor;
 }
 
-/** Runs a provider handler under the Durable Object alarm's lifetime. */
+/**
+ * Runs a provider handler under the Durable Object alarm's lifetime, on the
+ * Enter authorization the coordinator obtained. The result is only "cached"
+ * once Enter settled the request and the durable write then landed: track
+ * holds the cache publication until settlement, so an unsettled response is
+ * never written and nothing is ever served that was not paid for.
+ */
 export async function executeGeneration(
     request: Request,
     auth: GenerationAuthSnapshot,
     requestId: string,
     balanceCheckResult: BalanceCheckResult,
-    apiKeyBudgetEstimate: number | undefined,
+    authorizationId: string,
     env: CloudflareBindings,
 ): Promise<DetachedGeneration> {
     const promises: Promise<unknown>[] = [];
-    let cacheWrite: Promise<void> | undefined;
+    let cacheWrite: GenerationCacheWrite | undefined;
+    const billing: GenerationBilling = { authorizationId };
     const executionCtx = {
         waitUntil(promise: Promise<unknown>) {
             promises.push(promise);
@@ -106,9 +126,9 @@ export async function executeGeneration(
         auth,
         requestId,
         balanceCheckResult,
-        apiKeyBudgetEstimate,
-        (promise) => {
-            cacheWrite = promise;
+        billing,
+        (write) => {
+            cacheWrite = write;
         },
     ).fetch(request, env, executionCtx);
     const settlement = Promise.allSettled(promises).then(() => {});
@@ -122,13 +142,33 @@ export async function executeGeneration(
             return { result: { status: "cached" }, settlement };
         }
         if (error) {
+            // A request refused before tracking ran (no matching route,
+            // validation) settles nothing, so release its authorization here.
+            if (!billing.settlement) {
+                await env.ENTER_GATEWAY.cancel(authorizationId).catch(
+                    () => undefined,
+                );
+            }
             return { result: { status: "failed", error }, settlement };
         }
         if (!cacheWrite) {
             throw new Error("Generation completed without a cacheable result");
         }
 
-        await cacheWrite;
+        if (!(await billing.settlement)) {
+            return {
+                result: failure(502, "Generation billing failed"),
+                settlement,
+            };
+        }
+        try {
+            await cacheWrite.write;
+        } catch {
+            return {
+                result: failure(503, "Generation cache write failed"),
+                settlement,
+            };
+        }
         return { result: { status: "cached" }, settlement };
     } catch (error) {
         await settlement;

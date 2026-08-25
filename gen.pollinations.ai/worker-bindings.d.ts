@@ -1,5 +1,7 @@
 interface CloudflareBindings {
     ENTER: Fetcher;
+    /** Enter's ServiceGateway RPC entrypoint: auth introspection and billing. */
+    ENTER_GATEWAY: import("../shared/schemas/service-billing.ts").ServiceGatewayBinding;
     POLLINATIONS_MCP: Fetcher;
     PORTKEY?: Fetcher;
     KLEIN_VPC?: Fetcher;

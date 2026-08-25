@@ -194,12 +194,16 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
         run: npm run deploy:production --workspace pollinations-enter
 
+  # Gen binds Enter's ServiceGateway named entrypoint, so a changed Enter must
+  # be live before gen deploys on top of it.
   deploy-gen:
-    needs: [changes, migrate, deploy-mcp-apps]
+    needs: [changes, migrate, deploy-enter, deploy-mcp-apps]
     if: >-
       always() &&
       needs.changes.outputs.gen == 'true' &&
       needs.migrate.result == 'success' &&
+      (needs.deploy-enter.result == 'success' ||
+       needs.deploy-enter.result == 'skipped') &&
       (needs.deploy-mcp-apps.result == 'success' ||
        needs.deploy-mcp-apps.result == 'skipped')
     runs-on: ubuntu-latest
@@ -248,9 +252,15 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_GEN }}
         run: npm run apply-lifecycle:production --workspace pollinations-gen
 
+  # Media binds Enter's ServiceGateway named entrypoint too.
   deploy-media:
-    needs: [changes, migrate]
-    if: needs.changes.outputs.media == 'true'
+    needs: [changes, migrate, deploy-enter]
+    if: >-
+      always() &&
+      needs.changes.outputs.media == 'true' &&
+      needs.migrate.result == 'success' &&
+      (needs.deploy-enter.result == 'success' ||
+       needs.deploy-enter.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code

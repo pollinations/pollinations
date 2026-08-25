@@ -2,6 +2,7 @@ import type { ErrorVariables } from "@shared/error.ts";
 import type { RequestIdVariables } from "hono/request-id";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
+import type { BillingVariables } from "@/middleware/billing.ts";
 import type { GenerationCacheVariables } from "@/middleware/generation-cache.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { FrontendKeyRateLimitVariables } from "@/middleware/rate-limit-durable.ts";
@@ -17,6 +18,7 @@ export type Env = {
         ErrorVariables &
         AuthVariables &
         BalanceVariables &
+        BillingVariables &
         FrontendKeyRateLimitVariables &
         GenerationCacheVariables &
         SafetyVariables &

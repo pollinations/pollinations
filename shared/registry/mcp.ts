@@ -1,32 +1,11 @@
-import type { TinybirdEventType } from "../schemas/generation-event.ts";
+export type McpBindingName = "POLLINATIONS_MCP";
 
-export const MCP_USAGE_HEADERS = {
-    cost: "x-pollinations-mcp-cost",
-    tool: "x-pollinations-mcp-tool",
-    status: "x-pollinations-mcp-status",
-    adjustmentId: "x-pollinations-mcp-adjustment-id",
-    adjustmentUnits: "x-pollinations-mcp-adjustment-units",
-    error: "x-pollinations-mcp-error",
-} as const;
-
-type McpServerDefinitionBase = {
+export type McpServerDefinition = {
     id: string;
     name: string;
     description: string;
     binding: McpBindingName;
 };
-
-export type McpBindingName = "POLLINATIONS_MCP";
-
-export type McpServerDefinition = McpServerDefinitionBase &
-    (
-        | { billing: "downstream" }
-        | {
-              billing: "usage_receipt";
-              provider: string;
-              eventType: TinybirdEventType;
-          }
-    );
 
 export const MCP_SERVERS = [
     {
@@ -35,7 +14,6 @@ export const MCP_SERVERS = [
         description:
             "Access Pollinations models and API capabilities through agent tools.",
         binding: "POLLINATIONS_MCP",
-        billing: "downstream",
     },
 ] as const satisfies readonly McpServerDefinition[];
 

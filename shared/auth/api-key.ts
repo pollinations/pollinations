@@ -218,7 +218,22 @@ export async function authenticateApiKeyRequest(opts: {
 }): Promise<ApiKeyAuthResult | null> {
     const rawApiKey = extractApiKey(opts.request);
     if (!rawApiKey) return null;
+    return authenticateApiKeyValue(rawApiKey, opts);
+}
 
+/**
+ * Authenticates an already-extracted credential (API key or agent run token).
+ * Shared by request authentication and service token introspection, so both
+ * run the identical invalidation/banned/staging checks.
+ */
+export async function authenticateApiKeyValue(
+    rawApiKey: string,
+    opts: {
+        env: ApiKeyAuthBindings;
+        client?: VerifyApiKeyClient;
+        ctx?: ExecutionContext;
+    },
+): Promise<ApiKeyAuthResult | null> {
     if (rawApiKey.startsWith(AGENT_RUN_TOKEN_PREFIX)) {
         return authenticateAgentRunToken(rawApiKey, opts.env);
     }

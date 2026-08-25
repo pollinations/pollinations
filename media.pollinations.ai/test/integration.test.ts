@@ -1,17 +1,31 @@
 import {
     createExecutionContext,
     env,
-    fetchMock,
-    SELF,
     waitOnExecutionContext,
 } from "cloudflare:test";
-import { user as userTable } from "@shared/db/better-auth.ts";
+import { signAgentRunToken } from "@shared/auth/agent-run-token.ts";
+import { createApiKeyAuth } from "@shared/auth/api-key.ts";
+import {
+    apikey as apikeyTable,
+    user as userTable,
+} from "@shared/db/better-auth.ts";
 import { mediaItem, mediaTag } from "@shared/db/media-catalog.ts";
+import {
+    serviceAuthorization,
+    serviceBillingEvent,
+} from "@shared/db/service-billing.ts";
+import type {
+    ServiceGatewayBinding,
+    ServiceSettleResult,
+} from "@shared/schemas/service-billing.ts";
+import { createFetchMock } from "@shared/test/mocks/fetch.ts";
 import { createTestR2Bucket } from "@shared/test/mocks/r2.ts";
+import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import app from "../src/index";
+import { enterGateway, gatewayEnv } from "./gateway.ts";
 
 // 1x1 red PNG (67 bytes)
 const TINY_PNG = new Uint8Array([
@@ -46,119 +60,137 @@ interface MediaPageResponse {
     hasMore: boolean;
 }
 
-// Kept for the pre-existing tests that don't care about identity.
-const VALID_KEY = "pk_alice";
-
-const KEY_IDENTITIES: Record<
-    string,
-    {
-        valid: boolean;
-        type?: string;
-        name?: string | null;
-        userId?: string | null;
-        byopApp?: { clientKeyId: string } | null;
-    }
-> = {
-    pk_alice: {
-        valid: true,
-        type: "publishable",
-        name: "alice-key",
-        userId: "user_alice",
-        byopApp: { clientKeyId: "pk_app_1" },
-    },
-    pk_bob: {
-        valid: true,
-        type: "publishable",
-        name: "bob-key",
-        userId: "user_bob",
-        byopApp: null,
-    },
-    pk_nouser: {
-        valid: true,
-        type: "publishable",
-        name: "service-key",
-        userId: null,
-        byopApp: null,
-    },
-    // Deleting media is secret-key only, so delete tests use these.
-    sk_alice: {
-        valid: true,
-        type: "secret",
-        name: "alice-secret",
-        userId: "user_alice",
-        byopApp: null,
-    },
-    sk_bob: {
-        valid: true,
-        type: "secret",
-        name: "bob-secret",
-        userId: "user_bob",
-        byopApp: null,
-    },
-    // The response shape of an enter deployment that predates the identity
-    // fields — userId/byopApp entirely absent, not null.
-    sk_legacy: {
-        valid: true,
-        type: "secret",
-        name: "legacy-key",
-    },
+// Real API keys created through Enter's better-auth instance in beforeAll.
+// The gateway authenticates them exactly as production does — bans, key
+// types and BYOP attribution all come from real rows, not fixtures.
+const keys = {
+    /** user_alice's publishable key, attributed to her app key below. */
+    pkAlice: "",
+    /** The BYOP client (app) key pk_alice uploads are attributed to. */
+    appKeyId: "",
+    skAlice: "",
+    /** Row id of skAlice: the parent key agent run tokens are minted from. */
+    skAliceId: "",
+    /** Secret key created before typed key metadata existed (no keyType). */
+    skAliceLegacy: "",
+    skBob: "",
+    /** Key of a banned account. */
+    pkBanned: "",
+    /** Key of an account with negative balances in both buckets. */
+    pkBroke: "",
 };
 
-function createMediaEnv(bucket = createTestR2Bucket()) {
+// In-memory bucket shared by all fetchApp calls within one test (reading the
+// real MEDIA_BUCKET binding from test-context requests leaks storage handles
+// across vitest's isolated-storage stack).
+let sharedBucket = createTestR2Bucket();
+
+function createMediaEnv(
+    bucket: R2Bucket = sharedBucket,
+    gateway: ServiceGatewayBinding = enterGateway,
+) {
     return {
         MEDIA_BUCKET: bucket,
         MAX_FILE_SIZE: "104857600",
         DB: env.DB,
+        ENTER: gateway,
     };
 }
 
-function mockAuth() {
-    fetchMock.activate();
-    fetchMock.disableNetConnect();
-    fetchMock
-        .get("https://gen.pollinations.ai")
-        .intercept({ path: "/account/key" })
-        .reply(({ headers }) => {
-            const headerBag = headers as Record<string, string>;
-            const authHeader =
-                headerBag.authorization ?? headerBag.Authorization ?? "";
-            const key = authHeader.replace(/^Bearer /, "");
-            const identity = KEY_IDENTITIES[key];
-            if (!identity) {
-                return {
-                    statusCode: 200,
-                    data: JSON.stringify({ valid: false }),
-                    responseOptions: {
-                        headers: { "content-type": "application/json" },
-                    },
-                };
-            }
-            return {
-                statusCode: 200,
-                data: JSON.stringify(identity),
-                responseOptions: {
-                    headers: { "content-type": "application/json" },
-                },
-            };
-        })
-        .persist();
+/**
+ * Drives the real worker app with the real gateway bound. Buffers the body
+ * before waiting on the execution context so R2 streams are consumed and the
+ * settlement waitUntil has completed by the time a test asserts.
+ */
+async function fetchApp(
+    input: string | URL,
+    init?: RequestInit,
+    gateway: ServiceGatewayBinding = enterGateway,
+): Promise<Response> {
+    const ctx = createExecutionContext();
+    const res = await app.fetch(
+        new Request(input, init),
+        createMediaEnv(sharedBucket, gateway),
+        ctx,
+    );
+    const buffered = new Response(await res.arrayBuffer(), res);
+    await waitOnExecutionContext(ctx);
+    return buffered;
 }
 
-async function seedUsers() {
+async function seedIdentities() {
     const db = drizzle(env.DB);
     const now = new Date();
-    for (const id of ["user_alice", "user_bob"]) {
+    const users = [
+        { id: "user_alice" },
+        { id: "user_bob" },
+        { id: "user_banned" },
+        { id: "user_broke", tierBalance: -1, packBalance: -1 },
+    ];
+    for (const user of users) {
         await db
             .insert(userTable)
             .values({
-                id,
-                name: id,
-                email: `${id}@test.com`,
+                name: user.id,
+                email: `${user.id}@test.com`,
                 createdAt: now,
                 updatedAt: now,
+                ...user,
             })
             .onConflictDoNothing({ target: userTable.id });
     }
+
+    const auth = createApiKeyAuth(gatewayEnv);
+    const create = async (
+        name: string,
+        prefix: "pk" | "sk",
+        userId: string,
+        metadata?: Record<string, unknown>,
+    ) => {
+        const created = await auth.api.createApiKey({
+            body: { name, prefix, userId, ...(metadata && { metadata }) },
+        });
+        if (!created.id || !created.key) {
+            throw new Error(`Failed to create test key ${name}`);
+        }
+        return { id: created.id, key: created.key };
+    };
+
+    const app_ = await create("alice-app", "pk", "user_alice", {
+        keyType: "publishable",
+    });
+    keys.appKeyId = app_.id;
+    const pkAlice = await create("alice-pk", "pk", "user_alice", {
+        keyType: "publishable",
+    });
+    keys.pkAlice = pkAlice.key;
+    await db
+        .update(apikeyTable)
+        .set({ byopClientKeyId: app_.id })
+        .where(eq(apikeyTable.id, pkAlice.id));
+    const skAlice = await create("alice-sk", "sk", "user_alice", {
+        keyType: "secret",
+    });
+    keys.skAlice = skAlice.key;
+    keys.skAliceId = skAlice.id;
+    keys.skAliceLegacy = (await create("alice-legacy", "sk", "user_alice")).key;
+    keys.skBob = (
+        await create("bob-sk", "sk", "user_bob", { keyType: "secret" })
+    ).key;
+    keys.pkBanned = (
+        await create("banned-pk", "pk", "user_banned", {
+            keyType: "publishable",
+        })
+    ).key;
+    keys.pkBroke = (
+        await create("broke-pk", "pk", "user_broke", {
+            keyType: "publishable",
+        })
+    ).key;
+    await db
+        .update(userTable)
+        .set({ banned: true })
+        .where(eq(userTable.id, "user_banned"));
 }
 
 function pngFile(name: string, bytes: Uint8Array = TINY_PNG): File {
@@ -179,6 +211,8 @@ async function uploadViaForm(
         bytes?: Uint8Array;
         tags?: string[];
         extraFields?: Record<string, string>;
+        gateway?: ServiceGatewayBinding;
+        query?: string;
     } = {},
 ): Promise<{ status: number; body: UploadResponse | { error: string } }> {
     const form = new FormData();
@@ -193,37 +227,45 @@ async function uploadViaForm(
         form.append(field, value);
     }
 
-    const res = await SELF.fetch("https://media.pollinations.ai/upload", {
-        method: "POST",
-        body: form,
-        headers: { Authorization: `Bearer ${key}` },
-    });
+    const res = await fetchApp(
+        `https://media.pollinations.ai/upload${options.query ?? ""}`,
+        {
+            method: "POST",
+            body: form,
+            ...(options.query
+                ? {}
+                : { headers: { Authorization: `Bearer ${key}` } }),
+        },
+        options.gateway,
+    );
     const body = (await res.json()) as UploadResponse | { error: string };
     return { status: res.status, body };
 }
 
 describe("media.pollinations.ai", () => {
+    // Enter's settlement writes one analytics row to Tinybird after each
+    // upload; the shared Tinybird mock absorbs it (and asserts nothing else
+    // leaves the worker) instead of a dropped connection to localhost.
+    const mocks = createFetchMock({ tinybird: createMockTinybird() });
+
     beforeAll(async () => {
-        await seedUsers();
+        await mocks.enable("tinybird");
+        await seedIdentities();
     });
 
     beforeEach(() => {
-        mockAuth();
-    });
-
-    afterEach(() => {
-        fetchMock.deactivate();
+        sharedBucket = createTestR2Bucket();
     });
 
     it("GET / returns service info", async () => {
-        const res = await SELF.fetch("https://media.pollinations.ai/");
+        const res = await fetchApp("https://media.pollinations.ai/");
         const body = (await res.json()) as Record<string, unknown>;
         expect(res.status).toBe(200);
         expect(body.service).toBe("media.pollinations.ai");
     });
 
     it("POST /upload without key returns 401", async () => {
-        const res = await SELF.fetch("https://media.pollinations.ai/upload", {
+        const res = await fetchApp("https://media.pollinations.ai/upload", {
             method: "POST",
             body: TINY_PNG,
             headers: { "Content-Type": "image/png" },
@@ -238,12 +280,12 @@ describe("media.pollinations.ai", () => {
             new File([TINY_PNG], "test.png", { type: "image/png" }),
         );
 
-        const uploadRes = await SELF.fetch(
+        const uploadRes = await fetchApp(
             "https://media.pollinations.ai/upload",
             {
                 method: "POST",
                 body: form,
-                headers: { Authorization: `Bearer ${VALID_KEY}` },
+                headers: { Authorization: `Bearer ${keys.pkAlice}` },
             },
         );
         expect(uploadRes.status).toBe(200);
@@ -254,7 +296,7 @@ describe("media.pollinations.ai", () => {
         expect(upload.size).toBe(TINY_PNG.length);
 
         // Retrieve — check Content-Disposition
-        const getRes = await SELF.fetch(
+        const getRes = await fetchApp(
             `https://media.pollinations.ai/${upload.id}`,
         );
         expect(getRes.status).toBe(200);
@@ -267,7 +309,7 @@ describe("media.pollinations.ai", () => {
         expect(body.length).toBe(TINY_PNG.length);
 
         // HEAD
-        const headRes = await SELF.fetch(
+        const headRes = await fetchApp(
             `https://media.pollinations.ai/${upload.id}`,
             { method: "HEAD" },
         );
@@ -280,26 +322,23 @@ describe("media.pollinations.ai", () => {
             "file",
             new File([TINY_PNG], "test.png", { type: "image/png" }),
         );
-        const dupRes = await SELF.fetch(
-            "https://media.pollinations.ai/upload",
-            {
-                method: "POST",
-                body: dupForm,
-                headers: { Authorization: `Bearer ${VALID_KEY}` },
-            },
-        );
+        const dupRes = await fetchApp("https://media.pollinations.ai/upload", {
+            method: "POST",
+            body: dupForm,
+            headers: { Authorization: `Bearer ${keys.pkAlice}` },
+        });
         const dup = (await dupRes.json()) as UploadResponse;
         expect(dup.id).not.toBe(upload.id);
     });
 
     it("uploads via base64 JSON", async () => {
         const base64 = btoa(String.fromCharCode(...TINY_PNG));
-        const uploadRes = await SELF.fetch(
+        const uploadRes = await fetchApp(
             "https://media.pollinations.ai/upload",
             {
                 method: "POST",
                 headers: {
-                    Authorization: `Bearer ${VALID_KEY}`,
+                    Authorization: `Bearer ${keys.pkAlice}`,
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
@@ -318,7 +357,7 @@ describe("media.pollinations.ai", () => {
         expect(upload.size).toBe(TINY_PNG.length);
         expect(upload.tags).toEqual(["gallery"]);
 
-        const getRes = await SELF.fetch(
+        const getRes = await fetchApp(
             `https://media.pollinations.ai/${upload.id}`,
         );
         expect(getRes.status).toBe(200);
@@ -328,17 +367,14 @@ describe("media.pollinations.ai", () => {
 
     it("validates the documented JSON upload shape", async () => {
         for (const body of [null, { data: "AAAA", tags: [42] }]) {
-            const res = await SELF.fetch(
-                "https://media.pollinations.ai/upload",
-                {
-                    method: "POST",
-                    headers: {
-                        Authorization: `Bearer ${VALID_KEY}`,
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(body),
+            const res = await fetchApp("https://media.pollinations.ai/upload", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${keys.pkAlice}`,
+                    "Content-Type": "application/json",
                 },
-            );
+                body: JSON.stringify(body),
+            });
             expect(res.status).toBe(400);
             expect(((await res.json()) as { error: string }).error).toContain(
                 "Invalid JSON body",
@@ -347,11 +383,11 @@ describe("media.pollinations.ai", () => {
     });
 
     it("rejects an unsupported upload content type with 400", async () => {
-        const res = await SELF.fetch("https://media.pollinations.ai/upload", {
+        const res = await fetchApp("https://media.pollinations.ai/upload", {
             method: "POST",
             body: TINY_PNG,
             headers: {
-                Authorization: `Bearer ${VALID_KEY}`,
+                Authorization: `Bearer ${keys.pkAlice}`,
                 "Content-Type": "image/png",
             },
         });
@@ -376,7 +412,7 @@ describe("media.pollinations.ai", () => {
                 method: "POST",
                 body: form,
                 headers: {
-                    Authorization: `Bearer ${VALID_KEY}`,
+                    Authorization: `Bearer ${keys.pkAlice}`,
                     "Content-Length": "1000",
                 },
             }),
@@ -398,22 +434,22 @@ describe("media.pollinations.ai", () => {
             "file",
             new File([], "empty.png", { type: "image/png" }),
         );
-        const emptyRes = await SELF.fetch(
+        const emptyRes = await fetchApp(
             "https://media.pollinations.ai/upload",
             {
                 method: "POST",
                 body: emptyForm,
-                headers: { Authorization: `Bearer ${VALID_KEY}` },
+                headers: { Authorization: `Bearer ${keys.pkAlice}` },
             },
         );
         expect(emptyRes.status).toBe(400);
 
-        const badBase64 = await SELF.fetch(
+        const badBase64 = await fetchApp(
             "https://media.pollinations.ai/upload",
             {
                 method: "POST",
                 headers: {
-                    Authorization: `Bearer ${VALID_KEY}`,
+                    Authorization: `Bearer ${keys.pkAlice}`,
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({ data: "!!!not-base64!!!" }),
@@ -421,17 +457,14 @@ describe("media.pollinations.ai", () => {
         );
         expect(badBase64.status).toBe(400);
 
-        const badJson = await SELF.fetch(
-            "https://media.pollinations.ai/upload",
-            {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${VALID_KEY}`,
-                    "Content-Type": "application/json",
-                },
-                body: "{not json",
+        const badJson = await fetchApp("https://media.pollinations.ai/upload", {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${keys.pkAlice}`,
+                "Content-Type": "application/json",
             },
-        );
+            body: "{not json",
+        });
         expect(badJson.status).toBe(400);
     });
 
@@ -446,7 +479,7 @@ describe("media.pollinations.ai", () => {
             new Request("https://media.pollinations.ai/upload", {
                 method: "POST",
                 body: uploadForm,
-                headers: { Authorization: `Bearer ${VALID_KEY}` },
+                headers: { Authorization: `Bearer ${keys.pkAlice}` },
             }),
             mediaEnv,
             uploadCtx,
@@ -483,15 +516,15 @@ describe("media.pollinations.ai", () => {
             new File([TINY_PNG], "a.png", { type: "image/png" }),
         );
 
-        const res1 = await SELF.fetch("https://media.pollinations.ai/upload", {
+        const res1 = await fetchApp("https://media.pollinations.ai/upload", {
             method: "POST",
             body: form1,
-            headers: { Authorization: `Bearer ${VALID_KEY}` },
+            headers: { Authorization: `Bearer ${keys.pkAlice}` },
         });
-        const res2 = await SELF.fetch("https://media.pollinations.ai/upload", {
+        const res2 = await fetchApp("https://media.pollinations.ai/upload", {
             method: "POST",
             body: form2,
-            headers: { Authorization: `Bearer ${VALID_KEY}` },
+            headers: { Authorization: `Bearer ${keys.pkAlice}` },
         });
 
         const upload1 = (await res1.json()) as UploadResponse;
@@ -500,7 +533,7 @@ describe("media.pollinations.ai", () => {
     });
 
     it("GET /:nonexistent-id returns 404", async () => {
-        const res = await SELF.fetch(
+        const res = await fetchApp(
             "https://media.pollinations.ai/does-not-exist",
         );
         expect(res.status).toBe(404);
@@ -535,7 +568,7 @@ describe("media.pollinations.ai", () => {
     });
 
     it("tagged upload is published to the tag gallery, without owner fields", async () => {
-        const { status, body } = await uploadViaForm("pk_alice", {
+        const { status, body } = await uploadViaForm(keys.pkAlice, {
             fileName: "gallery-a.png",
             bytes: variant(1),
             tags: ["Sunset "],
@@ -546,15 +579,15 @@ describe("media.pollinations.ai", () => {
 
         // Published uploads are deletable, so retrieval and metadata must not
         // remain in browser or intermediary caches after deletion.
-        const getRes = await SELF.fetch(upload.url);
+        const getRes = await fetchApp(upload.url);
         expect(getRes.headers.get("cache-control")).toBe("no-store");
         await getRes.arrayBuffer();
-        const metadataRes = await SELF.fetch(`${upload.url}/metadata`);
+        const metadataRes = await fetchApp(`${upload.url}/metadata`);
         expect(metadataRes.headers.get("cache-control")).toBe("no-store");
-        const headRes = await SELF.fetch(upload.url, { method: "HEAD" });
+        const headRes = await fetchApp(upload.url, { method: "HEAD" });
         expect(headRes.headers.get("cache-control")).toBe("no-store");
 
-        const galleryRes = await SELF.fetch(
+        const galleryRes = await fetchApp(
             "https://media.pollinations.ai/media?tag=sunset",
         );
         expect(galleryRes.status).toBe(200);
@@ -566,7 +599,7 @@ describe("media.pollinations.ai", () => {
         }
 
         // Tag lookups normalize like the write side — case must not matter.
-        const upperRes = await SELF.fetch(
+        const upperRes = await fetchApp(
             "https://media.pollinations.ai/media?tag=SUNSET",
         );
         expect(upperRes.status).toBe(200);
@@ -575,7 +608,7 @@ describe("media.pollinations.ai", () => {
     });
 
     it("untagged upload is not cataloged: unlisted but retrievable", async () => {
-        const { status, body } = await uploadViaForm("pk_alice", {
+        const { status, body } = await uploadViaForm(keys.pkAlice, {
             fileName: "untagged.png",
             bytes: variant(2),
         });
@@ -592,16 +625,14 @@ describe("media.pollinations.ai", () => {
             .where(eq(mediaItem.id, upload.id));
         expect(rows).toHaveLength(0);
 
-        const galleryRes = await SELF.fetch(
+        const galleryRes = await fetchApp(
             "https://media.pollinations.ai/media?tag=some-other-tag",
         );
         const gallery = (await galleryRes.json()) as MediaPageResponse;
         expect(gallery.items.map((i) => i.url)).not.toContain(upload.url);
 
         // The blob itself is still retrievable by its unguessable id.
-        // (Consume the body: an unread R2 stream keeps storage handles open
-        // and trips vitest-pool-workers' isolated-storage stacking.)
-        const getRes = await SELF.fetch(
+        const getRes = await fetchApp(
             `https://media.pollinations.ai/${upload.id}`,
         );
         expect(getRes.status).toBe(200);
@@ -609,7 +640,7 @@ describe("media.pollinations.ai", () => {
     });
 
     it("stamps owner and app from the verified key, ignoring spoofed form fields", async () => {
-        const alice = await uploadViaForm("pk_alice", {
+        const alice = await uploadViaForm(keys.pkAlice, {
             fileName: "spoof-alice.png",
             bytes: variant(3),
             tags: ["spoof-test"],
@@ -622,8 +653,9 @@ describe("media.pollinations.ai", () => {
         expect(alice.status).toBe(200);
         const aliceUpload = alice.body as UploadResponse;
 
-        // The catalog row carries the identity attested by /account/key —
-        // pk_alice → user_alice via app pk_app_1 — not the form fields.
+        // The catalog row carries the identity attested by Enter's
+        // authorization — pk_alice → user_alice via her app key — not the
+        // form fields.
         const db = drizzle(env.DB);
         const [row] = await db
             .select({
@@ -634,12 +666,12 @@ describe("media.pollinations.ai", () => {
             .where(eq(mediaItem.id, aliceUpload.id));
         expect(row).toEqual({
             ownerUserId: "user_alice",
-            appKeyId: "pk_app_1",
+            appKeyId: keys.appKeyId,
         });
     });
 
     it("rejects invalid tags with 400", async () => {
-        const upperCase = await uploadViaForm("pk_alice", {
+        const upperCase = await uploadViaForm(keys.pkAlice, {
             fileName: "bad-tag-1.png",
             bytes: variant(5),
             tags: ["UPPER CASE!"],
@@ -649,7 +681,7 @@ describe("media.pollinations.ai", () => {
             /UPPER CASE!/,
         );
 
-        const leadingDash = await uploadViaForm("pk_alice", {
+        const leadingDash = await uploadViaForm(keys.pkAlice, {
             fileName: "bad-tag-2.png",
             bytes: variant(6),
             tags: ["-leading"],
@@ -661,7 +693,7 @@ describe("media.pollinations.ai", () => {
     });
 
     it("does not treat singular tag as catalog metadata", async () => {
-        const res = await uploadViaForm("pk_alice", {
+        const res = await uploadViaForm(keys.pkAlice, {
             fileName: "singular-tag-ignored.png",
             bytes: variant(30),
             extraFields: { tag: "legacy" },
@@ -670,7 +702,7 @@ describe("media.pollinations.ai", () => {
         const upload = res.body as UploadResponse;
         expect(upload.tags).toBeUndefined();
 
-        const galleryRes = await SELF.fetch(
+        const galleryRes = await fetchApp(
             "https://media.pollinations.ai/media?tag=legacy",
         );
         const gallery = (await galleryRes.json()) as MediaPageResponse;
@@ -680,19 +712,19 @@ describe("media.pollinations.ai", () => {
     it("does not accept undocumented upload tags from the query string", async () => {
         const form = new FormData();
         form.append("file", pngFile("query-tag.png", variant(31)));
-        const res = await SELF.fetch(
+        const res = await fetchApp(
             "https://media.pollinations.ai/upload?tags=query-tag",
             {
                 method: "POST",
                 body: form,
-                headers: { Authorization: `Bearer ${VALID_KEY}` },
+                headers: { Authorization: `Bearer ${keys.pkAlice}` },
             },
         );
         expect(res.status).toBe(200);
         const upload = (await res.json()) as UploadResponse;
         expect(upload.tags).toBeUndefined();
 
-        const galleryRes = await SELF.fetch(
+        const galleryRes = await fetchApp(
             "https://media.pollinations.ai/media?tag=query-tag",
         );
         const gallery = (await galleryRes.json()) as MediaPageResponse;
@@ -701,7 +733,7 @@ describe("media.pollinations.ai", () => {
 
     it("rejects more than 8 tags with 400", async () => {
         const tags = Array.from({ length: 9 }, (_, i) => `tag${i}`);
-        const res = await uploadViaForm("pk_alice", {
+        const res = await uploadViaForm(keys.pkAlice, {
             fileName: "too-many-tags.png",
             bytes: variant(7),
             tags,
@@ -709,50 +741,341 @@ describe("media.pollinations.ai", () => {
         expect(res.status).toBe(400);
     });
 
-    it("keys without a user can't publish, but plain uploads still work", async () => {
-        const withTag = await uploadViaForm("pk_nouser", {
-            fileName: "nouser-tagged.png",
-            bytes: variant(8),
-            tags: ["should-fail"],
+    it("key without typed metadata acts as a secret key (legacy keys)", async () => {
+        // Keys created before typed key metadata carry no keyType; media must
+        // fall back to "secret" like /account/key does, so their owner can
+        // still publish and delete.
+        const upload = await uploadViaForm(keys.skAliceLegacy, {
+            fileName: "legacy.png",
+            bytes: variant(11),
+            tags: ["legacy-tag"],
         });
-        expect(withTag.status).toBe(400);
-        expect((withTag.body as { error: string }).error).toMatch(
-            /requires a user-owned API key/,
-        );
+        expect(upload.status).toBe(200);
+        const item = upload.body as UploadResponse;
 
-        const plain = await uploadViaForm("pk_nouser", {
-            fileName: "nouser-plain.png",
+        const deleted = await fetchApp(
+            `https://media.pollinations.ai/media/${item.id}`,
+            {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${keys.skAliceLegacy}` },
+            },
+        );
+        expect(deleted.status).toBe(200);
+    });
+
+    it("upload authorizes with Enter first, then settles one media.upload event", async () => {
+        const { status, body } = await uploadViaForm(keys.pkAlice, {
+            fileName: "billed.png",
+            bytes: variant(8),
+        });
+        expect(status).toBe(200);
+        const upload = body as UploadResponse;
+
+        // The authorization uses the media id as its stable request identity
+        // and snapshots the caller Enter authenticated.
+        const db = drizzle(env.DB);
+        const authorization = await db
+            .select()
+            .from(serviceAuthorization)
+            .where(eq(serviceAuthorization.requestId, upload.id))
+            .get();
+        expect(authorization).toMatchObject({
+            service: "media.pollinations.ai",
+            requestPath: "/upload",
+            userId: "user_alice",
+            byopClientKeyId: keys.appKeyId,
+        });
+
+        // Exactly one settled zero-price billing event.
+        const events = await db
+            .select()
+            .from(serviceBillingEvent)
+            .where(
+                eq(
+                    serviceBillingEvent.authorizationId,
+                    (authorization as { id: string }).id,
+                ),
+            );
+        expect(events).toHaveLength(1);
+        expect(events[0]).toMatchObject({
+            eventId: "upload",
+            eventType: "media.upload",
+            status: "settled",
+            price: 0,
+            billedPrice: 0,
+        });
+
+        // And exactly one analytics row for it left Enter.
+        const rows = mocks.tinybird.state.events.filter(
+            (row) => row.requestId === upload.id,
+        );
+        expect(rows).toHaveLength(1);
+        expect(rows[0]).toMatchObject({
+            eventType: "media.upload",
+            userId: "user_alice",
+            totalPrice: 0,
+        });
+    });
+
+    describe("upload settlement", () => {
+        async function stateFor(id: string) {
+            const db = drizzle(env.DB);
+            const authorization = await db
+                .select()
+                .from(serviceAuthorization)
+                .where(eq(serviceAuthorization.requestId, id))
+                .get();
+            const events = authorization
+                ? await db
+                      .select()
+                      .from(serviceBillingEvent)
+                      .where(
+                          eq(
+                              serviceBillingEvent.authorizationId,
+                              authorization.id,
+                          ),
+                      )
+                : [];
+            const catalogRows = await db
+                .select({ id: mediaItem.id })
+                .from(mediaItem)
+                .where(eq(mediaItem.id, id));
+            const tagRows = await db
+                .select({ tag: mediaTag.tag })
+                .from(mediaTag)
+                .where(eq(mediaTag.itemId, id));
+            return {
+                authorization,
+                events,
+                catalogRows,
+                tagRows,
+                object: sharedBucket.getObject(id),
+                analyticsRows: mocks.tinybird.state.events.filter(
+                    (row) => row.requestId === id,
+                ),
+            };
+        }
+
+        // The only authorization this isolated test created: the failed
+        // upload never returns its id, so the ledger is how a test finds it.
+        async function onlyRequestId(): Promise<string> {
+            const rows = await drizzle(env.DB)
+                .select({ requestId: serviceAuthorization.requestId })
+                .from(serviceAuthorization);
+            expect(rows).toHaveLength(1);
+            return rows[0].requestId;
+        }
+
+        it("re-delivers the identical settlement once when the first ack is lost", async () => {
+            // Every delivery reaches Enter. The first one commits, then its
+            // acknowledgement is lost on the way back; the second identical
+            // delivery is Enter's real duplicate response.
+            let calls = 0;
+            const results: ServiceSettleResult[] = [];
+            const gateway: ServiceGatewayBinding = {
+                ...enterGateway,
+                settle: async (input) => {
+                    calls += 1;
+                    const result = await enterGateway.settle(input);
+                    results.push(result);
+                    if (calls === 1) throw new Error("rpc ack lost");
+                    return result;
+                },
+            };
+            const { status, body } = await uploadViaForm(keys.pkAlice, {
+                fileName: "ack-lost.png",
+                bytes: variant(50),
+                tags: ["ack-lost"],
+                gateway,
+            });
+            expect(status).toBe(200);
+            const upload = body as UploadResponse;
+            expect(calls).toBe(2);
+            expect(results).toHaveLength(2);
+            expect(results[0]).toEqual({
+                ok: true,
+                settled: ["upload"],
+                duplicates: [],
+            });
+            expect(results[1]).toEqual({
+                ok: true,
+                settled: [],
+                duplicates: ["upload"],
+            });
+
+            const state = await stateFor(upload.id);
+            expect(state.events).toHaveLength(1);
+            expect(state.events[0]).toMatchObject({ status: "settled" });
+            expect(state.analyticsRows).toHaveLength(1);
+            expect(state.catalogRows).toHaveLength(1);
+            expect(state.object).toBeDefined();
+        });
+
+        it("rolls back storage and catalog when Enter refuses the settlement", async () => {
+            // Enter's own engine refuses once the authorization is gone
+            // (canceled here): the refusal is final and never retried.
+            let calls = 0;
+            const gateway: ServiceGatewayBinding = {
+                ...enterGateway,
+                settle: async (input) => {
+                    calls += 1;
+                    await enterGateway.cancel(input.authorizationId);
+                    return enterGateway.settle(input);
+                },
+            };
+            const { status } = await uploadViaForm(keys.pkAlice, {
+                fileName: "refused.png",
+                bytes: variant(51),
+                tags: ["refused"],
+                gateway,
+            });
+            expect(status).toBe(500);
+            expect(calls).toBe(1);
+
+            const state = await stateFor(await onlyRequestId());
+            expect(state.authorization?.canceledAt).not.toBeNull();
+            expect(state.events).toHaveLength(0);
+            expect(state.analyticsRows).toHaveLength(0);
+            expect(state.catalogRows).toHaveLength(0);
+            expect(state.tagRows).toHaveLength(0);
+            expect(state.object).toBeUndefined();
+
+            const galleryRes = await fetchApp(
+                "https://media.pollinations.ai/media?tag=refused",
+            );
+            expect(
+                ((await galleryRes.json()) as MediaPageResponse).items,
+            ).toEqual([]);
+        });
+
+        it("rolls back and cancels when the settlement binding keeps failing", async () => {
+            let calls = 0;
+            const gateway: ServiceGatewayBinding = {
+                ...enterGateway,
+                settle: async () => {
+                    calls += 1;
+                    throw new Error("rpc unavailable");
+                },
+            };
+            const { status } = await uploadViaForm(keys.pkAlice, {
+                fileName: "unavailable.png",
+                bytes: variant(52),
+                tags: ["unavailable"],
+                gateway,
+            });
+            expect(status).toBe(500);
+            expect(calls).toBe(2);
+
+            const state = await stateFor(await onlyRequestId());
+            expect(state.authorization?.canceledAt).not.toBeNull();
+            expect(state.events).toHaveLength(0);
+            expect(state.catalogRows).toHaveLength(0);
+            expect(state.tagRows).toHaveLength(0);
+            expect(state.object).toBeUndefined();
+        });
+    });
+
+    describe("agent run tokens", () => {
+        const runToken = () =>
+            signAgentRunToken({
+                secret: gatewayEnv.BETTER_AUTH_SECRET,
+                parentApiKeyId: keys.skAliceId,
+                parentRequestId: crypto.randomUUID(),
+            });
+
+        it("rejects ag_ in the query string with 401 before consulting Enter", async () => {
+            const { status } = await uploadViaForm("", {
+                fileName: "query-ag.png",
+                bytes: variant(60),
+                query: `?key=${encodeURIComponent(await runToken())}`,
+            });
+            expect(status).toBe(401);
+
+            const authorizations = await drizzle(env.DB)
+                .select()
+                .from(serviceAuthorization);
+            expect(authorizations).toHaveLength(0);
+        });
+
+        it("uploads with a Bearer ag_ token on behalf of the parent key's owner", async () => {
+            const { status, body } = await uploadViaForm(await runToken(), {
+                fileName: "bearer-ag.png",
+                bytes: variant(61),
+            });
+            expect(status).toBe(200);
+            const upload = body as UploadResponse;
+
+            const authorization = await drizzle(env.DB)
+                .select()
+                .from(serviceAuthorization)
+                .where(eq(serviceAuthorization.requestId, upload.id))
+                .get();
+            expect(authorization).toMatchObject({
+                userId: "user_alice",
+                apiKeyId: keys.skAliceId,
+            });
+        });
+
+        it("cannot delete published media; the owner's secret key still can", async () => {
+            const { status, body } = await uploadViaForm(keys.skAlice, {
+                fileName: "delete-ag.png",
+                bytes: variant(62),
+                tags: ["delete-ag"],
+            });
+            expect(status).toBe(200);
+            const upload = body as UploadResponse;
+            const url = `https://media.pollinations.ai/media/${upload.id}`;
+
+            const delegated = await fetchApp(url, {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${await runToken()}` },
+            });
+            expect(delegated.status).toBe(403);
+
+            // Nothing was removed.
+            expect(sharedBucket.getObject(upload.id)).toBeDefined();
+            const galleryRes = await fetchApp(
+                "https://media.pollinations.ai/media?tag=delete-ag",
+            );
+            expect(
+                ((await galleryRes.json()) as MediaPageResponse).items.map(
+                    (item) => item.id,
+                ),
+            ).toEqual([upload.id]);
+
+            const owner = await fetchApp(url, {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${keys.skAlice}` },
+            });
+            expect(owner.status).toBe(200);
+            expect(sharedBucket.getObject(upload.id)).toBeUndefined();
+        });
+    });
+
+    it("maps Enter denials onto the upload response", async () => {
+        const banned = await uploadViaForm(keys.pkBanned, {
+            fileName: "banned.png",
             bytes: variant(9),
         });
-        expect(plain.status).toBe(200);
-        const upload = plain.body as UploadResponse;
-        expect(upload.tags).toBeUndefined();
+        expect(banned.status).toBe(403);
 
-        // An /account/key response predating the identity fields (userId
-        // absent, not null) must read as not-user-attached: same behavior.
-        const legacyTagged = await uploadViaForm("sk_legacy", {
-            fileName: "legacy-tagged.png",
-            bytes: variant(11),
-            tags: ["should-fail"],
-        });
-        expect(legacyTagged.status).toBe(400);
-
-        const legacyPlain = await uploadViaForm("sk_legacy", {
-            fileName: "legacy-plain.png",
+        // Negative balances in both buckets fail even a zero-cost preflight.
+        const broke = await uploadViaForm(keys.pkBroke, {
+            fileName: "broke.png",
             bytes: variant(12),
         });
-        expect(legacyPlain.status).toBe(200);
-        const legacyUpload = legacyPlain.body as UploadResponse;
+        expect(broke.status).toBe(402);
+
+        // Denied requests must not authorize or settle anything.
         const db = drizzle(env.DB);
-        const rows = await db
-            .select({ id: mediaItem.id })
-            .from(mediaItem)
-            .where(eq(mediaItem.id, legacyUpload.id));
-        expect(rows).toHaveLength(0);
+        const authorizations = await db.select().from(serviceAuthorization);
+        expect(authorizations).toHaveLength(0);
+        const events = await db.select().from(serviceBillingEvent);
+        expect(events).toHaveLength(0);
     });
 
     it("re-uploading the same bytes creates a distinct item, not a merge", async () => {
-        const first = await uploadViaForm("pk_alice", {
+        const first = await uploadViaForm(keys.pkAlice, {
             fileName: "merge.png",
             bytes: variant(10),
             tags: ["first-tag"],
@@ -760,7 +1083,7 @@ describe("media.pollinations.ai", () => {
         expect(first.status).toBe(200);
         const firstUpload = first.body as UploadResponse;
 
-        const second = await uploadViaForm("pk_alice", {
+        const second = await uploadViaForm(keys.pkAlice, {
             fileName: "merge.png",
             bytes: variant(10),
             tags: ["second-tag"],
@@ -772,9 +1095,7 @@ describe("media.pollinations.ai", () => {
 
         // Each item lands only in its own tag's gallery.
         const firstGallery = (await (
-            await SELF.fetch(
-                "https://media.pollinations.ai/media?tag=first-tag",
-            )
+            await fetchApp("https://media.pollinations.ai/media?tag=first-tag")
         ).json()) as MediaPageResponse;
         expect(firstGallery.items.map((i) => i.url)).toContain(firstUpload.url);
         expect(firstGallery.items.map((i) => i.url)).not.toContain(
@@ -782,9 +1103,7 @@ describe("media.pollinations.ai", () => {
         );
 
         const secondGallery = (await (
-            await SELF.fetch(
-                "https://media.pollinations.ai/media?tag=second-tag",
-            )
+            await fetchApp("https://media.pollinations.ai/media?tag=second-tag")
         ).json()) as MediaPageResponse;
         expect(secondGallery.items.map((i) => i.url)).toContain(
             secondUpload.url,
@@ -796,12 +1115,12 @@ describe("media.pollinations.ai", () => {
 
     it("galleries order by upload time (createdAt)", async () => {
         const tag = "order-tag";
-        const first = await uploadViaForm("pk_alice", {
+        const first = await uploadViaForm(keys.pkAlice, {
             fileName: "order-a.png",
             bytes: variant(60),
             tags: [tag],
         });
-        const second = await uploadViaForm("pk_alice", {
+        const second = await uploadViaForm(keys.pkAlice, {
             fileName: "order-b.png",
             bytes: variant(61),
             tags: [tag],
@@ -823,7 +1142,7 @@ describe("media.pollinations.ai", () => {
         await backdate(a.id, 1000);
         await backdate(b.id, 2000);
 
-        const galleryRes = await SELF.fetch(
+        const galleryRes = await fetchApp(
             `https://media.pollinations.ai/media?tag=${tag}`,
         );
         const gallery = (await galleryRes.json()) as MediaPageResponse;
@@ -837,7 +1156,7 @@ describe("media.pollinations.ai", () => {
         const tag = "pagination-tag";
         const uploads: UploadResponse[] = [];
         for (let i = 0; i < 3; i++) {
-            const { status, body } = await uploadViaForm("pk_alice", {
+            const { status, body } = await uploadViaForm(keys.pkAlice, {
                 fileName: `page-${i}.png`,
                 bytes: variant(20 + i),
                 tags: [tag],
@@ -860,7 +1179,7 @@ describe("media.pollinations.ai", () => {
                 .where(eq(mediaItem.id, uploads[i].id));
         }
 
-        const page1Res = await SELF.fetch(
+        const page1Res = await fetchApp(
             `https://media.pollinations.ai/media?tag=${tag}&limit=2`,
         );
         expect(page1Res.status).toBe(200);
@@ -872,7 +1191,7 @@ describe("media.pollinations.ai", () => {
         expect(page1.items[0].url).toBe(uploads[2].url);
         expect(page1.items[1].url).toBe(uploads[1].url);
 
-        const page2Res = await SELF.fetch(
+        const page2Res = await fetchApp(
             `https://media.pollinations.ai/media?tag=${tag}&limit=2&cursor=${encodeURIComponent(
                 page1.nextCursor as string,
             )}`,
@@ -887,7 +1206,7 @@ describe("media.pollinations.ai", () => {
 
     it("validates the limit query param: valid passes, malformed 400s", async () => {
         // A well-formed integer limit is accepted.
-        const ok = await SELF.fetch(
+        const ok = await fetchApp(
             "https://media.pollinations.ai/media?tag=sunset&limit=10",
         );
         expect(ok.status).toBe(200);
@@ -900,7 +1219,7 @@ describe("media.pollinations.ai", () => {
             "limit=1000",
             "limit=1&limit=2",
         ]) {
-            const res = await SELF.fetch(
+            const res = await fetchApp(
                 `https://media.pollinations.ai/media?tag=sunset&${q}`,
             );
             expect(res.status, q).toBe(400);
@@ -909,7 +1228,7 @@ describe("media.pollinations.ai", () => {
         }
 
         // A garbage cursor is a 400 in the same {error} shape, not a 500.
-        const badCursor = await SELF.fetch(
+        const badCursor = await fetchApp(
             "https://media.pollinations.ai/media?tag=sunset&cursor=not-a-cursor",
         );
         expect(badCursor.status).toBe(400);
@@ -920,19 +1239,19 @@ describe("media.pollinations.ai", () => {
 
     it("GET /media requires a tag; galleries need no auth at all", async () => {
         // No tag → 400 in the same {error} shape as every other error.
-        const noTag = await SELF.fetch("https://media.pollinations.ai/media");
+        const noTag = await fetchApp("https://media.pollinations.ai/media");
         expect(noTag.status).toBe(400);
         const noTagBody = (await noTag.json()) as { error: string };
         expect(noTagBody.error).toContain("tag");
 
         // A whitespace-only tag normalizes to empty → also 400.
-        const emptyTag = await SELF.fetch(
+        const emptyTag = await fetchApp(
             "https://media.pollinations.ai/media?tag=%20",
         );
         expect(emptyTag.status).toBe(400);
 
         // A tag gallery is browsable with no key at all.
-        const publicGallery = await SELF.fetch(
+        const publicGallery = await fetchApp(
             "https://media.pollinations.ai/media?tag=sunset",
         );
         expect(publicGallery.status).toBe(200);
@@ -940,7 +1259,7 @@ describe("media.pollinations.ai", () => {
 
     describe("DELETE /media/:id", () => {
         it("owner deletes with a secret key: unpublished and gone", async () => {
-            const { status, body } = await uploadViaForm("pk_alice", {
+            const { status, body } = await uploadViaForm(keys.pkAlice, {
                 fileName: "delete-me.png",
                 bytes: variant(40),
                 tags: ["delete-flow-tag"],
@@ -948,11 +1267,11 @@ describe("media.pollinations.ai", () => {
             expect(status).toBe(200);
             const upload = body as UploadResponse;
 
-            const delRes = await SELF.fetch(
+            const delRes = await fetchApp(
                 `https://media.pollinations.ai/media/${upload.id}`,
                 {
                     method: "DELETE",
-                    headers: { Authorization: "Bearer sk_alice" },
+                    headers: { Authorization: `Bearer ${keys.skAlice}` },
                 },
             );
             expect(delRes.status).toBe(200);
@@ -962,14 +1281,14 @@ describe("media.pollinations.ai", () => {
             });
 
             // Gone from the gallery…
-            const galleryRes = await SELF.fetch(
+            const galleryRes = await fetchApp(
                 "https://media.pollinations.ai/media?tag=delete-flow-tag",
             );
             const gallery = (await galleryRes.json()) as MediaPageResponse;
             expect(gallery.items.map((i) => i.url)).not.toContain(upload.url);
 
             // …its URL 404s…
-            const getRes = await SELF.fetch(
+            const getRes = await fetchApp(
                 `https://media.pollinations.ai/${upload.id}`,
             );
             expect(getRes.status).toBe(404);
@@ -988,18 +1307,18 @@ describe("media.pollinations.ai", () => {
             expect(tagRows).toHaveLength(0);
 
             // Repeat delete: the item no longer exists → 404.
-            const again = await SELF.fetch(
+            const again = await fetchApp(
                 `https://media.pollinations.ai/media/${upload.id}`,
                 {
                     method: "DELETE",
-                    headers: { Authorization: "Bearer sk_alice" },
+                    headers: { Authorization: `Bearer ${keys.skAlice}` },
                 },
             );
             expect(again.status).toBe(404);
         });
 
         it("rejects non-owners, publishable keys, and missing/invalid keys", async () => {
-            const { status, body } = await uploadViaForm("pk_alice", {
+            const { status, body } = await uploadViaForm(keys.pkAlice, {
                 fileName: "delete-authz.png",
                 bytes: variant(41),
                 tags: ["delete-authz-tag"],
@@ -1008,10 +1327,10 @@ describe("media.pollinations.ai", () => {
             const upload = body as UploadResponse;
             const url = `https://media.pollinations.ai/media/${upload.id}`;
 
-            const noKey = await SELF.fetch(url, { method: "DELETE" });
+            const noKey = await fetchApp(url, { method: "DELETE" });
             expect(noKey.status).toBe(401);
 
-            const unknownKey = await SELF.fetch(url, {
+            const unknownKey = await fetchApp(url, {
                 method: "DELETE",
                 headers: { Authorization: "Bearer pk_unknown" },
             });
@@ -1019,36 +1338,20 @@ describe("media.pollinations.ai", () => {
 
             // Publishable keys ship inside public clients — anyone holding
             // one must not be able to delete the owner's published media.
-            const publishable = await SELF.fetch(url, {
+            const publishable = await fetchApp(url, {
                 method: "DELETE",
-                headers: { Authorization: "Bearer pk_alice" },
+                headers: { Authorization: `Bearer ${keys.pkAlice}` },
             });
             expect(publishable.status).toBe(403);
 
-            const nonOwner = await SELF.fetch(url, {
+            const nonOwner = await fetchApp(url, {
                 method: "DELETE",
-                headers: { Authorization: "Bearer sk_bob" },
+                headers: { Authorization: `Bearer ${keys.skBob}` },
             });
             expect(nonOwner.status).toBe(403);
 
-            // A valid key with no attached user has no library to own.
-            const noUser = await SELF.fetch(url, {
-                method: "DELETE",
-                headers: { Authorization: "Bearer pk_nouser" },
-            });
-            expect(noUser.status).toBe(403);
-
-            // An /account/key response predating the identity fields (userId
-            // absent, not null) must read as not-user-attached — the `?? null`
-            // normalization guard, exercised on the delete path.
-            const legacy = await SELF.fetch(url, {
-                method: "DELETE",
-                headers: { Authorization: "Bearer sk_legacy" },
-            });
-            expect(legacy.status).toBe(403);
-
             // None of the failed attempts deleted anything.
-            const getRes = await SELF.fetch(
+            const getRes = await fetchApp(
                 `https://media.pollinations.ai/${upload.id}`,
             );
             expect(getRes.status).toBe(200);
@@ -1056,34 +1359,34 @@ describe("media.pollinations.ai", () => {
         });
 
         it("unknown and uncataloged (untagged) ids answer 404", async () => {
-            const unknown = await SELF.fetch(
+            const unknown = await fetchApp(
                 `https://media.pollinations.ai/media/${crypto.randomUUID()}`,
                 {
                     method: "DELETE",
-                    headers: { Authorization: "Bearer sk_alice" },
+                    headers: { Authorization: `Bearer ${keys.skAlice}` },
                 },
             );
             expect(unknown.status).toBe(404);
 
             // An untagged upload was never published: no catalog row, no
             // owner record to authorize a delete against → 404, blob stays.
-            const { status, body } = await uploadViaForm("pk_alice", {
+            const { status, body } = await uploadViaForm(keys.pkAlice, {
                 fileName: "delete-untagged.png",
                 bytes: variant(42),
             });
             expect(status).toBe(200);
             const upload = body as UploadResponse;
 
-            const res = await SELF.fetch(
+            const res = await fetchApp(
                 `https://media.pollinations.ai/media/${upload.id}`,
                 {
                     method: "DELETE",
-                    headers: { Authorization: "Bearer sk_alice" },
+                    headers: { Authorization: `Bearer ${keys.skAlice}` },
                 },
             );
             expect(res.status).toBe(404);
 
-            const getRes = await SELF.fetch(
+            const getRes = await fetchApp(
                 `https://media.pollinations.ai/${upload.id}`,
             );
             expect(getRes.status).toBe(200);
@@ -1115,7 +1418,7 @@ describe("media.pollinations.ai", () => {
                 );
         }
 
-        const res = await SELF.fetch(
+        const res = await fetchApp(
             "https://media.pollinations.ai/media?tag=bulk&limit=100",
         );
         expect(res.status).toBe(200);

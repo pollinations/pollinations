@@ -89,15 +89,16 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
                 config.mediaTypes.some((type) => contentType?.includes(type))
             );
         },
-        capture(c, cacheKey, response) {
+        capture(c, cacheKey, response, publish) {
             return {
                 response,
-                write: putMediaResponse(
+                ...putMediaResponse(
                     c.env.IMAGE_BUCKET,
                     cacheKey,
                     c,
                     config.defaultContentType,
                     response,
+                    publish,
                 ),
             };
         },

@@ -6,30 +6,41 @@ export type UserBalance = {
 export type BalanceBucket = "tier" | "pack";
 
 /**
- * Preflight "can the caller afford this estimate" check. This is intentionally
- * a different question from the authoritative bucket ladder in
- * `atomicDeductUserBalance`: that function chooses *which* bucket to write to
- * when money actually moves; this one only asks whether *enough exists* to let
- * the request proceed before any mutation.
+ * The one wallet bucket a request pays from, fixed at authorize time for
+ * every event of the request: paid-only work is always billed to the pack;
+ * otherwise Quest Pollen when it covers the estimate, else the pack. With
+ * nothing positive to draw from, an affordable estimate still lands on the
+ * bucket that covers it (Quest Pollen first), so any shortfall the actual
+ * price adds becomes Quest-Pollen debt rather than deeper pack debt.
  *
- * The two therefore need not use identical thresholds. This preflight clamps
- * negative estimates to zero and accepts zero-cost coverage. The write path
- * skips non-positive charges entirely; for a positive actual charge, it uses
- * Quest Pollen when that bucket covers the charge, otherwise any positive paid
- * balance, and finally Quest Pollen debt when the paid balance is non-positive.
+ * Returns null when no bucket covers the estimate. Paid-only stays strict:
+ * the flag means "must hold paid balance", so the pack must cover the
+ * estimate and be positive, and a zero-balance caller never gets a
+ * paid-only model through on a zero estimate.
  */
+export function selectWalletBucket(
+    balances: UserBalance,
+    estimatedCost: number,
+    isPaidOnly = false,
+): BalanceBucket | null {
+    const threshold = Math.max(0, estimatedCost);
+    if (isPaidOnly) {
+        const { packBalance } = balances;
+        return packBalance > 0 && packBalance >= threshold ? "pack" : null;
+    }
+    const { tierBalance, packBalance } = balances;
+    if (tierBalance > 0 && tierBalance >= threshold) return "tier";
+    if (packBalance > 0 && packBalance >= threshold) return "pack";
+    if (tierBalance >= threshold) return "tier";
+    if (packBalance >= threshold) return "pack";
+    return null;
+}
+
+/** Preflight "can the caller afford this estimate" check, same rule as above. */
 export function canCoverEstimatedCharge(
     balances: UserBalance,
     estimatedCost: number,
     isPaidOnly = false,
 ): boolean {
-    const threshold = Math.max(0, estimatedCost);
-    // Paid-only stays strict: the flag means "must hold paid balance", a
-    // positive-balance requirement rather than a cost-coverage one. A paid-only
-    // model is never free, so no zero-balance caller needs to get through.
-    if (isPaidOnly) return balances.packBalance > threshold;
-    // Cost coverage, so a zero-priced model is covered by a zero balance.
-    return (
-        balances.tierBalance >= threshold || balances.packBalance >= threshold
-    );
+    return selectWalletBucket(balances, estimatedCost, isPaidOnly) !== null;
 }

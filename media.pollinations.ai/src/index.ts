@@ -1,4 +1,13 @@
+import { extractApiKey } from "@shared/auth/api-key.ts";
 import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
+import type {
+    ServiceAuthorization,
+    ServiceDenial,
+    ServiceGatewayBinding,
+    ServiceSettleResult,
+    TokenIntrospectionResult,
+} from "@shared/schemas/service-billing.ts";
+import type { Context } from "hono";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import {
@@ -24,9 +33,6 @@ import {
 } from "./catalog.ts";
 
 const DOMAIN = "media.pollinations.ai";
-// gen.pollinations.ai proxies /account/* to enter — using the public path
-// keeps internal services consistent with the documented SDK/external usage.
-const KEY_VERIFY_URL = "https://gen.pollinations.ai/account/key";
 // Untagged uploads cannot be deleted through the API, and each unique id always
 // maps to the same bytes, so they can be cached immutably. Tagged uploads are
 // deletable and must never be retained by downstream caches after deletion.
@@ -38,57 +44,58 @@ interface Env {
     MEDIA_BUCKET: R2Bucket;
     MAX_FILE_SIZE: string;
     DB: D1Database;
-}
-
-/**
- * Wire shape of `GET /account/key`. BYOP attribution arrives nested under
- * `byopApp`, which is null for keys not minted through the BYOP flow.
- */
-interface KeyVerifyResponse {
-    valid: boolean;
-    type: string;
-    name: string | null;
-    userId: string | null;
-    byopApp: { clientKeyId: string } | null;
+    // Enter's ServiceGateway RPC entrypoint, over a named Service Binding.
+    // Enter stays the auth and billing authority; media never sees balances.
+    ENTER: ServiceGatewayBinding;
 }
 
 interface AuthResult {
-    valid: boolean;
     type: string;
     name: string | null;
-    userId: string | null;
+    userId: string;
     byopClientKeyId: string | null;
 }
 
-async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
-    try {
-        const res = await fetch(KEY_VERIFY_URL, {
-            headers: { Authorization: `Bearer ${apiKey}` },
-        });
-        if (!res.ok) return null;
-        const data = await res.json<KeyVerifyResponse>();
-        if (!data.valid) return null;
-        // Normalize: an enter deployment that predates the identity fields
-        // omits them, and `undefined` would slip past the `=== null` guards
-        // downstream — never treat an unattested key as user-attached.
-        return {
-            valid: true,
-            type: data.type,
-            name: data.name ?? null,
-            userId: data.userId ?? null,
-            byopClientKeyId: data.byopApp?.clientKeyId ?? null,
-        };
-    } catch {
-        return null;
-    }
+// Same derivation as enter's /account/key: keys created before typed metadata
+// existed are secret keys.
+function toAuthResult(
+    identity: Pick<ServiceAuthorization, "user" | "apiKey">,
+): AuthResult {
+    return {
+        type: (identity.apiKey.metadata?.keyType as string) || "secret",
+        name: identity.apiKey.name ?? null,
+        userId: identity.user.id,
+        byopClientKeyId: identity.apiKey.byopClientKeyId ?? null,
+    };
 }
 
-function extractApiKey(req: Request): string | null {
-    const bearer = req.headers
-        .get("authorization")
-        ?.match(/^Bearer (.+)$/)?.[1];
-    if (bearer) return bearer;
-    return new URL(req.url).searchParams.get("key");
+function denialResponse(c: Context<{ Bindings: Env }>, denial: ServiceDenial) {
+    return c.json({ error: denial.message }, denial.status);
+}
+
+/**
+ * Undo an upload whose storage, catalog or settlement failed so no unbilled
+ * media stays published: catalog rows, then the R2 object, then the
+ * authorization. Every step is idempotent and best-effort — the caller
+ * reports the original failure, which this never masks.
+ */
+async function rollbackUpload(
+    env: Env,
+    id: string,
+    authorizationId: string,
+): Promise<void> {
+    const steps = [
+        () => deleteCatalogItem(getDb(env.DB), id),
+        () => env.MEDIA_BUCKET.delete(id),
+        () => env.ENTER.cancel(authorizationId),
+    ];
+    for (const step of steps) {
+        try {
+            await step();
+        } catch (error) {
+            console.error("Upload rollback step failed:", error);
+        }
+    }
 }
 
 function fileTooLargeError(maxSize: number): { error: string } {
@@ -305,13 +312,25 @@ api.post(
             },
             400: {
                 description:
-                    "No/empty file, invalid JSON/base64, invalid tags, or tags on a key with no user account",
+                    "No/empty file, invalid JSON/base64, or invalid tags",
                 content: {
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
             },
             401: {
                 description: "Missing or invalid API key",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+            402: {
+                description: "Account balance or API key budget too low",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+            403: {
+                description: "Banned account or restricted key",
                 content: {
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
@@ -334,11 +353,6 @@ api.post(
                 401,
             );
         }
-        const authResult = await verifyApiKey(apiKey);
-        if (!authResult) {
-            return c.json({ error: "Invalid or expired API key" }, 401);
-        }
-
         const maxSize = parseInt(c.env.MAX_FILE_SIZE, 10) || DEFAULT_MAX_SIZE;
 
         let fileBuffer: ArrayBuffer;
@@ -443,52 +457,67 @@ api.post(
                 throw error;
             }
 
-            if (authResult.userId === null && tags.length > 0) {
-                return c.json(
-                    {
-                        error: "publishing (tags) requires a user-owned API key",
-                    },
-                    400,
-                );
-            }
-
             // One id for everything: the R2 storage key, the retrieval id,
-            // and (for user uploads) the catalog row id.
+            // (for user uploads) the catalog row id, and the billing request
+            // identity — so retries and settlement all reference the same
+            // stable name for this piece of work.
             const id = crypto.randomUUID();
+
+            // Authorize with Enter after validation, before any storage
+            // work: bans, staging locks and (for finite-budget keys) an
+            // upfront reservation all happen here. Uploads are currently
+            // free, so the estimate is zero and the settlement below is an
+            // observability-only billing event.
+            const authorization = await c.env.ENTER.authorize({
+                token: apiKey,
+                service: DOMAIN,
+                requestId: id,
+                requestPath: "/upload",
+                estimatedPrice: 0,
+            });
+            if (!authorization.ok) {
+                return denialResponse(c, authorization.denial);
+            }
+            const authResult = toAuthResult(authorization);
+
             const cacheControl =
                 tags.length > 0
                     ? PUBLISHED_CACHE_CONTROL
                     : IMMUTABLE_CACHE_CONTROL;
 
-            await c.env.MEDIA_BUCKET.put(id, fileBuffer, {
-                httpMetadata: {
-                    contentType,
-                    cacheControl,
-                },
-                customMetadata: {
-                    uploadedAt: new Date().toISOString(),
-                    originalName: fileName || "",
-                    uploadedBy: authResult.name || "",
-                    keyType: authResult.type,
-                },
-            });
-
-            // Tags are the publish action: only tagged uploads get catalog
-            // rows (untagged uploads stay uncataloged blobs behind their
-            // unguessable id). The write is awaited inline (not waitUntil):
-            // a D1 failure must surface as a 500, not be silently swallowed.
-            // `tags` non-empty implies a user-attached key (rejected above
-            // otherwise), so ownerUserId is always real here.
-            if (tags.length > 0 && authResult.userId !== null) {
-                const db = getDb(c.env.DB);
-                await insertUploadCatalogItem(db, {
-                    id,
-                    ownerUserId: authResult.userId,
-                    appKeyId: authResult.byopClientKeyId,
-                    contentType,
-                    size: fileBuffer.byteLength,
-                    tags,
+            try {
+                await c.env.MEDIA_BUCKET.put(id, fileBuffer, {
+                    httpMetadata: {
+                        contentType,
+                        cacheControl,
+                    },
+                    customMetadata: {
+                        uploadedAt: new Date().toISOString(),
+                        originalName: fileName || "",
+                        uploadedBy: authResult.name || "",
+                        keyType: authResult.type,
+                    },
                 });
+
+                // Tags are the publish action: only tagged uploads get
+                // catalog rows (untagged uploads stay uncataloged blobs
+                // behind their unguessable id). The write is awaited inline
+                // (not waitUntil): a D1 failure must surface as a 500, not
+                // be silently swallowed.
+                if (tags.length > 0) {
+                    const db = getDb(c.env.DB);
+                    await insertUploadCatalogItem(db, {
+                        id,
+                        ownerUserId: authResult.userId,
+                        appKeyId: authResult.byopClientKeyId,
+                        contentType,
+                        size: fileBuffer.byteLength,
+                        tags,
+                    });
+                }
+            } catch (error) {
+                await rollbackUpload(c.env, id, authorization.authorizationId);
+                throw error;
             }
 
             console.log(
@@ -501,6 +530,44 @@ api.post(
                     uploadedBy: authResult.name || "unknown",
                 }),
             );
+
+            // Settle the completed work with Enter before answering:
+            // success means the financial settlement is committed.
+            // Idempotent per (authorization, eventId), so a repeated
+            // settlement bills once.
+            const settlement = {
+                authorizationId: authorization.authorizationId,
+                events: [
+                    {
+                        eventId: "upload",
+                        eventType: "media.upload" as const,
+                        price: 0,
+                    },
+                ],
+            };
+            let settled: ServiceSettleResult | null;
+            try {
+                settled = await c.env.ENTER.settle(settlement);
+            } catch (error) {
+                // The binding call itself failed, so the ack may simply have
+                // been lost after Enter settled: deliver the identical
+                // settlement exactly once more. A refusal (ok: false) is
+                // final and is never retried.
+                console.error("Upload settlement ack lost:", error);
+                settled = await c.env.ENTER.settle(settlement).catch(
+                    (retryError) => {
+                        console.error("Upload settlement failed:", retryError);
+                        return null;
+                    },
+                );
+            }
+            if (!settled?.ok) {
+                if (settled) {
+                    console.error("Upload settlement refused:", settled.error);
+                }
+                await rollbackUpload(c.env, id, authorization.authorizationId);
+                return c.json({ error: "Upload failed" }, 500);
+            }
 
             return c.json({
                 id,
@@ -621,7 +688,7 @@ api.delete(
             },
             403: {
                 description:
-                    "Key is not a secret (`sk_`) key, is not attached to a user account, or the item belongs to someone else",
+                    "Key is not a secret (`sk_`) key, is a delegated agent run token, or the item belongs to someone else",
                 content: {
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
@@ -644,16 +711,21 @@ api.delete(
                 401,
             );
         }
-        const auth = await verifyApiKey(apiKey);
-        if (!auth) {
-            return c.json({ error: "Invalid or expired API key" }, 401);
+        const introspection: TokenIntrospectionResult =
+            await c.env.ENTER.introspect(apiKey);
+        if (!introspection.valid) {
+            return denialResponse(c, introspection.denial);
         }
-        if (auth.userId === null) {
+        // A run token is handed to a third party mid-run and inherits only
+        // the parent key's generation access, never the owner's right to
+        // unpublish media.
+        if (introspection.agentRun) {
             return c.json(
-                { error: "This API key is not attached to a user account" },
+                { error: "Agent run tokens cannot delete media" },
                 403,
             );
         }
+        const auth = toAuthResult(introspection);
         // Publishable keys ship inside public clients — anyone holding one
         // could delete the owner's published media, so deletion is
         // secret-key only.

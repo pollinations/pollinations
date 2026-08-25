@@ -1,20 +1,12 @@
-import { getLogger } from "@logtape/logtape";
+import { getLogger, type Logger } from "@logtape/logtape";
 import type { ApiKeyType } from "@shared/auth/api-key-creation.ts";
-import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
-import { payerBucketToMeter } from "@shared/billing/balance.ts";
-import {
-    type CommunityModelRewardResolution,
-    handleBalanceDeduction,
-    type MarkupResolution,
-    selectCommunityModelReward,
-} from "@shared/billing/track-helpers.ts";
+import { selectCommunityModelReward } from "@shared/billing/track-helpers.ts";
 import {
     getRealClientIp,
     hashIp,
     stripIPv4MappedPrefix,
     truncateIpToSubnet,
 } from "@shared/client-ip.ts";
-import { user as userTable } from "@shared/db/better-auth.ts";
 import type { ErrorVariables } from "@shared/error.ts";
 import {
     getDefaultErrorMessage,
@@ -22,8 +14,8 @@ import {
     remapUpstreamStatus,
     UpstreamError,
 } from "@shared/error.ts";
-import { sendToTinybird } from "@shared/events.ts";
-import { PUBLIC_URLS } from "@shared/public-urls.ts";
+import { sendToTinybirdOnce } from "@shared/events.ts";
+import { redactCredentialQueryParams } from "@shared/observability/request-inputs.ts";
 import {
     type BillingAdjustment,
     type CostDefinition,
@@ -60,17 +52,16 @@ import {
     ContentFilterResultSchema,
     ContentFilterSeveritySchema,
 } from "@shared/schemas/openai.ts";
+import type { ServiceBillableEvent } from "@shared/schemas/service-billing.ts";
 import { getRoutePath, removeUnset } from "@shared/util.ts";
-import { eq } from "drizzle-orm";
-import type { DrizzleD1Database } from "drizzle-orm/d1";
-import { drizzle } from "drizzle-orm/d1";
 import { EventSourceParserStream } from "eventsource-parser/stream";
-import type { HonoRequest } from "hono";
+import type { Context, HonoRequest } from "hono";
 import { createMiddleware } from "hono/factory";
 import { z } from "zod";
 import { mergeContentFilterResults } from "@/content-filter.ts";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
+import type { BillingVariables } from "@/middleware/billing.ts";
 import {
     type GenerationCacheVariables,
     hashGenerationCacheIdentity,
@@ -79,7 +70,6 @@ import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import type { FrontendKeyRateLimitVariables } from "@/middleware/rate-limit-durable.ts";
 import { generateRandomId, parseBooleanLike } from "@/util.ts";
-import { releaseApiKeyBudgetReservation } from "@/utils/generation-access.ts";
 import {
     type FallbackAttempt,
     type FallbackCandidate,
@@ -154,6 +144,7 @@ export type TrackEnv = {
         LoggerVariables &
         AuthVariables &
         BalanceVariables &
+        BillingVariables &
         FrontendKeyRateLimitVariables &
         TrackVariables &
         ModelVariables &
@@ -164,7 +155,6 @@ export const track = (eventType: EventType) =>
     createMiddleware<TrackEnv>(async (c, next) => {
         const log = getLogger(["hono", "track"]);
         const startTime = new Date();
-        const db = drizzle(c.env.DB);
 
         // Get model from resolveModel middleware
         const modelInfo = c.var.model;
@@ -205,23 +195,18 @@ export const track = (eventType: EventType) =>
         };
 
         /**
-         * The one place a generation row is built and sent.
+         * The one place a generation row is built.
          *
          * Everything that identifies the request is captured here; callers pass
          * only what differs between a call that failed and the call that
-         * settled.
+         * settled. Money fields are left at zero: for a settled request Enter
+         * fills them from its ledger, and a request that never reached
+         * settlement moved no money.
          */
-        const emitRow = async (row: {
-            startTime: Date;
-            endTime: Date;
-            balanceTracking: BalanceData;
-            responseTracking: ResponseTrackingData;
-            errorTracking: ErrorData;
-            markup?: MarkupResolution | null;
-            communityModelReward?: CommunityModelRewardResolution | null;
-            billedPrice?: number;
-        }): Promise<InsertGenerationEvent> => {
-            const event = createTrackingEvent({
+        const buildRow = async (
+            row: TrackingRow,
+        ): Promise<InsertGenerationEvent> =>
+            createTrackingEvent({
                 id: generateRandomId(),
                 requestId: c.get("requestId"),
                 requestPath: getRoutePath(c),
@@ -237,18 +222,29 @@ export const track = (eventType: EventType) =>
                 responseTracking: row.responseTracking,
                 cacheKey: await cacheKeyForTracking(),
                 errorTracking: row.errorTracking,
-                markup: row.markup ?? null,
-                communityModelReward: row.communityModelReward ?? null,
-                billedPrice: row.billedPrice ?? 0,
             });
-            await sendToTinybird(
-                event,
+        /**
+         * Records a request that has no Enter authorization to settle under:
+         * one best-effort write, never retried.
+         */
+        const emitRow = async (row: TrackingRow): Promise<void> => {
+            await sendToTinybirdOnce(
+                await buildRow(row),
                 c.env.TINYBIRD_INGEST_URL,
                 c.env.TINYBIRD_INGEST_TOKEN,
                 log,
             );
-            return event;
         };
+
+        // The cache may buffer the response but must not publish it before
+        // Enter has durably accepted the settlement (or nothing is owed).
+        let publishCache: (publish: boolean) => void = () => {};
+        c.set(
+            "generationCachePublish",
+            new Promise<boolean>((resolve) => {
+                publishCache = resolve;
+            }),
+        );
 
         c.set("track", {
             modelRequested: requestTracking.modelRequested,
@@ -263,255 +259,259 @@ export const track = (eventType: EventType) =>
             attempts,
         });
 
-        await next();
+        try {
+            await next();
+        } catch (error) {
+            publishCache(false);
+            throw error;
+        }
 
         // Detached execution already tracked the provider failure. The outer
         // caller only receives that captured result and must not emit it again.
-        if (c.var.track.detachedExecutionTracked) return;
+        if (c.var.track.detachedExecutionTracked) {
+            publishCache(false);
+            return;
+        }
 
-        let billingStarted = false;
+        const billing = c.var.billing;
+        let resolveSettlement: (settled: boolean) => void = () => {};
+        if (billing) {
+            billing.settlement = new Promise((resolve) => {
+                resolveSettlement = resolve;
+            });
+        }
+        // Returns whether the request's money is resolved: nothing owed,
+        // or settled. Any other outcome, thrown or not, cancels the open
+        // authorization exactly once below.
+        const resolve = async (): Promise<boolean> => {
+            const userId = userTracking.userId;
+            if (!userId) {
+                publishCache(true);
+                return true;
+            }
+
+            const finalCandidate =
+                attempts.find((attempt) => attempt.settled)?.candidate ??
+                fallbackCandidates(modelInfo)[0];
+
+            // Routes attach telemetry headers (x-moderation-*, cache
+            // status) to the final response AFTER the override is
+            // captured, so read the body from the override but headers
+            // from c.res — keeping the override's content-type since it
+            // describes the body that usage extraction parses.
+            const response = responseOverride
+                ? withFinalResponseHeaders(responseOverride, c.res)
+                : responseForTracking(c.res);
+            // What a rescue changes: the generation's cost, and which owner
+            // earns the reward. Not the price — the caller is charged the
+            // listing they asked for either way.
+            // Captured only after the response above is cloned: any await
+            // before that clone lets the body start streaming, and cloning
+            // a locked stream throws.
+            // One row per call that was moved on from. The failure that
+            // ended the request is not among them: it is the response, and
+            // the settlement row below carries it — under the name only the
+            // loop can supply. So a request emits one row per upstream call.
+            const attemptRows: TrackingRow[] = [];
+            for (const attempt of attempts) {
+                if (attempt.settled) continue;
+                const model = attempt.candidate.id;
+                const status = failedAttemptStatus(attempt.error);
+                attemptRows.push({
+                    startTime: attempt.startedAt,
+                    endTime: attempt.endedAt,
+                    balanceTracking: balanceTracking(),
+                    responseTracking: {
+                        responseStatus: status,
+                        cacheHit: false,
+                        isBilledUsage: false,
+                        isFinal: false,
+                        fallbackUsed:
+                            model !== requestTracking.resolvedModelRequested,
+                        modelUsed: model,
+                        modelProviderUsed:
+                            attempt.candidate.definition?.provider ??
+                            requestTracking.modelProvider,
+                    },
+                    errorTracking: collectErrorData(
+                        status,
+                        attempt.error instanceof Error
+                            ? attempt.error
+                            : undefined,
+                    ),
+                });
+            }
+            const responseTracking = await trackResponse(
+                eventType,
+                requestTracking,
+                response,
+                finalCandidate,
+                pricingInput,
+            );
+            if (responseTracking.cacheHit) {
+                // Nothing was generated, so nothing is owed: the open
+                // authorization is released below and no row is left.
+                await c.var.frontendKeyRateLimit?.consumePollen(0);
+                return false;
+            }
+            // trackResponse consumes SSE text and JSON bodies, so for
+            // those endTime marks actual response completion — not
+            // time-to-first-byte. Binary bodies (image/audio) are never
+            // read by tracking, so their endTime stays ~header arrival.
+            const endTime = new Date();
+            const finalRow: TrackingRow = {
+                startTime,
+                endTime,
+                balanceTracking: balanceTracking(),
+                responseTracking,
+                errorTracking:
+                    responseTracking.errorTracking ??
+                    collectErrorData(response.status, c.get("error")),
+            };
+
+            if (!billing) {
+                // The request was refused before Enter authorized it
+                // (denied, rate limited, unavailable): no money moved, so
+                // the rows are recorded directly.
+                publishCache(true);
+                for (const row of attemptRows) await emitRow(row);
+                await emitRow(finalRow);
+                return true;
+            }
+
+            // Enter settles the request's whole event set as one
+            // financial batch: a zero-price row per abandoned upstream
+            // call, then the outcome with its price and owner reward.
+            const price = responseTracking.isBilledUsage
+                ? (responseTracking.price?.totalPrice ?? 0)
+                : 0;
+            const events: ServiceBillableEvent[] = [];
+            for (const [index, row] of attemptRows.entries()) {
+                events.push({
+                    eventId: `attempt-${index}`,
+                    eventType,
+                    price: 0,
+                    modelUsed: row.responseTracking.modelUsed,
+                    telemetry: await buildRow(row),
+                });
+            }
+            // A private endpoint only earns a reward when it backs its
+            // owner's public listing. Cross-owner private fallbacks are
+            // rejected when the fallback is linked.
+            const communityReward = selectCommunityModelReward(
+                c.var.model?.communityEndpoint,
+                finalCandidate.communityEndpoint,
+                responseTracking.servedPrice,
+            );
+            events.push({
+                eventId: "generation",
+                eventType,
+                price,
+                modelUsed: responseTracking.modelUsed,
+                ...(communityReward && {
+                    communityReward: {
+                        ownerUserId: communityReward.userId,
+                        rewardRate: communityReward.rewardRate,
+                        basePrice: communityReward.basePrice,
+                    },
+                }),
+                telemetry: await buildRow(finalRow),
+            });
+
+            // Nothing may be charged for a response the cache could not
+            // hold: the whole body is buffered and validated first.
+            await c.var.generationCacheWrite?.prepared;
+            const settled = await settleWithEnter(
+                c,
+                billing.authorizationId,
+                events,
+                log,
+            );
+            // Unpaid output is never published to the cache.
+            if (!settled) return false;
+            resolveSettlement(true);
+            publishCache(true);
+
+            await c.var.frontendKeyRateLimit?.consumePollen(price);
+            log.trace("Settled {price} pollen for request {requestId}", {
+                price,
+                requestId: c.get("requestId"),
+            });
+            return true;
+        };
         c.executionCtx.waitUntil(
             (async () => {
-                const userId = userTracking.userId;
-                if (!userId) return;
-
-                const finalCandidate =
-                    attempts.find((attempt) => attempt.settled)?.candidate ??
-                    fallbackCandidates(modelInfo)[0];
-
-                // Routes attach telemetry headers (x-moderation-*, cache
-                // status) to the final response AFTER the override is
-                // captured, so read the body from the override but headers
-                // from c.res — keeping the override's content-type since it
-                // describes the body that usage extraction parses.
-                const response = responseOverride
-                    ? withFinalResponseHeaders(responseOverride, c.res)
-                    : responseForTracking(c.res);
-                // What a rescue changes: the generation's cost, and which owner
-                // earns the reward. Not the price — the caller is charged the
-                // listing they asked for either way.
-                // Emitted only after the response above is captured: any
-                // await before that clone lets the body start streaming, and
-                // cloning a locked stream throws.
-                // One row per call that was moved on from. The failure that
-                // ended the request is not among them: it is the response, and
-                // the settlement row below carries it — under the name only the
-                // loop can supply. So a request emits one row per upstream call.
-                for (const attempt of attempts) {
-                    if (attempt.settled) continue;
-                    const model = attempt.candidate.id;
-                    const status = failedAttemptStatus(attempt.error);
-                    await emitRow({
-                        startTime: attempt.startedAt,
-                        endTime: attempt.endedAt,
-                        balanceTracking: balanceTracking(),
-                        responseTracking: {
-                            responseStatus: status,
-                            cacheHit: false,
-                            isBilledUsage: false,
-                            isFinal: false,
-                            fallbackUsed:
-                                model !==
-                                requestTracking.resolvedModelRequested,
-                            modelUsed: model,
-                            modelProviderUsed:
-                                attempt.candidate.definition?.provider ??
-                                requestTracking.modelProvider,
-                        },
-                        errorTracking: collectErrorData(
-                            status,
-                            attempt.error instanceof Error
-                                ? attempt.error
-                                : undefined,
-                        ),
-                    });
-                }
-                const responseTracking = await trackResponse(
-                    eventType,
-                    requestTracking,
-                    response,
-                    finalCandidate,
-                    pricingInput,
-                );
-                if (responseTracking.cacheHit) {
-                    await releaseApiKeyBudgetReservation(c.var, c.env);
-                    await c.var.frontendKeyRateLimit?.consumePollen(0);
-                    return;
-                }
-                // trackResponse consumes SSE text and JSON bodies, so for
-                // those endTime marks actual response completion — not
-                // time-to-first-byte. Binary bodies (image/audio) are never
-                // read by tracking, so their endTime stays ~header arrival.
-                const endTime = new Date();
-
-                // Deduct payer + credit dev before emitting the event so billing
-                // telemetry reflects the committed ledger state.
-                const balanceDb = db as unknown as Parameters<
-                    typeof handleBalanceDeduction
-                >[0]["db"];
-                let markup: MarkupResolution | null = null;
-                let payerBucket: Awaited<
-                    ReturnType<typeof handleBalanceDeduction>
-                >["payerBucket"] = null;
-                let communityModelReward: CommunityModelRewardResolution | null =
-                    null;
-                let billedPrice = 0;
-                let shouldRunAutoTopUp = false;
-                billingStarted = true;
+                let resolved = false;
                 try {
-                    const requestedCommunityEndpoint =
-                        c.var.model?.communityEndpoint;
-                    const servedCommunityEndpoint =
-                        finalCandidate.communityEndpoint;
-                    const deduction = await handleBalanceDeduction({
-                        db: balanceDb,
-                        isBilledUsage: responseTracking.isBilledUsage,
-                        totalPrice: responseTracking.price?.totalPrice,
-                        userId,
-                        apiKeyId: c.var.auth?.apiKey?.id,
-                        apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
-                        apiKeyReservedAmount:
-                            c.var.balance.apiKeyReservation?.amount,
-                        byopClientKeyId: c.var.auth?.apiKey?.byopClientKeyId,
-                        modelPaidOnly: c.var.model?.definition.paidOnly,
-                        // A private endpoint only earns a reward when it backs
-                        // its owner's public listing. Cross-owner private
-                        // fallbacks are rejected when the fallback is linked.
-                        communityModelReward: selectCommunityModelReward(
-                            requestedCommunityEndpoint,
-                            servedCommunityEndpoint,
-                            responseTracking.servedPrice,
-                        ),
-                    });
-                    c.var.balance.apiKeyReservation = undefined;
-                    markup = deduction.markup;
-                    communityModelReward = deduction.communityModelReward;
-                    payerBucket = deduction.payerBucket;
-                    billedPrice = deduction.billedPrice;
-                    const totalPrice = responseTracking.price?.totalPrice ?? 0;
-                    if (
-                        totalPrice > 0 &&
-                        payerBucket === "pack" &&
-                        deduction.postDeductionPackBalance != null &&
-                        deduction.postDeductionPackBalance <=
-                            AUTO_TOP_UP_THRESHOLD_POLLEN &&
-                        (await isAutoTopUpConfigured(db, userId))
-                    ) {
-                        shouldRunAutoTopUp = true;
-                    }
+                    resolved = await resolve();
                 } catch (error) {
-                    log.error(
-                        "Billing deduction failed after response; continuing tracking: {error}",
-                        {
-                            error:
-                                error instanceof Error
-                                    ? error.message
-                                    : String(error),
-                        },
-                    );
+                    log.error("Tracking failed before settlement: {error}", {
+                        error:
+                            error instanceof Error
+                                ? error.message
+                                : String(error),
+                    });
+                } finally {
+                    resolveSettlement(false);
+                    publishCache(false);
                 }
-                const committedBalanceTracking = payerBucket
-                    ? {
-                          ...balanceTracking(),
-                          ...payerBucketToMeter(payerBucket),
-                      }
-                    : balanceTracking();
-
-                await c.var.frontendKeyRateLimit?.consumePollen(
-                    responseTracking.price?.totalPrice || 0,
-                );
-
-                const finalEvent = await emitRow({
-                    startTime,
-                    endTime,
-                    balanceTracking: committedBalanceTracking,
-                    responseTracking,
-                    markup,
-                    communityModelReward,
-                    billedPrice,
-                    errorTracking:
-                        responseTracking.errorTracking ??
-                        collectErrorData(response.status, c.get("error")),
-                });
-
-                log.trace(
-                    [
-                        "Tracking event:",
-                        "  isBilledUsage={event.isBilledUsage}",
-                        "  balances[v1:meter:tier]={event.balances[v1:meter:tier]}",
-                        "  balances[v1:meter:pack]={event.balances[v1:meter:pack]}",
-                        '  selectedMeterSlug="{event.selectedMeterSlug}"',
-                        "  totalCost={event.totalCost}",
-                        "  totalPrice={event.totalPrice}",
-                        "  devPrice={event.devPrice}",
-                        "  communityModelRewardRate={event.communityModelRewardRate}",
-                        "  communityModelRewardAmount={event.communityModelRewardAmount}",
-                    ].join("\n"),
-                    { event: finalEvent },
-                );
-
-                if (shouldRunAutoTopUp) {
-                    await triggerAutoTopUp(c.env, userId, log);
+                if (billing && !resolved) {
+                    await cancelAuthorization(c, billing, log);
                 }
-            })().catch(async (error) => {
-                if (!billingStarted) {
-                    await releaseApiKeyBudgetReservation(c.var, c.env);
-                }
-                throw error;
-            }),
+            })(),
         );
     });
 
-async function isAutoTopUpConfigured(
-    db: DrizzleD1Database,
-    userId: string,
+/**
+ * One settlement, plus one immediate re-delivery of the identical call if
+ * the first lost its acknowledgement: Enter settles by (authorization,
+ * event id), so a committed first call answers the second as duplicates and
+ * writes no second analytics row. A refusal is final and never retried.
+ */
+async function settleWithEnter(
+    c: Context<TrackEnv>,
+    authorizationId: string,
+    events: ServiceBillableEvent[],
+    log: Logger,
 ): Promise<boolean> {
-    const [user] = await db
-        .select({
-            enabled: userTable.autoTopUpEnabled,
-            amountUsd: userTable.autoTopUpAmountUsd,
-        })
-        .from(userTable)
-        .where(eq(userTable.id, userId))
-        .limit(1);
-
-    if (!user?.enabled || user.amountUsd == null) {
-        return false;
-    }
-
-    return true;
-}
-
-async function triggerAutoTopUp(
-    env: CloudflareBindings,
-    userId: string,
-    log: ReturnType<typeof getLogger>,
-): Promise<void> {
-    try {
-        const response = await env.ENTER.fetch(
-            `${PUBLIC_URLS.enter.production}/api/stripe/auto-top-up/trigger`,
-            {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${env.PLN_ENTER_TOKEN}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    userId,
-                    environment: env.ENVIRONMENT,
-                }),
-            },
-        );
-
-        if (!response.ok) {
-            log.warn("Auto top-up trigger failed for user {userId}", {
-                userId,
-                status: response.status,
+    for (let delivery = 1; delivery <= 2; delivery += 1) {
+        try {
+            const result = await c.env.ENTER_GATEWAY.settle({
+                authorizationId,
+                events,
+            });
+            if (result.ok) return true;
+            log.error("Enter refused the settlement: {error}", {
+                error: result.error,
+            });
+            return false;
+        } catch (error) {
+            log.error("Settlement delivery {delivery} failed: {error}", {
+                delivery,
+                error: error instanceof Error ? error.message : String(error),
             });
         }
+    }
+    return false;
+}
+
+type TrackingRow = {
+    startTime: Date;
+    endTime: Date;
+    balanceTracking: BalanceData;
+    responseTracking: ResponseTrackingData;
+    errorTracking: ErrorData;
+};
+
+async function cancelAuthorization(
+    c: Context<TrackEnv>,
+    billing: NonNullable<TrackEnv["Variables"]["billing"]>,
+    log: Logger,
+): Promise<void> {
+    try {
+        await c.env.ENTER_GATEWAY.cancel(billing.authorizationId);
     } catch (error) {
-        log.warn("Auto top-up trigger errored for user {userId}: {error}", {
-            userId,
+        log.error("Authorization cancel failed: {error}", {
             error: error instanceof Error ? error.message : String(error),
         });
     }
@@ -896,7 +896,9 @@ export type UserData = {
     apiKeyClientId?: string;
 };
 
-export function requestIdentity(auth: AuthVariables["auth"]): UserData {
+export function requestIdentity(
+    auth: Pick<AuthVariables["auth"], "user" | "apiKey" | "agentRun">,
+): UserData {
     const apiKeyMetadata = auth.apiKey?.metadata as
         | Record<string, unknown>
         | undefined;
@@ -942,9 +944,6 @@ type TrackingEventInput = {
     balanceTracking: BalanceData;
     requestTracking: RequestTrackingData;
     responseTracking: ResponseTrackingData;
-    markup: MarkupResolution | null;
-    communityModelReward: CommunityModelRewardResolution | null;
-    billedPrice: number;
     errorTracking?: ErrorData;
 };
 
@@ -984,9 +983,6 @@ function createTrackingEvent({
     balanceTracking,
     requestTracking,
     responseTracking,
-    markup,
-    communityModelReward,
-    billedPrice,
     errorTracking,
 }: TrackingEventInput): InsertGenerationEvent {
     return {
@@ -1034,12 +1030,12 @@ function createTrackingEvent({
         ...usageToEventParams(responseTracking.usage),
 
         totalCost: responseTracking.cost?.totalCost || 0,
-        totalPrice: billedPrice,
+        // Money fields: zero until Enter's ledger fills them at settlement.
+        totalPrice: 0,
         devPrice: responseTracking.price?.totalPrice || 0,
-        markupRate: markup?.markupRate ?? 0,
-        communityModelRewardUserId: communityModelReward?.userId,
-        communityModelRewardRate: communityModelReward?.rewardRate ?? 0,
-        communityModelRewardAmount: communityModelReward?.credit ?? 0,
+        markupRate: 0,
+        communityModelRewardRate: 0,
+        communityModelRewardAmount: 0,
 
         ...responseTracking.contentFilterResults,
         ...errorTracking,
@@ -1274,16 +1270,16 @@ type ReferrerData = {
 };
 
 function extractReferrerHeader(request: HonoRequest): ReferrerData {
-    const referrerUrl = request.header("referer") || undefined;
-    const referrerDomain = referrerUrl && safeUrl(referrerUrl)?.hostname;
-    return { referrerUrl, referrerDomain };
-}
-
-function safeUrl(url: string): URL | null {
+    const referrer = request.header("referer") || undefined;
+    if (!referrer) return {};
     try {
-        return new URL(url);
+        const url = new URL(referrer);
+        return {
+            referrerUrl: redactCredentialQueryParams(url),
+            referrerDomain: url.hostname,
+        };
     } catch {
-        return null;
+        return {};
     }
 }
 

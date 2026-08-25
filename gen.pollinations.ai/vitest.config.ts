@@ -22,6 +22,7 @@ const genAliases = [
     "logger.ts",
     "middleware/auth.ts",
     "middleware/balance.ts",
+    "middleware/billing.ts",
     "middleware/generation-cache.ts",
     "middleware/generation-deduplication.ts",
     "middleware/logger.ts",
@@ -34,6 +35,7 @@ const genAliases = [
     "middleware/track.ts",
     "middleware/validator.ts",
     "routes/generation-executor.ts",
+    "routes/mcp.ts",
     "schemas/embeddings.ts",
     "schemas/image.ts",
     "schemas/model3d.ts",
@@ -134,6 +136,12 @@ export default defineWorkersConfig(async ({ mode }) => {
                                 }
                                 return new Response("enter test stub");
                             },
+                            // Replaced per test file by the real in-process
+                            // gateway (test/setup/apply-migrations.ts).
+                            ENTER_GATEWAY: async () =>
+                                new Response("enter gateway test stub", {
+                                    status: 500,
+                                }),
                             POLLINATIONS_MCP: async (request: Request) => {
                                 if (
                                     !request.headers.has("authorization") ||

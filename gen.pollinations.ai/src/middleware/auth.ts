@@ -2,9 +2,7 @@ import type { AgentRunClaims } from "@shared/auth/agent-run-token.ts";
 import {
     type AuthenticatedApiKey,
     type AuthUser,
-    authenticateApiKeyRequest,
-    BannedAccountError,
-    StagingAccessDeniedError,
+    extractApiKey,
 } from "@shared/auth/api-key.ts";
 import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
 import type { Context } from "hono";
@@ -85,27 +83,37 @@ function installAuth(
     });
 }
 
+/**
+ * Authenticates the caller through Enter's ServiceGateway. Enter owns the
+ * credential checks (key validity, bans, staging allowlists, agent run
+ * tokens); gen only keeps the raw token in memory for the request so the
+ * generation can later be authorized under it. It is never persisted: the
+ * durable job snapshot strips it (see createAuthSnapshot).
+ */
 export const auth = () =>
     createMiddleware<AuthEnv>(async (c, next) => {
-        let authResult: Awaited<ReturnType<typeof authenticateApiKeyRequest>>;
-        try {
-            authResult = await authenticateApiKeyRequest({
-                request: c.req.raw,
-                env: c.env,
-                ctx: c.executionCtx,
-            });
-        } catch (error) {
-            if (
-                error instanceof BannedAccountError ||
-                error instanceof StagingAccessDeniedError
-            ) {
-                throw new HTTPException(403, {
-                    message: error.message,
-                });
-            }
-            throw error;
+        const token = extractApiKey(c.req.raw);
+        if (!token) {
+            installAuth(c, {});
+            return next();
         }
-        installAuth(c, authResult || {});
+        const introspection = await c.env.ENTER_GATEWAY.introspect(token);
+        if (!introspection.valid) {
+            // An unknown credential is an anonymous caller (routes decide
+            // whether to require a user); a refused one is refused outright.
+            if (introspection.denial.status === 401) {
+                installAuth(c, {});
+                return next();
+            }
+            throw new HTTPException(introspection.denial.status, {
+                message: introspection.denial.message,
+            });
+        }
+        installAuth(c, {
+            user: introspection.user as AuthUser,
+            apiKey: { ...introspection.apiKey, rawKey: token },
+            agentRun: introspection.agentRun,
+        });
         await next();
     });
 

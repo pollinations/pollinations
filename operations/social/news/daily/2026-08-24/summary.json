@@ -1,0 +1,75 @@
+{
+  "date": "2026-08-24",
+  "period_start": "2026-08-24",
+  "period_end": "2026-08-24",
+  "title": "Managed agents get an MCP registry, proxy, and transcription",
+  "summary": "A systems day: MCP agents gained transcription and discovery, Kontext returned to service, and generation accounting got much harder to confuse.\n\nManaged agents can now discover registered MCP servers through a Pollinations-hosted registry and authenticated Gen proxy, starting with the existing Pollinations MCP. The MCP package also gained audio transcription from public HTTPS URLs, while the API docs now include a complete Endpoint Agent POST example. Agents have acquired ears and a more organized tool shed.\n\nAzure Flux Kontext generation and single-reference editing now use Azure's supported Black Forest Labs route again. Its adapter also preserves useful upstream diagnostics, identifies content-policy blocks cleanly, and avoids declaring the model unhealthy because one request had a bad day.\n\nGeneration attempts across text, images, video, audio, embeddings, and 3D now share one ordered fallback trace, so the provider that actually completes a request gets the right attribution. API-key budgets reserve capacity atomically across HTTP, audio, proxy, and realtime routes, while empty upstream text streams return into the retry loop instead of masquerading as successful responses.",
+  "pr_count": 16,
+  "prs": [
+    {
+      "number": 12921,
+      "date": "2026-08-24"
+    },
+    {
+      "number": 13086,
+      "date": "2026-08-24"
+    },
+    {
+      "number": 13166,
+      "date": "2026-08-24"
+    },
+    {
+      "number": 13428,
+      "date": "2026-08-24"
+    },
+    {
+      "number": 13672,
+      "date": "2026-08-24"
+    },
+    {
+      "number": 13803,
+      "date": "2026-08-24"
+    },
+    {
+      "number": 13804,
+      "date": "2026-08-24"
+    },
+    {
+      "number": 13809,
+      "date": "2026-08-24"
+    },
+    {
+      "number": 13814,
+      "date": "2026-08-24"
+    },
+    {
+      "number": 13816,
+      "date": "2026-08-24"
+    },
+    {
+      "number": 13831,
+      "date": "2026-08-24"
+    },
+    {
+      "number": 13834,
+      "date": "2026-08-24"
+    },
+    {
+      "number": 13836,
+      "date": "2026-08-24"
+    },
+    {
+      "number": 13838,
+      "date": "2026-08-24"
+    },
+    {
+      "number": 13851,
+      "date": "2026-08-24"
+    },
+    {
+      "number": 13860,
+      "date": "2026-08-24"
+    }
+  ],
+  "generated_at": "2026-08-25T06:15:25.064469+00:00"
+}

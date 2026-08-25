@@ -166,6 +166,8 @@ TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events
 STRIPE_MODE = "sandbox"
 STRIPE_SUCCESS_URL = "https://staging.enter.pollinations.ai"
 BETTER_AUTH_URL = "https://staging.enter.pollinations.ai"
+GITHUB_CONNECT_APP_CLIENT_ID = "Iv23liz0okjNLuW7jeMM"
+GITHUB_CONNECT_APP_SLUG = "pollinations-connect-staging"
 AGENT_RUNTIME_BASE_URL = "https://staging.enter.myceli.ai/api/agent-runtime/v1"
 # Staging gen gateway used by the shared prompt-agent runtime.
 GEN_BASE_URL = "https://staging.gen.pollinations.ai"
@@ -234,6 +236,9 @@ LOG_FORMAT = "text"
 D1_EXPORT_TOKEN_SHA256 = "93b05a64761af544d325ac158513bef41959e8777a7375981ec7ae41f84cb05d"
 GITHUB_CLIENT_ID = "test_github_client_id"
 GITHUB_CLIENT_SECRET = "test_github_client_secret"
+GITHUB_CONNECT_APP_CLIENT_ID = "test_github_connect_client_id"
+GITHUB_CONNECT_APP_CLIENT_SECRET = "test_github_connect_client_secret"
+GITHUB_CONNECT_APP_SLUG = "pollinations-connect-test"
 BETTER_AUTH_SECRET = "not-a-secret-workers-test-only"
 # isInternalRequest() rejects tokens shorter than 32 characters, so a shorter
 # placeholder 401s every internal route instead of exercising it.

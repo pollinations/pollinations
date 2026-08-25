@@ -101,7 +101,25 @@ export const ImageParamsSchema = z
                 "adaptive",
             ])
             .optional(),
-        audio: sanitizedBoolean.catch(true), // generateAudio defaults to true
+        audio: sanitizedBoolean.catch(true), // generateAudio defaults to true,
+        reference_image: z
+            .union([z.array(z.string()), z.string(), z.null(), z.undefined()])
+            .transform((value) => {
+                if (!value) return [];
+                if (Array.isArray(value)) return value;
+                return value.includes("|")
+                    ? value.split("|")
+                    : value.split(",");
+            })
+            .catch([]),
+        reference_video: z
+            .union([z.string(), z.null(), z.undefined()])
+            .transform((value) => value || undefined)
+            .optional(),
+        reference_audio: z
+            .union([z.string(), z.null(), z.undefined()])
+            .transform((value) => value || undefined)
+            .optional(),
     })
     .superRefine((data, ctx) => {
         if (data.resolution) {
@@ -157,6 +175,36 @@ export const ImageParamsSchema = z
                 path: ["quality"],
                 message:
                     "grok-imagine-image-2.0 supports low or medium quality.",
+            });
+        }
+        // Reference media validation
+        const refImageModels = new Set(["seedance-2.5"]);
+        if (
+            data.reference_image &&
+            data.reference_image.length > 0 &&
+            !refImageModels.has(data.model)
+        ) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["reference_image"],
+                message:
+                    "reference_image is only supported by seedance-2.5. Use the image parameter for start/end frame control on other models.",
+            });
+        }
+        if (data.reference_video) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["reference_video"],
+                message:
+                    "reference_video is reserved for future video-to-video models and is not yet supported.",
+            });
+        }
+        if (data.reference_audio) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["reference_audio"],
+                message:
+                    "reference_audio is reserved for future audio-to-video models and is not yet supported.",
             });
         }
     })

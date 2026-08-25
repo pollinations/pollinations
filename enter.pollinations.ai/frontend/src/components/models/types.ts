@@ -68,6 +68,14 @@ export type ModelPriceAdjustment = {
 export type ModelPrice = {
     name: string;
     type: ModelCategory;
+    /** Maximum prompt + completion window in tokens, when advertised. */
+    contextLength?: number;
+    /** Advertised video duration limits in seconds. */
+    duration?: {
+        min?: number;
+        max?: number;
+        default?: number;
+    };
     community?: boolean;
     agent?: boolean;
     baseModel?: string;

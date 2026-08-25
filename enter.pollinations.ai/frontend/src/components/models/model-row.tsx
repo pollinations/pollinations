@@ -41,6 +41,35 @@ import {
 } from "./price-badge.tsx";
 import type { ModelPrice } from "./types.ts";
 
+function stripTrailingZeros(value: number): string {
+    return String(Number(value.toFixed(2)));
+}
+
+function formatContextLimit(contextLength: number): string {
+    if (contextLength >= 1_000_000)
+        return `${stripTrailingZeros(contextLength / 1_000_000)}M`;
+    if (contextLength >= 1_000)
+        return `${stripTrailingZeros(contextLength / 1_000)}K`;
+    return String(contextLength);
+}
+
+function formatDurationLimit(seconds: number): string {
+    return `${stripTrailingZeros(seconds)}s`;
+}
+
+function getVideoDurationLabel(
+    duration: NonNullable<ModelPrice["duration"]>,
+): string | null {
+    const hasRange =
+        duration.min != null &&
+        duration.max != null &&
+        duration.min !== duration.max;
+    if (hasRange)
+        return `${formatDurationLimit(duration.min as number)}–${formatDurationLimit(duration.max as number)}`;
+    const fixed = duration.min ?? duration.max ?? duration.default;
+    return fixed != null ? formatDurationLimit(fixed) : null;
+}
+
 type ModelRowProps = {
     model: ModelPrice;
 };
@@ -276,6 +305,24 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                         )}
                     </div>
                     <ModelId name={model.name} />
+                    {(model.contextLength != null || model.duration) && (
+                        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-theme-text-muted">
+                            {model.contextLength != null && (
+                                <span>
+                                    {formatContextLimit(model.contextLength)}{" "}
+                                    context
+                                </span>
+                            )}
+                            {(() => {
+                                const durationLabel = model.duration
+                                    ? getVideoDurationLabel(model.duration)
+                                    : null;
+                                return durationLabel ? (
+                                    <span>{durationLabel}</span>
+                                ) : null;
+                            })()}
+                        </div>
+                    )}
                     {model.brandUrl && model.brand && (
                         <a
                             href={model.brandUrl}

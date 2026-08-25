@@ -526,16 +526,11 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["720p", "480p"],
         title: "Seedance 2.0 Mini",
         description:
-            "Lower-cost 4–10 second video with synchronized sound, first/last-frame control, or reference images at 480p or 720p",
+            "Lower-cost 4–10 second video with synchronized sound and first/last-frame control at 480p or 720p",
         inputModalities: ["text", "image"],
         outputModalities: ["video", "audio"],
-        videoCapabilities: [
-            "start_frame",
-            "end_frame",
-            "audio_output",
-            "reference_images",
-        ],
-        maxReferenceImages: 12, // Up to 12 reference images (conservative cap without verified schema access).
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2, // Video keyframe slots: start + end.
         minDuration: 4,
         maxDuration: 10,
         defaultDuration: 5,
@@ -555,16 +550,11 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["480p"],
         title: "Seedance 2.0 Fast",
         description:
-            "Short 4–5 second video with synchronized sound, first/last-frame control, or reference images at 480p",
+            "Short 4–5 second video with synchronized sound and first/last-frame control at 480p",
         inputModalities: ["text", "image"],
         outputModalities: ["video", "audio"],
-        videoCapabilities: [
-            "start_frame",
-            "end_frame",
-            "audio_output",
-            "reference_images",
-        ],
-        maxReferenceImages: 12, // Up to 12 reference images (conservative cap without verified schema access).
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2, // Video keyframe slots: start + end.
         minDuration: 4,
         maxDuration: 5,
         defaultDuration: 5,

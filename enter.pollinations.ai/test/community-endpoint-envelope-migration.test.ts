@@ -202,7 +202,6 @@ describe("community endpoint envelope migration", () => {
                     completionReasoningPrice: 0,
                     completionAudioPrice: 0,
                     completionImagePrice: 0,
-                    completionVideoPrice: 0,
                 },
             },
         });

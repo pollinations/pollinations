@@ -1,0 +1,34 @@
+{
+  "pr_number": 13866,
+  "title": "feat(sdk): add accountQuests() method",
+  "author": "housir2001",
+  "url": "https://github.com/pollinations/pollinations/pull/13866",
+  "merged_at": "2026-08-25T08:50:00Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n- Adds `Pollinations.accountQuests()` to the JS SDK, fetching the quest catalog with the authenticated account's status from `GET /account/quests`.\n- Follows the existing `accountBalance()`/`validateKey()` pattern (uses the internal `getJson<T>()` helper, no query params needed).\n- New types (`AccountQuest`, `AccountQuestReward`, `AccountQuestsResponse`) mirror the Zod schemas defined server-side in `enter.pollinations.ai/src/routes/account.ts` (`accountQuestSchema`, `accountQuestRewardSchema`, `accountQuestsResponseSchema`), and are exported from `index.ts`.\n- No server-side changes.\n\n## Test plan\n- [x] `bunx tsc --noEmit` (packages/sdk) — clean\n- [x] `bunx vitest run src/client.test.ts` — 22/22 passing (1 new test for `accountQuests()`)\n- [x] `bunx biome check` on changed files — clean\n\nCloses #13770",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Quests, now in your toolkit",
+    "blurb": "The JS SDK can now fetch your quest catalog with your account’s progress already tucked inside. Less manual API plumbing; more pollen for useful things.",
+    "summary": "Added `Pollinations.accountQuests()` to the JavaScript SDK, exposing authenticated `GET /account/quests` results plus exported `AccountQuest`, `AccountQuestReward`, and `AccountQuestsResponse` types.",
+    "impact": "JavaScript developers can now build quest-aware apps with account-specific completion and reward status through the SDK instead of wiring the account quests endpoint and response types themselves.",
+    "keywords": [
+      "sdk",
+      "javascript",
+      "quests",
+      "account",
+      "pollen",
+      "api"
+    ],
+    "visual_concept": "Polli, wearing a tiny explorer hat and carrying a clipboard, checks a cozy quest board beside a retro terminal showing a neat quest catalog. Small code-plants grow from pots around the desk, with quest badges and Pollen-like glowing seeds representing account-specific rewards and progress.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny explorer hat, checking a quest board beside a retro computer displaying a quest catalog and small reward badges; code-plants and pixel flowers sprout from lime green (#ecf874) pots around her. Cozy 8-bit pixel art aesthetic, soft lime green and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley, subtle pixel-font text: 'QUESTS'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-25/PR-13866.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny explorer hat, checking a quest board beside a retro computer displaying a quest catalog and small reward badges; code-plants and pixel flowers sprout from lime green (#ecf874) pots around her. Cozy 8-bit pixel art aesthetic, soft lime green and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley, subtle pixel-font text: 'QUESTS'."
+  },
+  "generated_at": "2026-08-25T08:51:07.588264+00:00"
+}

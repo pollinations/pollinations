@@ -1,0 +1,34 @@
+{
+  "pr_number": 13852,
+  "title": "fix(account): send no-store cache headers on all account routes",
+  "author": "TRDEFI",
+  "url": "https://github.com/pollinations/pollinations/pull/13852",
+  "merged_at": "2026-08-25T09:52:13Z",
+  "labels": [],
+  "pr_body_excerpt": "﻿Closes #13771\n\nAdds one middleware on `accountRoutes` (right after the auth middleware) that sets `Cache-Control: private, no-store, max-age=0` and `Pragma: no-cache` on every response, including the nested `/agents` and `/my-models` routes. Headers are set after `await next()` so nothing a handler does can skip the policy.\n\nAlso drops the per-handler `Cache-Control` line in the `/keys` list handler, since the router-level middleware now covers it.\n\nA focused test covers one top-level response (`/account/profile`) and one nested response (`/account/agents`) for both headers.\r\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The account pages forget",
+    "blurb": "Account routes now carry a firm little reminder not to linger in browser caches. Polli put the privacy labels on every drawer, including the nested ones.",
+    "summary": "Added router-level `Cache-Control: private, no-store, max-age=0` and `Pragma: no-cache` headers to every authenticated account response, including nested `/account/agents` and `/account/my-models` routes.",
+    "impact": "Account profile, agent, model, and key responses now consistently avoid browser or intermediary caching, with the policy applied after handlers complete so individual routes cannot bypass it.",
+    "keywords": [
+      "account",
+      "cache-control",
+      "privacy",
+      "authentication",
+      "headers",
+      "agents"
+    ],
+    "visual_concept": "Depict account data as cozy labeled filing drawers beside a retro terminal, each stamped with a clear pixel-art “NO STORE” privacy tag. Polli, wearing a tiny archivist visor, carefully seals the drawers while a few code-plants grow nearby; the metaphor is that every account route, including nested drawers, receives the same protective cache policy.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with black antennae, oval eyes, pink rectangular blush, a happy smile, and rounded translucent light-blue wings, wearing a tiny archivist visor as she stamps glowing account-data drawers “NO STORE”; a retro terminal and nested little drawers sit among flowering code-plants, with lime green (#ecf874) prominent against warm cream, mint, lavender, and peach pastels. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with dark purple (#110518) pixel-font text and a softly glowing private garden atmosphere."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-25/PR-13852.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with black antennae, oval eyes, pink rectangular blush, a happy smile, and rounded translucent light-blue wings, wearing a tiny archivist visor as she stamps glowing account-data drawers “NO STORE”; a retro terminal and nested little drawers sit among flowering code-plants, with lime green (#ecf874) prominent against warm cream, mint, lavender, and peach pastels. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with dark purple (#110518) pixel-font text and a softly glowing private garden atmosphere."
+  },
+  "generated_at": "2026-08-25T09:53:11.106432+00:00"
+}

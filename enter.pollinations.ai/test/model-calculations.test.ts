@@ -47,3 +47,34 @@ describe("model per-pollen calculations", () => {
         expect(calculatePerPollen(freeModel)).toBe("∞");
     });
 });
+
+describe("model limit fields", () => {
+    it("maps context_length from the catalog to contextLength on ModelPrice", () => {
+        const [m] = getModelPricesFromCatalog([
+            {
+                name: "text-model",
+                category: "text",
+                context_length: 128000,
+                pricing: { currency: "pollen", promptTextTokens: "0.000001" },
+            },
+        ]);
+        expect(m.contextLength).toBe(128000);
+    });
+
+    it("maps video duration fields from the catalog to ModelPrice", () => {
+        const [m] = getModelPricesFromCatalog([
+            {
+                name: "video-model",
+                category: "video",
+                min_duration: 4,
+                max_duration: 8,
+                pricing: {
+                    currency: "pollen",
+                    completionVideoSeconds: "0.05",
+                },
+            },
+        ]);
+        expect(m.minDuration).toBe(4);
+        expect(m.maxDuration).toBe(8);
+    });
+});

@@ -55,6 +55,18 @@ export const ModelId: FC<ModelIdProps> = ({ name }) => (
     </CopyButton>
 );
 
+function formatContextK(n: number): string {
+    if (n >= 1_000_000) {
+        const m = n / 1_000_000;
+        return `${Number.isInteger(m) ? m : m.toFixed(1)}M`;
+    }
+    return `${Math.round(n / 1000)}k`;
+}
+
+function formatDurationRange(min: number, max: number): string {
+    return min === max ? `${min}s` : `${min}–${max}s`;
+}
+
 export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const modelDisplayName = getModelDisplayName(model);
     const modelDescription = getModelDescriptionWithoutName(model);
@@ -180,45 +192,95 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                         <ModelId name={model.name} />
                     </div>
                     {(inputModalities.length > 0 ||
-                        capabilities.length > 0) && (
+                        capabilities.length > 0 ||
+                        model.contextLength != null ||
+                        (model.type === "video" &&
+                            model.minDuration != null &&
+                            model.maxDuration != null)) && (
                         <div className="flex min-w-0 flex-wrap items-center gap-2">
-                            <div className="inline-flex items-center gap-2.5 text-theme-text-muted">
-                                {inputModalities.length > 0 && (
-                                    <Tooltip content={modalityLabel}>
-                                        <span className="inline-flex items-center gap-2">
-                                            {inputModalities.map((key) => {
-                                                const Icon = MODALITY_ICON[key];
-                                                return (
-                                                    <Icon
-                                                        key={key}
-                                                        className="h-4 w-4"
-                                                    />
-                                                );
-                                            })}
-                                        </span>
-                                    </Tooltip>
-                                )}
-                                {inputModalities.length > 0 &&
-                                    capabilities.length > 0 && (
-                                        <span className="h-3.5 w-px bg-current opacity-30" />
+                            {(inputModalities.length > 0 ||
+                                capabilities.length > 0) && (
+                                <div className="inline-flex items-center gap-2.5 text-theme-text-muted">
+                                    {inputModalities.length > 0 && (
+                                        <Tooltip content={modalityLabel}>
+                                            <span className="inline-flex items-center gap-2">
+                                                {inputModalities.map((key) => {
+                                                    const Icon =
+                                                        MODALITY_ICON[key];
+                                                    return (
+                                                        <Icon
+                                                            key={key}
+                                                            className="h-4 w-4"
+                                                        />
+                                                    );
+                                                })}
+                                            </span>
+                                        </Tooltip>
                                     )}
-                                {capabilities.length > 0 && (
-                                    <Tooltip content={capabilityLabel}>
-                                        <span className="inline-flex items-center gap-2 text-theme-text-soft">
-                                            {capabilities.map((key) => {
-                                                const Icon =
-                                                    CAPABILITY_ICON[key];
-                                                return (
-                                                    <Icon
-                                                        key={key}
-                                                        className="h-4 w-4"
-                                                    />
-                                                );
-                                            })}
+                                    {inputModalities.length > 0 &&
+                                        capabilities.length > 0 && (
+                                            <span className="h-3.5 w-px bg-current opacity-30" />
+                                        )}
+                                    {capabilities.length > 0 && (
+                                        <Tooltip content={capabilityLabel}>
+                                            <span className="inline-flex items-center gap-2 text-theme-text-soft">
+                                                {capabilities.map((key) => {
+                                                    const Icon =
+                                                        CAPABILITY_ICON[key];
+                                                    return (
+                                                        <Icon
+                                                            key={key}
+                                                            className="h-4 w-4"
+                                                        />
+                                                    );
+                                                })}
+                                            </span>
+                                        </Tooltip>
+                                    )}
+                                </div>
+                            )}
+                            {model.contextLength != null && (
+                                <Tooltip
+                                    content={
+                                        <span>
+                                            <strong className="font-semibold text-theme-text-strong">
+                                                Context window:
+                                            </strong>{" "}
+                                            {model.contextLength.toLocaleString()}{" "}
+                                            tokens
+                                        </span>
+                                    }
+                                >
+                                    <span className="whitespace-nowrap text-xs tabular-nums text-theme-text-muted">
+                                        {formatContextK(model.contextLength)}{" "}
+                                        ctx
+                                    </span>
+                                </Tooltip>
+                            )}
+                            {model.type === "video" &&
+                                model.minDuration != null &&
+                                model.maxDuration != null && (
+                                    <Tooltip
+                                        content={
+                                            <span>
+                                                <strong className="font-semibold text-theme-text-strong">
+                                                    Duration:
+                                                </strong>{" "}
+                                                {formatDurationRange(
+                                                    model.minDuration,
+                                                    model.maxDuration,
+                                                )}
+                                            </span>
+                                        }
+                                    >
+                                        <span className="whitespace-nowrap text-xs tabular-nums text-theme-text-muted">
+                                            {formatDurationRange(
+                                                model.minDuration,
+                                                model.maxDuration,
+                                            )}
                                         </span>
                                     </Tooltip>
                                 )}
-                            </div>
                         </div>
                     )}
                 </div>

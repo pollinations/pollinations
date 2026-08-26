@@ -34,7 +34,7 @@ import {
     fetchModelCatalog,
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
-import { getModelDisplayName } from "./model-info.ts";
+import { matchesParsedQuery, parseModelQuery } from "./model-query.ts";
 import type { ModelScope, ModelSort } from "./model-search.ts";
 import { sortModels } from "./model-sort.ts";
 import {
@@ -116,11 +116,9 @@ const SEARCH_LABELS: Record<SectionType, string> = {
     agent: "agent",
 };
 
-function matchesQuery(model: ModelPrice, query: string): boolean {
-    if (!query) return true;
-    const displayName = getModelDisplayName(model) ?? "";
-    const haystack = `${displayName} ${model.brand ?? ""}`.toLowerCase();
-    return haystack.includes(query);
+function matchesQuery(model: ModelPrice, rawQuery: string): boolean {
+    if (!rawQuery) return true;
+    return matchesParsedQuery(model, parseModelQuery(rawQuery));
 }
 
 function categorizeModels(
@@ -419,7 +417,8 @@ export const Models: FC = () => {
                                     pushSearch(normalizedSearch);
                                 }}
                                 placeholder={`Search ${searchTarget}…`}
-                                aria-label={`Search ${searchTarget}`}
+                                aria-label={`Search ${searchTarget}. Filters: access:, owner:, id:, type:, capability:`}
+                                title="Filters: access:paid access:quest access:free owner:<login> id:<model-id> type:<category> capability:<capability>"
                                 className="w-full pl-9"
                             />
                         </div>

@@ -1,0 +1,34 @@
+{
+  "pr_number": 14013,
+  "title": "feat: add Exa Search MCP",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14013",
+  "merged_at": "2026-08-26T21:46:16Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds a private, stateless Exa MCP Worker with `web_search_exa` and `web_fetch_exa`.\n- Registers Exa in the shared MCP catalog for Gen and prompt agents.\n- Strips caller credentials and bills Exa-reported request costs through Gen usage receipts.\n- Adds Worker, proxy billing, dashboard, and deployment coverage.\n- Deploys the SOPS-managed Worker secret through guarded CI.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive found a search engine",
+    "blurb": "Exa Search has moved into the MCP garden. Gen and prompt agents can now search the web or fetch a page, while the receipts do the boring accounting.",
+    "summary": "Added a private stateless Exa MCP Worker with web_search_exa and web_fetch_exa, registered it in the shared MCP catalog for Gen and prompt agents, and routes Exa-reported request costs through Gen usage receipts.",
+    "impact": "Agents using the shared MCP catalog can now search and retrieve web content through Exa without passing caller credentials downstream, with usage billed from Exa's reported request costs.",
+    "keywords": [
+      "mcp",
+      "exa",
+      "web search",
+      "agents",
+      "gen",
+      "billing"
+    ],
+    "visual_concept": "Polli helps a curious CRT-monitor robot search a cozy web-shaped garden: an Exa search terminal sprouts useful page-shaped leaves and map-like results, while a tiny receipt printer produces neat usage slips. The scene represents private agent web search, page fetching, protected credentials, and metered request receipts.",
+    "image_prompt": "In a cozy garden hackerspace, Polli—the cute pixel art bee mascot with a yellow body, dark brown stripes, black antennae and oval eyes, bright pink rectangular cheek blushes, a happy smile, and small rounded translucent light-blue wings—wears tiny librarian glasses and helps a chunky CRT-monitor robot search a lime green (#ecf874) terminal labeled \"EXA\"; page-shaped leaves and code-plants grow from the results while a small receipt printer makes tidy slips. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-26/PR-14013.jpg",
+    "prompt": "In a cozy garden hackerspace, Polli—the cute pixel art bee mascot with a yellow body, dark brown stripes, black antennae and oval eyes, bright pink rectangular cheek blushes, a happy smile, and small rounded translucent light-blue wings—wears tiny librarian glasses and helps a chunky CRT-monitor robot search a lime green (#ecf874) terminal labeled \"EXA\"; page-shaped leaves and code-plants grow from the results while a small receipt printer makes tidy slips. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-08-26T21:47:35.527198+00:00"
+}

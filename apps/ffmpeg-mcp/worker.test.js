@@ -176,10 +176,11 @@ test("accepts public HTTPS media and a single supplied input", async () => {
         arguments: {
             source: publicSource,
             args: [],
-            outputExtension: "mp4",
+            outputExtension: "mkv",
         },
     });
     assert.equal(success.isError, undefined);
+    assert.equal(calls.upload[0].input.contentType, "application/octet-stream");
 
     const extraInput = await client.callTool({
         name: "runFfmpeg",

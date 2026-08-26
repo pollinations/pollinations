@@ -7,7 +7,6 @@ import {
     FFMPEG_COST_PER_SECOND,
     FFMPEG_MAX_MEDIA_BYTES,
     FFMPEG_MAX_RUN_MS,
-    FFMPEG_OUTPUT_EXTENSIONS,
 } from "./ffmpeg.js";
 
 const MAX_SOURCE_REDIRECTS = 5;
@@ -116,7 +115,9 @@ async function runTool(params, env, dependencies, reportUsage) {
         if (!result.ok) {
             throw new ToolFailure(422, result.stderr || "FFmpeg failed");
         }
-        const contentType = MIME_TYPES[params.outputExtension];
+        const contentType =
+            MIME_TYPES[params.outputExtension.toLowerCase()] ??
+            "application/octet-stream";
         const mediaBody = dependencies.createFixedLengthStreamImpl(
             result.bytes,
         );
@@ -202,7 +203,15 @@ function buildServer(env, dependencies, reportUsage) {
                         (args) => !args.includes("-i"),
                         "omit -i; Pollinations supplies the input",
                     ),
-                outputExtension: z.enum(FFMPEG_OUTPUT_EXTENSIONS),
+                outputExtension: z
+                    .string()
+                    .regex(
+                        /^[a-zA-Z0-9]{1,16}$/,
+                        "outputExtension must contain only letters and numbers",
+                    )
+                    .describe(
+                        "Output filename extension without a dot. Any single-file format supported by FFmpeg is accepted.",
+                    ),
             }),
         },
         (params) => runTool(params, env, dependencies, reportUsage),

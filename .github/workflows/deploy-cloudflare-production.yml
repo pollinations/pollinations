@@ -27,6 +27,10 @@ on:
           - gen
           - media
         default: all
+      sync_discord_secrets:
+        description: 'Push only Discord production secrets'
+        type: boolean
+        default: false
 
 concurrency:
   group: pollinations-cloudflare-production
@@ -193,6 +197,23 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
         run: npm run deploy:production --workspace pollinations-enter
+
+      - name: Set up SOPS for Discord secrets
+        if: github.event_name == 'workflow_dispatch' && inputs.sync_discord_secrets == true && (inputs.service == 'all' || inputs.service == 'enter')
+        uses: nhedger/setup-sops@v2
+
+      - name: Push Discord production secrets
+        if: github.event_name == 'workflow_dispatch' && inputs.sync_discord_secrets == true && (inputs.service == 'all' || inputs.service == 'enter')
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
+        run: |
+          set -euo pipefail
+          secrets_file="$RUNNER_TEMP/discord-secrets.json"
+          trap 'rm -f "$secrets_file"' EXIT
+          sops -d enter.pollinations.ai/secrets/prod.vars.json | jq '. {DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, DISCORD_BOT_TOKEN}' > "$secrets_file"
+          test "$(jq 'length' "$secrets_file")" -eq 3
+          npx wrangler secret bulk "$secrets_file" --env production
 
   deploy-gen:
     needs: [changes, migrate, deploy-mcp-apps]

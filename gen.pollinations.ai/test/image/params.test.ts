@@ -156,3 +156,44 @@ describe("ImageParamsSchema", () => {
         }
     });
 });
+
+describe("reference media params", () => {
+    it("parses pipe-separated reference media on seedance-2.0", () => {
+        const result = ImageParamsSchema.parse({
+            model: "seedance-2.0",
+            reference_images: "https://a.com/1.png|https://a.com/2.png",
+            reference_audios: ["https://a.com/voice.mp3"],
+        });
+
+        expect(result.reference_images).toEqual([
+            "https://a.com/1.png",
+            "https://a.com/2.png",
+        ]);
+        expect(result.reference_videos).toEqual([]);
+        expect(result.reference_audios).toEqual(["https://a.com/voice.mp3"]);
+    });
+
+    it("defaults reference media to empty lists when absent", () => {
+        const result = ImageParamsSchema.parse({ model: "flux" });
+
+        expect(result.reference_images).toEqual([]);
+        expect(result.reference_videos).toEqual([]);
+        expect(result.reference_audios).toEqual([]);
+    });
+
+    it("rejects reference media on models without the inputs", () => {
+        const result = ImageParamsSchema.safeParse({
+            model: "flux",
+            reference_images: ["https://a.com/ref.png"],
+        });
+
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error.issues[0]).toMatchObject({
+                path: ["reference_images"],
+                message:
+                    "reference_images is only supported by seedance-2.0 and seedance-2.5.",
+            });
+        }
+    });
+});

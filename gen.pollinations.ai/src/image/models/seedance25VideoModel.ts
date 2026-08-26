@@ -6,6 +6,10 @@ import { closestRatioLogSpace } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { toDataUri } from "../utils/imageDownload.ts";
 import {
+    type ResolvedReferenceMedia,
+    resolveReferenceMedia,
+} from "../utils/referenceMedia.ts";
+import {
     ReplicateError,
     runReplicatePrediction,
     toReplicateHttpError,
@@ -27,6 +31,9 @@ interface Seedance25Input {
     seed?: number;
     image?: string;
     last_frame_image?: string;
+    reference_images?: string[];
+    reference_videos?: string[];
+    reference_audios?: string[];
 }
 
 function resolveAspectRatio(safeParams: ImageParams): Seedance25AspectRatio {
@@ -72,6 +79,18 @@ export async function callSeedance25API(
 
     const images = safeParams.image ?? [];
 
+    const referenceMedia =
+        (safeParams.reference_images ?? []).length > 0 ||
+        (safeParams.reference_videos ?? []).length > 0 ||
+        (safeParams.reference_audios ?? []).length > 0
+            ? resolveReferenceMedia(safeParams, {
+                  title: "Seedance 2.5",
+                  maxImages: 30,
+                  maxVideos: 10,
+                  maxAudios: 10,
+              })
+            : undefined;
+
     const input: Seedance25Input = {
         prompt,
         duration: DURATION,
@@ -84,6 +103,12 @@ export async function callSeedance25API(
     }
     if (images[0]) input.image = await toDataUri(images[0]);
     if (images[1]) input.last_frame_image = await toDataUri(images[1]);
+    if (referenceMedia?.images.length)
+        input.reference_images = referenceMedia.images;
+    if (referenceMedia?.videos.length)
+        input.reference_videos = referenceMedia.videos;
+    if (referenceMedia?.audios.length)
+        input.reference_audios = referenceMedia.audios;
 
     let videoUrl: string;
     let actualDurationSeconds: number | undefined;

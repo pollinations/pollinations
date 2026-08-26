@@ -51,6 +51,29 @@ function adjustImageSizeForModel(
     return { width: sanitizedWidth, height: sanitizedHeight };
 }
 
+// Reference-media inputs ([QUEST] #13901): provider-defined on the Seedance
+// video families. Shape mirrors the `image` parameter; per-model support
+// gating happens here, caps and frame-combination rules live in the adapters.
+const REFERENCE_MEDIA_KEYS = [
+    "reference_images",
+    "reference_videos",
+    "reference_audios",
+] as const;
+
+const REFERENCE_MEDIA_MODELS = new Set(["seedance-2.0", "seedance-2.5"]);
+
+const referenceMediaParam = () =>
+    z
+        .union([z.array(z.string()), z.string(), z.null(), z.undefined()])
+        .transform((value?: string[] | string | null) => {
+            if (!value) return [];
+            // Already an array (from POST JSON body)
+            if (Array.isArray(value)) return value;
+            // String: support both pipe (|) and comma (,) separators
+            return value.includes("|") ? value.split("|") : value.split(",");
+        })
+        .catch([]);
+
 export const ImageParamsSchema = z
     .object({
         width: sanitizedSideLength,
@@ -71,6 +94,9 @@ export const ImageParamsSchema = z
                     : value.split(",");
             })
             .catch([]),
+        reference_images: referenceMediaParam().optional(),
+        reference_videos: referenceMediaParam().optional(),
+        reference_audios: referenceMediaParam().optional(),
         transparent: sanitizedBoolean.catch(false),
         reasoning: z
             .union([z.string(), z.boolean()])
@@ -146,6 +172,17 @@ export const ImageParamsSchema = z
                     path: ["fps"],
                     message: "minimax-h3 outputs 24 FPS.",
                 });
+            }
+        }
+        if (!REFERENCE_MEDIA_MODELS.has(data.model)) {
+            for (const key of REFERENCE_MEDIA_KEYS) {
+                if (data[key]?.length) {
+                    ctx.addIssue({
+                        code: z.ZodIssueCode.custom,
+                        path: [key],
+                        message: `${key} is only supported by seedance-2.0 and seedance-2.5.`,
+                    });
+                }
             }
         }
         if (

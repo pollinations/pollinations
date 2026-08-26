@@ -24,6 +24,9 @@ export type PricingInput = {
     searchContextSize?: "low" | "high";
     hasDiarization?: boolean;
     hasPrompt?: boolean;
+    // Reference-video inputs move Replicate video models (e.g. Seedance) onto
+    // their paid "video_in" rate sheet.
+    hasReferenceVideo?: boolean;
 };
 
 export type CostVariantContext = {
@@ -72,6 +75,13 @@ export function longContextAtLeast(minPromptTokens: number) {
 export function matchResolution<const R extends string>(...resolutions: R[]) {
     return ({ input }: CostVariantContext): R | undefined =>
         resolutions.find((resolution) => resolution === input?.resolution);
+}
+
+// Selects a named rate sheet when the request carries a reference video,
+// which prices Replicate video models at their "video_in" tier.
+export function hasReferenceVideo<const V extends string>(variant: V) {
+    return ({ input }: CostVariantContext): V | undefined =>
+        input?.hasReferenceVideo ? variant : undefined;
 }
 
 // Pairs variant sheets with their selector so TypeScript checks that the

@@ -1,4 +1,8 @@
-import { defineCostVariants, matchResolution } from "./cost-variants";
+import {
+    defineCostVariants,
+    hasReferenceVideo,
+    matchResolution,
+} from "./cost-variants";
 import { IMAGE_FALLBACKS } from "./image-fallbacks";
 import { mergeFallbacks } from "./merge-fallbacks";
 import { perMillion } from "./price-helpers";
@@ -475,16 +479,40 @@ const IMAGE_BASE_SERVICES = {
         addedDate: new Date("2026-05-07").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // non_video_in tier @ 720p; see Economics' replicate connector guide
+        // non_video_in tier @ 720p; see Economics' replicate connector guide.
+        // A reference video input bills at Replicate's video_in tier ($0.22/s).
         cost: {
             completionVideoSeconds: 0.18,
         },
+        ...defineCostVariants(
+            {
+                video_in: {
+                    completionVideoSeconds: 0.22,
+                },
+            },
+            hasReferenceVideo("video_in"),
+            {
+                video_in: {
+                    label: "With reference video",
+                    description:
+                        "Applies when the request includes a reference video input.",
+                },
+            },
+            "720p",
+        ),
         title: "Seedance 2.0",
         description:
-            "720p video with natively synced sound, from text or images",
+            "720p video with natively synced sound, from text, frames, or multimodal references",
         inputModalities: ["text", "image"],
         outputModalities: ["video", "audio"],
-        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        videoCapabilities: [
+            "start_frame",
+            "end_frame",
+            "audio_output",
+            "reference_images",
+            "reference_videos",
+            "reference_audios",
+        ],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
         minDuration: 4,
         maxDuration: 15,
@@ -1032,13 +1060,36 @@ const IMAGE_BASE_SERVICES = {
                 "720p": {
                     completionVideoSeconds: 0.2312,
                 },
+                "480p_video_in": {
+                    completionVideoSeconds: 0.4304,
+                },
+                "720p_video_in": {
+                    completionVideoSeconds: 0.9676,
+                },
             },
-            matchResolution("720p"),
+            ({ input }) => {
+                if (input?.hasReferenceVideo) {
+                    return input.resolution === "720p"
+                        ? "720p_video_in"
+                        : "480p_video_in";
+                }
+                return input?.resolution === "720p" ? "720p" : undefined;
+            },
             {
                 "720p": {
                     label: "720p",
                     description:
                         "Applies when the requested video resolution is 720p.",
+                },
+                "480p_video_in": {
+                    label: "480p with reference video",
+                    description:
+                        "Applies when a reference video input is used at 480p.",
+                },
+                "720p_video_in": {
+                    label: "720p with reference video",
+                    description:
+                        "Applies when a reference video input is used at 720p.",
                 },
             },
             "480p",
@@ -1046,10 +1097,17 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["480p", "720p"],
         title: "Seedance 2.5",
         description:
-            "Four-second video with synchronized audio and first/last-frame control at 480p or 720p",
+            "Four-second video with synchronized audio, frame control, or multimodal references at 480p or 720p",
         inputModalities: ["text", "image"],
         outputModalities: ["video", "audio"],
-        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        videoCapabilities: [
+            "start_frame",
+            "end_frame",
+            "audio_output",
+            "reference_images",
+            "reference_videos",
+            "reference_audios",
+        ],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
         minDuration: 4,
         maxDuration: 4,

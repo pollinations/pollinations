@@ -2,8 +2,10 @@
  * ByteDance Seedance 2.0 family video generation via Replicate.
  *
  * The full model remains 720p locked. All three use the existing
- * safeParams.image convention for T2V/I2V/reference modes. We don't expose
- * reference_videos, which would trigger Replicate's "video_in" price tier.
+ * safeParams.image convention for T2V/I2V/frame modes. Reference media inputs
+ * are exposed on the full seedance-2.0 model, whose published upstream schema
+ * defines them; requests carrying a reference video bill at Replicate's
+ * video_in tier (see the registry cost variants).
  */
 
 import { HttpError } from "@shared/http-error.ts";
@@ -14,6 +16,10 @@ import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import type { ImageParams } from "../params.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { toDataUri } from "../utils/imageDownload.ts";
+import {
+    type ResolvedReferenceMedia,
+    resolveReferenceMedia,
+} from "../utils/referenceMedia.ts";
 import {
     ReplicateError,
     runReplicatePrediction,
@@ -75,6 +81,9 @@ interface SeedanceV2Input {
     seed?: number;
     image?: string;
     last_frame_image?: string;
+    reference_images?: string[];
+    reference_videos?: string[];
+    reference_audios?: string[];
 }
 
 export async function callSeedanceV2API(
@@ -97,6 +106,27 @@ export async function callSeedanceV2API(
 
     const images = safeParams.image ?? [];
 
+    // Reference media are defined by the full model's published schema only.
+    let referenceMedia: ResolvedReferenceMedia | undefined;
+    if (
+        (safeParams.reference_images ?? []).length > 0 ||
+        (safeParams.reference_videos ?? []).length > 0 ||
+        (safeParams.reference_audios ?? []).length > 0
+    ) {
+        if (modelName !== "seedance-2.0") {
+            throw new HttpError(
+                `${definition.title} does not support reference media inputs.`,
+                400,
+            );
+        }
+        referenceMedia = resolveReferenceMedia(safeParams, {
+            title: definition.title,
+            maxImages: 9,
+            maxVideos: 3,
+            maxAudios: 3,
+        });
+    }
+
     const input: SeedanceV2Input = {
         prompt,
         duration,
@@ -112,6 +142,12 @@ export async function callSeedanceV2API(
     }
     if (images.length >= 1) input.image = await toDataUri(images[0]);
     if (images.length >= 2) input.last_frame_image = await toDataUri(images[1]);
+    if (referenceMedia?.images.length)
+        input.reference_images = referenceMedia.images;
+    if (referenceMedia?.videos.length)
+        input.reference_videos = referenceMedia.videos;
+    if (referenceMedia?.audios.length)
+        input.reference_audios = referenceMedia.audios;
 
     logOps(`${definition.title} input:`, {
         ...input,

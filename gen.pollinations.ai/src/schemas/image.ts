@@ -22,6 +22,30 @@ const modelSchema = (defaultModel: string) =>
                 "Model to use. **Image:** flux, zimage, gptimage, kontext, seedream5, seedream5-pro, nanobanana, nanobanana-pro, klein. **Video:** veo, seedance-pro, wan, wan-pro, p-video, nova-reel. See /image/models for full list.",
         });
 
+// Reference-media URL lists (Seedance video models): GET-friendly
+// separator-delimited string, or an array in POST JSON bodies.
+const referenceMediaField = (description: string) =>
+    z
+        .string()
+        .transform((value: string) => {
+            if (!value) return [];
+            return value.includes("|") ? value.split("|") : value.split(",");
+        })
+        .optional()
+        .refine(
+            (urls) =>
+                !urls ||
+                urls.every(
+                    (url) =>
+                        url.startsWith("http://") || url.startsWith("https://"),
+                ),
+            {
+                message:
+                    "Invalid reference media URL. Reference media must be http(s) URLs. Put the parameter last in your URL, or URL-encode it.",
+            },
+        )
+        .meta({ description });
+
 const GenerateImageRequestQueryParamsBaseSchema = z.object({
     // Image model params
     model: modelSchema(DEFAULT_IMAGE_MODEL),
@@ -86,6 +110,15 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
             description:
                 "Reference image URL(s) for image editing or video generation. Separate multiple URLs with `|` or `,`. **Image models:** Used for editing/style reference (kontext, gptimage, seedream, klein, nanobanana). **Video models:** `image[0]` = starting frame (I2V); `image[1]` = ending frame for first+last-frame interpolation. End-frame supported by `veo`, the `seedance-2.0` family, `seedance-2.5`, `wan-fast`, and `wan-pro`. Requests exceeding the selected model's `max_reference_images` return 400. See `video_capabilities` on `/image/models` or `/models` for per-model support.",
         }),
+    reference_images: referenceMediaField(
+        "Reference image URL(s) for character consistency, style guidance, and scene composition — distinct from the `image` start/end frames. Separate multiple URLs with `|`. Cannot be combined with `image`. Caps: `seedance-2.0` up to 9, `seedance-2.5` up to 30. Reference them in your prompt as [Image1], [Image2], etc. Only `seedance-2.0` and `seedance-2.5` accept reference media.",
+    ),
+    reference_videos: referenceMediaField(
+        "Reference video URL(s) for motion transfer, style reference, editing, and extension. Separate multiple URLs with `|`. Cannot be combined with `image`. Caps: `seedance-2.0` up to 3, `seedance-2.5` up to 10. A request that includes a reference video bills at the model's video-in rate (see cost variants on `/models`). Reference them in your prompt as [Video1], etc. Only `seedance-2.0` and `seedance-2.5` accept reference media.",
+    ),
+    reference_audios: referenceMediaField(
+        "Reference audio URL(s) for audio-driven generation and lip-sync. Requires at least one reference image or video. Separate multiple URLs with `|`. Caps: `seedance-2.0` up to 3, `seedance-2.5` up to 10. Reference them in your prompt as [Audio1], etc. Only `seedance-2.0` and `seedance-2.5` accept reference media.",
+    ),
     transparent: z.coerce.boolean().optional().default(false).meta({
         description:
             "Generate image with transparent background. Only supported by `gptimage` and `gptimage-large`.",

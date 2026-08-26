@@ -1,0 +1,34 @@
+{
+  "pr_number": 13712,
+  "title": "feat: simplify economics and reconcile provider balances",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13712",
+  "merged_at": "2026-08-26T18:11:28Z",
+  "labels": [],
+  "pr_body_excerpt": "- Simplifies Economics navigation, period controls, raw ledgers, Close, balances, runway, and unit-economics views.\n- Derives runway forecasts from current ledger facts, provider balances, billing methods, and usage run rates instead of stale forecast rows.\n- Hardens provider reconciliation tooling for BytePlus, Google, Stripe, and InferencePort while preserving the committed registry as the alias source of truth.\n- Shows every missing transaction document consistently; acknowledged permanent losses remain visible without blocking a clean close.\n- Verifies 309 tests, TypeScript, Biome, ingestion-script syntax, and the production build. This push contains no Tinybird deployment and does not touch production.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The ledger learned gardening",
+    "blurb": "The economics console got a thorough compost turn: clearer ledgers, sturdier provider reconciliation, and runway numbers grown from current facts instead of old forecast rows.",
+    "summary": "Reworked the internal Economics console around bank and compute ledgers, provider balances and close workflows, with runway forecasts now calculated from current ledger facts, billing methods, provider balances, and usage run rates.",
+    "impact": "Operators can reconcile BytePlus, Google, Stripe, and InferencePort more consistently, inspect every missing transaction document, and keep acknowledged permanent losses visible without preventing a clean period close.",
+    "keywords": [
+      "economics",
+      "ledger",
+      "provider reconciliation",
+      "runway",
+      "observability",
+      "internal tooling"
+    ],
+    "visual_concept": "An internal accounting garden: Polli tends a set of labeled ledger plants while a friendly CRT monitor robot compares provider balance jars against a tidy monthly ledger. A clear runway path is assembled from current receipts, usage meters, and balance markers rather than a dusty crystal-ball forecast; small flowers and vines make the bookkeeping feel cared for.",
+    "image_prompt": "Cozy pixel art scene inside a warm garden-shed accounting nook: Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears tiny accountant glasses while tending lime green (#ecf874) code-plants growing from labeled ledger pots; beside her, a chunky CRT-monitor robot compares balance jars, receipts, and a clear runway path, with soft flowers and vines around the desk. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-26/PR-13712.jpg",
+    "prompt": "Cozy pixel art scene inside a warm garden-shed accounting nook: Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears tiny accountant glasses while tending lime green (#ecf874) code-plants growing from labeled ledger pots; beside her, a chunky CRT-monitor robot compares balance jars, receipts, and a clear runway path, with soft flowers and vines around the desk. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-26T18:12:28.944575+00:00"
+}

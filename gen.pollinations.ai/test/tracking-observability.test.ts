@@ -5,6 +5,7 @@ import {
 } from "cloudflare:test";
 import type { AgentRunClaims } from "@shared/auth/agent-run-token.ts";
 import type { AuthUser } from "@shared/auth/api-key.ts";
+import { selectCommunityModelReward } from "@shared/billing/track-helpers.ts";
 import {
     COMMUNITY_MODEL_REWARD_RATE,
     type CommunityEndpointRuntime,
@@ -28,6 +29,7 @@ import { Hono } from "hono";
 import { requestId } from "hono/request-id";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
+import type { FallbackAttempt, FallbackCandidate } from "@/fallback.ts";
 import type {
     GenerationCacheAdapter,
     GenerationCacheVariables,
@@ -55,7 +57,7 @@ function createTestApp(
         resolved: "openai",
         definition: getRegistryModelDefinition("openai"),
     },
-    servedModelEntry?: ModelVariables["servedModelEntry"],
+    finalEntry?: GenerationModelEntry,
     responseHeaders: Record<string, string> = {},
     generationCache?: GenerationCacheVariables["generationCache"],
     agentRun?: AgentRunClaims,
@@ -82,37 +84,34 @@ function createTestApp(
         });
         c.set("frontendKeyRateLimit", { consumePollen });
         c.set("model", model);
-        if (servedModelEntry) c.set("servedModelEntry", servedModelEntry);
         if (generationCache) c.set("generationCache", generationCache);
         await next();
     });
-    app.post(
-        "/v1/chat/completions",
-        track("generate.text"),
-        () =>
-            new Response(
-                JSON.stringify({
-                    id: "chatcmpl_test",
-                    object: "chat.completion",
-                    choices: [
-                        {
-                            index: 0,
-                            message: { role: "assistant", content: "ok" },
-                            finish_reason: "stop",
-                        },
-                    ],
-                }),
-                {
-                    headers: {
-                        "content-type": "application/json",
-                        "x-model-used": "gpt-5-nano-2025-08-07",
-                        "x-usage-prompt-text-tokens": "1000",
-                        "x-usage-completion-text-tokens": "500",
-                        ...responseHeaders,
+    app.post("/v1/chat/completions", track("generate.text"), (c) => {
+        recordSettledEntry(c.var.track.attempts, finalEntry);
+        return new Response(
+            JSON.stringify({
+                id: "chatcmpl_test",
+                object: "chat.completion",
+                choices: [
+                    {
+                        index: 0,
+                        message: { role: "assistant", content: "ok" },
+                        finish_reason: "stop",
                     },
+                ],
+            }),
+            {
+                headers: {
+                    "content-type": "application/json",
+                    "x-model-used": "gpt-5-nano-2025-08-07",
+                    "x-usage-prompt-text-tokens": "1000",
+                    "x-usage-completion-text-tokens": "500",
+                    ...responseHeaders,
                 },
-            ),
-    );
+            },
+        );
+    });
 
     return app;
 }
@@ -286,7 +285,7 @@ function createHeaderApp(
     status = 200,
     consumePollen: (amount: number) => Promise<void> = async () => {},
     model: ModelName = "openai",
-    servedModelEntry?: GenerationModelEntry,
+    finalEntry?: GenerationModelEntry,
 ) {
     const app = new Hono<Env>();
 
@@ -310,24 +309,21 @@ function createHeaderApp(
             resolved: model,
             definition: getRegistryModelDefinition(model),
         });
-        if (servedModelEntry) c.set("servedModelEntry", servedModelEntry);
         await next();
     });
-    app.post(
-        "/v1/chat/completions",
-        track("generate.text"),
-        () =>
-            new Response(JSON.stringify({ choices: [{ message: {} }] }), {
-                status,
-                headers: {
-                    "content-type": "application/json",
-                    "x-model-used": "gpt-5-nano-2025-08-07",
-                    "x-usage-prompt-text-tokens": "10",
-                    "x-usage-completion-text-tokens": "5",
-                    ...extraHeaders,
-                },
-            }),
-    );
+    app.post("/v1/chat/completions", track("generate.text"), (c) => {
+        recordSettledEntry(c.var.track.attempts, finalEntry);
+        return new Response(JSON.stringify({ choices: [{ message: {} }] }), {
+            status,
+            headers: {
+                "content-type": "application/json",
+                "x-model-used": "gpt-5-nano-2025-08-07",
+                "x-usage-prompt-text-tokens": "10",
+                "x-usage-completion-text-tokens": "5",
+                ...extraHeaders,
+            },
+        });
+    });
 
     return app;
 }
@@ -343,6 +339,25 @@ function createStaticEntry(model: ModelName): GenerationModelEntry {
         info: modelInfoFromDefinition(model, definition),
         visible: true,
     };
+}
+
+function recordSettledEntry(
+    attempts: FallbackAttempt[],
+    entry?: GenerationModelEntry,
+): void {
+    if (!entry) return;
+    const now = new Date();
+    attempts.push({
+        candidate: {
+            id: entry.id,
+            definition: entry.definition,
+            communityEndpoint: entry.communityEndpoint,
+            entry,
+        },
+        startedAt: now,
+        endedAt: now,
+        settled: true,
+    });
 }
 
 async function captureFallbackEvent(extraHeaders: Record<string, string>) {
@@ -380,6 +395,20 @@ async function captureFallbackEvent(extraHeaders: Record<string, string>) {
     expect(tinybirdRequests).toHaveLength(1);
     return (await tinybirdRequests[0].json()) as { fallbackUsed?: boolean };
 }
+
+describe("selectCommunityModelReward", () => {
+    it("preserves an undefined served price for an eligible public endpoint", () => {
+        const endpoint = createCommunityEndpoint("community-owner");
+
+        expect(
+            selectCommunityModelReward(undefined, endpoint, undefined),
+        ).toStrictEqual({
+            userId: endpoint.ownerUserId,
+            rewardRate: COMMUNITY_MODEL_REWARD_RATE,
+            basePrice: undefined,
+        });
+    });
+});
 
 describe("tracking observability", () => {
     beforeEach(async () => {
@@ -1091,19 +1120,20 @@ describe("tracking observability", () => {
         expect(tinybirdRequests).toHaveLength(1);
         const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
         const expectedCost = 272_001 * (5 / 1e6) + 1_000 * (22.5 / 1e6);
+        const expectedPrice = expectedCost * 0.75;
         expect(event).toMatchObject({
             modelRequested: "gpt-5.4",
             resolvedModelRequested: "gpt-5.4",
             costVariant: "long_context",
-            tokenPricePromptText: 5 / 1e6,
-            tokenPriceCompletionText: 22.5 / 1e6,
+            tokenPricePromptText: (5 / 1e6) * 0.75,
+            tokenPriceCompletionText: (22.5 / 1e6) * 0.75,
             tokenCountPromptText: 272_001,
             tokenCountCompletionText: 1_000,
             totalCost: expectedCost,
-            totalPrice: expectedCost,
-            devPrice: expectedCost,
+            totalPrice: expectedPrice,
+            devPrice: expectedPrice,
         });
-        expect(consumePollen).toHaveBeenCalledWith(expectedCost);
+        expect(consumePollen).toHaveBeenCalledWith(expectedPrice);
     });
 
     it("does not emit Tinybird generation events for cache hits", async () => {
@@ -1519,6 +1549,109 @@ describe("tracking observability", () => {
             .where(eq(userTable.id, primaryOwnerId))
             .limit(1);
         expect(primaryOwner?.tierBalance).toBe(0);
+    });
+
+    it("rewards a public model owner when their private fallback serves", async () => {
+        const db = drizzle(env.DB);
+        const payerId = `track-private-fallback-payer-${crypto.randomUUID()}`;
+        const ownerId = `track-private-fallback-owner-${crypto.randomUUID()}`;
+        await db.insert(userTable).values(
+            [payerId, ownerId].map((id) => ({
+                id,
+                email: `${id}@test.local`,
+                name: id,
+                tierBalance: id === payerId ? 1 : 0,
+                packBalance: 0,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            })),
+        );
+        const [payer] = await db
+            .select()
+            .from(userTable)
+            .where(eq(userTable.id, payerId))
+            .limit(1);
+        if (!payer) throw new Error("Expected inserted payer");
+
+        const primaryEndpoint = createCommunityEndpoint(ownerId);
+        const fallbackEndpoint = createCommunityEndpoint(ownerId, {
+            id: "community-endpoint-private-fallback",
+            modelId: "test-owner/private-fallback",
+            name: "private-fallback",
+            visibility: "private",
+            ...communityEndpointPrices({
+                promptTextPrice: 0.00005,
+                completionTextPrice: 0.0001,
+            }),
+        });
+        const fallbackEntry = createCommunityEntry(fallbackEndpoint);
+        const model: ModelVariables["model"] = {
+            requested: primaryEndpoint.modelId,
+            resolved: primaryEndpoint.modelId,
+            definition: communityModelDefinition(primaryEndpoint),
+            communityEndpoint: primaryEndpoint,
+            fallbackEntries: [fallbackEntry],
+        };
+
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+
+        const ctx = createExecutionContext();
+        const response = await createTestApp(
+            async () => {},
+            payer,
+            model,
+            fallbackEntry,
+        ).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: primaryEndpoint.modelId,
+                    stream: false,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                ...env,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as unknown as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(1);
+        const event = (await tinybirdRequests[0].json()) as Record<
+            string,
+            unknown
+        >;
+        expect(event).toMatchObject({
+            resolvedModelRequested: primaryEndpoint.modelId,
+            totalPrice: 0.2,
+            communityModelRewardUserId: ownerId,
+            communityModelRewardRate: COMMUNITY_MODEL_REWARD_RATE,
+            communityModelRewardAmount: 0.075,
+        });
+
+        const [owner] = await db
+            .select({ tierBalance: userTable.tierBalance })
+            .from(userTable)
+            .where(eq(userTable.id, ownerId))
+            .limit(1);
+        expect(owner?.tierBalance).toBeCloseTo(0.075, 10);
     });
 
     it("does not bill image generation that returns a JSON (non-image) content-type", async () => {
@@ -2015,14 +2148,14 @@ describe("tracking observability", () => {
         expect(after?.tierBalance).toBe(1);
     });
 
-    it("records fallbackUsed=true when Portkey served a non-primary target", async () => {
+    it("records fallbackUsed=true for a non-primary target", async () => {
         const event = await captureFallbackEvent({
             "x-fallback-target": "config.targets[1]",
         });
         expect(event.fallbackUsed).toBe(true);
     });
 
-    it("records fallbackUsed=false when Portkey served the primary target", async () => {
+    it("records fallbackUsed=false for the primary target", async () => {
         const event = await captureFallbackEvent({
             "x-fallback-target": "config.targets[0]",
         });
@@ -2057,12 +2190,20 @@ function requestTrackingFixture(
     };
 }
 
+function candidateFixture(model: ModelName = "openai"): FallbackCandidate {
+    return {
+        id: model,
+        definition: getRegistryModelDefinition(model),
+    };
+}
+
 describe("trackResponse modelUsed", () => {
     it("attributes a failed generation to the resolved model", async () => {
         const tracking = await trackResponse(
             "generate.text",
             requestTrackingFixture(),
             new Response("upstream exploded", { status: 502 }),
+            candidateFixture(),
         );
         expect(tracking).toMatchObject({
             responseStatus: 502,
@@ -2078,6 +2219,7 @@ describe("trackResponse modelUsed", () => {
             requestTrackingFixture(),
             // A JSON error body served with HTTP 200 instead of an image.
             Response.json({ error: "boom" }),
+            candidateFixture(),
         );
         expect(tracking).toMatchObject({
             responseStatus: 200,
@@ -2096,6 +2238,7 @@ describe("trackResponse modelUsed", () => {
                 'data: {"model":"gpt-5-nano","choices":[{"delta":{"content":"hi"}}]}\n\ndata: [DONE]\n\n',
                 { headers: { "content-type": "text/event-stream" } },
             ),
+            candidateFixture(),
         );
         expect(tracking).toMatchObject({
             responseStatus: 200,
@@ -2110,6 +2253,7 @@ describe("trackResponse modelUsed", () => {
             "generate.text",
             requestTrackingFixture(),
             Response.json({ choices: [] }, { headers: { "x-cache": "HIT" } }),
+            candidateFixture(),
         );
         expect(tracking.cacheHit).toBe(true);
         expect(tracking.isBilledUsage).toBe(false);
@@ -2128,6 +2272,7 @@ describe("trackResponse missing usage", () => {
             "generate.text",
             requestTrackingFixture(true),
             emptyStream(),
+            candidateFixture(),
         );
         expect(tracking.isBilledUsage).toBe(false);
         expect(tracking.errorTracking).toMatchObject({
@@ -2142,6 +2287,7 @@ describe("trackResponse missing usage", () => {
             "generate.text",
             requestTrackingFixture(true, "perplexity-fast"),
             emptyStream(),
+            candidateFixture("perplexity-fast"),
         );
         expect(tracking.isBilledUsage).toBe(true);
         expect(tracking.errorTracking).toBeUndefined();

@@ -481,18 +481,29 @@ export const Models: FC = () => {
                         title="Community model privacy"
                         className="mb-4"
                     >
-                        Requests to community models are sent to independent
-                        providers, including configured fallback providers. They
-                        may retain, share, or train on your data under their own
-                        policies. Check the provider information before sending
-                        confidential or sensitive data. See our{" "}
-                        <InlineLink
-                            href="https://pollinations.ai/privacy"
-                            showIcon={false}
-                        >
-                            Privacy Policy
-                        </InlineLink>
-                        .
+                        <p>
+                            Requests go to independent providers and configured
+                            fallbacks, which handle your data under their own
+                            policies.
+                        </p>
+                        <p className="mt-2">
+                            <strong>Avoid sensitive data.</strong> For text
+                            input, you can use our optional{" "}
+                            <InlineLink
+                                href="https://gen.pollinations.ai/docs#tag/Safety"
+                                showIcon={false}
+                            >
+                                privacy filter
+                            </InlineLink>
+                            . See our{" "}
+                            <InlineLink
+                                href="https://pollinations.ai/privacy"
+                                showIcon={false}
+                            >
+                                Privacy Policy
+                            </InlineLink>
+                            .
+                        </p>
                     </Alert>
                 )}
                 {catalogError && (

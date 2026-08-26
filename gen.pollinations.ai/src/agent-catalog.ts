@@ -6,13 +6,15 @@
  * the generic registry: where their runtime is, what their stored config
  * means, and how they present the metadata of the base model they wrap.
  */
+
+import type { McpServerId } from "@shared/registry/mcp.ts";
 import type { ModelCapability } from "@shared/registry/model-info.ts";
 import type { GenerationModelEntry } from "./model-registry.ts";
 
 /** The agent fields the catalog reads out of the listing payload. */
 export type AgentCatalogConfig = {
     baseModel: string;
-    mcpServers: "pollinations"[];
+    mcpServers: McpServerId[];
 };
 
 function applyBaseModelMetadata(

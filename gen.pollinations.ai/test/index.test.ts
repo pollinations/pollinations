@@ -845,6 +845,7 @@ fixtureTest(
         expect(generation.usage.total_tokens).toBe(1);
         await waitOnExecutionContext(generationContext);
 
+        // Completed media stays public when the caller retries without a key.
         const urlContext = createExecutionContext();
         const urlResponse = await worker.fetch(
             new Request(
@@ -852,7 +853,6 @@ fixtureTest(
                 {
                     method: "POST",
                     headers: {
-                        Authorization: `Bearer ${paidApiKey}`,
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify({

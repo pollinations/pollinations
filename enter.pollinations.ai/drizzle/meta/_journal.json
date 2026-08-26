@@ -379,6 +379,20 @@
       "when": 1787239130592,
       "tag": "0053_listing_envelope",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "6",
+      "when": 1787318370605,
+      "tag": "0054_canonicalize_midijourney_permission",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "6",
+      "when": 1787648526176,
+      "tag": "0055_rare_doctor_spectrum",
+      "breakpoints": true
     }
   ]
 }

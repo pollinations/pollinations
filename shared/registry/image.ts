@@ -50,7 +50,7 @@ const IMAGE_BASE_SERVICES = {
         brand: "Black Forest Labs",
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             completionImageTokens: 0.04, // per image
         },
@@ -300,7 +300,7 @@ const IMAGE_BASE_SERVICES = {
         brand: "OpenAI",
         category: "image",
         addedDate: new Date("2025-12-23").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             // Official pricing: https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/introducing-openai%E2%80%99s-gpt-image-1-5-in-microsoft-foundry/4478139
             promptTextTokens: perMillion(5), // per 1M tokens
@@ -659,6 +659,54 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 2, // Video keyframe slots: start + end.
         minDuration: 2,
         maxDuration: 15,
+        defaultDuration: 5,
+    },
+    "wan-3.0": {
+        aliases: [],
+        provider: "fal",
+        brand: "Alibaba",
+        category: "video",
+        addedDate: new Date("2026-08-25").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // Fal Prime rates verified against live endpoints on 2026-08-25.
+        cost: {
+            completionVideoSeconds: 0.068, // per sec at 480p
+        },
+        ...defineCostVariants(
+            {
+                "720p": {
+                    completionVideoSeconds: 0.14,
+                },
+                "1080p": {
+                    completionVideoSeconds: 0.28,
+                },
+            },
+            matchResolution("720p", "1080p"),
+            {
+                "720p": {
+                    label: "720p",
+                    description:
+                        "Applies when the requested video resolution is 720p.",
+                },
+                "1080p": {
+                    label: "1080p",
+                    description:
+                        "Applies when the requested video resolution is 1080p.",
+                },
+            },
+            "480p",
+        ),
+        resolutions: ["480p", "720p", "1080p"],
+        title: "Wan 3.0",
+        description:
+            "Five-second video from text or a start image with optional audio at 480p, 720p, or 1080p",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "audio_output"],
+        maxReferenceImages: 1, // Video keyframe slots: start only.
+        minDuration: 5,
+        maxDuration: 5,
         defaultDuration: 5,
     },
     "wan-image": {
@@ -1171,9 +1219,27 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 1,
+        // AWS Cost Explorer Nova Canvas Standard meters, verified 2026-08-24.
         cost: {
             completionImageTokens: 0.04, // per image
         },
+        ...defineCostVariants(
+            {
+                "2048": {
+                    completionImageTokens: 0.06, // per image when either side exceeds 1024px
+                },
+            },
+            ({ input }) =>
+                (input?.maxImageDimension ?? 0) > 1024 ? "2048" : undefined,
+            {
+                "2048": {
+                    label: "2048 tier",
+                    description:
+                        "Applies when either output dimension exceeds 1024 pixels.",
+                },
+            },
+            "1024 tier",
+        ),
         title: "Nova Canvas",
         description: "Image generation with editing and inpainting tools",
         inputModalities: ["text", "image"],

@@ -203,16 +203,16 @@ describe("long-context cost variants", () => {
             12,
         );
         expect(billing.priceDefinition).toMatchObject({
-            promptTextTokens: 10 / 1e6,
-            promptCachedTokens: 1 / 1e6,
-            completionTextTokens: 45 / 1e6,
+            promptTextTokens: (10 / 1e6) * 0.75,
+            promptCachedTokens: (1 / 1e6) * 0.75,
+            completionTextTokens: (45 / 1e6) * 0.75,
         });
     });
 
     it.each([
-        ["gpt-5.6-sol", 10, 1, 12.5, 45, 0.5],
-        ["gpt-5.6-terra", 4, 0.4, 5, 18, 0.625],
-        ["gpt-5.6-luna", 0.4, 0.04, 0.5, 1.8, 1],
+        ["gpt-5.6-sol", 10, 1, 12.5, 45, 1 / 3],
+        ["gpt-5.6-terra", 4, 0.4, 5, 18, 0.75],
+        ["gpt-5.6-luna", 0.4, 0.04, 0.5, 1.8, 0.75],
     ] satisfies [
         ModelName,
         number,
@@ -415,6 +415,23 @@ describe("request-mode cost variants", () => {
 });
 
 describe("resolution cost variants", () => {
+    it.each([
+        [1024, 1024, 0.04, undefined],
+        [1008, 1040, 0.06, "2048"],
+        [1024, 1040, 0.06, "2048"],
+        [2048, 2048, 0.06, "2048"],
+    ] as const)("nova-canvas bills %sx%s at $%s/image", (width, height, rate, variant) => {
+        const billing = bill(
+            "nova-canvas",
+            { completionImageTokens: 1 },
+            { maxImageDimension: Math.max(width, height) },
+        );
+
+        expect(billing.costVariant).toBe(variant);
+        expect(billing.cost.totalCost).toBeCloseTo(rate, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(rate, 12);
+    });
+
     it("p-video bills the 720p base and 1080p variant", () => {
         expect(
             bill("p-video", { completionVideoSeconds: 10 }).cost.totalCost,

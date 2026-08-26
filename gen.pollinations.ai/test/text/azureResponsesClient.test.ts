@@ -415,6 +415,21 @@ describe("callAzureResponses", () => {
         ).rejects.toThrow("Azure Responses API key is not configured");
     });
 
+    it("rejects an empty upstream stream as a retryable failure", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response(null));
+
+        await expect(
+            callAzureResponses([{ role: "user", content: "Hi" }], {
+                model: "gpt-5.6-sol",
+                modelConfig,
+                stream: true,
+            }),
+        ).rejects.toMatchObject({
+            status: 502,
+            requestUrl: new URL(ENDPOINT),
+        });
+    });
+
     it("clears the request timeout after response headers arrive", async () => {
         vi.useFakeTimers();
         let signal: AbortSignal | null | undefined;

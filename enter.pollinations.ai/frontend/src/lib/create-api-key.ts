@@ -46,7 +46,7 @@ export async function createKeyWithPermissions({
         allowedModels: permissions?.allowedModels ?? null,
         pollenBudget: permissions?.pollenBudget,
         pollenType: permissions?.pollenType,
-        questPollenOnly: permissions?.questPollenOnly,
+        questPollenOnly: permissions?.questPollenOnly ?? undefined,
         accountPermissions: permissions?.accountPermissions,
     };
 

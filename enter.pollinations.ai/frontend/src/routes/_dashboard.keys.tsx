@@ -79,6 +79,7 @@ function KeysPage() {
             json: {
                 ...updates,
                 allowedModels: updates.allowedModels ?? null,
+                questPollenOnly: updates.questPollenOnly ?? undefined,
                 expiresAt:
                     updates.expiresAt instanceof Date
                         ? updates.expiresAt.toISOString()

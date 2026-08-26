@@ -31,6 +31,7 @@ import { mcpRoutes } from "./routes/mcp.ts";
 import { modelStatusRoutes } from "./routes/model-status.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
 import { docsLandingHtml, manifestResponse } from "./routes/seo.ts";
+import { x402Routes } from "./routes/x402.ts";
 
 export { CommunityModelRateLimiter } from "./durable-objects/CommunityModelRateLimiter.ts";
 export { GenerationCoordinator } from "./durable-objects/GenerationCoordinator.ts";
@@ -156,6 +157,7 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
         return c.json(merged);
     })
     .route("/", modelStatusRoutes)
+    .route("/", x402Routes)
     .route("/", proxyRoutes);
 
 app.notFound(async (c: Context<Env>) => {

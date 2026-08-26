@@ -1,6 +1,6 @@
 import {
     discordConfigFromEnv,
-    getPollinationsDiscordMembership,
+    isPollinationsDiscordMember,
 } from "../../discord.ts";
 import type { QuestDefinition } from "../definitions.ts";
 import {
@@ -34,10 +34,8 @@ export async function evaluateUser(
     user: QuestUser,
 ): Promise<QuestEvaluation> {
     if (!discordConfigFromEnv(env)) return { proposals: [] };
-    const membership = await getPollinationsDiscordMembership(env, user.id);
+    const member = await isPollinationsDiscordMember(env, user.id);
     return {
-        proposals: membership?.member
-            ? [{ quest: joinDiscordQuest, userId: user.id }]
-            : [],
+        proposals: member ? [{ quest: joinDiscordQuest, userId: user.id }] : [],
     };
 }

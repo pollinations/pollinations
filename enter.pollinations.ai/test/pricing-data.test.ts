@@ -34,6 +34,8 @@ import { getModelPricesFromCatalog } from "../frontend/src/components/models/mod
 import { getCommunityModelIcon } from "../frontend/src/components/models/model-icons.tsx";
 import {
     getModelBrandLogoPath,
+    getModelCapabilities,
+    getModelCapabilityLabel,
     hasPollinationsTools,
 } from "../frontend/src/components/models/model-info.ts";
 import { ModelRow } from "../frontend/src/components/models/model-row.tsx";
@@ -346,6 +348,21 @@ test("Pollinations tools are shown only for agents with the MCP capability", () 
     expect(
         renderToStaticMarkup(createElement(ModelRow, { model: toolsAgent })),
     ).toContain(">Tools</span>");
+});
+
+test("tool calling is shown through the shared model capability display", () => {
+    const model: ComponentProps<typeof ModelRow>["model"] = {
+        name: "example/tools-model",
+        type: "text",
+        capabilities: ["tool_calling"],
+        prices: [],
+    };
+
+    expect(getModelCapabilities(model)).toEqual(["tool_calling"]);
+    expect(getModelCapabilityLabel(model)).toBe("Tool calling");
+    expect(renderToStaticMarkup(createElement(ModelRow, { model }))).toContain(
+        'aria-label="Tool calling"',
+    );
 });
 
 test("cached modality adjustments remain visible without a matching base row", () => {

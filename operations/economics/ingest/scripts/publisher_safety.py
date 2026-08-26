@@ -41,7 +41,6 @@ def latest_version_query(table, entry_ids):
     if table not in {
         "economics_bank_ledger",
         "economics_compute_ledger",
-        "op_pollen_history",
     }:
         raise RuntimeError(f"Unsupported versioned datasource: {table}")
     quoted = ",".join(

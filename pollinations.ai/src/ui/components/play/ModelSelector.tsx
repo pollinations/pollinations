@@ -1,4 +1,4 @@
-import { memo, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { PLAY_PAGE } from "../../../copy/content/play";
 import type { Model } from "../../../hooks/useModelList";
 import { usePageCopy } from "../../../hooks/usePageCopy";
@@ -71,6 +71,14 @@ export const ModelSelector = memo(function ModelSelector({
     const { copy } = usePageCopy(PLAY_PAGE);
     const [activeCategory, setActiveCategory] =
         useState<ModelCategory>("image");
+
+    useEffect(() => {
+        const model = models.find((m) => m.id === selectedModel);
+        if (model) {
+            const cat = getModelCategory(model);
+            if (cat !== activeCategory) setActiveCategory(cat);
+        }
+    }, [selectedModel, models, activeCategory]);
 
     const categories: { key: ModelCategory; label: string }[] = [
         { key: "image", label: copy.imageLabel },

@@ -1,4 +1,5 @@
 import {
+    BeakerIcon,
     CheckIcon,
     Chip,
     ClipboardIcon,
@@ -386,6 +387,15 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                 </div>
             </div>
 
+            <a
+                href={`/play?model=${encodeURIComponent(model.name)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Try in Play"
+                className="mr-1 inline-flex items-center justify-center rounded-md p-1.5 text-theme-text-muted transition-colors hover:bg-surface-opaque hover:text-theme-text-soft"
+            >
+                <BeakerIcon className="h-4 w-4" />
+            </a>
             <div className="w-[clamp(312px,calc(32%_-_8px),352px)] shrink-0 py-3 pl-3 pr-1">
                 <ModelPricingLedger
                     pricing={pricing}

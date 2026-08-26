@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { PLAY_PAGE } from "../../copy/content/play";
 import { LINKS } from "../../copy/content/socialLinks";
 import { useAuth } from "../../hooks/useAuth";
@@ -14,7 +15,12 @@ import { PageContainer } from "../components/ui/page-container";
 import { Body, Title } from "../components/ui/typography";
 
 function PlayPage() {
-    const [selectedModel, setSelectedModel] = useState("flux");
+    const [searchParams] = useSearchParams();
+    const urlModel = searchParams.get("model");
+    const [selectedModel, setSelectedModel] = useState(urlModel || "flux");
+    useEffect(() => {
+        if (urlModel) setSelectedModel(urlModel);
+    }, [urlModel]);
     const [prompt, setPrompt] = useState("");
     const { apiKey, isLoggedIn, login } = useAuth();
     const {

@@ -859,11 +859,14 @@ export type CommunityVideoData = {
 /**
  * Read one completed clip from the synchronous community video contract.
  * Publishers return OpenAI-images-style `data` with either `b64_json` or a
- * downloadable URL, plus the measured output duration used for billing.
+ * downloadable URL, plus the measured output duration used for billing. When
+ * a requested duration is supplied, it is also a lower bound: accepting a
+ * provider-reported fraction of the requested clip would underbill callers.
  */
 export async function firstCommunityVideoData(
     body: unknown,
     endpointBaseUrl: string,
+    requestedDurationSeconds?: number,
 ): Promise<CommunityVideoData | null> {
     if (
         !body ||
@@ -873,13 +876,17 @@ export async function firstCommunityVideoData(
     ) {
         return null;
     }
+    const minimumDuration = Math.max(
+        MIN_COMMUNITY_VIDEO_DURATION_SECONDS,
+        requestedDurationSeconds ?? 0,
+    );
     for (const video of body.data) {
         if (!video || typeof video !== "object") continue;
         const durationSeconds =
             "duration_seconds" in video &&
             typeof video.duration_seconds === "number" &&
             Number.isFinite(video.duration_seconds) &&
-            video.duration_seconds >= MIN_COMMUNITY_VIDEO_DURATION_SECONDS
+            video.duration_seconds >= minimumDuration
                 ? video.duration_seconds
                 : null;
         if (durationSeconds === null) continue;

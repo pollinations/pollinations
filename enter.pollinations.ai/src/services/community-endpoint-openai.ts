@@ -252,7 +252,7 @@ export async function testCommunityVideoEndpoint({
             duration: 1,
         }),
     });
-    const video = await firstCommunityVideoData(body, baseUrl);
+    const video = await firstCommunityVideoData(body, baseUrl, 1);
     if (!video || !detectVideoMimeType(video.bytes)) {
         throw new Error(
             "Endpoint did not return a supported video with duration_seconds",

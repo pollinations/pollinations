@@ -119,7 +119,11 @@ export async function callCommunityVideoEndpoint(
         }),
         "video",
     );
-    const video = await firstCommunityVideoData(body, endpoint.baseUrl);
+    const video = await firstCommunityVideoData(
+        body,
+        endpoint.baseUrl,
+        safeParams.duration,
+    );
     const mimeType = video && detectVideoMimeType(video.bytes);
     if (!video || !mimeType) {
         throw new HttpError(

@@ -1446,7 +1446,7 @@ describe("community endpoint helpers", () => {
                         data: [
                             {
                                 b64_json: TEST_MP4_BASE64,
-                                duration_seconds: 0.1,
+                                duration_seconds: 0.5,
                             },
                         ],
                     }),
@@ -1457,7 +1457,7 @@ describe("community endpoint helpers", () => {
                 callCommunityVideoEndpoint(
                     await videoEndpoint(),
                     "a sprout",
-                    { model: "video-1" },
+                    { model: "video-1", duration: 10 },
                     secret,
                 ),
             ).rejects.toMatchObject({ status: 502 });

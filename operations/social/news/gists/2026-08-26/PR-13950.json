@@ -1,0 +1,34 @@
+{
+  "pr_number": 13950,
+  "title": "refactor: simplify Discord quest membership",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13950",
+  "merged_at": "2026-08-26T02:29:09Z",
+  "labels": [],
+  "pr_body_excerpt": "- Removes the UI-only Discord membership endpoint and account-page status lookup\n- Keeps membership verification inside the server-side Discord quest evaluator\n- Simplifies cached membership results to a boolean while preserving Discord error handling\n- Verifies linked members still earn the 1-Pollen `join_discord` reward\n\nTests:\n- `npm run typecheck`\n- `npx vitest run test/integration/account-linking.test.ts`\n- `npx vitest run test/quests.test.ts`",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Quest check, less clutter",
+    "blurb": "The Discord quest now checks membership where it counts: in the server-side evaluator. Linked hive members can still collect their 1 Pollen without the account page performing an extra little ritual.",
+    "summary": "Simplified the `join_discord` Quest by removing the UI-only membership endpoint and account-page status lookup, while keeping server-side Discord verification and the 1-Pollen reward for linked members.",
+    "impact": "Linked Discord members still earn 1 Pollen for `join_discord`, with membership results cached as a simple boolean and fewer account-page requests involved.",
+    "keywords": [
+      "quests",
+      "discord",
+      "pollen",
+      "account-linking",
+      "membership",
+      "reliability"
+    ],
+    "visual_concept": "A cozy quest-verification garden: Polli follows one clear server-side path from a linked Discord-style badge to a glowing 1-Pollen flower, while an unnecessary extra signpost is peacefully put away. A CRT monitor robot can inspect the single green checkmark, with code-plants and soft garden details showing that the quest still completes.",
+    "image_prompt": "Cozy pixel art scene in a tiny garden-server room where Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wears a tiny quest ranger hat and guides a linked Discord-style badge along one clear path to a glowing lime green (#ecf874) flower labeled in simple pixel text “1 POLLEN”; a cute chunky CRT monitor robot watches a single green membership check while an unused signpost rests beside code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-26/PR-13950.jpg",
+    "prompt": "Cozy pixel art scene in a tiny garden-server room where Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wears a tiny quest ranger hat and guides a linked Discord-style badge along one clear path to a glowing lime green (#ecf874) flower labeled in simple pixel text “1 POLLEN”; a cute chunky CRT monitor robot watches a single green membership check while an unused signpost rests beside code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-08-26T02:30:06.807403+00:00"
+}

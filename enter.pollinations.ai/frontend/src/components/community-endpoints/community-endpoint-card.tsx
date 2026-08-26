@@ -173,6 +173,19 @@ export function CommunityEndpointCard({
                     />
                 ))}
             </div>
+            <Button
+                variant="outline"
+                className="mt-2 w-full"
+                onClick={() =>
+                    navigate({
+                        pathname: "/activity",
+                        search: { earningsModels: [endpoint.modelId] },
+                    })
+                }
+            >
+                <EarningsIcon className="h-4 w-4" />
+                View activity
+            </Button>
         </Surface>
     );
 }

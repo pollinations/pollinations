@@ -1,0 +1,34 @@
+{
+  "pr_number": 13946,
+  "title": "fix: block requests from overdrawn wallets",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13946",
+  "merged_at": "2026-08-26T02:02:47Z",
+  "labels": [],
+  "pr_body_excerpt": "- Preflight now requires a positive balance in at least one bucket (Quest > 0 or Paid > 0) before the estimate check; a wallet in debt with no positive bucket gets 402 on every model, including free ones\n- A positive Paid balance still covers a negative Quest balance, so users recover by purchasing\n- Root cause: #13512 changed the coverage check from `>` to `>=`, so a 0 paid balance \"covered\" a 0 estimate. Estimates read as 0 whenever the Tinybird `public_model_stats` fetch failed (empty result cached in KV for 1h), which became frequent after #13467 made the pipe heavier on Aug 22. Aug 22–25: 12,718 overdrawn calls, 210 users, ~226 Pollen of Quest debt, one wallet to −134\n- Behaviour change: accounts at exactly 0/0 can no longer call zero-priced community endpoints (including owners calling their own private model) until they hold some Pollen\n- Not addressed: truly concurrent requests can still each incur one debt charge before any settles; the empty stats result is still cached for the TTL (no longer a billing hole)\n- Tests: full gen suite 606 passed; the two `elevenlabs-*` failures reproduce on `main`\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01QHuPnX3Kamv8h2onjppz8Z",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "No more bottomless pollen pots",
+    "blurb": "The billing garden now checks that a wallet has some pollen before opening the gate. Paid Pollen can still help a Quest balance climb back out of the compost heap.",
+    "summary": "Updated generation preflight checks so wallets need a positive Quest or Paid Pollen bucket before requests proceed, preventing zero-cost estimates from allowing overdrawn accounts to continue generating.",
+    "impact": "Accounts with a positive Paid balance can continue using models even if their Quest bucket is negative, while empty 0/0 wallets now need to hold Pollen before calling community or private endpoints.",
+    "keywords": [
+      "billing",
+      "wallets",
+      "pollen",
+      "preflight",
+      "generation",
+      "quest"
+    ],
+    "visual_concept": "Polli is a careful garden keeper inspecting two labeled pollen jars, Quest and Paid, beside a cozy API gate; a small positive Paid jar helps a drooping Quest plant recover while the gate only opens for jars with pollen. Use flowers and code-plants to make wallet balance checks feel like tending a shared garden.",
+    "image_prompt": "A cozy pixel art garden-gate scene where Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny accountant visor, checks two glowing pollen jars labeled in simple pixel text “QUEST” and “PAID” before opening a retro terminal gate; a small Paid jar nourishes a recovering code-plant while warm flowers grow nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-26/PR-13946.jpg",
+    "prompt": "A cozy pixel art garden-gate scene where Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny accountant visor, checks two glowing pollen jars labeled in simple pixel text “QUEST” and “PAID” before opening a retro terminal gate; a small Paid jar nourishes a recovering code-plant while warm flowers grow nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-08-26T02:03:49.069695+00:00"
+}

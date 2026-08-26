@@ -6,12 +6,9 @@ import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
-import {
-    fallbackCandidates,
-    formatFallbackTarget,
-    withModelFallback,
-} from "../fallback.ts";
-import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
+import { fallbackCandidates, withModelFallback } from "../fallback.ts";
+import type { GenerationModelEntry } from "../model-registry.ts";
+import { enforceCommunityModelRateLimit } from "../utils/community-model-rate-limit.ts";
 import {
     getRegisteredServers,
     isValidType,
@@ -33,7 +30,6 @@ import {
 } from "./createAndReturnVideos.ts";
 import { getImageEnv, syncImageEnv } from "./env.ts";
 import { setKleinVpcBinding } from "./models/fluxKleinModel.ts";
-import { clampNovaCanvasDimensions } from "./models/novaCanvasModel.ts";
 import { type ImageParams, ImageParamsSchema } from "./params.ts";
 import { sanitizeString, sleep } from "./util.ts";
 import {
@@ -50,6 +46,7 @@ import {
 } from "./utils/imageDownload.ts";
 import { setImagesBinding } from "./utils/imageTransform.ts";
 import { buildTrackingHeaders } from "./utils/trackingHeaders.ts";
+import { callCommunityVideoEndpoint } from "./videoCommunityEndpoint.ts";
 
 type ImageContext = Context<Env>;
 type RuntimeImageParams = Omit<ImageParams, "model"> & { model: string };
@@ -419,13 +416,27 @@ async function generateMediaWithFallback(
 ): Promise<{
     result: ImageGenerationResult | VideoGenerationResult;
     params: RuntimeImageParams;
+    servedEntry?: GenerationModelEntry;
     servedIndex: number;
 }> {
-    const { result, index } = await withModelFallback(
+    const { result, candidate, index } = await withModelFallback(
         fallbackCandidates(c.var.model),
         async (attempt) => {
             const params = { ...safeParams, model: attempt.id };
             if (attempt.communityEndpoint) {
+                if (attempt.communityEndpoint.modality === "video") {
+                    const generated = await callCommunityVideoEndpoint(
+                        attempt.communityEndpoint,
+                        prompt,
+                        params,
+                        c.env.BETTER_AUTH_SECRET,
+                    );
+                    assertNonEmptyMedia(
+                        generated.buffer,
+                        "Community video endpoint",
+                    );
+                    return { result: generated, params };
+                }
                 const generated = await callCommunityImageEndpoint(
                     attempt.communityEndpoint,
                     prompt,
@@ -447,11 +458,13 @@ async function generateMediaWithFallback(
             assertNonEmptyMedia(generated.buffer, "Image provider");
             return { result: generated, params };
         },
-        c.var.track?.attempts,
-        (attempt) => enforceModelRateLimit(c, attempt),
+        c.var.track?.failedCalls,
+        (attempt) =>
+            enforceCommunityModelRateLimit(c, attempt.communityEndpoint),
     );
     return {
         ...result,
+        servedEntry: candidate.entry,
         servedIndex: index,
     };
 }
@@ -521,38 +534,29 @@ export async function generateImageOrVideoResponse(
         definition.inputModalities?.includes("image")
             ? await resolveEditDimensionsForImage(parsedParams)
             : parsedParams;
-    const pricingDimensions =
-        c.var.model.resolved === "nova-canvas"
-            ? clampNovaCanvasDimensions(safeParams.width, safeParams.height)
-            : safeParams;
     c.var.track.setPricingInput({
         resolution: safeParams.resolution,
         quality: safeParams.quality,
         hasImage: (safeParams.image?.length ?? 0) > 0,
-        maxImageDimension: Math.max(
-            pricingDimensions.width,
-            pricingDimensions.height,
-        ),
+        hasReferenceVideo: (safeParams.reference_video?.length ?? 0) > 0,
         megapixels: (safeParams.width * safeParams.height) / 1_000_000,
     });
 
     try {
-        const { result, params, servedIndex } = await generateMediaWithFallback(
-            c,
-            originalPrompt,
-            safeParams,
-        );
+        const { result, params, servedEntry, servedIndex } =
+            await generateMediaWithFallback(c, originalPrompt, safeParams);
         const headers = mediaHeaders(
             originalPrompt,
             params,
             result,
             result.mimeType || detectMimeType(result.buffer),
         );
+        if (servedEntry) c.set("servedModelEntry", servedEntry);
         if (servedIndex > 0) {
             // Same shape text emits, so tracking has one fallback marker.
             headers.set(
                 FALLBACK_TARGET_HEADER,
-                formatFallbackTarget(servedIndex),
+                `config.targets[${servedIndex}]`,
             );
         }
         return new Response(bufferToUint8Array(result.buffer), { headers });

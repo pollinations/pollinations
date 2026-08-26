@@ -1,8 +1,5 @@
-import { z } from "zod";
 import { isCommunityModelAllowedGithubId } from "./auth/github-id-list.ts";
 import { HttpError } from "./http-error.ts";
-import { MCP_SERVER_IDS } from "./registry/mcp.ts";
-import type { ModelCapability } from "./registry/model-info.ts";
 import {
     MODEL_INPUT_MODALITIES,
     type ModelDefinition,
@@ -18,10 +15,10 @@ import { readResponseBytes } from "./response-bytes.ts";
 
 export const LEGACY_COMMUNITY_MODEL_PREFIX = "community/";
 export const COMMUNITY_MODEL_REWARD_RATE = 0.75;
-export const COMMUNITY_ENDPOINT_CHANGE_DELAY_MS = 12 * 60 * 60 * 1000;
 export const COMMUNITY_ENDPOINT_MODALITIES = [
     "text",
     "image",
+    "video",
     "transcription",
 ] as const;
 // How a community image endpoint is billed. "request" charges the fixed
@@ -70,56 +67,12 @@ export type CommunityEndpointModality =
 export const COMMUNITY_ENDPOINT_INPUT_MODALITIES = {
     text: MODEL_INPUT_MODALITIES,
     image: ["text", "image"],
+    video: ["text", "image", "video", "audio"],
     transcription: ["audio"],
 } as const satisfies Record<
     CommunityEndpointModality,
     readonly ModelInputModality[]
 >;
-
-export const MAX_COMMUNITY_CONTEXT_LENGTH = 10_000_000;
-
-export const COMMUNITY_ENDPOINT_CAPABILITIES = [
-    "tool_calling",
-    "reasoning",
-] as const satisfies readonly ModelCapability[];
-
-export type CommunityEndpointCapability =
-    (typeof COMMUNITY_ENDPOINT_CAPABILITIES)[number];
-
-export const CommunityEndpointAdvertisedSchema = z
-    .object({
-        capabilities: z
-            .array(z.enum(COMMUNITY_ENDPOINT_CAPABILITIES))
-            .optional(),
-        contextLength: z
-            .number()
-            .int()
-            .positive()
-            .max(MAX_COMMUNITY_CONTEXT_LENGTH)
-            .optional(),
-    })
-    .strict();
-
-export type CommunityEndpointAdvertised = z.infer<
-    typeof CommunityEndpointAdvertisedSchema
->;
-
-export function normalizeCommunityEndpointAdvertised(
-    value: CommunityEndpointAdvertised | null | undefined,
-    modality: CommunityEndpointModality,
-): CommunityEndpointAdvertised {
-    if (!value || modality !== "text") return {};
-    const advertised: CommunityEndpointAdvertised = {};
-    if (value.capabilities?.length) {
-        const declared = new Set<string>(value.capabilities);
-        const capabilities = COMMUNITY_ENDPOINT_CAPABILITIES.filter(
-            (capability) => declared.has(capability),
-        );
-        if (capabilities.length) advertised.capabilities = capabilities;
-    }
-    if (value.contextLength) advertised.contextLength = value.contextLength;
-    return advertised;
-}
 
 export type CommunityEndpointImagePricing =
     (typeof COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES)[number];
@@ -233,9 +186,20 @@ const COMMUNITY_TRANSCRIPTION_PRICE_FIELD = {
     rawUsagePaths: ["duration"],
 } as const;
 
+// Community video endpoints bill output duration in seconds against the
+// completionVideoSeconds usage type, consistent with first-party video pricing.
+const COMMUNITY_VIDEO_PRICE_FIELD = {
+    key: "completionVideoPrice",
+    usageType: "completionVideoSeconds",
+    label: "Generated video",
+    priceUnit: "second",
+    rawUsagePaths: ["video_seconds", "duration"],
+} as const;
+
 export const COMMUNITY_ENDPOINT_PRICE_FIELDS = [
     ...COMMUNITY_TEXT_PRICE_FIELDS,
     COMMUNITY_IMAGE_PRICE_FIELD,
+    COMMUNITY_VIDEO_PRICE_FIELD,
     COMMUNITY_TRANSCRIPTION_PRICE_FIELD,
 ] as const;
 
@@ -243,6 +207,7 @@ const COMMUNITY_TEXT_ENDPOINT_PRICE_FIELDS =
     COMMUNITY_ENDPOINT_PRICE_FIELDS.filter(
         (field) =>
             field.usageType !== "completionImageTokens" &&
+            field.usageType !== "completionVideoSeconds" &&
             field.usageType !== "promptAudioSeconds",
     );
 
@@ -254,12 +219,19 @@ const COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS = [
     COMMUNITY_TRANSCRIPTION_PRICE_FIELD,
 ] as const;
 
+const COMMUNITY_VIDEO_ENDPOINT_PRICE_FIELDS = [
+    COMMUNITY_VIDEO_PRICE_FIELD,
+] as const;
+
 export function communityEndpointPriceFieldsForModality(
     modality: CommunityEndpointModality,
     imagePricing: CommunityEndpointImagePricing = "request",
 ) {
     if (modality === "transcription") {
         return COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS;
+    }
+    if (modality === "video") {
+        return COMMUNITY_VIDEO_ENDPOINT_PRICE_FIELDS;
     }
     if (modality !== "image") return COMMUNITY_TEXT_ENDPOINT_PRICE_FIELDS;
     return imagePricing === "tokens"
@@ -342,21 +314,11 @@ export function isCommunityFallbackPricingAllowed(
     );
 }
 
-/**
- * A fallback cannot require a balance bucket the caller was never required to
- * have for the primary model. A paid-only primary may fall back to either kind.
- */
-export function isCommunityFallbackBalanceAllowed(
-    primary: { paidOnly: boolean },
-    target: { paidOnly: boolean },
-): boolean {
-    return !target.paidOnly || primary.paidOnly;
-}
-
 export function normalizeCommunityEndpointModality(
     value: string | null | undefined,
 ): CommunityEndpointModality {
     if (value === "transcription") return "transcription";
+    if (value === "video") return "video";
     return value === "image" ? "image" : "text";
 }
 
@@ -391,190 +353,6 @@ export const COMMUNITY_ENDPOINT_VISIBILITIES = ["private", "public"] as const;
 export type CommunityEndpointVisibility =
     (typeof COMMUNITY_ENDPOINT_VISIBILITIES)[number];
 
-/* -------------------------------------------------------------------------
- * Listing storage
- *
- * A row carries what every listing has — who owns it, what it is called,
- * whether it is published — plus one `payload` whose shape `type` selects.
- * A field that belongs to one kind of listing exists only in that kind's
- * payload, so a listing cannot store a price it never charges or a credential
- * it never sends. The invariants that used to be checked field by field on
- * write are now the absence of somewhere to put the value.
- * ---------------------------------------------------------------------- */
-
-export const LISTING_TYPES = [
-    "proxy",
-    "prompt_agent",
-    "endpoint_agent",
-] as const;
-
-// Prompt agents all share one deployment-specific worker. Store this safe,
-// environment-neutral URL in the common target column, then replace it with
-// AGENT_RUNTIME_BASE_URL when a row crosses the API/runtime boundary. The
-// reserved .invalid host guarantees a missed replacement cannot call another
-// environment by accident.
-export const PROMPT_AGENT_BASE_URL_PLACEHOLDER =
-    "https://agent-runtime.invalid/api/agent-runtime/v1";
-
-export type ListingType = (typeof LISTING_TYPES)[number];
-
-/**
- * The owner's own OpenAI-compatible server, reached with the upstream bearer
- * secret registered for that server. This is never the owner's or caller's
- * Pollinations credential. The only kind that names a price, because it is the
- * only kind whose caller is buying something from the owner.
- */
-export type ProxyListingPayload = {
-    bearerTokenCiphertext: string;
-    // Owner-set: callers may only spend Paid Pollen on this model.
-    paidOnly: boolean;
-    modality: CommunityEndpointModality;
-    imagePricing: CommunityEndpointImagePricing;
-    inputModalities: ModelInputModality[];
-    perUserRpm: number | null;
-    fallbacks: string[];
-    advertised?: CommunityEndpointAdvertised;
-    prices: CommunityEndpointPrices;
-};
-
-/**
- * An agent Enter runs itself. Its row id is also the model sent to the shared
- * runtime, which loads this configuration from the same row.
- */
-export const BuiltinMcpServerIdSchema = z.enum(MCP_SERVER_IDS);
-export const PromptAgentConfigSchema = z.object({
-    systemPrompt: z.string().trim().min(1).max(8000),
-    baseModel: z.string().trim().min(1).max(253),
-    mcpServers: z
-        .array(BuiltinMcpServerIdSchema)
-        .max(MCP_SERVER_IDS.length)
-        .refine((servers) => new Set(servers).size === servers.length, {
-            message: "Duplicate MCP servers are not allowed",
-        })
-        .optional()
-        .default([]),
-});
-export const PromptAgentInputSchema = PromptAgentConfigSchema.strict();
-
-export type PromptAgentListingPayload = z.infer<typeof PromptAgentConfigSchema>;
-
-/**
- * An agent on the owner's own server. It is sent a run token rather than a
- * credential. The rate limit remains gateway policy, not an upstream secret.
- */
-export const EndpointAgentListingPayloadSchema = z
-    .object({
-        perUserRpm: z.number().finite().positive().nullable().default(null),
-    })
-    .strict();
-
-export type EndpointAgentListingPayload = z.infer<
-    typeof EndpointAgentListingPayloadSchema
->;
-
-export type ListingPayloadByType = {
-    proxy: ProxyListingPayload;
-    prompt_agent: PromptAgentListingPayload;
-    endpoint_agent: EndpointAgentListingPayload;
-};
-
-/**
- * Read a stored payload back into its typed shape.
- *
- * Storage is the only place a payload arrives untyped, so it is normalized
- * once here and every reader downstream gets a complete value. A payload
- * missing what its type requires returns null, which leaves the listing out of
- * the catalog rather than in it half-populated.
- */
-export function parseListingPayload<K extends ListingType>(
-    type: K,
-    raw: string | null,
-): ListingPayloadByType[K] | null {
-    let parsed: unknown;
-    try {
-        parsed = raw === null ? null : JSON.parse(raw);
-    } catch {
-        return null;
-    }
-    if (parsed === null || typeof parsed !== "object") return null;
-    const source = parsed as Record<string, unknown>;
-
-    if (type === "endpoint_agent") {
-        const result = EndpointAgentListingPayloadSchema.safeParse(source);
-        return result.success ? (result.data as ListingPayloadByType[K]) : null;
-    }
-    if (type === "prompt_agent") {
-        const result = PromptAgentConfigSchema.safeParse(source);
-        return result.success ? (result.data as ListingPayloadByType[K]) : null;
-    }
-
-    const bearerTokenCiphertext =
-        typeof source.bearerTokenCiphertext === "string"
-            ? source.bearerTokenCiphertext
-            : "";
-    if (!bearerTokenCiphertext) return null;
-    const modality = normalizeCommunityEndpointModality(
-        typeof source.modality === "string" ? source.modality : null,
-    );
-    return {
-        bearerTokenCiphertext,
-        paidOnly: source.paidOnly === true,
-        modality,
-        imagePricing: normalizeCommunityEndpointImagePricing(
-            typeof source.imagePricing === "string"
-                ? source.imagePricing
-                : null,
-        ),
-        inputModalities: normalizeCommunityEndpointInputModalities(
-            Array.isArray(source.inputModalities)
-                ? (source.inputModalities as ModelInputModality[])
-                : undefined,
-            modality,
-        ),
-        perUserRpm:
-            typeof source.perUserRpm === "number" ? source.perUserRpm : null,
-        fallbacks: Array.isArray(source.fallbacks)
-            ? source.fallbacks.filter(
-                  (id): id is string => typeof id === "string",
-              )
-            : [],
-        advertised: normalizeCommunityEndpointAdvertised(
-            CommunityEndpointAdvertisedSchema.safeParse(source.advertised).data,
-            modality,
-        ),
-        prices: communityEndpointPrices(
-            (typeof source.prices === "object" && source.prices !== null
-                ? source.prices
-                : {}) as Partial<CommunityEndpointPrices>,
-        ),
-    } as ListingPayloadByType[K];
-}
-
-export function pendingCommunityEndpointChangeIsReady(
-    pendingAt: Date | null,
-    now = Date.now(),
-): boolean {
-    return (
-        pendingAt !== null &&
-        now >= pendingAt.getTime() + COMMUNITY_ENDPOINT_CHANGE_DELAY_MS
-    );
-}
-
-/** Apply only the delayed price policy, preserving newer credentials/settings. */
-export function applyPendingProxyPricing(
-    current: ProxyListingPayload,
-    pending: ProxyListingPayload | null,
-): ProxyListingPayload {
-    return pending
-        ? {
-              ...current,
-              paidOnly: pending.paidOnly,
-              imagePricing: pending.imagePricing,
-              prices: pending.prices,
-          }
-        : current;
-}
-
 type CommunityEndpointRuntimeBase = {
     id: string;
     ownerUserId: string;
@@ -590,62 +368,56 @@ type CommunityEndpointRuntimeBase = {
     imagePricing: CommunityEndpointImagePricing;
     inputModalities: ModelInputModality[] | null;
     // Where the gateway sends the request, and the model name it asks for.
-    // All variants resolve these when the row is read, so routing never has
+    // Both variants resolve these when the row is read, so routing never has
     // to know which kind it is holding.
     baseUrl: string;
     upstreamModel: string;
     visibility: CommunityEndpointVisibility;
-    paidOnly: boolean;
     // Exact gateway-side cap per Pollinations user. Null delegates capacity
     // limits to the upstream, whose 429 then remains a model failure.
     perUserRpm: number | null;
     // Community model ids tried in order when this endpoint's upstream fails.
     // A target's own list is never followed: the owner declares the full order.
-    fallbacks: string[];
-    hiddenAt: number | null;
-    hiddenReason: string | null;
+    fallbackModelIds: string[];
+    disabledAt: number | null;
+    disabledReason: string | null;
 } & CommunityEndpointPrices;
 
-/** A third-party server, reached with its registered upstream bearer secret. */
-export type ProxyCommunityEndpointRuntime = CommunityEndpointRuntimeBase & {
-    type: "proxy";
+/** A third-party OpenAI-compatible server the owner registered. */
+export type ExternalCommunityEndpointRuntime = CommunityEndpointRuntimeBase & {
+    kind: "external";
     bearerTokenCiphertext: string;
-    advertised?: CommunityEndpointAdvertised;
+    /** Admin-granted: may spend an agent run token on the caller's behalf. */
+    delegatesGeneration: boolean;
 };
 
-/** An agent Enter runs on its own runtime, named by its listing id. */
-export type PromptAgentCommunityEndpointRuntime =
-    CommunityEndpointRuntimeBase & {
-        type: "prompt_agent";
-    };
-
-/** An agent on the owner's own server, sent a run token instead of a key. */
-export type EndpointAgentCommunityEndpointRuntime =
-    CommunityEndpointRuntimeBase & {
-        type: "endpoint_agent";
-    };
+/** A managed prompt agent, run by Enter's own agent runtime. */
+export type AgentCommunityEndpointRuntime = CommunityEndpointRuntimeBase & {
+    kind: "agent";
+    agentId: string;
+};
 
 export type CommunityEndpointRuntime =
-    | ProxyCommunityEndpointRuntime
-    | PromptAgentCommunityEndpointRuntime
-    | EndpointAgentCommunityEndpointRuntime;
+    | ExternalCommunityEndpointRuntime
+    | AgentCommunityEndpointRuntime;
 
 /**
  * Whether calls to this endpoint spend the caller's balance downstream.
  *
- * Both agent kinds do — one runs here, one on the owner's server, and either
- * way the work is charged to whoever called. A proxy never does: its owner
- * pays their own upstream and charges the caller a declared price. This is the
- * fact that decides which credential goes on the wire, so it has one name.
+ * Managed agents always do: they call their base model and tools on the
+ * caller's behalf. External endpoints only do so when an admin granted it.
+ * Both are barred from the same places — fallback targets, and being called
+ * by another run token — so the two cases share one name.
  */
-export function usesAgentRunToken(endpoint: CommunityEndpointRuntime): boolean {
-    return endpoint.type !== "proxy";
+export function isDelegatingEndpoint(
+    endpoint: CommunityEndpointRuntime,
+): boolean {
+    return endpoint.kind === "agent" || endpoint.delegatesGeneration;
 }
 
 export type CommunityModelDefinitionInput = {
     modelId: string;
     addedDate?: number;
-    perUserRpm?: number | null;
     title?: string | null;
     description: string | null;
     providerName?: string | null;
@@ -653,10 +425,6 @@ export type CommunityModelDefinitionInput = {
     modality?: CommunityEndpointModality;
     imagePricing?: CommunityEndpointImagePricing;
     inputModalities?: ModelInputModality[] | null;
-    fallbacks?: string[];
-    advertised?: CommunityEndpointAdvertised | null;
-    hidden?: boolean;
-    paidOnly?: boolean;
 } & CommunityEndpointPrices;
 
 export type CommunityProviderProfile = {
@@ -895,6 +663,10 @@ export function communityAudioTranscriptionsUrl(baseUrl: string): string {
     return `${communityOpenAIBaseUrl(baseUrl)}/audio/transcriptions`;
 }
 
+export function communityVideoGenerationsUrl(baseUrl: string): string {
+    return `${communityOpenAIBaseUrl(baseUrl)}/video/generations`;
+}
+
 /**
  * Audio duration reported by an OpenAI-compatible transcription response.
  *
@@ -990,6 +762,7 @@ export function communityModelDefinition(
     );
     const isImage = modality === "image";
     const isTranscription = modality === "transcription";
+    const isVideo = modality === "video";
     // Token-priced image endpoints bill like text models (usage × per-token
     // rates), so only fixed per-request image endpoints are flat-rate.
     const isFlatRateImage = isImage && imagePricing === "request";
@@ -999,38 +772,35 @@ export function communityModelDefinition(
     );
     const providerName = endpoint.providerName?.trim();
     const providerUrl = endpoint.providerUrl?.trim();
-    const { capabilities = [], ...advertised } =
-        normalizeCommunityEndpointAdvertised(endpoint.advertised, modality);
     return {
         aliases,
         provider: "community",
-        perUserRpm: endpoint.perUserRpm,
         brand: providerName || "Community",
         brandUrl: providerName && providerUrl ? providerUrl : undefined,
-        category: isImage ? "image" : isTranscription ? "audio" : "text",
+        category: isImage
+            ? "image"
+            : isTranscription
+              ? "audio"
+              : isVideo
+                ? "video"
+                : "text",
         cost: communityPriceDefinition(endpoint, modality, imagePricing),
         priceMultiplier: 1,
         addedDate: endpoint.addedDate ?? 0,
         title: communityEndpointTitle(endpoint),
         description: description || undefined,
         inputModalities,
-        outputModalities: isImage ? ["image"] : ["text"],
-        hidden: endpoint.hidden,
-        ...(endpoint.fallbacks?.length
-            ? { fallbacks: endpoint.fallbacks }
-            : {}),
+        outputModalities: isImage ? ["image"] : isVideo ? ["video"] : ["text"],
         ...(isTranscription
             ? { supportedEndpoints: ["/v1/audio/transcriptions"] }
             : {}),
-        paidOnly: endpoint.paidOnly ?? false,
+        ...(isVideo ? { supportedEndpoints: ["/v1/video/generations"] } : {}),
+        paidOnly: false,
         alpha: true,
         // Explicit false (not omitted) for token-priced image endpoints: the
         // catalog only renders per-1M prices when flat_rate === false or a
         // prompt token price is set.
         ...(isImage ? { flatRate: isFlatRateImage } : {}),
-        ...(capabilities.includes("tool_calling") ? { tools: true } : {}),
-        ...(capabilities.includes("reasoning") ? { reasoning: true } : {}),
-        ...advertised,
     };
 }
 

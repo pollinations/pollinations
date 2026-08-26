@@ -8,6 +8,7 @@ import {
     communityImageGenerationsUrl,
     communityOpenAIBaseUrl,
     communityTranscriptionSeconds,
+    communityVideoGenerationsUrl,
     decodeCommunityBase64,
     firstCommunityImageBytes,
     normalizeCommunityEndpointBearerToken,
@@ -284,6 +285,115 @@ export async function testCommunityTranscriptionEndpoint({
         usage: { duration: promptAudioSeconds },
         billableUsage: { promptAudioSeconds },
     };
+}
+
+/**
+ * Probe a community video endpoint by generating a short clip and verifying
+ * the response carries downloadable video bytes and a billable duration.
+ */
+export async function testCommunityVideoEndpoint({
+    baseUrl,
+    bearerToken,
+    model,
+}: EndpointTestInput): Promise<CommunityEndpointTestResult> {
+    const body = await fetchJson(communityVideoGenerationsUrl(baseUrl), {
+        method: "POST",
+        headers: {
+            ...authorizationHeaders(bearerToken),
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            model,
+            prompt: "A simple green sprout growing on a white background.",
+            duration: 2,
+        }),
+    });
+
+    if (!body || typeof body !== "object") {
+        throw new Error("Endpoint did not return a JSON object");
+    }
+
+    const responseUrl = getFirstVideoUrl(body);
+    if (!responseUrl) {
+        throw new Error("Endpoint did not return a playable video URL or data");
+    }
+
+    const duration = communityVideoSeconds(body);
+    if (duration === null) {
+        throw new Error(
+            "Endpoint did not report the video duration, which is required to bill video generation",
+        );
+    }
+
+    // Verify the video URL is reachable.
+    await fetchVideoBytes(responseUrl, bearerToken);
+
+    return {
+        usage: { video_seconds: duration },
+        billableUsage: { completionVideoSeconds: duration },
+    };
+}
+
+function getFirstVideoUrl(body: Record<string, unknown>): string | null {
+    if (typeof body.url === "string" && body.url) return body.url;
+    if (typeof body.video === "string" && body.video) return body.video;
+    if (
+        body.data &&
+        Array.isArray(body.data) &&
+        typeof body.data[0] === "object" &&
+        body.data[0] !== null &&
+        typeof (body.data[0] as { url?: unknown }).url === "string"
+    ) {
+        return (body.data[0] as { url: string }).url;
+    }
+    return null;
+}
+
+function communityVideoSeconds(body: unknown): number | null {
+    if (!body || typeof body !== "object") return null;
+    const record = body as Record<string, unknown>;
+    if (typeof record.duration === "number") return record.duration;
+    if (
+        typeof record.usage === "object" &&
+        record.usage !== null &&
+        typeof (record.usage as { duration?: unknown }).duration === "number"
+    ) {
+        return (record.usage as { duration: number }).duration;
+    }
+    if (
+        typeof record.usage === "object" &&
+        record.usage !== null &&
+        typeof (record.usage as { video_seconds?: unknown }).video_seconds ===
+            "number"
+    ) {
+        return (record.usage as { video_seconds: number }).video_seconds;
+    }
+    if (typeof record.video_seconds === "number") {
+        return record.video_seconds as number;
+    }
+    return null;
+}
+
+async function fetchVideoBytes(
+    url: string,
+    bearerToken: string,
+): Promise<void> {
+    const response = await fetch(url, {
+        headers: authorizationHeaders(bearerToken),
+        redirect: "manual",
+        signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
+    });
+    if (!response.ok) {
+        throw new Error(`Video download failed with status ${response.status}`);
+    }
+    const contentType = response.headers.get("content-type") || "";
+    if (!contentType.startsWith("video/")) {
+        throw new Error(`Expected video content-type, got "${contentType}"`);
+    }
+    const contentLength = response.headers.get("content-length");
+    if (contentLength && Number(contentLength) <= 0) {
+        throw new Error("Video response was empty");
+    }
 }
 
 async function testCommunityImageEdits(

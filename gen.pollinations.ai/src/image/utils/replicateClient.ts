@@ -19,6 +19,12 @@ const POLL_INTERVAL_MS = 5000;
 // so the upstream and Worker ceilings cannot drift apart.
 const DEFAULT_PREDICTION_DEADLINE_MINUTES = 6;
 const CANCEL_REQUEST_TIMEOUT_MS = 5000;
+const HTTP_URL_PATTERN = /https?:\/\/[^\s"'<>]+/gi;
+
+/** Remove user/provider media URLs before messages reach logs or clients. */
+export function redactHttpUrls(value: string): string {
+    return value.replace(HTTP_URL_PATTERN, "[url]");
+}
 
 export class ReplicateError extends Error {
     /**
@@ -145,7 +151,9 @@ export async function runReplicatePrediction<TInput, TOutput>(
         prediction.status === "canceled" ||
         prediction.status === "aborted"
     ) {
-        const message = prediction.error || `Prediction ${prediction.status}`;
+        const message = prediction.error
+            ? redactHttpUrls(prediction.error)
+            : `Prediction ${prediction.status}`;
         throw new ReplicateError(
             message,
             // Replicate uses aborted before a deadline-started prediction runs
@@ -223,7 +231,9 @@ async function replicateFetch<T>(
             signal: args.signal,
         });
     } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
+        const message = redactHttpUrls(
+            error instanceof Error ? error.message : String(error),
+        );
         throw new ReplicateError(
             `Replicate ${args.method} ${args.url} network failure: ${message}`,
             502,
@@ -237,7 +247,7 @@ async function replicateFetch<T>(
         // (auth, validation of our request, Replicate outages) maps to 502 —
         // the failure is on our side of the boundary, not the user's input.
         throw new ReplicateError(
-            `Replicate ${args.method} ${args.url} failed (HTTP ${response.status}): ${text.slice(0, 300)}`,
+            `Replicate ${args.method} ${args.url} failed (HTTP ${response.status}): ${redactHttpUrls(text.slice(0, 300))}`,
             classifyReplicateHttpStatus(response.status),
             args.url,
         );
@@ -245,7 +255,9 @@ async function replicateFetch<T>(
     try {
         return (await response.json()) as T;
     } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
+        const message = redactHttpUrls(
+            error instanceof Error ? error.message : String(error),
+        );
         throw new ReplicateError(
             `Replicate ${args.method} ${args.url} response read failed: ${message}`,
             502,

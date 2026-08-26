@@ -76,6 +76,22 @@ describe("ImageParamsSchema", () => {
         ).toBe(true);
     });
 
+    it("rejects native-only reference media on OpenAI POST requests", () => {
+        for (const field of [
+            "reference_images",
+            "reference_videos",
+            "reference_audios",
+        ] as const) {
+            const result = CreateImageRequestSchema.safeParse({
+                model: "seedance-2.0",
+                prompt: "a paper boat",
+                [field]: ["https://media.example/reference.bin"],
+            });
+
+            expect(result.success, field).toBe(false);
+        }
+    });
+
     it("enforces the public minimax-h3 contract", () => {
         expect(
             ImageParamsSchema.safeParse({

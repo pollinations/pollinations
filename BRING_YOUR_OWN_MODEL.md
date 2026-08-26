@@ -15,9 +15,9 @@ role and should not be mixed up:
 
 ### Model ID — `{username}/{model-id}`
 
-- **Stable**: once registered, keep this ID. Changing it creates a *new* model and
+- **Stable / non-mutable**: once registered, keep this ID — never change it. Changing it creates a *new* model and
   loses all history, earnings, and health metrics.
-- **No mutable details**: avoid pricing, provider routing, or context-length in the
+- **Keep mutable details out of the ID**: avoid pricing, provider routing, or context-length in the
   ID. Those change over time. Use them in the description instead.
 - **Slug format**: lowercase letters, numbers, and hyphens. No spaces, capitals, or
   special characters.

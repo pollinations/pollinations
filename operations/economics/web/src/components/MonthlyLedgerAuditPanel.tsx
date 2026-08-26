@@ -27,7 +27,7 @@ import {
 } from "./DataTable";
 
 const STATUS_INTENT = {
-    clean: "free",
+    clean: "success",
     attention: "warning",
     structural: "danger",
 } as const;
@@ -167,44 +167,18 @@ export function MonthlyLedgerAuditPanel({
                             Ledger rows
                         </TableHeaderCell>
                         <TableHeaderCell
-                            rowSpan={2}
-                            {...headerProps(
-                                "actionableTransactionEvidenceGaps",
-                            )}
-                            align="right"
-                            className={GROUP_BORDER}
-                        >
-                            <HeaderHint hint="Transactions whose invoice, receipt, statement, or reconciliation reference still needs to be archived in Drive. Hover a non-zero count to see the number for each vendor.">
-                                Open documents
-                            </HeaderHint>
-                        </TableHeaderCell>
-                        <TableHeaderCell
-                            rowSpan={2}
-                            {...headerProps(
-                                "acknowledgedTransactionEvidenceGaps",
-                            )}
-                            align="right"
-                        >
-                            <HeaderHint hint="Permanent document losses that are explicitly documented and therefore do not block a clean month. Hover a non-zero count to see the number for each vendor.">
-                                Document exceptions
-                            </HeaderHint>
-                        </TableHeaderCell>
-                        <TableHeaderCell
-                            rowSpan={2}
-                            {...headerProps("missingMappings")}
-                            align="right"
-                            className={GROUP_BORDER}
-                        >
-                            <HeaderHint hint="Vendors in the ledgers that do not resolve to a canonical vendor. Hover a non-zero count to see them.">
-                                Unmapped
-                            </HeaderHint>
-                        </TableHeaderCell>
-                        <TableHeaderCell
-                            colSpan={3}
+                            colSpan={2}
                             align="center"
                             className={GROUP_BORDER}
                         >
-                            Integrity
+                            Evidence
+                        </TableHeaderCell>
+                        <TableHeaderCell
+                            colSpan={4}
+                            align="center"
+                            className={GROUP_BORDER}
+                        >
+                            Data checks
                         </TableHeaderCell>
                     </TableRow>
                     <TableRow>
@@ -228,24 +202,55 @@ export function MonthlyLedgerAuditPanel({
                             Pollen
                         </TableHeaderCell>
                         <TableHeaderCell
-                            {...headerProps("estimatedFx")}
+                            {...headerProps(
+                                "actionableTransactionEvidenceGaps",
+                            )}
+                            align="right"
                             className={GROUP_BORDER}
                         >
-                            <HeaderHint hint="Estimated means a future EUR or CAD row is converted using the latest published monthly rate. Closed months without a published rate fail instead of being guessed.">
-                                FX
+                            <HeaderHint hint="Transactions with evidence that is missing or still unresolved. These items block the monthly close. Hover a non-zero count to see the number for each vendor.">
+                                Missing
+                            </HeaderHint>
+                        </TableHeaderCell>
+                        <TableHeaderCell
+                            {...headerProps(
+                                "acknowledgedTransactionEvidenceGaps",
+                            )}
+                            align="right"
+                        >
+                            <HeaderHint hint="Permanent evidence losses that are documented and accepted. These remain visible but do not block the monthly close. Hover a non-zero count to see the number for each vendor.">
+                                Exceptions
+                            </HeaderHint>
+                        </TableHeaderCell>
+                        <TableHeaderCell
+                            {...headerProps("missingMappings")}
+                            align="right"
+                            className={GROUP_BORDER}
+                        >
+                            <HeaderHint hint="Unique vendor names that do not resolve to the canonical vendor registry. These must be mapped before the month is structurally clean. Hover a non-zero count to see the vendors.">
+                                Unmapped vendors
+                            </HeaderHint>
+                        </TableHeaderCell>
+                        <TableHeaderCell {...headerProps("estimatedFx")}>
+                            <HeaderHint hint="Published uses that month's recorded exchange rate. Estimated uses the latest published rate for a current or future month; a closed month without its rate fails instead of being guessed.">
+                                FX rate
                             </HeaderHint>
                         </TableHeaderCell>
                         <TableHeaderCell
                             {...headerProps("invalidRows")}
                             align="right"
                         >
-                            Invalid
+                            <HeaderHint hint="Ledger rows that fail required identity, date, source, category, currency, or numeric-value checks. Invalid rows block a structurally clean month. Hover a non-zero count to see the vendors.">
+                                Invalid rows
+                            </HeaderHint>
                         </TableHeaderCell>
                         <TableHeaderCell
                             {...headerProps("duplicateRows")}
                             align="right"
                         >
-                            Duplicates
+                            <HeaderHint hint="Extra ledger rows sharing the same source and entry ID. Duplicate rows block a structurally clean month. Hover a non-zero count to see the vendors.">
+                                Duplicates
+                            </HeaderHint>
                         </TableHeaderCell>
                     </TableRow>
                 </TableHead>

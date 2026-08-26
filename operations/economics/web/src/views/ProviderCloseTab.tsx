@@ -1,6 +1,9 @@
 import {
     Button,
+    Chip,
     Dialog,
+    Heading,
+    InlineLink,
     TableBody,
     TableCell,
     TableHead,
@@ -34,19 +37,19 @@ import {
 } from "../lib/providerClose";
 import type { Data } from "../types";
 
-const CLOSE_CLASS: Record<ProviderCloseRow["closeStatus"], string> = {
-    ready: "bg-intent-success-bg-bright/15 text-intent-success-text ring-intent-success-bg-bright/30",
-    "missing document":
-        "bg-intent-warning-bg-light text-intent-warning-text ring-intent-warning-text/25",
-    "needs provider check":
-        "bg-intent-danger-bg-light text-intent-danger-text ring-intent-danger-border/40",
-    "needs account check":
-        "bg-intent-warning-bg-light text-intent-warning-text ring-intent-warning-text/25",
+const CLOSE_INTENT: Record<
+    ProviderCloseRow["closeStatus"],
+    "danger" | "success" | "warning"
+> = {
+    ready: "success",
+    "missing document": "warning",
+    "needs provider check": "danger",
+    "needs account check": "warning",
 };
 
 const CLOSE_LABEL: Record<ProviderCloseRow["closeStatus"], string> = {
     ready: "ready",
-    "missing document": "missing document",
+    "missing document": "missing evidence",
     "needs provider check": "missing source",
     "needs account check": "account incomplete",
 };
@@ -54,7 +57,7 @@ const CLOSE_LABEL: Record<ProviderCloseRow["closeStatus"], string> = {
 const CLOSE_HINT: Record<ProviderCloseRow["closeStatus"], string> = {
     ready: "Vendor source and account coverage checks are complete for this vendor-month.",
     "missing document":
-        "A recoverable transaction invoice, receipt, or reconciliation document is not archived in Drive.",
+        "Transaction evidence is missing or still unresolved. This item blocks the monthly close.",
     "needs provider check":
         "The vendor statement, dashboard export, or other archived source is missing. No vendor cost is inferred.",
     "needs account check":
@@ -88,19 +91,17 @@ function StatusBadge({ row }: { row: ProviderCloseRow }) {
                 triggerAs="span"
                 content="The current month is open and excluded from close-readiness counts."
             >
-                <span className="inline-flex whitespace-nowrap rounded-md bg-theme-bg-active px-2 py-0.5 text-xs font-medium text-theme-text-soft ring-1 ring-theme-border">
+                <Chip intent="neutral" size="sm">
                     open
-                </span>
+                </Chip>
             </Tooltip>
         );
     }
     return (
         <Tooltip triggerAs="span" content={CLOSE_HINT[row.closeStatus]}>
-            <span
-                className={`inline-flex whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-medium ring-1 ${CLOSE_CLASS[row.closeStatus]}`}
-            >
+            <Chip intent={CLOSE_INTENT[row.closeStatus]} size="sm">
                 {CLOSE_LABEL[row.closeStatus]}
-            </span>
+            </Chip>
         </Tooltip>
     );
 }
@@ -136,13 +137,16 @@ function EvidenceGroupAction({
 }) {
     if (!items.length) return null;
     return (
-        <button
+        <InlineLink
+            as="button"
             type="button"
             onClick={onBrowse}
-            className="whitespace-nowrap text-xs font-medium text-theme-text underline underline-offset-4 hover:text-theme-text-soft"
+            external={false}
+            showIcon={false}
+            className="whitespace-nowrap text-xs"
         >
             Vendor source ({items.length})
-        </button>
+        </InlineLink>
     );
 }
 
@@ -286,7 +290,7 @@ export function ProviderCloseTab({
             ? `${summary.blockers} vendor ${summary.blockers === 1 ? "check" : "checks"}`
             : null,
         openDocumentGaps
-            ? `${openDocumentGaps} open transaction ${openDocumentGaps === 1 ? "document" : "documents"}`
+            ? `${openDocumentGaps} missing evidence ${openDocumentGaps === 1 ? "item" : "items"}`
             : null,
         missingBankMonths
             ? `${missingBankMonths} ${missingBankMonths === 1 ? "month has" : "months have"} no bank data`
@@ -350,15 +354,15 @@ export function ProviderCloseTab({
     return (
         <div className="flex flex-col gap-4">
             <section className="flex flex-col gap-2">
-                <h3 className="text-lg font-semibold text-theme-text-strong">
+                <Heading as="h3" size="card">
                     Ledger integrity
-                </h3>
+                </Heading>
                 <MonthlyLedgerAuditPanel data={data} month="" />
             </section>
             <section className="flex flex-col gap-4">
-                <h3 className="text-lg font-semibold text-theme-text-strong">
+                <Heading as="h3" size="card">
                     Monthly close
-                </h3>
+                </Heading>
                 <MonthFilter
                     months={months}
                     year={year}
@@ -449,11 +453,10 @@ export function ProviderCloseTab({
                                                                 : "text-sm text-theme-text-soft"
                                                         }
                                                     >
-                                                        Missing document
                                                         {row.transactionDocumentStatus ===
-                                                        "acknowledged"
-                                                            ? " · acknowledged"
-                                                            : ""}
+                                                        "missing"
+                                                            ? "Missing evidence"
+                                                            : "Evidence exception"}
                                                     </span>
                                                 )}
                                                 {row.evidence.length === 0 &&

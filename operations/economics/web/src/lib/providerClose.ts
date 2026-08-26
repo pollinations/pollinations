@@ -325,8 +325,9 @@ export function visibleProviderCloseRows({
 export function providerCloseRank(row: ProviderCloseRow): number {
     if (!row.partial && row.closeStatus === "needs provider check") return 0;
     if (!row.partial && row.closeStatus === "needs account check") return 1;
-    if (row.partial) return 2;
-    return 3;
+    if (!row.partial && row.transactionDocumentStatus === "missing") return 2;
+    if (row.partial) return 3;
+    return 4;
 }
 
 export function attentionFirst(rows: ProviderCloseRow[]): ProviderCloseRow[] {

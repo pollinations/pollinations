@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { PRIVATE_CONFIG_FIXTURE } from "../fixtures";
 import type { Data, OpCloudRow, OpPollenRow, OpTransactionRow } from "../types";
 import {
+    attentionFirst,
     providerClosePeriodStatus,
     providerCloseRows,
     providerCloseSummary,
@@ -109,6 +110,29 @@ describe("providerCloseRows", () => {
             closeStatus: "ready",
             transactionDocumentStatus: "acknowledged",
         });
+    });
+
+    it("sorts unresolved transaction evidence above ready rows", () => {
+        const missing = providerCloseRows(
+            data({ opTransactions: [transaction()] }),
+            "2026-08",
+        )[0];
+        const ready = providerCloseRows(
+            data({
+                opTransactions: [
+                    transaction({
+                        vendor: "discord",
+                        description:
+                            "Discord receipt · supplier invoice lost and unavailable",
+                    }),
+                ],
+            }),
+            "2026-08",
+        )[0];
+
+        expect(
+            attentionFirst([ready, missing]).map((row) => row.vendor),
+        ).toEqual(["buffer", "discord"]);
     });
 
     it("keeps a fully credit-funded provider at zero cash cost", () => {

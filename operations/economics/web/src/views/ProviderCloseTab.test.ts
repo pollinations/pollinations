@@ -59,11 +59,16 @@ describe("ProviderCloseTab", () => {
         );
 
         expect(html).toContain("Action needed");
-        expect(html).toContain("1 open transaction document");
+        expect(html).toContain("1 missing evidence item");
         expect(html).toContain("Vendor source (1)");
         expect(html).toContain("Ledger integrity");
-        expect(html).toContain("Open documents");
-        expect(html).toContain("Document exceptions");
+        expect(html).toContain("Evidence");
+        expect(html).toContain("Missing");
+        expect(html).toContain("Exceptions");
+        expect(html).toContain("Data checks");
+        expect(html).toContain("Unmapped vendors");
+        expect(html).toContain("FX rate");
+        expect(html).toContain("Invalid rows");
         expect(html.indexOf("Ledger integrity")).toBeLessThan(
             html.indexOf("Monthly close"),
         );

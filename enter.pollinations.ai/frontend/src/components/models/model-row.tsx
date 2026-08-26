@@ -1,4 +1,5 @@
 import {
+    BeakerIcon,
     CheckIcon,
     Chip,
     ClipboardIcon,
@@ -182,6 +183,21 @@ export function getModelTitleTooltipContent(model: ModelPrice): ReactNode {
                 <span className="font-mono">{model.baseModel}</span>
             </span>
         </span>
+    );
+}
+
+function PlayLink({ name }: { name: string }) {
+    return (
+        <Tooltip label="Try in Play" tapEnabled>
+            <a
+                href={`/play?model=${encodeURIComponent(name)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center rounded size-7 text-theme-text-muted hover:bg-theme-hover"
+            >
+                <BeakerIcon className="size-3.5 shrink-0" />
+            </a>
+        </Tooltip>
     );
 }
 
@@ -382,6 +398,9 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             access={balanceAccess}
                             className="whitespace-nowrap"
                         />
+                    </div>
+                    <div className="flex items-start gap-1 pt-3">
+                        <PlayLink name={model.name} />
                     </div>
                 </div>
             </div>

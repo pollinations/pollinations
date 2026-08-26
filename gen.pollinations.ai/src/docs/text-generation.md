@@ -37,3 +37,27 @@ On Gemini, Claude, and Nova models, a large static prompt prefix can be cached s
 **Claude** — all Claude models cache. The prefix must be at least 4,096 tokens (1,024 on `claude` and `claude-fable-5`); tools are fine. Cache creates bill at 1.25× the input rate (no storage fee); hits bill at 10% of input. The cache lives ~5 minutes, refreshed on each hit.
 
 **Nova** — `nova` and `nova-fast` cache. The prefix must be at least ~1,000 tokens (up to 20K tokens cacheable). Cache creates are free; hits bill at 25% of input. ~5-minute TTL.
+
+### Reasoning
+
+Ask a model to think more carefully before answering by setting `reasoning_effort`. Accepted values: `none`, `minimal`, `low`, `medium`, `high`, `xhigh` — higher means more deliberation. The setting only affects models that support adjustable reasoning; `none` disables it on models that would otherwise reason by default. Check a model's metadata — models that support reasoning list a `reasoning` capability — to see which ones honor it.
+
+**Chat Completions — `POST /v1/chat/completions`**
+
+```bash
+curl https://gen.pollinations.ai/v1/chat/completions \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "openai",
+    "reasoning_effort": "high",
+    "messages": [{"role": "user", "content": "Prove that the square root of 2 is irrational."}]
+  }'
+```
+
+**Text endpoint — `GET /text/{prompt}`**
+
+```bash
+curl "https://gen.pollinations.ai/text/Prove%20that%20the%20square%20root%20of%202%20is%20irrational?model=openai&reasoning_effort=high" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```

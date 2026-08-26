@@ -64,6 +64,18 @@ const response = await client.chat.completions.create({
 });
 console.log(response.choices[0].message.content);`,
         },
+        {
+            label: "Reasoning",
+            lang: "Shell",
+            source: `curl https://gen.pollinations.ai/v1/chat/completions \\
+  -H "Authorization: Bearer YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "openai",
+    "reasoning_effort": "high",
+    "messages": [{"role": "user", "content": "Prove that the square root of 2 is irrational."}]
+  }'`,
+        },
     ],
     "get /text/{prompt}": [
         {
@@ -92,6 +104,12 @@ print(response.text)`,
   { headers: { Authorization: "Bearer YOUR_API_KEY" } },
 );
 console.log(await response.text());`,
+        },
+        {
+            label: "Reasoning",
+            lang: "Shell",
+            source: `curl "https://gen.pollinations.ai/text/Prove%20that%20the%20square%20root%20of%202%20is%20irrational?model=openai&reasoning_effort=high" \\
+  -H "Authorization: Bearer YOUR_API_KEY"`,
         },
     ],
     "get /image/{prompt}": [

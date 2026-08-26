@@ -3,9 +3,14 @@ const SESSION_PAYLOAD = "economics";
 const SESSION_MAX_AGE_SECONDS = 43_200;
 const PASSWORD_CHECK_PAYLOAD = "economics-password-check";
 const READ_PIPES = new Set([
-    "op_transactions_api",
-    "op_cloud_api",
-    "op_pollen_api",
+    "economics_bank_ledger_api",
+    "economics_compute_ledger_api",
+    "economics_pollen_usage_api",
+]);
+const POLLEN_PIPE_ROUTE = "economics_pollen_usage_api";
+const POLLEN_UPSTREAM_PIPES = new Set([
+    "economics_pollen_usage_api",
+    "economics_pollen_usage_snapshot_api",
 ]);
 
 interface Env {
@@ -14,6 +19,7 @@ interface Env {
     LOGIN_RATE_LIMITER: RateLimit;
     TINYBIRD_API: string;
     TINYBIRD_ECONOMICS_READ_TOKEN: string;
+    TINYBIRD_POLLEN_PIPE: string;
 }
 
 const encoder = new TextEncoder();
@@ -190,7 +196,11 @@ async function validPassword(candidate: string, password: string) {
 }
 
 function requiredSecrets(env: Env) {
-    if (!env.ECONOMICS_PASSWORD || !env.TINYBIRD_ECONOMICS_READ_TOKEN) {
+    if (
+        !env.ECONOMICS_PASSWORD ||
+        !env.TINYBIRD_ECONOMICS_READ_TOKEN ||
+        !POLLEN_UPSTREAM_PIPES.has(env.TINYBIRD_POLLEN_PIPE)
+    ) {
         throw new Error("Economics secrets unavailable");
     }
 }
@@ -267,8 +277,11 @@ async function handleApi(request: Request, env: Env) {
             return json({ error: "Unknown pipe" }, 404);
         }
 
+        const upstreamPipe =
+            pipe === POLLEN_PIPE_ROUTE ? env.TINYBIRD_POLLEN_PIPE : pipe;
+
         const upstream = await fetch(
-            `${env.TINYBIRD_API}/v0/pipes/${pipe}.json`,
+            `${env.TINYBIRD_API}/v0/pipes/${upstreamPipe}.json`,
             {
                 headers: {
                     Authorization: `Bearer ${env.TINYBIRD_ECONOMICS_READ_TOKEN}`,

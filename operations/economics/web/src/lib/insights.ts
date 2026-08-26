@@ -881,7 +881,7 @@ export function insightVendorOptions(
 
 // Vendors priced from our own pollen records rather than an external bill.
 // Their calib is 1.00 by construction, a definition rather than a measurement.
-// Community has no provider cost; op_pollen_api normalizes its cost fields to 0.
+// Community has no provider cost; the Pollen usage endpoint normalizes it to 0.
 // |calib − 1| beyond this marks a registry mispricing worth fixing.
 export const CALIB_DRIFT_ALARM = 0.25;
 export const CALIB_DRIFT_ABS_ALARM_USD = 100;

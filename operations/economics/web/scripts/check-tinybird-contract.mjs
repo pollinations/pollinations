@@ -3,9 +3,9 @@ import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 
 export const REQUIRED_PIPES = [
-    "op_transactions_api",
-    "op_cloud_api",
-    "op_pollen_api",
+    "economics_bank_ledger_api",
+    "economics_compute_ledger_api",
+    "economics_pollen_usage_api",
 ];
 
 export async function checkTinybirdContract({ api, token, fetchImpl = fetch }) {

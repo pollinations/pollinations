@@ -34,11 +34,11 @@ test("blocks deployment when a pipe is absent or malformed", async () => {
             api: "https://tinybird.test",
             token: "redacted",
             fetchImpl: async (url) => {
-                if (url.includes("op_pollen_api")) {
+                if (url.includes("economics_pollen_usage_api")) {
                     return Response.json({ rows: [] });
                 }
                 return Response.json({ data: [] });
             },
         }),
-    ).rejects.toThrow(/op_pollen_api: invalid shape/);
+    ).rejects.toThrow(/economics_pollen_usage_api: invalid shape/);
 });

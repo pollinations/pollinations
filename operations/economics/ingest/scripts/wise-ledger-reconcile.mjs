@@ -519,7 +519,7 @@ async function main() {
             since: "2025-01-01T00:00:00.000Z",
             until: since,
         }),
-        tinybirdRows("op_transactions_api", tinybirdToken),
+        tinybirdRows("economics_bank_ledger_api", tinybirdToken),
     ]);
 
     const existingIds = coveredWiseEntryIds(transactions);

@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { FIXTURES } from "./fixtures";
 
-const EXPECTED_PIPES = ["op_transactions_api", "op_cloud_api", "op_pollen_api"];
+const EXPECTED_PIPES = [
+    "economics_bank_ledger_api",
+    "economics_compute_ledger_api",
+    "economics_pollen_usage_api",
+];
 
 describe("fixtures", () => {
     it("covers every pipe the app fetches", () => {
@@ -12,7 +16,7 @@ describe("fixtures", () => {
     });
 
     it("gives every transaction a stable entry id", () => {
-        const transactions = FIXTURES.op_transactions_api as Array<{
+        const transactions = FIXTURES.economics_bank_ledger_api as Array<{
             entry_id: string;
         }>;
         const ids = transactions.map((row) => row.entry_id);
@@ -21,7 +25,7 @@ describe("fixtures", () => {
     });
 
     it("keeps one statement-backed opening balance in the bank ledger", () => {
-        const transactions = FIXTURES.op_transactions_api as Array<{
+        const transactions = FIXTURES.economics_bank_ledger_api as Array<{
             kind: string;
         }>;
         expect(
@@ -30,7 +34,7 @@ describe("fixtures", () => {
     });
 
     it("covers every 2026 month through the current demo month", () => {
-        const transactions = FIXTURES.op_transactions_api as Array<{
+        const transactions = FIXTURES.economics_bank_ledger_api as Array<{
             date: string;
         }>;
         const months = [
@@ -50,11 +54,11 @@ describe("fixtures", () => {
     });
 
     it("keeps every unit-economics view populated in the latest closed demo month", () => {
-        const cloud = FIXTURES.op_cloud_api as Array<{
+        const cloud = FIXTURES.economics_compute_ledger_api as Array<{
             start: string;
             type: string;
         }>;
-        const pollen = FIXTURES.op_pollen_api as Array<{
+        const pollen = FIXTURES.economics_pollen_usage_api as Array<{
             month: string;
             vendor: string;
         }>;

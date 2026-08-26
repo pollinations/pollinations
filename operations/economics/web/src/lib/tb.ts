@@ -27,7 +27,7 @@ type PipeContract = {
 };
 
 const PIPE_CONTRACTS: Record<string, PipeContract> = {
-    op_transactions_api: {
+    economics_bank_ledger_api: {
         strings: [
             "entry_id",
             "kind",
@@ -43,7 +43,7 @@ const PIPE_CONTRACTS: Record<string, PipeContract> = {
         numbers: ["amount"],
         enums: { kind: ["transaction", "opening_balance"] },
     },
-    op_cloud_api: {
+    economics_compute_ledger_api: {
         strings: [
             "entry_id",
             "source",
@@ -61,7 +61,7 @@ const PIPE_CONTRACTS: Record<string, PipeContract> = {
         ],
         numbers: ["credit", "paid", "resource_count"],
     },
-    op_pollen_api: {
+    economics_pollen_usage_api: {
         strings: ["month", "vendor", "model", "currency"],
         numbers: [
             "cost_paid",
@@ -189,9 +189,9 @@ export async function loadAll(): Promise<Data> {
     // All three pipes are required contracts. A missing pipe (404) must surface
     // as an error, never render as plausible-but-empty economics data.
     const [opTransactions, opCloud, opPollen] = await Promise.all([
-        fetchPipe<OpTransactionRow>("op_transactions_api"),
-        fetchPipe<OpCloudRow>("op_cloud_api"),
-        fetchPipe<OpPollenRow>("op_pollen_api"),
+        fetchPipe<OpTransactionRow>("economics_bank_ledger_api"),
+        fetchPipe<OpCloudRow>("economics_compute_ledger_api"),
+        fetchPipe<OpPollenRow>("economics_pollen_usage_api"),
     ]);
 
     const canonicalize = <T extends { vendor: string }>(row: T): T => ({

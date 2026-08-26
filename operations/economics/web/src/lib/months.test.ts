@@ -11,9 +11,9 @@ import {
 } from "./months";
 
 const data: Data = {
-    opTransactions: FIXTURES.op_transactions_api,
-    opCloud: FIXTURES.op_cloud_api,
-    opPollen: FIXTURES.op_pollen_api,
+    opTransactions: FIXTURES.economics_bank_ledger_api,
+    opCloud: FIXTURES.economics_compute_ledger_api,
+    opPollen: FIXTURES.economics_pollen_usage_api,
 } as Data;
 
 describe("collectMonths", () => {

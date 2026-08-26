@@ -166,7 +166,7 @@ const TABS: {
         id: "op-transactions",
         label: "Bank",
         codes: ["WISE"],
-        pipe: "op_transactions_api",
+        pipe: "economics_bank_ledger_api",
         note: "Wise-derived bank ledger in native currency: signed cash movements plus one statement-backed opening-balance anchor. Drive evidence links to transaction documents.",
         icon: DatabaseIcon,
         rows: (data) =>
@@ -178,7 +178,7 @@ const TABS: {
         id: "op-cloud",
         label: "Compute & Infra",
         codes: ["API", "CLI", "BQ", "HC", "INV", "EXP", "ING", "AGT"],
-        pipe: "op_cloud_api",
+        pipe: "economics_compute_ledger_api",
         note: "Compute and infrastructure usage facts, including inference, GPUs, grants, and credit burn. Paid and burn values are signed; positive credit is a grant award.",
         icon: DatabaseIcon,
         rows: (data) =>
@@ -190,7 +190,7 @@ const TABS: {
         id: "op-pollen",
         label: "Pollen",
         codes: ["TB"],
-        pipe: "op_pollen_api",
+        pipe: "economics_pollen_usage_api",
         note: "Monthly canonical vendor and internal-model usage with Paid/Quest customer price, metered cost, ecosystem shares, and request counts.",
         icon: DatabaseIcon,
         rows: (data) =>

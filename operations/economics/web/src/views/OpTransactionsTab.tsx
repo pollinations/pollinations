@@ -122,7 +122,7 @@ export function OpTransactionsTab({
                                 hint={{
                                     meaning:
                                         "Signed Wise value. Ordinary rows are cash movements; the opening-balance row is a non-movement anchor used only to reconstruct cash.",
-                                    tables: "op_transactions_api",
+                                    tables: "economics_bank_ledger_api",
                                     sources: "WISE",
                                 }}
                             >

@@ -15,6 +15,7 @@ run_worker_first = true
 
 [vars]
 TINYBIRD_API = "https://api.europe-west2.gcp.tinybird.co"
+TINYBIRD_POLLEN_PIPE = "economics_pollen_usage_api"
 
 [[ratelimits]]
 name = "LOGIN_RATE_LIMITER"

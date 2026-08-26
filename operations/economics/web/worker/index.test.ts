@@ -17,6 +17,7 @@ const env = {
     },
     TINYBIRD_API: "https://api.europe-west2.gcp.tinybird.co",
     TINYBIRD_ECONOMICS_READ_TOKEN: "test-token",
+    TINYBIRD_POLLEN_PIPE: "economics_pollen_usage_snapshot_api",
 };
 
 function request(path: string, init?: RequestInit) {
@@ -114,7 +115,9 @@ describe("economics Worker auth", () => {
         const upstream = vi.fn();
         vi.stubGlobal("fetch", upstream);
 
-        const response = await request("/api/pipes/op_cloud_api");
+        const response = await request(
+            "/api/pipes/economics_compute_ledger_api",
+        );
 
         expect(response.status).toBe(401);
         expect(upstream).not.toHaveBeenCalled();
@@ -140,16 +143,39 @@ describe("economics Worker auth", () => {
             );
         vi.stubGlobal("fetch", upstream);
 
-        const response = await request("/api/pipes/op_cloud_api", {
-            headers: { Cookie: await authenticatedCookie() },
-        });
+        const response = await request(
+            "/api/pipes/economics_compute_ledger_api",
+            {
+                headers: { Cookie: await authenticatedCookie() },
+            },
+        );
 
         expect(response.status).toBe(200);
         await expect(response.json()).resolves.toEqual({
             data: [{ entry_id: "cloud-1" }],
         });
         expect(upstream).toHaveBeenCalledWith(
-            `${env.TINYBIRD_API}/v0/pipes/op_cloud_api.json`,
+            `${env.TINYBIRD_API}/v0/pipes/economics_compute_ledger_api.json`,
+            {
+                headers: {
+                    Authorization: `Bearer ${env.TINYBIRD_ECONOMICS_READ_TOKEN}`,
+                },
+            },
+        );
+    });
+
+    it("routes Pollen reads to the environment-specific upstream", async () => {
+        const upstream = vi.fn().mockResolvedValue(Response.json({ data: [] }));
+        vi.stubGlobal("fetch", upstream);
+
+        const response = await request(
+            "/api/pipes/economics_pollen_usage_api",
+            { headers: { Cookie: await authenticatedCookie() } },
+        );
+
+        expect(response.status).toBe(200);
+        expect(upstream).toHaveBeenCalledWith(
+            `${env.TINYBIRD_API}/v0/pipes/economics_pollen_usage_snapshot_api.json`,
             {
                 headers: {
                     Authorization: `Bearer ${env.TINYBIRD_ECONOMICS_READ_TOKEN}`,

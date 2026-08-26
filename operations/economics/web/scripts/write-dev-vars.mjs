@@ -11,6 +11,7 @@ const temporary = new URL("../.dev.vars.tmp", import.meta.url);
 const contents = [
     `ECONOMICS_PASSWORD=${JSON.stringify(required("ECONOMICS_PASSWORD"))}`,
     `TINYBIRD_ECONOMICS_READ_TOKEN=${JSON.stringify(required("TINYBIRD_ECONOMICS_READ_TOKEN"))}`,
+    'TINYBIRD_POLLEN_PIPE="economics_pollen_usage_snapshot_api"',
     "",
 ].join("\n");
 

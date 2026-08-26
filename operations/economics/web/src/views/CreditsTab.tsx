@@ -272,7 +272,7 @@ export function BalancesTab({ data }: { data: Data }) {
                                     hint={{
                                         meaning:
                                             "Latest dated OP Cloud balance snapshot. A partial multi-account row sums only the checked accounts. Without a snapshot, the balance stays blank.",
-                                        tables: "op_cloud_api",
+                                        tables: "economics_compute_ledger_api",
                                         formula: "latest balance snapshot",
                                     }}
                                 >
@@ -290,7 +290,7 @@ export function BalancesTab({ data }: { data: Data }) {
                                     hint={{
                                         meaning:
                                             "Latest dated OP Cloud balance snapshot. A partial multi-account row sums only the checked accounts. Without a snapshot, the balance stays blank.",
-                                        tables: "op_cloud_api",
+                                        tables: "economics_compute_ledger_api",
                                         formula: "latest balance snapshot",
                                     }}
                                 >

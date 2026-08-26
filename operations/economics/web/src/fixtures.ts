@@ -465,7 +465,7 @@ const opPollen: OpPollenRow[] = [
     },
 ];
 export const FIXTURES: Record<string, unknown[]> = {
-    op_transactions_api: opTransactions,
-    op_cloud_api: opCloud,
-    op_pollen_api: opPollen,
+    economics_bank_ledger_api: opTransactions,
+    economics_compute_ledger_api: opCloud,
+    economics_pollen_usage_api: opPollen,
 };

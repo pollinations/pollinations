@@ -12,16 +12,16 @@ describe("Tinybird pipe contracts", () => {
 
     it("rejects malformed financial values at the API boundary", () => {
         expect(() =>
-            validatePipeRows("op_transactions_api", [
+            validatePipeRows("economics_bank_ledger_api", [
                 {
-                    ...(FIXTURES.op_transactions_api[0] as Record<
+                    ...(FIXTURES.economics_bank_ledger_api[0] as Record<
                         string,
                         unknown
                     >),
                     amount: "100",
                 },
             ]),
-        ).toThrow("op_transactions_api[0].amount: expected number");
+        ).toThrow("economics_bank_ledger_api[0].amount: expected number");
     });
 });
 

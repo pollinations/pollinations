@@ -1752,3 +1752,205 @@ test("account quest history accepts account usage permission", async ({
         rewards: [],
     });
 });
+
+
+test("quest leaderboard returns ranked contributors by total pollen", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    await mocks.enable("github", "tinybird");
+    const db = drizzle(env.DB, { schema });
+    await env.KV.delete("quests:catalog:v26");
+    await env.KV.delete("quests:leaderboard:v1");
+
+    const user = await getOnlyUser();
+    const now = new Date();
+
+    await db
+        .update(schema.user)
+        .set({ githubUsername: "fixture-user" })
+        .where(eq(schema.user.id, user.id));
+
+    const extraUsers = await db
+        .insert(schema.user)
+        .values([
+            {
+                id: "leaderboard-user-2",
+                name: "Second Place",
+                email: "user2@example.com",
+                githubId: 2_000_002,
+                githubUsername: "second-placer",
+                tier: "spore",
+                createdAt: now,
+                updatedAt: now,
+            },
+            {
+                id: "leaderboard-user-3",
+                name: "Third Place",
+                email: "user3@example.com",
+                githubId: 2_000_003,
+                githubUsername: "third-placer",
+                tier: "spore",
+                createdAt: now,
+                updatedAt: now,
+            },
+        ])
+        .returning();
+
+    await recordRewards(db, [
+        {
+            idempotencyKey: "leaderboard:u1:quest:a",
+            userId: user.id,
+            questId: "github:issue:1001",
+            title: "Quest A",
+            amount: 5,
+            bucket: "tier",
+        },
+        {
+            idempotencyKey: "leaderboard:u1:quest:b",
+            userId: user.id,
+            questId: "github:issue:1002",
+            title: "Quest B",
+            amount: 5,
+            bucket: "tier",
+        },
+        {
+            idempotencyKey: "leaderboard:u1:quest:c",
+            userId: user.id,
+            questId: "github:issue:1003",
+            title: "Quest C",
+            amount: 5,
+            bucket: "tier",
+        },
+        {
+            idempotencyKey: "leaderboard:u2:quest:a",
+            userId: extraUsers[0].id,
+            questId: "github:issue:1004",
+            title: "Quest D",
+            amount: 5,
+            bucket: "tier",
+        },
+        {
+            idempotencyKey: "leaderboard:u2:quest:b",
+            userId: extraUsers[0].id,
+            questId: "github:issue:1005",
+            title: "Quest E",
+            amount: 5,
+            bucket: "tier",
+        },
+        {
+            idempotencyKey: "leaderboard:u3:quest:a",
+            userId: extraUsers[1].id,
+            questId: "github:issue:1006",
+            title: "Quest F",
+            amount: 5,
+            bucket: "tier",
+        },
+    ]);
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/quests/leaderboard",
+    );
+    expect(response.status).toBe(200);
+    const payload = (await response.json()) as {
+        leaderboard: Array<{
+            githubUsername: string;
+            totalPollen: number;
+            questCount: number;
+        }>;
+    };
+
+    expect(payload.leaderboard).toHaveLength(3);
+    expect(payload.leaderboard[0]).toMatchObject({
+        githubUsername: "fixture-user",
+        totalPollen: 15,
+        questCount: 3,
+    });
+    expect(payload.leaderboard[1]).toMatchObject({
+        githubUsername: "second-placer",
+        totalPollen: 10,
+        questCount: 2,
+    });
+    expect(payload.leaderboard[2]).toMatchObject({
+        githubUsername: "third-placer",
+        totalPollen: 5,
+        questCount: 1,
+    });
+});
+
+test("quest leaderboard excludes non-quest rewards and users without github username", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    await mocks.enable("github", "tinybird");
+    const db = drizzle(env.DB, { schema });
+    await env.KV.delete("quests:catalog:v26");
+    await env.KV.delete("quests:leaderboard:v1");
+
+    const user = await getOnlyUser();
+    const now = new Date();
+
+    await db
+        .update(schema.user)
+        .set({ githubUsername: "quest-user" })
+        .where(eq(schema.user.id, user.id));
+
+    const noGithubUser = await db
+        .insert(schema.user)
+        .values({
+            id: "no-github-user",
+            name: "No Github",
+            email: "nogithub@example.com",
+            githubId: 3_000_001,
+            tier: "spore",
+            createdAt: now,
+            updatedAt: now,
+        })
+        .returning();
+
+    await recordRewards(db, [
+        {
+            idempotencyKey: "leaderboard-exclude:quest",
+            userId: user.id,
+            questId: "github:issue:2001",
+            title: "Real Quest",
+            amount: 5,
+            bucket: "tier",
+        },
+        {
+            idempotencyKey: "leaderboard-exclude:oneoff",
+            userId: user.id,
+            questId: null,
+            title: "One-off reward",
+            amount: 10,
+            bucket: "tier",
+        },
+        {
+            idempotencyKey: "leaderboard-exclude:nogithub",
+            userId: noGithubUser[0].id,
+            questId: "github:issue:2002",
+            title: "No Github Quest",
+            amount: 5,
+            bucket: "tier",
+        },
+    ]);
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/quests/leaderboard",
+    );
+    expect(response.status).toBe(200);
+    const payload = (await response.json()) as {
+        leaderboard: Array<{
+            githubUsername: string;
+            totalPollen: number;
+            questCount: number;
+        }>;
+    };
+
+    expect(payload.leaderboard).toHaveLength(1);
+    expect(payload.leaderboard[0]).toMatchObject({
+        githubUsername: "quest-user",
+        totalPollen: 5,
+        questCount: 1,
+    });
+});

@@ -1,7 +1,7 @@
 import { claimReward } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { rewards as rewardsTable } from "@shared/db/better-auth.ts";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, isNotNull, sum, count } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -83,6 +83,24 @@ const claimRewardResponseSchema = z.object({
     reward: rewardSchema,
 });
 
+const LEADERBOARD_CACHE_KEY = "quests:leaderboard:v1";
+const LEADERBOARD_CACHE_TTL = 300;
+
+const leaderboardEntrySchema = z.object({
+    githubUsername: z.string(),
+    totalPollen: z.number(),
+    questCount: z.number(),
+});
+
+const questLeaderboardResponseSchema = z.object({
+    leaderboard: z.array(leaderboardEntrySchema),
+});
+
+export type QuestLeaderboardEntry = z.infer<typeof leaderboardEntrySchema>;
+export type QuestLeaderboardResponse = z.infer<
+    typeof questLeaderboardResponseSchema
+>;
+
 function formatRewardTimestamp(value: Date | number | string): string {
     return value instanceof Date
         ? value.toISOString()
@@ -118,6 +136,62 @@ export const questsRoutes = new Hono<Env>()
                 expirationTtl: CACHE_TTL,
             });
             return c.json(catalog);
+        },
+    )
+    .get(
+        "/leaderboard",
+        describeRoute({
+            tags: ["✨ Quests"],
+            summary: "Get Quest Leaderboard",
+            description:
+                "Returns the public quest reward leaderboard, ranked by total Pollen earned from completed GitHub POLLEN-QUEST issues. Only public GitHub identity and aggregate totals are exposed.",
+            responses: {
+                200: {
+                    description: "Quest leaderboard",
+                    content: {
+                        "application/json": {
+                            schema: resolver(questLeaderboardResponseSchema),
+                        },
+                    },
+                },
+            },
+        }),
+        async (c) => {
+            const cached = await readCachedLeaderboard(c.env.KV);
+            if (cached) return c.json(cached);
+
+            const db = drizzle(c.env.DB, { schema });
+            const rows = await db
+                .select({
+                    githubUsername: userTable.githubUsername,
+                    totalPollen: sum(rewardsTable.pollenAmount),
+                    questCount: count(rewardsTable.questId),
+                })
+                .from(rewardsTable)
+                .innerJoin(userTable, eq(rewardsTable.userId, userTable.id))
+                .where(isNotNull(rewardsTable.questId))
+                .groupBy(userTable.githubUsername);
+
+            const leaderboard = rows
+                .filter(
+                    (row): row is typeof row & { githubUsername: string } =>
+                        !!row.githubUsername,
+                )
+                .map((row) => ({
+                    githubUsername: row.githubUsername,
+                    totalPollen: Math.round(Number(row.totalPollen) ?? 0),
+                    questCount: Number(row.questCount) ?? 0,
+                }))
+                .sort((a, b) => b.totalPollen - a.totalPollen)
+                .slice(0, 20);
+
+            const response = { leaderboard };
+            await c.env.KV.put(
+                LEADERBOARD_CACHE_KEY,
+                JSON.stringify(response),
+                { expirationTtl: LEADERBOARD_CACHE_TTL },
+            );
+            return c.json(response);
         },
     )
     .post(
@@ -303,6 +377,15 @@ async function readCached(
     kv: KVNamespace,
 ): Promise<QuestCatalogResponse | null> {
     return await kv.get<QuestCatalogResponse>(CACHE_KEY, "json");
+}
+
+async function readCachedLeaderboard(
+    kv: KVNamespace,
+): Promise<QuestLeaderboardResponse | null> {
+    return await kv.get<QuestLeaderboardResponse>(
+        LEADERBOARD_CACHE_KEY,
+        "json",
+    );
 }
 
 async function buildQuestCatalog(

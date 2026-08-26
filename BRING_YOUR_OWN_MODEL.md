@@ -11,11 +11,27 @@ Model publishing and [connecting user wallets](./BRING_YOUR_OWN_POLLEN.md) solve
 | Text | `POST /v1/chat/completions` | `POST /v1/chat/completions` |
 | Image | `POST /v1/images/generations` | `GET /image/{prompt}` or `POST /v1/images/generations` |
 | Image editing | `POST /v1/images/edits` in addition to image generation | `POST /v1/images/edits` |
+| Video | `POST /v1/videos/generations` | `GET /video/{prompt}`, `GET /image/{prompt}`, or `POST /v1/images/generations` |
 | Speech to text | `POST /v1/audio/transcriptions` | `POST /v1/audio/transcriptions` |
 
 Image providers must return `b64_json`. During testing, Pollinations checks whether an image provider supports edits and whether it reports OpenAI image-token usage.
 
-Video, text-to-speech, embeddings, realtime, and 3D endpoints cannot currently be registered through this workflow.
+Video generation is synchronous: Pollinations sends JSON with `model`, `prompt`, and optional `duration`, and the endpoint must return completed MP4 media within 300 seconds. Return exactly one OpenAI-images-style item with either `b64_json` or a public `url`, plus the measured clip length used for billing:
+
+```json
+{
+  "data": [
+    {
+      "url": "https://video-provider.example/output/clip.mp4",
+      "duration_seconds": 4
+    }
+  ]
+}
+```
+
+Inline `b64_json` and downloaded URL responses are limited to 20 MB. Pollinations validates the media container and rejects missing or non-positive `duration_seconds`. Do not return an async job id; polling must finish inside the publisher endpoint before it responds.
+
+Text-to-speech, embeddings, realtime, and 3D endpoints cannot currently be registered through this workflow.
 
 ## Private and Public Models
 
@@ -27,6 +43,7 @@ Public models appear in the model catalog and can be called by other Pollination
 
 - Text models use the token categories reported by the upstream endpoint.
 - Image models use per-token pricing when the registration test finds valid OpenAI image usage; otherwise they use a fixed price per generated image.
+- Video models are priced from the returned clip duration in seconds.
 - Transcription models are priced from reported audio duration.
 - A zero price makes the public model free.
 
@@ -36,7 +53,7 @@ Owners receive 75% of the Pollen spent on their models. Paid and Quest Pollen ea
 
 1. Open [My Models](https://enter.pollinations.ai/my-models).
 2. Choose **Add model**.
-3. Select text, image, or transcription and enter the upstream base URL, model id, and bearer token.
+3. Select text, image, video, or transcription and enter the upstream base URL, model id, and bearer token.
 4. Fetch the upstream model list or run the endpoint test before saving.
 5. Save the model as private, then call its `owner/model` id through the normal Pollinations endpoint.
 6. If your account has publisher access, change visibility to public and set prices when it is ready for other users.
@@ -45,7 +62,7 @@ The upstream credential is used by Pollinations to proxy requests to your endpoi
 
 ## Register with the CLI
 
-The CLI manages text, image, and transcription model registrations. Sign in, test the endpoint, then create the model:
+The CLI manages text, image, video, and transcription model registrations. Sign in, test the endpoint, then create the model:
 
 ```bash
 npx @pollinations/cli auth login
@@ -80,7 +97,7 @@ Public models support these owner controls in the dashboard or Account API:
 - The provider profile at `POST /account/my-models/provider` sets the public provider name and service URL shared by your models.
 - Owners can hide or relist their models without deleting them.
 
-Token prices cannot exceed 50 Pollen per 1M tokens. Fixed image prices cannot exceed 0.25 Pollen per image, and transcription prices cannot exceed 0.012 Pollen per minute. See the [Community Models API reference](https://gen.pollinations.ai/docs#tag/community-models) for the exact fields.
+Token prices cannot exceed 50 Pollen per 1M tokens. Fixed image prices cannot exceed 0.25 Pollen per image, video prices cannot exceed 0.5 Pollen per generated second, and transcription prices cannot exceed 0.012 Pollen per minute. See the [Community Models API reference](https://gen.pollinations.ai/docs#tag/community-models) for the exact fields.
 
 ## Call Your Model
 
@@ -102,7 +119,7 @@ Authenticated model-list requests include your own private models. Public discov
 
 Public and private community models can nominate up to three compatible community fallbacks. Fallbacks are tried in order and must use the same model family. They must not cost more than the primary model; image fallbacks must also match its pricing mode and support image input when the primary model does. A fallback cannot require Paid Pollen unless the primary model does too.
 
-Pollinations monitors public text and image models using live traffic and active probes. Sustained failures can hide a model from listings while exact-ID calls continue to work. Owners can relist a fixed model, and the monitor can automatically relist models it hid after recovery is verified. View public model health at [model-monitor.pollinations.ai](https://model-monitor.pollinations.ai).
+Pollinations monitors public text, image, and video models using live traffic and active probes. Sustained failures can hide a model from listings while exact-ID calls continue to work. Owners can relist a fixed model, and the monitor can automatically relist models it hid after recovery is verified. View public model health at [model-monitor.pollinations.ai](https://model-monitor.pollinations.ai).
 
 ## Trust Boundary
 

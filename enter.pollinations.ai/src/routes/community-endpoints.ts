@@ -27,6 +27,7 @@ import {
     testCommunityEndpoint,
     testCommunityImageEndpoint,
     testCommunityTranscriptionEndpoint,
+    testCommunityVideoEndpoint,
 } from "../services/community-endpoint-openai.ts";
 import { requireAccountPermission } from "./account-permissions.ts";
 import {
@@ -483,7 +484,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["🧩 Community Models"],
             summary: "Create My Model",
             description:
-                "Register a private or public community text, image, or transcription model. Private is the default. Public models require an allowlisted account and may be free or priced. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
+                "Register a private or public community text, image, video, or transcription model. Private is the default. Public models require an allowlisted account and may be free or priced. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
             responses: {
                 200: {
                     description: "Created community model",
@@ -601,7 +602,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["🧩 Community Models"],
             summary: "Test My Model Endpoint",
             description:
-                "Test an OpenAI-compatible upstream model before registering it. Image tests detect the image pricing mode and probe the derived `/images/edits` endpoint. Limited to one probe every 30 seconds per account. API keys require `account:keys`.",
+                "Test an OpenAI-compatible upstream model before registering it. Image tests detect the image pricing mode and probe the derived `/images/edits` endpoint; video tests validate completed MP4 data and its duration. Limited to one probe every 30 seconds per account. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Endpoint test result",
@@ -634,9 +635,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 const result =
                     input.modality === "image"
                         ? await testCommunityImageEndpoint(input)
-                        : input.modality === "transcription"
-                          ? await testCommunityTranscriptionEndpoint(input)
-                          : await testCommunityEndpoint(input);
+                        : input.modality === "video"
+                          ? await testCommunityVideoEndpoint(input)
+                          : input.modality === "transcription"
+                            ? await testCommunityTranscriptionEndpoint(input)
+                            : await testCommunityEndpoint(input);
                 return c.json({
                     ok: true,
                     message:
@@ -644,9 +647,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
                             ? result.inputModalities?.includes("image")
                                 ? "Generation and editing endpoints responded with image data"
                                 : "Generation endpoint responded; editing is not supported"
-                            : input.modality === "transcription"
-                              ? "Endpoint responded with transcription text"
-                              : "Endpoint responded with usage",
+                            : input.modality === "video"
+                              ? "Endpoint responded with playable video and duration"
+                              : input.modality === "transcription"
+                                ? "Endpoint responded with transcription text"
+                                : "Endpoint responded with usage",
                     ...result,
                 });
             } catch (error) {

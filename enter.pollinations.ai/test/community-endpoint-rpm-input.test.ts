@@ -43,6 +43,7 @@ describe("community endpoint per-user RPM input", () => {
         expect(
             publicCommunityFallbackOptions([
                 { name: "owner/model", type: "text", community: true },
+                { name: "owner/video", type: "video", community: true },
                 {
                     name: "owner/agent",
                     type: "text",
@@ -50,7 +51,10 @@ describe("community endpoint per-user RPM input", () => {
                     agent: true,
                 },
             ]),
-        ).toEqual([{ modelId: "owner/model", modality: "text" }]);
+        ).toEqual([
+            { modelId: "owner/model", modality: "text" },
+            { modelId: "owner/video", modality: "video" },
+        ]);
     });
 
     // Create adds the type and agent id at the API call site; the reusable

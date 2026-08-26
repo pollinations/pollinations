@@ -12,6 +12,7 @@ import {
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MAX_COMMUNITY_PRICE_PER_SECOND,
+    MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     normalizeCommunityEndpointAdvertised,
     normalizeCommunityEndpointInputModalities,
@@ -122,6 +123,7 @@ export function publicCommunityFallbackOptions(
                 !model.agent &&
                 (model.type === "text" ||
                     model.type === "image" ||
+                    model.type === "video" ||
                     model.type === "audio"),
         )
         .map((model) => ({
@@ -129,9 +131,11 @@ export function publicCommunityFallbackOptions(
             modality:
                 model.type === "image"
                     ? "image"
-                    : model.type === "audio"
-                      ? "transcription"
-                      : "text",
+                    : model.type === "video"
+                      ? "video"
+                      : model.type === "audio"
+                        ? "transcription"
+                        : "text",
         }));
 }
 
@@ -293,9 +297,11 @@ export function isValidPriceInput(
     const maximum =
         priceUnit === "image"
             ? MAX_COMMUNITY_PRICE_PER_IMAGE
-            : priceUnit === "second"
-              ? MAX_COMMUNITY_PRICE_PER_SECOND
-              : MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS;
+            : priceUnit === "video_second"
+              ? MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND
+              : priceUnit === "second"
+                ? MAX_COMMUNITY_PRICE_PER_SECOND
+                : MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS;
     return (
         Number.isFinite(parsed) &&
         parsed >= 0 &&
@@ -393,7 +399,8 @@ function formPricesToPayload(
                 const unit =
                     modalityField.priceUnit === "image"
                         ? "image"
-                        : modalityField.priceUnit === "second"
+                        : modalityField.priceUnit === "second" ||
+                            modalityField.priceUnit === "video_second"
                           ? "second"
                           : "1M units";
                 throw new Error(
@@ -529,9 +536,11 @@ export function nextFormState(
         const modality =
             value === "image"
                 ? "image"
-                : value === "transcription"
-                  ? "transcription"
-                  : "text";
+                : value === "video"
+                  ? "video"
+                  : value === "transcription"
+                    ? "transcription"
+                    : "text";
         return {
             ...current,
             modality,

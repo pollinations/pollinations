@@ -4,6 +4,7 @@ import {
     testCommunityEndpoint,
     testCommunityImageEndpoint,
     testCommunityTranscriptionEndpoint,
+    testCommunityVideoEndpoint,
 } from "../src/services/community-endpoint-openai.ts";
 
 afterEach(() => {
@@ -300,6 +301,62 @@ describe("community endpoint OpenAI service", () => {
         ).rejects.toThrow(
             "Endpoint responded 401 after we sent Authorization: Authentication required",
         );
+    });
+
+    it("probes synchronous video endpoints and requires measured duration", async () => {
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            expect(request.url).toBe(
+                "https://api.example.com/v1/videos/generations",
+            );
+            expect(request.headers.get("authorization")).toBe(
+                "Bearer sk_saved_token",
+            );
+            await expect(request.json()).resolves.toEqual({
+                model: "video-1",
+                prompt: "A green sprout gently moving in the breeze.",
+                duration: 1,
+            });
+            return Response.json({
+                data: [
+                    {
+                        b64_json: "AAAAFGZ0eXBpc29tAAAAAGlzb20=",
+                        duration_seconds: 1.25,
+                    },
+                ],
+            });
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        await expect(
+            testCommunityVideoEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "video-1",
+            }),
+        ).resolves.toEqual({
+            usage: { duration_seconds: 1.25 },
+            billableUsage: { completionVideoSeconds: 1.25 },
+        });
+    });
+
+    it("refuses video endpoints that return unmetered media", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json({
+                    data: [{ b64_json: "AAAAFGZ0eXBpc29tAAAAAGlzb20=" }],
+                }),
+            ),
+        );
+
+        await expect(
+            testCommunityVideoEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "video-1",
+            }),
+        ).rejects.toThrow("duration_seconds");
     });
 
     it("probes transcription endpoints with a sample audio file and OpenAI duration usage", async () => {

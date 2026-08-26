@@ -26,6 +26,7 @@ import {
     communityImageSupportedEndpoints,
     communityTextSupportedEndpoints,
     communityTranscriptionSupportedEndpoints,
+    communityVideoSupportedEndpoints,
     getCommunityModelRegistryEntries,
 } from "./community-models.ts";
 import { linkFallbackEntries } from "./fallback.ts";
@@ -135,13 +136,15 @@ function communityEntryToGenerationEntry(
         aliases: entry.aliases,
         eventType,
         supportedEndpoints:
-            eventType === "generate.image"
-                ? communityImageSupportedEndpoints(
-                      entry.definition.inputModalities,
-                  )
-                : eventType === "generate.audio"
-                  ? communityTranscriptionSupportedEndpoints()
-                  : communityTextSupportedEndpoints(),
+            entry.definition.category === "video"
+                ? communityVideoSupportedEndpoints()
+                : eventType === "generate.image"
+                  ? communityImageSupportedEndpoints(
+                        entry.definition.inputModalities,
+                    )
+                  : eventType === "generate.audio"
+                    ? communityTranscriptionSupportedEndpoints()
+                    : communityTextSupportedEndpoints(),
         definition: entry.definition,
         info: entry.info,
         communityEndpoint: entry.communityEndpoint,

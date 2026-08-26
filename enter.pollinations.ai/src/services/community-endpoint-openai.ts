@@ -8,8 +8,10 @@ import {
     communityImageGenerationsUrl,
     communityOpenAIBaseUrl,
     communityTranscriptionSeconds,
+    communityVideoGenerationsUrl,
     decodeCommunityBase64,
     firstCommunityImageBytes,
+    firstCommunityVideoData,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
@@ -19,6 +21,7 @@ import {
     openaiImageUsageToUsage,
     openaiUsageToUsage,
 } from "@shared/registry/usage-headers.ts";
+import { detectVideoMimeType } from "@shared/video-mime.ts";
 import { SAMPLE_AUDIO_BASE64 } from "./sample-audio.ts";
 
 type EndpointAuth = {
@@ -210,6 +213,40 @@ export async function testCommunityImageEndpoint({
         billableUsage: { completionImageTokens: 1 },
         imagePricing: "request",
         inputModalities,
+    };
+}
+
+// Video registration uses the same synchronous contract as request-time
+// generation: the endpoint must finish within the shared timeout and return
+// playable media together with the measured duration used for billing.
+export async function testCommunityVideoEndpoint({
+    baseUrl,
+    bearerToken,
+    model,
+}: EndpointTestInput): Promise<CommunityEndpointTestResult> {
+    const body = await fetchJson(communityVideoGenerationsUrl(baseUrl), {
+        method: "POST",
+        headers: {
+            ...authorizationHeaders(bearerToken),
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            model,
+            prompt: "A green sprout gently moving in the breeze.",
+            duration: 1,
+        }),
+    });
+    const video = await firstCommunityVideoData(body, baseUrl);
+    if (!video || !detectVideoMimeType(video.bytes)) {
+        throw new Error(
+            "Endpoint did not return a supported video with duration_seconds",
+        );
+    }
+    return {
+        usage: { duration_seconds: video.durationSeconds },
+        billableUsage: {
+            completionVideoSeconds: video.durationSeconds,
+        },
     };
 }
 

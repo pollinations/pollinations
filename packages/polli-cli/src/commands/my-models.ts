@@ -25,6 +25,7 @@ const PRICE_FLAGS = [
         "--completion-image-price <number>",
         "Generated-image price (per image when --image-pricing request; per token when --image-pricing tokens)",
     ],
+    ["--completion-video-price <number>", "Generated-video price per second"],
 ] as const;
 
 const PRICE_OPTION_KEYS = [
@@ -37,6 +38,7 @@ const PRICE_OPTION_KEYS = [
     "completionReasoningPrice",
     "completionAudioPrice",
     "completionImagePrice",
+    "completionVideoPrice",
 ] as const;
 
 type PriceOptionKey = (typeof PRICE_OPTION_KEYS)[number];
@@ -58,9 +60,10 @@ interface MyModelBase {
 interface ProxyMyModel extends MyModelBase {
     type: "proxy";
     paidOnly: boolean;
-    modality: "text" | "image" | "transcription";
+    modality: "text" | "image" | "video" | "transcription";
     imagePricing: "request" | "tokens";
     completionImagePrice: number;
+    completionVideoPrice: number;
     // /account/my-models/test detects edit support from endpoint probes.
     inputModalities: string[];
     fallbacks: string[];
@@ -131,9 +134,12 @@ export function modelBody(
         if (
             opts.modality !== "text" &&
             opts.modality !== "image" &&
+            opts.modality !== "video" &&
             opts.modality !== "transcription"
         ) {
-            fail("--modality must be 'text', 'image', or 'transcription'");
+            fail(
+                "--modality must be 'text', 'image', 'video', or 'transcription'",
+            );
         }
         body.modality = opts.modality;
     }
@@ -194,6 +200,10 @@ function printModels(models: MyModel[]) {
                 model.type === "proxy" && model.modality === "image"
                     ? `${model.completionImagePrice}/${model.imagePricing === "tokens" ? "token" : "req"}`
                     : "-",
+            video_price:
+                model.type === "proxy" && model.modality === "video"
+                    ? `${model.completionVideoPrice}/sec`
+                    : "-",
             inputs:
                 model.type === "proxy"
                     ? model.inputModalities?.join(", ") || "-"
@@ -217,6 +227,7 @@ function printModels(models: MyModel[]) {
             "type",
             "modality",
             "image_price",
+            "video_price",
             "inputs",
             "visibility",
             "upstream",
@@ -269,7 +280,7 @@ const create = addPriceOptions(
         )
         .option(
             "--modality <modality>",
-            "Model family: text (default), image, or transcription",
+            "Model family: text (default), image, video, or transcription",
         )
         .option(
             "--image-pricing <mode>",
@@ -404,7 +415,7 @@ const test = new Command("test")
     .requiredOption("--model <model>", "Upstream model id")
     .option(
         "--modality <modality>",
-        "Model family: text (default), image, or transcription",
+        "Model family: text (default), image, video, or transcription",
     )
     .action(async (opts) => {
         const key = requireKey();
@@ -412,9 +423,12 @@ const test = new Command("test")
             opts.modality !== undefined &&
             opts.modality !== "text" &&
             opts.modality !== "image" &&
+            opts.modality !== "video" &&
             opts.modality !== "transcription"
         ) {
-            fail("--modality must be 'text', 'image', or 'transcription'");
+            fail(
+                "--modality must be 'text', 'image', 'video', or 'transcription'",
+            );
         }
         try {
             const res = await gen<Record<string, unknown>>(
@@ -440,7 +454,7 @@ const test = new Command("test")
 
 export const myModelsCommand = new Command("my-models")
     .description(
-        "Manage private and published community text, image, and transcription models",
+        "Manage private and published community text, image, video, and transcription models",
     )
     .addCommand(list)
     .addCommand(create)

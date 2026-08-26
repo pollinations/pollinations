@@ -25,6 +25,7 @@ import {
     communityModelId,
     communityOpenAIBaseUrl,
     communityPriceDefinition,
+    communityVideoGenerationsUrl,
     type EndpointAgentCommunityEndpointRuntime,
     isCommunityEndpointOwnerAllowed,
     isCommunityFallbackPricingAllowed,
@@ -33,6 +34,7 @@ import {
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MAX_COMMUNITY_PRICE_PER_SECOND,
     MAX_COMMUNITY_PRICE_PER_TOKEN,
+    MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
     normalizeCommunityAssetUrl,
@@ -84,9 +86,13 @@ import { callCommunityTranscriptionEndpoint } from "./audio/communityEndpoint.ts
 import {
     communityImageSupportedEndpoints,
     communityTranscriptionSupportedEndpoints,
+    communityVideoSupportedEndpoints,
     getCommunityModelRegistryEntries,
 } from "./community-models.ts";
-import { callCommunityImageEndpoint } from "./image/communityEndpoint.ts";
+import {
+    callCommunityImageEndpoint,
+    callCommunityVideoEndpoint,
+} from "./image/communityEndpoint.ts";
 import worker from "./index.ts";
 import {
     getGenerationModelRegistry,
@@ -138,6 +144,7 @@ function insertCommunityEndpoints(
             completionReasoningPrice: _completionReasoningPrice,
             completionAudioPrice: _completionAudioPrice,
             completionImagePrice: _completionImagePrice,
+            completionVideoPrice: _completionVideoPrice,
             ...listing
         } = row;
         const modality = normalizeCommunityEndpointModality(rawModality);
@@ -199,6 +206,11 @@ const TEST_PNG_BYTES = [137, 80, 78, 71, 13, 10, 26, 10];
 const TEST_INVALID_IMAGE_BASE64 = "bm90IGFuIGltYWdl";
 const TEST_COMMUNITY_IMAGE_URL = "http://api.example.com/assets/image.png";
 const TEST_INPUT_IMAGE_URL = "https://input.example.com/source.png";
+const TEST_MP4_BASE64 = "AAAAFGZ0eXBpc29tAAAAAGlzb20=";
+const TEST_MP4_BYTES = [
+    0, 0, 0, 20, 102, 116, 121, 112, 105, 115, 111, 109, 0, 0, 0, 0, 105, 115,
+    111, 109,
+];
 
 function isPortkeyChatCompletionsRequest(request: Request): boolean {
     return new URL(request.url).pathname === "/v1/chat/completions";
@@ -607,6 +619,25 @@ describe("community endpoint helpers", () => {
         ]);
     });
 
+    it("derives the synchronous community video URL", () => {
+        expect(communityVideoGenerationsUrl("https://api.example.com/v1")).toBe(
+            "https://api.example.com/v1/videos/generations",
+        );
+        expect(
+            communityVideoGenerationsUrl(
+                "https://api.example.com/v1/videos/generations",
+            ),
+        ).toBe("https://api.example.com/v1/videos/generations");
+    });
+
+    it("advertises community videos on the existing public media routes", () => {
+        expect(communityVideoSupportedEndpoints()).toEqual([
+            "/v1/images/generations",
+            "/image/{prompt}",
+            "/video/{prompt}",
+        ]);
+    });
+
     it("normalizes public community provider URLs", () => {
         expect(
             normalizeCommunityProviderUrl(" https://example.com/models#top "),
@@ -777,6 +808,30 @@ describe("community endpoint helpers", () => {
                 servedBy: definition,
             }).price.totalPrice,
         ).toBeCloseTo(0.000005 * 100 + 0.00004 * 1000, 10);
+    });
+
+    it("builds community video models billed per generated second", () => {
+        const modelId = "voodoohop/video";
+        const definition = communityModelDefinition({
+            modelId,
+            description: "Community video model",
+            modality: "video",
+            ...communityEndpointPrices({ completionVideoPrice: 0.08 }),
+        });
+
+        expect(definition).toMatchObject({
+            category: "video",
+            inputModalities: ["text"],
+            outputModalities: ["video"],
+            cost: { completionVideoSeconds: 0.08 },
+        });
+        expect(
+            calculateUsageBilling({
+                model: modelId,
+                usage: { completionVideoSeconds: 4.5 },
+                servedBy: definition,
+            }).price.totalPrice,
+        ).toBeCloseTo(0.36, 10);
     });
 
     it("keeps zero prices as explicit zero rates in the price definition", () => {
@@ -1164,6 +1219,182 @@ describe("community endpoint helpers", () => {
                 message: expect.stringContaining(
                     "Image edits are not supported",
                 ),
+            });
+        });
+    });
+
+    describe("community video endpoint billing", () => {
+        const secret = "test-secret";
+
+        async function videoEndpoint(): Promise<CommunityEndpointRuntime> {
+            return {
+                type: "proxy",
+                id: "community-video-endpoint-id",
+                ownerUserId: "owner-id",
+                modelId: "voodoohop/video",
+                name: "video",
+                title: "Video",
+                description: null,
+                modality: "video",
+                imagePricing: "request",
+                inputModalities: ["text"],
+                baseUrl: "https://api.example.com/v1",
+                upstreamModel: "video-1",
+                visibility: "public",
+                paidOnly: false,
+                perUserRpm: null,
+                fallbacks: [],
+                hiddenAt: null,
+                hiddenReason: null,
+                bearerTokenCiphertext: await encryptSecret(
+                    "sk_saved_token",
+                    secret,
+                ),
+                ...communityEndpointPrices({ completionVideoPrice: 0.08 }),
+            };
+        }
+
+        it("returns playable MP4 and bills the reported duration", async () => {
+            const fetchMock = vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                expect(request.url).toBe(
+                    "https://api.example.com/v1/videos/generations",
+                );
+                expect(request.headers.get("authorization")).toBe(
+                    "Bearer sk_saved_token",
+                );
+                await expect(request.json()).resolves.toEqual({
+                    model: "video-1",
+                    prompt: "a sprout",
+                    duration: 4,
+                });
+                return Response.json({
+                    data: [
+                        {
+                            b64_json: TEST_MP4_BASE64,
+                            duration_seconds: 4.25,
+                        },
+                    ],
+                });
+            });
+            vi.stubGlobal("fetch", fetchMock);
+
+            const result = await callCommunityVideoEndpoint(
+                await videoEndpoint(),
+                "a sprout",
+                { model: "video-1", duration: 4 },
+                secret,
+            );
+
+            expect(result.mimeType).toBe("video/mp4");
+            expect(result.durationSeconds).toBe(4.25);
+            expect(result.trackingData.usage).toEqual({
+                completionVideoSeconds: 4.25,
+            });
+            expect(Array.from(result.buffer)).toEqual(TEST_MP4_BYTES);
+        });
+
+        it("downloads URL responses and still validates the MP4 payload", async () => {
+            const fetchMock = vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                if (request.url.endsWith("/videos/generations")) {
+                    return Response.json({
+                        data: [
+                            {
+                                url: "https://api.example.com/assets/clip.mp4",
+                                duration_seconds: 2.5,
+                            },
+                        ],
+                    });
+                }
+                expect(request.url).toBe(
+                    "https://api.example.com/assets/clip.mp4",
+                );
+                expect(request.redirect).toBe("manual");
+                return new Response(new Uint8Array(TEST_MP4_BYTES), {
+                    headers: { "Content-Type": "video/mp4" },
+                });
+            });
+            vi.stubGlobal("fetch", fetchMock);
+
+            const result = await callCommunityVideoEndpoint(
+                await videoEndpoint(),
+                "a sprout",
+                { model: "video-1" },
+                secret,
+            );
+
+            expect(result.durationSeconds).toBe(2.5);
+            expect(Array.from(result.buffer)).toEqual(TEST_MP4_BYTES);
+            expect(fetchMock).toHaveBeenCalledTimes(2);
+        });
+
+        it("rejects a non-MP4 payload even when duration is present", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({
+                        data: [
+                            {
+                                b64_json: TEST_INVALID_IMAGE_BASE64,
+                                duration_seconds: 2,
+                            },
+                        ],
+                    }),
+                ),
+            );
+
+            await expect(
+                callCommunityVideoEndpoint(
+                    await videoEndpoint(),
+                    "a sprout",
+                    { model: "video-1" },
+                    secret,
+                ),
+            ).rejects.toMatchObject({ status: 502 });
+        });
+
+        it("rejects missing duration instead of billing zero", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({
+                        data: [{ b64_json: TEST_MP4_BASE64 }],
+                    }),
+                ),
+            );
+
+            await expect(
+                callCommunityVideoEndpoint(
+                    await videoEndpoint(),
+                    "a sprout",
+                    { model: "video-1" },
+                    secret,
+                ),
+            ).rejects.toMatchObject({ status: 502 });
+        });
+
+        it("preserves upstream video failures", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json(
+                        { error: { message: "GPU unavailable" } },
+                        { status: 503 },
+                    ),
+                ),
+            );
+
+            await expect(
+                callCommunityVideoEndpoint(
+                    await videoEndpoint(),
+                    "a sprout",
+                    { model: "video-1" },
+                    secret,
+                ),
+            ).rejects.toMatchObject({
+                status: 503,
+                message: expect.stringContaining("GPU unavailable"),
             });
         });
     });
@@ -3771,6 +4002,176 @@ fixtureTest(
             ),
         );
         expect(excessiveImagePriceResponse.status).toBe(400);
+    },
+);
+
+fixtureTest(
+    "registers, catalogs, and serves a billed community video model",
+    async ({ apiKey }) => {
+        const ownerGithubUsername = `video-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `clip-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerUserId = await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: ownerGithubUsername,
+        });
+        const sessionToken = `session-${crypto.randomUUID()}`;
+        await db.insert(sessionTable).values({
+            id: `session-${crypto.randomUUID()}`,
+            token: sessionToken,
+            userId: ownerUserId,
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+        const cookie = await signedSessionCookie(sessionToken);
+        const enterApi = await createEnterCommunityApi();
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            if (new URL(request.url).pathname.endsWith("/videos/generations")) {
+                expect(request.headers.get("authorization")).toBe(
+                    "Bearer sk_video_upstream",
+                );
+                const body = (await request.json()) as {
+                    model: string;
+                    prompt: string;
+                    duration?: number;
+                };
+                expect(body.model).toBe("community-video-1");
+                return Response.json({
+                    data: [
+                        {
+                            b64_json: TEST_MP4_BASE64,
+                            duration_seconds: body.duration ?? 4,
+                        },
+                    ],
+                });
+            }
+            if (isBillingFetch(request)) return Response.json({ data: [] });
+            throw new Error(`Unexpected fetch: ${request.url}`);
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const probeResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints/test", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Cookie: cookie },
+                body: JSON.stringify({
+                    baseUrl: "https://api.example.com/v1",
+                    bearerToken: "sk_video_upstream",
+                    model: "community-video-1",
+                    modality: "video",
+                }),
+            }),
+        );
+        expect(probeResponse.status).toBe(200);
+        await expect(probeResponse.json()).resolves.toMatchObject({
+            message: "Endpoint responded with playable video and duration",
+            usage: { duration_seconds: 1 },
+            billableUsage: { completionVideoSeconds: 1 },
+        });
+
+        const registerResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Cookie: cookie },
+                body: JSON.stringify({
+                    name: modelName,
+                    title: "Community Video",
+                    description: "Synchronous community video endpoint",
+                    modality: "video",
+                    visibility: "public",
+                    baseUrl: "https://api.example.com/v1",
+                    upstreamModel: "community-video-1",
+                    bearerToken: "sk_video_upstream",
+                    completionVideoPrice: 0.08,
+                }),
+            }),
+        );
+        expect(registerResponse.status).toBe(200);
+        const registered = (await registerResponse.json()) as {
+            id: string;
+            modelId: string;
+            modality: string;
+            completionVideoPrice: number;
+        };
+        expect(registered).toMatchObject({
+            modelId: communityModelId(ownerGithubUsername, modelName),
+            modality: "video",
+            completionVideoPrice: 0.08,
+        });
+
+        const generationResponse = await fetchGen(
+            new Request(
+                `https://gen.pollinations.ai/video/green%20sprout?model=${encodeURIComponent(registered.modelId)}&duration=4`,
+                { headers: { Authorization: `Bearer ${apiKey}` } },
+            ),
+        );
+        expect(generationResponse.status).toBe(200);
+        expect(generationResponse.headers.get("content-type")).toBe(
+            "video/mp4",
+        );
+        expect(
+            generationResponse.headers.get(
+                USAGE_TYPE_HEADERS.completionVideoSeconds,
+            ),
+        ).toBe("4");
+        expect(
+            Array.from(new Uint8Array(await generationResponse.arrayBuffer())),
+        ).toEqual(TEST_MP4_BYTES);
+
+        const catalogResponse = await fetchGen(
+            "https://gen.pollinations.ai/video/models",
+        );
+        expect(catalogResponse.status).toBe(200);
+        const catalog = (await catalogResponse.json()) as {
+            name: string;
+            category: string;
+            output_modalities?: string[];
+            pricing: Record<string, string>;
+        }[];
+        expect(
+            catalog.find((model) => model.name === registered.modelId),
+        ).toMatchObject({
+            category: "video",
+            output_modalities: ["video"],
+            pricing: {
+                currency: "pollen",
+                completionVideoSeconds: "0.08",
+            },
+        });
+
+        const openaiCatalogResponse = await fetchGen(
+            "https://gen.pollinations.ai/v1/models",
+        );
+        expect(openaiCatalogResponse.status).toBe(200);
+        const openaiCatalog = (await openaiCatalogResponse.json()) as {
+            data: { id: string; supported_endpoints?: string[] }[];
+        };
+        expect(
+            openaiCatalog.data.find((model) => model.id === registered.modelId)
+                ?.supported_endpoints,
+        ).toEqual(communityVideoSupportedEndpoints());
+
+        const excessivePriceResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/community-endpoints/${registered.id}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: cookie,
+                    },
+                    body: JSON.stringify({
+                        completionVideoPrice:
+                            MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND + 0.01,
+                    }),
+                },
+            ),
+        );
+        expect(excessivePriceResponse.status).toBe(400);
     },
 );
 

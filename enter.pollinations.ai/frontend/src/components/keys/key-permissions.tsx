@@ -109,14 +109,14 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
                 }
                 onModelsChange={(models) =>
                     setAllowedModels(
-                        models.map(
+                        models?.map(
                             (modelId) =>
                                 permissions.allowedModels?.find(
                                     (entry) =>
                                         typeof entry !== "string" &&
                                         entry.id === modelId,
                                 ) ?? modelId,
-                        ),
+                        ) ?? null,
                     )
                 }
                 modelsInitiallyExpanded={modelsInitiallyExpanded}

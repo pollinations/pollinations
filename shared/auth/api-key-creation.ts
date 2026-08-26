@@ -286,10 +286,6 @@ export async function createApiKeyForUser({
             userId,
             ...(expiresIn != null && { expiresIn }),
             metadata: baseMetadata,
-            permissions:
-                Object.keys(permissions).length > 0
-                    ? (permissions as Record<string, string[]>)
-                    : undefined,
         },
     });
 
@@ -306,6 +302,10 @@ export async function createApiKeyForUser({
 
     const d1Updates: Partial<typeof schema.apikey.$inferInsert> = {
         metadata: JSON.stringify(finalMetadata),
+        permissions:
+            Object.keys(permissions).length > 0
+                ? JSON.stringify(permissions)
+                : null,
     };
     if (effectivePollenBudget != null) {
         d1Updates.pollenBalance = effectivePollenBudget;

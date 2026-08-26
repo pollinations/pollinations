@@ -1,4 +1,5 @@
 import type { Logger } from "@logtape/logtape";
+import type { AuthenticatedApiKey } from "@shared/auth/api-key.ts";
 import {
     type ApiKeyType,
     createApiKeyForUser,
@@ -60,10 +61,7 @@ type UsageDebugBindings = CloudflareBindings & {
 export function resolveUsageTargetUserId(
     env: CloudflareBindings,
     currentUserId: string,
-    apiKey?: {
-        permissions?: Record<string, string[]>;
-        metadata?: Record<string, unknown>;
-    },
+    apiKey?: AuthenticatedApiKey,
 ): { userId: string; overridden: boolean } {
     if (apiKey) {
         return { userId: currentUserId, overridden: false };

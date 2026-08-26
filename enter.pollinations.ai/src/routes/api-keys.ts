@@ -129,8 +129,6 @@ async function updateKeyMetadata(
 
 /**
  * Schema for updating an API key.
- * Uses better-auth's server API which supports server-only fields like permissions.
- *
  * Permissions format: { models?: ModelPermissionEntry[], account?: string[] }
  * - models: ["flux", { id: "openai", pollenType: "quest" }] = restrict models
  * - account: ["profile", "usage", "keys"] = allow access to account endpoints
@@ -329,7 +327,6 @@ export const apiKeysRoutes = new Hono<Env>()
     )
     /**
      * Update an API key's permissions.
-     * Uses auth.api.updateApiKey() which supports server-only fields like permissions.
      */
     .post(
         "/:id/update",
@@ -341,7 +338,6 @@ export const apiKeysRoutes = new Hono<Env>()
         validator("json", UpdateApiKeySchema),
         async (c) => {
             const user = c.var.auth.requireUser();
-            const authClient = c.var.auth.client;
             const { id } = c.req.param();
             const {
                 name,
@@ -372,25 +368,23 @@ export const apiKeysRoutes = new Hono<Env>()
                 sanitizedAccountPerms,
             );
 
-            if (updatedPermissions) {
-                await authClient.api.updateApiKey({
-                    body: {
-                        keyId: id,
-                        userId: user.id,
-                        permissions: updatedPermissions as Record<
-                            string,
-                            string[]
-                        >,
-                    },
-                });
+            const d1Updates: Partial<typeof schema.apikey.$inferInsert> = {};
+            if (updatedPermissions !== undefined) {
+                d1Updates.permissions =
+                    Object.keys(updatedPermissions).length > 0
+                        ? JSON.stringify(updatedPermissions)
+                        : null;
             }
-
-            const d1Updates: Record<string, string | number | Date | null> = {};
             if (name !== undefined) d1Updates.name = name;
             if (pollenBudget !== undefined)
                 d1Updates.pollenBalance = pollenBudget;
             if (pollenType !== undefined) d1Updates.pollenType = pollenType;
-            if (expiresAt !== undefined) d1Updates.expiresAt = expiresAt;
+            if (expiresAt !== undefined) {
+                d1Updates.expiresAt =
+                    expiresAt === null || expiresAt instanceof Date
+                        ? expiresAt
+                        : new Date(expiresAt);
+            }
 
             if (Object.keys(d1Updates).length > 0) {
                 await db

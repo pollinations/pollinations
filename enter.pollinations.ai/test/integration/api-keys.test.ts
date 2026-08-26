@@ -90,6 +90,59 @@ describe("API Key Management", () => {
             });
         });
 
+        test("persists per-model pollen overrides on creation", async ({
+            sessionToken,
+        }) => {
+            const allowedModels: ModelPermissionEntry[] = [
+                { id: "nanobanana2", pollenType: "paid" },
+                "flux",
+            ];
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        name: "created-model-pollen-override",
+                        allowedModels,
+                    }),
+                },
+            );
+
+            expect(response.status).toBe(200);
+            const created = (await response.json()) as {
+                id: string;
+                key: string;
+                permissions: { models: ModelPermissionEntry[] };
+            };
+            const expectedModels: ModelPermissionEntry[] = [
+                { id: "nanobanana-2", pollenType: "paid" },
+                "flux",
+            ];
+            expect(created.permissions.models).toEqual(expectedModels);
+
+            const db = drizzle(env.DB, { schema });
+            const stored = await db.query.apikey.findFirst({
+                where: (apikey, { eq }) => eq(apikey.id, created.id),
+            });
+            expect(JSON.parse(stored?.permissions ?? "{}").models).toEqual(
+                expectedModels,
+            );
+
+            const keyInfoResponse = await SELF.fetch(
+                "http://localhost:3000/api/account/key",
+                { headers: { Authorization: `Bearer ${created.key}` } },
+            );
+            expect(keyInfoResponse.status).toBe(200);
+            const keyInfo = (await keyInfoResponse.json()) as {
+                permissions: { models: ModelPermissionEntry[] };
+            };
+            expect(keyInfo.permissions.models).toEqual(expectedModels);
+        });
+
         test("should create publishable key metadata in one step", async ({
             sessionToken,
         }) => {

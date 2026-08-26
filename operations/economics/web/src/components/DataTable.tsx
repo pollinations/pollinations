@@ -1,4 +1,4 @@
-import { cn, Surface, Table, Tooltip } from "@pollinations/ui";
+import { cn, ScrollArea, Surface, Table, Tooltip } from "@pollinations/ui";
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 
@@ -29,7 +29,9 @@ export function TableScroller({ children }: { children: ReactNode }) {
     return (
         <section className="w-full max-w-full">
             <Surface className="overflow-hidden p-0">
-                <div className="overflow-x-auto">{children}</div>
+                <ScrollArea axis="x" className="pb-3">
+                    {children}
+                </ScrollArea>
             </Surface>
         </section>
     );

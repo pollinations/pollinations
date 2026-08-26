@@ -177,7 +177,10 @@ jobs:
 
   deploy-enter:
     needs: [changes, migrate]
-    if: needs.changes.outputs.enter == 'true'
+    if: >-
+      !cancelled() &&
+      needs.changes.outputs.enter == 'true' &&
+      needs.migrate.result == 'success'
     runs-on: ubuntu-latest
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}

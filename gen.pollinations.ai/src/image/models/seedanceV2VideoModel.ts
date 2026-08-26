@@ -2,8 +2,9 @@
  * ByteDance Seedance 2.0 family video generation via Replicate.
  *
  * The full model remains 720p locked. All three use the existing
- * safeParams.image convention for T2V/I2V/reference modes. We don't expose
- * reference_videos, which would trigger Replicate's "video_in" price tier.
+ * safeParams.image convention for T2V/I2V/reference modes. Reference video
+ * input (video_in) is supported on seedance-2.0 and billed at the higher
+ * video_in tier.
  */
 
 import { HttpError } from "@shared/http-error.ts";
@@ -75,6 +76,8 @@ interface SeedanceV2Input {
     seed?: number;
     image?: string;
     last_frame_image?: string;
+    video_in?: string;
+    audio_in?: string;
 }
 
 export async function callSeedanceV2API(
@@ -95,7 +98,16 @@ export async function callSeedanceV2API(
         Math.min(config.maxDuration, Math.floor(safeParams.duration ?? 5)),
     );
 
+    // Positional image[] contract:
+    //   length=1 → first-frame only (I2V)
+    //   length=2 → image[0] first frame, image[1] last frame
     const images = safeParams.image ?? [];
+    if (images.length > 2) {
+        throw new HttpError(
+            `${definition.title} supports at most two images: image[0] as first frame and image[1] as last frame.`,
+            400,
+        );
+    }
 
     const input: SeedanceV2Input = {
         prompt,
@@ -113,11 +125,40 @@ export async function callSeedanceV2API(
     if (images.length >= 1) input.image = await toDataUri(images[0]);
     if (images.length >= 2) input.last_frame_image = await toDataUri(images[1]);
 
+    // Reference video input (#13901): Replicate accepts a URL for video_in.
+    const capabilities = definition.videoCapabilities ?? [];
+    if (safeParams.reference_video?.length) {
+        if (!capabilities.includes("reference_video")) {
+            throw new HttpError(
+                `${definition.title} does not support reference video input.`,
+                400,
+            );
+        }
+        if (safeParams.reference_video.length > 1) {
+            throw new HttpError(
+                `${definition.title} supports at most one reference video.`,
+                400,
+            );
+        }
+        input.video_in = safeParams.reference_video[0];
+    }
+    if (safeParams.reference_audio) {
+        if (!capabilities.includes("reference_audio")) {
+            throw new HttpError(
+                `${definition.title} does not support reference audio input.`,
+                400,
+            );
+        }
+        input.audio_in = safeParams.reference_audio;
+    }
+
     logOps(`${definition.title} input:`, {
         ...input,
         prompt: prompt.slice(0, 80),
         image: input.image ? "[url]" : undefined,
         last_frame_image: input.last_frame_image ? "[url]" : undefined,
+        video_in: input.video_in ? "[url]" : undefined,
+        audio_in: input.audio_in ? "[url]" : undefined,
     });
 
     let videoUrl: string;

@@ -50,7 +50,7 @@ const IMAGE_BASE_SERVICES = {
         brand: "Black Forest Labs",
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
-        priceMultiplier: 0.75,
+        priceMultiplier: 1,
         cost: {
             completionImageTokens: 0.04, // per image
         },
@@ -300,7 +300,7 @@ const IMAGE_BASE_SERVICES = {
         brand: "OpenAI",
         category: "image",
         addedDate: new Date("2025-12-23").getTime(),
-        priceMultiplier: 0.75,
+        priceMultiplier: 1,
         cost: {
             // Official pricing: https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/introducing-openai%E2%80%99s-gpt-image-1-5-in-microsoft-foundry/4478139
             promptTextTokens: perMillion(5), // per 1M tokens
@@ -414,10 +414,7 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
-        minDuration: 4,
-        maxDuration: 8,
-        defaultDuration: 4,
-        allowedDurations: [4, 6, 8],
+        durationSeconds: { min: 4, max: 8 },
     },
     "seedance-pro": {
         aliases: [],
@@ -463,9 +460,7 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
-        minDuration: 2,
-        maxDuration: 10,
-        defaultDuration: 5,
+        durationSeconds: { min: 2, max: 10 },
     },
     "seedance-2.0": {
         aliases: ["seedance-2"],
@@ -475,20 +470,42 @@ const IMAGE_BASE_SERVICES = {
         addedDate: new Date("2026-05-07").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // non_video_in tier @ 720p; see Economics' replicate connector guide
+        // non_video_in tier @ 720p: $0.18/s; video_in tier @ 720p: $0.22/s.
+        // See Economics' replicate connector guide.
         cost: {
             completionVideoSeconds: 0.18,
         },
+        ...defineCostVariants(
+            {
+                video_in: {
+                    completionVideoSeconds: 0.22,
+                },
+            },
+            ({ input }) => (input?.hasReferenceVideo ? "video_in" : undefined),
+            {
+                video_in: {
+                    label: "720p with reference video",
+                    description:
+                        "Applies when the request includes a reference video input (video_in tier).",
+                },
+            },
+            "720p",
+        ),
         title: "Seedance 2.0",
         description:
-            "720p video with natively synced sound, from text or images",
-        inputModalities: ["text", "image"],
+            "720p video with natively synced sound, from text, images, or a reference video",
+        inputModalities: ["text", "image", "video"],
         outputModalities: ["video", "audio"],
-        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        videoCapabilities: [
+            "start_frame",
+            "end_frame",
+            "audio_output",
+            "reference_video",
+            "reference_audio",
+        ],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
-        minDuration: 4,
-        maxDuration: 15,
-        defaultDuration: 5,
+        maxReferenceVideos: 1, // video_in input.
+        durationSeconds: { min: 4, max: 15 },
     },
     "seedance-2.0-mini": {
         aliases: [],
@@ -499,6 +516,8 @@ const IMAGE_BASE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         // Replicate non_video_in tiers: 480p $0.04/s, 720p $0.09/s.
+        // video_in tier estimated at ~1.2x (see seedance-2.0 for verified
+        // rate). Re-check public Replicate model page before finalizing.
         cost: {
             completionVideoSeconds: 0.09,
         },
@@ -507,13 +526,36 @@ const IMAGE_BASE_SERVICES = {
                 "480p": {
                     completionVideoSeconds: 0.04,
                 },
+                "720p_video_in": {
+                    completionVideoSeconds: 0.11,
+                },
+                "480p_video_in": {
+                    completionVideoSeconds: 0.05,
+                },
             },
-            matchResolution("480p"),
+            ({ input }) => {
+                if (input?.hasReferenceVideo) {
+                    return input.resolution === "480p"
+                        ? "480p_video_in"
+                        : "720p_video_in";
+                }
+                return input?.resolution === "480p" ? "480p" : undefined;
+            },
             {
                 "480p": {
                     label: "480p",
                     description:
                         "Applies when the requested video resolution is 480p.",
+                },
+                "720p_video_in": {
+                    label: "720p with reference video",
+                    description:
+                        "Applies when the request includes a reference video input.",
+                },
+                "480p_video_in": {
+                    label: "480p with reference video",
+                    description:
+                        "Applies when the request includes a reference video input.",
                 },
             },
             "720p",
@@ -522,13 +564,18 @@ const IMAGE_BASE_SERVICES = {
         title: "Seedance 2.0 Mini",
         description:
             "Lower-cost 4–10 second video with synchronized sound and first/last-frame control at 480p or 720p",
-        inputModalities: ["text", "image"],
+        inputModalities: ["text", "image", "video"],
         outputModalities: ["video", "audio"],
-        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        videoCapabilities: [
+            "start_frame",
+            "end_frame",
+            "audio_output",
+            "reference_video",
+            "reference_audio",
+        ],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
-        minDuration: 4,
-        maxDuration: 10,
-        defaultDuration: 5,
+        maxReferenceVideos: 1, // video_in input.
+        durationSeconds: { min: 4, max: 10 },
     },
     "seedance-2.0-fast": {
         aliases: [],
@@ -538,21 +585,45 @@ const IMAGE_BASE_SERVICES = {
         addedDate: new Date("2026-08-14").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // Replicate non_video_in 480p tier; 720p misses the latency limit.
+        // Replicate non_video_in 480p tier: $0.07/s.
+        // video_in 480p tier estimated at ~1.3x. Re-check public Replicate
+        // model page before finalizing.
         cost: {
             completionVideoSeconds: 0.07,
         },
+        ...defineCostVariants(
+            {
+                "480p_video_in": {
+                    completionVideoSeconds: 0.09,
+                },
+            },
+            ({ input }) =>
+                input?.hasReferenceVideo ? "480p_video_in" : undefined,
+            {
+                "480p_video_in": {
+                    label: "480p with reference video",
+                    description:
+                        "Applies when the request includes a reference video input (video_in tier).",
+                },
+            },
+            "480p",
+        ),
         resolutions: ["480p"],
         title: "Seedance 2.0 Fast",
         description:
             "Short 4–5 second video with synchronized sound and first/last-frame control at 480p",
-        inputModalities: ["text", "image"],
+        inputModalities: ["text", "image", "video"],
         outputModalities: ["video", "audio"],
-        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        videoCapabilities: [
+            "start_frame",
+            "end_frame",
+            "audio_output",
+            "reference_video",
+            "reference_audio",
+        ],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
-        minDuration: 4,
-        maxDuration: 5,
-        defaultDuration: 5,
+        maxReferenceVideos: 1, // video_in input.
+        durationSeconds: { min: 4, max: 5 },
     },
     "wan": {
         aliases: ["wan2.6", "wan-i2v"],
@@ -574,10 +645,7 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "audio_output"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
-        minDuration: 5,
-        maxDuration: 15,
-        defaultDuration: 5,
-        allowedDurations: [5, 10, 15],
+        durationSeconds: { min: 5, max: 15 },
     },
     "wan-fast": {
         aliases: ["wan2.2", "wan-2.2"],
@@ -599,9 +667,7 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "end_frame"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
-        minDuration: 5,
-        maxDuration: 5,
-        defaultDuration: 5,
+        durationSeconds: { min: 5, max: 5 },
     },
     "wan-pro": {
         aliases: [
@@ -657,57 +723,7 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
-        minDuration: 2,
-        maxDuration: 15,
-        defaultDuration: 5,
-    },
-    "wan-3.0": {
-        aliases: [],
-        provider: "fal",
-        brand: "Alibaba",
-        category: "video",
-        addedDate: new Date("2026-08-25").getTime(),
-        priceMultiplier: 1,
-        paidOnly: true,
-        // Fal Prime rates verified against live endpoints on 2026-08-25.
-        cost: {
-            completionVideoSeconds: 0.068, // per sec at 480p
-        },
-        ...defineCostVariants(
-            {
-                "720p": {
-                    completionVideoSeconds: 0.14,
-                },
-                "1080p": {
-                    completionVideoSeconds: 0.28,
-                },
-            },
-            matchResolution("720p", "1080p"),
-            {
-                "720p": {
-                    label: "720p",
-                    description:
-                        "Applies when the requested video resolution is 720p.",
-                },
-                "1080p": {
-                    label: "1080p",
-                    description:
-                        "Applies when the requested video resolution is 1080p.",
-                },
-            },
-            "480p",
-        ),
-        resolutions: ["480p", "720p", "1080p"],
-        title: "Wan 3.0",
-        description:
-            "Five-second video from text or a start image with optional audio at 480p, 720p, or 1080p",
-        inputModalities: ["text", "image"],
-        outputModalities: ["video", "audio"],
-        videoCapabilities: ["start_frame", "audio_output"],
-        maxReferenceImages: 1, // Video keyframe slots: start only.
-        minDuration: 5,
-        maxDuration: 5,
-        defaultDuration: 5,
+        durationSeconds: { min: 2, max: 15 },
     },
     "wan-image": {
         aliases: ["wan2.7-image", "wan-img"],
@@ -964,9 +980,7 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
-        minDuration: 1,
-        maxDuration: 15,
-        defaultDuration: 5,
+        durationSeconds: { min: 1, max: 15 },
     },
     "grok-imagine-video-1.5": {
         aliases: [],
@@ -1012,9 +1026,7 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "audio_output"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
-        minDuration: 1,
-        maxDuration: 15,
-        defaultDuration: 5,
+        durationSeconds: { min: 1, max: 15 },
     },
     "seedance-2.5": {
         aliases: [],
@@ -1051,9 +1063,7 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
-        minDuration: 4,
-        maxDuration: 4,
-        defaultDuration: 4,
+        durationSeconds: { min: 4, max: 4 },
     },
     "happyhorse-1.1": {
         aliases: ["happyhorse", "happy-horse-1.1"],
@@ -1072,9 +1082,7 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1,
-        minDuration: 3,
-        maxDuration: 15,
-        defaultDuration: 5,
+        durationSeconds: { min: 3, max: 15 },
     },
     "minimax-h3": {
         aliases: [],
@@ -1089,7 +1097,7 @@ const IMAGE_BASE_SERVICES = {
         },
         ...defineCostVariants(
             {
-                "768p": { completionVideoSeconds: 0.06 },
+                "768p": { completionVideoSeconds: 0.08 },
                 "2k": { completionVideoSeconds: 0.13 },
             },
             matchResolution("768p", "2k"),
@@ -1114,9 +1122,7 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["video", "audio"],
         videoCapabilities: ["audio_output"],
-        minDuration: 5,
-        maxDuration: 5,
-        defaultDuration: 5,
+        durationSeconds: { min: 5, max: 5 },
     },
     "klein": {
         aliases: ["flux-klein"],
@@ -1208,9 +1214,7 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
-        minDuration: 1,
-        maxDuration: 10,
-        defaultDuration: 5,
+        durationSeconds: { min: 2, max: 10 },
     },
     "nova-canvas": {
         aliases: ["amazon-nova-canvas"],
@@ -1219,27 +1223,9 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 1,
-        // AWS Cost Explorer Nova Canvas Standard meters, verified 2026-08-24.
         cost: {
             completionImageTokens: 0.04, // per image
         },
-        ...defineCostVariants(
-            {
-                "2048": {
-                    completionImageTokens: 0.06, // per image when either side exceeds 1024px
-                },
-            },
-            ({ input }) =>
-                (input?.maxImageDimension ?? 0) > 1024 ? "2048" : undefined,
-            {
-                "2048": {
-                    label: "2048 tier",
-                    description:
-                        "Applies when either output dimension exceeds 1024 pixels.",
-                },
-            },
-            "1024 tier",
-        ),
         title: "Nova Canvas",
         description: "Image generation with editing and inpainting tools",
         inputModalities: ["text", "image"],
@@ -1263,10 +1249,7 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
-        minDuration: 6,
-        maxDuration: 120,
-        defaultDuration: 6,
-        durationStep: 6,
+        durationSeconds: { min: 6, max: 120 },
     },
 } as const satisfies Record<string, ModelDefinition>;
 

@@ -19,11 +19,9 @@ export type PricingInput = {
     resolution?: string;
     quality?: string;
     hasImage?: boolean;
-    maxImageDimension?: number;
+    hasReferenceVideo?: boolean;
     megapixels?: number;
     searchContextSize?: "low" | "high";
-    hasDiarization?: boolean;
-    hasPrompt?: boolean;
 };
 
 export type CostVariantContext = {

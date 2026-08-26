@@ -17,11 +17,29 @@ export function stripImageMetadata(bytes: Uint8Array): Uint8Array {
 }
 
 // ---------------------------------------------------------------------------
-// JPEG: drop APP1 (EXIF/XMP), APP2 (ICC — often embeds camera data),
-//       APP13 (IPTC/Photoshop), COM (comments).  Keep everything else.
+// JPEG: drop APP1 (EXIF/XMP), APP13 (IPTC/Photoshop), COM (comments).
+//       APP2 is kept when it carries an ICC colour profile; stripped otherwise.
 // ---------------------------------------------------------------------------
 
-const JPEG_STRIP_MARKERS = new Set([0xe1, 0xe2, 0xed, 0xfe]);
+/** Markers always stripped: APP1, APP13, COM.  APP2 handled separately. */
+const JPEG_STRIP_MARKERS = new Set([0xe1, 0xed, 0xfe]);
+
+/** `ICC_PROFILE\0` identifier at the start of ICC APP2 payloads. */
+const ICC_PROFILE_TAG = new Uint8Array([
+    0x49, 0x43, 0x43, 0x5f, 0x50, 0x52, 0x4f, 0x46, 0x49, 0x4c, 0x45, 0x00,
+]);
+
+function isIccProfile(
+    data: Uint8Array,
+    payloadStart: number,
+    payloadLen: number,
+): boolean {
+    if (payloadLen < ICC_PROFILE_TAG.length) return false;
+    for (let i = 0; i < ICC_PROFILE_TAG.length; i++) {
+        if (data[payloadStart + i] !== ICC_PROFILE_TAG[i]) return false;
+    }
+    return true;
+}
 
 function stripJpegMetadata(data: Uint8Array): Uint8Array {
     if (data.length < 4 || data[0] !== 0xff || data[1] !== 0xd8) return data;
@@ -30,18 +48,24 @@ function stripJpegMetadata(data: Uint8Array): Uint8Array {
     let offset = 2;
     let stripped = false;
 
-    while (offset + 3 < data.length) {
+    while (offset < data.length) {
         if (data[offset] !== 0xff) break;
-        const marker = data[offset + 1];
 
-        // Standalone markers (RST, TEM) or padding 0xFF bytes
+        // Consume legal 0xFF fill/padding bytes before the marker byte
+        let pos = offset + 1;
+        while (pos < data.length && data[pos] === 0xff) pos++;
+        if (pos >= data.length) break;
+
+        const marker = data[pos];
+
+        // Standalone markers (RST, TEM) or byte-stuffing
         if (
             marker === 0x00 ||
             marker === 0x01 ||
             (marker >= 0xd0 && marker <= 0xd7)
         ) {
-            segments.push(data.subarray(offset, offset + 2));
-            offset += 2;
+            segments.push(data.subarray(offset, pos + 1));
+            offset = pos + 1;
             continue;
         }
 
@@ -53,21 +77,29 @@ function stripJpegMetadata(data: Uint8Array): Uint8Array {
 
         // EOI
         if (marker === 0xd9) {
-            segments.push(data.subarray(offset, offset + 2));
+            segments.push(data.subarray(offset, pos + 1));
             break;
         }
 
-        // Variable-length segment
-        const segLen = (data[offset + 2] << 8) | data[offset + 3];
-        if (segLen < 2 || offset + 2 + segLen > data.length) break;
-        const totalLen = 2 + segLen; // marker (2) + length field + payload
+        // Variable-length segment: length field starts at pos+1
+        if (pos + 2 >= data.length) break;
+        const segLen = (data[pos + 1] << 8) | data[pos + 2];
+        if (segLen < 2 || pos + 1 + segLen > data.length) break;
+        const segEnd = pos + 1 + segLen;
 
         if (JPEG_STRIP_MARKERS.has(marker)) {
             stripped = true;
+        } else if (marker === 0xe2) {
+            // APP2: preserve ICC colour profiles, strip other APP2 metadata
+            if (isIccProfile(data, pos + 3, segLen - 2)) {
+                segments.push(data.subarray(offset, segEnd));
+            } else {
+                stripped = true;
+            }
         } else {
-            segments.push(data.subarray(offset, offset + totalLen));
+            segments.push(data.subarray(offset, segEnd));
         }
-        offset += totalLen;
+        offset = segEnd;
     }
 
     if (!stripped) return data;
@@ -75,10 +107,10 @@ function stripJpegMetadata(data: Uint8Array): Uint8Array {
     let totalSize = 0;
     for (const seg of segments) totalSize += seg.length;
     const out = new Uint8Array(totalSize);
-    let pos = 0;
+    let writePos = 0;
     for (const seg of segments) {
-        out.set(seg, pos);
-        pos += seg.length;
+        out.set(seg, writePos);
+        writePos += seg.length;
     }
     return out;
 }

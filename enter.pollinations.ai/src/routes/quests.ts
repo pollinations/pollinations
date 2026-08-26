@@ -1,7 +1,10 @@
 import { claimReward } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
-import { rewards as rewardsTable } from "@shared/db/better-auth.ts";
-import { desc, eq } from "drizzle-orm";
+import {
+    rewards as rewardsTable,
+    user as usersTable,
+} from "@shared/db/better-auth.ts";
+import { and, desc, eq, isNotNull, like, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -21,6 +24,7 @@ import { requireAccountPermission } from "./account-permissions.ts";
 // Bumped to v29: the Discord quest links to account connection and the server.
 const CACHE_KEY = "quests:catalog:v29";
 const CACHE_TTL = 60;
+const LEADERBOARD_CACHE_KEY = "quests:leaderboard:v1";
 const QUEST_CHECK_THROTTLE_SECONDS = 60;
 
 export type QuestCatalogResponse = {
@@ -62,6 +66,26 @@ const rewardSchema = z.object({
 const questRewardsResponseSchema = z.object({
     rewards: z.array(rewardSchema),
 });
+
+const leaderboardEntrySchema = z.object({
+    // Public GitHub identity only - never internal user ids.
+    githubLogin: z.string(),
+    completedQuests: z.number().int(),
+    totalPollen: z.number(),
+});
+
+const questLeaderboardResponseSchema = z.object({
+    leaderboard: z.array(leaderboardEntrySchema),
+    totals: z.object({
+        contributors: z.number().int(),
+        completedQuests: z.number().int(),
+        totalPollen: z.number(),
+    }),
+});
+
+export type QuestLeaderboardResponse = z.infer<
+    typeof questLeaderboardResponseSchema
+>;
 
 const questCheckResponseSchema = z.object({
     success: z.boolean(),
@@ -118,6 +142,89 @@ export const questsRoutes = new Hono<Env>()
                 expirationTtl: CACHE_TTL,
             });
             return c.json(catalog);
+        },
+    )
+    .get(
+        "/leaderboard",
+        describeRoute({
+            tags: ["✨ Quests"],
+            summary: "Get Quest Leaderboard",
+            security: [],
+            description:
+                "Aggregates public Pollen earned from completed public GitHub POLLEN-QUEST issues, grouped by contributor GitHub login.",
+            responses: {
+                200: {
+                    description: "Quest leaderboard",
+                    content: {
+                        "application/json": {
+                            schema: resolver(questLeaderboardResponseSchema),
+                        },
+                    },
+                },
+            },
+        }),
+        async (c) => {
+            const cached = await c.env.KV.get<QuestLeaderboardResponse>(
+                LEADERBOARD_CACHE_KEY,
+                "json",
+            );
+            if (cached) return c.json(cached);
+
+            const db = drizzle(c.env.DB);
+            const rows = await db
+                .select({
+                    githubLogin: usersTable.githubUsername,
+                    completedQuests: sql<number>`count(*)`.mapWith(Number),
+                    totalPollen:
+                        sql<number>`sum(${rewardsTable.pollenAmount})`.mapWith(
+                            Number,
+                        ),
+                })
+                .from(rewardsTable)
+                .innerJoin(usersTable, eq(rewardsTable.userId, usersTable.id))
+                .where(
+                    and(
+                        like(rewardsTable.questId, "github:issue:%"),
+                        isNotNull(usersTable.githubUsername),
+                    ),
+                )
+                .groupBy(usersTable.githubUsername)
+                .orderBy(desc(sql`sum(${rewardsTable.pollenAmount})`))
+                .limit(50);
+
+            const leaderboard = rows.flatMap((row) =>
+                row.githubLogin
+                    ? [
+                          {
+                              githubLogin: row.githubLogin,
+                              completedQuests: row.completedQuests,
+                              totalPollen: row.totalPollen,
+                          },
+                      ]
+                    : [],
+            );
+
+            const response: QuestLeaderboardResponse = {
+                leaderboard,
+                totals: {
+                    contributors: leaderboard.length,
+                    completedQuests: leaderboard.reduce(
+                        (sum, entry) => sum + entry.completedQuests,
+                        0,
+                    ),
+                    totalPollen: leaderboard.reduce(
+                        (sum, entry) => sum + entry.totalPollen,
+                        0,
+                    ),
+                },
+            };
+
+            await c.env.KV.put(
+                LEADERBOARD_CACHE_KEY,
+                JSON.stringify(response),
+                { expirationTtl: CACHE_TTL },
+            );
+            return c.json(response);
         },
     )
     .post(

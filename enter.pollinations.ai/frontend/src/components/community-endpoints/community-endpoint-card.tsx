@@ -72,6 +72,17 @@ export function CommunityEndpointCard({
                                 Agent
                             </Chip>
                         )}
+                        {endpoint.pending && (
+                            <Chip
+                                intent="neutral"
+                                size="sm"
+                                title={`Changes queued — effective ${new Date(
+                                    endpoint.pending.effectiveAt,
+                                ).toLocaleString()}`}
+                            >
+                                Changes queued
+                            </Chip>
+                        )}
                     </div>
                     {endpoint.description && (
                         <p className="mt-1 text-sm text-theme-text-muted">

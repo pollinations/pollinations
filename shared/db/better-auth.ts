@@ -267,6 +267,35 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   ),
 ]);
 
+// Deleting a community_endpoint row (e.g. to republish under the same name at
+// a higher price) must not reset the 12-hour price/visibility delay. This row
+// is keyed on the model id string, not the endpoint row id, and deliberately
+// carries no foreign key to community_endpoint so it survives that row's
+// deletion. Written when a public proxy listing is deleted; read back when a
+// new listing is created under the same owner/name to clamp it to the
+// snapshot until the cooldown expires.
+export const communityEndpointCooldown = sqliteTable("community_endpoint_cooldown", {
+  modelId: text("model_id").primaryKey(),
+  ownerUserId: text("owner_user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  // JSON: { prices: CommunityEndpointPrices, modality, imagePricing }. Modality
+  // and imagePricing ride along so a mode switch (e.g. image "request" cents
+  // per generation vs "tokens" cents per 1M) is never compared numerically
+  // against the wrong unit.
+  priceSnapshot: text("price_snapshot").notNull(),
+  paidOnlySnapshot: integer("paid_only_snapshot", { mode: "boolean" })
+    .default(false)
+    .notNull(),
+  visibilitySnapshot: text("visibility_snapshot", {
+    enum: ["private", "public"],
+  })
+    .default("public")
+    .notNull(),
+  expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+});
+
 // Drizzle relations for query builder joins
 export const userRelations = relations(user, ({ many }) => ({
   apikeys: many(apikey),

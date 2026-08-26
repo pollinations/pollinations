@@ -396,6 +396,18 @@ export function CommunityEndpointDialog({
                 <ScrollArea className="min-h-0 flex-1 space-y-4 overscroll-contain px-6 pb-2">
                     {error && <Alert intent="danger">{error}</Alert>}
 
+                    {endpoint?.pending && (
+                        <Alert intent="info" title="Changes queued">
+                            The fields above already show the queued values.
+                            They take effect{" "}
+                            {new Date(
+                                endpoint.pending.effectiveAt,
+                            ).toLocaleString()}
+                            . Saving again replaces the queued change and
+                            restarts the delay.
+                        </Alert>
+                    )}
+
                     {!isEndpointAgent && (
                         <FieldStack
                             label="Modality"

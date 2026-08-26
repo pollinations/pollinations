@@ -1,5 +1,6 @@
 import {
     applyPendingProxyPricing,
+    COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
     type CommunityEndpointVisibility,
     communityModelId,
     type EndpointAgentListingPayload,
@@ -29,6 +30,11 @@ import {
     testCommunityTranscriptionEndpoint,
 } from "../services/community-endpoint-openai.ts";
 import { requireAccountPermission } from "./account-permissions.ts";
+import {
+    getActiveCommunityEndpointCooldown,
+    stageCommunityEndpointCreate,
+    writeCommunityEndpointCooldown,
+} from "./community-endpoints/cooldown.ts";
 import {
     type FallbackPrimary,
     fallbackTargetRejection,
@@ -184,6 +190,50 @@ async function enforcePublishingAccess(
 ): Promise<void> {
     if (visibility !== "public") return;
     await requireCommunityEndpointPublishAccess(db, userId);
+}
+
+type CommunityEndpointRow = typeof schema.communityEndpoint.$inferSelect;
+
+/**
+ * Snapshot a deleted proxy listing's effective price/paidOnly under a
+ * 12-hour cooldown keyed on its model id, so recreating it under the same
+ * name cannot republish above that price without the same delay an update
+ * would have imposed. Only a listing that was actually public has a price
+ * worth protecting.
+ */
+async function recordCooldownOnDelete(
+    db: Db,
+    endpoint: CommunityEndpointRow,
+    ownerUserId: string,
+): Promise<void> {
+    if (endpoint.type !== "proxy") return;
+    const pendingReady = pendingCommunityEndpointChangeIsReady(
+        endpoint.pendingAt,
+    );
+    const effectiveVisibility =
+        pendingReady && endpoint.pendingVisibility
+            ? endpoint.pendingVisibility
+            : endpoint.visibility;
+    if (effectiveVisibility !== "public") return;
+    const current = parseListingPayload("proxy", endpoint.payload);
+    if (!current) return;
+    const maturedPending = pendingReady
+        ? parseListingPayload("proxy", endpoint.pendingPayload)
+        : null;
+    const effective = applyPendingProxyPricing(current, maturedPending);
+    const ownerGithubUsername = await requireOwnerGithubUsername(
+        db,
+        ownerUserId,
+    );
+    await writeCommunityEndpointCooldown(db, {
+        modelId: communityModelId(ownerGithubUsername, endpoint.name),
+        ownerUserId,
+        prices: effective.prices,
+        paidOnly: effective.paidOnly,
+        modality: effective.modality,
+        imagePricing: effective.imagePricing,
+        expiresAt: new Date(Date.now() + COMMUNITY_ENDPOINT_CHANGE_DELAY_MS),
+    });
 }
 
 async function enforceEndpointProbeThrottle(
@@ -509,23 +559,38 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 user.id,
             );
             await ensureModelNameAvailable(db, user.id, input.name);
+            await enforcePublishingAccess(db, user.id, input.visibility);
             const policy = deriveCreateProxyPolicy(input);
             const modelId = communityModelId(ownerGithubUsername, input.name);
+            // A cooldown left behind by a deleted model under this same name
+            // clamps a price/paidOnly/visibility increase to what it protects,
+            // so deleting and recreating cannot skip the delay an update would
+            // have imposed on the same change.
+            const cooldown = await getActiveCommunityEndpointCooldown(
+                db,
+                modelId,
+            );
+            const staged = stageCommunityEndpointCreate(
+                policy,
+                input.visibility,
+                cooldown,
+            );
+            const bearerTokenCiphertext = await encryptSecret(
+                normalizeInputBearerToken(input.bearerToken),
+                c.env.BETTER_AUTH_SECRET,
+            );
+            const fallbacks = input.fallbacks
+                ? await resolveFallbacks(db, input.fallbacks, {
+                      modelId,
+                      ownerUserId: user.id,
+                      ...staged.immediatePolicy,
+                  })
+                : [];
             const payload: ProxyListingPayload = {
-                bearerTokenCiphertext: await encryptSecret(
-                    normalizeInputBearerToken(input.bearerToken),
-                    c.env.BETTER_AUTH_SECRET,
-                ),
-                ...policy,
-                fallbacks: input.fallbacks
-                    ? await resolveFallbacks(db, input.fallbacks, {
-                          modelId,
-                          ownerUserId: user.id,
-                          ...policy,
-                      })
-                    : [],
+                bearerTokenCiphertext,
+                ...staged.immediatePolicy,
+                fallbacks,
             };
-            await enforcePublishingAccess(db, user.id, input.visibility);
             const [row] = await db
                 .insert(schema.communityEndpoint)
                 .values({
@@ -534,11 +599,20 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     name: input.name,
                     title: input.title,
                     description: input.description || null,
-                    visibility: input.visibility,
+                    visibility: staged.immediateVisibility,
                     type: "proxy",
                     baseUrl: normalizeInputBaseUrl(input.baseUrl),
                     upstreamModel: input.upstreamModel ?? input.name,
                     payload: JSON.stringify(payload),
+                    pendingPayload: staged.pending
+                        ? JSON.stringify({
+                              bearerTokenCiphertext,
+                              ...staged.pending.policy,
+                              fallbacks,
+                          } satisfies ProxyListingPayload)
+                        : null,
+                    pendingVisibility: staged.pending?.visibility ?? null,
+                    pendingAt: staged.pending ? new Date() : null,
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 })
@@ -899,7 +973,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const { id } = c.req.param();
             const db = drizzle(c.env.DB, { schema });
             requireAccountPermission(c.var.auth.apiKey, "keys");
-            await requireOwnedEndpoint(db, id, user.id);
+            const endpoint = await requireOwnedEndpoint(db, id, user.id);
             await db
                 .delete(schema.communityEndpoint)
                 .where(
@@ -908,6 +982,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         eq(schema.communityEndpoint.ownerUserId, user.id),
                     ),
                 );
+            await recordCooldownOnDelete(db, endpoint, user.id);
             return c.json({ id });
         },
     );

@@ -2,6 +2,7 @@ import { env, SELF } from "cloudflare:test";
 import {
     COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
+    communityModelId,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { eq } from "drizzle-orm";
@@ -44,6 +45,21 @@ async function advancePendingPast12Hours(id: string): Promise<void> {
             ),
         })
         .where(eq(schema.communityEndpoint.id, id));
+}
+
+async function deleteModel(sessionToken: string, id: string): Promise<void> {
+    const response = await SELF.fetch(`${endpointUrl}/${id}`, {
+        method: "DELETE",
+        headers: { Cookie: `better-auth.session_token=${sessionToken}` },
+    });
+    expect(response.status, await response.clone().text()).toBe(200);
+}
+
+async function expireCooldown(modelId: string): Promise<void> {
+    await drizzle(env.DB, { schema })
+        .update(schema.communityEndpointCooldown)
+        .set({ expiresAt: new Date(Date.now() - 1000) })
+        .where(eq(schema.communityEndpointCooldown.modelId, modelId));
 }
 
 describe("community endpoint 12-hour price-change delay", () => {
@@ -351,6 +367,239 @@ describe("community endpoint 12-hour price-change delay", () => {
             type: "endpoint_agent",
             visibility: "private",
             pending: { visibility: "public" },
+        });
+    });
+});
+
+describe("community endpoint model-id cooldown survives delete", () => {
+    test("delete then recreate the same name at a higher price stages it as pending", async ({
+        sessionToken,
+    }) => {
+        await approveCommunityModels();
+        const created = await postModel(sessionToken, "", {
+            name: "cooldown-raise-model",
+            title: "Cooldown raise model",
+            visibility: "public",
+            baseUrl: "https://text.example.com/v1",
+            bearerToken: "tok",
+            promptTextPrice: 0.000001,
+        });
+        await deleteModel(sessionToken, created.id as string);
+
+        const recreated = await postModel(sessionToken, "", {
+            name: "cooldown-raise-model",
+            title: "Cooldown raise model",
+            visibility: "public",
+            baseUrl: "https://text.example.com/v1",
+            bearerToken: "tok",
+            promptTextPrice: 0.000003,
+        });
+
+        expect(recreated).toMatchObject({
+            visibility: "public",
+            promptTextPrice: 0.000001,
+        });
+        expect(recreated.pending).toMatchObject({
+            promptTextPrice: 0.000003,
+        });
+    });
+
+    test("delete then recreate the same name at the same or lower price is immediate", async ({
+        sessionToken,
+    }) => {
+        await approveCommunityModels();
+        const created = await postModel(sessionToken, "", {
+            name: "cooldown-lower-model",
+            title: "Cooldown lower model",
+            visibility: "public",
+            baseUrl: "https://text.example.com/v1",
+            bearerToken: "tok",
+            promptTextPrice: 0.000003,
+        });
+        await deleteModel(sessionToken, created.id as string);
+
+        const recreated = await postModel(sessionToken, "", {
+            name: "cooldown-lower-model",
+            title: "Cooldown lower model",
+            visibility: "public",
+            baseUrl: "https://text.example.com/v1",
+            bearerToken: "tok",
+            promptTextPrice: 0.000001,
+        });
+
+        expect(recreated).toMatchObject({
+            visibility: "public",
+            promptTextPrice: 0.000001,
+            pending: null,
+        });
+    });
+
+    test("delete then recreate under a different name is immediate regardless of price", async ({
+        sessionToken,
+    }) => {
+        await approveCommunityModels();
+        const created = await postModel(sessionToken, "", {
+            name: "cooldown-original-name",
+            title: "Cooldown original name",
+            visibility: "public",
+            baseUrl: "https://text.example.com/v1",
+            bearerToken: "tok",
+            promptTextPrice: 0.000001,
+        });
+        await deleteModel(sessionToken, created.id as string);
+
+        const recreated = await postModel(sessionToken, "", {
+            name: "cooldown-different-name",
+            title: "Cooldown different name",
+            visibility: "public",
+            baseUrl: "https://text.example.com/v1",
+            bearerToken: "tok",
+            promptTextPrice: 0.00001,
+        });
+
+        expect(recreated).toMatchObject({
+            visibility: "public",
+            promptTextPrice: 0.00001,
+            pending: null,
+        });
+    });
+
+    test("an expired cooldown no longer blocks a higher-priced recreate", async ({
+        sessionToken,
+    }) => {
+        await approveCommunityModels();
+        const created = await postModel(sessionToken, "", {
+            name: "cooldown-expired-model",
+            title: "Cooldown expired model",
+            visibility: "public",
+            baseUrl: "https://text.example.com/v1",
+            bearerToken: "tok",
+            promptTextPrice: 0.000001,
+        });
+        await deleteModel(sessionToken, created.id as string);
+        await expireCooldown(
+            communityModelId("testuser", "cooldown-expired-model"),
+        );
+
+        const recreated = await postModel(sessionToken, "", {
+            name: "cooldown-expired-model",
+            title: "Cooldown expired model",
+            visibility: "public",
+            baseUrl: "https://text.example.com/v1",
+            bearerToken: "tok",
+            promptTextPrice: 0.00001,
+        });
+
+        expect(recreated).toMatchObject({
+            visibility: "public",
+            promptTextPrice: 0.00001,
+            pending: null,
+        });
+    });
+
+    test("a staged price change survives delete before it matures, gating recreation", async ({
+        sessionToken,
+    }) => {
+        await approveCommunityModels();
+        const created = await postModel(sessionToken, "", {
+            name: "cooldown-staged-model",
+            title: "Cooldown staged model",
+            visibility: "public",
+            baseUrl: "https://text.example.com/v1",
+            bearerToken: "tok",
+            promptTextPrice: 0.000001,
+        });
+        // Stage a price increase; it has not matured yet, so the effective
+        // (pre-increase) price is still the snapshot deletion protects.
+        await postModel(sessionToken, `/${created.id as string}/update`, {
+            promptTextPrice: 0.000005,
+        });
+        await deleteModel(sessionToken, created.id as string);
+
+        const recreated = await postModel(sessionToken, "", {
+            name: "cooldown-staged-model",
+            title: "Cooldown staged model",
+            visibility: "public",
+            baseUrl: "https://text.example.com/v1",
+            bearerToken: "tok",
+            promptTextPrice: 0.000005,
+        });
+
+        expect(recreated).toMatchObject({
+            visibility: "public",
+            promptTextPrice: 0.000001,
+        });
+        expect(recreated.pending).toMatchObject({
+            promptTextPrice: 0.000005,
+        });
+    });
+
+    test("deleting a private model writes no cooldown, so recreating public at any price is immediate", async ({
+        sessionToken,
+    }) => {
+        await approveCommunityModels();
+        const created = await postModel(sessionToken, "", {
+            name: "cooldown-private-model",
+            title: "Cooldown private model",
+            visibility: "private",
+            baseUrl: "https://text.example.com/v1",
+            bearerToken: "tok",
+        });
+        await deleteModel(sessionToken, created.id as string);
+
+        const recreated = await postModel(sessionToken, "", {
+            name: "cooldown-private-model",
+            title: "Cooldown private model",
+            visibility: "public",
+            baseUrl: "https://text.example.com/v1",
+            bearerToken: "tok",
+            promptTextPrice: 0.00002,
+        });
+
+        expect(recreated).toMatchObject({
+            visibility: "public",
+            promptTextPrice: 0.00002,
+            pending: null,
+        });
+    });
+
+    test("an image model deleted in per-request pricing gates a token-priced recreate", async ({
+        sessionToken,
+    }) => {
+        await approveCommunityModels();
+        const created = await postModel(sessionToken, "", {
+            name: "cooldown-image-mode-model",
+            title: "Cooldown image mode model",
+            visibility: "public",
+            modality: "image",
+            imagePricing: "request",
+            baseUrl: "https://image.example.com/v1",
+            bearerToken: "tok",
+            completionImagePrice: 0.01,
+        });
+        await deleteModel(sessionToken, created.id as string);
+
+        // Numerically tiny per-token price, but an incompatible pricing mode —
+        // must not be waved through as "lower" than the per-image snapshot.
+        const recreated = await postModel(sessionToken, "", {
+            name: "cooldown-image-mode-model",
+            title: "Cooldown image mode model",
+            visibility: "public",
+            modality: "image",
+            imagePricing: "tokens",
+            baseUrl: "https://image.example.com/v1",
+            bearerToken: "tok",
+            completionImagePrice: 0.000002,
+        });
+
+        expect(recreated).toMatchObject({
+            visibility: "public",
+            imagePricing: "request",
+            completionImagePrice: 0.01,
+        });
+        expect(recreated.pending).toMatchObject({
+            imagePricing: "tokens",
+            completionImagePrice: 0.000002,
         });
     });
 });

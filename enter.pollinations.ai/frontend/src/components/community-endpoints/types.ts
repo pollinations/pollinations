@@ -50,6 +50,21 @@ export type CommunityProviderProfile = {
     url: string | null;
 };
 
+/**
+ * A staged price/paidOnly/visibility change queued by the 12-hour community
+ * endpoint delay, not yet applied. `visibility` is present only when going
+ * private → public is itself what is pending; a pure price/paidOnly change on
+ * an already-public model omits it. Price fields are present only for the
+ * ones the owner changed — everything else keeps showing the current value.
+ */
+export type PendingCommunityEndpointChange =
+    Partial<CommunityEndpointPrices> & {
+        effectiveAt: string;
+        visibility?: "public";
+        paidOnly?: boolean;
+        imagePricing?: CommunityEndpointImagePricing;
+    };
+
 type CommunityEndpointBase = {
     id: string;
     modelId: string;
@@ -62,6 +77,7 @@ type CommunityEndpointBase = {
     // private → owner-only, shown only to the owner, no owner-set price;
     // public → globally listed + billed to callers.
     visibility: CommunityEndpointVisibility;
+    pending: PendingCommunityEndpointChange | null;
     hidden: boolean;
     hiddenReason: string | null;
     hiddenAt: string | null;
@@ -306,51 +322,55 @@ export function isValidPriceInput(
     );
 }
 
+// A reopened dialog must show the value the owner is about to see applied,
+// not the stale current one — otherwise a saved paidOnly/price/visibility
+// change looks like it silently reverted when it only hasn't matured yet.
 export function endpointToForm(endpoint: EditableEndpoint): EndpointFormState {
+    const pending = endpoint.pending;
+    const visibility = pending?.visibility ?? endpoint.visibility;
     if (endpoint.type === "endpoint_agent") {
         return {
             ...emptyForm,
             name: endpoint.name,
             title: endpoint.title,
             description: endpoint.description ?? "",
-            visibility: endpoint.visibility,
+            visibility,
             perUserRpm: endpoint.perUserRpm?.toString() ?? "",
             baseUrl: endpoint.baseUrl,
             upstreamModel: endpoint.upstreamModel,
         };
     }
+    const imagePricing = pending?.imagePricing ?? endpoint.imagePricing;
     const fields = new Map(
         communityEndpointPriceFieldsForModality(
             endpoint.modality,
-            endpoint.imagePricing,
+            imagePricing,
         ).map((field) => [field.key, field]),
     );
     return {
         modality: endpoint.modality,
-        imagePricing: endpoint.imagePricing,
+        imagePricing,
         inputModalities: endpoint.inputModalities,
         capabilities: endpoint.advertised.capabilities ?? [],
         contextLength: endpoint.advertised.contextLength?.toString() ?? "",
         name: endpoint.name,
         title: endpoint.title,
         description: endpoint.description ?? "",
-        visibility: endpoint.visibility,
+        visibility,
         perUserRpm: endpoint.perUserRpm?.toString() ?? "",
         baseUrl: endpoint.baseUrl,
         upstreamModel: endpoint.upstreamModel,
         bearerToken: "",
-        paidOnly: endpoint.paidOnly,
+        paidOnly: pending?.paidOnly ?? endpoint.paidOnly,
         fallbacks: endpoint.fallbacks ?? [],
         ...(Object.fromEntries(
             COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => {
                 const modalityField = fields.get(field.key);
+                const value = pending?.[field.key] ?? endpoint[field.key];
                 return [
                     field.key,
                     modalityField
-                        ? storedPriceToFormValue(
-                              endpoint[field.key],
-                              modalityField.priceUnit,
-                          )
+                        ? storedPriceToFormValue(value, modalityField.priceUnit)
                         : "",
                 ];
             }),

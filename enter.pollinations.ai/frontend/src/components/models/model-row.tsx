@@ -41,20 +41,20 @@ import {
 } from "./price-badge.tsx";
 import type { ModelPrice } from "./types.ts";
 
-function stripTrailingZeros(value: number): string {
-    return String(Number(value.toFixed(2)));
+function formatNumber(value: number): string {
+    return value % 1 === 0 ? String(value) : value.toFixed(2);
 }
 
 function formatContextLimit(contextLength: number): string {
     if (contextLength >= 1_000_000)
-        return `${stripTrailingZeros(contextLength / 1_000_000)}M`;
+        return `${formatNumber(contextLength / 1_000_000)}M`;
     if (contextLength >= 1_000)
-        return `${stripTrailingZeros(contextLength / 1_000)}K`;
+        return `${formatNumber(contextLength / 1_000)}K`;
     return String(contextLength);
 }
 
 function formatDurationLimit(seconds: number): string {
-    return `${stripTrailingZeros(seconds)}s`;
+    return `${formatNumber(seconds)}s`;
 }
 
 function getVideoDurationLabel(
@@ -65,7 +65,7 @@ function getVideoDurationLabel(
         duration.max != null &&
         duration.min !== duration.max;
     if (hasRange)
-        return `${formatDurationLimit(duration.min as number)}–${formatDurationLimit(duration.max as number)}`;
+        return `${formatDurationLimit(duration.min!)}–${formatDurationLimit(duration.max!)}`;
     const fixed = duration.min ?? duration.max ?? duration.default;
     return fixed != null ? formatDurationLimit(fixed) : null;
 }

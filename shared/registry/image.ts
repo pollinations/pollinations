@@ -364,6 +364,8 @@ export const IMAGE_SERVICES = {
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
+        minDuration: 4,
+        maxDuration: 8,
     },
     "veo-1080p": {
         aliases: ["veo-3.1-fast-1080p", "veo-1080"],
@@ -383,6 +385,8 @@ export const IMAGE_SERVICES = {
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
+        minDuration: 4,
+        maxDuration: 8,
     },
     "seedance-pro": {
         aliases: [],
@@ -405,6 +409,8 @@ export const IMAGE_SERVICES = {
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
+        minDuration: 2,
+        maxDuration: 12,
     },
     "seedance-2.0": {
         aliases: ["seedance-2"],
@@ -425,6 +431,8 @@ export const IMAGE_SERVICES = {
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
+        minDuration: 4,
+        maxDuration: 15,
     },
     "wan": {
         aliases: ["wan2.6", "wan-i2v"],
@@ -446,6 +454,8 @@ export const IMAGE_SERVICES = {
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "audio_output"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
+        minDuration: 5,
+        maxDuration: 15,
     },
     "wan-fast": {
         aliases: ["wan2.2", "wan-2.2"],
@@ -467,6 +477,8 @@ export const IMAGE_SERVICES = {
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "end_frame"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
+        minDuration: 5,
+        maxDuration: 5,
     },
     "wan-pro": {
         aliases: ["wan2.7", "wan-2.7"],
@@ -487,6 +499,8 @@ export const IMAGE_SERVICES = {
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
+        minDuration: 2,
+        maxDuration: 15,
     },
     "wan-pro-1080p": {
         aliases: ["wan2.7-1080p", "wan-pro-1080"],
@@ -508,6 +522,8 @@ export const IMAGE_SERVICES = {
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
+        minDuration: 2,
+        maxDuration: 15,
     },
     "wan-image": {
         aliases: ["wan2.7-image", "wan-img"],
@@ -651,6 +667,8 @@ export const IMAGE_SERVICES = {
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
+        minDuration: 1,
+        maxDuration: 15,
     },
     "happyhorse-1.1": {
         aliases: ["happyhorse", "happy-horse-1.1"],
@@ -669,6 +687,8 @@ export const IMAGE_SERVICES = {
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1,
+        minDuration: 3,
+        maxDuration: 15,
     },
     "klein": {
         aliases: ["flux-klein"],
@@ -740,6 +760,8 @@ export const IMAGE_SERVICES = {
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
+        minDuration: 1,
+        maxDuration: 10,
     },
     "p-video-1080p": {
         aliases: ["pruna-video-1080p"],
@@ -758,6 +780,8 @@ export const IMAGE_SERVICES = {
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
+        minDuration: 1,
+        maxDuration: 10,
     },
     "nova-canvas": {
         aliases: ["amazon-nova-canvas"],
@@ -792,6 +816,8 @@ export const IMAGE_SERVICES = {
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
+        minDuration: 6,
+        maxDuration: 120,
     },
 } as const satisfies Record<string, ModelDefinition>;
 

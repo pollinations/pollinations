@@ -59,6 +59,10 @@ export type ModelPrice = {
     prices: ModelPriceLine[];
     // Real usage data from Tinybird (rolling 7-day average)
     realAvgCost?: number;
+    // Model limits surfaced from the API for compact dashboard display.
+    contextLength?: number;
+    minDuration?: number;
+    maxDuration?: number;
 };
 
 export type Modalities = {

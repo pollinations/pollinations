@@ -4,6 +4,8 @@ import { calculatePerPollen, calculatePerPollenValue } from "./calculations.ts";
 import { CAPABILITY_ICON, MODALITY_ICON } from "./model-icons.tsx";
 import {
     type DisplayCapability,
+    formatContextLength,
+    formatDuration,
     getModelBrandLogoPath,
     getModelCapabilities,
     getModelDescriptionWithoutName,
@@ -197,6 +199,48 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                 inputModalities={inputModalities}
                                 capabilities={capabilities}
                             />
+                            {model.contextLength != null && (
+                                <Tooltip
+                                    content={
+                                        <span>
+                                            <strong className="font-semibold text-theme-text-strong">
+                                                Context window:
+                                            </strong>{" "}
+                                            {model.contextLength.toLocaleString()}{" "}
+                                            tokens
+                                        </span>
+                                    }
+                                >
+                                    <span className="whitespace-nowrap text-xs tabular-nums text-theme-text-muted">
+                                        {formatContextLength(model.contextLength)}{" "}
+                                        ctx
+                                    </span>
+                                </Tooltip>
+                            )}
+                            {model.type === "video" &&
+                                model.minDuration != null &&
+                                model.maxDuration != null && (
+                                    <Tooltip
+                                        content={
+                                            <span>
+                                                <strong className="font-semibold text-theme-text-strong">
+                                                    Duration:
+                                                </strong>{" "}
+                                                {formatDuration(
+                                                    model.minDuration,
+                                                    model.maxDuration,
+                                                )}
+                                            </span>
+                                        }
+                                    >
+                                        <span className="whitespace-nowrap text-xs tabular-nums text-theme-text-muted">
+                                            {formatDuration(
+                                                model.minDuration,
+                                                model.maxDuration,
+                                            )}
+                                        </span>
+                                    </Tooltip>
+                                )}
                             <ModelStatusChips
                                 showNew={showNew}
                                 showAlpha={showAlpha}

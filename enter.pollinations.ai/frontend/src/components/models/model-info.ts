@@ -190,3 +190,23 @@ export const isPaidOnly = (model: ModelPrice): boolean =>
  * Check if a model is marked as alpha (experimental, potentially unstable)
  */
 export const isAlpha = (model: ModelPrice): boolean => model.alpha === true;
+
+/**
+ * Format context length for compact display (e.g. 128000 → "128k", 2000000 → "2M").
+ */
+export const formatContextLength = (n: number): string => {
+    if (n >= 1_000_000) {
+        const m = n / 1_000_000;
+        return `${Number.isInteger(m) ? m : m.toFixed(1)}M`;
+    }
+    return `${Math.round(n / 1000)}k`;
+};
+
+/**
+ * Format duration range for compact display.
+ * When min === max the model produces a fixed-length clip (e.g. "5s").
+ * Otherwise show the range (e.g. "4–8s").
+ */
+export const formatDuration = (min: number, max: number): string => {
+    return min === max ? `${min}s` : `${min}–${max}s`;
+};

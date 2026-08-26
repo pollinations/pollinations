@@ -142,6 +142,11 @@ export type ModelDefinition = {
     videoCapabilities?: VideoCapability[]; // Video-only: which frame controls the provider supports
     maxReferenceImages?: number; // Models with image input: effective accepted reference images
     maxReferenceVideos?: number; // Models with video input: effective accepted reference videos
+    // Video-only: supported duration range in seconds. When both are equal the
+    // model produces a fixed-length clip; when different the user may choose any
+    // integer in [min, max]. Surfaced to the dashboard as a compact badge.
+    minDuration?: number;
+    maxDuration?: number;
 };
 
 // Helper: Convert usage counts to rated USD-equivalent cost or Pollen charge.

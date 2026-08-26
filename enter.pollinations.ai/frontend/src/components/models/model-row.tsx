@@ -15,6 +15,8 @@ import {
     MODALITY_ICON,
 } from "./model-icons.tsx";
 import {
+    formatContextLength,
+    formatDuration,
     getModelBrandLogoPath,
     getModelCapabilities,
     getModelCapabilityLabel,
@@ -22,8 +24,6 @@ import {
     getModelDisplayName,
     getModelInputModalities,
     getModelModalityLabel,
-    formatContextLength,
-    formatDuration,
     hasPollinationsTools,
     isAlpha,
     isNewModel,

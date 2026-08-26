@@ -274,7 +274,9 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                     tapEnabled
                                 >
                                     <span className="whitespace-nowrap text-xs tabular-nums text-theme-text-muted">
-                                        {formatContextLength(model.contextLength)}{" "}
+                                        {formatContextLength(
+                                            model.contextLength,
+                                        )}{" "}
                                         ctx
                                     </span>
                                 </Tooltip>

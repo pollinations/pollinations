@@ -60,17 +60,13 @@ export async function checkBalance(
             keyPollenType,
         )
     ) {
-        const available =
-            keyPollenType === "quest"
-                ? userBalance.tierBalance
-                : keyPollenType === "paid"
-                  ? userBalance.packBalance
-                  : isPaidOnly
-                    ? userBalance.packBalance
-                    : Math.max(
-                          userBalance.tierBalance,
-                          userBalance.packBalance,
-                      );
+        const available = isPaidOnly
+            ? userBalance.packBalance
+            : keyPollenType === "quest"
+              ? userBalance.tierBalance
+              : keyPollenType === "paid"
+                ? userBalance.packBalance
+                : Math.max(userBalance.tierBalance, userBalance.packBalance);
         throw new HTTPException(402, {
             message: `Insufficient balance. This request costs ~${estimatedCost.toFixed(4)} pollen, but your available balance is ${Math.max(0, available).toFixed(4)}.`,
         });

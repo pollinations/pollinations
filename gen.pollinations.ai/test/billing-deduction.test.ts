@@ -1,5 +1,6 @@
 import { env } from "cloudflare:test";
 import { getUserBalance } from "@shared/billing/balance.ts";
+import { canCoverEstimatedCharge } from "@shared/billing/bucket-selection.ts";
 import {
     atomicDeductUserBalance,
     atomicReserveApiKeyBalance,
@@ -46,6 +47,29 @@ async function getApiKeyBalance(apiKeyId: string) {
 }
 
 describe("billing deduction", () => {
+    it("restricts preflight coverage to the selected key bucket", () => {
+        const balances = { tierBalance: 5, packBalance: 10 };
+
+        expect(canCoverEstimatedCharge(balances, 6, false, "quest")).toBe(
+            false,
+        );
+        expect(canCoverEstimatedCharge(balances, 6, false, "paid")).toBe(true);
+        expect(canCoverEstimatedCharge(balances, 6, true, "quest")).toBe(true);
+    });
+
+    it("deducts from the selected key bucket while paid-only takes precedence", async () => {
+        const userId = await createUser({ tierBalance: 10, packBalance: 10 });
+
+        await atomicDeductUserBalance(db, userId, 3, false, "paid");
+        await atomicDeductUserBalance(db, userId, 2, false, "quest");
+        await atomicDeductUserBalance(db, userId, 4, true, "quest");
+
+        expect(await getUserBalance(db, userId)).toEqual({
+            tierBalance: 8,
+            packBalance: 3,
+        });
+    });
+
     it("deducts regular generation charges from tier, then positive pack, with empty-pack overage on tier", async () => {
         const userId = await createUser({ tierBalance: 5, packBalance: 10 });
 

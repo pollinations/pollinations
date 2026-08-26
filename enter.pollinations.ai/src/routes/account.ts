@@ -29,12 +29,7 @@ import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
-import {
-    type DiscordMembership,
-    DiscordRateLimitError,
-    discordConfigFromEnv,
-    getPollinationsDiscordMembership,
-} from "../services/discord.ts";
+import { discordConfigFromEnv } from "../services/discord.ts";
 import { QUEST_CATEGORIES } from "../services/quests/definitions.ts";
 import { listQuestCards } from "../services/quests/index.ts";
 import {
@@ -673,11 +668,6 @@ const profileResponseSchema = z.object({
         ),
 });
 
-const discordMembershipResponseSchema = z.object({
-    member: z.boolean(),
-    joinedAt: z.string().nullable(),
-});
-
 const accountBalanceSchema = z.object({
     total: z
         .number()
@@ -815,70 +805,6 @@ export const accountRoutes = new Hono<Env>()
     })
     .route("/agents", agentsRoutes)
     .route("/my-models", communityEndpointsRoutes)
-    .get(
-        "/discord-membership",
-        describeRoute({
-            tags: ["👤 Account"],
-            summary: "Check Discord Membership",
-            description:
-                "Checks whether the linked Discord account belongs to the Pollinations Discord server.",
-            responses: {
-                200: {
-                    description: "Discord membership status",
-                    content: {
-                        "application/json": {
-                            schema: resolver(discordMembershipResponseSchema),
-                        },
-                    },
-                },
-                401: { description: "Unauthorized" },
-                403: { description: "Dashboard session required" },
-                404: { description: "Discord account not connected" },
-                429: { description: "Discord membership check rate limited" },
-                502: { description: "Discord membership check failed" },
-            },
-        }),
-        async (c) => {
-            await c.var.auth.requireAuthorization();
-            if (!c.var.auth.session) {
-                throw new HTTPException(403, {
-                    message:
-                        "Discord membership checks require a dashboard session",
-                });
-            }
-            const user = c.var.auth.requireUser();
-            let membership: DiscordMembership | null;
-            try {
-                membership = await getPollinationsDiscordMembership(
-                    c.env,
-                    user.id,
-                );
-            } catch (error) {
-                if (error instanceof DiscordRateLimitError) {
-                    return c.json(
-                        {
-                            error: "rate_limited",
-                            message: "Discord membership check rate limited",
-                        },
-                        429,
-                        {
-                            "Retry-After": String(error.retryAfterSeconds),
-                        },
-                    );
-                }
-                throw new HTTPException(502, {
-                    message: "Discord membership check failed",
-                });
-            }
-
-            if (!membership) {
-                throw new HTTPException(404, {
-                    message: "Discord account not connected",
-                });
-            }
-            return c.json(membership);
-        },
-    )
     .get(
         "/profile",
         describeRoute({

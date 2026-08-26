@@ -53,13 +53,11 @@ function renderContextBadge(length: number): JSX.Element | null {
     return <>{length} ctx</>;
 }
 
-function renderDurationBadge(maxD: number | undefined, defaultD: number | undefined): JSX.Element | null {
+function formatDuration(maxD: number | undefined, defaultD: number | undefined): string | null {
     if (maxD != null && defaultD != null && maxD !== defaultD) {
-        return <>{defaultD}s{defaultD % 1 !== 0 ? "" : ""}–{maxD}s</>;
+        return `${defaultD}s–${maxD}s`;
     }
-    if (maxD != null) return <>{maxD}s</>;
-    if (defaultD != null) return <>{defaultD}s</>;
-    return null;
+    return maxD != null ? `${maxD}s` : defaultD != null ? `${defaultD}s` : null;
 }
 
 type ModelRowProps = {
@@ -304,11 +302,14 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                     {renderContextBadge(model.contextLength)}
                                 </span>
                             )}
-                            {renderDurationBadge(model.maxDuration, model.defaultDuration) != null && (
-                                <span className="inline-flex rounded bg-surface-secondary px-1.5 py-0.5 font-mono text-[10px] leading-none text-theme-text-muted">
-                                    {renderDurationBadge(model.maxDuration, model.defaultDuration)}
-                                </span>
-                            )}
+                            {(() => {
+                                const dur = formatDuration(model.maxDuration, model.defaultDuration);
+                                return dur ? (
+                                    <span className="inline-flex rounded bg-surface-secondary px-1.5 py-0.5 font-mono text-[10px] leading-none text-theme-text-muted">
+                                        {dur}
+                                    </span>
+                                ) : null;
+                            })()}
                         </div>
                     )}
                     {model.brandUrl && model.brand && (

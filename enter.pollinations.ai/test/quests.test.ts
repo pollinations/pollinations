@@ -1752,3 +1752,245 @@ test("account quest history accepts account usage permission", async ({
         rewards: [],
     });
 });
+
+test("GET /api/quests/leaderboard aggregates GitHub POLLEN-QUEST rewards by contributor", async ({
+    sessionToken: _sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const now = new Date();
+
+    await db.insert(schema.user).values([
+        {
+            id: "leaderboard-alice",
+            name: "Alice Quester",
+            email: "alice@example.com",
+            emailVerified: false,
+            image: null,
+            createdAt: now,
+            updatedAt: now,
+            githubId: 1001,
+            githubUsername: "alice-quester",
+            tierBalance: 0,
+            packBalance: 0,
+        },
+        {
+            id: "leaderboard-bob",
+            name: "Bob Quester",
+            email: "bob@example.com",
+            emailVerified: false,
+            image: null,
+            createdAt: now,
+            updatedAt: now,
+            githubId: 1002,
+            githubUsername: "bob-quester",
+            tierBalance: 0,
+            packBalance: 0,
+        },
+        {
+            id: "leaderboard-carol",
+            name: "Carol Quester",
+            email: "carol@example.com",
+            emailVerified: false,
+            image: null,
+            createdAt: now,
+            updatedAt: now,
+            githubId: 1003,
+            githubUsername: "carol-quester",
+            tierBalance: 0,
+            packBalance: 0,
+        },
+        // A linked account without a public GitHub username must never rank.
+        {
+            id: "leaderboard-nogithub",
+            name: "No GitHub",
+            email: "nogithub@example.com",
+            emailVerified: false,
+            image: null,
+            createdAt: now,
+            updatedAt: now,
+            githubId: 1004,
+            githubUsername: null,
+            tierBalance: 0,
+            packBalance: 0,
+        },
+    ]);
+
+    await db.insert(schema.rewards).values([
+        // alice: two claimed bounties -> 12 pollen, 2 quests.
+        {
+            id: "lb-r-a1",
+            idempotencyKey: "quest:github:issue:101",
+            userId: "leaderboard-alice",
+            questId: "github:issue:101",
+            title: "Ship bounty #101",
+            pollenAmount: 5,
+            balanceBucket: "tier",
+            earnedAt: now,
+            claimedAt: now,
+        },
+        {
+            id: "lb-r-a2",
+            idempotencyKey: "quest:github:issue:102",
+            userId: "leaderboard-alice",
+            questId: "github:issue:102",
+            title: "Ship bounty #102",
+            pollenAmount: 7,
+            balanceBucket: "tier",
+            earnedAt: now,
+            claimedAt: now,
+        },
+        // bob: one claimed bounty -> 15 pollen, 1 quest (ranked first).
+        {
+            id: "lb-r-b1",
+            idempotencyKey: "quest:github:issue:201",
+            userId: "leaderboard-bob",
+            questId: "github:issue:201",
+            title: "Ship bounty #201",
+            pollenAmount: 15,
+            balanceBucket: "tier",
+            earnedAt: now,
+            claimedAt: now,
+        },
+        // carol: one claimed bounty + a product quest that must not count.
+        {
+            id: "lb-r-c1",
+            idempotencyKey: "quest:github:issue:301",
+            userId: "leaderboard-carol",
+            questId: "github:issue:301",
+            title: "Ship bounty #301",
+            pollenAmount: 3,
+            balanceBucket: "tier",
+            earnedAt: now,
+            claimedAt: now,
+        },
+        {
+            id: "lb-r-c2",
+            idempotencyKey: "quest:merged_pr:leaderboard-carol",
+            userId: "leaderboard-carol",
+            questId: "merged_pr",
+            title: "Contribute a pull request",
+            pollenAmount: 5,
+            balanceBucket: "tier",
+            earnedAt: now,
+            claimedAt: now,
+        },
+        // Claimed bounty for an account without a GitHub username: excluded.
+        {
+            id: "lb-r-n1",
+            idempotencyKey: "quest:github:issue:401",
+            userId: "leaderboard-nogithub",
+            questId: "github:issue:401",
+            title: "Ship bounty #401",
+            pollenAmount: 9,
+            balanceBucket: "tier",
+            earnedAt: now,
+            claimedAt: now,
+        },
+    ]);
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/quests/leaderboard",
+    );
+    expect(response.status).toBe(200);
+
+    const payload = (await response.json()) as {
+        leaderboard: {
+            rank: number;
+            githubUsername: string;
+            totalPollen: number;
+            completedQuests: number;
+        }[];
+    };
+
+    // Ranked by claimed Pollen from completed GitHub POLLEN-QUEST issues only.
+    expect(payload.leaderboard).toEqual([
+        {
+            rank: 1,
+            githubUsername: "bob-quester",
+            totalPollen: 15,
+            completedQuests: 1,
+        },
+        {
+            rank: 2,
+            githubUsername: "alice-quester",
+            totalPollen: 12,
+            completedQuests: 2,
+        },
+        {
+            rank: 3,
+            githubUsername: "carol-quester",
+            totalPollen: 3,
+            completedQuests: 1,
+        },
+    ]);
+});
+
+test("GET /api/quests/leaderboard excludes unclaimed rewards", async ({
+    sessionToken: _sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const now = new Date();
+
+    await db.insert(schema.user).values({
+        id: "leaderboard-unclaimed",
+        name: "Unclaimed Quester",
+        email: "unclaimed@example.com",
+        emailVerified: false,
+        image: null,
+        createdAt: now,
+        updatedAt: now,
+        githubId: 1005,
+        githubUsername: "unclaimed-quester",
+        tierBalance: 0,
+        packBalance: 0,
+    });
+
+    await db.insert(schema.rewards).values([
+        {
+            id: "lb-r-u1",
+            idempotencyKey: "quest:github:issue:501",
+            userId: "leaderboard-unclaimed",
+            questId: "github:issue:501",
+            title: "Ship bounty #501",
+            pollenAmount: 10,
+            balanceBucket: "tier",
+            earnedAt: now,
+            claimedAt: now,
+        },
+        {
+            id: "lb-r-u2",
+            idempotencyKey: "quest:github:issue:502",
+            userId: "leaderboard-unclaimed",
+            questId: "github:issue:502",
+            title: "Ship bounty #502",
+            pollenAmount: 10,
+            balanceBucket: "tier",
+            earnedAt: now,
+            claimedAt: null,
+        },
+    ]);
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/quests/leaderboard",
+    );
+    expect(response.status).toBe(200);
+
+    const payload = (await response.json()) as {
+        leaderboard: {
+            rank: number;
+            githubUsername: string;
+            totalPollen: number;
+            completedQuests: number;
+        }[];
+    };
+
+    // Only the claimed bounty is credited; the pending one is not yet earned.
+    expect(payload.leaderboard).toEqual([
+        {
+            rank: 1,
+            githubUsername: "unclaimed-quester",
+            totalPollen: 10,
+            completedQuests: 1,
+        },
+    ]);
+});

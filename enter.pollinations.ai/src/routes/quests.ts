@@ -1,7 +1,7 @@
 import { claimReward } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { rewards as rewardsTable } from "@shared/db/better-auth.ts";
-import { desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, isNotNull, like, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -81,6 +81,17 @@ const claimRewardResponseSchema = z.object({
     claimed: z.boolean(),
     newBalance: z.number().nullable(),
     reward: rewardSchema,
+});
+
+const leaderboardEntrySchema = z.object({
+    rank: z.number(),
+    githubUsername: z.string(),
+    totalPollen: z.number(),
+    completedQuests: z.number(),
+});
+
+const leaderboardResponseSchema = z.object({
+    leaderboard: z.array(leaderboardEntrySchema),
 });
 
 function formatRewardTimestamp(value: Date | number | string): string {
@@ -296,6 +307,79 @@ export const questsRoutes = new Hono<Env>()
                         : null,
                 },
             });
+        },
+    )
+    .get(
+        "/leaderboard",
+        describeRoute({
+            tags: ["✨ Quests"],
+            summary: "Get Quest Leaderboard",
+            security: [],
+            description:
+                "Public leaderboard of contributors ranked by total Quest Pollen earned from completed public GitHub POLLEN-QUEST issues. Shows each contributor's GitHub username, completed quest count, and total Quest Pollen.",
+            responses: {
+                200: {
+                    description: "Quest leaderboard",
+                    content: {
+                        "application/json": {
+                            schema: resolver(leaderboardResponseSchema),
+                        },
+                    },
+                },
+            },
+        }),
+        async (c) => {
+            const db = drizzle(c.env.DB, { schema });
+            const rows = await db
+                .select({
+                    githubUsername: schema.user.githubUsername,
+                    totalPollen:
+                        sql<number>`SUM(${rewardsTable.pollenAmount})`.mapWith(
+                            Number,
+                        ),
+                    completedQuests:
+                        sql<number>`COUNT(DISTINCT ${rewardsTable.questId})`.mapWith(
+                            Number,
+                        ),
+                })
+                .from(rewardsTable)
+                .innerJoin(schema.user, eq(rewardsTable.userId, schema.user.id))
+                .where(
+                    and(
+                        // Only public GitHub POLLEN-QUEST issue bounties count;
+                        // product quests (setup, top-up, app) do not.
+                        like(rewardsTable.questId, "github:issue:%"),
+                        // Pollen only counts once the contributor claimed it.
+                        isNotNull(rewardsTable.claimedAt),
+                        isNotNull(schema.user.githubUsername),
+                    ),
+                )
+                .groupBy(schema.user.githubUsername)
+                .orderBy(
+                    desc(sql`SUM(${rewardsTable.pollenAmount})`),
+                    desc(sql`COUNT(DISTINCT ${rewardsTable.questId})`),
+                    asc(schema.user.githubUsername),
+                )
+                .limit(20);
+
+            const leaderboard = rows
+                .filter(
+                    (
+                        row,
+                    ): row is {
+                        githubUsername: string;
+                        totalPollen: number;
+                        completedQuests: number;
+                    } => row.githubUsername !== null,
+                )
+                .map((row, index) => ({
+                    rank: index + 1,
+                    githubUsername: row.githubUsername,
+                    totalPollen: row.totalPollen,
+                    completedQuests: row.completedQuests,
+                }));
+
+            return c.json({ leaderboard });
         },
     );
 

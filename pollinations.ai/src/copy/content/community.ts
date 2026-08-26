@@ -96,6 +96,16 @@ export const COMMUNITY_PAGE = {
     commitLabel: "commit",
     votesLabel: "votes",
 
+    // Quest Leaderboard
+    questLeaderboardTitle: "Quest leaderboard",
+    questLeaderboardDescription:
+        "Top questers ranked by total Pollen earned from completing public GitHub quests.",
+    questLeaderboardCta: "Want to earn Pollen?",
+    questsPageLink: "Browse the quests page",
+    questsLabel: "quests",
+    questLabel: "quest",
+    pollenLabel: "Pollen",
+
     // Section 5 — Build Diary + Supporters
     buildDiaryTitle: "Build diary",
     buildDiarySubtitle: "A visual log of what we ship every day.",

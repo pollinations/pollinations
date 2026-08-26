@@ -5,6 +5,7 @@ import { usePageCopy } from "../../hooks/usePageCopy";
 import { useTranslate } from "../../hooks/useTranslate";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { BuildDiary } from "../components/BuildDiary";
+import { QuestLeaderboard } from "../components/QuestLeaderboard";
 import { TopContributors } from "../components/TopContributors";
 import { Button } from "../components/ui/button";
 import { Divider } from "../components/ui/divider";
@@ -323,6 +324,8 @@ export default function CommunityPage() {
                 <Divider />
 
                 <TopContributors />
+
+                <QuestLeaderboard />
 
                 {/* Section 5 — Build Diary + Supporters */}
                 <div className="mb-12">

@@ -117,3 +117,69 @@ describe("Seedance 2.0 family via Replicate", () => {
         ).rejects.toThrow("not supported by Seedance 2.0 Mini");
     });
 });
+
+    it("forwards input_references for seedance-2.0", async () => {
+        const inputs: Record<string, unknown>[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
+            const href = typeof url === "string" ? url : url.toString();
+            if (href === PREDICTIONS_URL) {
+                inputs.push(
+                    JSON.parse(init?.body as string) as {
+                        input: Record<string, unknown>;
+                    },
+                );
+    it(\"names the selected variant in aspect-ratio errors\", async () => {
+        await expect(
+            callSeedanceV2API(\"a paper boat\", {
+                ...baseParams,
+                aspectRatio: \"9:21\",\
+            }),
+        ).rejects.toThrow(\"not supported by Seedance 2.0 Mini\");
+    });
+
+    it(\"forwards input_references for seedance-2.0\", async () => {
+        const inputs: Record<string, unknown>[] = [];
+        vi.spyOn(globalThis, \"fetch\").mockImplementation(async (url, init) => {
+            const href = typeof url === \"string\" ? url : url.toString();
+            if (href === PREDICTIONS_URL) {
+                inputs.push(
+                    JSON.parse(init?.body as string) as {
+                        input: Record<string, unknown>;
+                    },
+                );
+                return new Response(
+                    JSON.stringify({
+                        id: \"pred-seedance-v2-refs\",
+                        status: \"succeeded\",
+                        output: VIDEO_URL,
+                        metrics: { video_output_duration_seconds: 5 },
+                    }),
+                    { status: 201 },
+                );
+            }
+            if (href === VIDEO_URL) {
+                return new Response(new Uint8Array([0, 0, 0, 24]), {
+                    headers: { \"Content-Type\": \"video/mp4\" },
+                });
+            }
+            return new Response(\"unexpected URL\", { status: 404 });
+        });
+
+        await callSeedanceV2API(\"combine references\", {
+            ...baseParams,
+            model: \"seedance-2.0\",
+            image: [],
+            input_references: [
+                \"https://media.pollinations.ai/reference-one\",\
+                \"https://example.com/reference-two.png\",\
+            ],
+        });
+
+        expect(inputs[0].input).toMatchObject({
+            reference_images: [
+                \"https://media.pollinations.ai/reference-one\",\
+                \"https://example.com/reference-two.png\",\
+            ],
+        });
+    });
+});

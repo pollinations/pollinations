@@ -592,6 +592,15 @@ export class Pollinations {
             seed: options.seed,
             audio: options.audio,
             image: options.referenceImage,
+            input_references: Array.isArray(options.inputReferences)
+                ? options.inputReferences.join("|")
+                : options.inputReferences,
+            input_reference_videos: Array.isArray(options.inputReferenceVideos)
+                ? options.inputReferenceVideos.join("|")
+                : options.inputReferenceVideos,
+            input_reference_audios: Array.isArray(options.inputReferenceAudios)
+                ? options.inputReferenceAudios.join("|")
+                : options.inputReferenceAudios,
             safe: options.safe,
         };
 

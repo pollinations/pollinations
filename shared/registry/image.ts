@@ -484,8 +484,11 @@ const IMAGE_BASE_SERVICES = {
             "720p video with natively synced sound, from text or images",
         inputModalities: ["text", "image"],
         outputModalities: ["video", "audio"],
-        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        videoCapabilities: ["start_frame", "end_frame", "reference_images", "reference_videos", "reference_audios", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
+        maxInputReferences: 9, // Reference images for style/character guidance.
+        maxReferenceVideos: 3, // Reference videos for motion transfer.
+        maxReferenceAudios: 3, // Reference audios for lip-sync.
         minDuration: 4,
         maxDuration: 15,
         defaultDuration: 5,
@@ -1046,11 +1049,14 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["480p", "720p"],
         title: "Seedance 2.5",
         description:
-            "Four-second video with synchronized audio and first/last-frame control at 480p or 720p",
-        inputModalities: ["text", "image"],
+            "Four-second video with synchronized audio, first/last-frame control, and reference image/video/audio guidance at 480p or 720p",
+        inputModalities: ["text", "image", "video", "audio"],
         outputModalities: ["video", "audio"],
-        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        videoCapabilities: ["start_frame", "end_frame", "reference_images", "reference_videos", "reference_audios", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
+        maxInputReferences: 30, // Reference images for style/character guidance (Replicate limit).
+        maxReferenceVideos: 10, // Reference videos for motion transfer.
+        maxReferenceAudios: 10, // Reference audios for lip-sync.
         minDuration: 4,
         maxDuration: 4,
         defaultDuration: 4,

@@ -1,9 +1,9 @@
 /**
  * ByteDance Seedance 2.0 family video generation via Replicate.
  *
- * Supports reference images, videos, and audios for guidance without
- * fixing the first or last frame. The first/last-frame slots remain
- * available via the `image` parameter when reference media is not used.
+ * The full model remains 720p locked. All three use the existing
+ * safeParams.image convention for T2V/I2V/reference modes. We don't expose
+ * reference_videos, which would trigger Replicate's "video_in" price tier.
  */
 
 import { HttpError } from "@shared/http-error.ts";
@@ -27,23 +27,14 @@ const MODELS = {
     "seedance-2.0": {
         upstream: "bytedance/seedance-2.0",
         maxDuration: 15,
-        maxReferenceImages: 9,
-        maxReferenceVideos: 3,
-        maxReferenceAudios: 3,
     },
     "seedance-2.0-mini": {
         upstream: "bytedance/seedance-2.0-mini",
         maxDuration: 10,
-        maxReferenceImages: 9,
-        maxReferenceVideos: 3,
-        maxReferenceAudios: 3,
     },
     "seedance-2.0-fast": {
         upstream: "bytedance/seedance-2.0-fast",
         maxDuration: 5,
-        maxReferenceImages: 9,
-        maxReferenceVideos: 3,
-        maxReferenceAudios: 3,
     },
 } as const;
 type SeedanceV2ModelName = keyof typeof MODELS;
@@ -108,6 +99,9 @@ export async function callSeedanceV2API(
     );
 
     const images = safeParams.image ?? [];
+    const inputReferences = safeParams.input_references ?? [];
+    const inputReferenceVideos = safeParams.input_reference_videos ?? [];
+    const inputReferenceAudios = safeParams.input_reference_audios ?? [];
 
     const input: SeedanceV2Input = {
         prompt,
@@ -124,16 +118,14 @@ export async function callSeedanceV2API(
     }
     if (images.length >= 1) input.image = await toDataUri(images[0]);
     if (images.length >= 2) input.last_frame_image = await toDataUri(images[1]);
-    
-    // Forward reference media inputs directly (Replicate accepts public URLs)
-    if ((safeParams.input_references?.length ?? 0) > 0) {
-        input.reference_images = safeParams.input_references;
+    if (inputReferences.length > 0) {
+        input.reference_images = inputReferences;
     }
-    if ((safeParams.input_reference_videos?.length ?? 0) > 0) {
-        input.reference_videos = safeParams.input_reference_videos;
+    if (inputReferenceVideos.length > 0) {
+        input.reference_videos = inputReferenceVideos;
     }
-    if ((safeParams.input_reference_audios?.length ?? 0) > 0) {
-        input.reference_audios = safeParams.input_reference_audios;
+    if (inputReferenceAudios.length > 0) {
+        input.reference_audios = inputReferenceAudios;
     }
 
     logOps(`${definition.title} input:`, {
@@ -141,9 +133,15 @@ export async function callSeedanceV2API(
         prompt: prompt.slice(0, 80),
         image: input.image ? "[url]" : undefined,
         last_frame_image: input.last_frame_image ? "[url]" : undefined,
-        reference_images: input.reference_images ? `[${input.reference_images.length}]` : undefined,
-        reference_videos: input.reference_videos ? `[${input.reference_videos.length}]` : undefined,
-        reference_audios: input.reference_audios ? `[${input.reference_audios.length}]` : undefined,
+        reference_images: input.reference_images
+            ? `[${input.reference_images.length} refs]`
+            : undefined,
+        reference_videos: input.reference_videos
+            ? `[${input.reference_videos.length} refs]`
+            : undefined,
+        reference_audios: input.reference_audios
+            ? `[${input.reference_audios.length} refs]`
+            : undefined,
     });
 
     let videoUrl: string;

@@ -242,6 +242,10 @@ export const prepareOpenAIImageGeneration = createMiddleware<Env>(
             body.prompt,
             body.safe as SafeValue,
         );
+        // Strip native-only reference fields before OpenAI replay/caching
+        delete body.input_references;
+        delete body.input_reference_videos;
+        delete body.input_reference_audios;
         Object.assign(body, resolved, { model, prompt: safePrompt });
         c.set("generationRequestBody", JSON.stringify(body));
 

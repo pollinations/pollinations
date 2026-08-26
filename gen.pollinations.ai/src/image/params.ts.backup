@@ -1,6 +1,5 @@
 import { IMAGE_SERVICES, type ImageModelName } from "@shared/registry/image.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
-import { validateUserMediaUrl } from "@shared/user-media-url.ts";
 import { z } from "zod";
 import { normalizeSeed, SENTINEL_SEED } from "@/util.ts";
 import { getDefaultSideLength } from "./models.js";
@@ -31,87 +30,6 @@ const sanitizedSideLength = z.preprocess((v) => {
     const parsed = Number.parseInt(v as string, 10);
     return Number.isInteger(parsed) ? parsed : undefined;
 }, z.int().optional());
-
-
-// Maximum counts for reference media inputs
-const INPUT_REFERENCES_VALIDATION_CEILING = 30;
-const INPUT_REFERENCE_VIDEOS_CEILING = 10;
-const INPUT_REFERENCE_AUDIOS_CEILING = 10;
-
-const publicReferenceUrl = z
-    .string()
-    .trim()
-    .superRefine((value, ctx) => {
-        if (!validateUserMediaUrl(value).ok) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                message:
-                    "Reference URLs must use public HTTP(S) URLs without credentials or literal IP hosts.",
-            });
-        }
-    });
-
-const sanitizedInputReferences = z.preprocess(
-    (value?: string[] | string | null) => {
-        const references = Array.isArray(value)
-            ? value
-            : typeof value === "string"
-              ? value.split("|")
-              : [];
-        const normalized = references
-            .map((reference) => reference.trim())
-            .filter(Boolean);
-        return normalized.slice(0, INPUT_REFERENCES_VALIDATION_CEILING + 1);
-    },
-    z
-        .array(publicReferenceUrl)
-        .max(
-            INPUT_REFERENCES_VALIDATION_CEILING,
-            `input_references accepts at most ${INPUT_REFERENCES_VALIDATION_CEILING} URLs.`,
-        ),
-);
-
-const sanitizedInputReferenceVideos = z.preprocess(
-    (value?: string[] | string | null) => {
-        const references = Array.isArray(value)
-            ? value
-            : typeof value === "string"
-              ? value.split("|")
-              : [];
-        const normalized = references
-            .map((reference) => reference.trim())
-            .filter(Boolean);
-        return normalized.slice(0, INPUT_REFERENCE_VIDEOS_CEILING + 1);
-    },
-    z
-        .array(publicReferenceUrl)
-        .max(
-            INPUT_REFERENCE_VIDEOS_CEILING,
-            `input_reference_videos accepts at most ${INPUT_REFERENCE_VIDEOS_CEILING} URLs.`,
-        ),
-);
-
-const sanitizedInputReferenceAudios = z.preprocess(
-    (value?: string[] | string | null) => {
-        const references = Array.isArray(value)
-            ? value
-            : typeof value === "string"
-              ? value.split("|")
-              : [];
-        const normalized = references
-            .map((reference) => reference.trim())
-            .filter(Boolean);
-        return normalized.slice(0, INPUT_REFERENCE_AUDIOS_CEILING + 1);
-    },
-    z
-        .array(publicReferenceUrl)
-        .max(
-            INPUT_REFERENCE_AUDIOS_CEILING,
-            `input_reference_audios accepts at most ${INPUT_REFERENCE_AUDIOS_CEILING} URLs.`,
-        ),
-);
-
-
 
 function adjustImageSizeForModel(
     model: ImageModelName,
@@ -184,10 +102,6 @@ export const ImageParamsSchema = z
             ])
             .optional(),
         audio: sanitizedBoolean.catch(true), // generateAudio defaults to true
-        // Reference media inputs for video models (distinct from frame controls)
-        input_references: sanitizedInputReferences.optional(),
-        input_reference_videos: sanitizedInputReferenceVideos.optional(),
-        input_reference_audios: sanitizedInputReferenceAudios.optional(),
     })
     .superRefine((data, ctx) => {
         if (data.resolution) {
@@ -244,80 +158,6 @@ export const ImageParamsSchema = z
                 message:
                     "grok-imagine-image-2.0 supports low or medium quality.",
             });
-        }
-        // Validate reference media inputs for video models
-        const hasInputRefs = (data.input_references?.length ?? 0) > 0;
-        const hasInputVideos = (data.input_reference_videos?.length ?? 0) > 0;
-        const hasInputAudios = (data.input_reference_audios?.length ?? 0) > 0;
-        const hasAnyInputRef = hasInputRefs || hasInputVideos || hasInputAudios;
-        
-        if (hasAnyInputRef) {
-            const definition = IMAGE_SERVICES[data.model] as ModelDefinition;
-            
-            // Check which capabilities are supported
-            const supportsImageRefs = definition.videoCapabilities?.includes("reference_images");
-            const supportsVideoRefs = definition.videoCapabilities?.includes("reference_videos");
-            const supportsAudioRefs = definition.videoCapabilities?.includes("reference_audios");
-            
-            // Validate reference images
-            if (hasInputRefs && !supportsImageRefs) {
-                ctx.addIssue({
-                    code: z.ZodIssueCode.custom,
-                    path: ["input_references"],
-                    message: `${data.model} does not support input_references.`,
-                });
-            } else if (hasInputRefs && definition.maxInputReferences !== undefined) {
-                if ((data.input_references?.length ?? 0) > definition.maxInputReferences) {
-                    ctx.addIssue({
-                        code: z.ZodIssueCode.custom,
-                        path: ["input_references"],
-                        message: `${data.model} supports at most ${definition.maxInputReferences} input references.`,
-                    });
-                }
-            }
-            
-            // Validate reference videos
-            if (hasInputVideos && !supportsVideoRefs) {
-                ctx.addIssue({
-                    code: z.ZodIssueCode.custom,
-                    path: ["input_reference_videos"],
-                    message: `${data.model} does not support input_reference_videos.`,
-                });
-            } else if (hasInputVideos && definition.maxReferenceVideos !== undefined) {
-                if ((data.input_reference_videos?.length ?? 0) > definition.maxReferenceVideos) {
-                    ctx.addIssue({
-                        code: z.ZodIssueCode.custom,
-                        path: ["input_reference_videos"],
-                        message: `${data.model} supports at most ${definition.maxReferenceVideos} reference videos.`,
-                    });
-                }
-            }
-            
-            // Validate reference audios
-            if (hasInputAudios && !supportsAudioRefs) {
-                ctx.addIssue({
-                    code: z.ZodIssueCode.custom,
-                    path: ["input_reference_audios"],
-                    message: `${data.model} does not support input_reference_audios.`,
-                });
-            } else if (hasInputAudios && definition.maxReferenceAudios !== undefined) {
-                if ((data.input_reference_audios?.length ?? 0) > definition.maxReferenceAudios) {
-                    ctx.addIssue({
-                        code: z.ZodIssueCode.custom,
-                        path: ["input_reference_audios"],
-                        message: `${data.model} supports at most ${definition.maxReferenceAudios} reference audios.`,
-                    });
-                }
-            }
-            
-            // Cannot combine input references with frame controls
-            if ((data.image.length > 0) && hasAnyInputRef) {
-                ctx.addIssue({
-                    code: z.ZodIssueCode.custom,
-                    path: ["input_references"],
-                    message: `${data.model} cannot combine input_references with first/last-frame images.`,
-                });
-            }
         }
     })
     .transform((data) => {

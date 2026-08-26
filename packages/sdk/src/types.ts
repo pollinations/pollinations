@@ -51,6 +51,12 @@ export interface ImageGenerateOptions extends RequestOptions {
     quality?: ImageQuality;
     /** Reference image URL(s) for image-to-image generation */
     referenceImage?: string | string[];
+    /** Visual reference URLs for video models (distinct from frame controls). */
+    inputReferences?: string | string[];
+    /** Reference video URLs for motion/style transfer. */
+    inputReferenceVideos?: string | string[];
+    /** Reference audio URLs for audio-driven generation. */
+    inputReferenceAudios?: string | string[];
     /** Enable transparent background - outputs PNG (default: false) */
     transparent?: boolean;
     /** How closely to follow prompt, 1-20 (higher = stricter) */
@@ -99,6 +105,12 @@ export interface VideoGenerateOptions extends RequestOptions {
     audio?: boolean;
     /** Reference image URL(s) for image-to-video. For video, image[0] is the start frame and image[1] is the end frame when supported. */
     referenceImage?: string | string[];
+    /** Visual reference URLs for video models (distinct from frame controls). */
+    inputReferences?: string | string[];
+    /** Reference video URLs for motion/style transfer. */
+    inputReferenceVideos?: string | string[];
+    /** Reference audio URLs for audio-driven generation. */
+    inputReferenceAudios?: string | string[];
     /** Enable safety content filters (default: false) */
     safe?: boolean;
 }

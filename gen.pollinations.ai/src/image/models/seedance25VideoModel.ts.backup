@@ -1,7 +1,3 @@
-/**
- * ByteDance Seedance 2.5 video generation via Replicate.
- */
-
 import { HttpError } from "@shared/http-error.ts";
 import debug from "debug";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
@@ -78,6 +74,9 @@ export async function callSeedance25API(
     }
 
     const images = safeParams.image ?? [];
+    const inputReferences = safeParams.input_references ?? [];
+    const inputReferenceVideos = safeParams.input_reference_videos ?? [];
+    const inputReferenceAudios = safeParams.input_reference_audios ?? [];
 
     const input: Seedance25Input = {
         prompt,
@@ -91,16 +90,14 @@ export async function callSeedance25API(
     }
     if (images[0]) input.image = await toDataUri(images[0]);
     if (images[1]) input.last_frame_image = await toDataUri(images[1]);
-    
-    // Forward reference media inputs directly (Replicate accepts public URLs)
-    if ((safeParams.input_references?.length ?? 0) > 0) {
-        input.reference_images = safeParams.input_references;
+    if (inputReferences.length > 0) {
+        input.reference_images = inputReferences;
     }
-    if ((safeParams.input_reference_videos?.length ?? 0) > 0) {
-        input.reference_videos = safeParams.input_reference_videos;
+    if (inputReferenceVideos.length > 0) {
+        input.reference_videos = inputReferenceVideos;
     }
-    if ((safeParams.input_reference_audios?.length ?? 0) > 0) {
-        input.reference_audios = safeParams.input_reference_audios;
+    if (inputReferenceAudios.length > 0) {
+        input.reference_audios = inputReferenceAudios;
     }
 
     let videoUrl: string;

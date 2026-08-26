@@ -90,6 +90,9 @@ export type VideoCapability =
     | "start_frame"
     | "end_frame"
     | "keyframes"
+    | "reference_images"
+    | "reference_videos"
+    | "reference_audios"
     | "audio_output";
 
 export type BillingAdjustmentRule = {
@@ -215,6 +218,8 @@ export type ModelDefinition = {
     durationStep?: number; // Video-only: duration must be a multiple of this value
     maxReferenceImages?: number; // Models with image input: effective accepted reference images
     maxReferenceVideos?: number; // Models with video input: effective accepted reference videos
+    maxReferenceAudios?: number; // Models with audio input: effective accepted reference audios
+    maxInputReferences?: number; // Models with reference image guidance (distinct from frame control)
 };
 
 // Helper: Convert usage counts to rated USD-equivalent cost or Pollen charge.

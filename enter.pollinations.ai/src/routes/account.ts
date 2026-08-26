@@ -29,6 +29,7 @@ import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
+import { discordConfigFromEnv } from "../services/discord.ts";
 import { QUEST_CATEGORIES } from "../services/quests/definitions.ts";
 import { listQuestCards } from "../services/quests/index.ts";
 import {
@@ -648,6 +649,9 @@ const profileResponseSchema = z.object({
         .describe(
             "Whether the account is allowed to manage community endpoints.",
         ),
+    discordAvailable: z
+        .boolean()
+        .describe("Whether Discord account connections are available."),
     name: z
         .string()
         .nullable()
@@ -849,6 +853,7 @@ export const accountRoutes = new Hono<Env>()
                 image: profile.image ?? null,
                 communityEndpointsAllowed:
                     isCommunityEndpointOwnerAllowed(profile),
+                discordAvailable: Boolean(discordConfigFromEnv(c.env)),
                 ...(includeProfilePII && {
                     name: profile.name ?? null,
                     email: profile.email ?? null,

@@ -1,0 +1,45 @@
+DESCRIPTION >
+    Effective canonical bank ledger. Corrections re-append the same entry_id;
+    this endpoint exposes only the latest complete fact per key.
+
+TOKEN "operations_read" READ
+
+NODE endpoint
+SQL >
+    SELECT
+        entry_id,
+        tupleElement(latest, 1) AS kind,
+        tupleElement(latest, 2) AS source,
+        formatDateTime(tupleElement(latest, 3), '%F') AS date,
+        tupleElement(latest, 4) AS vendor,
+        tupleElement(latest, 5) AS category,
+        tupleElement(latest, 6) AS amount,
+        tupleElement(latest, 7) AS currency,
+        tupleElement(latest, 8) AS description,
+        tupleElement(latest, 9) AS evidence,
+        toString(tupleElement(latest, 10)) AS recorded_at
+    FROM
+    (
+        SELECT
+            entry_id,
+            argMax(
+                tuple(
+                    kind,
+                    source,
+                    date,
+                    vendor,
+                    category,
+                    amount,
+                    currency,
+                    description,
+                    evidence,
+                    recorded_at
+                ),
+                recorded_at
+            ) AS latest
+        FROM economics_bank_ledger
+        GROUP BY entry_id
+    )
+    ORDER BY date DESC, vendor, category
+
+TYPE ENDPOINT

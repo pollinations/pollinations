@@ -1,0 +1,35 @@
+{
+  "pr_number": 14002,
+  "title": "feat: support multiple inputs in FFmpeg MCP",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14002",
+  "merged_at": "2026-08-26T17:51:10Z",
+  "labels": [],
+  "pr_body_excerpt": "- Downloads public HTTPS sources into seekable container files named `input0`, `input1`, and so on\n- Passes caller-supplied FFmpeg arguments directly, including positional `-i` options\n- Accepts any safe single-file output extension and uploads the result to Pollinations Media\n- Keeps Gen authentication, usage billing, and hosted resource links unchanged\n\nTests:\n- `npm test` (8/8)\n- `npm run check`\n- Local two-input video + audio FFmpeg smoke test",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Two inputs, one tiny movie",
+    "blurb": "The FFmpeg MCP tool can now bring video and audio to the same picnic. Hand it multiple public HTTPS files, add your FFmpeg flags, and it returns a freshly rendered result.",
+    "summary": "FFmpeg MCP now downloads multiple public HTTPS inputs as seekable `input0`, `input1`, and subsequent files, supports caller-provided positional `-i` arguments, and uploads any safe single-file output format to Pollinations Media.",
+    "impact": "Developers can combine separate video, audio, and other media sources in one MCP FFmpeg job while keeping the existing Gen authentication, billing, and hosted-result links.",
+    "keywords": [
+      "ffmpeg",
+      "mcp",
+      "media",
+      "multiple inputs",
+      "video",
+      "audio",
+      "community"
+    ],
+    "visual_concept": "A cozy garden-shed editing desk represents the FFmpeg MCP tool: two labeled media reels, one video and one audio, feed through a retro terminal into a single finished film reel. Polli acts as the cheerful editor, wearing tiny headphones and carefully connecting the two inputs, while a code-plant and small flowers make the technical workflow feel like a shared creative workspace.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-shed media workshop where the cute Polli bee mascot, with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light blue translucent wings, wears tiny headphones while plugging two labeled reels, “VIDEO” and “AUDIO,” into a chunky retro FFmpeg terminal; the terminal produces one glowing finished film reel beside flowering code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow and scanlines, pixel-font text: “2 IN → 1 OUT”, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-26/PR-14002.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-shed media workshop where the cute Polli bee mascot, with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light blue translucent wings, wears tiny headphones while plugging two labeled reels, “VIDEO” and “AUDIO,” into a chunky retro FFmpeg terminal; the terminal produces one glowing finished film reel beside flowering code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow and scanlines, pixel-font text: “2 IN → 1 OUT”, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-26T17:59:55.016143+00:00"
+}

@@ -47,6 +47,19 @@ export const CODE_SAMPLES: Record<
   }'`,
         },
         {
+            label: "cURL (reasoning)",
+            lang: "Shell",
+            source: `# Reasoning models only - check the model's capabilities first.
+curl https://gen.pollinations.ai/v1/chat/completions \\
+  -H "Authorization: Bearer ***" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "openai",
+    "reasoning_effort": "medium",
+    "messages": [{"role": "user", "content": "Solve this step by step: ..."}]
+  }'`,
+        },
+        {
             label: "Python",
             lang: "Python",
             source: `from openai import OpenAI
@@ -106,6 +119,21 @@ print(response.text)`,
   { headers: { Authorization: "Bearer YOUR_API_KEY" } },
 );
 console.log(await response.text());`,
+        },
+    ],
+    "post /text": [
+        {
+            label: "cURL (reasoning)",
+            lang: "Shell",
+            source: `# Reasoning models only - check the model's capabilities first.
+curl https://gen.pollinations.ai/text \\
+  -H "Authorization: Bearer ***" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "openai",
+    "reasoning_effort": "low",
+    "messages": [{"role": "user", "content": "Plan my week"}]
+  }'`,
         },
     ],
     "get /image/{prompt}": [

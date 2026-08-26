@@ -9,6 +9,7 @@ import {
     DropdownItem,
     ExternalLinkButton,
     GitHubIcon,
+    InfoTip,
     InlineLink,
     Input,
     SearchIcon,
@@ -34,7 +35,7 @@ import {
     fetchModelCatalog,
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
-import { getModelDisplayName } from "./model-info.ts";
+import { matchesModelQuery, parseModelQuery } from "./model-query.ts";
 import type { ModelScope, ModelSort } from "./model-search.ts";
 import { sortModels } from "./model-sort.ts";
 import {
@@ -116,13 +117,6 @@ const SEARCH_LABELS: Record<SectionType, string> = {
     agent: "agent",
 };
 
-function matchesQuery(model: ModelPrice, query: string): boolean {
-    if (!query) return true;
-    const displayName = getModelDisplayName(model) ?? "";
-    const haystack = `${displayName} ${model.brand ?? ""}`.toLowerCase();
-    return haystack.includes(query);
-}
-
 function categorizeModels(
     models: ModelPrice[],
 ): Record<SectionType, ModelPrice[]> {
@@ -191,7 +185,8 @@ export const Models: FC = () => {
         () => getModelPricesFromCatalog(catalogModels, stats),
         [catalogModels, stats],
     );
-    const query = search.trim().toLowerCase();
+    const query = search.trim();
+    const parsedQuery = useMemo(() => parseModelQuery(query), [query]);
     const scopedModels = useMemo(
         () =>
             allModels.filter(
@@ -203,9 +198,11 @@ export const Models: FC = () => {
     const filteredModels = useMemo(
         () =>
             query
-                ? scopedModels.filter((model) => matchesQuery(model, query))
+                ? scopedModels.filter((model) =>
+                      matchesModelQuery(model, parsedQuery),
+                  )
                 : scopedModels,
-        [query, scopedModels],
+        [parsedQuery, query, scopedModels],
     );
 
     const loadModelCatalog = useCallback(
@@ -422,6 +419,41 @@ export const Models: FC = () => {
                                 aria-label={`Search ${searchTarget}`}
                                 className="w-full pl-9"
                             />
+                            <p className="mt-1 flex items-center text-xs text-theme-text-muted">
+                                Search filters: access, owner, id, type,
+                                capability
+                                <InfoTip
+                                    label="How to filter models"
+                                    content={
+                                        <span className="flex flex-col gap-1 text-left">
+                                            <span>
+                                                <strong>access:</strong> paid,
+                                                quest, or free
+                                            </span>
+                                            <span>
+                                                <strong>owner:</strong> GitHub
+                                                login
+                                            </span>
+                                            <span>
+                                                <strong>id:</strong> exact model
+                                                ID
+                                            </span>
+                                            <span>
+                                                <strong>type:</strong> model
+                                                category
+                                            </span>
+                                            <span>
+                                                <strong>capability:</strong>
+                                                model capability
+                                            </span>
+                                            <span>
+                                                Combine filters and words to
+                                                match all conditions.
+                                            </span>
+                                        </span>
+                                    }
+                                />
+                            </p>
                         </div>
                         <Dropdown
                             align="end"

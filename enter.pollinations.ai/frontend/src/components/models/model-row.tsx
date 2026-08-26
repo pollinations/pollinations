@@ -373,7 +373,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             </div>
                         )}
                     </div>
-                    <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5">
+                    <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-2">
                         <ModelStatusChips
                             showNew={showNew}
                             showAlpha={showAlpha}
@@ -382,6 +382,25 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             access={balanceAccess}
                             className="whitespace-nowrap"
                         />
+                        <Tooltip
+                            content="Try in Play"
+                            ariaLabel={`Try ${model.name} in Play`}
+                            tapEnabled
+                        >
+                            <a
+                                href={`/play?model=${encodeURIComponent(model.name)}`}
+                                aria-label={`Try ${model.name} in Play`}
+                                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-divider bg-surface text-theme-text-muted transition-colors hover:bg-surface-opaque hover:text-theme-text-soft"
+                            >
+                                <span
+                                    aria-hidden="true"
+                                    className="text-[11px] leading-none"
+                                >
+                                    ▶
+                                </span>
+                                <span className="sr-only">Try in Play</span>
+                            </a>
+                        </Tooltip>
                     </div>
                 </div>
             </div>

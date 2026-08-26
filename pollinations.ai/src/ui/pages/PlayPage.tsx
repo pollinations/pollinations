@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { PLAY_PAGE } from "../../copy/content/play";
 import { LINKS } from "../../copy/content/socialLinks";
 import { useAuth } from "../../hooks/useAuth";
@@ -14,7 +15,11 @@ import { PageContainer } from "../components/ui/page-container";
 import { Body, Title } from "../components/ui/typography";
 
 function PlayPage() {
-    const [selectedModel, setSelectedModel] = useState("flux");
+    const [searchParams] = useSearchParams();
+    const urlModel = searchParams.get("model");
+    const [selectedModel, setSelectedModel] = useState(
+        () => urlModel || "flux",
+    );
     const [prompt, setPrompt] = useState("");
     const { apiKey, isLoggedIn, login } = useAuth();
     const {
@@ -25,6 +30,16 @@ function PlayPage() {
         allowedAudioModelIds,
         isLoading: isLoadingModels,
     } = useModelList(apiKey);
+
+    useEffect(() => {
+        if (
+            urlModel &&
+            registryModels.some((m) => m.id === urlModel) &&
+            urlModel !== selectedModel
+        ) {
+            setSelectedModel(urlModel);
+        }
+    }, [urlModel, registryModels, selectedModel]);
 
     // Get translated copy
     const { copy: pageCopy, isTranslating } = usePageCopy(PLAY_PAGE);

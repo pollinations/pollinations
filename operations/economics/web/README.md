@@ -31,7 +31,9 @@ and no network calls.
 ## Data Contract
 
 Reads OP pipes from `enter.pollinations.ai/observability/endpoints/`:
-`op_transactions_api`, `op_cloud_api`, and `op_pollen_api`.
+`economics_bank_ledger_api`, `economics_compute_ledger_api`, and the environment-routed
+`economics_pollen_usage_api`. Production reads the live materialization; local
+development reads the verified production snapshot in staging.
 Write-side conventions (entry_id, idempotent corrections) live in the
 Economics ingest agent's own system prompt.
 
@@ -46,7 +48,7 @@ pipes already respond from the production Tinybird workspace. Deploy and verify
 Tinybird schema changes before promoting a Worker that reads them.
 
 Runway reconstructs cash from one statement-backed opening-balance row in
-`op_transactions` plus later bank movements. Closed months are actuals. The
+`economics_bank_ledger` plus later bank movements. Closed months are actuals. The
 open month shows actual cash to date beside the explicit full-month OP Forecast
 plan; month-end cash applies only the unspent/unreceived remainder of that plan.
 Future months use explicit forecast facts with structured methods (`fixed`,

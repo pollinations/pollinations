@@ -157,6 +157,39 @@ describe("gpuResourceRows", () => {
         });
     });
 
+    it("treats legacy RunPod storage as GPU overhead, not an instance", () => {
+        const rows = gpuResourceRows(
+            {
+                ...baseData,
+                opCloud: [
+                    cloud({
+                        entry_id: "runpod-storage",
+                        resource_id: "_storage",
+                        resource_name: "_storage",
+                        resource_sku: "",
+                        resource_count: 61_500,
+                        paid: -5.98,
+                    }),
+                ],
+            },
+            "2026-06",
+        );
+
+        expect(rows).toHaveLength(1);
+        expect(rows[0]).toMatchObject({
+            kind: "overhead",
+            vendor: "runpod",
+            resourceName: "Overhead & adjustments",
+            paidCostUsd: 5.98,
+            relatedResources: 1,
+        });
+        expect(gpuResourceSummary(rows)).toMatchObject({
+            gpuCount: 0,
+            overheadCostUsd: 5.98,
+            totalCostUsd: 5.98,
+        });
+    });
+
     it("uses resource rows for legacy Lambda and RunPod hourly extracts", () => {
         const rows = gpuResourceRows(
             {

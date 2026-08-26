@@ -109,13 +109,14 @@ const USAGE_KIND_BY_SKU: Record<string, UsageKind> = {
 
 const LEGACY_HOURLY_VENDORS = new Set(["lambda", "runpod"]);
 const NON_RESOURCE_PATTERN =
-    /refund|grant|promo|credit|settlement|reconcil|account total|billing-history|startup program|top.?up/i;
+    /refund|grant|promo|credit|settlement|reconcil|account total|billing-history|startup program|top.?up|storage/i;
 
 function usageKind(row: OpCloudRow): UsageKind | null {
     return USAGE_KIND_BY_SKU[row.resource_sku.trim().toLowerCase()] ?? null;
 }
 
 function isFinancialOrAggregateRow(row: OpCloudRow): boolean {
+    if (usageKind(row)) return false;
     return NON_RESOURCE_PATTERN.test(
         `${row.resource_id} ${row.resource_name} ${row.resource_sku}`,
     );
@@ -1000,7 +1001,7 @@ export function GpuTab({
                                     hint={{
                                         meaning:
                                             "Cash-backed Pollen used on this workload after owner, BYOP, and model payouts.",
-                                        tables: "op_pollen_api",
+                                        tables: "economics_pollen_usage_api",
                                     }}
                                 >
                                     Retained Paid

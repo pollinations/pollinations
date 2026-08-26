@@ -1,0 +1,35 @@
+{
+  "pr_number": 14012,
+  "title": "fix: restore Pointsflyer history and add credit vendors",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14012",
+  "merged_at": "2026-08-26T20:33:54Z",
+  "labels": [],
+  "pr_body_excerpt": "- Restores legacy Pointsflyer Pollen attribution from `generation_event_v2` without changing total requests or cost.\n- Preserves the historical paid and Quest split for legacy combined-balance events.\n- Registers Exa and Regolo.ai with account identities, dashboard URLs, balance tracking, and monthly collection guides.\n- Adds registry lifecycle coverage for both new vendor accounts.\n- Verified against Tinybird staging; production data is unchanged.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The Pollen ledger remembers",
+    "blurb": "The hive’s old Pointsflyer trails are blooming again, with the historical paid-and-Quest split intact. Exa and Regolo.ai also got their own labeled jars in the collection shed.",
+    "summary": "Restored legacy Pointsflyer Pollen attribution from generation_event_v2 while preserving historical paid-versus-Quest splits, and added Exa and Regolo.ai to the provider registry with balances, dashboards, and monthly collection guides.",
+    "impact": "Economics reporting can now account for legacy Pointsflyer events without changing request or cost totals, while Exa and Regolo.ai have tracked vendor-account collection workflows.",
+    "keywords": [
+      "economics",
+      "Pointsflyer",
+      "Pollen",
+      "vendor-registry",
+      "Exa",
+      "Regolo.ai",
+      "observability"
+    ],
+    "visual_concept": "A cozy garden ledger scene: Polli carefully restores faded entries in a large Pollen record book, with two newly labeled vendor jars for Exa and Regolo.ai beside it. Small code-plants and a retro terminal represent the restored event materialization and balance tracking; the scene should feel like tidy bookkeeping rather than finance drama.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses as she restores faded entries in a glowing ledger labeled \"POLLEN\"; two neat jars labeled \"EXA\" and \"REGOLO\" sit beside sprouting code-plants and a retro terminal. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-26/PR-14012.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses as she restores faded entries in a glowing ledger labeled \"POLLEN\"; two neat jars labeled \"EXA\" and \"REGOLO\" sit beside sprouting code-plants and a retro terminal. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-26T20:35:01.984718+00:00"
+}

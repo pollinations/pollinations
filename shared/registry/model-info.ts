@@ -92,29 +92,18 @@ export const ModelInfoSchema = z.object({
     output_modalities: z.array(z.string()).optional(),
     supported_endpoints: z.array(z.string()).optional(),
     video_capabilities: z.array(z.string()).optional(),
-    min_duration: z.number().positive().optional(),
-    max_duration: z.number().positive().optional(),
-    default_duration: z.number().positive().optional(),
-    allowed_durations: z.array(z.number().positive()).optional(),
-    duration_step: z.number().positive().optional(),
     max_reference_images: z.number().int().positive().optional(),
     max_reference_videos: z.number().int().positive().optional(),
     capabilities: z.array(ModelCapabilitySchema),
     tools: z.boolean().optional(),
     reasoning: z.boolean().optional(),
     context_length: z.number().optional(),
+    duration_seconds: z
+        .object({ min: z.number().int(), max: z.number().int() })
+        .optional(),
     voices: z.array(z.string()).optional(),
     is_specialized: z.boolean().optional(),
     paid_only: z.boolean().optional(),
-    pending_change: z
-        .object({
-            effective_at: z.string().datetime(),
-            paid_only: z.boolean(),
-            pricing: z
-                .record(z.string(), z.string())
-                .and(z.object({ currency: z.literal("pollen") })),
-        })
-        .optional(),
     alpha: z.boolean().optional(),
     flat_rate: z.boolean().optional(),
     added_date: z.number().optional(),
@@ -142,6 +131,7 @@ function getCapabilities(service: ModelDefinition): ModelCapability[] {
 type ModelInfoOptions = {
     community?: boolean;
     agent?: boolean;
+    perUserRpm?: number | null;
 };
 
 function pricingInfoFromDefinition(
@@ -189,7 +179,7 @@ export function modelInfoFromDefinition(
         brand_url: service.brandUrl,
         community: options.community || undefined,
         agent: options.agent || undefined,
-        per_user_rpm: service.perUserRpm,
+        per_user_rpm: options.perUserRpm,
         pricing: pricingInfoFromDefinition(getPriceDefinitionForModel(service)),
         pricing_variants:
             service.costVariants && service.costVariantMetadata
@@ -225,19 +215,13 @@ export function modelInfoFromDefinition(
         output_modalities: service.outputModalities,
         supported_endpoints: service.supportedEndpoints,
         video_capabilities: service.videoCapabilities,
-        min_duration: service.minDuration,
-        max_duration: service.maxDuration,
-        default_duration: service.defaultDuration,
-        allowed_durations: service.allowedDurations
-            ? [...service.allowedDurations]
-            : undefined,
-        duration_step: service.durationStep,
         max_reference_images: service.maxReferenceImages,
         max_reference_videos: service.maxReferenceVideos,
         capabilities: getCapabilities(service),
         tools: service.tools,
         reasoning: service.reasoning,
         context_length: service.contextLength,
+        duration_seconds: service.durationSeconds,
         voices: service.voices,
         is_specialized: service.isSpecialized,
         paid_only: service.paidOnly,

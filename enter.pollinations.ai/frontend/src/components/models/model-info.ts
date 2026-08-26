@@ -84,7 +84,6 @@ export const getModelModalityLabel = (model: ModelPrice): string => {
 
 export type DisplayCapability =
     | "agent"
-    | "tool_calling"
     | "reasoning"
     | "web_search"
     | "code_execution";
@@ -95,7 +94,6 @@ export const getModelCapabilities = (
     const keys: DisplayCapability[] = [];
 
     if (model.agent) keys.push("agent");
-    if (hasToolCalling(model)) keys.push("tool_calling");
     if (hasReasoning(model)) keys.push("reasoning");
     if (hasSearch(model)) keys.push("web_search");
     if (hasCodeExecution(model)) keys.push("code_execution");
@@ -107,7 +105,6 @@ export const getModelCapabilityLabel = (model: ModelPrice): string => {
     const labels: string[] = [];
 
     if (model.agent) labels.push("Agent");
-    if (hasToolCalling(model)) labels.push("Tool calling");
     if (hasReasoning(model)) labels.push("Reasoning");
     if (hasSearch(model)) labels.push("Web search");
     if (hasCodeExecution(model)) labels.push("Code execution");
@@ -119,9 +116,6 @@ const hasCapability = (
     model: ModelPrice,
     capability: ModelCapability,
 ): boolean => model.capabilities.includes(capability);
-
-const hasToolCalling = (model: ModelPrice): boolean =>
-    hasCapability(model, "tool_calling");
 
 const hasReasoning = (model: ModelPrice): boolean =>
     hasCapability(model, "reasoning");
@@ -155,3 +149,37 @@ export const isPaidOnly = (model: ModelPrice): boolean =>
  * Check if a model is marked as alpha (experimental, potentially unstable)
  */
 export const isAlpha = (model: ModelPrice): boolean => model.alpha === true;
+
+/**
+ * Format a context length (in tokens) as a human-readable string.
+ * e.g. 128000 → "128K", 8000 → "8K", 2000000 → "2M"
+ */
+export const formatContextLength = (length: number): string => {
+    if (length >= 1_000_000) return `${Math.round(length / 1_000_000)}M`;
+    if (length >= 1_000) return `${Math.round(length / 1_000)}K`;
+    return `${length}`;
+};
+
+/**
+ * Format a video duration range as a human-readable string.
+ * e.g. {min: 5, max: 15} → "5–15s", {min: 5, max: 5} → "5s"
+ */
+export const formatDuration = (range: { min: number; max: number }): string => {
+    if (range.min === range.max) return `${range.min}s`;
+    return `${range.min}–${range.max}s`;
+};
+
+/**
+ * Get a human-readable limit string for a model, combining context length
+ * and/or video duration as applicable.
+ */
+export const getModelLimitLabel = (model: ModelPrice): string | undefined => {
+    const parts: string[] = [];
+    if (model.contextLength) {
+        parts.push(`${formatContextLength(model.contextLength)} context`);
+    }
+    if (model.durationSeconds) {
+        parts.push(`${formatDuration(model.durationSeconds)} video`);
+    }
+    return parts.length > 0 ? parts.join(", ") : undefined;
+};

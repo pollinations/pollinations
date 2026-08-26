@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "03454932-2040-4d9f-baa0-fcbbc99e92b2",
+  "id": "dfd92e83-e77e-4e3e-a350-5810513c2a9e",
   "prevId": "042a6398-9671-424c-a76a-0b00789e4c1c",
   "tables": {
     "account": {
@@ -708,7 +708,6 @@
           ],
           "onDelete": "restrict",
           "onUpdate": "no action"
-
         }
       },
       "compositePrimaryKeys": {},
@@ -1803,111 +1802,6 @@
           "tableTo": "media_item",
           "columnsFrom": [
             "item_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "notification": {
-      "name": "notification",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "type": {
-          "name": "type",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "title": {
-          "name": "title",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "body": {
-          "name": "body",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "payload": {
-          "name": "payload",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "link": {
-          "name": "link",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "read_at": {
-          "name": "read_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(cast((julianday('now') - 2440587.5)*86400000 as integer))"
-        }
-      },
-      "indexes": {
-        "idx_notification_user_created": {
-          "name": "idx_notification_user_created",
-          "columns": [
-            "user_id",
-            "created_at"
-          ],
-          "isUnique": false
-        },
-        "idx_notification_user_read": {
-          "name": "idx_notification_user_read",
-          "columns": [
-            "user_id",
-            "read_at"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {
-        "notification_user_id_user_id_fk": {
-          "name": "notification_user_id_user_id_fk",
-          "tableFrom": "notification",
-          "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
           ],
           "columnsTo": [
             "id"

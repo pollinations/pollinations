@@ -21,12 +21,10 @@ export const adminRoutes = new Hono<Env>()
             throw new HTTPException(401, { message: "Unauthorized" });
         }
 
-        // Full admin token has access to all endpoints
         if (providedKey === c.env.PLN_ENTER_TOKEN) {
             return await next();
         }
 
-        // The runner holds the token; the Worker stores only its hash.
         const exportTokenHash = c.env.D1_EXPORT_TOKEN_SHA256;
         if (
             exportTokenHash &&

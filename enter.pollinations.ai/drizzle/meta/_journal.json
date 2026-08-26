@@ -2,369 +2,62 @@
   "version": "7",
   "dialect": "sqlite",
   "entries": [
-    {
-      "idx": 0,
-      "version": "6",
-      "when": 1758838821183,
-      "tag": "0000_amused_living_tribunal",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1762354921081,
-      "tag": "0001_damp_dakota_north",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1762379554907,
-      "tag": "0002_lucky_wendell_rand",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "6",
-      "when": 1762541196857,
-      "tag": "0003_charming_magma",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "6",
-      "when": 1764690998786,
-      "tag": "0004_gray_molecule_man",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "6",
-      "when": 1764841024405,
-      "tag": "0005_swift_scalphunter",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "6",
-      "when": 1765310596696,
-      "tag": "0006_wealthy_queen_noir",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "6",
-      "when": 1765787222986,
-      "tag": "0007_new_shooting_star",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "6",
-      "when": 1766161057557,
-      "tag": "0008_mysterious_marrow",
-      "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "6",
-      "when": 1766335384151,
-      "tag": "0009_even_morg",
-      "breakpoints": true
-    },
-    {
-      "idx": 10,
-      "version": "6",
-      "when": 1766348172604,
-      "tag": "0010_crazy_mojo",
-      "breakpoints": true
-    },
-    {
-      "idx": 11,
-      "version": "6",
-      "when": 1766351297567,
-      "tag": "0011_optimize_event_indexes",
-      "breakpoints": true
-    },
-    {
-      "idx": 12,
-      "version": "6",
-      "when": 1766417598796,
-      "tag": "0012_even_dorian_gray",
-      "breakpoints": true
-    },
-    {
-      "idx": 13,
-      "version": "6",
-      "when": 1767109952917,
-      "tag": "0013_freezing_hex",
-      "breakpoints": true
-    },
-    {
-      "idx": 14,
-      "version": "6",
-      "when": 1767177789202,
-      "tag": "0014_overjoyed_matthew_murdock",
-      "breakpoints": true
-    },
-    {
-      "idx": 15,
-      "version": "6",
-      "when": 1767370640413,
-      "tag": "0015_great_wonder_man",
-      "breakpoints": true
-    },
-    {
-      "idx": 16,
-      "version": "6",
-      "when": 1769255535655,
-      "tag": "0016_migrate-temporary-keytype-to-secret",
-      "breakpoints": true
-    },
-    {
-      "idx": 17,
-      "version": "6",
-      "when": 1774230815486,
-      "tag": "0017_numerous_richard_fisk",
-      "breakpoints": true
-    },
-    {
-      "idx": 18,
-      "version": "6",
-      "when": 1777307039011,
-      "tag": "0018_consolidate_crypto_into_pack",
-      "breakpoints": true
-    },
-    {
-      "idx": 19,
-      "version": "6",
-      "when": 1777313809557,
-      "tag": "0019_drop_crypto_column",
-      "breakpoints": true
-    },
-    {
-      "idx": 20,
-      "version": "6",
-      "when": 1777418896875,
-      "tag": "0020_migrate-appurl-to-redirect-uris",
-      "breakpoints": true
-    },
-    {
-      "idx": 21,
-      "version": "6",
-      "when": 1777746472187,
-      "tag": "0021_left_wolverine",
-      "breakpoints": true
-    },
-    {
-      "idx": 22,
-      "version": "6",
-      "when": 1778063624846,
-      "tag": "0022_byop-client-key-id",
-      "breakpoints": true
-    },
-    {
-      "idx": 23,
-      "version": "6",
-      "when": 1778063629187,
-      "tag": "0023_byop-backfill",
-      "breakpoints": true
-    },
-    {
-      "idx": 24,
-      "version": "6",
-      "when": 1778407366862,
-      "tag": "0024_nasty_hitman",
-      "breakpoints": true
-    },
-    {
-      "idx": 25,
-      "version": "6",
-      "when": 1778529206824,
-      "tag": "0025_blue_banshee",
-      "breakpoints": true
-    },
-    {
-      "idx": 26,
-      "version": "6",
-      "when": 1780419641045,
-      "tag": "0026_reflective_kinsey_walden",
-      "breakpoints": true
-    },
-    {
-      "idx": 27,
-      "version": "6",
-      "when": 1782220405628,
-      "tag": "0027_gh_repo_mirror",
-      "breakpoints": true
-    },
-    {
-      "idx": 28,
-      "version": "6",
-      "when": 1782231033008,
-      "tag": "0028_gh_mirror_assignees_dates",
-      "breakpoints": true
-    },
-    {
-      "idx": 29,
-      "version": "6",
-      "when": 1782416176948,
-      "tag": "0029_create_rewards",
-      "breakpoints": true
-    },
-    {
-      "idx": 30,
-      "version": "6",
-      "when": 1782416177948,
-      "tag": "0030_fix_reward_timestamp_units",
-      "breakpoints": true
-    },
-    {
-      "idx": 31,
-      "version": "6",
-      "when": 1782467647638,
-      "tag": "0031_lucky_alex_power",
-      "breakpoints": true
-    },
-    {
-      "idx": 32,
-      "version": "6",
-      "when": 1782557977942,
-      "tag": "0032_parallel_albert_cleary",
-      "breakpoints": true
-    },
-    {
-      "idx": 33,
-      "version": "6",
-      "when": 1782823187000,
-      "tag": "0033_stripe_card_fingerprint_attempt",
-      "breakpoints": true
-    },
-    {
-      "idx": 34,
-      "version": "6",
-      "when": 1782911825724,
-      "tag": "0034_opposite_ultron",
-      "breakpoints": true
-    },
-    {
-      "idx": 35,
-      "version": "6",
-      "when": 1783712598018,
-      "tag": "0035_media_catalog",
-      "breakpoints": true
-    },
-    {
-      "idx": 36,
-      "version": "6",
-      "when": 1784063115626,
-      "tag": "0036_community_endpoint_visibility",
-      "breakpoints": true
-    },
-    {
-      "idx": 37,
-      "version": "6",
-      "when": 1784745559578,
-      "tag": "0037_salty_khan",
-      "breakpoints": true
-    },
-    {
-      "idx": 38,
-      "version": "6",
-      "when": 1784972286318,
-      "tag": "0038_slimy_ultimo",
-      "breakpoints": true
-    },
-    {
-      "idx": 39,
-      "version": "6",
-      "when": 1785145497278,
-      "tag": "0039_blushing_ultimatum",
-      "breakpoints": true
-    },
-    {
-      "idx": 40,
-      "version": "6",
-      "when": 1785331128707,
-      "tag": "0040_fearless_carnage",
-      "breakpoints": true
-    },
-    {
-      "idx": 41,
-      "version": "6",
-      "when": 1785349614100,
-      "tag": "0041_material_centennial",
-      "breakpoints": true
-    },
-    {
-      "idx": 42,
-      "version": "6",
-      "when": 1785526197552,
-      "tag": "0042_lethal_marvel_apes",
-      "breakpoints": true
-    },
-    {
-      "idx": 43,
-      "version": "6",
-      "when": 1785590121639,
-      "tag": "0043_canonicalize-model-permissions",
-      "breakpoints": true
-    },
-    {
-      "idx": 44,
-      "version": "6",
-      "when": 1785758400000,
-      "tag": "0044_consolidate-model-permissions",
-      "breakpoints": true
-    },
-    {
-      "idx": 45,
-      "version": "6",
-      "when": 1785885364700,
-      "tag": "0045_community_provider_profile",
-      "breakpoints": true
-    },
-    {
-      "idx": 46,
-      "version": "6",
-      "when": 1786708800000,
-      "tag": "0046_canonicalize-model-permission-aliases",
-      "breakpoints": true
-    },
-    {
-      "idx": 47,
-      "version": "6",
-      "when": 1786712400000,
-      "tag": "0047_blushing_bedlam",
-      "breakpoints": true
-    },
-    {
-      "idx": 48,
-      "version": "6",
-      "when": 1786716000000,
-      "tag": "0048_heavy_jimmy_woo",
-      "breakpoints": true
-    },
-    {
-      "idx": 49,
-      "version": "6",
-      "when": 1786889023916,
-      "tag": "0049_stormy_franklin_storm",
-      "breakpoints": true
-    },
-    {
-      "idx": 50,
-      "version": "6",
-      "when": 1787112508266,
-      "tag": "0050_create_notifications",
-      "breakpoints": true
-    },
-    {
-      "idx": 51,
-      "version": "6",
-      "when": 1787738230584,
-      "tag": "0051_brave_forgotten_one",
-      "breakpoints": true
-    }
+    {"idx":0,"version":"6","when":1758838821183,"tag":"0000_amused_living_tribunal","breakpoints":true},
+    {"idx":1,"version":"6","when":1762354921081,"tag":"0001_damp_dakota_north","breakpoints":true},
+    {"idx":2,"version":"6","when":1762379554907,"tag":"0002_lucky_wendell_rand","breakpoints":true},
+    {"idx":3,"version":"6","when":1762541196857,"tag":"0003_charming_magma","breakpoints":true},
+    {"idx":4,"version":"6","when":1764690998786,"tag":"0004_gray_molecule_man","breakpoints":true},
+    {"idx":5,"version":"6","when":1764841024405,"tag":"0005_swift_scalphunter","breakpoints":true},
+    {"idx":6,"version":"6","when":1765310596696,"tag":"0006_wealthy_queen_noir","breakpoints":true},
+    {"idx":7,"version":"6","when":1765787222986,"tag":"0007_new_shooting_star","breakpoints":true},
+    {"idx":8,"version":"6","when":1766161057557,"tag":"0008_mysterious_marrow","breakpoints":true},
+    {"idx":9,"version":"6","when":1766335384151,"tag":"0009_even_morg","breakpoints":true},
+    {"idx":10,"version":"6","when":1766348172604,"tag":"0010_crazy_mojo","breakpoints":true},
+    {"idx":11,"version":"6","when":1766351297567,"tag":"0011_optimize_event_indexes","breakpoints":true},
+    {"idx":12,"version":"6","when":1766417598796,"tag":"0012_even_dorian_gray","breakpoints":true},
+    {"idx":13,"version":"6","when":1767109952917,"tag":"0013_freezing_hex","breakpoints":true},
+    {"idx":14,"version":"6","when":1767177789202,"tag":"0014_overjoyed_matthew_murdock","breakpoints":true},
+    {"idx":15,"version":"6","when":1767370640413,"tag":"0015_great_wonder_man","breakpoints":true},
+    {"idx":16,"version":"6","when":1769255535655,"tag":"0016_migrate-temporary-keytype-to-secret","breakpoints":true},
+    {"idx":17,"version":"6","when":1774230815486,"tag":"0017_numerous_richard_fisk","breakpoints":true},
+    {"idx":18,"version":"6","when":1777307039011,"tag":"0018_consolidate_crypto_into_pack","breakpoints":true},
+    {"idx":19,"version":"6","when":1777313809557,"tag":"0019_drop_crypto_column","breakpoints":true},
+    {"idx":20,"version":"6","when":1777418896875,"tag":"0020_migrate-appurl-to-redirect-uris","breakpoints":true},
+    {"idx":21,"version":"6","when":1777746472187,"tag":"0021_left_wolverine","breakpoints":true},
+    {"idx":22,"version":"6","when":1778063624846,"tag":"0022_byop-client-key-id","breakpoints":true},
+    {"idx":23,"version":"6","when":1778063629187,"tag":"0023_byop-backfill","breakpoints":true},
+    {"idx":24,"version":"6","when":1778407366862,"tag":"0024_nasty_hitman","breakpoints":true},
+    {"idx":25,"version":"6","when":1778529206824,"tag":"0025_blue_banshee","breakpoints":true},
+    {"idx":26,"version":"6","when":1780419641045,"tag":"0026_reflective_kinsey_walden","breakpoints":true},
+    {"idx":27,"version":"6","when":1782220405628,"tag":"0027_gh_repo_mirror","breakpoints":true},
+    {"idx":28,"version":"6","when":1782231033008,"tag":"0028_gh_mirror_assignees_dates","breakpoints":true},
+    {"idx":29,"version":"6","when":1782416176948,"tag":"0029_create_rewards","breakpoints":true},
+    {"idx":30,"version":"6","when":1782416177948,"tag":"0030_fix_reward_timestamp_units","breakpoints":true},
+    {"idx":31,"version":"6","when":1782467647638,"tag":"0031_lucky_alex_power","breakpoints":true},
+    {"idx":32,"version":"6","when":1782557977942,"tag":"0032_parallel_albert_cleary","breakpoints":true},
+    {"idx":33,"version":"6","when":1782823187000,"tag":"0033_stripe_card_fingerprint_attempt","breakpoints":true},
+    {"idx":34,"version":"6","when":1782911825724,"tag":"0034_opposite_ultron","breakpoints":true},
+    {"idx":35,"version":"6","when":1783712598018,"tag":"0035_media_catalog","breakpoints":true},
+    {"idx":36,"version":"6","when":1784063115626,"tag":"0036_community_endpoint_visibility","breakpoints":true},
+    {"idx":37,"version":"6","when":1784745559578,"tag":"0037_salty_khan","breakpoints":true},
+    {"idx":38,"version":"6","when":1784972286318,"tag":"0038_slimy_ultimo","breakpoints":true},
+    {"idx":39,"version":"6","when":1785145497278,"tag":"0039_blushing_ultimatum","breakpoints":true},
+    {"idx":40,"version":"6","when":1785331128707,"tag":"0040_fearless_carnage","breakpoints":true},
+    {"idx":41,"version":"6","when":1785349614100,"tag":"0041_material_centennial","breakpoints":true},
+    {"idx":42,"version":"6","when":1785526197552,"tag":"0042_lethal_marvel_apes","breakpoints":true},
+    {"idx":43,"version":"6","when":1785590121639,"tag":"0043_canonicalize-model-permissions","breakpoints":true},
+    {"idx":44,"version":"6","when":1785758400000,"tag":"0044_consolidate-model-permissions","breakpoints":true},
+    {"idx":45,"version":"6","when":1785885364700,"tag":"0045_community_provider_profile","breakpoints":true},
+    {"idx":46,"version":"6","when":1786708800000,"tag":"0046_canonicalize-model-permission-aliases","breakpoints":true},
+    {"idx":47,"version":"6","when":1786712400000,"tag":"0047_blushing_bedlam","breakpoints":true},
+    {"idx":48,"version":"6","when":1786716000000,"tag":"0048_heavy_jimmy_woo","breakpoints":true},
+    {"idx":49,"version":"6","when":1786889023916,"tag":"0049_stormy_franklin_storm","breakpoints":true},
+    {"idx":50,"version":"6","when":1787093800020,"tag":"0050_rekey_rewards_to_github_id","breakpoints":true},
+    {"idx":51,"version":"6","when":1787093808467,"tag":"0051_drop_rewards_github_id","breakpoints":true},
+    {"idx":52,"version":"6","when":1787225959768,"tag":"0052_redundant_silver_sable","breakpoints":true},
+    {"idx":53,"version":"6","when":1787239130592,"tag":"0053_listing_envelope","breakpoints":true},
+    {"idx":54,"version":"6","when":1787318370605,"tag":"0054_canonicalize_midijourney_permission","breakpoints":true},
+    {"idx":55,"version":"6","when":1787648526176,"tag":"0055_rare_doctor_spectrum","breakpoints":true},
+    {"idx":56,"version":"6","when":1787738640000,"tag":"0056_create_notifications","breakpoints":true}
   ]
 }

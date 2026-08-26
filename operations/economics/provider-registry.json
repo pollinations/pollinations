@@ -1,5 +1,5 @@
 {
-  "version": 12,
+  "version": 13,
   "providers": [
     {
       "id": "airforce",
@@ -249,6 +249,31 @@
         {
           "workspace": "myceli.ai",
           "url": "https://elevenlabs.io/app/subscription/creative"
+        }
+      ]
+    },
+    {
+      "id": "exa",
+      "label": "Exa",
+      "meteringBasis": "direct",
+      "aliases": [],
+      "connector": "exa",
+      "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "elliot@myceli.ai",
+          "label": "Myceli.AI",
+          "activeFrom": "2026-08",
+          "activeTo": null
+        }
+      ],
+      "balanceTracking": true,
+      "collectionMethod": "dashboard",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://dashboard.exa.ai/billing",
+          "accountId": "elliot@myceli.ai"
         }
       ]
     },
@@ -629,6 +654,31 @@
         {
           "workspace": "myceli.ai",
           "url": "https://replicate.com/account/billing"
+        }
+      ]
+    },
+    {
+      "id": "regolo",
+      "label": "Regolo.ai",
+      "meteringBasis": "direct",
+      "aliases": [],
+      "connector": "regolo",
+      "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "thomash@pollinations.ai",
+          "label": "Pollinations.ai",
+          "activeFrom": "2026-08",
+          "activeTo": null
+        }
+      ],
+      "balanceTracking": true,
+      "collectionMethod": "dashboard",
+      "access": [
+        {
+          "workspace": "pollinations.ai",
+          "url": "https://dashboard.regolo.ai/subscriptions",
+          "accountId": "thomash@pollinations.ai"
         }
       ]
     },

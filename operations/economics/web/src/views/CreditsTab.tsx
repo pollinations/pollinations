@@ -234,6 +234,11 @@ export function BalancesTab({ data }: { data: Data }) {
     const sortColumns = useMemo<SortColumn<ProviderBalanceRow>[]>(
         () => [
             { key: "vendor", value: (row) => row.vendor },
+            { key: "active", value: (row) => Number(row.active) },
+            {
+                key: "collectionMethod",
+                value: (row) => row.collectionMethod,
+            },
             { key: "creditBalanceUsd", value: (row) => row.creditBalanceUsd },
             {
                 key: "creditDepletionDate",
@@ -278,6 +283,21 @@ export function BalancesTab({ data }: { data: Data }) {
                                 {...headerProps("vendor")}
                             >
                                 Vendor
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                rowSpan={2}
+                                {...headerProps("active")}
+                            >
+                                Status
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                rowSpan={2}
+                                {...headerProps("collectionMethod")}
+                            >
+                                Collection
+                            </TableHeaderCell>
+                            <TableHeaderCell rowSpan={2}>
+                                Access
                             </TableHeaderCell>
                             <TableHeaderCell rowSpan={2}>
                                 Last checked
@@ -347,70 +367,70 @@ export function BalancesTab({ data }: { data: Data }) {
                                             }
                                         >
                                             <TableCell>
-                                                <div className="flex flex-col gap-1">
-                                                    <div className="flex items-center gap-2">
-                                                        <TableDisclosureButton
-                                                            expanded={
-                                                                isExpanded
-                                                            }
-                                                            onClick={() =>
-                                                                toggle(
-                                                                    row.vendor,
-                                                                )
-                                                            }
-                                                        >
-                                                            {row.label}
-                                                        </TableDisclosureButton>
-                                                        <Chip
-                                                            intent={
-                                                                row.active
-                                                                    ? "success"
-                                                                    : "neutral"
-                                                            }
-                                                            size="sm"
-                                                        >
-                                                            {row.active
-                                                                ? "active"
-                                                                : "inactive"}
-                                                        </Chip>
-                                                    </div>
-                                                    <div className="ml-5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-theme-text-soft">
-                                                        {row.collectionMethod && (
-                                                            <span className="uppercase">
-                                                                {
-                                                                    row.collectionMethod
-                                                                }
-                                                            </span>
-                                                        )}
-                                                        {row.access.map(
-                                                            (target, index) => {
-                                                                const account =
-                                                                    target.accountId;
-                                                                const label =
-                                                                    account ??
-                                                                    (row.access
-                                                                        .length >
-                                                                    1
-                                                                        ? new URL(
-                                                                              target.url,
-                                                                          ).hostname.split(
-                                                                              ".",
-                                                                          )[0]
-                                                                        : target.workspace);
-                                                                return (
-                                                                    <InlineLink
-                                                                        key={`${target.url}|${account ?? index}`}
-                                                                        href={
-                                                                            target.url
-                                                                        }
-                                                                        className="text-xs"
-                                                                    >
-                                                                        {label}
-                                                                    </InlineLink>
-                                                                );
-                                                            },
-                                                        )}
-                                                    </div>
+                                                <TableDisclosureButton
+                                                    expanded={isExpanded}
+                                                    onClick={() =>
+                                                        toggle(row.vendor)
+                                                    }
+                                                >
+                                                    {row.label}
+                                                </TableDisclosureButton>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Chip
+                                                    intent={
+                                                        row.active
+                                                            ? "success"
+                                                            : "neutral"
+                                                    }
+                                                    size="sm"
+                                                >
+                                                    {row.active
+                                                        ? "active"
+                                                        : "inactive"}
+                                                </Chip>
+                                            </TableCell>
+                                            <TableCell className="uppercase text-xs text-theme-text-soft">
+                                                {row.collectionMethod ?? "–"}
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                                    {row.access.length === 0
+                                                        ? "–"
+                                                        : row.access.map(
+                                                              (
+                                                                  target,
+                                                                  index,
+                                                              ) => {
+                                                                  const account =
+                                                                      target.accountId;
+                                                                  const label =
+                                                                      account ??
+                                                                      (row
+                                                                          .access
+                                                                          .length >
+                                                                      1
+                                                                          ? new URL(
+                                                                                target.url,
+                                                                            ).hostname.split(
+                                                                                ".",
+                                                                            )[0]
+                                                                          : target.workspace);
+                                                                  return (
+                                                                      <InlineLink
+                                                                          key={`${target.url}|${account ?? index}`}
+                                                                          href={
+                                                                              target.url
+                                                                          }
+                                                                          className="text-xs"
+                                                                      >
+                                                                          {
+                                                                              label
+                                                                          }
+                                                                      </InlineLink>
+                                                                  );
+                                                              },
+                                                          )}
                                                 </div>
                                             </TableCell>
                                             <TableCell>
@@ -455,7 +475,7 @@ export function BalancesTab({ data }: { data: Data }) {
                                         {isExpanded && (
                                             <TableRow>
                                                 <TableCell
-                                                    colSpan={5}
+                                                    colSpan={8}
                                                     className="bg-theme-bg-active/40"
                                                 >
                                                     <BalanceHistory row={row} />

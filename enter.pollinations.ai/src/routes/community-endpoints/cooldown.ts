@@ -55,13 +55,18 @@ export async function getActiveCommunityEndpointCooldown(
 }
 
 /**
- * Snapshot a public proxy listing's effective price/paidOnly as it is
- * deleted. Deliberately writes to a table with no foreign key to
- * community_endpoint, so the snapshot outlives the row it was taken from —
- * that survival is what stops delete-then-recreate from skipping the
- * 12-hour price-increase delay.
+ * Build (without executing) the upsert that snapshots a public proxy
+ * listing's effective price/paidOnly as it is deleted. Deliberately writes
+ * to a table with no foreign key to community_endpoint, so the snapshot
+ * outlives the row it was taken from — that survival is what stops
+ * delete-then-recreate from skipping the 12-hour price-increase delay.
+ *
+ * Returns an unexecuted query so the caller can run it in the same D1 batch
+ * as the endpoint deletion: committing them separately would leave a window
+ * where a failed cooldown write (or a create racing in between) lets the
+ * model be deleted with no cooldown behind it, reopening the bypass.
  */
-export async function writeCommunityEndpointCooldown(
+export function buildCommunityEndpointCooldownUpsert(
     db: Db,
     params: {
         modelId: string;
@@ -72,7 +77,7 @@ export async function writeCommunityEndpointCooldown(
         imagePricing: CommunityEndpointImagePricing;
         expiresAt: Date;
     },
-): Promise<void> {
+) {
     const snapshot: CooldownSnapshot = {
         prices: params.prices,
         modality: params.modality,
@@ -82,10 +87,9 @@ export async function writeCommunityEndpointCooldown(
         ownerUserId: params.ownerUserId,
         priceSnapshot: JSON.stringify(snapshot),
         paidOnlySnapshot: params.paidOnly,
-        visibilitySnapshot: "public" as const,
         expiresAt: params.expiresAt,
     };
-    await db
+    return db
         .insert(schema.communityEndpointCooldown)
         .values({ modelId: params.modelId, createdAt: new Date(), ...values })
         .onConflictDoUpdate({
@@ -108,34 +112,27 @@ function minPrices(
 
 export type StagedCommunityEndpointCreate = {
     immediatePolicy: ProxyPolicy;
-    immediateVisibility: CommunityEndpointVisibility;
-    /** Present when any requested value exceeds the surviving cooldown. */
-    pending: {
-        policy: ProxyPolicy;
-        // Only set when visibility itself is what exceeded the cooldown, so a
-        // pure price/paidOnly stage never claims a visibility change is queued.
-        visibility: CommunityEndpointVisibility | null;
-    } | null;
+    /** Present when any requested price/paidOnly exceeds the surviving cooldown. */
+    pending: ProxyPolicy | null;
 };
 
 /**
  * Clamp a fresh creation against a surviving cooldown so deleting a public
  * model and recreating it under the same name cannot skip the delay a normal
- * update would have imposed on the same change. Same/lower price, same
- * paidOnly-or-lower, and re-registering private all pass through immediately;
- * anything higher is clamped to the snapshot now and staged as pending at the
- * requested value, mirroring the update path's delayed-price mechanism.
+ * update would have imposed on the same price/paidOnly change. Same/lower
+ * price, same-or-lower paidOnly, and re-registering private all pass through
+ * immediately; anything higher is clamped to the snapshot now and staged as
+ * pending at the requested value, mirroring the update path's delayed-price
+ * mechanism. Visibility itself is never gated here — a cooldown is only ever
+ * recorded for an already-public listing, so there is nothing to protect
+ * against a private→public jump on create.
  */
 export function stageCommunityEndpointCreate(
     policy: ProxyPolicy,
     requestedVisibility: CommunityEndpointVisibility,
     cooldown: CooldownRow | null,
 ): StagedCommunityEndpointCreate {
-    const passThrough = {
-        immediatePolicy: policy,
-        immediateVisibility: requestedVisibility,
-        pending: null,
-    };
+    const passThrough = { immediatePolicy: policy, pending: null };
     if (!cooldown || requestedVisibility === "private") return passThrough;
 
     const snapshot = parseSnapshot(cooldown.priceSnapshot);
@@ -155,13 +152,8 @@ export function stageCommunityEndpointCreate(
             (field) => policy.prices[field.key] > snapshot.prices[field.key],
         );
     const paidOnlyExceeds = policy.paidOnly && !cooldown.paidOnlySnapshot;
-    const visibilityExceeds =
-        requestedVisibility === "public" &&
-        cooldown.visibilitySnapshot === "private";
 
-    if (!pricesExceed && !paidOnlyExceeds && !visibilityExceeds) {
-        return passThrough;
-    }
+    if (!pricesExceed && !paidOnlyExceeds) return passThrough;
 
     const immediatePolicy: ProxyPolicy = {
         ...policy,
@@ -171,16 +163,6 @@ export function stageCommunityEndpointCreate(
             ? snapshot.prices
             : minPrices(policy.prices, snapshot.prices),
     };
-    const immediateVisibility: CommunityEndpointVisibility = visibilityExceeds
-        ? "private"
-        : requestedVisibility;
 
-    return {
-        immediatePolicy,
-        immediateVisibility,
-        pending: {
-            policy,
-            visibility: visibilityExceeds ? requestedVisibility : null,
-        },
-    };
+    return { immediatePolicy, pending: policy };
 }

@@ -31,9 +31,9 @@ import {
 } from "../services/community-endpoint-openai.ts";
 import { requireAccountPermission } from "./account-permissions.ts";
 import {
+    buildCommunityEndpointCooldownUpsert,
     getActiveCommunityEndpointCooldown,
     stageCommunityEndpointCreate,
-    writeCommunityEndpointCooldown,
 } from "./community-endpoints/cooldown.ts";
 import {
     type FallbackPrimary,
@@ -195,18 +195,28 @@ async function enforcePublishingAccess(
 type CommunityEndpointRow = typeof schema.communityEndpoint.$inferSelect;
 
 /**
- * Snapshot a deleted proxy listing's effective price/paidOnly under a
- * 12-hour cooldown keyed on its model id, so recreating it under the same
- * name cannot republish above that price without the same delay an update
- * would have imposed. Only a listing that was actually public has a price
- * worth protecting.
+ * Resolve the cooldown snapshot a deletion should write, if any: a public
+ * proxy listing's effective price/paidOnly, keyed on its model id, so
+ * recreating it under the same name cannot republish above that price
+ * without the same delay an update would have imposed. Only a listing that
+ * was actually public has a price worth protecting; returns null otherwise.
+ *
+ * Every input (including the owner's GitHub username) is resolved here,
+ * before the caller deletes anything, so the caller can build the cooldown
+ * upsert query and commit it together with the deletion in one batch —
+ * never delete-then-maybe-write, which would leave the model gone with no
+ * cooldown behind it on any failure or race in between. Returning plain data
+ * rather than the query itself matters: an async function that returns a
+ * thenable (a Drizzle query builder) has that thenable auto-awaited on
+ * return, which would execute the upsert here instead of deferring it to
+ * the batch.
  */
-async function recordCooldownOnDelete(
+async function resolveCooldownSnapshotOnDelete(
     db: Db,
     endpoint: CommunityEndpointRow,
     ownerUserId: string,
-): Promise<void> {
-    if (endpoint.type !== "proxy") return;
+): Promise<Parameters<typeof buildCommunityEndpointCooldownUpsert>[1] | null> {
+    if (endpoint.type !== "proxy") return null;
     const pendingReady = pendingCommunityEndpointChangeIsReady(
         endpoint.pendingAt,
     );
@@ -214,9 +224,9 @@ async function recordCooldownOnDelete(
         pendingReady && endpoint.pendingVisibility
             ? endpoint.pendingVisibility
             : endpoint.visibility;
-    if (effectiveVisibility !== "public") return;
+    if (effectiveVisibility !== "public") return null;
     const current = parseListingPayload("proxy", endpoint.payload);
-    if (!current) return;
+    if (!current) return null;
     const maturedPending = pendingReady
         ? parseListingPayload("proxy", endpoint.pendingPayload)
         : null;
@@ -225,7 +235,7 @@ async function recordCooldownOnDelete(
         db,
         ownerUserId,
     );
-    await writeCommunityEndpointCooldown(db, {
+    return {
         modelId: communityModelId(ownerGithubUsername, endpoint.name),
         ownerUserId,
         prices: effective.prices,
@@ -233,7 +243,7 @@ async function recordCooldownOnDelete(
         modality: effective.modality,
         imagePricing: effective.imagePricing,
         expiresAt: new Date(Date.now() + COMMUNITY_ENDPOINT_CHANGE_DELAY_MS),
-    });
+    };
 }
 
 async function enforceEndpointProbeThrottle(
@@ -563,8 +573,8 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const policy = deriveCreateProxyPolicy(input);
             const modelId = communityModelId(ownerGithubUsername, input.name);
             // A cooldown left behind by a deleted model under this same name
-            // clamps a price/paidOnly/visibility increase to what it protects,
-            // so deleting and recreating cannot skip the delay an update would
+            // clamps a price/paidOnly increase to what it protects, so
+            // deleting and recreating cannot skip the delay an update would
             // have imposed on the same change.
             const cooldown = await getActiveCommunityEndpointCooldown(
                 db,
@@ -599,7 +609,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     name: input.name,
                     title: input.title,
                     description: input.description || null,
-                    visibility: staged.immediateVisibility,
+                    visibility: input.visibility,
                     type: "proxy",
                     baseUrl: normalizeInputBaseUrl(input.baseUrl),
                     upstreamModel: input.upstreamModel ?? input.name,
@@ -607,11 +617,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     pendingPayload: staged.pending
                         ? JSON.stringify({
                               bearerTokenCiphertext,
-                              ...staged.pending.policy,
+                              ...staged.pending,
                               fallbacks,
                           } satisfies ProxyListingPayload)
                         : null,
-                    pendingVisibility: staged.pending?.visibility ?? null,
+                    pendingVisibility: null,
                     pendingAt: staged.pending ? new Date() : null,
                     createdAt: new Date(),
                     updatedAt: new Date(),
@@ -974,7 +984,16 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const db = drizzle(c.env.DB, { schema });
             requireAccountPermission(c.var.auth.apiKey, "keys");
             const endpoint = await requireOwnedEndpoint(db, id, user.id);
-            await db
+            // Resolve the cooldown snapshot (including the owner's GitHub
+            // username lookup) before touching anything. If that fails, the
+            // model is untouched rather than deleted with no cooldown behind
+            // it — the safe failure direction.
+            const cooldownSnapshot = await resolveCooldownSnapshotOnDelete(
+                db,
+                endpoint,
+                user.id,
+            );
+            const deleteQuery = db
                 .delete(schema.communityEndpoint)
                 .where(
                     and(
@@ -982,7 +1001,19 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         eq(schema.communityEndpoint.ownerUserId, user.id),
                     ),
                 );
-            await recordCooldownOnDelete(db, endpoint, user.id);
+            // The cooldown write and the deletion must commit together: a
+            // cooldown outliving a still-existing model is harmless (only
+            // read on create, which ensureModelNameAvailable already blocks
+            // while the row exists), but a deleted row with no cooldown
+            // reopens the price-increase bypass.
+            if (cooldownSnapshot) {
+                await db.batch([
+                    buildCommunityEndpointCooldownUpsert(db, cooldownSnapshot),
+                    deleteQuery,
+                ]);
+            } else {
+                await deleteQuery;
+            }
             return c.json({ id });
         },
     );

@@ -268,12 +268,13 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
 ]);
 
 // Deleting a community_endpoint row (e.g. to republish under the same name at
-// a higher price) must not reset the 12-hour price/visibility delay. This row
-// is keyed on the model id string, not the endpoint row id, and deliberately
-// carries no foreign key to community_endpoint so it survives that row's
-// deletion. Written when a public proxy listing is deleted; read back when a
-// new listing is created under the same owner/name to clamp it to the
-// snapshot until the cooldown expires.
+// a higher price) must not reset the 12-hour price delay. This row is keyed
+// on the model id string, not the endpoint row id, and deliberately carries
+// no foreign key to community_endpoint so it survives that row's deletion.
+// Written only for a listing that was effectively public at deletion — a
+// private listing has no price to protect — so there is no visibility column
+// here: create-time enforcement only ever gates price/paidOnly, never a
+// private→public transition.
 export const communityEndpointCooldown = sqliteTable("community_endpoint_cooldown", {
   modelId: text("model_id").primaryKey(),
   ownerUserId: text("owner_user_id")
@@ -286,11 +287,6 @@ export const communityEndpointCooldown = sqliteTable("community_endpoint_cooldow
   priceSnapshot: text("price_snapshot").notNull(),
   paidOnlySnapshot: integer("paid_only_snapshot", { mode: "boolean" })
     .default(false)
-    .notNull(),
-  visibilitySnapshot: text("visibility_snapshot", {
-    enum: ["private", "public"],
-  })
-    .default("public")
     .notNull(),
   expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),

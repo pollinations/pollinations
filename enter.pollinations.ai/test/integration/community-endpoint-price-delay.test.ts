@@ -602,4 +602,70 @@ describe("community endpoint model-id cooldown survives delete", () => {
             completionImagePrice: 0.000002,
         });
     });
+
+    test("a failed cooldown snapshot leaves the model undeleted instead of deleted-with-no-cooldown", async ({
+        sessionToken,
+    }) => {
+        await approveCommunityModels();
+        const created = await postModel(sessionToken, "", {
+            name: "cooldown-failed-write-model",
+            title: "Cooldown failed write model",
+            visibility: "public",
+            baseUrl: "https://text.example.com/v1",
+            bearerToken: "tok",
+            promptTextPrice: 0.000001,
+        });
+
+        // Simulate the snapshot resolution failing (e.g. a lookup error)
+        // by clearing the field the delete path resolves before writing
+        // anything: the owner's GitHub username.
+        await drizzle(env.DB)
+            .update(schema.user)
+            .set({ githubUsername: null })
+            .where(eq(schema.user.githubUsername, "testuser"));
+
+        const response = await SELF.fetch(
+            `${endpointUrl}/${created.id as string}`,
+            {
+                method: "DELETE",
+                headers: {
+                    Cookie: `better-auth.session_token=${sessionToken}`,
+                },
+            },
+        );
+        expect(response.status).toBe(400);
+
+        // The failed resolution must not have deleted the row: a delete
+        // with no cooldown behind it would reopen the price-increase bypass.
+        const row = await drizzle(env.DB, {
+            schema,
+        }).query.communityEndpoint.findFirst({
+            where: eq(schema.communityEndpoint.id, created.id as string),
+        });
+        expect(row).toBeDefined();
+
+        // Restore the username and confirm the delete + cooldown now
+        // succeed together as a single atomic write.
+        await drizzle(env.DB)
+            .update(schema.user)
+            .set({ githubUsername: "testuser" })
+            .where(eq(schema.user.id, row?.ownerUserId as string));
+        await deleteModel(sessionToken, created.id as string);
+
+        const recreated = await postModel(sessionToken, "", {
+            name: "cooldown-failed-write-model",
+            title: "Cooldown failed write model",
+            visibility: "public",
+            baseUrl: "https://text.example.com/v1",
+            bearerToken: "tok",
+            promptTextPrice: 0.00001,
+        });
+        expect(recreated).toMatchObject({
+            visibility: "public",
+            promptTextPrice: 0.000001,
+        });
+        expect(recreated.pending).toMatchObject({
+            promptTextPrice: 0.00001,
+        });
+    });
 });

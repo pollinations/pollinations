@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "6f7dea0b-b116-4799-9844-517bd71173c4",
+  "id": "737563ec-142e-4eb0-9e26-c9523fd0383d",
   "prevId": "789d39a2-1c11-4452-befe-e59872c14b1b",
   "tables": {
     "account": {
@@ -562,14 +562,6 @@
           "notNull": true,
           "autoincrement": false,
           "default": false
-        },
-        "visibility_snapshot": {
-          "name": "visibility_snapshot",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'public'"
         },
         "expires_at": {
           "name": "expires_at",

@@ -32,13 +32,14 @@ export type ManagedAgent = {
     systemPrompt: string;
     baseModel: string;
     mcpServers: McpServerId[];
+    delegateModels: string[];
     createdAt: string;
     updatedAt: string;
 };
 
 type AgentFields = Pick<
     ManagedAgent,
-    "systemPrompt" | "baseModel" | "mcpServers"
+    "systemPrompt" | "baseModel" | "mcpServers" | "delegateModels"
 >;
 
 export type AgentFormState = AgentFields;
@@ -237,6 +238,7 @@ export const emptyAgentForm: AgentFormState = {
     systemPrompt: "",
     baseModel: "",
     mcpServers: [],
+    delegateModels: [],
 };
 
 export const idleAction: ActionState = { status: "idle" };
@@ -458,6 +460,7 @@ export function toAgentPayload(form: AgentFormState): AgentPayload {
         systemPrompt,
         baseModel,
         mcpServers: form.mcpServers,
+        delegateModels: form.delegateModels,
     };
 }
 

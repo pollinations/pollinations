@@ -453,6 +453,13 @@ export const PromptAgentConfigSchema = z.object({
         })
         .optional()
         .default([]),
+    delegateModels: z
+        .array(z.string().trim().min(1))
+        .refine((models) => new Set(models).size === models.length, {
+            message: "delegateModels must not contain duplicates",
+        })
+        .optional()
+        .default([]),
 });
 export const PromptAgentInputSchema = PromptAgentConfigSchema.strict();
 

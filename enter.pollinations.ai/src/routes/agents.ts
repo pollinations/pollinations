@@ -70,6 +70,7 @@ const AgentResponseSchema = z.object({
     systemPrompt: z.string(),
     baseModel: z.string(),
     mcpServers: z.array(BuiltinMcpServerIdSchema),
+    delegateModels: z.array(z.string()),
     createdAt: z.string(),
     updatedAt: z.string(),
 });

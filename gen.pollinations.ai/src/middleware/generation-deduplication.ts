@@ -49,6 +49,7 @@ export type GenerationJob = {
     auth: GenerationAuthSnapshot;
     requestId: string;
     balanceCheckResult: BalanceCheckResult;
+    apiKeyBudgetEstimate?: number;
 };
 
 export type GenerationOutcome =
@@ -149,6 +150,7 @@ async function createJob(
         auth: createAuthSnapshot(c.var.auth),
         requestId: c.get("requestId"),
         balanceCheckResult,
+        apiKeyBudgetEstimate: c.var.balance.apiKeyBudgetEstimate,
     };
 }
 

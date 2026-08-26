@@ -58,6 +58,22 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.03,
     },
   },
+  "alibaba/wan-3.0": {
+    "cost": {
+      "completionVideoSeconds": 0.068,
+    },
+    "costVariants": {
+      "1080p": {
+        "completionVideoSeconds": 0.28,
+      },
+      "720p": {
+        "completionVideoSeconds": 0.14,
+      },
+    },
+    "price": {
+      "completionVideoSeconds": 0.068,
+    },
+  },
   "amazon/nova-2-lite-v1": {
     "cost": {
       "completionTextTokens": 0.00000275,
@@ -75,6 +91,11 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "amazon/nova-canvas-v1": {
     "cost": {
       "completionImageTokens": 0.04,
+    },
+    "costVariants": {
+      "2048": {
+        "completionImageTokens": 0.06,
+      },
     },
     "price": {
       "completionImageTokens": 0.04,
@@ -204,6 +225,11 @@ exports[`effective cost and price per model — snapshot 1`] = `
     "cost": {
       "promptAudioSeconds": 0.0000416666666666667,
     },
+    "costVariants": {
+      "diarization": {
+        "promptAudioSeconds": 0.0000472222222222222,
+      },
+    },
     "price": {
       "promptAudioSeconds": 0.0000416666666666667,
     },
@@ -211,6 +237,17 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "assemblyai/universal-3.5-pro": {
     "cost": {
       "promptAudioSeconds": 0.0000583333333333333,
+    },
+    "costVariants": {
+      "diarization": {
+        "promptAudioSeconds": 0.0000638888888888889,
+      },
+      "prompting": {
+        "promptAudioSeconds": 0.0000722222222222222,
+      },
+      "prompting_diarization": {
+        "promptAudioSeconds": 0.0000777777777777778,
+      },
     },
     "price": {
       "promptAudioSeconds": 0.0000583333333333333,
@@ -221,7 +258,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.04,
     },
     "price": {
-      "completionImageTokens": 0.04,
+      "completionImageTokens": 0.03,
     },
   },
   "black-forest-labs/flux.1-schnell": {
@@ -352,14 +389,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "deepseek/deepseek-v4-flash": {
     "cost": {
-      "completionTextTokens": 0.00000028,
-      "promptCachedTokens": 0.000000028,
-      "promptTextTokens": 0.00000014,
+      "completionTextTokens": 0.00000066,
+      "promptCachedTokens": 0.000000007,
+      "promptTextTokens": 0.00000022,
     },
     "price": {
-      "completionTextTokens": 0.00000028,
-      "promptCachedTokens": 0.000000028,
-      "promptTextTokens": 0.00000014,
+      "completionTextTokens": 0.00000066,
+      "promptCachedTokens": 0.000000007,
+      "promptTextTokens": 0.00000022,
     },
   },
   "deepseek/deepseek-v4-pro": {
@@ -666,22 +703,22 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "google/gemma-4-26b-a4b-it": {
     "cost": {
-      "completionTextTokens": 0.00000033,
-      "promptTextTokens": 0.00000006,
+      "completionTextTokens": 0.0000004,
+      "promptTextTokens": 0.00000013,
     },
     "price": {
-      "completionTextTokens": 0.00000033,
-      "promptTextTokens": 0.00000006,
+      "completionTextTokens": 0.0000004,
+      "promptTextTokens": 0.00000013,
     },
   },
   "google/gemma-4-31b-it": {
     "cost": {
-      "completionTextTokens": 0.00000037,
-      "promptTextTokens": 0.00000012,
+      "completionTextTokens": 0.0000004,
+      "promptTextTokens": 0.00000014,
     },
     "price": {
-      "completionTextTokens": 0.00000037,
-      "promptTextTokens": 0.00000012,
+      "completionTextTokens": 0.0000004,
+      "promptTextTokens": 0.00000014,
     },
   },
   "google/lyria-3-clip-preview": {
@@ -866,7 +903,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
         "completionVideoSeconds": 0.13,
       },
       "768p": {
-        "completionVideoSeconds": 0.08,
+        "completionVideoSeconds": 0.06,
       },
     },
     "price": {
@@ -1017,9 +1054,9 @@ exports[`effective cost and price per model — snapshot 1`] = `
       },
     },
     "price": {
-      "completionTextTokens": 0.000015,
-      "promptCachedTokens": 0.00000025,
-      "promptTextTokens": 0.0000025,
+      "completionTextTokens": 0.00001125,
+      "promptCachedTokens": 0.0000001875,
+      "promptTextTokens": 0.000001875,
     },
   },
   "openai/gpt-5.4-mini": {
@@ -1060,31 +1097,31 @@ exports[`effective cost and price per model — snapshot 1`] = `
       },
     },
     "price": {
-      "completionTextTokens": 0.00003,
-      "promptCachedTokens": 0.0000005,
-      "promptTextTokens": 0.000005,
+      "completionTextTokens": 0.0000225,
+      "promptCachedTokens": 0.000000375,
+      "promptTextTokens": 0.00000375,
     },
   },
   "openai/gpt-5.6-luna": {
     "cost": {
-      "completionTextTokens": 0.000006,
-      "promptCacheWriteTokens": 0.00000125,
-      "promptCachedTokens": 0.0000001,
-      "promptTextTokens": 0.000001,
-    },
-    "costVariants": {
-      "long_context": {
-        "completionTextTokens": 0.000009,
-        "promptCacheWriteTokens": 0.0000025,
-        "promptCachedTokens": 0.0000002,
-        "promptTextTokens": 0.000002,
-      },
-    },
-    "price": {
       "completionTextTokens": 0.0000012,
       "promptCacheWriteTokens": 0.00000025,
       "promptCachedTokens": 0.00000002,
       "promptTextTokens": 0.0000002,
+    },
+    "costVariants": {
+      "long_context": {
+        "completionTextTokens": 0.0000018,
+        "promptCacheWriteTokens": 0.0000005,
+        "promptCachedTokens": 0.00000004,
+        "promptTextTokens": 0.0000004,
+      },
+    },
+    "price": {
+      "completionTextTokens": 0.0000009,
+      "promptCacheWriteTokens": 0.0000001875,
+      "promptCachedTokens": 0.000000015,
+      "promptTextTokens": 0.00000015,
     },
   },
   "openai/gpt-5.6-sol": {
@@ -1103,46 +1140,46 @@ exports[`effective cost and price per model — snapshot 1`] = `
       },
     },
     "price": {
-      "completionTextTokens": 0.000015,
-      "promptCacheWriteTokens": 0.000003125,
-      "promptCachedTokens": 0.00000025,
-      "promptTextTokens": 0.0000025,
+      "completionTextTokens": 0.00001,
+      "promptCacheWriteTokens": 0.00000208333333333333,
+      "promptCachedTokens": 0.00000016666666666667,
+      "promptTextTokens": 0.00000166666666666667,
     },
   },
   "openai/gpt-5.6-terra": {
     "cost": {
-      "completionTextTokens": 0.000015,
-      "promptCacheWriteTokens": 0.000003125,
-      "promptCachedTokens": 0.00000025,
-      "promptTextTokens": 0.0000025,
+      "completionTextTokens": 0.000012,
+      "promptCacheWriteTokens": 0.0000025,
+      "promptCachedTokens": 0.0000002,
+      "promptTextTokens": 0.000002,
     },
     "costVariants": {
       "long_context": {
-        "completionTextTokens": 0.0000225,
-        "promptCacheWriteTokens": 0.00000625,
-        "promptCachedTokens": 0.0000005,
-        "promptTextTokens": 0.000005,
+        "completionTextTokens": 0.000018,
+        "promptCacheWriteTokens": 0.000005,
+        "promptCachedTokens": 0.0000004,
+        "promptTextTokens": 0.000004,
       },
     },
     "price": {
-      "completionTextTokens": 0.0000075,
-      "promptCacheWriteTokens": 0.0000015625,
-      "promptCachedTokens": 0.000000125,
-      "promptTextTokens": 0.00000125,
+      "completionTextTokens": 0.000009,
+      "promptCacheWriteTokens": 0.000001875,
+      "promptCachedTokens": 0.00000015,
+      "promptTextTokens": 0.0000015,
     },
   },
   "openai/gpt-audio-1.5": {
     "cost": {
-      "completionAudioTokens": 0.00008,
+      "completionAudioTokens": 0.000064,
       "completionTextTokens": 0.00001,
-      "promptAudioTokens": 0.00004,
+      "promptAudioTokens": 0.000032,
       "promptTextTokens": 0.0000025,
     },
     "price": {
-      "completionAudioTokens": 0.00008,
-      "completionTextTokens": 0.00001,
-      "promptAudioTokens": 0.00004,
-      "promptTextTokens": 0.0000025,
+      "completionAudioTokens": 0.000048,
+      "completionTextTokens": 0.0000075,
+      "promptAudioTokens": 0.000024,
+      "promptTextTokens": 0.000001875,
     },
   },
   "openai/gpt-audio-mini": {
@@ -1153,10 +1190,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000006,
     },
     "price": {
-      "completionAudioTokens": 0.00002,
-      "completionTextTokens": 0.0000024,
-      "promptAudioTokens": 0.00001,
-      "promptTextTokens": 0.0000006,
+      "completionAudioTokens": 0.000015,
+      "completionTextTokens": 0.0000018,
+      "promptAudioTokens": 0.0000075,
+      "promptTextTokens": 0.00000045,
     },
   },
   "openai/gpt-image-1-mini": {
@@ -1182,11 +1219,11 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000005,
     },
     "price": {
-      "completionImageTokens": 0.000032,
-      "completionTextTokens": 0.00001,
-      "promptCachedTokens": 0.00000125,
-      "promptImageTokens": 0.000008,
-      "promptTextTokens": 0.000005,
+      "completionImageTokens": 0.000024,
+      "completionTextTokens": 0.0000075,
+      "promptCachedTokens": 0.0000009375,
+      "promptImageTokens": 0.000006,
+      "promptTextTokens": 0.00000375,
     },
   },
   "openai/gpt-image-2": {
@@ -1201,6 +1238,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptCachedTokens": 0.0000009375,
       "promptImageTokens": 0.000006,
       "promptTextTokens": 0.00000375,
+    },
+  },
+  "openai/gpt-live-transcribe": {
+    "cost": {
+      "promptAudioSeconds": 0.000283333333333333,
+    },
+    "price": {
+      "promptAudioSeconds": 0.0002125,
     },
   },
   "openai/gpt-oss-20b": {
@@ -1267,6 +1312,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000045,
     },
   },
+  "openai/gpt-transcribe": {
+    "cost": {
+      "promptAudioSeconds": 0.000075,
+    },
+    "price": {
+      "promptAudioSeconds": 0.00005625,
+    },
+  },
   "openai/text-embedding-3-large": {
     "cost": {
       "promptTextTokens": 0.00000013,
@@ -1285,10 +1338,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "openai/whisper-large-v3": {
     "cost": {
-      "promptAudioSeconds": 0.0000445,
+      "promptAudioSeconds": 0.0000452777777777778,
     },
     "price": {
-      "promptAudioSeconds": 0.0000445,
+      "promptAudioSeconds": 0.0000452777777777778,
     },
   },
   "perplexity/sonar": {
@@ -1347,21 +1400,21 @@ exports[`effective cost and price per model — snapshot 1`] = `
       },
     },
     "price": {
-      "completionTextTokens": 0.00003,
-      "promptCachedTokens": 0.0000005,
-      "promptTextTokens": 0.000005,
+      "completionTextTokens": 0.0000225,
+      "promptCachedTokens": 0.000000375,
+      "promptTextTokens": 0.00000375,
     },
   },
   "poolside/laguna-s-2.1": {
     "cost": {
-      "completionTextTokens": 0.0000002,
-      "promptCachedTokens": 0.00000001,
-      "promptTextTokens": 0.0000001,
+      "completionTextTokens": 0.00000018,
+      "promptCachedTokens": 0.000000009,
+      "promptTextTokens": 0.00000009,
     },
     "price": {
-      "completionTextTokens": 0.0000002,
-      "promptCachedTokens": 0.00000001,
-      "promptTextTokens": 0.0000001,
+      "completionTextTokens": 0.00000018,
+      "promptCachedTokens": 0.000000009,
+      "promptTextTokens": 0.00000009,
     },
   },
   "prunaai/p-image": {
@@ -1424,24 +1477,24 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "qwen/qwen3-coder-30b-a3b-instruct": {
     "cost": {
-      "completionTextTokens": 0.00000022,
-      "promptTextTokens": 0.00000006,
+      "completionTextTokens": 0.00000026,
+      "promptTextTokens": 0.00000007,
     },
     "price": {
-      "completionTextTokens": 0.00000022,
-      "promptTextTokens": 0.00000006,
+      "completionTextTokens": 0.00000026,
+      "promptTextTokens": 0.00000007,
     },
   },
   "qwen/qwen3-coder-next": {
     "cost": {
       "completionTextTokens": 0.0000008,
       "promptCachedTokens": 0.00000007,
-      "promptTextTokens": 0.00000011,
+      "promptTextTokens": 0.00000012,
     },
     "price": {
       "completionTextTokens": 0.0000008,
       "promptCachedTokens": 0.00000007,
-      "promptTextTokens": 0.00000011,
+      "promptTextTokens": 0.00000012,
     },
   },
   "qwen/qwen3-embedding-8b": {
@@ -1470,12 +1523,12 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "qwen/qwen3-vl-235b-a22b-thinking": {
     "cost": {
-      "completionTextTokens": 0.0000026,
-      "promptTextTokens": 0.00000026,
+      "completionTextTokens": 0.000004,
+      "promptTextTokens": 0.0000004,
     },
     "price": {
-      "completionTextTokens": 0.0000026,
-      "promptTextTokens": 0.00000026,
+      "completionTextTokens": 0.000004,
+      "promptTextTokens": 0.0000004,
     },
   },
   "qwen/qwen3-vl-30b-a3b-instruct": {
@@ -1574,18 +1627,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "qwen/qwen3.8-27b": {
     "cost": {
-      "completionTextTokens": 0.000003,
-      "promptCachedTokens": 0.00000004,
-      "promptImageTokens": 0.0000004,
-      "promptTextTokens": 0.0000004,
-      "promptVideoTokens": 0.0000004,
+      "completionTextTokens": 0.00000275,
+      "promptCachedTokens": 0.000000035,
+      "promptImageTokens": 0.00000035,
+      "promptTextTokens": 0.00000035,
+      "promptVideoTokens": 0.00000035,
     },
     "price": {
-      "completionTextTokens": 0.000003,
-      "promptCachedTokens": 0.00000004,
-      "promptImageTokens": 0.0000004,
-      "promptTextTokens": 0.0000004,
-      "promptVideoTokens": 0.0000004,
+      "completionTextTokens": 0.00000275,
+      "promptCachedTokens": 0.000000035,
+      "promptImageTokens": 0.00000035,
+      "promptTextTokens": 0.00000035,
+      "promptVideoTokens": 0.00000035,
     },
   },
   "qwen/qwen3.8-max": {
@@ -1708,10 +1761,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000002,
     },
     "price": {
-      "completionTextTokens": 0.000006,
-      "promptCachedTokens": 0.0000002,
-      "promptImageTokens": 0.000002,
-      "promptTextTokens": 0.000002,
+      "completionTextTokens": 0.0000045,
+      "promptCachedTokens": 0.00000015,
+      "promptImageTokens": 0.0000015,
+      "promptTextTokens": 0.0000015,
     },
   },
   "x-ai/grok-4.3": {
@@ -1722,10 +1775,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000125,
     },
     "price": {
-      "completionTextTokens": 0.0000025,
-      "promptCachedTokens": 0.0000002,
-      "promptImageTokens": 0.00000125,
-      "promptTextTokens": 0.00000125,
+      "completionTextTokens": 0.000001875,
+      "promptCachedTokens": 0.00000015,
+      "promptImageTokens": 0.0000009375,
+      "promptTextTokens": 0.0000009375,
     },
   },
   "x-ai/grok-4.6": {

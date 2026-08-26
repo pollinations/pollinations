@@ -13,14 +13,30 @@ SQL >
     SELECT
         formatDateTime(toStartOfWeek(start_time, 1), '%Y-%m-%d') AS week,
         count() AS total_requests,
-        countIf(event_type = 'text') AS text_requests,
-        countIf(event_type = 'image') AS image_requests,
+        -- event_type is 'generate.text' / 'generate.image'; matching on the
+        -- bare word returned 0 for both of these columns.
+        countIf(event_type = 'generate.text') AS text_requests,
+        countIf(event_type = 'generate.image') AS image_requests,
         sum(token_count_prompt_text) AS prompt_tokens,
         sum(token_count_completion_text) AS completion_tokens,
         sum(token_count_prompt_text + token_count_completion_text) AS total_tokens,
         sum(total_price) AS revenue_usd,
-        sum(total_cost) AS cost_usd,
+        -- Community total_cost is its sale price, not an upstream bill. Its
+        -- owner reward is the corresponding COGS for this gross-margin view.
+        sum(if(
+            model_provider_used = 'community',
+            community_model_reward_amount,
+            total_cost
+        )) AS cost_usd,
         uniq(user_id) AS active_users,
+        -- See weekly_active_users: 402 is an out-of-Pollen rejection, counted
+        -- as a user and a request today but never served.
+        uniq(if(response_status != 402, user_id, null)) AS served_users,
+        countIf(response_status != 402) AS served_requests,
+        countIf(event_type = 'generate.text' AND response_status != 402)
+            AS served_text_requests,
+        countIf(event_type = 'generate.image' AND response_status != 402)
+            AS served_image_requests,
         if(active_users > 0, total_tokens / active_users, 0) AS tokens_per_user,
         if(active_users > 0, total_requests / active_users, 0) AS requests_per_user,
         -- Community models: endpoints registered by users, which the registry
@@ -28,6 +44,10 @@ SQL >
         -- too, so their top-level runs are inside these numbers until the
         -- is_agent attribution column exists.
         uniqIf(user_id, model_provider_used = 'community') AS community_users,
+        uniqIf(
+            user_id,
+            model_provider_used = 'community' AND response_status != 402
+        ) AS served_community_users,
         countIf(response_status >= 200 AND response_status < 300) AS successful_requests,
         countIf(
             model_provider_used = 'community'
@@ -37,6 +57,8 @@ SQL >
             AS community_server_errors_5xx,
         round(community_users * 100.0 / nullIf(active_users, 0), 1)
             AS community_user_pct,
+        round(served_community_users * 100.0 / nullIf(served_users, 0), 1)
+            AS served_community_user_pct,
         round(
             community_successful_requests * 100.0
             / nullIf(successful_requests, 0),

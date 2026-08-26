@@ -63,6 +63,9 @@ jobs:
               git diff --name-only HEAD~1 HEAD > changed.txt
             fi
             APPS=$(node operations/deployment/discover.cjs --scope=all --changed=changed.txt)
+            # Cloudflare production deploys MCP Workers in dependency order
+            # (Media -> MCP -> Gen). Do not race that chain here.
+            APPS=$(node -e 'const apps = JSON.parse(process.argv[1]); process.stdout.write(JSON.stringify(apps.filter(({ name }) => !name.endsWith("-mcp"))))' "$APPS")
           fi
 
           if [ "$APPS" = "[]" ]; then

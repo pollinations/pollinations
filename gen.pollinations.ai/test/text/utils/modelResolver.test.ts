@@ -145,8 +145,8 @@ describe("resolveModelConfig", () => {
 
         expect(result.options.model).toBe("qwen/qwen3.7-flash");
         expect(result.options.modelConfig).toMatchObject({
-            provider: "openai",
-            "custom-host": "https://openrouter.ai/api/v1",
+            provider: "openrouter",
+            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
         });
         expect(result.options.provider).toEqual({
             only: ["Alibaba"],
@@ -161,8 +161,8 @@ describe("resolveModelConfig", () => {
 
         expect(result.options.model).toBe("qwen/qwen3.8-max");
         expect(result.options.modelConfig).toMatchObject({
-            provider: "openai",
-            "custom-host": "https://openrouter.ai/api/v1",
+            provider: "openrouter",
+            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
         });
         expect(result.options.provider).toEqual({
             only: ["Alibaba"],
@@ -192,8 +192,8 @@ describe("resolveModelConfig", () => {
 
         expect(result.options.model).toBe("qwen/qwen3.8-27b");
         expect(result.options.modelConfig).toMatchObject({
-            provider: "openai",
-            "custom-host": "https://openrouter.ai/api/v1",
+            provider: "openrouter",
+            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
         });
         expect(result.options.provider).toEqual({
             only: ["Chutes"],
@@ -245,8 +245,8 @@ describe("resolveModelConfig", () => {
 
         expect(result.options.model).toBe("x-ai/grok-4.6");
         expect(result.options.modelConfig).toMatchObject({
-            provider: "openai",
-            "custom-host": "https://openrouter.ai/api/v1",
+            provider: "openrouter",
+            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
         });
         expect(result.options.provider).toEqual({
             only: ["xai/zdr"],
@@ -259,11 +259,46 @@ describe("resolveModelConfig", () => {
 
         expect(result.options.model).toBe("z-ai/glm-5.3");
         expect(result.options.modelConfig).toMatchObject({
-            provider: "openai",
-            "custom-host": "https://openrouter.ai/api/v1",
+            provider: "openrouter",
+            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
         });
         expect(result.options.provider).toEqual({
             only: ["z-ai/fp8"],
+            allow_fallbacks: false,
+        });
+    });
+
+    it.each([
+        ["qwen-coder-large", "qwen/qwen3-coder-next", "parasail/bf16"],
+        ["qwen-vision", "qwen/qwen3-vl-30b-a3b-instruct", "alibaba"],
+        ["qwen-vision-pro", "qwen/qwen3-vl-235b-a22b-thinking", "alibaba"],
+        [
+            "mistral-small-3.2",
+            "mistralai/mistral-small-3.2-24b-instruct",
+            "deepinfra/fp8",
+        ],
+        ["gemma", "google/gemma-4-26b-a4b-it", "novita/bf16"],
+        ["gemma-4-31b", "google/gemma-4-31b-it", "novita/bf16"],
+        ["mimo-v2.5", "xiaomi/mimo-v2.5", "xiaomi/fp8"],
+        ["mimo-v2.5-pro", "xiaomi/mimo-v2.5-pro", "xiaomi/fp8"],
+        ["llama-scout", "meta-llama/llama-4-scout", "deepinfra/fp8"],
+    ])("pins %s to %s through %s without fallback", (model, route, provider) => {
+        const result = resolveModelConfig(messages, { model });
+
+        expect(result.options.model).toBe(route);
+        expect(result.options.provider).toEqual({
+            only: [provider],
+            allow_fallbacks: false,
+        });
+    });
+
+    it("excludes Mistral's non-standard endpoint variants", () => {
+        const result = resolveModelConfig(messages, { model: "mistral" });
+
+        expect(result.options.model).toBe("mistralai/mistral-small-2603");
+        expect(result.options.provider).toEqual({
+            only: ["mistral"],
+            ignore: ["mistral/zdr", "mistral/us", "mistral/eu"],
             allow_fallbacks: false,
         });
     });

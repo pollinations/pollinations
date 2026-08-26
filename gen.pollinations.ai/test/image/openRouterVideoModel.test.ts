@@ -34,12 +34,63 @@ function setOpenRouterEnv() {
     );
 }
 
+function mockHappyHorseSuccess(requests: Record<string, unknown>[]) {
+    return vi
+        .spyOn(globalThis, "fetch")
+        .mockImplementation(async (url, init) => {
+            const href = typeof url === "string" ? url : url.toString();
+            if (href === SUBMIT_URL) {
+                requests.push(
+                    JSON.parse(init?.body as string) as Record<string, unknown>,
+                );
+                return Response.json({
+                    id: "job-happyhorse-test",
+                    polling_url: POLL_URL,
+                    status: "pending",
+                });
+            }
+            if (href === POLL_URL) {
+                return Response.json({
+                    id: "job-happyhorse-test",
+                    polling_url: POLL_URL,
+                    status: "completed",
+                    unsigned_urls: [VIDEO_URL],
+                });
+            }
+            if (href === VIDEO_URL) {
+                return new Response(new Uint8Array([0, 0, 0, 24]), {
+                    headers: { "Content-Type": "video/mp4" },
+                });
+            }
+            return new Response("unexpected URL", { status: 404 });
+        });
+}
+
 afterEach(() => {
     vi.useRealTimers();
     vi.restoreAllMocks();
 });
 
 describe("openRouterVideoModel", () => {
+    it("maps the HappyHorse image to a first-frame request", async () => {
+        setOpenRouterEnv();
+        const requests: Record<string, unknown>[] = [];
+        mockHappyHorseSuccess(requests);
+
+        await callHappyHorseAPI("animate this opening frame", {
+            ...baseParams,
+            image: ["https://example.com/start.png"],
+        });
+
+        expect(requests[0].frame_images).toEqual([
+            {
+                type: "image_url",
+                image_url: { url: "https://example.com/start.png" },
+                frame_type: "first_frame",
+            },
+        ]);
+    });
+
     it("retries 429 and 5xx polls without forwarding auth to the download host", async () => {
         vi.useFakeTimers();
         setOpenRouterEnv();
@@ -280,7 +331,10 @@ describe("OpenRouter Grok Video Pro", () => {
         );
     });
 
-    it("forwards one start frame and derives ratio from explicit dimensions", async () => {
+    it.each([
+        ["x-ai/grok-imagine-video", "x-ai/grok-imagine-video"],
+        ["x-ai/grok-imagine-video-1.5", "x-ai/grok-imagine-video-1.5"],
+    ] as const)("%s forwards one start frame", async (model, upstreamModel) => {
         setOpenRouterEnv();
         const requests: Record<string, unknown>[] = [];
         mockGrokFetch(requests);
@@ -289,7 +343,7 @@ describe("OpenRouter Grok Video Pro", () => {
             "animate this opening frame",
             {
                 ...baseParams,
-                model: "x-ai/grok-imagine-video",
+                model,
                 width: 1080,
                 height: 720,
                 dimensionsExplicit: true,
@@ -300,7 +354,7 @@ describe("OpenRouter Grok Video Pro", () => {
         );
 
         expect(requests[0]).toEqual({
-            model: "x-ai/grok-imagine-video",
+            model: upstreamModel,
             prompt: "animate this opening frame",
             resolution: "720p",
             duration: 15,

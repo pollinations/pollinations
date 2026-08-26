@@ -369,8 +369,36 @@
     {
       "idx": 52,
       "version": "6",
+      "when": 1787225959768,
+      "tag": "0052_redundant_silver_sable",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "6",
+      "when": 1787239130592,
+      "tag": "0053_listing_envelope",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "6",
+      "when": 1787318370605,
+      "tag": "0054_canonicalize_midijourney_permission",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "6",
+      "when": 1787648526176,
+      "tag": "0055_rare_doctor_spectrum",
+      "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "6",
       "when": 1787093810000,
-      "tag": "0052_standardize-model-permissions",
+      "tag": "0056_standardize-model-permissions",
       "breakpoints": true
     }
   ]

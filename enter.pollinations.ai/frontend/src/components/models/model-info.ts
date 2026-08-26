@@ -85,6 +85,7 @@ export const getModelModalityLabel = (model: ModelPrice): string => {
 
 export type DisplayCapability =
     | "agent"
+    | "tool_calling"
     | "reasoning"
     | "web_search"
     | "code_execution";
@@ -95,6 +96,7 @@ export const getModelCapabilities = (
     const keys: DisplayCapability[] = [];
 
     if (model.agent) keys.push("agent");
+    if (hasToolCalling(model)) keys.push("tool_calling");
     if (hasReasoning(model)) keys.push("reasoning");
     if (hasSearch(model)) keys.push("web_search");
     if (hasCodeExecution(model)) keys.push("code_execution");
@@ -106,6 +108,7 @@ export const getModelCapabilityLabel = (model: ModelPrice): string => {
     const labels: string[] = [];
 
     if (model.agent) labels.push("Agent");
+    if (hasToolCalling(model)) labels.push("Tool calling");
     if (hasReasoning(model)) labels.push("Reasoning");
     if (hasSearch(model)) labels.push("Web search");
     if (hasCodeExecution(model)) labels.push("Code execution");
@@ -117,6 +120,9 @@ const hasCapability = (
     model: ModelPrice,
     capability: ModelCapability,
 ): boolean => model.capabilities.includes(capability);
+
+const hasToolCalling = (model: ModelPrice): boolean =>
+    hasCapability(model, "tool_calling");
 
 const hasReasoning = (model: ModelPrice): boolean =>
     hasCapability(model, "reasoning");

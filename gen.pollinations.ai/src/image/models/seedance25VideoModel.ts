@@ -71,12 +71,6 @@ export async function callSeedance25API(
     }
 
     const images = safeParams.image ?? [];
-    if (images.length > 2) {
-        throw new HttpError(
-            "Seedance 2.5 supports at most two images: image[0] as first frame and image[1] as last frame.",
-            400,
-        );
-    }
 
     const input: Seedance25Input = {
         prompt,

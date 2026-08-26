@@ -30,8 +30,9 @@ afterEach(() => {
     vi.restoreAllMocks();
 });
 
-describe("Seedance 2.0 Mini and Fast via Replicate", () => {
+describe("Seedance 2.0 family via Replicate", () => {
     it.each([
+        ["bytedance/seedance-2.0", undefined, "720p", 15, 15],
         ["bytedance/seedance-2.0-mini", undefined, "720p", 15, 10],
         ["bytedance/seedance-2.0-mini", "480p", "480p", 4, 4],
         ["bytedance/seedance-2.0-fast", undefined, "480p", 15, 5],

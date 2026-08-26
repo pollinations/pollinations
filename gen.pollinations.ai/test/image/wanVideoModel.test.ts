@@ -11,6 +11,7 @@ const REPLICATE_PREDICTIONS =
     /^https:\/\/api\.replicate\.com\/v1\/models\/(.+)\/predictions$/;
 const VIDEO_URL = "https://video.example.com/wan-output.mp4";
 const INPUT_IMAGE_URL = "https://img.example.com/first-frame.png";
+const LAST_IMAGE_URL = "https://img.example.com/last-frame.png";
 // PNG magic bytes so downloadUserImage's detectMimeType resolves to image/png.
 const PNG_BYTES = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
 const EXPECTED_DATA_URI = /^data:image\/png;base64,/;
@@ -82,7 +83,7 @@ function mockReplicateFetch(
                     headers: { "Content-Type": "video/mp4" },
                 });
             }
-            if (href === INPUT_IMAGE_URL) {
+            if (href === INPUT_IMAGE_URL || href === LAST_IMAGE_URL) {
                 return new Response(PNG_BYTES, {
                     status: 200,
                     headers: { "Content-Type": "image/png" },
@@ -188,20 +189,36 @@ describe("wanVideoModel billing usage", () => {
 });
 
 describe("wanVideoModel image-to-video routing", () => {
-    it("wan-pro i2v routes to wan-2.7-i2v and sends first_frame", async () => {
+    it("wan i2v routes to wan-2.6-i2v and sends the start frame", async () => {
+        setReplicateEnv();
+        const calls: ReplicateCall[] = [];
+        mockReplicateFetch(calls, 5);
+
+        await callWanAPI("a cat walking", {
+            ...baseParams,
+            model: "alibaba/wan-2.6",
+            image: [INPUT_IMAGE_URL],
+        });
+
+        expect(calls[0].model).toBe("wan-video/wan-2.6-i2v");
+        expect(calls[0].input.image as string).toMatch(EXPECTED_DATA_URI);
+    });
+
+    it("wan-pro maps two images to first_frame and last_frame", async () => {
         setReplicateEnv();
         const calls: ReplicateCall[] = [];
         mockReplicateFetch(calls, 5);
 
         await callWanProAPI("a cat walking", {
             ...baseParams,
-            image: [INPUT_IMAGE_URL],
+            image: [INPUT_IMAGE_URL, LAST_IMAGE_URL],
         });
 
         expect(calls[0].model).toBe("wan-video/wan-2.7-i2v");
         expect(calls[0].input.resolution).toBe("720p");
         expect(calls[0].cancelAfter).toBe("15m");
         expect(calls[0].input.first_frame as string).toMatch(EXPECTED_DATA_URI);
+        expect(calls[0].input.last_frame as string).toMatch(EXPECTED_DATA_URI);
     });
 
     it("wan-pro 1080p i2v keeps the Wan 2.7 deadline", async () => {
@@ -221,7 +238,7 @@ describe("wanVideoModel image-to-video routing", () => {
         expect(calls[0].input.first_frame as string).toMatch(EXPECTED_DATA_URI);
     });
 
-    it("wan-fast i2v routes to wan-2.2-i2v-fast and sends image", async () => {
+    it("wan-fast maps two images to image and last_image", async () => {
         setReplicateEnv();
         const calls: ReplicateCall[] = [];
         mockReplicateFetch(calls, undefined);
@@ -229,11 +246,12 @@ describe("wanVideoModel image-to-video routing", () => {
         await callWanFastAPI("a cat walking", {
             ...baseParams,
             model: "alibaba/wan-2.2-fast",
-            image: [INPUT_IMAGE_URL],
+            image: [INPUT_IMAGE_URL, LAST_IMAGE_URL],
         });
 
         expect(calls[0].model).toBe("wan-video/wan-2.2-i2v-fast");
         expect(calls[0].input.resolution).toBe("480p");
         expect(calls[0].input.image as string).toMatch(EXPECTED_DATA_URI);
+        expect(calls[0].input.last_image as string).toMatch(EXPECTED_DATA_URI);
     });
 });

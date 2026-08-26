@@ -1,82 +1,11 @@
-import { CreateChatCompletionRequestSchema } from "@shared/schemas/openai.ts";
 import { describe, expect, it } from "vitest";
-import { validateAndNormalizeMessages } from "../../src/text/textGenerationUtils.js";
+import {
+    normalizeOptions,
+    prepareMessages,
+} from "../../src/text/textGenerationUtils.js";
 
-describe("CreateChatCompletionRequestSchema cache_control handling", () => {
-    // This guards the FIRST stripping point at ingress: the route validates
-    // the request body with this schema and forwards the PARSED output
-    // upstream, so zod's parse result — not the raw body — is what survives.
-    // If cache_control were ever dropped from the text content-part schema,
-    // this test fails while every other test (which never inspects the
-    // parsed shape) would keep passing.
-    it("preserves content-block cache_control through schema parsing", () => {
-        const result = CreateChatCompletionRequestSchema.parse({
-            model: "google/gemini-2.5-flash-lite",
-            messages: [
-                {
-                    role: "system",
-                    content: [
-                        {
-                            type: "text",
-                            text: "big static prefix",
-                            cache_control: { type: "ephemeral" },
-                        },
-                    ],
-                },
-                { role: "user", content: "tail" },
-            ],
-        });
-
-        const systemContent = result.messages[0].content;
-        expect(Array.isArray(systemContent)).toBe(true);
-        expect(
-            (systemContent as Array<Record<string, unknown>>)[0],
-        ).toMatchObject({ cache_control: { type: "ephemeral" } });
-    });
-});
-
-describe("CreateChatCompletionRequestSchema seed handling", () => {
-    const request = {
-        model: "qwen/qwen3-vl-235b-a22b-thinking",
-        messages: [{ role: "user" as const, content: "hello" }],
-    };
-
-    it("accepts signed INT32 seeds", () => {
-        expect(
-            CreateChatCompletionRequestSchema.safeParse({
-                ...request,
-                seed: 2147483647,
-            }).success,
-        ).toBe(true);
-    });
-
-    it("rejects seeds above signed INT32 range", () => {
-        expect(
-            CreateChatCompletionRequestSchema.safeParse({
-                ...request,
-                seed: 2147483648,
-            }).success,
-        ).toBe(false);
-    });
-});
-
-describe("CreateChatCompletionRequestSchema reasoning handling", () => {
-    it("accepts GPT-5.6 max reasoning effort", () => {
-        const result = CreateChatCompletionRequestSchema.safeParse({
-            model: "gpt-5.6-sol",
-            messages: [{ role: "user", content: "hello" }],
-            reasoning_effort: "max",
-        });
-
-        expect(result.success).toBe(true);
-    });
-});
-
-describe("validateAndNormalizeMessages cache_control handling", () => {
-    // Vertex explicit context caching (pollinations/gateway#8) relies on
-    // content-block cache_control markers surviving ingress. Message content
-    // is carried by reference, so block-level markers pass through untouched.
-    it("preserves content-block cache_control markers by reference", () => {
+describe("prepareMessages", () => {
+    it("preserves message and content-block provider extensions", () => {
         const content = [
             {
                 type: "text",
@@ -84,29 +13,74 @@ describe("validateAndNormalizeMessages cache_control handling", () => {
                 cache_control: { type: "ephemeral" },
             },
         ];
-
-        const result = validateAndNormalizeMessages([
-            { role: "system", content },
-            { role: "user", content: "dynamic tail" },
-        ]);
-
-        expect(result[0].content).toBe(content);
-    });
-
-    // The message rebuild uses a field allowlist, so MESSAGE-level markers
-    // (Anthropic puts them on content blocks; some clients put them on the
-    // message) are dropped. Documented behavior: markers must be on content
-    // blocks. This test pins that so a silent allowlist change is visible.
-    it("drops message-level cache_control", () => {
-        const result = validateAndNormalizeMessages([
+        const [message] = prepareMessages([
             {
-                role: "user",
-                content: "hello",
-                cache_control: { type: "ephemeral" },
+                role: "system",
+                content,
+                provider_option: "kept",
             },
         ]);
 
-        expect(result[0]).not.toHaveProperty("cache_control");
-        expect(result[0]).toEqual({ role: "user", content: "hello" });
+        expect(message.content).toBe(content);
+        expect(message.provider_option).toBe("kept");
+    });
+
+    it.each(["", "   ", []])("repairs empty user content %j", (content) => {
+        expect(prepareMessages([{ role: "user", content }])).toEqual([
+            { role: "user", content: "Please provide a response." },
+        ]);
+    });
+
+    it("keeps missing tool-call content nullable", () => {
+        expect(
+            prepareMessages([
+                {
+                    role: "assistant",
+                    tool_calls: [{ id: "call_1" }],
+                },
+            ]),
+        ).toEqual([
+            {
+                role: "assistant",
+                content: null,
+                tool_calls: [{ id: "call_1" }],
+            },
+        ]);
+    });
+
+    it("rejects invalid semantic names and drops optional invalid names", () => {
+        expect(() =>
+            prepareMessages([
+                { role: "tool", name: "invalid name", content: "result" },
+            ]),
+        ).toThrow("Invalid message name for role 'tool'");
+        expect(
+            prepareMessages([
+                { role: "user", name: "invalid name", content: "hello" },
+            ]),
+        ).toEqual([{ role: "user", content: "hello" }]);
+    });
+});
+
+describe("normalizeOptions", () => {
+    it("retains compatibility defaults and bounds", () => {
+        expect(
+            normalizeOptions({
+                temperature: 4,
+                top_p: -1,
+                presence_penalty: 3,
+                frequency_penalty: -3,
+                seed: 4.9,
+                jsonMode: true,
+            }),
+        ).toEqual({
+            stream: false,
+            temperature: 3,
+            top_p: 0,
+            presence_penalty: 2,
+            frequency_penalty: -2,
+            seed: 4,
+            response_format: { type: "json_object" },
+        });
     });
 });

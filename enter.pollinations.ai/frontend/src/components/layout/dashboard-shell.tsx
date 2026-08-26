@@ -64,6 +64,7 @@ type DashboardShellProps = PropsWithChildren<{
     onSignOut?: () => void;
     accountArea?: ReactNode;
     walletArea?: ReactNode;
+    showFooterLinks?: boolean;
 }>;
 
 type BrandLink = {
@@ -146,6 +147,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     onSignOut,
     accountArea,
     walletArea,
+    showFooterLinks = true,
     children,
 }) => {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -241,8 +243,8 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             ),
         },
         {
-            label: "BYOP",
-            href: `${genDocsUrl()}#tag/byop`,
+            label: "Connect User Wallets",
+            href: `${genDocsUrl()}#tag/connect-user-wallets`,
             icon: (
                 <WalletIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />
             ),
@@ -298,6 +300,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             supportLinks={supportLinks}
             accountArea={effectiveAccountArea}
             walletArea={walletArea}
+            showFooterLinks={showFooterLinks}
             onNavigate={closeDrawer}
         />
     );
@@ -328,7 +331,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                 />
                 <div
                     className={cn(
-                        "absolute inset-y-0 left-0 flex w-[min(20rem,86vw)] transform-gpu flex-col overflow-hidden border-r border-theme-text-strong/10 bg-app-bg shadow-xl transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
+                        "absolute inset-y-0 left-0 flex w-[clamp(14.5rem,76vw,17rem)] transform-gpu flex-col overflow-hidden border-r border-theme-text-strong/10 bg-app-bg shadow-xl transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
                         "duration-[420ms]",
                         isDrawerOpen ? "translate-x-0" : "-translate-x-full",
                     )}
@@ -389,6 +392,7 @@ type DashboardRailProps = {
     supportLinks: readonly SupportLink[];
     accountArea?: ReactNode;
     walletArea?: ReactNode;
+    showFooterLinks: boolean;
     onNavigate: () => void;
 };
 
@@ -399,6 +403,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
     supportLinks,
     accountArea,
     walletArea,
+    showFooterLinks,
     onNavigate,
 }) => (
     <aside
@@ -419,7 +424,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                 } as CSSProperties
             }
         >
-            <nav className="flex flex-col gap-1 pr-2">
+            <nav className="flex flex-col gap-1">
                 {navItems.map((item) => (
                     <NavItem
                         as={Link}
@@ -431,13 +436,13 @@ const DashboardRail: FC<DashboardRailProps> = ({
                         onClick={onNavigate}
                     >
                         {item.label}
-                        {item.id === "my-models" && (
+                        {(item.id === "my-models" || item.id === "quests") && (
                             <Chip
                                 intent="neutral"
                                 size="sm"
                                 className="ml-auto bg-transparent text-theme-text-soft"
                             >
-                                New!
+                                {item.id === "quests" ? "3 new!" : "New!"}
                             </Chip>
                         )}
                     </NavItem>
@@ -448,7 +453,10 @@ const DashboardRail: FC<DashboardRailProps> = ({
         <div className="flex shrink-0 flex-col gap-2 border-t border-theme-text-strong/10 pt-4">
             {walletArea && <div className="px-1">{walletArea}</div>}
             {accountArea}
-            <DashboardFooter links={footerLinks} note="© 2026 Myceli.AI" />
+            <DashboardFooter
+                links={showFooterLinks ? footerLinks : []}
+                note="© 2026 Myceli.AI"
+            />
         </div>
     </aside>
 );
@@ -571,19 +579,21 @@ const DashboardFooter: FC<{
     note?: ReactNode;
 }> = ({ links, note }) => (
     <>
-        <div className="flex flex-wrap gap-x-2 gap-y-1 px-3 text-xs leading-snug text-theme-text-muted">
-            {links.map((link) => (
-                <a
-                    key={link.href}
-                    href={link.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="transition-colors hover:text-theme-text-strong"
-                >
-                    {link.label}
-                </a>
-            ))}
-        </div>
+        {links.length > 0 && (
+            <div className="flex flex-wrap gap-x-2 gap-y-1 px-3 text-xs leading-snug text-theme-text-muted">
+                {links.map((link) => (
+                    <a
+                        key={link.href}
+                        href={link.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="transition-colors hover:text-theme-text-strong"
+                    >
+                        {link.label}
+                    </a>
+                ))}
+            </div>
+        )}
         <div className="flex items-center justify-between gap-2 pl-3 text-xs leading-none text-theme-text-muted">
             <span>{note}</span>
             {/* accent on the toggle's active icon, over the neutral rail */}

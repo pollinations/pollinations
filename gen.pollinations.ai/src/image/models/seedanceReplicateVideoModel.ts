@@ -74,7 +74,6 @@ interface SeedanceInput {
     camera_fixed: boolean;
     seed?: number;
     image?: string;
-    last_frame_image?: string;
 }
 
 interface SeedanceModelConfig {
@@ -84,8 +83,6 @@ interface SeedanceModelConfig {
     trackingLabel: string;
     /** Display name for error context. */
     displayName: string;
-    /** Whether the model accepts last_frame_image. Pro-Fast does not. */
-    supportsEndFrame: boolean;
     /** Default duration in seconds when the request omits it. */
     defaultDuration: number;
     /** Max duration accepted by the upstream (Replicate caps at 12). */
@@ -96,7 +93,6 @@ const SEEDANCE_PRO_FAST_CONFIG: SeedanceModelConfig = {
     model: "bytedance/seedance-1-pro-fast",
     trackingLabel: "bytedance/seedance-1-pro-fast",
     displayName: "Seedance 1.0 Pro Fast",
-    supportsEndFrame: false,
     defaultDuration: 5,
     maxDuration: 10,
 };
@@ -115,22 +111,7 @@ async function generateSeedanceVideo(
         Math.min(config.maxDuration, requestedDuration),
     );
 
-    // Positional image[] contract:
-    //   length=1 → first frame only (I2V)
-    //   length=2 → image[0] first frame, image[1] last frame (Lite only)
     const images = safeParams.image ?? [];
-    if (images.length > 2) {
-        throw new HttpError(
-            `${config.displayName} supports at most two images: image[0] as first frame${config.supportsEndFrame ? " and image[1] as last frame" : ""}.`,
-            400,
-        );
-    }
-    if (images.length === 2 && !config.supportsEndFrame) {
-        throw new HttpError(
-            `${config.displayName} does not support last_frame_image. Provide only image[0] as the first frame.`,
-            400,
-        );
-    }
 
     const input: SeedanceInput = {
         prompt,
@@ -149,13 +130,11 @@ async function generateSeedanceVideo(
     }
 
     if (images.length >= 1) input.image = await toDataUri(images[0]);
-    if (images.length >= 2) input.last_frame_image = await toDataUri(images[1]);
 
     logOps(`${config.displayName} input:`, {
         ...input,
         prompt: prompt.slice(0, 80),
         image: input.image ? "[data uri]" : undefined,
-        last_frame_image: input.last_frame_image ? "[data uri]" : undefined,
     });
 
     let videoUrl: string;

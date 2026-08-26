@@ -15,7 +15,11 @@ function model(name: string, overrides: Partial<ModelPrice> = {}): ModelPrice {
 describe("model sorting", () => {
     const models = [
         model("unknown"),
-        model("free", { free: true, addedDate: 10, realAvgCost: 99 }),
+        model("free-but-measured", {
+            free: true,
+            addedDate: 10,
+            realAvgCost: 99,
+        }),
         model("cheap", {
             realAvgCost: 0.1,
             addedDate: 30,
@@ -30,11 +34,11 @@ describe("model sorting", () => {
         expect(sortModels(models, "newest").map(({ name }) => name)).toEqual([
             "cheap",
             "expensive",
-            "free",
+            "free-but-measured",
             "unknown",
         ]);
         expect(sortModels(models, "oldest").map(({ name }) => name)).toEqual([
-            "free",
+            "free-but-measured",
             "expensive",
             "cheap",
             "unknown",
@@ -49,13 +53,13 @@ describe("model sorting", () => {
         ).toEqual(["first", "second"]);
     });
 
-    it("sorts free and observed average generation costs", () => {
+    it("sorts free and observed generation costs", () => {
         expect(sortModels(models, "price-low").map(({ name }) => name)).toEqual(
-            ["free", "cheap", "expensive", "unknown"],
+            ["cheap", "expensive", "free-but-measured", "unknown"],
         );
         expect(
             sortModels(models, "price-high").map(({ name }) => name),
-        ).toEqual(["expensive", "cheap", "free", "unknown"]);
+        ).toEqual(["free-but-measured", "expensive", "cheap", "unknown"]);
     });
 
     it("sorts by display title or groups by author and then title", () => {

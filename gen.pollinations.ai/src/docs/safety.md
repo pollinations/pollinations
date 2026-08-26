@@ -2,6 +2,8 @@
 
 Optional safety checking runs on text input before generation. Omitted, `false`, or `0` means off.
 
+For community models, enabled checks run before text is sent to the provider or a configured fallback.
+
 Use `safe` as a query parameter or JSON body field, or send the same value in the `Pollinations-Safe` header.
 
 Values: `privacy` redacts personal information like names, email, phone, address, IP, URLs, and usernames. `secrets` redacts keys and passwords. `sexual`, `violence`, and `shield` block matching requests. Aliases: `true` = `privacy,secrets`, `nsfw` = `sexual,violence`.

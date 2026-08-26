@@ -147,13 +147,6 @@ export const ImageParamsSchema = z
                     message: "minimax-h3 outputs 24 FPS.",
                 });
             }
-            if (data.image.length > 0) {
-                ctx.addIssue({
-                    code: z.ZodIssueCode.custom,
-                    path: ["image"],
-                    message: "minimax-h3 currently supports text input only.",
-                });
-            }
         }
         if (
             data.model === "x-ai/grok-imagine-image-2.0" &&

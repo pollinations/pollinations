@@ -1,8 +1,28 @@
 import { env } from "cloudflare:test";
+import { modelInfoFromDefinition } from "@shared/registry/model-info.ts";
+import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { describe, expect, it } from "vitest";
 import type { CommunityModelRateLimiter } from "../src/durable-objects/CommunityModelRateLimiter.ts";
 
-describe("CommunityModelRateLimiter", () => {
+describe("model rate limiting", () => {
+    it("publishes a catalog model's configured per-user RPM", () => {
+        const definition: ModelDefinition = {
+            aliases: [],
+            provider: "test",
+            perUserRpm: 0.5,
+            author: "Test",
+            category: "text",
+            cost: {},
+            priceMultiplier: 1,
+            addedDate: 0,
+            title: "Test",
+        };
+
+        expect(modelInfoFromDefinition("test", definition).per_user_rpm).toBe(
+            0.5,
+        );
+    });
+
     it("enforces whole and fractional limits independently per object", async () => {
         const namespace = env.COMMUNITY_MODEL_RATE_LIMITER;
         const first = namespace.get(
@@ -21,5 +41,15 @@ describe("CommunityModelRateLimiter", () => {
         if (!blocked.allowed) {
             expect(blocked.retryAfterSeconds).toBeGreaterThan(60);
         }
+    });
+
+    it("does not refill an exhausted bucket when its limit changes", async () => {
+        const stub = env.COMMUNITY_MODEL_RATE_LIMITER.get(
+            env.COMMUNITY_MODEL_RATE_LIMITER.newUniqueId(),
+        ) as DurableObjectStub<CommunityModelRateLimiter>;
+
+        await expect(stub.check(2)).resolves.toEqual({ allowed: true });
+        await expect(stub.check(2)).resolves.toEqual({ allowed: true });
+        await expect(stub.check(1)).resolves.toMatchObject({ allowed: false });
     });
 });

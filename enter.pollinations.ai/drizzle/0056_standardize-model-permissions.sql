@@ -1,4 +1,4 @@
--- Promote the 154 canonical model IDs renamed by this release in stored
+-- Promote the 156 canonical model IDs renamed by this release in stored
 -- API-key allowlists. The preceding 0046 migration canonicalized all known
 -- aliases at rest, and write paths now canonicalize recognized IDs, so this
 -- migration rewrites the canonical IDs from the current main registry.
@@ -39,6 +39,70 @@ WHERE CASE
         SELECT 1
         FROM json_each(permissions, '$.models') AS model
         WHERE model.type = 'text' AND model.value = 'claude'
+    )
+END;
+UPDATE apikey
+SET permissions = json_set(
+    permissions,
+    '$.models',
+    (
+        SELECT json_group_array(model_id ORDER BY position)
+        FROM (
+            SELECT model_id, MIN(position) AS position
+            FROM (
+                SELECT
+                    CASE
+                        WHEN model.type = 'text' AND model.value = 'gpt-live-transcribe'
+                            THEN 'openai/gpt-live-transcribe'
+                        ELSE model.value
+                    END AS model_id,
+                    CAST(model.key AS integer) AS position
+                FROM json_each(apikey.permissions, '$.models') AS model
+            )
+            GROUP BY model_id
+        )
+    )
+)
+WHERE CASE
+    WHEN instr(permissions, '"gpt-live-transcribe"') = 0 THEN 0
+    WHEN NOT json_valid(permissions) THEN 0
+    WHEN json_type(permissions, '$.models') != 'array' THEN 0
+    ELSE EXISTS (
+        SELECT 1
+        FROM json_each(permissions, '$.models') AS model
+        WHERE model.type = 'text' AND model.value = 'gpt-live-transcribe'
+    )
+END;
+UPDATE apikey
+SET permissions = json_set(
+    permissions,
+    '$.models',
+    (
+        SELECT json_group_array(model_id ORDER BY position)
+        FROM (
+            SELECT model_id, MIN(position) AS position
+            FROM (
+                SELECT
+                    CASE
+                        WHEN model.type = 'text' AND model.value = 'wan-3.0'
+                            THEN 'alibaba/wan-3.0'
+                        ELSE model.value
+                    END AS model_id,
+                    CAST(model.key AS integer) AS position
+                FROM json_each(apikey.permissions, '$.models') AS model
+            )
+            GROUP BY model_id
+        )
+    )
+)
+WHERE CASE
+    WHEN instr(permissions, '"wan-3.0"') = 0 THEN 0
+    WHEN NOT json_valid(permissions) THEN 0
+    WHEN json_type(permissions, '$.models') != 'array' THEN 0
+    ELSE EXISTS (
+        SELECT 1
+        FROM json_each(permissions, '$.models') AS model
+        WHERE model.type = 'text' AND model.value = 'wan-3.0'
     )
 END;
 UPDATE apikey

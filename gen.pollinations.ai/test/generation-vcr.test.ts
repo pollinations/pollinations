@@ -328,6 +328,34 @@ async function fakePortkeyResponse(request: Request) {
     const isAudio =
         model === "openai/gpt-audio-mini" || prompt.includes("vcr audio text");
 
+    if (prompt.includes("vcr response extensions")) {
+        return Response.json({
+            provider_response_option: { trace: "kept" },
+            choices: [
+                {
+                    index: 0,
+                    message: { role: "assistant", content: "first" },
+                    finish_reason: "stop",
+                    provider_choice_option: "first-kept",
+                },
+                {
+                    index: 1,
+                    message: { role: "assistant", content: "second" },
+                    finish_reason: "stop",
+                    provider_choice_option: "second-kept",
+                },
+            ],
+            usage: {
+                prompt_tokens: 4,
+                completion_tokens: 2,
+                total_tokens: 6,
+                provider_usage_option: { cached: 1 },
+                search_context_size: "low",
+                cost: { total_cost: 0.000006 },
+            },
+        });
+    }
+
     if (isAudio) {
         return Response.json(
             {
@@ -881,6 +909,75 @@ test("simple text generation uses local text generation with VCR-backed Portkey"
         tokenCountCompletionText: 4,
         isBilledUsage: true,
     });
+});
+
+test("simple text forwards options through provider transforms once", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+
+    const { response, wait } = await fetchWorker(
+        "/text/vcr%20simple%20text?model=openai-fast&seed=-1&temperature=0.5&top_p=0.8&presence_penalty=0.2&frequency_penalty=-0.2&max_tokens=16&reasoning_effort=medium",
+        { headers: { authorization: `Bearer ${paidApiKey}` } },
+    );
+
+    expect(response.status).toBe(200);
+    await response.text();
+    await wait();
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(1);
+    expect(mocks.portkeyDirect.state.requests[0]).toMatchObject({
+        model: "gpt-5-nano",
+        seed: 42,
+        temperature: 1,
+        max_completion_tokens: 16,
+        reasoning_effort: "medium",
+        messages: [{ role: "user", content: "vcr simple text" }],
+    });
+    expect(mocks.portkeyDirect.state.requests[0]).not.toHaveProperty("top_p");
+    expect(mocks.portkeyDirect.state.requests[0]).not.toHaveProperty(
+        "presence_penalty",
+    );
+    expect(mocks.portkeyDirect.state.requests[0]).not.toHaveProperty(
+        "frequency_penalty",
+    );
+});
+
+test("chat responses preserve choices and extensions but hide private usage", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+    const before = Math.floor(Date.now() / 1000);
+
+    const { response, wait } = await fetchWorker("/v1/chat/completions", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "openai-fast",
+            messages: [{ role: "user", content: "vcr response extensions" }],
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as Record<string, unknown> & {
+        choices: Array<Record<string, unknown>>;
+        usage: Record<string, unknown>;
+        created: number;
+    };
+    expect(body.created).toBeGreaterThanOrEqual(before);
+    expect(body.created).toBeLessThanOrEqual(Math.floor(Date.now() / 1000));
+    expect(body.provider_response_option).toEqual({ trace: "kept" });
+    expect(body.choices).toHaveLength(2);
+    expect(body.choices[0].provider_choice_option).toBe("first-kept");
+    expect(body.choices[1].provider_choice_option).toBe("second-kept");
+    expect(body.usage.provider_usage_option).toEqual({ cached: 1 });
+    expect(body.usage).not.toHaveProperty("cost");
+    expect(body.usage).not.toHaveProperty("search_context_size");
+    await wait();
 });
 
 test("POST /text returns assistant content directly", async ({

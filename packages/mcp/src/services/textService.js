@@ -22,8 +22,6 @@ async function generateText(params, context) {
         seed,
         stop,
         response_format,
-        stream = false,
-        stream_options,
         reasoning_effort,
         tools,
         tool_choice,
@@ -62,8 +60,6 @@ async function generateText(params, context) {
         seed,
         stop,
         response_format,
-        stream,
-        stream_options,
         reasoning_effort,
         tools,
         tool_choice,
@@ -266,7 +262,7 @@ const chatParamsSchema = {
         .string()
         .optional()
         .describe(
-            "Canonical text model name or alias returned by listModels with type=text",
+            "Canonical text model or agent name returned by listModels with type=text",
         ),
     temperature: z
         .number()
@@ -406,7 +402,7 @@ const chatParamsSchema = {
 export const textTools = [
     [
         "generateText",
-        "Run a completion through any text model in the live Pollinations registry. If the user requests a named model or provider, call listModels with type=text first and pass the matched canonical model name. Supports search, multimodal input, tool calling, structured output, reasoning, and audio output.",
+        "Run a completion through any text model or agent in the live Pollinations registry. To delegate to an agent, call listModels with type=text and agent=true, then pass its canonical name. For any named model or provider, call listModels first. Supports search, multimodal input, tool calling, structured output, reasoning, and audio output.",
         chatParamsSchema,
         generateText,
     ],

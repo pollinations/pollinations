@@ -22,6 +22,7 @@ Only the names are changing. Model behavior and pricing stay the same.
 | Wan 2.7 | `wan2.7` | `alibaba/wan-2.7` |
 | Wan 2.7 Image | `wan2.7-image` | `alibaba/wan-2.7-image` |
 | Wan 2.7 Image Pro | `wan2.7-image-pro` | `alibaba/wan-2.7-image-pro` |
+| Wan 3.0 | `wan-3.0` | `alibaba/wan-3.0` |
 | Z-Image Turbo | `z-image` | `tongyi-mai/z-image-turbo` |
 
 ## Amazon
@@ -86,7 +87,7 @@ Only the names are changing. Model behavior and pricing stay the same.
 | Model | Existing ID | New ID |
 | --- | --- | --- |
 | DeepSeek V4 Flash 0731 | `deepseek-v4` | `deepseek/deepseek-v4-flash` |
-| DeepSeek V4 Pro 0813 | `deepseek-v4-pro-0813` | `deepseek/deepseek-v4-pro` |
+| DeepSeek V4 Pro 0813 | `deepseek-pro` | `deepseek/deepseek-v4-pro` |
 
 ## ElevenLabs
 
@@ -117,7 +118,7 @@ Only the names are changing. Model behavior and pricing stay the same.
 | Gemini 3 Flash Preview | `gemini-3-flash-preview` | `google/gemini-3-flash-preview` |
 | Gemini 3.1 Pro Preview | `gemini-3.1-pro` | `google/gemini-3.1-pro-preview` |
 | Gemini 3.5 Flash Lite | `gemini-flash-lite-3.1` | `google/gemini-3.5-flash-lite` |
-| Gemini 3.7 Flash | `gemini-3.7-flash` | `google/gemini-3.7-flash` |
+| Gemini 3.7 Flash | `gemini` | `google/gemini-3.7-flash` |
 | Gemini Embedding 2 | `embedding` | `google/gemini-embedding-2` |
 | Gemma 4 26B A4B | `gemma-4` | `google/gemma-4-26b-a4b-it` |
 | Gemma 4 31B | `gemma-large` | `google/gemma-4-31b-it` |
@@ -229,9 +230,11 @@ Only the names are changing. Model behavior and pricing stay the same.
 | GPT Image 1 Mini | `gpt-image` | `openai/gpt-image-1-mini` |
 | GPT Image 1.5 | `gpt-image-1.5` | `openai/gpt-image-1.5` |
 | GPT Image 2 | `gpt-image-2` | `openai/gpt-image-2` |
+| GPT Live Transcribe | `gpt-live-transcribe` | `openai/gpt-live-transcribe` |
 | GPT Realtime 2 | `gpt-realtime-2` | `openai/gpt-realtime-2` |
 | GPT Realtime 2.1 | `gpt-realtime-2.1` | `openai/gpt-realtime-2.1` |
 | GPT Realtime 2.1 Mini | `gpt-realtime-2.1-mini` | `openai/gpt-realtime-2.1-mini` |
+| GPT Transcribe | `gpt-transcribe` | `openai/gpt-transcribe` |
 | GPT-5 Nano | `gpt-5-nano` | `openai/gpt-5-nano` |
 | GPT-5.4 | `gpt-5.4-reasoning` | `openai/gpt-5.4` |
 | GPT-5.4 Mini | `gpt-5-mini` | `openai/gpt-5.4-mini` |

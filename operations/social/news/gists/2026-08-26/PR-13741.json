@@ -1,0 +1,34 @@
+{
+  "pr_number": 13741,
+  "title": "feat: connect Discord accounts",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13741",
+  "merged_at": "2026-08-26T01:01:22Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds Discord account linking while keeping GitHub as the only sign-in provider\n- Enforces one connected Discord identity per Pollinations account\n- Shows the linked Discord profile and Pollinations server membership with a session-only cached lookup\n- Adds a 1-Pollen quest for connected users confirmed in the Pollinations Discord\n- Adds an explicitly gated production sync for the three Discord secrets",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive knows your handle",
+    "blurb": "Discord accounts can now be linked to Pollinations accounts without changing the GitHub-only sign-in flow. Join the Pollinations Discord, connect the dots, and a 1-Pollen quest is waiting in the garden.",
+    "summary": "Added Discord account linking to the account dashboard, including one Discord identity per Pollinations account, linked-profile and server-membership status, and a 1-Pollen quest for members confirmed in the Pollinations Discord.",
+    "impact": "Users can keep signing in with GitHub while connecting their Discord profile, seeing whether they are in the Pollinations server, and claiming Pollen for joining the community.",
+    "keywords": [
+      "discord",
+      "account-linking",
+      "quests",
+      "pollen",
+      "community",
+      "authentication"
+    ],
+    "visual_concept": "Depict Polli connecting a glowing Discord-style chat badge to a cozy account terminal with a little garden path leading into the Pollinations community server. The monitor robot can eagerly verify a friendly member badge, while a small 1-Pollen reward flower blooms nearby; the visual metaphor is account linking as tying two warm garden threads together.",
+    "image_prompt": "Cozy pixel art scene in a tiny community garden hackerspace where Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wears tiny moderator headphones while gently connects a Discord-style chat badge to a retro account terminal; a cute chunky CRT monitor robot holds a glowing verified member badge beside a blooming flower labeled \"1 POLLEN.\" Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and vines, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: \"CONNECTED\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-26/PR-13741.jpg",
+    "prompt": "Cozy pixel art scene in a tiny community garden hackerspace where Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wears tiny moderator headphones while gently connects a Discord-style chat badge to a retro account terminal; a cute chunky CRT monitor robot holds a glowing verified member badge beside a blooming flower labeled \"1 POLLEN.\" Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and vines, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: \"CONNECTED\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-26T01:02:22.562085+00:00"
+}

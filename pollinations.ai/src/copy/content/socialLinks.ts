@@ -56,6 +56,7 @@ export const SOCIAL_LINKS = {
 export const LINKS = {
     enter: "https://enter.pollinations.ai",
     enterKeys: "https://enter.pollinations.ai/keys",
+    enterQuests: "https://enter.pollinations.ai/quests",
     enterDocs: "https://gen.pollinations.ai/docs",
     enterApiDocs: "https://gen.pollinations.ai/docs",
     enterQuestsFaq: "https://enter.pollinations.ai/news#how-do-quests-work",

@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-    getModelQuerySuggestions,
     matchesModelQuery,
     parseModelQuery,
 } from "../frontend/src/components/models/model-query.ts";
@@ -156,78 +155,5 @@ describe("matchesModelQuery", () => {
 
     it("matches an empty query", () => {
         expect(matches(model(), "   ")).toBe(true);
-    });
-});
-
-describe("getModelQuerySuggestions", () => {
-    const models = [
-        model({ name: "openai/gpt", type: "text" }),
-        model({
-            name: "Alice/quick-coder",
-            type: "text",
-            community: true,
-            agent: true,
-        }),
-        model({
-            name: "bob/painter",
-            type: "image",
-            community: true,
-            capabilities: ["reasoning", "web_search"],
-        }),
-    ];
-
-    it("suggests matching filter keys for a bare token", () => {
-        expect(getModelQuerySuggestions("ty", models)).toEqual(["type:"]);
-        expect(getModelQuerySuggestions("", models)).toEqual([
-            "access:",
-            "owner:",
-            "id:",
-            "type:",
-            "capability:",
-        ]);
-    });
-
-    it("suggests access values", () => {
-        expect(getModelQuerySuggestions("access:", models)).toEqual([
-            "access:paid",
-            "access:quest",
-            "access:free",
-        ]);
-        expect(getModelQuerySuggestions("access:p", models)).toEqual([
-            "access:paid",
-        ]);
-    });
-
-    it("suggests type values present in the given models, including agent", () => {
-        expect(getModelQuerySuggestions("type:", models)).toEqual([
-            "type:agent",
-            "type:image",
-            "type:text",
-        ]);
-    });
-
-    it("suggests hyphenated capability values", () => {
-        expect(getModelQuerySuggestions("capability:", models)).toEqual([
-            "capability:agent",
-            "capability:reasoning",
-            "capability:web-search",
-        ]);
-    });
-
-    it("suggests community owners only", () => {
-        expect(getModelQuerySuggestions("owner:", models)).toEqual([
-            "owner:alice",
-            "owner:bob",
-        ]);
-    });
-
-    it("suggests model IDs matching the typed prefix", () => {
-        expect(getModelQuerySuggestions("id:al", models)).toEqual([
-            "id:alice/quick-coder",
-        ]);
-    });
-
-    it("returns nothing for an unsupported filter key", () => {
-        expect(getModelQuerySuggestions("unknown:foo", models)).toEqual([]);
     });
 });

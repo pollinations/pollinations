@@ -11,6 +11,7 @@ import {
     ReasoningIcon,
     SearchIcon,
     SpeakerIcon,
+    ToolIcon,
     VideoIcon,
 } from "@pollinations/ui";
 import type { FC } from "react";
@@ -41,6 +42,7 @@ export const MODALITY_ICON: Record<InputModality, Icon> = {
 /** Capability glyphs (reasoning/web search/code execution). */
 export const CAPABILITY_ICON: Record<DisplayCapability, Icon> = {
     agent: BotIcon,
+    tool_calling: ToolIcon,
     reasoning: ReasoningIcon,
     web_search: SearchIcon,
     code_execution: CodeIcon,

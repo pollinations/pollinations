@@ -9,6 +9,24 @@ Generate text responses using AI models. Fully compatible with the OpenAI Chat C
 
 **Available models:** {{TEXT_MODELS}}
 
+### Reasoning
+
+Some models expose adjustable reasoning. Pass `reasoning_effort` (`none`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max`) — omit it for default behavior. Only models with `reasoning: true` in `GET /v1/models` support it.
+
+```json
+{
+  "model": "openai-reasoning",
+  "messages": [{ "role": "user", "content": "Prove the Pythagorean theorem" }],
+  "reasoning_effort": "high"
+}
+```
+
+For the `GET /text/{prompt}` endpoint, use the same parameter as a query string:
+
+```
+GET https://gen.pollinations.ai/text/Prove%20the%20Pythagorean%20theorem?model=openai-reasoning&reasoning_effort=high
+```
+
 ### Prompt caching
 
 On Gemini, Claude, and Nova models, a large static prompt prefix can be cached so repeat requests bill it at a fraction of the input rate. Mark the end of the static prefix with `cache_control` on a content block (not on the message); everything before the marker must be byte-identical across requests, everything dynamic goes after. The first request creates the cache (`usage` reports `cache_creation_input_tokens`); repeat requests within the TTL report `prompt_tokens_details.cached_tokens` at the discounted rate.

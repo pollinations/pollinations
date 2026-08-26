@@ -47,6 +47,18 @@ export const CODE_SAMPLES: Record<
   }'`,
         },
         {
+            label: "Reasoning",
+            lang: "Shell",
+            source: `curl https://gen.pollinations.ai/v1/chat/completions \\
+  -H "Authorization: Bearer YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "openai-reasoning",
+    "messages": [{"role": "user", "content": "Prove the Pythagorean theorem"}],
+    "reasoning_effort": "high"
+  }'`,
+        },
+        {
             label: "Python",
             lang: "Python",
             source: `from openai import OpenAI
@@ -84,6 +96,12 @@ console.log(response.choices[0].message.content);`,
             label: "cURL",
             lang: "Shell",
             source: `curl "https://gen.pollinations.ai/text/Write%20a%20haiku?model=openai" \\
+  -H "Authorization: Bearer YOUR_API_KEY"`,
+        },
+        {
+            label: "Reasoning",
+            lang: "Shell",
+            source: `curl "https://gen.pollinations.ai/text/Prove%20the%20Pythagorean%20theorem?model=openai-reasoning&reasoning_effort=high" \\
   -H "Authorization: Bearer YOUR_API_KEY"`,
         },
         {

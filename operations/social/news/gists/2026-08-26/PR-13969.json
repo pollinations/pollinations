@@ -1,0 +1,36 @@
+{
+  "pr_number": 13969,
+  "title": "Add Descriptly to writing",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13969",
+  "merged_at": "2026-08-26T06:33:05Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Descriptly](https://github.com/g33ky00/descriptly) to writing\n- ## Descriptly v1.0.0 First public release. Descriptly scans images added or modified in a pull request and generates accessible alt-text suggestions using Pollinations vision models — posted directly \n\nFixes #13889",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Alt text grows here",
+    "blurb": "Descriptly joined the writing garden. It watches pull-request images and leaves accessible alt-text suggestions behind, which is a much nicer use of computer vision than staring at screenshots until everyone agrees.",
+    "summary": "Added Descriptly v1.0.0 to the writing apps directory: it scans images added or changed in pull requests and posts accessible alt-text suggestions generated with Pollinations vision models.",
+    "impact": "Developers can now discover Descriptly through the writing collection and use Pollinations vision models to make PR image changes easier to describe accessibly.",
+    "keywords": [
+      "Descriptly",
+      "accessibility",
+      "alt text",
+      "pull requests",
+      "vision models",
+      "writing apps"
+    ],
+    "visual_concept": "A cozy open-source garden workspace where Descriptly turns pull-request image cards into small, readable alt-text notes. Polli acts as an attentive editor with a tiny librarian hat, while a CRT monitor robot presents a PR screenshot and a blooming code-plant represents accessibility growing from the review process.",
+    "image_prompt": "A cozy pixel art garden hackerspace where Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wears a tiny librarian hat and writes alt-text notes beside a retro pull-request terminal; a cute CRT monitor robot holds an image card with a simple pixel-font label, “ALT TEXT,” while code-plants and flowers bloom around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-26/PR-13969.jpg",
+    "prompt": "A cozy pixel art garden hackerspace where Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wears a tiny librarian hat and writes alt-text notes beside a retro pull-request terminal; a cute CRT monitor robot holds an image card with a simple pixel-font label, “ALT TEXT,” while code-plants and flowers bloom around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-08-26T06:34:03.963677+00:00",
+  "app_name": "Descriptly",
+  "app_url": "https://github.com/g33ky00/descriptly"
+}

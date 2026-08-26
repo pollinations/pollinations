@@ -1,0 +1,34 @@
+{
+  "pr_number": 13941,
+  "title": "fix: run targeted Enter production deploys",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13941",
+  "merged_at": "2026-08-26T01:19:02Z",
+  "labels": [],
+  "pr_body_excerpt": "- Fixes Enter-only production dispatches after the optional gen test is skipped\n- Requires the shared migration job to succeed before deploying Enter\n- Unblocks the approved Discord production secret sync",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Enter finds the right door",
+    "blurb": "Targeted Enter production deploys no longer wait around for an optional gen test that was politely skipped. The shared migration gate is now checked before the hive opens the production door.",
+    "summary": "Fixed the Cloudflare production workflow so Enter-only dispatches proceed when the optional gen test is skipped, while still requiring the shared migration job to succeed before deployment.",
+    "impact": "Enter production changes and the approved Discord production secret sync can now deploy reliably through the targeted workflow with migrations verified first.",
+    "keywords": [
+      "Enter",
+      "production deploy",
+      "Cloudflare",
+      "GitHub Actions",
+      "migrations",
+      "Discord secrets"
+    ],
+    "visual_concept": "Polli acts as a careful release engineer at a cozy garden gate labeled Enter, checking a glowing migration checklist before opening it. A skipped optional side path to a small gen garden is visibly harmless, while a tiny CRT monitor robot carries an approved Discord secret envelope; vines and code-flowers make the deployment pipeline feel warm rather than industrial.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny release-engineer hard hat, checking a glowing checklist beside a garden gate labeled \"ENTER\" before opening it; a small CRT monitor robot carries a sealed Discord envelope, while an optional side path marked \"GEN\" has a friendly skipped sign. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-flowers and vines, warm lighting, retro gaming vibes, subtle CRT glow, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-26/PR-13941.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny release-engineer hard hat, checking a glowing checklist beside a garden gate labeled \"ENTER\" before opening it; a small CRT monitor robot carries a sealed Discord envelope, while an optional side path marked \"GEN\" has a friendly skipped sign. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-flowers and vines, warm lighting, retro gaming vibes, subtle CRT glow, emotionally warm."
+  },
+  "generated_at": "2026-08-26T01:20:02.413433+00:00"
+}

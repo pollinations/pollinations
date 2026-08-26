@@ -63,6 +63,11 @@ export type ApiModelInfo = {
     alpha?: boolean;
     flat_rate?: boolean;
     added_date?: number;
+    min_duration?: number;
+    max_duration?: number;
+    default_duration?: number;
+    allowed_durations?: number[];
+    duration_step?: number;
 };
 
 type PriceField =
@@ -267,6 +272,14 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
         outputSortPrice,
         prices: [],
         priceAdjustments: model.pricing_adjustments,
+        contextLength: model.context_length,
+        minDuration: model.min_duration,
+        maxDuration: model.max_duration,
+        defaultDuration: model.default_duration,
+        allowedDurations: model.allowed_durations
+            ? [...model.allowed_durations]
+            : undefined,
+        durationStep: model.duration_step,
     };
 }
 

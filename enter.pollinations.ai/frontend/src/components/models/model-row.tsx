@@ -41,6 +41,31 @@ import {
 } from "./price-badge.tsx";
 import type { ModelPrice } from "./types.ts";
 
+function formatContextLength(n: number): string {
+    if (n >= 1_000_000) {
+        const v = n / 1_000_000;
+        return `${Number.isInteger(v) ? v : v.toFixed(1).replace(/\.0$/, "")}M`;
+    }
+    return `${Math.round(n / 1000)}k`;
+}
+
+function formatVideoDuration(model: ModelPrice): string | null {
+    if (model.allowedDurations?.length) {
+        const ds = [...model.allowedDurations].sort((a, b) => a - b);
+        if (ds.length === 1) return `${ds[0]}s`;
+        return `${ds[0]}–${ds[ds.length - 1]}s`;
+    }
+    if (model.minDuration != null && model.maxDuration != null) {
+        return model.minDuration === model.maxDuration
+            ? `${model.minDuration}s`
+            : `${model.minDuration}–${model.maxDuration}s`;
+    }
+    if (model.minDuration != null) return `${model.minDuration}s+`;
+    if (model.maxDuration != null) return `≤${model.maxDuration}s`;
+    if (model.defaultDuration != null) return `${model.defaultDuration}s`;
+    return null;
+}
+
 type ModelRowProps = {
     model: ModelPrice;
 };
@@ -382,6 +407,36 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             access={balanceAccess}
                             className="whitespace-nowrap"
                         />
+                        {model.contextLength != null && (
+                            <Tooltip
+                                content={`Context window: ${model.contextLength.toLocaleString()} tokens`}
+                                ariaLabel={`Context window ${formatContextLength(model.contextLength)}`}
+                                tapEnabled
+                            >
+                                <Chip
+                                    size="sm"
+                                    className="whitespace-nowrap tabular-nums"
+                                >
+                                    {formatContextLength(model.contextLength)}{" "}
+                                    ctx
+                                </Chip>
+                            </Tooltip>
+                        )}
+                        {model.type === "video" &&
+                            formatVideoDuration(model) && (
+                                <Tooltip
+                                    content={`Supported duration: ${formatVideoDuration(model)}`}
+                                    ariaLabel={`Video duration ${formatVideoDuration(model)}`}
+                                    tapEnabled
+                                >
+                                    <Chip
+                                        size="sm"
+                                        className="whitespace-nowrap tabular-nums"
+                                    >
+                                        {formatVideoDuration(model)}
+                                    </Chip>
+                                </Tooltip>
+                            )}
                     </div>
                 </div>
             </div>

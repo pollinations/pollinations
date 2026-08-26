@@ -328,7 +328,7 @@ export const CreateChatCompletionRequestSchema = z
         reasoning_effort: z
             .enum(["none", "minimal", "low", "medium", "high", "xhigh", "max"])
             .describe(
-                'Requests reasoning depth for models that support adjustable reasoning. "none" requests no reasoning.',
+                'Requests reasoning depth for models that support adjustable reasoning. "none" requests no reasoning. Models that support it report `"reasoning": true` in `/text/models`.',
             )
             .optional(),
         web_search_options: z

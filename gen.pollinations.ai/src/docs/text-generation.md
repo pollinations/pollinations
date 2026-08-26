@@ -9,6 +9,30 @@ Generate text responses using AI models. Fully compatible with the OpenAI Chat C
 
 **Available models:** {{TEXT_MODELS}}
 
+### Reasoning
+
+Models that support adjustable reasoning accept a `reasoning_effort` field: `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, or `max`. `"none"` requests no reasoning; on models without reasoning support the parameter is ignored. Model metadata reports support — reasoning-capable models return `"reasoning": true` from [`/text/models`](https://gen.pollinations.ai/text/models).
+
+`POST /v1/chat/completions`:
+
+```json
+{
+  "model": "deepseek",
+  "reasoning_effort": "high",
+  "messages": [{ "role": "user", "content": "Explain the P versus NP problem" }]
+}
+```
+
+`POST /text` accepts the same body and returns plain text:
+
+```json
+{
+  "model": "deepseek",
+  "reasoning_effort": "low",
+  "messages": [{ "role": "user", "content": "Outline a URL shortener design" }]
+}
+```
+
 ### Prompt caching
 
 On Gemini, Claude, and Nova models, a large static prompt prefix can be cached so repeat requests bill it at a fraction of the input rate. Mark the end of the static prefix with `cache_control` on a content block (not on the message); everything before the marker must be byte-identical across requests, everything dynamic goes after. The first request creates the cache (`usage` reports `cache_creation_input_tokens`); repeat requests within the TTL report `prompt_tokens_details.cached_tokens` at the discounted rate.

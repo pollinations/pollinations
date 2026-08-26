@@ -49,7 +49,10 @@ export const GenerateTextRequestQueryParamsSchema = z.object({
     repetition_penalty: FloatQueryParamSchema,
     max_tokens: IntQueryParamSchema,
     max_completion_tokens: IntQueryParamSchema,
-    reasoning_effort: z.string().optional(),
+    reasoning_effort: z.string().optional().meta({
+        description:
+            'Requests reasoning depth for models that support adjustable reasoning. "none" requests no reasoning. Models that support it report `"reasoning": true` in `/text/models`.',
+    }),
     voice: z.string().optional(),
     stream: BooleanQueryParamSchema.optional().default(false).meta({
         description:

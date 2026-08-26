@@ -1585,10 +1585,21 @@ export const accountRoutes = new Hono<Env>()
                                     permissions: z
                                         .object({
                                             models: z
-                                                .array(z.string())
+                                                .array(
+                                                    z.union([
+                                                        z.string(),
+                                                        z.object({
+                                                            id: z.string(),
+                                                            pollenType: z.enum([
+                                                                "quest",
+                                                                "paid",
+                                                            ]),
+                                                        }),
+                                                    ]),
+                                                )
                                                 .nullable()
                                                 .describe(
-                                                    "List of allowed model IDs, null = all models allowed",
+                                                    "Allowed model IDs with optional per-model pollen restrictions, null = all models allowed",
                                                 ),
                                             account: z
                                                 .array(z.string())

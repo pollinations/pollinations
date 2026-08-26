@@ -1166,6 +1166,23 @@ describe("API Key Management", () => {
                 { id: "nanobanana-2", pollenType: "paid" },
                 "flux",
             ]);
+
+            const keyInfoResponse = await SELF.fetch(
+                "http://localhost:3000/api/account/key",
+                {
+                    headers: {
+                        Authorization: `Bearer ${createdKey.key}`,
+                    },
+                },
+            );
+            expect(keyInfoResponse.status).toBe(200);
+            const keyInfo = (await keyInfoResponse.json()) as {
+                permissions: { models: ModelPermissionEntry[] };
+            };
+            expect(keyInfo.permissions.models).toEqual([
+                { id: "nanobanana-2", pollenType: "paid" },
+                "flux",
+            ]);
         });
 
         test("should reflect updated permissions immediately after update", async ({

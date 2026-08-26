@@ -799,7 +799,6 @@ describe("community endpoint helpers", () => {
             modality: "embedding",
             ...communityEndpointPrices({
                 promptTextPrice: 0.00001,
-                completionTextPrice: 0,
             }),
         });
 
@@ -817,34 +816,6 @@ describe("community endpoint helpers", () => {
                 servedBy: definition,
             }).price.totalPrice,
         ).toBeCloseTo(0.00001 * 1000, 10);
-    });
-
-    it("builds fixed per-request community embedding models as flat rate", () => {
-        const modelId = "voodoohop/bge-fixed";
-        const definition = communityModelDefinition({
-            modelId,
-            description: "Flat-rate community embedding model",
-            modality: "embedding",
-            ...communityEndpointPrices({
-                promptTextPrice: 0,
-                completionTextPrice: 0.01,
-            }),
-        });
-
-        expect(definition).toMatchObject({
-            category: "embedding",
-            inputModalities: ["text"],
-            outputModalities: ["embedding"],
-            flatRate: true,
-            cost: { completionTextTokens: 0.01 },
-        });
-        expect(
-            calculateUsageBilling({
-                model: modelId,
-                usage: { completionTextTokens: 1 },
-                servedBy: definition,
-            }).price.totalPrice,
-        ).toBe(0.01);
     });
 
     it("builds the community embeddings upstream URL from the endpoint base URL", () => {
@@ -4090,6 +4061,192 @@ fixtureTest(
         expect(
             fetchMock.mock.calls.filter(
                 ([input]) => new Request(input).url === transcriptionUrl,
+            ),
+        ).toHaveLength(2);
+    },
+);
+
+fixtureTest(
+    "registers an OpenAI-compatible embedding endpoint and bills it through embeddings APIs",
+    async ({ apiKey }) => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `embed-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerUserId = await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: ownerGithubUsername,
+        });
+        const sessionToken = `session-${crypto.randomUUID()}`;
+        await db.insert(sessionTable).values({
+            id: `session-${crypto.randomUUID()}`,
+            token: sessionToken,
+            userId: ownerUserId,
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const enterApi = await createEnterCommunityApi();
+        const embeddingUrl = "https://api.example.com/v1/embeddings";
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            if (request.url === embeddingUrl) {
+                expect(request.headers.get("authorization")).toBe(
+                    "Bearer sk_embedding_upstream",
+                );
+                const body = await request.json();
+                expect(body).toMatchObject({
+                    model: "text-embedding-3-small",
+                    input: "A simple green sprout.",
+                    encoding_format: "float",
+                });
+                return Response.json({
+                    data: [
+                        {
+                            embedding: Array.from({ length: 4 }, () =>
+                                Math.random(),
+                            ),
+                        },
+                    ],
+                    usage: { prompt_tokens: 12 },
+                });
+            }
+            if (isBillingFetch(request)) {
+                return Response.json({ data: [] });
+            }
+            throw new Error(`Unexpected fetch: ${request.url}`);
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const registrationPayload = {
+            name: modelName,
+            title: "Community Embedding Endpoint",
+            description: "OpenAI-compatible embedding endpoint",
+            modality: "embedding",
+            inputModalities: ["text"],
+            visibility: "public",
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "text-embedding-3-small",
+            bearerToken: "Bearer sk_embedding_upstream",
+            promptTextPrice: 0.00001,
+        };
+        const registerResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: await signedSessionCookie(sessionToken),
+                },
+                body: JSON.stringify(registrationPayload),
+            }),
+        );
+        expect(registerResponse.status).toBe(200);
+        const registered = (await registerResponse.json()) as {
+            id: string;
+            modelId: string;
+            modality: string;
+            inputModalities: string[];
+            baseUrl: string;
+            upstreamModel: string;
+            promptTextPrice: number;
+        };
+        expect(registered).toMatchObject({
+            modelId: communityModelId(ownerGithubUsername, modelName),
+            modality: "embedding",
+            inputModalities: ["text"],
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "text-embedding-3-small",
+            promptTextPrice: 0.00001,
+        });
+
+        const testResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints/test", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: await signedSessionCookie(sessionToken),
+                },
+                body: JSON.stringify({
+                    baseUrl: registered.baseUrl,
+                    bearerToken: "Bearer sk_embedding_upstream",
+                    model: registered.upstreamModel,
+                    modality: "embedding",
+                }),
+            }),
+        );
+        expect(testResponse.status).toBe(200);
+        await expect(testResponse.json()).resolves.toMatchObject({
+            message: "Endpoint responded with embedding data",
+            usage: { prompt_tokens: 12 },
+            billableUsage: { promptTextTokens: 12 },
+        });
+
+        const embeddingsResponse = await fetchGen(
+            new Request("https://gen.pollinations.ai/v1/embeddings", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${apiKey}`,
+                },
+                body: JSON.stringify({
+                    model: registered.modelId,
+                    input: "A simple green sprout.",
+                }),
+            }),
+        );
+        expect(embeddingsResponse.status).toBe(200);
+        await expect(embeddingsResponse.json()).resolves.toMatchObject({
+            data: expect.arrayContaining([
+                expect.objectContaining({
+                    embedding: expect.arrayContaining([expect.any(Number)]),
+                }),
+            ]),
+            model: registered.modelId,
+        });
+        expect(embeddingsResponse.headers.get("x-model-used")).toBe(
+            registered.modelId,
+        );
+        expect(
+            embeddingsResponse.headers.get("x-usage-prompt-text-tokens"),
+        ).toBe("12");
+
+        const openaiModelsResponse = await fetchGen(
+            "https://gen.pollinations.ai/v1/models",
+        );
+        expect(openaiModelsResponse.status).toBe(200);
+        const openaiModels = (await openaiModelsResponse.json()) as {
+            data: {
+                id: string;
+                input_modalities?: string[];
+                supported_endpoints?: string[];
+            }[];
+        };
+        const listedModel = openaiModels.data.find(
+            (model) => model.id === registered.modelId,
+        );
+        expect(listedModel?.input_modalities).toEqual(["text"]);
+        expect(listedModel?.supported_endpoints).toEqual(
+            expect.arrayContaining(["/v1/embeddings"]),
+        );
+
+        const embeddingModelsResponse = await fetchGen(
+            "https://gen.pollinations.ai/embedding/models",
+        );
+        expect(embeddingModelsResponse.status).toBe(200);
+        const embeddingModels = await embeddingModelsResponse.json();
+        const listedEmbeddingModel = embeddingModels.find(
+            (model: { name: string }) => model.name === registered.modelId,
+        );
+        expect(listedEmbeddingModel).toMatchObject({
+            name: registered.modelId,
+            category: "embedding",
+            community: true,
+            pricing: { promptTextTokens: "0.00001" },
+        });
+        expect(
+            fetchMock.mock.calls.filter(
+                ([input]) => new Request(input).url === embeddingUrl,
             ),
         ).toHaveLength(2);
     },

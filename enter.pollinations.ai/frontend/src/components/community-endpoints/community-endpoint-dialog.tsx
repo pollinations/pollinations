@@ -8,7 +8,6 @@ import {
     DialogTitle,
     Dropdown,
     DropdownItem,
-    EditableCombobox,
     FieldStack,
     Input,
     ScrollArea,
@@ -544,9 +543,8 @@ export function CommunityEndpointDialog({
                                             ? "Fetching…"
                                             : "Fetch models"}
                                     </Button>
-                                ) : undefined
-                            }
-                        >
+                                }
+                            >
                             {modelOptions.length > 0 ? (
                                 <Dropdown
                                     align="end"
@@ -649,6 +647,7 @@ export function CommunityEndpointDialog({
                                     }
                                 />
                             )}
+                        </FieldStack>
                         )}
                     </div>
 

@@ -30,7 +30,7 @@ Use when:
 
 - collecting Fireworks account usage and invoice evidence
 - reconciling Fireworks grant burn, postpaid invoices, and prepaid/top-up activity
-- filling/checking `op_cloud` model usage rows
+- filling/checking `economics_compute_ledger` model usage rows
 
 Primary evidence sources:
 
@@ -119,8 +119,8 @@ Known traps:
 
 Reconciliation notes:
 
-- Usage exports explain `op_cloud`.
-- Postpaid invoices and top-ups explain `op_transactions`.
+- Usage exports explain `economics_compute_ledger`.
+- Postpaid invoices and top-ups explain `economics_bank_ledger`.
 - Grant/credit waterfalls should be replayed from the grant start, not just the requested month.
 
 ## Rotation

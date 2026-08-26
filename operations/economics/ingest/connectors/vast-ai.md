@@ -12,14 +12,14 @@ Use when:
 
 - collecting Vast.ai GPU marketplace usage
 - reconciling Vast.ai invoices, balance transfers, or Wise charges
-- explaining `op_cloud` GPU rows for Vast.ai
+- explaining `economics_compute_ledger` GPU rows for Vast.ai
 
 Primary evidence sources:
 
 - Invoice/payment: Vast.ai invoice PDF or billing receipt, often a transfer/top-up.
 - Dashboard/usage: Vast.ai console billing and instance usage views.
 - CLI: `vastai show invoices --raw -s <YYYY-MM-DD> -e <YYYY-MM-DD>`
-- Transaction context: `op_transactions` vendor `vast.ai`, usually Wise EUR card charge.
+- Transaction context: `economics_bank_ledger` vendor `vast.ai`, usually Wise EUR card charge.
 
 Collection steps:
 
@@ -43,7 +43,7 @@ Collection steps:
 
    The proposal supersedes the prior account-total row and replaces it with
    one row per billed instance and charge kind. Pass a current effective
-   `op_cloud` snapshot when replacing legacy instance rows so every old entry
+   `economics_compute_ledger` snapshot when replacing legacy instance rows so every old entry
    ID is neutralized. Its built-in total check must pass before publication.
    Verified instance-to-workload mappings come from
    `vast-ai-workloads.json`; update that registry when the GPU fleet changes.
@@ -79,4 +79,4 @@ Known traps:
 Reconciliation notes:
 
 - A Wise transaction can be `matched` to a Vast invoice when vendor, date, and FX-adjusted amount align.
-- `op_cloud` rows should usually be `partial` or matched to a separate usage export unless the usage rows explain the invoice amount.
+- `economics_compute_ledger` rows should usually be `partial` or matched to a separate usage export unless the usage rows explain the invoice amount.

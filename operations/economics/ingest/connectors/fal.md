@@ -17,10 +17,10 @@ Use when:
 
 Primary evidence sources:
 
-- Usage: Tinybird `op_pollen` rows where `vendor = 'fal'`.
+- Usage: Tinybird `economics_pollen_usage` rows where `vendor = 'fal'`.
 - Unit price: `POST https://api.fal.ai/v1/models/pricing/estimate`.
 - Closed-month/cash: fal billing dashboard, invoice, receipt, Wise, or
-  `op_transactions`.
+  `economics_bank_ledger`.
 
 Required credential:
 
@@ -28,7 +28,7 @@ Required credential:
 
 Collection steps:
 
-1. Query bounded `op_pollen` usage for the requested period.
+1. Query bounded `economics_pollen_usage` usage for the requested period.
 2. When price evidence is needed, request an estimate without running a model:
 
    ```bash

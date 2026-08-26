@@ -12,18 +12,18 @@ Canonical vendor: `io.net`
 Use when:
 
 - collecting io.net grant, balance, invoice, or usage evidence
-- auditing historical io.net `op_cloud` rows
+- auditing historical io.net `economics_compute_ledger` rows
 - reconciling io.net inference usage with cash or credits
 
 Primary evidence sources:
 
-- Usage: Tinybird `op_pollen` rows where `vendor = 'io.net'`.
+- Usage: Tinybird `economics_pollen_usage` rows where `vendor = 'io.net'`.
 - Balance/grants: io.net Usage & Billing dashboard screenshot or export.
-- Closed-month/cash: invoice, receipt, Wise, or `op_transactions`.
+- Closed-month/cash: invoice, receipt, Wise, or `economics_bank_ledger`.
 
 Collection steps:
 
-1. Query bounded `op_pollen` rows for the requested period.
+1. Query bounded `economics_pollen_usage` rows for the requested period.
 2. Ask the operator for dashboard evidence when balance or grant status matters.
    In the balance snapshot, record only the wallet value still available now:
    cash/prepaid in `paid`, promotional credit in `credit`, and zero when the

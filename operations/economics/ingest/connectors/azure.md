@@ -30,7 +30,7 @@ Primary evidence sources:
 - Detailed usage: subscription Cost Management API, or Azure cost/usage CSV,
   when service, SKU, or
   model/inference classification matters.
-- Transaction context: `op_transactions` vendor `azure`.
+- Transaction context: `economics_bank_ledger` vendor `azure`.
 
 Collection steps:
 

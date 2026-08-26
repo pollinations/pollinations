@@ -12,14 +12,14 @@ Use when:
 
 - collecting OpenAI organization model/API cost
 - reconciling OpenAI invoices, credits, grants, or card charges
-- filling/checking `op_cloud` inference rows
+- filling/checking `economics_compute_ledger` inference rows
 
 Primary evidence sources:
 
 - Invoice/payment: OpenAI invoice PDF, receipt, billing email, or card/Wise transaction.
 - Dashboard/usage: OpenAI organization billing/cost dashboard.
 - API: `GET https://api.openai.com/v1/organization/costs`
-- Transaction context: `op_transactions` vendor `openai`.
+- Transaction context: `economics_bank_ledger` vendor `openai`.
 
 Collection steps:
 
@@ -63,6 +63,6 @@ Known traps:
 
 Reconciliation notes:
 
-- API/dashboard costs explain `op_cloud` inference/model usage.
-- Invoices or card charges explain `op_transactions`.
+- API/dashboard costs explain `economics_compute_ledger` inference/model usage.
+- Invoices or card charges explain `economics_bank_ledger`.
 - If usage is grant-funded, do not force a cash transaction match.

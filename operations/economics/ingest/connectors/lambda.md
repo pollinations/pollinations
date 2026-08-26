@@ -13,7 +13,7 @@ Use when:
 
 - collecting a current snapshot of active Lambda Cloud instances
 - estimating the instantaneous GPU burn rate for an operator review
-- reconciling Lambda invoices or manually witnessed GPU periods to `op_cloud`
+- reconciling Lambda invoices or manually witnessed GPU periods to `economics_compute_ledger`
 
 Primary evidence sources:
 
@@ -28,7 +28,7 @@ Primary evidence sources:
 - Grant and cash settlement: `https://cloud.lambda.ai/account/billing`. Preserve
   weekly credit applications and payment invoices separately from calendar-month
   usage.
-- Cash context: Wise or `op_transactions` when a payment is made.
+- Cash context: Wise or `economics_bank_ledger` when a payment is made.
 
 Required credential:
 

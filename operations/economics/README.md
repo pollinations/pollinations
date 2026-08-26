@@ -27,7 +27,8 @@ Production deploys through `.github/workflows/deploy-applications.yml`
 on the `production` branch. The workflow deploys the Worker with both custom
 domains and verifies both session endpoints.
 
-The OP Tinybird datasource and pipe definitions (`op_*`) live in
+The canonical Economics Tinybird datasource and pipe definitions
+(`economics_*`) live in
 [`enter.pollinations.ai/observability/`](../../enter.pollinations.ai/observability/).
 
 Runway is derived mathematically from `economics_bank_ledger_api`,
@@ -36,9 +37,7 @@ checked balances, and the reviewed calculation rules in
 `web/src/lib/forecastTerms.ts`. It has no separate Tinybird forecast or runway
 ledger.
 
-Before relying only on the explicit `source=tombstone` filter in
-`economics_compute_ledger_api`, run
-`ingest/scripts/prepare-op-cloud-tombstone-migration.py` against a fresh raw
-compute-ledger export, publish its reviewed corrections, and verify the effective
-endpoint is unchanged. This data migration must precede the pipe deployment;
-the old evidence-text filter currently hides legacy tombstones.
+Corrections in the bank and compute ledgers are append-only: publishers reuse
+the stable `entry_id` with a newer `recorded_at`. Compute tombstones use the
+explicit `source=tombstone` marker and remain preserved in the raw ledger while
+the effective endpoint hides them.

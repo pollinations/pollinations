@@ -14,14 +14,14 @@ Canonical vendor: `deepinfra`
 Use when:
 
 - collecting DeepInfra model/API usage cost
-- reconciling prepaid DeepInfra usage with `op_cloud` inference rows
+- reconciling prepaid DeepInfra usage with `economics_compute_ledger` inference rows
 
 Primary evidence sources:
 
 - API: `GET https://api.deepinfra.com/payment/usage?from=<epoch>&to=<epoch>`
 - Current balance snapshot: `GET https://api.deepinfra.com/v1/me?checklist=true`
 - Dashboard/usage: DeepInfra billing or usage screenshots/exports when API access is unavailable.
-- Transaction context: `op_transactions` only for top-ups or payments, not pure usage exports.
+- Transaction context: `economics_bank_ledger` only for top-ups or payments, not pure usage exports.
 
 Required credential:
 

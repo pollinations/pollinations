@@ -24,8 +24,8 @@ Local-only:
 - `data/other/` - non-billing keepers (contracts, decks, financial models,
   mockups). Never ledger evidence.
 - `data/reconcile/` - reconcile working artifacts: `reports/` (per-vendor
-  reconcile reports), `proposals/` (validated op_cloud row proposals),
-  `snapshots/` (op table pulls taken before writes), `writes/` (NDJSON batches
+  reconcile reports), `proposals/` (validated compute-ledger row proposals),
+  `snapshots/` (Economics ledger pulls taken before writes), `writes/` (NDJSON batches
   actually appended to Tinybird, kept as the write audit trail).
 - `data/QUESTIONS.md` - the cross-vendor open-questions ledger (resolutions,
   discrepancies, pending decisions).

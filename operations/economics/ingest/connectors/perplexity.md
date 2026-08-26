@@ -20,10 +20,10 @@ Use when:
 
 Primary evidence sources:
 
-- Usage: Tinybird `op_pollen` rows where `vendor = 'perplexity'`.
+- Usage: Tinybird `economics_pollen_usage` rows where `vendor = 'perplexity'`.
 - Per-request detail: saved Sonar response usage/cost fields when available.
 - Balance/grants: Perplexity API billing dashboard screenshot or export.
-- Cash: receipt, Wise, or `op_transactions`.
+- Cash: receipt, Wise, or `economics_bank_ledger`.
 
 Required credential:
 
@@ -32,7 +32,7 @@ Required credential:
 
 Collection steps:
 
-1. Query bounded `op_pollen` usage for the requested period.
+1. Query bounded `economics_pollen_usage` usage for the requested period.
 2. Prefer `usage.cost.total_cost` from saved Sonar responses when available;
    otherwise use the Economics meter and show its source.
 3. Ask the operator for dashboard evidence when balance, auto-top-up, or grant
@@ -41,7 +41,7 @@ Collection steps:
    The invoice subtotal is the authoritative provider total and its SKU lines
    are the strongest model/request/token detail.
 5. Use `agent.system.txt` to extract or reconcile it.
-6. For model attribution, query `op_pollen_api` and retain paid + quest request
+6. For model attribution, query `economics_pollen_usage_api` and retain paid + quest request
    counts and provider-cost estimates by month/model. For closed months, use
    those rows as proportions only when the provider invoice total is stronger.
 
@@ -63,7 +63,7 @@ Known traps:
 - Do not maintain a local balance cache or forecast from the partial month.
 - A credit purchase invoice is not model usage. On 2026-08-19, the dashboard
   showed a $62 paid invoice for the user's $50-plus-tax tier purchase; keep it
-  in cash evidence and do not add it to `op_cloud` usage.
+  in cash evidence and do not add it to `economics_compute_ledger` usage.
 - Perplexity per-request search fees were absent from the retained Pollen meter
   until commit `0aa5fb55ef6030493fd4884f209d17fb58737b04` shipped on
   2026-07-03. January–June provider/Pollen drift is therefore historical

@@ -14,7 +14,7 @@ Use when:
 
 Primary evidence sources:
 
-- Cash truth: Wise activity or `op_transactions` on the bank settlement date.
+- Cash truth: Wise activity or `economics_bank_ledger` on the bank settlement date.
 - Payouts API: `GET https://api.stripe.com/v1/payouts`.
 - Payout contents: `GET https://api.stripe.com/v1/balance_transactions?payout=<po_id>` for an automatic payout.
 - Balance activity: bounded `GET https://api.stripe.com/v1/balance_transactions`.
@@ -76,10 +76,10 @@ Known traps:
 
 Economics use:
 
-- Stripe payout cash belongs in `op_transactions`, category `revenue`, and
+- Stripe payout cash belongs in `economics_bank_ledger`, category `revenue`, and
   should reconcile to Wise.
 - Stripe balance activity is supporting evidence for reconciliation. Do not
-  write it to `op_cloud`; Runway derives its revenue projection from verified
+  write it to `economics_compute_ledger`; Runway derives its revenue projection from verified
   bank history.
 - Until Economics has a dedicated earned-revenue ledger, do not replace Wise
   cash rows with Stripe activity-month totals.

@@ -14,11 +14,11 @@ Use when:
 
 - auditing historical direct BytePlus / ByteDance usage evidence
 - checking an old BytePlus credit balance or grant document
-- reconciling legacy `bytedance` rows already present in `op_cloud`
+- reconciling legacy `bytedance` rows already present in `economics_compute_ledger`
 
 Primary evidence sources:
 
-- Historical usage: Tinybird `op_pollen` rows where `vendor = 'bytedance'`.
+- Historical usage: Tinybird `economics_pollen_usage` rows where `vendor = 'bytedance'`.
 - Historical detail: bounded `generation_event` (pre-v2 archive) rows for old direct BytePlus models.
 - Exact 2026 configuration detail: BytePlus Billing center → Cost analysis →
   group by Configuration Name.
@@ -27,7 +27,7 @@ Primary evidence sources:
   costs by product.
 - 2026 provider/Pollen reconciliation: https://drive.google.com/file/d/124mpTlfa0RIh3Dy1fFTaLle0hq5RVgvW/view?usp=drivesdk
 - Contract and discount terms: https://drive.google.com/file/d/11ih6rA-gHyVByv4dFlllBKJWj3ie_LNN/view?usp=drivesdk
-- Cash: invoice, receipt, Wise, or `op_transactions`.
+- Cash: invoice, receipt, Wise, or `economics_bank_ledger`.
 
 Live validation:
 
@@ -42,7 +42,7 @@ Live validation:
   - `Seedream 5.0-Lite` → `seedream5`
   - `Seedance-1.0-pro-fast-infer` → `seedance-pro`
   - both Seedance Lite I2V/T2V configurations → `seedance`
-- These exact mappings cover every active ByteDance model in `op_pollen` for
+- These exact mappings cover every active ByteDance model in `economics_pollen_usage` for
   each month from January through May. Preserve each raw configuration in
   `resource_name` and `resource_sku`; use the canonical ID in `model`.
 - The January–May 2026 cost is cash-billed/provider-payable, not credit-funded.
@@ -55,15 +55,15 @@ Live validation:
 
 Collection steps:
 
-1. Query the requested period from `op_pollen` first:
+1. Query the requested period from `economics_pollen_usage` first:
 
    ```sql
    SELECT
      month,
-     round(sum(cost_paid), 4) AS cost_paid,
-     round(sum(cost_quests), 4) AS cost_quests,
+     round(sumMerge(cost_paid), 4) AS cost_paid,
+     round(sumMerge(cost_quests), 4) AS cost_quests,
      count() AS rows
-   FROM op_pollen
+   FROM economics_pollen_usage
    WHERE vendor = 'bytedance'
    GROUP BY month
    ORDER BY month

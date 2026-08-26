@@ -98,7 +98,7 @@ Known traps:
 - Public model pricing lives on model pages, not in the API response.
 - Official model predictions use `/v1/models/{owner}/{name}/predictions`; pinned/community predictions use `/v1/predictions` with a version hash.
 - A provider-wide invoice gap should not be assigned to a single model price until untracked models, web UI runs, private deployments, storage/egress, background jobs, failed-but-billed work, and missing invoice lines have been checked.
-- Replicate's monthly invoice gross is authoritative for `op_cloud`; prepaid
+- Replicate's monthly invoice gross is authoritative for `economics_compute_ledger`; prepaid
   adjustments reduce cash due but do not reduce model usage cost.
 - An adjustment labeled `One-time credit purchase applied` is purchased prepaid
   balance. Keep that usage in `paid`; it is not a promotional provider credit.
@@ -108,8 +108,8 @@ Known traps:
 
 Reconciliation notes:
 
-- The invoice or Wise/card charge explains `op_transactions`.
-- Tinybird `generation_event_v2.total_cost` explains internal per-model `op_cloud` attribution.
+- The invoice or Wise/card charge explains `economics_bank_ledger`.
+- Tinybird `generation_event_v2.total_cost` explains internal per-model `economics_compute_ledger` attribution.
 - Replicate prediction exports can help find untracked model IDs, web-created predictions, status mix, and output metrics for video pricing.
 - If invoice total exceeds metered model cost, keep the raw model price unchanged unless independent model-level pricing evidence shows the model itself is underpriced.
 

@@ -13,7 +13,7 @@ Use when:
 
 - collecting Alibaba Cloud monthly billing-item and model evidence
 - reconciling Alibaba Cloud charges, discounts, coupons, and usage cost
-- filling/checking `op_cloud` infrastructure or inference rows
+- filling/checking `economics_compute_ledger` infrastructure or inference rows
 
 Primary evidence sources:
 

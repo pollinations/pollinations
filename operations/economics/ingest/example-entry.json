@@ -23,5 +23,5 @@
       "currency": "USD"
     }
   ],
-  "reconciliation_notes": "Collected from provider dashboard or CLI export for January 2026. This usage evidence complements invoice/payment evidence and should reconcile to op_cloud, not directly to op_transactions."
+  "reconciliation_notes": "Collected from provider dashboard or CLI export for January 2026. This usage evidence complements invoice/payment evidence and should reconcile to the compute ledger, not directly to the bank ledger."
 }

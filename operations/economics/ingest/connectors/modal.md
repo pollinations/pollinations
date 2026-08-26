@@ -12,7 +12,7 @@ Use when:
 
 - collecting Modal billing report evidence
 - reconciling Modal serverless/GPU app spend
-- filling/checking `op_cloud` serverless inference or GPU rows
+- filling/checking `economics_compute_ledger` serverless inference or GPU rows
 
 Primary evidence sources:
 
@@ -76,6 +76,6 @@ Known traps:
 
 Reconciliation notes:
 
-- Billing reports explain `op_cloud`.
-- Receipts/card charges explain `op_transactions`.
+- Billing reports explain `economics_compute_ledger`.
+- Receipts/card charges explain `economics_bank_ledger`.
 - For serverless rows, app name may be the best available resource ID.

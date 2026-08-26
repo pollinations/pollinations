@@ -15,7 +15,7 @@ Use when:
 
 - collecting Anthropic organization cost report evidence
 - reconciling Anthropic grant burn, paid usage, and card charges
-- filling/checking `op_cloud` model usage rows
+- filling/checking `economics_compute_ledger` model usage rows
 
 Primary evidence sources:
 
@@ -89,6 +89,6 @@ Known traps:
 
 Reconciliation notes:
 
-- The cost report explains Anthropic `op_cloud` usage.
-- Receipts/card charges explain `op_transactions`.
+- The cost report explains Anthropic `economics_compute_ledger` usage.
+- Receipts/card charges explain `economics_bank_ledger`.
 - If usage is grant-funded, do not force a same-month cash transaction match.

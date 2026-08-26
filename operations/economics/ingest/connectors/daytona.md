@@ -15,13 +15,13 @@ Use when:
 
 - collecting Daytona invoice or dashboard evidence
 - checking sandbox resource usage
-- auditing historical Daytona `op_cloud` rows
+- auditing historical Daytona `economics_compute_ledger` rows
 
 Primary evidence sources:
 
 - Cost/balance: Daytona billing dashboard, invoice, receipt, or grant notice.
 - Resource usage: `GET https://app.daytona.io/api/organizations/{organizationId}/usage`.
-- Cash: Wise or `op_transactions`.
+- Cash: Wise or `economics_bank_ledger`.
 
 Required credential:
 

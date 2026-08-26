@@ -12,7 +12,7 @@ Use when:
 
 - collecting ElevenLabs workspace usage cost
 - reconciling ElevenLabs grant burn, paid overage, top-ups, or subscription charges
-- filling/checking `op_cloud` audio/model usage rows
+- filling/checking `economics_compute_ledger` audio/model usage rows
 
 Primary evidence sources:
 
@@ -72,8 +72,8 @@ Known traps:
 
 Reconciliation notes:
 
-- Analytics explains `op_cloud` usage.
-- Top-ups/subscriptions/card charges explain `op_transactions`.
+- Analytics explains `economics_compute_ledger` usage.
+- Top-ups/subscriptions/card charges explain `economics_bank_ledger`.
 - If grant-funded, do not force a same-month cash transaction match.
 
 ## Rotation

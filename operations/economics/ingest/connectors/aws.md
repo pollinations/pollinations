@@ -32,7 +32,7 @@ Primary evidence sources, in order by purpose:
 - Optimization only: Umbrella recommendations and potential savings. Never
   book these as actual usage, discounts, credits, or liabilities.
 - Invoice/payment evidence: Glass invoices and Wise/card transactions.
-- Transaction context: `op_transactions` vendor `aws` when a cash invoice is paid.
+- Transaction context: `economics_bank_ledger` vendor `aws` when a cash invoice is paid.
 
 Collection steps:
 
@@ -160,9 +160,9 @@ Mapping:
 
 Reconciliation notes:
 
-- API usage evidence should reconcile to `op_cloud`.
-- Paid invoice evidence should reconcile to `op_transactions`.
-- Credit-funded usage should usually explain `op_cloud` without a cash transaction.
+- API usage evidence should reconcile to `economics_compute_ledger`.
+- Paid invoice evidence should reconcile to `economics_bank_ledger`.
+- Credit-funded usage should usually explain `economics_compute_ledger` without a cash transaction.
 
 ## Rotation
 

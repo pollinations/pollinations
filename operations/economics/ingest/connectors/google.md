@@ -25,7 +25,7 @@ Primary evidence sources:
 - Invoice/payment: Google Cloud invoices or payment receipts.
 - Dashboard/usage: Google Cloud Billing reports and credit pages.
 - BigQuery: GCP billing export table.
-- Transaction context: `op_transactions` vendor `google` when a cash invoice/payment exists.
+- Transaction context: `economics_bank_ledger` vendor `google` when a cash invoice/payment exists.
 
 Collection steps:
 
@@ -139,8 +139,8 @@ Known traps:
 
 Reconciliation notes:
 
-- BigQuery export evidence should reconcile to `op_cloud`.
-- Google invoices/payments should reconcile to `op_transactions`.
+- BigQuery export evidence should reconcile to `economics_compute_ledger`.
+- Google invoices/payments should reconcile to `economics_bank_ledger`.
 - Credits and discounts should explain cloud usage without necessarily matching cash movement.
 
 ## Rotation

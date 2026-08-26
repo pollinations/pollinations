@@ -38,7 +38,7 @@ Primary evidence sources:
   `https://dash.cloudflare.com/efdcb0933eaac64f27c0b295039b28f2/billing/invoices`.
 - API: `GET https://api.cloudflare.com/client/v4/user/billing/history?per_page=50`
   - Cloudflare currently documents `/user/billing/history` as deprecated. Use it only for billing-history evidence until a replacement source is chosen.
-- Transaction context: `op_transactions` vendor `cloudflare`.
+- Transaction context: `economics_bank_ledger` vendor `cloudflare`.
 
 Collection steps:
 

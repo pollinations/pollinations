@@ -27,7 +27,7 @@ Primary evidence sources:
   (Balances → statement) — complete settled truth incl. fees and running
   balance, and the workaround while the statement API's SCA key is unregistered.
 - Local files: Wise CSV/JSON/screenshots already placed in `data/inbox/`.
-- Transaction context: `op_transactions`.
+- Transaction context: `economics_bank_ledger`.
 
 Credentials are SOPS-encrypted in `secrets/env.json` as `WISE_API_TOKEN`,
 `WISE_BUSINESS_PROFILE_ID`, and `WISE_BUSINESS_EUR_BALANCE_ID`. Decrypt them in
@@ -40,7 +40,7 @@ Official references:
 
 Collection steps:
 
-1. Prefer existing `op_transactions` when it already covers the requested
+1. Prefer existing `economics_bank_ledger` when it already covers the requested
    period; it is the Economics cash ledger derived from Wise.
 2. For a missing or live period, request Wise activities with explicit ISO 8601
    `since` and `until` bounds, `size=100`, and follow `cursor` with
@@ -54,7 +54,7 @@ Collection steps:
    result will become durable evidence.
 5. Use `agent.system.txt` with `mode: extract` when exported transaction
    evidence needs to become an entry.
-6. For reconciliation, compare against invoice entries and `op_transactions`.
+6. For reconciliation, compare against invoice entries and `economics_bank_ledger`.
 
 Repeatable monthly pull:
 
@@ -95,7 +95,7 @@ Entry mapping rules for Wise activity payment evidence:
 - `entry_id` (op_transactions rows): use the Wise-native resource ID
   `{resource.type}-{resource.id}` from the Activities API, e.g.
   `CARD_TRANSACTION-4049450438` or `TRANSFER-2237416213`. Every row MUST carry
-  one — the `op_transactions_api` pipe collapses rows per `entry_id` via
+  one — the `economics_bank_ledger_api` pipe collapses rows per `entry_id` via
   `argMax(recorded_at)`, so corrections re-append with the SAME `entry_id` and
   a newer `recorded_at`, and a blank id would merge unrelated rows.
   Balance-statement rows use the same namespace: normalize the statement's
@@ -155,6 +155,6 @@ Known traps:
 
 Reconciliation notes:
 
-- Wise rows are strongest for `op_transactions`.
-- Wise evidence can validate invoice payment but usually cannot explain `op_cloud` usage.
+- Wise rows are strongest for `economics_bank_ledger`.
+- Wise evidence can validate invoice payment but usually cannot explain `economics_compute_ledger` usage.
 - Match by vendor alias, date, amount, currency, description, and FX plausibility.

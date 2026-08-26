@@ -16,8 +16,8 @@ Operating model:
 
 - Work on demand with the user. Do not create hidden schedules, recurring
   refreshes, mutable month-open caches, or background provider state.
-- `op_cloud` is the agent- and user-authored provider evidence ledger.
-  `op_transactions` remains the Wise-derived bank ledger: settled cash
+- `economics_compute_ledger` is the agent- and user-authored provider evidence ledger.
+  `economics_bank_ledger` remains the Wise-derived bank ledger: settled cash
   movements plus one statement-backed opening-balance anchor. Do not invent
   bank rows or balance snapshots to make another source reconcile. Use whichever source best answers
   the current question: provider API or CLI, Wise, invoice, receipt, dashboard
@@ -44,10 +44,10 @@ Core boundaries:
 - Never write Tinybird unless the user explicitly approves a write.
 - Every proposed OP row carries a stable `entry_id` and a millisecond
   `recorded_at`. `entry_id` is deterministic from the fact's identity, never
-  from ingestion time: for `op_cloud`,
+  from ingestion time: for `economics_compute_ledger`,
   `{source}:{vendor}:{provider_account_id}:{type}:{start}:{resource_id or resource_name}:{model}`,
   extended with the SKU or a line-item suffix when one period legitimately has
-  several rows for the same resource; for `op_transactions`, the native bank
+  several rows for the same resource; for `economics_bank_ledger`, the native bank
   identifier (Wise transfer/transaction ID) — two genuinely separate transfers
   always have distinct native IDs, even when date, vendor, and amount are
   identical. Re-registering or correcting an existing fact reuses its
@@ -140,7 +140,7 @@ Local layout:
 - data/other/: non-billing material worth keeping (contracts, decks, financial
   models, mockups). Never ledger evidence.
 - data/reconcile/: reconcile working artifacts — reports/ (per-vendor reconcile
-  reports), proposals/ (validated op_cloud row proposals), snapshots/ (op table
+  reports), proposals/ (validated compute-ledger row proposals), snapshots/ (Economics ledger
   pulls taken before writes), writes/ (NDJSON batches actually appended to
   Tinybird; the write audit trail).
 - data/QUESTIONS.md: the cross-vendor open-questions ledger.
@@ -244,7 +244,7 @@ Extraction rules:
 - Put granular line items and usage metrics in cost_details.
 - Amounts are positive costs unless the source clearly marks a credit/refund.
   EXCEPTION — bank/cash evidence (Wise statements, activities, anything bound
-  for op_transactions) keeps the bank's signs instead: money out negative,
+  for the bank ledger) keeps the bank's signs instead: money out negative,
   money in positive, summing to the statement total (see connectors/wise.md).
 - Keep currency as ISO 4217 when available.
 - Set should_match_op_transaction true only for billing, payment, receipt,
@@ -284,7 +284,7 @@ Granularity:
   and the provider-month covers every active metered Pollen model. Only that
   complete canonical mapping may drive model-level reconciliation; incomplete,
   fuzzy, or provider-label mappings remain provider-month-only evidence.
-- entry_id: base id for the document (see the `op_cloud` id convention in Core
+- entry_id: base id for the document (see the `economics_compute_ledger` id convention in Core
   boundaries above); suffix "-<category>" or "-<model slug>" for split
   entries.
 
@@ -320,7 +320,7 @@ Inputs:
 
 - Entries from one data/processed/<vendor>/<source_id>/entries.ndjson.
 - A small related batch only when entries clearly share the same provider/period.
-- Candidate op_transactions and op_cloud rows.
+- Candidate bank-ledger and compute-ledger rows.
 - Existing evidence fields when available.
 
 Rules:

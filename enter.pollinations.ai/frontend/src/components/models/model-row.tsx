@@ -21,6 +21,7 @@ import {
     getModelDescriptionWithoutName,
     getModelDisplayName,
     getModelInputModalities,
+    getModelLimitLabel,
     getModelModalityLabel,
     hasPollinationsTools,
     isAlpha,
@@ -276,6 +277,14 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                         )}
                     </div>
                     <ModelId name={model.name} />
+                    {(() => {
+                        const limitLabel = getModelLimitLabel(model);
+                        return limitLabel ? (
+                            <div className="text-xs leading-tight text-theme-text-muted">
+                                {limitLabel}
+                            </div>
+                        ) : null;
+                    })()}
                     {model.brandUrl && model.brand && (
                         <a
                             href={model.brandUrl}

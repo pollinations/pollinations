@@ -155,3 +155,44 @@ export const isPaidOnly = (model: ModelPrice): boolean =>
  * Check if a model is marked as alpha (experimental, potentially unstable)
  */
 export const isAlpha = (model: ModelPrice): boolean => model.alpha === true;
+
+/** Compact context-window size, e.g. 400000 -> "400K", 2097152 -> "2.1M". */
+export const formatContextLength = (length: number): string => {
+    const compact = (scaled: number): string =>
+        `${scaled >= 100 ? Math.round(scaled) : Number(scaled.toFixed(2))}`;
+    if (length >= 1_000_000) return `${compact(length / 1_000_000)}M`;
+    if (length >= 1_000) return `${compact(length / 1_000)}K`;
+    return `${length}`;
+};
+
+/** Video duration bounds in seconds, e.g. {min: 4, max: 10} -> "4–10s". */
+export const formatDurationLimit = (
+    duration: NonNullable<ModelPrice["duration"]>,
+): string | undefined => {
+    const value = (v: number): string => `${Number(v.toFixed(2))}`;
+    if (duration.min !== undefined && duration.max !== undefined) {
+        return duration.min === duration.max
+            ? `${value(duration.min)}s`
+            : `${value(duration.min)}–${value(duration.max)}s`;
+    }
+    if (duration.max !== undefined) return `up to ${value(duration.max)}s`;
+    if (duration.min !== undefined) return `from ${value(duration.min)}s`;
+    if (duration.default !== undefined) return `${value(duration.default)}s`;
+    return undefined;
+};
+
+/**
+ * One-line summary of the advertised limits shown on a model row,
+ * e.g. "128K context · 4–10s video". Undefined when none are advertised.
+ */
+export const getModelLimitLabel = (model: ModelPrice): string | undefined => {
+    const parts: string[] = [];
+    if (model.contextLength != null && model.contextLength > 0) {
+        parts.push(`${formatContextLength(model.contextLength)} context`);
+    }
+    const duration = model.duration
+        ? formatDurationLimit(model.duration)
+        : undefined;
+    if (duration) parts.push(`${duration} video`);
+    return parts.length > 0 ? parts.join(" · ") : undefined;
+};

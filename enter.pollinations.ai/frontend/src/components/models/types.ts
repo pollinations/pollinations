@@ -72,6 +72,14 @@ export type ModelPrice = {
     agent?: boolean;
     baseModel?: string;
     perUserRpm?: number | null;
+    /** Advertised context window in tokens, when known. */
+    contextLength?: number;
+    /** Advertised video duration bounds in seconds. */
+    duration?: {
+        min?: number;
+        max?: number;
+        default?: number;
+    };
     displayName?: string;
     description?: string;
     brand?: string;

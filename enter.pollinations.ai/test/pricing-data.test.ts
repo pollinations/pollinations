@@ -33,13 +33,17 @@ import {
 import { getModelPricesFromCatalog } from "../frontend/src/components/models/model-catalog.ts";
 import { getCommunityModelIcon } from "../frontend/src/components/models/model-icons.tsx";
 import {
+    formatContextLength,
+    formatDurationLimit,
     getModelBrandLogoPath,
     getModelCapabilities,
     getModelCapabilityLabel,
+    getModelLimitLabel,
     hasPollinationsTools,
 } from "../frontend/src/components/models/model-info.ts";
 import { ModelRow } from "../frontend/src/components/models/model-row.tsx";
 import { ModelPricingLedger } from "../frontend/src/components/models/price-badge.tsx";
+import type { ModelPrice } from "../frontend/src/components/models/types.ts";
 
 const getCatalogModelPrices = () =>
     getModelPricesFromCatalog([
@@ -1387,4 +1391,83 @@ test("registry cost blocks contain no sentinel/placeholder negative values", () 
         offenders,
         `Models with placeholder/sentinel pricing — fill in real rates before merging:\n${offenders.join("\n")}`,
     ).toEqual([]);
+});
+
+test("model rows show the advertised context window", () => {
+    const textWithLimits = getTextModelsInfo().filter(
+        (model) => model.context_length != null,
+    );
+    expect(textWithLimits.length).toBeGreaterThan(0);
+
+    const prices = getModelPricesFromCatalog(textWithLimits);
+    let checkedModels = 0;
+
+    for (const modelPrice of prices) {
+        const source = textWithLimits.find(
+            ({ name }) => name === modelPrice.name,
+        );
+        if (source?.context_length == null) continue;
+
+        expect(modelPrice.contextLength).toBe(source.context_length);
+        checkedModels += 1;
+    }
+
+    expect(checkedModels).toBeGreaterThan(0);
+
+    // Compact rendering stays exact for common window sizes.
+    expect(formatContextLength(400_000)).toBe("400K");
+    expect(formatContextLength(131_072)).toBe("131K");
+    expect(formatContextLength(2_000_000)).toBe("2M");
+    expect(formatContextLength(8_000)).toBe("8K");
+});
+
+test("video duration bounds survive catalog mapping and render compactly", () => {
+    const videoSources = [...getCatalogModels()].filter(
+        (model) =>
+            model.min_duration !== undefined ||
+            model.max_duration !== undefined,
+    );
+    expect(videoSources.length).toBeGreaterThan(0);
+
+    const prices = getModelPricesFromCatalog(
+        videoSources as Parameters<typeof getModelPricesFromCatalog>[0],
+    );
+    for (const modelPrice of prices) {
+        const source = videoSources.find(
+            ({ name }) => name === modelPrice.name,
+        );
+        expect(modelPrice.duration).toEqual({
+            min: source?.min_duration,
+            max: source?.max_duration,
+            default: source?.default_duration,
+        });
+    }
+
+    // Range vs fixed vs partial metadata all render sensibly.
+    expect(formatDurationLimit({ min: 4, max: 10 })).toBe("4–10s");
+    expect(formatDurationLimit({ min: 5, max: 5, default: 5 })).toBe("5s");
+    expect(formatDurationLimit({ max: 15 })).toBe("up to 15s");
+    expect(formatDurationLimit({ default: 5 })).toBe("5s");
+
+    const rowModel = {
+        ...prices[0],
+        contextLength: undefined,
+        duration: { min: 4, max: 10, default: 5 },
+    } as ComponentProps<typeof ModelRow>["model"];
+    expect(
+        renderToStaticMarkup(createElement(ModelRow, { model: rowModel })),
+    ).toContain("4–10s video");
+});
+
+test("rows without advertised limits render no limit line", () => {
+    const bareModel = {
+        name: "owner/bare",
+        type: "text" as const,
+        capabilities: [],
+        prices: [],
+    } satisfies ModelPrice;
+    expect(getModelLimitLabel(bareModel)).toBeUndefined();
+    expect(
+        renderToStaticMarkup(createElement(ModelRow, { model: bareModel })),
+    ).not.toContain("context");
 });

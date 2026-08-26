@@ -51,7 +51,9 @@ type UpstreamErrorOptions = {
 };
 
 export class UpstreamError extends HTTPException {
-    public readonly name = "UpstreamError" as const;
+    // Not readonly: subclasses (e.g. HttpError) override name at runtime,
+    // so the type must stay mutable for `this.name = ...` assignments.
+    public name = "UpstreamError";
     public readonly requestUrl?: URL;
     public readonly requestBody?: unknown;
     public readonly upstreamStatus?: number;

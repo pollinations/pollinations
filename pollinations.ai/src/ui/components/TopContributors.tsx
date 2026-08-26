@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { COMMUNITY_PAGE } from "../../copy/content/community";
 import { usePageCopy } from "../../hooks/usePageCopy";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
+import { QuestLeaderboard } from "./QuestLeaderboard";
 import { Divider } from "./ui/divider";
 import { Body, Heading } from "./ui/typography";
 
@@ -117,15 +118,16 @@ export function TopContributors() {
     }, []);
 
     if (loadingContributors && contributors.length === 0) {
-        return null;
+        return <QuestLeaderboard />;
     }
 
     if (!loadingContributors && contributors.length === 0) {
-        return null;
+        return <QuestLeaderboard />;
     }
 
     return (
         <>
+            <QuestLeaderboard />
             <div className="mb-12">
                 <Heading variant="section">{copy.topContributorsTitle}</Heading>
                 <Body size="sm" spacing="comfortable">

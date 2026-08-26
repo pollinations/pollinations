@@ -272,13 +272,13 @@ describe("resolveModelConfig", () => {
         });
     });
 
-    it("excludes Mistral's higher-priced ZDR variant", () => {
+    it("excludes Mistral's non-standard endpoint variants", () => {
         const result = resolveModelConfig(messages, { model: "mistral" });
 
         expect(result.options.model).toBe("mistralai/mistral-small-2603");
         expect(result.options.provider).toEqual({
             only: ["mistral"],
-            ignore: ["mistral/zdr"],
+            ignore: ["mistral/zdr", "mistral/us", "mistral/eu"],
             allow_fallbacks: false,
         });
     });

@@ -1,8 +1,11 @@
 import {
+    applyPendingProxyPricing,
+    COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
     communityEndpointTitle,
     communityModelId,
     normalizeCommunityEndpointAdvertised,
     parseListingPayload,
+    pendingCommunityEndpointChangeIsReady,
 } from "@shared/community-endpoints.ts";
 import type * as schema from "@shared/db/better-auth.ts";
 import {
@@ -18,6 +21,22 @@ export function toCommunityEndpointResponse(
     agentRuntimeUrl: string,
 ): CommunityEndpointResponse {
     const modelId = communityModelId(ownerGithubUsername, row.name);
+    const pendingReady = pendingCommunityEndpointChangeIsReady(row.pendingAt);
+    const pendingAt = row.pendingAt;
+    const hasPending =
+        !pendingReady &&
+        pendingAt !== null &&
+        (row.pendingVisibility !== null || row.pendingPayload !== null);
+    const pendingBase = hasPending
+        ? {
+              effectiveAt: new Date(
+                  pendingAt.getTime() + COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
+              ).toISOString(),
+              ...(row.pendingVisibility === "public"
+                  ? { visibility: "public" as const }
+                  : {}),
+          }
+        : null;
     const common = {
         id: row.id,
         modelId,
@@ -30,7 +49,11 @@ export function toCommunityEndpointResponse(
         description: row.description,
         baseUrl: row.type === "prompt_agent" ? agentRuntimeUrl : row.baseUrl,
         upstreamModel: row.upstreamModel,
-        visibility: row.visibility,
+        visibility:
+            pendingReady && row.pendingVisibility
+                ? row.pendingVisibility
+                : row.visibility,
+        pending: pendingBase,
         hidden: row.hiddenAt !== null,
         hiddenReason: row.hiddenReason,
         hiddenAt: row.hiddenAt?.toISOString() ?? null,
@@ -56,8 +79,14 @@ export function toCommunityEndpointResponse(
         });
     }
 
-    const payload = parseListingPayload("proxy", row.payload);
-    if (!payload) throw new Error(`Invalid proxy payload for ${row.id}`);
+    const currentPayload = parseListingPayload("proxy", row.payload);
+    if (!currentPayload) {
+        throw new Error(`Invalid proxy payload for ${row.id}`);
+    }
+    const pendingPayload = parseListingPayload("proxy", row.pendingPayload);
+    const payload = pendingReady
+        ? applyPendingProxyPricing(currentPayload, pendingPayload)
+        : currentPayload;
     const { bearerTokenCiphertext: _credential, prices, ...proxy } = payload;
     return CommunityEndpointResponseSchema.parse({
         ...common,
@@ -68,5 +97,14 @@ export function toCommunityEndpointResponse(
             payload.modality,
         ),
         ...prices,
+        pending:
+            pendingBase && pendingPayload
+                ? {
+                      ...pendingBase,
+                      paidOnly: pendingPayload.paidOnly,
+                      imagePricing: pendingPayload.imagePricing,
+                      ...pendingPayload.prices,
+                  }
+                : pendingBase,
     });
 }

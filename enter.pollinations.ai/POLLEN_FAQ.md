@@ -34,7 +34,7 @@ Quests reward eligible account activity and community contributions.
 
 - Browse the dashboard for current requirements, progress, and rewards.
 - Claim completed rewards from the dashboard; past qualifying activity may count.
-- Contribution quests are labeled GitHub issues with a stated reward. Get assigned, complete the issue, and claim after the work is merged.
+- Contribution quests are labeled GitHub issues with a stated reward. Multiple contributors may submit solutions without claiming the issue first. Maintainers select and assign the best completed approach before merge; the selected contributor can claim the reward afterward.
 
 Quest availability and reward amounts can change, so the dashboard and the linked issue are the source of truth.
 

@@ -9,7 +9,6 @@ type MockDiscordState = {
     membershipRequestCount: number;
     membershipStatus: number;
     membershipErrorCode: number;
-    retryAfterSeconds: number;
 };
 
 export function createMockDiscord(): MockAPI<MockDiscordState> {
@@ -18,7 +17,6 @@ export function createMockDiscord(): MockAPI<MockDiscordState> {
         membershipRequestCount: 0,
         membershipStatus: 200,
         membershipErrorCode: 10007,
-        retryAfterSeconds: 12,
     };
     const userProfile = {
         id: state.userId,
@@ -61,10 +59,10 @@ export function createMockDiscord(): MockAPI<MockDiscordState> {
                 return c.json(
                     {
                         message: "You are being rate limited.",
-                        retry_after: state.retryAfterSeconds,
+                        retry_after: 12,
                     },
                     429,
-                    { "Retry-After": String(state.retryAfterSeconds) },
+                    { "Retry-After": "12" },
                 );
             }
             return c.json({
@@ -80,7 +78,6 @@ export function createMockDiscord(): MockAPI<MockDiscordState> {
             state.membershipRequestCount = 0;
             state.membershipStatus = 200;
             state.membershipErrorCode = 10007;
-            state.retryAfterSeconds = 12;
         },
         handlerMap: {
             "discord.com": createHonoMockHandler(discord),

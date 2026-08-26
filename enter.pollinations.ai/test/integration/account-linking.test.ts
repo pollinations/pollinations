@@ -8,7 +8,10 @@ import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
 import { createAuth } from "../../src/auth.ts";
-import { discordConfigFromEnv } from "../../src/services/discord.ts";
+import {
+    discordConfigFromEnv,
+    isPollinationsDiscordMember,
+} from "../../src/services/discord.ts";
 import { checkQuestsForUser } from "../../src/services/quest-checker.ts";
 import { test } from "../fixtures.ts";
 
@@ -23,6 +26,23 @@ async function seedDiscordAccount(accountId: string): Promise<string> {
         userId: user.id,
     });
     return user.id;
+}
+
+async function getDiscordReward(userId: string) {
+    const db = drizzle(env.DB);
+    const [reward] = await db
+        .select({
+            questId: rewardsTable.questId,
+            pollenAmount: rewardsTable.pollenAmount,
+        })
+        .from(rewardsTable)
+        .where(
+            and(
+                eq(rewardsTable.userId, userId),
+                eq(rewardsTable.questId, "join_discord"),
+            ),
+        );
+    return reward ?? null;
 }
 
 test("requires complete Discord configuration", () => {
@@ -48,7 +68,6 @@ test("requires complete Discord configuration", () => {
 });
 
 test("links a Discord identity to the signed-in GitHub account", async ({
-    apiKey,
     mocks,
     sessionToken,
 }) => {
@@ -157,121 +176,55 @@ test("links a Discord identity to the signed-in GitHub account", async ({
         },
     });
 
-    const membershipResponse = await SELF.fetch(
-        "http://localhost:3000/api/account/discord-membership",
-        {
-            headers: {
-                Cookie: `better-auth.session_token=${sessionToken}`,
-            },
-        },
-    );
-    expect(membershipResponse.status).toBe(200);
-    await expect(membershipResponse.json()).resolves.toEqual({
-        member: true,
-        joinedAt: "2021-09-10T11:09:04.586000+00:00",
-    });
-    expect(mocks.discord.state.membershipRequestCount).toBe(1);
-
-    const cachedMembershipResponse = await SELF.fetch(
-        "http://localhost:3000/api/account/discord-membership",
-        {
-            headers: {
-                Cookie: `better-auth.session_token=${sessionToken}`,
-            },
-        },
-    );
-    expect(cachedMembershipResponse.status).toBe(200);
-    expect(mocks.discord.state.membershipRequestCount).toBe(1);
-
-    const apiKeyResponse = await SELF.fetch(
-        "http://localhost:3000/api/account/discord-membership",
-        { headers: { Authorization: `Bearer ${apiKey}` } },
-    );
-    expect(apiKeyResponse.status).toBe(403);
-    expect(mocks.discord.state.membershipRequestCount).toBe(1);
-
     await checkQuestsForUser(env, user.id);
     expect(mocks.discord.state.membershipRequestCount).toBe(1);
-    const [reward] = await db
-        .select({
-            questId: rewardsTable.questId,
-            pollenAmount: rewardsTable.pollenAmount,
-        })
-        .from(rewardsTable)
-        .where(
-            and(
-                eq(rewardsTable.userId, user.id),
-                eq(rewardsTable.questId, "join_discord"),
-            ),
-        );
-    expect(reward).toEqual({ questId: "join_discord", pollenAmount: 1 });
+    await checkQuestsForUser(env, user.id);
+    expect(mocks.discord.state.membershipRequestCount).toBe(1);
+    await expect(getDiscordReward(user.id)).resolves.toEqual({
+        questId: "join_discord",
+        pollenAmount: 1,
+    });
 });
 
 test("treats Discord error 10007 as a missing member", async ({
     mocks,
-    sessionToken,
+    sessionToken: _sessionToken,
 }) => {
     await mocks.enable("discord");
-    await seedDiscordAccount(mocks.discord.state.userId);
+    const userId = await seedDiscordAccount(mocks.discord.state.userId);
     mocks.discord.state.membershipStatus = 404;
     mocks.discord.state.membershipErrorCode = 10007;
 
-    const response = await SELF.fetch(
-        "http://localhost:3000/api/account/discord-membership",
-        {
-            headers: {
-                Cookie: `better-auth.session_token=${sessionToken}`,
-            },
-        },
-    );
-
-    expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({
-        member: false,
-        joinedAt: null,
-    });
+    await expect(isPollinationsDiscordMember(env, userId)).resolves.toBe(false);
+    expect(mocks.discord.state.membershipRequestCount).toBe(1);
 });
 
 test("surfaces Discord 404 errors other than unknown member", async ({
     mocks,
-    sessionToken,
+    sessionToken: _sessionToken,
 }) => {
     await mocks.enable("discord");
-    await seedDiscordAccount(mocks.discord.state.userId);
+    const userId = await seedDiscordAccount(mocks.discord.state.userId);
     mocks.discord.state.membershipStatus = 404;
     mocks.discord.state.membershipErrorCode = 10004;
 
-    const response = await SELF.fetch(
-        "http://localhost:3000/api/account/discord-membership",
-        {
-            headers: {
-                Cookie: `better-auth.session_token=${sessionToken}`,
-            },
-        },
+    await expect(isPollinationsDiscordMember(env, userId)).rejects.toThrow(
+        "404 code=10004",
     );
-
-    expect(response.status).toBe(502);
+    expect(mocks.discord.state.membershipRequestCount).toBe(1);
 });
 
-test("forwards Discord membership rate limits", async ({
+test("surfaces Discord membership rate limits", async ({
     mocks,
-    sessionToken,
+    sessionToken: _sessionToken,
 }) => {
     await mocks.enable("discord");
-    await seedDiscordAccount(mocks.discord.state.userId);
+    const userId = await seedDiscordAccount(mocks.discord.state.userId);
     mocks.discord.state.membershipStatus = 429;
-    mocks.discord.state.retryAfterSeconds = 12;
 
-    const firstResponse = await SELF.fetch(
-        "http://localhost:3000/api/account/discord-membership",
-        {
-            headers: {
-                Cookie: `better-auth.session_token=${sessionToken}`,
-            },
-        },
+    await expect(isPollinationsDiscordMember(env, userId)).rejects.toThrow(
+        "Discord membership lookup is rate limited",
     );
-    expect(firstResponse.status).toBe(429);
-    expect(firstResponse.headers.get("Retry-After")).toBe("12");
     expect(mocks.discord.state.membershipRequestCount).toBe(1);
 });
 

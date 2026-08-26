@@ -12,14 +12,6 @@ class ExaFailure extends Error {
     }
 }
 
-function responseCost(body) {
-    const cost = body?.costDollars?.total;
-    if (!Number.isFinite(cost) || cost < 0) {
-        throw new ExaFailure(502, "Exa response is missing usage cost");
-    }
-    return cost;
-}
-
 async function callExa(path, payload, env, fetchImpl) {
     if (!env.EXA_API_KEY) {
         throw new ExaFailure(500, "Exa API key is not configured");
@@ -33,18 +25,20 @@ async function callExa(path, payload, env, fetchImpl) {
         body: JSON.stringify(payload),
     });
     const body = await response.json().catch(() => null);
+    const cost = body?.costDollars?.total;
     if (!response.ok) {
         throw new ExaFailure(
             response.status >= 500 ? 502 : response.status,
             body?.error ||
                 body?.message ||
                 `Exa returned HTTP ${response.status}`,
-            Number.isFinite(body?.costDollars?.total)
-                ? body.costDollars.total
-                : 0,
+            Number.isFinite(cost) ? cost : 0,
         );
     }
-    return { body, cost: responseCost(body) };
+    if (!Number.isFinite(cost) || cost < 0) {
+        throw new ExaFailure(502, "Exa response is missing usage cost");
+    }
+    return { body, cost };
 }
 
 function formatSearchResults(results) {
@@ -87,17 +81,21 @@ function formatFetchedPages(body) {
     return sections.join("\n\n---\n\n") || "No content found.";
 }
 
+function textResult(text) {
+    return { content: [{ type: "text", text }] };
+}
+
 async function runWithUsage(reportUsage, tool, adjustmentId, units, run) {
     try {
-        const result = await run();
+        const { cost, result } = await run();
         reportUsage({
-            cost: result.cost,
+            cost,
             tool,
             status: 200,
             adjustmentId,
             adjustmentUnits: units,
         });
-        return result.content;
+        return result;
     } catch (error) {
         const failure =
             error instanceof ExaFailure
@@ -155,14 +153,7 @@ function buildServer(env, fetchImpl, reportUsage) {
                     );
                     return {
                         cost,
-                        content: {
-                            content: [
-                                {
-                                    type: "text",
-                                    text: formatSearchResults(body.results),
-                                },
-                            ],
-                        },
+                        result: textResult(formatSearchResults(body.results)),
                     };
                 },
             ),
@@ -198,14 +189,7 @@ function buildServer(env, fetchImpl, reportUsage) {
                     );
                     return {
                         cost,
-                        content: {
-                            content: [
-                                {
-                                    type: "text",
-                                    text: formatFetchedPages(body),
-                                },
-                            ],
-                        },
+                        result: textResult(formatFetchedPages(body)),
                     };
                 },
             ),

@@ -9,6 +9,28 @@ Generate text responses using AI models. Fully compatible with the OpenAI Chat C
 
 **Available models:** {{TEXT_MODELS}}
 
+### Reasoning
+
+Models with `reasoning: true` in their metadata (see `/v1/models`) support adjustable reasoning depth via the `reasoning_effort` parameter. Use `"none"` to disable reasoning, `"minimal"` for a brief chain-of-thought, or `"high"` for deep step-by-step analysis. Check a model's `reasoning` capability before relying on it — non-reasoning models ignore or reject the parameter.
+
+**Chat Completions:**
+
+```json
+{
+  "model": "gpt-oss",
+  "messages": [{"role": "user", "content": "Explain the physics of black holes"}],
+  "reasoning_effort": "high"
+}
+```
+
+**Simple text endpoint** — pass `reasoning_effort` as a query parameter:
+
+```
+GET /text/Explain%20black%20holes?model=gpt-oss&reasoning_effort=high
+```
+
+Valid values: `"none"`, `"minimal"`, `"low"`, `"medium"`, `"high"`, `"xhigh"`, `"max"`.
+
 ### Prompt caching
 
 On Gemini, Claude, and Nova models, a large static prompt prefix can be cached so repeat requests bill it at a fraction of the input rate. Mark the end of the static prefix with `cache_control` on a content block (not on the message); everything before the marker must be byte-identical across requests, everything dynamic goes after. The first request creates the cache (`usage` reports `cache_creation_input_tokens`); repeat requests within the TTL report `prompt_tokens_details.cached_tokens` at the discounted rate.

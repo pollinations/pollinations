@@ -1,6 +1,26 @@
 [
   {
     "emoji": "🖼️",
+    "name": "Dery AI",
+    "url": "https://dery-ai.my.id",
+    "description": "Create collaborative images using the Pollinations image API",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "derymegana",
+    "githubUserId": "207986077",
+    "repositoryUrl": "https://github.com/derymegana/derymegana-github-io",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-08-23",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/13782",
+    "approvedDate": "2026-08-26",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
+    "emoji": "🖼️",
     "name": "Pollinations App",
     "url": "https://sohaib7838.github.io/pollinations-app",
     "description": "A simple web app that lets users connect their Pollinations account and generate AI images using their own Pollen.",

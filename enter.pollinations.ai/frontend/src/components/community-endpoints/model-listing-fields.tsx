@@ -2,15 +2,14 @@ import {
     ButtonGroup,
     CheckIcon,
     FieldStack,
+    InlineLink,
     Input,
     TabButton,
 } from "@pollinations/ui";
 import {
-    COMMUNITY_ENDPOINT_CAPABILITIES,
     COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
     COMMUNITY_ENDPOINT_INPUT_MODALITIES,
     COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH,
-    type CommunityEndpointCapability,
     type CommunityEndpointModality,
 } from "@shared/community-endpoints.ts";
 import type { ModelInputModality } from "@shared/registry/registry.ts";
@@ -21,34 +20,24 @@ type ListingTextField =
     | "title"
     | "description"
     | "visibility"
-    | "perUserRpm"
-    | "contextLength";
-
-const CAPABILITY_LABEL: Record<CommunityEndpointCapability, string> = {
-    tool_calling: "Tool calling",
-    reasoning: "Reasoning",
-};
+    | "perUserRpm";
 
 export function ModelListingFields({
     form,
     modality,
     canPublish,
     isAgent,
-    allowPerUserRpm,
     required = true,
     onChange,
     onInputModalitiesChange,
-    onCapabilitiesChange,
 }: {
     form: ModelListingFormState;
     modality: CommunityEndpointModality;
     canPublish: boolean;
     isAgent: boolean;
-    allowPerUserRpm: boolean;
     required?: boolean;
     onChange: (key: ListingTextField, value: string) => void;
     onInputModalitiesChange?: (value: ModelInputModality[]) => void;
-    onCapabilitiesChange?: (value: CommunityEndpointCapability[]) => void;
 }) {
     function toggleInputModality(input: ModelInputModality): void {
         const selected = form.inputModalities.includes(input);
@@ -63,17 +52,7 @@ export function ModelListingFields({
         );
     }
 
-    function toggleCapability(capability: CommunityEndpointCapability): void {
-        const next = new Set(form.capabilities);
-        if (next.has(capability)) next.delete(capability);
-        else next.add(capability);
-        onCapabilitiesChange?.(
-            COMMUNITY_ENDPOINT_CAPABILITIES.filter((value) => next.has(value)),
-        );
-    }
-
     const isPublic = form.visibility === "public";
-    const canAdvertise = modality === "text";
 
     return (
         <>
@@ -114,9 +93,19 @@ export function ModelListingFields({
                 <FieldStack
                     label={isAgent ? "ID" : "Model ID"}
                     helper={
-                        isAgent
-                            ? "Public ID: {username}/{id}."
-                            : "Public ID: {username}/{model-id}."
+                        isAgent ? (
+                            "Public ID: {username}/{id}."
+                        ) : (
+                            <>
+                                Public ID: {"{username}/{model-id}"}.{" "}
+                                <InlineLink
+                                    href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_MODEL.md"
+                                    showIcon={false}
+                                >
+                                    Naming guide
+                                </InlineLink>
+                            </>
+                        )
                     }
                     alignLabelRow
                 >
@@ -135,7 +124,17 @@ export function ModelListingFields({
                 </FieldStack>
                 <FieldStack
                     label="Title"
-                    helper="Display name shown in the Models list."
+                    helper={
+                        <>
+                            Display name shown in the Models list.{" "}
+                            <InlineLink
+                                href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_MODEL.md"
+                                showIcon={false}
+                            >
+                                Naming guide
+                            </InlineLink>
+                        </>
+                    }
                     alignLabelRow
                 >
                     <Input
@@ -209,56 +208,7 @@ export function ModelListingFields({
                 </ButtonGroup>
             </FieldStack>
 
-            {!isAgent && canAdvertise && (
-                <FieldStack
-                    label="Capabilities"
-                    helper="Optional catalog claims about the upstream model."
-                    alignLabelRow
-                >
-                    <ButtonGroup aria-label="Advertised capabilities">
-                        {COMMUNITY_ENDPOINT_CAPABILITIES.map((capability) => {
-                            const selected =
-                                form.capabilities.includes(capability);
-                            return (
-                                <TabButton
-                                    key={capability}
-                                    active={selected}
-                                    onClick={() => toggleCapability(capability)}
-                                    size="sm"
-                                    className="gap-1.5"
-                                >
-                                    {selected && (
-                                        <CheckIcon className="h-3.5 w-3.5" />
-                                    )}
-                                    {CAPABILITY_LABEL[capability]}
-                                </TabButton>
-                            );
-                        })}
-                    </ButtonGroup>
-                </FieldStack>
-            )}
-
-            {!isAgent && canAdvertise && (
-                <FieldStack
-                    label="Context length (optional)"
-                    helper="Context window in tokens. Leave blank to advertise none."
-                    alignLabelRow
-                >
-                    <Input
-                        name="community-model-context-length"
-                        type="number"
-                        min="1"
-                        step="1"
-                        value={form.contextLength}
-                        placeholder="Not advertised"
-                        onChange={(event) =>
-                            onChange("contextLength", event.target.value)
-                        }
-                    />
-                </FieldStack>
-            )}
-
-            {allowPerUserRpm && (
+            {!isAgent && (
                 <FieldStack
                     label="Per-user RPM"
                     helper="Optional. Maximum requests each Pollinations user can send per minute. Decimals are supported (0.5 = one request every 2 minutes). Leave blank for no Pollinations-side limit."

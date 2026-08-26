@@ -8,6 +8,7 @@ import {
     type ModelDefinition,
     type ModelInputModality,
     type PriceDefinition,
+    type VideoCapability,
 } from "./registry/registry.ts";
 import {
     OPENAI_CHAT_USAGE_PATHS,
@@ -22,6 +23,7 @@ export const COMMUNITY_ENDPOINT_CHANGE_DELAY_MS = 12 * 60 * 60 * 1000;
 export const COMMUNITY_ENDPOINT_MODALITIES = [
     "text",
     "image",
+    "video",
     "transcription",
 ] as const;
 // How a community image endpoint is billed. "request" charges the fixed
@@ -70,6 +72,7 @@ export type CommunityEndpointModality =
 export const COMMUNITY_ENDPOINT_INPUT_MODALITIES = {
     text: MODEL_INPUT_MODALITIES,
     image: ["text", "image"],
+    video: ["text", "image"],
     transcription: ["audio"],
 } as const satisfies Record<
     CommunityEndpointModality,
@@ -86,6 +89,13 @@ export const COMMUNITY_ENDPOINT_CAPABILITIES = [
 export type CommunityEndpointCapability =
     (typeof COMMUNITY_ENDPOINT_CAPABILITIES)[number];
 
+export const COMMUNITY_ENDPOINT_ADVERTISED_VIDEO_CAPABILITIES = [
+    "start_frame",
+    "end_frame",
+] as const satisfies readonly VideoCapability[];
+
+export const MAX_COMMUNITY_VIDEO_DURATION_SECONDS = 120;
+
 export const CommunityEndpointAdvertisedSchema = z
     .object({
         capabilities: z
@@ -96,6 +106,22 @@ export const CommunityEndpointAdvertisedSchema = z
             .int()
             .positive()
             .max(MAX_COMMUNITY_CONTEXT_LENGTH)
+            .optional(),
+        // Video models only: the duration window callers may request.
+        minDuration: z
+            .number()
+            .positive()
+            .max(MAX_COMMUNITY_VIDEO_DURATION_SECONDS)
+            .optional(),
+        maxDuration: z
+            .number()
+            .positive()
+            .max(MAX_COMMUNITY_VIDEO_DURATION_SECONDS)
+            .optional(),
+        defaultDuration: z
+            .number()
+            .positive()
+            .max(MAX_COMMUNITY_VIDEO_DURATION_SECONDS)
             .optional(),
     })
     .strict();
@@ -108,16 +134,40 @@ export function normalizeCommunityEndpointAdvertised(
     value: CommunityEndpointAdvertised | null | undefined,
     modality: CommunityEndpointModality,
 ): CommunityEndpointAdvertised {
-    if (!value || modality !== "text") return {};
+    if (!value) return {};
     const advertised: CommunityEndpointAdvertised = {};
-    if (value.capabilities?.length) {
-        const declared = new Set<string>(value.capabilities);
-        const capabilities = COMMUNITY_ENDPOINT_CAPABILITIES.filter(
-            (capability) => declared.has(capability),
-        );
-        if (capabilities.length) advertised.capabilities = capabilities;
+    if (modality === "text") {
+        if (value.capabilities?.length) {
+            const declared = new Set<string>(value.capabilities);
+            const capabilities = COMMUNITY_ENDPOINT_CAPABILITIES.filter(
+                (capability) => declared.has(capability),
+            );
+            if (capabilities.length) advertised.capabilities = capabilities;
+        }
+        if (value.contextLength) advertised.contextLength = value.contextLength;
+        return advertised;
     }
-    if (value.contextLength) advertised.contextLength = value.contextLength;
+    if (modality === "video") {
+        // Duration metadata is only meaningful as a bounded, ordered window.
+        const { minDuration, maxDuration, defaultDuration } = value;
+        if (
+            minDuration !== undefined &&
+            maxDuration !== undefined &&
+            minDuration <= maxDuration
+        ) {
+            advertised.minDuration = minDuration;
+            advertised.maxDuration = maxDuration;
+        }
+        if (
+            defaultDuration !== undefined &&
+            defaultDuration >= (advertised.minDuration ?? defaultDuration) &&
+            defaultDuration <= (advertised.maxDuration ?? defaultDuration)
+        ) {
+            advertised.defaultDuration = defaultDuration;
+        } else if (defaultDuration === undefined && minDuration !== undefined) {
+            advertised.defaultDuration = advertised.minDuration;
+        }
+    }
     return advertised;
 }
 
@@ -233,6 +283,18 @@ const COMMUNITY_TRANSCRIPTION_PRICE_FIELD = {
     rawUsagePaths: ["duration"],
 } as const;
 
+// Video endpoints bill per second of generated output, mirroring first-party
+// video models (cost keyed on completionVideoSeconds). The provider returns
+// the duration in an OpenAI-compatible usage shape — usage.video_seconds or
+// usage.duration — which the probe normalizes for billing.
+const COMMUNITY_VIDEO_PRICE_FIELD = {
+    key: "completionVideoPrice",
+    usageType: "completionVideoSeconds",
+    label: "Generated video",
+    priceUnit: "second",
+    rawUsagePaths: ["video_seconds", "duration"],
+} as const;
+
 export const COMMUNITY_ENDPOINT_PRICE_FIELDS = [
     ...COMMUNITY_TEXT_PRICE_FIELDS,
     COMMUNITY_IMAGE_PRICE_FIELD,
@@ -250,6 +312,10 @@ const COMMUNITY_IMAGE_ENDPOINT_PRICE_FIELDS = [
     COMMUNITY_IMAGE_PRICE_FIELD,
 ] as const;
 
+const COMMUNITY_VIDEO_ENDPOINT_PRICE_FIELDS = [
+    COMMUNITY_VIDEO_PRICE_FIELD,
+] as const;
+
 const COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS = [
     COMMUNITY_TRANSCRIPTION_PRICE_FIELD,
 ] as const;
@@ -261,6 +327,9 @@ export function communityEndpointPriceFieldsForModality(
     if (modality === "transcription") {
         return COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS;
     }
+    if (modality === "video") {
+        return COMMUNITY_VIDEO_ENDPOINT_PRICE_FIELDS;
+    }
     if (modality !== "image") return COMMUNITY_TEXT_ENDPOINT_PRICE_FIELDS;
     return imagePricing === "tokens"
         ? COMMUNITY_IMAGE_TOKEN_PRICE_FIELDS
@@ -269,10 +338,12 @@ export function communityEndpointPriceFieldsForModality(
 
 export type CommunityEndpointPriceField =
     | (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number]
-    | (typeof COMMUNITY_IMAGE_TOKEN_PRICE_FIELDS)[number];
+    | (typeof COMMUNITY_IMAGE_TOKEN_PRICE_FIELDS)[number]
+    | (typeof COMMUNITY_VIDEO_ENDPOINT_PRICE_FIELDS)[number];
 
 export type CommunityEndpointPriceKey =
-    (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number]["key"];
+    | (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number]["key"]
+    | (typeof COMMUNITY_VIDEO_ENDPOINT_PRICE_FIELDS)[number]["key"];
 
 export type CommunityEndpointPrices = Record<CommunityEndpointPriceKey, number>;
 
@@ -357,6 +428,7 @@ export function normalizeCommunityEndpointModality(
     value: string | null | undefined,
 ): CommunityEndpointModality {
     if (value === "transcription") return "transcription";
+    if (value === "video") return "video";
     return value === "image" ? "image" : "text";
 }
 
@@ -895,6 +967,10 @@ export function communityAudioTranscriptionsUrl(baseUrl: string): string {
     return `${communityOpenAIBaseUrl(baseUrl)}/audio/transcriptions`;
 }
 
+export function communityVideoUrl(baseUrl: string): string {
+    return `${communityOpenAIBaseUrl(baseUrl)}/video/generations`;
+}
+
 /**
  * Audio duration reported by an OpenAI-compatible transcription response.
  *
@@ -927,12 +1003,42 @@ export function communityOpenAIBaseUrl(baseUrl: string): string {
         "/images/generations",
         "/images/edits",
         "/audio/transcriptions",
+        "/video/generations",
     ]) {
         if (normalized.endsWith(suffix)) {
             return normalized.slice(0, -suffix.length);
         }
     }
     return normalized;
+}
+
+/**
+ * Video duration reported by an OpenAI-compatible video generation response.
+ *
+ * Mirrors communityTranscriptionSeconds: `usage.video_seconds` is the
+ * documented shape, `usage.duration` and a top-level `duration` cover the
+ * common passthrough variants. Returns null when none carry a usable number —
+ * the probe rejects registration and the request path fails rather than ever
+ * billing an unmetered video at zero.
+ */
+export function communityVideoSeconds(body: unknown): number | null {
+    if (!body || typeof body !== "object") return null;
+    const record = body as Record<string, unknown>;
+    const usage =
+        record.usage && typeof record.usage === "object"
+            ? (record.usage as Record<string, unknown>)
+            : undefined;
+    for (const value of [
+        usage?.video_seconds,
+        usage?.duration,
+        record.video_seconds,
+        record.duration,
+    ]) {
+        if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+            return value;
+        }
+    }
+    return null;
 }
 
 export function communityPriceDefinition(
@@ -989,6 +1095,7 @@ export function communityModelDefinition(
         endpoint.imagePricing,
     );
     const isImage = modality === "image";
+    const isVideo = modality === "video";
     const isTranscription = modality === "transcription";
     // Token-priced image endpoints bill like text models (usage × per-token
     // rates), so only fixed per-request image endpoints are flat-rate.
@@ -1007,17 +1114,41 @@ export function communityModelDefinition(
         perUserRpm: endpoint.perUserRpm,
         brand: providerName || "Community",
         brandUrl: providerName && providerUrl ? providerUrl : undefined,
-        category: isImage ? "image" : isTranscription ? "audio" : "text",
+        category: isVideo
+            ? "video"
+            : isImage
+              ? "image"
+              : isTranscription
+                ? "audio"
+                : "text",
         cost: communityPriceDefinition(endpoint, modality, imagePricing),
         priceMultiplier: 1,
         addedDate: endpoint.addedDate ?? 0,
         title: communityEndpointTitle(endpoint),
         description: description || undefined,
         inputModalities,
-        outputModalities: isImage ? ["image"] : ["text"],
+        outputModalities: isVideo ? ["video"] : isImage ? ["image"] : ["text"],
         hidden: endpoint.hidden,
         ...(endpoint.fallbacks?.length
             ? { fallbacks: endpoint.fallbacks }
+            : {}),
+        ...(isVideo
+            ? {
+                  supportedEndpoints: [
+                      "/v1/video/generations",
+                      "/video/{prompt}",
+                  ],
+                  // Community video endpoints bill per output second like the
+                  // first-party video models.
+                  flatRate: false,
+              }
+            : {}),
+        ...(isVideo && (advertised.minDuration || advertised.maxDuration)
+            ? {
+                  minDuration: advertised.minDuration,
+                  maxDuration: advertised.maxDuration,
+                  defaultDuration: advertised.defaultDuration,
+              }
             : {}),
         ...(isTranscription
             ? { supportedEndpoints: ["/v1/audio/transcriptions"] }

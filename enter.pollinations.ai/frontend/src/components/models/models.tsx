@@ -7,11 +7,10 @@ import {
     ClockIcon,
     Dropdown,
     DropdownItem,
+    EditableCombobox,
     ExternalLinkButton,
     GitHubIcon,
-    InfoTip,
     InlineLink,
-    Input,
     SearchIcon,
     Section,
     SparklesIcon,
@@ -35,7 +34,11 @@ import {
     fetchModelCatalog,
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
-import { matchesModelQuery, parseModelQuery } from "./model-query.ts";
+import {
+    getModelQuerySuggestions,
+    matchesModelQuery,
+    parseModelQuery,
+} from "./model-query.ts";
 import type { ModelScope, ModelSort } from "./model-search.ts";
 import { sortModels } from "./model-sort.ts";
 import {
@@ -177,6 +180,8 @@ export const Models: FC = () => {
     const activeSort = modelSearch.sort ?? "newest";
     const urlSearch = modelSearch.q ?? "";
     const [search, setSearch] = useState(urlSearch);
+    const [searchFocused, setSearchFocused] = useState(false);
+    const [searchOpen, setSearchOpen] = useState(false);
     const lastPushedSearchRef = useRef(urlSearch);
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
     const [catalogError, setCatalogError] = useState<string | null>(null);
@@ -204,6 +209,44 @@ export const Models: FC = () => {
                 : scopedModels,
         [parsedQuery, query, scopedModels],
     );
+
+    // Suggestions complete the token being typed, not the whole query, so a
+    // qualifier picked mid-search only replaces that one word.
+    const lastSpaceIndex = search.lastIndexOf(" ");
+    const searchTokenPrefix = search.slice(0, lastSpaceIndex + 1);
+    const searchToken = search.slice(lastSpaceIndex + 1);
+    const searchSuggestions = useMemo(
+        () => getModelQuerySuggestions(searchToken, scopedModels),
+        [searchToken, scopedModels],
+    );
+    const searchOptions = useMemo(
+        () =>
+            searchSuggestions.map(
+                (suggestion) =>
+                    searchTokenPrefix +
+                    suggestion +
+                    (suggestion.endsWith(":") ? "" : " "),
+            ),
+        [searchSuggestions, searchTokenPrefix],
+    );
+
+    // Picking a suggestion (click or Enter) closes the popup even when the
+    // new token has its own follow-up suggestions (e.g. `access:` -> its
+    // values), because that close comes from the same interaction that
+    // changed the value. Reopen once the resulting options are known, same
+    // as typing already does on every keystroke. Depends on primitives, not
+    // the `searchOptions` array itself, so an unrelated re-render (e.g. a
+    // stats refetch producing a new but equal-content array) can't reopen it.
+    const hasSearchSuggestions = searchOptions.length > 0;
+    // `search` isn't read in the body, but selecting one filter's value into
+    // another (e.g. "access:paid" -> "type:") keeps hasSearchSuggestions true
+    // throughout, so re-running on every value change is what reopens the popup.
+    // biome-ignore lint/correctness/useExhaustiveDependencies: see comment above
+    useEffect(() => {
+        if (searchFocused && hasSearchSuggestions) {
+            setSearchOpen(true);
+        }
+    }, [searchFocused, hasSearchSuggestions, search]);
 
     const loadModelCatalog = useCallback(
         () =>
@@ -401,59 +444,27 @@ export const Models: FC = () => {
                             })}
                         </div>
                     </div>
-                    <div className="flex w-full items-center justify-between gap-2">
-                        <div className="relative min-w-0 max-w-md flex-1">
-                            <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />
-                            <Input
-                                type="search"
+                    <div className="flex w-full flex-wrap items-center justify-between gap-2">
+                        <div className="relative min-w-0 max-w-md flex-1 basis-[240px]">
+                            <SearchIcon className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />
+                            <EditableCombobox
                                 value={search}
-                                onChange={(event) =>
-                                    setSearch(event.target.value)
-                                }
+                                options={searchOptions}
+                                onChange={setSearch}
+                                open={searchOpen}
+                                onOpenChange={setSearchOpen}
+                                onFocus={() => setSearchFocused(true)}
                                 onBlur={() => {
+                                    setSearchFocused(false);
                                     const normalizedSearch = search.trim();
                                     setSearch(normalizedSearch);
                                     pushSearch(normalizedSearch);
                                 }}
                                 placeholder={`Search ${searchTarget}…`}
                                 aria-label={`Search ${searchTarget}`}
-                                className="w-full pl-9"
+                                autoComplete="off"
+                                className="pl-9"
                             />
-                            <p className="mt-1 flex items-center text-xs text-theme-text-muted">
-                                Search filters: access, owner, id, type,
-                                capability
-                                <InfoTip
-                                    label="How to filter models"
-                                    content={
-                                        <span className="flex flex-col gap-1 text-left">
-                                            <span>
-                                                <strong>access:</strong> paid,
-                                                quest, or free
-                                            </span>
-                                            <span>
-                                                <strong>owner:</strong> GitHub
-                                                login
-                                            </span>
-                                            <span>
-                                                <strong>id:</strong> exact model
-                                                ID
-                                            </span>
-                                            <span>
-                                                <strong>type:</strong> model
-                                                category
-                                            </span>
-                                            <span>
-                                                <strong>capability:</strong>
-                                                model capability
-                                            </span>
-                                            <span>
-                                                Combine filters and words to
-                                                match all conditions.
-                                            </span>
-                                        </span>
-                                    }
-                                />
-                            </p>
                         </div>
                         <Dropdown
                             align="end"

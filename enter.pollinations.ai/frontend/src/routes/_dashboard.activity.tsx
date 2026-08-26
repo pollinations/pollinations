@@ -19,10 +19,15 @@ const PERIOD_PATTERN: Record<PeriodGranularity, RegExp> = {
 };
 
 function stringArray(value: unknown): string[] | undefined {
-    return Array.isArray(value) &&
-        value.every((item) => typeof item === "string")
-        ? value
-        : undefined;
+    if (Array.isArray(value)) {
+        return value.every((item) => typeof item === "string")
+            ? value
+            : undefined;
+    }
+    if (typeof value === "string" && value.length > 0) {
+        return [value];
+    }
+    return undefined;
 }
 
 function metric(value: unknown): Metric | undefined {
@@ -95,8 +100,7 @@ function ActivityPage() {
                         minDate={ACTIVITY_MIN_DATE}
                     />
                     <p className="text-micro text-theme-text-muted">
-                        Usage refreshes hourly. All dates and times are shown in
-                        UTC.
+                        Usage refreshes hourly. Times are shown in UTC.
                     </p>
                 </div>
                 <UsageSection

@@ -19,13 +19,22 @@ const CREDENTIAL_QUERY_PARAMS = new Set([
     "key",
     "token",
 ]);
+const USER_MEDIA_QUERY_PARAMS = new Set([
+    "reference_images",
+    "reference_videos",
+    "reference_audios",
+]);
 const REDACTED = "[redacted]";
 
 export function redactCredentialQueryParams(url: URL): string {
     const redacted = new URL(url);
-    for (const param of redacted.searchParams.keys()) {
+    for (const param of new Set(redacted.searchParams.keys())) {
         if (CREDENTIAL_QUERY_PARAMS.has(param.toLowerCase())) {
             redacted.searchParams.set(param, REDACTED);
+        } else if (USER_MEDIA_QUERY_PARAMS.has(param.toLowerCase())) {
+            const values = redacted.searchParams.getAll(param);
+            redacted.searchParams.delete(param);
+            redacted.searchParams.set(param, redactUserMediaQueryValue(values));
         }
     }
     return redacted.toString();
@@ -109,7 +118,21 @@ function redactQueryParam(
     key: string,
     value: string | string[],
 ): string | string[] {
-    return CREDENTIAL_QUERY_PARAMS.has(key.toLowerCase()) ? REDACTED : value;
+    const normalizedKey = key.toLowerCase();
+    if (CREDENTIAL_QUERY_PARAMS.has(normalizedKey)) return REDACTED;
+    return USER_MEDIA_QUERY_PARAMS.has(normalizedKey)
+        ? redactUserMediaQueryValue(value)
+        : value;
+}
+
+function redactUserMediaQueryValue(value: string | string[]): string {
+    const values = Array.isArray(value) ? value : [value];
+    const count = values.reduce(
+        (total, entry) =>
+            total + entry.split("|").filter((segment) => segment.trim()).length,
+        0,
+    );
+    return count > 1 ? `[redacted:${count}]` : REDACTED;
 }
 
 function redactBodyFields(value: unknown): unknown {

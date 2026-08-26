@@ -41,7 +41,7 @@ On Gemini, Claude, and Nova models, a large static prompt prefix can be cached s
 
 ### Reasoning
 
-Reasoning-capable models can spend extra tokens thinking before answering. Request a thinking depth with `reasoning_effort`; use `"none"` to disable it. Check the [models list](https://gen.pollinations.ai/models) — each model's metadata reports whether it supports adjustable reasoning, so pick one that does before sending the parameter. Unsupported values on non-reasoning models are ignored.
+Reasoning-capable models can spend extra tokens thinking before answering. Request a thinking depth with `reasoning_effort`. Check the [models list](https://gen.pollinations.ai/models) first — model metadata reports whether a model supports reasoning at all, not which effort levels it accepts. Handling of specific values (including `"none"` and `"minimal"`) varies by model: some honor every level, while others reject, normalize, or drop unsupported ones.
 
 ```bash
 # POST /v1/chat/completions — OpenAI-compatible endpoint
@@ -71,4 +71,4 @@ curl https://gen.pollinations.ai/text \
   }'
 ```
 
-Higher efforts produce more thorough (and slower, more expensive) answers; `"minimal"` keeps latency low while still letting the model think briefly.
+Higher efforts produce more thorough (and slower, more expensive) answers on models that support them.

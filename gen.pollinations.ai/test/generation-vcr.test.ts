@@ -695,7 +695,7 @@ test("pins other Perplexity models high and strips search options elsewhere", as
     paidApiKey,
     mocks,
 }) => {
-    await mocks.enable("portkeyDirect");
+    await mocks.enable("tinybird", "portkeyDirect");
 
     for (const [model, searchContextSize] of [
         ["perplexity", "low"],

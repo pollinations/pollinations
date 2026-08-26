@@ -27,6 +27,7 @@ interface Seedance25Input {
     seed?: number;
     image?: string;
     last_frame_image?: string;
+    reference_images?: string[];
 }
 
 function resolveAspectRatio(safeParams: ImageParams): Seedance25AspectRatio {
@@ -84,6 +85,12 @@ export async function callSeedance25API(
     }
     if (images[0]) input.image = await toDataUri(images[0]);
     if (images[1]) input.last_frame_image = await toDataUri(images[1]);
+    // Reference images guide generation without occupying frame slots. They
+    // are forwarded as public URLs (validated at the params layer), not
+    // data URIs — providers fetch them directly.
+    if (safeParams.reference_images?.length > 0) {
+        input.reference_images = safeParams.reference_images;
+    }
 
     let videoUrl: string;
     let actualDurationSeconds: number | undefined;

@@ -86,6 +86,19 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
             description:
                 "Reference image URL(s) for image editing or video generation. Separate multiple URLs with `|` or `,`. **Image models:** Used for editing/style reference (kontext, gptimage, seedream, klein, nanobanana). **Video models:** `image[0]` = starting frame (I2V); `image[1]` = ending frame for first+last-frame interpolation. End-frame supported by `veo`, the `seedance-2.0` family, `seedance-2.5`, `wan-fast`, and `wan-pro`. Requests exceeding the selected model's `max_reference_images` return 400. See `video_capabilities` on `/image/models` or `/models` for per-model support.",
         }),
+    reference_images: z
+        .string()
+        .transform((value: string) =>
+            value
+                .split("|")
+                .map((reference) => reference.trim())
+                .filter(Boolean),
+        )
+        .optional()
+        .meta({
+            description:
+                "Video models only: public HTTP(S) image URLs used as visual guidance without fixing the first or last frame. Separate multiple URLs with `|`. Support and limits are advertised by `reference_images` and `max_input_references` in `/models`; cannot be combined with the `image` frame parameter.",
+        }),
     transparent: z.coerce.boolean().optional().default(false).meta({
         description:
             "Generate image with transparent background. Only supported by `gptimage` and `gptimage-large`.",

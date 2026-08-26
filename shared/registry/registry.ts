@@ -90,6 +90,7 @@ export type VideoCapability =
     | "start_frame"
     | "end_frame"
     | "keyframes"
+    | "reference_images"
     | "audio_output";
 
 export type BillingAdjustmentRule = {
@@ -214,6 +215,7 @@ export type ModelDefinition = {
     allowedDurations?: number[]; // Video-only: explicit set of valid durations (overrides min/max range)
     durationStep?: number; // Video-only: duration must be a multiple of this value
     maxReferenceImages?: number; // Models with image input: effective accepted reference images
+    maxInputReferences?: number; // Video-only: reference images distinct from start/end frames
     maxReferenceVideos?: number; // Models with video input: effective accepted reference videos
 };
 

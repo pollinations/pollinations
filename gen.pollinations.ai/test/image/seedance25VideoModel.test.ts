@@ -118,4 +118,63 @@ describe("Seedance 2.5 via Replicate", () => {
         ).rejects.toMatchObject({ status: 400 });
         expect(fetchSpy).not.toHaveBeenCalled();
     });
+
+    it("forwards reference images to the provider without consuming frame slots", async () => {
+        syncImageEnv(
+            {
+                REPLICATE_API_TOKEN: "replicate-test-key",
+            } as CloudflareBindings,
+            ["REPLICATE_API_TOKEN"],
+        );
+        const referenceUrls = [
+            "https://image.example.com/ref-1.png",
+            "https://image.example.com/ref-2.png",
+            "https://image.example.com/ref-3.png",
+        ];
+        const inputs: Record<string, unknown>[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
+            const href = typeof url === "string" ? url : url.toString();
+            if (href === PREDICTIONS_URL) {
+                inputs.push(
+                    (
+                        JSON.parse(init?.body as string) as {
+                            input: Record<string, unknown>;
+                        }
+                    ).input,
+                );
+                return new Response(
+                    JSON.stringify({
+                        id: "pred-seedance-25-ref",
+                        status: "succeeded",
+                        output: VIDEO_URL,
+                        metrics: { video_output_duration_seconds: 4 },
+                    }),
+                    { status: 201 },
+                );
+            }
+            if (href === VIDEO_URL) {
+                return new Response(new Uint8Array([0, 0, 0, 24]), {
+                    headers: { "Content-Type": "video/mp4" },
+                });
+            }
+            return new Response("unexpected URL", { status: 404 });
+        });
+
+        const result = await callSeedance25API("a paper boat", {
+            ...baseParams,
+            image: [],
+            reference_images: referenceUrls,
+        });
+
+        expect(inputs).toHaveLength(1);
+        // References pass through as URLs, distinct from frame slots.
+        expect(inputs[0].reference_images).toEqual(referenceUrls);
+        expect(inputs[0].image).toBeUndefined();
+        expect(result).toMatchObject({
+            durationSeconds: 4,
+            trackingData: {
+                usage: { completionVideoSeconds: 4 },
+            },
+        });
+    });
 });

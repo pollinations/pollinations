@@ -71,6 +71,16 @@ export const ImageParamsSchema = z
                     : value.split(",");
             })
             .catch([]),
+        reference_images: z
+            .union([z.array(z.string()), z.string(), z.null(), z.undefined()])
+            .transform((value?: string[] | string | null) => {
+                if (!value) return [];
+                if (Array.isArray(value)) return value;
+                return value.includes("|")
+                    ? value.split("|")
+                    : value.split(",");
+            })
+            .catch([]),
         transparent: sanitizedBoolean.catch(false),
         reasoning: z
             .union([z.string(), z.boolean()])
@@ -158,6 +168,36 @@ export const ImageParamsSchema = z
                 message:
                     "grok-imagine-image-2.0 supports low or medium quality.",
             });
+        }
+        if (data.reference_images.length > 0) {
+            const definition = IMAGE_SERVICES[data.model] as ModelDefinition;
+            if (
+                !definition.videoCapabilities?.includes("reference_images") ||
+                !definition.maxInputReferences
+            ) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["reference_images"],
+                    message: `${data.model} does not support reference_images. Models that do advertise \`reference_images\` in video_capabilities.`,
+                });
+            } else if (
+                data.reference_images.length > definition.maxInputReferences
+            ) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["reference_images"],
+                    message: `${data.model} accepts at most ${definition.maxInputReferences} reference images.`,
+                });
+            }
+            // References are guidance, not frames: combining them with frame
+            // slots is ambiguous about which wins.
+            if (data.image.length > 0) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["reference_images"],
+                    message: `reference_images cannot be combined with the image frame parameter on ${data.model}.`,
+                });
+            }
         }
     })
     .transform((data) => {

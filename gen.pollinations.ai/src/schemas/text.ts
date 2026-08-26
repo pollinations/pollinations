@@ -49,7 +49,6 @@ export const GenerateTextRequestQueryParamsSchema = z.object({
     repetition_penalty: FloatQueryParamSchema,
     max_tokens: IntQueryParamSchema,
     max_completion_tokens: IntQueryParamSchema,
-    reasoning_effort: z.string().optional(),
     voice: z.string().optional(),
     stream: BooleanQueryParamSchema.optional().default(false).meta({
         description:

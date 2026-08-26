@@ -6,6 +6,7 @@ import { useTranslate } from "../../hooks/useTranslate";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { BuildDiary } from "../components/BuildDiary";
 import { TopContributors } from "../components/TopContributors";
+import { QuestLeaderboard } from "../components/QuestLeaderboard";
 import { Button } from "../components/ui/button";
 import { Divider } from "../components/ui/divider";
 import { PageCard } from "../components/ui/page-card";

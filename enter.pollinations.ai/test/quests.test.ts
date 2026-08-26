@@ -1752,3 +1752,447 @@ test("account quest history accepts account usage permission", async ({
         rewards: [],
     });
 });
+
+test("GET /api/quests/leaderboard returns top contributors ordered by total quest pollen", async ({
+    sessionToken: _sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const now = new Date();
+
+    // Create three users with github identities
+    const users = await db
+        .insert(schema.user)
+        .values([
+            {
+                id: "leader-user-a",
+                name: "Leader Alice",
+                email: "alice@pollen.quest",
+                githubId: hashGithubId("leader-alice"),
+                githubUsername: "alice-quester",
+                createdAt: now,
+                updatedAt: now,
+            },
+            {
+                id: "leader-user-b",
+                name: "Leader Bob",
+                email: "bob@pollen.quest",
+                githubId: hashGithubId("leader-bob"),
+                githubUsername: "bob-quester",
+                createdAt: now,
+                updatedAt: now,
+            },
+            {
+                id: "leader-user-c",
+                name: "Leader Carol",
+                email: "carol@pollen.quest",
+                githubId: hashGithubId("leader-carol"),
+                githubUsername: "carol-quester",
+                createdAt: now,
+                updatedAt: now,
+            },
+        ])
+        .returning({ id: schema.user.id });
+
+    const userA = users[0];
+    const userB = users[1];
+    const userC = users[2];
+
+    // Insert rewards: alice has 15 pollen (3 quests), bob has 22 pollen (4 quests), carol has 5 pollen (1 quest)
+    await db.insert(schema.rewards).values([
+        {
+            id: "leader-reward-a1",
+            idempotencyKey: `quest:13901:github:${userA.githubId}`,
+            userId: userA.id,
+            questId: "13901",
+            title: "Quest A1",
+            pollenAmount: 5,
+            balanceBucket: "tier",
+            earnedAt: now,
+            claimedAt: now,
+        },
+        {
+            id: "leader-reward-a2",
+            idempotencyKey: `quest:13902:github:${userA.githubId}`,
+            userId: userA.id,
+            questId: "13902",
+            title: "Quest A2",
+            pollenAmount: 5,
+            balanceBucket: "tier",
+            earnedAt: now,
+            claimedAt: now,
+        },
+        {
+            id: "leader-reward-a3",
+            idempotencyKey: `quest:13903:github:${userA.githubId}`,
+            userId: userA.id,
+            questId: "13903",
+            title: "Quest A3",
+            pollenAmount: 5,
+            balanceBucket: "tier",
+            earnedAt: now,
+            claimedAt: now,
+        },
+        {
+            id: "leader-reward-b1",
+            idempotencyKey: `quest:13904:github:${userB.githubId}`,
+            userId: userB.id,
+            questId: "13904",
+            title: "Quest B1",
+            pollenAmount: 7,
+            balanceBucket: "tier",
+            earnedAt: now,
+            claimedAt: now,
+        },
+        {
+            id: "leader-reward-b2",
+            idempotencyKey: `quest:13905:github:${userB.githubId}`,
+            userId: userB.id,
+            questId: "13905",
+            title: "Quest B2",
+            pollenAmount: 7,
+            balanceBucket: "tier",
+            earnedAt: now,
+            claimedAt: now,
+        },
+        {
+            id: "leader-reward-b3",
+            idempotencyKey: `quest:13906:github:${userB.githubId}`,
+            userId: userB.id,
+            questId: "13906",
+            title: "Quest B3",
+            pollenAmount: 7,
+            balanceBucket: "tier",
+            earnedAt: now,
+            claimedAt: now,
+        },
+        {
+            id: "leader-reward-b4",
+            idempotencyKey: `quest:13907:github:${userB.githubId}`,
+            userId: userB.id,
+            questId: "13907",
+            title: "Quest B4",
+            pollenAmount: 1,
+            balanceBucket: "tier",
+            earnedAt: now,
+            claimedAt: now,
+        },
+        {
+            id: "leader-reward-c1",
+            idempotencyKey: `quest:13908:github:${userC.githubId}`,
+            userId: userC.id,
+            questId: "13908",
+            title: "Quest C1",
+            pollenAmount: 5,
+            balanceBucket: "tier",
+            earnedAt: now,
+            claimedAt: now,
+        },
+    ]);
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/quests/leaderboard",
+    );
+    expect(response.status).toBe(200);
+
+    const payload = (await response.json()) as {
+        leaderboard: {
+            githubUsername: string;
+            totalPollen: number;
+            completedQuests: number;
+            avatarUrl: string | null;
+            profileUrl: string | null;
+        }[];
+    };
+
+    expect(payload.leaderboard).toHaveLength(3);
+    // Bob should be first with 22 pollen, then Alice with 15, then Carol with 5
+    expect(payload.leaderboard[0].githubUsername).toBe("bob-quester");
+    expect(payload.leaderboard[0].totalPollen).toBe(22);
+    expect(payload.leaderboard[0].completedQuests).toBe(4);
+    expect(payload.leaderboard[1].githubUsername).toBe("alice-quester");
+    expect(payload.leaderboard[1].totalPollen).toBe(15);
+    expect(payload.leaderboard[1].completedQuests).toBe(3);
+    expect(payload.leaderboard[2].githubUsername).toBe("carol-quester");
+    expect(payload.leaderboard[2].totalPollen).toBe(5);
+    expect(payload.leaderboard[2].completedQuests).toBe(1);
+    expect(payload.leaderboard[2].avatarUrl).toBeNull();
+    expect(payload.leaderboard[2].profileUrl).toBeNull();
+});
+
+test("GET /api/quests/leaderboard excludes unclaimed rewards", async ({
+    sessionToken: _sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const now = new Date();
+
+    await db.insert(schema.user).values({
+        id: "unclaimed-user",
+        name: "Unclaimed User",
+        email: "unclaimed@pollen.quest",
+        githubId: hashGithubId("unclaimed-user"),
+        githubUsername: "unclaimed-quester",
+        createdAt: now,
+        updatedAt: now,
+    });
+
+    // Insert one claimed and one unclaimed reward for the same user
+    await db.insert(schema.rewards).values([
+        {
+            id: "leader-unclaimed-1",
+            idempotencyKey: `quest:13901:github:${hashGithubId("unclaimed-user")}`,
+            userId: "unclaimed-user",
+            questId: "13901",
+            title: "Claimed Quest",
+            pollenAmount: 10,
+            balanceBucket: "tier",
+            earnedAt: now,
+            claimedAt: now,
+        },
+        {
+            id: "leader-unclaimed-2",
+            idempotencyKey: `quest:13902:github:${hashGithubId("unclaimed-user")}`,
+            userId: "unclaimed-user",
+            questId: "13902",
+            title: "Unclaimed Quest",
+            pollenAmount: 10,
+            balanceBucket: "tier",
+            earnedAt: now,
+            claimedAt: null,
+        },
+    ]);
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/quests/leaderboard",
+    );
+    expect(response.status).toBe(200);
+
+    const payload = (await response.json()) as {
+        leaderboard: {
+            githubUsername: string;
+            totalPollen: number;
+            completedQuests: number;
+        }[];
+    };
+
+    const entry = payload.leaderboard.find(
+        (e) => e.githubUsername === "unclaimed-quester",
+    );
+    expect(entry).toBeDefined();
+    // Only the claimed reward counts (10 pollen, 1 quest)
+    expect(entry.totalPollen).toBe(10);
+    expect(entry.completedQuests).toBe(1);
+});
+
+// Leaderboard tests
+
+test("GET /api/quests/leaderboard returns empty array with no rewards", async () => {
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/quests/leaderboard",
+    );
+    expect(response.status).toBe(200);
+    const payload = (await response.json()) as { leaderboard: unknown[] };
+    expect(payload.leaderboard).toEqual([]);
+});
+
+test("GET /api/quests/leaderboard ranks by total quest Pollen descending", async ({
+    sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const now = new Date();
+
+    // Create three users with GitHub identities
+    const user1Id = "quest-lb-user-1";
+    const user2Id = "quest-lb-user-2";
+    const user3Id = "quest-lb-user-3";
+    await db.insert(schema.user).values([
+        {
+            id: user1Id,
+            name: "Alice",
+            email: "alice@example.com",
+            githubUsername: "alice-quest",
+            githubId: hashGithubId("alice"),
+            createdAt: now,
+            updatedAt: now,
+        },
+        {
+            id: user2Id,
+            name: "Bob",
+            email: "bob@example.com",
+            githubUsername: "bob-quest",
+            githubId: hashGithubId("bob"),
+            createdAt: now,
+            updatedAt: now,
+        },
+        {
+            id: user3Id,
+            name: "Charlie",
+            email: "charlie@example.com",
+            githubUsername: "charlie-quest",
+            githubId: hashGithubId("charlie"),
+            createdAt: now,
+            updatedAt: now,
+        },
+    ]);
+
+    // Alice earned 20 pollen across 3 quests
+    await db.insert(schema.rewards).values([
+        {
+            id: `lb-alice-1`,
+            idempotencyKey: `quest:lba:github:${hashGithubId("alice")}`,
+            userId: user1Id,
+            questId: "lba",
+            title: "Quest A",
+            pollenAmount: 10,
+            balanceBucket: "tier",
+            earnedAt: now,
+        },
+        {
+            id: `lb-alice-2`,
+            idempotencyKey: `quest:lbb:github:${hashGithubId("alice")}`,
+            userId: user1Id,
+            questId: "lbb",
+            title: "Quest B",
+            pollenAmount: 5,
+            balanceBucket: "tier",
+            earnedAt: now,
+        },
+        {
+            id: `lb-alice-3`,
+            idempotencyKey: `quest:lbc:github:${hashGithubId("alice")}`,
+            userId: user1Id,
+            questId: "lbc",
+            title: "Quest C",
+            pollenAmount: 5,
+            balanceBucket: "tier",
+            earnedAt: now,
+        },
+    ]);
+
+    // Bob earned 10 pollen across 1 quest
+    await db.insert(schema.rewards).values({
+        id: `lb-bob-1`,
+        idempotencyKey: `quest:lbd:github:${hashGithubId("bob")}`,
+        userId: user2Id,
+        questId: "lbd",
+        title: "Quest D",
+        pollenAmount: 10,
+        balanceBucket: "tier",
+        earnedAt: now,
+    });
+
+    // Charlie earned 5 pollen across 2 quests
+    await db.insert(schema.rewards).values([
+        {
+            id: `lb-charlie-1`,
+            idempotencyKey: `quest:lbe:github:${hashGithubId("charlie")}`,
+            userId: user3Id,
+            questId: "lbe",
+            title: "Quest E",
+            pollenAmount: 3,
+            balanceBucket: "tier",
+            earnedAt: now,
+        },
+        {
+            id: `lb-charlie-2`,
+            idempotencyKey: `quest:lbf:github:${hashGithubId("charlie")}`,
+            userId: user3Id,
+            questId: "lbf",
+            title: "Quest F",
+            pollenAmount: 2,
+            balanceBucket: "tier",
+            earnedAt: now,
+        },
+    ]);
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/quests/leaderboard",
+    );
+    expect(response.status).toBe(200);
+
+    const payload = (await response.json()) as {
+        leaderboard: {
+            githubUsername: string;
+            githubId: number;
+            totalPollen: number;
+            completedQuests: number;
+        }[];
+    };
+
+    expect(payload.leaderboard).toHaveLength(3);
+    // Rank order: Alice (20), Bob (10), Charlie (5)
+    expect(payload.leaderboard[0].githubUsername).toBe("alice-quest");
+    expect(payload.leaderboard[0].totalPollen).toBe(20);
+    expect(payload.leaderboard[0].completedQuests).toBe(3);
+    expect(payload.leaderboard[1].githubUsername).toBe("bob-quest");
+    expect(payload.leaderboard[1].totalPollen).toBe(10);
+    expect(payload.leaderboard[1].completedQuests).toBe(1);
+    expect(payload.leaderboard[2].githubUsername).toBe("charlie-quest");
+    expect(payload.leaderboard[2].totalPollen).toBe(5);
+    expect(payload.leaderboard[2].completedQuests).toBe(2);
+});
+
+test("GET /api/quests/leaderboard excludes users without github identity", async ({
+    sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const now = new Date();
+
+    const userIdWithGithub = "quest-lb-no-github-1";
+    const userIdWithoutGithub = "quest-lb-no-github-2";
+    await db.insert(schema.user).values([
+        {
+            id: userIdWithGithub,
+            name: "WithGithub",
+            email: "withgithub@example.com",
+            githubUsername: "withgithub",
+            githubId: hashGithubId("withgithub"),
+            createdAt: now,
+            updatedAt: now,
+        },
+        {
+            id: userIdWithoutGithub,
+            name: "NoGithub",
+            email: "nogithub@example.com",
+            githubUsername: null,
+            githubId: null,
+            createdAt: now,
+            updatedAt: now,
+        },
+    ]);
+
+    await db.insert(schema.rewards).values([
+        {
+            id: `lb-no-github-1`,
+            idempotencyKey: `quest:lbog:github:${hashGithubId("withgithub")}`,
+            userId: userIdWithGithub,
+            questId: "lbog",
+            title: "Quest G",
+            pollenAmount: 5,
+            balanceBucket: "tier",
+            earnedAt: now,
+        },
+        {
+            id: `lb-no-github-2`,
+            idempotencyKey: `quest:lboh:github:null`,
+            userId: userIdWithoutGithub,
+            questId: "lboh",
+            title: "Quest H",
+            pollenAmount: 5,
+            balanceBucket: "tier",
+            earnedAt: now,
+        },
+    ]);
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/quests/leaderboard",
+    );
+    expect(response.status).toBe(200);
+
+    const payload = (await response.json()) as {
+        leaderboard: Array<{ githubUsername: string }>;
+    };
+
+    // Only the user with github identity should appear
+    expect(payload.leaderboard).toHaveLength(1);
+    expect(payload.leaderboard[0].githubUsername).toBe("withgithub");
+});

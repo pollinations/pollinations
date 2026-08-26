@@ -1,7 +1,7 @@
 import { claimReward } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { rewards as rewardsTable } from "@shared/db/better-auth.ts";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNotNull, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -81,6 +81,18 @@ const claimRewardResponseSchema = z.object({
     claimed: z.boolean(),
     newBalance: z.number().nullable(),
     reward: rewardSchema,
+});
+
+// Leaderboard entry shape returned by GET /api/quests/leaderboard
+const leaderboardEntrySchema = z.object({
+    rank: z.number(),
+    githubUsername: z.string(),
+    pollen: z.number(),
+    completedQuests: z.number(),
+});
+
+const leaderboardResponseSchema = z.object({
+    leaderboard: z.array(leaderboardEntrySchema),
 });
 
 function formatRewardTimestamp(value: Date | number | string): string {
@@ -296,6 +308,61 @@ export const questsRoutes = new Hono<Env>()
                         : null,
                 },
             });
+        },
+    )
+    .get(
+        "/leaderboard",
+        describeRoute({
+            tags: ["✨ Quests"],
+            summary: "Get Quest Leaderboard",
+            security: [],
+            description:
+                "Public leaderboard of top quest contributors ranked by total Pollen earned from completed public GitHub POLLEN-QUEST issues. Shows GitHub username, total Pollen, and completed quest count.",
+            responses: {
+                200: {
+                    description: "Quest leaderboard",
+                    content: {
+                        "application/json": {
+                            schema: resolver(leaderboardResponseSchema),
+                        },
+                    },
+                },
+            },
+        }),
+        async (c) => {
+            const db = drizzle(c.env.DB, { schema });
+            const rows = await db
+                .select({
+                    githubUsername: schema.user.githubUsername,
+                    totalPollen:
+                        sql<number>`SUM(${rewardsTable.pollenAmount})`.mapWith(
+                            Number,
+                        ),
+                    completedQuests:
+                        sql<number>`COUNT(DISTINCT ${rewardsTable.questId})`.mapWith(
+                            Number,
+                        ),
+                })
+                .from(rewardsTable)
+                .innerJoin(schema.user, eq(rewardsTable.userId, schema.user.id))
+                .where(
+                    and(
+                        isNotNull(rewardsTable.questId),
+                        isNotNull(schema.user.githubUsername),
+                    ),
+                )
+                .groupBy(schema.user.githubUsername)
+                .orderBy(desc(sql`totalPollen`))
+                .limit(20);
+
+            const leaderboard = rows.map((row, index) => ({
+                rank: index + 1,
+                githubUsername: row.githubUsername!,
+                pollen: row.totalPollen,
+                completedQuests: row.completedQuests,
+            }));
+
+            return c.json({ leaderboard });
         },
     );
 

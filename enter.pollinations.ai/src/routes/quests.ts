@@ -1,7 +1,7 @@
 import { claimReward } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { rewards as rewardsTable } from "@shared/db/better-auth.ts";
-import { desc, eq } from "drizzle-orm";
+import { count, desc, eq, isNotNull, sum } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -81,6 +81,21 @@ const claimRewardResponseSchema = z.object({
     claimed: z.boolean(),
     newBalance: z.number().nullable(),
     reward: rewardSchema,
+});
+
+// Public aggregate for the Community-page quest leaderboard: per-GITHUB-LOGIN
+// completed-quest counts and pollen totals from the reward ledger. Aggregate
+// only — no user ids, no per-reward rows.
+const LEADERBOARD_LIMIT = 25;
+
+const questLeaderboardEntrySchema = z.object({
+    githubUsername: z.string(),
+    completedQuests: z.number().int().nonnegative(),
+    totalPollen: z.number().nonnegative(),
+});
+
+const questLeaderboardResponseSchema = z.object({
+    leaderboard: z.array(questLeaderboardEntrySchema),
 });
 
 function formatRewardTimestamp(value: Date | number | string): string {
@@ -236,6 +251,58 @@ export const questsRoutes = new Hono<Env>()
             }));
 
             return c.json({ rewards });
+        },
+    )
+    .get(
+        "/leaderboard",
+        describeRoute({
+            tags: ["✨ Quests"],
+            summary: "Get Quest Leaderboard",
+            security: [],
+            description:
+                "Public aggregate of quest contributions: GitHub logins ranked by completed POLLEN-QUEST rewards and total quest pollen. Aggregate only — no user identifiers beyond public GitHub usernames.",
+            responses: {
+                200: {
+                    description: "Quest leaderboard",
+                    content: {
+                        "application/json": {
+                            schema: resolver(questLeaderboardResponseSchema),
+                        },
+                    },
+                },
+            },
+        }),
+        async (c) => {
+            const db = drizzle(c.env.DB);
+            const rows = await db
+                .select({
+                    githubUsername: schema.user.githubUsername,
+                    completedQuests: count(rewardsTable.id),
+                    totalPollen: sum(rewardsTable.pollenAmount),
+                })
+                .from(rewardsTable)
+                // Deleted accounts (null userId / login) have no public
+                // identity to celebrate and drop out via the inner join.
+                .innerJoin(schema.user, eq(rewardsTable.userId, schema.user.id))
+                .where(isNotNull(schema.user.githubUsername))
+                // Rank by completed quests; pollen breaks ties deterministically.
+                .orderBy(
+                    desc(count(rewardsTable.id)),
+                    desc(sum(rewardsTable.pollenAmount)),
+                )
+                .groupBy(schema.user.githubUsername)
+                .limit(LEADERBOARD_LIMIT);
+
+            const leaderboard = rows.map((row) => ({
+                githubUsername: row.githubUsername ?? "",
+                completedQuests: Number(row.completedQuests ?? 0),
+                totalPollen:
+                    Math.round(
+                        (Number(row.totalPollen ?? 0) + Number.EPSILON) * 100,
+                    ) / 100,
+            }));
+
+            return c.json({ leaderboard });
         },
     )
     .post(

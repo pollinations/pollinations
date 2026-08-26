@@ -9,12 +9,6 @@ Canonical vendor: `alibaba`
 - The current month remains partial and must not be used as a closed-month
   forecast baseline.
 
-Use when:
-
-- collecting Alibaba Cloud monthly billing-item and model evidence
-- reconciling Alibaba Cloud charges, discounts, coupons, and usage cost
-- filling/checking `economics_compute_ledger` infrastructure or inference rows
-
 Primary evidence sources:
 
 - CLI: `aliyun bssopenapi QueryInstanceBill --BillingCycle <YYYY-MM> --Granularity MONTHLY --IsBillingItem true --IsHideZeroCharge true --PageSize 300 -p pollinations-finops`
@@ -62,17 +56,7 @@ Collection steps:
    Keep `DeductedByResourcePackage` as metadata unless it demonstrably reduces
    `PretaxAmount`.
 5. For cash reconciliation, pair Alibaba bill overview with Wise/card transactions or invoice PDFs.
-6. Use `agent.system.txt` with `mode: extract` for saved raw evidence.
-7. Run `ingest/scripts/alibaba-2026-reconcile.mjs` before publishing a reviewed
-   historical correction.
-
-Expected entry:
-
-- `cost_category`: `infrastructure`, `model`, or `inference_serverless` depending on product rows
-- `op_cloud_type`: `infra` unless the product rows clearly indicate inference/model spend
-- `op_transaction_category`: `cloud` for invoices/card charges, `null` for pure bill overview usage evidence
-- `should_match_op_transaction`: true for invoice/payment evidence, false for pure CLI usage evidence
-- `should_match_op_cloud`: true for bill overview usage evidence
+6. Use this skill for saved raw evidence.
 
 Known traps:
 
@@ -81,14 +65,3 @@ Known traps:
   `PretaxGrossAmount` as cash cost.
 - The CLI profile is the auth source; do not put access keys in command arguments or saved evidence.
 - Current-month bill overview is live and may change until the month closes.
-
-Reconciliation notes:
-
-- `QueryInstanceBill` explains provider usage/cost and model attribution.
-- `QueryBillOverview` is only a monthly-total cross-check when the detailed call
-  is unavailable.
-- Wise/card transactions explain cash movement.
-- Small differences between net bill overview and card transactions can be FX or timing noise.
-- February, March, May, and June 2026 contain explained historical
-  provider-versus-Pollen drift. Preserve both source ledgers; the missing cost
-  cannot be assigned safely to Paid versus Quest.

@@ -11,12 +11,6 @@ Canonical vendor: `daytona`
   is not available to this API-key scope.
 - Keep invoices/dashboard screenshots as the authoritative dollar source.
 
-Use when:
-
-- collecting Daytona invoice or dashboard evidence
-- checking sandbox resource usage
-- auditing historical Daytona `economics_compute_ledger` rows
-
 Primary evidence sources:
 
 - Cost/balance: Daytona billing dashboard, invoice, receipt, or grant notice.
@@ -39,15 +33,7 @@ Collection steps:
 
 2. For dollars, credits, or invoices, use the dashboard or an exported source.
    Save it to `data/inbox/`.
-3. Use `agent.system.txt` to extract or reconcile the bounded evidence.
-
-Expected entry:
-
-- `cost_category`: `infrastructure` unless a source proves dedicated GPU
-- `op_cloud_type`: `infra` or explicit `gpu`
-- `op_transaction_category`: `cloud` for invoices/payments
-- `should_match_op_transaction`: true only for invoice/payment evidence
-- `should_match_op_cloud`: true for bounded usage/cost evidence
+3. Use this skill to extract or reconcile the bounded evidence.
 
 Known traps:
 

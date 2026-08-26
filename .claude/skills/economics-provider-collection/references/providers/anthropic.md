@@ -11,12 +11,6 @@ Canonical vendor: `anthropic`
 - A zero here is a scoped API result, not proof that every Anthropic account
   or Claude subscription had zero cost; cross-check the console and Wise.
 
-Use when:
-
-- collecting Anthropic organization cost report evidence
-- reconciling Anthropic grant burn, paid usage, and card charges
-- filling/checking `economics_compute_ledger` model usage rows
-
 Primary evidence sources:
 
 - API: `GET https://api.anthropic.com/v1/organizations/cost_report`
@@ -46,33 +40,19 @@ Collection steps:
 
    Save raw JSON chunks to `data/inbox/anthropic-<period>-cost-report-<chunk>.json`.
 
-   For the reproducible Economics collector:
-
-   ```bash
-   sops exec-env secrets/env.json \
-     'node scripts/collect-anthropic-cost-report.mjs <start> <end-exclusive> <output.json> description'
-   ```
-
    To explain a cost mismatch by API key, provider model, service tier, and
-   context band, collect the matching usage report:
+   context band, query the matching usage report:
 
    ```bash
-   sops exec-env secrets/env.json \
-     'node scripts/collect-anthropic-usage-report.mjs <start> <end-exclusive> <output.json> api_key_id,model,service_tier,context_window'
+   curl "https://api.anthropic.com/v1/organizations/usage_report/messages?starting_at=<start_rfc3339>&ending_at=<end_rfc3339>&group_by[]=api_key_id&group_by[]=model&group_by[]=service_tier&group_by[]=context_window" \
+     -H "x-api-key: $ANTHROPIC_ADMIN_KEY" \
+     -H "anthropic-version: 2023-06-01"
    ```
 
 2. Sum `data[].results[].amount` across buckets. The API reports amount in cents; divide by 100 for USD.
 3. Preserve daily buckets and any result dimensions in `cost_details`.
 4. For grant/cash attribution, use dashboard grant details and card/Wise transactions as separate evidence.
-5. Use `agent.system.txt` with `mode: extract` for saved raw evidence.
-
-Expected entry:
-
-- `cost_category`: `model` or `inference_serverless`
-- `op_cloud_type`: `inference`
-- `op_transaction_category`: `cloud` for receipts/card charges, `null` for pure API usage evidence
-- `should_match_op_transaction`: true for receipts/card charges, false for pure API cost reports
-- `should_match_op_cloud`: true for cost report usage evidence
+5. Use this skill for saved raw evidence.
 
 Known traps:
 
@@ -86,9 +66,3 @@ Known traps:
 - Amounts are cents, not dollars.
 - Admin key organization scope matters; zero cost can mean no usage or the wrong org.
 - Grant waterfall assumptions must be backed by dashboard or transaction evidence, not inferred from the API alone.
-
-Reconciliation notes:
-
-- The cost report explains Anthropic `economics_compute_ledger` usage.
-- Receipts/card charges explain `economics_bank_ledger`.
-- If usage is grant-funded, do not force a same-month cash transaction match.

@@ -8,15 +8,6 @@ daily tier subscriptions before the Stripe/D1 migration at the end of January
 webhook + SDK integration was removed 2026-05-02. Historical orders, customers,
 and subscriptions remain useful for pre-Stripe revenue reconciliation.
 
-Use when:
-
-- reconciling pre-migration (Nov 2025–Jan 2026) Pollen pack revenue
-- confirming a historical Polar order, payout, or subscription
-
-Canonical mapping: Polar payouts, fees, and pack revenue are vendor `polar`,
-category `revenue` (see agent.system.txt). Never combine historical Polar totals
-with Stripe totals without checking the migration cutoff for overlap.
-
 ## Guardrails
 
 - Read-only historical queries only. Never add the Polar SDK, Worker bindings,
@@ -34,8 +25,10 @@ entries. Historical reconciliation must use the organization ID below. If that
 organization is not available to the signed-in account, keep the affected rows
 unresolved instead of attaching evidence from `myceliai-dev`.
 
-Create a read-only organization access token in Polar org settings, load it
-locally for the session, and unset it afterward. Never print the token.
+Use an existing read-only organization access token, load it locally for the
+session, and unset it afterward. Never print the token. If no authorized token
+exists, stop and request the repository's separate explicit approval before any
+credential is created; token creation is not part of monthly collection.
 
 ```bash
 export POLAR_ACCESS_TOKEN="polar_oat_..."

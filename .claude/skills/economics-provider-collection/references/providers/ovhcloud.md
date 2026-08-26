@@ -8,12 +8,6 @@ Canonical vendor: `ovhcloud`
 - Movement amounts use signed values: `USE` is negative and `VOUCHER` is
   positive. Preserve the provider date before shifting a monthly debit.
 
-Use when:
-
-- collecting OVHcloud invoices
-- collecting startup credit burn evidence
-- reconciling OVHcloud AI Endpoints, dedicated GPU, and infrastructure usage
-
 Primary evidence sources:
 
 - Invoice/payment: OVHcloud invoice PDFs and Wise/card transactions.
@@ -56,17 +50,3 @@ Known traps:
   shared workload label `legacy-image-api`; the individual served model is not
   evidenced.
 - Keep native EUR unless the source itself provides another currency.
-
-Expected entry:
-
-- AI Endpoints token, image, video, or audio usage: `cost_category` `model`,
-  `op_cloud_type` `inference`
-- Dedicated hourly GPU machines: `cost_category` `gpu`, `op_cloud_type` `gpu`,
-  `resource_sku` `gpu-hours`, and invoice quantity in `resource_count`
-- Gateway VMs, CPU compute, disks, and snapshots: `cost_category`
-  `infrastructure` or `storage`, `op_cloud_type` `infra`
-- Startup credit awards and monthly burns: `cost_category` `credit`; use the
-  underlying service type when it is known
-- `op_transaction_category`: `cloud` for invoices/payments, `null` for pure credit-burn evidence
-- `should_match_op_transaction`: true for invoices/payments, false for pure credit-burn evidence
-- `should_match_op_cloud`: true

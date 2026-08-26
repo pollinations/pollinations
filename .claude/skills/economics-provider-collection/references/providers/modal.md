@@ -8,12 +8,6 @@ Canonical vendor: `modal`
 - Zero rows can be valid for a quiet/open period and are not an
   authentication failure.
 
-Use when:
-
-- collecting Modal billing report evidence
-- reconciling Modal serverless/GPU app spend
-- filling/checking `economics_compute_ledger` serverless inference or GPU rows
-
 Primary evidence sources:
 
 - CLI: `modal billing report --start <YYYY-MM-DD> --end <YYYY-MM-DD> --json`
@@ -52,15 +46,7 @@ Collection steps:
    `environment`.
 3. Preserve app names in `cost_details` or resource fields because they map to model/deployment attribution.
 4. Save dashboard screenshots or invoices separately if the CLI output is zero but the dashboard shows usage.
-5. Use `agent.system.txt` with `mode: extract` for saved raw evidence.
-
-Expected entry:
-
-- `cost_category`: `inference_serverless` or `gpu`
-- `op_cloud_type`: `inference` for serverless model apps, `gpu` for explicit GPU runtimes
-- `op_transaction_category`: `cloud` for invoices/card charges, `null` for pure CLI billing reports
-- `should_match_op_transaction`: true for invoices/card charges, false for pure billing reports
-- `should_match_op_cloud`: true for billing reports
+5. Use this skill for saved raw evidence.
 
 Known traps:
 
@@ -73,9 +59,3 @@ Known traps:
 - The billing report is gross provider usage. Apply known grants as a funding
   waterfall separately; only the amount beyond verified available credit is
   paid/provider-payable.
-
-Reconciliation notes:
-
-- Billing reports explain `economics_compute_ledger`.
-- Receipts/card charges explain `economics_bank_ledger`.
-- For serverless rows, app name may be the best available resource ID.

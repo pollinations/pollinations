@@ -8,12 +8,6 @@ Canonical vendor: `elevenlabs`
 - The response is column-oriented (`columns` plus array-valued `rows`); it
   does not return a `total_cost` property on each row object.
 
-Use when:
-
-- collecting ElevenLabs workspace usage cost
-- reconciling ElevenLabs grant burn, paid overage, top-ups, or subscription charges
-- filling/checking `economics_compute_ledger` audio/model usage rows
-
 Primary evidence sources:
 
 - API: `POST https://api.elevenlabs.io/v1/workspace/analytics/query/usage-by-product-over-time`
@@ -53,15 +47,7 @@ Collection steps:
 3. Sum `total_cost` by month, product, and model. Preserve the raw provider
    model identifier in `model` and the product type in `resource_sku`.
 4. Save invoice/top-up/subscription evidence separately when reconciling cash.
-5. Use `agent.system.txt` with `mode: extract` for saved raw evidence.
-
-Expected entry:
-
-- `cost_category`: `model` or `inference_serverless`
-- `op_cloud_type`: `inference`
-- `op_transaction_category`: `cloud` for invoices/top-ups/subscription charges, `null` for pure analytics usage
-- `should_match_op_transaction`: true for receipts/card charges, false for pure analytics usage
-- `should_match_op_cloud`: true for analytics usage evidence
+5. Use this skill for saved raw evidence.
 
 Known traps:
 
@@ -69,30 +55,3 @@ Known traps:
 - Analytics usage can differ from invoice cash because subscriptions, overage timing, and top-ups are separate evidence surfaces.
 - Grant waterfall assumptions need dashboard or transaction backing.
 - Use Unix milliseconds for `start_time` and `end_time`.
-
-Reconciliation notes:
-
-- Analytics explains `economics_compute_ledger` usage.
-- Top-ups/subscriptions/card charges explain `economics_bank_ledger`.
-- If grant-funded, do not force a same-month cash transaction match.
-
-## Rotation
-
-- Rotates `ELEVENLABS_API_KEY` in enter/gen's runtime secrets — the same env
-  var name and same "admin/usage analytics scope" this connector requires.
-  Verify empirically whether it's the identical key value as the economics
-  copy before assuming it stays valid; update `secrets/env.json` too if
-  shared.
-- Mechanism: `POST /service-accounts/{id}/api-keys`, authenticated with a
-  separate static admin key (`ELEVENLABS_ADMIN_API_KEY` +
-  `ELEVENLABS_SERVICE_ACCOUNT_ID`), creates a new SA key (old stays valid),
-  deploy, verify with a live `/v1/audio/speech` call, then
-  `DELETE /service-accounts/{id}/api-keys/{old-id}`.
-- On the very first rotation, the runtime key may predate the service account
-  (e.g. a personal key) — the admin API can't delete a key it doesn't own.
-  Warn and ask the operator to revoke it manually in the ElevenLabs UI instead
-  of silently leaving it valid.
-- SOPS files: `enter.pollinations.ai/secrets/{dev,staging,prod}.vars.json`
-  (ElevenLabs is called by the enter worker, not gen).
-- Deploy target: enter's Cloudflare deploy workflow. Health check:
-  `POST gen.pollinations.ai/v1/audio/speech` → 200.

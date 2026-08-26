@@ -8,12 +8,6 @@ Canonical vendor: `openai`
 - Amount values are already currency values; preserve the API currency and
   do not treat them as cents.
 
-Use when:
-
-- collecting OpenAI organization model/API cost
-- reconciling OpenAI invoices, credits, grants, or card charges
-- filling/checking `economics_compute_ledger` inference rows
-
 Primary evidence sources:
 
 - Invoice/payment: OpenAI invoice PDF, receipt, billing email, or card/Wise transaction.
@@ -41,15 +35,7 @@ Collection steps:
    output, cached input, audio, image, or embedding). Preserve the full line
    item in `resource_sku` and extract its model prefix into `model`.
 6. For dashboard evidence, save screenshots or exports to `data/inbox/`.
-7. Use `agent.system.txt` with `mode: extract` for saved raw evidence.
-
-Expected entry:
-
-- `cost_category`: `model` or `inference_serverless`
-- `op_cloud_type`: `inference`
-- `op_transaction_category`: `cloud` for invoices/card charges, `null` for pure usage exports
-- `should_match_op_transaction`: true for invoices/card charges, false for pure API/dashboard usage exports
-- `should_match_op_cloud`: true for usage/cost exports
+7. Use this skill for saved raw evidence.
 
 Known traps:
 
@@ -60,9 +46,3 @@ Known traps:
 - If using `group_by`, put project/model/line-item breakdowns in `cost_details`.
 - Credits/grants can pay usage before cash transactions appear.
 - Historical local note: a grant starting 2025-12-04 expires 2026-08-01; credit burn may not map to cash transactions.
-
-Reconciliation notes:
-
-- API/dashboard costs explain `economics_compute_ledger` inference/model usage.
-- Invoices or card charges explain `economics_bank_ledger`.
-- If usage is grant-funded, do not force a cash transaction match.

@@ -9,12 +9,6 @@ Canonical vendor: `io.net`
 - Keep this guide for historical facts, invoices, and grant audits. A zero
   recent meter is not a live balance and should not overwrite old facts.
 
-Use when:
-
-- collecting io.net grant, balance, invoice, or usage evidence
-- auditing historical io.net `economics_compute_ledger` rows
-- reconciling io.net inference usage with cash or credits
-
 Primary evidence sources:
 
 - Usage: Tinybird `economics_pollen_usage` rows where `vendor = 'io.net'`.
@@ -30,15 +24,7 @@ Collection steps:
    wallet is exhausted. The dashboard's historical deposits, spend, or usage
    totals are not balances.
 3. Save the raw screenshot, export, invoice, or receipt to `data/inbox/`.
-4. Use `agent.system.txt` to extract or reconcile the evidence.
-
-Expected entry:
-
-- `cost_category`: `model`
-- `op_cloud_type`: `inference`
-- `op_transaction_category`: `cloud` for invoices/payments
-- `should_match_op_transaction`: true only for invoice/payment evidence
-- `should_match_op_cloud`: true for usage evidence
+4. Use this skill to extract or reconcile the evidence.
 
 Known traps:
 

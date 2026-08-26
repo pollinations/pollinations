@@ -6,12 +6,6 @@ Canonical vendor: `stripe`
 
 - Status: bounded payouts API works.
 
-Use when:
-
-- reconciling a Stripe payout received in Wise with the transactions it settles
-- checking bounded Stripe balance activity as evidence for a runway assumption
-- distinguishing operating Stripe cash from a separately evidenced investment
-
 Primary evidence sources:
 
 - Cash truth: Wise activity or `economics_bank_ledger` on the bank settlement date.
@@ -26,8 +20,8 @@ Account identity:
   from a bank description such as `STRIPE`.
 - Use one API key and one export per Stripe account. Never combine pagination
   across accounts.
-- `collect-stripe-payout.mjs` records the authenticated account ID and display
-  name alongside the payout and its balance transactions.
+- Record the authenticated account ID and display name alongside the payout and
+  its balance transactions.
 
 Required credential:
 
@@ -40,17 +34,10 @@ Collection steps:
    `data/inbox/stripe-<period>-payouts.json`.
 3. When the question is what a specific automatic payout contains, query its
    balance transactions by payout ID and save the raw response separately.
-   Use the paginated collector so a payout with more than 100 rows is not
-   silently truncated:
-
-   ```bash
-   sops exec-env secrets/env.json \
-     'node scripts/collect-stripe-payout.mjs <po_id> data/inbox/stripe-<date>-payout.json'
-   ```
-
-   The collector stops unless the contained balance-transaction net equals
-   the payout amount exactly. Confirm the recorded `stripe_account.id` is the
-   intended account before using the file as evidence.
+   Follow `has_more` and `starting_after` until every page is saved, then require
+   the contained balance-transaction net to equal the payout amount exactly.
+   Confirm the authenticated Stripe account ID is the intended account before
+   using the export as evidence.
 4. When the question is activity during a calendar month, query balance
    transactions by `created[gte]` and exclusive `created[lt]`. Sum `net` only
    after filtering to the requested question; Stripe monetary fields are minor

@@ -16,11 +16,6 @@ Canonical accounts:
   management key reads the Myceli organization; the Pollinations organization
   must be collected from its separately authenticated dashboard/export.
 
-Use when:
-
-- collecting OpenRouter activity/cost evidence
-- reconciling OpenRouter grant-funded inference usage
-
 Primary evidence sources:
 
 - API: `GET https://openrouter.ai/api/v1/activity`
@@ -54,28 +49,3 @@ Known traps:
   grant to August usage before assigning the residual to purchased credit.
 - PollinationsAI received a separate $3,000 startup grant on 2026-07-20; do not
   combine the two organizations' grant balances.
-
-Expected entry:
-
-- `provider_account_id`: `myceli` or `pollinations`
-- `cost_category`: `model`
-- `op_cloud_type`: `inference`
-- `op_transaction_category`: `null` for activity exports
-- `should_match_op_transaction`: false unless separate payment evidence exists
-- `should_match_op_cloud`: true
-
-## Rotation
-
-- Rotates the runtime `OPENROUTER_API_KEY` gen.pollinations.ai uses for
-  completions — a different credential from this connector's
-  `OPENROUTER_MANAGEMENT_API_KEY`, which is also the admin credential the
-  rotation itself needs (to create/list/delete runtime keys via the
-  management API). If the management key is ever rotated, this connector's
-  billing collection needs the new value too.
-- Mechanism: `POST /api/v1/keys` cloning the old key's label/limit/
-  limit_reset/include_byok_in_limit/expires_at (old stays valid), deploy,
-  verify with a live completion, then `DELETE /api/v1/keys/{hash}` for the
-  old key. Zero downtime.
-- SOPS files: `gen.pollinations.ai/secrets/{dev,staging,prod}.vars.json`.
-- Deploy target: gen's Cloudflare deploy workflow. Health check: a live
-  completion against a configurable test model (default `qwen/qwen3.6-plus`).

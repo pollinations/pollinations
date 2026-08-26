@@ -11,11 +11,6 @@ Canonical vendor: `deepinfra`
 - The endpoint returns exact item rows with model, task, units, rate, pricing
   type, and cost. Item and `total_cost` values are cents.
 
-Use when:
-
-- collecting DeepInfra model/API usage cost
-- reconciling prepaid DeepInfra usage with `economics_compute_ledger` inference rows
-
 Primary evidence sources:
 
 - API: `GET https://api.deepinfra.com/payment/usage?from=<epoch>&to=<epoch>`
@@ -45,11 +40,3 @@ Known traps:
   derive historical monthly burn from successive snapshots unless the user
   explicitly asks for an estimate.
 - Treat API usage as cloud/inference evidence. Do not force a cash transaction match unless the source is a payment, receipt, or top-up.
-
-Expected entry:
-
-- `cost_category`: `model` or `inference_serverless`
-- `op_cloud_type`: `inference`
-- `op_transaction_category`: `null` for pure usage exports
-- `should_match_op_transaction`: false for pure usage exports
-- `should_match_op_cloud`: true

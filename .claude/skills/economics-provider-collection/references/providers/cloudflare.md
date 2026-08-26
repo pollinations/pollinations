@@ -24,12 +24,6 @@ Canonical accounts:
   2026-07-22 through 2026-08-21; Cloudflare says the invoice can follow within
   24 hours.
 
-Use when:
-
-- collecting Cloudflare infrastructure billing
-- collecting Cloudflare startup credit consumption
-- reconciling Cloudflare invoices, refunds, or Wise reimbursement context
-
 Primary evidence sources:
 
 - Invoice/payment: Cloudflare invoice PDFs and billing history.
@@ -69,16 +63,7 @@ Collection steps:
 6. Treat the period label as a billing-cycle label, not a calendar month. Keep
    the observed cycle dates in evidence and assign the ledger month consistently
    with the invoice issue/end month.
-7. Use `agent.system.txt` with `mode: extract` for saved raw evidence.
-
-Expected entry:
-
-- `provider_account_id`: `pollinations` or `myceli`
-- `cost_category`: `infrastructure`, `network`, `storage`, or `credit`
-- `op_cloud_type`: `infra`
-- `op_transaction_category`: `cloud` for invoices/payments/refunds, `null` for pure dashboard/API credit-burn or usage evidence
-- `should_match_op_transaction`: true for invoices/payments/refunds, false for pure dashboard/API credit-burn or usage evidence
-- `should_match_op_cloud`: true for infra usage, billing, or credit consumption
+7. Use this skill for saved raw evidence.
 
 Known traps:
 
@@ -87,9 +72,3 @@ Known traps:
 - Startup credit burn may be visible only in the dashboard, not the billing history API.
 - A mistaken June 2026 card charge was refunded; do not double count charge and refund as cost.
 - The `/user/billing/history` endpoint scopes to the token/account context.
-
-Reconciliation notes:
-
-- API billing history helps cash/invoice truth.
-- Dashboard credit pages help usage/credit-burn truth.
-- Refunds should be represented carefully in transaction reconciliation.

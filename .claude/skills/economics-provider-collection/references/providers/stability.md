@@ -11,12 +11,6 @@ Canonical vendor: `stability`
   the internal Pollen meter together; never infer provider burn only from the
   prepaid balance.
 
-Use when:
-
-- collecting direct Stability API usage or credit-balance evidence
-- reconciling `stable-audio-3-large` provider cost against internal usage
-- checking whether another credit purchase created a Wise/card transaction
-
 Primary evidence sources:
 
 - Dashboard: Stability account billing, usage and remaining credits.
@@ -33,14 +27,6 @@ Collection steps:
    Drive before proposing ledger rows.
 4. Compare the provider month to OP Pollen for `stable-audio-3-large`.
 5. Keep prepaid credit purchases separate from usage consumption.
-
-Expected entry:
-
-- `cost_category`: `model`
-- `op_cloud_type`: `inference`
-- `op_transaction_category`: `cloud` for purchases; `null` for usage evidence
-- `should_match_op_transaction`: true for purchases, false for pure usage
-- `should_match_op_cloud`: true for usage and credit consumption
 
 Known traps:
 

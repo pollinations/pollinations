@@ -14,12 +14,14 @@ Canonical vendor: `inferenceport`
 
 Collection steps:
 
-1. From the repository root, run the read-only collector with the existing live
-   generation credential:
+1. Use the existing live generation credential for two bounded read-only API
+   requests:
 
    ```bash
    sops exec-env gen.pollinations.ai/secrets/prod.vars.json \
-     'node operations/economics/ingest/scripts/collect-inferenceport-balance.mjs'
+     'curl -sS https://api.inferenceport.ai/v1/me -H "Authorization: Bearer $INFERENCEPORT_API_KEY"'
+   sops exec-env gen.pollinations.ai/secrets/prod.vars.json \
+     'curl -sS https://api.inferenceport.ai/v1/credits/ledger -H "Authorization: Bearer $INFERENCEPORT_API_KEY"'
    ```
 
 2. Preserve the generated JSON in `data/inbox/inferenceport/` and the monthly
@@ -43,4 +45,4 @@ Known traps:
 - Internal Pollen rows are not an independent provider statement.
 - `balance_credits` is an aggregate wallet value. It is not proof that the full
   balance is purchased cash or promotional credit.
-- The collector is read-only. It does not publish or replace Tinybird rows.
+- Both API requests are read-only. They do not publish or replace Tinybird rows.

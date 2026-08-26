@@ -14,12 +14,6 @@ Canonical vendor: `google`
 - Current-month rows are snapshots. Refresh the bounded BigQuery export before
   using them for Runway; `recorded_at` must identify the data-through date.
 
-Use when:
-
-- collecting Google Cloud / Vertex / BigQuery billing export evidence
-- reconciling GCP gross cost, credits, and cloud usage rows
-- separating cash cost from credit/discount usage
-
 Primary evidence sources:
 
 - Invoice/payment: Google Cloud invoices or payment receipts.
@@ -68,7 +62,7 @@ Collection steps:
    After the dry run succeeds, run the same query without `--dry_run` and save stdout.
 
 7. Save raw query output to `data/inbox/google-<period>-billing-export.json`.
-8. Use `agent.system.txt` with `mode: extract` for saved raw evidence.
+8. Use this skill for saved raw evidence.
 9. For the current OP Cloud balance, review Billing → Credits → Issued Credits
    and record one dated `type: balance` row containing only remaining credits
    whose usage scope covers compute, infrastructure, or model usage.
@@ -111,14 +105,6 @@ GROUP BY month, service, sku
 ORDER BY month, service, sku
 ```
 
-Expected entry:
-
-- `cost_category`: `infrastructure`, `model`, `inference_serverless`, `storage`, `network`, or `credit`
-- `op_cloud_type`: `inference` for Vertex/model usage, `infra` for general GCP services
-- `op_transaction_category`: `cloud` for invoices/payments, `null` for pure BigQuery usage exports
-- `should_match_op_transaction`: true for invoices/payments, false for pure usage exports
-- `should_match_op_cloud`: true for billing export usage/cost evidence
-
 Known traps:
 
 - Cost is kept in native EUR locally.
@@ -136,27 +122,3 @@ Known traps:
 - For the main entry, use `amount = net_amount` when the source is a monthly aggregate. Put gross, net, absolute credits, row count, and latest usage in `cost_details`.
 - Prefer the service/SKU query when model/inference vs infra classification matters. If only aggregate data is available, use one aggregate infra/unknown entry and explain the missing service split.
 - Pure BigQuery exports use `op_transaction_category: null`, `should_match_op_transaction: false`, and `should_match_op_cloud: true`.
-
-Reconciliation notes:
-
-- BigQuery export evidence should reconcile to `economics_compute_ledger`.
-- Google invoices/payments should reconcile to `economics_bank_ledger`.
-- Credits and discounts should explain cloud usage without necessarily matching cash movement.
-
-## Rotation
-
-- Rotates the Vertex/GenAI service-account key (`GOOGLE_CLIENT_EMAIL`/
-  `GOOGLE_PRIVATE_KEY_ID`) gen.pollinations.ai uses for model calls — a
-  different credential from this connector's `GCP_BILLING_SA_JSON` (billing
-  export service account), so rotating it does not affect billing collection
-  here.
-- Mechanism: `gcloud iam service-accounts keys create` for the same SA (old
-  key stays valid), deploy, verify, then `keys delete` for the old key ID.
-  Zero downtime.
-- Authenticates via an already-authenticated local `gcloud` session with IAM
-  permission to manage keys on that service account — there is no dedicated
-  rotation service account or separate admin credential.
-- SOPS files: `gen.pollinations.ai/secrets/{dev,staging,prod}.vars.json`.
-- Deploy target: gen's Cloudflare deploy workflow. Health check:
-  `POST gen.pollinations.ai/v1/chat/completions` against a GCP/Vertex-backed
-  model → 200.

@@ -11,29 +11,6 @@ Canonical vendor: `aws`
 - Keep the accounts separate in raw evidence before summing, because service
   ownership and reseller credits can differ.
 
-Use when:
-
-- collecting AWS/AIT/Umbrella Cost billing evidence
-- separating Bedrock/model usage from infrastructure usage
-- reconciling AWS invoices, credits, and cloud usage rows
-
-Primary evidence sources, in order by purpose:
-
-- Live grant balance and expiry: AWS Billing and Cost Management → Credits.
-  Use `Total estimated amount remaining` for the current OP Cloud balance
-  snapshot. The non-estimated amount only updates after invoices finalize.
-- Closed-month payable and funding split: Automat-it Glass. Use its monthly
-  `Total Usage`, `Savings Plan Discount`, `Reserved Instance Discount`,
-  `Credits`, and `You Pay (excl. tax)` values. Archive the Glass invoice when
-  one exists.
-- Detailed service/model usage: Umbrella Cost API and Cost & Usage Explorer.
-  Use `costType=cost` and `groupBy=service`; reconcile the closed-month total to
-  Glass.
-- Optimization only: Umbrella recommendations and potential savings. Never
-  book these as actual usage, discounts, credits, or liabilities.
-- Invoice/payment evidence: Glass invoices and Wise/card transactions.
-- Transaction context: `economics_bank_ledger` vendor `aws` when a cash invoice is paid.
-
 Collection steps:
 
 1. For invoices, place PDFs/receipts in `data/inbox/`.
@@ -93,20 +70,12 @@ Collection steps:
    ```
 
 9. Save raw API JSON to `data/inbox/aws-umbrella-<period>-cost-and-usage.json`.
-10. Use `agent.system.txt` with `mode: extract` for saved raw evidence.
+10. Use this skill for saved raw evidence.
 
 For the detailed provider ledger, use `groupBy=service`. Preserve the AWS
 account ID in `resource_id`, classify `Amazon Bedrock` and services ending in
 `[Amazon Bedrock Edition]` as inference, and normalize the named edition to the
 canonical model slug. Other services are infrastructure.
-
-Expected entry:
-
-- `cost_category`: `model` or `infrastructure`
-- `op_cloud_type`: `inference` for Bedrock/model usage, `infra` for other AWS services
-- `op_transaction_category`: `cloud` for invoices/payments, `null` for pure usage exports
-- `should_match_op_transaction`: true for invoices/payments, false for pure usage exports
-- `should_match_op_cloud`: true for usage/cost exports
 
 Known traps:
 
@@ -157,24 +126,3 @@ Mapping:
 - `cost_category`: `model`
 - `op_cloud_type`: `inference`
 - `cost_details[].label`: `Amazon Bedrock`
-
-Reconciliation notes:
-
-- API usage evidence should reconcile to `economics_compute_ledger`.
-- Paid invoice evidence should reconcile to `economics_bank_ledger`.
-- Credit-funded usage should usually explain `economics_compute_ledger` without a cash transaction.
-
-## Rotation
-
-- Rotates the `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` pair gen.pollinations.ai
-  uses for Bedrock model calls — a different credential from this connector's
-  `UMBRELLA_USERNAME`/`UMBRELLA_PASSWORD` reseller-billing login, so rotating it
-  does not affect billing collection here.
-- Mechanism: IAM `create-access-key` for the same IAM user (old key stays
-  valid), deploy, verify `aws sts get-caller-identity` with the new key, then
-  `delete-access-key` for the old one. Zero downtime.
-- SOPS files: `gen.pollinations.ai/secrets/{dev,staging,prod}.vars.json`.
-- Deploy target: gen's Cloudflare deploy workflow. Health check:
-  `GET gen.pollinations.ai/v1/models` → 200.
-- Any failure after the new key is created aborts without deleting the old
-  one — it stays valid until the operator retries.

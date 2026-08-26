@@ -9,12 +9,6 @@ Canonical vendor: `lambda`
   dashboard exposes complete calendar-month history by instance, instance type,
   region, duration, hours, rate, and spend.
 
-Use when:
-
-- collecting a current snapshot of active Lambda Cloud instances
-- estimating the instantaneous GPU burn rate for an operator review
-- reconciling Lambda invoices or manually witnessed GPU periods to `economics_compute_ledger`
-
 Primary evidence sources:
 
 - Current instances: `GET https://cloud.lambda.ai/api/v1/instances`.

@@ -10,12 +10,6 @@ Canonical vendor: `bytedance`
 - Use this guide for historical `bytedance` facts and old BytePlus evidence.
   Use `replicate.md` for current Seedance/Seedream provider collection.
 
-Use when:
-
-- auditing historical direct BytePlus / ByteDance usage evidence
-- checking an old BytePlus credit balance or grant document
-- reconciling legacy `bytedance` rows already present in `economics_compute_ledger`
-
 Primary evidence sources:
 
 - Historical usage: Tinybird `economics_pollen_usage` rows where `vendor = 'bytedance'`.
@@ -76,17 +70,7 @@ Collection steps:
    and record explicit zero months. The international Model Ark API does not
    expose a supported billing or credit-balance endpoint.
 4. Save evidence to `data/inbox/`, present the source and timestamp, and use
-   `agent.system.txt` to extract or reconcile it.
-5. Run `ingest/scripts/bytedance-2026-reconcile.mjs` before publishing a
-   reviewed historical correction.
-
-Expected entry:
-
-- `cost_category`: `model`
-- `op_cloud_type`: `inference`
-- `op_transaction_category`: `cloud` for a payment, otherwise `null`
-- `should_match_op_transaction`: true only for invoice/payment evidence
-- `should_match_op_cloud`: true for usage evidence
+   this skill to extract or reconcile it.
 
 Known traps:
 

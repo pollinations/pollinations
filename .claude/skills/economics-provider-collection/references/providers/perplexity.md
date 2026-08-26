@@ -12,12 +12,6 @@ Canonical vendor: `perplexity`
   breakdown. It does not expose a calendar-month selector; the available
   presets are last 24 hours, 7 days, 30 days, and year to date.
 
-Use when:
-
-- collecting Perplexity Sonar usage evidence
-- checking the Perplexity prepaid balance or grant status
-- reconciling Perplexity model cost to Economics
-
 Primary evidence sources:
 
 - Usage: Tinybird `economics_pollen_usage` rows where `vendor = 'perplexity'`.
@@ -40,18 +34,10 @@ Collection steps:
 4. For a closed month, open **Invoice history** and download the original PDF.
    The invoice subtotal is the authoritative provider total and its SKU lines
    are the strongest model/request/token detail.
-5. Use `agent.system.txt` to extract or reconcile it.
+5. Use this skill to extract or reconcile it.
 6. For model attribution, query `economics_pollen_usage_api` and retain paid + quest request
    counts and provider-cost estimates by month/model. For closed months, use
    those rows as proportions only when the provider invoice total is stronger.
-
-Expected entry:
-
-- `cost_category`: `model`
-- `op_cloud_type`: `inference`
-- `op_transaction_category`: `cloud` for receipts/top-ups
-- `should_match_op_transaction`: true only for cash evidence
-- `should_match_op_cloud`: true for usage evidence
 
 Known traps:
 
@@ -82,20 +68,3 @@ Known traps:
 Official reference:
 
 - https://docs.perplexity.ai
-
-## Rotation
-
-- Rotates `PERPLEXITY_API_KEY` in gen.pollinations.ai's runtime secrets — the
-  same env var name this connector lists as `Required credential`. Verify
-  empirically whether the economics copy in `secrets/env.json` is the
-  identical key value before assuming it stays valid after rotation; update it
-  too if shared.
-- Mechanism: `POST /generate_auth_token` for a new key (old stays valid),
-  deploy, verify with a live `/chat/completions` call using the `sonar` model,
-  then `POST /revoke_auth_token` for the old key. Zero downtime.
-- SOPS files: `gen.pollinations.ai/secrets/{dev,staging,prod}.vars.json`.
-- Deploy target: gen's Cloudflare deploy workflow. Health check:
-  `POST gen.pollinations.ai/v1/chat/completions` with `sonar` → 200.
-- Lowest blast radius of any rotation here (text-only, isolated provider, old
-  key valid until the very last step) — the best candidate for proving a
-  rotation end-to-end for the first time.

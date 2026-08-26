@@ -8,12 +8,6 @@ Canonical vendor: `vast.ai`
 - Do not recursively sum every nested `amount`; invoice items and metadata can
   repeat monetary values. Use the top-level charge amount once.
 
-Use when:
-
-- collecting Vast.ai GPU marketplace usage
-- reconciling Vast.ai invoices, balance transfers, or Wise charges
-- explaining `economics_compute_ledger` GPU rows for Vast.ai
-
 Primary evidence sources:
 
 - Invoice/payment: Vast.ai invoice PDF or billing receipt, often a transfer/top-up.
@@ -32,38 +26,15 @@ Collection steps:
 
    Save stdout to `data/inbox/vast-ai-<period>.json`.
 
-   Convert a reviewed month to additive-neutral instance detail with:
-
-   ```bash
-   node scripts/vast-ai-usage-reconcile.mjs \
-     <raw-invoices.json> <YYYY-MM> <drive-evidence-url> \
-     <expected-month-total-usd> <proposal.ndjson> \
-     [effective-op-cloud-snapshot.json]
-   ```
-
-   The proposal supersedes the prior account-total row and replaces it with
-   one row per billed instance and charge kind. Pass a current effective
-   `economics_compute_ledger` snapshot when replacing legacy instance rows so every old entry
-   ID is neutralized. Its built-in total check must pass before publication.
+   Preserve one reviewed row per billed instance and charge kind. When replacing
+   legacy instance rows, compare against a current effective
+   `economics_compute_ledger` snapshot so every old entry ID is neutralized and
+   require the detailed rows to equal the provider month total before publication.
    Verified instance-to-workload mappings come from
    `vast-ai-workloads.json`; update that registry when the GPU fleet changes.
 
 3. If using dashboard screenshots, save them under `data/inbox/`.
-4. Use `agent.system.txt` with `mode: extract` for saved raw evidence.
-
-Expected entry:
-
-- `cost_category`: `gpu`
-- `op_cloud_type`: `gpu`
-- `resource_id`: Vast.ai instance ID
-- `resource_sku`: `gpu-hours`, `storage-hours`, `download-gb`, or `upload-gb`
-- `resource_count`: the allocated hours or posted network quantity
-- `model`: populated from `vast-ai-workloads.json` when repository fleet
-  records or the historical ledger prove the workload; unknown short-lived
-  instances stay blank instead of being guessed
-- `op_transaction_category`: `cloud` for payment/invoice documents, `null` for pure usage exports
-- `should_match_op_transaction`: true for invoices/transfers, false for pure usage exports
-- `should_match_op_cloud`: true for usage exports and GPU invoices
+4. Use this skill for saved raw evidence.
 
 Known traps:
 
@@ -75,8 +46,3 @@ Known traps:
 - Upload/download quantities are network units, not hours; assign them to the
   posting month instead of splitting them over time.
 - Always pass explicit `-s` and `-e`; the CLI can otherwise default to too narrow a window.
-
-Reconciliation notes:
-
-- A Wise transaction can be `matched` to a Vast invoice when vendor, date, and FX-adjusted amount align.
-- `economics_compute_ledger` rows should usually be `partial` or matched to a separate usage export unless the usage rows explain the invoice amount.

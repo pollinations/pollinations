@@ -12,12 +12,6 @@ Canonical vendor: `pruna`
 - Monthly `Pruna Model API` invoices can be zero-quantity prepaid statements.
   They are provider documents, but they do not prove prepaid balance burn.
 
-Use when:
-
-- collecting Pruna calendar-month usage and model evidence
-- checking Pruna prepaid balance and top-ups
-- reconciling Pruna usage, Pollen meter rows, invoices, and Wise cash
-
 Primary evidence sources:
 
 - Usage: `https://dashboard.pruna.ai/usage`, one calendar month at a time.
@@ -43,14 +37,6 @@ Collection steps:
    internal model/request context; do not substitute their estimated cost for a
    provider total when the two sources disagree.
 6. Match top-up invoices and receipts to Wise separately from provider usage.
-
-Expected entry:
-
-- `cost_category`: `model`
-- `op_cloud_type`: `inference`
-- `op_transaction_category`: `cloud` for top-ups
-- `should_match_op_transaction`: true only for a cash/top-up document
-- `should_match_op_cloud`: true only for usage or balance-burn evidence
 
 Known traps:
 

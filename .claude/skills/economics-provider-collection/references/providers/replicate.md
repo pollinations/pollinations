@@ -9,13 +9,6 @@ Canonical vendor: `replicate`
 - The token resolved to an organization account.
 - Predictions prove operational activity, not the amount charged.
 
-Use when:
-
-- collecting Replicate invoice, receipt, billing UI, or Wise/card payment evidence
-- checking recent Replicate prediction evidence for missing model usage
-- reconciling Replicate invoices against Tinybird metered model costs
-- investigating provider-wide gaps before changing individual model prices
-
 Primary evidence sources:
 
 - Invoice/payment: Replicate invoice PDF, billing receipt email, billing UI screenshot, or Wise/card transaction.
@@ -65,7 +58,7 @@ Collection steps:
 
 5. For model pricing, save model page screenshots or short HTML/text evidence from the public model page. Do not infer pricing from `metrics.predict_time`.
 6. For invoice reconciliation, compare Replicate cash/invoice evidence with Tinybird metered Replicate model costs. Treat any remainder as a Replicate-wide reconciliation item until the missing source is identified.
-7. Use `agent.system.txt` with `mode: extract` for saved raw evidence.
+7. Use this skill for saved raw evidence.
 8. Prefer finalized invoice JSON over a manual monthly aggregate. Draft invoice
    JSON is appropriate for the open month when it is timestamped and marked
    provisional.
@@ -79,14 +72,6 @@ Seedance 2.0 pricing witness:
 - Pollinations exposes `non_video_in` at 720p; audio and image input do not
   change that tier.
 - Re-check the public Replicate model page before changing the registry price.
-
-Expected entry:
-
-- `cost_category`: `model` for public model predictions, `gpu` or `inference_serverless` only when the source explicitly supports it; `storage` or `network` only when an invoice line proves it
-- `op_cloud_type`: `inference` for model prediction usage, `gpu` for explicit dedicated GPU/deployment compute, `null` for cash-only invoice or payment evidence
-- `op_transaction_category`: `cloud` for invoices/card charges, `null` for pure prediction/API evidence
-- `should_match_op_transaction`: true for invoices, receipts, and card/Wise payments; false for pure prediction/API evidence
-- `should_match_op_cloud`: true for prediction/model usage evidence; false for cash-only payments unless they include usage detail
 
 Known traps:
 
@@ -105,25 +90,3 @@ Known traps:
 - The billing overview can lag the open invoice briefly. On 2026-08-20 it
   displayed $968.89 while the downloaded draft moments later contained
   $969.1874. Use the downloaded JSON total.
-
-Reconciliation notes:
-
-- The invoice or Wise/card charge explains `economics_bank_ledger`.
-- Tinybird `generation_event_v2.total_cost` explains internal per-model `economics_compute_ledger` attribution.
-- Replicate prediction exports can help find untracked model IDs, web-created predictions, status mix, and output metrics for video pricing.
-- If invoice total exceeds metered model cost, keep the raw model price unchanged unless independent model-level pricing evidence shows the model itself is underpriced.
-
-## Rotation
-
-- Rotates the runtime `REPLICATE_API_TOKEN` gen.pollinations.ai uses for
-  predictions — the same env var this connector uses. Verify empirically
-  whether it's the identical token as the economics copy before assuming it
-  stays valid; update `secrets/env.json` too if shared.
-- Replicate has no public token create/delete API. The operator must create
-  the new token and (later) delete the old one manually in the Replicate UI
-  (<https://replicate.com/account/api-tokens>); only the middle step can be
-  automated: update SOPS, deploy, verify.
-- SOPS files: `gen.pollinations.ai/secrets/{dev,staging,prod}.vars.json`.
-- Deploy target: gen's Cloudflare deploy workflow. Health check: a live
-  prediction or `GET /v1/account` with the new token, plus an end-to-end
-  Pollinations smoke test.

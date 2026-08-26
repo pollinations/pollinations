@@ -7,12 +7,6 @@ Canonical vendor: `community`
 - Status: working internal Economics meter; no external provider API is needed.
 - Meter values are internal settlement evidence, not bank cash.
 
-Use when:
-
-- explaining community rows that have no external invoice
-- reconciling creator payouts (`model_paid` / `model_quests`) against `economics_pollen_usage`
-- **not** booking `cost_paid` as a provider bill — community `total_cost` is the sale price, not cash we pay an upstream
-
 Primary evidence sources:
 
 - Internal meter: Tinybird `economics_pollen_usage` rows where `vendor = 'community'`.
@@ -48,15 +42,7 @@ Collection steps:
 
 2. Treat `model_paid` as the owner payout (already netted out of revenue as eco). Do **not** treat `cost_paid + cost_quests` as a provider cost — that meter copied the sale price and double-counts the payout.
 3. Do **not** book community into `economics_compute_ledger`. There is no upstream invoice.
-4. Use `agent.system.txt` with `mode: extract` for saved raw evidence.
-
-Expected entry:
-
-- `cost_category`: `model`
-- `op_cloud_type`: `null`
-- `op_transaction_category`: `null`
-- `should_match_op_transaction`: false
-- `should_match_op_cloud`: false
+4. Use this skill for saved raw evidence.
 
 Known traps:
 
@@ -65,8 +51,3 @@ Known traps:
 - The legacy Forager connector reads `pollen_monthly`; Economics uses `economics_pollen_usage`.
 - Historical raw `cost_paid` on community rows is the sale price, not a provider bill. `economics_pollen_usage_api` normalizes it to 0, and `economics_pollen_usage_mv` stores 0 for new rows.
 - Zero rows in early months can be valid if no community models were used.
-
-Reconciliation notes:
-
-- Community rows are pollen-priced/internal by construction.
-- Do not mirror community `cost_paid` into `economics_compute_ledger`. The 75% owner reward is `model_paid`, already subtracted from revenue.

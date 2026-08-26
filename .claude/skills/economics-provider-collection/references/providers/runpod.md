@@ -8,11 +8,6 @@ Canonical vendor: `runpod`
   for Pods, Serverless endpoints, and network volumes. The current account's
   first returned activity is 2026-03-25.
 
-Use when:
-
-- collecting RunPod GPU billing evidence
-- reconciling RunPod invoices, card top-ups, grants, and GPU usage
-
 Primary evidence sources:
 
 - Invoice/payment: RunPod invoice PDFs, receipts, and card/Wise transactions.
@@ -60,11 +55,3 @@ Known traps:
   otherwise leave the model unallocated.
 - The monthly API can omit the running month. Query the running month with daily
   buckets and record zero only when all three billing surfaces return no rows.
-
-Expected entry:
-
-- `cost_category`: `gpu`
-- `op_cloud_type`: `gpu`
-- `op_transaction_category`: `cloud` for invoices/top-ups, `null` for pure usage exports
-- `should_match_op_transaction`: true for invoices/top-ups, false for pure usage exports
-- `should_match_op_cloud`: true

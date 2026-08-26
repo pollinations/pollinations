@@ -17,12 +17,6 @@ Canonical vendor: `scaleway`
   vouchers. The separate `Pollinations GmbH` organization has no vouchers,
   payment method, invoices, or 2026 consumption.
 
-Use when:
-
-- collecting Scaleway consumption, invoice, or discount evidence
-- auditing historical Scaleway credit/grant rows
-- reconciling Scaleway infrastructure or inference cost
-
 Primary evidence sources:
 
 - Current credit balance: the active-vouchers table at
@@ -56,7 +50,7 @@ Collection steps:
    ```
 
 3. Use the invoice endpoints for closed-month obligations and downloads.
-4. Save bounded evidence to `data/inbox/` and use `agent.system.txt` to
+4. Save bounded evidence to `data/inbox/` and use this skill to
    extract or reconcile it.
 5. Preserve positive consumption rows by project and SKU. Map managed AI to
    `inference`, L4 compute to `gpu`, and CPU/network/storage to `infra`.
@@ -64,14 +58,6 @@ Collection steps:
    discount pro rata across its exact consumption rows and document the
    allocation. Keep VAT in a separate `infra` row so it reconciles the amount
    due without inflating model/provider usage.
-
-Expected entry:
-
-- `cost_category`: `infrastructure` or `model`, based on product detail
-- `op_cloud_type`: `infra` or explicit `inference`
-- `op_transaction_category`: `cloud` for invoices/payments
-- `should_match_op_transaction`: true only for invoice/payment evidence
-- `should_match_op_cloud`: true for usage/discount evidence
 
 Known traps:
 

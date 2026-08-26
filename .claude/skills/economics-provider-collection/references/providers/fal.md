@@ -9,12 +9,6 @@ Canonical vendor: `fal`
   inference.
 - Use dashboard/invoice evidence for account balance and closed cash charges.
 
-Use when:
-
-- collecting fal model usage and price evidence
-- reconciling fal dashboard, invoice, or prepaid cash activity
-- checking a model's current unit price
-
 Primary evidence sources:
 
 - Usage: Tinybird `economics_pollen_usage` rows where `vendor = 'fal'`.
@@ -40,15 +34,7 @@ Collection steps:
    ```
 
 3. Save dashboard/invoice/price evidence to `data/inbox/` and use
-   `agent.system.txt` to extract or reconcile it.
-
-Expected entry:
-
-- `cost_category`: `model`
-- `op_cloud_type`: `inference`
-- `op_transaction_category`: `cloud` for invoices/top-ups
-- `should_match_op_transaction`: true only for cash evidence
-- `should_match_op_cloud`: true for usage/price evidence
+   this skill to extract or reconcile it.
 
 Known traps:
 

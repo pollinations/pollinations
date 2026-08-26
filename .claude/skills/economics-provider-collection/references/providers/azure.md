@@ -13,12 +13,6 @@ Canonical vendor: `azure`
 - Do not sum every returned invoice blindly. Select the monthly obligation
   and preserve invoice date separately from the covered billing period.
 
-Use when:
-
-- collecting Microsoft Azure invoice/billing-profile evidence
-- tracking startup sponsorship credits and card-paid Azure usage
-- reconciling Azure invoices and cloud usage rows
-
 Primary evidence sources:
 
 - Invoice/payment: monthly Azure/Microsoft invoice, usually issued around day 9 for the previous calendar month.
@@ -79,15 +73,7 @@ Collection steps:
    monthly granularity and group by `ServiceName` and `Meter`. Preserve the raw
    values; for closed months, allocate the final invoice total and funding split
    across meter rows so the detailed ledger still ties exactly to the invoice.
-9. Use `agent.system.txt` with `mode: extract` for saved raw evidence.
-
-Expected entry:
-
-- `cost_category`: `infrastructure`, `model`, `inference_serverless`, or `credit` depending on the source detail
-- `op_cloud_type`: `infra` by default; `inference` if Azure OpenAI/model usage is explicit
-- `op_transaction_category`: `cloud` for invoices/payments, `null` for pure credit/usage evidence
-- `should_match_op_transaction`: true for paid invoices/card charges, false for pure credit burn or usage evidence
-- `should_match_op_cloud`: true for Azure usage/cost evidence
+9. Use this skill for saved raw evidence.
 
 Known traps:
 
@@ -113,30 +99,3 @@ Known traps:
   invoice row instead.
 - Currency is usually EUR in the local billing profile.
 - Dry-run mode: do not write the API dump. Verify command shape, env presence, period bounds, and intended `source_file` path only. Set `source_file` to the intended `data/inbox` path and mention dry-run paths in `reconciliation_notes`.
-
-Reconciliation notes:
-
-- Invoice/API billing evidence can explain both paid transaction rows and cloud usage rows.
-- Sponsorship-credit months should not be forced to match cash transactions.
-- If the invoice lacks service breakdown, use it for the ledger-level cash/credit
-  amount only. Use Azure usage exports or dashboard evidence for detailed
-  service/model/GPU attribution; if those are unavailable, classify cautiously
-  and explain the limitation in `reconciliation_notes`.
-
-## Rotation
-
-- Rotates the Azure OpenAI/Cognitive Services keys gen.pollinations.ai uses for
-  model calls (key1/key2 slots per resource: `east`, `sweden`, `safety`) — a
-  different credential from this connector's `AZURE_CLIENT_ID`/`AZURE_TENANT_ID`/
-  `AZURE_CLIENT_SECRET` billing-API app registration, so rotating it does not
-  affect billing collection here.
-- Mechanism: each Cognitive Services resource exposes two key slots. Detect
-  which slot the current SOPS value matches, regenerate the unused slot, then
-  switch SOPS to it. The previous slot stays valid the whole time — true
-  zero-downtime, no delete step needed.
-- SOPS files: `gen.pollinations.ai/secrets/{dev,staging,prod}.vars.json`.
-- Deploy target: gen's Cloudflare deploy workflow. Health check:
-  `POST gen.pollinations.ai/v1/chat/completions` against an Azure-backed model
-  → 200.
-- The `safety` resource lives in a subscription not visible under the default
-  `az` context — run `az account set --subscription <other>` first.

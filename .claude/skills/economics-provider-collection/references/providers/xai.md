@@ -17,11 +17,6 @@ Canonical vendor: `xai`
 - Grouping the full 2026 Usage view by API key showed all spend on the
   `pollinations` runtime key. No second usage key was observed.
 
-Use when:
-
-- collecting xAI model/API billing evidence
-- reconciling xAI invoices and prepaid top-ups
-
 Primary evidence sources:
 
 - API: xAI management billing invoice ledger.
@@ -64,26 +59,3 @@ Known traps:
 - For the current open month, supersede provisional Pollen-derived provider
   rows with exact dashboard CSV rows. Replace them again with invoice-line rows
   once the monthly cycle invoice closes.
-
-Expected entry:
-
-- `cost_category`: `model`
-- `op_cloud_type`: `inference`
-- `op_transaction_category`: `cloud` for paid invoices/top-ups, `null` for pure usage evidence
-- `should_match_op_transaction`: true for invoices/top-ups, false for pure usage exports
-- `should_match_op_cloud`: true for cycle invoice usage
-
-## Rotation
-
-- Rotates the runtime `XAI_API_KEY` gen.pollinations.ai uses for chat
-  completions — a different credential from this connector's
-  `XAI_MANAGEMENT_API_KEY` (billing/invoices). Rotation needs its own
-  management-scoped admin credentials (`XAI_MANAGEMENT_KEY`, `XAI_TEAM_ID`) —
-  verify empirically whether these are the same value as this connector's
-  management key before assuming so; the naming differs slightly.
-- Mechanism: `POST /auth/api-keys` cloning the old key's ACLs (old stays
-  valid), deploy, verify with a live grok-model completion, then
-  `DELETE /auth/api-keys/{old-id}`. Zero downtime.
-- SOPS files: `gen.pollinations.ai/secrets/{dev,staging,prod}.vars.json`.
-- Deploy target: gen's Cloudflare deploy workflow. Health check:
-  `POST gen.pollinations.ai/v1/chat/completions` with a grok model → 200.

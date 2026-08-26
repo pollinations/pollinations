@@ -26,11 +26,6 @@ Official references:
 - https://docs.inceptionlabs.ai/get-started/get-started
 - https://api.inceptionlabs.ai/openapi.json
 
-Use when:
-
-- closing direct Inception usage for June and July 2026
-- checking that no direct-account usage continued after the route moved
-
 Collection steps:
 
 1. In the Inception dashboard, collect usage and cost for 2026-06-23 through
@@ -48,12 +43,6 @@ Captured evidence:
 - https://drive.google.com/file/d/1E4HCmKeHNCbDOLyBKpZyw3sREumhbNIf/view?usp=drivesdk
 - https://drive.google.com/file/d/1fMiubBFvBtzLG4pBIGL_i0iQcquChVb_/view?usp=drivesdk
 - https://drive.google.com/file/d/1upcqX3kGUNmPWieSNMIttFSace_OW6vN/view?usp=drivesdk
-
-Expected entry:
-
-- `cost_category`: `model`
-- `op_cloud_type`: `inference`
-- `should_match_op_cloud`: true
 
 Known traps:
 

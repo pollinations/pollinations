@@ -14,16 +14,6 @@ Canonical vendor: `digitalocean`
 - Replace or re-scope `DIGITALOCEAN_TOKEN` with `billing:read`; until then,
   use invoices and dashboard evidence. Do not interpret the 403 as zero.
 
-Use when:
-
-- collecting DigitalOcean balance, billing history, invoice, or usage evidence
-- tracking DigitalOcean promotional credits and their cash transition
-- reconciling DigitalOcean infrastructure cost to Economics
-
-Required credential:
-
-- `DIGITALOCEAN_TOKEN` with `billing:read` scope
-
 Collection steps:
 
 1. Query the current balance:
@@ -44,15 +34,7 @@ Collection steps:
 
 3. Use invoices or Billing Insights when a closed-month or resource breakdown
    is required. Save raw evidence to `data/inbox/`.
-4. Use `agent.system.txt` to extract or reconcile it.
-
-Expected entry:
-
-- `cost_category`: `infrastructure`
-- `op_cloud_type`: `infra`
-- `op_transaction_category`: `cloud` for invoices/payments
-- `should_match_op_transaction`: true only for invoice/payment evidence
-- `should_match_op_cloud`: true for usage/cost evidence
+4. Use this skill to extract or reconcile it.
 
 Known traps:
 

@@ -336,7 +336,17 @@ describe("error observability", () => {
                         apiKey: "nested_api_key_secret",
                         token: "nested_token_secret",
                         keep: "visible",
+                        reference_images: [
+                            "https://media.example/nested-one.png|https://media.example/nested-two.png",
+                        ],
+                        REFERENCE_VIDEOS:
+                            "https://user:secret@media.example/nested.mp4",
                     },
+                    reference_images: [
+                        "https://media.example/one.png|https://media.example/two.png",
+                        "https://media.example/three.png",
+                    ],
+                    reference_audios: "https://media.example/voice.mp3",
                     items: [
                         {
                             key: "array_key_secret",
@@ -391,7 +401,11 @@ describe("error observability", () => {
                     apiKey: "[redacted]",
                     token: "[redacted]",
                     keep: "visible",
+                    reference_images: "[redacted:2]",
+                    REFERENCE_VIDEOS: "[redacted]",
                 },
+                reference_images: "[redacted:3]",
+                reference_audios: "[redacted]",
                 items: [
                     {
                         key: "[redacted]",
@@ -401,6 +415,67 @@ describe("error observability", () => {
                 ],
             },
         });
+    });
+
+    it("redacts native media fields from form error telemetry", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+
+        const app = new Hono<Env>();
+        app.post("/form-error", () => {
+            throw new Error("form failure");
+        });
+        app.onError(handleError);
+
+        const form = new FormData();
+        form.append(
+            "reference_images",
+            "https://media.example/form-one.png|https://media.example/form-two.png",
+        );
+        form.append("reference_images", "https://media.example/form-three.png");
+        form.append(
+            "REFERENCE_AUDIOS",
+            "https://user:secret@media.example/form.mp3",
+        );
+        form.append("keep", "visible");
+
+        const ctx = createExecutionContext();
+        const response = await app.fetch(
+            new Request("https://gen.pollinations.ai/form-error", {
+                method: "POST",
+                body: form,
+            }),
+            {
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(500);
+        const payload = (await tinybirdRequests[0].json()) as Record<
+            string,
+            unknown
+        >;
+        const requestInputs = JSON.parse(payload.request_inputs as string);
+        expect(requestInputs.body).toMatchObject({
+            reference_images: "[redacted:3]",
+            REFERENCE_AUDIOS: "[redacted]",
+            keep: "visible",
+        });
+        expect(payload.request_inputs).not.toContain("media.example");
+        expect(payload.request_inputs).not.toContain("secret@media.example");
     });
 
     it("does not require logger middleware state for 5xx errors", async () => {

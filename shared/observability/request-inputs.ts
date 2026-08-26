@@ -132,6 +132,23 @@ function redactUserMediaQueryValue(value: string | string[]): string {
             total + entry.split("|").filter((segment) => segment.trim()).length,
         0,
     );
+    return redactUserMediaCount(count);
+}
+
+function redactUserMediaBodyValue(value: unknown): string {
+    if (typeof value === "string") return redactUserMediaQueryValue(value);
+    if (Array.isArray(value)) {
+        const strings = value.filter(
+            (entry): entry is string => typeof entry === "string",
+        );
+        if (strings.length === value.length) {
+            return redactUserMediaQueryValue(strings);
+        }
+    }
+    return REDACTED;
+}
+
+function redactUserMediaCount(count: number): string {
     return count > 1 ? `[redacted:${count}]` : REDACTED;
 }
 
@@ -145,12 +162,17 @@ function redactBodyFields(value: unknown): unknown {
     }
 
     return Object.fromEntries(
-        Object.entries(value).map(([key, fieldValue]) => [
-            key,
-            CREDENTIAL_QUERY_PARAMS.has(key.toLowerCase())
-                ? REDACTED
-                : redactBodyFields(fieldValue),
-        ]),
+        Object.entries(value).map(([key, fieldValue]) => {
+            const normalizedKey = key.toLowerCase();
+            return [
+                key,
+                CREDENTIAL_QUERY_PARAMS.has(normalizedKey)
+                    ? REDACTED
+                    : USER_MEDIA_QUERY_PARAMS.has(normalizedKey)
+                      ? redactUserMediaBodyValue(fieldValue)
+                      : redactBodyFields(fieldValue),
+            ];
+        }),
     );
 }
 

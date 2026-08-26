@@ -84,8 +84,8 @@ describe("monthlyLedgerAuditRows", () => {
             cloudRows: 1,
             pollenRows: 1,
             missingBankData: false,
-            transactionEvidenceGaps: 0,
             actionableTransactionEvidenceGaps: 0,
+            acknowledgedTransactionEvidenceGaps: 0,
             missingMappings: 0,
             estimatedFx: false,
             invalidRows: 0,
@@ -135,9 +135,12 @@ describe("monthlyLedgerAuditRows", () => {
 
         expect(row).toMatchObject({
             status: "structural",
-            transactionEvidenceGaps: 2,
             actionableTransactionEvidenceGaps: 2,
-            transactionEvidenceProviders: ["aws"],
+            actionableTransactionEvidenceProviderCounts: [
+                { provider: "aws", count: 2 },
+            ],
+            acknowledgedTransactionEvidenceGaps: 0,
+            acknowledgedTransactionEvidenceProviderCounts: [],
             missingMappings: 1,
             missingMappingProviders: ["new-provider"],
             invalidRows: 4,
@@ -219,8 +222,8 @@ describe("monthlyLedgerAuditRows", () => {
         );
 
         expect(row.status).toBe("attention");
-        expect(row.transactionEvidenceGaps).toBe(1);
         expect(row.actionableTransactionEvidenceGaps).toBe(1);
+        expect(row.acknowledgedTransactionEvidenceGaps).toBe(0);
     });
 
     it("keeps acknowledged lost documents visible without blocking a clean month", () => {
@@ -249,9 +252,13 @@ describe("monthlyLedgerAuditRows", () => {
 
         expect(row).toMatchObject({
             status: "clean",
-            transactionEvidenceGaps: 2,
             actionableTransactionEvidenceGaps: 0,
-            transactionEvidenceProviders: ["openai", "space-berlin"],
+            actionableTransactionEvidenceProviderCounts: [],
+            acknowledgedTransactionEvidenceGaps: 2,
+            acknowledgedTransactionEvidenceProviderCounts: [
+                { provider: "openai", count: 1 },
+                { provider: "space-berlin", count: 1 },
+            ],
         });
     });
 
@@ -273,8 +280,8 @@ describe("monthlyLedgerAuditRows", () => {
         );
 
         expect(row.status).toBe("clean");
-        expect(row.transactionEvidenceGaps).toBe(1);
         expect(row.actionableTransactionEvidenceGaps).toBe(0);
+        expect(row.acknowledgedTransactionEvidenceGaps).toBe(1);
     });
 
     it("marks the current month as partial without replacing its clean status", () => {

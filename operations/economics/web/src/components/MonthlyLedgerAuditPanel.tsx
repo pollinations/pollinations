@@ -10,6 +10,7 @@ import {
 } from "@pollinations/ui";
 import { useMemo } from "react";
 import {
+    type MonthlyLedgerAuditProviderCount,
     type MonthlyLedgerAuditRow,
     type MonthlyLedgerAuditStatus,
     monthlyLedgerAuditRows,
@@ -31,6 +32,12 @@ const STATUS_INTENT = {
     structural: "danger",
 } as const;
 
+const STATUS_LABEL = {
+    clean: "clean",
+    attention: "review",
+    structural: "structural",
+} as const;
+
 const STATUS_RANK: Record<MonthlyLedgerAuditStatus, number> = {
     structural: 0,
     attention: 1,
@@ -44,8 +51,12 @@ const SORT_COLUMNS: SortColumn<MonthlyLedgerAuditRow>[] = [
     { key: "cloudRows", value: (row) => row.cloudRows },
     { key: "pollenRows", value: (row) => row.pollenRows },
     {
-        key: "transactionEvidenceGaps",
-        value: (row) => row.transactionEvidenceGaps,
+        key: "actionableTransactionEvidenceGaps",
+        value: (row) => row.actionableTransactionEvidenceGaps,
+    },
+    {
+        key: "acknowledgedTransactionEvidenceGaps",
+        value: (row) => row.acknowledgedTransactionEvidenceGaps,
     },
     { key: "missingMappings", value: (row) => row.missingMappings },
     { key: "estimatedFx", value: (row) => row.estimatedFx },
@@ -79,10 +90,12 @@ function BankRowsCell({ row }: { row: MonthlyLedgerAuditRow }) {
 function IssueCountCell({
     value,
     vendors,
+    vendorCounts,
     className,
 }: {
     value: number;
     vendors: string[];
+    vendorCounts?: MonthlyLedgerAuditProviderCount[];
     className?: string;
 }) {
     return (
@@ -95,11 +108,18 @@ function IssueCountCell({
                     triggerAs="span"
                     content={
                         <span className="block max-w-72">
-                            <strong>Affected vendors</strong>
+                            <strong>Vendors</strong>
                             <span className="mt-1 block">
-                                {vendors.length > 0
-                                    ? vendors.join(", ")
-                                    : "Unknown"}
+                                {vendorCounts && vendorCounts.length > 0
+                                    ? vendorCounts
+                                          .map(
+                                              ({ provider, count }) =>
+                                                  `${provider} (${count.toLocaleString()})`,
+                                          )
+                                          .join(", ")
+                                    : vendors.length > 0
+                                      ? vendors.join(", ")
+                                      : "Unknown"}
                             </span>
                         </span>
                     }
@@ -148,12 +168,25 @@ export function MonthlyLedgerAuditPanel({
                         </TableHeaderCell>
                         <TableHeaderCell
                             rowSpan={2}
-                            {...headerProps("transactionEvidenceGaps")}
+                            {...headerProps(
+                                "actionableTransactionEvidenceGaps",
+                            )}
                             align="right"
                             className={GROUP_BORDER}
                         >
-                            <HeaderHint hint="Transactions whose invoice, receipt, statement, or reconciliation reference is not archived in Drive. Explicitly acknowledged permanent losses remain visible here but do not block a clean month. Hover a non-zero count to see the affected vendors.">
-                                Missing documents
+                            <HeaderHint hint="Transactions whose invoice, receipt, statement, or reconciliation reference still needs to be archived in Drive. Hover a non-zero count to see the number for each vendor.">
+                                Open documents
+                            </HeaderHint>
+                        </TableHeaderCell>
+                        <TableHeaderCell
+                            rowSpan={2}
+                            {...headerProps(
+                                "acknowledgedTransactionEvidenceGaps",
+                            )}
+                            align="right"
+                        >
+                            <HeaderHint hint="Permanent document losses that are explicitly documented and therefore do not block a clean month. Hover a non-zero count to see the number for each vendor.">
+                                Document exceptions
                             </HeaderHint>
                         </TableHeaderCell>
                         <TableHeaderCell
@@ -229,7 +262,7 @@ export function MonthlyLedgerAuditPanel({
                                         intent={STATUS_INTENT[row.status]}
                                         size="sm"
                                     >
-                                        {row.status}
+                                        {STATUS_LABEL[row.status]}
                                     </Chip>
                                 )}
                             </TableCell>
@@ -238,9 +271,19 @@ export function MonthlyLedgerAuditPanel({
                             <NumberCell value={row.cloudRows} />
                             <NumberCell value={row.pollenRows} />
                             <IssueCountCell
-                                value={row.transactionEvidenceGaps}
-                                vendors={row.transactionEvidenceProviders}
+                                value={row.actionableTransactionEvidenceGaps}
+                                vendors={[]}
+                                vendorCounts={
+                                    row.actionableTransactionEvidenceProviderCounts
+                                }
                                 className={GROUP_BORDER}
+                            />
+                            <IssueCountCell
+                                value={row.acknowledgedTransactionEvidenceGaps}
+                                vendors={[]}
+                                vendorCounts={
+                                    row.acknowledgedTransactionEvidenceProviderCounts
+                                }
                             />
                             <IssueCountCell
                                 value={row.missingMappings}

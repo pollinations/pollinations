@@ -245,7 +245,7 @@ export function ProviderCloseTab({
         [data, month],
     );
     const closedAuditRows = auditRows.filter((row) => !row.partial);
-    const transactionEvidenceGaps = closedAuditRows.reduce(
+    const openDocumentGaps = closedAuditRows.reduce(
         (total, row) => total + row.actionableTransactionEvidenceGaps,
         0,
     );
@@ -268,7 +268,7 @@ export function ProviderCloseTab({
         (row) => row.estimatedFx,
     ).length;
     const ledgerIssues =
-        transactionEvidenceGaps +
+        openDocumentGaps +
         missingBankMonths +
         missingMappings +
         invalidRows +
@@ -285,8 +285,8 @@ export function ProviderCloseTab({
         summary.blockers
             ? `${summary.blockers} vendor ${summary.blockers === 1 ? "check" : "checks"}`
             : null,
-        transactionEvidenceGaps
-            ? `${transactionEvidenceGaps} transaction ${transactionEvidenceGaps === 1 ? "document" : "documents"} missing`
+        openDocumentGaps
+            ? `${openDocumentGaps} open transaction ${openDocumentGaps === 1 ? "document" : "documents"}`
             : null,
         missingBankMonths
             ? `${missingBankMonths} ${missingBankMonths === 1 ? "month has" : "months have"} no bank data`

@@ -31,6 +31,11 @@ const POLLEN_MEASURES: (keyof OpPollenRow)[] = [
 
 export type MonthlyLedgerAuditStatus = "clean" | "attention" | "structural";
 
+export type MonthlyLedgerAuditProviderCount = {
+    provider: string;
+    count: number;
+};
+
 export type MonthlyLedgerAuditRow = {
     month: string;
     status: MonthlyLedgerAuditStatus;
@@ -39,9 +44,10 @@ export type MonthlyLedgerAuditRow = {
     cloudRows: number;
     pollenRows: number;
     missingBankData: boolean;
-    transactionEvidenceGaps: number;
     actionableTransactionEvidenceGaps: number;
-    transactionEvidenceProviders: string[];
+    actionableTransactionEvidenceProviderCounts: MonthlyLedgerAuditProviderCount[];
+    acknowledgedTransactionEvidenceGaps: number;
+    acknowledgedTransactionEvidenceProviderCounts: MonthlyLedgerAuditProviderCount[];
     missingMappings: number;
     missingMappingProviders: string[];
     estimatedFx: boolean;
@@ -125,6 +131,19 @@ function providerNames(rows: readonly { vendor: string }[]): string[] {
     ].sort((a, b) => a.localeCompare(b));
 }
 
+function providerCounts(
+    rows: readonly { vendor: string }[],
+): MonthlyLedgerAuditProviderCount[] {
+    const counts = new Map<string, number>();
+    for (const row of rows) {
+        const provider = String(row.vendor ?? "").trim() || "missing vendor";
+        counts.set(provider, (counts.get(provider) ?? 0) + 1);
+    }
+    return [...counts]
+        .map(([provider, count]) => ({ provider, count }))
+        .sort((a, b) => a.provider.localeCompare(b.provider));
+}
+
 function providersWithDuplicateKeys<T extends { vendor: string }>(
     rows: readonly T[],
     key: (row: T) => string,
@@ -206,6 +225,9 @@ export function monthlyLedgerAuditRows(
             const actionableEvidenceGaps = evidenceGaps.filter(
                 (row) => !isAcknowledgedLostTransactionEvidence(row),
             );
+            const acknowledgedEvidenceGaps = evidenceGaps.filter((row) =>
+                isAcknowledgedLostTransactionEvidence(row),
+            );
             const mappingGaps = missingProviderMappings(data, month);
             const missingMappingProviders = [
                 ...new Set(mappingGaps.map((row) => row.provider)),
@@ -221,10 +243,16 @@ export function monthlyLedgerAuditRows(
                 cloudRows: cloud.length,
                 pollenRows: pollen.length,
                 missingBankData: !partial && transactions.length === 0,
-                transactionEvidenceGaps: evidenceGaps.length,
                 actionableTransactionEvidenceGaps:
                     actionableEvidenceGaps.length,
-                transactionEvidenceProviders: providerNames(evidenceGaps),
+                actionableTransactionEvidenceProviderCounts: providerCounts(
+                    actionableEvidenceGaps,
+                ),
+                acknowledgedTransactionEvidenceGaps:
+                    acknowledgedEvidenceGaps.length,
+                acknowledgedTransactionEvidenceProviderCounts: providerCounts(
+                    acknowledgedEvidenceGaps,
+                ),
                 missingMappings: missingMappingProviders.length,
                 missingMappingProviders,
                 estimatedFx: estimatedFxMonths.has(month),
@@ -289,9 +317,10 @@ export function monthlyLedgerAuditRows(
             cloudRows: invalidDateCloud.length,
             pollenRows: invalidDatePollen.length,
             missingBankData: false,
-            transactionEvidenceGaps: 0,
             actionableTransactionEvidenceGaps: 0,
-            transactionEvidenceProviders: [],
+            actionableTransactionEvidenceProviderCounts: [],
+            acknowledgedTransactionEvidenceGaps: 0,
+            acknowledgedTransactionEvidenceProviderCounts: [],
             missingMappings: 0,
             missingMappingProviders: [],
             estimatedFx: false,

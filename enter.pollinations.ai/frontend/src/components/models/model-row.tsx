@@ -41,33 +41,25 @@ import {
 } from "./price-badge.tsx";
 import type { ModelPrice } from "./types.ts";
 
-function formatNumber(value: number): string {
-    return value % 1 === 0 ? String(value) : value.toFixed(2);
+function toCompactUnit(n: number, divisor: number, suffix: string): string {
+    if (n % divisor !== 0) return n.toFixed(2);
+    const val = n / divisor;
+    return `${val % 1 === 0 ? String(val) : val.toFixed(2)}${suffix}`;
 }
 
-function formatContextLimit(contextLength: number): string {
-    if (contextLength >= 1_000_000)
-        return `${formatNumber(contextLength / 1_000_000)}M`;
-    if (contextLength >= 1_000)
-        return `${formatNumber(contextLength / 1_000)}K`;
-    return String(contextLength);
+function renderContextBadge(length: number): JSX.Element | null {
+    if (length >= 1_000_000) return <>{toCompactUnit(length, 1_000_000, "M")} ctx</>;
+    if (length >= 1_000) return <>{toCompactUnit(length, 1_000, "K")} ctx</>;
+    return <>{length} ctx</>;
 }
 
-function formatDurationLimit(seconds: number): string {
-    return `${formatNumber(seconds)}s`;
-}
-
-function getVideoDurationLabel(
-    duration: NonNullable<ModelPrice["duration"]>,
-): string | null {
-    const hasRange =
-        duration.min != null &&
-        duration.max != null &&
-        duration.min !== duration.max;
-    if (hasRange)
-        return `${formatDurationLimit(duration.min!)}–${formatDurationLimit(duration.max!)}`;
-    const fixed = duration.min ?? duration.max ?? duration.default;
-    return fixed != null ? formatDurationLimit(fixed) : null;
+function renderDurationBadge(maxD: number | undefined, defaultD: number | undefined): JSX.Element | null {
+    if (maxD != null && defaultD != null && maxD !== defaultD) {
+        return <>{defaultD}s{defaultD % 1 !== 0 ? "" : ""}–{maxD}s</>;
+    }
+    if (maxD != null) return <>{maxD}s</>;
+    if (defaultD != null) return <>{defaultD}s</>;
+    return null;
 }
 
 type ModelRowProps = {
@@ -305,23 +297,18 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                         )}
                     </div>
                     <ModelId name={model.name} />
-                    {(model.contextLength != null || model.duration) && (
-                        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-theme-text-muted">
+                    {(model.contextLength != null || model.maxDuration != null || model.defaultDuration != null) && (
+                        <div className="mt-1 flex flex-wrap items-center gap-1">
                             {model.contextLength != null && (
-                                <span>
-                                    {formatContextLimit(model.contextLength)}
-                                    {" "}
-                                    context
+                                <span className="inline-flex rounded bg-surface-secondary px-1.5 py-0.5 font-mono text-[10px] leading-none text-theme-text-muted">
+                                    {renderContextBadge(model.contextLength)}
                                 </span>
                             )}
-                            {(() => {
-                                const durationLabel = model.duration
-                                    ? getVideoDurationLabel(model.duration)
-                                    : null;
-                                return durationLabel ? (
-                                    <span>{durationLabel}</span>
-                                ) : null;
-                            })()}
+                            {renderDurationBadge(model.maxDuration, model.defaultDuration) != null && (
+                                <span className="inline-flex rounded bg-surface-secondary px-1.5 py-0.5 font-mono text-[10px] leading-none text-theme-text-muted">
+                                    {renderDurationBadge(model.maxDuration, model.defaultDuration)}
+                                </span>
+                            )}
                         </div>
                     )}
                     {model.brandUrl && model.brand && (

@@ -253,16 +253,8 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
         baseModel: model.base_model,
         perUserRpm: model.per_user_rpm,
         contextLength: model.context_length,
-        duration:
-            model.min_duration !== undefined ||
-            model.max_duration !== undefined ||
-            model.default_duration !== undefined
-                ? {
-                      min: model.min_duration,
-                      max: model.max_duration,
-                      default: model.default_duration,
-                  }
-                : undefined,
+        maxDuration: model.max_duration ?? undefined,
+        defaultDuration: model.default_duration ?? undefined,
         displayName: getCatalogDisplayName(model, name),
         description: getCatalogDescriptionWithoutName(model),
         brand: model.brand,

@@ -70,12 +70,9 @@ export type ModelPrice = {
     type: ModelCategory;
     /** Maximum prompt + completion window in tokens, when advertised. */
     contextLength?: number;
-    /** Advertised video duration limits in seconds. */
-    duration?: {
-        min?: number;
-        max?: number;
-        default?: number;
-    };
+    /** Optional maximum video duration in seconds when known. */
+    maxDuration?: number;
+    defaultDuration?: number;
     community?: boolean;
     agent?: boolean;
     baseModel?: string;

@@ -6,30 +6,40 @@ import {
 } from "./CreditsTab";
 
 describe("isActiveBalanceRow", () => {
-    it("tracks whether any provider balance remains", () => {
-        expect(isActiveBalanceRow({ finished: false })).toBe(true);
-        expect(isActiveBalanceRow({ finished: true })).toBe(false);
+    it("uses the provider lifecycle rather than its remaining balance", () => {
+        expect(isActiveBalanceRow({ active: true })).toBe(true);
+        expect(isActiveBalanceRow({ active: false })).toBe(false);
     });
 });
 
 describe("needsBalanceAttention", () => {
-    it("ignores finished pools and flags only active unchecked balances", () => {
+    it("flags only active tracked balances that are not checked", () => {
         expect(
             needsBalanceAttention({
-                finished: true,
+                active: false,
+                balanceTracking: true,
                 balanceStatus: "not_checked",
             }),
         ).toBe(false);
         expect(
             needsBalanceAttention({
-                finished: false,
+                active: true,
+                balanceTracking: true,
                 balanceStatus: "partial",
             }),
         ).toBe(true);
         expect(
             needsBalanceAttention({
-                finished: false,
+                active: true,
+                balanceTracking: true,
                 balanceStatus: "checked",
+            }),
+        ).toBe(false);
+        expect(
+            needsBalanceAttention({
+                active: true,
+                balanceTracking: false,
+                balanceStatus: "not_applicable",
             }),
         ).toBe(false);
     });

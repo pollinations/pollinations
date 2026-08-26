@@ -13,7 +13,13 @@ import {
 import { toUsd } from "./fx";
 import { monthLabel, monthShift, WINDOW_START } from "./months";
 import { isPrepaidVendor } from "./providerFunding";
-import { activeProviderAccounts, resolveProvider } from "./providerRegistry";
+import {
+    activeProviderAccounts,
+    PROVIDER_REGISTRY,
+    type ProviderAccessTarget,
+    type ProviderCollectionMethod,
+    resolveProvider,
+} from "./providerRegistry";
 
 const MONTH_KEY_RE = /^\d{4}-\d{2}$/;
 
@@ -471,10 +477,21 @@ export type ProviderBalanceMonth = {
 
 export type ProviderBalanceRow = {
     vendor: string;
+    label: string;
+    active: boolean;
+    balanceTracking: boolean;
+    collectionMethod: ProviderCollectionMethod | null;
+    access: ProviderAccessTarget[];
     cashBalanceUsd: number | null;
     creditBalanceUsd: number | null;
     balanceAsOf: string | null;
-    balanceStatus: "checked" | "partial" | "not_checked";
+    balanceStatus:
+        | "checked"
+        | "partial"
+        | "stale"
+        | "not_checked"
+        | "not_applicable"
+        | "archived";
     checkedAccounts: number;
     expectedAccounts: number;
     balanceNote: string | null;
@@ -583,23 +600,31 @@ function providerBalanceAnchors(
                 ? expectedAccounts.map((accountId) => accounts.get(accountId))
                 : [...accounts.values()]
         ).filter((row): row is OpCloudRow => row != null);
-        const rows = selected.filter(
+        const freshRows = selected.filter(
             (row) => row.start.slice(0, 10) >= freshSince,
         );
+        const active = provider?.monthlyReview ?? true;
+        const balanceTracking = provider?.balanceTracking ?? true;
+        const rows = !active || freshRows.length === 0 ? selected : freshRows;
         const expectedCount =
             expectedAccounts.length > 0
                 ? expectedAccounts.length
                 : accounts.size;
         const observedDates = rows.map((row) => row.start.slice(0, 10)).sort();
-        const checkedAccounts = rows.length;
+        const checkedAccounts = freshRows.length;
         coverage.set(vendor, {
             balanceAsOf: observedDates[0] ?? null,
-            balanceStatus:
-                checkedAccounts === 0
-                    ? "not_checked"
-                    : checkedAccounts < expectedCount
-                      ? "partial"
-                      : "checked",
+            balanceStatus: !balanceTracking
+                ? "not_applicable"
+                : !active
+                  ? "archived"
+                  : checkedAccounts === 0 && selected.length > 0
+                    ? "stale"
+                    : checkedAccounts === 0
+                      ? "not_checked"
+                      : checkedAccounts < expectedCount
+                        ? "partial"
+                        : "checked",
             checkedAccounts,
             expectedAccounts: expectedCount,
         });
@@ -750,6 +775,11 @@ export function providerBalanceRows(
         ...cashVendors,
         ...anchors.keys(),
         ...coverage.keys(),
+        ...PROVIDER_REGISTRY.filter(
+            (provider) =>
+                provider.meteringBasis !== "internal" &&
+                (provider.connector != null || provider.monthlyReview),
+        ).map((provider) => provider.id),
     ]);
     const rows: ProviderBalanceRow[] = [];
     for (const vendor of vendors) {
@@ -757,9 +787,15 @@ export function providerBalanceRows(
         if (definition?.meteringBasis === "internal") continue;
         const credit = creditByVendor.get(vendor) ?? null;
         const anchor = anchors.get(vendor) ?? null;
+        const active = definition?.monthlyReview ?? true;
+        const balanceTracking = definition?.balanceTracking ?? true;
         const balanceCoverage = coverage.get(vendor) ?? {
             balanceAsOf: null,
-            balanceStatus: "not_checked" as const,
+            balanceStatus: !balanceTracking
+                ? ("not_applicable" as const)
+                : !active
+                  ? ("archived" as const)
+                  : ("not_checked" as const),
             checkedAccounts: 0,
             expectedAccounts:
                 definition == null
@@ -828,6 +864,11 @@ export function providerBalanceRows(
                 : null;
         rows.push({
             vendor,
+            label: definition?.label ?? vendor,
+            active,
+            balanceTracking,
+            collectionMethod: definition?.collectionMethod ?? null,
+            access: definition?.access ?? [],
             cashBalanceUsd,
             creditBalanceUsd,
             balanceAsOf: balanceCoverage.balanceAsOf,
@@ -853,6 +894,7 @@ export function providerBalanceRows(
 
     return rows.sort(
         (a, b) =>
+            Number(b.active) - Number(a.active) ||
             Number(a.finished) - Number(b.finished) ||
             (a.creditDepletionDate ?? "9999").localeCompare(
                 b.creditDepletionDate ?? "9999",

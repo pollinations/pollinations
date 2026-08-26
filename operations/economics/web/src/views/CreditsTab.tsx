@@ -1,5 +1,7 @@
 import {
+    Chip,
     cn,
+    InlineLink,
     ScrollArea,
     TableBody,
     TableCell,
@@ -36,14 +38,17 @@ export function depletionTone(date: string | null, now: Date): string {
     return "text-theme-text-soft";
 }
 
-export function isActiveBalanceRow(row: Pick<ProviderBalanceRow, "finished">) {
-    return !row.finished;
+export function isActiveBalanceRow(row: Pick<ProviderBalanceRow, "active">) {
+    return row.active;
 }
 
 export function needsBalanceAttention(
-    row: Pick<ProviderBalanceRow, "balanceStatus" | "finished">,
+    row: Pick<
+        ProviderBalanceRow,
+        "active" | "balanceStatus" | "balanceTracking"
+    >,
 ) {
-    return !row.finished && row.balanceStatus !== "checked";
+    return row.active && row.balanceTracking && row.balanceStatus !== "checked";
 }
 
 function balanceTone(value: number | null) {
@@ -56,31 +61,47 @@ function optionalUsd(value: number | null) {
 
 function BalanceStatus({ row }: { row: ProviderBalanceRow }) {
     const status = row.balanceStatus;
-    const label = row.finished
-        ? "Finished"
-        : status === "checked"
-          ? row.balanceAsOf
-              ? fmtPeriod(row.balanceAsOf)
-              : "Checked"
-          : status === "partial"
-            ? `${row.checkedAccounts}/${row.expectedAccounts} accounts`
-            : "Not checked";
-    const hint = row.finished
-        ? "The tracked cash and free-credit pools are exhausted, so there is no active balance to verify."
-        : status === "checked"
-          ? `Current balance snapshot checked${row.balanceAsOf ? ` on ${fmtPeriod(row.balanceAsOf)}` : ""}.`
-          : status === "partial"
-            ? `Only ${row.checkedAccounts} of ${row.expectedAccounts} active accounts have a same-day balance snapshot. Displayed balances sum the checked accounts only.`
-            : "No current OP Cloud balance snapshot. Displayed balances are ledger estimates, not a verified account balance.";
+    const needsAttention =
+        status === "stale" || status === "partial" || status === "not_checked";
+    const label =
+        status === "not_applicable"
+            ? "No balance"
+            : status === "archived"
+              ? row.balanceAsOf
+                  ? fmtPeriod(row.balanceAsOf)
+                  : "No snapshot"
+              : status === "stale"
+                ? row.balanceAsOf
+                    ? fmtPeriod(row.balanceAsOf)
+                    : "Stale"
+                : status === "checked"
+                  ? row.balanceAsOf
+                      ? fmtPeriod(row.balanceAsOf)
+                      : "Checked"
+                  : status === "partial"
+                    ? `${row.checkedAccounts}/${row.expectedAccounts} accounts`
+                    : "Not checked";
+    const hint =
+        status === "not_applicable"
+            ? "This vendor has no wallet, credit pool, or quota balance to refresh. Monthly usage and invoices are checked separately."
+            : status === "archived"
+              ? `This provider is inactive. Its last recorded balance${row.balanceAsOf ? ` is dated ${fmtPeriod(row.balanceAsOf)}` : " has no snapshot"}; no monthly refresh is required.`
+              : status === "stale"
+                ? `The last balance snapshot${row.balanceAsOf ? ` is dated ${fmtPeriod(row.balanceAsOf)}` : " is old"}. Refresh this active provider.`
+                : status === "checked"
+                  ? `Current balance snapshot checked${row.balanceAsOf ? ` on ${fmtPeriod(row.balanceAsOf)}` : ""}.`
+                  : status === "partial"
+                    ? `Only ${row.checkedAccounts} of ${row.expectedAccounts} active accounts have a same-day balance snapshot. Displayed balances sum the checked accounts only.`
+                    : "No current OP Cloud balance snapshot. Displayed balances are ledger estimates, not a verified account balance.";
     const fullHint = row.balanceNote ? `${hint} ${row.balanceNote}.` : hint;
     return (
         <Tooltip triggerAs="span" content={fullHint}>
             <span className="flex flex-col whitespace-nowrap text-sm">
                 <span
                     className={
-                        row.finished || status === "checked"
-                            ? "text-theme-text-soft"
-                            : "text-intent-warning-text"
+                        needsAttention
+                            ? "text-intent-warning-text"
+                            : "text-theme-text-soft"
                     }
                 >
                     {label}
@@ -200,9 +221,10 @@ export function BalancesTab({ data }: { data: Data }) {
         let checked = 0;
         let attention = 0;
         for (const row of rows) {
+            if (!row.active) continue;
             cashBalance += Math.max(row.cashBalanceUsd ?? 0, 0);
             creditBalance += Math.max(row.creditBalanceUsd ?? 0, 0);
-            if (row.finished) continue;
+            if (!row.balanceTracking) continue;
             active += 1;
             if (row.balanceStatus === "checked") checked += 1;
             if (needsBalanceAttention(row)) attention += 1;
@@ -238,7 +260,7 @@ export function BalancesTab({ data }: { data: Data }) {
                     {
                         label: "Free credit",
                         value: fmtUsd(totals.creditBalance),
-                        detail: `Known balance · ${totals.checked} of ${totals.active} active balances checked`,
+                        detail: `Active providers · ${totals.checked} of ${totals.active} tracked balances checked`,
                     },
                     {
                         label: "Cash prepaid",
@@ -258,7 +280,7 @@ export function BalancesTab({ data }: { data: Data }) {
                                 Vendor
                             </TableHeaderCell>
                             <TableHeaderCell rowSpan={2}>
-                                Balance checked
+                                Last checked
                             </TableHeaderCell>
                             <TableHeaderCell
                                 colSpan={2}
@@ -276,7 +298,7 @@ export function BalancesTab({ data }: { data: Data }) {
                                 <HeaderHint
                                     hint={{
                                         meaning:
-                                            "Latest dated OP Cloud balance snapshot. A partial multi-account row sums only the checked accounts. Without a snapshot, the balance stays blank.",
+                                            "Latest dated Compute ledger balance snapshot. Inactive vendors keep their last known snapshot. A partial multi-account row sums only checked accounts.",
                                         tables: "economics_compute_ledger_api",
                                         formula: "latest balance snapshot",
                                     }}
@@ -294,7 +316,7 @@ export function BalancesTab({ data }: { data: Data }) {
                                 <HeaderHint
                                     hint={{
                                         meaning:
-                                            "Latest dated OP Cloud balance snapshot. A partial multi-account row sums only the checked accounts. Without a snapshot, the balance stays blank.",
+                                            "Latest dated Compute ledger balance snapshot. Inactive vendors keep their last known snapshot. A partial multi-account row sums only checked accounts.",
                                         tables: "economics_compute_ledger_api",
                                         formula: "latest balance snapshot",
                                     }}
@@ -325,14 +347,71 @@ export function BalancesTab({ data }: { data: Data }) {
                                             }
                                         >
                                             <TableCell>
-                                                <TableDisclosureButton
-                                                    expanded={isExpanded}
-                                                    onClick={() =>
-                                                        toggle(row.vendor)
-                                                    }
-                                                >
-                                                    {row.vendor}
-                                                </TableDisclosureButton>
+                                                <div className="flex flex-col gap-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <TableDisclosureButton
+                                                            expanded={
+                                                                isExpanded
+                                                            }
+                                                            onClick={() =>
+                                                                toggle(
+                                                                    row.vendor,
+                                                                )
+                                                            }
+                                                        >
+                                                            {row.label}
+                                                        </TableDisclosureButton>
+                                                        <Chip
+                                                            intent={
+                                                                row.active
+                                                                    ? "success"
+                                                                    : "neutral"
+                                                            }
+                                                            size="sm"
+                                                        >
+                                                            {row.active
+                                                                ? "active"
+                                                                : "inactive"}
+                                                        </Chip>
+                                                    </div>
+                                                    <div className="ml-5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-theme-text-soft">
+                                                        {row.collectionMethod && (
+                                                            <span className="uppercase">
+                                                                {
+                                                                    row.collectionMethod
+                                                                }
+                                                            </span>
+                                                        )}
+                                                        {row.access.map(
+                                                            (target, index) => {
+                                                                const account =
+                                                                    target.accountId;
+                                                                const label =
+                                                                    account ??
+                                                                    (row.access
+                                                                        .length >
+                                                                    1
+                                                                        ? new URL(
+                                                                              target.url,
+                                                                          ).hostname.split(
+                                                                              ".",
+                                                                          )[0]
+                                                                        : target.workspace);
+                                                                return (
+                                                                    <InlineLink
+                                                                        key={`${target.url}|${account ?? index}`}
+                                                                        href={
+                                                                            target.url
+                                                                        }
+                                                                        className="text-xs"
+                                                                    >
+                                                                        {label}
+                                                                    </InlineLink>
+                                                                );
+                                                            },
+                                                        )}
+                                                    </div>
+                                                </div>
                                             </TableCell>
                                             <TableCell>
                                                 <BalanceStatus row={row} />

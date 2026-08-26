@@ -1238,6 +1238,13 @@ describe("creditRunway", () => {
 
 describe("providerBalanceRows", () => {
     const NOW = new Date("2026-03-15T12:00:00Z");
+    const rowFor = (data: Data, now: Date, vendor: string) => {
+        const row = providerBalanceRows(data, now).find(
+            (candidate) => candidate.vendor === vendor,
+        );
+        if (!row) throw new Error(`missing ${vendor} balance row`);
+        return row;
+    };
 
     it("shows ledger flows without inventing an unchecked balance", () => {
         const data = emptyData({
@@ -1276,7 +1283,7 @@ describe("providerBalanceRows", () => {
             ],
         });
 
-        const [row] = providerBalanceRows(data, NOW);
+        const row = rowFor(data, NOW, "vast.ai");
         expect(row.vendor).toBe("vast.ai");
         expect(row.cashBalanceUsd).toBeNull();
         expect(row.creditBalanceUsd).toBeNull();
@@ -1306,16 +1313,14 @@ describe("providerBalanceRows", () => {
     });
 
     it("does not invent a prepaid balance for an ordinary billed provider", () => {
-        const [row] = providerBalanceRows(
-            emptyData({
-                opTransactions: [opTxn({ vendor: "aws", amount: -500 })],
-                opCloud: [
-                    grant({ vendor: "aws", granted: 1000 }),
-                    opCreditBurn({ vendor: "aws", credit: 100 }),
-                ],
-            }),
-            NOW,
-        );
+        const data = emptyData({
+            opTransactions: [opTxn({ vendor: "aws", amount: -500 })],
+            opCloud: [
+                grant({ vendor: "aws", granted: 1000 }),
+                opCreditBurn({ vendor: "aws", credit: 100 }),
+            ],
+        });
+        const row = rowFor(data, NOW, "aws");
 
         expect(row.vendor).toBe("aws");
         expect(row.cashBalanceUsd).toBeNull();
@@ -1323,28 +1328,26 @@ describe("providerBalanceRows", () => {
     });
 
     it("keeps an unchecked prepaid pool active for attention", () => {
-        const [row] = providerBalanceRows(
-            emptyData({
-                opTransactions: [
-                    opTxn({
-                        entry_id: "vast-topup",
-                        date: "2026-01-01",
-                        vendor: "vast.ai",
-                        amount: -100,
-                    }),
-                ],
-                opCloud: [
-                    opCloud({
-                        entry_id: "vast-usage",
-                        start: "2026-01-02 00:00:00",
-                        vendor: "vast.ai",
-                        type: "gpu",
-                        paid: -150,
-                    }),
-                ],
-            }),
-            NOW,
-        );
+        const data = emptyData({
+            opTransactions: [
+                opTxn({
+                    entry_id: "vast-topup",
+                    date: "2026-01-01",
+                    vendor: "vast.ai",
+                    amount: -100,
+                }),
+            ],
+            opCloud: [
+                opCloud({
+                    entry_id: "vast-usage",
+                    start: "2026-01-02 00:00:00",
+                    vendor: "vast.ai",
+                    type: "gpu",
+                    paid: -150,
+                }),
+            ],
+        });
+        const row = rowFor(data, NOW, "vast.ai");
 
         expect(row.cashBalanceUsd).toBeNull();
         expect(row.finished).toBe(false);
@@ -1352,39 +1355,37 @@ describe("providerBalanceRows", () => {
 
     it("anchors the current roll-forward to an OP Cloud balance snapshot", () => {
         const now = new Date("2026-08-22T12:00:00Z");
-        const [row] = providerBalanceRows(
-            emptyData({
-                opTransactions: [
-                    opTxn({
-                        entry_id: "vast-topup",
-                        date: "2026-07-01",
-                        vendor: "vast.ai",
-                        amount: -500,
-                    }),
-                ],
-                opCloud: [
-                    opCloud({
-                        entry_id: "vast-usage",
-                        vendor: "vast.ai",
-                        type: "gpu",
-                        start: "2026-07-01 00:00:00",
-                        paid: -200,
-                    }),
-                    opCloud({
-                        entry_id: "vast-balance-2026-08-22",
-                        source: "dashboard",
-                        vendor: "vast.ai",
-                        type: "balance",
-                        start: "2026-08-22 10:00:00",
-                        end: "2027-01-01 00:00:00",
-                        paid: 3_925.11,
-                        credit: 8.95,
-                        resource_sku: "current-balance",
-                    }),
-                ],
-            }),
-            now,
-        );
+        const data = emptyData({
+            opTransactions: [
+                opTxn({
+                    entry_id: "vast-topup",
+                    date: "2026-07-01",
+                    vendor: "vast.ai",
+                    amount: -500,
+                }),
+            ],
+            opCloud: [
+                opCloud({
+                    entry_id: "vast-usage",
+                    vendor: "vast.ai",
+                    type: "gpu",
+                    start: "2026-07-01 00:00:00",
+                    paid: -200,
+                }),
+                opCloud({
+                    entry_id: "vast-balance-2026-08-22",
+                    source: "dashboard",
+                    vendor: "vast.ai",
+                    type: "balance",
+                    start: "2026-08-22 10:00:00",
+                    end: "2027-01-01 00:00:00",
+                    paid: 3_925.11,
+                    credit: 8.95,
+                    resource_sku: "current-balance",
+                }),
+            ],
+        });
+        const row = rowFor(data, now, "vast.ai");
 
         expect(row).toMatchObject({
             vendor: "vast.ai",
@@ -1419,22 +1420,20 @@ describe("providerBalanceRows", () => {
 
     it("recognizes the external InferencePort wallet snapshot", () => {
         const now = new Date("2026-08-25T12:00:00Z");
-        const [row] = providerBalanceRows(
-            emptyData({
-                opCloud: [
-                    opCloud({
-                        entry_id: "inferenceport-balance-2026-08-25",
-                        vendor: "inferenceport",
-                        type: "balance",
-                        start: "2026-08-25 10:21:59",
-                        paid: 29.4185,
-                        credit: 0,
-                        resource_sku: "current-balance",
-                    }),
-                ],
-            }),
-            now,
-        );
+        const data = emptyData({
+            opCloud: [
+                opCloud({
+                    entry_id: "inferenceport-balance-2026-08-25",
+                    vendor: "inferenceport",
+                    type: "balance",
+                    start: "2026-08-25 10:21:59",
+                    paid: 29.4185,
+                    credit: 0,
+                    resource_sku: "current-balance",
+                }),
+            ],
+        });
+        const row = rowFor(data, now, "inferenceport");
 
         expect(row).toMatchObject({
             vendor: "inferenceport",
@@ -1447,50 +1446,48 @@ describe("providerBalanceRows", () => {
 
     it("does not roll post-snapshot flows backward through the anchor", () => {
         const now = new Date("2026-08-24T12:00:00Z");
-        const [row] = providerBalanceRows(
-            emptyData({
-                opTransactions: [
-                    opTxn({
-                        entry_id: "vast-before",
-                        date: "2026-08-20",
-                        vendor: "vast.ai",
-                        amount: -100,
-                    }),
-                    opTxn({
-                        entry_id: "vast-after",
-                        date: "2026-08-23",
-                        vendor: "vast.ai",
-                        amount: -500,
-                    }),
-                ],
-                opCloud: [
-                    opCloud({
-                        entry_id: "vast-before-usage",
-                        vendor: "vast.ai",
-                        type: "gpu",
-                        start: "2026-08-21 00:00:00",
-                        paid: -20,
-                    }),
-                    opCloud({
-                        entry_id: "vast-after-usage",
-                        vendor: "vast.ai",
-                        type: "gpu",
-                        start: "2026-08-23 00:00:00",
-                        paid: -50,
-                    }),
-                    opCloud({
-                        entry_id: "vast-balance",
-                        source: "dashboard",
-                        vendor: "vast.ai",
-                        type: "balance",
-                        start: "2026-08-22 10:00:00",
-                        paid: 400,
-                        resource_sku: "current-balance",
-                    }),
-                ],
-            }),
-            now,
-        );
+        const data = emptyData({
+            opTransactions: [
+                opTxn({
+                    entry_id: "vast-before",
+                    date: "2026-08-20",
+                    vendor: "vast.ai",
+                    amount: -100,
+                }),
+                opTxn({
+                    entry_id: "vast-after",
+                    date: "2026-08-23",
+                    vendor: "vast.ai",
+                    amount: -500,
+                }),
+            ],
+            opCloud: [
+                opCloud({
+                    entry_id: "vast-before-usage",
+                    vendor: "vast.ai",
+                    type: "gpu",
+                    start: "2026-08-21 00:00:00",
+                    paid: -20,
+                }),
+                opCloud({
+                    entry_id: "vast-after-usage",
+                    vendor: "vast.ai",
+                    type: "gpu",
+                    start: "2026-08-23 00:00:00",
+                    paid: -50,
+                }),
+                opCloud({
+                    entry_id: "vast-balance",
+                    source: "dashboard",
+                    vendor: "vast.ai",
+                    type: "balance",
+                    start: "2026-08-22 10:00:00",
+                    paid: 400,
+                    resource_sku: "current-balance",
+                }),
+            ],
+        });
+        const row = rowFor(data, now, "vast.ai");
         const august = row.history.find((month) => month.month === "2026-08");
 
         expect(row.cashBalanceUsd).toBe(400);
@@ -1525,7 +1522,7 @@ describe("providerBalanceRows", () => {
             ],
         });
 
-        expect(providerBalanceRows(base, now)[0]).toMatchObject({
+        expect(rowFor(base, now, "openrouter")).toMatchObject({
             creditBalanceUsd: 16.17,
             balanceAsOf: "2026-08-22",
             balanceStatus: "partial",
@@ -1547,7 +1544,7 @@ describe("providerBalanceRows", () => {
                 resource_sku: "current-balance",
             }),
         );
-        expect(providerBalanceRows(base, now)[0]).toMatchObject({
+        expect(rowFor(base, now, "openrouter")).toMatchObject({
             creditBalanceUsd: 1_516.17,
             balanceAsOf: "2026-08-22",
             balanceStatus: "checked",
@@ -1580,7 +1577,7 @@ describe("providerBalanceRows", () => {
             now,
         );
 
-        expect(rows[0]).toMatchObject({
+        expect(rows.find((row) => row.vendor === "openrouter")).toMatchObject({
             creditBalanceUsd: 1_516.17,
             balanceAsOf: "2026-08-22",
             balanceStatus: "checked",
@@ -1590,41 +1587,70 @@ describe("providerBalanceRows", () => {
     });
 
     it("does not call stale balance snapshots checked", () => {
-        const [row] = providerBalanceRows(
-            emptyData({
-                opCloud: [
-                    opCloud({
-                        vendor: "vast.ai",
-                        type: "balance",
-                        start: "2026-08-01 10:00:00",
-                        paid: 500,
-                    }),
-                ],
-            }),
-            new Date("2026-08-23T12:00:00Z"),
-        );
+        const data = emptyData({
+            opCloud: [
+                opCloud({
+                    vendor: "vast.ai",
+                    type: "balance",
+                    start: "2026-08-01 10:00:00",
+                    paid: 500,
+                }),
+            ],
+        });
+        const row = rowFor(data, new Date("2026-08-23T12:00:00Z"), "vast.ai");
 
         expect(row).toMatchObject({
-            balanceAsOf: null,
-            balanceStatus: "not_checked",
-            cashBalanceUsd: null,
+            balanceAsOf: "2026-08-01",
+            balanceStatus: "stale",
+            cashBalanceUsd: 500,
         });
     });
 
-    it("does not list a billed vendor without a balance to track", () => {
-        expect(
-            providerBalanceRows(
-                emptyData({
-                    opCloud: [
-                        opCloud({
-                            vendor: "inception",
-                            type: "inference",
-                            paid: -10,
-                        }),
-                    ],
+    it("lists a provider even when it has no wallet balance to refresh", () => {
+        const data = emptyData({
+            opCloud: [
+                opCloud({
+                    vendor: "inception",
+                    type: "inference",
+                    paid: -10,
                 }),
-                new Date("2026-08-22T12:00:00Z"),
-            ),
-        ).toEqual([]);
+            ],
+        });
+
+        expect(
+            rowFor(data, new Date("2026-08-22T12:00:00Z"), "inception"),
+        ).toMatchObject({
+            active: true,
+            balanceTracking: false,
+            balanceStatus: "not_applicable",
+            cashBalanceUsd: null,
+            creditBalanceUsd: null,
+        });
+    });
+
+    it("keeps inactive providers and their last known balance in history", () => {
+        const now = new Date("2026-08-25T12:00:00Z");
+        const row = rowFor(
+            emptyData({
+                opCloud: [
+                    opCloud({
+                        vendor: "io.net",
+                        type: "balance",
+                        start: "2026-07-01 00:00:00",
+                        credit: 324.86,
+                    }),
+                ],
+            }),
+            now,
+            "io.net",
+        );
+
+        expect(row).toMatchObject({
+            active: false,
+            balanceTracking: true,
+            balanceStatus: "archived",
+            balanceAsOf: "2026-07-01",
+            creditBalanceUsd: 324.86,
+        });
     });
 });

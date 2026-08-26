@@ -5,6 +5,8 @@ import {
     communityEndpointErrorDetail,
     communityImageEditsUrl,
     communityImageGenerationsUrl,
+    communityVideoSeconds,
+    communityVideoUrl,
     firstCommunityImageBytes,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
@@ -17,10 +19,12 @@ import {
 } from "@shared/registry/usage-headers.ts";
 import { decryptSecret } from "@shared/secret-encryption.ts";
 import type { ImageGenerationResult } from "./createAndReturnImages.ts";
+import type { VideoGenerationResult } from "./createAndReturnVideos.ts";
 import type { ImageParams } from "./params.ts";
 import {
     bufferToUint8Array,
     downloadUserImage,
+    toDataUri,
 } from "./utils/imageDownload.ts";
 
 type CommunityImageParams = Omit<ImageParams, "model"> & { model: string };
@@ -208,4 +212,115 @@ function endpointErrorMessage(status: number, body: unknown): string {
     return message
         ? `Community image endpoint responded ${status}: ${message}`
         : `Community image endpoint responded ${status}`;
+}
+
+type CommunityVideoParams = Omit<ImageParams, "model"> & { model: string };
+
+/**
+ * Generate a video through a community proxy endpoint's
+ * `/v1/video/generations`. The upstream contract is the minimal OpenAI-like
+ * shape: `{ model, prompt, duration?, ... }` in, an image-style response with
+ * the playable video as base64 or URL out, and the output duration reported
+ * via usage.video_seconds / duration for per-second billing.
+ */
+export async function callCommunityVideoEndpoint(
+    endpoint: CommunityEndpointRuntime,
+    prompt: string,
+    safeParams: CommunityVideoParams,
+    secret: string,
+): Promise<VideoGenerationResult> {
+    // Managed agents are text-only, so a video endpoint is always external.
+    if (endpoint.type !== "proxy") {
+        throw new Error(
+            `Community video endpoint '${endpoint.modelId}' is a managed agent`,
+        );
+    }
+    const bearerToken = await decryptSecret(
+        endpoint.bearerTokenCiphertext,
+        secret,
+    );
+    const body = await fetchCommunityVideoJson(
+        communityVideoUrl(endpoint.baseUrl),
+        bearerToken,
+        JSON.stringify({
+            model: endpoint.upstreamModel,
+            prompt,
+            ...(safeParams.duration !== undefined
+                ? { duration: safeParams.duration }
+                : {}),
+            ...(safeParams.image?.length > 0
+                ? { image: await toDataUri(safeParams.image[0]) }
+                : {}),
+        }),
+    );
+
+    const bytes = await firstCommunityImageBytes(body, endpoint.baseUrl);
+    if (!bytes) {
+        throw new HttpError(
+            "Community video endpoint did not return a supported video",
+            502,
+        );
+    }
+    const durationSeconds = communityVideoSeconds(body);
+    if (durationSeconds === null) {
+        throw new HttpError(
+            "Community video endpoint did not report the output duration (expected usage.video_seconds or usage.duration), which is required to bill video",
+            502,
+        );
+    }
+    return {
+        buffer: Buffer.from(bytes),
+        mimeType: "video/mp4",
+        durationSeconds,
+        trackingData: {
+            actualModel: endpoint.upstreamModel || endpoint.modelId,
+            usage: { completionVideoSeconds: durationSeconds },
+        },
+    };
+}
+
+async function fetchCommunityVideoJson(
+    url: string,
+    bearerToken: string,
+    body: string,
+): Promise<unknown> {
+    let response: Response;
+    try {
+        response = await fetch(url, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${normalizeCommunityEndpointBearerToken(bearerToken)}`,
+                "Content-Type": "application/json",
+            },
+            body,
+            redirect: "manual",
+            signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
+        });
+    } catch (error) {
+        throw new HttpError(
+            "Community video endpoint timed out or could not connect",
+            502,
+            { error: error instanceof Error ? error.message : String(error) },
+            url,
+        );
+    }
+    const text = await response.text();
+    let parsed: unknown = null;
+    try {
+        parsed = JSON.parse(text);
+    } catch {
+        parsed = null;
+    }
+    if (!response.ok) {
+        const message = communityEndpointErrorDetail(parsed);
+        throw new HttpError(
+            message
+                ? `Community video endpoint responded ${response.status}: ${message}`
+                : `Community video endpoint responded ${response.status}`,
+            response.status,
+            { body: text },
+            url,
+        );
+    }
+    return parsed;
 }

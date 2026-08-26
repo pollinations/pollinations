@@ -46,10 +46,13 @@ export class HttpError extends UpstreamError {
             upstreamStatus: status,
             errorCode,
         });
-        // Override readonly name from UpstreamError.
+        // Override readonly name from UpstreamError; keep it writable so
+        // subclasses (e.g. UserImageError) can reassign this.name.
         Object.defineProperty(this, "name", {
             value: "HttpError",
-            writable: false,
+            writable: true,
+            configurable: true,
+            enumerable: false,
         });
         this.details = details;
         this.upstreamUrl = upstreamUrl;

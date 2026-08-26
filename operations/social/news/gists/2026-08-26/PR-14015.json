@@ -1,0 +1,34 @@
+{
+  "pr_number": 14015,
+  "title": "chore: add Exa MCP secret",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14015",
+  "merged_at": "2026-08-26T21:49:10Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds the SOPS-encrypted `EXA_API_KEY` used by the Exa MCP Worker.\n- Uses one shared credential for staging and production.\n- Contains no runtime or deployment changes.\n\nStacked on #14013.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "A key for the search garden",
+    "blurb": "The Exa MCP Worker now has its encrypted key tucked safely into the tool shed. Staging and production share one carefully guarded spare.",
+    "summary": "Added a SOPS-encrypted EXA_API_KEY secret for the Exa MCP Worker, shared by staging and production, with no runtime or deployment behavior changes.",
+    "impact": "This prepares the Exa MCP Worker to access its Exa credential consistently across staging and production without changing the live service yet.",
+    "keywords": [
+      "exa",
+      "mcp",
+      "secrets",
+      "sops",
+      "staging",
+      "infrastructure"
+    ],
+    "visual_concept": "Polli acts as a careful gardener placing a glowing key into a small locked seed box beside a cozy Exa search terminal. A tiny code-plant and shared path between two garden signs, “staging” and “production,” represent the single encrypted credential; this is internal setup rather than a visible product change.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener's key ring, carefully placing a glowing encrypted key into a locked seed box beside a retro search terminal; two little garden paths labeled “STAGING” and “PRODUCTION” meet at the same box, with code-plants and flowers growing nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, dark purple (#110518) outlines, emotionally warm and gently technical."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-26/PR-14015.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener's key ring, carefully placing a glowing encrypted key into a locked seed box beside a retro search terminal; two little garden paths labeled “STAGING” and “PRODUCTION” meet at the same box, with code-plants and flowers growing nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, dark purple (#110518) outlines, emotionally warm and gently technical."
+  },
+  "generated_at": "2026-08-26T21:50:08.488975+00:00"
+}

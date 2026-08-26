@@ -255,4 +255,18 @@ describe("Pointsflyer Recovery and Migration Cutover Protection", () => {
         expect(correctedCheck.passed).toBe(true);
         expect(correctedCheck.droppedProviders).toHaveLength(0);
     });
+
+    // -----------------------------------------------------------------------
+    // 9. Total baseline request count sum verification
+    // -----------------------------------------------------------------------
+    it("sums expected request count, price, and cost across all 16 baseline entries accurately", () => {
+        const totalReqs = PRESERVED_ECONOMICS_BASELINE.reduce((sum, b) => sum + b.expected_request_count, 0);
+        const totalPrice = PRESERVED_ECONOMICS_BASELINE.reduce((sum, b) => sum + b.expected_price, 0);
+        const totalCost = PRESERVED_ECONOMICS_BASELINE.reduce((sum, b) => sum + b.expected_cost, 0);
+
+        expect(totalReqs).toBe(1216900);
+        expect(Math.round(totalPrice * 100) / 100).toBe(3790.1);
+        expect(Math.round(totalCost * 100) / 100).toBe(1895.05);
+    });
 });
+

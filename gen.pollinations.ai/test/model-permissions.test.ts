@@ -41,6 +41,12 @@ test("canonicalizes and resolves per-model pollen overrides", () => {
     ]);
     expect(resolveModelPollenType(permissions, "flux", "paid")).toBe("quest");
     expect(resolveModelPollenType(permissions, "openai", "paid")).toBe("paid");
+    expect(
+        resolveModelPollenType(permissions, "flux", "paid", false, true),
+    ).toBe("quest");
+    expect(
+        resolveModelPollenType(permissions, "flux", "quest", true, true),
+    ).toBe(null);
 });
 
 test("filters OpenAI-compatible model list by API key permissions", async ({

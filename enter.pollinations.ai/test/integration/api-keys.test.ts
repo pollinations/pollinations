@@ -15,6 +15,8 @@ type ListedApiKey = {
     start?: string;
     createdAt?: string;
     pollenBalance?: number | null;
+    pollenType?: "quest" | "paid" | null;
+    questPollenOnly?: boolean;
     permissions?: Record<string, string[] | ModelPermissionEntry[]> | null;
     expiresAt?: string | null;
     metadata?: { redirectUris?: string[] };
@@ -141,6 +143,65 @@ describe("API Key Management", () => {
                 permissions: { models: ModelPermissionEntry[] };
             };
             expect(keyInfo.permissions.models).toEqual(expectedModels);
+        });
+
+        test("persists quest-only billing through create, auth, and update", async ({
+            sessionToken,
+        }) => {
+            const createResponse = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        name: "quest-pollen-only-test",
+                        questPollenOnly: true,
+                    }),
+                },
+            );
+            expect(createResponse.status).toBe(200);
+            const created = (await createResponse.json()) as {
+                id: string;
+                key: string;
+                questPollenOnly: boolean;
+            };
+            expect(created.questPollenOnly).toBe(true);
+
+            const keyInfoResponse = await SELF.fetch(
+                "http://localhost:3000/api/account/key",
+                {
+                    headers: { Authorization: `Bearer ${created.key}` },
+                },
+            );
+            expect(keyInfoResponse.status).toBe(200);
+            await expect(keyInfoResponse.json()).resolves.toMatchObject({
+                questPollenOnly: true,
+            });
+
+            const updateResponse = await SELF.fetch(
+                `http://localhost:3000/api/api-keys/${created.id}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({ questPollenOnly: false }),
+                },
+            );
+            expect(updateResponse.status).toBe(200);
+            await expect(updateResponse.json()).resolves.toMatchObject({
+                questPollenOnly: false,
+            });
+
+            const db = drizzle(env.DB, { schema });
+            const stored = await db.query.apikey.findFirst({
+                where: (apikey, { eq }) => eq(apikey.id, created.id),
+            });
+            expect(stored?.questPollenOnly).toBe(false);
         });
 
         test("should create publishable key metadata in one step", async ({

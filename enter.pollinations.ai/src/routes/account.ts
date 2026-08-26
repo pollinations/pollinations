@@ -1613,6 +1613,17 @@ export const accountRoutes = new Hono<Env>()
                                         .describe(
                                             "Remaining pollen budget for this key, null = unlimited (uses user balance)",
                                         ),
+                                    pollenType: z
+                                        .enum(["quest", "paid"])
+                                        .nullable()
+                                        .describe(
+                                            "Key-level pollen bucket restriction, null = unrestricted",
+                                        ),
+                                    questPollenOnly: z
+                                        .boolean()
+                                        .describe(
+                                            "Whether non-paid-only models are restricted to Quest Pollen",
+                                        ),
                                     rateLimitEnabled: z
                                         .boolean()
                                         .describe(
@@ -1742,6 +1753,8 @@ export const accountRoutes = new Hono<Env>()
                 expiresIn,
                 permissions,
                 pollenBudget: apiKey.pollenBalance ?? null,
+                pollenType: apiKey.pollenType ?? null,
+                questPollenOnly: apiKey.questPollenOnly ?? false,
                 // Generation rate limiting applies to publishable keys only.
                 rateLimitEnabled: keyType === "publishable",
                 // Server-attested identity. Downstream services (media catalog)

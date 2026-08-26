@@ -29,7 +29,7 @@ export interface AuthenticatedApiKey {
     metadata?: Record<string, unknown>;
     pollenBalance?: number | null;
     pollenType?: "quest" | "paid" | null;
-    questPollenOnly?: boolean | null;
+    questPollenOnly?: boolean;
     byopClientKeyId?: string | null;
     byopClientName?: string | null;
     byopClientUserId?: string | null;
@@ -44,9 +44,14 @@ export interface AuthenticatedApiKey {
  */
 export function resolveModelPollenType(
     permissions: Record<string, string[] | ModelPermissionEntry[]> | undefined,
-    modelId: string,
+    modelId: string | undefined,
     keyPollenType?: "quest" | "paid" | null,
+    isPaidOnly = false,
+    questPollenOnly = false,
 ): "quest" | "paid" | null {
+    if (isPaidOnly) return null;
+    if (questPollenOnly) return "quest";
+
     const modelPerms = permissions?.models;
     if (Array.isArray(modelPerms)) {
         for (const entry of modelPerms) {
@@ -374,6 +379,7 @@ async function loadActiveApiKeyAuthResult(opts: {
             pollenBalance: row.apiKey.pollenBalance ?? null,
             pollenType:
                 (row.apiKey.pollenType as "quest" | "paid" | null) ?? null,
+            questPollenOnly: row.apiKey.questPollenOnly ?? false,
             byopClientKeyId: row.apiKey.byopClientKeyId ?? null,
             byopClientName: row.byopClientName ?? null,
             byopClientUserId: row.byopClientUserId ?? null,

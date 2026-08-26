@@ -30,6 +30,7 @@ import {
 import {
     type BalanceAccess,
     BalanceAccessChip,
+    ModelLimitChips,
     ModelRateValue,
     ModelStatusChips,
     PerUserRateLimit,
@@ -382,6 +383,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             access={balanceAccess}
                             className="whitespace-nowrap"
                         />
+                        <ModelLimitChips model={model} />
                     </div>
                 </div>
             </div>

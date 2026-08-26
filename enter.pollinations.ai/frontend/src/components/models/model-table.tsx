@@ -29,6 +29,7 @@ import type { ModelCategory } from "./model-search.ts";
 import {
     type BalanceAccess,
     BalanceAccessChip,
+    ModelLimitChips,
     ModelStatusChips,
     PerUserRateLimit,
 } from "./model-status-chips.tsx";
@@ -277,6 +278,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                             access={balanceAccess}
                             className="whitespace-nowrap"
                         />
+                        <ModelLimitChips model={model} />
                     </div>
                 </div>
             </div>

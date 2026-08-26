@@ -1,6 +1,7 @@
 import { Chip, SparklesIcon, Tooltip } from "@pollinations/ui";
 import { PaidChip, TierChip, WalletKindIcon } from "@pollinations/ui/wallet";
 import type { FC } from "react";
+import type { ModelPrice } from "./types.ts";
 
 export type BalanceAccess = "quest" | "paid" | "free";
 
@@ -171,5 +172,118 @@ export const BalanceAccessChip: FC<BalanceAccessChipProps> = ({
         >
             {chip}
         </Tooltip>
+    );
+};
+
+// --- Model limit chips: context window + video duration ---
+
+function trimNumber(value: number): string {
+    const rounded = Math.round(value * 10) / 10;
+    return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+}
+
+function formatContextLength(contextLength?: number): string | undefined {
+    if (contextLength == null) return undefined;
+    if (contextLength >= 1_000_000) {
+        return `${trimNumber(contextLength / 1_000_000)}M ctx`;
+    }
+    if (contextLength >= 1_000) {
+        return `${trimNumber(contextLength / 1_000)}k ctx`;
+    }
+    return `${contextLength} ctx`;
+}
+
+function getVideoDurationRange(model: ModelPrice): {
+    lo: number;
+    hi: number;
+} | null {
+    if (model.type !== "video") return null;
+    const allowed = model.allowedDurations;
+    let min: number | undefined;
+    let max: number | undefined;
+    if (allowed && allowed.length > 0) {
+        min = Math.min(...allowed);
+        max = Math.max(...allowed);
+    } else {
+        min = model.minDuration;
+        max = model.maxDuration;
+    }
+    const candidates = [min, max, model.defaultDuration].filter(
+        (value): value is number => value != null,
+    );
+    if (candidates.length === 0) return null;
+    return { lo: Math.min(...candidates), hi: Math.max(...candidates) };
+}
+
+function formatVideoDuration(model: ModelPrice): string | undefined {
+    const range = getVideoDurationRange(model);
+    if (!range) return undefined;
+    return range.lo === range.hi ? `${range.lo}s` : `${range.lo}–${range.hi}s`;
+}
+
+function videoDurationTooltip(model: ModelPrice): string {
+    const range = getVideoDurationRange(model);
+    if (!range) return "";
+    return range.lo === range.hi
+        ? `Duration: ${range.lo} seconds`
+        : `Supported duration: ${range.lo}–${range.hi} seconds`;
+}
+
+export const ModelLimitChips: FC<{ model: ModelPrice }> = ({ model }) => {
+    const context = formatContextLength(model.contextLength);
+    const duration = formatVideoDuration(model);
+    if (!context && !duration) return null;
+
+    return (
+        <span className="inline-flex shrink-0 items-center gap-1.5">
+            {context && (
+                <Tooltip
+                    triggerAs="span"
+                    content={
+                        <span>
+                            <strong className="font-semibold text-theme-text-strong">
+                                Context window:
+                            </strong>{" "}
+                            {new Intl.NumberFormat("en").format(
+                                model.contextLength ?? 0,
+                            )}{" "}
+                            tokens
+                        </span>
+                    }
+                    ariaLabel={
+                        model.contextLength != null
+                            ? `Context window: ${new Intl.NumberFormat("en").format(model.contextLength)} tokens`
+                            : ""
+                    }
+                    tapEnabled
+                    displayContents
+                >
+                    <Chip
+                        intent="neutral"
+                        size="sm"
+                        className="whitespace-nowrap tabular-nums"
+                    >
+                        {context}
+                    </Chip>
+                </Tooltip>
+            )}
+            {duration && (
+                <Tooltip
+                    triggerAs="span"
+                    content={<span>{videoDurationTooltip(model)}</span>}
+                    ariaLabel={videoDurationTooltip(model)}
+                    tapEnabled
+                    displayContents
+                >
+                    <Chip
+                        intent="neutral"
+                        size="sm"
+                        className="whitespace-nowrap tabular-nums"
+                    >
+                        {duration}
+                    </Chip>
+                </Tooltip>
+            )}
+        </span>
     );
 };

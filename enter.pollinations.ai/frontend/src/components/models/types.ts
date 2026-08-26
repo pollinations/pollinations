@@ -83,6 +83,11 @@ export type ModelPrice = {
     free?: boolean;
     alpha?: boolean;
     addedDate?: number;
+    contextLength?: number;
+    minDuration?: number;
+    maxDuration?: number;
+    defaultDuration?: number;
+    allowedDurations?: number[];
     inputSortPrice?: number;
     outputSortPrice?: number;
     prices: ModelPriceLine[];

@@ -5,11 +5,12 @@ import {
     communityEndpointErrorDetail,
     communityImageEditsUrl,
     communityImageGenerationsUrl,
+    communityVideoUrl,
     firstCommunityImageBytes,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
 import { HttpError } from "@shared/http-error.ts";
-import { detectImageMimeType } from "@shared/image-mime.ts";
+import { detectImageMimeType, detectVideoMimeType } from "@shared/image-mime.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 import {
     getOpenAIImageUsage,
@@ -22,6 +23,157 @@ import {
     bufferToUint8Array,
     downloadUserImage,
 } from "./utils/imageDownload.ts";
+
+export async function callCommunityVideoEndpoint(
+    endpoint: CommunityEndpointRuntime,
+    prompt: string,
+    safeParams: Omit<ImageParams, "model"> & { model: string },
+    secret: string,
+): Promise<import("./createAndReturnVideos.ts").VideoGenerationResult> {
+    if (endpoint.type !== "proxy") {
+        throw new Error(
+            `Community video endpoint '${endpoint.modelId}' is a managed agent`,
+        );
+    }
+    const bearerToken = await decryptSecret(
+        endpoint.bearerTokenCiphertext,
+        secret,
+    );
+    const upstreamUrl = communityVideoUrl(endpoint.baseUrl);
+    const body = await fetchCommunityVideoJson(
+        upstreamUrl,
+        bearerToken,
+        JSON.stringify({
+            model: endpoint.upstreamModel,
+            prompt,
+            duration: safeParams.duration ?? 5,
+            width: safeParams.width ?? 1280,
+            height: safeParams.height ?? 720,
+            ...(safeParams.image?.length > 0
+                ? { image: safeParams.image[0] }
+                : {}),
+        }),
+    );
+    const bytes = await firstCommunityVideoBytes(body, endpoint.baseUrl);
+    const mimeType = bytes ? detectVideoMimeType(bytes) : null;
+    if (!bytes || !mimeType) {
+        throw new HttpError(
+            "Community video endpoint did not return a supported video",
+            502,
+        );
+    }
+    const durationSeconds = communityVideoDuration(body);
+    return {
+        buffer: Buffer.from(bytes),
+        mimeType,
+        durationSeconds: durationSeconds || safeParams.duration || 5,
+        trackingData: {
+            actualModel: endpoint.upstreamModel || "community",
+            usage: {
+                completionVideoSeconds: durationSeconds || safeParams.duration || 5,
+            },
+        },
+    };
+}
+
+async function fetchCommunityVideoJson(
+    url: string,
+    bearerToken: string,
+    body: string,
+): Promise<unknown> {
+    const response = await fetchWithTimeout(url, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${normalizeCommunityEndpointBearerToken(bearerToken)}`,
+            "Content-Type": "application/json",
+        },
+        body,
+    });
+    const text = await response.text();
+    const parsed = parseJson(text);
+    if (!response.ok) {
+        throw new HttpError(
+            endpointErrorMessage(response.status, parsed),
+            response.status,
+            { body: text },
+            url,
+        );
+    }
+    return parsed;
+}
+
+export async function firstCommunityVideoBytes(
+    body: unknown,
+    endpointBaseUrl: string,
+): Promise<Uint8Array | null> {
+    if (!body || typeof body !== "object") return null;
+    const record = body as Record<string, unknown>;
+    // Try base64 video data first (OpenAI-compatible format)
+    if ("data" in record && Array.isArray(record.data)) {
+        for (const item of record.data) {
+            if (!item || typeof item !== "object") continue;
+            if ("b64_json" in item && typeof (item as Record<string, unknown>).b64_json === "string") {
+                const decoded = decodeCommunityBase64((item as Record<string, unknown>).b64_json as string);
+                if (decoded && detectedVideoMime(decoded)) return decoded;
+            }
+            if ("url" in item && typeof (item as Record<string, unknown>).url === "string") {
+                const url = (item as Record<string, unknown>).url as string;
+                try {
+                    const response = await fetch(url, {
+                        redirect: "manual",
+                        signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
+                    });
+                    if (response.ok) {
+                        const buffer = new Uint8Array(await response.arrayBuffer());
+                        if (detectedVideoMime(buffer)) return buffer;
+                    }
+                } catch {
+                    // ignore network errors, continue trying other items
+                }
+            }
+        }
+    }
+    // Fall back to inline base64 video directly
+    if ("b64_json" in record && typeof record.b64_json === "string") {
+        const decoded = decodeCommunityBase64(record.b64_json);
+        if (decoded && detectedVideoMime(decoded)) return decoded;
+    }
+    // Try url field at top level
+    if ("url" in record && typeof record.url === "string") {
+        try {
+            const response = await fetch(record.url as string, {
+                redirect: "manual",
+                signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
+            });
+            if (response.ok) {
+                const buffer = new Uint8Array(await response.arrayBuffer());
+                if (detectedVideoMime(buffer)) return buffer;
+            }
+        } catch {
+            // ignore
+        }
+    }
+    return null;
+}
+
+function detectedVideoMime(bytes: Uint8Array): boolean {
+    return detectVideoMimeType(bytes) !== null;
+}
+
+export function communityVideoDuration(body: unknown): number | null {
+    if (!body || typeof body !== "object") return null;
+    const record = body as Record<string, unknown>;
+    // OpenAI-compatible usage shape: usage.video_seconds or usage.duration
+    const usage = record.usage && typeof record.usage === "object"
+        ? (record.usage as Record<string, unknown>)
+        : undefined;
+    for (const value of [usage?.video_seconds, usage?.duration, record.duration]) {
+        if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+            return value;
+        }
+    }
+    return null;
+}
 
 type CommunityImageParams = Omit<ImageParams, "model"> & { model: string };
 

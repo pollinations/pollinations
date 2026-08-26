@@ -7,12 +7,13 @@ import {
     communityImageEditsUrl,
     communityImageGenerationsUrl,
     communityOpenAIBaseUrl,
+    communityVideoUrl,
     communityTranscriptionSeconds,
     decodeCommunityBase64,
     firstCommunityImageBytes,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
-import { detectImageMimeType } from "@shared/image-mime.ts";
+import { detectImageMimeType, detectVideoMimeType } from "@shared/image-mime.ts";
 import type { ModelInputModality, Usage } from "@shared/registry/registry.ts";
 import {
     getOpenAIImageUsage,
@@ -216,6 +217,82 @@ export async function testCommunityImageEndpoint({
 // Transcription endpoints are billed against prompt audio seconds, mirroring
 // the first-party whisper/scribe models. The probe uploads a real audio file
 // and validates the OpenAI transcription response shape.
+// Video endpoints are billed per second of generated output. The probe sends a
+// short text-only prompt, collects the bytes from the video response, detects
+// the mime type (mp4/webm/qt), and returns duration from usage headers or a
+// fixed sample usage when no duration is reported.
+export async function testCommunityVideoEndpoint({
+    baseUrl,
+    bearerToken,
+    model,
+}: EndpointTestInput): Promise<CommunityEndpointTestResult> {
+    const body = await fetchJson(communityVideoUrl(baseUrl), {
+        method: "POST",
+        headers: {
+            ...authorizationHeaders(bearerToken),
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            model,
+            prompt: "A short sample clip for endpoint validation.",
+        }),
+    });
+
+    const videoBytes = await firstCommunityVideoBytes(body);
+    if (!videoBytes) {
+        throw new Error("Endpoint did not return supported video data");
+    }
+    const videoMimeType = detectVideoMimeType(videoBytes);
+    if (!videoMimeType) {
+        throw new Error("Endpoint returned an unsupported video mime type");
+    }
+
+    // Check for duration in the response body (OpenAI-compatible usage shape).
+    const durationFromBody = getCommunityVideoDurationSeconds(body);
+    if (durationFromBody !== null && durationFromBody > 0) {
+        return {
+            usage: { duration: durationFromBody },
+            billableUsage: { completionVideoSeconds: durationFromBody },
+        };
+    }
+    // Fallback to fixed billing when no duration is present.
+    return {
+        usage: { video_seconds: 4 },
+        billableUsage: { completionVideoSeconds: 4 },
+    };
+}
+
+function getCommunityVideoDurationSeconds(body: unknown): number | null {
+    if (!body || typeof body !== "object") return null;
+    const record = body as Record<string, unknown>;
+    // Common shapes: usage.video_seconds, usage.duration, top-level duration.
+    const raw =
+        record.usage &&
+        typeof record.usage === "object"
+            ? (record.usage as Record<string, unknown>)?.video_seconds ??
+              (record.usage as Record<string, unknown>)?.duration
+            : record.duration;
+    if (typeof raw === "number" && raw > 0) return raw;
+    return null;
+}
+
+async function firstCommunityVideoBytes(body: unknown): Promise<Uint8Array | null> {
+    if (!body || typeof body !== "object") return null;
+    const record = body as Record<string, unknown>;
+    const videoField = record.video ?? record.output ?? record.url;
+    if (typeof videoField === "string") return null;
+    if (videoField instanceof Uint8Array) return videoField;
+    if (videoField && typeof (videoField as any).arrayBuffer === "function") {
+        try {
+            const buf = await (videoField as any).arrayBuffer();
+            return new Uint8Array(buf);
+        } catch {
+            return null;
+        }
+    }
+    return null;
+}
+
 export async function testCommunityTranscriptionEndpoint({
     baseUrl,
     bearerToken,

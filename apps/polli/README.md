@@ -251,8 +251,7 @@ Polli/
 │       ├── 📄 discord_search.py  # Discord guild search
 │       ├── 📄 web_scraper.py     # Crawl4AI web scraper
 │       └── 📄 webhook_server.py  # GitHub webhooks
-└── 📁 .github/workflows/
-    └── 📄 deploy.yml             # Auto-deploy on push
+└── 📄 deploy.json                # Production deployment manifest
 ```
 
 ---

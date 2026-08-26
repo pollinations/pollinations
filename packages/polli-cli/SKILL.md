@@ -1,12 +1,12 @@
 ---
 name: polli
-description: Generate images, text, audio, video, and transcribe speech via the Pollinations API using the polli CLI. Use when asked to generate media, call pollinations.ai, check pollen balance, list models, manage API keys, inspect quests, manage my-models, or run polli commands.
+description: Generate images, text, audio, video, and transcribe speech via the Pollinations API using the polli CLI. Use when asked to generate media, call pollinations.ai, check pollen balance, list models, manage API keys, inspect quests, manage agents or my-models, or run polli commands.
 allowed-tools: Bash(polli *)
 ---
 
 # polli — Pollinations CLI
 
-Thin wrapper around `gen.pollinations.ai`. Generates images, text, audio, video; transcribes speech; manages API keys, usage, quests, and invite-only my-models.
+Thin wrapper around `gen.pollinations.ai`. Generates images, text, audio, video; transcribes speech; manages API keys, usage, quests, agents, and invite-only my-models.
 
 Install: `npm i -g @pollinations/cli@latest` (provides the `polli` binary).
 
@@ -18,6 +18,7 @@ Install: `npm i -g @pollinations/cli@latest` (provides the `polli` binary).
 - User asks about their **pollen balance, usage, or API keys**
 - User wants to **browse or filter available models**
 - User wants to inspect **quests** or manage invite-only **my-models**
+- User wants to create or update a hosted prompt **agent**
 
 ## Quick reference
 
@@ -38,7 +39,9 @@ Install: `npm i -g @pollinations/cli@latest` (provides the `polli` binary).
 | Filter models by type | `polli models --type image` |
 | Model health + latency | `polli models --stats` (default 60m, `--window <min>`) |
 | Check balance | `polli usage` |
+| Developer earnings | `polli earnings` (`--days <n>`, max 90) |
 | List your quests + claim state | `polli quests` (filters: `--open --claimable --claimed --coming-soon`) |
+| Manage prompt agents | `polli agents list` |
 | Manage invite-only community models | `polli my-models list` |
 | Machine-readable output | append `--json` to any command |
 
@@ -127,7 +130,7 @@ Cheapest path: `--model wan-fast` at ~$0.01/sec, **fixed 5-second output** (any 
 ```bash
 polli gen transcribe recording.mp3 --language en
 ```
-Models: `whisper` (default), `scribe`, `universal-2`, `universal-3-pro`. Accepts common audio formats (mp3, wav, m4a, flac, ogg); non-audio input (e.g. a `.txt` file) returns a clear `400 invalid_request_error: extension "txt" not supported` — no need to pre-validate with `file`. Default output is the plain transcript on stdout as a single line (pipe-friendly). Use `--json` for structured output: **whisper** and **AssemblyAI** return timing data when requested through the API; **scribe** returns only `{text: "..."}` — use whisper or AssemblyAI if you need timing data. `--language <ISO-639-1>` (e.g. `en`, `fr`) is an optional hint that can improve accuracy for non-English or accented speech.
+Models: `whisper` (default), `scribe`, `universal-2`, `universal-3.5-pro`. Accepts common audio formats (mp3, wav, m4a, flac, ogg); non-audio input (e.g. a `.txt` file) returns a clear `400 invalid_request_error: extension "txt" not supported` — no need to pre-validate with `file`. Default output is the plain transcript on stdout as a single line (pipe-friendly). Use `--json` for structured output: **whisper** and **AssemblyAI** return timing data when requested through the API; **scribe** returns only `{text: "..."}` — use whisper or AssemblyAI if you need timing data. `--language <ISO-639-1>` (e.g. `en`, `fr`) is an optional hint that can improve accuracy for non-English or accented speech.
 
 ### Discover models
 ```bash
@@ -145,6 +148,8 @@ Use `--stats` before choosing a model. **Caveat**: the `err%` column counts **5x
 polli usage              # current pollen balance
 polli usage --history    # recent individual requests
 polli usage --daily      # daily cost summary
+polli earnings           # developer earnings total + per-entity breakdown (default 30d)
+polli earnings --days 7  # rolling window, max 90
 polli quests             # your quests + claim state (open/claimable/claimed/coming)
 polli quests --claimable # only rewards ready to claim
 ```
@@ -155,10 +160,38 @@ polli quests --claimable # only rewards ready to claim
 polli my-models list
 polli my-models models --base-url https://api.example.com/v1 --bearer-token "$UPSTREAM_KEY"
 polli my-models create --name my-model --title "My Model" --base-url https://api.example.com/v1 --bearer-token "$UPSTREAM_KEY" --upstream-model gpt-4.1-mini
+polli my-models create --name my-image --title "My Image" --modality image --image-pricing request --completion-image-price 0.01 --base-url https://api.example.com/v1 --bearer-token "$UPSTREAM_KEY" --upstream-model flux
 polli my-models update <id> --description "Updated description"
+polli my-models update <id> --paid-only            # only accept Paid Pollen; --no-paid-only reverts
 polli my-models delete <id>
 ```
-`my-models` manages owned community text models for invite-only accounts. It requires `communityEndpointsAllowed: true` plus a key with `account:keys`, or an authenticated dashboard session through the API. Use `account:usage` for narrow read-only usage and `polli quests`; use both permissions when a client needs both read-only account state and admin operations. Quest claiming is dashboard-only; `polli quests` is read-only and account-aware.
+`my-models` manages owned community text, image, and transcription models. Any account can create private models; `communityEndpointsAllowed: true` is required only to publish them. API keys require `account:keys`. Use `account:usage` for narrow read-only usage and `polli quests`; use both permissions when a client needs both read-only account state and admin operations. Quest claiming is dashboard-only; `polli quests` is read-only and account-aware.
+
+### Register an image my-model
+```bash
+polli my-models test --modality image --base-url https://api.example.com/v1 --bearer-token "$UPSTREAM_KEY" --model image-v1
+polli my-models create --name my-image --title "My Image" --modality image --image-pricing request --completion-image-price 0.01 --input-modalities text,image --base-url https://api.example.com/v1 --bearer-token "$UPSTREAM_KEY" --upstream-model image-v1
+```
+Test before creating. The probe reports the pricing mode it detected and the input modalities it found, including whether the endpoint accepts image edits; pass those back as `--input-modalities text,image` to advertise edit support. `polli my-models list` shows them in the `inputs` column.
+
+Two billing modes: `--image-pricing request` charges `--completion-image-price` per generated image, while `--image-pricing tokens` bills returned token usage per 1M through `--prompt-text-price`, `--prompt-image-price`, and `--completion-image-price`.
+
+Prices only apply to `--visibility public` models. A private model is owner-only and always free, so every price flag above is stored as `0` until you publish — and making a published model private clears its prices again.
+
+`--modality` is fixed at creation — `update` cannot change it.
+
+### Manage agents
+
+```bash
+polli agents list
+polli agents get <id>
+polli agents create --config agent.json --name my-agent --title "My Agent"
+polli agents update <id> --config agent.json
+polli agents delete <id>
+```
+The config file contains `systemPrompt`, `baseModel`, and optional `mcpServers`; create also requires `--name` and `--title` for the callable model listing. The only supported server ID is currently `"pollinations"`. Updates replace the complete agent configuration.
+
+Creating an agent also creates its callable model listing. Managed agents are text-only and free, with no fallbacks or per-user RPM. Deleting the agent also deletes its model listing. See [Publish an Agent](https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md).
 
 ### Manage API keys
 ```bash

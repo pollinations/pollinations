@@ -20,8 +20,35 @@ export type ApiModelInfo = {
     id?: string;
     category?: ModelCategory;
     brand?: string;
+    brand_url?: string;
     community?: boolean;
+    agent?: boolean;
+    base_model?: string;
+    per_user_rpm?: number | null;
     pricing?: ApiPricing;
+    pricing_variants?: Array<{
+        name: string;
+        label: string;
+        description: string;
+        pricing: ApiPricing;
+    }>;
+    pricing_default_label?: string;
+    pricing_adjustments?: Array<{
+        name: string;
+        label: string;
+        kind: string;
+        price: string;
+        currency: "pollen";
+        quantity: number;
+        unit: string;
+        suffix?: string;
+        option?: {
+            group: string;
+            value: string;
+            label: string;
+            default?: boolean;
+        };
+    }>;
     title?: string;
     description?: string;
     input_modalities?: string[];
@@ -87,21 +114,60 @@ const formatEstimatedTtsPricePerSecond = (pricePerChar: number): string => {
         : pricePerSecond.toFixed(4);
 };
 
+// A 200 response with an empty array, a non-array body, or entries that all
+// lack an identifiable name/id is indistinguishable from "no models" to the
+// caller — it must be treated as a fetch failure, not a valid empty catalog,
+// so the UI surfaces an error instead of silently rendering an empty table.
+export function parseModelCatalogResponse(data: unknown): ApiModelInfo[] {
+    if (!Array.isArray(data) || data.length === 0) {
+        throw new Error("Model catalog response was empty or malformed");
+    }
+    const models = data as ApiModelInfo[];
+    if (!models.some((model) => getCatalogModelId(model))) {
+        throw new Error("Model catalog response had no usable model entries");
+    }
+    return models;
+}
+
 let modelCatalogPromise: Promise<ApiModelInfo[]> | null = null;
+
+export function mergeModelCatalogs(
+    catalogs: readonly ApiModelInfo[][],
+): ApiModelInfo[] {
+    const modelsById = new Map<string, ApiModelInfo>();
+    for (const catalog of catalogs) {
+        for (const model of catalog) {
+            const id = getCatalogModelId(model);
+            if (id && !modelsById.has(id)) modelsById.set(id, model);
+        }
+    }
+    return [...modelsById.values()];
+}
+
+async function fetchCatalog(url: string): Promise<ApiModelInfo[]> {
+    const response = await fetch(url, {
+        cache: "no-store",
+        signal: AbortSignal.timeout(15_000),
+    });
+    if (!response.ok) {
+        throw new Error(`Failed to fetch models (${response.status})`);
+    }
+    return parseModelCatalogResponse(await response.json());
+}
 
 export async function fetchModelCatalog(
     options: { refresh?: boolean } = {},
 ): Promise<ApiModelInfo[]> {
     if (options.refresh) modelCatalogPromise = null;
     modelCatalogPromise ??= import("../../config.ts")
-        .then(({ config }) =>
-            fetch(`${config.genBaseUrl}/models`, { cache: "no-store" }),
-        )
-        .then((response) => {
-            if (!response.ok) {
-                throw new Error(`Failed to fetch models (${response.status})`);
-            }
-            return response.json() as Promise<ApiModelInfo[]>;
+        .then(async ({ config }) => {
+            const catalogs = await Promise.all([
+                fetchCatalog(`${config.genBaseUrl}/models`),
+                ...(config.communityCatalogUrl
+                    ? [fetchCatalog(config.communityCatalogUrl)]
+                    : []),
+            ]);
+            return mergeModelCatalogs(catalogs);
         })
         .catch((error) => {
             modelCatalogPromise = null;
@@ -182,9 +248,13 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
         name,
         type: getCatalogCategory(model),
         community: model.community,
+        agent: model.agent,
+        baseModel: model.base_model,
+        perUserRpm: model.per_user_rpm,
         displayName: getCatalogDisplayName(model, name),
         description: getCatalogDescriptionWithoutName(model),
         brand: model.brand,
+        brandUrl: model.brand_url,
         inputModalities: model.input_modalities,
         outputModalities: model.output_modalities,
         capabilities: model.capabilities ?? [],
@@ -201,10 +271,11 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
         contextLength: model.context_length,
         minDuration: model.min_duration,
         maxDuration: model.max_duration,
+        priceAdjustments: model.pricing_adjustments,
     };
 }
 
-function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {
+function modelPriceFromPricing(model: ApiModelInfo): ModelPrice | null {
     const price = baseModelPrice(model);
     if (!price) return null;
 
@@ -270,11 +341,8 @@ function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {
     }
 
     if (price.type === "image") {
-        if (
-            model.flat_rate === false ||
-            promptTextTokens ||
-            promptImageTokens
-        ) {
+        const isFlatRate = model.flat_rate ?? !promptTextTokens;
+        if (!isFlatRate) {
             return {
                 ...price,
                 prices: priceLines(
@@ -301,12 +369,20 @@ function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {
         }
         return {
             ...price,
-            prices: priceLines([
-                "output",
-                "image",
-                formatPrice(completionImageTokens, formatPriceFlat),
-                "request",
-            ]),
+            prices: priceLines(
+                [
+                    "input",
+                    "image",
+                    formatPrice(promptImageTokens, formatPriceFlat),
+                    "request",
+                ],
+                [
+                    "output",
+                    "image",
+                    formatPrice(completionImageTokens, formatPriceFlat),
+                    "request",
+                ],
+            ),
         };
     }
 
@@ -318,6 +394,18 @@ function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {
                 "3d",
                 formatPrice(completionImageTokens, formatPriceFlat),
                 "request",
+            ]),
+        };
+    }
+
+    if (price.type === "realtime" && promptAudioSeconds) {
+        return {
+            ...price,
+            prices: priceLines([
+                "input",
+                "audioIn",
+                formatPrice(promptAudioSeconds, (v) => v.toFixed(5)),
+                "second",
             ]),
         };
     }
@@ -468,6 +556,37 @@ function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {
             ],
         ),
     };
+}
+
+function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {
+    const basePrice = modelPriceFromPricing(model);
+    if (!basePrice) return null;
+
+    const priceVariants = model.pricing_variants?.flatMap((variant) => {
+        const variantPrice = modelPriceFromPricing({
+            ...model,
+            pricing: variant.pricing,
+            pricing_variants: undefined,
+        });
+        return variantPrice
+            ? [
+                  {
+                      name: variant.name,
+                      label: variant.label,
+                      description: variant.description,
+                      prices: variantPrice.prices,
+                  },
+              ]
+            : [];
+    });
+
+    return priceVariants?.length
+        ? {
+              ...basePrice,
+              priceVariants,
+              priceDefaultLabel: model.pricing_default_label,
+          }
+        : basePrice;
 }
 
 export function getModelPricesFromCatalog(

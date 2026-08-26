@@ -11,16 +11,16 @@
  * at the 2K tier (4K for pro text-to-image, where the upstream allows it).
  */
 
+import { HttpError } from "@shared/http-error.ts";
 import debug from "debug";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
-import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import { closestByRatio } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { toDataUri } from "../utils/imageDownload.ts";
 import {
-    ReplicateError,
     runReplicatePrediction,
+    toReplicateHttpError,
 } from "../utils/replicateClient.ts";
 
 const logOps = debug("pollinations:wan-image:ops");
@@ -131,15 +131,7 @@ export async function callWanImageAPI(
         });
     } catch (err) {
         logError(`${modelLabel} prediction call failed:`, err);
-        if (err instanceof ReplicateError) {
-            throw new HttpError(
-                `${modelLabel} generation failed: ${err.message}`,
-                err.status ?? 500,
-                undefined,
-                err.url,
-            );
-        }
-        throw err;
+        throw toReplicateHttpError(err, `${modelLabel} generation failed`);
     }
 
     if (outputUrls.length === 0) {

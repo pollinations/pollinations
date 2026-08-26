@@ -1,6 +1,6 @@
+import { HttpError } from "@shared/http-error.ts";
 import debug from "debug";
 import { getImageEnv } from "../env.ts";
-import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import { base64ToBuffer, downloadUserImage } from "../utils/imageDownload.ts";
 
@@ -33,7 +33,7 @@ interface ImageGenerationResult {
  * - 320-4096px per side, divisible by 16
  * - Total pixels < 4,194,304
  */
-function clampDimensions(
+export function clampNovaCanvasDimensions(
     width: number,
     height: number,
 ): { width: number; height: number } {
@@ -67,17 +67,13 @@ export async function callNovaCanvasAPI(
         throw new HttpError("AWS credentials not configured", 500);
     }
 
-    const { width, height } = clampDimensions(
+    const { width, height } = clampNovaCanvasDimensions(
         safeParams.width || 1024,
         safeParams.height || 1024,
     );
 
     // Check if image input is provided for editing mode
-    const rawImageUrl = safeParams.image
-        ? Array.isArray(safeParams.image)
-            ? safeParams.image[0]
-            : safeParams.image
-        : undefined;
+    const rawImageUrl = safeParams.image?.[0];
     const mode = rawImageUrl ? "IMAGE_VARIATION" : "TEXT_IMAGE";
 
     logOps(`Calling Nova Canvas API (${mode}):`, {

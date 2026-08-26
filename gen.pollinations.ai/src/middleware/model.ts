@@ -1,4 +1,7 @@
-import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
+import {
+    type CommunityEndpointRuntime,
+    usesAgentRunToken,
+} from "@shared/community-endpoints.ts";
 import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
 import { DEFAULT_EMBEDDING_MODEL } from "@shared/registry/embeddings.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
@@ -8,7 +11,10 @@ import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
 import type { EventType } from "@shared/schemas/generation-event.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
-import { getGenerationModelRegistry } from "../model-registry.ts";
+import {
+    type GenerationModelEntry,
+    getGenerationModelRegistry,
+} from "../model-registry.ts";
 import type { AuthVariables } from "./auth.ts";
 
 const ENDPOINT_LABEL: Record<EventType, string> = {
@@ -28,6 +34,14 @@ export type ModelVariables = {
         /** Static registry definition, or a dynamic definition resolved from D1. */
         definition: ModelDefinition;
         communityEndpoint?: CommunityEndpointRuntime;
+        /**
+         * Extra cache-key scope for models whose output is not shareable
+         * between callers. Unset means the response is cacheable platform-wide,
+         * which is the default for every static and external community model.
+         */
+        cacheScope?: string;
+        /** Entry that serves the request when this model's upstream fails. */
+        fallbackEntries?: GenerationModelEntry[];
     };
     formData?: FormData;
 };
@@ -107,6 +121,15 @@ export async function resolveModelDefinition(
         ...(entry.communityEndpoint && {
             communityEndpoint: entry.communityEndpoint,
         }),
+        // An agent run executes tools and spends the caller's balance, so its
+        // answer belongs to that caller and must never be replayed to another.
+        ...(entry.communityEndpoint &&
+            usesAgentRunToken(entry.communityEndpoint) && {
+                cacheScope: `agent:${entry.id}`,
+            }),
+        ...(entry.fallbackEntries && {
+            fallbackEntries: entry.fallbackEntries,
+        }),
     };
 }
 
@@ -171,16 +194,27 @@ export function resolveModel(
         // routes, so the caller identity is available to gate private
         // endpoints. If it isn't (unauthenticated path), callerUserId is
         // undefined and a private endpoint fails closed — never exposed.
-        c.set(
-            "model",
-            await resolveModelDefinition(
-                model,
-                eventType,
-                c.env,
-                c.var.auth?.user?.id,
-                options?.supportedEndpoint,
-            ),
+        const resolved = await resolveModelDefinition(
+            model,
+            eventType,
+            c.env,
+            c.var.auth?.user?.id,
+            options?.supportedEndpoint,
         );
+        // Hidden registry fallbacks are provider implementations of the public
+        // model the caller selected, so they inherit that model's permission.
+        // Visible and community targets remain independently scoped: a key can
+        // never be served — or billed for — a model it could not call directly.
+        const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+        if (allowedModels && resolved.fallbackEntries) {
+            resolved.fallbackEntries = resolved.fallbackEntries.filter(
+                (entry) =>
+                    (entry.definition.hidden === true &&
+                        !entry.communityEndpoint) ||
+                    allowedModels.includes(entry.id),
+            );
+        }
+        c.set("model", resolved);
         await next();
     });
 }

@@ -1,4 +1,5 @@
 import {
+    BotIcon,
     ChatIcon,
     CodeIcon,
     CubeIcon,
@@ -10,13 +11,25 @@ import {
     ReasoningIcon,
     SearchIcon,
     SpeakerIcon,
+    ToolIcon,
     VideoIcon,
 } from "@pollinations/ui";
 import type { FC } from "react";
 import type { DisplayCapability, InputModality } from "./model-info.ts";
-import type { PriceKind } from "./types.ts";
+import type { ModelPrice, PriceKind } from "./types.ts";
 
 type Icon = FC<IconProps>;
+
+/** Community listings use their model type instead of a provider logo. */
+export const getCommunityModelIcon = (
+    model: Pick<ModelPrice, "agent" | "community" | "type">,
+): Icon | undefined => {
+    if (!model.community) return undefined;
+    if (model.agent) return BotIcon;
+    if (model.type === "image") return ImageIcon;
+    if (model.type === "text") return ChatIcon;
+    return undefined;
+};
 
 /** Input-modality glyphs (chat/eye/video/mic). */
 export const MODALITY_ICON: Record<InputModality, Icon> = {
@@ -28,6 +41,8 @@ export const MODALITY_ICON: Record<InputModality, Icon> = {
 
 /** Capability glyphs (reasoning/web search/code execution). */
 export const CAPABILITY_ICON: Record<DisplayCapability, Icon> = {
+    agent: BotIcon,
+    tool_calling: ToolIcon,
     reasoning: ReasoningIcon,
     web_search: SearchIcon,
     code_execution: CodeIcon,

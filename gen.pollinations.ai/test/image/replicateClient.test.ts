@@ -4,6 +4,7 @@ import { syncImageEnvironment } from "../../src/image/handler.ts";
 import {
     ReplicateError,
     runReplicatePrediction,
+    toReplicateHttpError,
 } from "../../src/image/utils/replicateClient.ts";
 
 beforeEach(() => {
@@ -530,5 +531,30 @@ describe("runReplicatePrediction", () => {
             name: "ReplicateError",
             status: 429,
         });
+    });
+});
+
+describe("toReplicateHttpError", () => {
+    it("preserves classified status, URL, and adapter context", () => {
+        expect(
+            toReplicateHttpError(
+                new ReplicateError(
+                    "rate limited",
+                    429,
+                    "https://api.replicate.com/v1/predictions/123",
+                ),
+                "Wan generation failed",
+            ),
+        ).toMatchObject({
+            name: "HttpError",
+            message: "Wan generation failed: rate limited",
+            status: 429,
+            upstreamUrl: "https://api.replicate.com/v1/predictions/123",
+        });
+    });
+
+    it("does not mask non-Replicate failures", () => {
+        const error = new TypeError("coding bug");
+        expect(toReplicateHttpError(error, "ignored")).toBe(error);
     });
 });

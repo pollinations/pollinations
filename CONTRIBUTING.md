@@ -12,6 +12,8 @@ Before you start, please refer to the main `README.md` file of the `pollinations
 
 Look for issues that interest you and feel free to tackle them!
 
+Issues labeled `POLLEN-QUEST` are open to multiple solutions; you do not need to claim the issue or wait for assignment before starting. Link your PR with `Fixes #N`. Maintainers compare completed approaches and assign the selected contributor before merge so they can claim the stated reward.
+
 ### 2. Understand the Issue and Build an MVP
 
 Once you've selected an issue, take the time to thoroughly understand its requirements. For code contributions, focus on building a **Minimum Viable Product (MVP)** that addresses the core problem or implements the key feature described in the issue.
@@ -27,7 +29,7 @@ We are in profound need of members who can help enhance our documentation. If yo
 
 ### 4. Build Apps with pollinations.ai
 
-Want to build something cool? Check out our **[apps folder](./apps/README.md)**!
+Want to build something cool? Browse the [community apps](https://pollinations.ai/apps) or [submit your own](https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml).
 
 **How it works:**
 
@@ -43,7 +45,7 @@ Create apps using pollinations.ai APIs and get them featured. Each app lives in 
 - Fun projects (games, quizzes)
 - Developer tools (API playgrounds, dashboards)
 
-See the [apps README](./apps/README.md) for detailed guidelines and templates.
+Use the repository's app submission issue form when your app is ready for review.
 
 ### 5. Code Contributions
 

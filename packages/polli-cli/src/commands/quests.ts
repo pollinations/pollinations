@@ -3,8 +3,8 @@ import { Command } from "commander";
 import { gen, requireKey } from "../lib/api.js";
 import { ENTER_URL } from "../lib/config.js";
 import {
+    fail,
     getOutputMode,
-    printError,
     printInfo,
     printResult,
     printTable,
@@ -143,9 +143,6 @@ export const questsCommand = new Command("quests")
 
             renderQuests(filterQuests(all, opts));
         } catch (err) {
-            printError(
-                `Failed to fetch quests: ${err instanceof Error ? err.message : "unknown"}`,
-            );
-            process.exit(1);
+            fail("Failed to fetch quests", err);
         }
     });

@@ -1,12 +1,30 @@
-import { env, SELF } from "cloudflare:test";
+import {
+    createExecutionContext,
+    env,
+    waitOnExecutionContext,
+} from "cloudflare:test";
+import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
+import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import { test as workerTest } from "@shared/test/fixtures/index.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import worker from "../src/index.ts";
+import { resetGenerationModelRegistryCache } from "../src/model-registry.ts";
 import { generateElevenLabsSpeechWithTimestamps } from "../src/routes/audio.ts";
+import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
 
 const log = {
     info: vi.fn(),
     warn: vi.fn(),
 } as never;
+
+async function fetchGen(input: RequestInfo | URL, init?: RequestInit) {
+    const ctx = createExecutionContext();
+    return worker.fetch(
+        new Request(input, init),
+        withInlineGenerationCoordinator(env),
+        ctx,
+    );
+}
 
 const providerResponse = {
     audio_base64: "SUQz",
@@ -106,7 +124,7 @@ describe("ElevenLabs timestamped TTS", () => {
 workerTest(
     "rejects unsupported FLAC instead of returning PCM under the wrong format",
     async ({ paidApiKey }) => {
-        const response = await SELF.fetch(
+        const response = await fetchGen(
             "https://gen.pollinations.ai/v1/audio/speech/with-timestamps",
             {
                 method: "POST",
@@ -133,6 +151,76 @@ workerTest(
     },
 );
 
+workerTest(
+    "uses the shared fallback loop for audio",
+    async ({ paidApiKey }) => {
+        const source = getRegistryModelDefinition("elevenlabs");
+        const previousFallbacks = source.fallbacks;
+        const fetchMock = vi.spyOn(globalThis, "fetch");
+        try {
+            source.fallbacks = ["elevenflash"];
+            resetGenerationModelRegistryCache();
+            const providerModels: string[] = [];
+            fetchMock.mockImplementation(async (input, init) => {
+                const request = new Request(input, init);
+                if (request.url.includes("public_model_stats.json")) {
+                    return Response.json({ data: [] });
+                }
+                if (
+                    request.url.includes("/v0/events?name=generation_event_v2")
+                ) {
+                    return new Response("", { status: 202 });
+                }
+                const body = (await request.json()) as { model_id: string };
+                providerModels.push(body.model_id);
+                if (body.model_id === "eleven_v3") {
+                    return Response.json(
+                        { error: { message: "rate limited" } },
+                        { status: 429 },
+                    );
+                }
+                return Response.json(providerResponse);
+            });
+
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(
+                new Request(
+                    "https://gen.pollinations.ai/v1/audio/speech/with-timestamps",
+                    {
+                        method: "POST",
+                        headers: {
+                            Authorization: `Bearer ${paidApiKey}`,
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            model: "elevenlabs",
+                            input: "Fallback speech",
+                        }),
+                    },
+                ),
+                withInlineGenerationCoordinator({
+                    ...env,
+                    ELEVENLABS_API_KEY: "test-eleven-key",
+                } as unknown as CloudflareBindings),
+                ctx,
+            );
+
+            expect(response.status).toBe(200);
+            expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBe(
+                "config.targets[1]",
+            );
+            expect(response.headers.get("x-model-used")).toBe("elevenflash");
+            await response.arrayBuffer();
+            await waitOnExecutionContext(ctx);
+            expect(providerModels).toEqual(["eleven_v3", "eleven_flash_v2_5"]);
+        } finally {
+            fetchMock.mockRestore();
+            source.fallbacks = previousFallbacks;
+            resetGenerationModelRegistryCache();
+        }
+    },
+);
+
 for (const testCase of [
     { model: "elevenlabs", format: "mp3", magic: "ID3" },
     { model: "elevenflash", format: "wav", magic: "RIFF" },
@@ -142,7 +230,7 @@ for (const testCase of [
         `returns ${testCase.format} audio and alignment for ${testCase.model}`,
         async ({ paidApiKey }) => {
             const input = "Timed speech.";
-            const response = await SELF.fetch(
+            const response = await fetchGen(
                 "https://gen.pollinations.ai/v1/audio/speech/with-timestamps",
                 {
                     method: "POST",

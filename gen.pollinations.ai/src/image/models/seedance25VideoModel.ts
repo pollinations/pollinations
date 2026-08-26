@@ -88,7 +88,7 @@ export async function callSeedance25API(
     // Reference images guide generation without occupying frame slots. They
     // are forwarded as public URLs (validated at the params layer), not
     // data URIs — providers fetch them directly.
-    if (safeParams.reference_images?.length > 0) {
+    if ((safeParams.reference_images?.length ?? 0) > 0) {
         input.reference_images = safeParams.reference_images;
     }
 

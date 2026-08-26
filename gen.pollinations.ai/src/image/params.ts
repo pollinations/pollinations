@@ -80,7 +80,8 @@ export const ImageParamsSchema = z
                     ? value.split("|")
                     : value.split(",");
             })
-            .catch([]),
+            .catch([])
+            .optional(),
         transparent: sanitizedBoolean.catch(false),
         reasoning: z
             .union([z.string(), z.boolean()])
@@ -169,7 +170,7 @@ export const ImageParamsSchema = z
                     "grok-imagine-image-2.0 supports low or medium quality.",
             });
         }
-        if (data.reference_images.length > 0) {
+        if ((data.reference_images?.length ?? 0) > 0) {
             const definition = IMAGE_SERVICES[data.model] as ModelDefinition;
             if (
                 !definition.videoCapabilities?.includes("reference_images") ||
@@ -181,7 +182,8 @@ export const ImageParamsSchema = z
                     message: `${data.model} does not support reference_images. Models that do advertise \`reference_images\` in video_capabilities.`,
                 });
             } else if (
-                data.reference_images.length > definition.maxInputReferences
+                (data.reference_images?.length ?? 0) >
+                definition.maxInputReferences
             ) {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,

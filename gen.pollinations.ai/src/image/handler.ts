@@ -204,38 +204,33 @@ function safeUpstreamUrl(value: string | undefined): URL | undefined {
     }
 }
 
-function throwImageError(error: unknown): never {
-    if (error instanceof UpstreamError) throw error;
-
-    // Content-policy rejections from any provider (DashScope green-net, Replicate
-    // moderation, Vertex safety, Azure content safety) are client errors, not
-    // backend failures. Catch them here — the single funnel for image/video
-    // errors — so they surface as 422 with a stable, detectable code instead of
-    // a 500 that pollutes model-health stats.
-    const candidateMessages =
-        error instanceof HttpError
-            ? [parseUpstreamErrorBody(error).text, error.message]
-            : [error instanceof Error ? error.message : String(error)];
-    const moderationMessage = firstContentPolicyMessage(candidateMessages);
-    if (moderationMessage) {
-        throw new UpstreamError(CONTENT_POLICY_STATUS, {
-            message: contentPolicyMessage(moderationMessage),
-            errorCode: CONTENT_POLICY_ERROR_CODE,
-            requestUrl:
-                error instanceof HttpError
-                    ? safeUpstreamUrl(error.upstreamUrl)
-                    : undefined,
-            upstreamStatus:
-                error instanceof HttpError ? error.status : undefined,
-            responseBody:
-                error instanceof HttpError
-                    ? imageResponseBody(error)
-                    : undefined,
-            cause: error,
-        });
-    }
-
+export function throwImageError(error: unknown): never {
+    // HttpError extends UpstreamError, so we must check HttpError FIRST to
+    // preserve HttpError-specific handling (moderation mapping, status
+    // classification, and response-body extraction) that UpstreamError-only
+    // errors skip.
     if (error instanceof HttpError) {
+        // Content-policy rejections from any provider (DashScope green-net,
+        // Replicate moderation, Vertex safety, Azure content safety) are client
+        // errors, not backend failures. Catch them here — the single funnel for
+        // image/video errors — so they surface as 422 with a stable, detectable
+        // code instead of a 500 that pollutes model-health stats.
+        const candidateMessages = [
+            parseUpstreamErrorBody(error).text,
+            error.message,
+        ];
+        const moderationMessage = firstContentPolicyMessage(candidateMessages);
+        if (moderationMessage) {
+            throw new UpstreamError(CONTENT_POLICY_STATUS, {
+                message: contentPolicyMessage(moderationMessage),
+                errorCode: CONTENT_POLICY_ERROR_CODE,
+                requestUrl: safeUpstreamUrl(error.upstreamUrl),
+                upstreamStatus: error.status,
+                responseBody: imageResponseBody(error),
+                cause: error,
+            });
+        }
+
         const { status, message } = classifyImageHttpError(error);
         throw new UpstreamError(status, {
             message,
@@ -247,6 +242,22 @@ function throwImageError(error: unknown): never {
             cause: error,
         });
     }
+
+    // Plain UpstreamError (not HttpError) — pass through directly.
+    if (error instanceof UpstreamError) throw error;
+
+    const candidateMessages = [
+        error instanceof Error ? error.message : String(error),
+    ];
+    const moderationMessage = firstContentPolicyMessage(candidateMessages);
+    if (moderationMessage) {
+        throw new UpstreamError(CONTENT_POLICY_STATUS, {
+            message: contentPolicyMessage(moderationMessage),
+            errorCode: CONTENT_POLICY_ERROR_CODE,
+            cause: error,
+        });
+    }
+
     const message = error instanceof Error ? error.message : String(error);
     throw new UpstreamError(500, {
         message: message || "Image generation failed",

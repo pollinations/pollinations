@@ -16,6 +16,14 @@ interface LeaderboardEntry {
 const LEADERBOARD_ENDPOINT =
     "https://enter.pollinations.ai/api/quests/leaderboard";
 
+const MEDALS = ["🥇", "🥈", "🥉"];
+
+const COLOR_CLASSES = [
+    "border-primary-strong shadow-[2px_2px_0_rgb(var(--primary-strong)_/_0.3)]",
+    "border-secondary-strong shadow-[2px_2px_0_rgb(var(--secondary-strong)_/_0.3)]",
+    "border-tertiary-strong shadow-[2px_2px_0_rgb(var(--tertiary-strong)_/_0.3)]",
+];
+
 export function QuestLeaderboard() {
     const { copy } = usePageCopy(COMMUNITY_PAGE);
 
@@ -84,43 +92,68 @@ export function QuestLeaderboard() {
                 <Body size="sm" spacing="comfortable">
                     {copy.questLeaderboardDescription}
                 </Body>
-                <div className="mt-4 flex flex-col gap-2">
-                    {entries.map((entry) => (
-                        <a
-                            key={entry.githubUsername}
-                            href={`https://github.com/${entry.githubUsername}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/40 transition"
-                        >
-                            <span className="w-6 text-center font-headline text-xs font-black text-muted">
-                                {entry.rank}
-                            </span>
-                            <img
-                                src={`https://github.com/${entry.githubUsername}.png?size=64`}
-                                alt={entry.githubUsername}
-                                className="w-8 h-8 rounded-full"
-                                width={32}
-                                height={32}
-                                loading="lazy"
-                                decoding="async"
-                            />
-                            <span className="font-headline text-sm font-black text-dark flex-1 truncate">
-                                {entry.githubUsername}
-                            </span>
-                            <span className="text-xs text-muted">
-                                {entry.completedQuests}{" "}
-                                {entry.completedQuests === 1
-                                    ? copy.questLabel
-                                    : copy.questsLabel}
-                            </span>
-                            <span className="font-headline text-xs font-black text-primary">
-                                {entry.totalPollen} {copy.pollenLabel}
-                            </span>
-                        </a>
-                    ))}
+                <div className="mt-4 flex flex-col gap-3">
+                    {entries.map((entry) => {
+                        const isTop3 = entry.rank <= 3;
+                        const colorClass =
+                            COLOR_CLASSES[
+                                (entry.githubUsername.charCodeAt(0) +
+                                    entry.githubUsername.charCodeAt(1)) %
+                                    COLOR_CLASSES.length
+                            ];
+                        const medal = isTop3 ? MEDALS[entry.rank - 1] : null;
+
+                        return (
+                            <a
+                                key={entry.githubUsername}
+                                href={`https://github.com/${entry.githubUsername}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`group flex items-center gap-4 p-3 bg-white/60 rounded-sub-card border-r-2 border-b-2 ${colorClass} transition hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none`}
+                            >
+                                {medal ? (
+                                    <span className="w-8 text-center text-lg">
+                                        {medal}
+                                    </span>
+                                ) : (
+                                    <span className="w-8 text-center font-headline text-xs font-black text-muted">
+                                        #{entry.rank}
+                                    </span>
+                                )}
+                                <div
+                                    className={`w-12 h-12 overflow-hidden rounded-full border-2 border-r-4 border-b-4 ${colorClass} shadow-[3px_3px_0_rgb(17_5_24_/_0.15)] group-hover:shadow-none transition`}
+                                >
+                                    <img
+                                        src={`https://github.com/${entry.githubUsername}.png?size=96`}
+                                        alt={entry.githubUsername}
+                                        className="w-full h-full object-cover"
+                                        width={48}
+                                        height={48}
+                                        loading="lazy"
+                                        decoding="async"
+                                    />
+                                </div>
+                                <span className="font-headline text-sm font-black text-dark flex-1 truncate">
+                                    {entry.githubUsername}
+                                </span>
+                                <span className="text-xs text-muted hidden sm:inline">
+                                    {entry.completedQuests}{" "}
+                                    {entry.completedQuests === 1
+                                        ? copy.questLabel
+                                        : copy.questsLabel}
+                                </span>
+                                <span className="font-headline text-sm font-black text-primary bg-accent-light px-2 py-0.5 rounded-sub-card">
+                                    {entry.totalPollen} {copy.pollenLabel}
+                                </span>
+                            </a>
+                        );
+                    })}
                 </div>
-                <Body size="sm" spacing="comfortable" className="text-muted">
+                <Body
+                    size="sm"
+                    spacing="comfortable"
+                    className="text-muted mt-4"
+                >
                     {copy.questLeaderboardCta}{" "}
                     <a
                         href={LINKS.enterQuests}

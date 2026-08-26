@@ -99,9 +99,9 @@ export const COMMUNITY_PAGE = {
     // Quest Leaderboard
     questLeaderboardTitle: "Quest leaderboard",
     questLeaderboardDescription:
-        "Top questers ranked by total Pollen earned from completing public GitHub quests.",
-    questLeaderboardCta: "Want to earn Pollen?",
-    questsPageLink: "Browse the quests page",
+        "Top contributors ranked by Pollen earned from completing GitHub quests. Want to join them?",
+    questLeaderboardCta: "Earn Pollen by completing quests",
+    questsPageLink: "Browse quests",
     questsLabel: "quests",
     questLabel: "quest",
     pollenLabel: "Pollen",

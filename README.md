@@ -21,6 +21,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🖼️ Dery AI](https://dery-ai.my.id) | Create collaborative images using the Pollinations image API | [@derymegana](https://github.com/derymegana) |
 | [🖼️ Pollinations App](https://sohaib7838.github.io/pollinations-app) | A simple web app that lets users connect their Pollinations account and generate AI images using their own Pollen. | [@Sohaib7838](https://github.com/Sohaib7838) |
 | [✍️ Descriptly](https://github.com/g33ky00/descriptly) | ## Descriptly v1.0.0 First public release. Descriptly scans images added or modified in a pull request and generates accessible alt-text suggestions using Pollinations vision models — posted directly | [@g33ky00](https://github.com/g33ky00) |
 | [🖼️ EAS AI STUDIO](https://www.ekin-ai-studio.my.id) | Create collaborative images using the Pollinations image API | [@EkinLiu](https://github.com/EkinLiu) |
@@ -30,7 +31,6 @@
 | [🖼️ Dery Lau AI](https://derylau.my.id) | Create collaborative images using the Pollinations image API | [@derylau166](https://github.com/derylau166) |
 | [🖼️ Pollen Image Studio](https://image.lanprint.com) | Pollen Image Studio is an online AI image generator powered by the Pollinations image API. --- --- What it is An online AI image generator using the Pollinations image API How to use Type a prompt or | [@dokirong](https://github.com/dokirong) |
 | [🖼️ REKTY GENERATOR](https://visualaiartwork.pages.dev) | REKTY GENERATOR is a free, open-source AI image generator web app that supports multiple providers in one interface. It uses **Pollinations AI** for: - **Image generation** via Pollinations API (57+ m | [@rekty](https://github.com/rekty) |
-| [🖼️ ArtScape Studio](https://creatneworld.github.io/artscape-studio) | A free bilingual (Chinese/English) AI art studio. Type an idea, pick an aspect ratio, style model and seed, then instantly generate a unique artwork using the Pollinations image API. Includes quick st | [@Creatneworld](https://github.com/Creatneworld) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

@@ -79,6 +79,67 @@ const response = await client.chat.completions.create({
 console.log(response.choices[0].message.content);`,
         },
     ],
+    "post /v1/chat/completions/reasoning": [
+        {
+            label: "cURL",
+            lang: "Shell",
+            source: `curl https://gen.pollinations.ai/v1/chat/completions \\
+  -H "Authorization: Bearer YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "grok",
+    "messages": [{"role": "user", "content": "Solve step by step: what is 17 × 23?"}],
+    "reasoning_effort": "high"
+  }'`,
+        },
+        {
+            label: "Python",
+            lang: "Python",
+            source: `from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://gen.pollinations.ai/v1",
+    api_key="YOUR_API_KEY"
+)
+
+response = client.chat.completions.create(
+    model="grok",
+    messages=[{"role": "user", "content": "Solve step by step: what is 17 × 23?"}],
+    reasoning_effort="high"
+)
+print(response.choices[0].message.content)`,
+        },
+    ],
+    "post /text": [
+        {
+            label: "cURL",
+            lang: "Shell",
+            source: `curl https://gen.pollinations.ai/text \\
+  -H "Authorization: Bearer YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "perplexity-reasoning",
+    "messages": [{"role": "user", "content": "Explain quantum entanglement step by step."}],
+    "reasoning_effort": "high"
+  }'`,
+        },
+        {
+            label: "Python",
+            lang: "Python",
+            source: `import requests
+
+response = requests.post(
+    "https://gen.pollinations.ai/text",
+    json={
+        "model": "perplexity-reasoning",
+        "messages": [{"role": "user", "content": "Explain quantum entanglement step by step."}],
+        "reasoning_effort": "high"
+    },
+    headers={"Authorization": "Bearer YOUR_API_KEY"}
+)
+print(response.json()["choices"][0]["message"]["content"])`,
+        },
+    ],
     "get /text/{prompt}": [
         {
             label: "cURL",

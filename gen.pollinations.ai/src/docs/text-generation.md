@@ -37,3 +37,17 @@ On Gemini, Claude, and Nova models, a large static prompt prefix can be cached s
 **Claude** — all Claude models cache. The prefix must be at least 4,096 tokens (1,024 on `claude` and `claude-fable-5`); tools are fine. Cache creates bill at 1.25× the input rate (no storage fee); hits bill at 10% of input. The cache lives ~5 minutes, refreshed on each hit.
 
 **Nova** — `nova` and `nova-fast` cache. The prefix must be at least ~1,000 tokens (up to 20K tokens cacheable). Cache creates are free; hits bill at 25% of input. ~5-minute TTL.
+
+### Reasoning models
+
+Use `reasoning_effort` to control reasoning depth on models that support it (e.g., `grok`, `perplexity-reasoning`). Values range from `"none"` (disable reasoning) through `"minimal"`, `"low"`, `"medium"`, `"high"`, `"xhigh"`, to `"max"`. Some models require reasoning and reject `"none"`; check model metadata via `/text/models` or `/v1/models` for details.
+
+```json
+{
+  "model": "grok",
+  "messages": [{ "role": "user", "content": "Solve this step by step: what is 17 × 23?" }],
+  "reasoning_effort": "high"
+}
+```
+
+To disable reasoning on a model that enables it by default, set `"reasoning_effort": "none"`.

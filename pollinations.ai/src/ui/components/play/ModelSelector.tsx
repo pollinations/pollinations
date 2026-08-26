@@ -11,6 +11,7 @@ interface ModelSelectorProps {
     selectedModel: string;
     onSelectModel: (id: string) => void;
     showLegend?: boolean;
+    initialActiveCategory?: ModelCategory;
     allowedImageModelIds: Set<string>;
     allowedTextModelIds: Set<string>;
     allowedAudioModelIds: Set<string>;
@@ -44,7 +45,7 @@ const COLOR_VARS: Record<ModelCategory, { strong: string; light: string }> = {
     },
 };
 
-function getModelCategory(m: Model): ModelCategory {
+export function getModelCategory(m: Model): ModelCategory {
     if (m.hasVideoOutput) return "video";
     if (m.hasAudioOutput || m.type === "audio") return "audio";
     if (m.type === "image") return "image";
@@ -69,8 +70,9 @@ export const ModelSelector = memo(function ModelSelector({
     isLoggedIn = false,
 }: ModelSelectorProps) {
     const { copy } = usePageCopy(PLAY_PAGE);
-    const [activeCategory, setActiveCategory] =
-        useState<ModelCategory>("image");
+    const [activeCategory, setActiveCategory] = useState<ModelCategory>(
+        initialActiveCategory ?? "image",
+    );
 
     const categories: { key: ModelCategory; label: string }[] = [
         { key: "image", label: copy.imageLabel },

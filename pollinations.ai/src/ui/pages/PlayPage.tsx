@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { PLAY_PAGE } from "../../copy/content/play";
 import { LINKS } from "../../copy/content/socialLinks";
 import { useAuth } from "../../hooks/useAuth";
@@ -6,7 +7,10 @@ import { useDocumentMeta } from "../../hooks/useDocumentMeta";
 import { useModelList } from "../../hooks/useModelList";
 import { usePageCopy } from "../../hooks/usePageCopy";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
-import { ModelSelector } from "../components/play/ModelSelector";
+import {
+    getModelCategory,
+    ModelSelector,
+} from "../components/play/ModelSelector";
 import { PlayGenerator } from "../components/play/PlayGenerator";
 import { UserMenu } from "../components/UserMenu";
 import { PageCard } from "../components/ui/page-card";
@@ -14,7 +18,12 @@ import { PageContainer } from "../components/ui/page-container";
 import { Body, Title } from "../components/ui/typography";
 
 function PlayPage() {
+    const [searchParams] = useSearchParams();
+    const urlModel = searchParams.get("model");
     const [selectedModel, setSelectedModel] = useState("flux");
+    const [initialCategory, setInitialCategory] = useState<
+        "image" | "text" | "audio" | "video"
+    >("image");
     const [prompt, setPrompt] = useState("");
     const { apiKey, isLoggedIn, login } = useAuth();
     const {
@@ -49,6 +58,15 @@ function PlayPage() {
                 (typeOrder[effectiveType(b)] ?? 99),
         );
     }, [registryModels]);
+
+    // Preselect the model from the URL query string and show its category tab.
+    useEffect(() => {
+        const model = allModels.find((m) => m.id === urlModel);
+        if (model) {
+            setSelectedModel(model.id);
+            setInitialCategory(getModelCategory(model));
+        }
+    }, [urlModel, allModels]);
 
     const currentModel = allModels.find((m) => m.id === selectedModel);
     const isVideoModel = !!currentModel?.hasVideoOutput;
@@ -101,9 +119,11 @@ function PlayPage() {
                 </div>
 
                 <ModelSelector
+                    key={initialCategory}
                     models={allModels}
                     selectedModel={selectedModel}
                     onSelectModel={setSelectedModel}
+                    initialActiveCategory={initialCategory}
                     allowedImageModelIds={allowedImageModelIds}
                     allowedTextModelIds={allowedTextModelIds}
                     allowedAudioModelIds={allowedAudioModelIds}

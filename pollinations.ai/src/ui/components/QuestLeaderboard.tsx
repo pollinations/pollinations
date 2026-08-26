@@ -38,7 +38,8 @@ export function QuestLeaderboardContent({
                         Quest leaderboard
                     </h2>
                     <p className="font-body text-sm leading-relaxed text-dark">
-                        Builders who completed public GitHub POLLEN-QUEST issues.
+                        Builders who completed public GitHub POLLEN-QUEST
+                        issues.
                     </p>
                 </div>
                 <a
@@ -71,7 +72,9 @@ export function QuestLeaderboardContent({
                     <dd className="font-headline text-lg font-black text-dark">
                         {data.totals.totalPollen}
                     </dd>
-                    <dt className="font-body text-xs text-subtle">Quest Pollen</dt>
+                    <dt className="font-body text-xs text-subtle">
+                        Quest Pollen
+                    </dt>
                 </div>
             </dl>
 

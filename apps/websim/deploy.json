@@ -1,0 +1,14 @@
+{
+  "target": "worker",
+  "credentials": "myceli",
+  "subdomain": "websim",
+  "install": "npm install --silent && npm install --silent --prefix ../..",
+  "build": "npm run build",
+  "deploy": "npx wrangler deploy worker.js",
+  "watch": [
+    "packages/sdk/",
+    "packages/ui/",
+    "package.json",
+    "package-lock.json"
+  ]
+}

@@ -1,4 +1,4 @@
-import { HttpError } from "../httpError.ts";
+import { HttpError } from "@shared/http-error.ts";
 
 type TransformOptions = {
     format?: "image/jpeg" | "image/png" | "image/webp";
@@ -17,10 +17,6 @@ let imagesBinding: ImagesBinding | null = null;
 
 export function setImagesBinding(binding: ImagesBinding | undefined): void {
     imagesBinding = binding || null;
-}
-
-export function getImagesBinding(): ImagesBinding | null {
-    return imagesBinding;
 }
 
 export async function transformImage(

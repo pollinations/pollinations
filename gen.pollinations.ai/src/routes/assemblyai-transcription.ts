@@ -6,17 +6,29 @@ import {
 } from "@shared/registry/usage-headers.ts";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import {
+    assertTranscriptionResponseFormat,
     buildTranscriptionResponse,
     type NormalizedDiarizedSegment,
     type NormalizedWord,
+    TRANSCRIPTION_RESPONSE_FORMATS,
 } from "./transcription-response.ts";
+
+/**
+ * AssemblyAI serves srt/vtt from its own rendered subtitle endpoint, so it
+ * supports the two formats the shared formatter cannot.
+ */
+const ASSEMBLYAI_RESPONSE_FORMATS = [
+    ...TRANSCRIPTION_RESPONSE_FORMATS,
+    "srt",
+    "vtt",
+] as const;
 
 const ASSEMBLYAI_API_BASE = "https://api.assemblyai.com";
 const ASSEMBLYAI_POLL_INTERVAL_MS = 2_000;
 const ASSEMBLYAI_TRANSCRIPTION_TIMEOUT_MS = 240_000;
-const ASSEMBLYAI_MODELS: Record<string, string[]> = {
-    "universal-2": ["universal-2"],
-    "universal-3-pro": ["universal-3-pro", "universal-2"],
+const ASSEMBLYAI_MODELS: Record<string, string> = {
+    "universal-2": "universal-2",
+    "universal-3.5-pro": "universal-3-5-pro",
 };
 
 interface AssemblyAiUploadResponse {
@@ -44,7 +56,6 @@ interface AssemblyAiTranscriptResponse {
     text?: string | null;
     audio_duration?: number | null;
     language_code?: string | null;
-    speech_model_used?: string | null;
     words?: AssemblyAiWord[] | null;
     utterances?: AssemblyAiUtterance[] | null;
 }
@@ -79,21 +90,11 @@ export async function transcribeWithAssemblyAi(opts: {
         });
     }
 
-    if (
-        responseFormat &&
-        ![
-            "json",
-            "text",
-            "verbose_json",
-            "srt",
-            "vtt",
-            "diarized_json",
-        ].includes(responseFormat)
-    ) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Unsupported response_format for AssemblyAI model: ${responseFormat}. Supported: json, text, verbose_json, srt, vtt, diarized_json`,
-        });
-    }
+    assertTranscriptionResponseFormat(
+        responseFormat,
+        "AssemblyAI model",
+        ASSEMBLYAI_RESPONSE_FORMATS,
+    );
     if (
         temperature !== undefined &&
         (!Number.isFinite(temperature) || temperature < 0 || temperature > 1)
@@ -103,8 +104,8 @@ export async function transcribeWithAssemblyAi(opts: {
         });
     }
 
-    const speechModels = ASSEMBLYAI_MODELS[model];
-    if (!speechModels) {
+    const speechModel = ASSEMBLYAI_MODELS[model];
+    if (!speechModel) {
         throw new UpstreamError(400 as ContentfulStatusCode, {
             message: `Unsupported AssemblyAI model: ${model}`,
         });
@@ -118,7 +119,7 @@ export async function transcribeWithAssemblyAi(opts: {
     const uploadData = await uploadAssemblyAiFile(file, apiKey);
     const submitted = await submitAssemblyAiTranscript({
         uploadUrl: uploadData.upload_url,
-        speechModels,
+        speechModel,
         language,
         prompt,
         temperature,
@@ -132,13 +133,9 @@ export async function transcribeWithAssemblyAi(opts: {
         log,
     });
 
-    const modelUsed = getAssemblyAiRegistryModel(
-        transcript.speech_model_used,
-        model,
-    );
     const duration = getAssemblyAiDuration(transcript, log);
     const usageHeaders = buildUsageHeaders(
-        modelUsed,
+        model,
         createAudioSecondsUsage(duration),
     );
 
@@ -187,7 +184,7 @@ async function uploadAssemblyAiFile(
 
 async function submitAssemblyAiTranscript(opts: {
     uploadUrl: string;
-    speechModels: string[];
+    speechModel: string;
     language?: string;
     prompt?: string;
     temperature?: number;
@@ -197,7 +194,7 @@ async function submitAssemblyAiTranscript(opts: {
 }): Promise<{ id: string }> {
     const {
         uploadUrl,
-        speechModels,
+        speechModel,
         language,
         prompt,
         temperature,
@@ -207,7 +204,7 @@ async function submitAssemblyAiTranscript(opts: {
     } = opts;
     const transcriptRequest: Record<string, unknown> = {
         audio_url: uploadUrl,
-        speech_models: speechModels,
+        speech_models: [speechModel],
         punctuate: true,
         format_text: true,
     };
@@ -216,7 +213,7 @@ async function submitAssemblyAiTranscript(opts: {
     } else {
         transcriptRequest.language_detection = true;
     }
-    if (speechModels[0] === "universal-3-pro") {
+    if (speechModel === "universal-3-5-pro") {
         if (prompt) transcriptRequest.prompt = prompt;
         if (temperature !== undefined)
             transcriptRequest.temperature = temperature;
@@ -334,6 +331,9 @@ function buildAssemblyAiTranscriptResponse(opts: {
             language: transcript.language_code || undefined,
             duration,
             words: toNormalizedWords(transcript.words),
+            // AssemblyAI reports words and utterances, not segments;
+            // verbose_json falls back to one segment spanning the file.
+            segments: [],
             diarizedSegments: toNormalizedDiarizedSegments(
                 transcript.utterances,
             ),
@@ -356,20 +356,12 @@ function getAssemblyAiErrorStatus(message: string): 400 | 500 {
     const normalized = message.toLowerCase();
     if (
         normalized.includes("no spoken audio") ||
-        normalized.includes("does not appear to contain audio")
+        normalized.includes("does not appear to contain audio") ||
+        normalized.includes("transcoding failed")
     ) {
         return 400;
     }
     return 500;
-}
-
-function getAssemblyAiRegistryModel(
-    speechModelUsed: string | null | undefined,
-    fallbackModel: string,
-): string {
-    if (speechModelUsed === "universal-2") return "universal-2";
-    if (speechModelUsed === "universal-3-pro") return "universal-3-pro";
-    return fallbackModel;
 }
 
 function getAssemblyAiDuration(

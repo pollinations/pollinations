@@ -167,7 +167,7 @@ class PollinationsClient:
                 else:
                     error_text = await response.text()
                     if response.status == 402:
-                        logger.warning(f"generate_text: insufficient balance (402), bailing")
+                        logger.warning("generate_text: insufficient balance (402), bailing")
                         return None
                     logger.error(f"generate_text error: HTTP {response.status}: {error_text[:200]}")
                     return None
@@ -763,66 +763,6 @@ class PollinationsClient:
         logger.error(f"All {MAX_RETRIES} API attempts failed. Last error: {last_error}")
         return None
 
-    async def process_message(
-        self,
-        user_message: str,
-        discord_username: str,
-        thread_history: list[dict] | None = None,
-        image_urls: list[str] | None = None,
-        context_data: dict | None = None,
-    ) -> dict | None:
-        """Legacy method - wraps new tool-based processing."""
-        result = await self.process_with_tools(
-            user_message=user_message,
-            discord_username=discord_username,
-            thread_history=thread_history,
-            image_urls=image_urls,
-        )
-
-        # Convert to legacy format
-        if result.get("error"):
-            return None
-
-        return {"action": "respond", "message": result["response"]}
-
-    async def format_search_results(self, user_query: str, issues: list[dict], discord_username: str) -> dict | None:
-        """Format search results (now handled by AI after tool call)."""
-        if not issues:
-            return {
-                "action": "respond",
-                "message": "No issues found matching your search.",
-            }
-
-        # Format for display
-        issues_text = "\n".join(
-            [f"- **#{i['number']}**: {i['title']} ({i['state']}) - {i['url']}" for i in issues[:10]]
-        )
-
-        return {
-            "action": "respond",
-            "message": f"Found {len(issues)} issue(s):\n{issues_text}",
-        }
-
-    async def format_issue_detail(self, issue: dict, comments: list[dict] | None = None) -> dict | None:
-        """Format issue detail (now handled by AI after tool call)."""
-        state_emoji = "🟢" if issue["state"] == "open" else "🔴"
-
-        msg = f"{state_emoji} **#{issue['number']}: {issue['title']}**\n"
-        msg += f"State: {issue['state']} | Author: {issue['author']}\n"
-
-        if issue.get("labels"):
-            msg += f"Labels: {', '.join(issue['labels'])}\n"
-
-        msg += f"\n{issue.get('body', 'No description')}\n"
-        msg += f"\n{issue['url']}"
-
-        if comments:
-            msg += "\n\n**Recent comments:**\n"
-            for c in comments[:3]:
-                msg += f"- {c['author']}: {c['body']}\n"
-
-        return {"action": "respond", "message": msg}
-
     def get_topic_summary_fast(self, message: str) -> str:
         words = message.lower().split()
         stop_words = {
@@ -1003,4 +943,3 @@ async def web_search_handler(query: str, **kwargs) -> dict:
     except Exception as e:
         logger.error(f"Web search error: {e}")
         return {"error": f"Search failed: {str(e)}"}
-

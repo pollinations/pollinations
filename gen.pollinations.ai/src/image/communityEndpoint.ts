@@ -18,6 +18,7 @@ import {
 } from "@shared/registry/usage-headers.ts";
 import { decryptSecret } from "@shared/secret-encryption.ts";
 import type { ImageGenerationResult } from "./createAndReturnImages.ts";
+import type { VideoGenerationResult } from "./createAndReturnVideos.ts";
 import type { ImageParams } from "./params.ts";
 import {
     bufferToUint8Array,
@@ -256,7 +257,7 @@ export async function callCommunityVideoEndpoint(
         response = await fetch(upstreamUrl, {
             method: "POST",
             headers: {
-                ...authorizationHeaders(bearerToken),
+                Authorization: `Bearer ${normalizeCommunityEndpointBearerToken(bearerToken)}`,
                 "Content-Type": "application/json",
             },
             body,

@@ -28,24 +28,22 @@ async function challenge(body: unknown) {
 
 const usd = (accepts: { amount: string }) => Number(accepts.amount) / 1e6;
 
-test("advertises both upto and exact for the configured network", async () => {
+// `upto` is the only scheme this rail may advertise. `exact` cannot settle
+// below the signed amount, so it would charge the padded ceiling in full —
+// re-adding it silently reintroduces the pricing model the rail exists to
+// avoid, and nothing else in the suite would notice.
+test("advertises upto and only upto", async () => {
     const { accepts } = await challenge({
         model: "openai",
         max_tokens: 100,
         messages: [{ role: "user", content: "hi" }],
     });
 
-    expect(accepts.map((a: { scheme: string }) => a.scheme).sort()).toEqual([
-        "exact",
-        "upto",
-    ]);
-    for (const option of accepts) {
-        expect(option.network).toBe("eip155:84532");
-        expect(option.payTo).toBe(PAY_TO);
-    }
-    // Only `upto` can settle below the signed amount, so it must carry Permit2.
-    const upto = accepts.find((a: { scheme: string }) => a.scheme === "upto");
-    expect(upto.extra.assetTransferMethod).toBe("permit2");
+    expect(accepts.map((a: { scheme: string }) => a.scheme)).toEqual(["upto"]);
+    expect(accepts[0].network).toBe("eip155:84532");
+    expect(accepts[0].payTo).toBe(PAY_TO);
+    // Settling below the signed maximum is a Permit2 flow.
+    expect(accepts[0].extra.assetTransferMethod).toBe("permit2");
 });
 
 // Regression: the Hono adapter's getBody() is async. Passing the unawaited

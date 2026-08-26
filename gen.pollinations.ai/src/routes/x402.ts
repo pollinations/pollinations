@@ -4,10 +4,11 @@
  * An isolated payment rail: agents pay in USDC per request instead of holding a
  * Pollinations account and Pollen balance. Existing `/v1/*` auth is untouched.
  *
- * Two schemes are advertised on every route:
- *   - `exact` — flat ceiling price, no buyer setup. First-touch agents use this.
- *   - `upto`  — buyer signs the ceiling; only this scheme can settle below the
- *               signed amount. Needs a one-time Permit2 approval by the buyer.
+ * `upto` is the only scheme advertised. The buyer signs a ceiling and we settle
+ * the metered actual, which is the whole point of the rail: `exact` is a push
+ * payment that cannot settle below the signed amount, so it would charge a
+ * padded output cap in full. The cost is a one-time Permit2 approval by the
+ * buyer; the alternative is shipping a pricing model we consider wrong.
  *
  * The ceiling runs through `calculatePrice…`, the same engine that prices
  * Pollen, so this rail cannot drift from Pollen rates. Pollen is
@@ -16,10 +17,11 @@
  * ⚠️ METERED SETTLEMENT IS NOT ACTIVE YET. `@x402/core` reads a settlement
  * override from `transportContext.responseHeaders`, but neither Weft middleware
  * adapter passes `transportContext` to `processSettlement` — both call it with
- * two arguments. Until that is fixed upstream, an `upto` payment settles the
- * full advertised ceiling, exactly like `exact`. The override header below is
- * written in preparation and is currently inert; do not describe this rail as
- * "pay only for what you used" until settlement is verified on a testnet.
+ * two arguments. Until that is fixed upstream, a payment settles the full
+ * advertised ceiling — padding included — which is the behaviour choosing
+ * `upto` was meant to avoid. The override header below is written in
+ * preparation and is currently inert; do not describe this rail as "pay only
+ * for what you used" until settlement is verified on a testnet.
  */
 
 import { validator } from "@shared/middleware/validator.ts";
@@ -34,7 +36,6 @@ import {
     type HTTPRequestContext,
     SETTLEMENT_OVERRIDES_HEADER,
 } from "@x402/core/http";
-import { ExactEvmScheme } from "@x402/evm/exact/server";
 import { UptoEvmScheme } from "@x402/evm/upto/server";
 import { Hono, type MiddlewareHandler } from "hono";
 import type { Env } from "@/env.ts";
@@ -182,10 +183,13 @@ export function createX402Routes(env: CloudflareBindings) {
         paymentMiddleware(
             {
                 [`POST ${ROUTE}`]: {
-                    accepts: [
-                        { scheme: "upto", network, payTo, price },
-                        { scheme: "exact", network, payTo, price },
-                    ],
+                    // `upto` only, deliberately. `exact` is a push payment that
+                    // can never settle below the signed amount, so a ceiling
+                    // built from an output cap would be charged in full — the
+                    // estimate-and-keep-the-difference model this rail exists
+                    // to avoid. Offering it as a convenience on-ramp would
+                    // quietly lock those buyers out of metered settlement.
+                    accepts: [{ scheme: "upto", network, payTo, price }],
                     description:
                         "OpenAI-compatible chat completions, priced per token.",
                 },
@@ -198,10 +202,7 @@ export function createX402Routes(env: CloudflareBindings) {
                 name: "Pollinations Text Generation",
                 type: "api",
                 tags: ["ai", "llm", "inference"],
-                schemes: [
-                    { network, server: new UptoEvmScheme() },
-                    { network, server: new ExactEvmScheme() },
-                ],
+                schemes: [{ network, server: new UptoEvmScheme() }],
             },
         ),
     );

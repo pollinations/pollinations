@@ -5,7 +5,6 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
 import { checkQuestsForUser } from "../src/services/quest-checker.ts";
-import * as discordCommunity from "../src/services/quests/groups/discord-community.ts";
 import * as questIndex from "../src/services/quests/index.ts";
 import type { QuestGroup } from "../src/services/quests/types.ts";
 import { test } from "./fixtures.ts";
@@ -22,25 +21,6 @@ const QUEST_REWARDS_LAUNCH_CUTOFF_MILLIS = Date.parse(
 const BEFORE_QUEST_REWARDS_LAUNCH_MILLIS =
     QUEST_REWARDS_LAUNCH_CUTOFF_MILLIS - 1;
 const AFTER_QUEST_REWARDS_LAUNCH_DATE = new Date("2026-06-22T00:00:00.000Z");
-
-test("omits the Discord quest when its configuration is incomplete", async () => {
-    const ctx = {
-        db: drizzle(env.DB, { schema }),
-        env: {
-            ...env,
-            DISCORD_BOT_TOKEN: "",
-        } as unknown as CloudflareBindings,
-    };
-
-    await expect(discordCommunity.listQuestCards(ctx)).resolves.toEqual([]);
-    await expect(
-        discordCommunity.evaluateUser(ctx, {
-            id: "unused",
-            githubId: null,
-            githubUsername: null,
-        }),
-    ).resolves.toEqual({ proposals: [] });
-});
 
 // Build an issue body the deriver can parse: a "### Reward" heading (when a
 // reward is given) plus a short Goal section for the description.
@@ -293,7 +273,7 @@ test("catalog returns quest definitions without ledger stats", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v29");
+    await env.KV.delete("quests:catalog:v26");
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
@@ -366,11 +346,6 @@ test("catalog returns quest definitions without ledger stats", async ({
         rewardAmount: 0.25,
         balanceBucket: "tier",
     });
-    expectStableCatalogFields("join_discord", {
-        state: "available",
-        rewardAmount: 1,
-        balanceBucket: "tier",
-    });
     expectStableCatalogFields("app_active", {
         state: "available",
         rewardAmount: 7,
@@ -417,7 +392,7 @@ test("catalog includes coming-soon GitHub issue placeholder", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v29");
+    await env.KV.delete("quests:catalog:v26");
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
@@ -455,7 +430,7 @@ test("catalog excludes closed GitHub quest issues without merged PRs", async ({
     sessionToken: _sessionToken,
 }) => {
     await mocks.enable("github");
-    await env.KV.delete("quests:catalog:v29");
+    await env.KV.delete("quests:catalog:v26");
 
     seedQuestIssue(mocks.github.state, {
         issueNumber: 801,
@@ -501,7 +476,7 @@ test("account quests merge earned rewards into completed status", async ({
 }) => {
     const db = drizzle(env.DB, { schema });
     await mocks.enable("github", "tinybird");
-    await env.KV.delete("quests:catalog:v29");
+    await env.KV.delete("quests:catalog:v26");
     const user = await getOnlyUser();
 
     const createKeyResponse = await SELF.fetch(
@@ -1750,5 +1725,214 @@ test("account quest history accepts account usage permission", async ({
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
         rewards: [],
+    });
+});
+
+test("quest leaderboard returns ranked contributors by total pollen", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    await mocks.enable("github", "tinybird");
+    const db = drizzle(env.DB, { schema });
+    await env.KV.delete("quests:catalog:v26");
+    await env.KV.delete("quests:leaderboard:v1");
+
+    const user = await getOnlyUser();
+    const now = new Date();
+
+    // Give the fixture user a GitHub username
+    await db
+        .update(schema.user)
+        .set({ githubUsername: "fixture-user" })
+        .where(eq(schema.user.id, user.id));
+
+    // Create two additional users with GitHub usernames
+    const extraUsers = await db
+        .insert(schema.user)
+        .values([
+            {
+                id: "leaderboard-user-2",
+                name: "Second Place",
+                email: "user2@example.com",
+                githubId: 2_000_002,
+                githubUsername: "second-placer",
+                tier: "spore",
+                createdAt: now,
+                updatedAt: now,
+            },
+            {
+                id: "leaderboard-user-3",
+                name: "Third Place",
+                email: "user3@example.com",
+                githubId: 2_000_003,
+                githubUsername: "third-placer",
+                tier: "spore",
+                createdAt: now,
+                updatedAt: now,
+            },
+        ])
+        .returning();
+
+    // Record quest rewards: user 1 gets 15 pollen across 3 quests, user 2 gets 10 across 2, user 3 gets 5 across 1
+    await recordRewards(db, [
+        {
+            idempotencyKey: "leaderboard:u1:quest:a",
+            userId: user.id,
+            questId: "github:issue:1001",
+            title: "Quest A",
+            amount: 5,
+            bucket: "tier",
+        },
+        {
+            idempotencyKey: "leaderboard:u1:quest:b",
+            userId: user.id,
+            questId: "github:issue:1002",
+            title: "Quest B",
+            amount: 5,
+            bucket: "tier",
+        },
+        {
+            idempotencyKey: "leaderboard:u1:quest:c",
+            userId: user.id,
+            questId: "github:issue:1003",
+            title: "Quest C",
+            amount: 5,
+            bucket: "tier",
+        },
+        {
+            idempotencyKey: "leaderboard:u2:quest:a",
+            userId: extraUsers[0].id,
+            questId: "github:issue:1004",
+            title: "Quest D",
+            amount: 5,
+            bucket: "tier",
+        },
+        {
+            idempotencyKey: "leaderboard:u2:quest:b",
+            userId: extraUsers[0].id,
+            questId: "github:issue:1005",
+            title: "Quest E",
+            amount: 5,
+            bucket: "tier",
+        },
+        {
+            idempotencyKey: "leaderboard:u3:quest:a",
+            userId: extraUsers[1].id,
+            questId: "github:issue:1006",
+            title: "Quest F",
+            amount: 5,
+            bucket: "tier",
+        },
+    ]);
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/quests/leaderboard",
+    );
+    expect(response.status).toBe(200);
+    const payload = (await response.json()) as {
+        leaderboard: Array<{
+            githubUsername: string;
+            totalPollen: number;
+            questCount: number;
+        }>;
+    };
+
+    expect(payload.leaderboard).toHaveLength(3);
+    expect(payload.leaderboard[0]).toMatchObject({
+        githubUsername: "fixture-user",
+        totalPollen: 15,
+        questCount: 3,
+    });
+    expect(payload.leaderboard[1]).toMatchObject({
+        githubUsername: "second-placer",
+        totalPollen: 10,
+        questCount: 2,
+    });
+    expect(payload.leaderboard[2]).toMatchObject({
+        githubUsername: "third-placer",
+        totalPollen: 5,
+        questCount: 1,
+    });
+});
+
+test("quest leaderboard excludes non-quest rewards and users without github username", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    await mocks.enable("github", "tinybird");
+    const db = drizzle(env.DB, { schema });
+    await env.KV.delete("quests:leaderboard:v1");
+
+    const user = await getOnlyUser();
+    const now = new Date();
+
+    await db
+        .update(schema.user)
+        .set({ githubUsername: "quest-user" })
+        .where(eq(schema.user.id, user.id));
+
+    // Create a user without a GitHub username (should be excluded from join)
+    const noGithubUser = await db
+        .insert(schema.user)
+        .values({
+            id: "no-github-user",
+            name: "No Github",
+            email: "nogithub@example.com",
+            githubId: 3_000_001,
+            tier: "spore",
+            createdAt: now,
+            updatedAt: now,
+        })
+        .returning();
+
+    await recordRewards(db, [
+        // A quest reward for the user with GitHub username
+        {
+            idempotencyKey: "leaderboard-exclude:quest",
+            userId: user.id,
+            questId: "github:issue:2001",
+            title: "Real Quest",
+            amount: 5,
+            bucket: "tier",
+        },
+        // A one-off reward (null questId) — should be excluded
+        {
+            idempotencyKey: "leaderboard-exclude:oneoff",
+            userId: user.id,
+            questId: null,
+            title: "One-off reward",
+            amount: 10,
+            bucket: "tier",
+        },
+        // A quest reward for a user without GitHub username — should be excluded by inner join
+        {
+            idempotencyKey: "leaderboard-exclude:nogithub",
+            userId: noGithubUser[0].id,
+            questId: "github:issue:2002",
+            title: "No Github Quest",
+            amount: 5,
+            bucket: "tier",
+        },
+    ]);
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/quests/leaderboard",
+    );
+    expect(response.status).toBe(200);
+    const payload = (await response.json()) as {
+        leaderboard: Array<{
+            githubUsername: string;
+            totalPollen: number;
+            questCount: number;
+        }>;
+    };
+
+    // Only the user with GitHub username and a quest reward should appear,
+    // and only the quest reward (5 pollen), not the one-off (10 pollen).
+    expect(payload.leaderboard).toHaveLength(1);
+    expect(payload.leaderboard[0]).toMatchObject({
+        githubUsername: "quest-user",
+        totalPollen: 5,
+        questCount: 1,
     });
 });

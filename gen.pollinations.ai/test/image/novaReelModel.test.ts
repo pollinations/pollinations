@@ -112,6 +112,9 @@ describe("Nova Reel frame mapping", () => {
                 reasoning: "balanced",
                 audio: false,
                 duration: 6,
+                referenceImages: [],
+                referenceVideos: [],
+                referenceAudios: [],
             } satisfies ImageParams,
             "test-request",
         );

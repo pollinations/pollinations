@@ -68,6 +68,9 @@ const baseParams: ImageParams = {
     reasoning: "balanced",
     audio: false,
     duration: 0,
+    referenceImages: [],
+    referenceVideos: [],
+    referenceAudios: [],
 };
 
 beforeEach(() => {

@@ -75,6 +75,9 @@ interface SeedanceV2Input {
     seed?: number;
     image?: string;
     last_frame_image?: string;
+    reference_images?: string[];
+    reference_videos?: string[];
+    reference_audios?: string[];
 }
 
 export async function callSeedanceV2API(
@@ -113,11 +116,38 @@ export async function callSeedanceV2API(
     if (images.length >= 1) input.image = await toDataUri(images[0]);
     if (images.length >= 2) input.last_frame_image = await toDataUri(images[1]);
 
+    // Reference media inputs (distinct from start/end frames).
+    // These are passed as data URIs to the Replicate API.
+    if (safeParams.referenceImages?.length) {
+        input.reference_images = await Promise.all(
+            safeParams.referenceImages.map(toDataUri),
+        );
+    }
+    if (safeParams.referenceVideos?.length) {
+        input.reference_videos = await Promise.all(
+            safeParams.referenceVideos.map(toDataUri),
+        );
+    }
+    if (safeParams.referenceAudios?.length) {
+        input.reference_audios = await Promise.all(
+            safeParams.referenceAudios.map(toDataUri),
+        );
+    }
+
     logOps(`${definition.title} input:`, {
         ...input,
         prompt: prompt.slice(0, 80),
         image: input.image ? "[url]" : undefined,
         last_frame_image: input.last_frame_image ? "[url]" : undefined,
+        reference_images: input.reference_images
+            ? `${input.reference_images.length} refs`
+            : undefined,
+        reference_videos: input.reference_videos
+            ? `${input.reference_videos.length} refs`
+            : undefined,
+        reference_audios: input.reference_audios
+            ? `${input.reference_audios.length} refs`
+            : undefined,
     });
 
     let videoUrl: string;

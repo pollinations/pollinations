@@ -46,6 +46,9 @@ function params(model: ImageModelName, frameCount: number): ImageParams {
         transparent: false,
         reasoning: "balanced",
         audio: false,
+        referenceImages: [],
+        referenceVideos: [],
+        referenceAudios: [],
     };
 }
 

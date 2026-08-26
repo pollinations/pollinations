@@ -29,6 +29,9 @@ function makeParams(overrides: Partial<ImageParams> = {}): ImageParams {
         transparent: false,
         reasoning: "balanced",
         audio: false,
+        referenceImages: [],
+        referenceVideos: [],
+        referenceAudios: [],
         ...overrides,
     };
 }

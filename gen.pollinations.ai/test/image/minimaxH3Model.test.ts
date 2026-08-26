@@ -23,6 +23,9 @@ const baseParams: ImageParams = {
     audio: false,
     duration: 5,
     aspectRatio: "16:9",
+    referenceImages: [],
+    referenceVideos: [],
+    referenceAudios: [],
 };
 
 type ProviderRequest = {

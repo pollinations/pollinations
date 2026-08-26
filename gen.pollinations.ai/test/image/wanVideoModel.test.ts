@@ -35,6 +35,9 @@ const baseParams: ImageParams = {
     reasoning: "balanced",
     audio: true,
     duration: 5,
+    referenceImages: [],
+    referenceVideos: [],
+    referenceAudios: [],
 };
 
 /**

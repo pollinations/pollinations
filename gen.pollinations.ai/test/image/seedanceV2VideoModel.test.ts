@@ -24,6 +24,9 @@ const baseParams: ImageParams = {
     audio: true,
     duration: 4,
     aspectRatio: "4:3",
+    referenceImages: [],
+    referenceVideos: [],
+    referenceAudios: [],
 };
 
 afterEach(() => {
@@ -115,5 +118,106 @@ describe("Seedance 2.0 family via Replicate", () => {
                 aspectRatio: "9:21",
             }),
         ).rejects.toThrow("not supported by Seedance 2.0 Mini");
+    });
+
+    it("passes reference images to Replicate API", async () => {
+        syncImageEnv(
+            { REPLICATE_API_TOKEN: "replicate-test-key" } as CloudflareBindings,
+            ["REPLICATE_API_TOKEN"],
+        );
+        const refUrls = [
+            "https://example.com/ref1.png",
+            "https://example.com/ref2.png",
+            "https://example.com/ref3.png",
+        ];
+        const inputs: Record<string, unknown>[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
+            const href = typeof url === "string" ? url : url.toString();
+            if (refUrls.includes(href) || IMAGE_URLS.includes(href)) {
+                return new Response(PNG_BYTES, {
+                    headers: { "Content-Type": "image/png" },
+                });
+            }
+            if (href.includes("replicate.com")) {
+                inputs.push(JSON.parse(init?.body as string).input);
+                return new Response(
+                    JSON.stringify({
+                        id: "pred-ref-img",
+                        status: "succeeded",
+                        output: VIDEO_URL,
+                        metrics: { video_output_duration_seconds: 4 },
+                    }),
+                    { status: 201 },
+                );
+            }
+            if (href === VIDEO_URL) {
+                return new Response(new Uint8Array([0, 0, 0, 24]), {
+                    headers: { "Content-Type": "video/mp4" },
+                });
+            }
+            return new Response("unexpected URL", { status: 404 });
+        });
+
+        await callSeedanceV2API("a cat", {
+            ...baseParams,
+            image: [],
+            referenceImages: refUrls,
+        });
+
+        expect(inputs[0].reference_images).toHaveLength(3);
+        expect((inputs[0].reference_images as string[])[0]).toMatch(
+            /^data:image\/png;base64,/,
+        );
+        expect(inputs[0].image).toBeUndefined();
+    });
+
+    it("passes reference videos and audios to Replicate API", async () => {
+        syncImageEnv(
+            { REPLICATE_API_TOKEN: "replicate-test-key" } as CloudflareBindings,
+            ["REPLICATE_API_TOKEN"],
+        );
+        const refVideoUrls = ["https://example.com/ref-vid1.mp4"];
+        const refAudioUrls = ["https://example.com/ref-aud1.mp3"];
+        const inputs: Record<string, unknown>[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
+            const href = typeof url === "string" ? url : url.toString();
+            if (
+                refVideoUrls.includes(href) ||
+                refAudioUrls.includes(href) ||
+                IMAGE_URLS.includes(href)
+            ) {
+                return new Response(new Uint8Array([0, 0, 0, 24]), {
+                    headers: { "Content-Type": "video/mp4" },
+                });
+            }
+            if (href.includes("replicate.com")) {
+                inputs.push(JSON.parse(init?.body as string).input);
+                return new Response(
+                    JSON.stringify({
+                        id: "pred-ref-vid",
+                        status: "succeeded",
+                        output: VIDEO_URL,
+                        metrics: { video_output_duration_seconds: 4 },
+                    }),
+                    { status: 201 },
+                );
+            }
+            if (href === VIDEO_URL) {
+                return new Response(new Uint8Array([0, 0, 0, 24]), {
+                    headers: { "Content-Type": "video/mp4" },
+                });
+            }
+            return new Response("unexpected URL", { status: 404 });
+        });
+
+        await callSeedanceV2API("a cat dancing", {
+            ...baseParams,
+            image: [],
+            referenceVideos: refVideoUrls,
+            referenceAudios: refAudioUrls,
+        });
+
+        expect(inputs[0].reference_videos).toHaveLength(1);
+        expect(inputs[0].reference_audios).toHaveLength(1);
     });
 });

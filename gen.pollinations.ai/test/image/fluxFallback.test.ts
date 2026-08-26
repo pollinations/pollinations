@@ -48,6 +48,9 @@ const fluxParams: ImageParams = {
     reasoning: "balanced",
     audio: false,
     duration: 0,
+    referenceImages: [],
+    referenceVideos: [],
+    referenceAudios: [],
 };
 
 // Records fetched URLs; per-URL responder decides what each backend returns.

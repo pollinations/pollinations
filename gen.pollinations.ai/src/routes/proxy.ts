@@ -843,6 +843,11 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "You can pass reference images via the `image` parameter: `image[0]` is the start frame, and `image[1]` is the end frame for models with `end_frame` in `video_capabilities`.",
                 "",
+                "Seedance 2.0 family and 2.5 support reference media inputs distinct from start/end frames:",
+                "- `referenceImages`: Reference images for character/style/scene guidance (pipe-separated URLs).",
+                "- `referenceVideos`: Reference videos for motion/style/editing guidance (pipe-separated URLs).",
+                "- `referenceAudios`: Reference audios for audio-driven/lip-sync guidance (pipe-separated URLs).",
+                "",
                 "Browse all available models and their `video_capabilities` at [`/image/models`](https://gen.pollinations.ai/image/models).",
             ].join("\n"),
             responses: {

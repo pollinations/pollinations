@@ -26,6 +26,9 @@ const baseParams: ImageParams = {
     audio: true,
     duration: 4,
     aspectRatio: "4:3",
+    referenceImages: [],
+    referenceVideos: [],
+    referenceAudios: [],
 };
 
 afterEach(() => {

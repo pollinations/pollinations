@@ -64,6 +64,9 @@ describe("Seedance Pro via Replicate", () => {
             reasoning: "balanced",
             audio: false,
             duration: 5,
+            referenceImages: [],
+            referenceVideos: [],
+            referenceAudios: [],
         } satisfies ImageParams);
 
         expect(inputs).toHaveLength(1);

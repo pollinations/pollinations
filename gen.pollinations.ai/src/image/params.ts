@@ -102,6 +102,38 @@ export const ImageParamsSchema = z
             ])
             .optional(),
         audio: sanitizedBoolean.catch(true), // generateAudio defaults to true
+        // Reference media inputs for video models (distinct from start/end frames).
+        // Pipe-separated URLs: "url1|url2|url3"
+        referenceImages: z
+            .union([z.array(z.string()), z.string(), z.null(), z.undefined()])
+            .transform((value?: string[] | string | null) => {
+                if (!value) return [];
+                if (Array.isArray(value)) return value;
+                return value.includes("|")
+                    ? value.split("|")
+                    : value.split(",");
+            })
+            .catch([]),
+        referenceVideos: z
+            .union([z.array(z.string()), z.string(), z.null(), z.undefined()])
+            .transform((value?: string[] | string | null) => {
+                if (!value) return [];
+                if (Array.isArray(value)) return value;
+                return value.includes("|")
+                    ? value.split("|")
+                    : value.split(",");
+            })
+            .catch([]),
+        referenceAudios: z
+            .union([z.array(z.string()), z.string(), z.null(), z.undefined()])
+            .transform((value?: string[] | string | null) => {
+                if (!value) return [];
+                if (Array.isArray(value)) return value;
+                return value.includes("|")
+                    ? value.split("|")
+                    : value.split(",");
+            })
+            .catch([]),
     })
     .superRefine((data, ctx) => {
         if (data.resolution) {
@@ -158,6 +190,67 @@ export const ImageParamsSchema = z
                 message:
                     "grok-imagine-image-2.0 supports low or medium quality.",
             });
+        }
+        // Reference media inputs: only supported on Seedance 2.0 family and 2.5.
+        const hasReferences =
+            data.referenceImages.length > 0 ||
+            data.referenceVideos.length > 0 ||
+            data.referenceAudios.length > 0;
+        const seedanceFamily = [
+            "seedance-2.0",
+            "seedance-2.0-mini",
+            "seedance-2.0-fast",
+            "seedance-2.5",
+        ];
+        if (hasReferences && !seedanceFamily.includes(data.model)) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["referenceImages"],
+                message: `Reference media inputs are only supported by Seedance 2.0 family and Seedance 2.5 models.`,
+            });
+        }
+        // Cannot combine reference media with start/end frame control (image param).
+        if (hasReferences && data.image.length > 0) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["referenceImages"],
+                message:
+                    "Cannot combine reference media inputs with start/end frame images (image parameter). Use either reference media or start/end frames, not both.",
+            });
+        }
+        // Validate per-model reference limits.
+        if (data.referenceImages.length > 0) {
+            const def = IMAGE_SERVICES[data.model] as ModelDefinition;
+            const maxRef = def.maxReferenceImages ?? 0;
+            if (data.referenceImages.length > maxRef) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["referenceImages"],
+                    message: `${data.model} supports up to ${maxRef} reference images, got ${data.referenceImages.length}.`,
+                });
+            }
+        }
+        if (data.referenceVideos.length > 0) {
+            const def = IMAGE_SERVICES[data.model] as ModelDefinition;
+            const maxRef = def.maxReferenceVideos ?? 0;
+            if (data.referenceVideos.length > maxRef) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["referenceVideos"],
+                    message: `${data.model} supports up to ${maxRef} reference videos, got ${data.referenceVideos.length}.`,
+                });
+            }
+        }
+        if (data.referenceAudios.length > 0) {
+            const def = IMAGE_SERVICES[data.model] as ModelDefinition;
+            const maxRef = def.maxReferenceAudios ?? 0;
+            if (data.referenceAudios.length > maxRef) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["referenceAudios"],
+                    message: `${data.model} supports up to ${maxRef} reference audios, got ${data.referenceAudios.length}.`,
+                });
+            }
         }
     })
     .transform((data) => {

@@ -21,6 +21,9 @@ const baseParams: ImageParams = {
     reasoning: "balanced",
     audio: true,
     duration: 4,
+    referenceImages: [],
+    referenceVideos: [],
+    referenceAudios: [],
 };
 
 function mockVeoFetch(requests: Array<Record<string, unknown>>) {

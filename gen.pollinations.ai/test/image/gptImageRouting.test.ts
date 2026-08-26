@@ -33,6 +33,9 @@ const params: ImageParams = {
     transparent: false,
     reasoning: "balanced",
     audio: false,
+    referenceImages: [],
+    referenceVideos: [],
+    referenceAudios: [],
 };
 
 const userInfo: AuthResult = {

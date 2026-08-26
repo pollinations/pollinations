@@ -25,6 +25,9 @@ const baseParams: ImageParams = {
     reasoning: "balanced",
     audio: false,
     duration: 5,
+    referenceImages: [],
+    referenceVideos: [],
+    referenceAudios: [],
 };
 
 function setOpenRouterEnv() {

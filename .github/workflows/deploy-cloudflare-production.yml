@@ -211,7 +211,7 @@ jobs:
           set -euo pipefail
           secrets_file="$RUNNER_TEMP/discord-secrets.json"
           trap 'rm -f "$secrets_file"' EXIT
-          sops -d enter.pollinations.ai/secrets/prod.vars.json | jq '. {DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, DISCORD_BOT_TOKEN}' > "$secrets_file"
+          sops -d enter.pollinations.ai/secrets/prod.vars.json | jq '{DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, DISCORD_BOT_TOKEN}' > "$secrets_file"
           test "$(jq 'length' "$secrets_file")" -eq 3
           npx wrangler secret bulk "$secrets_file" --env production
 

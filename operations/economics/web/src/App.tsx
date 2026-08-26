@@ -65,8 +65,6 @@ import { ProviderCloseTab } from "./views/ProviderCloseTab";
 import { RunwayTab } from "./views/RunwayTab";
 import { ManagedInferenceTab, VendorsTab } from "./views/UnitEconomicsTab";
 
-type Tab = LedgerTab;
-type EconomicsSection = "insights" | "raw";
 type InsightTab =
     | "close"
     | "runway"
@@ -75,6 +73,7 @@ type InsightTab =
     | "community"
     | "balances"
     | "gpu";
+type ActiveView = InsightTab | LedgerTab;
 
 const logoMask: CSSProperties = {
     WebkitMask: `url(${logoUrl}) center / contain no-repeat`,
@@ -88,12 +87,7 @@ type DrawerItem<Id extends string> = {
     icon: ComponentType<{ className?: string }>;
 };
 
-const INSIGHT_TABS: {
-    id: InsightTab;
-    label: string;
-    note: string;
-    icon: ComponentType<{ className?: string }>;
-}[] = [
+const INSIGHT_TABS = [
     {
         id: "runway",
         label: "Runway",
@@ -126,12 +120,7 @@ const INSIGHT_TABS: {
     },
 ] satisfies readonly DrawerItem<InsightTab>[];
 
-const LEDGER_INSIGHT_TABS: {
-    id: InsightTab;
-    label: string;
-    note: string;
-    icon: ComponentType<{ className?: string }>;
-}[] = [
+const LEDGER_INSIGHT_TABS = [
     {
         id: "close",
         label: "Close",
@@ -153,15 +142,13 @@ const ALL_INSIGHT_TABS = [
 
 // note + pipe surface as a hover tooltip on the tab button — the tab body
 // itself stays table-only.
-const TABS: {
-    id: Tab;
-    label: string;
+type LedgerDrawerItem = DrawerItem<LedgerTab> & {
     codes: ProvenanceCode[];
     pipe: string;
-    note: string;
-    icon: ComponentType<{ className?: string }>;
     rows: (data: Data) => number;
-}[] = [
+};
+
+const TABS = [
     {
         id: "op-transactions",
         label: "Bank",
@@ -197,7 +184,11 @@ const TABS: {
             (data.opPollen ?? []).filter((row) => row.month >= WINDOW_START)
                 .length,
     },
-];
+] satisfies readonly LedgerDrawerItem[];
+
+function isLedgerTab(value: ActiveView): value is LedgerTab {
+    return TABS.some((item) => item.id === value);
+}
 
 function codesLabel(codes: readonly ProvenanceCode[]) {
     return codes.length ? `${codes.join(", ")} · ` : "";
@@ -246,19 +237,13 @@ function DrawerGroup({
 }
 
 function EconomicsNav({
+    activeView,
     data,
-    insightTab,
-    section,
-    tab,
-    onInsightTabChange,
-    onRawTabChange,
+    onViewChange,
 }: {
+    activeView: ActiveView;
     data: Data | null;
-    insightTab: InsightTab;
-    section: EconomicsSection;
-    tab: Tab;
-    onInsightTabChange: (value: InsightTab) => void;
-    onRawTabChange: (value: Tab) => void;
+    onViewChange: (value: ActiveView) => void;
 }) {
     const insightItem = (item: DrawerItem<InsightTab>) => (
         <NavItem
@@ -266,9 +251,9 @@ function EconomicsNav({
             type="button"
             data-theme="accent"
             icon={item.icon}
-            active={section === "insights" && insightTab === item.id}
+            active={activeView === item.id}
             title={item.note}
-            onClick={() => onInsightTabChange(item.id)}
+            onClick={() => onViewChange(item.id)}
         >
             {item.label}
         </NavItem>
@@ -283,9 +268,9 @@ function EconomicsNav({
                 type="button"
                 data-theme="accent"
                 icon={item.icon}
-                active={section === "raw" && tab === item.id}
+                active={activeView === item.id}
                 title={title}
-                onClick={() => onRawTabChange(item.id)}
+                onClick={() => onViewChange(item.id)}
             >
                 <span className="min-w-0 flex-1 truncate">{item.label}</span>
                 {count == null ? null : (
@@ -316,21 +301,15 @@ function EconomicsNav({
 }
 
 function EconomicsDrawer({
+    activeView,
     data,
     footer,
-    insightTab,
-    section,
-    tab,
-    onInsightTabChange,
-    onRawTabChange,
+    onViewChange,
 }: {
+    activeView: ActiveView;
     data: Data | null;
     footer: ReactNode;
-    insightTab: InsightTab;
-    section: EconomicsSection;
-    tab: Tab;
-    onInsightTabChange: (value: InsightTab) => void;
-    onRawTabChange: (value: Tab) => void;
+    onViewChange: (value: ActiveView) => void;
 }) {
     return (
         <aside
@@ -343,12 +322,9 @@ function EconomicsDrawer({
             </div>
             <ScrollArea className="-mr-2 min-h-0 flex-1 pt-3">
                 <EconomicsNav
+                    activeView={activeView}
                     data={data}
-                    section={section}
-                    tab={tab}
-                    insightTab={insightTab}
-                    onRawTabChange={onRawTabChange}
-                    onInsightTabChange={onInsightTabChange}
+                    onViewChange={onViewChange}
                 />
             </ScrollArea>
             <div className="flex shrink-0 flex-col gap-2 border-t border-theme-text-strong/10 px-1 pt-4">
@@ -359,23 +335,17 @@ function EconomicsDrawer({
 }
 
 function EconomicsShell({
+    activeView,
     children,
     data,
     footer,
-    insightTab,
-    section,
-    tab,
-    onInsightTabChange,
-    onRawTabChange,
+    onViewChange,
 }: {
+    activeView: ActiveView;
     children: ReactNode;
     data: Data | null;
     footer: ReactNode;
-    insightTab: InsightTab;
-    section: EconomicsSection;
-    tab: Tab;
-    onInsightTabChange: (value: InsightTab) => void;
-    onRawTabChange: (value: Tab) => void;
+    onViewChange: (value: ActiveView) => void;
 }) {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -385,24 +355,17 @@ function EconomicsShell({
         menuButtonRef.current?.focus({ preventScroll: true });
     };
 
-    const handleInsightTabChange = (value: InsightTab) => {
-        onInsightTabChange(value);
-        closeDrawer();
-    };
-    const handleRawTabChange = (value: Tab) => {
-        onRawTabChange(value);
+    const handleViewChange = (value: ActiveView) => {
+        onViewChange(value);
         closeDrawer();
     };
 
     const drawer = (
         <EconomicsDrawer
+            activeView={activeView}
             data={data}
             footer={footer}
-            section={section}
-            tab={tab}
-            insightTab={insightTab}
-            onRawTabChange={handleRawTabChange}
-            onInsightTabChange={handleInsightTabChange}
+            onViewChange={handleViewChange}
         />
     );
 
@@ -479,30 +442,20 @@ function EconomicsBrand({ size }: { size: "desktop" | "drawer" }) {
     );
 }
 
-function activeViewTitle(
-    section: EconomicsSection,
-    tab: Tab,
-    insightTab: InsightTab,
-) {
-    if (section === "insights") {
-        return (
-            ALL_INSIGHT_TABS.find((item) => item.id === insightTab)?.label ?? ""
-        );
+function activeViewTitle(activeView: ActiveView) {
+    if (isLedgerTab(activeView)) {
+        return TABS.find((item) => item.id === activeView)?.label ?? "";
     }
-    return TABS.find((item) => item.id === tab)?.label ?? "";
+    return ALL_INSIGHT_TABS.find((item) => item.id === activeView)?.label ?? "";
 }
 
 function InfoLine({ children }: { children: ReactNode }) {
     return <span className="block">• {children}</span>;
 }
 
-function viewInfoContent(
-    section: EconomicsSection,
-    tab: Tab,
-    insightTab: InsightTab,
-) {
-    if (section === "raw") {
-        const active = TABS.find((item) => item.id === tab);
+function viewInfoContent(activeView: ActiveView) {
+    if (isLedgerTab(activeView)) {
+        const active = TABS.find((item) => item.id === activeView);
         if (!active) return null;
         return (
             <span className="block max-w-72">
@@ -515,7 +468,7 @@ function viewInfoContent(
         );
     }
 
-    if (insightTab === "vendors") {
+    if (activeView === "vendors") {
         return (
             <span className="block max-w-72">
                 <strong>Vendors</strong>
@@ -539,7 +492,7 @@ function viewInfoContent(
             </span>
         );
     }
-    if (insightTab === "inference") {
+    if (activeView === "inference") {
         return (
             <span className="block max-w-72">
                 <strong>Inference</strong>
@@ -565,7 +518,7 @@ function viewInfoContent(
             </span>
         );
     }
-    if (insightTab === "community") {
+    if (activeView === "community") {
         return (
             <span className="block max-w-72">
                 <strong>Community Models</strong>
@@ -585,7 +538,7 @@ function viewInfoContent(
             </span>
         );
     }
-    if (insightTab === "close") {
+    if (activeView === "close") {
         return (
             <span className="block max-w-72">
                 <strong>Close</strong>
@@ -606,7 +559,7 @@ function viewInfoContent(
             </span>
         );
     }
-    if (insightTab === "balances") {
+    if (activeView === "balances") {
         return (
             <span className="block max-w-72">
                 <strong>Balances</strong>
@@ -626,7 +579,7 @@ function viewInfoContent(
             </span>
         );
     }
-    if (insightTab === "runway") {
+    if (activeView === "runway") {
         return (
             <span className="block max-w-72">
                 <strong>Runway</strong>
@@ -650,7 +603,7 @@ function viewInfoContent(
             </span>
         );
     }
-    if (insightTab === "gpu") {
+    if (activeView === "gpu") {
         return (
             <span className="block max-w-72">
                 <strong>GPU Economics</strong>
@@ -743,16 +696,12 @@ export default function App() {
     const [authError, setAuthError] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [data, setData] = useState<Data | null>(null);
-    const [tab, setTab] = useState<Tab>("op-transactions");
-    const [section, setSection] = useState<EconomicsSection>("insights");
-    const [insightTab, setInsightTab] = useState<InsightTab>("runway");
-    const [selectedYear, setSelectedYear] = useState("");
+    const [activeView, setActiveView] = useState<ActiveView>("runway");
     const [selectedMonth, setSelectedMonth] = useState("");
     const [runwayYear, setRunwayYear] = useState("2026");
     const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     const [attempt, setAttempt] = useState(0);
-    const monthFilterInitialized = useRef(false);
     const ready = fixtures || (sessionChecked && authenticated);
 
     useEffect(() => {
@@ -816,11 +765,17 @@ export default function App() {
 
     const months = useMemo(() => (data ? collectMonths(data) : []), [data]);
     const reportingYears = useMemo(() => yearsOf(months), [months]);
-    const monthFilter = selectedMonth;
+    const monthFilter = months.includes(selectedMonth)
+        ? selectedMonth
+        : (latestClosedMonth(months) ?? "");
+    const selectedYear = monthFilter.slice(0, 4) || reportingYears.at(-1) || "";
+    const activeLedgerTab = isLedgerTab(activeView)
+        ? activeView
+        : "op-transactions";
     const rawFacets = useMemo(
         () =>
             data
-                ? ledgerFacets(data, tab, {
+                ? ledgerFacets(data, activeLedgerTab, {
                       month: monthFilter,
                       vendors: selectedVendors,
                       categories: selectedCategories,
@@ -829,40 +784,26 @@ export default function App() {
                       vendors: [] as FacetOption[],
                       categories: [] as FacetOption[],
                   },
-        [data, monthFilter, selectedCategories, selectedVendors, tab],
+        [
+            activeLedgerTab,
+            data,
+            monthFilter,
+            selectedCategories,
+            selectedVendors,
+        ],
     );
-    const showVendorFilter = section === "raw" && rawFacets.vendors.length > 0;
+    const showVendorFilter =
+        isLedgerTab(activeView) && rawFacets.vendors.length > 0;
     const showPeriodFilter =
-        (section === "insights" &&
-            insightTab !== "balances" &&
-            insightTab !== "runway") ||
-        section === "raw";
-    const showRunwayYearFilter =
-        section === "insights" && insightTab === "runway";
-    const showTopMonthFilter =
-        showPeriodFilter && !(section === "insights" && insightTab === "close");
-    const showCategoryFilter = section === "raw" && tab === "op-transactions";
+        activeView !== "balances" && activeView !== "runway";
+    const showRunwayYearFilter = activeView === "runway";
+    const showTopMonthFilter = showPeriodFilter && activeView !== "close";
+    const showCategoryFilter = activeView === "op-transactions";
     const hasFilters =
         showPeriodFilter ||
         showRunwayYearFilter ||
         showVendorFilter ||
         showCategoryFilter;
-    const categoryOptions = rawFacets.categories;
-
-    useEffect(() => {
-        if (!monthFilterInitialized.current && months.length > 0) {
-            monthFilterInitialized.current = true;
-            const initialMonth = latestClosedMonth(months);
-            setSelectedMonth(initialMonth ?? "");
-            setSelectedYear(initialMonth?.slice(0, 4) ?? "");
-            return;
-        }
-        if (selectedMonth && !months.includes(selectedMonth)) {
-            const fallback = latestClosedMonth(months);
-            setSelectedMonth(fallback ?? "");
-            setSelectedYear(fallback?.slice(0, 4) ?? "");
-        }
-    }, [months, selectedMonth]);
 
     if (!sessionChecked) {
         return (
@@ -915,8 +856,8 @@ export default function App() {
             </div>
         </>
     );
-    const viewTitle = activeViewTitle(section, tab, insightTab);
-    const viewInfo = viewInfoContent(section, tab, insightTab);
+    const viewTitle = activeViewTitle(activeView);
+    const viewInfo = viewInfoContent(activeView);
     const filters = hasFilters ? (
         <FilterBar>
             {(showPeriodFilter || showRunwayYearFilter) && (
@@ -930,11 +871,10 @@ export default function App() {
                             setRunwayYear(year);
                             return;
                         }
-                        setSelectedYear(year);
                         const yearMonths = months.filter((month) =>
                             month.startsWith(year),
                         );
-                        if (!selectedMonth.startsWith(year)) {
+                        if (!monthFilter.startsWith(year)) {
                             setSelectedMonth(
                                 latestClosedMonth(yearMonths) ??
                                     yearMonths.at(-1) ??
@@ -948,7 +888,7 @@ export default function App() {
                 <MonthFilter
                     months={months}
                     year={selectedYear}
-                    value={selectedMonth}
+                    value={monthFilter}
                     onChange={setSelectedMonth}
                 />
             )}
@@ -965,7 +905,7 @@ export default function App() {
                     <FilterMultiSelect
                         value={selectedCategories}
                         onChange={setSelectedCategories}
-                        options={categoryOptions}
+                        options={rawFacets.categories}
                         placeholder="All categories"
                     />
                 )}
@@ -989,9 +929,9 @@ export default function App() {
             )}
             {!error && !data && <Text tone="soft">Loading pipes...</Text>}
             <ErrorBoundary
-                resetKey={`${section}:${tab}:${insightTab}:${selectedYear}:${selectedMonth}:${runwayYear}:${selectedVendors.join(",")}:${selectedCategories.join(",")}`}
+                resetKey={`${activeView}:${selectedYear}:${monthFilter}:${runwayYear}:${selectedVendors.join(",")}:${selectedCategories.join(",")}`}
             >
-                {data && section === "raw" && tab === "op-transactions" && (
+                {data && activeView === "op-transactions" && (
                     <OpTransactionsTab
                         category={selectedCategories}
                         data={data}
@@ -999,21 +939,21 @@ export default function App() {
                         vendor={selectedVendors}
                     />
                 )}
-                {data && section === "raw" && tab === "op-pollen" && (
+                {data && activeView === "op-pollen" && (
                     <OpPollenTab
                         data={data}
                         month={monthFilter}
                         vendor={selectedVendors}
                     />
                 )}
-                {data && section === "raw" && tab === "op-cloud" && (
+                {data && activeView === "op-cloud" && (
                     <OpCloudTab
                         data={data}
                         month={monthFilter}
                         vendor={selectedVendors}
                     />
                 )}
-                {data && section === "insights" && insightTab === "close" && (
+                {data && activeView === "close" && (
                     <ProviderCloseTab
                         data={data}
                         month={monthFilter}
@@ -1022,26 +962,22 @@ export default function App() {
                         onMonthChange={setSelectedMonth}
                     />
                 )}
-                {data && section === "insights" && insightTab === "runway" && (
+                {data && activeView === "runway" && (
                     <RunwayTab data={data} year={runwayYear} />
                 )}
-                {data && section === "insights" && insightTab === "vendors" && (
+                {data && activeView === "vendors" && (
                     <VendorsTab data={data} month={monthFilter} />
                 )}
-                {data &&
-                    section === "insights" &&
-                    insightTab === "inference" && (
-                        <ManagedInferenceTab data={data} month={monthFilter} />
-                    )}
-                {data &&
-                    section === "insights" &&
-                    insightTab === "balances" && <BalancesTab data={data} />}
-                {data &&
-                    section === "insights" &&
-                    insightTab === "community" && (
-                        <CommunityTab data={data} month={monthFilter} />
-                    )}
-                {data && section === "insights" && insightTab === "gpu" && (
+                {data && activeView === "inference" && (
+                    <ManagedInferenceTab data={data} month={monthFilter} />
+                )}
+                {data && activeView === "balances" && (
+                    <BalancesTab data={data} />
+                )}
+                {data && activeView === "community" && (
+                    <CommunityTab data={data} month={monthFilter} />
+                )}
+                {data && activeView === "gpu" && (
                     <GpuTab data={data} month={monthFilter} />
                 )}
             </ErrorBoundary>
@@ -1053,22 +989,13 @@ export default function App() {
     return (
         <ErrorBoundary resetKey={String(attempt)}>
             <EconomicsShell
+                activeView={activeView}
                 data={data}
                 footer={drawerFooter}
-                section={section}
-                tab={tab}
-                insightTab={insightTab}
-                onRawTabChange={(value) => {
+                onViewChange={(value) => {
                     setSelectedVendors([]);
                     setSelectedCategories([]);
-                    setSection("raw");
-                    setTab(value);
-                }}
-                onInsightTabChange={(value) => {
-                    setSelectedVendors([]);
-                    setSelectedCategories([]);
-                    setSection("insights");
-                    setInsightTab(value);
+                    setActiveView(value);
                 }}
             >
                 <main className="flex w-full flex-col gap-6 px-4 py-14 pb-32 sm:px-6 sm:py-10 sm:pb-32 md:py-8 lg:px-8">

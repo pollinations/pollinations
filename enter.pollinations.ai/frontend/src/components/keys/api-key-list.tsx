@@ -266,15 +266,16 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 {protectedAppKeys
                                     .map((key) => key.name || "Unnamed key")
                                     .join(", ")}
-                                . Pollinations Auth (BYOP) remains available.
+                                . Connect User Wallets remains available.
                             </p>
                         )}
                         <p className="mt-1 text-sm">
                             Raw publishable keys (<code>pk_</code>) are legacy
-                            for direct API requests. Use Pollinations Auth
-                            (BYOP), where users sign in and spend their own
-                            Pollen.{" "}
-                            <InlineLink href={genDocsUrl("#tag/byop")}>
+                            for direct API requests. Use Connect User Wallets,
+                            where users sign in and spend their own Pollen.{" "}
+                            <InlineLink
+                                href={genDocsUrl("#tag/connect-user-wallets")}
+                            >
                                 Read the migration guide
                             </InlineLink>
                             .
@@ -365,7 +366,11 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             <span>
                                 Turn on earnings to receive a share of pollen
                                 users spend in your app.{" "}
-                                <InlineLink href={genDocsUrl("#tag/byop")}>
+                                <InlineLink
+                                    href={genDocsUrl(
+                                        "#tag/connect-user-wallets",
+                                    )}
+                                >
                                     Read the guide
                                 </InlineLink>
                             </span>

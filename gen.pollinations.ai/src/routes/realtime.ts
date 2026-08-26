@@ -41,7 +41,12 @@ import {
 } from "@/middleware/track.ts";
 import { RealtimeUsageSchema } from "@/schemas/realtime.ts";
 import { generateRandomId } from "@/util.ts";
-import { checkBalance } from "@/utils/generation-access.ts";
+import {
+    checkBalance,
+    releaseApiKeyBudgetReservation,
+    reserveApiKeyBudget,
+} from "@/utils/generation-access.ts";
+import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 
 type AzureRealtimeApiKey =
     | "AZURE_MYCELI_PROD_EASTUS2_API_KEY"
@@ -69,9 +74,21 @@ const REALTIME_ROUTES = {
         deployment: "gpt-realtime-2",
         apiKeyEnv: "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
     },
+    "gpt-live-transcribe": {
+        endpoint:
+            "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/realtime",
+        deployment: "test-gpt-live-transcribe",
+        apiKeyEnv: "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
+        intent: "transcription",
+    },
 } satisfies Record<
     string,
-    { endpoint: string; deployment: string; apiKeyEnv: AzureRealtimeApiKey }
+    {
+        endpoint: string;
+        deployment: string;
+        apiKeyEnv: AzureRealtimeApiKey;
+        intent?: "transcription";
+    }
 >;
 type AzureRealtimeModelName = keyof typeof REALTIME_ROUTES;
 const UNSUPPORTED_TRANSCRIPTION_MESSAGE =
@@ -88,6 +105,7 @@ type RealtimeBillingContext = {
     // reaches a realtime row without touching this file.
     identity: UserData & { userId: string };
     apiKeyPollenBalance?: number | null;
+    apiKeyReservedAmount?: number;
     byopClientKeyId?: string | null;
     modelRequested: string;
     resolvedModelRequested: string;
@@ -133,7 +151,11 @@ async function createSafetyIdentifier(
 function buildUpstreamUrl(model: AzureRealtimeModelName): string {
     const route = REALTIME_ROUTES[model];
     const upstreamUrl = new URL(route.endpoint);
-    upstreamUrl.searchParams.set("model", route.deployment);
+    if ("intent" in route) {
+        upstreamUrl.searchParams.set("intent", route.intent);
+    } else {
+        upstreamUrl.searchParams.set("model", route.deployment);
+    }
     return upstreamUrl.toString();
 }
 
@@ -297,6 +319,7 @@ function forwardMessage(
     target: WebSocket,
     validate?: (data: unknown) => string | null,
     onReject?: () => void,
+    transform?: (data: unknown) => unknown,
 ): void {
     source.addEventListener("message", (event) => {
         const error = validate?.(event.data);
@@ -306,7 +329,7 @@ function forwardMessage(
             onReject?.();
             return;
         }
-        if (isOpen(target)) target.send(event.data);
+        if (isOpen(target)) target.send(transform?.(event.data) ?? event.data);
     });
 }
 
@@ -614,8 +637,21 @@ function parseEventData(data: unknown): unknown | null {
     }
 }
 
-function validateClientRealtimeEvent(data: unknown): string | null {
+function validateClientRealtimeEvent(
+    data: unknown,
+    allowTranscription: boolean,
+): string | null {
     const event = asRecord(parseEventData(data));
+    if (allowTranscription) {
+        const transcription = asRecord(
+            asRecord(asRecord(event.session).audio).input,
+        ).transcription;
+        const requestedModel = asRecord(transcription).model;
+        return typeof requestedModel === "string" &&
+            requestedModel !== "gpt-live-transcribe"
+            ? "gpt-live-transcribe sessions cannot select another transcription model."
+            : null;
+    }
     const eventType = event.type;
     if (
         typeof eventType === "string" &&
@@ -653,11 +689,31 @@ function isInputAudioTranscriptionEventType(type: unknown): type is string {
     );
 }
 
-function validateUpstreamRealtimeEvent(data: unknown): string | null {
+function validateUpstreamRealtimeEvent(
+    data: unknown,
+    allowTranscription: boolean,
+): string | null {
+    if (allowTranscription) return null;
     const event = asRecord(parseEventData(data));
     return isInputAudioTranscriptionEventType(event.type)
         ? UNSUPPORTED_TRANSCRIPTION_MESSAGE
         : null;
+}
+
+function rewriteLiveTranscriptionModel(
+    data: unknown,
+    from: string,
+    to: string,
+): unknown {
+    const event = asRecord(parseEventData(data));
+    const audioInput = asRecord(asRecord(asRecord(event.session).audio).input);
+    const transcription = asRecord(audioInput.transcription);
+    if (!Object.keys(transcription).length) return data;
+    if (transcription.model === undefined || transcription.model === from) {
+        transcription.model = to;
+        return JSON.stringify(event);
+    }
+    return data;
 }
 
 function extractReferrerHeader(c: Context<Env>): {
@@ -730,7 +786,7 @@ function createRealtimeTrackingEvent(args: {
         ...usageToEventParams(args.usage),
         ...reduceAdjustmentsToEventFields(args.adjustments),
         totalCost: args.cost.totalCost,
-        totalPrice: args.price.totalPrice + (args.markup?.devCredit ?? 0),
+        totalPrice: args.tracking.deduction?.billedPrice ?? 0,
         devPrice: args.price.totalPrice,
         markupRate: args.markup?.markupRate ?? 0,
     };
@@ -745,6 +801,18 @@ async function settleRealtimeSession(
 
     const usage = positiveEntries(tracking.usage);
     if (!hasPositiveUsage(usage)) {
+        if (!tracking.deductionAttempted) {
+            await handleBalanceDeduction({
+                db: drizzle(c.env.DB),
+                isBilledUsage: false,
+                userId: tracking.identity.userId,
+                apiKeyId: tracking.identity.apiKeyId,
+                apiKeyPollenBalance: tracking.apiKeyPollenBalance,
+                apiKeyReservedAmount: tracking.apiKeyReservedAmount,
+            });
+            tracking.deductionAttempted = true;
+            c.var.balance.apiKeyReservation = undefined;
+        }
         tracking.settled = true;
         return;
     }
@@ -756,6 +824,18 @@ async function settleRealtimeSession(
         output: { realtimeCache: tracking.cacheUsage },
     });
     if (price.totalPrice <= 0) {
+        if (!tracking.deductionAttempted) {
+            await handleBalanceDeduction({
+                db: drizzle(c.env.DB),
+                isBilledUsage: false,
+                userId: tracking.identity.userId,
+                apiKeyId: tracking.identity.apiKeyId,
+                apiKeyPollenBalance: tracking.apiKeyPollenBalance,
+                apiKeyReservedAmount: tracking.apiKeyReservedAmount,
+            });
+            tracking.deductionAttempted = true;
+            c.var.balance.apiKeyReservation = undefined;
+        }
         tracking.settled = true;
         return;
     }
@@ -775,9 +855,11 @@ async function settleRealtimeSession(
             userId: tracking.identity.userId,
             apiKeyId: tracking.identity.apiKeyId,
             apiKeyPollenBalance: tracking.apiKeyPollenBalance,
+            apiKeyReservedAmount: tracking.apiKeyReservedAmount,
             byopClientKeyId: tracking.byopClientKeyId,
             modelPaidOnly: tracking.modelDefinition.paidOnly,
         });
+        c.var.balance.apiKeyReservation = undefined;
     }
 
     if (!tracking.rateLimitConsumed) {
@@ -834,17 +916,24 @@ function collectBillingEvents(
             return;
         }
 
-        const transcriptionUsage =
-            extractUnsupportedInputTranscriptionUsage(eventData);
+        const transcriptionUsage = extractInputTranscriptionUsage(eventData);
         if (transcriptionUsage) addUsage(billing.usage, transcriptionUsage);
     });
 }
 
-function extractUnsupportedInputTranscriptionUsage(
-    eventData: unknown,
-): Usage | null {
+function extractInputTranscriptionUsage(eventData: unknown): Usage | null {
     const event = asRecord(eventData);
     if (!isInputAudioTranscriptionEventType(event.type)) return null;
+
+    const rawUsage = asRecord(event.usage);
+    if (
+        rawUsage.type === "duration" &&
+        typeof rawUsage.seconds === "number" &&
+        Number.isFinite(rawUsage.seconds) &&
+        rawUsage.seconds > 0
+    ) {
+        return { promptAudioSeconds: rawUsage.seconds };
+    }
 
     const usage = realtimeUsageToUsage(event.usage);
     return hasPositiveUsage(usage) ? usage : null;
@@ -926,14 +1015,38 @@ function proxyRealtimeWebSockets(
 ): Response {
     const pair = new WebSocketPair();
     const [client, downstream] = Object.values(pair) as [WebSocket, WebSocket];
+    const allowTranscription =
+        tracking.resolvedModelRequested === "gpt-live-transcribe";
 
     downstream.binaryType = "arraybuffer";
     collectBillingEvents(c, upstream, tracking);
-    forwardMessage(downstream, upstream, validateClientRealtimeEvent, () =>
-        scheduleRealtimeSettlement(c, tracking),
+    forwardMessage(
+        downstream,
+        upstream,
+        (data) => validateClientRealtimeEvent(data, allowTranscription),
+        () => scheduleRealtimeSettlement(c, tracking),
+        allowTranscription
+            ? (data) =>
+                  rewriteLiveTranscriptionModel(
+                      data,
+                      "gpt-live-transcribe",
+                      REALTIME_ROUTES["gpt-live-transcribe"].deployment,
+                  )
+            : undefined,
     );
-    forwardMessage(upstream, downstream, validateUpstreamRealtimeEvent, () =>
-        scheduleRealtimeSettlement(c, tracking),
+    forwardMessage(
+        upstream,
+        downstream,
+        (data) => validateUpstreamRealtimeEvent(data, allowTranscription),
+        () => scheduleRealtimeSettlement(c, tracking),
+        allowTranscription
+            ? (data) =>
+                  rewriteLiveTranscriptionModel(
+                      data,
+                      REALTIME_ROUTES["gpt-live-transcribe"].deployment,
+                      "gpt-live-transcribe",
+                  )
+            : undefined,
     );
     wireClose(c, downstream, upstream, tracking);
     wireClose(c, upstream, downstream, tracking);
@@ -1330,6 +1443,11 @@ export async function handleRealtimeWebSocket(
         return new Response("Expected Upgrade: websocket", { status: 426 });
     }
     const userId = await authorizeRealtimeSession(c);
+    await enforceModelRateLimit(c, {
+        id: c.var.model.resolved,
+        definition: c.var.model.definition,
+        communityEndpoint: c.var.model.communityEndpoint,
+    });
     const tracking = await createRealtimeBillingContext(c);
     if (c.var.model.resolved === "scribe-realtime") {
         if (!c.env.ELEVENLABS_API_KEY) {
@@ -1337,7 +1455,14 @@ export async function handleRealtimeWebSocket(
                 message: "ElevenLabs realtime provider is not configured.",
             });
         }
-        return proxyScribeOpenAIRealtime(c, tracking);
+        await reserveApiKeyBudget(c.var, c.env);
+        tracking.apiKeyReservedAmount = c.var.balance.apiKeyReservation?.amount;
+        try {
+            return proxyScribeOpenAIRealtime(c, tracking);
+        } catch (error) {
+            await releaseApiKeyBudgetReservation(c.var, c.env);
+            throw error;
+        }
     }
 
     const upstream = await connectAzureRealtime(
@@ -1347,5 +1472,13 @@ export async function handleRealtimeWebSocket(
     );
     if (upstream instanceof Response) return upstream;
 
-    return proxyRealtimeWebSockets(c, upstream, tracking);
+    await reserveApiKeyBudget(c.var, c.env);
+    tracking.apiKeyReservedAmount = c.var.balance.apiKeyReservation?.amount;
+    try {
+        return proxyRealtimeWebSockets(c, upstream, tracking);
+    } catch (error) {
+        await releaseApiKeyBudgetReservation(c.var, c.env);
+        closeSocket(upstream, 1011, "Unable to start realtime session");
+        throw error;
+    }
 }

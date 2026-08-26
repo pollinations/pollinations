@@ -23,6 +23,7 @@ import { PriceBadge, type PriceBadgeConfig } from "../models/price-badge.tsx";
 import type { PriceKind } from "../models/types.ts";
 import {
     type CommunityEndpoint,
+    type ProxyCommunityEndpoint,
     storedPriceToFormValue,
     VISIBILITY_LABELS,
 } from "./types.ts";
@@ -43,12 +44,14 @@ export function CommunityEndpointCard({
     onDelete,
 }: CommunityEndpointCardProps) {
     const isPublic = endpoint.visibility === "public";
-    const priceGroups = communityPriceGroups(endpoint);
+    const isAgent = endpoint.type !== "proxy";
+    const priceGroups =
+        endpoint.type === "proxy" ? communityPriceGroups(endpoint) : [];
 
     return (
         <Surface
             className={`transition-colors hover:bg-surface-opaque/90 ${
-                endpoint.disabled ? "opacity-60" : ""
+                endpoint.hidden ? "opacity-60" : ""
             }`}
         >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -65,7 +68,7 @@ export function CommunityEndpointCard({
                             )}
                             {VISIBILITY_LABELS[endpoint.visibility]}
                         </Chip>
-                        {endpoint.agentId && (
+                        {isAgent && (
                             <Chip intent="news" size="sm">
                                 Agent
                             </Chip>
@@ -81,20 +84,20 @@ export function CommunityEndpointCard({
                     <Button
                         type="button"
                         size="sm"
-                        intent={endpoint.disabled ? "info" : "danger"}
+                        intent={endpoint.hidden ? "info" : "danger"}
                         disabled={isToggling}
                         onClick={onToggle}
                     >
                         {isToggling
                             ? "Saving…"
-                            : endpoint.disabled
-                              ? "Reactivate"
-                              : "Deactivate"}
+                            : endpoint.hidden
+                              ? "Relist"
+                              : "Hide"}
                     </Button>
                     <IconButton
                         intent="info"
-                        title={endpoint.agentId ? "Edit agent" : "Edit model"}
-                        tooltip={endpoint.agentId ? "Edit agent" : "Edit model"}
+                        title={isAgent ? "Edit agent" : "Edit model"}
+                        tooltip={isAgent ? "Edit agent" : "Edit model"}
                         tooltipAlign="center"
                         onClick={onEdit}
                     >
@@ -112,13 +115,13 @@ export function CommunityEndpointCard({
                 </div>
             </div>
 
-            {endpoint.disabled && (
+            {endpoint.hidden && (
                 <Alert intent="danger" className="mt-3">
                     <div className="flex flex-col gap-1">
-                        <span className="font-semibold">Model deactivated</span>
+                        <span className="font-semibold">Model hidden</span>
                         <span className="text-sm">
-                            {endpoint.disabledReason ??
-                                "Deactivated due to repeated failures."}
+                            {endpoint.hiddenReason ??
+                                "Hidden due to repeated failures."}
                         </span>
                     </div>
                 </Alert>
@@ -131,7 +134,7 @@ export function CommunityEndpointCard({
                     value={endpoint.modelId}
                     copyLabel="Copy model id"
                 />
-                {!endpoint.agentId && (
+                {endpoint.type !== "prompt_agent" && (
                     <CommunityDetailRow
                         icon={<ExternalLinkIcon className="h-3.5 w-3.5" />}
                         label="Endpoint"
@@ -139,24 +142,28 @@ export function CommunityEndpointCard({
                         copyLabel="Copy endpoint"
                     />
                 )}
-                <CommunityDetailRow
-                    icon={<TerminalIcon className="h-3.5 w-3.5" />}
-                    label="Modality"
-                    value={endpoint.modality}
-                />
-                {!endpoint.agentId && (
-                    <CommunityDetailRow
-                        icon={<TerminalIcon className="h-3.5 w-3.5" />}
-                        label="Upstream model"
-                        value={endpoint.upstreamModel}
-                    />
-                )}
-                {!endpoint.agentId && endpoint.perUserRpm !== null && (
-                    <CommunityDetailRow
-                        icon={<TerminalIcon className="h-3.5 w-3.5" />}
-                        label="Per-user limit"
-                        value={`${endpoint.perUserRpm} RPM/user`}
-                    />
+                {endpoint.type !== "prompt_agent" && (
+                    <>
+                        {endpoint.type === "proxy" && (
+                            <CommunityDetailRow
+                                icon={<TerminalIcon className="h-3.5 w-3.5" />}
+                                label="Modality"
+                                value={endpoint.modality}
+                            />
+                        )}
+                        <CommunityDetailRow
+                            icon={<TerminalIcon className="h-3.5 w-3.5" />}
+                            label="Upstream model"
+                            value={endpoint.upstreamModel}
+                        />
+                        {endpoint.perUserRpm !== null && (
+                            <CommunityDetailRow
+                                icon={<TerminalIcon className="h-3.5 w-3.5" />}
+                                label="Per-user limit"
+                                value={`${endpoint.perUserRpm} RPM/user`}
+                            />
+                        )}
+                    </>
                 )}
                 {priceGroups.map((group) => (
                     <CommunityDetailRow
@@ -253,7 +260,7 @@ type CommunityPriceBadge = {
 };
 
 function communityPriceGroups(
-    endpoint: CommunityEndpoint,
+    endpoint: ProxyCommunityEndpoint,
 ): CommunityPriceGroup[] {
     const groups: Record<CommunityPriceGroup["key"], CommunityPriceBadge[]> = {
         input: [],

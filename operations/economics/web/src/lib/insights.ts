@@ -683,7 +683,8 @@ export function vendorPlanes(data: Data): VendorPlanes[] {
     const pollen = new Map<string, OpPollenWitness>();
     for (const row of data.opPollen ?? []) {
         if (!MONTH_KEY_RE.test(row.month) || row.month < WINDOW_START) continue;
-        if (communityMeterIsNotProviderCost(row.vendor)) continue;
+        // Community has no external provider bill to reconcile on this tab.
+        if (row.vendor === "community") continue;
         const key = `${row.month}|${row.vendor}`;
         const entry = getOrInit(pollen, key, () => ({
             paidCostUsd: 0,
@@ -817,9 +818,9 @@ export function insightVendorOptions(data: Data): string[] {
 
 // ------------------------------------------------------------- economics
 
-// Vendors whose provider_monthly rows are our own pollen numbers booked back
-// (community mirror + meter-less free partners) — their calib is 1.00 by
-// construction, a definition rather than a measurement.
+// Vendors priced from our own pollen records rather than an external bill.
+// Their calib is 1.00 by construction, a definition rather than a measurement.
+// Community has no provider cost; op_pollen_api normalizes its cost fields to 0.
 const POLLEN_PRICED_VENDORS = new Set([
     "airforce",
     "community",
@@ -827,14 +828,6 @@ const POLLEN_PRICED_VENDORS = new Set([
     "pointsflyer",
     "seraphyn",
 ]);
-
-// Community owners run their own endpoints. `total_cost` was recorded as the
-// sale price, but we never pay a provider — the 75% owner payout is already
-// in `model_paid` (eco). Treat that mirrored meter as 0 so margin is not
-// charged twice.
-function communityMeterIsNotProviderCost(vendor: string): boolean {
-    return vendor === "community";
-}
 
 // |calib − 1| beyond this marks a registry mispricing worth fixing.
 export const CALIB_DRIFT_ALARM = 0.25;
@@ -992,13 +985,11 @@ function opEconomics(
         if (!matchesMonth(row.month, monthFilter)) continue;
         const facts = getOrInit(vendors, row.vendor, emptyFacts);
         facts.hasPollen = true;
-        if (!communityMeterIsNotProviderCost(row.vendor)) {
-            facts.meteredUsd += toUsd(
-                row.cost_paid + row.cost_quests,
-                row.currency,
-                row.month,
-            );
-        }
+        facts.meteredUsd += toUsd(
+            row.cost_paid + row.cost_quests,
+            row.currency,
+            row.month,
+        );
         const key =
             grain === "model" ? `${row.vendor}|${row.model}` : row.vendor;
         const entry = getOrInit(byKey, key, () => ({
@@ -1017,14 +1008,8 @@ function opEconomics(
             row.month,
         );
         entry.soldQuests += toUsd(row.price_quests, row.currency, row.month);
-        if (!communityMeterIsNotProviderCost(row.vendor)) {
-            entry.meteredPaid += toUsd(row.cost_paid, row.currency, row.month);
-            entry.meteredQuests += toUsd(
-                row.cost_quests,
-                row.currency,
-                row.month,
-            );
-        }
+        entry.meteredPaid += toUsd(row.cost_paid, row.currency, row.month);
+        entry.meteredQuests += toUsd(row.cost_quests, row.currency, row.month);
     }
 
     type VendorCalib = {

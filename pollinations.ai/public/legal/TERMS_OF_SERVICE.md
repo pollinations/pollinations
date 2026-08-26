@@ -1,6 +1,6 @@
 # Terms of Service
 
-**Updated: 2026-08-17**
+**Updated: 2026-08-22**
 
 _2026-07-02 — Pollen purchases now include a service fee shown before payment, and prices are shown exclusive of tax; applicable VAT or similar taxes are added at checkout._
 
@@ -51,6 +51,10 @@ Beta features carry no service level commitments. By using beta features, you ac
 
 Hosted access to model-powered APIs and tools per your plan, balance, and usage limits. Model outputs vary and may be incomplete, inaccurate, unsafe, unavailable, or unsuitable for your intended use. You are responsible for reviewing outputs before relying on them.
 
+**Externally hosted community models.** Third-party community providers, not Pollinations, operate these models. Using one sends your request to its provider and any configured community fallback providers. Those providers are responsible for how they store, share, secure, train on, or otherwise use it; their terms and privacy policies apply. Pollinations does not control or verify those practices and, to the extent permitted by law, is not responsible for them. Provider details come from the provider and are not an endorsement. Check them before sending credentials, confidential information, or sensitive personal data.
+
+**Managed agents.** Pollinations hosts these agents, and publishing one does not give its creator access to caller requests. Selected models and tools may still process those requests, and public agent instructions may be inferred or extracted. Creators must not include credentials or confidential data in agent instructions.
+
 We may make non-breaking changes and will notify you of material reductions where practical.
 
 ## 4) Customer Data & Privacy
@@ -60,6 +64,8 @@ You retain all rights to data you submit ("Customer Data"). How personal data is
 ## 5) Acceptable Use & Safety
 
 Do not violate law; infringe IP/likeness/privacy; attack the Service; evade rate limits or spending controls; abuse Pollen grants, app attribution, or developer earnings; or replicate non-public features to build a competing hosted service. **No deepfakes of real people without consent. No CSAM (real or fictional).**
+
+If you publish an externally hosted community model, you are responsible for the endpoint and the caller data it receives. Identify the provider accurately, keep its privacy information current, use appropriate security and retention controls, and comply with applicable law. Clearly disclose how you store, share, train on, or otherwise use caller data. Do not mislead callers about the endpoint or its data practices.
 
 ## 6) Pollen, Fees, Taxes & Billing
 

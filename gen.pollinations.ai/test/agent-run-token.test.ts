@@ -5,6 +5,7 @@ import {
     verifyAgentRunToken,
 } from "@shared/auth/agent-run-token.ts";
 import { getUserBalance } from "@shared/billing/balance.ts";
+import { atomicReserveApiKeyBalance } from "@shared/billing/deduction.ts";
 import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
 import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
 import { apikey as apiKeyTable } from "@shared/db/better-auth.ts";
@@ -30,26 +31,18 @@ const authProbe = new Hono<AuthEnv>().use("*", auth()).get("/", (c) =>
     }),
 );
 
-function communityProbe({
-    agentId = null,
-    delegatesGeneration = false,
-}: {
-    agentId?: string | null;
-    delegatesGeneration?: boolean;
-} = {}) {
+function communityProbe(type: CommunityEndpointRuntime["type"] = "proxy") {
     return new Hono<AuthEnv>()
         .use("*", auth())
         .use("*", async (c, next) => {
             c.set("model", {
                 requested: "Itachi-1824/polli",
                 resolved: "Itachi-1824/polli",
-                communityEndpoint: (agentId
-                    ? { modelId: "Itachi-1824/polli", kind: "agent", agentId }
-                    : {
-                          modelId: "Itachi-1824/polli",
-                          kind: "external",
-                          delegatesGeneration,
-                      }) as unknown as CommunityEndpointRuntime,
+                communityEndpoint: {
+                    id: "managed-agent-id",
+                    modelId: "Itachi-1824/polli",
+                    type,
+                } as unknown as CommunityEndpointRuntime,
             });
             await next();
         })
@@ -63,8 +56,8 @@ async function runTokenFor(parentApiKeyId: string, managedAgentId?: string) {
     return signAgentRunToken({
         secret: env.BETTER_AUTH_SECRET,
         parentApiKeyId,
+        parentRequestId: crypto.randomUUID(),
         managedAgentId,
-        runId: crypto.randomUUID(),
     });
 }
 
@@ -122,7 +115,21 @@ test("preserves the managed agent scope", async () => {
     });
 });
 
-test("agent run tokens can call community models but cannot recurse into agent models", async () => {
+test("surfaces the parent request id", async () => {
+    const parent = await createTestApiKey({ user: { tierBalance: 100 } });
+
+    const token = await signAgentRunToken({
+        secret: env.BETTER_AUTH_SECRET,
+        parentApiKeyId: parent.id,
+        parentRequestId: "req-abc",
+    });
+    const body = await (
+        await probe(authProbe, "https://gen.pollinations.ai/", token)
+    ).json();
+    expect(body).toMatchObject({ agentRun: { parentRequestId: "req-abc" } });
+});
+
+test("agent run tokens can call community models and agents", async () => {
     const parent = await createTestApiKey({ user: { tierBalance: 100 } });
     const token = await runTokenFor(parent.id);
 
@@ -134,18 +141,18 @@ test("agent run tokens can call community models but cannot recurse into agent m
     expect(communityResponse.status).toBe(200);
 
     const agentResponse = await probe(
-        communityProbe({ agentId: "managed-agent-id" }),
+        communityProbe("prompt_agent"),
         "https://gen.pollinations.ai/",
         token,
     );
-    expect(agentResponse.status).toBe(403);
+    expect(agentResponse.status).toBe(200);
 
     const delegatedAgentResponse = await probe(
-        communityProbe({ delegatesGeneration: true }),
+        communityProbe("endpoint_agent"),
         "https://gen.pollinations.ai/",
         token,
     );
-    expect(delegatedAgentResponse.status).toBe(403);
+    expect(delegatedAgentResponse.status).toBe(200);
 });
 
 test("is rejected as a query parameter", async () => {
@@ -201,6 +208,11 @@ test("spends the parent key's budget and the parent user's wallet", async () => 
     };
 
     const db = drizzle(env.DB);
+    const { reserved } = await atomicReserveApiKeyBalance(
+        db,
+        probed.apiKeyId,
+        1,
+    );
     await handleBalanceDeduction({
         db,
         isBilledUsage: true,
@@ -208,6 +220,7 @@ test("spends the parent key's budget and the parent user's wallet", async () => 
         userId: probed.userId,
         apiKeyId: probed.apiKeyId,
         apiKeyPollenBalance: probed.pollenBalance,
+        apiKeyReservedAmount: reserved,
     });
 
     expect((await getUserBalance(db, parent.userId)).tierBalance).toBeCloseTo(
@@ -226,7 +239,7 @@ test("rejects tampered, expired and malformed agent run tokens", async () => {
     const token = await signAgentRunToken({
         secret: env.BETTER_AUTH_SECRET,
         parentApiKeyId: "parent-key-id",
-        runId: "run-id",
+        parentRequestId: "parent-request-id",
         expiresIn: 30,
         now: 1_000,
     });
@@ -247,11 +260,10 @@ test("rejects tampered, expired and malformed agent run tokens", async () => {
         signAgentRunToken({
             secret: env.BETTER_AUTH_SECRET,
             parentApiKeyId: "parent-key-id",
-            runId: "run-id",
+            parentRequestId: "parent-request-id",
             expiresIn: AGENT_RUN_TOKEN_TTL_SECONDS + 1,
         }),
     ).rejects.toThrow("Invalid agent run token lifetime");
-
     // Correctly signed but missing the subject: the signature proves origin, it
     // does not prove the payload has the shape the auth layer reads.
     const malformedJwt = await new SignJWT({ version: 1 })
@@ -273,4 +285,32 @@ test("rejects tampered, expired and malformed agent run tokens", async () => {
             1_001,
         ),
     ).rejects.toThrow("Invalid agent run token claims");
+
+    // The parent request id is what groups a run's generations, so a token
+    // that cannot be attributed is rejected rather than billed untagged.
+    for (const payload of [
+        { version: 1 },
+        { version: 1, parentRequestId: "" },
+    ]) {
+        const untagged = await new SignJWT(payload)
+            .setProtectedHeader({ alg: "HS256", typ: "JWT" })
+            .setIssuer("gen.pollinations.ai")
+            .setAudience("pollinations-api")
+            .setSubject("parent-key-id")
+            .setJti("run-id")
+            .setIssuedAt(1_000)
+            .setExpirationTime(1_000 + AGENT_RUN_TOKEN_TTL_SECONDS)
+            .sign(
+                new TextEncoder().encode(
+                    `pollinations-agent-run-token:v1\0${env.BETTER_AUTH_SECRET}`,
+                ),
+            );
+        await expect(
+            verifyAgentRunToken(
+                `ag_${untagged}`,
+                env.BETTER_AUTH_SECRET,
+                1_001,
+            ),
+        ).rejects.toThrow("Invalid agent run token claims");
+    }
 });

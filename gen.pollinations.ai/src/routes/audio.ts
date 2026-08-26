@@ -16,6 +16,7 @@ import {
 } from "@shared/registry/usage-headers.ts";
 import { readResponseBytes } from "@shared/response-bytes.ts";
 import { SafeSchema } from "@shared/schemas/safety.ts";
+import { validateUserMediaUrl } from "@shared/user-media-url.ts";
 import { errorResponseDescriptions } from "@shared/utils/api-docs.ts";
 import { type Context, Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
@@ -39,13 +40,16 @@ import { textCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
 import googleCloudAuth from "@/text/auth/googleCloudAuth.ts";
 import { arrayBufferToBase64, normalizeSeed } from "@/util.ts";
-import { generationAccess } from "@/utils/generation-access.ts";
+import {
+    apiKeyBudgetReservation,
+    generationAccess,
+} from "@/utils/generation-access.ts";
 import { callCommunityTranscriptionEndpoint } from "../audio/communityEndpoint.ts";
 import {
     type FallbackCandidate,
     withModelFallbackResponse,
 } from "../fallback.ts";
-import { validateUserMediaUrl } from "../utils/user-media-url.ts";
+import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 import { transcribeWithAssemblyAi } from "./assemblyai-transcription.ts";
 import type { SimpleAudioQuery } from "./generation-handlers.ts";
 import {
@@ -154,13 +158,12 @@ async function withAudioFallback(
     c: AudioContext,
     attempt: (candidate: FallbackCandidate) => Promise<Response>,
 ): Promise<Response> {
-    const { response, servedEntry } = await withModelFallbackResponse(
+    return withModelFallbackResponse(
         c.var.model,
         attempt,
-        c.var.track?.failedCalls,
+        c.var.track?.attempts,
+        (candidate) => enforceModelRateLimit(c, candidate),
     );
-    if (servedEntry) c.set("servedModelEntry", servedEntry);
-    return response;
 }
 type AudioRefChunk = {
     song_id: string;
@@ -797,6 +800,94 @@ interface ElevenLabsTranscriptionResponse {
         speaker_id?: string | null;
         type?: string;
     }[];
+}
+
+interface AzureTranscriptionResponse {
+    text: string;
+    usage: {
+        type: "duration";
+        seconds: number;
+    };
+}
+
+const AZURE_GPT_TRANSCRIBE_ENDPOINT =
+    "https://myceli-prod-swedencentral.openai.azure.com/openai/deployments/test-gpt-transcribe/audio/transcriptions?api-version=2025-04-01-preview";
+
+export async function transcribeWithAzure(opts: {
+    file: File;
+    language?: string;
+    prompt?: string;
+    responseFormat?: string;
+    temperature?: number;
+    apiKey: string;
+}): Promise<Response> {
+    const {
+        file,
+        language,
+        prompt,
+        responseFormat = "json",
+        temperature,
+        apiKey,
+    } = opts;
+
+    if (!apiKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: "Azure transcription service is not configured",
+        });
+    }
+    assertTranscriptionResponseFormat(responseFormat, "gpt-transcribe", [
+        "json",
+    ]);
+
+    const formData = new FormData();
+    formData.append("model", "gpt-transcribe");
+    if (language) formData.append("language", language);
+    if (prompt) formData.append("prompt", prompt);
+    formData.append("response_format", responseFormat);
+    if (temperature !== undefined) {
+        formData.append("temperature", String(temperature));
+    }
+    formData.append("file", file, file.name || "audio");
+
+    const response = await ensureUpstreamOk(
+        await fetch(AZURE_GPT_TRANSCRIBE_ENDPOINT, {
+            method: "POST",
+            headers: { "api-key": apiKey },
+            body: formData,
+        }),
+        AZURE_GPT_TRANSCRIBE_ENDPOINT,
+    );
+    const transcript = (await response
+        .json()
+        .catch(() => null)) as AzureTranscriptionResponse | null;
+    if (
+        !transcript ||
+        typeof transcript.text !== "string" ||
+        transcript.usage?.type !== "duration" ||
+        typeof transcript.usage.seconds !== "number" ||
+        !Number.isFinite(transcript.usage.seconds) ||
+        transcript.usage.seconds <= 0
+    ) {
+        throw new UpstreamError(502 as ContentfulStatusCode, {
+            message:
+                "Azure transcription response did not include valid input-duration metering.",
+        });
+    }
+
+    return buildTranscriptionResponse({
+        normalized: {
+            text: transcript.text,
+            duration: transcript.usage.seconds,
+            words: [],
+            segments: [],
+            diarizedSegments: [],
+        },
+        responseFormat,
+        usageHeaders: buildUsageHeaders(
+            "gpt-transcribe",
+            createAudioSecondsUsage(transcript.usage.seconds),
+        ),
+    });
 }
 
 const ELEVENLABS_SCRIBE_SECONDS_PER_CREDIT = 2.5;
@@ -2921,6 +3012,11 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
         });
     }
 
+    c.var.track.setPricingInput({
+        hasDiarization: responseFormat === "diarized_json",
+        hasPrompt: Boolean(prompt),
+    });
+
     const result = await withAudioFallback(c, async (candidate) => {
         if (candidate.communityEndpoint) {
             return callCommunityTranscriptionEndpoint(
@@ -2942,6 +3038,16 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
                 responseFormat: responseFormat || undefined,
                 apiKey: c.env.XAI_API_KEY,
                 log,
+            });
+        }
+        if (candidate.id === "gpt-transcribe") {
+            return transcribeWithAzure({
+                file,
+                language: language || undefined,
+                prompt: prompt || undefined,
+                responseFormat: responseFormat || undefined,
+                temperature,
+                apiKey: c.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
             });
         }
         if (candidate.id === "scribe") {
@@ -3118,6 +3224,7 @@ export const audioRoutes = new Hono<Env>()
         audioCache,
         generationAccess,
         deduplicateGeneration,
+        apiKeyBudgetReservation,
         handleVoiceChanger,
     )
     .post(
@@ -3172,6 +3279,7 @@ export const audioRoutes = new Hono<Env>()
         audioCache,
         generationAccess,
         deduplicateGeneration,
+        apiKeyBudgetReservation,
         handleVoiceIsolator,
     )
     .post(
@@ -3316,6 +3424,7 @@ export const audioRoutes = new Hono<Env>()
         audioCache,
         generationAccess,
         deduplicateGeneration,
+        apiKeyBudgetReservation,
         handleSpeech,
     )
     .post(
@@ -3437,6 +3546,7 @@ export const audioRoutes = new Hono<Env>()
         textCache,
         generationAccess,
         deduplicateGeneration,
+        apiKeyBudgetReservation,
         handleSpeechWithTimestamps,
     )
     .post(
@@ -3452,6 +3562,7 @@ export const audioRoutes = new Hono<Env>()
                 "**Models:**",
                 "- `whisper-large-v3` (default) — OpenAI Whisper via OVHcloud",
                 "- `whisper-1` — Alias for whisper-large-v3",
+                "- `gpt-transcribe` — Fast multilingual speech recognition with prompt context",
                 "- `scribe` — ElevenLabs Scribe (90+ languages, word-level timestamps)",
                 "- `grok-transcribe` — xAI speech recognition with word timestamps, speaker labels, and text formatting",
                 "- `universal-2` — AssemblyAI Universal-2 (99 languages)",
@@ -3475,7 +3586,7 @@ export const audioRoutes = new Hono<Env>()
                                     type: "string",
                                     default: "whisper-large-v3",
                                     description:
-                                        "The model to use. Options: `whisper-large-v3`, `whisper-1`, `scribe`, `grok-transcribe`, `universal-2`, `universal-3.5-pro`.",
+                                        "The model to use. Options: `whisper-large-v3`, `whisper-1`, `gpt-transcribe`, `scribe`, `grok-transcribe`, `universal-2`, `universal-3.5-pro`.",
                                 },
                                 language: {
                                     type: "string",
@@ -3564,6 +3675,7 @@ export const audioRoutes = new Hono<Env>()
         textCache,
         generationAccess,
         deduplicateGeneration,
+        apiKeyBudgetReservation,
         handleTranscription,
     );
 

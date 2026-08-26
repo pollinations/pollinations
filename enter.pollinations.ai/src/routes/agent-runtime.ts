@@ -1,5 +1,5 @@
 import * as schema from "@shared/db/better-auth.ts";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -11,16 +11,6 @@ import {
     handlePromptAgentRequest,
     PromptAgentRuntimeRequestSchema,
 } from "../services/prompt-agent-runtime.ts";
-
-// The MCP worker serves Streamable HTTP directly at the root URL.
-export const POLLINATIONS_MCP_URL = "https://mcp.pollinations.ai";
-
-function pollinationsMcpUrl(env: Env["Bindings"]): string {
-    return (
-        (env as { POLLINATIONS_MCP_URL?: string }).POLLINATIONS_MCP_URL ??
-        POLLINATIONS_MCP_URL
-    );
-}
 
 function genBaseUrl(env: Env["Bindings"]): string {
     return (
@@ -54,13 +44,16 @@ export const agentRuntimeRoutes = new Hono<Env>()
             }
 
             const db = drizzle(c.env.DB, { schema });
-            const row = await db.query.agent.findFirst({
-                where: eq(schema.agent.id, body.model),
+            const row = await db.query.communityEndpoint.findFirst({
+                where: and(
+                    eq(schema.communityEndpoint.id, body.model),
+                    eq(schema.communityEndpoint.type, "prompt_agent"),
+                ),
             });
             if (!row) {
                 throw new HTTPException(404, { message: "Agent not found" });
             }
-            const config = parsePromptAgentConfig(row.config);
+            const config = parsePromptAgentConfig(row.payload);
             if (!config) {
                 throw new Error(`Agent ${row.id} has invalid configuration`);
             }
@@ -68,7 +61,6 @@ export const agentRuntimeRoutes = new Hono<Env>()
                 config,
                 apiKey,
                 genBaseUrl: genBaseUrl(c.env),
-                pollinationsMcpUrl: pollinationsMcpUrl(c.env),
             });
         },
     );

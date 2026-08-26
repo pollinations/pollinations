@@ -1,0 +1,344 @@
+name: Deploy / Cloudflare production
+
+on:
+  push:
+    branches:
+      - production
+    paths:
+      - 'enter.pollinations.ai/**'
+      - 'gen.pollinations.ai/**'
+      - 'media.pollinations.ai/**'
+      - 'shared/**'
+      - 'packages/sdk/**'
+      - 'packages/ui/**'
+      - 'packages/mcp/**'
+      - 'apps/*-mcp/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/deploy-cloudflare-production.yml'
+  workflow_dispatch:
+    inputs:
+      service:
+        description: 'Which service to deploy'
+        type: choice
+        options:
+          - all
+          - enter
+          - gen
+          - media
+        default: all
+      sync_discord_secrets:
+        description: 'Sync the approved Discord secrets to Enter'
+        type: boolean
+        default: false
+
+concurrency:
+  group: pollinations-cloudflare-production
+  cancel-in-progress: false
+  queue: max
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      enter: ${{ github.event_name == 'workflow_dispatch' && (inputs.service == 'all' || inputs.service == 'enter') || steps.filter.outputs.enter == 'true' }}
+      gen: ${{ github.event_name == 'workflow_dispatch' && (inputs.service == 'all' || inputs.service == 'gen') || steps.filter.outputs.gen == 'true' }}
+      media: ${{ github.event_name == 'workflow_dispatch' && (inputs.service == 'all' || inputs.service == 'media') || steps.filter.outputs.media == 'true' }}
+      mcp_apps: ${{ steps.mcp-apps.outputs.apps || '[]' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed services
+        id: filter
+        if: github.event_name == 'push'
+        uses: dorny/paths-filter@v3
+        with:
+          # Required for long-lived branches. Without `base`, the action falls
+          # back to the repository default branch and diffs
+          # merge-base(main, production)..production. A main -> production
+          # promotion makes that diff empty, so every filter reports false and
+          # all three deploy jobs skip while `migrate` still applies the
+          # schema. Pointing `base` at the pushed ref makes the action compare
+          # against the push's `before` SHA — the same semantics the previous
+          # top-level `on.push.paths` filters had.
+          base: ${{ github.ref }}
+          filters: |
+            enter:
+              - 'enter.pollinations.ai/**'
+              - 'shared/**'
+              - 'packages/sdk/**'
+              - 'packages/ui/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - '.github/workflows/deploy-cloudflare-production.yml'
+            gen:
+              - 'gen.pollinations.ai/**'
+              - 'packages/mcp/**'
+              - 'shared/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - '.github/workflows/deploy-cloudflare-production.yml'
+            media:
+              - 'media.pollinations.ai/**'
+              # The worker imports shared/ modules and queries tables migrated
+              # from enter's drizzle dir — redeploy on either so code and schema
+              # move together.
+              - 'shared/**'
+              - 'enter.pollinations.ai/drizzle/**'
+              - '.github/workflows/deploy-cloudflare-production.yml'
+
+      - name: Detect changed MCP applications
+        id: mcp-apps
+        if: github.event_name == 'push'
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          CURRENT_SHA: ${{ github.sha }}
+        run: |
+          git diff --name-only "$BEFORE_SHA" "$CURRENT_SHA" > changed.txt
+          APPS=$(node operations/deployment/discover.cjs --scope=apps --changed=changed.txt)
+          MCP_APPS=$(node -e 'const apps = JSON.parse(process.argv[1]); process.stdout.write(JSON.stringify(apps.filter(({ name }) => name.endsWith("-mcp"))))' "$APPS")
+          echo "MCP applications: $MCP_APPS"
+          echo "apps=$MCP_APPS" >> "$GITHUB_OUTPUT"
+
+  # Gen's suite runs BEFORE the migration, not inside deploy-gen after it. Two
+  # reasons. It keeps a red gen test from letting a schema change reach
+  # production. And it takes ~2.5 min of work out from between `migrate` and
+  # gen actually deploying: the deployed gen reads the old schema, and
+  # loadGenerationModelRegistry has no try/catch, so a column it no longer
+  # recognises takes the whole model registry down — static models included,
+  # not just community ones. Shrinking that gap below the 60s registry cache
+  # is what keeps a column-dropping migration invisible to callers.
+  test-gen:
+    needs: changes
+    if: needs.changes.outputs.gen == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test
+        run: npm test --workspace pollinations-gen
+
+      - name: Typecheck
+        run: npm run typecheck --workspace pollinations-gen
+
+  # One migration for all three workers: they share
+  # production-pollinations-enter-db, so the schema must move once, before any
+  # of them deploys. `d1 migrations apply` is idempotent.
+  #
+  # `!cancelled()` is required: without a status function here, a skipped
+  # test-gen (gen not deploying) would skip migrate too, and with it every
+  # deploy job.
+  migrate:
+    needs: [changes, test-gen]
+    # Never move the schema unless at least one worker is going to deploy on
+    # top of it. Without this the job runs whenever the workflow fires, so any
+    # filter that wrongly reports false leaves migrations applied with every
+    # worker still on the old code — strictly worse than not deploying at all.
+    if: >-
+      !cancelled() &&
+      needs.test-gen.result != 'failure' &&
+      (needs.changes.outputs.enter == 'true' ||
+       needs.changes.outputs.gen == 'true' ||
+       needs.changes.outputs.media == 'true')
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Run database migrations
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
+        run: npm run migrate:production --workspace pollinations-enter
+
+  deploy-enter:
+    needs: [changes, migrate]
+    if: >-
+      !cancelled() &&
+      needs.changes.outputs.enter == 'true' &&
+      needs.migrate.result == 'success'
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Setup SOPS
+        if: github.event_name == 'workflow_dispatch' && inputs.sync_discord_secrets
+        uses: nhedger/setup-sops@v2
+
+      - name: Build and deploy to Cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
+        run: npm run deploy:production --workspace pollinations-enter
+
+      - name: Push Discord secrets
+        if: github.event_name == 'workflow_dispatch' && inputs.sync_discord_secrets
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
+        run: >-
+          sops exec-file --no-fifo enter.pollinations.ai/secrets/prod.vars.json
+          'jq "{DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, DISCORD_BOT_TOKEN}" {}
+          | npx wrangler secret bulk - --env production
+          --config enter.pollinations.ai/wrangler.toml'
+
+  deploy-gen:
+    needs: [changes, migrate, deploy-mcp-apps]
+    if: >-
+      always() &&
+      needs.changes.outputs.gen == 'true' &&
+      needs.migrate.result == 'success' &&
+      (needs.deploy-mcp-apps.result == 'success' ||
+       needs.deploy-mcp-apps.result == 'skipped')
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Only this job sits on the post-migration critical path, so it is the
+      # one place the npm cache is worth having: every second between `migrate`
+      # finishing and gen deploying is a second the live worker queries a schema
+      # its code predates.
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup SOPS
+        uses: nhedger/setup-sops@v2
+
+      # Deploy BEFORE pushing secrets: a fresh `wrangler deploy` makes the
+      # latest worker version the deployed one. `wrangler secret bulk` edits
+      # the latest version's settings and fails (Cloudflare 10214) if that
+      # version isn't deployed — which happens after a manual version upload or
+      # rollback. Deploying first guarantees latest == deployed so the secret
+      # push can never hit that state. A brand-new secret is briefly missing in
+      # the few seconds between deploy and push, which self-heals.
+      - name: Deploy to Cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_GEN }}
+        run: npm run deploy:production --workspace pollinations-gen
+
+      - name: Push generation secrets
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_GEN }}
+        run: npm run push-secrets:production --workspace pollinations-gen
+
+      - name: Apply R2 lifecycle rules
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_GEN }}
+        run: npm run apply-lifecycle:production --workspace pollinations-gen
+
+  deploy-media:
+    needs: [changes, migrate]
+    if: needs.changes.outputs.media == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install shared dependencies
+        run: npm install --workspace shared --include-workspace-root=false
+
+      - name: Install media dependencies
+        run: npm install
+        working-directory: ./media.pollinations.ai
+
+      - name: Test
+        run: npm test
+        working-directory: ./media.pollinations.ai
+
+      - name: Apply R2 lifecycle rules
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
+        run: npm run apply-lifecycle:production
+        working-directory: ./media.pollinations.ai
+
+      - name: Deploy to Cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
+        run: npm run deploy:production
+        working-directory: ./media.pollinations.ai
+
+  # A Worker must exist before Gen can deploy a service binding to it. Deploy
+  # changed private MCP applications before Gen. The automatic Applications
+  # workflow excludes MCP Workers so it cannot race this dependency chain.
+  deploy-mcp-apps:
+    needs: [changes, deploy-media]
+    if: >-
+      always() &&
+      needs.changes.outputs.mcp_apps != '[]' &&
+      (needs.deploy-media.result == 'success' ||
+       needs.deploy-media.result == 'skipped')
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: ${{ fromJSON(needs.changes.outputs.mcp_apps) }}
+    concurrency:
+      group: deploy-${{ matrix.app.path }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Verify Docker
+        if: matrix.app.docker
+        run: docker info
+
+      - name: Deploy ${{ matrix.app.path }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
+        run: operations/deployment/deploy.sh "${{ matrix.app.path }}"

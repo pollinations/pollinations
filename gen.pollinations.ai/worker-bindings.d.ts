@@ -1,5 +1,7 @@
 interface CloudflareBindings {
     ENTER: Fetcher;
+    POLLINATIONS_MCP: Fetcher;
+    FFMPEG_MCP: Fetcher;
     PORTKEY?: Fetcher;
     KLEIN_VPC?: Fetcher;
     BETTER_AUTH_SECRET: string;

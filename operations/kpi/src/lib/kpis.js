@@ -42,10 +42,28 @@ export const KPIS = [
     },
     {
         key: "wau",
-        name: "WAU",
         category: "Usage",
+        views: [
+            {
+                name: "WAU",
+                tooltip:
+                    "Unique users we served this week — at least one request that was not rejected for insufficient Pollen. A 402 never reaches a provider and is never billed, so it does not make someone an active user. Source: Tinybird (weekly_active_users).",
+            },
+            {
+                key: "wauAll",
+                name: "WAU · incl. rejected",
+                tooltip:
+                    "Every unique user who sent a request, including those whose only requests came back 402 for insufficient Pollen. This is the figure the dashboard showed before; it runs roughly twice the served count and has stayed flat while the served base halved.",
+            },
+        ],
+    },
+    {
+        key: "turnedAway",
+        name: "Turned away",
+        category: "Usage",
+        calc: (w) => w.wauAll - w.wau,
         tooltip:
-            "Weekly active users: unique users with at least one API request this week. Source: Tinybird (generation_event_v2)",
+            "Users whose every request this week was rejected for insufficient Pollen (WAU incl. rejected − WAU). Demand that reached the Pollen wall and got nothing.",
     },
     {
         key: "tokens",
@@ -74,6 +92,12 @@ export const KPIS = [
                 name: "Revenue",
                 tooltip:
                     "Gross USD from Pollen pack purchases. Source: Stripe checkout events in Tinybird.",
+            },
+            {
+                key: "pollenRevenue",
+                name: "Pollen spent",
+                tooltip:
+                    "USD value of Pollen consumed by generation requests this week, across Paid and Quest balances. Source: Tinybird (weekly_usage_stats).",
             },
             {
                 name: "ARPA",
@@ -139,11 +163,21 @@ export const KPIS = [
     },
     {
         key: "byopUserPct",
-        name: "BYOP user %",
         category: "Segments",
         format: "percent",
-        tooltip:
-            "Share of active users from BYOP apps (app key attribution or hostname heuristic).",
+        views: [
+            {
+                name: "BYOP user %",
+                tooltip:
+                    "Share of served users on BYOP keys. Users whose only requests were rejected for insufficient Pollen are excluded from both sides.",
+            },
+            {
+                key: "byopUserPctAll",
+                name: "BYOP user % · incl. rejected",
+                tooltip:
+                    "The same share counting users whose every request came back 402. BYOP keys hit the Pollen wall more often than others, so this reads several points higher.",
+            },
+        ],
     },
     {
         key: "byopPollenPct",
@@ -162,7 +196,7 @@ export const KPIS = [
                 key: "communityUserPct",
                 name: "Community models · users",
                 tooltip:
-                    "Unique users making at least one final community-model request / weekly active users × 100. Status is ignored on the numerator, so a user whose only community call returned 4xx or 5xx still counts. Managed agents are community endpoints too, so their callers are included until agent attribution exists.",
+                    "Unique users making at least one final community-model request / WAU × 100. Both sides exclude users rejected for insufficient Pollen, so this is a share of people we served. Other 4xx and 5xx still count on the numerator. Managed agents are community endpoints too, so their callers are included until agent attribution exists.",
             },
             {
                 key: "communityRequestPct",

@@ -8,11 +8,16 @@ import {
 import { getModels } from "../utils/models.js";
 
 async function listModels(params, context) {
-    const models = await getModels(
+    let models = await getModels(
         params.type || "all",
         context,
         params.community,
     );
+    if (params.agent !== undefined) {
+        models = models.filter(
+            (model) => (model.agent === true) === params.agent,
+        );
+    }
     return createMCPResponse([createTextContent(models, true)]);
 }
 
@@ -28,7 +33,7 @@ async function getModelStatus(params, context) {
 export const discoveryTools = [
     [
         "listModels",
-        "Call before claiming that a named model is unavailable. Returns live canonical names, aliases, modalities, capabilities, voices, supported endpoints, and pricing in Pollen. Filter by modality or community ownership.",
+        "Call before claiming that a named model or agent is unavailable. Returns live canonical names, aliases, modalities, capabilities, voices, supported endpoints, agent status, and pricing in Pollen. Filter by modality, community ownership, or agents.",
         {
             type: z
                 .enum([
@@ -48,6 +53,10 @@ export const discoveryTools = [
                 .describe(
                     "True for community models only, false for official models only",
                 ),
+            agent: z
+                .boolean()
+                .optional()
+                .describe("True for agents only, false to exclude agents"),
         },
         listModels,
     ],

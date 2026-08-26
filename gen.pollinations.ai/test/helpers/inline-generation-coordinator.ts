@@ -19,6 +19,7 @@ export function withInlineGenerationCoordinator(
                         job.auth,
                         job.requestId,
                         job.balanceCheckResult,
+                        job.apiKeyBudgetEstimate,
                         coordinated,
                     );
                     await execution.settlement;

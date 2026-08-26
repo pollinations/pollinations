@@ -203,23 +203,24 @@ describe("long-context cost variants", () => {
             12,
         );
         expect(billing.priceDefinition).toMatchObject({
-            promptTextTokens: 10 / 1e6,
-            promptCachedTokens: 1 / 1e6,
-            completionTextTokens: 45 / 1e6,
+            promptTextTokens: (10 / 1e6) * 0.75,
+            promptCachedTokens: (1 / 1e6) * 0.75,
+            completionTextTokens: (45 / 1e6) * 0.75,
         });
     });
 
     it.each([
-        ["gpt-5.6-sol", 10, 1, 12.5, 45],
-        ["gpt-5.6-terra", 5, 0.5, 6.25, 22.5],
-        ["gpt-5.6-luna", 2, 0.2, 2.5, 9],
+        ["gpt-5.6-sol", 10, 1, 12.5, 45, 1 / 3],
+        ["gpt-5.6-terra", 4, 0.4, 5, 18, 0.75],
+        ["gpt-5.6-luna", 0.4, 0.04, 0.5, 1.8, 0.75],
     ] satisfies [
         ModelName,
         number,
         number,
         number,
         number,
-    ][])("%s applies every Azure long-context meter to the full request", (model, input, cached, cacheWrite, output) => {
+        number,
+    ][])("%s applies every Azure long-context meter to the full request", (model, input, cached, cacheWrite, output, multiplier) => {
         const billing = bill(model, {
             promptTextTokens: 272_001,
             promptCachedTokens: 1_000,
@@ -228,7 +229,6 @@ describe("long-context cost variants", () => {
         });
 
         expect(billing.costVariant).toBe("long_context");
-        const multiplier = model === "gpt-5.6-luna" ? 0.2 : 0.5;
         expect(billing.priceDefinition).toMatchObject({
             promptTextTokens: (input / 1e6) * multiplier,
             promptCachedTokens: (cached / 1e6) * multiplier,
@@ -352,6 +352,33 @@ describe("long-context cost variants", () => {
     });
 });
 
+describe("AssemblyAI transcription cost variants", () => {
+    it.each([
+        ["universal-2", "json", false, 0.15, undefined],
+        ["universal-2", "diarized_json", false, 0.17, "diarization"],
+        ["universal-3.5-pro", "json", false, 0.21, undefined],
+        ["universal-3.5-pro", "json", true, 0.26, "prompting"],
+        ["universal-3.5-pro", "diarized_json", false, 0.23, "diarization"],
+        [
+            "universal-3.5-pro",
+            "diarized_json",
+            true,
+            0.28,
+            "prompting_diarization",
+        ],
+    ] as const)("%s format=%s prompt=%s bills $%s/hour", (model, responseFormat, hasPrompt, hourlyCost, variant) => {
+        const billing = bill(
+            model,
+            { promptAudioSeconds: 3600 },
+            { hasDiarization: responseFormat === "diarized_json", hasPrompt },
+        );
+
+        expect(billing.cost.totalCost).toBeCloseTo(hourlyCost, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(hourlyCost, 12);
+        expect(billing.costVariant).toBe(variant);
+    });
+});
+
 describe("request-mode cost variants", () => {
     it("qwen-image bills text-to-image and edit at their separate rates", () => {
         const textToImage = bill("qwen-image", {
@@ -388,6 +415,23 @@ describe("request-mode cost variants", () => {
 });
 
 describe("resolution cost variants", () => {
+    it.each([
+        [1024, 1024, 0.04, undefined],
+        [1008, 1040, 0.06, "2048"],
+        [1024, 1040, 0.06, "2048"],
+        [2048, 2048, 0.06, "2048"],
+    ] as const)("nova-canvas bills %sx%s at $%s/image", (width, height, rate, variant) => {
+        const billing = bill(
+            "nova-canvas",
+            { completionImageTokens: 1 },
+            { maxImageDimension: Math.max(width, height) },
+        );
+
+        expect(billing.costVariant).toBe(variant);
+        expect(billing.cost.totalCost).toBeCloseTo(rate, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(rate, 12);
+    });
+
     it("p-video bills the 720p base and 1080p variant", () => {
         expect(
             bill("p-video", { completionVideoSeconds: 10 }).cost.totalCost,

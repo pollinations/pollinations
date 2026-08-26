@@ -63,7 +63,7 @@ Known traps:
 - There is no external provider invoice for `community`; our pollen ledger is the source of truth.
 - Do not use Wise/card matching for community rows.
 - The legacy Forager connector reads `pollen_monthly`; Economics uses `op_pollen`.
-- Historical `cost_paid` on community rows is the sale price, not a provider bill. `op_pollen_populate` now stores 0; the economics reader also ignores it.
+- Historical raw `cost_paid` on community rows is the sale price, not a provider bill. `op_pollen_api` normalizes it to 0, and `op_pollen_populate` stores 0 for new rows.
 - Zero rows in early months can be valid if no community models were used.
 
 Reconciliation notes:

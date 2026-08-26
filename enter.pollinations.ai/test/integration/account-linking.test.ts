@@ -108,10 +108,8 @@ test("links a Discord identity to the signed-in GitHub account", async ({
         accountId: mocks.discord.state.userId,
         userId: user?.id,
     });
-    expect(discordAccount?.accessToken).toBeTruthy();
-    expect(discordAccount?.accessToken).not.toBe("mock_discord_access_token");
-    expect(discordAccount?.refreshToken).toBeTruthy();
-    expect(discordAccount?.refreshToken).not.toBe("mock_discord_refresh_token");
+    expect(discordAccount?.accessToken).toBe("mock_discord_access_token");
+    expect(discordAccount?.refreshToken).toBe("mock_discord_refresh_token");
 
     const secondLinkResponse = await SELF.fetch(
         "http://localhost:3000/api/auth/link-social",

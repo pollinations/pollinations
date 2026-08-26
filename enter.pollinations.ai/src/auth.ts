@@ -168,7 +168,6 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             },
         },
         account: {
-            encryptOAuthTokens: true,
             accountLinking: {
                 allowDifferentEmails: true,
                 // Better Auth 1.4 requires this for Discord accounts without a

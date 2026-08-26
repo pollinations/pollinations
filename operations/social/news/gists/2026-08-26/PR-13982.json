@@ -1,0 +1,35 @@
+{
+  "pr_number": 13982,
+  "title": "Add Dery AI to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13982",
+  "merged_at": "2026-08-26T09:42:46Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Dery AI](https://dery-ai.my.id) to image\n- Create collaborative images using the Pollinations image API\n\nFixes #13782",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A shared canvas blooms",
+    "blurb": "Dery AI joined the garden with a collaborative canvas powered by the Pollinations image API. More people can now pass pixels around and make something pleasantly strange together.",
+    "summary": "Added Dery AI to the app directory, giving users a collaborative image-making experience built on the Pollinations image API.",
+    "impact": "Users can discover and use Dery AI to create images together while Pollinations handles the generation layer.",
+    "keywords": [
+      "Dery AI",
+      "images",
+      "collaboration",
+      "image API",
+      "community app"
+    ],
+    "visual_concept": "Depict a cozy shared pixel-art canvas where Polli and a few friendly collaborators add colorful image tiles to one large garden mural. The collaborative canvas represents Dery AI, while sprouting code-flowers and a glowing retro image terminal connect it clearly to the Pollinations image API.",
+    "image_prompt": "A cozy shared pixel-art art table where the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny painter’s beret and happily places a pixel flower tile onto a collaborative canvas beside a glowing retro image terminal and code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with simple pixel-font text: “CREATE TOGETHER”; nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-26/PR-13982.jpg",
+    "prompt": "A cozy shared pixel-art art table where the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny painter’s beret and happily places a pixel flower tile onto a collaborative canvas beside a glowing retro image terminal and code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with simple pixel-font text: “CREATE TOGETHER”; nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-26T09:43:47.511720+00:00",
+  "app_name": "Dery AI",
+  "app_url": "https://dery-ai.my.id"
+}

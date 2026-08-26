@@ -16,10 +16,7 @@ type McpServerDefinitionBase = {
     binding: McpBindingName;
 };
 
-export type McpBindingName =
-    | "POLLINATIONS_MCP"
-    | "FFMPEG_MCP"
-    | "EXA_MCP";
+export type McpBindingName = "POLLINATIONS_MCP" | "FFMPEG_MCP" | "EXA_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (

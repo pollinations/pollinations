@@ -104,7 +104,10 @@ test("searches Exa and reports exact API cost", async () => {
     });
     const response = responses.at(-1);
     assert.equal(response.headers.get(MCP_USAGE_HEADERS.cost), "0.007");
-    assert.equal(response.headers.get(MCP_USAGE_HEADERS.tool), "web_search_exa");
+    assert.equal(
+        response.headers.get(MCP_USAGE_HEADERS.tool),
+        "web_search_exa",
+    );
     assert.equal(response.headers.get(MCP_USAGE_HEADERS.status), "200");
     assert.equal(
         response.headers.get(MCP_USAGE_HEADERS.adjustmentId),
@@ -130,10 +133,7 @@ test("fetches multiple pages and reports per-page usage", async () => {
     });
     const response = responses.at(-1);
     assert.equal(response.headers.get(MCP_USAGE_HEADERS.cost), "0.002");
-    assert.equal(
-        response.headers.get(MCP_USAGE_HEADERS.adjustmentUnits),
-        "2",
-    );
+    assert.equal(response.headers.get(MCP_USAGE_HEADERS.adjustmentUnits), "2");
     await client.close();
 });
 

@@ -36,7 +36,9 @@ async function callExa(path, payload, env, fetchImpl) {
     if (!response.ok) {
         throw new ExaFailure(
             response.status >= 500 ? 502 : response.status,
-            body?.error || body?.message || `Exa returned HTTP ${response.status}`,
+            body?.error ||
+                body?.message ||
+                `Exa returned HTTP ${response.status}`,
             Number.isFinite(body?.costDollars?.total)
                 ? body.costDollars.total
                 : 0,

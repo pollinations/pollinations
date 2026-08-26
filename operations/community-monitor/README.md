@@ -3,8 +3,9 @@
 Headless coding agent that watches community text and image models (the
 `owner/model` endpoints registered via My Models), probes them, reads Tinybird
 health, and hides unreliable ones from model listings while keeping exact-ID
-calls available. Runs on a standalone EC2 box (`community-monitor`), not in
-this repo's CI.
+calls available. Runs on the `monitoring-agents` EC2 box (ssh alias
+`community-monitor`, see `operations/infrastructure/gpu/GPU_INSTANCES.md`),
+not in this repo's CI. The Discord bots share that host.
 
 ## What's here vs what's live-only
 
@@ -46,11 +47,24 @@ Live-only on the box, never committed:
 
 ## Provisioning / reproducing the box
 
+Current box: `monitoring-agents` in AWS account `myceli-prod`, `us-east-1`,
+`t4g.medium` (arm64), Elastic IP `3.221.108.127`, Ubuntu 24.04, Node 22,
+`@anthropic-ai/claude-code` installed globally via npm, `gh` + `screen`.
+Every new instance gets a persisted swapfile at least the size of RAM.
+
 Use a monitor-specific SSH key and the infrastructure secret manager; do not
 commit private keys or host credentials to this repository, even encrypted.
 Install Node and the `claude` CLI, clone/copy this directory, populate `.env`
 (see `.env.example`), install `community-monitor.service`, then run
 `systemctl enable --now community-monitor`.
+
+To move the box, `rsync -a` the whole `/home/ubuntu` (this carries
+`~/.claude/` — credentials, session transcripts, and the agent's memory —
+plus `.env`, `state.json`, and `people_mapping.json`), copy the systemd unit
+and crontab, stop the old service and screen session, then on the new host
+`systemctl enable --now community-monitor` and relaunch the console with
+`screen -dmS rc-console bash -lc 'cd /home/ubuntu/monitor && set -a && source .env && set +a && exec claude --resume <session-id> --remote-control community-monitor --dangerously-skip-permissions'`.
+Pick "Resume full session" at the prompt to keep the session state intact.
 
 ## Automatic prompt/runtime updates
 

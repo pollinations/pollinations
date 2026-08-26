@@ -1,0 +1,21 @@
+[Unit]
+Description=Pollinations Discord Bot Family
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/discord-bots/apps/discord-bot-family
+ExecStart=/usr/bin/node start-all.js
+Restart=always
+RestartSec=30
+EnvironmentFile=/home/ubuntu/discord-bots/apps/discord-bot-family/.env
+Environment=PATH=/usr/bin:/usr/local/bin
+Environment=HOME=/home/ubuntu
+Environment=DEBUG=app:*
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=discord-bots
+
+[Install]
+WantedBy=multi-user.target

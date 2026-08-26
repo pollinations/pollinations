@@ -1753,7 +1753,6 @@ test("account quest history accepts account usage permission", async ({
     });
 });
 
-
 test("quest leaderboard returns ranked contributors by total pollen", async ({
     mocks,
     sessionToken: _sessionToken,

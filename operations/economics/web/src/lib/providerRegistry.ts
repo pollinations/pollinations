@@ -22,7 +22,18 @@ export type ProviderDefinition = {
     aliases: string[];
     connector: string | null;
     monthlyReview: boolean;
+    balanceTracking: boolean;
+    collectionMethod: ProviderCollectionMethod | null;
+    access?: ProviderAccessTarget[];
     accounts?: ProviderAccountDefinition[];
+};
+
+export type ProviderCollectionMethod = "api" | "cli" | "dashboard" | "internal";
+
+export type ProviderAccessTarget = {
+    workspace: string;
+    url: string;
+    accountId?: string;
 };
 
 export type MeteringBasis =

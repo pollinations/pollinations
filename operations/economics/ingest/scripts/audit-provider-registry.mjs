@@ -9,14 +9,12 @@ const repositoryDirectory = resolve(economicsDirectory, "../..");
 const registry = JSON.parse(
     readFileSync(resolve(economicsDirectory, "provider-registry.json"), "utf8"),
 );
-const auditTargetsPath = resolve(
-    economicsDirectory,
-    "ingest/data/provider-audit-targets.json",
+const auditTargets = registry.providers.flatMap((provider) =>
+    (provider.access ?? []).map((target) => ({
+        ...target,
+        provider: provider.id,
+    })),
 );
-const auditTargets = existsSync(auditTargetsPath)
-    ? (JSON.parse(readFileSync(auditTargetsPath, "utf8")).auditTargets ?? [])
-    : [];
-const hasPrivateAuditTargets = existsSync(auditTargetsPath);
 const reconciliation = await loadPrivateReconciliation();
 
 const errors = [];
@@ -71,8 +69,8 @@ for (const provider of registry.providers) {
 
     if (provider.monthlyReview) {
         const connectorPath = resolve(
-            economicsDirectory,
-            "ingest/connectors",
+            repositoryDirectory,
+            ".claude/skills/economics-provider-collection/references/providers",
             `${provider.connector}.md`,
         );
         if (!provider.connector || !existsSync(connectorPath)) {
@@ -81,7 +79,6 @@ for (const provider of registry.providers) {
             );
         }
         if (
-            hasPrivateAuditTargets &&
             provider.meteringBasis !== "internal" &&
             !auditTargets.some((target) => target.provider === provider.id)
         ) {
@@ -104,16 +101,8 @@ for (const target of auditTargets) {
     } catch {
         errors.push(`Dashboard audit URL ${providerId} is invalid`);
     }
-    if (target.loginEmail == null && !target.pending) {
-        errors.push(`Dashboard audit target ${providerId} has no login email`);
-    }
-    if (
-        target.loginEmail != null &&
-        !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(target.loginEmail)
-    ) {
-        errors.push(
-            `Dashboard audit target ${providerId} has an invalid login email`,
-        );
+    if (!/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(target.workspace ?? "")) {
+        errors.push(`Dashboard audit target ${providerId} has no workspace`);
     }
     if (target.accountId != null) {
         const accountIds = new Set(
@@ -133,9 +122,8 @@ for (const provider of registry.providers) {
     const targets = auditTargets.filter(
         (target) => target.provider === provider.id,
     );
-    for (const account of hasPrivateAuditTargets
-        ? (provider.accounts ?? [])
-        : []) {
+    for (const account of provider.accounts ?? []) {
+        if (!provider.monthlyReview) continue;
         if (!targets.some((target) => target.accountId === account.id)) {
             errors.push(
                 `Provider ${provider.id} account ${account.id} has no dashboard audit target`,
@@ -151,6 +139,21 @@ for (const target of auditTargets) {
         errors.push(`Duplicate dashboard audit target ${key}`);
     }
     auditTargetKeys.add(key);
+}
+
+const collectionMethods = new Set(["api", "cli", "dashboard", "internal"]);
+for (const provider of registry.providers) {
+    if (
+        provider.collectionMethod != null &&
+        !collectionMethods.has(provider.collectionMethod)
+    ) {
+        errors.push(
+            `Provider ${provider.id} has invalid collectionMethod ${provider.collectionMethod}`,
+        );
+    }
+    if (typeof provider.balanceTracking !== "boolean") {
+        errors.push(`Provider ${provider.id} has no balanceTracking decision`);
+    }
 }
 
 const providerCheckKeys = new Set();

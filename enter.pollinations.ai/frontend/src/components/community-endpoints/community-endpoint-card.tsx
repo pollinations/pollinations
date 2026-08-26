@@ -9,6 +9,7 @@ import {
     ExternalLinkIcon,
     GlobeIcon,
     IconButton,
+    InlineLink,
     LockIcon,
     PencilIcon,
     Surface,
@@ -166,6 +167,14 @@ export function CommunityEndpointCard({
                     />
                 ))}
             </div>
+
+            <InlineLink
+                href={`/activity?earningsModels=${encodeURIComponent(endpoint.modelId)}`}
+                showIcon={false}
+                className="mt-2 text-xs"
+            >
+                View activity
+            </InlineLink>
         </Surface>
     );
 }

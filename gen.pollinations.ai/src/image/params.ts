@@ -102,6 +102,19 @@ export const ImageParamsSchema = z
             ])
             .optional(),
         audio: sanitizedBoolean.catch(true), // generateAudio defaults to true
+        // Reference media inputs (#13901): reference video/audio URLs passed
+        // through to video model backends.
+        reference_video: z
+            .union([z.array(z.string()), z.string(), z.null(), z.undefined()])
+            .transform((value?: string[] | string | null) => {
+                if (!value) return undefined;
+                if (Array.isArray(value)) return value;
+                return value.includes("|")
+                    ? value.split("|")
+                    : value.split(",");
+            })
+            .catch(undefined),
+        reference_audio: z.string().optional().catch(undefined),
     })
     .superRefine((data, ctx) => {
         if (data.resolution) {

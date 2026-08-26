@@ -89,6 +89,7 @@ export function publicCommunityFallbackOptions(
                 !model.agent &&
                 (model.type === "text" ||
                     model.type === "image" ||
+                    model.type === "video" ||
                     model.type === "audio"),
         )
         .map((model) => ({
@@ -96,9 +97,11 @@ export function publicCommunityFallbackOptions(
             modality:
                 model.type === "image"
                     ? "image"
-                    : model.type === "audio"
-                      ? "transcription"
-                      : "text",
+                    : model.type === "video"
+                      ? "video"
+                      : model.type === "audio"
+                        ? "transcription"
+                        : "text",
         }));
 }
 
@@ -465,9 +468,11 @@ export function nextFormState(
         const modality =
             value === "image"
                 ? "image"
-                : value === "transcription"
-                  ? "transcription"
-                  : "text";
+                : value === "video"
+                  ? "video"
+                  : value === "transcription"
+                    ? "transcription"
+                    : "text";
         return {
             ...current,
             modality,

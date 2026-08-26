@@ -1,4 +1,5 @@
-import { Tooltip } from "@pollinations/ui";
+import { cn, RocketIcon, Tooltip } from "@pollinations/ui";
+import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import { type FC, useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
     CAPABILITY_ICON,
@@ -12,6 +13,7 @@ import {
     getModelCapabilityLabel,
     getModelDisplayName,
     getModelInputModalities,
+    getModelLimitLabel,
     getModelModalityLabel,
     hasPollinationsTools,
     type InputModality,
@@ -174,6 +176,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
     const capabilities = getModelCapabilities(model);
     const capabilityLabel = getModelCapabilityLabel(model);
     const pollinationsTools = hasPollinationsTools(model);
+    const modelLimitLabel = getModelLimitLabel(model);
     const publicModelName = displayName || model.name;
     const showNew = isNewModel(model);
     const showPaidOnly = isPaidOnly(model);
@@ -267,6 +270,13 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                 <PerUserRateLimit value={model.perUserRpm} />
                             </div>
                         )}
+                        {modelLimitLabel && (
+                            <div className="flex min-w-0 items-center">
+                                <span className="text-xs text-theme-text-muted">
+                                    {modelLimitLabel}
+                                </span>
+                            </div>
+                        )}
                     </div>
                     <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5">
                         <ModelStatusChips
@@ -279,6 +289,33 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                         />
                     </div>
                 </div>
+                {model.type !== "3d" &&
+                    model.type !== "embedding" &&
+                    model.type !== "realtime" && (
+                        <Tooltip
+                            content={
+                                <span className="flex items-center gap-1.5">
+                                    <RocketIcon className="h-3.5 w-3.5" />
+                                    Try in Play
+                                </span>
+                            }
+                            ariaLabel="Try in Play"
+                            tapEnabled
+                            displayContents
+                        >
+                            <a
+                                href={`${PUBLIC_URLS.pollinations.root}/play?model=${encodeURIComponent(model.name)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label={`Try ${model.name} in Play`}
+                                className={cn(
+                                    "shrink-0 inline-flex h-6 w-6 items-center justify-center rounded text-theme-text-soft hover:text-theme-text-strong hover:bg-theme-bg-active transition-colors",
+                                )}
+                            >
+                                <RocketIcon className="h-4 w-4" />
+                            </a>
+                        </Tooltip>
+                    )}
             </div>
 
             <div className="flex gap-2.5 px-4 pb-4 pt-0">

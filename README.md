@@ -96,7 +96,7 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 Community members run their own models on the Pollinations platform — text, image, video, audio, embeddings, and more.
 
-- **Host your own model** — register an upstream endpoint with the [`/account/my-models`](APIDOCS.md) API, then serve it to everyone or keep it private to your account.
+- **Host your own model** — register an upstream endpoint with the [`/account/my-models`](APIDOCS.md) API, then serve it to everyone or keep it private to your account. See the [naming guide](./BRING_YOUR_OWN_MODEL.md) for choosing stable model IDs, titles, and descriptions.
 - **Automatic fallback routing** — nominate up to three compatible backup models so generations keep moving when an upstream model goes down.
 - **Discover and monitor** — browse community models via [gen.pollinations.ai/v1/models](https://gen.pollinations.ai/v1/models) and watch live health and community leaderboards at [model-monitor.pollinations.ai](https://model-monitor.pollinations.ai).
 

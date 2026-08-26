@@ -48,6 +48,10 @@ export function communityImageSupportedEndpoints(
     ];
 }
 
+export function communityVideoSupportedEndpoints(): string[] {
+    return ["/v1/video/generations", "/video/{prompt}"];
+}
+
 export type CommunityModelRegistryEntry = {
     id: string;
     aliases: string[];
@@ -99,6 +103,7 @@ export async function getCommunityModelRegistryEntries(
                 schema.communityEndpoint.completionReasoningPrice,
             completionAudioPrice: schema.communityEndpoint.completionAudioPrice,
             completionImagePrice: schema.communityEndpoint.completionImagePrice,
+            completionVideoPrice: schema.communityEndpoint.completionVideoPrice,
             fallbackModelIds: schema.communityEndpoint.fallbackModelIds,
             disabledAt: schema.communityEndpoint.disabledAt,
             disabledReason: schema.communityEndpoint.disabledReason,

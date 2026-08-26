@@ -19,10 +19,15 @@ const PERIOD_PATTERN: Record<PeriodGranularity, RegExp> = {
 };
 
 function stringArray(value: unknown): string[] | undefined {
-    return Array.isArray(value) &&
-        value.every((item) => typeof item === "string")
-        ? value
-        : undefined;
+    if (Array.isArray(value)) {
+        return value.every((item) => typeof item === "string")
+            ? value
+            : undefined;
+    }
+    if (typeof value === "string" && value.length > 0) {
+        return [value];
+    }
+    return undefined;
 }
 
 function metric(value: unknown): Metric | undefined {

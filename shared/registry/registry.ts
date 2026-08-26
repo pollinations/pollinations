@@ -90,6 +90,8 @@ export type VideoCapability =
     | "start_frame"
     | "end_frame"
     | "keyframes"
+    | "reference_video"
+    | "reference_audio"
     | "audio_output";
 
 export type BillingAdjustmentRule = {
@@ -208,6 +210,7 @@ export type ModelDefinition = {
     videoCapabilities?: VideoCapability[]; // Video-only: which frame controls the provider supports
     maxReferenceImages?: number; // Models with image input: effective accepted reference images
     maxReferenceVideos?: number; // Models with video input: effective accepted reference videos
+    durationSeconds?: { min: number; max: number }; // Video-only: supported duration range in seconds
 };
 
 // Helper: Convert usage counts to rated USD-equivalent cost or Pollen charge.

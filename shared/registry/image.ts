@@ -414,6 +414,7 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
+        durationSeconds: { min: 4, max: 8 },
     },
     "seedance-pro": {
         aliases: [],
@@ -459,6 +460,7 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
+        durationSeconds: { min: 2, max: 10 },
     },
     "seedance-2.0": {
         aliases: ["seedance-2"],
@@ -468,17 +470,42 @@ const IMAGE_BASE_SERVICES = {
         addedDate: new Date("2026-05-07").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // non_video_in tier @ 720p; see Economics' replicate connector guide
+        // non_video_in tier @ 720p: $0.18/s; video_in tier @ 720p: $0.22/s.
+        // See Economics' replicate connector guide.
         cost: {
             completionVideoSeconds: 0.18,
         },
+        ...defineCostVariants(
+            {
+                video_in: {
+                    completionVideoSeconds: 0.22,
+                },
+            },
+            ({ input }) => (input?.hasReferenceVideo ? "video_in" : undefined),
+            {
+                video_in: {
+                    label: "720p with reference video",
+                    description:
+                        "Applies when the request includes a reference video input (video_in tier).",
+                },
+            },
+            "720p",
+        ),
         title: "Seedance 2.0",
         description:
-            "720p video with natively synced sound, from text or images",
-        inputModalities: ["text", "image"],
+            "720p video with natively synced sound, from text, images, or a reference video",
+        inputModalities: ["text", "image", "video"],
         outputModalities: ["video", "audio"],
-        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        videoCapabilities: [
+            "start_frame",
+            "end_frame",
+            "audio_output",
+            "reference_video",
+            "reference_audio",
+        ],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
+        maxReferenceVideos: 1, // video_in input.
+        durationSeconds: { min: 4, max: 15 },
     },
     "seedance-2.0-mini": {
         aliases: [],
@@ -489,6 +516,8 @@ const IMAGE_BASE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         // Replicate non_video_in tiers: 480p $0.04/s, 720p $0.09/s.
+        // video_in tier estimated at ~1.2x (see seedance-2.0 for verified
+        // rate). Re-check public Replicate model page before finalizing.
         cost: {
             completionVideoSeconds: 0.09,
         },
@@ -497,13 +526,36 @@ const IMAGE_BASE_SERVICES = {
                 "480p": {
                     completionVideoSeconds: 0.04,
                 },
+                "720p_video_in": {
+                    completionVideoSeconds: 0.11,
+                },
+                "480p_video_in": {
+                    completionVideoSeconds: 0.05,
+                },
             },
-            matchResolution("480p"),
+            ({ input }) => {
+                if (input?.hasReferenceVideo) {
+                    return input.resolution === "480p"
+                        ? "480p_video_in"
+                        : "720p_video_in";
+                }
+                return input?.resolution === "480p" ? "480p" : undefined;
+            },
             {
                 "480p": {
                     label: "480p",
                     description:
                         "Applies when the requested video resolution is 480p.",
+                },
+                "720p_video_in": {
+                    label: "720p with reference video",
+                    description:
+                        "Applies when the request includes a reference video input.",
+                },
+                "480p_video_in": {
+                    label: "480p with reference video",
+                    description:
+                        "Applies when the request includes a reference video input.",
                 },
             },
             "720p",
@@ -512,10 +564,18 @@ const IMAGE_BASE_SERVICES = {
         title: "Seedance 2.0 Mini",
         description:
             "Lower-cost 4–10 second video with synchronized sound and first/last-frame control at 480p or 720p",
-        inputModalities: ["text", "image"],
+        inputModalities: ["text", "image", "video"],
         outputModalities: ["video", "audio"],
-        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        videoCapabilities: [
+            "start_frame",
+            "end_frame",
+            "audio_output",
+            "reference_video",
+            "reference_audio",
+        ],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
+        maxReferenceVideos: 1, // video_in input.
+        durationSeconds: { min: 4, max: 10 },
     },
     "seedance-2.0-fast": {
         aliases: [],
@@ -525,18 +585,45 @@ const IMAGE_BASE_SERVICES = {
         addedDate: new Date("2026-08-14").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // Replicate non_video_in 480p tier; 720p misses the latency limit.
+        // Replicate non_video_in 480p tier: $0.07/s.
+        // video_in 480p tier estimated at ~1.3x. Re-check public Replicate
+        // model page before finalizing.
         cost: {
             completionVideoSeconds: 0.07,
         },
+        ...defineCostVariants(
+            {
+                "480p_video_in": {
+                    completionVideoSeconds: 0.09,
+                },
+            },
+            ({ input }) =>
+                input?.hasReferenceVideo ? "480p_video_in" : undefined,
+            {
+                "480p_video_in": {
+                    label: "480p with reference video",
+                    description:
+                        "Applies when the request includes a reference video input (video_in tier).",
+                },
+            },
+            "480p",
+        ),
         resolutions: ["480p"],
         title: "Seedance 2.0 Fast",
         description:
             "Short 4–5 second video with synchronized sound and first/last-frame control at 480p",
-        inputModalities: ["text", "image"],
+        inputModalities: ["text", "image", "video"],
         outputModalities: ["video", "audio"],
-        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        videoCapabilities: [
+            "start_frame",
+            "end_frame",
+            "audio_output",
+            "reference_video",
+            "reference_audio",
+        ],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
+        maxReferenceVideos: 1, // video_in input.
+        durationSeconds: { min: 4, max: 5 },
     },
     "wan": {
         aliases: ["wan2.6", "wan-i2v"],
@@ -558,6 +645,7 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "audio_output"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
+        durationSeconds: { min: 5, max: 15 },
     },
     "wan-fast": {
         aliases: ["wan2.2", "wan-2.2"],
@@ -579,6 +667,7 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["video"],
         videoCapabilities: ["start_frame", "end_frame"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
+        durationSeconds: { min: 5, max: 5 },
     },
     "wan-pro": {
         aliases: [
@@ -634,6 +723,7 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
+        durationSeconds: { min: 2, max: 15 },
     },
     "wan-image": {
         aliases: ["wan2.7-image", "wan-img"],
@@ -890,6 +980,7 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
+        durationSeconds: { min: 1, max: 15 },
     },
     "grok-imagine-video-1.5": {
         aliases: [],
@@ -935,6 +1026,7 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "audio_output"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
+        durationSeconds: { min: 1, max: 15 },
     },
     "seedance-2.5": {
         aliases: [],
@@ -971,6 +1063,7 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
+        durationSeconds: { min: 4, max: 4 },
     },
     "happyhorse-1.1": {
         aliases: ["happyhorse", "happy-horse-1.1"],
@@ -989,6 +1082,7 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1,
+        durationSeconds: { min: 3, max: 15 },
     },
     "minimax-h3": {
         aliases: [],
@@ -1028,6 +1122,7 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["video", "audio"],
         videoCapabilities: ["audio_output"],
+        durationSeconds: { min: 5, max: 5 },
     },
     "klein": {
         aliases: ["flux-klein"],
@@ -1119,6 +1214,7 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
+        durationSeconds: { min: 2, max: 10 },
     },
     "nova-canvas": {
         aliases: ["amazon-nova-canvas"],
@@ -1153,6 +1249,7 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["video"],
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
+        durationSeconds: { min: 6, max: 120 },
     },
 } as const satisfies Record<string, ModelDefinition>;
 

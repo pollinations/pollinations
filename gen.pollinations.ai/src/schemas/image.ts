@@ -111,6 +111,47 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         description:
             "Generate audio for the video. Only applies to video models. `wan` and `minimax-h3` always generate audio regardless of this flag. For `veo`, set to `true` to enable audio.",
     }),
+    // Video-specific reference media inputs (#13901): reference videos and
+    // audio that guide generation, distinct from start/end frame images.
+    reference_video: z
+        .string()
+        .optional()
+        .transform((value?: string) => {
+            if (!value) return undefined;
+            return value.includes("|") ? value.split("|") : value.split(",");
+        })
+        .refine(
+            (urls) =>
+                !urls ||
+                urls.every(
+                    (url) =>
+                        !url ||
+                        url.startsWith("http://") ||
+                        url.startsWith("https://"),
+                ),
+            {
+                message:
+                    "Invalid reference_video URL. Put reference_video= param last in your URL, or URL-encode it.",
+            },
+        )
+        .meta({
+            description:
+                "Reference video URL(s) that guide video generation, distinct from start/end frame images. Supported by `seedance-2.0` (video_in) and other models advertising `reference_video` in `video_capabilities`. Separate multiple URLs with `|` or `,`. Only applies to video models.",
+        }),
+    reference_audio: z
+        .string()
+        .optional()
+        .refine(
+            (url) =>
+                !url || url.startsWith("http://") || url.startsWith("https://"),
+            {
+                message: "Invalid reference_audio URL.",
+            },
+        )
+        .meta({
+            description:
+                "Reference audio URL that the generated video should sync with (e.g. lip sync, motion to beat). Supported by models advertising `reference_audio` in `video_capabilities`. Only applies to video models.",
+        }),
 });
 
 const validateDuration = (

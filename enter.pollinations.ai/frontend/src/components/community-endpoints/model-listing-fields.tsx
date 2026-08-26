@@ -2,6 +2,7 @@ import {
     ButtonGroup,
     CheckIcon,
     FieldStack,
+    InlineLink,
     Input,
     TabButton,
 } from "@pollinations/ui";
@@ -92,9 +93,19 @@ export function ModelListingFields({
                 <FieldStack
                     label={isAgent ? "ID" : "Model ID"}
                     helper={
-                        isAgent
-                            ? "Public ID: {username}/{id}."
-                            : "Public ID: {username}/{model-id}."
+                        isAgent ? (
+                            "Public ID: {username}/{id}."
+                        ) : (
+                            <>
+                                Public ID: {"{username}/{model-id}"}.{" "}
+                                <InlineLink
+                                    href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_MODEL.md"
+                                    showIcon={false}
+                                >
+                                    Naming guide
+                                </InlineLink>
+                            </>
+                        )
                     }
                     alignLabelRow
                 >
@@ -113,7 +124,17 @@ export function ModelListingFields({
                 </FieldStack>
                 <FieldStack
                     label="Title"
-                    helper="Display name shown in the Models list."
+                    helper={
+                        <>
+                            Display name shown in the Models list.{" "}
+                            <InlineLink
+                                href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_MODEL.md"
+                                showIcon={false}
+                            >
+                                Naming guide
+                            </InlineLink>
+                        </>
+                    }
                     alignLabelRow
                 >
                     <Input

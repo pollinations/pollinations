@@ -64,6 +64,52 @@ const response = await client.chat.completions.create({
 });
 console.log(response.choices[0].message.content);`,
         },
+        {
+            label: "Reasoning",
+            lang: "Shell",
+            source: `curl https://gen.pollinations.ai/v1/chat/completions \\
+  -H "Authorization: Bearer YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "gpt-oss",
+    "messages": [{"role": "user", "content": "Explain the physics of black holes"}],
+    "reasoning_effort": "high"
+  }'`,
+        },
+        {
+            label: "Reasoning",
+            lang: "Python",
+            source: `from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://gen.pollinations.ai/v1",
+    api_key="YOUR_API_KEY"
+)
+
+response = client.chat.completions.create(
+    model="gpt-oss",
+    messages=[{"role": "user", "content": "Explain the physics of black holes"}],
+    reasoning_effort="high",
+)
+print(response.choices[0].message.content)`,
+        },
+        {
+            label: "Reasoning",
+            lang: "JavaScript",
+            source: `import OpenAI from "openai";
+
+const client = new OpenAI({
+  baseURL: "https://gen.pollinations.ai/v1",
+  apiKey: "YOUR_API_KEY",
+});
+
+const response = await client.chat.completions.create({
+  model: "gpt-oss",
+  messages: [{ role: "user", content: "Explain the physics of black holes" }],
+  reasoning_effort: "high",
+});
+console.log(response.choices[0].message.content);`,
+        },
     ],
     "get /text/{prompt}": [
         {
@@ -89,6 +135,33 @@ print(response.text)`,
             lang: "JavaScript",
             source: `const response = await fetch(
   "https://gen.pollinations.ai/text/Write%20a%20haiku?model=openai",
+  { headers: { Authorization: "Bearer YOUR_API_KEY" } },
+);
+console.log(await response.text());`,
+        },
+        {
+            label: "Reasoning",
+            lang: "Shell",
+            source: `curl "https://gen.pollinations.ai/text/Explain%20black%20holes?model=gpt-oss&reasoning_effort=high" \\
+  -H "Authorization: Bearer YOUR_API_KEY"`,
+        },
+        {
+            label: "Reasoning",
+            lang: "Python",
+            source: `import requests
+
+response = requests.get(
+    "https://gen.pollinations.ai/text/Explain black holes",
+    params={"model": "gpt-oss", "reasoning_effort": "high"},
+    headers={"Authorization": "Bearer YOUR_API_KEY"},
+)
+print(response.text)`,
+        },
+        {
+            label: "Reasoning",
+            lang: "JavaScript",
+            source: `const response = await fetch(
+  "https://gen.pollinations.ai/text/Explain%20black%20holes?model=gpt-oss&reasoning_effort=high",
   { headers: { Authorization: "Bearer YOUR_API_KEY" } },
 );
 console.log(await response.text());`,

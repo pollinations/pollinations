@@ -297,6 +297,7 @@ function priceKind(field: PriceField): PriceKind {
         return field.usageType.startsWith("prompt") ? "audioIn" : "audioOut";
     }
     if (field.usageType.includes("Image")) return "image";
+    if (field.usageType.includes("Video")) return "video";
     return "text";
 }
 
@@ -331,6 +332,9 @@ export const BASE_TEXT_PRICE_KEYS: PriceFieldKey[] = [
 export const BASE_TRANSCRIPTION_PRICE_KEYS: PriceFieldKey[] = [
     "promptAudioPrice",
 ];
+
+// Video models bill per output second.
+export const BASE_VIDEO_PRICE_KEYS: PriceFieldKey[] = ["completionVideoPrice"];
 
 export function returnedPriceFields(
     testState: ActionState,

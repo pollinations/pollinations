@@ -9,6 +9,7 @@ import {
     DropdownItem,
     ExternalLinkButton,
     GitHubIcon,
+    InfoTip,
     Input,
     SearchIcon,
     Section,
@@ -34,7 +35,11 @@ import {
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
 import { getModelDisplayName } from "./model-info.ts";
-import type { ModelScope, ModelSort } from "./model-search.ts";
+import {
+    type ModelScope,
+    type ModelSort,
+    matchesQuery,
+} from "./model-search.ts";
 import { sortModels } from "./model-sort.ts";
 import {
     type SectionType,
@@ -114,13 +119,6 @@ const SEARCH_LABELS: Record<SectionType, string> = {
     embedding: "embedding",
     agent: "agent",
 };
-
-function matchesQuery(model: ModelPrice, query: string): boolean {
-    if (!query) return true;
-    const displayName = getModelDisplayName(model) ?? "";
-    const haystack = `${displayName} ${model.brand ?? ""}`.toLowerCase();
-    return haystack.includes(query);
-}
 
 function categorizeModels(
     models: ModelPrice[],
@@ -420,6 +418,30 @@ export const Models: FC = () => {
                                 placeholder={`Search ${searchTarget}…`}
                                 aria-label={`Search ${searchTarget}`}
                                 className="w-full pl-9"
+                            />
+                            <InfoTip
+                                content={
+                                    <span className="max-w-xs">
+                                        <strong className="font-semibold">
+                                            Search filters
+                                        </strong>
+                                        <br />
+                                        Use <code>key:value</code> syntax:
+                                        <br />
+                                        <code>access:paid</code>,{" "}
+                                        <code>access:quest</code>,{" "}
+                                        <code>access:free</code> ·{" "}
+                                        <code>owner:login</code> ·{" "}
+                                        <code>id:model-id</code> ·{" "}
+                                        <code>type:category</code> ·{" "}
+                                        <code>capability:reasoning</code>
+                                        <br />
+                                        Free-text terms search name, title,
+                                        description, brand, modalities, and
+                                        capabilities.
+                                    </span>
+                                }
+                                label="Search filter help"
                             />
                         </div>
                         <Dropdown

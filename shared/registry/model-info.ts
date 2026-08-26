@@ -98,6 +98,9 @@ export const ModelInfoSchema = z.object({
     tools: z.boolean().optional(),
     reasoning: z.boolean().optional(),
     context_length: z.number().optional(),
+    duration_seconds: z
+        .object({ min: z.number().int(), max: z.number().int() })
+        .optional(),
     voices: z.array(z.string()).optional(),
     is_specialized: z.boolean().optional(),
     paid_only: z.boolean().optional(),
@@ -218,6 +221,7 @@ export function modelInfoFromDefinition(
         tools: service.tools,
         reasoning: service.reasoning,
         context_length: service.contextLength,
+        duration_seconds: service.durationSeconds,
         voices: service.voices,
         is_specialized: service.isSpecialized,
         paid_only: service.paidOnly,

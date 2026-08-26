@@ -89,6 +89,9 @@ export type ModelPrice = {
     priceVariants?: ModelPriceVariant[];
     priceDefaultLabel?: string;
     priceAdjustments?: ModelPriceAdjustment[];
+    // Model limits
+    contextLength?: number; // Text context length (tokens)
+    durationSeconds?: { min: number; max: number }; // Video duration range (seconds)
     // Real usage data from Tinybird (rolling 7-day average)
     realAvgCost?: number;
 };

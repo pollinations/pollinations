@@ -34,6 +34,13 @@ export const GenerateTextRequestQueryParamsSchema = z.object({
         description:
             "Stream the response as it's generated, using Server-Sent Events (SSE). Each chunk contains partial text.",
     }),
+    reasoning_effort: z
+        .enum(["none", "minimal", "low", "medium", "high", "xhigh", "max"])
+        .optional()
+        .meta({
+            description:
+                "Requests reasoning depth for models that support adjustable reasoning. See model metadata (`reasoning: true`) on /v1/models for which models support this. Use with a model that has reasoning enabled.",
+        }),
     safe: SafeSchema,
 });
 

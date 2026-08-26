@@ -46,6 +46,7 @@ import {
 } from "./utils/imageDownload.ts";
 import { setImagesBinding } from "./utils/imageTransform.ts";
 import { buildTrackingHeaders } from "./utils/trackingHeaders.ts";
+import { callCommunityVideoEndpoint } from "./videoCommunityEndpoint.ts";
 
 type ImageContext = Context<Env>;
 type RuntimeImageParams = Omit<ImageParams, "model"> & { model: string };
@@ -423,6 +424,19 @@ async function generateMediaWithFallback(
         async (attempt) => {
             const params = { ...safeParams, model: attempt.id };
             if (attempt.communityEndpoint) {
+                if (attempt.communityEndpoint.modality === "video") {
+                    const generated = await callCommunityVideoEndpoint(
+                        attempt.communityEndpoint,
+                        prompt,
+                        params,
+                        c.env.BETTER_AUTH_SECRET,
+                    );
+                    assertNonEmptyMedia(
+                        generated.buffer,
+                        "Community video endpoint",
+                    );
+                    return { result: generated, params };
+                }
                 const generated = await callCommunityImageEndpoint(
                     attempt.communityEndpoint,
                     prompt,
@@ -524,6 +538,7 @@ export async function generateImageOrVideoResponse(
         resolution: safeParams.resolution,
         quality: safeParams.quality,
         hasImage: (safeParams.image?.length ?? 0) > 0,
+        hasReferenceVideo: (safeParams.reference_video?.length ?? 0) > 0,
         megapixels: (safeParams.width * safeParams.height) / 1_000_000,
     });
 

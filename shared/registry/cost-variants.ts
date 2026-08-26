@@ -19,6 +19,7 @@ export type PricingInput = {
     resolution?: string;
     quality?: string;
     hasImage?: boolean;
+    hasReferenceVideo?: boolean;
     megapixels?: number;
     searchContextSize?: "low" | "high";
 };

@@ -9,6 +9,7 @@ from publisher_safety import (
     assert_opening_balance_integrity,
     assert_pollen_reason_transitions,
     assert_production_confirmation,
+    batches,
     canonical_pollen_provider,
     latest_version_query,
     validate_recorded_at,
@@ -16,6 +17,11 @@ from publisher_safety import (
 
 
 class PublisherSafetyTest(unittest.TestCase):
+    def test_batches_large_publisher_queries(self):
+        self.assertEqual(list(batches(list(range(5)), 2)), [[0, 1], [2, 3], [4]])
+        with self.assertRaisesRegex(ValueError, "positive"):
+            list(batches([1], 0))
+
     def test_requires_an_explicit_production_append_confirmation(self):
         with self.assertRaisesRegex(RuntimeError, "confirm-production"):
             assert_production_confirmation("production", False, False)
@@ -74,7 +80,9 @@ class PublisherSafetyTest(unittest.TestCase):
         )
 
     def test_quotes_entry_ids_and_restricts_tables(self):
-        query = latest_version_query("op_cloud", ["normal", "quote'id"])
+        query = latest_version_query(
+            "economics_compute_ledger", ["normal", "quote'id"]
+        )
         self.assertIn("'quote''id'", query)
         with self.assertRaisesRegex(RuntimeError, "Unsupported"):
             latest_version_query("secret_table", ["a"])

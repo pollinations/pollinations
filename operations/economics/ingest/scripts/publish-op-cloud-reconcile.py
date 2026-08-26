@@ -11,8 +11,10 @@ from tinybird.client import TinyB
 from publisher_safety import (
     assert_base_versions,
     assert_explicit_tombstones,
+    assert_immutable_fields,
     assert_newer_versions,
     assert_production_confirmation,
+    batches,
     latest_version_query,
     validate_recorded_at,
 )
@@ -47,7 +49,7 @@ OPTIONAL_FIELDS = {"account_id", "account_name"}
 
 def arguments():
     parser = argparse.ArgumentParser(
-        description="Append a reviewed op_cloud correction and verify every row."
+        description="Append a reviewed compute-ledger correction and verify every row."
     )
     parser.add_argument("environment", choices=WORKSPACES)
     parser.add_argument("input", type=Path)
@@ -62,7 +64,7 @@ def read_ndjson(path):
     rows = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
     ids = [row["entry_id"] for row in rows]
     if not rows or len(ids) != len(set(ids)):
-        raise RuntimeError("Input must contain unique op_cloud entry IDs")
+        raise RuntimeError("Input must contain unique compute-ledger entry IDs")
     validate_recorded_at(rows)
     assert_explicit_tombstones(rows, ["credit", "paid"])
     return rows
@@ -85,13 +87,15 @@ async def datasource_fields(client):
     query = """
         SELECT name
         FROM system.columns
-        WHERE table = 'op_cloud'
+        WHERE table = 'economics_compute_ledger'
         FORMAT JSON
     """
     fields = {row["name"] for row in (await client.query(query))["data"]}
     missing = set(FIELDS) - OPTIONAL_FIELDS - fields
     if missing:
-        raise RuntimeError(f"op_cloud is missing required fields: {sorted(missing)}")
+        raise RuntimeError(
+            f"economics_compute_ledger is missing required fields: {sorted(missing)}"
+        )
     return fields
 
 
@@ -133,7 +137,7 @@ async def effective_rows(client, fields):
                 argMax(resource_id, recorded_at) AS resource_id,
                 argMax(resource_name, recorded_at) AS resource_name,
                 max(recorded_at) AS latest_recorded_at
-            FROM op_cloud
+            FROM economics_compute_ledger
             GROUP BY entry_id
         )
         WHERE source != 'tombstone'
@@ -144,41 +148,55 @@ async def effective_rows(client, fields):
 
 
 async def latest_rows(client, entry_ids, fields):
-    quoted = ",".join("'" + value.replace("'", "''") + "'" for value in entry_ids)
     account_fields = "".join(
         f",\n            ifNull(argMax({field}, recorded_at), '') AS {field}"
         for field in ("account_id", "account_name")
         if field in fields
     )
-    query = f"""
-        SELECT
-            entry_id,
-            argMax(source, recorded_at) AS source,
-            argMax(start, recorded_at) AS start,
-            argMax(end, recorded_at) AS end,
-            argMax(vendor, recorded_at) AS vendor{account_fields},
-            argMax(type, recorded_at) AS type,
-            argMax(model, recorded_at) AS model,
-            argMax(credit, recorded_at) AS credit,
-            argMax(paid, recorded_at) AS paid,
-            argMax(currency, recorded_at) AS currency,
-            argMax(evidence, recorded_at) AS evidence,
-            argMax(resource_sku, recorded_at) AS resource_sku,
-            argMax(resource_count, recorded_at) AS resource_count,
-            argMax(resource_id, recorded_at) AS resource_id,
-            argMax(resource_name, recorded_at) AS resource_name
-        FROM op_cloud
-        WHERE entry_id IN ({quoted})
-        GROUP BY entry_id
-        FORMAT JSON
-    """
-    return (await client.query(query))["data"]
+    rows = []
+    for entry_id_batch in batches(entry_ids):
+        quoted = ",".join(
+            "'" + value.replace("'", "''") + "'" for value in entry_id_batch
+        )
+        query = f"""
+            SELECT
+                entry_id,
+                argMax(source, recorded_at) AS source,
+                argMax(start, recorded_at) AS start,
+                argMax(end, recorded_at) AS end,
+                argMax(vendor, recorded_at) AS vendor{account_fields},
+                argMax(type, recorded_at) AS type,
+                argMax(model, recorded_at) AS model,
+                argMax(credit, recorded_at) AS credit,
+                argMax(paid, recorded_at) AS paid,
+                argMax(currency, recorded_at) AS currency,
+                argMax(evidence, recorded_at) AS evidence,
+                argMax(resource_sku, recorded_at) AS resource_sku,
+                argMax(resource_count, recorded_at) AS resource_count,
+                argMax(resource_id, recorded_at) AS resource_id,
+                argMax(resource_name, recorded_at) AS resource_name
+            FROM economics_compute_ledger
+            WHERE entry_id IN ({quoted})
+            GROUP BY entry_id
+            FORMAT JSON
+        """
+        rows.extend((await client.query(query))["data"])
+    return rows
 
 
 async def current_versions(client, entry_ids):
-    return (
-        await client.query(latest_version_query("op_cloud", entry_ids))
-    )["data"]
+    rows = []
+    for entry_id_batch in batches(entry_ids):
+        rows.extend(
+            (
+                await client.query(
+                    latest_version_query(
+                        "economics_compute_ledger", entry_id_batch
+                    )
+                )
+            )["data"]
+        )
+    return rows
 
 
 def equal_value(expected, actual):
@@ -237,24 +255,46 @@ async def main():
     before = await effective_rows(admin, fields)
     write_snapshot(args.before_snapshot.resolve(), before)
 
-    result = {}
-    if not args.verify_only:
-        versions = await current_versions(
-            admin, [row["entry_id"] for row in expected]
-        )
-        assert_base_versions(expected, versions)
-        assert_newer_versions(
-            expected,
-            versions,
-        )
-        append = await client_for(workspace_name, append=True)
-        with tempfile.TemporaryDirectory() as temporary_directory:
-            append_path = append_input_path(expected, fields, temporary_directory)
-            result = await append.datasource_append_data(
-                "op_cloud", append_path, mode="append", format="ndjson"
+    versions = await current_versions(
+        admin, [row["entry_id"] for row in expected]
+    )
+    identities = await latest_rows(
+        admin, [row["entry_id"] for row in expected], fields
+    )
+    assert_base_versions(expected, versions)
+    assert_newer_versions(expected, versions)
+    assert_immutable_fields(
+        expected,
+        identities,
+        ["vendor", "start", "type", "resource_id"],
+    )
+
+    if args.verify_only:
+        write_snapshot(args.after_snapshot.resolve(), before)
+        print(
+            json.dumps(
+                {
+                    "environment": args.environment,
+                    "rows_appended": 0,
+                    "rows_validated": len(versions),
+                    "effective_rows_before": len(before),
+                    "effective_rows_after": len(before),
+                }
             )
-        if result.get("error"):
-            raise RuntimeError(f"Tinybird append failed: {result['error']}")
+        )
+        return
+
+    append = await client_for(workspace_name, append=True)
+    with tempfile.TemporaryDirectory() as temporary_directory:
+        append_path = append_input_path(expected, fields, temporary_directory)
+        result = await append.datasource_append_data(
+            "economics_compute_ledger",
+            append_path,
+            mode="append",
+            format="ndjson",
+        )
+    if result.get("error"):
+        raise RuntimeError(f"Tinybird append failed: {result['error']}")
 
     actual = []
     for attempt in range(6):
@@ -274,7 +314,7 @@ async def main():
         json.dumps(
             {
                 "environment": args.environment,
-                "rows_appended": 0 if args.verify_only else len(expected),
+                "rows_appended": len(expected),
                 "rows_verified": len(actual),
                 "effective_rows_before": len(before),
                 "effective_rows_after": len(after),

@@ -11,9 +11,11 @@ from tinybird.client import TinyB
 
 from publisher_safety import (
     assert_base_versions,
+    assert_immutable_fields,
     assert_newer_versions,
     assert_production_confirmation,
     assert_opening_balance_integrity,
+    batches,
     latest_version_query,
     validate_recorded_at,
 )
@@ -42,7 +44,7 @@ KINDS = {"transaction", "opening_balance"}
 
 def arguments():
     parser = argparse.ArgumentParser(
-        description="Append reviewed op_transactions facts and verify every row."
+        description="Append reviewed bank-ledger facts and verify every row."
     )
     parser.add_argument("environment", choices=WORKSPACES)
     parser.add_argument("input", type=Path)
@@ -57,7 +59,7 @@ def read_ndjson(path):
     rows = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
     ids = [row["entry_id"] for row in rows]
     if not rows or len(ids) != len(set(ids)):
-        raise RuntimeError("Input must contain unique op_transactions entry IDs")
+        raise RuntimeError("Input must contain unique bank-ledger entry IDs")
 
     invalid_kinds = [row["entry_id"] for row in rows if row.get("kind") not in KINDS]
     if invalid_kinds:
@@ -144,7 +146,7 @@ async def effective_rows(client):
                 argMax(description, recorded_at) AS description,
                 argMax(evidence, recorded_at) AS evidence,
                 max(recorded_at) AS latest_recorded_at
-            FROM op_transactions
+            FROM economics_bank_ledger
             GROUP BY entry_id
         )
         ORDER BY date DESC, vendor, entry_id
@@ -154,31 +156,43 @@ async def effective_rows(client):
 
 
 async def latest_rows(client, entry_ids):
-    quoted = ",".join("'" + value.replace("'", "''") + "'" for value in entry_ids)
-    query = f"""
-        SELECT
-            entry_id,
-            argMax(kind, recorded_at) AS kind,
-            argMax(source, recorded_at) AS source,
-            formatDateTime(argMax(date, recorded_at), '%F') AS date,
-            argMax(vendor, recorded_at) AS vendor,
-            argMax(category, recorded_at) AS category,
-            argMax(amount, recorded_at) AS amount,
-            argMax(currency, recorded_at) AS currency,
-            argMax(description, recorded_at) AS description,
-            argMax(evidence, recorded_at) AS evidence
-        FROM op_transactions
-        WHERE entry_id IN ({quoted})
-        GROUP BY entry_id
-        FORMAT JSON
-    """
-    return (await client.query(query))["data"]
+    rows = []
+    for entry_id_batch in batches(entry_ids):
+        quoted = ",".join(
+            "'" + value.replace("'", "''") + "'" for value in entry_id_batch
+        )
+        query = f"""
+            SELECT
+                entry_id,
+                argMax(kind, recorded_at) AS kind,
+                argMax(source, recorded_at) AS source,
+                formatDateTime(argMax(date, recorded_at), '%F') AS date,
+                argMax(vendor, recorded_at) AS vendor,
+                argMax(category, recorded_at) AS category,
+                argMax(amount, recorded_at) AS amount,
+                argMax(currency, recorded_at) AS currency,
+                argMax(description, recorded_at) AS description,
+                argMax(evidence, recorded_at) AS evidence
+            FROM economics_bank_ledger
+            WHERE entry_id IN ({quoted})
+            GROUP BY entry_id
+            FORMAT JSON
+        """
+        rows.extend((await client.query(query))["data"])
+    return rows
 
 
 async def current_versions(client, entry_ids):
-    return (
-        await client.query(latest_version_query("op_transactions", entry_ids))
-    )["data"]
+    rows = []
+    for entry_id_batch in batches(entry_ids):
+        rows.extend(
+            (
+                await client.query(
+                    latest_version_query("economics_bank_ledger", entry_id_batch)
+                )
+            )["data"]
+        )
+    return rows
 
 
 def equal_value(expected, actual):
@@ -243,11 +257,18 @@ async def main():
             expected,
             versions,
         )
+        identities = await latest_rows(
+            admin, [row["entry_id"] for row in expected]
+        )
+        assert_immutable_fields(expected, identities, ["kind", "date"])
         append = await client_for(workspace_name, append=True)
         with tempfile.TemporaryDirectory() as temporary_directory:
             append_path = append_input_path(expected, temporary_directory)
             result = await append.datasource_append_data(
-                "op_transactions", append_path, mode="append", format="ndjson"
+                "economics_bank_ledger",
+                append_path,
+                mode="append",
+                format="ndjson",
             )
         if result.get("error"):
             raise RuntimeError(f"Tinybird append failed: {result['error']}")

@@ -1,6 +1,13 @@
 from datetime import datetime
 
 
+def batches(values, size=200):
+    if size <= 0:
+        raise ValueError("Batch size must be positive")
+    for start in range(0, len(values), size):
+        yield values[start : start + size]
+
+
 def assert_production_confirmation(environment, verify_only, confirmed):
     if environment == "production" and not verify_only and not confirmed:
         raise RuntimeError(
@@ -32,9 +39,8 @@ def validate_recorded_at(rows):
 
 def latest_version_query(table, entry_ids):
     if table not in {
-        "op_transactions",
-        "op_cloud",
-        "op_forecast",
+        "economics_bank_ledger",
+        "economics_compute_ledger",
         "op_pollen_history",
     }:
         raise RuntimeError(f"Unsupported versioned datasource: {table}")

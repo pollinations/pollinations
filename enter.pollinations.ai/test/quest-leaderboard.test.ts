@@ -25,9 +25,11 @@ test("leaderboard limits rows without truncating aggregate totals", async () => 
         };
     });
 
-    await db.insert(schema.user).values(builders);
-    await db.insert(schema.rewards).values(
-        builders.map((builder, index) => {
+    for (let index = 0; index < builders.length; index += 10) {
+        await db.insert(schema.user).values(builders.slice(index, index + 10));
+    }
+    const rewards: (typeof schema.rewards.$inferInsert)[] = builders.map(
+        (builder, index) => {
             const reward = index + 1;
             return {
                 id: `leaderboard-reward-${reward}`,
@@ -39,8 +41,42 @@ test("leaderboard limits rows without truncating aggregate totals", async () => 
                 pollenAmount: reward,
                 balanceBucket: "tier",
             };
-        }),
+        },
     );
+    for (let index = 0; index < rewards.length; index += 10) {
+        await db
+            .insert(schema.rewards)
+            .values(rewards.slice(index, index + 10));
+    }
+
+    // GitHub logins are case-insensitive, including across linked accounts.
+    await db.insert(schema.user).values({
+        id: "leaderboard-user-51-alias",
+        name: "Builder 51 alias",
+        email: "leaderboard-51-alias@example.com",
+        githubId: 9_100_051,
+        githubUsername: "Builder-51",
+    });
+    await db.insert(schema.rewards).values([
+        {
+            id: "leaderboard-reward-51-decimal-a",
+            idempotencyKey: "quest:github:issue:30001",
+            userId: "leaderboard-user-51",
+            questId: "github:issue:30001",
+            title: "Decimal quest A",
+            pollenAmount: 0.1,
+            balanceBucket: "tier",
+        },
+        {
+            id: "leaderboard-reward-51-decimal-b",
+            idempotencyKey: "quest:github:issue:30002",
+            userId: "leaderboard-user-51-alias",
+            questId: "github:issue:30002",
+            title: "Decimal quest B",
+            pollenAmount: 0.2,
+            balanceBucket: "tier",
+        },
+    ]);
 
     // A large product reward must not affect the public GitHub quest board.
     await db.insert(schema.rewards).values({
@@ -80,8 +116,8 @@ test("leaderboard limits rows without truncating aggregate totals", async () => 
     expect(payload.leaderboard).toHaveLength(50);
     expect(payload.leaderboard[0]).toEqual({
         githubLogin: "builder-51",
-        completedQuests: 1,
-        totalPollen: 51,
+        completedQuests: 3,
+        totalPollen: 51.3,
     });
     expect(payload.leaderboard.at(-1)).toEqual({
         githubLogin: "builder-2",
@@ -89,11 +125,11 @@ test("leaderboard limits rows without truncating aggregate totals", async () => 
         totalPollen: 2,
     });
 
-    // 1 + ... + 51 = 1326. Totals cover all 51, not only the top 50.
+    // 1 + ... + 51 + 0.1 + 0.2 = 1326.3. Totals cover all contributors.
     expect(payload.totals).toEqual({
         contributors: 51,
-        completedQuests: 51,
-        totalPollen: 1326,
+        completedQuests: 53,
+        totalPollen: 1326.3,
     });
 });
 

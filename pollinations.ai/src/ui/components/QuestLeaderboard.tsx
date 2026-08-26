@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { COMMUNITY_PAGE } from "../../copy/content/community";
+import { usePageCopy } from "../../hooks/usePageCopy";
 
 export type QuestLeaderboardEntry = {
     githubLogin: string;
@@ -25,6 +27,7 @@ export function QuestLeaderboardContent({
 }: {
     data: QuestLeaderboardData;
 }) {
+    const { copy } = usePageCopy(COMMUNITY_PAGE);
     const visible = data.leaderboard.slice(0, VISIBLE_CONTRIBUTORS);
 
     return (
@@ -35,37 +38,38 @@ export function QuestLeaderboardContent({
                         id="quest-leaderboard-heading"
                         className="mb-3 border-l-4 border-dark pl-4 font-headline text-2xl font-black uppercase tracking-widest text-dark md:text-3xl"
                     >
-                        Quest leaderboard
+                        {copy.questLeaderboardTitle}
                     </h2>
                     <p className="font-body text-sm leading-relaxed text-dark">
-                        Builders who completed public GitHub POLLEN-QUEST
-                        issues.
+                        {copy.questLeaderboardDescription}
                     </p>
                 </div>
                 <a
                     href={QUESTS_PAGE_URL}
                     className="w-fit bg-accent-strong px-2 py-1 font-headline text-xs font-black text-dark hover:underline"
                 >
-                    Browse open quests ↗
+                    {copy.questLeaderboardCta}
                 </a>
             </div>
 
             <dl
                 className="mb-4 grid grid-cols-3 gap-2"
-                aria-label="Quest leaderboard totals"
+                aria-label={copy.questLeaderboardTotalsLabel}
             >
                 <div className="rounded-sub-card border border-border-subtle bg-white/60 p-3">
                     <dd className="font-headline text-lg font-black text-dark">
                         {data.totals.contributors}
                     </dd>
-                    <dt className="font-body text-xs text-subtle">builders</dt>
+                    <dt className="font-body text-xs text-subtle">
+                        {copy.questLeaderboardBuildersLabel}
+                    </dt>
                 </div>
                 <div className="rounded-sub-card border border-border-subtle bg-white/60 p-3">
                     <dd className="font-headline text-lg font-black text-dark">
                         {data.totals.completedQuests}
                     </dd>
                     <dt className="font-body text-xs text-subtle">
-                        completed quests
+                        {copy.questLeaderboardCompletedLabel}
                     </dt>
                 </div>
                 <div className="rounded-sub-card border border-border-subtle bg-white/60 p-3">
@@ -73,7 +77,7 @@ export function QuestLeaderboardContent({
                         {data.totals.totalPollen}
                     </dd>
                     <dt className="font-body text-xs text-subtle">
-                        Quest Pollen
+                        {copy.questLeaderboardPollenLabel}
                     </dt>
                 </div>
             </dl>
@@ -98,11 +102,13 @@ export function QuestLeaderboardContent({
                                     @{entry.githubLogin}
                                 </span>
                                 <span className="block font-body text-xs text-subtle">
-                                    {entry.completedQuests} completed
+                                    {entry.completedQuests}{" "}
+                                    {copy.questLeaderboardRowCompletedLabel}
                                 </span>
                             </span>
                             <strong className="shrink-0 font-headline text-xs font-black text-dark">
-                                {entry.totalPollen} Pollen
+                                {entry.totalPollen}{" "}
+                                {copy.questLeaderboardRowPollenLabel}
                             </strong>
                         </a>
                     </li>

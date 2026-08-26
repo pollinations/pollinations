@@ -1,3 +1,4 @@
+import { roundPollenLedgerAmount } from "@shared/billing/precision.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { rewards as rewardsTable } from "@shared/db/better-auth.ts";
 import { and, eq, isNotNull, like, sql } from "drizzle-orm";
@@ -73,9 +74,10 @@ async function buildQuestLeaderboard(
     env: CloudflareBindings,
 ): Promise<QuestLeaderboardResponse> {
     const db = drizzle(env.DB);
+    const githubLogin = sql<string>`lower(${schema.user.githubUsername})`;
     const rows = await db
         .select({
-            githubLogin: schema.user.githubUsername,
+            githubLogin,
             completedQuests: sql<number>`count(${rewardsTable.id})`.mapWith(
                 Number,
             ),
@@ -92,7 +94,7 @@ async function buildQuestLeaderboard(
                 isNotNull(schema.user.githubUsername),
             ),
         )
-        .groupBy(schema.user.id, schema.user.githubUsername);
+        .groupBy(githubLogin);
 
     const contributors = rows
         .flatMap((row) =>
@@ -101,7 +103,7 @@ async function buildQuestLeaderboard(
                       {
                           githubLogin: row.githubLogin,
                           completedQuests: row.completedQuests,
-                          totalPollen: row.totalPollen,
+                          totalPollen: roundPollenLedgerAmount(row.totalPollen),
                       },
                   ]
                 : [],
@@ -121,9 +123,8 @@ async function buildQuestLeaderboard(
                 (sum, entry) => sum + entry.completedQuests,
                 0,
             ),
-            totalPollen: contributors.reduce(
-                (sum, entry) => sum + entry.totalPollen,
-                0,
+            totalPollen: roundPollenLedgerAmount(
+                contributors.reduce((sum, entry) => sum + entry.totalPollen, 0),
             ),
         },
     };

@@ -45,6 +45,7 @@ export const Route = createFileRoute("/_dashboard")({
                 tierBalance: 0,
                 packBalance: 0,
                 communityEndpointsAllowed: false,
+                discordAvailable: false,
                 billingState: null,
                 paidWeek: 0,
                 tierWeek: 0,
@@ -89,6 +90,7 @@ export const Route = createFileRoute("/_dashboard")({
             packBalance: d1BalanceResult?.packBalance ?? 0,
             communityEndpointsAllowed:
                 profileResult?.communityEndpointsAllowed ?? false,
+            discordAvailable: profileResult?.discordAvailable ?? false,
             billingState,
             paidWeek: earningsTodayResult?.paidWeek ?? 0,
             tierWeek: earningsTodayResult?.tierWeek ?? 0,

@@ -338,7 +338,7 @@ export const portkeyConfig: PortkeyConfigMap = {
                 max_tokens: 64000,
                 provider: {
                     only: ["mistral"],
-                    ignore: ["mistral/zdr"],
+                    ignore: ["mistral/zdr", "mistral/us", "mistral/eu"],
                     allow_fallbacks: false,
                 },
             },

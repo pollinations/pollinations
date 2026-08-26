@@ -4,6 +4,7 @@ import {
     ClipboardIcon,
     CopyButton,
     cn,
+    ExternalLinkIcon,
     Surface,
     Tooltip,
 } from "@pollinations/ui";
@@ -386,7 +387,25 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                 </div>
             </div>
 
-            <div className="w-[clamp(312px,calc(32%_-_8px),352px)] shrink-0 py-3 pl-3 pr-1">
+            <div className="flex shrink-0 items-center justify-end gap-2 py-3 pr-1">
+                <a
+                    href={`/play?model=${encodeURIComponent(model.name)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`Try ${publicModelName} in Play`}
+                    className="inline-flex items-center justify-center rounded-md p-1.5 text-theme-text-muted transition-colors hover:bg-surface-opaque hover:text-theme-text-base"
+                >
+                    <Tooltip
+                        triggerAs="span"
+                        content={<span>Try in Play</span>}
+                        ariaLabel="Try in Play"
+                        tapEnabled
+                    >
+                        <ExternalLinkIcon className="h-4 w-4" strokeWidth="3" />
+                    </Tooltip>
+                </a>
+            </div>
+            <div className="w-[clamp(312px,calc(32%_-_8px),352px)] shrink-0 py-3 pl-3">
                 <ModelPricingLedger
                     pricing={pricing}
                     hasTools={pollinationsTools}

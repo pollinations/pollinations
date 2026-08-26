@@ -34,7 +34,7 @@ import {
     fetchModelCatalog,
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
-import { getModelDisplayName } from "./model-info.ts";
+import { matchesModelQuery, parseModelQuery } from "./model-query.ts";
 import type { ModelScope, ModelSort } from "./model-search.ts";
 import { sortModels } from "./model-sort.ts";
 import {
@@ -116,13 +116,6 @@ const SEARCH_LABELS: Record<SectionType, string> = {
     agent: "agent",
 };
 
-function matchesQuery(model: ModelPrice, query: string): boolean {
-    if (!query) return true;
-    const displayName = getModelDisplayName(model) ?? "";
-    const haystack = `${displayName} ${model.brand ?? ""}`.toLowerCase();
-    return haystack.includes(query);
-}
-
 function categorizeModels(
     models: ModelPrice[],
 ): Record<SectionType, ModelPrice[]> {
@@ -191,7 +184,8 @@ export const Models: FC = () => {
         () => getModelPricesFromCatalog(catalogModels, stats),
         [catalogModels, stats],
     );
-    const query = search.trim().toLowerCase();
+    const query = search.trim();
+    const parsedQuery = useMemo(() => parseModelQuery(query), [query]);
     const scopedModels = useMemo(
         () =>
             allModels.filter(
@@ -202,10 +196,10 @@ export const Models: FC = () => {
     );
     const filteredModels = useMemo(
         () =>
-            query
-                ? scopedModels.filter((model) => matchesQuery(model, query))
+            parsedQuery
+                ? scopedModels.filter((model) => matchesModelQuery(model, parsedQuery))
                 : scopedModels,
-        [query, scopedModels],
+        [parsedQuery, scopedModels],
     );
 
     const loadModelCatalog = useCallback(
@@ -422,6 +416,9 @@ export const Models: FC = () => {
                                 aria-label={`Search ${searchTarget}`}
                                 className="w-full pl-9"
                             />
+                            <p className="mt-1 truncate text-xs text-theme-text-muted">
+                                Filters: access:paid · access:quest · access:free · owner:&lt;github-login&gt; · id:&lt;model-id&gt; · type:&lt;category&gt; · capability:&lt;capability&gt;
+                            </p>
                         </div>
                         <Dropdown
                             align="end"

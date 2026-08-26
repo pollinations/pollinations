@@ -34,6 +34,13 @@ test("lists the MCP servers exposed through Gen", async () => {
                     "Run FFmpeg against public HTTPS media and return hosted outputs.",
                 url: "https://gen.pollinations.ai/mcp/ffmpeg",
             },
+            {
+                id: "exa",
+                name: "Exa Search",
+                description:
+                    "Search the live web and fetch clean content from source pages.",
+                url: "https://gen.pollinations.ai/mcp/exa",
+            },
         ],
     });
 });
@@ -111,6 +118,37 @@ test("proxies FFmpeg without caller credentials and bills reported usage", async
     }
     expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
         tierBalance: 0.75,
+        packBalance: 0,
+    });
+});
+
+test("proxies Exa without caller credentials and bills reported usage", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1 },
+    });
+    const response = await SELF.fetch("https://gen.pollinations.ai/mcp/exa", {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${key}`,
+            Cookie: "session=private",
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(MCP_REQUEST),
+    });
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+        jsonrpc: "2.0",
+        id: 1,
+        result: {
+            content: [{ type: "text", text: "exa proxied" }],
+        },
+    });
+    for (const header of Object.values(MCP_USAGE_HEADERS)) {
+        expect(response.headers.has(header)).toBe(false);
+    }
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 0.993,
         packBalance: 0,
     });
 });

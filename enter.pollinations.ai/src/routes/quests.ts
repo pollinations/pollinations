@@ -1,6 +1,9 @@
 import { claimReward } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
-import { rewards as rewardsTable } from "@shared/db/better-auth.ts";
+import {
+    rewards as rewardsTable,
+    user as userTable,
+} from "@shared/db/better-auth.ts";
 import { count, desc, eq, isNotNull, sum } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";

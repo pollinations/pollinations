@@ -1,4 +1,5 @@
 import {
+    Alert,
     AppIcon,
     Chip,
     GlobeIcon,
@@ -22,26 +23,10 @@ import { ApiKeyDialog } from "./api-key-dialog.tsx";
 import { EditApiKeyDialog } from "./edit-api-key-dialog.tsx";
 import { DeleteConfirmation } from "./key-delete-confirmation.tsx";
 import { KeyDisplay } from "./key-display.tsx";
+import { isAppKey, isPublishableKey, readRedirectUris } from "./key-type.ts";
 import { LimitsBadge, shortLocale } from "./limits-badge.tsx";
 import { ModelsBadge } from "./models-badge.tsx";
 import type { ApiKey, ApiKeyManagerProps } from "./types.ts";
-
-function isPublishableKey(apiKey: ApiKey): boolean {
-    return apiKey.metadata?.keyType === "publishable";
-}
-
-function isAppKey(apiKey: ApiKey): boolean {
-    if (!isPublishableKey(apiKey)) return false;
-
-    const redirectUris = apiKey.metadata?.redirectUris;
-    const hasRedirectUris =
-        Array.isArray(redirectUris) &&
-        redirectUris.some(
-            (uri) => typeof uri === "string" && uri.trim().length > 0,
-        );
-
-    return hasRedirectUris || apiKey.metadata?.earningsEnabled === true;
-}
 
 export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     apiKeys,
@@ -63,6 +48,17 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     const visibleKeys = apiKeys.filter(
         (k) => !k.expiresAt || new Date(k.expiresAt).getTime() > now,
     );
+    const leakedPublishableKeys = visibleKeys.filter(
+        (key) =>
+            isPublishableKey(key) &&
+            key.metadata?.directUseDisabledDueToLeak === true,
+    );
+    const disabledPublishableKeys = leakedPublishableKeys.filter(
+        (key) => !isAppKey(key) && key.enabled === false,
+    );
+    const protectedAppKeys = leakedPublishableKeys.filter(
+        (key) => isAppKey(key) && key.enabled !== false,
+    );
     const sortedKeys = [...visibleKeys].sort(
         (a, b) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
@@ -76,9 +72,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
         const plaintextKey = apiKey.metadata?.plaintextKey as
             | string
             | undefined;
-        const redirectUrisMeta = Array.isArray(apiKey.metadata?.redirectUris)
-            ? (apiKey.metadata?.redirectUris as string[])
-            : [];
+        const redirectUrisMeta = readRedirectUris(apiKey.metadata);
         const primaryRedirectUri = redirectUrisMeta[0] || "";
         const extraRedirectUriCount = Math.max(0, redirectUrisMeta.length - 1);
         const earningsEnabled = apiKey.metadata?.earningsEnabled === true;
@@ -246,6 +240,48 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     return (
         <>
             <div className="flex flex-col gap-6">
+                {(disabledPublishableKeys.length > 0 ||
+                    protectedAppKeys.length > 0) && (
+                    <Alert intent="warning">
+                        {disabledPublishableKeys.length > 0 && (
+                            <p className="font-medium">
+                                We disabled {disabledPublishableKeys.length}{" "}
+                                publishable{" "}
+                                {disabledPublishableKeys.length === 1
+                                    ? "key"
+                                    : "keys"}{" "}
+                                after detecting suspicious direct use:{" "}
+                                {disabledPublishableKeys
+                                    .map((key) => key.name || "Unnamed key")
+                                    .join(", ")}
+                                .
+                            </p>
+                        )}
+                        {protectedAppKeys.length > 0 && (
+                            <p className="font-medium">
+                                We blocked direct Pollen spending on{" "}
+                                {protectedAppKeys.length} app{" "}
+                                {protectedAppKeys.length === 1 ? "key" : "keys"}{" "}
+                                after detecting suspicious direct use:{" "}
+                                {protectedAppKeys
+                                    .map((key) => key.name || "Unnamed key")
+                                    .join(", ")}
+                                . Connect User Wallets remains available.
+                            </p>
+                        )}
+                        <p className="mt-1 text-sm">
+                            Raw publishable keys (<code>pk_</code>) are legacy
+                            for direct API requests. Use Connect User Wallets,
+                            where users sign in and spend their own Pollen.{" "}
+                            <InlineLink
+                                href={genDocsUrl("#tag/connect-user-wallets")}
+                            >
+                                Read the migration guide
+                            </InlineLink>
+                            .
+                        </p>
+                    </Alert>
+                )}
                 <Section
                     title="API"
                     framed
@@ -332,7 +368,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 users spend in your app.{" "}
                                 <InlineLink
                                     href={genDocsUrl(
-                                        "#tag/bring-your-own-pollen",
+                                        "#tag/connect-user-wallets",
                                     )}
                                 >
                                     Read the guide

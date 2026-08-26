@@ -8,6 +8,13 @@ SQL >
         start_time AS timestamp,
         event_id,
         'community_model' AS source,
+        -- Labelled by the listing the caller asked for. model_used is NOT an
+        -- alternative here: on a successful call it holds the upstream's own
+        -- name (`deepseek-chat`), not the registry id
+        -- (`voodoohop/anyvm-deepseek-chat`), so using it would collapse every
+        -- owner's listing into whatever their provider happens to call it.
+        -- Crediting a rescuer's own listing needs a column naming the registry
+        -- model that served, which the event does not carry yet.
         resolved_model_requested AS entity_id,
         resolved_model_requested AS entity_name,
         model_used AS model,

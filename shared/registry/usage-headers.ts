@@ -20,6 +20,8 @@ export const USAGE_TYPE_HEADERS: Record<UsageType, string> = {
     completionVideoTokens: "x-usage-completion-video-tokens",
 };
 
+export const USAGE_MISSING_HEADER = "x-usage-missing";
+
 export const OPENAI_CHAT_USAGE_TYPES = [
     "promptTextTokens",
     "promptCachedTokens",
@@ -117,12 +119,15 @@ export function usageToOpenAIImageUsage(usage: Usage): OpenAIImageUsage {
     };
 }
 
-/**
- * Internal worker header carrying Portkey's served fallback target (e.g.
- * "config.targets[1]"), re-emitted from x-portkey-last-used-option-index so
- * tracking can read it off the worker response like the other usage headers.
- */
+/** Internal worker header carrying the served fallback candidate index. */
 export const FALLBACK_TARGET_HEADER = "x-fallback-target";
+
+/**
+ * Our id for the model that served the request. Authoritative over any name a
+ * provider reports for itself, which for a community endpoint is its upstream's
+ * name rather than the listing anyone can act on.
+ */
+export const MODEL_USED_HEADER = "x-model-used";
 
 /**
  * Convert OpenAI usage format to Usage format.
@@ -334,11 +339,16 @@ function detectUsageConvention(
  */
 export function buildUsageHeaders(
     modelUsed: string,
-    usage: Usage,
+    usage?: Usage,
 ): Record<string, string> {
     const headers: Record<string, string> = {
-        "x-model-used": modelUsed,
+        [MODEL_USED_HEADER]: modelUsed,
     };
+
+    if (!usage) {
+        headers[USAGE_MISSING_HEADER] = "true";
+        return headers;
+    }
 
     for (const [usageType, headerName] of Object.entries(USAGE_TYPE_HEADERS)) {
         const value = usage[usageType as UsageType];

@@ -1,11 +1,14 @@
 import { Buffer } from "node:buffer";
 import {
+    COMMUNITY_ENDPOINT_TIMEOUT_MS,
     type CommunityEndpointRuntime,
+    communityEndpointErrorDetail,
     communityImageEditsUrl,
     communityImageGenerationsUrl,
-    normalizeCommunityAssetUrl,
+    firstCommunityImageBytes,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
+import { HttpError } from "@shared/http-error.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 import {
@@ -14,18 +17,13 @@ import {
 } from "@shared/registry/usage-headers.ts";
 import { decryptSecret } from "@shared/secret-encryption.ts";
 import type { ImageGenerationResult } from "./createAndReturnImages.ts";
-import { HttpError } from "./httpError.ts";
 import type { ImageParams } from "./params.ts";
 import {
-    base64ToBuffer,
     bufferToUint8Array,
     downloadUserImage,
 } from "./utils/imageDownload.ts";
 
 type CommunityImageParams = Omit<ImageParams, "model"> & { model: string };
-
-const REQUEST_TIMEOUT_MS = 120_000;
-const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
 
 export async function callCommunityImageEndpoint(
     endpoint: CommunityEndpointRuntime,
@@ -33,6 +31,12 @@ export async function callCommunityImageEndpoint(
     safeParams: CommunityImageParams,
     secret: string,
 ): Promise<ImageGenerationResult> {
+    // Managed agents are text-only, so an image endpoint is always external.
+    if (endpoint.type !== "proxy") {
+        throw new Error(
+            `Community image endpoint '${endpoint.modelId}' is a managed agent`,
+        );
+    }
     const bearerToken = await decryptSecret(
         endpoint.bearerTokenCiphertext,
         secret,
@@ -59,15 +63,15 @@ export async function callCommunityImageEndpoint(
               }),
     );
 
-    const buffer = await firstImageBuffer(body, endpoint.baseUrl);
-    if (!detectImageMimeType(buffer)) {
+    const bytes = await firstCommunityImageBytes(body, endpoint.baseUrl);
+    if (!bytes || !detectImageMimeType(bytes)) {
         throw new HttpError(
             "Community image endpoint did not return a supported image",
             502,
         );
     }
     return {
-        buffer,
+        buffer: Buffer.from(bytes),
         isMature: false,
         isChild: false,
         trackingData: {
@@ -99,7 +103,7 @@ async function imageEditFormData(
     for (const [index, imageUrl] of safeParams.image.entries()) {
         const { buffer, mimeType } = await downloadUserImage(
             imageUrl,
-            AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+            AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
         );
         const extension = mimeType.split("/")[1];
         formData.append(
@@ -179,7 +183,7 @@ async function fetchWithTimeout(
         return await fetch(input, {
             ...init,
             redirect: "manual",
-            signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+            signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
         });
     } catch (error) {
         throw new HttpError(
@@ -191,108 +195,6 @@ async function fetchWithTimeout(
     }
 }
 
-async function firstImageBuffer(
-    body: unknown,
-    endpointBaseUrl: string,
-): Promise<Buffer> {
-    if (
-        !body ||
-        typeof body !== "object" ||
-        !("data" in body) ||
-        !Array.isArray(body.data)
-    ) {
-        throw new HttpError(
-            "Community image endpoint did not return OpenAI image data",
-            502,
-        );
-    }
-    for (const image of body.data) {
-        if (!image || typeof image !== "object") continue;
-        if (
-            "b64_json" in image &&
-            typeof image.b64_json === "string" &&
-            image.b64_json.length > 0
-        ) {
-            return base64ToBuffer(image.b64_json);
-        }
-        if (
-            "url" in image &&
-            typeof image.url === "string" &&
-            image.url.length > 0
-        ) {
-            return fetchImageBuffer(image.url, endpointBaseUrl);
-        }
-    }
-    throw new HttpError(
-        "Community image endpoint did not return base64 or URL image data",
-        502,
-    );
-}
-
-async function fetchImageBuffer(
-    value: string,
-    endpointBaseUrl: string,
-): Promise<Buffer> {
-    let url: string;
-    try {
-        url = normalizeCommunityAssetUrl(value, endpointBaseUrl);
-    } catch {
-        throw new HttpError(
-            "Community image endpoint returned an unsafe image URL",
-            502,
-        );
-    }
-    const response = await fetchWithTimeout(url);
-    if (!response.ok) {
-        throw new HttpError(
-            `Community image URL responded ${response.status}`,
-            502,
-            undefined,
-            url,
-        );
-    }
-    const contentLength = Number(response.headers.get("content-length"));
-    if (Number.isFinite(contentLength) && contentLength > MAX_IMAGE_BYTES) {
-        throw new HttpError("Community image is larger than 20 MB", 502);
-    }
-    return readImageBuffer(response);
-}
-
-async function readImageBuffer(response: Response): Promise<Buffer> {
-    const reader = response.body?.getReader();
-    if (!reader) {
-        const buffer = Buffer.from(await response.arrayBuffer());
-        if (buffer.byteLength > MAX_IMAGE_BYTES) {
-            throw new HttpError("Community image is larger than 20 MB", 502);
-        }
-        return buffer;
-    }
-
-    const chunks: Uint8Array[] = [];
-    let total = 0;
-    try {
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            total += value.byteLength;
-            if (total > MAX_IMAGE_BYTES) {
-                await reader.cancel();
-                throw new HttpError(
-                    "Community image is larger than 20 MB",
-                    502,
-                );
-            }
-            chunks.push(value);
-        }
-    } finally {
-        reader.releaseLock();
-    }
-    return Buffer.concat(
-        chunks.map((chunk) => Buffer.from(chunk)),
-        total,
-    );
-}
-
 function parseJson(text: string): unknown {
     try {
         return JSON.parse(text);
@@ -302,26 +204,8 @@ function parseJson(text: string): unknown {
 }
 
 function endpointErrorMessage(status: number, body: unknown): string {
-    const message = endpointBodyMessage(body);
+    const message = communityEndpointErrorDetail(body);
     return message
         ? `Community image endpoint responded ${status}: ${message}`
         : `Community image endpoint responded ${status}`;
-}
-
-function endpointBodyMessage(body: unknown): string | null {
-    if (!body || typeof body !== "object") return null;
-    if (
-        "error" in body &&
-        body.error &&
-        typeof body.error === "object" &&
-        "message" in body.error &&
-        typeof body.error.message === "string"
-    ) {
-        return body.error.message;
-    }
-    if ("error" in body && typeof body.error === "string") return body.error;
-    if ("message" in body && typeof body.message === "string") {
-        return body.message;
-    }
-    return null;
 }

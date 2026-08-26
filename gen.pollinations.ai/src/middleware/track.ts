@@ -6,6 +6,7 @@ import {
     type CommunityModelRewardResolution,
     handleBalanceDeduction,
     type MarkupResolution,
+    selectCommunityModelReward,
 } from "@shared/billing/track-helpers.ts";
 import {
     getRealClientIp,
@@ -13,15 +14,12 @@ import {
     stripIPv4MappedPrefix,
     truncateIpToSubnet,
 } from "@shared/client-ip.ts";
-import {
-    COMMUNITY_MODEL_REWARD_RATE,
-    type CommunityEndpointRuntime,
-} from "@shared/community-endpoints.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
 import type { ErrorVariables } from "@shared/error.ts";
 import {
     getDefaultErrorMessage,
     getErrorCode,
+    remapUpstreamStatus,
     UpstreamError,
 } from "@shared/error.ts";
 import { sendToTinybird } from "@shared/events.ts";
@@ -33,14 +31,17 @@ import {
     getPriceDefinitionForModel,
     type ModelDefinition,
     type PriceDefinition,
+    type PricingInput,
     type Usage,
     type UsageCost,
     type UsagePrice,
 } from "@shared/registry/registry.ts";
 import {
     FALLBACK_TARGET_HEADER,
+    MODEL_USED_HEADER,
     openaiUsageToUsage,
     parseUsageHeaders,
+    USAGE_MISSING_HEADER,
 } from "@shared/registry/usage-headers.ts";
 import type {
     EventType,
@@ -70,18 +71,20 @@ import { z } from "zod";
 import { mergeContentFilterResults } from "@/content-filter.ts";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
+import {
+    type GenerationCacheVariables,
+    hashGenerationCacheIdentity,
+} from "@/middleware/generation-cache.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
+import type { ModelVariables } from "@/middleware/model.ts";
 import type { FrontendKeyRateLimitVariables } from "@/middleware/rate-limit-durable.ts";
 import { generateRandomId, parseBooleanLike } from "@/util.ts";
-
-type ModelVariables = {
-    model: {
-        requested: string;
-        resolved: string;
-        definition: ModelDefinition;
-        communityEndpoint?: CommunityEndpointRuntime;
-    };
-};
+import { releaseApiKeyBudgetReservation } from "@/utils/generation-access.ts";
+import {
+    type FallbackAttempt,
+    type FallbackCandidate,
+    fallbackCandidates,
+} from "../fallback.ts";
 
 export type ModelUsage = {
     model: string;
@@ -105,14 +108,29 @@ type ResponseTrackingData = {
     cacheHit: boolean;
     isBilledUsage: boolean;
     fallbackUsed: boolean;
+    /** False only on a call that was moved on from; the outcome row leaves it true. */
+    isFinal?: boolean;
     modelUsed?: string;
+    modelProviderUsed?: string;
     usage?: Usage;
     cost?: UsageCost;
     price?: UsagePrice;
-    // Per-rule billing adjustment breakdown for the billed generation. Absent on
-    // cache hits / not-billed paths, which return before cost calculation.
+    /** What the serving model charges for this usage; bounds the owner reward. */
+    servedPrice?: number;
+    // Per-rule provider-cost adjustment breakdown. Absent when no independently
+    // knowable provider adjustment was incurred.
     adjustments?: BillingAdjustment[];
+    // Effective per-unit price sheet applied at billing time (cost variant
+    // merged, multiplier applied). The tracking event records this sheet so
+    // recorded rates always reproduce the billed totals.
+    priceDefinition?: PriceDefinition;
+    // Applied cost variant name (financial identity; modelUsed stays
+    // observational).
+    costVariant?: string;
     contentFilterResults?: GenerationEventContentFilterParams;
+    // A failure the response status cannot show. Replaces the status-derived
+    // error data when the settlement row is emitted.
+    errorTracking?: ErrorData;
 };
 
 export type TrackVariables = {
@@ -120,7 +138,13 @@ export type TrackVariables = {
         modelRequested: string | null;
         resolvedModelRequested: string;
         streamRequested: boolean;
+        detachedExecutionTracked?: boolean;
         overrideResponseTracking: (response: Response) => void;
+        // Service layers register normalized request facts that affect
+        // pricing. Consumed once at billing time by selectCostVariant.
+        setPricingInput: (input: PricingInput) => void;
+        /** Ordered upstream calls; one is marked when it settles the request. */
+        attempts: FallbackAttempt[];
     };
 };
 
@@ -132,7 +156,8 @@ export type TrackEnv = {
         BalanceVariables &
         FrontendKeyRateLimitVariables &
         TrackVariables &
-        ModelVariables;
+        ModelVariables &
+        GenerationCacheVariables;
 };
 
 export const track = (eventType: EventType) =>
@@ -150,26 +175,80 @@ export const track = (eventType: EventType) =>
             rawIp !== "unknown" ? stripIPv4MappedPrefix(rawIp) : undefined;
         const ipSubnet = truncateIpToSubnet(clientIp);
 
-        const apiKeyMetadata = c.var.auth.apiKey?.metadata as
-            | Record<string, unknown>
-            | undefined;
-        const byopClientKeyId = c.var.auth.apiKey?.byopClientKeyId;
-        const userTracking: UserData = {
-            userId: c.var.auth.user?.id,
-            userTier: c.var.auth.user?.tier,
-            apiKeyId: c.var.auth.apiKey?.id,
-            apiKeyType: apiKeyMetadata?.keyType as ApiKeyType,
-            apiKeyName: c.var.auth.apiKey?.name,
-            apiKeyCreatedVia: byopClientKeyId
-                ? "redirect-auth"
-                : (apiKeyMetadata?.createdVia as string | undefined),
-            apiKeyClientId: byopClientKeyId ?? undefined,
-            apiKeyCreatedForApp: c.var.auth.apiKey?.byopClientName ?? undefined,
-            apiKeyCreatedForUserId:
-                c.var.auth.apiKey?.byopClientUserId ?? undefined,
-        } satisfies UserData;
+        const userTracking = requestIdentity(c.var.auth);
 
         let responseOverride: Response | null = null;
+        let pricingInput: PricingInput | undefined;
+        /** Filled by the fallback loop; this middleware turns it into rows. */
+        const attempts: FallbackAttempt[] = [];
+
+        // Read at emit time: balanceCheckResult is only set once the balance
+        // middleware has run.
+        const balanceTracking = (): BalanceData => ({
+            selectedMeterId: c.var.balance.balanceCheckResult?.selectedMeterId,
+            selectedMeterSlug:
+                c.var.balance.balanceCheckResult?.selectedMeterSlug,
+            balances: c.var.balance.balanceCheckResult?.balances || {},
+        });
+        let cacheKeyPromise: Promise<string | undefined> | undefined;
+        const cacheKeyForTracking = () => {
+            if (!cacheKeyPromise) {
+                const cache = c.var.generationCache;
+                cacheKeyPromise = cache
+                    ? hashGenerationCacheIdentity(
+                          cache.adapter.storage,
+                          cache.key,
+                      )
+                    : Promise.resolve(undefined);
+            }
+            return cacheKeyPromise;
+        };
+
+        /**
+         * The one place a generation row is built and sent.
+         *
+         * Everything that identifies the request is captured here; callers pass
+         * only what differs between a call that failed and the call that
+         * settled.
+         */
+        const emitRow = async (row: {
+            startTime: Date;
+            endTime: Date;
+            balanceTracking: BalanceData;
+            responseTracking: ResponseTrackingData;
+            errorTracking: ErrorData;
+            markup?: MarkupResolution | null;
+            communityModelReward?: CommunityModelRewardResolution | null;
+            billedPrice?: number;
+        }): Promise<InsertGenerationEvent> => {
+            const event = createTrackingEvent({
+                id: generateRandomId(),
+                requestId: c.get("requestId"),
+                requestPath: getRoutePath(c),
+                environment: c.env.ENVIRONMENT,
+                eventType,
+                ipSubnet,
+                ipHash: await hashIp(clientIp, c.env.BETTER_AUTH_SECRET),
+                userTracking,
+                requestTracking,
+                startTime: row.startTime,
+                endTime: row.endTime,
+                balanceTracking: row.balanceTracking,
+                responseTracking: row.responseTracking,
+                cacheKey: await cacheKeyForTracking(),
+                errorTracking: row.errorTracking,
+                markup: row.markup ?? null,
+                communityModelReward: row.communityModelReward ?? null,
+                billedPrice: row.billedPrice ?? 0,
+            });
+            await sendToTinybird(
+                event,
+                c.env.TINYBIRD_INGEST_URL,
+                c.env.TINYBIRD_INGEST_TOKEN,
+                log,
+            );
+            return event;
+        };
 
         c.set("track", {
             modelRequested: requestTracking.modelRequested,
@@ -178,14 +257,27 @@ export const track = (eventType: EventType) =>
             overrideResponseTracking: (response: Response) => {
                 responseOverride = response;
             },
+            setPricingInput: (input: PricingInput) => {
+                pricingInput = input;
+            },
+            attempts,
         });
 
         await next();
 
+        // Detached execution already tracked the provider failure. The outer
+        // caller only receives that captured result and must not emit it again.
+        if (c.var.track.detachedExecutionTracked) return;
+
+        let billingStarted = false;
         c.executionCtx.waitUntil(
             (async () => {
                 const userId = userTracking.userId;
                 if (!userId) return;
+
+                const finalCandidate =
+                    attempts.find((attempt) => attempt.settled)?.candidate ??
+                    fallbackCandidates(modelInfo)[0];
 
                 // Routes attach telemetry headers (x-moderation-*, cache
                 // status) to the final response AFTER the override is
@@ -194,13 +286,55 @@ export const track = (eventType: EventType) =>
                 // describes the body that usage extraction parses.
                 const response = responseOverride
                     ? withFinalResponseHeaders(responseOverride, c.res)
-                    : c.res.clone();
+                    : responseForTracking(c.res);
+                // What a rescue changes: the generation's cost, and which owner
+                // earns the reward. Not the price — the caller is charged the
+                // listing they asked for either way.
+                // Emitted only after the response above is captured: any
+                // await before that clone lets the body start streaming, and
+                // cloning a locked stream throws.
+                // One row per call that was moved on from. The failure that
+                // ended the request is not among them: it is the response, and
+                // the settlement row below carries it — under the name only the
+                // loop can supply. So a request emits one row per upstream call.
+                for (const attempt of attempts) {
+                    if (attempt.settled) continue;
+                    const model = attempt.candidate.id;
+                    const status = failedAttemptStatus(attempt.error);
+                    await emitRow({
+                        startTime: attempt.startedAt,
+                        endTime: attempt.endedAt,
+                        balanceTracking: balanceTracking(),
+                        responseTracking: {
+                            responseStatus: status,
+                            cacheHit: false,
+                            isBilledUsage: false,
+                            isFinal: false,
+                            fallbackUsed:
+                                model !==
+                                requestTracking.resolvedModelRequested,
+                            modelUsed: model,
+                            modelProviderUsed:
+                                attempt.candidate.definition?.provider ??
+                                requestTracking.modelProvider,
+                        },
+                        errorTracking: collectErrorData(
+                            status,
+                            attempt.error instanceof Error
+                                ? attempt.error
+                                : undefined,
+                        ),
+                    });
+                }
                 const responseTracking = await trackResponse(
                     eventType,
                     requestTracking,
                     response,
+                    finalCandidate,
+                    pricingInput,
                 );
                 if (responseTracking.cacheHit) {
+                    await releaseApiKeyBudgetReservation(c.var, c.env);
                     await c.var.frontendKeyRateLimit?.consumePollen(0);
                     return;
                 }
@@ -209,17 +343,6 @@ export const track = (eventType: EventType) =>
                 // time-to-first-byte. Binary bodies (image/audio) are never
                 // read by tracking, so their endTime stays ~header arrival.
                 const endTime = new Date();
-
-                // Capture balance tracking AFTER next() so balanceCheckResult is set
-                const balanceTracking = {
-                    selectedMeterId:
-                        c.var.balance.balanceCheckResult?.selectedMeterId,
-                    selectedMeterSlug:
-                        c.var.balance.balanceCheckResult?.selectedMeterSlug,
-                    balances: c.var.balance.balanceCheckResult?.balances || {},
-                } satisfies BalanceData;
-
-                const ipHash = await hashIp(clientIp, c.env.BETTER_AUTH_SECRET);
 
                 // Deduct payer + credit dev before emitting the event so billing
                 // telemetry reflects the committed ledger state.
@@ -234,8 +357,12 @@ export const track = (eventType: EventType) =>
                     null;
                 let billedPrice = 0;
                 let shouldRunAutoTopUp = false;
+                billingStarted = true;
                 try {
-                    const communityEndpoint = c.var.model?.communityEndpoint;
+                    const requestedCommunityEndpoint =
+                        c.var.model?.communityEndpoint;
+                    const servedCommunityEndpoint =
+                        finalCandidate.communityEndpoint;
                     const deduction = await handleBalanceDeduction({
                         db: balanceDb,
                         isBilledUsage: responseTracking.isBilledUsage,
@@ -243,19 +370,20 @@ export const track = (eventType: EventType) =>
                         userId,
                         apiKeyId: c.var.auth?.apiKey?.id,
                         apiKeyPollenBalance: c.var.auth?.apiKey?.pollenBalance,
-                        byopClientKeyId,
+                        apiKeyReservedAmount:
+                            c.var.balance.apiKeyReservation?.amount,
+                        byopClientKeyId: c.var.auth?.apiKey?.byopClientKeyId,
                         modelPaidOnly: c.var.model?.definition.paidOnly,
-                        // Only public endpoints pay their owner a reward: a
-                        // private endpoint is owner-called (base cost billed to
-                        // the owner, no markup, no self-credit).
-                        communityModelReward:
-                            communityEndpoint?.visibility === "public"
-                                ? {
-                                      userId: communityEndpoint.ownerUserId,
-                                      rewardRate: COMMUNITY_MODEL_REWARD_RATE,
-                                  }
-                                : null,
+                        // A private endpoint only earns a reward when it backs
+                        // its owner's public listing. Cross-owner private
+                        // fallbacks are rejected when the fallback is linked.
+                        communityModelReward: selectCommunityModelReward(
+                            requestedCommunityEndpoint,
+                            servedCommunityEndpoint,
+                            responseTracking.servedPrice,
+                        ),
                     });
+                    c.var.balance.apiKeyReservation = undefined;
                     markup = deduction.markup;
                     communityModelReward = deduction.communityModelReward;
                     payerBucket = deduction.payerBucket;
@@ -284,34 +412,27 @@ export const track = (eventType: EventType) =>
                 }
                 const committedBalanceTracking = payerBucket
                     ? {
-                          ...balanceTracking,
+                          ...balanceTracking(),
                           ...payerBucketToMeter(payerBucket),
                       }
-                    : balanceTracking;
-
-                const finalEvent = createTrackingEvent({
-                    id: generateRandomId(),
-                    requestId: c.get("requestId"),
-                    requestPath: getRoutePath(c),
-                    startTime,
-                    endTime,
-                    environment: c.env.ENVIRONMENT,
-                    eventType,
-                    ipSubnet,
-                    ipHash,
-                    userTracking,
-                    balanceTracking: committedBalanceTracking,
-                    requestTracking,
-                    responseTracking,
-                    markup,
-                    communityModelReward,
-                    billedPrice,
-                    errorTracking: collectErrorData(response, c.get("error")),
-                });
+                    : balanceTracking();
 
                 await c.var.frontendKeyRateLimit?.consumePollen(
                     responseTracking.price?.totalPrice || 0,
                 );
+
+                const finalEvent = await emitRow({
+                    startTime,
+                    endTime,
+                    balanceTracking: committedBalanceTracking,
+                    responseTracking,
+                    markup,
+                    communityModelReward,
+                    billedPrice,
+                    errorTracking:
+                        responseTracking.errorTracking ??
+                        collectErrorData(response.status, c.get("error")),
+                });
 
                 log.trace(
                     [
@@ -329,17 +450,15 @@ export const track = (eventType: EventType) =>
                     { event: finalEvent },
                 );
 
-                await sendToTinybird(
-                    finalEvent,
-                    c.env.TINYBIRD_INGEST_URL,
-                    c.env.TINYBIRD_INGEST_TOKEN,
-                    log,
-                );
-
                 if (shouldRunAutoTopUp) {
                     await triggerAutoTopUp(c.env, userId, log);
                 }
-            })(),
+            })().catch(async (error) => {
+                if (!billingStarted) {
+                    await releaseApiKeyBudgetReservation(c.var, c.env);
+                }
+                throw error;
+            }),
         );
     });
 
@@ -448,15 +567,30 @@ function withFinalResponseHeaders(
     });
 }
 
+/** Avoid cloning binary streams that tracking never reads. */
+function responseForTracking(response: Response): Response {
+    const contentType = response.headers.get("content-type") || "";
+    const readsBody =
+        contentType.includes("text/event-stream") ||
+        contentType.includes("application/json");
+    return readsBody ? response.clone() : new Response(null, response);
+}
+
 export async function trackResponse(
     eventType: EventType,
     requestTracking: RequestTrackingData,
     response: Response,
+    candidate: FallbackCandidate,
+    pricingInput?: PricingInput,
 ): Promise<ResponseTrackingData> {
     const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
+    const modelCalled = candidate.id || resolvedModelRequested;
+    const modelProviderUsed =
+        candidate.definition?.provider ?? requestTracking.modelProvider;
     const cacheHit = response.headers.get("x-cache") === "HIT";
-    const fallbackUsed = parseFallbackUsed(response);
+    const fallbackUsed =
+        modelCalled !== resolvedModelRequested || parseFallbackUsed(response);
     const notBilled = (
         extra?: Partial<ResponseTrackingData>,
     ): ResponseTrackingData => ({
@@ -464,6 +598,7 @@ export async function trackResponse(
         cacheHit,
         isBilledUsage: false,
         fallbackUsed,
+        modelProviderUsed,
         ...extra,
     });
 
@@ -472,16 +607,17 @@ export async function trackResponse(
     // say what failed — otherwise model_used falls back to the datasource
     // DEFAULT 'undefined' and per-model upstream health is unqueryable.
     //
-    // resolvedModelRequested is the model that was called: the model is
-    // resolved once per request and no path re-dispatches to a different
-    // Pollinations model id. Portkey's multi-target config (see fallbackUsed /
-    // x-portkey-last-used-option-index) only changes which upstream provider
-    // target served a single model id, not the id itself.
+    // Which model that was: the one the request resolved to, unless the
+    // fallback loop moved on and stopped on a different one. Only the loop
+    // knows that, so it reports the id it stopped on and modelCalled prefers
+    // it.
     if (cacheHit) {
         return notBilled();
     }
     if (!response.ok) {
-        return notBilled({ modelUsed: resolvedModelRequested });
+        return notBilled({
+            modelUsed: modelCalled,
+        });
     }
 
     // Verify the response content-type matches the expected output before
@@ -506,30 +642,106 @@ export async function trackResponse(
         return notBilled({ modelUsed: resolvedModelRequested });
     }
 
-    const { modelUsage, contentFilterResults } =
+    const { modelUsage, output, contentFilterResults } =
         await extractUsageAndContentFilterResults(
             eventType,
             requestTracking,
             response,
         );
+    const hasFinishReasonError =
+        eventType === "generate.text"
+            ? containsFinishReasonError(output)
+            : false;
+    if (hasFinishReasonError) {
+        // Keep the proxy response untouched; only billing and health reflect
+        // the upstream protocol's explicit terminal failure.
+        const usage = modelUsage?.usage ?? {};
+        return {
+            responseStatus: 502,
+            cacheHit,
+            isBilledUsage: false,
+            fallbackUsed,
+            ...calculateUsageBilling({
+                model: resolvedModelRequested,
+                usage,
+                servedBy:
+                    candidate.definition ?? requestTracking.modelDefinition,
+                quotedBy: requestTracking.modelDefinition,
+                output,
+                input: pricingInput,
+            }),
+            modelUsed: modelUsage?.model ?? modelCalled,
+            modelProviderUsed,
+            usage,
+            contentFilterResults,
+            errorTracking: {
+                errorResponseCode: "upstream_finish_reason_error",
+                errorMessage:
+                    "Upstream ended generation with finish_reason=error",
+            },
+        };
+    }
     if (!modelUsage) {
         log.error("Failed to extract model usage for model {model}", {
             model: resolvedModelRequested,
         });
+        // Missing token usage must never fabricate token charges, but some
+        // provider fees are independently knowable from the request/response
+        // (for example, Perplexity's flat per-request search fee).
+        const adjustmentOnlyBilling = calculateUsageBilling({
+            model: resolvedModelRequested,
+            usage: {},
+            servedBy: candidate.definition ?? requestTracking.modelDefinition,
+            quotedBy: requestTracking.modelDefinition,
+            output,
+            input: pricingInput,
+        });
+        const hasKnownProviderCost = adjustmentOnlyBilling.cost.totalCost > 0;
+        const hasBillablePrice = adjustmentOnlyBilling.price.totalPrice > 0;
+        if (hasKnownProviderCost || hasBillablePrice) {
+            return {
+                responseStatus: response.status,
+                cacheHit,
+                isBilledUsage: hasBillablePrice,
+                fallbackUsed,
+                ...adjustmentOnlyBilling,
+                modelUsed: modelCalled,
+                usage: {},
+                contentFilterResults,
+            };
+        }
+        // Nothing was charged and nothing could be. Mark the row so a billable
+        // text generation with no charge stays queryable instead of passing
+        // for an ordinary unbilled one.
         return notBilled({
             contentFilterResults,
-            modelUsed: resolvedModelRequested,
+            modelUsed: modelCalled,
+            errorTracking:
+                eventType === "generate.text"
+                    ? {
+                          errorResponseCode: "usage_missing",
+                          errorMessage: `No usage and no determinable charge for model ${resolvedModelRequested}`,
+                      }
+                    : undefined,
         });
     }
-    // Single pass: cost, price, and the per-rule fee breakdown all derive from
-    // one walk over the billing rules, so the event's adjustment maps always
-    // match the billed totals and clamp warnings log once per request.
-    const { cost, price, adjustments } = calculateUsageBilling(
-        resolvedModelRequested,
-        modelUsage.usage,
-        requestTracking.modelDefinition,
-        modelUsage.output,
-    );
+    // Cost follows the model that ran; price follows the one the caller asked
+    // for, so the invoice does not move because a fallback stepped in.
+    const {
+        cost,
+        price,
+        adjustments,
+        servedPrice,
+        priceDefinition,
+        costVariant,
+    } = calculateUsageBilling({
+        model: resolvedModelRequested,
+        usage: modelUsage.usage,
+        servedBy: candidate.definition ?? requestTracking.modelDefinition,
+        quotedBy: requestTracking.modelDefinition,
+        output: modelUsage.output,
+        input: pricingInput,
+    });
     return {
         responseStatus: response.status,
         cacheHit,
@@ -537,16 +749,37 @@ export async function trackResponse(
         fallbackUsed,
         cost,
         price,
+        servedPrice,
         adjustments,
+        priceDefinition,
+        costVariant,
         modelUsed: modelUsage.model,
+        modelProviderUsed,
         usage: modelUsage.usage,
         contentFilterResults,
     };
 }
 
-// Portkey reports the served target as "config.targets[N]" via the
-// x-fallback-target header (re-emitted from x-portkey-last-used-option-index).
-// A fallback fired whenever the served target is not the primary (index 0).
+function containsFinishReasonError(output: unknown): boolean {
+    if (!output || typeof output !== "object") return false;
+    const streamEvents = (output as { streamEvents?: unknown }).streamEvents;
+    const events = Array.isArray(streamEvents) ? streamEvents : [output];
+    for (const event of events) {
+        if (!event || typeof event !== "object") continue;
+        const choices = (event as { choices?: unknown }).choices;
+        if (!Array.isArray(choices)) continue;
+        for (const choice of choices) {
+            if (!choice || typeof choice !== "object") continue;
+            const finish = choice as { finish_reason?: unknown };
+            if (finish.finish_reason !== "error") continue;
+            return true;
+        }
+    }
+    return false;
+}
+
+// The fallback loop reports the served candidate as "config.targets[N]" via
+// x-fallback-target. A fallback fired whenever N is not the primary index 0.
 function parseFallbackUsed(response: Response): boolean {
     const target = response.headers.get(FALLBACK_TARGET_HEADER);
     if (!target) return false;
@@ -616,7 +849,14 @@ async function* extractResponseStream(
 
     for await (const event of asyncIteratorStream(eventStream)) {
         if (event.data === "[DONE]") return;
-        yield JSON.parse(event.data);
+
+        let data: unknown;
+        try {
+            data = JSON.parse(event.data);
+        } catch {
+            continue;
+        }
+        yield data;
     }
 }
 
@@ -635,9 +875,18 @@ async function* asyncIteratorStream<T>(
     }
 }
 
-type UserData = {
+/**
+ * Who made the request, in the shape the event carries it.
+ *
+ * Every path that emits a generation row builds this the same way, so a new
+ * identity column is added here once rather than in each emitter. Realtime
+ * settles from a socket rather than a response and so keeps its own event
+ * builder; it spreads this verbatim.
+ */
+export type UserData = {
     userId?: string;
     userTier?: string;
+    parentRequestId?: string;
     apiKeyId?: string;
     apiKeyType?: ApiKeyType;
     apiKeyName?: string;
@@ -646,6 +895,31 @@ type UserData = {
     apiKeyCreatedForUserId?: string;
     apiKeyClientId?: string;
 };
+
+export function requestIdentity(auth: AuthVariables["auth"]): UserData {
+    const apiKeyMetadata = auth.apiKey?.metadata as
+        | Record<string, unknown>
+        | undefined;
+    const byopClientKeyId = auth.apiKey?.byopClientKeyId;
+    return {
+        userId: auth.user?.id,
+        userTier: auth.user?.tier,
+        // A verified claim, never a header — the run token is the only channel
+        // that crosses the hop.
+        parentRequestId: auth.agentRun?.parentRequestId,
+        apiKeyId: auth.apiKey?.id,
+        apiKeyType: apiKeyMetadata?.keyType as ApiKeyType,
+        apiKeyName: auth.apiKey?.name,
+        // A BYOP key is created by the redirect flow, whatever its metadata
+        // says it was created via.
+        apiKeyCreatedVia: byopClientKeyId
+            ? "redirect-auth"
+            : (apiKeyMetadata?.createdVia as string | undefined),
+        apiKeyClientId: byopClientKeyId ?? undefined,
+        apiKeyCreatedForApp: auth.apiKey?.byopClientName ?? undefined,
+        apiKeyCreatedForUserId: auth.apiKey?.byopClientUserId ?? undefined,
+    };
+}
 
 type BalanceData = {
     selectedMeterId?: string;
@@ -663,6 +937,7 @@ type TrackingEventInput = {
     eventType: EventType;
     ipSubnet?: string;
     ipHash?: string;
+    cacheKey?: string;
     userTracking: UserData;
     balanceTracking: BalanceData;
     requestTracking: RequestTrackingData;
@@ -704,6 +979,7 @@ function createTrackingEvent({
     eventType,
     ipSubnet,
     ipHash,
+    cacheKey,
     userTracking,
     balanceTracking,
     requestTracking,
@@ -726,21 +1002,35 @@ function createTrackingEvent({
         ipSubnet,
         ipHash,
 
+        ...(cacheKey && {
+            cacheHit: responseTracking.cacheHit,
+            cacheType: responseTracking.cacheHit ? "EXACT" : "MISS",
+            cacheKey,
+        }),
+
         ...userTracking,
         ...requestTracking.referrerData,
 
         modelRequested: requestTracking.modelRequested,
         resolvedModelRequested: requestTracking.resolvedModelRequested,
         modelUsed: responseTracking.modelUsed,
-        modelProviderUsed: requestTracking.modelProvider,
+        modelProviderUsed:
+            responseTracking.modelProviderUsed ?? requestTracking.modelProvider,
+        costVariant: responseTracking.costVariant,
         fallbackUsed: responseTracking.fallbackUsed,
+        isFinal: responseTracking.isFinal ?? true,
 
         isBilledUsage: responseTracking.isBilledUsage,
 
         ...balanceTracking,
         ...reduceAdjustmentsToEventFields(responseTracking.adjustments),
 
-        ...priceToEventParams(requestTracking.modelPriceDefinition),
+        // Billed rows record the effective sheet resolved at billing time
+        // (cost variant merged); not-billed rows fall back to the base sheet.
+        ...priceToEventParams(
+            responseTracking.priceDefinition ??
+                requestTracking.modelPriceDefinition,
+        ),
         ...usageToEventParams(responseTracking.usage),
 
         totalCost: responseTracking.cost?.totalCost || 0,
@@ -791,7 +1081,10 @@ async function extractStreamRequested(request: HonoRequest): Promise<boolean> {
     return false;
 }
 
-function extractUsageHeaders(response: Response): ModelUsage {
+function extractUsageHeaders(response: Response): ModelUsage | null {
+    if (response.headers.get(USAGE_MISSING_HEADER) === "true") {
+        return null;
+    }
     const modelUsed = response.headers.get("x-model-used");
     if (!modelUsed) {
         throw new Error(
@@ -837,27 +1130,38 @@ function extractContentFilterHeaders(
 async function extractUsageAndContentFilterResultsHeaders(
     response: Response,
 ): Promise<{
-    modelUsage: ModelUsage;
+    modelUsage: ModelUsage | null;
+    output?: unknown;
     contentFilterResults: GenerationEventContentFilterParams;
 }> {
     const modelUsage = extractUsageHeaders(response);
-    modelUsage.output = await extractResponseJsonOutput(response);
+    const output = await extractResponseJsonOutput(response);
+    if (modelUsage) {
+        modelUsage.output = output;
+    }
     return {
         modelUsage,
+        output,
         contentFilterResults: extractContentFilterHeaders(response),
     };
 }
 
 async function extractUsageAndContentFilterResultsStream(
     events: AsyncIterable<unknown>,
+    servedModelId?: string,
 ): Promise<{
     modelUsage: ModelUsage | null;
+    output?: unknown;
     contentFilterResults: GenerationEventContentFilterParams;
 }> {
     const log = getLogger(["hono", "track", "stream"]);
     const EventSchema = z.object({
         model: z.string(),
-        usage: CompletionUsageSchema.nullish(),
+        // Preserve Perplexity's provider-reported request cost for billing
+        // rules that inspect the original event.
+        usage: CompletionUsageSchema.extend({
+            cost: z.unknown().nullish(),
+        }).nullish(),
         choices: z.array(
             z.object({
                 content_filter_results: ContentFilterResultSchema.nullish(),
@@ -914,20 +1218,27 @@ async function extractUsageAndContentFilterResultsStream(
         completionFilterResults,
     });
 
-    if (!model || !usage) {
+    // Our id wins over the name the provider puts in its chunks: for a
+    // community endpoint that name is its upstream's, and after a rescue it
+    // belongs to a different owner's model than the one that served.
+    const servedModel = servedModelId || model;
+    if (!servedModel || !usage) {
         log.error("No usage object found in event stream");
         return {
             modelUsage: null,
+            output: streamEvents.length > 0 ? { streamEvents } : undefined,
             contentFilterResults,
         };
     }
 
+    const output = streamEvents.length > 0 ? { streamEvents } : undefined;
     return {
         modelUsage: {
-            model,
+            model: servedModel,
             usage: openaiUsageToUsage(usage),
-            output: streamEvents.length > 0 ? { streamEvents } : undefined,
+            output,
         },
+        output,
         contentFilterResults,
     };
 }
@@ -938,6 +1249,7 @@ async function extractUsageAndContentFilterResults(
     response: Response,
 ): Promise<{
     modelUsage: ModelUsage | null;
+    output?: unknown;
     contentFilterResults: GenerationEventContentFilterParams;
 }> {
     const contentType = response.headers.get("content-type") || "";
@@ -948,7 +1260,10 @@ async function extractUsageAndContentFilterResults(
         contentType.includes("text/event-stream")
     ) {
         const eventStream = extractResponseStream(response);
-        return await extractUsageAndContentFilterResultsStream(eventStream);
+        return await extractUsageAndContentFilterResultsStream(
+            eventStream,
+            response.headers.get(MODEL_USED_HEADER) ?? undefined,
+        );
     }
     return await extractUsageAndContentFilterResultsHeaders(response);
 }
@@ -1036,8 +1351,8 @@ type ErrorData = {
     // errorStack and errorDetails removed to reduce D1 memory usage
 };
 
-export function collectErrorData(response: Response, error?: Error): ErrorData {
-    if (response.ok && !error) return {};
+export function collectErrorData(status: number, error?: Error): ErrorData {
+    if (status < 400 && !error) return {};
     let source: string | undefined;
     let explicitCode: string | undefined;
     if (error instanceof UpstreamError) {
@@ -1049,8 +1364,24 @@ export function collectErrorData(response: Response, error?: Error): ErrorData {
     return {
         // Prefer the error's explicit code (e.g. content_policy_violation) so
         // analytics can distinguish it from a generic status-derived code.
-        errorResponseCode: explicitCode ?? getErrorCode(response.status),
+        errorResponseCode: explicitCode ?? getErrorCode(status),
         errorSource: source,
-        errorMessage: error?.message || getDefaultErrorMessage(response.status),
+        errorMessage: error?.message || getDefaultErrorMessage(status),
     };
+}
+
+/**
+ * The status the request would have returned had this failed attempt been the
+ * last one, so an attempt row reads like any other error row on the dashboards:
+ * upstream 4xx that are our own concern (auth, quota) arrive as 502 on the
+ * served path too, and counting them as client errors would hide a model whose
+ * every request is rate limited.
+ */
+function failedAttemptStatus(error: unknown): number {
+    const failure = error as
+        | { status?: unknown; upstreamStatus?: unknown }
+        | null
+        | undefined;
+    const status = failure?.upstreamStatus ?? failure?.status;
+    return typeof status === "number" ? remapUpstreamStatus(status) : 500;
 }

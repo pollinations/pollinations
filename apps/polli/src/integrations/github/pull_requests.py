@@ -1,16 +1,14 @@
-import asyncio
 import logging
 from dataclasses import dataclass
 
 import aiohttp
 
 from ...core.config import config
-from .pr_review import PRReviewMixin
-from . import auth as github_auth
+from .auth import get_github_token, has_github_auth
 from .graphql import github_graphql
+from .pr_review import PRReviewMixin
 
 logger = logging.getLogger(__name__)
-
 
 
 @dataclass
@@ -53,15 +51,8 @@ class GitHubPRManager(PRReviewMixin):
             await self._session.close()
             self._session = None
 
-    async def _get_token(self) -> str | None:
-        if github_auth.github_app_auth:
-            token = await github_auth.github_app_auth.get_token()
-            if token:
-                return token
-        return config.github.token if config.github.token else None
-
     async def _get_headers(self) -> dict | None:
-        token = await self._get_token()
+        token = await get_github_token()
         if not token:
             return None
         return {
@@ -70,16 +61,13 @@ class GitHubPRManager(PRReviewMixin):
             "X-GitHub-Api-Version": "2022-11-28",
         }
 
-    def _has_auth(self) -> bool:
-        return github_auth.github_app_auth is not None or bool(config.github.token)
-
     # ============================================================
     # PR READ OPERATIONS (GraphQL)
     # ============================================================
 
     async def get_pr(self, pr_number: int) -> dict:
         """Get full details of a pull request using GraphQL."""
-        if not self._has_auth():
+        if not has_github_auth():
             return {"error": "GitHub token not configured"}
 
         query = """
@@ -197,7 +185,7 @@ class GitHubPRManager(PRReviewMixin):
 
     async def list_prs(self, state: str = "open", limit: int = 10, base: str | None = None) -> dict:
         """List pull requests using GraphQL."""
-        if not self._has_auth():
+        if not has_github_auth():
             return {"error": "GitHub token not configured"}
 
         states_map = {
@@ -269,7 +257,7 @@ class GitHubPRManager(PRReviewMixin):
 
     async def get_pr_files(self, pr_number: int) -> dict:
         """Get files changed in a PR using REST API (GraphQL doesn't expose patches)."""
-        if not self._has_auth():
+        if not has_github_auth():
             return {"error": "GitHub token not configured"}
 
         url = f"https://api.github.com/repos/{self.repo}/pulls/{pr_number}/files?per_page=100"
@@ -307,7 +295,7 @@ class GitHubPRManager(PRReviewMixin):
 
     async def get_pr_diff(self, pr_number: int) -> dict:
         """Get the unified diff for a PR."""
-        if not self._has_auth():
+        if not has_github_auth():
             return {"error": "GitHub token not configured"}
 
         url = f"https://api.github.com/repos/{self.repo}/pulls/{pr_number}"
@@ -330,7 +318,7 @@ class GitHubPRManager(PRReviewMixin):
 
     async def get_pr_checks(self, pr_number: int) -> dict:
         """Get CI/workflow status for a PR using GraphQL statusCheckRollup."""
-        if not self._has_auth():
+        if not has_github_auth():
             return {"error": "GitHub token not configured"}
 
         query = """
@@ -443,7 +431,7 @@ class GitHubPRManager(PRReviewMixin):
         team_reviewers: list[str] | None = None,
     ) -> dict:
         """Request reviewers for a PR using REST API."""
-        if not self._has_auth():
+        if not has_github_auth():
             return {"error": "GitHub token not configured"}
 
         if not reviewers and not team_reviewers:
@@ -481,7 +469,7 @@ class GitHubPRManager(PRReviewMixin):
 
     async def create_review(self, pr_number: int, event: str, body: str | None = None) -> dict:
         """Create a review on a PR (approve, request changes, or comment)."""
-        if not self._has_auth():
+        if not has_github_auth():
             return {"error": "GitHub token not configured"}
 
         valid_events = ["APPROVE", "REQUEST_CHANGES", "COMMENT"]
@@ -529,7 +517,7 @@ class GitHubPRManager(PRReviewMixin):
         merge_method: str = "merge",
     ) -> dict:
         """Merge a PR."""
-        if not self._has_auth():
+        if not has_github_auth():
             return {"error": "GitHub token not configured"}
 
         valid_methods = ["merge", "squash", "rebase"]
@@ -579,7 +567,7 @@ class GitHubPRManager(PRReviewMixin):
         base: str | None = None,
     ) -> dict:
         """Update a PR's title, body, state, or base branch."""
-        if not self._has_auth():
+        if not has_github_auth():
             return {"error": "GitHub token not configured"}
 
         if not any([title, body, state, base]):
@@ -616,7 +604,7 @@ class GitHubPRManager(PRReviewMixin):
 
     async def create_pr(self, title: str, body: str, head: str, base: str = "main", draft: bool = False) -> dict:
         """Create a new pull request."""
-        if not self._has_auth():
+        if not has_github_auth():
             return {"error": "GitHub token not configured"}
 
         url = f"https://api.github.com/repos/{self.repo}/pulls"
@@ -722,7 +710,7 @@ class GitHubPRManager(PRReviewMixin):
 
     async def update_branch(self, pr_number: int) -> dict:
         """Update a PR branch with the latest from base branch."""
-        if not self._has_auth():
+        if not has_github_auth():
             return {"error": "GitHub token not configured"}
 
         url = f"https://api.github.com/repos/{self.repo}/pulls/{pr_number}/update-branch"
@@ -749,7 +737,7 @@ class GitHubPRManager(PRReviewMixin):
 
     async def add_comment(self, pr_number: int, body: str, author: str = "Discord User") -> dict:
         """Add a comment to a PR."""
-        if not self._has_auth():
+        if not has_github_auth():
             return {"error": "GitHub token not configured"}
 
         url = f"https://api.github.com/repos/{self.repo}/issues/{pr_number}/comments"
@@ -798,7 +786,7 @@ class GitHubPRManager(PRReviewMixin):
             commit_id: Optional commit SHA (uses HEAD if not provided)
             author: Discord username
         """
-        if not self._has_auth():
+        if not has_github_auth():
             return {"error": "GitHub token not configured"}
 
         # Get commit SHA if not provided
@@ -902,7 +890,7 @@ class GitHubPRManager(PRReviewMixin):
         Returns:
             dict with 'content' (decoded file content) and metadata
         """
-        if not self._has_auth():
+        if not has_github_auth():
             return {"error": "GitHub token not configured"}
 
         import base64
@@ -944,7 +932,7 @@ class GitHubPRManager(PRReviewMixin):
 
     async def get_pr_commits(self, pr_number: int) -> dict:
         """Get all commits in a PR."""
-        if not self._has_auth():
+        if not has_github_auth():
             return {"error": "GitHub token not configured"}
 
         url = f"https://api.github.com/repos/{self.repo}/pulls/{pr_number}/commits?per_page=100"
@@ -984,7 +972,7 @@ class GitHubPRManager(PRReviewMixin):
 
     async def resolve_thread(self, thread_id: str) -> dict:
         """Resolve a review thread using GraphQL."""
-        if not self._has_auth():
+        if not has_github_auth():
             return {"error": "GitHub token not configured"}
 
         mutation = """
@@ -1007,7 +995,7 @@ class GitHubPRManager(PRReviewMixin):
 
     async def unresolve_thread(self, thread_id: str) -> dict:
         """Unresolve a review thread using GraphQL."""
-        if not self._has_auth():
+        if not has_github_auth():
             return {"error": "GitHub token not configured"}
 
         mutation = """
@@ -1030,7 +1018,7 @@ class GitHubPRManager(PRReviewMixin):
 
     async def get_review_threads(self, pr_number: int) -> dict:
         """Get all review threads for a PR."""
-        if not self._has_auth():
+        if not has_github_auth():
             return {"error": "GitHub token not configured"}
 
         query = """
@@ -1174,7 +1162,7 @@ class GitHubPRManager(PRReviewMixin):
 
     async def get_review_comments(self, pr_number: int) -> dict:
         """Get all inline review comments on a PR."""
-        if not self._has_auth():
+        if not has_github_auth():
             return {"error": "GitHub token not configured"}
 
         url = f"https://api.github.com/repos/{self.repo}/pulls/{pr_number}/comments?per_page=100"
@@ -1217,7 +1205,7 @@ class GitHubPRManager(PRReviewMixin):
         team_reviewers: list[str] | None = None,
     ) -> dict:
         """Remove requested reviewers from a PR."""
-        if not self._has_auth():
+        if not has_github_auth():
             return {"error": "GitHub token not configured"}
 
         if not reviewers and not team_reviewers:
@@ -1248,7 +1236,6 @@ class GitHubPRManager(PRReviewMixin):
         except Exception as e:
             logger.error(f"Error removing reviewers: {e}")
             return {"error": str(e)}
-
 
 
 # Singleton instance

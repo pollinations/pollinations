@@ -76,10 +76,7 @@ function KeysPage() {
             param: { id },
             json: {
                 ...updates,
-                allowedModels:
-                    updates.allowedModels?.map((e) =>
-                        typeof e === "string" ? e : e.id,
-                    ) ?? null,
+                allowedModels: updates.allowedModels ?? null,
                 expiresAt:
                     updates.expiresAt instanceof Date
                         ? updates.expiresAt.toISOString()

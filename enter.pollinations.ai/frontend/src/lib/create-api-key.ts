@@ -42,10 +42,7 @@ export async function createKeyWithPermissions({
         type: keyType,
         expiresIn,
         metadata,
-        allowedModels:
-            permissions?.allowedModels?.map((e) =>
-                typeof e === "string" ? e : e.id,
-            ) ?? null,
+        allowedModels: permissions?.allowedModels ?? null,
         pollenBudget: permissions?.pollenBudget,
         pollenType: permissions?.pollenType,
         accountPermissions: permissions?.accountPermissions,

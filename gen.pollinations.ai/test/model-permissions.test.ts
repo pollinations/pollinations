@@ -1,9 +1,14 @@
 import { SELF } from "cloudflare:test";
+import {
+    extractAllowedModelIds,
+    resolveModelPollenType,
+} from "@shared/auth/api-key.ts";
 import { getAudioModelsInfo } from "@shared/registry/model-info.ts";
 import {
     getRegistryModelDefinition,
     getVisibleTextModels,
 } from "@shared/registry/registry.ts";
+import { canonicalizeModelPermissionEntries } from "@shared/registry/visible-model-ids.ts";
 import {
     createTestApiKey,
     RESTRICTED_IMAGE_TEST_MODEL,
@@ -16,6 +21,27 @@ import { expect } from "vitest";
 async function fetchWorker(path: string, init: RequestInit = {}) {
     return SELF.fetch(new Request(`https://gen.pollinations.ai${path}`, init));
 }
+
+test("canonicalizes and resolves per-model pollen overrides", () => {
+    const permissions = {
+        models: canonicalizeModelPermissionEntries([
+            "nanobanana2",
+            { id: "nanobanana-2", pollenType: "paid" },
+            { id: "flux", pollenType: "quest" },
+        ]),
+    };
+
+    expect(permissions.models).toEqual([
+        { id: "nanobanana-2", pollenType: "paid" },
+        { id: "flux", pollenType: "quest" },
+    ]);
+    expect(extractAllowedModelIds(permissions)).toEqual([
+        "nanobanana-2",
+        "flux",
+    ]);
+    expect(resolveModelPollenType(permissions, "flux", "paid")).toBe("quest");
+    expect(resolveModelPollenType(permissions, "openai", "paid")).toBe("paid");
+});
 
 test("filters OpenAI-compatible model list by API key permissions", async ({
     restrictedApiKey,

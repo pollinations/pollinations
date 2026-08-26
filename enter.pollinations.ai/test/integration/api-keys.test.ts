@@ -5,13 +5,17 @@ import { drizzle } from "drizzle-orm/d1";
 import { describe, expect } from "vitest";
 import { createApiKeyViaApi, test } from "../fixtures.ts";
 
+type ModelPermissionEntry =
+    | string
+    | { id: string; pollenType: "quest" | "paid" };
+
 type ListedApiKey = {
     id: string;
     name?: string;
     start?: string;
     createdAt?: string;
     pollenBalance?: number | null;
-    permissions?: Record<string, string[]> | null;
+    permissions?: Record<string, string[] | ModelPermissionEntry[]> | null;
     expiresAt?: string | null;
     metadata?: { redirectUris?: string[] };
 };
@@ -1127,6 +1131,41 @@ describe("API Key Management", () => {
                 models: ["flux", "nanobanana-2"],
                 account: ["profile", "usage"],
             });
+        });
+
+        test("should preserve per-model pollen overrides", async ({
+            sessionToken,
+        }) => {
+            const createdKey = await createApiKeyViaApi(sessionToken, {
+                name: "model-pollen-override-test",
+            });
+            const allowedModels: ModelPermissionEntry[] = [
+                { id: "nanobanana2", pollenType: "paid" },
+                "flux",
+            ];
+
+            const updateResponse = await SELF.fetch(
+                `http://localhost:3000/api/api-keys/${createdKey.id}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({ allowedModels }),
+                },
+            );
+
+            expect(updateResponse.status).toBe(200);
+
+            const db = drizzle(env.DB, { schema });
+            const stored = await db.query.apikey.findFirst({
+                where: (apikey, { eq }) => eq(apikey.id, createdKey.id),
+            });
+            expect(JSON.parse(stored?.permissions ?? "{}").models).toEqual([
+                { id: "nanobanana-2", pollenType: "paid" },
+                "flux",
+            ]);
         });
 
         test("should reflect updated permissions immediately after update", async ({

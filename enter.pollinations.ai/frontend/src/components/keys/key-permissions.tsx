@@ -107,7 +107,18 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
                         typeof e === "string" ? e : e.id,
                     ) ?? null
                 }
-                onModelsChange={(models) => setAllowedModels(models)}
+                onModelsChange={(models) =>
+                    setAllowedModels(
+                        models.map(
+                            (modelId) =>
+                                permissions.allowedModels?.find(
+                                    (entry) =>
+                                        typeof entry !== "string" &&
+                                        entry.id === modelId,
+                                ) ?? modelId,
+                        ),
+                    )
+                }
                 modelsInitiallyExpanded={modelsInitiallyExpanded}
                 modelCategories={modelCategories}
             />

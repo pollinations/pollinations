@@ -1,3 +1,4 @@
+import type { ModelPermissionEntry } from "@shared/auth/api-key.ts";
 import {
     createApiKeyForUser,
     validateRedirectUriFormat,
@@ -7,7 +8,7 @@ import { sanitizeAuthorizeAccountPermissions } from "@shared/auth/authorize-conf
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import {
-    canonicalizeModelPermissionIds,
+    canonicalizeModelPermissionEntries,
     filterPermissionsToVisibleModels,
     getVisibleModelIdsForUser,
 } from "@shared/registry/visible-model-ids.ts";
@@ -22,6 +23,16 @@ import { auth } from "../middleware/auth.ts";
 
 const SECONDS_PER_DAY = 24 * 60 * 60;
 
+const ModelPermissionEntrySchema = z.union([
+    z.string(),
+    z.object({
+        id: z.string(),
+        pollenType: z.enum(["quest", "paid"]),
+    }),
+]);
+
+type ApiKeyPermissions = Record<string, string[] | ModelPermissionEntry[]>;
+
 function setPrivateNoStoreHeaders(c: {
     header: (name: string, value: string) => void;
 }): void {
@@ -34,10 +45,10 @@ function setPrivateNoStoreHeaders(c: {
  * Returns undefined if no permission fields were provided.
  */
 function buildUpdatedPermissions(
-    existing: Record<string, string[]>,
-    allowedModels?: string[] | null,
+    existing: ApiKeyPermissions,
+    allowedModels?: ModelPermissionEntry[] | null,
     accountPermissions?: string[] | null,
-): Record<string, string[]> | undefined {
+): ApiKeyPermissions | undefined {
     if (allowedModels === undefined && accountPermissions === undefined) {
         return undefined;
     }
@@ -46,7 +57,7 @@ function buildUpdatedPermissions(
         updated,
         "models",
         Array.isArray(allowedModels)
-            ? canonicalizeModelPermissionIds(allowedModels)
+            ? canonicalizeModelPermissionEntries(allowedModels)
             : allowedModels,
     );
     applyPermissionField(updated, "account", accountPermissions);
@@ -54,9 +65,9 @@ function buildUpdatedPermissions(
 }
 
 function applyPermissionField(
-    target: Record<string, string[]>,
+    target: ApiKeyPermissions,
     key: string,
-    value: string[] | null | undefined,
+    value: string[] | ModelPermissionEntry[] | null | undefined,
 ): void {
     if (value === undefined) return;
     if (value === null) {
@@ -69,7 +80,7 @@ function applyPermissionField(
 /**
  * Parse permissions JSON, returning null for empty objects or invalid JSON.
  */
-function parsePermissions(raw: string): Record<string, string[]> | null {
+function parsePermissions(raw: string): ApiKeyPermissions | null {
     try {
         const parsed = JSON.parse(raw);
         return Object.keys(parsed).length > 0 ? parsed : null;
@@ -120,14 +131,14 @@ async function updateKeyMetadata(
  * Schema for updating an API key.
  * Uses better-auth's server API which supports server-only fields like permissions.
  *
- * Permissions format: { models?: string[], account?: string[] }
- * - models: ["flux", "openai"] = restrict to specific models
+ * Permissions format: { models?: ModelPermissionEntry[], account?: string[] }
+ * - models: ["flux", { id: "openai", pollenType: "quest" }] = restrict models
  * - account: ["profile", "usage", "keys"] = allow access to account endpoints
  */
 const UpdateApiKeySchema = z.object({
     name: z.string().optional().describe("Name for the API key"),
     allowedModels: z
-        .array(z.string())
+        .array(ModelPermissionEntrySchema)
         .nullable()
         .optional()
         .describe("Model IDs this key can access. null = all models allowed"),
@@ -174,7 +185,7 @@ const CreateApiKeySchema = z.object({
         .optional()
         .describe("Expiry in seconds from now (max 365 days)"),
     allowedModels: z
-        .array(z.string())
+        .array(ModelPermissionEntrySchema)
         .nullable()
         .optional()
         .describe("Model IDs this key can access. null = all models allowed"),
@@ -366,7 +377,10 @@ export const apiKeysRoutes = new Hono<Env>()
                     body: {
                         keyId: id,
                         userId: user.id,
-                        permissions: updatedPermissions,
+                        permissions: updatedPermissions as Record<
+                            string,
+                            string[]
+                        >,
                     },
                 });
             }

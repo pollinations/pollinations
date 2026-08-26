@@ -86,6 +86,45 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
             description:
                 "Reference image URL(s) for image editing or video generation. Separate multiple URLs with `|` or `,`. **Image models:** Used for editing/style reference (kontext, gptimage, seedream, klein, nanobanana). **Video models:** `image[0]` = starting frame (I2V); `image[1]` = ending frame for first+last-frame interpolation. End-frame supported by `veo`, the `seedance-2.0` family, `seedance-2.5`, `wan-fast`, and `wan-pro`. Requests exceeding the selected model's `max_reference_images` return 400. See `video_capabilities` on `/image/models` or `/models` for per-model support.",
         }),
+    reference_images: z
+        .string()
+        .transform((value) =>
+            value
+                .split("|")
+                .map((url) => url.trim())
+                .filter(Boolean),
+        )
+        .optional()
+        .meta({
+            description:
+                "Video models only: public HTTP(S) image URLs for visual guidance, separate from first/last-frame controls. Separate multiple URLs with `|`; commas inside URLs are preserved. Supported only by Seedance 2.0 and 2.5; caps are advertised as `max_input_reference_images` in `/models`.",
+        }),
+    reference_videos: z
+        .string()
+        .transform((value) =>
+            value
+                .split("|")
+                .map((url) => url.trim())
+                .filter(Boolean),
+        )
+        .optional()
+        .meta({
+            description:
+                "Video models only: public HTTP(S) video URLs for motion or style guidance. Separate multiple URLs with `|`; commas inside URLs are preserved. Supported only by Seedance 2.0 and 2.5; caps are advertised as `max_input_reference_videos` in `/models`.",
+        }),
+    reference_audios: z
+        .string()
+        .transform((value) =>
+            value
+                .split("|")
+                .map((url) => url.trim())
+                .filter(Boolean),
+        )
+        .optional()
+        .meta({
+            description:
+                "Video models only: public HTTP(S) audio URLs for audio-driven generation. Separate multiple URLs with `|`; commas inside URLs are preserved. Requires at least one reference image or video; caps are advertised as `max_input_reference_audios` in `/models`.",
+        }),
     transparent: z.coerce.boolean().optional().default(false).meta({
         description:
             "Generate image with transparent background. Only supported by `gptimage` and `gptimage-large`.",

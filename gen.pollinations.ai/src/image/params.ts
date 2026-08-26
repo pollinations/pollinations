@@ -1,5 +1,6 @@
 import { IMAGE_SERVICES, type ImageModelName } from "@shared/registry/image.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
+import { validateUserMediaUrl } from "@shared/user-media-url.ts";
 import { z } from "zod";
 import { normalizeSeed, SENTINEL_SEED } from "@/util.ts";
 import { getDefaultSideLength } from "./models.js";
@@ -30,6 +31,33 @@ const sanitizedSideLength = z.preprocess((v) => {
     const parsed = Number.parseInt(v as string, 10);
     return Number.isInteger(parsed) ? parsed : undefined;
 }, z.int().optional());
+
+const parseReferenceUrls = (value: unknown): string[] => {
+    const values = Array.isArray(value)
+        ? value
+        : typeof value === "string"
+          ? value.split("|")
+          : [];
+    return values
+        .filter((entry): entry is string => typeof entry === "string")
+        .map((entry) => entry.trim())
+        .filter(Boolean);
+};
+
+const referenceUrl = z.string().superRefine((value, ctx) => {
+    if (!validateUserMediaUrl(value).ok) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message:
+                "Reference media must use public HTTP(S) URLs without credentials or literal IP hosts.",
+        });
+    }
+});
+
+const referenceUrls = z.preprocess(
+    parseReferenceUrls,
+    z.array(referenceUrl).max(30, "Reference media accepts at most 30 URLs."),
+);
 
 function adjustImageSizeForModel(
     model: ImageModelName,
@@ -71,6 +99,9 @@ export const ImageParamsSchema = z
                     : value.split(",");
             })
             .catch([]),
+        reference_images: referenceUrls.optional(),
+        reference_videos: referenceUrls.optional(),
+        reference_audios: referenceUrls.optional(),
         transparent: sanitizedBoolean.catch(false),
         reasoning: z
             .union([z.string(), z.boolean()])
@@ -123,6 +154,65 @@ export const ImageParamsSchema = z
                 path: ["transparent"],
                 message:
                     "Transparent backgrounds are not supported by gpt-image-2.",
+            });
+        }
+        const definition = IMAGE_SERVICES[data.model] as ModelDefinition;
+        const references = [
+            {
+                field: "reference_images" as const,
+                values: data.reference_images ?? [],
+                capability: "reference_images" as const,
+                max: definition.maxInputReferenceImages,
+            },
+            {
+                field: "reference_videos" as const,
+                values: data.reference_videos ?? [],
+                capability: "reference_videos" as const,
+                max: definition.maxInputReferenceVideos,
+            },
+            {
+                field: "reference_audios" as const,
+                values: data.reference_audios ?? [],
+                capability: "reference_audios" as const,
+                max: definition.maxInputReferenceAudios,
+            },
+        ];
+        const hasReferences = references.some(
+            ({ values }) => values.length > 0,
+        );
+        for (const { field, values, capability, max } of references) {
+            if (values.length === 0) continue;
+            if (!definition.videoCapabilities?.includes(capability) || !max) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: [field],
+                    message: `${data.model} does not support ${field}.`,
+                });
+            } else if (values.length > max) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: [field],
+                    message: `${data.model} supports at most ${max} ${field}.`,
+                });
+            }
+        }
+        if (hasReferences && data.image.length > 0) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["image"],
+                message: `${data.model} cannot combine reference media with first/last-frame images.`,
+            });
+        }
+        if (
+            (data.reference_audios?.length ?? 0) > 0 &&
+            (data.reference_images?.length ?? 0) === 0 &&
+            (data.reference_videos?.length ?? 0) === 0
+        ) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["reference_audios"],
+                message:
+                    "reference_audios requires at least one reference_images or reference_videos URL.",
             });
         }
         if (data.model === "minimax-h3") {

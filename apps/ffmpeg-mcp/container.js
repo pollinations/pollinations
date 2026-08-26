@@ -27,6 +27,23 @@ export class FfmpegContainer extends Container {
         if (!runtime.running) {
             await this.start({ enableInternet: false });
         }
+
+        const inputPath = `${WORK_DIR}/input`;
+        const write = await runtime.exec(["tee", inputPath], {
+            stdin: input,
+            stdout: "ignore",
+        });
+        const [writeExitCode, writeError] = await Promise.all([
+            write.exitCode,
+            decodeStream(write.stderr),
+        ]);
+        if (writeExitCode !== 0) {
+            return {
+                ok: false,
+                stderr: writeError || "FFmpeg input could not be saved",
+            };
+        }
+
         const remainingMs = deadlineMs - Date.now();
         if (remainingMs <= 0) {
             return {
@@ -45,11 +62,11 @@ export class FfmpegContainer extends Container {
                 "-nostdin",
                 "-y",
                 "-i",
-                "pipe:0",
+                inputPath,
                 ...args,
                 outputPath,
             ],
-            { stdin: input, stdout: "ignore" },
+            { stdout: "ignore" },
         );
         const timer = setTimeout(() => process.kill(9), remainingMs);
         const [exitCode, stderr] = await Promise.all([

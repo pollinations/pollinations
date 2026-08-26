@@ -1,0 +1,21 @@
+import { chmod, rename, writeFile } from "node:fs/promises";
+
+function required(name) {
+    const value = process.env[name];
+    if (!value) throw new Error(`Missing ${name}`);
+    return value;
+}
+
+const target = new URL("../.dev.vars", import.meta.url);
+const temporary = new URL("../.dev.vars.tmp", import.meta.url);
+const contents = [
+    `ECONOMICS_PASSWORD=${JSON.stringify(required("ECONOMICS_PASSWORD"))}`,
+    `TINYBIRD_ECONOMICS_READ_TOKEN=${JSON.stringify(required("TINYBIRD_ECONOMICS_READ_TOKEN"))}`,
+    'TINYBIRD_POLLEN_PIPE="economics_pollen_usage_snapshot_api"',
+    "",
+].join("\n");
+
+await writeFile(temporary, contents, { mode: 0o600 });
+await rename(temporary, target);
+await chmod(target, 0o600);
+console.log("Wrote .dev.vars with the staging Tinybird reader.");

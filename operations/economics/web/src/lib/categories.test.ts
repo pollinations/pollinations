@@ -182,15 +182,15 @@ describe("canonical categories", () => {
 
     it("trusts the reviewed category on forecast facts", () => {
         const fact = {
-            entry_id: "deel-refund",
+            entry_id: "example-adjustment",
             month: "2026-08-01",
-            vendor: "deel",
+            vendor: "example-vendor",
             category: "balance_sheet",
-            amount: 12_036.42,
+            amount: 1_234.56,
             currency: "EUR",
             method: "one_off",
             source: "agent",
-            evidence: "Deel deposit refund",
+            evidence: "Example balance adjustment",
             recorded_at: "2026-08-24 00:00:00",
         };
         const openAiFact = {

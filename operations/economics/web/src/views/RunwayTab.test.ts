@@ -1,6 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { PRIVATE_CONFIG_FIXTURE } from "../fixtures";
 import { automaticForecastRule } from "../lib/forecastTerms";
 import type { Data } from "../types";
 import {
@@ -18,15 +19,15 @@ import {
 
 describe("RunwayTab labels", () => {
     it("shows full rounded runway amounts without compact suffixes", () => {
-        expect(fmtRunwayUsd(12_036.42)).toBe("$12,036");
-        expect(fmtRunwayUsd(-1_648.62)).toBe("−$1,649");
+        expect(fmtRunwayUsd(12_345.67)).toBe("$12,346");
+        expect(fmtRunwayUsd(-1_234.56)).toBe("−$1,235");
         expect(fmtRunwayUsd(0)).toBe("$0");
         expect(fmtRunwayUsd(null)).toBe("–");
     });
 
     it("omits repeated currency symbols inside the runway table", () => {
-        expect(fmtRunwayTableValue(12_036.42)).toBe("12,036");
-        expect(fmtRunwayTableValue(-1_648.62)).toBe("−1,649");
+        expect(fmtRunwayTableValue(12_345.67)).toBe("12,346");
+        expect(fmtRunwayTableValue(-1_234.56)).toBe("−1,235");
         expect(fmtRunwayTableValue(0)).toBe("0");
         expect(fmtRunwayTableValue(null)).toBe("–");
     });
@@ -107,6 +108,7 @@ describe("RunwayTab labels", () => {
 
     it("shows category totals while vendor detail starts collapsed", () => {
         const data: Data = {
+            privateConfig: PRIVATE_CONFIG_FIXTURE,
             opTransactions: [
                 {
                     entry_id: "opening",
@@ -171,6 +173,7 @@ describe("RunwayTab labels", () => {
             createElement(RunwayTab, {
                 year: "2026",
                 data: {
+                    privateConfig: PRIVATE_CONFIG_FIXTURE,
                     opTransactions: [
                         {
                             entry_id: "opening",
@@ -193,7 +196,7 @@ describe("RunwayTab labels", () => {
         expect(html).toContain("Cash now");
         expect(html).toContain("August month-end cash");
         expect(html).toContain("September cash change");
-        expect(html).toContain("forecast lines");
+        expect(html).toContain("forecast line");
         expect(html).toContain("no bank movements");
         expect(html).not.toContain("opening balance missing");
     });

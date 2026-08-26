@@ -1,7 +1,16 @@
-import { describe, expect, it } from "vitest";
-import { FIXTURES } from "../fixtures";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { FIXTURES, PRIVATE_CONFIG_FIXTURE } from "../fixtures";
 import type { OpPollenRow } from "../types";
-import { canonicalPollenRows, canonicalVendor, validatePipeRows } from "./tb";
+import {
+    canonicalPollenRows,
+    canonicalVendor,
+    loadAll,
+    validatePipeRows,
+} from "./tb";
+
+afterEach(() => {
+    vi.unstubAllGlobals();
+});
 
 describe("Tinybird pipe contracts", () => {
     it("keeps every fixture aligned with its live pipe contract", () => {
@@ -22,6 +31,47 @@ describe("Tinybird pipe contracts", () => {
                 },
             ]),
         ).toThrow("economics_bank_ledger_api[0].amount: expected number");
+    });
+});
+
+describe("loadAll", () => {
+    it("requires and parses the authenticated private configuration", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn((input: RequestInfo | URL) => {
+                const pipe = decodeURIComponent(
+                    String(input).split("/").at(-1) ?? "",
+                );
+                return Promise.resolve(Response.json({ data: FIXTURES[pipe] }));
+            }),
+        );
+
+        const result = await loadAll();
+
+        expect(result.privateConfig).toEqual(PRIVATE_CONFIG_FIXTURE);
+    });
+
+    it("fails closed when the private configuration is absent", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn((input: RequestInfo | URL) => {
+                const pipe = decodeURIComponent(
+                    String(input).split("/").at(-1) ?? "",
+                );
+                return Promise.resolve(
+                    Response.json({
+                        data:
+                            pipe === "economics_private_config_api"
+                                ? []
+                                : FIXTURES[pipe],
+                    }),
+                );
+            }),
+        );
+
+        await expect(loadAll()).rejects.toThrow(
+            "economics_private_config_api: expected one row, received 0",
+        );
     });
 });
 

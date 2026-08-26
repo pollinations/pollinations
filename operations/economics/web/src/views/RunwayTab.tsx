@@ -258,8 +258,9 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                 data.opTransactions ?? [],
                 new Date(),
                 data.opCloud ?? [],
+                data.privateConfig?.forecastRules,
             ),
-        [data.opCloud, data.opTransactions],
+        [data.opCloud, data.opTransactions, data.privateConfig?.forecastRules],
     );
     const columns = useMemo(
         () => runway.columns.filter((column) => column.month.startsWith(year)),

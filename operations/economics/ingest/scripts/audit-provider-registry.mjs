@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { loadPrivateReconciliation } from "./private-config.mjs";
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const economicsDirectory = resolve(scriptDirectory, "../..");
@@ -16,12 +17,7 @@ const auditTargets = existsSync(auditTargetsPath)
     ? (JSON.parse(readFileSync(auditTargetsPath, "utf8")).auditTargets ?? [])
     : [];
 const hasPrivateAuditTargets = existsSync(auditTargetsPath);
-const reconciliation = JSON.parse(
-    readFileSync(
-        resolve(economicsDirectory, "provider-reconciliation.json"),
-        "utf8",
-    ),
-);
+const reconciliation = await loadPrivateReconciliation();
 
 const errors = [];
 const providerByName = new Map();

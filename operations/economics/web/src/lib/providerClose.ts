@@ -265,7 +265,11 @@ export function providerCloseRows(
             meteringBasis !== "internal" &&
             meteringBasis !== "not_applicable";
         const providerCheckResolved =
-            providerCheckExplanation(plane.month, plane.vendor) != null;
+            providerCheckExplanation(
+                plane.month,
+                plane.vendor,
+                data.privateConfig,
+            ) != null;
         const billedUsd = hasProviderEvidence
             ? (plane.cloudPaidUsd ?? 0)
             : null;

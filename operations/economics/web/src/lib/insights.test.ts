@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { PRIVATE_CONFIG_FIXTURE } from "../fixtures";
 import type { Data, OpCloudRow, OpPollenRow, OpTransactionRow } from "../types";
 import {
     allocateGrants,
@@ -73,6 +74,7 @@ const emptyData = (over: Partial<Data>): Data => ({
     opTransactions: [],
     opCloud: [],
     opPollen: [],
+    privateConfig: PRIVATE_CONFIG_FIXTURE,
     ...over,
 });
 

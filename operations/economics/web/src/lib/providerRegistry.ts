@@ -1,8 +1,11 @@
-import reconciliationJson from "../../../provider-reconciliation.json";
 import registryJson from "../../../provider-registry.json";
 import type {
     Data,
+    EconomicsPrivateConfig,
+    MeterDriftExplanation,
     OpCloudRow,
+    PollenWitnessExplanation,
+    ProviderCheckExplanation,
     ProviderObservation,
     ProviderObservationSource,
 } from "../types";
@@ -42,56 +45,12 @@ type ProviderRegistryFile = {
     providers: ProviderDefinition[];
 };
 
-export type PollenWitnessExplanation = {
-    month: string;
-    provider: string;
-    reason:
-        | "pre_meter_coverage"
-        | "provider_attribution_transition"
-        | "provider_only_residual";
-    explanation: string;
-    evidence: string[];
-};
-
-export type ProviderCheckExplanation = {
-    month: string;
-    provider: string;
-    reason: "unverifiable_history";
-    explanation: string;
-    evidence: string[];
-};
-
-export type MeterDriftExplanation = {
-    month: string;
-    provider: string;
-    reason: "historical_tracking_gap";
-    explanation: string;
-    evidence: string[];
-};
-
 export type ProviderReconciliationExplanation =
     | PollenWitnessExplanation
     | MeterDriftExplanation;
 
-type ProviderReconciliationFile = {
-    version: number;
-    providerCheckExplanations: ProviderCheckExplanation[];
-    meterDriftExplanations: MeterDriftExplanation[];
-    pollenWitnessExplanations: PollenWitnessExplanation[];
-};
-
 export const PROVIDER_REGISTRY = (registryJson as ProviderRegistryFile)
     .providers;
-export const POLLEN_WITNESS_EXPLANATIONS = (
-    reconciliationJson as ProviderReconciliationFile
-).pollenWitnessExplanations;
-export const PROVIDER_CHECK_EXPLANATIONS = (
-    reconciliationJson as ProviderReconciliationFile
-).providerCheckExplanations;
-export const METER_DRIFT_EXPLANATIONS = (
-    reconciliationJson as ProviderReconciliationFile
-).meterDriftExplanations;
-
 const providerByAlias = new Map<string, ProviderDefinition>();
 for (const provider of PROVIDER_REGISTRY) {
     providerByAlias.set(provider.id, provider);
@@ -129,50 +88,45 @@ export function canonicalProvider(value: string): string {
     return resolveProvider(normalized)?.id ?? normalized;
 }
 
-const pollenExplanationByKey = new Map(
-    POLLEN_WITNESS_EXPLANATIONS.map((explanation) => [
-        `${explanation.month}|${canonicalProvider(explanation.provider)}`,
-        explanation,
-    ]),
-);
-const providerCheckExplanationByKey = new Map(
-    PROVIDER_CHECK_EXPLANATIONS.map((explanation) => [
-        `${explanation.month}|${canonicalProvider(explanation.provider)}`,
-        explanation,
-    ]),
-);
-const meterDriftExplanationByKey = new Map(
-    METER_DRIFT_EXPLANATIONS.map((explanation) => [
-        `${explanation.month}|${canonicalProvider(explanation.provider)}`,
-        explanation,
-    ]),
-);
+function explanationByKey<T extends { month: string; provider: string }>(
+    explanations: readonly T[],
+): Map<string, T> {
+    return new Map(
+        explanations.map((explanation) => [
+            `${explanation.month}|${canonicalProvider(explanation.provider)}`,
+            explanation,
+        ]),
+    );
+}
 
 export function meterDriftExplanation(
     month: string,
     provider: string,
+    privateConfig?: EconomicsPrivateConfig,
 ): MeterDriftExplanation | undefined {
-    return meterDriftExplanationByKey.get(
-        `${month}|${canonicalProvider(provider)}`,
-    );
+    return explanationByKey(
+        privateConfig?.reconciliation.meterDriftExplanations ?? [],
+    ).get(`${month}|${canonicalProvider(provider)}`);
 }
 
 export function providerCheckExplanation(
     month: string,
     provider: string,
+    privateConfig?: EconomicsPrivateConfig,
 ): ProviderCheckExplanation | undefined {
-    return providerCheckExplanationByKey.get(
-        `${month}|${canonicalProvider(provider)}`,
-    );
+    return explanationByKey(
+        privateConfig?.reconciliation.providerCheckExplanations ?? [],
+    ).get(`${month}|${canonicalProvider(provider)}`);
 }
 
 export function pollenWitnessExplanation(
     month: string,
     provider: string,
+    privateConfig?: EconomicsPrivateConfig,
 ): PollenWitnessExplanation | undefined {
-    return pollenExplanationByKey.get(
-        `${month}|${canonicalProvider(provider)}`,
-    );
+    return explanationByKey(
+        privateConfig?.reconciliation.pollenWitnessExplanations ?? [],
+    ).get(`${month}|${canonicalProvider(provider)}`);
 }
 
 type ObservationInput = Pick<Data, "opCloud" | "opPollen" | "opTransactions">;
@@ -441,6 +395,7 @@ export function providerReviewRows(
                 const checkExplanation = providerCheckExplanation(
                     row.month,
                     row.provider,
+                    data.privateConfig,
                 );
                 return {
                     ...row,

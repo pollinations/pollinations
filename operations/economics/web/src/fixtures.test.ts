@@ -5,6 +5,7 @@ const EXPECTED_PIPES = [
     "economics_bank_ledger_api",
     "economics_compute_ledger_api",
     "economics_pollen_usage_api",
+    "economics_private_config_api",
 ];
 
 describe("fixtures", () => {

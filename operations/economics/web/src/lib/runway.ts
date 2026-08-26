@@ -1,4 +1,8 @@
-import type { OpCloudRow, OpTransactionRow } from "../types";
+import type {
+    OpCloudRow,
+    OpTransactionRow,
+    PrivateForecastRule,
+} from "../types";
 import {
     cloudCategory,
     EXPENSE_CATEGORY_ORDER,
@@ -146,6 +150,7 @@ function activeInMonth(
 function ruleBasedForecasts(
     transactions: OpTransactionRow[],
     now: Date,
+    privateRules?: Readonly<Record<string, PrivateForecastRule>>,
 ): DerivedForecastFact[] {
     const currentMonth = now.toISOString().slice(0, 7);
     const horizon = `${now.getUTCFullYear() + 1}-12`;
@@ -201,7 +206,9 @@ function ruleBasedForecasts(
         });
     };
 
-    for (const { vendor, category, rule } of forecastRuleEntries()) {
+    for (const { vendor, category, rule } of forecastRuleEntries(
+        privateRules,
+    )) {
         for (const scheduled of rule.scheduledAmounts ?? []) {
             addFact(
                 vendor,
@@ -626,6 +633,7 @@ export function buildRunway(
     transactions: OpTransactionRow[],
     now: Date = new Date(),
     cloudRows: OpCloudRow[] = [],
+    privateRules?: Readonly<Record<string, PrivateForecastRule>>,
 ): RunwayResult {
     const currentMonth = now.toISOString().slice(0, 7);
     const flags: string[] = [];
@@ -689,7 +697,7 @@ export function buildRunway(
         observedMonths.add(month);
     }
 
-    const ruleBased = ruleBasedForecasts(transactions, now);
+    const ruleBased = ruleBasedForecasts(transactions, now, privateRules);
     const balanceAware = balanceAwareForecasts(bankRows, cloudRows, now);
     flags.push(...balanceAware.flags);
     const effectiveForecastFacts = [...ruleBased, ...balanceAware.facts];

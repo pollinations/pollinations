@@ -7,6 +7,7 @@ import {
 } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { loadPrivateReconciliation } from "./private-config.mjs";
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const economicsDirectory = resolve(scriptDirectory, "../..");
@@ -17,12 +18,7 @@ const snapshotDirectory = resolve(
 const registry = JSON.parse(
     readFileSync(resolve(economicsDirectory, "provider-registry.json"), "utf8"),
 );
-const reconciliation = JSON.parse(
-    readFileSync(
-        resolve(economicsDirectory, "provider-reconciliation.json"),
-        "utf8",
-    ),
-);
+const reconciliation = await loadPrivateReconciliation();
 
 const argumentsByName = new Map(
     process.argv

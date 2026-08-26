@@ -1,15 +1,13 @@
 import { describe, expect, it } from "vitest";
+import { PRIVATE_CONFIG_FIXTURE } from "../fixtures";
 import type { Data, OpCloudRow, OpPollenRow, OpTransactionRow } from "../types";
 import {
     activeProviderAccounts,
     canonicalProvider,
     collectProviderObservations,
-    METER_DRIFT_EXPLANATIONS,
     meterDriftExplanation,
     missingProviderMappings,
     normalizeProviderName,
-    POLLEN_WITNESS_EXPLANATIONS,
-    PROVIDER_CHECK_EXPLANATIONS,
     PROVIDER_REGISTRY,
     pollenWitnessExplanation,
     providerCheckExplanation,
@@ -147,33 +145,49 @@ describe("provider registry", () => {
     });
 
     it("keeps source-backed Pollen witness explanations unique and canonical", () => {
-        const keys = POLLEN_WITNESS_EXPLANATIONS.map(
+        const explanations =
+            PRIVATE_CONFIG_FIXTURE.reconciliation.pollenWitnessExplanations;
+        const keys = explanations.map(
             (explanation) => `${explanation.month}|${explanation.provider}`,
         );
         expect(new Set(keys).size).toBe(keys.length);
-        for (const explanation of POLLEN_WITNESS_EXPLANATIONS) {
+        for (const explanation of explanations) {
             expect(resolveProvider(explanation.provider)?.id).toBe(
                 explanation.provider,
             );
             expect(explanation.evidence.length).toBeGreaterThan(0);
         }
 
-        expect(pollenWitnessExplanation("2026-02", "vastai")).toMatchObject({
+        expect(
+            pollenWitnessExplanation(
+                "2026-02",
+                "vastai",
+                PRIVATE_CONFIG_FIXTURE,
+            ),
+        ).toMatchObject({
             provider: "vast.ai",
             reason: "provider_attribution_transition",
         });
-        expect(pollenWitnessExplanation("2026-02", "pruna")).toMatchObject({
+        expect(
+            pollenWitnessExplanation(
+                "2026-02",
+                "pruna",
+                PRIVATE_CONFIG_FIXTURE,
+            ),
+        ).toMatchObject({
             provider: "pruna",
             reason: "unverifiable_history",
         });
     });
 
     it("keeps reviewed provider limitations unique, canonical, and archived", () => {
-        const keys = PROVIDER_CHECK_EXPLANATIONS.map(
+        const explanations =
+            PRIVATE_CONFIG_FIXTURE.reconciliation.providerCheckExplanations;
+        const keys = explanations.map(
             (explanation) => `${explanation.month}|${explanation.provider}`,
         );
         expect(new Set(keys).size).toBe(keys.length);
-        for (const explanation of PROVIDER_CHECK_EXPLANATIONS) {
+        for (const explanation of explanations) {
             expect(resolveProvider(explanation.provider)?.id).toBe(
                 explanation.provider,
             );
@@ -184,18 +198,30 @@ describe("provider registry", () => {
             ).toBe(true);
         }
 
-        expect(providerCheckExplanation("2026-03", "pruna")).toMatchObject({
-            reason: "unverifiable_history",
-        });
-        expect(providerCheckExplanation("2026-07", "pruna")).toBeUndefined();
+        expect(
+            providerCheckExplanation(
+                "2026-03",
+                "pruna",
+                PRIVATE_CONFIG_FIXTURE,
+            ),
+        ).toMatchObject({ reason: "unverifiable_history" });
+        expect(
+            providerCheckExplanation(
+                "2026-07",
+                "pruna",
+                PRIVATE_CONFIG_FIXTURE,
+            ),
+        ).toBeUndefined();
     });
 
     it("keeps explained meter drift unique, canonical, and archived", () => {
-        const keys = METER_DRIFT_EXPLANATIONS.map(
+        const explanations =
+            PRIVATE_CONFIG_FIXTURE.reconciliation.meterDriftExplanations;
+        const keys = explanations.map(
             (explanation) => `${explanation.month}|${explanation.provider}`,
         );
         expect(new Set(keys).size).toBe(keys.length);
-        for (const explanation of METER_DRIFT_EXPLANATIONS) {
+        for (const explanation of explanations) {
             expect(resolveProvider(explanation.provider)?.id).toBe(
                 explanation.provider,
             );
@@ -206,10 +232,20 @@ describe("provider registry", () => {
             ).toBe(true);
         }
 
-        expect(meterDriftExplanation("2026-03", "anthropic")).toMatchObject({
-            reason: "historical_tracking_gap",
-        });
-        expect(meterDriftExplanation("2026-04", "anthropic")).toBeUndefined();
+        expect(
+            meterDriftExplanation(
+                "2026-03",
+                "anthropic",
+                PRIVATE_CONFIG_FIXTURE,
+            ),
+        ).toMatchObject({ reason: "historical_tracking_gap" });
+        expect(
+            meterDriftExplanation(
+                "2026-04",
+                "anthropic",
+                PRIVATE_CONFIG_FIXTURE,
+            ),
+        ).toBeUndefined();
     });
 });
 
@@ -372,6 +408,7 @@ describe("providerReviewRows", () => {
     it("separates a completed historical limitation review from a check still due", () => {
         const [row] = providerReviewRows(
             data({
+                privateConfig: PRIVATE_CONFIG_FIXTURE,
                 opCloud: [
                     cloud({
                         vendor: "pruna",

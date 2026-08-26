@@ -68,8 +68,9 @@ Known traps:
   until commit `0aa5fb55ef6030493fd4884f209d17fb58737b04` shipped on
   2026-07-03. January–June provider/Pollen drift is therefore historical
   under-metering; July is the partial rollout month. Preserve both source
-  ledgers and use `provider-reconciliation.json` instead of fabricating a
-  Paid/Quest allocation for the missing fees.
+  ledgers and record the reviewed limitation in the authenticated Economics
+  private configuration instead of fabricating a Paid/Quest allocation for the
+  missing fees.
 - The dashboard's **Year to Date** total covers the current billing group, whose
   invoice series starts on 2026-03-26. It excludes the legacy `HNCVBP` invoice
   series from January through 2026-03-26. Reconcile full-year usage from both

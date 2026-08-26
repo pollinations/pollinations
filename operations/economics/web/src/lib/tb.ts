@@ -1,5 +1,12 @@
 import { FIXTURES } from "../fixtures";
-import type { Data, OpCloudRow, OpPollenRow, OpTransactionRow } from "../types";
+import type {
+    Data,
+    EconomicsPrivateConfig,
+    EconomicsPrivateConfigRow,
+    OpCloudRow,
+    OpPollenRow,
+    OpTransactionRow,
+} from "../types";
 import {
     canonicalProvider,
     collectProviderObservations,
@@ -76,6 +83,10 @@ const PIPE_CONTRACTS: Record<string, PipeContract> = {
             "requests_quests",
         ],
     },
+    economics_private_config_api: {
+        strings: ["config", "recorded_at"],
+        numbers: [],
+    },
 };
 
 export function validatePipeRows<T>(pipe: string, rows: unknown[]): T[] {
@@ -129,6 +140,29 @@ async function fetchPipe<T>(pipe: string): Promise<T[]> {
         throw new Error(`${pipe}: response has no data array`);
     }
     return validatePipeRows<T>(pipe, body.data);
+}
+
+function parsePrivateConfig(
+    row: EconomicsPrivateConfigRow,
+): EconomicsPrivateConfig {
+    const value: unknown = JSON.parse(row.config);
+    if (value == null || typeof value !== "object" || Array.isArray(value)) {
+        throw new Error("economics_private_config_api.config: expected object");
+    }
+    const config = value as Partial<EconomicsPrivateConfig>;
+    if (
+        config.forecastRules == null ||
+        typeof config.forecastRules !== "object" ||
+        Array.isArray(config.forecastRules) ||
+        config.reconciliation == null ||
+        typeof config.reconciliation !== "object" ||
+        !Array.isArray(config.reconciliation.providerCheckExplanations) ||
+        !Array.isArray(config.reconciliation.meterDriftExplanations) ||
+        !Array.isArray(config.reconciliation.pollenWitnessExplanations)
+    ) {
+        throw new Error("economics_private_config_api.config: invalid shape");
+    }
+    return config as EconomicsPrivateConfig;
 }
 
 export function canonicalVendor(vendor: string): string {
@@ -188,11 +222,21 @@ export function canonicalPollenRows(
 export async function loadAll(): Promise<Data> {
     // All three pipes are required contracts. A missing pipe (404) must surface
     // as an error, never render as plausible-but-empty economics data.
-    const [opTransactions, opCloud, opPollen] = await Promise.all([
-        fetchPipe<OpTransactionRow>("economics_bank_ledger_api"),
-        fetchPipe<OpCloudRow>("economics_compute_ledger_api"),
-        fetchPipe<OpPollenRow>("economics_pollen_usage_api"),
-    ]);
+    const [opTransactions, opCloud, opPollen, privateConfigRows] =
+        await Promise.all([
+            fetchPipe<OpTransactionRow>("economics_bank_ledger_api"),
+            fetchPipe<OpCloudRow>("economics_compute_ledger_api"),
+            fetchPipe<OpPollenRow>("economics_pollen_usage_api"),
+            fetchPipe<EconomicsPrivateConfigRow>(
+                "economics_private_config_api",
+            ),
+        ]);
+    if (privateConfigRows.length !== 1) {
+        throw new Error(
+            `economics_private_config_api: expected one row, received ${privateConfigRows.length}`,
+        );
+    }
+    const privateConfig = parsePrivateConfig(privateConfigRows[0]);
 
     const canonicalize = <T extends { vendor: string }>(row: T): T => ({
         ...row,
@@ -210,5 +254,6 @@ export async function loadAll(): Promise<Data> {
         opCloud: opCloud.map(canonicalize),
         opPollen: canonicalPollenRows(opPollen),
         providerObservations,
+        privateConfig,
     };
 }

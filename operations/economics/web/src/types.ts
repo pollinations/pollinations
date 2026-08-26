@@ -65,9 +65,71 @@ export type ProviderObservation = {
     accountId?: string;
 };
 
+export type ForecastPaymentTiming = "direct" | "postpaid" | "prepaid";
+
+export type ForecastAmount = {
+    amount: number;
+    currency: "EUR" | "USD";
+};
+
+export type ScheduledForecastAmount = ForecastAmount & {
+    month: string;
+    note: string;
+};
+
+export type PrivateForecastRule = {
+    fixedAmounts?: ForecastAmount[];
+    activeFrom?: string;
+    activeThrough?: string;
+    scheduledAmounts?: ScheduledForecastAmount[];
+};
+
+export type ProviderCheckExplanation = {
+    month: string;
+    provider: string;
+    reason: "unverifiable_history";
+    explanation: string;
+    evidence: string[];
+};
+
+export type PollenWitnessExplanation = {
+    month: string;
+    provider: string;
+    reason:
+        | "pre_meter_coverage"
+        | "provider_attribution_transition"
+        | "provider_only_residual"
+        | "unverifiable_history";
+    explanation: string;
+    evidence: string[];
+};
+
+export type MeterDriftExplanation = {
+    month: string;
+    provider: string;
+    reason: "historical_tracking_gap";
+    explanation: string;
+    evidence: string[];
+};
+
+export type EconomicsPrivateConfig = {
+    forecastRules: Record<string, PrivateForecastRule>;
+    reconciliation: {
+        providerCheckExplanations: ProviderCheckExplanation[];
+        meterDriftExplanations: MeterDriftExplanation[];
+        pollenWitnessExplanations: PollenWitnessExplanation[];
+    };
+};
+
+export type EconomicsPrivateConfigRow = {
+    config: string;
+    recorded_at: string;
+};
+
 export type Data = {
     opTransactions?: OpTransactionRow[];
     opCloud?: OpCloudRow[];
     opPollen?: OpPollenRow[];
     providerObservations?: ProviderObservation[];
+    privateConfig?: EconomicsPrivateConfig;
 };

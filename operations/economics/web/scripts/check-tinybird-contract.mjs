@@ -6,6 +6,7 @@ export const REQUIRED_PIPES = [
     "economics_bank_ledger_api",
     "economics_compute_ledger_api",
     "economics_pollen_usage_api",
+    "economics_private_config_api",
 ];
 
 export async function checkTinybirdContract({ api, token, fetchImpl = fetch }) {

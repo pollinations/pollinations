@@ -1,10 +1,12 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { PRIVATE_CONFIG_FIXTURE } from "../fixtures";
 import type { Data } from "../types";
 import { ProviderCloseTab } from "./ProviderCloseTab";
 
 const data: Data = {
+    privateConfig: PRIVATE_CONFIG_FIXTURE,
     opTransactions: [
         {
             entry_id: "wise-openai-january",
@@ -78,6 +80,7 @@ describe("ProviderCloseTab", () => {
         const html = renderToStaticMarkup(
             createElement(ProviderCloseTab, {
                 data: {
+                    privateConfig: PRIVATE_CONFIG_FIXTURE,
                     opTransactions: [],
                     opCloud: [
                         {

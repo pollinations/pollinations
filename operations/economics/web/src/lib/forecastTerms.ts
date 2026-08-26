@@ -1,16 +1,13 @@
+import type {
+    ForecastAmount,
+    ForecastPaymentTiming,
+    PrivateForecastRule,
+    ScheduledForecastAmount,
+} from "../types";
+
 export type ForecastMethod = "fixed" | "funded" | "last" | "one_off";
 
-export type ForecastPaymentTiming = "direct" | "postpaid" | "prepaid";
-
-export type ForecastAmount = {
-    amount: number;
-    currency: "EUR" | "USD";
-};
-
-export type ScheduledForecastAmount = ForecastAmount & {
-    month: string;
-    note: string;
-};
+export type { ForecastPaymentTiming } from "../types";
 
 export type ForecastLineRule = {
     method: ForecastMethod;
@@ -42,20 +39,6 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
     "deel|balance_sheet": {
         method: "one_off",
         paymentTiming: "direct",
-        scheduledAmounts: [
-            {
-                month: "2026-08",
-                amount: 12_036.42,
-                currency: "EUR",
-                note: "Thomas employment deposit refund",
-            },
-            {
-                month: "2026-12",
-                amount: 13_204.82,
-                currency: "EUR",
-                note: "Elliot employment deposit refund",
-            },
-        ],
     },
     "fx revaluation|balance_sheet": {
         method: "one_off",
@@ -118,7 +101,6 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
     "elevenlabs|compute": {
         method: "fixed",
         paymentTiming: "direct",
-        fixedAmounts: [{ amount: -299, currency: "USD" }],
     },
     "fal|compute": {
         method: "last",
@@ -204,13 +186,11 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
     "anthropic|development": {
         method: "fixed",
         paymentTiming: "direct",
-        fixedAmounts: [{ amount: -360, currency: "EUR" }],
     },
     "github|development": { method: "last", paymentTiming: "direct" },
     "openai|development": {
         method: "fixed",
         paymentTiming: "direct",
-        fixedAmounts: [{ amount: -600, currency: "USD" }],
     },
     "typeless|development": {
         method: "one_off",
@@ -229,7 +209,6 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
     "google-workspace|operations": {
         method: "fixed",
         paymentTiming: "direct",
-        fixedAmounts: [{ amount: -33.43, currency: "EUR" }],
     },
     "notion|operations": { method: "one_off", paymentTiming: "direct" },
     "protonvpn|operations": { method: "last", paymentTiming: "direct" },
@@ -259,15 +238,11 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
     "enty|admin": {
         method: "fixed",
         paymentTiming: "direct",
-        fixedAmounts: [{ amount: -417.7, currency: "EUR" }],
-        activeThrough: "2026-12",
     },
     "estonia|admin": { method: "one_off", paymentTiming: "direct" },
     "replacement-accountant|admin": {
         method: "fixed",
         paymentTiming: "direct",
-        fixedAmounts: [{ amount: -200, currency: "EUR" }],
-        activeFrom: "2027-01",
     },
     "tax office|admin": { method: "one_off", paymentTiming: "direct" },
     "taxes|admin": { method: "one_off", paymentTiming: "direct" },
@@ -275,11 +250,6 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
     "deel|payroll": {
         method: "fixed",
         paymentTiming: "direct",
-        fixedAmounts: [
-            { amount: -3_523.74, currency: "EUR" },
-            { amount: -537, currency: "USD" },
-        ],
-        activeThrough: "2026-11",
     },
     "so-lab-x|payroll": { method: "one_off", paymentTiming: "direct" },
     "thot|payroll": { method: "one_off", paymentTiming: "direct" },
@@ -293,24 +263,39 @@ function key(vendor: string, category: string): string {
     return `${vendor.trim().toLowerCase()}|${category.trim().toLowerCase()}`;
 }
 
+function privateRule(
+    vendor: string,
+    category: string,
+    privateRules?: Readonly<Record<string, PrivateForecastRule>>,
+): PrivateForecastRule | undefined {
+    return privateRules?.[key(vendor, category)];
+}
+
 export function forecastLineRule(
     vendor: string,
     category: string,
+    privateRules?: Readonly<Record<string, PrivateForecastRule>>,
 ): ForecastLineRule | null {
-    return FORECAST_RULE_BY_LINE[key(vendor, category)] ?? null;
+    const rule = FORECAST_RULE_BY_LINE[key(vendor, category)];
+    if (!rule) return null;
+    return { ...rule, ...privateRule(vendor, category, privateRules) };
 }
 
-export function forecastRuleEntries(): {
+export function forecastRuleEntries(
+    privateRules?: Readonly<Record<string, PrivateForecastRule>>,
+): {
     vendor: string;
     category: string;
     rule: ForecastLineRule;
 }[] {
     return Object.entries(FORECAST_RULE_BY_LINE).map(([line, rule]) => {
         const separator = line.indexOf("|");
+        const vendor = line.slice(0, separator);
+        const category = line.slice(separator + 1);
         return {
-            vendor: line.slice(0, separator),
-            category: line.slice(separator + 1),
-            rule,
+            vendor,
+            category,
+            rule: { ...rule, ...privateRule(vendor, category, privateRules) },
         };
     });
 }

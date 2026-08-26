@@ -825,9 +825,14 @@ export function vendorPlanes(data: Data): VendorPlanes[] {
         });
         const reconciliationExplanation =
             rawStatus === "missing pollen"
-                ? (pollenWitnessExplanation(month, vendor) ?? null)
+                ? (pollenWitnessExplanation(
+                      month,
+                      vendor,
+                      data.privateConfig,
+                  ) ?? null)
                 : rawStatus === "drift"
-                  ? (meterDriftExplanation(month, vendor) ?? null)
+                  ? (meterDriftExplanation(month, vendor, data.privateConfig) ??
+                    null)
                   : null;
         return {
             month,

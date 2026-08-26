@@ -1,4 +1,62 @@
-import type { OpCloudRow, OpPollenRow, OpTransactionRow } from "./types";
+import type {
+    EconomicsPrivateConfig,
+    EconomicsPrivateConfigRow,
+    OpCloudRow,
+    OpPollenRow,
+    OpTransactionRow,
+} from "./types";
+
+export const PRIVATE_CONFIG_FIXTURE: EconomicsPrivateConfig = {
+    forecastRules: {
+        "openai|development": {
+            fixedAmounts: [{ amount: -90, currency: "USD" }],
+        },
+    },
+    reconciliation: {
+        providerCheckExplanations: [
+            {
+                month: "2026-03",
+                provider: "pruna",
+                reason: "unverifiable_history",
+                explanation: "Example reviewed limitation.",
+                evidence: [
+                    "https://drive.google.com/file/d/example-check/view",
+                ],
+            },
+        ],
+        meterDriftExplanations: [
+            {
+                month: "2026-03",
+                provider: "anthropic",
+                reason: "historical_tracking_gap",
+                explanation: "Example reviewed meter gap.",
+                evidence: [
+                    "https://drive.google.com/file/d/example-drift/view",
+                ],
+            },
+        ],
+        pollenWitnessExplanations: [
+            {
+                month: "2026-02",
+                provider: "vast.ai",
+                reason: "provider_attribution_transition",
+                explanation: "Example reviewed transition.",
+                evidence: [
+                    "https://drive.google.com/file/d/example-witness/view",
+                ],
+            },
+            {
+                month: "2026-02",
+                provider: "pruna",
+                reason: "unverifiable_history",
+                explanation: "Example reviewed residual.",
+                evidence: [
+                    "https://drive.google.com/file/d/example-residual/view",
+                ],
+            },
+        ],
+    },
+};
 
 // Demo-only rows. Every amount is a deliberately round, invented value —
 // never copy real ledger figures in here: fixtures ship in the public bundle
@@ -464,8 +522,15 @@ const opPollen: OpPollenRow[] = [
         requests_quests: 250,
     },
 ];
+const privateConfig: EconomicsPrivateConfigRow[] = [
+    {
+        config: JSON.stringify(PRIVATE_CONFIG_FIXTURE),
+        recorded_at: "2026-01-01 00:00:00.000",
+    },
+];
 export const FIXTURES: Record<string, unknown[]> = {
     economics_bank_ledger_api: opTransactions,
     economics_compute_ledger_api: opCloud,
     economics_pollen_usage_api: opPollen,
+    economics_private_config_api: privateConfig,
 };

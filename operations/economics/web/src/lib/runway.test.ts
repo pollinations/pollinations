@@ -1,8 +1,49 @@
 import { describe, expect, it } from "vitest";
-import type { OpCloudRow, OpTransactionRow } from "../types";
+import type {
+    OpCloudRow,
+    OpTransactionRow,
+    PrivateForecastRule,
+} from "../types";
 import { buildRunway } from "./runway";
 
 const NOW = new Date("2026-08-25T12:00:00.000Z");
+
+const PRIVATE_RULES: Record<string, PrivateForecastRule> = {
+    "deel|balance_sheet": {
+        scheduledAmounts: [
+            {
+                month: "2026-08",
+                amount: 100,
+                currency: "EUR",
+                note: "Example scheduled inflow",
+            },
+            {
+                month: "2026-12",
+                amount: 200,
+                currency: "EUR",
+                note: "Example later inflow",
+            },
+        ],
+    },
+    "deel|payroll": {
+        fixedAmounts: [{ amount: -300, currency: "EUR" }],
+        activeThrough: "2026-11",
+    },
+    "elevenlabs|compute": {
+        fixedAmounts: [{ amount: -70, currency: "USD" }],
+    },
+    "enty|admin": {
+        fixedAmounts: [{ amount: -80, currency: "EUR" }],
+        activeThrough: "2026-12",
+    },
+    "openai|development": {
+        fixedAmounts: [{ amount: -90, currency: "USD" }],
+    },
+    "replacement-accountant|admin": {
+        fixedAmounts: [{ amount: -60, currency: "EUR" }],
+        activeFrom: "2027-01",
+    },
+};
 
 const transaction = (
     overrides: Partial<OpTransactionRow> = {},
@@ -87,14 +128,14 @@ describe("buildRunway", () => {
     });
 
     it("derives fixed subscriptions from reviewed rules, not forecast rows", () => {
-        const result = buildRunway([opening()], NOW);
+        const result = buildRunway([opening()], NOW, [], PRIVATE_RULES);
         const openai = result.rows.find(
             (row) => row.vendor === "openai" && row.category === "development",
         );
 
-        expect(openai?.values["2026-08:forecast"]).toBe(-600);
-        expect(openai?.values["2027-01:forecast"]).toBe(-600);
-        expect(openai?.values["2027-12:forecast"]).toBe(-600);
+        expect(openai?.values["2026-08:forecast"]).toBe(-90);
+        expect(openai?.values["2027-01:forecast"]).toBe(-90);
+        expect(openai?.values["2027-12:forecast"]).toBe(-90);
         expect(result.columns.at(-1)?.month).toBe("2027-12");
         expect(openai?.forecastMethod).toBe("fixed");
     });
@@ -117,13 +158,14 @@ describe("buildRunway", () => {
                     recorded_at: "2026-08-22 00:00:00.000",
                 }),
             ],
+            PRIVATE_RULES,
         );
         const elevenlabs = result.rows.find(
             (row) => row.vendor === "elevenlabs" && row.category === "compute",
         );
 
-        expect(elevenlabs?.values["2026-08:forecast"]).toBe(-299);
-        expect(elevenlabs?.values["2026-09:forecast"]).toBe(-299);
+        expect(elevenlabs?.values["2026-08:forecast"]).toBe(-70);
+        expect(elevenlabs?.values["2026-09:forecast"]).toBe(-70);
         expect(elevenlabs?.forecastMethod).toBe("fixed");
         expect(elevenlabs?.forecastPaymentTiming).toBe("direct");
     });
@@ -229,7 +271,7 @@ describe("buildRunway", () => {
     });
 
     it("keeps only reviewed scheduled events and lifecycle boundaries", () => {
-        const result = buildRunway([opening()], NOW);
+        const result = buildRunway([opening()], NOW, [], PRIVATE_RULES);
         const refund = result.rows.find(
             (row) => row.vendor === "deel" && row.category === "balance_sheet",
         );
@@ -243,14 +285,8 @@ describe("buildRunway", () => {
             (row) => row.vendor === "replacement-accountant",
         );
 
-        expect(refund?.values["2026-08:forecast"]).toBeCloseTo(
-            12_036.42 * 1.1411,
-            2,
-        );
-        expect(refund?.values["2026-12:forecast"]).toBeCloseTo(
-            13_204.82 * 1.1411,
-            2,
-        );
+        expect(refund?.values["2026-08:forecast"]).toBeCloseTo(100 * 1.1411, 2);
+        expect(refund?.values["2026-12:forecast"]).toBeCloseTo(200 * 1.1411, 2);
         expect(payroll?.values["2026-11:forecast"]).toBeLessThan(0);
         expect(payroll?.values["2026-12:forecast"]).toBe(0);
         expect(accounting?.values["2026-12:forecast"]).toBeLessThan(0);
@@ -379,6 +415,7 @@ describe("buildRunway", () => {
                 }),
                 balance("runpod", 4.76),
             ],
+            PRIVATE_RULES,
         );
         const runpod = result.rows.find((row) => row.vendor === "runpod");
 
@@ -410,6 +447,8 @@ describe("buildRunway", () => {
                 }),
             ],
             NOW,
+            [],
+            PRIVATE_RULES,
         );
         const notion = result.rows.find((row) => row.vendor === "notion");
 

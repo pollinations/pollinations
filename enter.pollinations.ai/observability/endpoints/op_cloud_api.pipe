@@ -50,7 +50,9 @@ SQL >
         FROM op_cloud
         GROUP BY entry_id
     )
-    WHERE source != 'tombstone'
+    WHERE
+        source != 'tombstone'
+        AND positionCaseInsensitive(evidence, 'superseded') = 0
     ORDER BY start DESC, vendor, type, resource_name, resource_id
 
 TYPE ENDPOINT

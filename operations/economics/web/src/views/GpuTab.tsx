@@ -22,16 +22,16 @@ import {
 import { GaugeSummary } from "../components/EconomicsGauge";
 import { StatCards } from "../components/StatCards";
 import {
+    opCloudCreditBurnUsd,
+    opCloudMonth,
+    opCloudPaidBurnUsd,
+} from "../lib/computeLedger";
+import {
     computeModeIndex,
     providerMonthComputeMode,
 } from "../lib/computeModes";
 import { fmtMarginPct, fmtNumber, fmtUsd, fmtUsd4 } from "../lib/format";
 import { toUsd } from "../lib/fx";
-import {
-    opCloudCreditBurnUsd,
-    opCloudMonth,
-    opCloudPaidBurnUsd,
-} from "../lib/insights";
 import {
     type MonthFilterValue,
     matchesMonth,

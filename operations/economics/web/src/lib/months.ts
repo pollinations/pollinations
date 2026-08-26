@@ -33,6 +33,16 @@ export function isDateKey(value: string): boolean {
     );
 }
 
+export function monthShift(month: string, delta: number): string {
+    const total =
+        Number(month.slice(0, 4)) * 12 +
+        (Number(month.slice(5, 7)) - 1) +
+        delta;
+    const year = Math.floor(total / 12);
+    const shiftedMonth = (total % 12) + 1;
+    return `${String(year).padStart(4, "0")}-${String(shiftedMonth).padStart(2, "0")}`;
+}
+
 // filter is "" (everything), "YYYY" (whole year) or "YYYY-MM"; value may be a
 // month or a full date. Undated rows stay visible in all/year views, but not
 // when drilling into one specific month.

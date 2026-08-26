@@ -11,6 +11,11 @@ import {
     transactionCategory,
 } from "./categories";
 import {
+    isOpCloudBalanceRow,
+    opCloudCreditBurnUsd,
+    opCloudPaidBurnUsd,
+} from "./computeLedger";
+import {
     automaticForecastRule,
     type ForecastMethod,
     type ForecastPaymentTiming,
@@ -19,14 +24,8 @@ import {
     forecastRuleEntries,
 } from "./forecastTerms";
 import { canConvertToUsd, toUsd } from "./fx";
-import {
-    isOpCloudBalanceRow,
-    monthShift,
-    opCloudCreditBurnUsd,
-    opCloudPaidBurnUsd,
-    providerBalanceRows,
-} from "./insights";
-import { WINDOW_START } from "./months";
+import { monthShift, WINDOW_START } from "./months";
+import { providerBalanceRows } from "./providerBalances";
 
 const MONTH_RE = /^\d{4}-\d{2}$/;
 const FORECAST_METHODS = new Set<ForecastMethod>([

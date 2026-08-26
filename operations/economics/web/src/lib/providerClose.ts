@@ -6,7 +6,6 @@ import {
     hasReconciledTransactionEvidence,
     isAcknowledgedLostTransactionEvidence,
 } from "./documents";
-import { type VendorPlanes, vendorPlanes } from "./insights";
 import {
     type MonthFilterValue,
     matchesMonth,
@@ -19,6 +18,7 @@ import {
     providerMeteringBasis,
     providerReviewRows,
 } from "./providerRegistry";
+import { type VendorPlanes, vendorPlanes } from "./vendorReconciliation";
 
 const ACTIVE_USD = 0.0001;
 

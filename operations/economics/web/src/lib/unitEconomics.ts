@@ -1,4 +1,3 @@
-import { CALIB_DRIFT_ABS_ALARM_USD, hasCalibDrift } from "./insights";
 import type {
     ModelAllocationRow,
     ModelAllocationStatus,
@@ -6,6 +5,10 @@ import type {
     ModelReconcileStatus,
 } from "./modelReconcile";
 import { type MeteringBasis, providerMeteringBasis } from "./providerRegistry";
+import {
+    CALIB_DRIFT_ABS_ALARM_USD,
+    hasCalibDrift,
+} from "./vendorReconciliation";
 
 export type UnitEconomicsGrain = "model" | "provider";
 

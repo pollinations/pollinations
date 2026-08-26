@@ -5,8 +5,8 @@ import {
     allocateGrants,
     creditRunway,
     providerBalanceRows,
-    vendorPlanes,
-} from "./insights";
+} from "./providerBalances";
+import { vendorPlanes } from "./vendorReconciliation";
 
 const opTxn = (over: Partial<OpTransactionRow>): OpTransactionRow => ({
     entry_id: "wise-test-transaction",

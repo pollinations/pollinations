@@ -21,7 +21,10 @@ import {
 } from "../components/DataTable";
 import { StatCards } from "../components/StatCards";
 import { fmtPeriod, fmtUsd } from "../lib/format";
-import { type ProviderBalanceRow, providerBalanceRows } from "../lib/insights";
+import {
+    type ProviderBalanceRow,
+    providerBalanceRows,
+} from "../lib/providerBalances";
 import type { Data } from "../types";
 
 // Urgency color for a depletion date: red under 30 days, amber under 90.

@@ -21,6 +21,8 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🖼️ Pollinations App](https://sohaib7838.github.io/pollinations-app) | A simple web app that lets users connect their Pollinations account and generate AI images using their own Pollen. | [@Sohaib7838](https://github.com/Sohaib7838) |
+| [✍️ Descriptly](https://github.com/g33ky00/descriptly) | ## Descriptly v1.0.0 First public release. Descriptly scans images added or modified in a pull request and generates accessible alt-text suggestions using Pollinations vision models — posted directly | [@g33ky00](https://github.com/g33ky00) |
 | [🖼️ EAS AI STUDIO](https://www.ekin-ai-studio.my.id) | Create collaborative images using the Pollinations image API | [@EkinLiu](https://github.com/EkinLiu) |
 | [💬 App Submission: FreeChat CLI](https://github.com/xiaotian1171/freechat-cli) | A zero-config command-line chat tool powered by the Pollinations free API. No API key required. Features include multi-model switching, streaming responses, conversation history, and save/load. Uses t | [@xiaotian1171](https://github.com/xiaotian1171) |
 | [✍️ StoryForge](https://storyforge.wiradifit-makmur-sejahtera.duckdns.org) | Turn any idea into an illustrated AI micro-story. The user signs in via the official BYOP OAuth flow (PKCE) with a self-chosen pollen budget, describes an idea, picks a genre (fantasy / sci-fi / myste | [@wiradifit](https://github.com/wiradifit) |
@@ -29,8 +31,6 @@
 | [🖼️ Pollen Image Studio](https://image.lanprint.com) | Pollen Image Studio is an online AI image generator powered by the Pollinations image API. --- --- What it is An online AI image generator using the Pollinations image API How to use Type a prompt or | [@dokirong](https://github.com/dokirong) |
 | [🖼️ REKTY GENERATOR](https://visualaiartwork.pages.dev) | REKTY GENERATOR is a free, open-source AI image generator web app that supports multiple providers in one interface. It uses **Pollinations AI** for: - **Image generation** via Pollinations API (57+ m | [@rekty](https://github.com/rekty) |
 | [🖼️ ArtScape Studio](https://creatneworld.github.io/artscape-studio) | A free bilingual (Chinese/English) AI art studio. Type an idea, pick an aspect ratio, style model and seed, then instantly generate a unique artwork using the Pollinations image API. Includes quick st | [@Creatneworld](https://github.com/Creatneworld) |
-| [🖼️ Cursor Maker](https://hk.1r.gs) | Cursor Maker (光标工坊) is an AI-powered Windows cursor generator. Type a one-line description (e.g. "glowing blue crystal arrow") and it generates a custom cursor design using the Pollinations image API | [@momokula123](https://github.com/momokula123) |
-| [💬 The Mita (Roblox AI)](https://www.roblox.com/games/98105867888961/The-Mita) | This AI powers a game character named Mita from MiSide. It runs on a Flask server and connects to the Roblox game via HTTP. The AI receives the player’s spoken lines, along with conversation history a | [@MoronDe](https://github.com/MoronDe) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->
@@ -51,16 +51,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-08-25** – **🎬 Wan 3.0 video generation** `wan-3.0` now makes 5-second text-to-video and image-to-video clips with optional audio, start frames, and 480p through 1080p output. [API Docs](https://gen.pollinations.ai/docs)
+- **2026-08-25** – **✨ Hosted FFmpeg for prompt agents** Agents can now select a managed FFmpeg tool to process media and receive stored outputs—no server maintenance, a small mercy. [MCP Server Docs](https://gen.pollinations.ai/docs#tag/mcp-server)
+- **2026-08-25** – **💡 Model lookup, OpenAI-style** OpenAI-compatible clients can inspect a single accessible model with `GET /v1/models/:model`, including aliases and registry metadata. [API Docs](https://gen.pollinations.ai/docs)
+- **2026-08-25** – **🌟 Pollen earnings in code and CLI** Check developer earnings from TypeScript with `accountEarnings()` or run `polli earnings --days 30 --json` for scriptable totals and per-entity detail.
+- **2026-08-25** – **🎨 EAS AI STUDIO joins the garden** A collaborative image-making app built on the Pollinations image API is now in the community showcase. [Try it](https://www.ekin-ai-studio.my.id) <!-- app -->
 - **2026-08-24** – **🤖 MCPs move into the hive** Managed agents can now discover and use registered MCP servers through a single authenticated Gen path, with Pollen handling the receipts. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-server)
 - **2026-08-24** – **🎵 The hive has ears** MCP agents can now transcribe audio from a public HTTPS URL with the new `transcribeAudio` tool.
 - **2026-08-24** – **🎨 Kontext finds its way home** Azure Flux Kontext is back for text-to-image generation and single-reference editing, at $0.03 per image. [Try it](https://pollinations.ai/play)
 - **2026-08-24** – **📱 Chat from the shell** FreeChat CLI brings zero-config, multi-model Pollinations chat, streaming, and saved conversations to the terminal. [View repo](https://github.com/xiaotian1171/freechat-cli) <!-- app -->
 - **2026-08-23** – **🤖 Agents can delegate to agents** MCP-connected agents can discover agent models and call them directly, inheriting permissions and billing through the parent key.
-- **2026-08-23** – **🚀 Register endpoint agents by API** Create private endpoint agents directly with `POST /account/my-models/endpoint-agents`; public publishing follows the existing allowlist.
-- **2026-08-23** – **🎯 Find models usable with Quest Pollen** The Models page now has a local filter for models your Quest-earned Pollen can actually use. Less botanical guesswork.
-- **2026-08-23** – **✨ Turn an idea into an illustrated micro-story** StoryForge lets you pick a genre and Pollen budget, then make a short illustrated story with BYOP sign-in. [Try it](https://storyforge.wiradifit-makmur-sejahtera.duckdns.org) <!-- app -->
-- **2026-08-21** – **🎥 Videos learn to count** Video model endpoints and SDK types now expose supported minimum, maximum, default, and stepped durations—so apps can offer controls that match the model instead of asking nicely and hoping. [API Docs](https://gen.pollinations.ai/docs)
-- **2026-08-21** – **🔗 OpenRouter takes the direct path** Chat requests to OpenRouter models now preserve requested provider routing plus OpenRouter’s raw usage and cost data, in streaming and non-streaming calls. [Chat API](https://gen.pollinations.ai/v1/chat/completions)
 ---
 
 ## 🌱 Introduction

@@ -118,7 +118,7 @@ export function QuestLeaderboard() {
                         </tr>
                     </thead>
                     <tbody>
-                        {(loading ? Array.from({ length: 3 }) : entries).map(
+                        {(loading ? [null, null, null] : entries).map(
                             (entry, index) =>
                                 entry ? (
                                     <tr
@@ -148,7 +148,7 @@ export function QuestLeaderboard() {
                                         </td>
                                     </tr>
                                 ) : (
-                                    <tr key={`skeleton-${index}`}>
+                                    <tr key="leaderboard-loading">
                                         <td colSpan={4} className="px-3 py-2">
                                             <div className="h-4 w-full animate-pulse bg-border opacity-40" />
                                         </td>

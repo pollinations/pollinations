@@ -101,7 +101,13 @@ test("quest leaderboard returns public aggregates ranked by completions", async 
     expect(bob).toBeDefined();
 
     // Ranked by completions first; pollen is only the tiebreak.
-    expect(leaderboard.indexOf(alice!)).toBeLessThan(leaderboard.indexOf(bob!));
+    const aliceIndex = leaderboard.findIndex(
+        (entry) => entry.githubUsername === "alice",
+    );
+    const bobIndex = leaderboard.findIndex(
+        (entry) => entry.githubUsername === "bob",
+    );
+    expect(aliceIndex).toBeLessThan(bobIndex);
     expect(alice).toEqual({
         githubUsername: "alice",
         completedQuests: 2,

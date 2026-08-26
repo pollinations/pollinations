@@ -274,7 +274,7 @@ export async function callCommunityVideoEndpoint(
         throw new Error(endpointErrorMessage(response.status, errBody));
     }
 
-    const result = await response.json();
+    const result: any = await response.json();
     const videoData = result.data?.[0];
     const videoUrl = videoData?.url ?? videoData?.b64_json;
 

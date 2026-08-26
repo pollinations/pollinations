@@ -111,7 +111,7 @@ export const ImageParamsSchema = z
                     ? value.split("|")
                     : value.split(",");
             })
-            .catch([]),
+            .optional(),
         reference_video: z
             .union([z.string(), z.null(), z.undefined()])
             .transform((value) => value || undefined)

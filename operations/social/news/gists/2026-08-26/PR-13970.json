@@ -1,0 +1,35 @@
+{
+  "pr_number": 13970,
+  "title": "Add Pollinations App to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/13970",
+  "merged_at": "2026-08-26T06:36:16Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Pollinations App](https://sohaib7838.github.io/pollinations-app) to image\n- A simple web app that lets users connect their Pollinations account and generate AI images using their own Pollen.\n\nFixes #13892",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A fresh image garden",
+    "blurb": "Pollinations App has joined the image garden. Connect an account, bring your own Pollen, and turn prompts into pixels without wandering off the path.",
+    "summary": "Added Pollinations App to the image app directory, giving users a simple web app for connecting their Pollinations account and generating AI images with their own Pollen.",
+    "impact": "People browsing Pollinations image apps can now discover a straightforward account-connected image generator that spends Pollen from their own wallet.",
+    "keywords": [
+      "community",
+      "image-generation",
+      "pollen",
+      "web-app",
+      "app-directory"
+    ],
+    "visual_concept": "Depict Polli helping a friendly maker use a cozy little image-generation workstation: a retro browser window shows a simple prompt box, an account connection badge, a Pollen jar, and freshly generated pixel landscape cards growing like flowers. The scene represents a discoverable community-built app that turns a user's own Pollen into images.",
+    "image_prompt": "A cozy pixel art garden workshop where Polli, the cute pixel art bee mascot with a yellow body, dark brown stripes, black oval eyes, pink rectangular cheek blushes, a happy smile, light blue translucent wings, and a tiny artist beret, helps at a retro computer showing a simple image prompt box, a connected-account badge, and a small jar of Pollen; generated pixel-art picture cards bloom from flower pots beside it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, code-plants and tiny flowers, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text: \"MAKE IMAGES\". Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-26/PR-13970.jpg",
+    "prompt": "A cozy pixel art garden workshop where Polli, the cute pixel art bee mascot with a yellow body, dark brown stripes, black oval eyes, pink rectangular cheek blushes, a happy smile, light blue translucent wings, and a tiny artist beret, helps at a retro computer showing a simple image prompt box, a connected-account badge, and a small jar of Pollen; generated pixel-art picture cards bloom from flower pots beside it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, code-plants and tiny flowers, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text: \"MAKE IMAGES\". Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-26T06:37:20.348903+00:00",
+  "app_name": "Pollinations App",
+  "app_url": "https://sohaib7838.github.io/pollinations-app"
+}

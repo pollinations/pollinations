@@ -1,5 +1,69 @@
 # Pollinations Model Changelog
 
+## 2026-08-26
+
+### Added
+- `glm-5.3` (Z.ai, text) — tool calling and reasoning.
+- `nemotron-3.5-lightning` (NVIDIA, text) — tool calling and reasoning.
+- `qwen3.8-27b` (Qwen, text) — text, image, and video input; tool calling and reasoning.
+- `wan-3.0` (Alibaba, video) — text/image-to-video with audio output.
+- `fish-audio-s2.1-pro` (Fish Audio, audio) — text-to-speech.
+- `gpt-transcribe` (OpenAI, audio) — speech-to-text via `/v1/audio/transcriptions`.
+- `grok-tts` (xAI, audio) — text-to-speech via `/audio/{text}` and `/v1/audio/speech`.
+
+### Changed
+- `chigwell/claude-haiku-4-5` — now paid-only.
+- `chigwell/gpt-5.4-mini` — now paid-only.
+- `chigwell/gemini-3.7-flash` — now paid-only.
+- `chigwell/gemini-3.1-flash-lite` — now paid-only.
+- `chigwell/minimax-m2.7` — now paid-only.
+- `chigwell/llm7-pro` — now paid-only.
+- `chigwell/gemini-3.5-flash-low` — now paid-only.
+- `chigwell/claude-opus-5` — now paid-only.
+- `chigwell/claude-fable-5` — now paid-only.
+- `chigwell/gemini-3-flash` — now paid-only.
+- `chigwell/grok-4.6` — now paid-only.
+- `chigwell/gpt-5.5` — now paid-only.
+- `chigwell/grok-4.5` — now paid-only.
+- `chigwell/gpt-5.6-terra` — now paid-only.
+- `chigwell/gpt-5.4` — now paid-only.
+- `chigwell/claude-sonnet-5` — now paid-only.
+- `chigwell/firefly-image-5` — now paid-only.
+- `chigwell/gpt-image-2` — now paid-only.
+- `laguna` — price cut ~10%.
+- `gpt-5.6-luna` — price cut ~25%.
+- `gpt-5.6-sol` — price cut ~35%.
+- `grok-large` — price cut ~25%.
+- `openai-large` — price cut ~25%.
+- `gpt-5.4` — price cut ~25%.
+- `grok` — price cut ~25%.
+- `gptimage-large` — price cut ~25%.
+- `kontext` — price cut ~25%.
+- `MarcosFRG/glm-5.2` — price cut ~50%.
+- `MarcosFRG/deepseek-v4-pro` — price cut ~70%.
+- `vendouple/kimi-k3` — price cut ~20%.
+- `gemma-4-31b` — price increase ~10%.
+- `gpt-5.6-terra` — price increase ~20%.
+- `qwen-vision-pro` — price increase ~55%.
+- `gemma` — price increase ~20%.
+- `deepseek` — price increase ~135%.
+- `qwen-coder` — price increase ~20%.
+- `JustScriptzz/agnes-2.5-flash` — added tool calling and reasoning.
+- `Lorodn4x/deepseek-v4-pro-0813` — added tool calling and reasoning.
+- `solarnode-developement/hy3` — added tool calling and reasoning.
+- `sharktide/inferenceport-ai-minimax-m3` — added image input, tool calling, and reasoning.
+- `MarcosFRG/minimax-m3` — added video input, tool calling, and reasoning.
+- `MarcosFRG/gemma-4-31b` — added video input, tool calling, and reasoning.
+- `MarcosFRG/metraxai` — removed audio and video input; added tool calling and reasoning.
+
+### Removed
+- `JustScriptzz/kimi-k3` (was: text)
+- `JustScriptzz/kimi-k2.7` (was: text)
+- `JustScriptzz/mercury-2` (was: text)
+- `Catniti/openai-fast` (was: text)
+- `tomdacatto/chatgpt-image-2` (was: image)
+- `tomdacatto/flux-2-max` (was: image)
+
 ## 2026-08-19
 
 ### Added

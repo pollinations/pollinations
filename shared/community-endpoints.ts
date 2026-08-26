@@ -22,8 +22,12 @@ export const COMMUNITY_ENDPOINT_CHANGE_DELAY_MS = 12 * 60 * 60 * 1000;
 export const COMMUNITY_ENDPOINT_MODALITIES = [
     "text",
     "image",
+    "video",
     "transcription",
 ] as const;
+// Video endpoints are billed as a fixed per-second rate. There is no token mode
+// because video upstreams report duration rather than output tokens.
+export const COMMUNITY_ENDPOINT_VIDEO_PRICING_MODES = ["request"] as const;
 // How a community image endpoint is billed. "request" charges the fixed
 // per-image price once per generation; "tokens" charges the provider-returned
 // OpenAI image token usage against per-1M prices. The mode is detected by the
@@ -49,6 +53,11 @@ export const MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS = 50;
 export const MAX_COMMUNITY_PRICE_PER_TOKEN =
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS / 1_000_000;
 export const MAX_COMMUNITY_PRICE_PER_IMAGE = 0.25;
+// Video prices are per second of output. $0.10/sec is generous for hobby GPUs
+// (first-party models range from $0.01 to $0.18/sec) but keeps community
+// endpoints from charging extreme rates.
+export const MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND = 0.10;
+export const MAX_COMMUNITY_VIDEO_BYTES = 20 * 1024 * 1024;
 // Per-second audio (STT/TTS) prices are tiny compared to per-token rates, so
 // this ceiling is written per minute and divided down: $0.012/min is ~2x
 // OpenAI whisper ($0.006/min) and ~3x the priciest first-party STT model
@@ -70,6 +79,7 @@ export type CommunityEndpointModality =
 export const COMMUNITY_ENDPOINT_INPUT_MODALITIES = {
     text: MODEL_INPUT_MODALITIES,
     image: ["text", "image"],
+    video: ["text", "image"] as const,
     transcription: ["audio"],
 } as const satisfies Record<
     CommunityEndpointModality,
@@ -123,6 +133,9 @@ export function normalizeCommunityEndpointAdvertised(
 
 export type CommunityEndpointImagePricing =
     (typeof COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES)[number];
+
+export type CommunityEndpointVideoPricing =
+    (typeof COMMUNITY_ENDPOINT_VIDEO_PRICING_MODES)[number];
 
 const COMMUNITY_PRICE_FIELD_BY_USAGE_TYPE = {
     promptTextTokens: {
@@ -233,6 +246,18 @@ const COMMUNITY_TRANSCRIPTION_PRICE_FIELD = {
     rawUsagePaths: ["duration"],
 } as const;
 
+// Video endpoints bill per-second output against completionVideoPrice. The
+// provider returns the generated video duration in an OpenAI-compatible usage
+// shape (usage.video_seconds or usage.duration), which the probe normalises
+// to completionVideoSeconds for billing.
+const COMMUNITY_VIDEO_PRICE_FIELD = {
+    key: "completionVideoPrice",
+    usageType: "completionVideoSeconds",
+    label: "Generated video",
+    priceUnit: "second",
+    rawUsagePaths: ["video_seconds", "duration"],
+} as const;
+
 export const COMMUNITY_ENDPOINT_PRICE_FIELDS = [
     ...COMMUNITY_TEXT_PRICE_FIELDS,
     COMMUNITY_IMAGE_PRICE_FIELD,
@@ -250,6 +275,10 @@ const COMMUNITY_IMAGE_ENDPOINT_PRICE_FIELDS = [
     COMMUNITY_IMAGE_PRICE_FIELD,
 ] as const;
 
+const COMMUNITY_VIDEO_ENDPOINT_PRICE_FIELDS = [
+    COMMUNITY_VIDEO_PRICE_FIELD,
+] as const;
+
 const COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS = [
     COMMUNITY_TRANSCRIPTION_PRICE_FIELD,
 ] as const;
@@ -258,6 +287,7 @@ export function communityEndpointPriceFieldsForModality(
     modality: CommunityEndpointModality,
     imagePricing: CommunityEndpointImagePricing = "request",
 ) {
+    if (modality === "video") return COMMUNITY_VIDEO_ENDPOINT_PRICE_FIELDS;
     if (modality === "transcription") {
         return COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS;
     }
@@ -357,6 +387,7 @@ export function normalizeCommunityEndpointModality(
     value: string | null | undefined,
 ): CommunityEndpointModality {
     if (value === "transcription") return "transcription";
+    if (value === "video") return "video";
     return value === "image" ? "image" : "text";
 }
 
@@ -366,13 +397,19 @@ export function normalizeCommunityEndpointImagePricing(
     return value === "tokens" ? "tokens" : "request";
 }
 
+export function normalizeCommunityEndpointVideoPricing(
+    value: string | null | undefined,
+): CommunityEndpointVideoPricing {
+    return "request";
+}
+
 export function normalizeCommunityEndpointInputModalities(
     value: readonly ModelInputModality[] | null | undefined,
     endpointModality: CommunityEndpointModality,
 ): ModelInputModality[] {
     // Both empty cases — nothing declared, and a declared set that shares
     // nothing with this modality — fall back to the modality's own first
-    // input: text for text and image endpoints, audio for transcription.
+    // input: text for text/image/video endpoints, audio for transcription.
     // Falling back to a bare "text" would hand a transcription endpoint the
     // one input it cannot accept, which the write path then rejects with a
     // 400 naming an input the owner never chose.
@@ -895,6 +932,10 @@ export function communityAudioTranscriptionsUrl(baseUrl: string): string {
     return `${communityOpenAIBaseUrl(baseUrl)}/audio/transcriptions`;
 }
 
+export function communityVideoUrl(baseUrl: string): string {
+    return `${communityOpenAIBaseUrl(baseUrl)}/video/generations`;
+}
+
 /**
  * Audio duration reported by an OpenAI-compatible transcription response.
  *
@@ -927,6 +968,7 @@ export function communityOpenAIBaseUrl(baseUrl: string): string {
         "/images/generations",
         "/images/edits",
         "/audio/transcriptions",
+        "/video/generations",
     ]) {
         if (normalized.endsWith(suffix)) {
             return normalized.slice(0, -suffix.length);
@@ -989,6 +1031,7 @@ export function communityModelDefinition(
         endpoint.imagePricing,
     );
     const isImage = modality === "image";
+    const isVideo = modality === "video";
     const isTranscription = modality === "transcription";
     // Token-priced image endpoints bill like text models (usage × per-token
     // rates), so only fixed per-request image endpoints are flat-rate.
@@ -1007,17 +1050,30 @@ export function communityModelDefinition(
         perUserRpm: endpoint.perUserRpm,
         brand: providerName || "Community",
         brandUrl: providerName && providerUrl ? providerUrl : undefined,
-        category: isImage ? "image" : isTranscription ? "audio" : "text",
+        category: isVideo
+            ? "video"
+            : isImage
+              ? "image"
+              : isTranscription
+                ? "audio"
+                : "text",
         cost: communityPriceDefinition(endpoint, modality, imagePricing),
         priceMultiplier: 1,
         addedDate: endpoint.addedDate ?? 0,
         title: communityEndpointTitle(endpoint),
         description: description || undefined,
         inputModalities,
-        outputModalities: isImage ? ["image"] : ["text"],
+        outputModalities: isVideo
+            ? ["video"]
+            : isImage
+              ? ["image"]
+              : ["text"],
         hidden: endpoint.hidden,
         ...(endpoint.fallbacks?.length
             ? { fallbacks: endpoint.fallbacks }
+            : {}),
+        ...(isVideo
+            ? { supportedEndpoints: ["/v1/video/generations", "/video"] }
             : {}),
         ...(isTranscription
             ? { supportedEndpoints: ["/v1/audio/transcriptions"] }

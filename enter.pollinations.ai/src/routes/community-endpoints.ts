@@ -27,6 +27,7 @@ import {
     testCommunityEndpoint,
     testCommunityImageEndpoint,
     testCommunityTranscriptionEndpoint,
+    testCommunityVideoEndpoint,
 } from "../services/community-endpoint-openai.ts";
 import { requireAccountPermission } from "./account-permissions.ts";
 import {
@@ -634,9 +635,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 const result =
                     input.modality === "image"
                         ? await testCommunityImageEndpoint(input)
-                        : input.modality === "transcription"
-                          ? await testCommunityTranscriptionEndpoint(input)
-                          : await testCommunityEndpoint(input);
+                        : input.modality === "video"
+                          ? await testCommunityVideoEndpoint(input)
+                          : input.modality === "transcription"
+                            ? await testCommunityTranscriptionEndpoint(input)
+                            : await testCommunityEndpoint(input);
                 return c.json({
                     ok: true,
                     message:

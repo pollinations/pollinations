@@ -4,6 +4,7 @@ import {
     ClipboardIcon,
     CopyButton,
     cn,
+    RocketIcon,
     Surface,
     Tooltip,
 } from "@pollinations/ui";
@@ -274,6 +275,25 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                 {publicModelName}
                             </span>
                         )}
+                        <Tooltip
+                            content={
+                                <strong className="font-semibold text-theme-text-strong">
+                                    Try in Play
+                                </strong>
+                            }
+                            ariaLabel={`Try ${publicModelName} in Play`}
+                            tapEnabled
+                            displayContents
+                        >
+                            <a
+                                href={`https://pollinations.ai/play?model=${encodeURIComponent(model.name)}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex shrink-0 text-theme-text-muted transition-colors hover:text-theme-text-soft"
+                            >
+                                <RocketIcon className="h-4 w-4" />
+                            </a>
+                        </Tooltip>
                     </div>
                     <ModelId name={model.name} />
                     {model.brandUrl && model.brand && (

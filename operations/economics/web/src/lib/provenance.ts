@@ -17,7 +17,7 @@ export type ProvenanceCode =
     | "GRT"
     | "INT";
 
-export type SourceMetadata = {
+type SourceMetadata = {
     code: ProvenanceCode;
     display: string;
     title: string;
@@ -79,9 +79,9 @@ const SOURCE_METADATA: Record<string, SourceMetadata> = {
     ),
 };
 
-export const TRANSACTION_SOURCE_NAMES = new Set(["wise"]);
+const TRANSACTION_SOURCE_NAMES = new Set(["wise"]);
 
-export const CLOUD_SOURCE_NAMES = new Set([
+const CLOUD_SOURCE_NAMES = new Set([
     "agent",
     "api",
     "bigquery",
@@ -98,7 +98,7 @@ export const CLOUD_SOURCE_NAMES = new Set([
     "tinybird",
 ]);
 
-export function normalizeSourceName(value: string): string {
+function normalizeSourceName(value: string): string {
     return value.trim().toLowerCase();
 }
 

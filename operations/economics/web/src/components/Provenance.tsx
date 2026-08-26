@@ -1,8 +1,6 @@
 import { Chip } from "@pollinations/ui";
 import { sourceMetadata, uniqueSourceNames } from "../lib/provenance";
 
-export type { ProvenanceCode } from "../lib/provenance";
-
 function InlineSourceBadge({ source }: { source: string }) {
     if (!source) return null;
 

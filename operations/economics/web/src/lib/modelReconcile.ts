@@ -610,18 +610,6 @@ export function visibleModelReconcileRows({
     );
 }
 
-export function modelReconcileProviderOptions(
-    data: Data,
-    month: MonthFilterValue = "",
-): string[] {
-    const vendors = new Set(
-        modelReconcileRows(data)
-            .filter((row) => matchesMonth(row.month, month))
-            .map((row) => row.vendor),
-    );
-    return ["all", ...[...vendors].sort((a, b) => a.localeCompare(b))];
-}
-
 export function modelReconcileSummary(
     rows: ModelReconcileRow[],
 ): ModelReconcileSummary {

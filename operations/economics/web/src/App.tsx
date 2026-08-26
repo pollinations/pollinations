@@ -41,7 +41,6 @@ import {
     MonthFilter,
     YearFilter,
 } from "./components/Filters";
-import type { ProvenanceCode } from "./components/Provenance";
 import {
     type FacetOption,
     type LedgerTab,
@@ -53,6 +52,7 @@ import {
     WINDOW_START,
     yearsOf,
 } from "./lib/months";
+import type { ProvenanceCode } from "./lib/provenance";
 import { fixturesMode, loadAll, TbError } from "./lib/tb";
 import type { Data } from "./types";
 import { CommunityTab } from "./views/CommunityTab";

@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Data, OpCloudRow, OpPollenRow } from "../types";
 import {
-    modelReconcileProviderOptions,
     modelReconcileRows,
     modelReconcileSummary,
     visibleModelReconcileRows,
@@ -391,23 +390,5 @@ describe("modelReconcileRows", () => {
         expect(summary.questCashSubsidyUsd).toBe(0);
         expect(summary.netCashContributionUsd).toBe(10);
         expect(summary.pollenOnlyMeterUsd).toBe(10);
-    });
-
-    it("builds provider filter options from the selected reconciliation period", () => {
-        const input = data({
-            opCloud: [
-                cloud({ vendor: "aws", start: "2026-07-01" }),
-                cloud({ vendor: "modal", start: "2026-06-01" }),
-            ],
-            opPollen: [
-                pollen({ vendor: "bedrock", month: "2026-07" }),
-                pollen({ vendor: "openai", month: "2026-06" }),
-            ],
-        });
-
-        expect(modelReconcileProviderOptions(input, "2026-07")).toEqual([
-            "all",
-            "aws",
-        ]);
     });
 });

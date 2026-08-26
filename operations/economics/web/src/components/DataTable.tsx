@@ -15,7 +15,7 @@ type SortState = {
     direction: SortDirection;
 };
 
-export type ColumnHint = {
+type ColumnHint = {
     meaning: string;
     tables?: string;
     sources?: string;

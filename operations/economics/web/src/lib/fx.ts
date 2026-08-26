@@ -59,10 +59,6 @@ function tableRate(currency: string, month: string): number {
     );
 }
 
-export function eurUsdRate(month: string): number {
-    return tableRate("EUR", month);
-}
-
 // Months with EUR/CAD rows converting at the estimated (latest known) rate.
 export function fxEstimatedMonths(data: Data): string[] {
     const months = new Set<string>();

@@ -1,0 +1,33 @@
+{
+  "pr_number": 14004,
+  "title": "chore: remove dashboard status notice",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14004",
+  "merged_at": "2026-08-26T18:26:08Z",
+  "labels": [],
+  "pr_body_excerpt": "- Removes the dashboard-wide status notice banner.\n- Stops fetching `/api/status-notice` from the dashboard.\n- Leaves the admin/status API unchanged.\n\nChecks:\n- `npx biome check frontend/src/components/layout/dashboard-shell.tsx`\n- `git diff --check`\n- Enter typecheck could not start because `tsup` is not installed in this checkout.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The banner flew south",
+    "blurb": "The dashboard status banner has been gently packed away. One less thing hovering over the workspace.",
+    "summary": "Removed the dashboard-wide status notice banner and its `/api/status-notice` fetch while leaving the admin status API available.",
+    "impact": "Dashboard users get a cleaner workspace without the persistent status notice, while administrators retain status API access.",
+    "keywords": [
+      "dashboard",
+      "status",
+      "ui",
+      "cleanup",
+      "enter"
+    ],
+    "visual_concept": "A cozy dashboard garden after a large notice banner has been removed: Polli tidies the newly open space on a retro terminal desk while small code-plants and flowers grow around it. A tiny folded banner rests in a basket, signaling UI cleanup without implying the status system itself disappeared.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, black antennae and oval eyes, pink rectangular cheek blushes, a happy smile, and small rounded translucent light-blue wings, wearing a tiny janitor scarf as she tidies a clear retro dashboard desk beside a basket holding a folded status banner; code-plants and pixel flowers bloom around a CRT monitor. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-26/PR-14004.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, black antennae and oval eyes, pink rectangular cheek blushes, a happy smile, and small rounded translucent light-blue wings, wearing a tiny janitor scarf as she tidies a clear retro dashboard desk beside a basket holding a folded status banner; code-plants and pixel flowers bloom around a CRT monitor. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-26T18:35:05.431364+00:00"
+}

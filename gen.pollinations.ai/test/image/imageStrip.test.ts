@@ -1,4 +1,7 @@
-import { stripImageMetadata } from "@shared/image-strip.ts";
+import {
+    InvalidImageStructureError,
+    stripImageMetadata,
+} from "@shared/image-strip.ts";
 import { describe, expect, it } from "vitest";
 
 // ── Helpers ──────────────────────────────────────────────────────────────
@@ -338,6 +341,30 @@ describe("stripImageMetadata — JPEG", () => {
             0xff, 0xd8, 0xff, 0xda, 0x00, 0x03, 0x00, 0xff, 0xd9,
         ]);
     });
+
+    it("strips metadata between entropy-coded scans", () => {
+        const input = new Uint8Array([
+            0xff,
+            0xd8,
+            0xff,
+            0xda,
+            0x00,
+            0x03,
+            0x00,
+            0x11, // first scan data
+            0xff,
+            0xe1,
+            0x00,
+            0x04,
+            0x00,
+            0x00, // APP1 between scans
+            0xff,
+            0xd9,
+        ]);
+        expect([...stripImageMetadata(input)]).toEqual([
+            0xff, 0xd8, 0xff, 0xda, 0x00, 0x03, 0x00, 0x11, 0xff, 0xd9,
+        ]);
+    });
 });
 
 // ── PNG ──────────────────────────────────────────────────────────────────
@@ -384,14 +411,81 @@ describe("stripImageMetadata — resilience", () => {
         expect(stripImageMetadata(gif)).toBe(gif);
     });
 
-    it("returns truncated JPEG header unchanged", () => {
+    it("returns a truncated JPEG header unchanged", () => {
         const stub = new Uint8Array([0xff, 0xd8, 0xff]);
         expect(stripImageMetadata(stub)).toBe(stub);
     });
 
-    it("returns truncated PNG unchanged", () => {
+    it("returns a truncated PNG unchanged", () => {
         const stub = new Uint8Array([...PNG_SIG, 0x00]);
         expect(stripImageMetadata(stub)).toBe(stub);
+    });
+
+    it("rejects JPEG metadata followed by a truncated segment", () => {
+        const input = new Uint8Array([
+            0xff, 0xd8, 0xff, 0xe1, 0x00, 0x04, 0x00, 0x00, 0xff, 0xc0, 0x00,
+        ]);
+        expect(() => stripImageMetadata(input)).toThrow(
+            InvalidImageStructureError,
+        );
+    });
+
+    it("rejects PNG metadata followed by a truncated chunk", () => {
+        const input = new Uint8Array([
+            ...PNG_SIG,
+            ...pngChunk("tEXt", [0x41]),
+            0x00,
+            0x00,
+            0x00,
+            0x04,
+            0x49,
+            0x44,
+            0x41,
+            0x54,
+            0x00,
+        ]);
+        expect(() => stripImageMetadata(input)).toThrow(
+            InvalidImageStructureError,
+        );
+    });
+
+    it("rejects WebP metadata followed by a truncated chunk", () => {
+        const exifChunk = [
+            0x45, 0x58, 0x49, 0x46, 0x04, 0x00, 0x00, 0x00, 0x45, 0x78, 0x69,
+            0x66,
+        ];
+        const truncatedVp8 = [
+            0x56, 0x50, 0x38, 0x20, 0x0a, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ];
+        const totalLength = 12 + exifChunk.length + truncatedVp8.length;
+        const riffSize = totalLength - 8;
+        const input = new Uint8Array([
+            0x52,
+            0x49,
+            0x46,
+            0x46,
+            riffSize & 0xff,
+            (riffSize >> 8) & 0xff,
+            (riffSize >> 16) & 0xff,
+            (riffSize >> 24) & 0xff,
+            0x57,
+            0x45,
+            0x42,
+            0x50,
+            ...exifChunk,
+            ...truncatedVp8,
+        ]);
+        expect(() => stripImageMetadata(input)).toThrow(
+            InvalidImageStructureError,
+        );
+    });
+
+    it("rejects WebP metadata when the RIFF size is inconsistent", () => {
+        const input = webpWithExif();
+        input[4]--;
+        expect(() => stripImageMetadata(input)).toThrow(
+            InvalidImageStructureError,
+        );
     });
 
     it("returns empty input unchanged", () => {

@@ -1,3 +1,4 @@
+import { toDataUri } from "../../image/utils/imageDownload.ts";
 import type { Model3dGenerationResult } from "../createAndReturnModel3d.ts";
 import { downloadMesh, requirePrompt, toHttpError } from "../modelUtils.ts";
 import type { Model3dParams } from "../params.ts";
@@ -17,6 +18,9 @@ export async function callRodinFalAPI(
     if (!hasImages) requirePrompt(prompt, "hyper3d-rodin");
 
     try {
+        const imageUrls = hasImages
+            ? await Promise.all(params.image.map(toDataUri))
+            : [];
         const seedInput =
             params.seed !== undefined ? { seed: params.seed } : {};
         const result = await runFalJob(
@@ -24,7 +28,7 @@ export async function callRodinFalAPI(
                 ? {
                       endpoint: RODIN_IMAGE_ENDPOINT,
                       input: {
-                          image_urls: params.image,
+                          image_urls: imageUrls,
                           ...(prompt.trim() ? { prompt } : {}),
                           ...seedInput,
                       },

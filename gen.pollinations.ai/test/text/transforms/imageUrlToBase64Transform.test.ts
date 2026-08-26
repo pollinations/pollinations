@@ -3,6 +3,10 @@ import { imageUrlToBase64Transform } from "../../../src/text/transforms/imageUrl
 
 const transform = imageUrlToBase64Transform;
 const bedrockOptions = { modelConfig: { provider: "bedrock" } };
+const openaiOptions = { modelConfig: { provider: "openai" } };
+const JPEG_WITH_EXIF_DATA_URI =
+    "data:image/jpeg;base64,/9j/4QAGRXhpZv/aAAMA/9k=";
+const CLEAN_JPEG_DATA_URI = "data:image/jpeg;base64,/9j/2gADAP/Z";
 
 /** PNG signature — enough for the media type to be read off the bytes. */
 const PNG_BYTES = new Uint8Array([
@@ -26,6 +30,21 @@ function imageMessage(urls: string[]) {
 }
 
 describe("imageUrlToBase64Transform", () => {
+    it("sanitizes data URLs for providers that do not require base64 conversion", async () => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+        const { messages } = await transform(
+            imageMessage([JPEG_WITH_EXIF_DATA_URI]),
+            openaiOptions,
+        );
+
+        const [part] = (
+            messages[0] as { content: { image_url: { url: string } }[] }
+        ).content;
+        expect(part.image_url.url).toBe(CLEAN_JPEG_DATA_URI);
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
     it("rejects malformed image URLs before they reach the provider", async () => {
         const fetchSpy = vi.spyOn(globalThis, "fetch");
 

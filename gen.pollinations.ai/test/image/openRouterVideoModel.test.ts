@@ -11,6 +11,7 @@ const POLL_URL = "https://openrouter.ai/api/v1/videos/job-happyhorse-test";
 const VIDEO_URL = "https://video.example.com/happyhorse-output.mp4";
 const GROK_POLL_URL = "https://openrouter.ai/api/v1/videos/job-grok-test";
 const GROK_VIDEO_URL = "https://video.example.com/grok-output.mp4";
+const CLEAN_JPEG_DATA_URI = "data:image/jpeg;base64,/9j/2gADAP/Z";
 
 const baseParams: ImageParams = {
     model: "happyhorse-1.1",
@@ -79,13 +80,13 @@ describe("openRouterVideoModel", () => {
 
         await callHappyHorseAPI("animate this opening frame", {
             ...baseParams,
-            image: ["https://example.com/start.png"],
+            image: [CLEAN_JPEG_DATA_URI],
         });
 
         expect(requests[0].frame_images).toEqual([
             {
                 type: "image_url",
-                image_url: { url: "https://example.com/start.png" },
+                image_url: { url: CLEAN_JPEG_DATA_URI },
                 frame_type: "first_frame",
             },
         ]);
@@ -347,7 +348,7 @@ describe("OpenRouter Grok Video Pro", () => {
                 dimensionsExplicit: true,
                 aspectRatio: "9:16",
                 duration: 15,
-                image: ["https://example.com/start.png"],
+                image: [CLEAN_JPEG_DATA_URI],
             },
         );
 
@@ -360,7 +361,7 @@ describe("OpenRouter Grok Video Pro", () => {
             frame_images: [
                 {
                     type: "image_url",
-                    image_url: { url: "https://example.com/start.png" },
+                    image_url: { url: CLEAN_JPEG_DATA_URI },
                     frame_type: "first_frame",
                 },
             ],

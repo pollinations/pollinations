@@ -166,6 +166,19 @@ function pngFile(name: string, bytes: Uint8Array = TINY_PNG): File {
     return new File([bytes], name, { type: "image/png" });
 }
 
+function pngWithTextMetadata(): Uint8Array {
+    const metadataChunk = new Uint8Array([
+        0x00, 0x00, 0x00, 0x03, 0x74, 0x45, 0x58, 0x74, 0x41, 0x00, 0x42, 0x00,
+        0x00, 0x00, 0x00,
+    ]);
+    const iendOffset = TINY_PNG.length - 12;
+    const bytes = new Uint8Array(TINY_PNG.length + metadataChunk.length);
+    bytes.set(TINY_PNG.subarray(0, iendOffset));
+    bytes.set(metadataChunk, iendOffset);
+    bytes.set(TINY_PNG.subarray(iendOffset), iendOffset + metadataChunk.length);
+    return bytes;
+}
+
 // Distinct byte content per upload, varying the same base PNG per seed.
 function variant(seed: number): Uint8Array {
     const bytes = new Uint8Array(TINY_PNG);
@@ -332,6 +345,31 @@ describe("media.pollinations.ai", () => {
         );
         const dup = (await dupRes.json()) as UploadResponse;
         expect(dup.id).not.toBe(upload.id);
+    });
+
+    it("strips image metadata before storing uploads", async () => {
+        const { status, body } = await uploadViaForm("pk_alice", {
+            fileName: "metadata.png",
+            bytes: pngWithTextMetadata(),
+        });
+
+        expect(status).toBe(200);
+        const upload = body as UploadResponse;
+        expect(upload.size).toBe(TINY_PNG.length);
+
+        const getRes = await SELF.fetch(upload.url);
+        expect(new Uint8Array(await getRes.arrayBuffer())).toEqual(TINY_PNG);
+    });
+
+    it("rejects malformed images after metadata instead of storing a prefix", async () => {
+        const malformed = pngWithTextMetadata().slice(0, -6);
+        const { status, body } = await uploadViaForm("pk_alice", {
+            fileName: "malformed.png",
+            bytes: malformed,
+        });
+
+        expect(status).toBe(400);
+        expect((body as { error: string }).error).toContain("Malformed PNG");
     });
 
     it("uploads via base64 JSON", async () => {

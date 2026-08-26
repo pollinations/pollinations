@@ -1,4 +1,4 @@
-import { base64ToBuffer } from "../../image/utils/imageDownload.ts";
+import { base64ToBuffer, toDataUri } from "../../image/utils/imageDownload.ts";
 import type { Model3dGenerationResult } from "../createAndReturnModel3d.ts";
 import { requireImages, toHttpError } from "../modelUtils.ts";
 import type { Model3dParams } from "../params.ts";
@@ -13,9 +13,10 @@ export async function callTrellis2(
     requireImages(params, "trellis-2");
 
     try {
+        const imageUrl = await toDataUri(params.image[0]);
         const result = await runInferenceport({
             model: TRELLIS2_INFERENCEPORT_MODEL_ID,
-            imageUrls: [params.image[0]],
+            imageUrls: [imageUrl],
             resolution: params.resolution,
         });
         if (!result.glbBase64) {

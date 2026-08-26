@@ -5,6 +5,7 @@ import type { ImageParams } from "../params.ts";
 import { sleep } from "../util.ts";
 import { closestRatioLogSpace } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
+import { toDataUri } from "../utils/imageDownload.ts";
 
 const WAN_3_TEXT_ENDPOINT =
     "https://queue.fal.run/alibaba/wan-3.0-prime/text-to-video";
@@ -60,7 +61,9 @@ export async function callWan3FalAPI(
         throw new HttpError("Wan 3.0 supports exactly 5 seconds", 400);
     }
 
-    const startImage = safeParams.image[0];
+    const startImage = safeParams.image[0]
+        ? await toDataUri(safeParams.image[0])
+        : undefined;
     const endpoint = startImage ? WAN_3_IMAGE_ENDPOINT : WAN_3_TEXT_ENDPOINT;
     const deadline = Date.now() + WAN_3_TIMEOUT_MS;
     const authorization = { Authorization: `Key ${apiKey}` };

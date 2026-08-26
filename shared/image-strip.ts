@@ -1,5 +1,21 @@
 import { detectImageMimeType } from "./image-mime.ts";
 
+export class InvalidImageStructureError extends Error {
+    constructor(format: string) {
+        super(`Malformed ${format} image`);
+        this.name = "InvalidImageStructureError";
+    }
+}
+
+function malformedAfterMetadata(
+    data: Uint8Array,
+    stripped: boolean,
+    format: string,
+): Uint8Array {
+    if (stripped) throw new InvalidImageStructureError(format);
+    return data;
+}
+
 /**
  * Strip privacy-sensitive metadata (EXIF, IPTC, XMP, GPS, comments) from
  * user-supplied input images. Uses pure binary marker slicing — no pixel
@@ -42,19 +58,56 @@ function isIccProfile(
 }
 
 function stripJpegMetadata(data: Uint8Array): Uint8Array {
-    if (data.length < 4 || data[0] !== 0xff || data[1] !== 0xd8) return data;
+    if (data.length < 4 || data[0] !== 0xff || data[1] !== 0xd8) {
+        return data;
+    }
 
     const segments: Uint8Array[] = [data.subarray(0, 2)]; // SOI
     let offset = 2;
     let stripped = false;
+    let inScan = false;
+    let scanStart = offset;
+    let complete = false;
 
     while (offset < data.length) {
-        if (data[offset] !== 0xff) break;
+        if (inScan) {
+            if (data[offset] !== 0xff) {
+                offset++;
+                continue;
+            }
+
+            let markerPos = offset + 1;
+            while (markerPos < data.length && data[markerPos] === 0xff) {
+                markerPos++;
+            }
+            if (markerPos >= data.length) {
+                return malformedAfterMetadata(data, stripped, "JPEG");
+            }
+            const scanMarker = data[markerPos];
+            if (
+                scanMarker === 0x00 ||
+                (scanMarker >= 0xd0 && scanMarker <= 0xd7)
+            ) {
+                offset = markerPos + 1;
+                continue;
+            }
+
+            segments.push(data.subarray(scanStart, offset));
+            inScan = false;
+            // Parse the marker next, including any legal 0xFF fill bytes.
+            continue;
+        }
+
+        if (data[offset] !== 0xff) {
+            return malformedAfterMetadata(data, stripped, "JPEG");
+        }
 
         // Consume legal 0xFF fill/padding bytes before the marker byte
         let pos = offset + 1;
         while (pos < data.length && data[pos] === 0xff) pos++;
-        if (pos >= data.length) break;
+        if (pos >= data.length) {
+            return malformedAfterMetadata(data, stripped, "JPEG");
+        }
 
         const marker = data[pos];
 
@@ -69,22 +122,22 @@ function stripJpegMetadata(data: Uint8Array): Uint8Array {
             continue;
         }
 
-        // SOS (0xDA) — rest of file is entropy-coded image data
-        if (marker === 0xda) {
-            segments.push(data.subarray(offset));
-            break;
-        }
-
         // EOI
         if (marker === 0xd9) {
             segments.push(data.subarray(offset, pos + 1));
+            offset = pos + 1;
+            complete = offset === data.length;
             break;
         }
 
         // Variable-length segment: length field starts at pos+1
-        if (pos + 2 >= data.length) break;
+        if (pos + 2 >= data.length) {
+            return malformedAfterMetadata(data, stripped, "JPEG");
+        }
         const segLen = (data[pos + 1] << 8) | data[pos + 2];
-        if (segLen < 2 || pos + 1 + segLen > data.length) break;
+        if (segLen < 2 || pos + 1 + segLen > data.length) {
+            return malformedAfterMetadata(data, stripped, "JPEG");
+        }
         const segEnd = pos + 1 + segLen;
 
         if (JPEG_STRIP_MARKERS.has(marker)) {
@@ -100,7 +153,16 @@ function stripJpegMetadata(data: Uint8Array): Uint8Array {
             segments.push(data.subarray(offset, segEnd));
         }
         offset = segEnd;
+
+        // Entropy-coded scan data ends at the next unstuffed, non-restart
+        // marker. Continue parsing there so metadata between scans is removed.
+        if (marker === 0xda) {
+            inScan = true;
+            scanStart = offset;
+        }
     }
+
+    if (!complete) return malformedAfterMetadata(data, stripped, "JPEG");
 
     if (!stripped) return data;
 
@@ -123,12 +185,15 @@ const PNG_STRIP_CHUNKS = new Set(["eXIf", "tEXt", "zTXt", "iTXt", "tIME"]);
 const PNG_HEADER_LEN = 8;
 
 function stripPngMetadata(data: Uint8Array): Uint8Array {
-    if (data.length < PNG_HEADER_LEN + 12) return data;
+    if (data.length < PNG_HEADER_LEN + 12) {
+        return data;
+    }
 
     const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
     const segments: Uint8Array[] = [data.subarray(0, PNG_HEADER_LEN)]; // signature
     let offset = PNG_HEADER_LEN;
     let stripped = false;
+    let complete = false;
 
     while (offset + 12 <= data.length) {
         const chunkDataLen = view.getUint32(offset);
@@ -140,7 +205,9 @@ function stripPngMetadata(data: Uint8Array): Uint8Array {
         );
         const chunkTotal = 4 + 4 + chunkDataLen + 4; // length + name + data + CRC
 
-        if (offset + chunkTotal > data.length) break;
+        if (offset + chunkTotal > data.length) {
+            return malformedAfterMetadata(data, stripped, "PNG");
+        }
 
         if (PNG_STRIP_CHUNKS.has(chunkName)) {
             stripped = true;
@@ -148,7 +215,13 @@ function stripPngMetadata(data: Uint8Array): Uint8Array {
             segments.push(data.subarray(offset, offset + chunkTotal));
         }
         offset += chunkTotal;
+        if (chunkName === "IEND") {
+            complete = offset === data.length;
+            break;
+        }
     }
+
+    if (!complete) return malformedAfterMetadata(data, stripped, "PNG");
 
     if (!stripped) return data;
 
@@ -172,6 +245,7 @@ function stripWebpMetadata(data: Uint8Array): Uint8Array {
     if (data.length < 20) return data;
 
     const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+    const declaredSizeValid = view.getUint32(4, true) === data.length - 8;
     const segments: Uint8Array[] = [data.subarray(0, 12)]; // RIFF + filesize + WEBP
     let offset = 12;
     let stripped = false;
@@ -188,7 +262,9 @@ function stripWebpMetadata(data: Uint8Array): Uint8Array {
         const paddedSize = chunkSize + (chunkSize & 1); // RIFF chunks are 2-byte aligned
         const chunkTotal = 8 + paddedSize;
 
-        if (offset + chunkTotal > data.length) break;
+        if (offset + chunkTotal > data.length) {
+            return malformedAfterMetadata(data, stripped, "WebP");
+        }
 
         if (fourCC === "EXIF" || fourCC === "XMP ") {
             stripped = true;
@@ -199,6 +275,10 @@ function stripWebpMetadata(data: Uint8Array): Uint8Array {
             segments.push(data.subarray(offset, offset + chunkTotal));
         }
         offset += chunkTotal;
+    }
+
+    if (offset !== data.length || !declaredSizeValid) {
+        return malformedAfterMetadata(data, stripped, "WebP");
     }
 
     if (!stripped) return data;

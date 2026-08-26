@@ -3,6 +3,8 @@ import { syncImageEnv } from "../../src/image/env.ts";
 import { callWan3FalAPI } from "../../src/image/models/wan3FalVideoModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
 
+const CLEAN_JPEG_DATA_URI = "data:image/jpeg;base64,/9j/2gADAP/Z";
+
 const TEXT_ENDPOINT =
     "https://queue.fal.run/alibaba/wan-3.0-prime/text-to-video";
 const IMAGE_ENDPOINT =
@@ -95,7 +97,7 @@ describe("Wan 3.0 Prime via Fal", () => {
             "1080p",
             "1080p",
             true,
-            ["https://media.pollinations.ai/start.png"],
+            [CLEAN_JPEG_DATA_URI],
             "adaptive",
             IMAGE_ENDPOINT,
         ],

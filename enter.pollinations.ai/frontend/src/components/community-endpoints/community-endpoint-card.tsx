@@ -275,7 +275,8 @@ function communityPriceGroups(
                 unit:
                     field.priceUnit === "million"
                         ? "token"
-                        : field.priceUnit === "second"
+                        : field.priceUnit === "second" ||
+                            field.priceUnit === "video_second"
                           ? "second"
                           : "request",
             },
@@ -305,5 +306,6 @@ function communityPriceKind(usageType: string): PriceKind {
     if (usageType === "promptAudioTokens") return "audioIn";
     if (usageType === "completionAudioTokens") return "audioOut";
     if (usageType.includes("Image")) return "image";
+    if (usageType.includes("Video")) return "video";
     return "text";
 }

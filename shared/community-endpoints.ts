@@ -61,6 +61,11 @@ export const MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND = 0.5;
 export const MAX_COMMUNITY_PRICE_PER_SECOND = 0.012 / 60;
 export const MAX_COMMUNITY_IMAGE_BYTES = 20 * 1024 * 1024;
 export const MAX_COMMUNITY_VIDEO_BYTES = 20 * 1024 * 1024;
+// A JSON envelope carrying a 20 MB base64 clip is at most ~28 MB; leave a
+// small amount of room for the envelope while still bounding provider output.
+export const MAX_COMMUNITY_MEDIA_RESPONSE_BYTES =
+    Math.ceil((MAX_COMMUNITY_VIDEO_BYTES * 4) / 3) + 64 * 1024;
+export const MIN_COMMUNITY_VIDEO_DURATION_SECONDS = 0.5;
 // How long we wait on a community endpoint before giving up. Generous because
 // these are self-hosted hobby GPUs that cold-start, and in line with the text
 // providers (Portkey and Azure both use 290s). Workers impose no wall-clock
@@ -874,7 +879,7 @@ export async function firstCommunityVideoData(
             "duration_seconds" in video &&
             typeof video.duration_seconds === "number" &&
             Number.isFinite(video.duration_seconds) &&
-            video.duration_seconds > 0
+            video.duration_seconds >= MIN_COMMUNITY_VIDEO_DURATION_SECONDS
                 ? video.duration_seconds
                 : null;
         if (durationSeconds === null) continue;
@@ -952,11 +957,18 @@ async function fetchCommunityImageBytes(
             url,
         );
     }
-    return readResponseBytes(
-        response,
-        MAX_COMMUNITY_IMAGE_BYTES,
-        () => new HttpError("Endpoint image is larger than 20 MB", 502),
-    );
+    try {
+        return await readResponseBytes(
+            response,
+            MAX_COMMUNITY_IMAGE_BYTES,
+            () => new HttpError("Endpoint image is larger than 20 MB", 502),
+        );
+    } catch (error) {
+        if (error instanceof HttpError) throw error;
+        throw new HttpError("Endpoint image could not be read", 502, {
+            error: error instanceof Error ? error.message : String(error),
+        });
+    }
 }
 
 export function decodeCommunityBase64(value: string): Uint8Array | null {
@@ -1017,11 +1029,18 @@ async function fetchCommunityVideoBytes(
             url,
         );
     }
-    return readResponseBytes(
-        response,
-        MAX_COMMUNITY_VIDEO_BYTES,
-        () => new HttpError("Endpoint video is larger than 20 MB", 502),
-    );
+    try {
+        return await readResponseBytes(
+            response,
+            MAX_COMMUNITY_VIDEO_BYTES,
+            () => new HttpError("Endpoint video is larger than 20 MB", 502),
+        );
+    } catch (error) {
+        if (error instanceof HttpError) throw error;
+        throw new HttpError("Endpoint video could not be read", 502, {
+            error: error instanceof Error ? error.message : String(error),
+        });
+    }
 }
 
 export function communityVideoGenerationsUrl(baseUrl: string): string {

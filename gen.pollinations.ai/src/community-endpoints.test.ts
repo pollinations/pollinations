@@ -206,10 +206,11 @@ const TEST_PNG_BYTES = [137, 80, 78, 71, 13, 10, 26, 10];
 const TEST_INVALID_IMAGE_BASE64 = "bm90IGFuIGltYWdl";
 const TEST_COMMUNITY_IMAGE_URL = "http://api.example.com/assets/image.png";
 const TEST_INPUT_IMAGE_URL = "https://input.example.com/source.png";
-const TEST_MP4_BASE64 = "AAAAFGZ0eXBpc29tAAAAAGlzb20=";
+const TEST_MP4_BASE64 = "AAAAFGZ0eXBpc29tAAAAAGlzb20AAAAJbWRhdAA=";
+const TEST_BARE_MP4_BASE64 = "AAAAFGZ0eXBpc29tAAAAAGlzb20=";
 const TEST_MP4_BYTES = [
     0, 0, 0, 20, 102, 116, 121, 112, 105, 115, 111, 109, 0, 0, 0, 0, 105, 115,
-    111, 109,
+    111, 109, 0, 0, 0, 9, 109, 100, 97, 116, 0,
 ];
 
 function isPortkeyChatCompletionsRequest(request: Request): boolean {
@@ -1329,6 +1330,44 @@ describe("community endpoint helpers", () => {
             expect(fetchMock).toHaveBeenCalledTimes(2);
         });
 
+        it("maps URL response stream failures to a provider error", async () => {
+            const fetchMock = vi.fn(async (input) => {
+                const url = String(input);
+                if (url.endsWith("/videos/generations")) {
+                    return Response.json({
+                        data: [
+                            {
+                                url: "https://api.example.com/assets/clip.mp4",
+                                duration_seconds: 2.5,
+                            },
+                        ],
+                    });
+                }
+                return new Response(
+                    new ReadableStream({
+                        start(controller) {
+                            controller.error(
+                                new Error("upstream stream failed"),
+                            );
+                        },
+                    }),
+                );
+            });
+            vi.stubGlobal("fetch", fetchMock);
+
+            await expect(
+                callCommunityVideoEndpoint(
+                    await videoEndpoint(),
+                    "a sprout",
+                    { model: "video-1" },
+                    secret,
+                ),
+            ).rejects.toMatchObject({
+                status: 502,
+                message: "Endpoint video could not be read",
+            });
+        });
+
         it("rejects a non-MP4 payload even when duration is present", async () => {
             vi.stubGlobal(
                 "fetch",
@@ -1354,12 +1393,62 @@ describe("community endpoint helpers", () => {
             ).rejects.toMatchObject({ status: 502 });
         });
 
+        it("rejects an MP4 brand header without media boxes", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({
+                        data: [
+                            {
+                                b64_json: TEST_BARE_MP4_BASE64,
+                                duration_seconds: 2,
+                            },
+                        ],
+                    }),
+                ),
+            );
+
+            await expect(
+                callCommunityVideoEndpoint(
+                    await videoEndpoint(),
+                    "a sprout",
+                    { model: "video-1" },
+                    secret,
+                ),
+            ).rejects.toMatchObject({ status: 502 });
+        });
+
         it("rejects missing duration instead of billing zero", async () => {
             vi.stubGlobal(
                 "fetch",
                 vi.fn(async () =>
                     Response.json({
                         data: [{ b64_json: TEST_MP4_BASE64 }],
+                    }),
+                ),
+            );
+
+            await expect(
+                callCommunityVideoEndpoint(
+                    await videoEndpoint(),
+                    "a sprout",
+                    { model: "video-1" },
+                    secret,
+                ),
+            ).rejects.toMatchObject({ status: 502 });
+        });
+
+        it("rejects implausibly short durations instead of underbilling", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({
+                        data: [
+                            {
+                                b64_json: TEST_MP4_BASE64,
+                                duration_seconds: 0.1,
+                            },
+                        ],
                     }),
                 ),
             );
@@ -4120,6 +4209,14 @@ fixtureTest(
         expect(
             Array.from(new Uint8Array(await generationResponse.arrayBuffer())),
         ).toEqual(TEST_MP4_BYTES);
+
+        const invalidDurationResponse = await fetchGen(
+            new Request(
+                `https://gen.pollinations.ai/video/green%20sprout?model=${encodeURIComponent(registered.modelId)}&duration=0`,
+                { headers: { Authorization: `Bearer ${apiKey}` } },
+            ),
+        );
+        expect(invalidDurationResponse.status).toBe(400);
 
         const catalogResponse = await fetchGen(
             "https://gen.pollinations.ai/video/models",

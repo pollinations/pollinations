@@ -8,6 +8,7 @@ import {
     communityVideoGenerationsUrl,
     firstCommunityImageBytes,
     firstCommunityVideoData,
+    MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
 import { HttpError } from "@shared/http-error.ts";
@@ -17,6 +18,7 @@ import {
     getOpenAIImageUsage,
     openaiImageUsageToUsage,
 } from "@shared/registry/usage-headers.ts";
+import { readResponseText } from "@shared/response-bytes.ts";
 import { decryptSecret } from "@shared/secret-encryption.ts";
 import { detectVideoMimeType } from "@shared/video-mime.ts";
 import type { ImageGenerationResult } from "./createAndReturnImages.ts";
@@ -218,7 +220,11 @@ async function fetchCommunityMediaJson(
         },
         body,
     });
-    const text = await response.text();
+    const text = await readResponseText(
+        response,
+        MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
+        () => new HttpError("Community endpoint response is too large", 502),
+    );
     const parsed = parseJson(text);
 
     if (!response.ok) {

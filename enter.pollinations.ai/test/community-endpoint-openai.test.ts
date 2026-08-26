@@ -35,6 +35,25 @@ describe("community endpoint OpenAI service", () => {
         expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
+    it("bounds model-list responses before parsing provider JSON", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(
+                async () =>
+                    new Response("{}", {
+                        headers: { "content-length": "999999999" },
+                    }),
+            ),
+        );
+
+        await expect(
+            listCommunityEndpointModels({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+            }),
+        ).rejects.toThrow("Endpoint response is too large");
+    });
+
     it("sends the bearer token when testing an endpoint", async () => {
         const fetchMock = vi.fn(async (input, init) => {
             const request = new Request(input, init);
@@ -320,7 +339,7 @@ describe("community endpoint OpenAI service", () => {
             return Response.json({
                 data: [
                     {
-                        b64_json: "AAAAFGZ0eXBpc29tAAAAAGlzb20=",
+                        b64_json: "AAAAFGZ0eXBpc29tAAAAAGlzb20AAAAJbWRhdAA=",
                         duration_seconds: 1.25,
                     },
                 ],
@@ -345,7 +364,12 @@ describe("community endpoint OpenAI service", () => {
             "fetch",
             vi.fn(async () =>
                 Response.json({
-                    data: [{ b64_json: "AAAAFGZ0eXBpc29tAAAAAGlzb20=" }],
+                    data: [
+                        {
+                            b64_json:
+                                "AAAAFGZ0eXBpc29tAAAAAGlzb20AAAAJbWRhdAA=",
+                        },
+                    ],
                 }),
             ),
         );

@@ -12,6 +12,7 @@ import {
     decodeCommunityBase64,
     firstCommunityImageBytes,
     firstCommunityVideoData,
+    MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
@@ -21,6 +22,7 @@ import {
     openaiImageUsageToUsage,
     openaiUsageToUsage,
 } from "@shared/registry/usage-headers.ts";
+import { readResponseText } from "@shared/response-bytes.ts";
 import { detectVideoMimeType } from "@shared/video-mime.ts";
 import { SAMPLE_AUDIO_BASE64 } from "./sample-audio.ts";
 
@@ -67,11 +69,25 @@ async function fetchJson(url: string, init: RequestInit): Promise<unknown> {
         throw new Error("Endpoint request timed out or could not connect");
     }
 
-    const body = await response.json().catch(() => null);
+    const body = parseJson(
+        await readResponseText(
+            response,
+            MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
+            () => new Error("Endpoint response is too large"),
+        ),
+    );
     if (!response.ok) {
         throw new Error(endpointErrorMessage(response.status, body));
     }
     return body;
+}
+
+function parseJson(text: string): unknown {
+    try {
+        return JSON.parse(text);
+    } catch {
+        return null;
+    }
 }
 
 function endpointErrorMessage(status: number, body: unknown): string {

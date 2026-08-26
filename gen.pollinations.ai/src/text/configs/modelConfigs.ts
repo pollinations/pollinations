@@ -8,6 +8,7 @@ import {
     createOVHcloudModelConfig,
     createOVHcloudOAIConfig,
     createPerplexityModelConfig,
+    createRunInfraModelConfig,
     createVercelAIGatewayModelConfig,
 } from "./providerConfigs.js";
 
@@ -196,18 +197,13 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "qwen/qwen3.7-max",
             defaultOptions: { max_tokens: 64000, provider: { sort: "price" } },
         }),
-    // Confirmed bug: pinned only to Chutes, whose max_tokens default (1024)
-    // is entirely consumed by the reasoning trace on non-trivial prompts,
-    // producing a blank visible response that still bills completion tokens.
+    // Switched to RunInfra for better pricing ($0.10/M in, $0.40/M out)
+    // vs OpenRouter Chutes ($0.35/M in, $2.75/M out).
     "qwen/qwen3.8-27b": () =>
-        createOpenRouterModelConfig({
-            model: "qwen/qwen3.8-27b",
+        createRunInfraModelConfig({
+            model: "Qwen3.8-27B",
             defaultOptions: {
                 max_tokens: 64000,
-                provider: {
-                    only: ["Chutes"],
-                    allow_fallbacks: false,
-                },
             },
         }),
     "qwen/qwen3.8-max": () =>

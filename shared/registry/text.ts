@@ -1929,19 +1929,19 @@ export const TEXT_SERVICES = {
     },
     "qwen3.8-27b": {
         aliases: [],
-        provider: "openrouter",
+        provider: "runinfra",
         brand: "Qwen",
         category: "text",
         addedDate: new Date("2026-08-18").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Chutes FP8 route rates (2026-08-24).
-            promptTextTokens: perMillion(0.35),
-            promptCachedTokens: perMillion(0.035),
-            promptImageTokens: perMillion(0.35),
-            promptVideoTokens: perMillion(0.35),
-            completionTextTokens: perMillion(2.75),
+            // RunInfra rates (2026-08-26).
+            promptTextTokens: perMillion(0.1),
+            promptCachedTokens: perMillion(0.01),
+            promptImageTokens: perMillion(0.1),
+            promptVideoTokens: perMillion(0.1),
+            completionTextTokens: perMillion(0.4),
         },
         title: "Qwen3.8 27B",
         description:

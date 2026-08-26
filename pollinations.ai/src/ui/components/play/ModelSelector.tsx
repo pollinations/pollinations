@@ -1,4 +1,4 @@
-import { memo, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { PLAY_PAGE } from "../../../copy/content/play";
 import type { Model } from "../../../hooks/useModelList";
 import { usePageCopy } from "../../../hooks/usePageCopy";
@@ -16,6 +16,8 @@ interface ModelSelectorProps {
     allowedAudioModelIds: Set<string>;
     isLoading?: boolean;
     isLoggedIn?: boolean;
+    /** Category tab to show initially (e.g. from a deep link). */
+    initialCategory?: ModelCategory;
 }
 
 const CATEGORY_GLOW: Record<ModelCategory, string> = {
@@ -44,7 +46,7 @@ const COLOR_VARS: Record<ModelCategory, { strong: string; light: string }> = {
     },
 };
 
-function getModelCategory(m: Model): ModelCategory {
+export function getModelCategory(m: Model): ModelCategory {
     if (m.hasVideoOutput) return "video";
     if (m.hasAudioOutput || m.type === "audio") return "audio";
     if (m.type === "image") return "image";
@@ -67,10 +69,19 @@ export const ModelSelector = memo(function ModelSelector({
     allowedAudioModelIds,
     isLoading = false,
     isLoggedIn = false,
+    initialCategory,
 }: ModelSelectorProps) {
     const { copy } = usePageCopy(PLAY_PAGE);
-    const [activeCategory, setActiveCategory] =
-        useState<ModelCategory>("image");
+    const [activeCategory, setActiveCategory] = useState<ModelCategory>(
+        initialCategory ?? "image",
+    );
+
+    // Deep links resolve the model after the registry loads, so the category
+    // prop arrives after first render. Sync once per change; manual tab
+    // clicks are not overridden because they don't change initialCategory.
+    useEffect(() => {
+        if (initialCategory) setActiveCategory(initialCategory);
+    }, [initialCategory]);
 
     const categories: { key: ModelCategory; label: string }[] = [
         { key: "image", label: copy.imageLabel },

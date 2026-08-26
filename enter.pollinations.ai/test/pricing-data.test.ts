@@ -1471,3 +1471,18 @@ test("rows without advertised limits render no limit line", () => {
         renderToStaticMarkup(createElement(ModelRow, { model: bareModel })),
     ).not.toContain("context");
 });
+
+test("model rows offer a Try in Play deep link", () => {
+    const model = {
+        name: "owner/deep-link-model",
+        type: "text" as const,
+        capabilities: [],
+        prices: [],
+    } satisfies ModelPrice;
+    const markup = renderToStaticMarkup(createElement(ModelRow, { model }));
+
+    expect(markup).toContain(
+        'href="https://pollinations.ai/play?model=owner%2Fdeep-link-model"',
+    );
+    expect(markup).toContain('aria-label="Try owner/deep-link-model in Play"');
+});

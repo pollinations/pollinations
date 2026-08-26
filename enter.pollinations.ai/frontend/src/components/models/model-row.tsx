@@ -4,9 +4,11 @@ import {
     ClipboardIcon,
     CopyButton,
     cn,
+    RocketIcon,
     Surface,
     Tooltip,
 } from "@pollinations/ui";
+import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import type { FC, ReactNode } from "react";
 import { calculatePerPollen } from "./calculations.ts";
 import {
@@ -391,6 +393,25 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             access={balanceAccess}
                             className="whitespace-nowrap"
                         />
+                        <Tooltip
+                            triggerAs="span"
+                            content={
+                                <strong className="font-semibold text-theme-text-strong">
+                                    Try in Play
+                                </strong>
+                            }
+                            ariaLabel={`Try ${publicModelName} in Play`}
+                            tapEnabled
+                            displayContents
+                        >
+                            <a
+                                href={`${PUBLIC_URLS.root}/play?model=${encodeURIComponent(model.name)}`}
+                                aria-label={`Try ${publicModelName} in Play`}
+                                className="inline-flex shrink-0 items-center justify-center rounded-md p-1 text-theme-text-muted transition-colors hover:bg-theme-bg-active hover:text-theme-text-strong"
+                            >
+                                <RocketIcon className="h-3.5 w-3.5" />
+                            </a>
+                        </Tooltip>
                     </div>
                 </div>
             </div>

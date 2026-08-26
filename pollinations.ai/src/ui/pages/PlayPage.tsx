@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PLAY_PAGE } from "../../copy/content/play";
 import { LINKS } from "../../copy/content/socialLinks";
 import { useAuth } from "../../hooks/useAuth";
@@ -6,7 +6,10 @@ import { useDocumentMeta } from "../../hooks/useDocumentMeta";
 import { useModelList } from "../../hooks/useModelList";
 import { usePageCopy } from "../../hooks/usePageCopy";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
-import { ModelSelector } from "../components/play/ModelSelector";
+import {
+    getModelCategory,
+    ModelSelector,
+} from "../components/play/ModelSelector";
 import { PlayGenerator } from "../components/play/PlayGenerator";
 import { UserMenu } from "../components/UserMenu";
 import { PageCard } from "../components/ui/page-card";
@@ -49,6 +52,18 @@ function PlayPage() {
                 (typeOrder[effectiveType(b)] ?? 99),
         );
     }, [registryModels]);
+
+    // Deep-link support: /play?model=<model-id> preselects that model once
+    // the registry has loaded. Unknown ids are ignored (keeps the default).
+    useEffect(() => {
+        if (isLoadingModels || allModels.length === 0) return;
+        const requested = new URLSearchParams(window.location.search).get(
+            "model",
+        );
+        if (requested && allModels.some((m) => m.id === requested)) {
+            setSelectedModel(requested);
+        }
+    }, [isLoadingModels, allModels]);
 
     const currentModel = allModels.find((m) => m.id === selectedModel);
     const isVideoModel = !!currentModel?.hasVideoOutput;
@@ -109,6 +124,11 @@ function PlayPage() {
                     allowedAudioModelIds={allowedAudioModelIds}
                     isLoading={isLoadingModels}
                     isLoggedIn={isLoggedIn}
+                    initialCategory={
+                        currentModel
+                            ? getModelCategory(currentModel)
+                            : undefined
+                    }
                 />
 
                 <div className="flex flex-col gap-4">

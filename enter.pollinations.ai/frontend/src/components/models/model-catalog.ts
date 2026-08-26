@@ -63,6 +63,8 @@ export type ApiModelInfo = {
     alpha?: boolean;
     flat_rate?: boolean;
     added_date?: number;
+    owner?: string;
+    ownerLogin?: string;
 };
 
 type PriceField =
@@ -267,6 +269,7 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
         outputSortPrice,
         prices: [],
         priceAdjustments: model.pricing_adjustments,
+        ownerLogin: model.ownerLogin ?? model.owner ?? undefined,
     };
 }
 

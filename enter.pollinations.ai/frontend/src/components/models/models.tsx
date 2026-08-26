@@ -34,8 +34,8 @@ import {
     fetchModelCatalog,
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
-import { getModelDisplayName } from "./model-info.ts";
 import type { ModelScope, ModelSort } from "./model-search.ts";
+import { matchesModelPrice } from "./model-search.ts";
 import { sortModels } from "./model-sort.ts";
 import {
     type SectionType,
@@ -116,11 +116,8 @@ const SEARCH_LABELS: Record<SectionType, string> = {
     agent: "agent",
 };
 
-function matchesQuery(model: ModelPrice, query: string): boolean {
-    if (!query) return true;
-    const displayName = getModelDisplayName(model) ?? "";
-    const haystack = `${displayName} ${model.brand ?? ""}`.toLowerCase();
-    return haystack.includes(query);
+export function matchesQuery(model: ModelPrice, query: string): boolean {
+    return matchesModelPrice(model, query);
 }
 
 function categorizeModels(
@@ -404,25 +401,26 @@ export const Models: FC = () => {
                             })}
                         </div>
                     </div>
-                    <div className="flex w-full items-center justify-between gap-2">
-                        <div className="relative min-w-0 max-w-md flex-1">
-                            <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />
-                            <Input
-                                type="search"
-                                value={search}
-                                onChange={(event) =>
-                                    setSearch(event.target.value)
-                                }
-                                onBlur={() => {
-                                    const normalizedSearch = search.trim();
-                                    setSearch(normalizedSearch);
-                                    pushSearch(normalizedSearch);
-                                }}
-                                placeholder={`Search ${searchTarget}…`}
-                                aria-label={`Search ${searchTarget}`}
-                                className="w-full pl-9"
-                            />
-                        </div>
+                    <div className="flex w-full flex-col gap-1.5">
+                        <div className="flex w-full items-center justify-between gap-2">
+                            <div className="relative min-w-0 max-w-md flex-1">
+                                <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />
+                                <Input
+                                    type="search"
+                                    value={search}
+                                    onChange={(event) =>
+                                        setSearch(event.target.value)
+                                    }
+                                    onBlur={() => {
+                                        const normalizedSearch = search.trim();
+                                        setSearch(normalizedSearch);
+                                        pushSearch(normalizedSearch);
+                                    }}
+                                    placeholder={`Search ${searchTarget}…`}
+                                    aria-label={`Search ${searchTarget}`}
+                                    className="w-full pl-9"
+                                />
+                            </div>
                         <Dropdown
                             align="end"
                             className="w-max p-2"
@@ -474,6 +472,13 @@ export const Models: FC = () => {
                             )}
                         </Dropdown>
                     </div>
+                    <p className="text-xs text-theme-text-muted">
+                        Filters: <code className="rounded bg-theme-bg-active px-1 py-0.5">access:free|quest|paid</code>{" "}
+                        <code className="rounded bg-theme-bg-active px-1 py-0.5">owner:&lt;login&gt;</code>{" "}
+                        <code className="rounded bg-theme-bg-active px-1 py-0.5">id:&lt;model&gt;</code>{" "}
+                        <code className="rounded bg-theme-bg-active px-1 py-0.5">type:&lt;category&gt;</code>{" "}
+                        <code className="rounded bg-theme-bg-active px-1 py-0.5">capability:&lt;name&gt;</code> — combine with free text
+                    </p>
                 </div>
                 {activeScope === "community" && (
                     <Alert

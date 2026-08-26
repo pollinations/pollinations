@@ -1,0 +1,87 @@
+{
+  "date": "2026-08-25",
+  "period_start": "2026-08-25",
+  "period_end": "2026-08-25",
+  "title": "Video generation got a new model and stricter frame handling",
+  "summary": "A busy day for media builders and model users: Wan 3.0 arrived, retries got friendlier, catalog details got clearer, and Pollen earnings became easier to inspect.\n\nWan 3.0 joined the video lineup for text-to-video and image-to-video work, including optional audio and multiple output resolutions. Video requests now enforce each model's declared reference-frame limits before dispatch, so accepted start/end frames reach the provider and unsupported extras get a useful 400. Cached image-generation retries can also return completed work after a disconnect without requiring the original key.\n\nCommunity-model term and visibility changes now show their pending state and effective time for 12 hours, giving consumers a clear runway while owners update public models. OpenAI-compatible clients can fetch a single model with GET /v1/models/:model, model browsing again searches the full catalog, and cards now show tool-calling support. Routing for Mistral stays pinned to its canonical endpoint, while mobile pricing cards no longer let their token labels wander offscreen.\n\nDevelopers can retrieve earnings from the JavaScript SDK or run polli earnings for totals, per-entity breakdowns, rolling windows, and scriptable JSON. The SDK also gained accountQuests(), so quest-aware apps can read completion and reward state without rebuilding account endpoint plumbing. Contributor docs now make the open-quest process explicit: several people can ship solutions, maintainers select the best merged one, and the reward follows it.",
+  "pr_count": 19,
+  "prs": [
+    {
+      "number": 13807,
+      "date": "2026-08-25"
+    },
+    {
+      "number": 13819,
+      "date": "2026-08-25"
+    },
+    {
+      "number": 13822,
+      "date": "2026-08-25"
+    },
+    {
+      "number": 13852,
+      "date": "2026-08-25"
+    },
+    {
+      "number": 13855,
+      "date": "2026-08-25"
+    },
+    {
+      "number": 13863,
+      "date": "2026-08-25"
+    },
+    {
+      "number": 13866,
+      "date": "2026-08-25"
+    },
+    {
+      "number": 13875,
+      "date": "2026-08-25"
+    },
+    {
+      "number": 13880,
+      "date": "2026-08-25"
+    },
+    {
+      "number": 13885,
+      "date": "2026-08-25"
+    },
+    {
+      "number": 13886,
+      "date": "2026-08-25"
+    },
+    {
+      "number": 13888,
+      "date": "2026-08-25"
+    },
+    {
+      "number": 13895,
+      "date": "2026-08-25"
+    },
+    {
+      "number": 13896,
+      "date": "2026-08-25"
+    },
+    {
+      "number": 13902,
+      "date": "2026-08-25"
+    },
+    {
+      "number": 13908,
+      "date": "2026-08-25"
+    },
+    {
+      "number": 13910,
+      "date": "2026-08-25"
+    },
+    {
+      "number": 13913,
+      "date": "2026-08-25"
+    },
+    {
+      "number": 13915,
+      "date": "2026-08-25"
+    }
+  ],
+  "generated_at": "2026-08-26T06:16:48.530054+00:00"
+}

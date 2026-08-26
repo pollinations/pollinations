@@ -1,7 +1,9 @@
 import {
     cn,
+    ScrollArea,
     TableBody,
     TableCell,
+    TableDisclosureButton,
     TableHead,
     TableHeaderCell,
     TableRow,
@@ -92,7 +94,7 @@ function BalanceStatus({ row }: { row: ProviderBalanceRow }) {
 
 function BalanceHistory({ row }: { row: ProviderBalanceRow }) {
     return (
-        <div className="overflow-x-auto p-2">
+        <ScrollArea axis="x" className="p-2 pb-3">
             <DataTable className="text-sm">
                 <TableHead>
                     <TableRow>
@@ -180,7 +182,7 @@ function BalanceHistory({ row }: { row: ProviderBalanceRow }) {
                     ))}
                 </TableBody>
             </DataTable>
-        </div>
+        </ScrollArea>
     );
 }
 
@@ -320,19 +322,14 @@ export function BalancesTab({ data }: { data: Data }) {
                                             }
                                         >
                                             <TableCell>
-                                                <button
-                                                    type="button"
-                                                    aria-expanded={isExpanded}
+                                                <TableDisclosureButton
+                                                    expanded={isExpanded}
                                                     onClick={() =>
                                                         toggle(row.vendor)
                                                     }
-                                                    className="inline-flex items-center gap-1.5 text-left hover:text-theme-text"
                                                 >
-                                                    <span className="text-theme-text-soft">
-                                                        {isExpanded ? "▾" : "▸"}
-                                                    </span>
                                                     {row.vendor}
-                                                </button>
+                                                </TableDisclosureButton>
                                             </TableCell>
                                             <TableCell>
                                                 <BalanceStatus row={row} />

@@ -4,6 +4,7 @@ import {
     cn,
     TableBody,
     TableCell,
+    TableDisclosureButton,
     TableHead,
     TableHeaderCell,
     TableRow,
@@ -377,7 +378,7 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                                     <span className="inline-flex flex-col items-end">
                                         <span>{monthName(column.month)}</span>
                                         {monthKindLabel(column.kind) && (
-                                            <span className="text-[0.65rem] font-medium uppercase tracking-wide opacity-70">
+                                            <span className="text-micro font-medium uppercase tracking-wide opacity-70">
                                                 {monthKindLabel(column.kind)}
                                             </span>
                                         )}
@@ -435,17 +436,12 @@ function RunwayCategoryRows({
                             "text-outcome-positive-text",
                     )}
                 >
-                    <button
-                        type="button"
-                        aria-expanded={expanded}
+                    <TableDisclosureButton
+                        expanded={expanded}
                         onClick={() => setExpanded((current) => !current)}
-                        className="inline-flex items-center gap-1.5 text-left hover:text-theme-text"
                     >
-                        <span className="text-theme-text-soft">
-                            {expanded ? "▾" : "▸"}
-                        </span>
                         {categoryLabel(group.category)}
-                    </button>
+                    </TableDisclosureButton>
                 </TableCell>
                 {columns.map((column, index) => (
                     <TableCell

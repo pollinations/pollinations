@@ -2,6 +2,7 @@ import {
     Chip,
     TableBody,
     TableCell,
+    TableDisclosureButton,
     TableHead,
     TableHeaderCell,
     TableRow,
@@ -187,14 +188,12 @@ export function OpTransactionsTab({
                                             />
                                         </TableCell>
                                         <TableCell>
-                                            <button
-                                                type="button"
+                                            <TableDisclosureButton
+                                                expanded={isExpanded}
                                                 onClick={() => toggle(key)}
-                                                className="font-medium text-theme-text underline underline-offset-4 hover:text-theme-text-soft"
-                                                aria-expanded={isExpanded}
                                             >
-                                                {isExpanded ? "Hide" : "Show"}
-                                            </button>
+                                                Details
+                                            </TableDisclosureButton>
                                         </TableCell>
                                     </TableRow>
                                     {isExpanded ? (

@@ -6,9 +6,11 @@ import {
     ColorModeToggle,
     cn,
     DatabaseIcon,
+    Drawer,
     EyeIcon,
     GlobeIcon,
     Heading,
+    IconButton,
     InfoTip,
     Input,
     MenuIcon,
@@ -18,7 +20,6 @@ import {
     SproutIcon,
     Text,
     UsageIcon,
-    useScrollLock,
     WalletIcon,
     XIcon,
 } from "@pollinations/ui";
@@ -28,7 +29,6 @@ import {
     type CSSProperties,
     type ReactNode,
     type RefObject,
-    useCallback,
     useEffect,
     useMemo,
     useRef,
@@ -211,15 +211,15 @@ function MobileMenuButton({
     onOpen: () => void;
 }) {
     return (
-        <button
+        <IconButton
             ref={buttonRef}
-            type="button"
-            className="fixed left-3 top-3 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque text-theme-text-strong shadow-md ring-1 ring-theme-text-strong/10 hover:bg-surface-opaque md:hidden"
+            size="md"
+            className="fixed left-3 top-3 z-30 bg-surface-opaque text-theme-text-strong shadow-md ring-1 ring-theme-text-strong/10 hover:bg-surface-opaque md:hidden"
             onClick={onOpen}
-            aria-label="Open navigation"
+            title="Open navigation"
         >
             <MenuIcon className="h-5 w-5" />
-        </button>
+        </IconButton>
     );
 }
 
@@ -378,32 +378,12 @@ function EconomicsShell({
     onRawTabChange: (value: Tab) => void;
 }) {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-    const drawerRef = useRef<HTMLDivElement>(null);
     const menuButtonRef = useRef<HTMLButtonElement>(null);
 
-    useScrollLock(isDrawerOpen);
-
-    const closeDrawer = useCallback(() => {
-        const activeElement = document.activeElement;
-        if (
-            activeElement instanceof HTMLElement &&
-            drawerRef.current?.contains(activeElement)
-        ) {
-            menuButtonRef.current?.focus({ preventScroll: true });
-        }
+    const closeDrawer = () => {
         setIsDrawerOpen(false);
-    }, []);
-
-    useEffect(() => {
-        if (!isDrawerOpen) return;
-
-        function handleKeyDown(event: KeyboardEvent) {
-            if (event.key === "Escape") closeDrawer();
-        }
-
-        window.addEventListener("keydown", handleKeyDown);
-        return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [closeDrawer, isDrawerOpen]);
+        menuButtonRef.current?.focus({ preventScroll: true });
+    };
 
     const handleInsightTabChange = (value: InsightTab) => {
         onInsightTabChange(value);
@@ -429,48 +409,33 @@ function EconomicsShell({
     return (
         <div
             data-theme="amber"
-            className="flex h-dvh min-h-0 overflow-hidden bg-app-bg text-theme-text-strong"
+            className="flex h-dvh min-h-0 overflow-hidden bg-app-bg font-body text-theme-text-strong"
         >
             <div className="hidden md:block">{drawer}</div>
-            <div
-                ref={drawerRef}
-                className={`fixed inset-0 z-40 transition-[visibility] md:hidden ${
-                    isDrawerOpen
-                        ? "pointer-events-auto visible delay-0"
-                        : "pointer-events-none invisible delay-[420ms]"
-                }`}
-                aria-hidden={!isDrawerOpen}
-                inert={!isDrawerOpen}
+            <Drawer
+                open={isDrawerOpen}
+                onOpenChange={(open) => {
+                    if (open) setIsDrawerOpen(true);
+                    else closeDrawer();
+                }}
+                ariaLabel="Economics navigation"
+                contentClassName="md:hidden"
             >
-                <button
-                    type="button"
-                    className={`absolute inset-0 bg-black/40 transition-opacity duration-[420ms] ease-out ${
-                        isDrawerOpen ? "opacity-100" : "opacity-0"
-                    }`}
-                    onClick={closeDrawer}
-                    aria-label="Close navigation"
-                />
-                <div
-                    className={`absolute inset-y-0 left-0 flex w-[min(20rem,86vw)] transform-gpu flex-col overflow-hidden border-r border-theme-text-strong/10 bg-app-bg shadow-xl transition-transform duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform ${
-                        isDrawerOpen ? "translate-x-0" : "-translate-x-full"
-                    }`}
-                >
-                    <div className="flex shrink-0 items-center justify-between gap-3 border-b border-theme-text-strong/10 px-4 py-3 text-theme-text-strong">
-                        <EconomicsBrand size="drawer" />
-                        <button
-                            type="button"
-                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-opaque/70 text-theme-text-strong hover:bg-surface-opaque"
-                            onClick={closeDrawer}
-                            aria-label="Close navigation"
-                        >
-                            <XIcon className="h-5 w-5" />
-                        </button>
-                    </div>
-                    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-                        {drawer}
-                    </div>
+                <div className="flex shrink-0 items-center justify-between gap-3 border-b border-theme-text-strong/10 px-4 py-3 text-theme-text-strong">
+                    <EconomicsBrand size="drawer" />
+                    <IconButton
+                        size="md"
+                        className="shrink-0 bg-surface-opaque/70 text-theme-text-strong hover:bg-surface-opaque"
+                        onClick={closeDrawer}
+                        title="Close navigation"
+                    >
+                        <XIcon className="h-5 w-5" />
+                    </IconButton>
                 </div>
-            </div>
+                <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                    {drawer}
+                </div>
+            </Drawer>
             <div className="flex min-w-0 flex-1 flex-col md:ml-60">
                 <MobileMenuButton
                     buttonRef={menuButtonRef}
@@ -901,7 +866,7 @@ export default function App() {
 
     if (!sessionChecked) {
         return (
-            <div className="flex h-dvh min-h-0 flex-col overflow-hidden bg-app-bg text-theme-text-strong">
+            <div className="flex h-dvh min-h-0 flex-col overflow-hidden bg-app-bg font-body text-theme-text-strong">
                 <ScrollArea axis="y" className="min-h-0 flex-1">
                     <div className="mx-auto mt-24 max-w-md px-4">
                         <Text tone="soft">Checking session...</Text>
@@ -913,7 +878,7 @@ export default function App() {
 
     if (!ready) {
         return (
-            <div className="flex h-dvh min-h-0 flex-col overflow-hidden bg-app-bg text-theme-text-strong">
+            <div className="flex h-dvh min-h-0 flex-col overflow-hidden bg-app-bg font-body text-theme-text-strong">
                 <ScrollArea axis="y" className="min-h-0 flex-1">
                     <PasswordGate
                         error={authError}

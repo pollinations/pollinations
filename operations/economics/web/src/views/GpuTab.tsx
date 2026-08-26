@@ -1,8 +1,10 @@
 import {
     Chip,
     cn,
+    ScrollArea,
     TableBody,
     TableCell,
+    TableDisclosureButton,
     TableHead,
     TableHeaderCell,
     TableRow,
@@ -639,7 +641,7 @@ function GpuInstanceTable({ rows }: { rows: GpuResourceRow[] }) {
     );
 
     return (
-        <div className="overflow-x-auto p-2">
+        <ScrollArea axis="x" className="p-2 pb-3">
             <DataTable className="min-w-[980px] text-sm">
                 <TableHead>
                     <TableRow>
@@ -736,7 +738,7 @@ function GpuInstanceTable({ rows }: { rows: GpuResourceRow[] }) {
                                     {row.resourceName}
                                 </span>
                                 {row.kind === "overhead" ? (
-                                    <span className="text-muted block text-xs">
+                                    <span className="block text-xs text-theme-text-muted">
                                         {fmtNumber(row.relatedResources)} source
                                         {row.relatedResources === 1 ? "" : "s"}
                                     </span>
@@ -746,12 +748,12 @@ function GpuInstanceTable({ rows }: { rows: GpuResourceRow[] }) {
                                             row.resourceId,
                                         ) &&
                                             row.resourceId && (
-                                                <span className="text-muted block text-xs">
+                                                <span className="block text-xs text-theme-text-muted">
                                                     {row.resourceId}
                                                 </span>
                                             )}
                                         {row.hardware && (
-                                            <span className="text-muted block text-xs">
+                                            <span className="block text-xs text-theme-text-muted">
                                                 {row.hardware}
                                             </span>
                                         )}
@@ -796,7 +798,7 @@ function GpuInstanceTable({ rows }: { rows: GpuResourceRow[] }) {
                     ))}
                 </TableBody>
             </DataTable>
-        </div>
+        </ScrollArea>
     );
 }
 
@@ -1082,9 +1084,8 @@ export function GpuTab({
                                     <Fragment key={key}>
                                         <TableRow className="bg-theme-bg-subtle font-semibold">
                                             <TableCell>
-                                                <button
-                                                    type="button"
-                                                    aria-expanded={isExpanded}
+                                                <TableDisclosureButton
+                                                    expanded={isExpanded}
                                                     disabled={
                                                         row.resources.length ===
                                                         0
@@ -1092,18 +1093,9 @@ export function GpuTab({
                                                     onClick={() =>
                                                         toggle(row.key)
                                                     }
-                                                    className="inline-flex items-center gap-1.5 text-left hover:text-theme-text disabled:cursor-default"
                                                 >
-                                                    <span className="text-theme-text-soft">
-                                                        {row.resources
-                                                            .length === 0
-                                                            ? "·"
-                                                            : isExpanded
-                                                              ? "▾"
-                                                              : "▸"}
-                                                    </span>
                                                     {row.workload}
-                                                </button>
+                                                </TableDisclosureButton>
                                                 {row.flags.map((flag) => (
                                                     <span
                                                         key={flag}

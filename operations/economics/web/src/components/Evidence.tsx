@@ -1,10 +1,12 @@
-import { Button, Chip, Tooltip, useScrollLock } from "@pollinations/ui";
-import { useEffect, useRef } from "react";
-import { createPortal } from "react-dom";
+import {
+    Button,
+    Chip,
+    Dialog,
+    DialogTitle,
+    InlineLink,
+    Tooltip,
+} from "@pollinations/ui";
 import { type DriveDocumentLink, driveDocumentLink } from "../lib/documents";
-
-const LINK_CLASS =
-    "font-medium text-theme-text underline underline-offset-4 hover:text-theme-text-soft";
 
 export function EvidenceAction({
     evidence,
@@ -39,27 +41,24 @@ export function EvidenceAction({
 
     if (documentLink.previewHref && onPreview) {
         return (
-            <button
+            <InlineLink
+                as="button"
                 type="button"
                 onClick={() => onPreview(documentLink)}
-                className={LINK_CLASS}
+                external={false}
+                showIcon={false}
             >
                 {previewLabel}
-            </button>
+            </InlineLink>
         );
     }
 
     return (
-        <a
-            href={documentLink.href}
-            target="_blank"
-            rel="noreferrer noopener"
-            className={LINK_CLASS}
-        >
+        <InlineLink href={documentLink.href} showIcon={false}>
             {documentLink.label === "Open folder"
                 ? "Open folder"
                 : openDocumentLabel}
-        </a>
+        </InlineLink>
     );
 }
 
@@ -72,92 +71,48 @@ export function EvidencePreview({
     onClose: () => void;
     title?: string;
 }) {
-    const dialogRef = useRef<HTMLDivElement>(null);
-    useScrollLock(documentLink != null);
-
-    useEffect(() => {
-        if (!documentLink) return;
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key === "Escape") {
-                onClose();
-                return;
-            }
-            if (event.key !== "Tab") return;
-
-            const focusable = dialogRef.current?.querySelectorAll<HTMLElement>(
-                'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
-            );
-            if (!focusable || focusable.length === 0) return;
-
-            const first = focusable[0];
-            const last = focusable[focusable.length - 1];
-            if (event.shiftKey && document.activeElement === first) {
-                event.preventDefault();
-                last.focus();
-            } else if (!event.shiftKey && document.activeElement === last) {
-                event.preventDefault();
-                first.focus();
-            }
-        };
-        window.addEventListener("keydown", handleKeyDown);
-        return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [documentLink, onClose]);
-
     if (!documentLink?.previewHref) return null;
 
-    return createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6">
-            <button
-                type="button"
-                className="absolute inset-0 bg-black/60"
-                aria-label="Close document preview"
-                tabIndex={-1}
-                onClick={onClose}
-            />
-            <div
-                ref={dialogRef}
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="document-preview-title"
-                className="relative flex h-[min(90vh,64rem)] w-[min(94vw,72rem)] flex-col overflow-hidden rounded-2xl bg-surface-opaque shadow-2xl"
-            >
-                <div className="flex shrink-0 items-center justify-between gap-3 border-b border-theme-text-strong/10 px-4 py-3">
-                    <h2
-                        id="document-preview-title"
-                        className="font-semibold text-theme-text-strong"
+    return (
+        <Dialog
+            open
+            onOpenChange={(open) => {
+                if (!open) onClose();
+            }}
+            labelledBy="document-preview-title"
+            size="xl"
+            contentClassName="flex h-[min(90vh,64rem)] max-w-[min(94vw,72rem)] flex-col rounded-2xl border-0"
+        >
+            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-theme-text-strong/10 px-4 py-3">
+                <DialogTitle
+                    id="document-preview-title"
+                    className="font-subheading text-xl text-theme-text-strong"
+                >
+                    {title}
+                </DialogTitle>
+                <div className="flex items-center gap-2">
+                    <Button
+                        as="a"
+                        href={documentLink.href}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        intent="info"
+                        size="sm"
                     >
-                        {title}
-                    </h2>
-                    <div className="flex items-center gap-2">
-                        <Button
-                            as="a"
-                            href={documentLink.href}
-                            target="_blank"
-                            rel="noreferrer noopener"
-                            intent="info"
-                            size="sm"
-                        >
-                            Open in Drive
-                        </Button>
-                        <Button
-                            type="button"
-                            size="sm"
-                            onClick={onClose}
-                            autoFocus
-                        >
-                            Close
-                        </Button>
-                    </div>
+                        Open in Drive
+                    </Button>
+                    <Button type="button" size="sm" onClick={onClose} autoFocus>
+                        Close
+                    </Button>
                 </div>
-                <iframe
-                    src={documentLink.previewHref}
-                    title={title}
-                    className="min-h-0 w-full flex-1 bg-white"
-                    referrerPolicy="strict-origin-when-cross-origin"
-                    sandbox="allow-forms allow-popups allow-same-origin allow-scripts"
-                />
             </div>
-        </div>,
-        document.body,
+            <iframe
+                src={documentLink.previewHref}
+                title={title}
+                className="min-h-0 w-full flex-1 bg-surface-opaque"
+                referrerPolicy="strict-origin-when-cross-origin"
+                sandbox="allow-forms allow-popups allow-same-origin allow-scripts"
+            />
+        </Dialog>
     );
 }

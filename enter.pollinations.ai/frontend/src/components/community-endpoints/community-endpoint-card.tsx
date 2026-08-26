@@ -6,6 +6,7 @@ import {
     Chip,
     ClipboardIcon,
     CopyButton,
+    EarningsIcon,
     ExternalLinkIcon,
     GlobeIcon,
     IconButton,
@@ -132,6 +133,18 @@ export function CommunityEndpointCard({
                     label="Model ID"
                     value={endpoint.modelId}
                     copyLabel="Copy model id"
+                />
+                <CommunityDetailRow
+                    icon={<EarningsIcon className="h-3.5 w-3.5" />}
+                    label="Activity"
+                    value={
+                        <a
+                            href={`/activity?earningsModels=${encodeURIComponent(endpoint.modelId)}`}
+                            className="font-medium text-xs text-theme-text-soft underline underline-offset-2 transition-colors hover:text-theme-text-strong"
+                        >
+                            View earnings activity
+                        </a>
+                    }
                 />
                 {endpoint.type !== "prompt_agent" && (
                     <CommunityDetailRow

@@ -8,6 +8,7 @@ import { MCP_USAGE_HEADERS } from "../../shared/registry/mcp.ts";
 import { createWorker } from "./worker.js";
 
 const SOURCE = "https://media.pollinations.ai/source";
+const SECOND_SOURCE = "https://media.pollinations.ai/second-source";
 
 function createHarness(options = {}) {
     const calls = {
@@ -18,9 +19,16 @@ function createHarness(options = {}) {
         sourceFetches: [],
     };
     const container = {
-        async run(input, args, outputExtension, deadlineMs) {
+        async run(inputs, args, outputExtension, deadlineMs) {
             calls.run.push({
-                input: new Uint8Array(await new Response(input).arrayBuffer()),
+                inputs: await Promise.all(
+                    inputs.map(
+                        async (input) =>
+                            new Uint8Array(
+                                await new Response(input).arrayBuffer(),
+                            ),
+                    ),
+                ),
                 args,
                 outputExtension,
                 deadlineMs,
@@ -65,7 +73,13 @@ function createHarness(options = {}) {
             calls.sourceFetches.push(url.toString());
             assert.equal(init.redirect, "manual");
             if (options.fetchImpl) return options.fetchImpl(url, init);
-            assert.equal(url.toString(), options.expectedSource ?? SOURCE);
+            assert.ok(
+                (
+                    options.expectedSources ?? [
+                        options.expectedSource ?? SOURCE,
+                    ]
+                ).includes(url.toString()),
+            );
             return (
                 options.sourceResponse ??
                 new Response(new Uint8Array([1, 2, 3]), {
@@ -130,14 +144,23 @@ test("rejects JSON-RPC batches before running tools", async () => {
     assert.equal(calls.run.length, 0);
 });
 
-test("runs FFmpeg, uploads the output, and reports trusted usage", async () => {
-    const { calls, env, worker } = createHarness();
+test("runs multi-input FFmpeg, uploads the output, and reports trusted usage", async () => {
+    const { calls, env, worker } = createHarness({
+        expectedSources: [SOURCE, SECOND_SOURCE],
+    });
     const client = await connect(worker, env, calls);
     const result = await client.callTool({
         name: "runFfmpeg",
         arguments: {
-            source: SOURCE,
-            args: ["-t", "1", "-vf", "scale=32:32"],
+            sources: [SOURCE, SECOND_SOURCE],
+            args: [
+                "-i",
+                "input0",
+                "-i",
+                "input1",
+                "-filter_complex",
+                "[0:v][1:v]overlay",
+            ],
             outputExtension: "mp4",
         },
     });
@@ -149,8 +172,18 @@ test("runs FFmpeg, uploads the output, and reports trusted usage", async () => {
         name: "FFmpeg output",
         mimeType: "video/mp4",
     });
-    assert.deepEqual(calls.run[0].input, new Uint8Array([1, 2, 3]));
-    assert.deepEqual(calls.run[0].args, ["-t", "1", "-vf", "scale=32:32"]);
+    assert.deepEqual(calls.run[0].inputs, [
+        new Uint8Array([1, 2, 3]),
+        new Uint8Array([1, 2, 3]),
+    ]);
+    assert.deepEqual(calls.run[0].args, [
+        "-i",
+        "input0",
+        "-i",
+        "input1",
+        "-filter_complex",
+        "[0:v][1:v]overlay",
+    ]);
     assert.deepEqual(calls.upload[0].body, new Uint8Array([4, 5, 6]));
     assert.equal(calls.destroy, 1);
 
@@ -165,7 +198,7 @@ test("runs FFmpeg, uploads the output, and reports trusted usage", async () => {
     await client.close();
 });
 
-test("accepts public HTTPS media and a single supplied input", async () => {
+test("accepts public HTTPS media and raw FFmpeg input arguments", async () => {
     const publicSource = "https://cdn.example.com/source.mp4";
     const { calls, env, worker } = createHarness({
         expectedSource: publicSource,
@@ -174,23 +207,14 @@ test("accepts public HTTPS media and a single supplied input", async () => {
     const success = await client.callTool({
         name: "runFfmpeg",
         arguments: {
-            source: publicSource,
-            args: [],
+            sources: [publicSource],
+            args: ["-i", "input0"],
             outputExtension: "mkv",
         },
     });
     assert.equal(success.isError, undefined);
     assert.equal(calls.upload[0].input.contentType, "application/octet-stream");
 
-    const extraInput = await client.callTool({
-        name: "runFfmpeg",
-        arguments: {
-            source: publicSource,
-            args: ["-i", "https://example.com/other.mp4"],
-            outputExtension: "mp4",
-        },
-    });
-    assert.equal(extraInput.isError, true);
     assert.equal(calls.run.length, 1);
     await client.close();
 });
@@ -216,8 +240,8 @@ test("revalidates public HTTPS redirects", async () => {
     const result = await client.callTool({
         name: "runFfmpeg",
         arguments: {
-            source: SOURCE,
-            args: [],
+            sources: [SOURCE],
+            args: ["-i", "input0"],
             outputExtension: "mp4",
         },
     });
@@ -236,8 +260,8 @@ test("revalidates public HTTPS redirects", async () => {
     const unsafeResult = await unsafeClient.callTool({
         name: "runFfmpeg",
         arguments: {
-            source: SOURCE,
-            args: [],
+            sources: [SOURCE],
+            args: ["-i", "input0"],
             outputExtension: "mp4",
         },
     });
@@ -261,7 +285,11 @@ test("rejects unsafe source URLs before execution", async () => {
     ]) {
         const result = await client.callTool({
             name: "runFfmpeg",
-            arguments: { source, args: [], outputExtension: "mp4" },
+            arguments: {
+                sources: [source],
+                args: ["-i", "input0"],
+                outputExtension: "mp4",
+            },
         });
         assert.equal(result.isError, true);
     }
@@ -283,8 +311,8 @@ test("rejects source responses without a known size", async () => {
     const result = await client.callTool({
         name: "runFfmpeg",
         arguments: {
-            source: SOURCE,
-            args: [],
+            sources: [SOURCE],
+            args: ["-i", "input0"],
             outputExtension: "mp4",
         },
     });
@@ -307,8 +335,8 @@ test("reports usage for executed failures", async () => {
         const result = await client.callTool({
             name: "runFfmpeg",
             arguments: {
-                source: SOURCE,
-                args: [],
+                sources: [SOURCE],
+                args: ["-i", "input0"],
                 outputExtension: "mp4",
             },
         });

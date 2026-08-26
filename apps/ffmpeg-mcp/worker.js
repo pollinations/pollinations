@@ -82,10 +82,14 @@ async function fetchSource(source, fetchImpl, createFixedLengthStream) {
 }
 
 async function runTool(params, env, dependencies, reportUsage) {
-    const input = await fetchSource(
-        params.source,
-        dependencies.fetchImpl,
-        dependencies.createFixedLengthStreamImpl,
+    const inputs = await Promise.all(
+        params.sources.map((source) =>
+            fetchSource(
+                source,
+                dependencies.fetchImpl,
+                dependencies.createFixedLengthStreamImpl,
+            ),
+        ),
     );
     const requestId = crypto.randomUUID();
     const startedAt = Date.now();
@@ -101,7 +105,7 @@ async function runTool(params, env, dependencies, reportUsage) {
         let result;
         try {
             result = await container.run(
-                input,
+                inputs,
                 params.args,
                 params.outputExtension,
                 startedAt + FFMPEG_MAX_RUN_MS,
@@ -165,7 +169,7 @@ async function runTool(params, env, dependencies, reportUsage) {
             {
                 type: "text",
                 text: JSON.stringify({
-                    source: params.source,
+                    sources: params.sources,
                     args: params.args,
                     outputExtension: params.outputExtension,
                     url: output.url,
@@ -181,28 +185,30 @@ function buildServer(env, dependencies, reportUsage) {
         { name: "pollinations-ffmpeg-mcp", version: "0.1.0" },
         {
             instructions:
-                "Run native FFmpeg commands against public HTTPS media. Pollinations supplies the input and hosted output; provide only arguments between them.",
+                "Run native FFmpeg commands against public HTTPS media. Sources are saved as input0, input1, and so on; pass ordinary FFmpeg arguments and Pollinations hosts the output.",
             capabilities: { tools: {} },
         },
     );
     server.registerTool(
         "runFfmpeg",
         {
-            description: `Run native FFmpeg arguments against a public HTTPS media URL and return an unlisted hosted resource link. Omit ffmpeg, -i, and the output path. Maximum input/output size is 100 MB and runtime is ${FFMPEG_MAX_RUN_MS / 1000} seconds. Billed at ${FFMPEG_COST_PER_SECOND.toFixed(8)} Pollen per active second.`,
+            description: `Run native FFmpeg arguments against public HTTPS media and return an unlisted hosted resource link. Sources are available as input0, input1, and so on. Include each needed -i argument, but omit ffmpeg and the output path. Maximum size per input/output is 100 MB and runtime is ${FFMPEG_MAX_RUN_MS / 1000} seconds. Billed at ${FFMPEG_COST_PER_SECOND.toFixed(8)} Pollen per active second.`,
             inputSchema: z.object({
-                source: z.url().refine((value) => {
-                    const validation = validateUserMediaUrl(value);
-                    return (
-                        validation.ok && validation.url.protocol === "https:"
-                    );
-                }, "source must be a public HTTPS URL without credentials"),
-                args: z
-                    .array(z.string().min(1).max(1024))
-                    .max(64)
-                    .refine(
-                        (args) => !args.includes("-i"),
-                        "omit -i; Pollinations supplies the input",
+                sources: z
+                    .array(
+                        z.url().refine((value) => {
+                            const validation = validateUserMediaUrl(value);
+                            return (
+                                validation.ok &&
+                                validation.url.protocol === "https:"
+                            );
+                        }, "sources must be public HTTPS URLs without credentials"),
+                    )
+                    .min(1)
+                    .describe(
+                        "Ordered source URLs, saved as input0, input1, and so on.",
                     ),
+                args: z.array(z.string().min(1).max(1024)).max(64),
                 outputExtension: z
                     .string()
                     .regex(

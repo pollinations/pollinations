@@ -1,6 +1,7 @@
 {
   "target": "worker",
   "credentials": "myceli",
+  "sops": "default",
   "install": "npm ci",
   "build": "npm test",
   "deploy": "npm run deploy",

@@ -6,8 +6,8 @@
   "scripts": {
     "test": "node --test worker.test.js",
     "check": "wrangler deploy --dry-run",
-    "deploy": "wrangler deploy",
-    "deploy:staging": "wrangler deploy --env staging"
+    "deploy": "sops exec-file --no-fifo secrets.vars.json 'wrangler deploy --secrets-file {}'",
+    "deploy:staging": "sops exec-file --no-fifo secrets.vars.json 'wrangler deploy --env staging --secrets-file {}'"
   },
   "dependencies": {
     "@modelcontextprotocol/server": "^2.0.0",

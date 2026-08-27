@@ -157,14 +157,14 @@ const CanonicalModelSlugAnnouncement: FC = () => (
     >
         <div className="bg-intent-warning-bg-light p-4 sm:p-5">
             <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-theme-text-muted">
-                Scheduled change · Sep 1, 2026 at 14:00 UTC
+                Scheduled change · Sep 7, 2026 at 14:00 UTC
             </div>
             <div className="flex items-baseline gap-2 font-semibold text-ink-900 text-base sm:text-lg">
                 <WarningIcon className="h-[1em] w-[1em] shrink-0 self-center text-intent-danger-text" />
                 <span>Model IDs are being standardized</span>
             </div>
             <p className="mt-1 text-sm text-ink-700">
-                Starting September 1, each new ID will include the publisher and
+                Starting September 7, each new ID will include the publisher and
                 use the model's official name. Existing IDs will remain
                 available as aliases.
             </p>

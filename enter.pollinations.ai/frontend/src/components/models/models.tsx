@@ -350,7 +350,7 @@ export const Models: FC = () => {
             >
                 <Alert
                     intent="warning"
-                    title="Model IDs are being standardized on September 1"
+                    title="Model IDs are being standardized on September 7"
                     className="mb-4"
                 >
                     Each new ID will include the publisher and use the model's

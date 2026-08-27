@@ -6,7 +6,7 @@
 
 # Model ID changes
 
-On **September 1, 2026 at 14:00 UTC**, Pollinations model IDs will be standardized. Each new ID will include the publisher and use the model's official name.
+On **September 7, 2026 at 14:00 UTC**, Pollinations model IDs will be standardized. Each new ID will include the publisher and use the model's official name.
 
 Existing IDs will remain available as aliases, so current integrations do not need to change. Use the new IDs for new integrations.
 

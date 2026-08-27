@@ -11,7 +11,7 @@ Generate text responses using AI models. Fully compatible with the OpenAI Chat C
 
 ### Reasoning
 
-Set `reasoning_effort` on reasoning-capable models. Model metadata reports reasoning support; supported effort levels vary by model.
+Use `reasoning_effort` to control reasoning on models that advertise reasoning support.
 
 ```bash
 # POST /v1/chat/completions — OpenAI-compatible response

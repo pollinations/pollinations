@@ -6,6 +6,7 @@ import {
     Chip,
     ClipboardIcon,
     CopyButton,
+    currentPeriod,
     ExternalLinkIcon,
     GlobeIcon,
     IconButton,
@@ -17,6 +18,7 @@ import {
     XIcon,
 } from "@pollinations/ui";
 import { communityEndpointPriceFieldsForModality } from "@shared/community-endpoints.ts";
+import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { PriceBadge, type PriceBadgeConfig } from "../models/price-badge.tsx";
 import type { PriceKind } from "../models/types.ts";
@@ -172,6 +174,23 @@ export function CommunityEndpointCard({
                         value={<CommunityPriceBadges group={group} />}
                     />
                 ))}
+            </div>
+            <div className="mt-3">
+                <Link
+                    to="/activity"
+                    search={{
+                        ...currentPeriod(),
+                        earningsModels: [endpoint.modelId],
+                        usageMetric: undefined,
+                        usageKeys: undefined,
+                        usageModels: undefined,
+                        earningsMetric: undefined,
+                        earningsApps: undefined,
+                    }}
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-theme-text-muted underline underline-offset-2 transition-colors hover:text-theme-text-strong"
+                >
+                    View activity
+                </Link>
             </div>
         </Surface>
     );

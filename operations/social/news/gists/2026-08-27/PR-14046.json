@@ -1,0 +1,37 @@
+{
+  "pr_number": 14046,
+  "title": "Add Pollinations Studio to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/14046",
+  "merged_at": "2026-08-27T13:03:10Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Pollinations Studio](https://sankezhiyyds.github.io/pollinations-app) to chat\n- A pure HTML/JavaScript AI generation studio with no framework dependencies. It supports image, text, audio, and video generation via the Pollinations API. Users bring their own API key (sk_ or pk_) fo\n\nFixes #13997",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A studio blooms in chat",
+    "blurb": "Pollinations Studio has joined the chat: a small, framework-free workshop for making images, text, audio, and video. Bring an sk_ or pk_ key; the bee has already put the kettle on.",
+    "summary": "Added Pollinations Studio to the chat app directory, a pure HTML/JavaScript generation workspace for Pollinations image, text, audio, and video APIs using users' own sk_ or pk_ API keys.",
+    "impact": "Chat users can now discover and open a no-framework creative studio that puts all four Pollinations generation modalities in one browser-based workspace.",
+    "keywords": [
+      "community-app",
+      "pollinations-studio",
+      "chat",
+      "image-generation",
+      "text-generation",
+      "audio",
+      "video"
+    ],
+    "visual_concept": "Depict Polli visiting a cozy all-in-one creative studio inside a retro chat terminal: four small glowing panels represent image pixels, a text page, audio waveforms, and a video filmstrip. Polli wears a tiny artist beret and helps a friendly CRT monitor robot arrange the tools, while code-plants and flowers grow around the desk to show this is a community-made browser app.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny painter's beret, visiting a warm browser-based creative studio beside an eager CRT monitor robot. Four small retro panels glow with image pixels, text lines, audio waveforms, and a video filmstrip amid code-plants and flowers, with lime green (#ecf874) prominent against soft mint, lavender, peach, and warm cream gradients; pixel-font text reads “POLLINATIONS STUDIO”. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-27/PR-14046.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny painter's beret, visiting a warm browser-based creative studio beside an eager CRT monitor robot. Four small retro panels glow with image pixels, text lines, audio waveforms, and a video filmstrip amid code-plants and flowers, with lime green (#ecf874) prominent against soft mint, lavender, peach, and warm cream gradients; pixel-font text reads “POLLINATIONS STUDIO”. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-27T13:05:38.679905+00:00",
+  "app_name": "Pollinations Studio",
+  "app_url": "https://sankezhiyyds.github.io/pollinations-app"
+}

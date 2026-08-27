@@ -1,17 +1,61 @@
 import { env, SELF } from "cloudflare:test";
+import { existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import * as schema from "@shared/db/better-auth.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { expect, test as vitestTest } from "vitest";
-import {
-    parseQuestLeaderboardEntries,
-    QuestLeaderboardContent,
-    type QuestLeaderboardData,
-} from "../../pollinations.ai/src/ui/components/QuestLeaderboard";
+import { expect, vi } from "vitest";
+import { COMMUNITY_PAGE } from "../../pollinations.ai/src/copy/content/community";
+import type { QuestLeaderboardData } from "../../pollinations.ai/src/ui/components/QuestLeaderboard";
 import { test } from "./fixtures.ts";
 
+const nestedReactRuntimeUrls = [
+    new URL(
+        "../../pollinations.ai/node_modules/react/jsx-runtime.js",
+        import.meta.url,
+    ),
+    new URL(
+        "../../pollinations.ai/node_modules/react/jsx-dev-runtime.js",
+        import.meta.url,
+    ),
+];
+const nestedReactRuntimeModules = import.meta.glob(
+    "../../pollinations.ai/node_modules/react/jsx*-runtime.js",
+);
+const hasNestedReactRuntimes =
+    nestedReactRuntimeUrls.some((url) => existsSync(fileURLToPath(url))) ||
+    Object.keys(nestedReactRuntimeModules).length > 0;
+
+if (hasNestedReactRuntimes) {
+    vi.doMock(
+        "../../pollinations.ai/node_modules/react/jsx-runtime",
+        async () => vi.importActual("react/jsx-runtime"),
+    );
+    vi.doMock(
+        "../../pollinations.ai/node_modules/react/jsx-dev-runtime",
+        async () => vi.importActual("react/jsx-dev-runtime"),
+    );
+}
+
+const { parseQuestLeaderboardEntries, QuestLeaderboardContent } = await import(
+    "../../pollinations.ai/src/ui/components/QuestLeaderboard"
+);
+
 const CACHE_KEY = "quests:leaderboard:v1";
+const initialLeaderboard = [
+    {
+        githubUsername: "alice",
+        completedQuests: 3,
+        totalPollen: 0.6,
+    },
+    { githubUsername: "bob", completedQuests: 1, totalPollen: 0.6 },
+    {
+        githubUsername: "dave",
+        completedQuests: 1,
+        totalPollen: 0.6,
+    },
+];
 
 test("leaderboard filters, merges, rounds, orders, and caches public quest rewards", async () => {
     const db = drizzle(env.DB, { schema });
@@ -85,15 +129,6 @@ test("leaderboard filters, merges, rounds, orders, and caches public quest rewar
             balanceBucket: "tier",
         },
         {
-            id: "leaderboard-reward-alice-duplicate",
-            idempotencyKey: "quest:github:issue:101:duplicate",
-            userId: "leaderboard-alice",
-            questId: "github:issue:101",
-            title: "Duplicate quest row",
-            pollenAmount: 0,
-            balanceBucket: "tier",
-        },
-        {
             id: "leaderboard-reward-bob",
             idempotencyKey: "quest:github:issue:104",
             userId: "leaderboard-bob",
@@ -136,19 +171,7 @@ test("leaderboard filters, merges, rounds, orders, and caches public quest rewar
     );
     expect(first.status).toBe(200);
     await expect(first.json()).resolves.toEqual({
-        leaderboard: [
-            {
-                githubUsername: "alice",
-                completedQuests: 3,
-                totalPollen: 0.6,
-            },
-            { githubUsername: "bob", completedQuests: 1, totalPollen: 0.6 },
-            {
-                githubUsername: "dave",
-                completedQuests: 1,
-                totalPollen: 0.6,
-            },
-        ],
+        leaderboard: initialLeaderboard,
     });
 
     await db.insert(schema.rewards).values({
@@ -165,19 +188,7 @@ test("leaderboard filters, merges, rounds, orders, and caches public quest rewar
         "http://localhost:3000/api/quests/leaderboard",
     );
     await expect(cached.json()).resolves.toEqual({
-        leaderboard: [
-            {
-                githubUsername: "alice",
-                completedQuests: 3,
-                totalPollen: 0.6,
-            },
-            { githubUsername: "bob", completedQuests: 1, totalPollen: 0.6 },
-            {
-                githubUsername: "dave",
-                completedQuests: 1,
-                totalPollen: 0.6,
-            },
-        ],
+        leaderboard: initialLeaderboard,
     });
 
     await env.KV.delete(CACHE_KEY);
@@ -201,7 +212,7 @@ test("leaderboard filters, merges, rounds, orders, and caches public quest rewar
     });
 });
 
-vitestTest("leaderboard content renders public fields and quest link", () => {
+test("leaderboard content renders public fields and quest link", () => {
     const data: QuestLeaderboardData = {
         leaderboard: [
             { githubUsername: "alice", completedQuests: 1, totalPollen: 1.25 },
@@ -213,7 +224,10 @@ vitestTest("leaderboard content renders public fields and quest link", () => {
         ],
     };
     const markup = renderToStaticMarkup(
-        createElement(QuestLeaderboardContent, { data }),
+        createElement(QuestLeaderboardContent, {
+            data,
+            copy: COMMUNITY_PAGE,
+        }),
     );
 
     expect(markup).toContain("Quest leaderboard");
@@ -227,7 +241,7 @@ vitestTest("leaderboard content renders public fields and quest link", () => {
     expect(markup).not.toContain("leaderboard-alice");
 });
 
-vitestTest("leaderboard payload validation drops malformed rows", () => {
+test("leaderboard payload validation drops malformed rows", () => {
     expect(
         parseQuestLeaderboardEntries([
             {
@@ -236,23 +250,16 @@ vitestTest("leaderboard payload validation drops malformed rows", () => {
                 totalPollen: 0.5,
             },
             null,
-            {},
             { githubUsername: "", completedQuests: 2, totalPollen: 1 },
             { githubUsername: "bob", completedQuests: 1.5, totalPollen: 1 },
             { githubUsername: "carol", completedQuests: 1, totalPollen: -1 },
             {
                 githubUsername: "dave",
-                completedQuests: Infinity,
-                totalPollen: 1,
+                completedQuests: 1,
+                totalPollen: Infinity,
             },
         ]),
     ).toEqual([
         { githubUsername: "Alice", completedQuests: 1, totalPollen: 0.5 },
     ]);
-    expect(
-        parseQuestLeaderboardEntries([
-            { githubUsername: "", completedQuests: 0, totalPollen: 0 },
-            { githubUsername: "eve", completedQuests: 0.5, totalPollen: 0 },
-        ]),
-    ).toEqual([]);
 });

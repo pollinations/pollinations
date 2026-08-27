@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { COMMUNITY_PAGE } from "../../copy/content/community";
 import { LINKS } from "../../copy/content/socialLinks";
 import { usePageCopy } from "../../hooks/usePageCopy";
+import { Body, Heading } from "./ui/typography";
 
 export type QuestLeaderboardEntry = {
     githubUsername: string;
@@ -52,24 +53,21 @@ export function parseQuestLeaderboardEntries(
 
 export function QuestLeaderboardContent({
     data,
-    copy = COMMUNITY_PAGE,
+    copy,
 }: {
     data: QuestLeaderboardData;
-    copy?: typeof COMMUNITY_PAGE;
+    copy: typeof COMMUNITY_PAGE;
 }) {
     return (
         <section className="mb-12" aria-labelledby="quest-leaderboard-heading">
             <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                    <h2
-                        id="quest-leaderboard-heading"
-                        className="mb-2 font-headline text-2xl font-black uppercase tracking-widest text-dark"
-                    >
+                    <Heading id="quest-leaderboard-heading" spacing="tight">
                         {copy.questLeaderboardTitle}
-                    </h2>
-                    <p className="font-body text-sm text-subtle">
+                    </Heading>
+                    <Body size="sm" spacing="none">
                         {copy.questLeaderboardDescription}
-                    </p>
+                    </Body>
                 </div>
                 <a
                     href={`${LINKS.enter}/quests`}

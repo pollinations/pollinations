@@ -43,6 +43,8 @@ Owners receive 75% of the Pollen spent on their models. Paid and Quest Pollen ea
 
 The upstream credential is used by Pollinations to proxy requests to your endpoint. Do not place it in a model name, description, public URL, or example.
 
+Choose the model ID and title carefully — the ID is public and permanent. See the [Community Model Naming Guide](./COMMUNITY_MODEL_NAMING.md) for how to pick a stable ID and a clear title, including direct, custom, router, and rebranded examples.
+
 ## Register with the CLI
 
 The CLI manages text, image, and transcription model registrations. Sign in, test the endpoint, then create the model:

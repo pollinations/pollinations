@@ -114,9 +114,19 @@ export function ModelListingFields({
                 <FieldStack
                     label={isAgent ? "ID" : "Model ID"}
                     helper={
-                        isAgent
-                            ? "Public ID: {username}/{id}."
-                            : "Public ID: {username}/{model-id}."
+                        <>
+                            {isAgent
+                                ? "Public ID: {username}/{id}."
+                                : "Public ID: {username}/{model-id}."}{" "}
+                            <a
+                                href="https://github.com/pollinations/pollinations/blob/main/COMMUNITY_MODEL_NAMING.md"
+                                target="_blank"
+                                rel="noreferrer"
+                                className="underline"
+                            >
+                                Naming guide
+                            </a>
+                        </>
                     }
                     alignLabelRow
                 >
@@ -135,7 +145,19 @@ export function ModelListingFields({
                 </FieldStack>
                 <FieldStack
                     label="Title"
-                    helper="Display name shown in the Models list."
+                    helper={
+                        <>
+                            Display name shown in the Models list.{" "}
+                            <a
+                                href="https://github.com/pollinations/pollinations/blob/main/COMMUNITY_MODEL_NAMING.md"
+                                target="_blank"
+                                rel="noreferrer"
+                                className="underline"
+                            >
+                                Naming guide
+                            </a>
+                        </>
+                    }
                     alignLabelRow
                 >
                     <Input

@@ -1,0 +1,34 @@
+{
+  "pr_number": 14010,
+  "title": "feat: add Seedance reference media inputs",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/14010",
+  "merged_at": "2026-08-27T02:30:19Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n- Adds native GET-only `reference_images`, `reference_videos`, and `reference_audios` to the existing image and video endpoints.\n- Restricts the fields to Seedance 2.0 and 2.5 while leaving provider-specific limits and combinations to Replicate.\n- Forwards validated public reference URLs directly to Replicate.\n- Adds reference-video billing variants and OpenAPI source documentation.\n\n## Verification\n- Biome check passed.\n- Gen focused parameter, provider, cache, and observability tests passed.\n- Enter pricing and effective-price snapshot tests passed.\n- Gen TypeScript check passed.\n\nFixes #13901",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Seedance Gets a Mood Board",
+    "blurb": "Seedance 2.0 and 2.5 can now take public image, video, and audio references straight from a URL. Polli has stopped trying to describe the vibe with increasingly elaborate hand gestures.",
+    "summary": "Added GET-only reference_images, reference_videos, and reference_audios parameters for Seedance 2.0 and 2.5 image/video generation, validating public URLs and forwarding them to Replicate with reference-video billing variants documented in OpenAPI.",
+    "impact": "Creators can guide Seedance 2.0 and 2.5 generations with supplied public visual or audio references while Replicate continues to handle each model's supported reference combinations and limits.",
+    "keywords": [
+      "Seedance 2.0",
+      "Seedance 2.5",
+      "reference media",
+      "video generation",
+      "Replicate",
+      "OpenAPI"
+    ],
+    "visual_concept": "Depict Seedance as a cozy retro video-editing workstation with a small film screen, image postcards, a tiny audio cassette, and video strips feeding into a glowing generation machine. Polli, wearing a director's beret, carefully arranges the reference materials while a few code-plants and flowers grow around the workstation, making the idea of creative guidance feel tangible and warm.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny director's beret as she arranges image postcards, a video film strip, and an audio cassette beside a retro Seedance video workstation glowing lime green (#ecf874); code-plants and pastel flowers sprout around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle pixel-font text: \"REFERENCE READY\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-27/PR-14010.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny director's beret as she arranges image postcards, a video film strip, and an audio cassette beside a retro Seedance video workstation glowing lime green (#ecf874); code-plants and pastel flowers sprout around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle pixel-font text: \"REFERENCE READY\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-27T02:31:18.336061+00:00"
+}

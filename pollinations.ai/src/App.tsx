@@ -15,6 +15,7 @@ function ScrollToTop() {
 // Lazy load pages
 const HelloPage = lazy(() => import("./ui/pages/HelloPage"));
 const PlayPage = lazy(() => import("./ui/pages/PlayPage"));
+const GiftPage = lazy(() => import("./ui/pages/GiftPage"));
 const AppsPage = lazy(() => import("./ui/pages/AppsPage"));
 const CommunityPage = lazy(() => import("./ui/pages/CommunityPage"));
 const TermsPage = lazy(() => import("./ui/pages/TermsPage"));
@@ -49,6 +50,7 @@ function App() {
                     <Route path="/" element={<Layout />}>
                         <Route index element={<HelloPage />} />
                         <Route path="play" element={<PlayPage />} />
+                        <Route path="gift" element={<GiftPage />} />
                         <Route path="apps" element={<AppsPage />} />
                         <Route
                             path="docs"

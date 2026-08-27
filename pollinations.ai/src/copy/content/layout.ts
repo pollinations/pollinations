@@ -9,6 +9,7 @@ export const LAYOUT = {
     // Navigation tabs
     navHello: "hello",
     navPlay: "play",
+    navGift: "gift",
     navDocs: "docs",
     navApps: "apps",
     navCommunity: "community",

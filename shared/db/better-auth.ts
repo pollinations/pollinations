@@ -340,6 +340,59 @@ export const deviceCode = sqliteTable("device_code", {
   index("idx_device_code_user_code").on(table.userCode),
 ]);
 
+export const pollenGiftCode = sqliteTable("pollen_gift_code", {
+  id: text("id").primaryKey(),
+  codeHash: text("code_hash").notNull().unique(),
+  pollenAmount: integer("pollen_amount").notNull(),
+  faceValueCents: integer("face_value_cents").notNull(),
+  serviceFeeCents: integer("service_fee_cents").notNull(),
+  paidAmountCents: integer("paid_amount_cents"),
+  paidCurrency: text("paid_currency"),
+  refundedAmountCents: integer("refunded_amount_cents").default(0).notNull(),
+  status: text("status", {
+    enum: ["pending", "active", "redeemed", "voided", "refunded", "disputed"],
+  }).default("pending").notNull(),
+  statusBeforeDispute: text("status_before_dispute"),
+  balanceReversed: integer("balance_reversed", { mode: "boolean" })
+    .default(false)
+    .notNull(),
+  stripeCheckoutSessionId: text("stripe_checkout_session_id").unique(),
+  stripePaymentIntentId: text("stripe_payment_intent_id").unique(),
+  stripeInvoiceId: text("stripe_invoice_id").unique(),
+  redeemerUserId: text("redeemer_user_id").references(() => user.id, {
+    onDelete: "set null",
+  }),
+  createdAt: integer("created_at", { mode: "timestamp_ms" })
+    .defaultNow()
+    .notNull(),
+  activatedAt: integer("activated_at", { mode: "timestamp_ms" }),
+  redeemedAt: integer("redeemed_at", { mode: "timestamp_ms" }),
+  invalidatedAt: integer("invalidated_at", { mode: "timestamp_ms" }),
+}, (table) => [
+  index("idx_pollen_gift_code_status").on(table.status),
+  index("idx_pollen_gift_code_redeemer_user_id").on(table.redeemerUserId),
+]);
+
+export const pollenGiftAdjustment = sqliteTable("pollen_gift_adjustment", {
+  idempotencyKey: text("idempotency_key").primaryKey(),
+  giftId: text("gift_id")
+    .notNull()
+    .references(() => pollenGiftCode.id),
+  stripeEventId: text("stripe_event_id").notNull(),
+  userId: text("user_id").references(() => user.id, {
+    onDelete: "set null",
+  }),
+  pollenDelta: real("pollen_delta").notNull(),
+  amountCents: integer("amount_cents").default(0).notNull(),
+  reason: text("reason").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" })
+    .defaultNow()
+    .notNull(),
+}, (table) => [
+  index("idx_pollen_gift_adjustment_gift_id").on(table.giftId),
+  index("idx_pollen_gift_adjustment_user_id").on(table.userId),
+]);
+
 export const stripeCheckoutCredits = sqliteTable("stripe_checkout_credits", {
   sessionId: text("session_id").primaryKey(),
   eventId: text("event_id").notNull(),

@@ -18,12 +18,14 @@ import { Route as DeviceRouteImport } from './routes/device'
 import { Route as AuthorizeRouteImport } from './routes/authorize'
 import { Route as DashboardRouteImport } from './routes/_dashboard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DashboardRedeemRouteImport } from './routes/_dashboard.redeem'
 import { Route as DashboardQuestsRouteImport } from './routes/_dashboard.quests'
 import { Route as DashboardPollenRouteImport } from './routes/_dashboard.pollen'
 import { Route as DashboardNewsRouteImport } from './routes/_dashboard.news'
 import { Route as DashboardMyModelsRouteImport } from './routes/_dashboard.my-models'
 import { Route as DashboardModelsRouteImport } from './routes/_dashboard.models'
 import { Route as DashboardKeysRouteImport } from './routes/_dashboard.keys'
+import { Route as DashboardGiftRouteImport } from './routes/_dashboard.gift'
 import { Route as DashboardActivityRouteImport } from './routes/_dashboard.activity'
 import { Route as DashboardAccountRouteImport } from './routes/_dashboard.account'
 
@@ -71,6 +73,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardRedeemRoute = DashboardRedeemRouteImport.update({
+  id: '/redeem',
+  path: '/redeem',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardQuestsRoute = DashboardQuestsRouteImport.update({
   id: '/quests',
   path: '/quests',
@@ -101,6 +108,11 @@ const DashboardKeysRoute = DashboardKeysRouteImport.update({
   path: '/keys',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardGiftRoute = DashboardGiftRouteImport.update({
+  id: '/gift',
+  path: '/gift',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardActivityRoute = DashboardActivityRouteImport.update({
   id: '/activity',
   path: '/activity',
@@ -123,12 +135,14 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/account': typeof DashboardAccountRoute
   '/activity': typeof DashboardActivityRoute
+  '/gift': typeof DashboardGiftRoute
   '/keys': typeof DashboardKeysRoute
   '/models': typeof DashboardModelsRoute
   '/my-models': typeof DashboardMyModelsRoute
   '/news': typeof DashboardNewsRoute
   '/pollen': typeof DashboardPollenRoute
   '/quests': typeof DashboardQuestsRoute
+  '/redeem': typeof DashboardRedeemRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -141,12 +155,14 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/account': typeof DashboardAccountRoute
   '/activity': typeof DashboardActivityRoute
+  '/gift': typeof DashboardGiftRoute
   '/keys': typeof DashboardKeysRoute
   '/models': typeof DashboardModelsRoute
   '/my-models': typeof DashboardMyModelsRoute
   '/news': typeof DashboardNewsRoute
   '/pollen': typeof DashboardPollenRoute
   '/quests': typeof DashboardQuestsRoute
+  '/redeem': typeof DashboardRedeemRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -161,12 +177,14 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/_dashboard/account': typeof DashboardAccountRoute
   '/_dashboard/activity': typeof DashboardActivityRoute
+  '/_dashboard/gift': typeof DashboardGiftRoute
   '/_dashboard/keys': typeof DashboardKeysRoute
   '/_dashboard/models': typeof DashboardModelsRoute
   '/_dashboard/my-models': typeof DashboardMyModelsRoute
   '/_dashboard/news': typeof DashboardNewsRoute
   '/_dashboard/pollen': typeof DashboardPollenRoute
   '/_dashboard/quests': typeof DashboardQuestsRoute
+  '/_dashboard/redeem': typeof DashboardRedeemRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -181,12 +199,14 @@ export interface FileRouteTypes {
     | '/terms'
     | '/account'
     | '/activity'
+    | '/gift'
     | '/keys'
     | '/models'
     | '/my-models'
     | '/news'
     | '/pollen'
     | '/quests'
+    | '/redeem'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -199,12 +219,14 @@ export interface FileRouteTypes {
     | '/terms'
     | '/account'
     | '/activity'
+    | '/gift'
     | '/keys'
     | '/models'
     | '/my-models'
     | '/news'
     | '/pollen'
     | '/quests'
+    | '/redeem'
   id:
     | '__root__'
     | '/'
@@ -218,12 +240,14 @@ export interface FileRouteTypes {
     | '/terms'
     | '/_dashboard/account'
     | '/_dashboard/activity'
+    | '/_dashboard/gift'
     | '/_dashboard/keys'
     | '/_dashboard/models'
     | '/_dashboard/my-models'
     | '/_dashboard/news'
     | '/_dashboard/pollen'
     | '/_dashboard/quests'
+    | '/_dashboard/redeem'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -303,6 +327,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_dashboard/redeem': {
+      id: '/_dashboard/redeem'
+      path: '/redeem'
+      fullPath: '/redeem'
+      preLoaderRoute: typeof DashboardRedeemRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/_dashboard/quests': {
       id: '/_dashboard/quests'
       path: '/quests'
@@ -345,6 +376,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardKeysRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/_dashboard/gift': {
+      id: '/_dashboard/gift'
+      path: '/gift'
+      fullPath: '/gift'
+      preLoaderRoute: typeof DashboardGiftRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/_dashboard/activity': {
       id: '/_dashboard/activity'
       path: '/activity'
@@ -365,23 +403,27 @@ declare module '@tanstack/react-router' {
 interface DashboardRouteChildren {
   DashboardAccountRoute: typeof DashboardAccountRoute
   DashboardActivityRoute: typeof DashboardActivityRoute
+  DashboardGiftRoute: typeof DashboardGiftRoute
   DashboardKeysRoute: typeof DashboardKeysRoute
   DashboardModelsRoute: typeof DashboardModelsRoute
   DashboardMyModelsRoute: typeof DashboardMyModelsRoute
   DashboardNewsRoute: typeof DashboardNewsRoute
   DashboardPollenRoute: typeof DashboardPollenRoute
   DashboardQuestsRoute: typeof DashboardQuestsRoute
+  DashboardRedeemRoute: typeof DashboardRedeemRoute
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardAccountRoute: DashboardAccountRoute,
   DashboardActivityRoute: DashboardActivityRoute,
+  DashboardGiftRoute: DashboardGiftRoute,
   DashboardKeysRoute: DashboardKeysRoute,
   DashboardModelsRoute: DashboardModelsRoute,
   DashboardMyModelsRoute: DashboardMyModelsRoute,
   DashboardNewsRoute: DashboardNewsRoute,
   DashboardPollenRoute: DashboardPollenRoute,
   DashboardQuestsRoute: DashboardQuestsRoute,
+  DashboardRedeemRoute: DashboardRedeemRoute,
 }
 
 const DashboardRouteWithChildren = DashboardRoute._addFileChildren(

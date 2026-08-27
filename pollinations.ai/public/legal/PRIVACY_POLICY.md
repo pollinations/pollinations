@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Updated: 2026-08-22**
+**Updated: 2026-08-27**
 
 ## 1) Scope & Roles
 
@@ -12,7 +12,7 @@ This policy covers (a) the paid dashboard/API and (b) the pollinations.ai commun
 
 * **Accounts & auth (commercial):** email, name/handle, org, password hash or SSO IDs.
 * **API keys & app authorization:** key type, key ID, scopes, model restrictions, expiry, Pollen budget/cap, app name, redirect URI, GitHub identity shown on consent screens, connected-app records, revocations, and developer-earnings settings.
-* **Billing & wallet (commercial):** plan, invoices, payment status, VAT ID, company details, Pollen purchases, Quest Pollen balance, Paid Pollen balance, grants, rewards, developer earnings, refunds, chargebacks, and wallet adjustments. Card data is handled by our payment provider; we do not store full card numbers.
+* **Billing & wallet (commercial):** plan, invoices, payment status, VAT ID, company details, Pollen and gift-code purchases, gift status and redemption records, Quest Pollen balance, Paid Pollen balance, grants, rewards, developer earnings, refunds, chargebacks, and wallet adjustments. For guest gift purchases, Stripe collects the buyer's email, billing address, country, and phone number. Stripe handles those billing details and card data; our gift ledger retains Stripe payment identifiers, gift status, and redemption records, but does not duplicate the buyer's email, address, phone number, or card data.
 * **Service usage & API metadata (commercial):** timestamps, endpoints/models, token/Pollen usage, balance bucket used, baseline model cost, app markup/developer credit where applicable, rate-limit events, IP, user-agent, and error logs.
 * **Quests & rewards (commercial/community):** quest availability, progress, completions, reward amounts, credited balance bucket, source references, and display/audit metadata such as quest titles, app names/URLs, app-directory approval records, GitHub issue/PR numbers, issue titles/URLs, assignees, labels, and completion timestamps.
 * **Prompts/outputs (commercial & demos):** processed transiently to deliver results; not retained beyond what's necessary to run the Service, except configuration you save and short-lived response caches. Generated responses may be cached temporarily for performance, reliability, cost control, and abuse prevention. Generated media cache identifiers and image metadata may include prompt-derived data.
@@ -29,7 +29,7 @@ This policy covers (a) the paid dashboard/API and (b) the pollinations.ai commun
 * **Security, abuse prevention, fraud prevention, and spending-control enforcement** (legitimate interests).
 * **Billing/tax/compliance** (legal obligations).
 * **Analytics & product research** using aggregated/pseudonymised metrics and the analytics processing described in §2 (legitimate interests).
-* **Service communications** (contract; legitimate interests). Service-related notifications are delivered in-product. Purchase invoices for paid Pollen are sent by email through our payment provider (Stripe). We do not currently send email directly. If we introduce direct email in the future, transactional messages will be limited to verification, billing, security, and service notices, and any marketing email will only be sent where permitted (consent) and will include an unsubscribe link and `List-Unsubscribe` header.
+* **Service communications** (contract; legitimate interests). Service-related notifications are delivered in-product. Purchase invoices for paid Pollen are sent by email through our payment provider (Stripe); gift purchase invoices contain the single-use gift code. We do not currently send email directly. If we introduce direct email in the future, transactional messages will be limited to verification, billing, security, and service notices, and any marketing email will only be sent where permitted (consent) and will include an unsubscribe link and `List-Unsubscribe` header.
 
 ## 4) Authorized Apps
 
@@ -76,7 +76,7 @@ Community providers may process data in other countries. Before sending personal
 
 * **Account and profile data:** while the account is active. When an account is deleted, access is revoked immediately and its profile, credentials, connected-app access, balances, and user-owned resources are deleted or de-identified from active systems within 30 days.
 * **Reward-protection records:** an immutable linked GitHub user ID and reward ledger records are retained while needed to prevent the same identity from receiving the same one-time reward more than once. We review this retention while the reward programmes remain available.
-* **Billing, wallet, and tax records:** account term + 7 years where needed for accounting, tax, fraud, disputes, and legal proof.
+* **Billing, wallet, gift-code, and tax records:** account term or purchase date + 7 years where needed for accounting, tax, fraud, disputes, and legal proof.
 * **API usage metadata:** typically 24 months (billing, fraud, capacity, developer-earnings attribution).
 * **Quest and reward records:** reward ledger records follow wallet/accounting retention where needed for balance, audit, fraud, and dispute purposes. Synced public GitHub quest issue records are retained while needed to display, process, and audit quest rewards.
 * **Generated response caches (text, image, audio, video):** typically up to 30 days, plus any downstream public/browser caches.

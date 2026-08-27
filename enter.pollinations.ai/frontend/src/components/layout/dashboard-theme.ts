@@ -53,8 +53,9 @@ const SIGNED_OUT_PAGES: ReadonlySet<DashboardPage> = new Set([
     "news-faq",
     "models",
     "quests",
+    "pollen",
 ]);
 
 export const SIGNED_OUT_NAV_ITEMS = DASHBOARD_NAV_ITEMS.filter((item) =>
     SIGNED_OUT_PAGES.has(item.id),
-);
+).map((item) => (item.id === "pollen" ? { ...item, badge: "Gift" } : item));

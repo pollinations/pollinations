@@ -441,18 +441,18 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["meta/muse-spark-1.2"],
     },
     {
-        name: "meta-llama/llama-3.3-70b-instruct",
+        name: "meta/llama-3.3-70b-instruct",
         config: portkeyConfig["Llama-3.3-70B-Instruct"],
         // No reasoning mode; Azure 422/400s on reasoning_effort.
         transform: stripReasoning,
     },
     {
-        name: "meta-llama/llama-4-maverick",
+        name: "meta/llama-4-maverick",
         config: portkeyConfig["Llama-4-Maverick-17B-128E-Instruct-FP8"],
         transform: stripReasoning,
     },
     {
-        name: "meta-llama/llama-4-scout",
+        name: "meta/llama-4-scout",
         config: portkeyConfig["Llama-4-Scout-17B-16E-Instruct"],
         // No reasoning mode.
         transform: stripReasoning,

@@ -1,4 +1,4 @@
--- Promote the 156 canonical model IDs renamed by this release in stored
+-- Promote the 158 canonical model IDs renamed by this release in stored
 -- API-key allowlists. The preceding 0046 migration canonicalized all known
 -- aliases at rest, and write paths now canonicalize recognized IDs, so this
 -- migration rewrites the canonical IDs from the current main registry.
@@ -1364,6 +1364,38 @@ SET permissions = json_set(
             FROM (
                 SELECT
                     CASE
+                        WHEN model.type = 'text' AND model.value = 'gpt-realtime-2.1'
+                            THEN 'openai/gpt-realtime-2.1'
+                        ELSE model.value
+                    END AS model_id,
+                    CAST(model.key AS integer) AS position
+                FROM json_each(apikey.permissions, '$.models') AS model
+            )
+            GROUP BY model_id
+        )
+    )
+)
+WHERE CASE
+    WHEN instr(permissions, '"gpt-realtime-2.1"') = 0 THEN 0
+    WHEN NOT json_valid(permissions) THEN 0
+    WHEN json_type(permissions, '$.models') != 'array' THEN 0
+    ELSE EXISTS (
+        SELECT 1
+        FROM json_each(permissions, '$.models') AS model
+        WHERE model.type = 'text' AND model.value = 'gpt-realtime-2.1'
+    )
+END;
+UPDATE apikey
+SET permissions = json_set(
+    permissions,
+    '$.models',
+    (
+        SELECT json_group_array(model_id ORDER BY position)
+        FROM (
+            SELECT model_id, MIN(position) AS position
+            FROM (
+                SELECT
+                    CASE
                         WHEN model.type = 'text' AND model.value = 'gpt-realtime-2.1-mini'
                             THEN 'openai/gpt-realtime-2.1-mini'
                         ELSE model.value
@@ -1383,6 +1415,38 @@ WHERE CASE
         SELECT 1
         FROM json_each(permissions, '$.models') AS model
         WHERE model.type = 'text' AND model.value = 'gpt-realtime-2.1-mini'
+    )
+END;
+UPDATE apikey
+SET permissions = json_set(
+    permissions,
+    '$.models',
+    (
+        SELECT json_group_array(model_id ORDER BY position)
+        FROM (
+            SELECT model_id, MIN(position) AS position
+            FROM (
+                SELECT
+                    CASE
+                        WHEN model.type = 'text' AND model.value = 'gpt-transcribe'
+                            THEN 'openai/gpt-transcribe'
+                        ELSE model.value
+                    END AS model_id,
+                    CAST(model.key AS integer) AS position
+                FROM json_each(apikey.permissions, '$.models') AS model
+            )
+            GROUP BY model_id
+        )
+    )
+)
+WHERE CASE
+    WHEN instr(permissions, '"gpt-transcribe"') = 0 THEN 0
+    WHEN NOT json_valid(permissions) THEN 0
+    WHEN json_type(permissions, '$.models') != 'array' THEN 0
+    ELSE EXISTS (
+        SELECT 1
+        FROM json_each(permissions, '$.models') AS model
+        WHERE model.type = 'text' AND model.value = 'gpt-transcribe'
     )
 END;
 UPDATE apikey
@@ -1685,7 +1749,7 @@ SET permissions = json_set(
                 SELECT
                     CASE
                         WHEN model.type = 'text' AND model.value = 'grok-transcribe'
-                            THEN 'x-ai/speech-to-text'
+                            THEN 'x-ai/grok-transcribe'
                         ELSE model.value
                     END AS model_id,
                     CAST(model.key AS integer) AS position
@@ -2197,7 +2261,7 @@ SET permissions = json_set(
                 SELECT
                     CASE
                         WHEN model.type = 'text' AND model.value = 'llama'
-                            THEN 'meta-llama/llama-3.3-70b-instruct'
+                            THEN 'meta/llama-3.3-70b-instruct'
                         ELSE model.value
                     END AS model_id,
                     CAST(model.key AS integer) AS position
@@ -2229,7 +2293,7 @@ SET permissions = json_set(
                 SELECT
                     CASE
                         WHEN model.type = 'text' AND model.value = 'llama-maverick'
-                            THEN 'meta-llama/llama-4-maverick'
+                            THEN 'meta/llama-4-maverick'
                         ELSE model.value
                     END AS model_id,
                     CAST(model.key AS integer) AS position
@@ -2261,7 +2325,7 @@ SET permissions = json_set(
                 SELECT
                     CASE
                         WHEN model.type = 'text' AND model.value = 'llama-scout'
-                            THEN 'meta-llama/llama-4-scout'
+                            THEN 'meta/llama-4-scout'
                         ELSE model.value
                     END AS model_id,
                     CAST(model.key AS integer) AS position

@@ -1672,7 +1672,7 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "meta-llama/llama-3.3-70b-instruct": {
+    "meta/llama-3.3-70b-instruct": {
         aliases: [
             "llama-3.3",
             "llama-3.3-70b",
@@ -1697,7 +1697,7 @@ export const TEXT_SERVICES = {
         contextLength: 131072,
         isSpecialized: false,
     },
-    "meta-llama/llama-4-maverick": {
+    "meta/llama-4-maverick": {
         aliases: [
             "llama-4",
             "llama-4-maverick",
@@ -1724,7 +1724,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
         paidOnly: true,
     },
-    "meta-llama/llama-4-scout": {
+    "meta/llama-4-scout": {
         aliases: [
             "llama-4-scout",
             "llama-scout-17b",

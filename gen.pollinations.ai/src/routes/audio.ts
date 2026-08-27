@@ -957,7 +957,7 @@ export async function transcribeWithXai(opts: {
             message: "xAI transcription service is not configured",
         });
     }
-    assertTranscriptionResponseFormat(responseFormat, "x-ai/speech-to-text");
+    assertTranscriptionResponseFormat(responseFormat, "x-ai/grok-transcribe");
 
     const formData = new FormData();
     if (language) {
@@ -1014,7 +1014,7 @@ export async function transcribeWithXai(opts: {
         },
         responseFormat,
         usageHeaders: buildUsageHeaders(
-            "x-ai/speech-to-text",
+            "x-ai/grok-transcribe",
             createAudioSecondsUsage(transcript.duration),
         ),
     });
@@ -3038,7 +3038,7 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
                 c.env.BETTER_AUTH_SECRET,
             );
         }
-        if (candidate.id === "x-ai/speech-to-text") {
+        if (candidate.id === "x-ai/grok-transcribe") {
             return transcribeWithXai({
                 file,
                 language: language || undefined,
@@ -3572,7 +3572,7 @@ export const audioRoutes = new Hono<Env>()
                 "- `whisper-1` — Alias for `openai/whisper-large-v3`",
                 "- `openai/gpt-transcribe` — Fast multilingual speech recognition with prompt context",
                 "- `elevenlabs/scribe-v2` — ElevenLabs Scribe (90+ languages, word-level timestamps)",
-                "- `x-ai/speech-to-text` — xAI speech recognition with word timestamps, speaker labels, and text formatting",
+                "- `x-ai/grok-transcribe` — xAI speech recognition with word timestamps, speaker labels, and text formatting",
                 "- `assemblyai/universal-2` — AssemblyAI Universal-2 (99 languages)",
                 "- `assemblyai/universal-3.5-pro` — AssemblyAI Universal-3.5 Pro (18 languages, code switching, prompting)",
             ].join("\n"),
@@ -3594,7 +3594,7 @@ export const audioRoutes = new Hono<Env>()
                                     type: "string",
                                     default: "openai/whisper-large-v3",
                                     description:
-                                        "The model to use. Options: `openai/whisper-large-v3`, `whisper-1`, `openai/gpt-transcribe`, `elevenlabs/scribe-v2`, `x-ai/speech-to-text`, `assemblyai/universal-2`, `assemblyai/universal-3.5-pro`.",
+                                        "The model to use. Options: `openai/whisper-large-v3`, `whisper-1`, `openai/gpt-transcribe`, `elevenlabs/scribe-v2`, `x-ai/grok-transcribe`, `assemblyai/universal-2`, `assemblyai/universal-3.5-pro`.",
                                 },
                                 language: {
                                     type: "string",

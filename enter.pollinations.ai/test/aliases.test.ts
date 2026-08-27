@@ -1,6 +1,7 @@
 import { AUDIO_SERVICES } from "@shared/registry/audio";
 import { EMBEDDING_SERVICES } from "@shared/registry/embeddings";
 import { IMAGE_SERVICES } from "@shared/registry/image";
+import { MODEL3D_SERVICES } from "@shared/registry/model3d";
 import { REALTIME_SERVICES } from "@shared/registry/realtime";
 import type { ModelDefinition } from "@shared/registry/registry.js";
 import {
@@ -70,6 +71,13 @@ test.for(
 test.for(
     serviceAliasTestCases(REALTIME_SERVICES),
 )("Realtime service alias %s is resolved to %s", ([alias, shouldResolveTo]) => {
+    const resolved = resolveModelName(alias);
+    expect(resolved).toBe(shouldResolveTo);
+});
+
+test.for(
+    serviceAliasTestCases(MODEL3D_SERVICES),
+)("3D service alias %s is resolved to %s", ([alias, shouldResolveTo]) => {
     const resolved = resolveModelName(alias);
     expect(resolved).toBe(shouldResolveTo);
 });

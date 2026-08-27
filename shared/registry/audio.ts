@@ -413,7 +413,7 @@ export const AUDIO_SERVICES = {
         outputModalities: ["text"],
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
-    "x-ai/speech-to-text": {
+    "x-ai/grok-transcribe": {
         aliases: ["grok-transcribe"],
         provider: "xai",
         author: "xAI",

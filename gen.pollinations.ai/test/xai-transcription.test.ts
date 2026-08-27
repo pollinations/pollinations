@@ -51,7 +51,7 @@ describe("transcribeWithXai", () => {
             "file",
         ]);
         expect(response.headers.get("x-model-used")).toBe(
-            "x-ai/speech-to-text",
+            "x-ai/grok-transcribe",
         );
         expect(response.headers.get("x-usage-prompt-audio-seconds")).toBe(
             "3.25",

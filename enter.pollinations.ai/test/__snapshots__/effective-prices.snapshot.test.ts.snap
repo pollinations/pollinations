@@ -835,7 +835,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000003,
     },
   },
-  "meta-llama/llama-3.3-70b-instruct": {
+  "meta/llama-3.3-70b-instruct": {
     "cost": {
       "completionTextTokens": 0.00000071,
       "promptTextTokens": 0.00000071,
@@ -845,7 +845,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000005325,
     },
   },
-  "meta-llama/llama-4-maverick": {
+  "meta/llama-4-maverick": {
     "cost": {
       "completionTextTokens": 0.000001,
       "promptTextTokens": 0.00000025,
@@ -855,7 +855,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000001875,
     },
   },
-  "meta-llama/llama-4-scout": {
+  "meta/llama-4-scout": {
     "cost": {
       "completionTextTokens": 0.0000003,
       "promptTextTokens": 0.0000001,
@@ -1883,20 +1883,20 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptImageTokens": 0.01,
     },
   },
+  "x-ai/grok-transcribe": {
+    "cost": {
+      "promptAudioSeconds": 0.0000277777777777778,
+    },
+    "price": {
+      "promptAudioSeconds": 0.0000277777777777778,
+    },
+  },
   "x-ai/grok-tts": {
     "cost": {
       "completionAudioTokens": 0.000015,
     },
     "price": {
       "completionAudioTokens": 0.000015,
-    },
-  },
-  "x-ai/speech-to-text": {
-    "cost": {
-      "promptAudioSeconds": 0.0000277777777777778,
-    },
-    "price": {
-      "promptAudioSeconds": 0.0000277777777777778,
     },
   },
   "xiaomi/mimo-v2.5": {

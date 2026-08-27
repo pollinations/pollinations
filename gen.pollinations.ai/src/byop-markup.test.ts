@@ -401,12 +401,12 @@ describe("BYOP markup", () => {
                     packBalance: 1,
                 }),
             },
-            model: testModel("meta-llama/llama-4-maverick"),
+            model: testModel("meta/llama-4-maverick"),
             log: fakeLog(),
         } as unknown as Parameters<typeof checkBalance>[0];
 
         await expect(
-            checkBalance(vars, fakeStatsEnv(1, "meta-llama/llama-4-maverick")),
+            checkBalance(vars, fakeStatsEnv(1, "meta/llama-4-maverick")),
         ).rejects.toMatchObject({
             status: 402,
         });

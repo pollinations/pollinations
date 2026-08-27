@@ -16,6 +16,13 @@ export type ParsedModelQuery = {
 };
 
 const ACCESS_VALUES: readonly ModelAccess[] = ["paid", "quest", "free"];
+const FILTER_KEYS = [
+    "access",
+    "publisher",
+    "id",
+    "type",
+    "capability",
+] as const;
 
 const isModelAccess = (value: string): value is ModelAccess =>
     ACCESS_VALUES.includes(value as ModelAccess);
@@ -78,17 +85,70 @@ function getSearchableCapabilities(model: ModelPrice): string[] {
     );
 }
 
+function getModelPublisher(model: ModelPrice): string | null {
+    if (model.community) {
+        const separator = model.name.indexOf("/");
+        return separator > 0
+            ? model.name.slice(0, separator).toLowerCase()
+            : null;
+    }
+    return model.author?.trim().toLowerCase().replace(/\s+/g, "-") ?? null;
+}
+
+function getFilterValues(key: string, models: ModelPrice[]): string[] {
+    switch (key) {
+        case "access":
+            return [...ACCESS_VALUES];
+        case "publisher":
+            return models
+                .map(getModelPublisher)
+                .filter((value): value is string => Boolean(value));
+        case "id":
+            return models.map((model) => model.name.toLowerCase());
+        case "type":
+            return models.map((model) => (model.agent ? "agent" : model.type));
+        case "capability":
+            return models
+                .flatMap(getSearchableCapabilities)
+                .map((value) => value.replaceAll("_", "-"));
+        default:
+            return [];
+    }
+}
+
+/** Complete the filter token currently being typed. */
+export function getModelQuerySuggestions(
+    query: string,
+    models: ModelPrice[],
+): string[] {
+    const tokenStart = query.lastIndexOf(" ") + 1;
+    const prefix = query.slice(0, tokenStart);
+    const token = query.slice(tokenStart).toLowerCase();
+    const separator = token.indexOf(":");
+
+    const suggestions =
+        separator === -1
+            ? FILTER_KEYS.filter((key) => key.startsWith(token)).map(
+                  (key) => `${key}:`,
+              )
+            : getFilterValues(token.slice(0, separator), models)
+                  .filter((value) =>
+                      value.startsWith(token.slice(separator + 1)),
+                  )
+                  .map((value) => `${token.slice(0, separator)}:${value} `);
+
+    return [...new Set(suggestions)]
+        .sort()
+        .slice(0, 20)
+        .map((suggestion) => `${prefix}${suggestion}`);
+}
+
 function matchesFilter(model: ModelPrice, filter: ModelQueryFilter): boolean {
     switch (filter.key) {
         case "access":
             return getModelAccess(model) === filter.value;
         case "publisher": {
-            if (!model.community) return false;
-            const separator = model.name.indexOf("/");
-            return (
-                separator > 0 &&
-                model.name.slice(0, separator).toLowerCase() === filter.value
-            );
+            return getModelPublisher(model) === filter.value;
         }
         case "id":
             return model.name.toLowerCase() === filter.value;

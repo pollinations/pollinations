@@ -4,6 +4,7 @@ import {
     resolveModelName,
 } from "@shared/registry/registry.ts";
 import { describe, expect, it } from "vitest";
+import modelSlugsMarkdown from "../../MODEL_SLUGS.md?raw";
 import migrationSql from "../drizzle/0056_standardize-model-permissions.sql?raw";
 
 const modelMappings = [
@@ -11,6 +12,16 @@ const modelMappings = [
         /WHEN model\.type = 'text' AND model\.value = '([^']+)'\s+THEN '([^']+)'/g,
     ),
 ].map((match) => [match[1], match[2]] as const);
+
+const publishedMappings = [
+    ...modelSlugsMarkdown.matchAll(/^\|[^\n|]+\| `([^`]+)` \| `([^`]+)` \|$/gm),
+].map((match) => [match[1], match[2]] as const);
+
+const hiddenMappings = [
+    ["midijourney", "pollinations/midijourney"],
+    ["midijourney-large", "pollinations/midijourney-large"],
+    ["zimage-fal", "tongyi-mai/z-image-turbo:fallback"],
+] as const;
 
 const retiredIds = modelMappings.map(([retired]) => retired);
 const retiredSqlLiterals = retiredIds
@@ -54,14 +65,18 @@ async function runMigrationForTest(): Promise<void> {
 
 describe("standardize model permissions migration", () => {
     it("migrates every promoted canonical ID with bounded statements", async () => {
-        expect(modelMappings).toHaveLength(156);
+        expect(publishedMappings).toHaveLength(155);
+        expect(new Map(modelMappings)).toEqual(
+            new Map([...publishedMappings, ...hiddenMappings]),
+        );
+        expect(modelMappings).toHaveLength(158);
         expect(new Set(modelMappings.map(([retired]) => retired)).size).toBe(
-            156,
+            158,
         );
         expect(
             new Set(modelMappings.map(([, canonical]) => canonical)).size,
-        ).toBe(156);
-        expect(migrationSql.match(/UPDATE apikey/g)).toHaveLength(156);
+        ).toBe(158);
+        expect(migrationSql.match(/UPDATE apikey/g)).toHaveLength(158);
         for (const [retiredId, canonicalId] of modelMappings) {
             expect(resolveModelName(retiredId)).toBe(canonicalId);
             expect(getRegistryModelDefinition(canonicalId).aliases).toContain(

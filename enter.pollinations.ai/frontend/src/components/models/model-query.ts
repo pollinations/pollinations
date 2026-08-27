@@ -85,14 +85,23 @@ function getSearchableCapabilities(model: ModelPrice): string[] {
     );
 }
 
+function getModelPublisher(model: ModelPrice): string | null {
+    if (model.community) {
+        const separator = model.name.indexOf("/");
+        return separator > 0
+            ? model.name.slice(0, separator).toLowerCase()
+            : null;
+    }
+    return model.brand?.trim().toLowerCase().replace(/\s+/g, "-") ?? null;
+}
+
 function getFilterValues(key: string, models: ModelPrice[]): string[] {
     switch (key) {
         case "access":
             return [...ACCESS_VALUES];
         case "publisher":
             return models
-                .filter((model) => model.community)
-                .map((model) => model.name.split("/", 1)[0]?.toLowerCase())
+                .map(getModelPublisher)
                 .filter((value): value is string => Boolean(value));
         case "id":
             return models.map((model) => model.name.toLowerCase());
@@ -139,12 +148,7 @@ function matchesFilter(model: ModelPrice, filter: ModelQueryFilter): boolean {
         case "access":
             return getModelAccess(model) === filter.value;
         case "publisher": {
-            if (!model.community) return false;
-            const separator = model.name.indexOf("/");
-            return (
-                separator > 0 &&
-                model.name.slice(0, separator).toLowerCase() === filter.value
-            );
+            return getModelPublisher(model) === filter.value;
         }
         case "id":
             return model.name.toLowerCase() === filter.value;

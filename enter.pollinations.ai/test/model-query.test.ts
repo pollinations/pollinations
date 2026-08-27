@@ -90,7 +90,7 @@ describe("matchesModelQuery", () => {
         expect(matches(model(overrides), query)).toBe(expected);
     });
 
-    it("matches an exact public publisher login for community models only", () => {
+    it("matches official publishers and public community owners", () => {
         const community = model({
             name: "PublicOwner/image-model",
             community: true,
@@ -100,11 +100,11 @@ describe("matchesModelQuery", () => {
         expect(matches(community, "publisher:publicowner")).toBe(true);
         expect(matches(community, "publisher:public")).toBe(false);
         expect(
-            matches(
-                model({ name: "PublicOwner/image-model" }),
-                "publisher:publicowner",
-            ),
-        ).toBe(false);
+            matches(model({ brand: "Moonshot AI" }), "publisher:moonshot-ai"),
+        ).toBe(true);
+        expect(matches(model({ brand: "NVIDIA" }), "publisher:nvidia")).toBe(
+            true,
+        );
     });
 
     it("matches an exact canonical ID case-insensitively", () => {
@@ -161,7 +161,7 @@ describe("matchesModelQuery", () => {
 
 describe("getModelQuerySuggestions", () => {
     const models = [
-        model({ name: "openai/gpt", type: "text" }),
+        model({ name: "openai/gpt", type: "text", brand: "OpenAI" }),
         model({
             name: "Alice/quick-coder",
             community: true,
@@ -186,6 +186,9 @@ describe("getModelQuerySuggestions", () => {
         ]);
         expect(getModelQuerySuggestions("publisher:a", models)).toEqual([
             "publisher:alice ",
+        ]);
+        expect(getModelQuerySuggestions("publisher:o", models)).toEqual([
+            "publisher:openai ",
         ]);
     });
 

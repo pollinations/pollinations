@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🖼️",
+    "name": "AI STUDIO — RealTime AUDIO & VIDEO CREATOR",
+    "url": "https://noanswers.website/WebAnimation",
+    "description": "Creates collaborative images using the Pollinations image API integration. Thereby, allowing users to add generated content or uploaded from the local machines and create slide/videos adaptive to FPS ",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "noanswers-website",
+    "githubUserId": "252242130",
+    "repositoryUrl": "https://github.com/noanswers-website/AI-STUDIO-RealTime-AUDIO-VIDEO-CREATOR.git",
+    "repositoryStars": null,
+    "discordUsername": "flintjoe_90214",
+    "other": null,
+    "submittedDate": "2026-08-26",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/13994",
+    "approvedDate": "2026-08-27",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "💬",
     "name": "Pollinations Studio",
     "url": "https://sankezhiyyds.github.io/pollinations-app",

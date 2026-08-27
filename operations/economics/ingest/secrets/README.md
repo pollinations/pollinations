@@ -1,11 +1,11 @@
-# Ingest Secrets
+# Economics Collection Secrets
 
-Local connector credentials live here.
+Local provider-collection credentials live here.
 
 Files:
 
-- `env.json`: SOPS-encrypted real local secrets for read-only provider
-  collection. Runtime-key rotation is outside the Economics collection skill.
+- `env.json`: SOPS-encrypted real local secrets for provider collection.
+  Runtime-key rotation is outside the Economics provider-collection skill.
 - `env.example.json`: same keys with empty values.
 
 Rules:
@@ -18,4 +18,5 @@ Rules:
 - Do not pass encrypted `ENC[...]` values to providers.
 - Do not write API tokens into provider guides, entries, or reconciliation notes.
 - Prefer checking key presence by name only.
-- Keep this directory inside `operations/economics/ingest/` so the ingest workspace is self-contained.
+- Keep this path stable for the SOPS rule and the provider guides. Do not add
+  permanent collection scripts or generated evidence here.

@@ -131,6 +131,7 @@ async function genCombo(a,b){
   const d=await r.json();
   try{return JSON.parse(d.choices[0].message.content||'{}');}catch(e){return{name:a+' '+b,emoji:'✨',description:'A fusion of '+a+' and '+b};}
 }
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 function updateStats(){
   document.getElementById('elemCount').textContent=elems.length;
   document.getElementById('discCount').textContent=firsts.size;
@@ -143,7 +144,7 @@ function renderList(){
   elems.filter(e=>!q||e.name.toLowerCase().includes(q)).forEach(e=>{
     const d=document.createElement('div');
     d.className='element'+(e.isRare?' rare':'');
-    d.innerHTML='<span class="ico">'+e.emoji+'</span>'+e.name+(firsts.has(e.name)?'<span class="first-badge">FIRST</span>':'');
+    d.innerHTML='<span class="ico">'+esc(e.emoji)+'</span>'+esc(e.name)+(firsts.has(e.name)?'<span class="first-badge">FIRST</span>':'');
     d.draggable=true;
     d.ondragstart=ev=>{ev.dataTransfer.setData('text/plain',JSON.stringify(e));};
     d.onclick=()=>showModal(e);
@@ -154,7 +155,7 @@ function setSlot(i,el){
   slots[i]=el;
   const s=document.getElementById('slot'+(i+1));
   s.classList.add('filled');
-  s.innerHTML='<div class="icon">'+el.emoji+'</div><div class="name">'+el.name+'</div>';
+  s.innerHTML='<div class="icon">'+esc(el.emoji)+'</div><div class="name">'+esc(el.name)+'</div>';
   if(slots[0]&&slots[1])doCombine();
 }
 function clearSlot(i){
@@ -187,7 +188,7 @@ async function doCombine(){
     ld.remove();
     const card=document.createElement('div');
     card.className='element new'+(ne.isRare?' rare':'');
-    card.innerHTML='<span class="ico">'+ne.emoji+'</span>'+ne.name+(firsts.has(ne.name)?'<span class="first-badge">FIRST</span>':'');
+    card.innerHTML='<span class="ico">'+esc(ne.emoji)+'</span>'+esc(ne.name)+(firsts.has(ne.name)?'<span class="first-badge">FIRST</span>':'');
     card.onclick=()=>showModal(ne);
     card.draggable=true;
     card.ondragstart=ev=>{ev.dataTransfer.setData('text/plain',JSON.stringify(ne));};

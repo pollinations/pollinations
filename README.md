@@ -14,6 +14,13 @@
 
 </div>
 
+> [!IMPORTANT]
+> **New model IDs are available now**
+>
+> Publisher-qualified IDs such as `black-forest-labs/flux.1-schnell` work today and become canonical on September 7. Existing IDs will keep working.
+>
+> [View all model ID changes →](MODEL_SLUGS.md)
+
 <p align="center"><img src="https://media.pollinations.ai/eb3be88cf66d7491" alt="Pixel art cozy hackerspace — robot at terminal, nomnom creature eating code, bee with glasses" width="800" /></p>
 
 <!-- recent-apps:start -->

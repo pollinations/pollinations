@@ -350,19 +350,15 @@ export const Models: FC = () => {
             >
                 <Alert
                     intent="warning"
-                    title="Model IDs are being standardized on September 7"
+                    title="New model IDs are available now"
                     className="mb-4"
                 >
-                    Each new ID will include the publisher and use the model's
-                    official name—for example,{" "}
-                    <code className="font-semibold !text-intent-free-text">
-                        flux
-                    </code>
-                    {" → "}
+                    Publisher-qualified IDs such as{" "}
                     <code className="font-semibold !text-intent-free-text">
                         black-forest-labs/flux.1-schnell
-                    </code>
-                    . Existing IDs will keep working.
+                    </code>{" "}
+                    work today and become canonical on September 7. Existing IDs
+                    will keep working.
                     <a
                         href={MODEL_SLUG_ANNOUNCEMENT_URL}
                         className="mt-1.5 block w-fit font-semibold underline hover:no-underline"

@@ -15,9 +15,9 @@
 </div>
 
 > [!IMPORTANT]
-> **Model IDs are being standardized on September 7**
+> **New model IDs are available now**
 >
-> Each new ID will include the publisher and use the model's official name—for example, `flux` → `black-forest-labs/flux.1-schnell`. Existing IDs will keep working.
+> Publisher-qualified IDs such as `black-forest-labs/flux.1-schnell` work today and become canonical on September 7. Existing IDs will keep working.
 >
 > [View all model ID changes →](MODEL_SLUGS.md)
 

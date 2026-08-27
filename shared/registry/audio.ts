@@ -155,7 +155,14 @@ export type AudioModelName = keyof typeof AUDIO_SERVICES;
 
 export const AUDIO_SERVICES = {
     elevenlabs: {
-        aliases: ["tts", "text-to-speech", "eleven", "tts-1", "tts-1-hd"],
+        aliases: [
+            "tts",
+            "text-to-speech",
+            "eleven",
+            "tts-1",
+            "tts-1-hd",
+            "elevenlabs/eleven-v3",
+        ],
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "audio",
@@ -181,7 +188,12 @@ export const AUDIO_SERVICES = {
         ],
     },
     elevenflash: {
-        aliases: ["tts-flash", "eleven-flash", "flash"],
+        aliases: [
+            "tts-flash",
+            "eleven-flash",
+            "flash",
+            "elevenlabs/eleven-flash-v2.5",
+        ],
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "audio",
@@ -207,7 +219,12 @@ export const AUDIO_SERVICES = {
         ],
     },
     "eleven-multilingual-v2": {
-        aliases: ["multilingual-v2", "eleven-v2", "tts-multilingual"],
+        aliases: [
+            "multilingual-v2",
+            "eleven-v2",
+            "tts-multilingual",
+            "elevenlabs/eleven-multilingual-v2",
+        ],
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "audio",
@@ -233,7 +250,11 @@ export const AUDIO_SERVICES = {
         ],
     },
     "eleven-dialogue": {
-        aliases: ["dialogue", "text-to-dialogue"],
+        aliases: [
+            "dialogue",
+            "text-to-dialogue",
+            "elevenlabs/eleven-v3:dialogue",
+        ],
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "audio",
@@ -252,7 +273,11 @@ export const AUDIO_SERVICES = {
         voices: ELEVENLABS_VOICES as string[],
     },
     "eleven-voice-changer": {
-        aliases: ["voice-changer", "speech-to-speech"],
+        aliases: [
+            "voice-changer",
+            "speech-to-speech",
+            "elevenlabs/eleven-multilingual-sts-v2",
+        ],
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "audio",
@@ -272,7 +297,11 @@ export const AUDIO_SERVICES = {
         supportedEndpoints: ["/v1/audio/voice-changer"],
     },
     "eleven-voice-isolator": {
-        aliases: ["voice-isolator", "audio-cleanup"],
+        aliases: [
+            "voice-isolator",
+            "audio-cleanup",
+            "elevenlabs/voice-isolator",
+        ],
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "audio",
@@ -291,7 +320,7 @@ export const AUDIO_SERVICES = {
         supportedEndpoints: ["/v1/audio/voice-isolator"],
     },
     elevenmusic: {
-        aliases: ["music"],
+        aliases: ["music", "elevenlabs/music-v2"],
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "audio",
@@ -312,7 +341,7 @@ export const AUDIO_SERVICES = {
         outputModalities: ["audio"],
     },
     "lyria-3-clip": {
-        aliases: ["lyria", "lyria-3"],
+        aliases: ["lyria", "lyria-3", "google/lyria-3-clip-preview"],
         provider: "google",
         brand: "Google",
         category: "audio",
@@ -330,7 +359,12 @@ export const AUDIO_SERVICES = {
         outputModalities: ["audio"],
     },
     "eleven-sfx": {
-        aliases: ["sfx", "sound-effects", "eleven-sound-effects"],
+        aliases: [
+            "sfx",
+            "sound-effects",
+            "eleven-sound-effects",
+            "elevenlabs/eleven-text-to-sound-v2",
+        ],
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "audio",
@@ -347,7 +381,7 @@ export const AUDIO_SERVICES = {
         outputModalities: ["audio"],
     },
     whisper: {
-        aliases: ["whisper-1", "whisper-large-v3"],
+        aliases: ["whisper-1", "whisper-large-v3", "openai/whisper-large-v3"],
         provider: "ovhcloud",
         brand: "OpenAI",
         category: "audio",
@@ -364,7 +398,7 @@ export const AUDIO_SERVICES = {
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     "gpt-transcribe": {
-        aliases: [],
+        aliases: ["openai/gpt-transcribe"],
         provider: "azure",
         brand: "OpenAI",
         category: "audio",
@@ -384,7 +418,7 @@ export const AUDIO_SERVICES = {
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     scribe: {
-        aliases: ["scribe_v2", "scribe-v2"],
+        aliases: ["scribe_v2", "scribe-v2", "elevenlabs/scribe-v2"],
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "audio",
@@ -402,7 +436,7 @@ export const AUDIO_SERVICES = {
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     "grok-transcribe": {
-        aliases: [],
+        aliases: ["x-ai/speech-to-text"],
         provider: "xai",
         brand: "xAI",
         category: "audio",
@@ -421,7 +455,7 @@ export const AUDIO_SERVICES = {
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     "grok-tts": {
-        aliases: [],
+        aliases: ["x-ai/grok-tts"],
         provider: "xai",
         brand: "xAI",
         category: "audio",
@@ -441,7 +475,11 @@ export const AUDIO_SERVICES = {
         supportedEndpoints: ["/audio/{text}", "/v1/audio/speech"],
     },
     "universal-2": {
-        aliases: ["assemblyai-universal-2", "assemblyai-u2"],
+        aliases: [
+            "assemblyai-universal-2",
+            "assemblyai-u2",
+            "assemblyai/universal-2",
+        ],
         provider: "assemblyai",
         brand: "AssemblyAI",
         category: "audio",
@@ -483,6 +521,7 @@ export const AUDIO_SERVICES = {
             "assemblyai-universal-3-pro",
             "assemblyai-u3-pro",
             "assemblyai-pro",
+            "assemblyai/universal-3.5-pro",
         ],
         provider: "assemblyai",
         brand: "AssemblyAI",
@@ -539,7 +578,12 @@ export const AUDIO_SERVICES = {
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     "stable-audio-3-medium": {
-        aliases: ["stable-audio", "stability-audio", "stable-audio-2.5"],
+        aliases: [
+            "stable-audio",
+            "stability-audio",
+            "stable-audio-2.5",
+            "stability-ai/stable-audio-3-medium",
+        ],
         provider: "fal",
         brand: "Stability AI",
         category: "audio",
@@ -565,7 +609,11 @@ export const AUDIO_SERVICES = {
         // Distinct from stable-audio-3-medium (fal): this is the larger
         // API-only model served by Stability's direct API. Keep aliases
         // non-overlapping with the medium entry.
-        aliases: ["stable-audio-3", "stable-audio-large"],
+        aliases: [
+            "stable-audio-3",
+            "stable-audio-large",
+            "stability-ai/stable-audio-3",
+        ],
         provider: "stability",
         brand: "Stability AI",
         category: "audio",
@@ -587,7 +635,7 @@ export const AUDIO_SERVICES = {
         outputModalities: ["audio"],
     },
     "fish-audio-s2.1-pro": {
-        aliases: [],
+        aliases: ["fish-audio/s2.1-pro"],
         provider: "openrouter",
         brand: "Fish Audio",
         category: "audio",
@@ -605,7 +653,7 @@ export const AUDIO_SERVICES = {
         outputModalities: ["audio"],
     },
     "qwen-tts": {
-        aliases: ["qwen3-tts", "qwen3-tts-flash"],
+        aliases: ["qwen3-tts", "qwen3-tts-flash", "qwen/qwen3-tts-flash"],
         provider: "alibaba",
         brand: "Qwen",
         category: "audio",
@@ -622,7 +670,11 @@ export const AUDIO_SERVICES = {
         outputModalities: ["audio"],
     },
     "qwen-tts-instruct": {
-        aliases: ["qwen3-tts-instruct", "qwen3-tts-instruct-flash"],
+        aliases: [
+            "qwen3-tts-instruct",
+            "qwen3-tts-instruct-flash",
+            "qwen/qwen3-tts-instruct-flash",
+        ],
         provider: "alibaba",
         brand: "Qwen",
         category: "audio",
@@ -640,7 +692,7 @@ export const AUDIO_SERVICES = {
         outputModalities: ["audio"],
     },
     "csm-1b": {
-        aliases: ["csm", "sesame-csm", "sesame-csm-1b"],
+        aliases: ["csm", "sesame-csm", "sesame-csm-1b", "sesame/csm-1b"],
         provider: "deepinfra",
         brand: "Sesame",
         category: "audio",
@@ -659,7 +711,12 @@ export const AUDIO_SERVICES = {
         voices: [...CSM_VOICES],
     },
     kokoro: {
-        aliases: ["kokoro-82m", "kokoro-tts", "hexgrad-kokoro-82m"],
+        aliases: [
+            "kokoro-82m",
+            "kokoro-tts",
+            "hexgrad-kokoro-82m",
+            "hexgrad/kokoro-82m",
+        ],
         provider: "deepinfra",
         brand: "Hexgrad",
         category: "audio",

@@ -161,12 +161,12 @@ const CanonicalModelSlugAnnouncement: FC = () => (
             </div>
             <div className="flex items-baseline gap-2 font-semibold text-ink-900 text-base sm:text-lg">
                 <WarningIcon className="h-[1em] w-[1em] shrink-0 self-center text-intent-danger-text" />
-                <span>Model IDs are being standardized</span>
+                <span>New model IDs are available now</span>
             </div>
             <p className="mt-1 text-sm text-ink-700">
-                Starting September 7, each new ID will include the publisher and
-                use the model's official name. Existing IDs will remain
-                available as aliases.
+                The new publisher-qualified IDs work today. On September 7, they
+                will become canonical. Existing IDs will remain available as
+                aliases.
             </p>
         </div>
 

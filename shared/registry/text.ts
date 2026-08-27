@@ -39,7 +39,7 @@ export type TextModelName = keyof typeof TEXT_SERVICES;
 
 export const TEXT_SERVICES = {
     "openai": {
-        aliases: ["gpt-5.4-nano"],
+        aliases: ["gpt-5.4-nano", "openai/gpt-5.4-nano"],
         provider: "azure",
         brand: "OpenAI",
         category: "text",
@@ -61,7 +61,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "openai-fast": {
-        aliases: ["gpt-5-nano", "gpt-5-nano-2025-08-07"],
+        aliases: ["gpt-5-nano", "gpt-5-nano-2025-08-07", "openai/gpt-5-nano"],
         provider: "azure",
         brand: "OpenAI",
         category: "text",
@@ -83,7 +83,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "gpt-oss": {
-        aliases: ["gpt-oss-20b", "ovh-reasoning"],
+        aliases: ["gpt-oss-20b", "ovh-reasoning", "openai/gpt-oss-20b"],
         provider: "ovhcloud",
         brand: "OpenAI",
         category: "text",
@@ -104,7 +104,12 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "gpt-5.4": {
-        aliases: ["gpt-5.4-reasoning", "gpt-5.2", "gpt-5.2-reasoning"],
+        aliases: [
+            "gpt-5.4-reasoning",
+            "gpt-5.2",
+            "gpt-5.2-reasoning",
+            "openai/gpt-5.4",
+        ],
         provider: "azure",
         brand: "OpenAI",
         category: "text",
@@ -149,7 +154,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "gpt-5.4-mini": {
-        aliases: ["gpt-5-mini", "openai-mini"],
+        aliases: ["gpt-5-mini", "openai-mini", "openai/gpt-5.4-mini"],
         provider: "azure",
         brand: "OpenAI",
         category: "text",
@@ -171,7 +176,12 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "openai-large": {
-        aliases: ["gpt-5.5", "gpt-5.5-reasoning", "openai-reasoning"],
+        aliases: [
+            "gpt-5.5",
+            "gpt-5.5-reasoning",
+            "openai-reasoning",
+            "openai/gpt-5.5",
+        ],
         provider: "azure",
         brand: "OpenAI",
         category: "text",
@@ -214,7 +224,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "gpt-5.6-sol": {
-        aliases: ["chatgpt-sol", "chatgpt-5.6-sol"],
+        aliases: ["chatgpt-sol", "chatgpt-5.6-sol", "openai/gpt-5.6-sol"],
         provider: "azure",
         brand: "OpenAI",
         category: "text",
@@ -259,7 +269,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "gpt-5.6-terra": {
-        aliases: ["chatgpt-terra", "chatgpt-5.6-terra"],
+        aliases: ["chatgpt-terra", "chatgpt-5.6-terra", "openai/gpt-5.6-terra"],
         provider: "azure",
         brand: "OpenAI",
         category: "text",
@@ -301,7 +311,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "gpt-5.6-luna": {
-        aliases: ["chatgpt-luna", "chatgpt-5.6-luna"],
+        aliases: ["chatgpt-luna", "chatgpt-5.6-luna", "openai/gpt-5.6-luna"],
         provider: "azure",
         brand: "OpenAI",
         category: "text",
@@ -343,7 +353,12 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "mercury": {
-        aliases: ["mercury-2", "inception", "inception-mercury"],
+        aliases: [
+            "mercury-2",
+            "inception",
+            "inception-mercury",
+            "inception/mercury-2",
+        ],
         provider: "openrouter",
         brand: "Inception",
         category: "text",
@@ -369,6 +384,7 @@ export const TEXT_SERVICES = {
             "cohere-command-a-plus",
             "command-a-plus-05-2026",
             "cohere-command-a-plus-05-2026",
+            "cohere/command-a-plus",
         ],
         provider: "azure",
         brand: "Cohere",
@@ -390,7 +406,11 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "qwen-coder": {
-        aliases: ["qwen3-coder", "qwen3-coder-30b-a3b-instruct"],
+        aliases: [
+            "qwen3-coder",
+            "qwen3-coder-30b-a3b-instruct",
+            "qwen/qwen3-coder-30b-a3b-instruct",
+        ],
         provider: "ovhcloud",
         brand: "Qwen",
         category: "text",
@@ -415,6 +435,7 @@ export const TEXT_SERVICES = {
             "mistral-small-3.1",
             "mistral-small-2503",
             "mistral-small-3.2-24b-instruct-2506",
+            "mistralai/mistral-small-3.2",
         ],
         provider: "openrouter",
         brand: "Mistral",
@@ -441,6 +462,7 @@ export const TEXT_SERVICES = {
             "mistral-small",
             "mistral-small-4",
             "mistral-small-2603",
+            "mistralai/mistral-small-4",
         ],
         provider: "openrouter",
         brand: "Mistral",
@@ -471,6 +493,7 @@ export const TEXT_SERVICES = {
             "gpt-audio-mini-2025-12-15",
             "gpt-4o-mini-audio-preview",
             "gpt-4o-mini-audio-preview-2024-12-17",
+            "openai/gpt-audio-mini",
         ],
         provider: "azure",
         brand: "OpenAI",
@@ -494,7 +517,12 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "openai-audio-large": {
-        aliases: ["gpt-audio", "gpt-audio-1.5", "gpt-audio-2025-12-15"],
+        aliases: [
+            "gpt-audio",
+            "gpt-audio-1.5",
+            "gpt-audio-2025-12-15",
+            "openai/gpt-audio-1.5",
+        ],
         provider: "azure",
         brand: "OpenAI",
         category: "text",
@@ -519,7 +547,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "gemini-3-flash": {
-        aliases: ["gemini-3-flash-preview"],
+        aliases: ["gemini-3-flash-preview", "google/gemini-3-flash-preview"],
         provider: "openrouter",
         brand: "Google",
         category: "text",
@@ -552,7 +580,11 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "gemini": {
-        aliases: ["gemini-3.6-flash", "gemini-3.5-flash"],
+        aliases: [
+            "gemini-3.6-flash",
+            "gemini-3.5-flash",
+            "google/gemini-3.7-flash",
+        ],
         provider: "openrouter",
         brand: "Google",
         category: "text",
@@ -593,6 +625,7 @@ export const TEXT_SERVICES = {
             "gemini-3.1-flash-lite-preview",
             "gemini-flash-lite",
             "gemini-3.5-flash-lite",
+            "google/gemini-3.5-flash-lite",
         ],
         provider: "openrouter",
         brand: "Google",
@@ -626,7 +659,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "gemini-fast": {
-        aliases: ["gemini-2.5-flash-lite"],
+        aliases: ["gemini-2.5-flash-lite", "google/gemini-2.5-flash-lite"],
         provider: "openrouter",
         brand: "Google",
         category: "text",
@@ -665,6 +698,7 @@ export const TEXT_SERVICES = {
             "deepseek-v4-lite",
             "deepseek-lite",
             "deepseek-flash",
+            "deepseek/deepseek-v4-flash",
         ],
         provider: "fireworks",
         brand: "DeepSeek",
@@ -691,6 +725,7 @@ export const TEXT_SERVICES = {
             "gemma-4-26b",
             "gemma-4-26b-a4b",
             "gemma-4-26b-a4b-it",
+            "google/gemma-4-26b-a4b-it",
         ],
         provider: "openrouter",
         addedDate: new Date("2026-05-08").getTime(),
@@ -714,7 +749,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "gemma-4-31b": {
-        aliases: ["gemma-large", "gemma-4-31b-it"],
+        aliases: ["gemma-large", "gemma-4-31b-it", "google/gemma-4-31b-it"],
         provider: "openrouter",
         addedDate: new Date("2026-07-18").getTime(),
         brand: "Google",
@@ -737,7 +772,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "deepseek-pro": {
-        aliases: ["deepseek-v4-pro"],
+        aliases: ["deepseek-v4-pro", "deepseek/deepseek-v4-pro"],
         provider: "fireworks",
         brand: "DeepSeek",
         category: "text",
@@ -770,6 +805,7 @@ export const TEXT_SERVICES = {
             "grok-4-20-reasoning",
             "grok-4-20",
             "grok-4-1-fast-reasoning",
+            "x-ai/grok-4.20",
         ],
         provider: "azure",
         brand: "xAI",
@@ -792,7 +828,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "grok-large": {
-        aliases: ["grok-4.3", "grok-4-3", "grok-reasoning"],
+        aliases: ["grok-4.3", "grok-4-3", "grok-reasoning", "x-ai/grok-4.3"],
         provider: "azure",
         brand: "xAI",
         category: "text",
@@ -817,7 +853,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "grok-4.6": {
-        aliases: ["grok-4.5", "grok-4-5"],
+        aliases: ["grok-4.5", "grok-4-5", "x-ai/grok-4.6"],
         provider: "openrouter",
         brand: "xAI",
         category: "text",
@@ -869,6 +905,7 @@ export const TEXT_SERVICES = {
             "gemini-search-large",
             "gemini-3.6-flash-search",
             "gemini-3.5-flash-search",
+            "google/gemini-2.5-flash-lite:search",
         ],
         provider: "google",
         brand: "Google",
@@ -900,7 +937,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "midijourney": {
-        aliases: [],
+        aliases: ["pollinations/midijourney"],
         provider: "azure",
         brand: "Pollinations",
         category: "text",
@@ -919,7 +956,7 @@ export const TEXT_SERVICES = {
         isSpecialized: true,
     },
     "midijourney-large": {
-        aliases: [],
+        aliases: ["pollinations/midijourney-large"],
         provider: "azure",
         brand: "Pollinations",
         category: "text",
@@ -958,7 +995,11 @@ export const TEXT_SERVICES = {
         isSpecialized: true,
     },
     "claude-fast": {
-        aliases: ["claude-haiku-4.5", "claude-haiku"],
+        aliases: [
+            "claude-haiku-4.5",
+            "claude-haiku",
+            "anthropic/claude-haiku-4.5",
+        ],
         provider: "bedrock",
         brand: "Anthropic",
         category: "text",
@@ -983,7 +1024,11 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "claude": {
-        aliases: ["claude-sonnet-4.6", "claude-sonnet"],
+        aliases: [
+            "claude-sonnet-4.6",
+            "claude-sonnet",
+            "anthropic/claude-sonnet-4.6",
+        ],
         provider: "bedrock",
         brand: "Anthropic",
         category: "text",
@@ -1008,7 +1053,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "claude-sonnet-5": {
-        aliases: ["sonnet-5"],
+        aliases: ["sonnet-5", "anthropic/claude-sonnet-5"],
         provider: "bedrock",
         brand: "Anthropic",
         category: "text",
@@ -1033,7 +1078,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "claude-opus-4.6": {
-        aliases: ["claude-opus-4.5"],
+        aliases: ["claude-opus-4.5", "anthropic/claude-opus-4.6"],
         provider: "bedrock",
         brand: "Anthropic",
         category: "text",
@@ -1058,7 +1103,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "claude-opus-4.7": {
-        aliases: [],
+        aliases: ["anthropic/claude-opus-4.7"],
         provider: "bedrock",
         brand: "Anthropic",
         category: "text",
@@ -1083,7 +1128,12 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "claude-large": {
-        aliases: ["claude-opus-5", "claude-opus-4.8", "claude-opus"],
+        aliases: [
+            "claude-opus-5",
+            "claude-opus-4.8",
+            "claude-opus",
+            "anthropic/claude-opus-5",
+        ],
         provider: "bedrock",
         brand: "Anthropic",
         category: "text",
@@ -1108,7 +1158,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "claude-fable-5": {
-        aliases: [],
+        aliases: ["anthropic/claude-fable-5"],
         provider: "bedrock",
         brand: "Anthropic",
         category: "text",
@@ -1133,7 +1183,13 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "perplexity-fast": {
-        aliases: ["sonar", "perplexity-high", "perplexity-deep", "sonar-deep"],
+        aliases: [
+            "sonar",
+            "perplexity-high",
+            "perplexity-deep",
+            "sonar-deep",
+            "perplexity/sonar",
+        ],
         provider: "perplexity",
         brand: "Perplexity",
         category: "text",
@@ -1157,7 +1213,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "perplexity": {
-        aliases: ["sonar-pro", "perplexity-pro"],
+        aliases: ["sonar-pro", "perplexity-pro", "perplexity/sonar-pro"],
         provider: "perplexity",
         brand: "Perplexity",
         category: "text",
@@ -1180,7 +1236,11 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "perplexity-reasoning": {
-        aliases: ["sonar-reasoning", "sonar-reasoning-pro"],
+        aliases: [
+            "sonar-reasoning",
+            "sonar-reasoning-pro",
+            "perplexity/sonar-reasoning-pro",
+        ],
         provider: "perplexity",
         brand: "Perplexity",
         category: "text",
@@ -1210,6 +1270,7 @@ export const TEXT_SERVICES = {
             "kimi-reasoning",
             "kimi-large",
             "kimi-thinking",
+            "moonshotai/kimi-k2.6",
         ],
         provider: "fireworks",
         brand: "Moonshot AI",
@@ -1233,7 +1294,12 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "kimi-code": {
-        aliases: ["kimi-k2.7-code", "kimi-k2.7", "kimi-k2p7"],
+        aliases: [
+            "kimi-k2.7-code",
+            "kimi-k2.7",
+            "kimi-k2p7",
+            "moonshotai/kimi-k2.7-code",
+        ],
         provider: "fireworks",
         brand: "Moonshot AI",
         category: "text",
@@ -1258,7 +1324,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "kimi-k3": {
-        aliases: [],
+        aliases: ["moonshotai/kimi-k3"],
         provider: "fireworks",
         brand: "Moonshot AI",
         category: "text",
@@ -1282,7 +1348,12 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "laguna": {
-        aliases: ["laguna-s-2.1", "laguna-s2.1", "poolside-laguna-s-2.1"],
+        aliases: [
+            "laguna-s-2.1",
+            "laguna-s2.1",
+            "poolside-laguna-s-2.1",
+            "poolside/laguna-s-2.1",
+        ],
         provider: "openrouter",
         brand: "Poolside",
         category: "text",
@@ -1306,7 +1377,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "longcat": {
-        aliases: ["longcat-2.0", "longcat-2"],
+        aliases: ["longcat-2.0", "longcat-2", "meituan/longcat-2.0"],
         provider: "openrouter",
         brand: "Meituan",
         category: "text",
@@ -1330,7 +1401,11 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "inkling": {
-        aliases: ["inkling-small", "inkling-small-20260730"],
+        aliases: [
+            "inkling-small",
+            "inkling-small-20260730",
+            "thinkingmachines/inkling-small",
+        ],
         provider: "openrouter",
         brand: "Thinking Machines",
         category: "text",
@@ -1360,6 +1435,7 @@ export const TEXT_SERVICES = {
             "nemotron-3-ultra",
             "nvidia-nemotron-3-ultra",
             "nemotron-3-ultra-550b-a55b",
+            "nvidia/nemotron-3-ultra",
         ],
         provider: "deepinfra",
         brand: "NVIDIA",
@@ -1385,7 +1461,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "nemotron-3.5-lightning": {
-        aliases: [],
+        aliases: ["nvidia/nemotron-3.5-lightning"],
         provider: "fireworks",
         brand: "NVIDIA",
         category: "text",
@@ -1409,7 +1485,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "mimo-v2.5": {
-        aliases: ["mimo", "mimo-2.5"],
+        aliases: ["mimo", "mimo-2.5", "xiaomi/mimo-v2.5"],
         provider: "openrouter",
         brand: "Xiaomi",
         category: "text",
@@ -1432,7 +1508,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "mimo-v2.5-pro": {
-        aliases: ["mimo-pro", "mimo-2.5-pro"],
+        aliases: ["mimo-pro", "mimo-2.5-pro", "xiaomi/mimo-v2.5-pro"],
         provider: "openrouter",
         brand: "Xiaomi",
         category: "text",
@@ -1455,7 +1531,11 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "gemini-large": {
-        aliases: ["gemini-3.1-pro", "gemini-2.5-pro"],
+        aliases: [
+            "gemini-3.1-pro",
+            "gemini-2.5-pro",
+            "google/gemini-3.1-pro-preview",
+        ],
         provider: "openrouter",
         brand: "Google",
         category: "text",
@@ -1516,7 +1596,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "nova-fast": {
-        aliases: ["amazon-nova-micro", "nova-micro"],
+        aliases: ["amazon-nova-micro", "nova-micro", "amazon/nova-micro-v1"],
         provider: "bedrock",
         brand: "Amazon",
         category: "text",
@@ -1540,7 +1620,12 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "nova": {
-        aliases: ["nova-2-lite", "amazon-nova-2-lite", "nova-2"],
+        aliases: [
+            "nova-2-lite",
+            "amazon-nova-2-lite",
+            "nova-2",
+            "amazon/nova-2-lite-v1",
+        ],
         provider: "bedrock",
         brand: "Amazon",
         category: "text",
@@ -1566,7 +1651,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "glm": {
-        aliases: ["glm-5.2", "glm-5p2"],
+        aliases: ["glm-5.2", "glm-5p2", "z-ai/glm-5.2"],
         provider: "fireworks",
         brand: "Z.ai",
         category: "text",
@@ -1588,7 +1673,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "glm-5.3": {
-        aliases: [],
+        aliases: ["z-ai/glm-5.3"],
         provider: "openrouter",
         brand: "Z.ai",
         category: "text",
@@ -1611,7 +1696,12 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "llama": {
-        aliases: ["llama-3.3", "llama-3.3-70b", "llama-v3p3-70b-instruct"],
+        aliases: [
+            "llama-3.3",
+            "llama-3.3-70b",
+            "llama-v3p3-70b-instruct",
+            "meta-llama/llama-3.3-70b-instruct",
+        ],
         provider: "azure",
         brand: "Meta",
         category: "text",
@@ -1636,6 +1726,7 @@ export const TEXT_SERVICES = {
             "llama-4-maverick",
             "llama-maverick-17b",
             "llama-4-maverick-17b-128e-instruct-fp8",
+            "meta-llama/llama-4-maverick",
         ],
         provider: "azure",
         brand: "Meta",
@@ -1661,6 +1752,7 @@ export const TEXT_SERVICES = {
             "llama-4-scout",
             "llama-scout-17b",
             "llama-4-scout-17b-16e-instruct",
+            "meta-llama/llama-4-scout",
         ],
         provider: "openrouter",
         brand: "Meta",
@@ -1684,7 +1776,12 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "minimax-m2.7": {
-        aliases: ["minimax-m2p7", "minimax-m2.5", "minimax-m2p5"],
+        aliases: [
+            "minimax-m2p7",
+            "minimax-m2.5",
+            "minimax-m2p5",
+            "minimax/minimax-m2.7",
+        ],
         provider: "fireworks",
         brand: "MiniMax",
         category: "text",
@@ -1705,7 +1802,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "minimax": {
-        aliases: ["minimax-m3", "minimax3", "minimax-3"],
+        aliases: ["minimax-m3", "minimax3", "minimax-3", "minimax/minimax-m3"],
         provider: "fireworks",
         brand: "MiniMax",
         category: "text",
@@ -1730,7 +1827,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "muse-glimmer": {
-        aliases: [],
+        aliases: ["meta/muse-glimmer-30b"],
         provider: "fireworks",
         brand: "Meta",
         category: "text",
@@ -1754,7 +1851,13 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "muse-spark-1.2": {
-        aliases: ["muse-spark-1.1", "muse-spark", "spark", "spark-1.1"],
+        aliases: [
+            "muse-spark-1.1",
+            "muse-spark",
+            "spark",
+            "spark-1.1",
+            "meta/muse-spark-1.2",
+        ],
         provider: "vercel",
         brand: "Meta",
         category: "text",
@@ -1776,7 +1879,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "mistral-large": {
-        aliases: ["mistral-large-3"],
+        aliases: ["mistral-large-3", "mistralai/mistral-large-3"],
         provider: "azure",
         brand: "Mistral",
         category: "text",
@@ -1798,7 +1901,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "qwen-coder-large": {
-        aliases: ["qwen3-coder-next"],
+        aliases: ["qwen3-coder-next", "qwen/qwen3-coder-next"],
         provider: "openrouter",
         brand: "Qwen",
         category: "text",
@@ -1828,6 +1931,7 @@ export const TEXT_SERVICES = {
             "qwen3.6",
             "qwen3.6-plus",
             "qwen3p6-plus",
+            "qwen/qwen3.7-plus",
         ],
         provider: "openrouter",
         brand: "Qwen",
@@ -1873,7 +1977,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "qwen3.7-max": {
-        aliases: ["qwen-max", "qwen3p7-max"],
+        aliases: ["qwen-max", "qwen3p7-max", "qwen/qwen3.7-max"],
         provider: "openrouter",
         brand: "Qwen",
         category: "text",
@@ -1897,7 +2001,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "qwen3.8-2.4t-a95b": {
-        aliases: [],
+        aliases: ["qwen/qwen3.8-2.4t-a95b"],
         provider: "fireworks",
         brand: "Qwen",
         category: "text",
@@ -1921,7 +2025,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "qwen3.8-27b": {
-        aliases: [],
+        aliases: ["qwen/qwen3.8-27b"],
         provider: "openrouter",
         brand: "Qwen",
         category: "text",
@@ -1949,7 +2053,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "qwen3.8-max": {
-        aliases: [],
+        aliases: ["qwen/qwen3.8-max"],
         provider: "openrouter",
         brand: "Qwen",
         category: "text",
@@ -1977,7 +2081,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "qwen3.7-flash": {
-        aliases: [],
+        aliases: ["qwen/qwen3.7-flash"],
         provider: "openrouter",
         brand: "Qwen",
         category: "text",
@@ -2052,6 +2156,7 @@ export const TEXT_SERVICES = {
             "qwen3-vl-instruct",
             "qwen3-vl-plus",
             "qwen-vl",
+            "qwen/qwen3-vl-30b-a3b-instruct",
         ],
         provider: "openrouter",
         brand: "Qwen",
@@ -2079,6 +2184,7 @@ export const TEXT_SERVICES = {
             "qwen3-vl-235b",
             "qwen3-vl-235b-a22b-thinking",
             "qwen-vl-pro",
+            "qwen/qwen3-vl-235b-a22b-thinking",
         ],
         provider: "openrouter",
         brand: "Qwen",
@@ -2102,7 +2208,12 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "step-flash": {
-        aliases: ["stepfun-flash", "step-3.7-flash", "step-flash-3.7"],
+        aliases: [
+            "stepfun-flash",
+            "step-3.7-flash",
+            "step-flash-3.7",
+            "stepfun/step-3.7-flash",
+        ],
         provider: "deepinfra",
         brand: "StepFun",
         category: "text",
@@ -2129,7 +2240,11 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "step-3.5-flash": {
-        aliases: ["stepfun-3.5-flash", "step-flash-3.5"],
+        aliases: [
+            "stepfun-3.5-flash",
+            "step-flash-3.5",
+            "stepfun/step-3.5-flash",
+        ],
         provider: "openrouter",
         brand: "StepFun",
         category: "text",
@@ -2152,7 +2267,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "qwen-safety": {
-        aliases: ["qwen3guard-gen-8b"],
+        aliases: ["qwen3guard-gen-8b", "qwen/qwen3guard-gen-8b"],
         provider: "ovhcloud",
         brand: "Qwen",
         category: "text",

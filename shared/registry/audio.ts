@@ -436,7 +436,7 @@ export const AUDIO_SERVICES = {
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     "grok-transcribe": {
-        aliases: ["x-ai/speech-to-text"],
+        aliases: ["x-ai/grok-transcribe"],
         provider: "xai",
         brand: "xAI",
         category: "audio",

@@ -82,6 +82,19 @@ test.for(
     expect(resolved).toBe(shouldResolveTo);
 });
 
+test("every public model has one publisher-qualified ID", () => {
+    for (const model of getModels()) {
+        const definition = getRegistryModelDefinition(model);
+        if (definition.hidden) continue;
+
+        const publisherQualifiedIds = definition.aliases.filter((alias) =>
+            alias.includes("/"),
+        );
+
+        expect(publisherQualifiedIds, model).toHaveLength(1);
+    }
+});
+
 test("gemini-search applies grounding cost on top of shared token rates", () => {
     const usage = {
         promptTextTokens: 1_000_000,

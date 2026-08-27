@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+    getModelQuerySuggestions,
     matchesModelQuery,
     parseModelQuery,
 } from "../frontend/src/components/models/model-query.ts";
@@ -89,7 +90,7 @@ describe("matchesModelQuery", () => {
         expect(matches(model(overrides), query)).toBe(expected);
     });
 
-    it("matches an exact public publisher login for community models only", () => {
+    it("matches official publishers and public community owners", () => {
         const community = model({
             name: "PublicOwner/image-model",
             community: true,
@@ -99,11 +100,11 @@ describe("matchesModelQuery", () => {
         expect(matches(community, "publisher:publicowner")).toBe(true);
         expect(matches(community, "publisher:public")).toBe(false);
         expect(
-            matches(
-                model({ name: "PublicOwner/image-model" }),
-                "publisher:publicowner",
-            ),
-        ).toBe(false);
+            matches(model({ brand: "Moonshot AI" }), "publisher:moonshot-ai"),
+        ).toBe(true);
+        expect(matches(model({ brand: "NVIDIA" }), "publisher:nvidia")).toBe(
+            true,
+        );
     });
 
     it("matches an exact canonical ID case-insensitively", () => {
@@ -155,5 +156,50 @@ describe("matchesModelQuery", () => {
 
     it("matches an empty query", () => {
         expect(matches(model(), "   ")).toBe(true);
+    });
+});
+
+describe("getModelQuerySuggestions", () => {
+    const models = [
+        model({ name: "openai/gpt", type: "text", brand: "OpenAI" }),
+        model({
+            name: "Alice/quick-coder",
+            community: true,
+            agent: true,
+            capabilities: ["tool_calling"],
+        }),
+        model({ name: "bob/painter", community: true, type: "image" }),
+    ];
+
+    it("suggests filter names and their values", () => {
+        expect(getModelQuerySuggestions("", models)).toEqual([
+            "access:",
+            "capability:",
+            "id:",
+            "publisher:",
+            "type:",
+        ]);
+        expect(getModelQuerySuggestions("access:", models)).toEqual([
+            "access:free ",
+            "access:paid ",
+            "access:quest ",
+        ]);
+        expect(getModelQuerySuggestions("publisher:a", models)).toEqual([
+            "publisher:alice ",
+        ]);
+        expect(getModelQuerySuggestions("publisher:o", models)).toEqual([
+            "publisher:openai ",
+        ]);
+    });
+
+    it("completes only the current token", () => {
+        expect(getModelQuerySuggestions("fast capability:t", models)).toEqual([
+            "fast capability:tool-calling ",
+        ]);
+        expect(getModelQuerySuggestions("type:", models)).toEqual([
+            "type:agent ",
+            "type:image ",
+            "type:text ",
+        ]);
     });
 });

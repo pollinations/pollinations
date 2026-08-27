@@ -22,6 +22,8 @@ import {
     getModelDisplayName,
     getModelInputModalities,
     getModelModalityLabel,
+    formatContextLength,
+    getModelDurationLabel,
     hasPollinationsTools,
     isAlpha,
     isNewModel,
@@ -184,6 +186,62 @@ export function getModelTitleTooltipContent(model: ModelPrice): ReactNode {
         </span>
     );
 }
+
+/**
+ * Compact model-limit chips: context window for text-capable models and
+ * supported duration for video models. Renders nothing when no limit metadata
+ * is available, keeping the row uncluttered.
+ */
+export const ModelLimitsChips: FC<{ model: ModelPrice }> = ({ model }) => {
+    const contextLabel = formatContextLength(model.contextLength);
+    const durationLabel = getModelDurationLabel(model);
+    if (!contextLabel && !durationLabel) return null;
+
+    return (
+        <span className="inline-flex shrink-0 items-center gap-1.5">
+            {contextLabel && (
+                <Tooltip
+                    triggerAs="span"
+                    content={
+                        <span>
+                            <strong className="font-semibold text-theme-text-strong">
+                                Context window
+                            </strong>{" "}
+                            — {contextLabel} tokens
+                        </span>
+                    }
+                    ariaLabel={`Context window ${contextLabel}`}
+                    tapEnabled
+                    displayContents
+                >
+                    <Chip intent="neutral" size="sm" className="tabular-nums">
+                        {contextLabel}
+                    </Chip>
+                </Tooltip>
+            )}
+            {durationLabel && (
+                <Tooltip
+                    triggerAs="span"
+                    content={
+                        <span>
+                            <strong className="font-semibold text-theme-text-strong">
+                                Supported duration
+                            </strong>{" "}
+                            — {durationLabel}
+                        </span>
+                    }
+                    ariaLabel={`Supported duration ${durationLabel}`}
+                    tapEnabled
+                    displayContents
+                >
+                    <Chip intent="neutral" size="sm" className="tabular-nums">
+                        {durationLabel}
+                    </Chip>
+                </Tooltip>
+            )}
+        </span>
+    );
+};
 
 export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const modelDisplayName = getModelDisplayName(model);
@@ -365,6 +423,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                     model={model}
                                     pricing={pricing}
                                 />
+                                <ModelLimitsChips model={model} />
                             </div>
                         )}
                         {model.perUserRpm != null && (

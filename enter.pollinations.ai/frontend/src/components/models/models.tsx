@@ -66,6 +66,8 @@ const COMMUNITY_SECTION_ORDER: SectionType[] = [
 const SCOPE_ORDER: ModelScope[] = ["pollinations", "community"];
 
 const MODEL_SLUG_ANNOUNCEMENT_URL = "/news#canonical-model-slugs";
+const MODEL_SLUG_LIST_URL =
+    "https://github.com/pollinations/pollinations/blob/main/MODEL_SLUGS.md";
 
 const SCOPE_LABELS: Record<ModelScope, string> = {
     pollinations: "Official",
@@ -362,6 +364,13 @@ export const Models: FC = () => {
                         className="font-semibold underline hover:no-underline"
                     >
                         Learn more →
+                    </a>
+                    <a
+                        href={MODEL_SLUG_LIST_URL}
+                        className="mt-2 flex w-fit items-center gap-1.5 font-semibold underline hover:no-underline"
+                    >
+                        <GitHubIcon className="h-4 w-4 shrink-0" />
+                        <span>View all model ID changes →</span>
                     </a>
                 </Alert>
                 <div className="mb-4 flex flex-col items-start gap-3">

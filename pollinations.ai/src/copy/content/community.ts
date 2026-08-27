@@ -85,6 +85,17 @@ export const COMMUNITY_PAGE = {
         },
     ],
 
+    // Quest leaderboard
+    questLeaderboardTitle: "Quest leaderboard",
+    questLeaderboardDescription:
+        "Builders completing public GitHub POLLEN-QUEST issues.",
+    questLeaderboardCta: "Join the quests",
+    questLeaderboardQuestLabel: "quest",
+    questLeaderboardQuestsLabel: "quests",
+    questLeaderboardPollenLabel: "Pollen",
+    questLeaderboardBuildersLabel: "builders",
+    questLeaderboardCompletedLabel: "completed",
+
     // Top Contributors
     topContributorsTitle: "Most active contributors",
     topContributorsDescription:

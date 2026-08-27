@@ -1,0 +1,34 @@
+{
+  "pr_number": 13996,
+  "title": "feat: add model search filters",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/13996",
+  "merged_at": "2026-08-27T03:21:21Z",
+  "labels": [],
+  "pr_body_excerpt": "- Searches canonical IDs, titles, descriptions, publishers, base models, modalities, and capabilities with AND semantics.\r\n- Adds frontend-only `access`, `publisher`, `id`, `type`, and `capability` qualifiers; unknown syntax remains literal text and publisher matching uses the public community ID prefix.\r\n- Keeps the existing URL-backed query, scope, category, and sort flow unchanged, and documents filter values in a compact keyboard-accessible help tooltip.\r\n- Tests: `npx vitest run test/model-query.test.ts test/model-categories.test.ts` (30 passed); UI tooltip tests (2 passed); `npx tsc --noEmit`; frontend Vite production build; Biome check.\r\n\r\nFixes #13907",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The model garden got filters",
+    "blurb": "The model picker can now understand a little more than a hopeful keyword. Tell it what kind of pollen you need, and it will stop wandering through the whole garden.",
+    "summary": "Added AND-based model search across canonical IDs, titles, descriptions, publishers, base models, modalities, and capabilities, plus frontend qualifiers for access, publisher, id, type, and capability.",
+    "impact": "Users can narrow the existing URL-backed model browser with queries like publisher: or capability: while keeping its current scope, category, and sorting controls intact.",
+    "keywords": [
+      "model search",
+      "filters",
+      "model browser",
+      "frontend",
+      "accessibility",
+      "qualifiers"
+    ],
+    "visual_concept": "Polli acts as a tiny librarian-gardener in a cozy model garden, using labeled seed packets and a magnifying glass to sort code-plants by publisher, type, access, and capability. A retro terminal shows a compact search bar with simple qualifier chips, while neatly organized flowering pots make the new precision feel tangible.",
+    "image_prompt": "A cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, using a magnifying glass to sort glowing code-plants into flower pots labeled \"PUBLISHER\", \"TYPE\", and \"CAPABILITY\" beside a retro terminal search bar. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, garden vines and pixel flowers, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-27/PR-13996.jpg",
+    "prompt": "A cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, using a magnifying glass to sort glowing code-plants into flower pots labeled \"PUBLISHER\", \"TYPE\", and \"CAPABILITY\" beside a retro terminal search bar. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, garden vines and pixel flowers, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm."
+  },
+  "generated_at": "2026-08-27T03:22:17.099340+00:00"
+}

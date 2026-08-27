@@ -1,0 +1,85 @@
+import {
+    CheckIcon,
+    Chip,
+    ClipboardIcon,
+    CopyButton,
+    InlineLink,
+    McpIcon,
+} from "@pollinations/ui";
+import { MCP_SERVERS } from "@shared/registry/mcp.ts";
+import type { FC } from "react";
+import { config, genDocsUrl } from "../../config.ts";
+
+export const McpServerList: FC<{ query: string }> = ({ query }) => {
+    const normalizedQuery = query.trim().toLowerCase();
+    const servers = MCP_SERVERS.filter((server) =>
+        [server.id, server.name, server.description].some((value) =>
+            value.toLowerCase().includes(normalizedQuery),
+        ),
+    );
+
+    if (servers.length === 0) {
+        return (
+            <p className="py-8 text-center text-sm text-theme-text-muted">
+                No MCP servers match “{query.trim()}”.
+            </p>
+        );
+    }
+
+    return (
+        <div className="space-y-4">
+            <div className="flex flex-col gap-2">
+                {servers.map((server) => {
+                    const endpoint = `${config.genBaseUrl}/mcp/${server.id}`;
+                    return (
+                        <div
+                            key={server.id}
+                            className="flex items-start gap-3 rounded-xl bg-surface-opaque p-4 shadow-sm"
+                        >
+                            <McpIcon className="mt-0.5 h-7 w-7 shrink-0 text-theme-text-muted" />
+                            <div className="min-w-0 flex-1 space-y-1.5">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <span className="font-medium text-theme-text-strong">
+                                        {server.name} MCP
+                                    </span>
+                                    <Chip size="sm" intent="neutral">
+                                        Built-in
+                                    </Chip>
+                                </div>
+                                <p className="text-sm text-theme-text-muted">
+                                    {server.description}
+                                </p>
+                                <div className="flex min-w-0 items-center gap-1.5 text-xs">
+                                    <span className="min-w-0 truncate font-mono text-theme-text-muted">
+                                        {endpoint}
+                                    </span>
+                                    <CopyButton
+                                        value={endpoint}
+                                        tooltip="Copy MCP endpoint"
+                                        copiedTooltip="Copied"
+                                        className="inline-flex shrink-0 items-center justify-center rounded-md p-1 text-theme-text-muted transition-colors hover:bg-theme-bg-active hover:text-theme-text-strong"
+                                    >
+                                        {(copied) =>
+                                            copied ? (
+                                                <CheckIcon className="h-3.5 w-3.5" />
+                                            ) : (
+                                                <ClipboardIcon className="h-3.5 w-3.5" />
+                                            )
+                                        }
+                                    </CopyButton>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+            <p className="text-xs text-theme-text-muted">
+                Connect with your Pollinations API key. See the{" "}
+                <InlineLink href={genDocsUrl("#tag/mcp-server")}>
+                    MCP docs
+                </InlineLink>
+                .
+            </p>
+        </div>
+    );
+};

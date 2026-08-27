@@ -132,6 +132,20 @@ describe("model categories", () => {
             q: undefined,
             sort: undefined,
         });
+        expect(validateModelSearch({ category: "mcp" })).toEqual({
+            scope: undefined,
+            category: "mcp",
+            q: undefined,
+            sort: undefined,
+        });
+        expect(
+            validateModelSearch({ scope: "community", category: "mcp" }),
+        ).toEqual({
+            scope: "community",
+            category: undefined,
+            q: undefined,
+            sort: undefined,
+        });
     });
 
     it("accepts model sort options and ignores obsolete values", () => {

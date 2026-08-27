@@ -34,6 +34,7 @@ import {
     fetchModelCatalog,
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
+import { McpServerList } from "./mcp-server-list.tsx";
 import { matchesModelQuery, parseModelQuery } from "./model-query.ts";
 import type { ModelScope, ModelSort } from "./model-search.ts";
 import { sortModels } from "./model-sort.ts";
@@ -54,6 +55,7 @@ const POLLINATIONS_SECTION_ORDER: SectionType[] = [
     "audio",
     "realtime",
     "embedding",
+    "mcp",
 ];
 
 const COMMUNITY_SECTION_ORDER: SectionType[] = [
@@ -114,6 +116,7 @@ const SEARCH_LABELS: Record<SectionType, string> = {
     text: "text",
     embedding: "embedding",
     agent: "agent",
+    mcp: "MCP server",
 };
 
 function categorizeModels(
@@ -129,6 +132,7 @@ function categorizeModels(
         text: [],
         embedding: [],
         agent: [],
+        mcp: [],
     };
 
     for (const model of models) {
@@ -235,7 +239,9 @@ export const Models: FC = () => {
     const scopeLabel = SCOPE_LABELS[activeScope];
     const searchLabel = SEARCH_LABELS[activeTab];
     const searchTarget =
-        activeTab === "all"
+        activeTab === "mcp"
+            ? "MCP servers"
+            : activeTab === "all"
             ? `${scopeLabel} models`
             : `${scopeLabel} ${searchLabel} models`;
 
@@ -417,68 +423,78 @@ export const Models: FC = () => {
                                     }}
                                     placeholder={`Search ${searchTarget}…`}
                                     aria-label={`Search ${searchTarget}`}
-                                    aria-describedby="model-search-filter-help"
+                                    aria-describedby={
+                                        activeTab === "mcp"
+                                            ? undefined
+                                            : "model-search-filter-help"
+                                    }
                                     className="w-full pl-9"
                                 />
                             </div>
-                            <p
-                                id="model-search-filter-help"
-                                className="mt-1 text-xs text-theme-text-muted"
-                            >
-                                Filters: access:, publisher:, id:, type:,
-                                capability:
-                            </p>
+                            {activeTab !== "mcp" && (
+                                <p
+                                    id="model-search-filter-help"
+                                    className="mt-1 text-xs text-theme-text-muted"
+                                >
+                                    Filters: access:, publisher:, id:, type:,
+                                    capability:
+                                </p>
+                            )}
                         </div>
-                        <Dropdown
-                            align="end"
-                            className="w-max p-2"
-                            trigger={(open) => (
-                                <Button
-                                    type="button"
-                                    size="md"
-                                    aria-label={`Sort models by ${activeSortAccessibleLabel}`}
-                                    className="shrink-0 justify-end gap-2"
-                                >
-                                    <span className="text-right">
-                                        {activeSortLabel}
-                                    </span>
-                                    <ChevronIcon expanded={open} />
-                                </Button>
-                            )}
-                        >
-                            {(close) => (
-                                <div
-                                    role="menu"
-                                    aria-label="Sort models"
-                                    onKeyDown={handleSortMenuKeyDown}
-                                    className="flex flex-col gap-1"
-                                >
-                                    {SORT_OPTIONS.map((option) => (
-                                        <DropdownItem
-                                            key={option.value}
-                                            role="menuitemradio"
-                                            aria-label={option.accessibleLabel}
-                                            aria-checked={
-                                                activeSort === option.value
-                                            }
-                                            onClick={() => {
-                                                setActiveSort(option.value);
-                                                close();
-                                            }}
-                                            className={
-                                                activeSort === option.value
-                                                    ? "justify-end bg-theme-bg-active text-right text-theme-text-strong"
-                                                    : "justify-end text-right"
-                                            }
-                                        >
-                                            <span className="flex-1 text-right">
-                                                {option.label}
-                                            </span>
-                                        </DropdownItem>
-                                    ))}
-                                </div>
-                            )}
-                        </Dropdown>
+                        {activeTab !== "mcp" && (
+                            <Dropdown
+                                align="end"
+                                className="w-max p-2"
+                                trigger={(open) => (
+                                    <Button
+                                        type="button"
+                                        size="md"
+                                        aria-label={`Sort models by ${activeSortAccessibleLabel}`}
+                                        className="shrink-0 justify-end gap-2"
+                                    >
+                                        <span className="text-right">
+                                            {activeSortLabel}
+                                        </span>
+                                        <ChevronIcon expanded={open} />
+                                    </Button>
+                                )}
+                            >
+                                {(close) => (
+                                    <div
+                                        role="menu"
+                                        aria-label="Sort models"
+                                        onKeyDown={handleSortMenuKeyDown}
+                                        className="flex flex-col gap-1"
+                                    >
+                                        {SORT_OPTIONS.map((option) => (
+                                            <DropdownItem
+                                                key={option.value}
+                                                role="menuitemradio"
+                                                aria-label={
+                                                    option.accessibleLabel
+                                                }
+                                                aria-checked={
+                                                    activeSort === option.value
+                                                }
+                                                onClick={() => {
+                                                    setActiveSort(option.value);
+                                                    close();
+                                                }}
+                                                className={
+                                                    activeSort === option.value
+                                                        ? "justify-end bg-theme-bg-active text-right text-theme-text-strong"
+                                                        : "justify-end text-right"
+                                                }
+                                            >
+                                                <span className="flex-1 text-right">
+                                                    {option.label}
+                                                </span>
+                                            </DropdownItem>
+                                        ))}
+                                    </div>
+                                )}
+                            </Dropdown>
+                        )}
                     </div>
                 </div>
                 {activeScope === "community" && (
@@ -512,12 +528,14 @@ export const Models: FC = () => {
                         </p>
                     </Alert>
                 )}
-                {catalogError && (
+                {catalogError && activeTab !== "mcp" && (
                     <Alert intent="danger" className="mb-4">
                         {catalogError}
                     </Alert>
                 )}
-                {query && sectionModels[activeTab].length === 0 ? (
+                {activeTab === "mcp" ? (
+                    <McpServerList query={query} />
+                ) : query && sectionModels[activeTab].length === 0 ? (
                     <p className="py-8 text-center text-sm text-theme-text-muted">
                         No {searchTarget.toLowerCase()} match “{search.trim()}”.
                     </p>
@@ -538,7 +556,8 @@ export const Models: FC = () => {
                         />
                     </div>
                 )}
-                <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
+                {activeTab !== "mcp" && (
+                    <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
                     {activeTab === "agent" && (
                         <p className="flex items-start gap-1.5">
                             <BotIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
@@ -577,7 +596,8 @@ export const Models: FC = () => {
                             the median observed cost over the last 7 days.
                         </span>
                     </p>
-                </div>
+                    </div>
+                )}
             </Section>
         </div>
     );

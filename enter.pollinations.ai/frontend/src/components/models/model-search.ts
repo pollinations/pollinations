@@ -8,6 +8,7 @@ export const MODEL_CATEGORIES = [
     "text",
     "embedding",
     "agent",
+    "mcp",
 ] as const;
 
 export type ModelCategory = (typeof MODEL_CATEGORIES)[number];

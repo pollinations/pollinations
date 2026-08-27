@@ -22,13 +22,13 @@ describe("parseModelQuery", () => {
     it("separates case-insensitive filters from text terms", () => {
         expect(
             parseModelQuery(
-                "Fast ACCESS:paid owner:Alice id:Alice/Coder type:text capability:tool-calling",
+                "Fast ACCESS:paid publisher:Alice id:Alice/Coder type:text capability:tool-calling",
             ),
         ).toEqual({
             terms: ["fast"],
             filters: [
                 { key: "access", value: "paid" },
-                { key: "owner", value: "alice" },
+                { key: "publisher", value: "alice" },
                 { key: "id", value: "alice/coder" },
                 { key: "type", value: "text" },
                 { key: "capability", value: "tool-calling" },
@@ -89,19 +89,19 @@ describe("matchesModelQuery", () => {
         expect(matches(model(overrides), query)).toBe(expected);
     });
 
-    it("matches an exact public owner login for community models only", () => {
+    it("matches an exact public publisher login for community models only", () => {
         const community = model({
             name: "PublicOwner/image-model",
             community: true,
             brand: "internal-user-123",
         });
 
-        expect(matches(community, "owner:publicowner")).toBe(true);
-        expect(matches(community, "owner:public")).toBe(false);
+        expect(matches(community, "publisher:publicowner")).toBe(true);
+        expect(matches(community, "publisher:public")).toBe(false);
         expect(
             matches(
                 model({ name: "PublicOwner/image-model" }),
-                "owner:publicowner",
+                "publisher:publicowner",
             ),
         ).toBe(false);
     });
@@ -144,11 +144,11 @@ describe("matchesModelQuery", () => {
         expect(
             matches(
                 candidate,
-                "quick owner:alice type:text capability:reasoning access:quest",
+                "quick publisher:alice type:text capability:reasoning access:quest",
             ),
         ).toBe(true);
         expect(
-            matches(candidate, "quick owner:alice capability:web-search"),
+            matches(candidate, "quick publisher:alice capability:web-search"),
         ).toBe(false);
         expect(matches(candidate, "access:quest access:paid")).toBe(false);
     });

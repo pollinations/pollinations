@@ -6,7 +6,7 @@ export type ModelAccess = "paid" | "quest" | "free";
 export type ModelQueryFilter =
     | { key: "access"; value: ModelAccess }
     | {
-          key: "owner" | "id" | "type" | "capability";
+          key: "publisher" | "id" | "type" | "capability";
           value: string;
       };
 
@@ -50,7 +50,7 @@ export function parseModelQuery(query: string): ParsedModelQuery {
                     terms.push(token.toLowerCase());
                 }
                 break;
-            case "owner":
+            case "publisher":
             case "id":
             case "type":
             case "capability":
@@ -82,7 +82,7 @@ function matchesFilter(model: ModelPrice, filter: ModelQueryFilter): boolean {
     switch (filter.key) {
         case "access":
             return getModelAccess(model) === filter.value;
-        case "owner": {
+        case "publisher": {
             if (!model.community) return false;
             const separator = model.name.indexOf("/");
             return (

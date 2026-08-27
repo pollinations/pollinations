@@ -425,7 +425,7 @@ export const Models: FC = () => {
                                 id="model-search-filter-help"
                                 className="mt-1 text-xs text-theme-text-muted"
                             >
-                                Filters: access:, owner:, id:, type:,
+                                Filters: access:, publisher:, id:, type:,
                                 capability:
                             </p>
                         </div>

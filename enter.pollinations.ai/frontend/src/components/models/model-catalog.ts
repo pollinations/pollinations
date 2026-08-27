@@ -57,6 +57,9 @@ export type ApiModelInfo = {
     tools?: boolean;
     reasoning?: boolean;
     context_length?: number;
+    min_duration?: number;
+    max_duration?: number;
+    default_duration?: number;
     voices?: string[];
     is_specialized?: boolean;
     paid_only?: boolean;
@@ -267,6 +270,10 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
         outputSortPrice,
         prices: [],
         priceAdjustments: model.pricing_adjustments,
+        contextLength: model.context_length,
+        minDuration: model.min_duration,
+        maxDuration: model.max_duration,
+        defaultDuration: model.default_duration,
     };
 }
 

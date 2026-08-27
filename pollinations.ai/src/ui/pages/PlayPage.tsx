@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { PLAY_PAGE } from "../../copy/content/play";
 import { LINKS } from "../../copy/content/socialLinks";
 import { useAuth } from "../../hooks/useAuth";
@@ -14,7 +15,17 @@ import { PageContainer } from "../components/ui/page-container";
 import { Body, Title } from "../components/ui/typography";
 
 function PlayPage() {
-    const [selectedModel, setSelectedModel] = useState("flux");
+    const [searchParams, setSearchParams] = useSearchParams();
+    const initialModel = searchParams.get("model") ?? "flux";
+    const [selectedModel, setSelectedModel] = useState(initialModel);
+
+    const handleModelChange = (model: string) => {
+        setSelectedModel(model);
+        setSearchParams((prev) => {
+            prev.set("model", model);
+            return prev;
+        });
+    };
     const [prompt, setPrompt] = useState("");
     const { apiKey, isLoggedIn, login } = useAuth();
     const {
@@ -103,7 +114,7 @@ function PlayPage() {
                 <ModelSelector
                     models={allModels}
                     selectedModel={selectedModel}
-                    onSelectModel={setSelectedModel}
+                    onSelectModel={handleModelChange}
                     allowedImageModelIds={allowedImageModelIds}
                     allowedTextModelIds={allowedTextModelIds}
                     allowedAudioModelIds={allowedAudioModelIds}

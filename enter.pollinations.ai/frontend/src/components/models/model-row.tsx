@@ -4,6 +4,7 @@ import {
     ClipboardIcon,
     CopyButton,
     cn,
+    RocketIcon,
     Surface,
     Tooltip,
 } from "@pollinations/ui";
@@ -373,6 +374,23 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             </div>
                         )}
                     </div>
+                    {model.contextLength && (
+                        <div className="mt-1 text-xs text-theme-text-muted">
+                            {model.contextLength >= 1000
+                                ? `${Math.round(model.contextLength / 1000)}K context`
+                                : `${model.contextLength} context`}
+                        </div>
+                    )}
+                    {model.minDuration != null && model.maxDuration != null && (
+                        <div className="mt-0.5 text-xs text-theme-text-muted">
+                            {model.minDuration === model.maxDuration
+                                ? `${model.minDuration}s`
+                                : `${model.minDuration}–${model.maxDuration}s`}
+                            {model.defaultDuration != null &&
+                                model.minDuration !== model.maxDuration &&
+                                ` (default ${model.defaultDuration}s)`}
+                        </div>
+                    )}
                     <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5">
                         <ModelStatusChips
                             showNew={showNew}
@@ -382,6 +400,17 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             access={balanceAccess}
                             className="whitespace-nowrap"
                         />
+                        <Tooltip content="Try in Play">
+                            <a
+                                href={`/play?model=${model.name}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center justify-center rounded-md p-1 text-theme-text-muted transition-colors hover:bg-theme-bg-active hover:text-theme-text-strong"
+                                aria-label={`Try ${publicModelName} in Play`}
+                            >
+                                <RocketIcon className="h-3.5 w-3.5" />
+                            </a>
+                        </Tooltip>
                     </div>
                 </div>
             </div>

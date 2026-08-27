@@ -1,0 +1,34 @@
+{
+  "pr_number": 14014,
+  "title": "feat(my-models): link each card to earnings activity",
+  "author": "TRDEFI",
+  "url": "https://github.com/pollinations/pollinations/pull/14014",
+  "merged_at": "2026-08-27T11:54:26Z",
+  "labels": [],
+  "pr_body_excerpt": "﻿Closes #13894\n\nEach My Models card now has a small \"View activity\" link that opens the existing Activity page filtered to that model.\n\n- Uses the dashboard's existing `earningsModels` search state (`/activity?earningsModels=<modelId>`), so reloading or sharing the URL keeps the selection.\n- No new API, charts, or duplicated earnings UI — just the current routing.\r\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Follow the pollen trail",
+    "blurb": "My Models cards now include a small View activity link. One click takes you straight to that model's earnings trail, because making people reconstruct a URL by hand is not a feature.",
+    "summary": "Added a \"View activity\" link to every My Models card that opens the existing Activity dashboard filtered via `/activity?earningsModels=<modelId>`.",
+    "impact": "Model creators can jump directly from a model card to its earnings activity, and the selected model remains intact when the URL is reloaded or shared.",
+    "keywords": [
+      "my-models",
+      "activity",
+      "earnings",
+      "dashboard",
+      "routing",
+      "community-endpoints"
+    ],
+    "visual_concept": "Polli, wearing a tiny accountant visor and carrying a clipboard, follows a glowing lime-green pollen trail from a row of model cards to a cozy retro Activity terminal. The terminal displays a simple earnings graph for one selected flower-like code model, with small flowers and code-plants showing that each model has its own traceable activity.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing a tiny accountant visor and following a lime green (#ecf874) glowing pollen trail from a row of model cards to a retro terminal showing one model's activity and earnings graph. Code-plants and small flowers grow around the dashboard, with pixel-font text \"VIEW ACTIVITY\"; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-27/PR-14014.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing a tiny accountant visor and following a lime green (#ecf874) glowing pollen trail from a row of model cards to a retro terminal showing one model's activity and earnings graph. Code-plants and small flowers grow around the dashboard, with pixel-font text \"VIEW ACTIVITY\"; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-27T11:55:26.792585+00:00"
+}

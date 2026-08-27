@@ -1,0 +1,34 @@
+{
+  "pr_number": 13587,
+  "title": "feat: announce canonical model slugs",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13587",
+  "merged_at": "2026-08-27T14:13:03Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds all 157 future canonical model IDs as working aliases now.\n- Announces that the new IDs become canonical on **September 7, 2026 at 14:00 UTC**.\n- Keeps every existing model ID working after the transition.\n- Adds the temporary Models banner, detailed Enter announcement, README notice, and complete mapping in `MODEL_SLUGS.md`.\n- Extends alias resolution tests to embeddings, realtime, and 3D models.\n\n## Discord announcement copy\n\n⚠️ **New model IDs are available now**\n\nPublisher-qualified IDs such as `black-forest-labs/flux.1-schnell` work today. They will become the canonical model IDs on **September 7, 2026 at 14:00 UTC**.\n\nExisting IDs will keep working after the transition, so current integrations do not need to change. New integrations can use the new IDs now.\n\nOnly the names are changing. Model behavior and pricing stay the same.\n\nView all model ID changes: https://github.com/pollinations/pollinations/blob/main/MODEL_SLUGS.md\n\n## Checks\n\n- 157 documented mappings resolve to the intended models and are present directly in their alias lists\n- Enter alias tests: 467 passed\n- Gen resolver and model-permission tests: 49 passed\n- Enter and Gen type checks\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The model garden gets signs",
+    "blurb": "157 publisher-qualified model IDs are ready to use now, with a clear map for the September 7 handoff. The old paths remain open; the garden just has better labels.",
+    "summary": "Added 157 publisher-qualified canonical model ID aliases, such as `black-forest-labs/flux.1-schnell`, ahead of their September 7, 2026 at 14:00 UTC canonical-name transition, while preserving every existing model ID.",
+    "impact": "New integrations can use publisher-qualified IDs immediately, while existing apps keep resolving their current model IDs with unchanged model behavior and pricing after the transition.",
+    "keywords": [
+      "models",
+      "model-slugs",
+      "aliases",
+      "api-compatibility",
+      "registry",
+      "documentation"
+    ],
+    "visual_concept": "A cozy model garden has gained clear wooden signposts: old short model-name paths and new publisher-qualified paths both lead to the same glowing model flowers. Polli acts as a warm guide with a tiny map and gardener hat, while a retro terminal displays a simple example canonical slug; the scene represents a planned naming migration without breaking existing routes.",
+    "image_prompt": "Cozy pixel art scene of a whimsical code garden where two neat signposted paths, labeled in simple pixel text `flux-schnell` and `black-forest-labs/flux.1-schnell`, lead to the same glowing flower-like model terminal; a small calendar sign reads `SEP 7`. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny gardener hat and holds a folded map beside code-plants and lime green (#ecf874) signposts. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-27/PR-13587.jpg",
+    "prompt": "Cozy pixel art scene of a whimsical code garden where two neat signposted paths, labeled in simple pixel text `flux-schnell` and `black-forest-labs/flux.1-schnell`, lead to the same glowing flower-like model terminal; a small calendar sign reads `SEP 7`. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny gardener hat and holds a folded map beside code-plants and lime green (#ecf874) signposts. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-27T14:14:06.515572+00:00"
+}

@@ -248,6 +248,22 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins GLM-5.3 Flash to Z.AI FP8 on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "z-ai/glm-5.3-flash",
+        });
+
+        expect(result.options.model).toBe("z-ai/glm-5.3-flash");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openrouter",
+            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
+        });
+        expect(result.options.provider).toEqual({
+            only: ["z-ai/fp8"],
+            allow_fallbacks: false,
+        });
+    });
+
     it.each([
         ["qwen-coder-large", "qwen/qwen3-coder-next", "parasail/bf16"],
         ["qwen-vision", "qwen/qwen3-vl-30b-a3b-instruct", "alibaba"],

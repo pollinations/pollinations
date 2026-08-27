@@ -142,6 +142,20 @@ describe("provider registry", () => {
                 (account) => account.id,
             ),
         ).toEqual(["myceli"]);
+
+        const exa = resolveProvider("exa");
+        expect(exa).toBeDefined();
+        if (!exa) throw new Error("Exa is not registered");
+        expect(activeProviderAccounts(exa, "2026-08")).toEqual([
+            expect.objectContaining({ id: "elliot@myceli.ai" }),
+        ]);
+
+        const regolo = resolveProvider("regolo");
+        expect(regolo).toBeDefined();
+        if (!regolo) throw new Error("Regolo.ai is not registered");
+        expect(activeProviderAccounts(regolo, "2026-08")).toEqual([
+            expect.objectContaining({ id: "thomash@pollinations.ai" }),
+        ]);
     });
 
     it("keeps source-backed Pollen witness explanations unique and canonical", () => {

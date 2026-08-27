@@ -1,0 +1,33 @@
+{
+  "pr_number": 13977,
+  "title": "docs: improve FFmpeg MCP description",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13977",
+  "merged_at": "2026-08-27T01:15:07Z",
+  "labels": [],
+  "pr_body_excerpt": "- Replaces implementation-focused FFmpeg copy with a concise list of user-facing capabilities\n- Updates the MCP registry response expectation",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "FFmpeg, Minus the Manual",
+    "blurb": "The FFmpeg MCP listing now says what it can actually do, without making everyone read the plumbing first. Polli approves of tools that introduce themselves properly.",
+    "summary": "Rewrote the FFmpeg MCP registry description as a concise list of user-facing media capabilities and updated the MCP proxy test expectation to match.",
+    "impact": "People browsing MCP tools now get a clearer, capability-focused explanation of what the FFmpeg server can help them do.",
+    "keywords": [
+      "ffmpeg",
+      "mcp",
+      "registry",
+      "tool-discovery",
+      "documentation"
+    ],
+    "visual_concept": "Depict the FFmpeg MCP tool as a friendly retro media-workbench: small film, audio-wave, and video-frame icons arranged as a simple capability menu instead of a dense technical manual. Polli, wearing tiny editor headphones, points warmly at the clear list while code-plants and flowers grow around a CRT terminal.",
+    "image_prompt": "A cozy pixel art media workshop where Polli, the cute yellow bee mascot with dark brown stripes, black antennae, oval eyes, pink rectangular cheek blushes, a happy smile, light-blue translucent wings, and tiny editor headphones, points at a friendly CRT monitor showing simple pixel icons for video, audio, and film tools; code-plants bloom in pots nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text: \"FFMPEG MCP\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-27/PR-13977.jpg",
+    "prompt": "A cozy pixel art media workshop where Polli, the cute yellow bee mascot with dark brown stripes, black antennae, oval eyes, pink rectangular cheek blushes, a happy smile, light-blue translucent wings, and tiny editor headphones, points at a friendly CRT monitor showing simple pixel icons for video, audio, and film tools; code-plants bloom in pots nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text: \"FFMPEG MCP\"."
+  },
+  "generated_at": "2026-08-27T01:16:13.131422+00:00"
+}

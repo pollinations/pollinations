@@ -1,5 +1,6 @@
 import { env, SELF } from "cloudflare:test";
 import {
+    COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     parseListingPayload,
 } from "@shared/community-endpoints.ts";
@@ -34,6 +35,21 @@ async function postModel(
     });
     expect(response.status, await response.clone().text()).toBe(200);
     return response.json<Record<string, unknown>>();
+}
+
+async function publishPendingModel(
+    sessionToken: string,
+    id: string,
+): Promise<Record<string, unknown>> {
+    await drizzle(env.DB)
+        .update(schema.communityEndpoint)
+        .set({
+            pendingAt: new Date(
+                Date.now() - COMMUNITY_ENDPOINT_CHANGE_DELAY_MS - 1000,
+            ),
+        })
+        .where(eq(schema.communityEndpoint.id, id));
+    return postModel(sessionToken, `/${id}/update`, {});
 }
 
 describe("community endpoint configuration policy", () => {
@@ -143,8 +159,12 @@ describe("community endpoint configuration policy", () => {
             perUserRpm: 2.5,
             completionImagePrice: 0.2,
         });
+        const published = await publishPendingModel(
+            sessionToken,
+            created.id as string,
+        );
 
-        expect(created).toMatchObject({
+        expect(published).toMatchObject({
             modality: "image",
             imagePricing: "request",
             inputModalities: ["text", "image"],
@@ -202,6 +222,7 @@ describe("community endpoint configuration policy", () => {
             bearerToken: "test-provider-token",
             promptTextPrice: 0.000001,
         });
+        await publishPendingModel(sessionToken, cheaper.id as string);
         const expensive = await postModel(sessionToken, "", {
             name: "expensive-fallback",
             title: "Expensive fallback",
@@ -210,6 +231,7 @@ describe("community endpoint configuration policy", () => {
             bearerToken: "test-provider-token",
             promptTextPrice: 0.000003,
         });
+        await publishPendingModel(sessionToken, expensive.id as string);
         const cheaperModelId = cheaper.modelId as string;
         const expensiveModelId = expensive.modelId as string;
         const primary = await postModel(sessionToken, "", {
@@ -221,8 +243,12 @@ describe("community endpoint configuration policy", () => {
             promptTextPrice: 0.000002,
             fallbacks: [cheaperModelId],
         });
+        const publishedPrimary = await publishPendingModel(
+            sessionToken,
+            primary.id as string,
+        );
 
-        expect(primary.fallbacks).toEqual([cheaperModelId]);
+        expect(publishedPrimary.fallbacks).toEqual([cheaperModelId]);
 
         const response = await SELF.fetch(
             `${endpointUrl}/${primary.id as string}/fallback-candidates`,
@@ -257,6 +283,7 @@ describe("community endpoint configuration policy", () => {
             },
             promptTextPrice: 0.000001,
         });
+        await publishPendingModel(sessionToken, created.id as string);
 
         const cleared = await postModel(
             sessionToken,

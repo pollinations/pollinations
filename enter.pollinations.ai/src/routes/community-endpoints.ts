@@ -421,7 +421,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["🤖 Community Agents"],
             summary: "Create Endpoint Agent",
             description:
-                "Register an agent running on an external OpenAI-compatible endpoint. Pollinations sends a short-lived agent run token instead of a stored bearer credential. Private is the default; public agents require an allowlisted account. API keys require `account:keys`.",
+                "Register an agent running on an external OpenAI-compatible endpoint. Pollinations sends a short-lived agent run token instead of a stored bearer credential. Private is the default; public agents require an allowlisted account and become public after 12 hours. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Created endpoint agent",
@@ -448,6 +448,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             );
             await ensureModelNameAvailable(db, user.id, input.name);
             await enforcePublishingAccess(db, user.id, input.visibility);
+            const queuesPublication = input.visibility === "public";
             const payload: EndpointAgentListingPayload = {
                 perUserRpm: input.perUserRpm,
             };
@@ -459,7 +460,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     name: input.name,
                     title: input.title,
                     description: input.description || null,
-                    visibility: input.visibility,
+                    visibility: queuesPublication
+                        ? "private"
+                        : input.visibility,
+                    pendingVisibility: queuesPublication ? "public" : null,
+                    pendingAt: queuesPublication ? new Date() : null,
                     type: "endpoint_agent",
                     baseUrl: normalizeInputBaseUrl(input.baseUrl),
                     upstreamModel: input.upstreamModel ?? input.name,
@@ -483,7 +488,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["🧩 Community Models"],
             summary: "Create My Model",
             description:
-                "Register a private or public community text, image, or transcription model. Private is the default. Public models require an allowlisted account and may be free or priced. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
+                "Register a private or public community text, image, or transcription model. Private is the default. Public models require an allowlisted account and become public after 12 hours. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
             responses: {
                 200: {
                     description: "Created community model",
@@ -509,21 +514,27 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 user.id,
             );
             await ensureModelNameAvailable(db, user.id, input.name);
-            const policy = deriveCreateProxyPolicy(input);
+            const targetPolicy = deriveCreateProxyPolicy(input);
+            const queuesPublication = input.visibility === "public";
+            const policy = queuesPublication
+                ? deriveCreateProxyPolicy({ ...input, visibility: "private" })
+                : targetPolicy;
             const modelId = communityModelId(ownerGithubUsername, input.name);
+            const bearerTokenCiphertext = await encryptSecret(
+                normalizeInputBearerToken(input.bearerToken),
+                c.env.BETTER_AUTH_SECRET,
+            );
+            const fallbacks = input.fallbacks
+                ? await resolveFallbacks(db, input.fallbacks, {
+                      modelId,
+                      ownerUserId: user.id,
+                      ...targetPolicy,
+                  })
+                : [];
             const payload: ProxyListingPayload = {
-                bearerTokenCiphertext: await encryptSecret(
-                    normalizeInputBearerToken(input.bearerToken),
-                    c.env.BETTER_AUTH_SECRET,
-                ),
+                bearerTokenCiphertext,
                 ...policy,
-                fallbacks: input.fallbacks
-                    ? await resolveFallbacks(db, input.fallbacks, {
-                          modelId,
-                          ownerUserId: user.id,
-                          ...policy,
-                      })
-                    : [],
+                fallbacks,
             };
             await enforcePublishingAccess(db, user.id, input.visibility);
             const [row] = await db
@@ -534,11 +545,22 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     name: input.name,
                     title: input.title,
                     description: input.description || null,
-                    visibility: input.visibility,
+                    visibility: queuesPublication
+                        ? "private"
+                        : input.visibility,
                     type: "proxy",
                     baseUrl: normalizeInputBaseUrl(input.baseUrl),
                     upstreamModel: input.upstreamModel ?? input.name,
                     payload: JSON.stringify(payload),
+                    pendingPayload: queuesPublication
+                        ? JSON.stringify({
+                              bearerTokenCiphertext,
+                              ...targetPolicy,
+                              fallbacks,
+                          } satisfies ProxyListingPayload)
+                        : null,
+                    pendingVisibility: queuesPublication ? "public" : null,
+                    pendingAt: queuesPublication ? new Date() : null,
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 })

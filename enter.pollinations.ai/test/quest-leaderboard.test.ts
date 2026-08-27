@@ -38,6 +38,13 @@ if (hasNestedReactRuntimes) {
     );
 }
 
+vi.doMock("../../pollinations.ai/src/ui/components/ui/typography", () => ({
+    Body: ({ children }: { children: string }) =>
+        createElement("p", null, children),
+    Heading: ({ children, ...props }: { children: string; id: string }) =>
+        createElement("h2", props, children),
+}));
+
 const { parseQuestLeaderboardEntries, QuestLeaderboardContent } = await import(
     "../../pollinations.ai/src/ui/components/QuestLeaderboard"
 );

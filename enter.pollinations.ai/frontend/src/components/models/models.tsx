@@ -1,5 +1,6 @@
 import {
     Alert,
+    BeakerIcon,
     BotIcon,
     Button,
     ChevronIcon,
@@ -348,22 +349,19 @@ export const Models: FC = () => {
                     </div>
                 }
             >
-                <Alert
-                    intent="warning"
-                    title="New model IDs are available now"
-                    className="mb-4"
-                >
-                    Publisher-qualified IDs such as{" "}
-                    <code className="font-semibold !text-intent-free-text">
-                        black-forest-labs/flux.1-schnell
-                    </code>{" "}
-                    work today and become canonical on September 7. Existing IDs
-                    will keep working.
+                <Alert intent="warning" className="mb-4">
+                    <div className="mb-1.5 flex items-center gap-2 text-base font-bold text-theme-text-strong">
+                        <BeakerIcon className="h-4 w-4 shrink-0" />
+                        <span>Publisher-qualified IDs are available now</span>
+                    </div>
+                    You can adopt them today. On September 7,
+                    publisher-qualified IDs become the canonical model IDs, and
+                    current IDs become aliases.{" "}
                     <a
                         href={MODEL_SLUG_ANNOUNCEMENT_URL}
-                        className="mt-1.5 block w-fit font-semibold underline hover:no-underline"
+                        className="font-semibold underline hover:no-underline"
                     >
-                        View all model ID changes →
+                        Learn more →
                     </a>
                 </Alert>
                 <div className="mb-4 flex flex-col items-start gap-3">

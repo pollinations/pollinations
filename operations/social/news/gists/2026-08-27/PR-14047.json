@@ -1,0 +1,36 @@
+{
+  "pr_number": 14047,
+  "title": "Add AI STUDIO — RealTime AUDIO & VIDEO CREATOR to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/14047",
+  "merged_at": "2026-08-27T13:06:20Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [AI STUDIO — RealTime AUDIO & VIDEO CREATOR](https://noanswers.website/WebAnimation) to image\n- Creates collaborative images using the Pollinations image API integration. Thereby, allowing users to add generated content or uploaded from the local machines and create slide/videos adaptive to FPS \n\nFixes #13994",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The studio joins the garden",
+    "blurb": "AI STUDIO has landed in the community gallery, where generated images and local uploads can become collaborative slides and FPS-adaptive videos. Polli brought the pixels; the studio brought the moving pictures.",
+    "summary": "Added AI STUDIO — RealTime AUDIO & VIDEO CREATOR to the app directory, showcasing a Pollinations Image API-powered collaborative editor for generated or locally uploaded content that can be assembled into FPS-adaptive slides and videos.",
+    "impact": "People browsing Pollinations apps can now discover AI STUDIO for turning generated images and local assets into collaborative audiovisual projects and adaptive video sequences.",
+    "keywords": [
+      "community-app",
+      "image-api",
+      "video",
+      "audio",
+      "collaboration",
+      "ai-studio"
+    ],
+    "visual_concept": "Depict a cozy pixel-art creative studio: Polli, wearing tiny filmmaker headphones and a beret, arranges glowing image cards on a retro timeline while a CRT monitor robot projects them as a gentle animated slideshow. Add a small microphone, film reel, code-plants, and flowering vines to represent real-time audio, video, and collaborative creation.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny filmmaker beret with headphones, arranging glowing image cards on a retro video-editing timeline beside a cheerful CRT monitor robot projecting a soft slideshow; little microphones, film reels, flowering code-plants, and vines fill the warm studio. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes; simple pixel-font text reads “AI STUDIO”, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-27/PR-14047.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny filmmaker beret with headphones, arranging glowing image cards on a retro video-editing timeline beside a cheerful CRT monitor robot projecting a soft slideshow; little microphones, film reels, flowering code-plants, and vines fill the warm studio. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes; simple pixel-font text reads “AI STUDIO”, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-27T13:07:27.439000+00:00",
+  "app_name": "AI STUDIO — RealTime AUDIO & VIDEO CREATOR",
+  "app_url": "https://noanswers.website/WebAnimation"
+}

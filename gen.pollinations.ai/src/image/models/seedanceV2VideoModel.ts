@@ -15,7 +15,6 @@ import type { ImageParams } from "../params.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { toDataUri } from "../utils/imageDownload.ts";
 import {
-    ReplicateError,
     runReplicatePrediction,
     toReplicateHttpError,
 } from "../utils/replicateClient.ts";
@@ -155,12 +154,6 @@ export async function callSeedanceV2API(
         });
     } catch (err) {
         logError(`${definition.title} prediction call failed:`, err);
-        if (err instanceof ReplicateError) {
-            logError("Replicate raw error details:", {
-                message: err.message,
-                status: err.status,
-            });
-        }
         throw toReplicateHttpError(
             err,
             `${definition.title} generation failed`,

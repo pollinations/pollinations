@@ -6,7 +6,6 @@ import { closestRatioLogSpace } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { toDataUri } from "../utils/imageDownload.ts";
 import {
-    ReplicateError,
     runReplicatePrediction,
     toReplicateHttpError,
 } from "../utils/replicateClient.ts";
@@ -113,12 +112,6 @@ export async function callSeedance25API(
         });
     } catch (error) {
         logError("prediction failed", error);
-        if (error instanceof ReplicateError) {
-            logError("Replicate error", {
-                message: error.message,
-                status: error.status,
-            });
-        }
         throw toReplicateHttpError(error, "Seedance 2.5 generation failed");
     }
 

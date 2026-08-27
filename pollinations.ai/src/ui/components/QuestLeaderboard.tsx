@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { COMMUNITY_PAGE } from "../../copy/content/community";
 import { LINKS } from "../../copy/content/socialLinks";
 import { usePageCopy } from "../../hooks/usePageCopy";
-import { Body, Heading } from "./ui/typography";
 
 export type QuestLeaderboardEntry = {
     githubUsername: string;
@@ -16,23 +15,61 @@ export type QuestLeaderboardData = {
 
 const LEADERBOARD_API = "https://enter.pollinations.ai/api/quests/leaderboard";
 
+export function parseQuestLeaderboardEntries(
+    value: unknown,
+): QuestLeaderboardEntry[] {
+    if (!Array.isArray(value)) return [];
+
+    return value.flatMap((entry) => {
+        if (typeof entry !== "object" || entry === null) return [];
+        const candidate = entry as Record<string, unknown>;
+        const githubUsername = candidate.githubUsername;
+        const completedQuests = candidate.completedQuests;
+        const totalPollen = candidate.totalPollen;
+
+        if (
+            typeof githubUsername !== "string" ||
+            githubUsername.trim() === "" ||
+            typeof completedQuests !== "number" ||
+            !Number.isFinite(completedQuests) ||
+            !Number.isInteger(completedQuests) ||
+            completedQuests < 0 ||
+            typeof totalPollen !== "number" ||
+            !Number.isFinite(totalPollen) ||
+            totalPollen < 0
+        )
+            return [];
+
+        return [
+            {
+                githubUsername: githubUsername.trim(),
+                completedQuests,
+                totalPollen,
+            },
+        ];
+    });
+}
+
 export function QuestLeaderboardContent({
     data,
+    copy = COMMUNITY_PAGE,
 }: {
     data: QuestLeaderboardData;
+    copy?: typeof COMMUNITY_PAGE;
 }) {
-    const { copy } = usePageCopy(COMMUNITY_PAGE);
-
     return (
         <section className="mb-12" aria-labelledby="quest-leaderboard-heading">
             <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                    <Heading id="quest-leaderboard-heading" spacing="tight">
+                    <h2
+                        id="quest-leaderboard-heading"
+                        className="mb-2 font-headline text-2xl font-black uppercase tracking-widest text-dark"
+                    >
                         {copy.questLeaderboardTitle}
-                    </Heading>
-                    <Body size="sm" spacing="none">
+                    </h2>
+                    <p className="font-body text-sm text-subtle">
                         {copy.questLeaderboardDescription}
-                    </Body>
+                    </p>
                 </div>
                 <a
                     href={`${LINKS.enter}/quests`}
@@ -63,7 +100,9 @@ export function QuestLeaderboardContent({
                                 </span>
                                 <span className="block font-body text-xs text-subtle">
                                     {entry.completedQuests}{" "}
-                                    {copy.questLeaderboardQuestsLabel}
+                                    {entry.completedQuests === 1
+                                        ? copy.questLeaderboardQuestLabel
+                                        : copy.questLeaderboardQuestsLabel}
                                 </span>
                             </span>
                             <strong className="shrink-0 font-headline text-xs font-black text-dark">
@@ -80,16 +119,23 @@ export function QuestLeaderboardContent({
 
 export function QuestLeaderboard() {
     const [data, setData] = useState<QuestLeaderboardData | null>(null);
+    const { copy } = usePageCopy(COMMUNITY_PAGE);
 
     useEffect(() => {
         let active = true;
         fetch(LEADERBOARD_API)
             .then((response) => {
                 if (!response.ok) throw new Error("Leaderboard request failed");
-                return response.json() as Promise<QuestLeaderboardData>;
+                return response.json() as Promise<unknown>;
             })
             .then((result) => {
-                if (active && result.leaderboard.length > 0) setData(result);
+                const leaderboard =
+                    typeof result === "object" && result !== null
+                        ? parseQuestLeaderboardEntries(
+                              (result as { leaderboard?: unknown }).leaderboard,
+                          )
+                        : [];
+                if (active && leaderboard.length > 0) setData({ leaderboard });
             })
             .catch(() => {
                 // The community page remains useful if the optional board is unavailable.
@@ -100,5 +146,5 @@ export function QuestLeaderboard() {
         };
     }, []);
 
-    return data ? <QuestLeaderboardContent data={data} /> : null;
+    return data ? <QuestLeaderboardContent data={data} copy={copy} /> : null;
 }

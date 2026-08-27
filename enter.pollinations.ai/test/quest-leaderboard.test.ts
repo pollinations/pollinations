@@ -1,10 +1,11 @@
 import { env, SELF } from "cloudflare:test";
 import * as schema from "@shared/db/better-auth.ts";
 import { drizzle } from "drizzle-orm/d1";
-import { expect } from "vitest";
-import { createElement } from "../../pollinations.ai/node_modules/react";
-import { renderToStaticMarkup } from "../../pollinations.ai/node_modules/react-dom/server";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { expect, test as vitestTest } from "vitest";
 import {
+    parseQuestLeaderboardEntries,
     QuestLeaderboardContent,
     type QuestLeaderboardData,
 } from "../../pollinations.ai/src/ui/components/QuestLeaderboard";
@@ -136,9 +137,17 @@ test("leaderboard filters, merges, rounds, orders, and caches public quest rewar
     expect(first.status).toBe(200);
     await expect(first.json()).resolves.toEqual({
         leaderboard: [
-            { githubUsername: "alice", completedQuests: 3, totalPollen: 0.6 },
+            {
+                githubUsername: "alice",
+                completedQuests: 3,
+                totalPollen: 0.6,
+            },
             { githubUsername: "bob", completedQuests: 1, totalPollen: 0.6 },
-            { githubUsername: "dave", completedQuests: 1, totalPollen: 0.6 },
+            {
+                githubUsername: "dave",
+                completedQuests: 1,
+                totalPollen: 0.6,
+            },
         ],
     });
 
@@ -157,9 +166,17 @@ test("leaderboard filters, merges, rounds, orders, and caches public quest rewar
     );
     await expect(cached.json()).resolves.toEqual({
         leaderboard: [
-            { githubUsername: "alice", completedQuests: 3, totalPollen: 0.6 },
+            {
+                githubUsername: "alice",
+                completedQuests: 3,
+                totalPollen: 0.6,
+            },
             { githubUsername: "bob", completedQuests: 1, totalPollen: 0.6 },
-            { githubUsername: "dave", completedQuests: 1, totalPollen: 0.6 },
+            {
+                githubUsername: "dave",
+                completedQuests: 1,
+                totalPollen: 0.6,
+            },
         ],
     });
 
@@ -170,16 +187,29 @@ test("leaderboard filters, merges, rounds, orders, and caches public quest rewar
     await expect(refreshed.json()).resolves.toEqual({
         leaderboard: [
             { githubUsername: "bob", completedQuests: 2, totalPollen: 2.1 },
-            { githubUsername: "alice", completedQuests: 3, totalPollen: 0.6 },
-            { githubUsername: "dave", completedQuests: 1, totalPollen: 0.6 },
+            {
+                githubUsername: "alice",
+                completedQuests: 3,
+                totalPollen: 0.6,
+            },
+            {
+                githubUsername: "dave",
+                completedQuests: 1,
+                totalPollen: 0.6,
+            },
         ],
     });
 });
 
-test("leaderboard content renders public fields and quest link", () => {
+vitestTest("leaderboard content renders public fields and quest link", () => {
     const data: QuestLeaderboardData = {
         leaderboard: [
-            { githubUsername: "alice", completedQuests: 2, totalPollen: 1.25 },
+            { githubUsername: "alice", completedQuests: 1, totalPollen: 1.25 },
+            {
+                githubUsername: "octo/user",
+                completedQuests: 2,
+                totalPollen: 2.5,
+            },
         ],
     };
     const markup = renderToStaticMarkup(
@@ -188,9 +218,41 @@ test("leaderboard content renders public fields and quest link", () => {
 
     expect(markup).toContain("Quest leaderboard");
     expect(markup).toContain("@alice");
+    expect(markup).toContain("1 quest");
+    expect(markup).not.toContain("1 quests");
     expect(markup).toContain("2 quests");
     expect(markup).toContain("1.25 Pollen");
-    expect(markup).toContain('href="https://github.com/alice"');
+    expect(markup).toContain('href="https://github.com/octo%2Fuser"');
     expect(markup).toContain('href="https://enter.pollinations.ai/quests"');
     expect(markup).not.toContain("leaderboard-alice");
+});
+
+vitestTest("leaderboard payload validation drops malformed rows", () => {
+    expect(
+        parseQuestLeaderboardEntries([
+            {
+                githubUsername: " Alice ",
+                completedQuests: 1,
+                totalPollen: 0.5,
+            },
+            null,
+            {},
+            { githubUsername: "", completedQuests: 2, totalPollen: 1 },
+            { githubUsername: "bob", completedQuests: 1.5, totalPollen: 1 },
+            { githubUsername: "carol", completedQuests: 1, totalPollen: -1 },
+            {
+                githubUsername: "dave",
+                completedQuests: Infinity,
+                totalPollen: 1,
+            },
+        ]),
+    ).toEqual([
+        { githubUsername: "Alice", completedQuests: 1, totalPollen: 0.5 },
+    ]);
+    expect(
+        parseQuestLeaderboardEntries([
+            { githubUsername: "", completedQuests: 0, totalPollen: 0 },
+            { githubUsername: "eve", completedQuests: 0.5, totalPollen: 0 },
+        ]),
+    ).toEqual([]);
 });

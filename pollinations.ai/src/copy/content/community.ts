@@ -101,6 +101,7 @@ export const COMMUNITY_PAGE = {
     questLeaderboardDescription:
         "A snapshot of the builders earning Pollen by completing community quests.",
     questLeaderboardCta: "Join the quests",
+    questLeaderboardQuestLabel: "quest",
     questLeaderboardQuestsLabel: "quests",
     questLeaderboardPollenLabel: "Pollen",
 

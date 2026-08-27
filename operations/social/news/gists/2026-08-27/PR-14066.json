@@ -1,0 +1,33 @@
+{
+  "pr_number": 14066,
+  "title": "feat: add sharktide to GitHub Polli whitelist",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/14066",
+  "merged_at": "2026-08-27T18:13:23Z",
+  "labels": [],
+  "pr_body_excerpt": "- Expands GitHub Polli access from 7 to 8 authorized users across both workflows.\n- Adds sharktide using immutable GitHub user ID 189873015.\n- Enables access to the !polli assistant for issue and PR review/coding requests, plus automated fixes for issues labeled POLLI.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "One more bee in the hive",
+    "blurb": "sharktide has been added to Polli’s GitHub guest list. The tiny assistant now recognizes one more trusted human when issues and PRs need tending.",
+    "summary": "Added GitHub user ID 189873015 (sharktide) to the authorization allowlists in both the !polli assistant and POLLI-labeled issue auto-fix workflows, expanding access from seven to eight users.",
+    "impact": "sharktide can now invoke !polli for issue and PR review or coding requests, and use the automated fix flow for issues labeled POLLI.",
+    "keywords": [
+      "github",
+      "polli",
+      "allowlist",
+      "automation",
+      "issue-fixes"
+    ],
+    "visual_concept": "Depict Polli as a cozy beekeeper at a small GitHub-themed garden gate, adding an eighth named badge to a trusted visitor board while a CRT monitor robot happily stamps an access card. Include code-plants and a subtle issue/PR terminal to represent assistant and auto-fix workflow access.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny beekeeper hat, adding an eighth visitor badge labeled “sharktide” to a garden gate beside a glowing GitHub-style terminal; a cheerful CRT monitor robot holds an access card while code-plants bloom nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, with subtle pixel text: “ACCESS GRANTED”."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-27/PR-14066.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny beekeeper hat, adding an eighth visitor badge labeled “sharktide” to a garden gate beside a glowing GitHub-style terminal; a cheerful CRT monitor robot holds an access card while code-plants bloom nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, with subtle pixel text: “ACCESS GRANTED”."
+  },
+  "generated_at": "2026-08-27T18:20:07.215532+00:00"
+}

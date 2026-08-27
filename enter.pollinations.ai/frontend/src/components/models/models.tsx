@@ -34,8 +34,8 @@ import {
     fetchModelCatalog,
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
-import { getModelDisplayName } from "./model-info.ts";
 import type { ModelScope, ModelSort } from "./model-search.ts";
+import { matchesQuery } from "./model-search-parser.ts";
 import { sortModels } from "./model-sort.ts";
 import {
     type SectionType,
@@ -115,13 +115,6 @@ const SEARCH_LABELS: Record<SectionType, string> = {
     embedding: "embedding",
     agent: "agent",
 };
-
-function matchesQuery(model: ModelPrice, query: string): boolean {
-    if (!query) return true;
-    const displayName = getModelDisplayName(model) ?? "";
-    const haystack = `${displayName} ${model.brand ?? ""}`.toLowerCase();
-    return haystack.includes(query);
-}
 
 function categorizeModels(
     models: ModelPrice[],

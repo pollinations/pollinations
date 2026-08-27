@@ -36,8 +36,16 @@ jobs:
         with:
           github-token: ${{ steps.token.outputs.token }}
           script: |
-            const authorizedUserIds = new Set([5099901, 36901823, 74301576, 158852059]);
-            const authorizedBotId = 247793354;
+            const authorizedUserIds = new Set([
+              5099901, // voodoohop
+              36901823, // ElliotEtag
+              158852059, // Itachi-1824
+              74301576, // Circuit-Overtime
+              204561696, // tomdacatto
+              182555207, // YoannDev90
+              34513273, // fisventurous
+            ]);
+            const authorizedBotId = 247793354; // pollinations-ai[bot]
             const labeledBy = context.payload.sender.login;
             const labeledById = context.payload.sender.id;
 

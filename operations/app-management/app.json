@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "💬",
+    "name": "Pollinations Studio",
+    "url": "https://sankezhiyyds.github.io/pollinations-app",
+    "description": "A pure HTML/JavaScript AI generation studio with no framework dependencies. It supports image, text, audio, and video generation via the Pollinations API. Users bring their own API key (sk_ or pk_) fo",
+    "language": "en",
+    "category": "chat",
+    "platform": "web",
+    "githubUsername": "sankezhiyyds",
+    "githubUserId": "109223978",
+    "repositoryUrl": "https://github.com/sankezhiyyds/pollinations-app",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-08-26",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/13997",
+    "approvedDate": "2026-08-27",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🖼️",
     "name": "Dery AI",
     "url": "https://dery-ai.my.id",

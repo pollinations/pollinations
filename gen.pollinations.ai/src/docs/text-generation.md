@@ -9,6 +9,38 @@ Generate text responses using AI models. Fully compatible with the OpenAI Chat C
 
 **Available models:** {{TEXT_MODELS}}
 
+### Reasoning
+
+Set `reasoning_effort` on reasoning-capable models. Model metadata reports reasoning support; supported effort levels vary by model.
+
+```bash
+# POST /v1/chat/completions — OpenAI-compatible response
+curl https://gen.pollinations.ai/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $POLLINATIONS_API_KEY" \
+  -d '{
+    "model": "openai",
+    "reasoning_effort": "high",
+    "messages": [
+      { "role": "user", "content": "Prove that there are infinitely many prime numbers." }
+    ]
+  }'
+```
+
+```bash
+# POST /text — plain-text response
+curl https://gen.pollinations.ai/text \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $POLLINATIONS_API_KEY" \
+  -d '{
+    "model": "openai",
+    "reasoning_effort": "medium",
+    "messages": [
+      { "role": "user", "content": "Design a URL shortener. Outline the key tradeoffs." }
+    ]
+  }'
+```
+
 ### Prompt caching
 
 On Gemini, Claude, and Nova models, a large static prompt prefix can be cached so repeat requests bill it at a fraction of the input rate. Mark the end of the static prefix with `cache_control` on a content block (not on the message); everything before the marker must be byte-identical across requests, everything dynamic goes after. The first request creates the cache (`usage` reports `cache_creation_input_tokens`); repeat requests within the TTL report `prompt_tokens_details.cached_tokens` at the discounted rate.
@@ -37,38 +69,3 @@ On Gemini, Claude, and Nova models, a large static prompt prefix can be cached s
 **Claude** — all Claude models cache. The prefix must be at least 4,096 tokens (1,024 on `claude` and `claude-fable-5`); tools are fine. Cache creates bill at 1.25× the input rate (no storage fee); hits bill at 10% of input. The cache lives ~5 minutes, refreshed on each hit.
 
 **Nova** — `nova` and `nova-fast` cache. The prefix must be at least ~1,000 tokens (up to 20K tokens cacheable). Cache creates are free; hits bill at 25% of input. ~5-minute TTL.
-
-
-### Reasoning
-
-Reasoning-capable models can spend extra tokens thinking before answering. Request a thinking depth with `reasoning_effort`. Check the [models list](https://gen.pollinations.ai/models) first — model metadata reports whether a model supports reasoning at all, not which effort levels it accepts. Handling of specific values (including `"none"` and `"minimal"`) varies by model: some honor every level, while others reject, normalize, or drop unsupported ones.
-
-```bash
-# POST /v1/chat/completions — OpenAI-compatible endpoint
-curl https://gen.pollinations.ai/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $POLLINATIONS_API_KEY" \
-  -d '{
-    "model": "openai",
-    "reasoning_effort": "high",
-    "messages": [
-      { "role": "user", "content": "Prove that there are infinitely many prime numbers." }
-    ]
-  }'
-```
-
-```bash
-# POST /text — same request body as chat completions, returns plain text
-curl https://gen.pollinations.ai/text \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $POLLINATIONS_API_KEY" \
-  -d '{
-    "model": "openai",
-    "reasoning_effort": "medium",
-    "messages": [
-      { "role": "user", "content": "Design a URL shortener. Outline the key tradeoffs." }
-    ]
-  }'
-```
-
-Higher efforts produce more thorough (and slower, more expensive) answers on models that support them.

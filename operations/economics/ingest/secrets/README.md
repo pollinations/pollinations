@@ -6,7 +6,6 @@ Files:
 
 - `env.json`: SOPS-encrypted real local secrets for provider collection.
   Runtime-key rotation is outside the Economics provider-collection skill.
-- `env.example.json`: same keys with empty values.
 
 Rules:
 

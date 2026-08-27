@@ -1,0 +1,35 @@
+{
+  "pr_number": 14069,
+  "title": "feat: add GLM-5.3 Flash",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14069",
+  "merged_at": "2026-08-27T21:00:33Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `z-ai/glm-5.3-flash` as a publisher-qualified canonical model with no aliases.\n- Pins OpenRouter to the exact `z-ai/fp8` route with provider fallback disabled.\n- Sets `paidOnly: true`, multiplier `1`, and verified rates: $0.075/M input and image tokens, $0.015/M cached input, and $0.25/M output.\n- Advertises text and image input, tools, mandatory reasoning, 10 reference images, and a 1,048,576-token context window.\n- Updates `MODEL_SLUGS.md`, pricing snapshots, canonical-ID retrieval, resolver, reasoning, alias, and billing coverage.\n\nVerified directly and through authenticated local E2E: streaming/non-streaming, tools, JSON object mode, reasoning, 10 images, prompt caching, exact billing, paid-only access, cache hit without a second debit, invalid input, and a 5-request burst.\n\nNo Pollinations GPU and no fallback.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A Flash in the Hive",
+    "blurb": "GLM-5.3 Flash has landed with a very large context window and room for ten reference images. Polli checked the route twice; it goes exactly where it says it goes.",
+    "summary": "Added the paid-only `z-ai/glm-5.3-flash` text model via a pinned OpenRouter `z-ai/fp8` route, with mandatory reasoning, tool use, text and image input, 10 reference images, and a 1,048,576-token context window.",
+    "impact": "Paid API users can now run GLM-5.3 Flash for long-context, reasoning-heavy multimodal work at verified rates of $0.075/M input or image tokens, $0.015/M cached input, and $0.25/M output tokens.",
+    "keywords": [
+      "GLM-5.3 Flash",
+      "OpenRouter",
+      "text models",
+      "reasoning",
+      "image input",
+      "tools",
+      "long context"
+    ],
+    "visual_concept": "Depict GLM-5.3 Flash as a cozy, precise lightning-fast library terminal: a huge glowing scroll represents the million-token context window, while ten tiny framed reference images float around it. Polli, wearing little librarian glasses and a tool belt, carefully routes a glowing cable into one clearly labeled OpenRouter socket; a code-plant and small flowers make the giant technical task feel like a well-tended garden.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, connecting a glowing lime green (#ecf874) cable from a retro terminal to one precise route labeled in simple pixel text: 'GLM-5.3 FLASH'; a huge illuminated scroll of code and ten small reference-image frames float nearby among code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-27/PR-14069.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, connecting a glowing lime green (#ecf874) cable from a retro terminal to one precise route labeled in simple pixel text: 'GLM-5.3 FLASH'; a huge illuminated scroll of code and ten small reference-image frames float nearby among code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-27T21:03:37.382466+00:00"
+}

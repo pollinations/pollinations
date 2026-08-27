@@ -11,7 +11,12 @@ export type Model3dName = keyof typeof MODEL3D_SERVICES;
 // shared/schemas/generation-event.ts and a Tinybird schema change.
 export const MODEL3D_SERVICES = {
     "trellis-2": {
-        aliases: ["trellis-2-low", "trellis-2-medium", "trellis-2-high"],
+        aliases: [
+            "trellis-2-low",
+            "trellis-2-medium",
+            "trellis-2-high",
+            "microsoft/trellis-2",
+        ],
         provider: "inferenceport",
         brand: "Microsoft",
         category: "3d",
@@ -48,7 +53,7 @@ export const MODEL3D_SERVICES = {
         resolutions: ["low", "medium", "high"],
     },
     "hyper3d-rodin": {
-        aliases: ["rodin"],
+        aliases: ["rodin", "hyper3d/rodin-2.5"],
         provider: "fal",
         brand: "Deemos",
         category: "3d",

@@ -1,5 +1,6 @@
 import {
     Alert,
+    BeakerIcon,
     BotIcon,
     Button,
     ChevronIcon,
@@ -67,6 +68,10 @@ const COMMUNITY_SECTION_ORDER: SectionType[] = [
     "agent",
 ];
 const SCOPE_ORDER: ModelScope[] = ["pollinations", "community"];
+
+const MODEL_SLUG_ANNOUNCEMENT_URL = "/news#canonical-model-slugs";
+const MODEL_SLUG_LIST_URL =
+    "https://github.com/pollinations/pollinations/blob/main/MODEL_SLUGS.md";
 
 const SCOPE_LABELS: Record<ModelScope, string> = {
     pollinations: "Official",
@@ -360,6 +365,28 @@ export const Models: FC = () => {
                     </div>
                 }
             >
+                <Alert intent="warning" className="mb-4">
+                    <div className="mb-1.5 flex items-center gap-2 text-base font-bold text-theme-text-strong">
+                        <BeakerIcon className="h-4 w-4 shrink-0" />
+                        <span>Publisher-qualified IDs are available now</span>
+                    </div>
+                    You can adopt them today. On September 7,
+                    publisher-qualified IDs become the canonical model IDs, and
+                    current IDs become aliases.{" "}
+                    <a
+                        href={MODEL_SLUG_ANNOUNCEMENT_URL}
+                        className="font-semibold underline hover:no-underline"
+                    >
+                        Learn more →
+                    </a>
+                    <a
+                        href={MODEL_SLUG_LIST_URL}
+                        className="mt-2 flex w-fit items-center gap-1.5 font-semibold underline hover:no-underline"
+                    >
+                        <GitHubIcon className="h-4 w-4 shrink-0" />
+                        <span>View all model ID changes →</span>
+                    </a>
+                </Alert>
                 <div className="mb-4 flex flex-col items-start gap-3">
                     <div className="flex flex-col gap-2">
                         <div className="flex flex-wrap gap-1.5">

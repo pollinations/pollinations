@@ -509,9 +509,6 @@ const IMAGE_BASE_SERVICES = {
             "reference_audios",
         ],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
-        maxInputReferenceImages: 9,
-        maxInputReferenceVideos: 3,
-        maxInputReferenceAudios: 3,
         minDuration: 4,
         maxDuration: 15,
         defaultDuration: 5,
@@ -1107,9 +1104,6 @@ const IMAGE_BASE_SERVICES = {
             "reference_audios",
         ],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
-        maxInputReferenceImages: 30,
-        maxInputReferenceVideos: 10,
-        maxInputReferenceAudios: 10,
         minDuration: 4,
         maxDuration: 4,
         defaultDuration: 4,

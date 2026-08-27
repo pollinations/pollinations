@@ -218,9 +218,6 @@ export type ModelDefinition = {
     durationStep?: number; // Video-only: duration must be a multiple of this value
     maxReferenceImages?: number; // Models with image input: effective accepted reference images
     maxReferenceVideos?: number; // Models with video input: effective accepted reference videos
-    maxInputReferenceImages?: number; // Video-only: references distinct from frame images
-    maxInputReferenceVideos?: number; // Video-only: references distinct from frame images
-    maxInputReferenceAudios?: number; // Video-only: references distinct from frame images
 };
 
 // Helper: Convert usage counts to rated USD-equivalent cost or Pollen charge.

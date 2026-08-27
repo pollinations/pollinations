@@ -193,40 +193,32 @@ describe("ImageParamsSchema", () => {
         }
     });
 
-    it("rejects unsupported reference media, frame combinations, and audio-only references", () => {
+    it("rejects reference media on unsupported models", () => {
         expect(
             ImageParamsSchema.safeParse({
                 model: "seedance-2.0-mini",
                 reference_images: "https://media.example/image.png",
             }).success,
         ).toBe(false);
+    });
+
+    it("passes provider-specific reference combinations through", () => {
         expect(
             ImageParamsSchema.safeParse({
                 model: "seedance-2.0",
                 image: "https://media.example/frame.png",
                 reference_images: "https://media.example/image.png",
             }).success,
-        ).toBe(false);
+        ).toBe(true);
         expect(
             ImageParamsSchema.safeParse({
                 model: "seedance-2.0",
                 reference_audios: "https://media.example/audio.mp3",
             }).success,
-        ).toBe(false);
+        ).toBe(true);
     });
 
-    it("enforces the per-model reference media caps and URL policy", () => {
-        const overLimit = Array.from(
-            { length: 10 },
-            (_, index) => `https://media.example/image-${index}.png`,
-        ).join("|");
-        expect(
-            ImageParamsSchema.safeParse({
-                model: "seedance-2.0",
-                reference_images: overLimit,
-            }).success,
-        ).toBe(false);
-
+    it("rejects unsafe reference media URLs", () => {
         const invalidUrl = ImageParamsSchema.safeParse({
             model: "seedance-2.5",
             reference_images: "http://127.0.0.1/image.png",

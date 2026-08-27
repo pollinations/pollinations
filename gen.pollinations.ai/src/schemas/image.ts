@@ -97,7 +97,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         .optional()
         .meta({
             description:
-                "Video models only: public HTTP(S) image URLs for visual guidance, separate from first/last-frame controls. Separate multiple URLs with `|`; commas inside URLs are preserved. Supported only by Seedance 2.0 and 2.5; caps are advertised as `max_input_reference_images` in `/models`.",
+                "Video models only: public HTTP(S) image URLs for visual guidance, separate from first/last-frame controls. Separate multiple URLs with `|`; commas inside URLs are preserved. Supported only by Seedance 2.0 and 2.5.",
         }),
     reference_videos: z
         .string()
@@ -110,7 +110,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         .optional()
         .meta({
             description:
-                "Video models only: public HTTP(S) video URLs for motion or style guidance. Separate multiple URLs with `|`; commas inside URLs are preserved. Supported only by Seedance 2.0 and 2.5; caps are advertised as `max_input_reference_videos` in `/models`.",
+                "Video models only: public HTTP(S) video URLs for motion or style guidance. Separate multiple URLs with `|`; commas inside URLs are preserved. Supported only by Seedance 2.0 and 2.5.",
         }),
     reference_audios: z
         .string()
@@ -123,7 +123,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         .optional()
         .meta({
             description:
-                "Video models only: public HTTP(S) audio URLs for audio-driven generation. Separate multiple URLs with `|`; commas inside URLs are preserved. Requires at least one reference image or video; caps are advertised as `max_input_reference_audios` in `/models`.",
+                "Video models only: public HTTP(S) audio URLs for audio-driven generation. Separate multiple URLs with `|`; commas inside URLs are preserved. Supported only by Seedance 2.0 and 2.5.",
         }),
     transparent: z.coerce.boolean().optional().default(false).meta({
         description:

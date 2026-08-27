@@ -1,0 +1,33 @@
+{
+  "pr_number": 14029,
+  "title": "refactor: separate image support from input limits",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14029",
+  "merged_at": "2026-08-27T03:39:21Z",
+  "labels": [],
+  "pr_body_excerpt": "- Uses input modalities to decide whether Play accepts images\n- Treats a missing reference-image limit as unknown instead of unsupported\n- Removes guessed text-model limits while retaining documented provider limits\n\nChecks:\n- `npm exec -- biome check apps/playground/src/Playground.tsx packages/ui/src/compositions/FileUpload.tsx shared/registry/text.ts`\n- `npm run typecheck --prefix packages/ui`\n- `npm run typecheck --prefix apps/playground`\n- `npm run build:app --prefix apps/playground`",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Images Ask the Right Question",
+    "blurb": "Play now checks a model’s actual input modalities before deciding whether to welcome an image. The hive has stopped mistaking an unknown signpost for a locked gate.",
+    "summary": "Playground image uploads now use each model’s declared input modalities, treat missing reference-image limits as unknown rather than unsupported, and retain only documented provider text limits.",
+    "impact": "Users can attach images to models that declare image input support without being blocked by guessed limits, while documented provider limits continue to guide uploads.",
+    "keywords": [
+      "playground",
+      "image-inputs",
+      "model-modalities",
+      "file-upload",
+      "provider-limits"
+    ],
+    "visual_concept": "A cozy playground terminal acts as a garden gate with separate text and image paths: Polli reads clear modality signs while gently guiding a pixel image card through the image-enabled path. A small code-plant and friendly CRT monitor show that unknown limits are a question mark, not a closed door.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, black oval eyes, pink rectangular blush, light blue wings, and a tiny librarian scarf, reading a retro terminal’s modality sign while guiding a pixel photo card through an open garden gate labeled \"IMAGE OK\"; a friendly CRT robot holds a small question-mark limit card beside blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-27/PR-14029.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, black oval eyes, pink rectangular blush, light blue wings, and a tiny librarian scarf, reading a retro terminal’s modality sign while guiding a pixel photo card through an open garden gate labeled \"IMAGE OK\"; a friendly CRT robot holds a small question-mark limit card beside blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-27T03:40:22.749557+00:00"
+}

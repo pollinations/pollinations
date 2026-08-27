@@ -29,6 +29,7 @@ import {
 } from "@x402/core/http";
 import { UptoEvmScheme } from "@x402/evm/upto/server";
 import { Hono, type MiddlewareHandler } from "hono";
+import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
 import { resolveModel } from "@/middleware/model.ts";
 import { track } from "@/middleware/track.ts";
@@ -215,6 +216,23 @@ export function createX402Routes(env: CloudflareBindings) {
             SETTLEMENT_OVERRIDES_HEADER,
             JSON.stringify({ amount: usdPrice(totalPrice) }),
         );
+    });
+
+    // x402 buyers have no Pollinations identity, but `track` (and per-user
+    // rate limits on community models) read `c.var.auth`, which only the auth
+    // middleware installs. Give the rail an anonymous auth context instead of
+    // running that middleware: payment already happened, per-request.
+    app.use(ROUTE, async (c, next) => {
+        c.set("auth", {
+            requireUser: () => {
+                throw new HTTPException(401, {
+                    message:
+                        "This model requires a Pollinations account and is not available on the x402 rail.",
+                });
+            },
+            requireModelAccess: () => {},
+        });
+        await next();
     });
 
     app.post(

@@ -155,12 +155,7 @@ function pricingAdjustmentInfoFromRule(
     rule: BillingAdjustmentRule,
     service: ModelDefinition,
 ) {
-    return publicPriceInfo({
-        name: rule.id,
-        kind: rule.kind,
-        unitPrice: rule.unitCost * service.priceMultiplier,
-        publicPricing: rule.publicPricing,
-    });
+    return publicPriceInfo(rule, service.priceMultiplier);
 }
 
 export function modelInfoFromDefinition(

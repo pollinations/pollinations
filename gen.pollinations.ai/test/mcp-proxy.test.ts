@@ -39,7 +39,6 @@ test("lists the MCP servers exposed through Gen", async () => {
                     "Trim, convert, resize, compress, and remix audio and video.",
                 url: "https://gen.pollinations.ai/mcp/ffmpeg",
                 pricing: {
-                    description: "Billed for active FFmpeg runtime.",
                     rates: [
                         {
                             name: "cloudflare.container.basic_runtime.v1",
@@ -60,7 +59,6 @@ test("lists the MCP servers exposed through Gen", async () => {
                     "Search the live web and fetch clean content from source pages.",
                 url: "https://gen.pollinations.ai/mcp/exa",
                 pricing: {
-                    description: "Billed at Exa's reported cost.",
                     rates: [
                         {
                             name: "exa.search.v1",
@@ -71,16 +69,6 @@ test("lists the MCP servers exposed through Gen", async () => {
                             quantity: 1,
                             unit: "request",
                             suffix: "up to 10 results",
-                        },
-                        {
-                            name: "exa.search.extra_result.v1",
-                            label: "Extra result",
-                            kind: "search_result",
-                            price: "0.001",
-                            currency: "pollen",
-                            quantity: 1,
-                            unit: "result",
-                            suffix: "after 10",
                         },
                         {
                             name: "exa.contents.text.v1",

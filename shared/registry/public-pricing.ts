@@ -11,6 +11,15 @@ export type PublicPricingDefinition = {
     };
 };
 
+export type BillingRateDefinition = {
+    id: string;
+    description: string;
+    kind: string;
+    unit: string;
+    unitCost: number;
+    publicPricing: PublicPricingDefinition;
+};
+
 export type PublicPriceInfo = PublicPricingDefinition & {
     name: string;
     kind: string;
@@ -22,22 +31,17 @@ export function toFixedPoint(value: number): string {
     return value.toFixed(12).replace(/\.?0+$/, "");
 }
 
-export function publicPriceInfo({
-    name,
-    kind,
-    unitPrice,
-    publicPricing,
-}: {
-    name: string;
-    kind: string;
-    unitPrice: number;
-    publicPricing: PublicPricingDefinition;
-}): PublicPriceInfo {
+export function publicPriceInfo(
+    rate: BillingRateDefinition,
+    priceMultiplier = 1,
+): PublicPriceInfo {
     return {
-        name,
-        kind,
-        price: toFixedPoint(unitPrice * publicPricing.quantity),
+        name: rate.id,
+        kind: rate.kind,
+        price: toFixedPoint(
+            rate.unitCost * rate.publicPricing.quantity * priceMultiplier,
+        ),
         currency: "pollen",
-        ...publicPricing,
+        ...rate.publicPricing,
     };
 }

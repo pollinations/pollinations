@@ -1,7 +1,7 @@
 import type { TinybirdEventType } from "../schemas/generation-event.ts";
 import {
+    type BillingRateDefinition,
     type PublicPriceInfo,
-    type PublicPricingDefinition,
     publicPriceInfo,
 } from "./public-pricing.ts";
 
@@ -22,20 +22,13 @@ type McpServerDefinitionBase = {
     pricing: McpPricingDefinition;
 };
 
-type McpPriceDefinition = {
-    name: string;
-    kind: string;
-    unitPrice: number;
-    publicPricing: PublicPricingDefinition;
-};
-
 type McpPricingDefinition = {
-    description: string;
-    rates: readonly McpPriceDefinition[];
+    description?: string;
+    rates: readonly BillingRateDefinition[];
 };
 
 export type McpPricingInfo = {
-    description: string;
+    description?: string;
     rates: PublicPriceInfo[];
 };
 
@@ -55,7 +48,6 @@ export const FFMPEG_MCP_PRICE_PER_SECOND =
     0.25 * 0.00002 + 1 * 0.0000025 + 4 * 0.00000007;
 
 const EXA_SEARCH_PRICE_PER_REQUEST = 0.007;
-const EXA_SEARCH_EXTRA_RESULT_PRICE = 0.001;
 const EXA_CONTENTS_PRICE_PER_PAGE = 0.001;
 
 export const MCP_SERVERS = [
@@ -82,12 +74,13 @@ export const MCP_SERVERS = [
         provider: "cloudflare",
         eventType: "tool.media",
         pricing: {
-            description: "Billed for active FFmpeg runtime.",
             rates: [
                 {
-                    name: "cloudflare.container.basic_runtime.v1",
+                    id: "cloudflare.container.basic_runtime.v1",
+                    description: "Cloudflare container runtime",
                     kind: "compute",
-                    unitPrice: FFMPEG_MCP_PRICE_PER_SECOND,
+                    unit: "second",
+                    unitCost: FFMPEG_MCP_PRICE_PER_SECOND,
                     publicPricing: {
                         label: "Runtime",
                         quantity: 1,
@@ -107,12 +100,13 @@ export const MCP_SERVERS = [
         provider: "exa",
         eventType: "tool.search",
         pricing: {
-            description: "Billed at Exa's reported cost.",
             rates: [
                 {
-                    name: "exa.search.v1",
+                    id: "exa.search.v1",
+                    description: "Exa auto search request",
                     kind: "search_request",
-                    unitPrice: EXA_SEARCH_PRICE_PER_REQUEST,
+                    unit: "request",
+                    unitCost: EXA_SEARCH_PRICE_PER_REQUEST,
                     publicPricing: {
                         label: "Search",
                         quantity: 1,
@@ -121,20 +115,11 @@ export const MCP_SERVERS = [
                     },
                 },
                 {
-                    name: "exa.search.extra_result.v1",
-                    kind: "search_result",
-                    unitPrice: EXA_SEARCH_EXTRA_RESULT_PRICE,
-                    publicPricing: {
-                        label: "Extra result",
-                        quantity: 1,
-                        unit: "result",
-                        suffix: "after 10",
-                    },
-                },
-                {
-                    name: "exa.contents.text.v1",
+                    id: "exa.contents.text.v1",
+                    description: "Exa text contents page",
                     kind: "page",
-                    unitPrice: EXA_CONTENTS_PRICE_PER_PAGE,
+                    unit: "page",
+                    unitCost: EXA_CONTENTS_PRICE_PER_PAGE,
                     publicPricing: {
                         label: "Fetch",
                         quantity: 1,
@@ -161,6 +146,6 @@ export function getMcpServerDefinition(
 export function getMcpPricingInfo(server: McpServerDefinition): McpPricingInfo {
     return {
         description: server.pricing.description,
-        rates: server.pricing.rates.map(publicPriceInfo),
+        rates: server.pricing.rates.map((rate) => publicPriceInfo(rate)),
     };
 }

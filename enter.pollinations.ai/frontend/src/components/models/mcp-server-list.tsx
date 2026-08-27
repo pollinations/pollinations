@@ -19,7 +19,7 @@ export const McpServerList: FC<{ query: string }> = ({ query }) => {
             server.id,
             server.name,
             server.description,
-            pricing.description,
+            pricing.description ?? "",
             ...pricing.rates.map(({ label }) => label),
         ].some((value) => value.toLowerCase().includes(normalizedQuery));
     });
@@ -68,9 +68,11 @@ export const McpServerList: FC<{ query: string }> = ({ query }) => {
                                             />
                                         </div>
                                     )}
-                                    <p className="text-xs text-theme-text-muted">
-                                        {pricing.description}
-                                    </p>
+                                    {pricing.description && (
+                                        <p className="text-xs text-theme-text-muted">
+                                            {pricing.description}
+                                        </p>
+                                    )}
                                 </div>
                                 <div className="flex min-w-0 items-center gap-1.5 text-xs">
                                     <span className="min-w-0 truncate font-mono text-theme-text-muted">

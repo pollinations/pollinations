@@ -4,7 +4,6 @@ import {
     ClipboardIcon,
     CopyButton,
     InlineLink,
-    McpIcon,
 } from "@pollinations/ui";
 import { getMcpPricingInfo, MCP_SERVERS } from "@shared/registry/mcp.ts";
 import type { FC } from "react";
@@ -43,7 +42,15 @@ export const McpServerList: FC<{ query: string }> = ({ query }) => {
                             key={server.id}
                             className="flex items-start gap-3 rounded-xl bg-surface-opaque p-4 shadow-sm"
                         >
-                            <McpIcon className="mt-0.5 h-7 w-7 shrink-0 text-theme-text-muted" />
+                            <span
+                                aria-hidden="true"
+                                className="mt-0.5 h-7 w-7 shrink-0 bg-current text-ink-900 opacity-55"
+                                style={{
+                                    mask: "url(/brand-logos/pollinations.svg) center / contain no-repeat",
+                                    WebkitMask:
+                                        "url(/brand-logos/pollinations.svg) center / contain no-repeat",
+                                }}
+                            />
                             <div className="min-w-0 flex-1 space-y-1.5">
                                 <div className="flex flex-wrap items-center gap-2">
                                     <span className="font-medium text-theme-text-strong">

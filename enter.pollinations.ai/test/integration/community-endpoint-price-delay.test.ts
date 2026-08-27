@@ -317,7 +317,7 @@ describe("community endpoint 12-hour price-change delay", () => {
         expect(row?.pendingAt).toBeNull();
     });
 
-    test("price change while private with pending visibility: pending preserved with new price", async ({
+    test("price change during pending publication restarts the delay", async ({
         sessionToken,
     }) => {
         await approveCommunityModels();
@@ -333,8 +333,12 @@ describe("community endpoint 12-hour price-change delay", () => {
         await postModel(sessionToken, `/${created.id as string}/update`, {
             visibility: "public",
         });
+        const previousPendingAt = new Date(Date.now() - 60 * 60 * 1000);
+        await drizzle(env.DB)
+            .update(schema.communityEndpoint)
+            .set({ pendingAt: previousPendingAt })
+            .where(eq(schema.communityEndpoint.id, created.id as string));
 
-        // Price change while still private — immediate but folds into pending.
         const priceUpdated = await postModel(
             sessionToken,
             `/${created.id as string}/update`,
@@ -353,6 +357,13 @@ describe("community endpoint 12-hour price-change delay", () => {
         expect(
             (priceUpdated.pending as Record<string, unknown>).promptTextPrice,
         ).toBe(0.000005);
+        expect(
+            Date.parse(
+                (priceUpdated.pending as Record<string, string>).effectiveAt,
+            ),
+        ).toBeGreaterThan(
+            previousPendingAt.getTime() + COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
+        );
     });
 
     test("non-pricing updates are immediate without clearing a pending price", async ({

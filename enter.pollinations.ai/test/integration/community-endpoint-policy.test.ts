@@ -243,6 +243,12 @@ describe("community endpoint configuration policy", () => {
             promptTextPrice: 0.000002,
             fallbacks: [cheaperModelId],
         });
+        const resaved = await postModel(
+            sessionToken,
+            `/${primary.id as string}/update`,
+            { visibility: "public", fallbacks: [cheaperModelId] },
+        );
+        expect(resaved.pending).toMatchObject({ visibility: "public" });
         const publishedPrimary = await publishPendingModel(
             sessionToken,
             primary.id as string,

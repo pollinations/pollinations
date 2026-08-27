@@ -833,7 +833,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                                   input.name ?? endpoint.name,
                               ),
                               ownerUserId: user.id,
-                              ...policy,
+                              ...targetPolicy,
                           });
                 const bearerTokenCiphertext =
                     input.bearerToken === undefined
@@ -866,7 +866,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         fallbacks,
                     };
                     pendingPayload = JSON.stringify(targetPayload);
-                    if (currentVisibility === "public" && pricingChanged) {
+                    if (pricingChanged) {
                         pendingAt = new Date();
                     }
                 }

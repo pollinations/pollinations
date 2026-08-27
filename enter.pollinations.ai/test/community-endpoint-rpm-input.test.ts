@@ -1,11 +1,13 @@
 import { communityEndpointPrices } from "@shared/community-endpoints.ts";
 import { describe, expect, it } from "vitest";
+import { savedEndpointPriceKeys } from "../frontend/src/components/community-endpoints/price-table.tsx";
 import {
     agentListingToForm,
     emptyAgentForm,
     emptyForm,
     endpointToForm,
     isValidPerUserRpm,
+    type ProxyCommunityEndpoint,
     publicCommunityFallbackOptions,
     toAgentListingPayload,
     toAgentPayload,
@@ -42,7 +44,7 @@ describe("community endpoint per-user RPM input", () => {
     });
 
     it("edits queued publication values instead of the current private values", () => {
-        const form = endpointToForm({
+        const endpoint: ProxyCommunityEndpoint = {
             id: "endpoint-id",
             modelId: "owner/model",
             name: "model",
@@ -64,18 +66,21 @@ describe("community endpoint per-user RPM input", () => {
                 visibility: "public",
                 paidOnly: true,
                 promptTextPrice: 0.000002,
+                promptCachedPrice: 0.000001,
             },
             hidden: false,
             hiddenReason: null,
             hiddenAt: null,
             ...communityEndpointPrices({}),
-        });
+        };
+        const form = endpointToForm(endpoint);
 
         expect(form).toMatchObject({
             visibility: "public",
             paidOnly: true,
             promptTextPrice: "2",
         });
+        expect(savedEndpointPriceKeys(endpoint)).toContain("promptCachedPrice");
     });
 
     it("does not offer agent listings as fallback models", () => {

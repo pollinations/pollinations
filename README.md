@@ -51,16 +51,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-08-26** – **🔗 Connect your Discord account** Link Discord to your Pollinations account, verify hive membership, and claim a 1-Pollen community Quest. [Connect your account](https://enter.pollinations.ai/keys)
+- **2026-08-26** – **🎬 FFmpeg MCP takes multiple inputs** Combine separate video, audio, and media files in one MCP job, then get the finished file hosted on Pollinations Media. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-server)
+- **2026-08-26** – **🔍 Exa Search MCP joins the agent toolbox** Prompt agents can now search the web and fetch pages through Exa in the shared MCP catalog. The internet remains largely unformatted. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-server)
+- **2026-08-26** – **💡 Descriptly writes alt-text suggestions for PR images** Use Pollinations vision models to spot changed images in pull requests and propose accessible descriptions. [View repo](https://github.com/g33ky00/descriptly) <!-- app -->
 - **2026-08-25** – **🎬 Wan 3.0 video generation** `wan-3.0` now makes 5-second text-to-video and image-to-video clips with optional audio, start frames, and 480p through 1080p output. [API Docs](https://gen.pollinations.ai/docs)
 - **2026-08-25** – **✨ Hosted FFmpeg for prompt agents** Agents can now select a managed FFmpeg tool to process media and receive stored outputs—no server maintenance, a small mercy. [MCP Server Docs](https://gen.pollinations.ai/docs#tag/mcp-server)
 - **2026-08-25** – **💡 Model lookup, OpenAI-style** OpenAI-compatible clients can inspect a single accessible model with `GET /v1/models/:model`, including aliases and registry metadata. [API Docs](https://gen.pollinations.ai/docs)
 - **2026-08-25** – **🌟 Pollen earnings in code and CLI** Check developer earnings from TypeScript with `accountEarnings()` or run `polli earnings --days 30 --json` for scriptable totals and per-entity detail.
 - **2026-08-25** – **🎨 EAS AI STUDIO joins the garden** A collaborative image-making app built on the Pollinations image API is now in the community showcase. [Try it](https://www.ekin-ai-studio.my.id) <!-- app -->
 - **2026-08-24** – **🤖 MCPs move into the hive** Managed agents can now discover and use registered MCP servers through a single authenticated Gen path, with Pollen handling the receipts. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-server)
-- **2026-08-24** – **🎵 The hive has ears** MCP agents can now transcribe audio from a public HTTPS URL with the new `transcribeAudio` tool.
-- **2026-08-24** – **🎨 Kontext finds its way home** Azure Flux Kontext is back for text-to-image generation and single-reference editing, at $0.03 per image. [Try it](https://pollinations.ai/play)
-- **2026-08-24** – **📱 Chat from the shell** FreeChat CLI brings zero-config, multi-model Pollinations chat, streaming, and saved conversations to the terminal. [View repo](https://github.com/xiaotian1171/freechat-cli) <!-- app -->
-- **2026-08-23** – **🤖 Agents can delegate to agents** MCP-connected agents can discover agent models and call them directly, inheriting permissions and billing through the parent key.
 ---
 
 ## 🌱 Introduction

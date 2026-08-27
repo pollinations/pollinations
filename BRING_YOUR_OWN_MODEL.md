@@ -2,6 +2,8 @@
 
 Publishing a model lets you connect an OpenAI-compatible endpoint to Pollinations and call it through `gen.pollinations.ai` under an `owner/model` id. Pollinations handles authentication, Pollen billing, model discovery, and routing; the model continues to run on infrastructure you control.
 
+Before choosing a model ID, title, and description, read the [community model naming guidance](./COMMUNITY_MODEL_NAMING.md) — it helps you pick a stable ID and a clear public name.
+
 Model publishing and [connecting user wallets](./BRING_YOUR_OWN_POLLEN.md) solve different problems. Model publishing supplies a model to the Pollinations catalog. The wallet flow lets users authorize an app to spend their own Pollen. An app can use either or both.
 
 ## Supported Models

@@ -1,0 +1,34 @@
+{
+  "pr_number": 13927,
+  "title": "docs: add reasoning quickstart to text generation guide",
+  "author": "xiaotian1171",
+  "url": "https://github.com/pollinations/pollinations/pull/13927",
+  "merged_at": "2026-08-27T03:46:11Z",
+  "labels": [],
+  "pr_body_excerpt": "Closes #13904\n\n## Changes\n- Adds a concise **Reasoning** section to the text-generation docs source.\n- One `POST /v1/chat/completions` example and one `POST /text` example, both using the existing `reasoning_effort` parameter.\n- Points readers to model metadata for checking reasoning support. No runtime changes, no generated docs touched.\n\n## Test plan\n- Docs build renders the new section with both examples.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A map for deeper thoughts",
+    "blurb": "The text-generation guide now has a small trail marker for reasoning models. Two copyable requests, one less expedition through parameter names.",
+    "summary": "Added a Reasoning section to the text-generation guide with POST /v1/chat/completions and POST /text examples using reasoning_effort, plus guidance for checking model metadata support.",
+    "impact": "Developers can now quickly enable reasoning_effort in either text API format and confirm which models support it before building.",
+    "keywords": [
+      "docs",
+      "text-generation",
+      "reasoning",
+      "reasoning_effort",
+      "chat-completions",
+      "api"
+    ],
+    "visual_concept": "Polli acts as a cozy trail guide in a code-garden, holding a tiny map labeled reasoning_effort while two signposts point to /v1/chat/completions and /text. A retro terminal displays model metadata beside sprouting code-plants, making the documentation addition feel like a clear path through deeper model thinking.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light-blue wings, and a tiny explorer scarf, guiding a garden path between two wooden pixel signposts labeled '/v1/chat/completions' and '/text'; she holds a small map labeled 'reasoning_effort' beside a retro terminal showing 'MODEL METADATA' and blooming code-plants. Cozy 8-bit pixel art aesthetic with a prominent lime green (#ecf874) and soft pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-27/PR-13927.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light-blue wings, and a tiny explorer scarf, guiding a garden path between two wooden pixel signposts labeled '/v1/chat/completions' and '/text'; she holds a small map labeled 'reasoning_effort' beside a retro terminal showing 'MODEL METADATA' and blooming code-plants. Cozy 8-bit pixel art aesthetic with a prominent lime green (#ecf874) and soft pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-27T03:47:17.874286+00:00"
+}

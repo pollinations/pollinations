@@ -13,15 +13,6 @@
  * The ceiling runs through `calculatePrice…`, the same engine that prices
  * Pollen, so this rail cannot drift from Pollen rates. Pollen is
  * USD-denominated ($1 ≈ 1 Pollen), so `totalPrice` is already USD.
- *
- * ⚠️ METERED SETTLEMENT IS NOT ACTIVE YET. `@x402/core` reads a settlement
- * override from `transportContext.responseHeaders`, but neither Weft middleware
- * adapter passes `transportContext` to `processSettlement` — both call it with
- * two arguments. Until that is fixed upstream, a payment settles the full
- * advertised ceiling — padding included — which is the behaviour choosing
- * `upto` was meant to avoid. The override header below is written in
- * preparation and is currently inert; do not describe this rail as "pay only
- * for what you used" until settlement is verified on a testnet.
  */
 
 import { validator } from "@shared/middleware/validator.ts";
@@ -208,14 +199,8 @@ export function createX402Routes(env: CloudflareBindings) {
     );
 
     // Writes what the request actually consumed, for the facilitator to settle
-    // instead of the advertised ceiling.
-    //
-    // INERT TODAY — see the ⚠️ note in the module header. The Weft middleware
-    // calls `processSettlement(payload, requirements)` without the
-    // `transportContext` that carries these response headers, so nothing reads
-    // this. Kept because it is the correct shape and starts working the moment
-    // the adapter forwards the context; the assertion that it is actually
-    // honoured belongs in a testnet settlement test, not a unit test.
+    // instead of the advertised ceiling. The assertion that the override is
+    // actually honoured belongs in a testnet settlement test, not a unit test.
     app.use(ROUTE, async (c, next) => {
         await next();
         const definition = c.var.model?.definition;

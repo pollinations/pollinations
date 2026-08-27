@@ -359,13 +359,7 @@ describe("long-context cost variants", () => {
 describe("AssemblyAI transcription cost variants", () => {
     it.each([
         ["assemblyai/universal-2", "json", false, 0.15, undefined],
-        [
-            "assemblyai/universal-2",
-            "diarized_json",
-            false,
-            0.17,
-            "diarization",
-        ],
+        ["assemblyai/universal-2", "diarized_json", false, 0.17, "diarization"],
         ["assemblyai/universal-3.5-pro", "json", false, 0.21, undefined],
         ["assemblyai/universal-3.5-pro", "json", true, 0.26, "prompting"],
         [
@@ -508,6 +502,41 @@ describe("resolution cost variants", () => {
             );
             expect(billing.cost.totalCost).toBeCloseTo(6 * rate, 12);
         }
+    });
+
+    it("uses the Replicate video-in rates for Seedance reference videos", () => {
+        expect(
+            bill("bytedance/seedance-2.0", { completionVideoSeconds: 4 }).cost
+                .totalCost,
+        ).toBeCloseTo(4 * 0.18, 12);
+        expect(
+            bill("bytedance/seedance-2.5", { completionVideoSeconds: 4 }).cost
+                .totalCost,
+        ).toBeCloseTo(4 * 0.1028, 12);
+
+        const seedance20 = bill(
+            "bytedance/seedance-2.0",
+            { completionVideoSeconds: 4 },
+            { hasReferenceVideo: true },
+        );
+        expect(seedance20.costVariant).toBe("video_in");
+        expect(seedance20.cost.totalCost).toBeCloseTo(4 * 0.22, 12);
+
+        const seedance25_480p = bill(
+            "bytedance/seedance-2.5",
+            { completionVideoSeconds: 4 },
+            { hasReferenceVideo: true },
+        );
+        expect(seedance25_480p.costVariant).toBe("video_in_480p");
+        expect(seedance25_480p.cost.totalCost).toBeCloseTo(4 * 0.4304, 12);
+
+        const seedance25_720p = bill(
+            "bytedance/seedance-2.5",
+            { completionVideoSeconds: 4 },
+            { hasReferenceVideo: true, resolution: "720p" },
+        );
+        expect(seedance25_720p.costVariant).toBe("video_in_720p");
+        expect(seedance25_720p.cost.totalCost).toBeCloseTo(4 * 0.9676, 12);
     });
 
     it("publishes supported resolutions with effective variant pricing", () => {

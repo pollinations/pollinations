@@ -5,7 +5,10 @@ import {
     StagingAccessDeniedError,
 } from "@shared/auth/api-key.ts";
 import * as betterAuthSchema from "@shared/db/better-auth.ts";
-import { user as userTable } from "@shared/db/better-auth.ts";
+import {
+    account as accountTable,
+    user as userTable,
+} from "@shared/db/better-auth.ts";
 import {
     getInstallationToken,
     githubAppCredentialsFromEnv,
@@ -25,14 +28,36 @@ import {
     getSessionFromCtx,
 } from "better-auth/api";
 import { admin, openAPI } from "better-auth/plugins";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
+import { discordConfigFromEnv } from "./services/discord.ts";
 
 const DELETE_ACCOUNT_FRESH_SESSION_MS = 10 * 60 * 1000;
 
 export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     const db = drizzle(env.DB);
     const apiKeyPlugin = createApiKeyPlugin();
+    const discordConfig = discordConfigFromEnv(env);
+
+    const hasDiscordAccount = async (userId: string) => {
+        const [account] = await db
+            .select({ id: accountTable.id })
+            .from(accountTable)
+            .where(
+                and(
+                    eq(accountTable.userId, userId),
+                    eq(accountTable.providerId, "discord"),
+                ),
+            )
+            .limit(1);
+        return Boolean(account);
+    };
+
+    const discordAccountAlreadyConnected = () =>
+        new APIError("BAD_REQUEST", {
+            code: "DISCORD_ACCOUNT_ALREADY_CONNECTED",
+            message: "Only one Discord account can be connected.",
+        });
 
     const adminPlugin = admin({
         adminUserIds: ["Py5RZYN9c10OsC1fjUYiqMYjttf0PLGv"],
@@ -57,6 +82,24 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             // scales freshAge by 1e3 twice (update-user.mjs), so the threshold
             // lands ~1000x too high and never fires. Enforce it here instead.
             before: createAuthMiddleware(async (authContext) => {
+                if (
+                    authContext.path === "/sign-in/social" &&
+                    authContext.body.provider === "discord"
+                ) {
+                    throw new APIError("BAD_REQUEST", {
+                        message:
+                            "Discord can only be connected to an existing Pollinations account.",
+                    });
+                }
+                if (
+                    authContext.path === "/link-social" &&
+                    authContext.body.provider === "discord"
+                ) {
+                    const session = await getSessionFromCtx(authContext);
+                    if (session && (await hasDiscordAccount(session.user.id))) {
+                        throw discordAccountAlreadyConnected();
+                    }
+                }
                 if (authContext.path !== "/delete-user") return;
 
                 const session = await getSessionFromCtx(authContext);
@@ -81,6 +124,20 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             schema: betterAuthSchema,
             provider: "sqlite",
         }),
+        databaseHooks: {
+            account: {
+                create: {
+                    before: async (account) => {
+                        if (
+                            account.providerId === "discord" &&
+                            (await hasDiscordAccount(account.userId))
+                        ) {
+                            throw discordAccountAlreadyConnected();
+                        }
+                    },
+                },
+            },
+        },
         advanced: {
             // Configure background tasks for Cloudflare Workers
             // Required for deferUpdates to work properly
@@ -110,6 +167,15 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                 enabled: true,
             },
         },
+        account: {
+            accountLinking: {
+                allowDifferentEmails: true,
+                // Better Auth 1.4 requires this for Discord accounts without a
+                // verified email. The sign-in hook above still limits Discord
+                // to explicit, authenticated linkSocial flows.
+                trustedProviders: discordConfig ? ["discord"] : [],
+            },
+        },
         socialProviders: {
             github: {
                 clientId: env.GITHUB_CLIENT_ID,
@@ -119,6 +185,18 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                     githubUsername: profile.login,
                 }),
             },
+            ...(discordConfig && {
+                discord: {
+                    clientId: discordConfig.clientId,
+                    clientSecret: discordConfig.clientSecret,
+                    disableSignUp: true,
+                    mapProfileToUser: (profile) => ({
+                        // Better Auth requires an email even when explicitly
+                        // linking a phone-only Discord account.
+                        email: profile.email ?? `${profile.id}@discord.invalid`,
+                    }),
+                },
+            }),
         },
         plugins: [
             adminPlugin,

@@ -11,6 +11,11 @@ const IMAGE_URLS = [
     "https://image.example.com/end.png",
 ];
 const PNG_BYTES = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
+const REFERENCE_MEDIA = {
+    reference_images: ["https://media.example/reference,a.png"],
+    reference_videos: ["https://media.example/motion.mp4"],
+    reference_audios: ["https://media.example/voice.mp3"],
+};
 
 const baseParams: ImageParams = {
     model: "bytedance/seedance-2.5",
@@ -117,5 +122,49 @@ describe("Seedance 2.5 via Replicate", () => {
             }),
         ).rejects.toMatchObject({ status: 400 });
         expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it("forwards all reference media URLs directly to Replicate", async () => {
+        syncImageEnv(
+            { REPLICATE_API_TOKEN: "replicate-test-key" } as CloudflareBindings,
+            ["REPLICATE_API_TOKEN"],
+        );
+        const inputs: Record<string, unknown>[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
+            const href = typeof url === "string" ? url : url.toString();
+            if (href === PREDICTIONS_URL) {
+                inputs.push(
+                    (
+                        JSON.parse(init?.body as string) as {
+                            input: Record<string, unknown>;
+                        }
+                    ).input,
+                );
+                return new Response(
+                    JSON.stringify({
+                        id: "pred",
+                        status: "succeeded",
+                        output: VIDEO_URL,
+                    }),
+                    { status: 201 },
+                );
+            }
+            if (href === VIDEO_URL) {
+                return new Response(new Uint8Array([0, 0, 0, 24]), {
+                    headers: { "Content-Type": "video/mp4" },
+                });
+            }
+            return new Response("reference media must not be downloaded", {
+                status: 500,
+            });
+        });
+
+        await callSeedance25API("reference-driven clip", {
+            ...baseParams,
+            image: [],
+            ...REFERENCE_MEDIA,
+        });
+
+        expect(inputs[0]).toMatchObject(REFERENCE_MEDIA);
     });
 });

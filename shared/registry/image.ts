@@ -499,12 +499,35 @@ const IMAGE_BASE_SERVICES = {
         cost: {
             completionVideoSeconds: 0.18,
         },
+        ...defineCostVariants(
+            {
+                video_in: {
+                    completionVideoSeconds: 0.22,
+                },
+            },
+            ({ input }) => (input?.hasReferenceVideo ? "video_in" : undefined),
+            {
+                video_in: {
+                    label: "720p with reference video",
+                    description:
+                        "Applies when the request includes a reference video input.",
+                },
+            },
+            "720p",
+        ),
         title: "Seedance 2.0",
         description:
-            "720p video with natively synced sound, from text or images",
-        inputModalities: ["text", "image"],
+            "720p video with natively synced sound, from text, images, or references",
+        inputModalities: ["text", "image", "video", "audio"],
         outputModalities: ["video", "audio"],
-        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        videoCapabilities: [
+            "start_frame",
+            "end_frame",
+            "audio_output",
+            "reference_images",
+            "reference_videos",
+            "reference_audios",
+        ],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
         minDuration: 4,
         maxDuration: 15,
@@ -1070,13 +1093,36 @@ const IMAGE_BASE_SERVICES = {
                 "720p": {
                     completionVideoSeconds: 0.2312,
                 },
+                video_in_480p: {
+                    completionVideoSeconds: 0.4304,
+                },
+                video_in_720p: {
+                    completionVideoSeconds: 0.9676,
+                },
             },
-            matchResolution("720p"),
+            ({ input }) => {
+                if (!input?.hasReferenceVideo) {
+                    return input?.resolution === "720p" ? "720p" : undefined;
+                }
+                return input.resolution === "720p"
+                    ? "video_in_720p"
+                    : "video_in_480p";
+            },
             {
                 "720p": {
                     label: "720p",
                     description:
                         "Applies when the requested video resolution is 720p.",
+                },
+                video_in_480p: {
+                    label: "480p with reference video",
+                    description:
+                        "Applies when the request includes a reference video input at 480p.",
+                },
+                video_in_720p: {
+                    label: "720p with reference video",
+                    description:
+                        "Applies when the request includes a reference video input at 720p.",
                 },
             },
             "480p",
@@ -1084,10 +1130,17 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["480p", "720p"],
         title: "Seedance 2.5",
         description:
-            "Four-second video with synchronized audio and first/last-frame control at 480p or 720p",
-        inputModalities: ["text", "image"],
+            "Four-second video with synchronized audio and reference media at 480p or 720p",
+        inputModalities: ["text", "image", "video", "audio"],
         outputModalities: ["video", "audio"],
-        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        videoCapabilities: [
+            "start_frame",
+            "end_frame",
+            "audio_output",
+            "reference_images",
+            "reference_videos",
+            "reference_audios",
+        ],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
         minDuration: 4,
         maxDuration: 4,

@@ -27,6 +27,10 @@ on:
           - gen
           - media
         default: all
+      sync_discord_secrets:
+        description: 'Sync the approved Discord secrets to Enter'
+        type: boolean
+        default: false
 
 concurrency:
   group: pollinations-cloudflare-production
@@ -173,7 +177,10 @@ jobs:
 
   deploy-enter:
     needs: [changes, migrate]
-    if: needs.changes.outputs.enter == 'true'
+    if: >-
+      !cancelled() &&
+      needs.changes.outputs.enter == 'true' &&
+      needs.migrate.result == 'success'
     runs-on: ubuntu-latest
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
@@ -189,10 +196,25 @@ jobs:
       - name: Install root dependencies
         run: npm ci
 
+      - name: Setup SOPS
+        if: github.event_name == 'workflow_dispatch' && inputs.sync_discord_secrets
+        uses: nhedger/setup-sops@v2
+
       - name: Build and deploy to Cloudflare
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
         run: npm run deploy:production --workspace pollinations-enter
+
+      - name: Push Discord secrets
+        if: github.event_name == 'workflow_dispatch' && inputs.sync_discord_secrets
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
+        run: >-
+          sops exec-file --no-fifo enter.pollinations.ai/secrets/prod.vars.json
+          'jq "{DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, DISCORD_BOT_TOKEN}" {}
+          | npx wrangler secret bulk - --env production
+          --config enter.pollinations.ai/wrangler.toml'
 
   deploy-gen:
     needs: [changes, migrate, deploy-mcp-apps]
@@ -311,6 +333,10 @@ jobs:
         with:
           node-version: '24'
 
+      - name: Setup SOPS
+        if: matrix.app.sops != 'none'
+        uses: nhedger/setup-sops@v2
+
       - name: Verify Docker
         if: matrix.app.docker
         run: docker info
@@ -319,4 +345,5 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
+          SOPS_AGE_KEY: ${{ matrix.app.sops == 'default' && secrets.SOPS_AGE_KEY || '' }}
         run: operations/deployment/deploy.sh "${{ matrix.app.path }}"

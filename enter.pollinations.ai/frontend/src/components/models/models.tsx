@@ -34,7 +34,7 @@ import {
     fetchModelCatalog,
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
-import { getModelDisplayName } from "./model-info.ts";
+import { matchesModelQuery, parseModelQuery } from "./model-query.ts";
 import type { ModelScope, ModelSort } from "./model-search.ts";
 import { sortModels } from "./model-sort.ts";
 import {
@@ -116,13 +116,6 @@ const SEARCH_LABELS: Record<SectionType, string> = {
     agent: "agent",
 };
 
-function matchesQuery(model: ModelPrice, query: string): boolean {
-    if (!query) return true;
-    const displayName = getModelDisplayName(model) ?? "";
-    const haystack = `${displayName} ${model.author ?? ""}`.toLowerCase();
-    return haystack.includes(query);
-}
-
 function categorizeModels(
     models: ModelPrice[],
 ): Record<SectionType, ModelPrice[]> {
@@ -191,7 +184,8 @@ export const Models: FC = () => {
         () => getModelPricesFromCatalog(catalogModels, stats),
         [catalogModels, stats],
     );
-    const query = search.trim().toLowerCase();
+    const query = search.trim();
+    const parsedQuery = useMemo(() => parseModelQuery(query), [query]);
     const scopedModels = useMemo(
         () =>
             allModels.filter(
@@ -203,9 +197,11 @@ export const Models: FC = () => {
     const filteredModels = useMemo(
         () =>
             query
-                ? scopedModels.filter((model) => matchesQuery(model, query))
+                ? scopedModels.filter((model) =>
+                      matchesModelQuery(model, parsedQuery),
+                  )
                 : scopedModels,
-        [query, scopedModels],
+        [parsedQuery, query, scopedModels],
     );
 
     const loadModelCatalog = useCallback(
@@ -404,24 +400,34 @@ export const Models: FC = () => {
                             })}
                         </div>
                     </div>
-                    <div className="flex w-full items-center justify-between gap-2">
-                        <div className="relative min-w-0 max-w-md flex-1">
-                            <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />
-                            <Input
-                                type="search"
-                                value={search}
-                                onChange={(event) =>
-                                    setSearch(event.target.value)
-                                }
-                                onBlur={() => {
-                                    const normalizedSearch = search.trim();
-                                    setSearch(normalizedSearch);
-                                    pushSearch(normalizedSearch);
-                                }}
-                                placeholder={`Search ${searchTarget}…`}
-                                aria-label={`Search ${searchTarget}`}
-                                className="w-full pl-9"
-                            />
+                    <div className="flex w-full flex-wrap items-start justify-between gap-2">
+                        <div className="min-w-0 max-w-md flex-1 basis-[240px]">
+                            <div className="relative">
+                                <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />
+                                <Input
+                                    type="search"
+                                    value={search}
+                                    onChange={(event) =>
+                                        setSearch(event.target.value)
+                                    }
+                                    onBlur={() => {
+                                        const normalizedSearch = search.trim();
+                                        setSearch(normalizedSearch);
+                                        pushSearch(normalizedSearch);
+                                    }}
+                                    placeholder={`Search ${searchTarget}…`}
+                                    aria-label={`Search ${searchTarget}`}
+                                    aria-describedby="model-search-filter-help"
+                                    className="w-full pl-9"
+                                />
+                            </div>
+                            <p
+                                id="model-search-filter-help"
+                                className="mt-1 text-xs text-theme-text-muted"
+                            >
+                                Filters: access:, publisher:, id:, type:,
+                                capability:
+                            </p>
                         </div>
                         <Dropdown
                             align="end"

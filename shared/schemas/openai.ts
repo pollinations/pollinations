@@ -630,6 +630,12 @@ export const CreateImageRequestSchema = z
                 description:
                     "Reference image URL(s) for image-to-image generation (Pollinations extension)",
             }),
+        // Reference media is supported only by the native GET image/video
+        // routes. Keep these keys explicit so the passthrough extension
+        // policy cannot accidentally expose them on OpenAI POST requests.
+        reference_images: z.never().optional(),
+        reference_videos: z.never().optional(),
+        reference_audios: z.never().optional(),
         resolution: imageResolutionField,
         safe: SafeSchema,
     })

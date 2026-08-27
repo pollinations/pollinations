@@ -445,7 +445,6 @@ export const TEXT_SERVICES = {
             "Follows instructions reliably and calls functions well, at low cost",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 10, // OpenRouter/Mistral image count varies by provider/model; Pollinations cap.
         tools: true,
         contextLength: 128000,
         isSpecialized: false,
@@ -741,7 +740,6 @@ export const TEXT_SERVICES = {
             "Efficient open-source chat with image understanding; modest on hard problems",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 10, // OpenRouter image count varies by provider/model; Pollinations cap.
         tools: true,
         reasoning: true,
         contextLength: 262144,
@@ -826,7 +824,6 @@ export const TEXT_SERVICES = {
         description: "Multimodal chat and tool calling with optional reasoning",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 100, // xAI publishes no hard image-count limit; Pollinations cap.
         tools: true,
         reasoning: true,
         contextLength: 262144,
@@ -850,7 +847,6 @@ export const TEXT_SERVICES = {
             "Strong multimodal reasoning with a huge context window at a friendly price",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 100, // xAI publishes no hard image-count limit; Pollinations cap.
         tools: true,
         reasoning: true,
         // The selected Azure deployment caps prompts at 200K; xAI direct's 1M
@@ -1723,7 +1719,6 @@ export const TEXT_SERVICES = {
             "Open-source chat that understands images, with a huge context window",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 10, // Azure-hosted Llama vision route has no public fixed image count; Pollinations cap.
         tools: true,
         contextLength: 1048576,
         isSpecialized: false,
@@ -1856,7 +1851,6 @@ export const TEXT_SERVICES = {
         description: "Agentic coding and tool-use model with 1M context",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 10, // Vercel/Meta publish vision support but no fixed image-count limit.
         tools: true,
         reasoning: true,
         contextLength: 1048576,
@@ -1883,7 +1877,6 @@ export const TEXT_SERVICES = {
             "Polished multilingual writing and reasoning with image understanding",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 10, // Mistral image count varies by model/token budget; Pollinations cap.
         tools: true,
         reasoning: true,
         contextLength: 256000,
@@ -2162,7 +2155,6 @@ export const TEXT_SERVICES = {
             "Fast image understanding — describes, reads and analyzes what it sees",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 10, // OpenRouter image count varies by provider/model; Pollinations cap.
         tools: true,
         reasoning: false,
         contextLength: 131072,
@@ -2192,7 +2184,6 @@ export const TEXT_SERVICES = {
             "Careful visual reasoning for charts, documents and complex scenes",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 10, // OpenRouter image count varies by provider/model; Pollinations cap.
         tools: true,
         reasoning: true,
         contextLength: 262144,
@@ -2223,7 +2214,6 @@ export const TEXT_SERVICES = {
             "Speedy reasoning over text and images for everyday questions",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 10, // OpenRouter image count varies by provider/model; Pollinations cap.
         tools: true,
         // Emits a chain-of-thought `reasoning` field (verified live); reasoning
         // tokens are billed within completion_tokens at the completionText rate.

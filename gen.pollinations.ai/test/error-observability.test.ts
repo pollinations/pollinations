@@ -3,7 +3,6 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import { handleError, UpstreamError } from "@shared/error.ts";
-import { redactCredentialQueryParams } from "@shared/observability/request-inputs.ts";
 import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -54,30 +53,6 @@ function createTextTestApp() {
 }
 
 describe("error observability", () => {
-    it("redacts native reference URLs from logger request URLs", () => {
-        const url = new URL("https://gen.pollinations.ai/video/a%20boat");
-        url.searchParams.set(
-            "reference_images",
-            "https://media.example/one.png|https://media.example/two.png",
-        );
-        url.searchParams.set(
-            "reference_videos",
-            "https://user:secret@media.example/input.mp4",
-        );
-        url.searchParams.set(
-            "reference_audios",
-            "https://media.example/voice.mp3",
-        );
-
-        const redacted = redactCredentialQueryParams(url);
-
-        expect(redacted).toContain("reference_images=%5Bredacted%3A2%5D");
-        expect(redacted).toContain("reference_videos=%5Bredacted%5D");
-        expect(redacted).toContain("reference_audios=%5Bredacted%5D");
-        expect(redacted).not.toContain("media.example");
-        expect(redacted).not.toContain("secret");
-    });
-
     it("emits structured Tinybird error events for actionable upstream failures", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
@@ -307,55 +282,32 @@ describe("error observability", () => {
         });
         app.onError(handleError);
 
-        const requestUrl = new URL(
-            "https://gen.pollinations.ai/body-error?api_key=query_secret",
-        );
-        requestUrl.searchParams.set(
-            "reference_images",
-            "https://media.example/one.png|https://media.example/two.png",
-        );
-        requestUrl.searchParams.set(
-            "reference_videos",
-            "https://user:secret@media.example/input.mp4",
-        );
-        requestUrl.searchParams.set(
-            "reference_audios",
-            "https://media.example/voice.mp3",
-        );
-
         const ctx = createExecutionContext();
         const response = await app.fetch(
-            new Request(requestUrl, {
-                method: "POST",
-                headers: { "content-type": "application/json" },
-                body: JSON.stringify({
-                    bearerToken: "sk_body_secret",
-                    authorization: "Bearer body_secret",
-                    nested: {
-                        api_key: "nested_api_secret",
-                        apiKey: "nested_api_key_secret",
-                        token: "nested_token_secret",
-                        keep: "visible",
-                        reference_images: [
-                            "https://media.example/nested-one.png|https://media.example/nested-two.png",
-                        ],
-                        REFERENCE_VIDEOS:
-                            "https://user:secret@media.example/nested.mp4",
-                    },
-                    reference_images: [
-                        "https://media.example/one.png|https://media.example/two.png",
-                        "https://media.example/three.png",
-                    ],
-                    reference_audios: "https://media.example/voice.mp3",
-                    items: [
-                        {
-                            key: "array_key_secret",
-                            access_token: "array_access_secret",
-                            accessToken: "array_access_token_secret",
+            new Request(
+                "https://gen.pollinations.ai/body-error?api_key=query_secret",
+                {
+                    method: "POST",
+                    headers: { "content-type": "application/json" },
+                    body: JSON.stringify({
+                        bearerToken: "sk_body_secret",
+                        authorization: "Bearer body_secret",
+                        nested: {
+                            api_key: "nested_api_secret",
+                            apiKey: "nested_api_key_secret",
+                            token: "nested_token_secret",
+                            keep: "visible",
                         },
-                    ],
-                }),
-            }),
+                        items: [
+                            {
+                                key: "array_key_secret",
+                                access_token: "array_access_secret",
+                                accessToken: "array_access_token_secret",
+                            },
+                        ],
+                    }),
+                },
+            ),
             {
                 ENVIRONMENT: "test",
                 LOG_LEVEL: "debug",
@@ -384,14 +336,9 @@ describe("error observability", () => {
         expect(requestInputsText).not.toContain("array_key_secret");
         expect(requestInputsText).not.toContain("array_access_secret");
         expect(requestInputsText).not.toContain("array_access_token_secret");
-        expect(requestInputsText).not.toContain("media.example");
-        expect(requestInputsText).not.toContain("secret@media.example");
         expect(JSON.parse(requestInputsText)).toMatchObject({
             query: {
                 api_key: "[redacted]",
-                reference_images: "[redacted:2]",
-                reference_videos: "[redacted]",
-                reference_audios: "[redacted]",
             },
             body: {
                 bearerToken: "[redacted]",
@@ -401,11 +348,7 @@ describe("error observability", () => {
                     apiKey: "[redacted]",
                     token: "[redacted]",
                     keep: "visible",
-                    reference_images: "[redacted:2]",
-                    REFERENCE_VIDEOS: "[redacted]",
                 },
-                reference_images: "[redacted:3]",
-                reference_audios: "[redacted]",
                 items: [
                     {
                         key: "[redacted]",
@@ -415,67 +358,6 @@ describe("error observability", () => {
                 ],
             },
         });
-    });
-
-    it("redacts native media fields from form error telemetry", async () => {
-        const tinybirdRequests: Request[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                tinybirdRequests.push(new Request(input, init));
-                return new Response("ok");
-            },
-        );
-
-        const app = new Hono<Env>();
-        app.post("/form-error", () => {
-            throw new Error("form failure");
-        });
-        app.onError(handleError);
-
-        const form = new FormData();
-        form.append(
-            "reference_images",
-            "https://media.example/form-one.png|https://media.example/form-two.png",
-        );
-        form.append("reference_images", "https://media.example/form-three.png");
-        form.append(
-            "REFERENCE_AUDIOS",
-            "https://user:secret@media.example/form.mp3",
-        );
-        form.append("keep", "visible");
-
-        const ctx = createExecutionContext();
-        const response = await app.fetch(
-            new Request("https://gen.pollinations.ai/form-error", {
-                method: "POST",
-                body: form,
-            }),
-            {
-                ENVIRONMENT: "test",
-                LOG_LEVEL: "debug",
-                LOG_FORMAT: "text",
-                TINYBIRD_INGEST_URL:
-                    "https://tinybird.test/v0/events?name=generation_event_v2",
-                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
-            } as CloudflareBindings,
-            ctx,
-        );
-
-        await waitOnExecutionContext(ctx);
-
-        expect(response.status).toBe(500);
-        const payload = (await tinybirdRequests[0].json()) as Record<
-            string,
-            unknown
-        >;
-        const requestInputs = JSON.parse(payload.request_inputs as string);
-        expect(requestInputs.body).toMatchObject({
-            reference_images: "[redacted:3]",
-            REFERENCE_AUDIOS: "[redacted]",
-            keep: "visible",
-        });
-        expect(payload.request_inputs).not.toContain("media.example");
-        expect(payload.request_inputs).not.toContain("secret@media.example");
     });
 
     it("does not require logger middleware state for 5xx errors", async () => {

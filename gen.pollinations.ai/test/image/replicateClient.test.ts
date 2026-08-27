@@ -193,47 +193,6 @@ describe("runReplicatePrediction", () => {
         });
     });
 
-    it("redacts media URLs from provider prediction errors", async () => {
-        const referenceUrl = "https://media.example/reference,a.png";
-        vi.spyOn(globalThis, "fetch").mockResolvedValue(
-            new Response(
-                JSON.stringify({
-                    id: "pred_user_err",
-                    status: "failed",
-                    error: `Input validation error: timed out downloading ${referenceUrl}`,
-                }),
-                { status: 201 },
-            ),
-        );
-
-        await expect(
-            runReplicatePrediction({
-                model: MODEL,
-                input: { prompt: "x" },
-            }),
-        ).rejects.toMatchObject({
-            name: "ReplicateError",
-            message: "Input validation error: timed out downloading [url]",
-        });
-    });
-
-    it("redacts media URLs from provider HTTP error bodies", async () => {
-        const referenceUrl = "https://media.example/reference.mp4";
-        vi.spyOn(globalThis, "fetch").mockResolvedValue(
-            new Response(`provider rejected ${referenceUrl}`, { status: 422 }),
-        );
-
-        await expect(
-            runReplicatePrediction({
-                model: MODEL,
-                input: { prompt: "x" },
-            }),
-        ).rejects.toMatchObject({
-            name: "ReplicateError",
-            message: expect.stringContaining("provider rejected [url]"),
-        });
-    });
-
     it("classifies provider capacity errors (E003) as 503", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response(

@@ -1,5 +1,6 @@
 import {
     Alert,
+    BeakerIcon,
     BotIcon,
     Button,
     ChevronIcon,
@@ -7,10 +8,10 @@ import {
     ClockIcon,
     Dropdown,
     DropdownItem,
+    EditableCombobox,
     ExternalLinkButton,
     GitHubIcon,
     InlineLink,
-    Input,
     SearchIcon,
     Section,
     SparklesIcon,
@@ -35,7 +36,11 @@ import {
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
 import { McpServerList } from "./mcp-server-list.tsx";
-import { matchesModelQuery, parseModelQuery } from "./model-query.ts";
+import {
+    getModelQuerySuggestions,
+    matchesModelQuery,
+    parseModelQuery,
+} from "./model-query.ts";
 import type { ModelScope, ModelSort } from "./model-search.ts";
 import { sortModels } from "./model-sort.ts";
 import {
@@ -65,6 +70,10 @@ const COMMUNITY_SECTION_ORDER: SectionType[] = [
     "agent",
 ];
 const SCOPE_ORDER: ModelScope[] = ["pollinations", "community"];
+
+const MODEL_SLUG_ANNOUNCEMENT_URL = "/news#canonical-model-slugs";
+const MODEL_SLUG_LIST_URL =
+    "https://github.com/pollinations/pollinations/blob/main/MODEL_SLUGS.md";
 
 const SCOPE_LABELS: Record<ModelScope, string> = {
     pollinations: "Official",
@@ -180,6 +189,8 @@ export const Models: FC = () => {
     const activeSort = modelSearch.sort ?? "newest";
     const urlSearch = modelSearch.q ?? "";
     const [search, setSearch] = useState(urlSearch);
+    const [searchFocused, setSearchFocused] = useState(false);
+    const [searchOpen, setSearchOpen] = useState(false);
     const lastPushedSearchRef = useRef(urlSearch);
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
     const [catalogError, setCatalogError] = useState<string | null>(null);
@@ -207,6 +218,17 @@ export const Models: FC = () => {
                 : scopedModels,
         [parsedQuery, query, scopedModels],
     );
+    const searchOptions = useMemo(
+        () =>
+            activeTab === "mcp"
+                ? []
+                : getModelQuerySuggestions(search, scopedModels),
+        [activeTab, search, scopedModels],
+    );
+
+    useEffect(() => {
+        setSearchOpen(searchFocused && searchOptions.length > 0);
+    }, [searchFocused, searchOptions]);
 
     const loadModelCatalog = useCallback(
         () =>
@@ -352,6 +374,28 @@ export const Models: FC = () => {
                     </div>
                 }
             >
+                <Alert intent="warning" className="mb-4">
+                    <div className="mb-1.5 flex items-center gap-2 text-base font-bold text-theme-text-strong">
+                        <BeakerIcon className="h-4 w-4 shrink-0" />
+                        <span>Publisher-qualified IDs are available now</span>
+                    </div>
+                    You can adopt them today. On September 7,
+                    publisher-qualified IDs become the canonical model IDs, and
+                    current IDs become aliases.{" "}
+                    <a
+                        href={MODEL_SLUG_ANNOUNCEMENT_URL}
+                        className="font-semibold underline hover:no-underline"
+                    >
+                        Learn more →
+                    </a>
+                    <a
+                        href={MODEL_SLUG_LIST_URL}
+                        className="mt-2 flex w-fit items-center gap-1.5 font-semibold underline hover:no-underline"
+                    >
+                        <GitHubIcon className="h-4 w-4 shrink-0" />
+                        <span>View all model ID changes →</span>
+                    </a>
+                </Alert>
                 <div className="mb-4 flex flex-col items-start gap-3">
                     <div className="flex flex-col gap-2">
                         <div className="flex flex-wrap gap-1.5">
@@ -406,40 +450,29 @@ export const Models: FC = () => {
                             })}
                         </div>
                     </div>
-                    <div className="flex w-full flex-wrap items-start justify-between gap-2">
+                    <div className="flex w-full flex-wrap items-center justify-between gap-2">
                         <div className="min-w-0 max-w-md flex-1 basis-[240px]">
                             <div className="relative">
-                                <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />
-                                <Input
-                                    type="search"
+                                <SearchIcon className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />
+                                <EditableCombobox
                                     value={search}
-                                    onChange={(event) =>
-                                        setSearch(event.target.value)
-                                    }
+                                    options={searchOptions}
+                                    onChange={setSearch}
+                                    open={searchOpen}
+                                    onOpenChange={setSearchOpen}
+                                    onFocus={() => setSearchFocused(true)}
                                     onBlur={() => {
+                                        setSearchFocused(false);
                                         const normalizedSearch = search.trim();
                                         setSearch(normalizedSearch);
                                         pushSearch(normalizedSearch);
                                     }}
                                     placeholder={`Search ${searchTarget}…`}
                                     aria-label={`Search ${searchTarget}`}
-                                    aria-describedby={
-                                        activeTab === "mcp"
-                                            ? undefined
-                                            : "model-search-filter-help"
-                                    }
-                                    className="w-full pl-9"
+                                    autoComplete="off"
+                                    className="pl-9"
                                 />
                             </div>
-                            {activeTab !== "mcp" && (
-                                <p
-                                    id="model-search-filter-help"
-                                    className="mt-1 text-xs text-theme-text-muted"
-                                >
-                                    Filters: access:, publisher:, id:, type:,
-                                    capability:
-                                </p>
-                            )}
                         </div>
                         {activeTab !== "mcp" && (
                             <Dropdown

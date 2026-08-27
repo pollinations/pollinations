@@ -22,6 +22,7 @@ export const COMMUNITY_ENDPOINT_CHANGE_DELAY_MS = 12 * 60 * 60 * 1000;
 export const COMMUNITY_ENDPOINT_MODALITIES = [
     "text",
     "image",
+    "video",
     "transcription",
 ] as const;
 // How a community image endpoint is billed. "request" charges the fixed
@@ -49,6 +50,10 @@ export const MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS = 50;
 export const MAX_COMMUNITY_PRICE_PER_TOKEN =
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS / 1_000_000;
 export const MAX_COMMUNITY_PRICE_PER_IMAGE = 0.25;
+// Video endpoints bill per-second output. Keep this in line with first-party
+// video pricing (Seedance 2.5 ~$0.10/sec at 480p, ~$0.23/sec at 720p).
+export const MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND = 0.5;
+export const MAX_COMMUNITY_VIDEO_BYTES = 20 * 1024 * 1024;
 // Per-second audio (STT/TTS) prices are tiny compared to per-token rates, so
 // this ceiling is written per minute and divided down: $0.012/min is ~2x
 // OpenAI whisper ($0.006/min) and ~3x the priciest first-party STT model
@@ -70,6 +75,7 @@ export type CommunityEndpointModality =
 export const COMMUNITY_ENDPOINT_INPUT_MODALITIES = {
     text: MODEL_INPUT_MODALITIES,
     image: ["text", "image"],
+    video: ["text", "image"] as const,
     transcription: ["audio"],
 } as const satisfies Record<
     CommunityEndpointModality,
@@ -233,9 +239,21 @@ const COMMUNITY_TRANSCRIPTION_PRICE_FIELD = {
     rawUsagePaths: ["duration"],
 } as const;
 
+// Video endpoints bill per-second output against completionVideoPrice. The
+// provider returns the generated video duration in an OpenAI-compatible usage
+// shape (usage.video_seconds or usage.duration).
+const COMMUNITY_VIDEO_PRICE_FIELD = {
+    key: "completionVideoPrice",
+    usageType: "completionVideoSeconds",
+    label: "Generated video",
+    priceUnit: "second",
+    rawUsagePaths: ["video_seconds", "duration"],
+} as const;
+
 export const COMMUNITY_ENDPOINT_PRICE_FIELDS = [
     ...COMMUNITY_TEXT_PRICE_FIELDS,
     COMMUNITY_IMAGE_PRICE_FIELD,
+    COMMUNITY_VIDEO_PRICE_FIELD,
     COMMUNITY_TRANSCRIPTION_PRICE_FIELD,
 ] as const;
 
@@ -250,6 +268,10 @@ const COMMUNITY_IMAGE_ENDPOINT_PRICE_FIELDS = [
     COMMUNITY_IMAGE_PRICE_FIELD,
 ] as const;
 
+const COMMUNITY_VIDEO_ENDPOINT_PRICE_FIELDS = [
+    COMMUNITY_VIDEO_PRICE_FIELD,
+] as const;
+
 const COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS = [
     COMMUNITY_TRANSCRIPTION_PRICE_FIELD,
 ] as const;
@@ -261,6 +283,7 @@ export function communityEndpointPriceFieldsForModality(
     if (modality === "transcription") {
         return COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS;
     }
+    if (modality === "video") return COMMUNITY_VIDEO_ENDPOINT_PRICE_FIELDS;
     if (modality !== "image") return COMMUNITY_TEXT_ENDPOINT_PRICE_FIELDS;
     return imagePricing === "tokens"
         ? COMMUNITY_IMAGE_TOKEN_PRICE_FIELDS
@@ -357,6 +380,7 @@ export function normalizeCommunityEndpointModality(
     value: string | null | undefined,
 ): CommunityEndpointModality {
     if (value === "transcription") return "transcription";
+    if (value === "video") return "video";
     return value === "image" ? "image" : "text";
 }
 
@@ -895,6 +919,10 @@ export function communityAudioTranscriptionsUrl(baseUrl: string): string {
     return `${communityOpenAIBaseUrl(baseUrl)}/audio/transcriptions`;
 }
 
+export function communityVideoUrl(baseUrl: string): string {
+    return `${communityOpenAIBaseUrl(baseUrl)}/video/generations`;
+}
+
 /**
  * Audio duration reported by an OpenAI-compatible transcription response.
  *
@@ -927,6 +955,7 @@ export function communityOpenAIBaseUrl(baseUrl: string): string {
         "/images/generations",
         "/images/edits",
         "/audio/transcriptions",
+        "/video/generations",
     ]) {
         if (normalized.endsWith(suffix)) {
             return normalized.slice(0, -suffix.length);
@@ -989,6 +1018,7 @@ export function communityModelDefinition(
         endpoint.imagePricing,
     );
     const isImage = modality === "image";
+    const isVideo = modality === "video";
     const isTranscription = modality === "transcription";
     // Token-priced image endpoints bill like text models (usage × per-token
     // rates), so only fixed per-request image endpoints are flat-rate.
@@ -1007,20 +1037,29 @@ export function communityModelDefinition(
         perUserRpm: endpoint.perUserRpm,
         brand: providerName || "Community",
         brandUrl: providerName && providerUrl ? providerUrl : undefined,
-        category: isImage ? "image" : isTranscription ? "audio" : "text",
+        category: isImage
+            ? "image"
+            : isVideo
+              ? "video"
+              : isTranscription
+                ? "audio"
+                : "text",
         cost: communityPriceDefinition(endpoint, modality, imagePricing),
         priceMultiplier: 1,
         addedDate: endpoint.addedDate ?? 0,
         title: communityEndpointTitle(endpoint),
         description: description || undefined,
         inputModalities,
-        outputModalities: isImage ? ["image"] : ["text"],
+        outputModalities: isImage ? ["image"] : isVideo ? ["video"] : ["text"],
         hidden: endpoint.hidden,
         ...(endpoint.fallbacks?.length
             ? { fallbacks: endpoint.fallbacks }
             : {}),
         ...(isTranscription
             ? { supportedEndpoints: ["/v1/audio/transcriptions"] }
+            : {}),
+        ...(isVideo
+            ? { supportedEndpoints: ["/v1/video/generations", "/video"] }
             : {}),
         paidOnly: endpoint.paidOnly ?? false,
         alpha: true,

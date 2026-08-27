@@ -1,0 +1,34 @@
+{
+  "pr_number": 14030,
+  "title": "refactor: remove duplicate Replicate error logs",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14030",
+  "merged_at": "2026-08-27T03:55:43Z",
+  "labels": [],
+  "pr_body_excerpt": "- Keeps one complete error log per failed Replicate-backed Seedance request\n- Removes duplicate message/status logging and direct adapter imports\n- Leaves timeout, cancellation, and error mapping behavior unchanged\n\nChecks:\n- `npm exec -- biome check` on the three changed adapters\n- `npm run test --workspace pollinations-gen -- test/image/replicateClient.test.ts`\n- `npm run typecheck --workspace pollinations-gen`",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "One Buzz Per Error",
+    "blurb": "The Seedance video workers have agreed to stop repeating themselves. Failed Replicate requests now leave one complete, useful trail instead of a small chorus of identical warnings.",
+    "summary": "Removed duplicate message and status logs from the Seedance 2.5, Seedance Replicate, and Seedance V2 video adapters so each failed Replicate-backed request produces one complete error log, with timeout, cancellation, and error mapping unchanged.",
+    "impact": "Maintainers get cleaner Replicate failure diagnostics for Seedance video requests without any change to generation behavior or error handling.",
+    "keywords": [
+      "replicate",
+      "seedance",
+      "video",
+      "error-logging",
+      "gen-api",
+      "maintenance"
+    ],
+    "visual_concept": "A cozy video-generation garden shed where Polli, wearing a tiny librarian visor, files one neat error-log scroll into a glowing lime-green terminal while duplicate paper slips dissolve into compost beneath code-plants. The scene represents clearer internal diagnostics rather than a user-facing feature.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing a tiny librarian visor as she places one neat error-log scroll beside a retro terminal glowing lime green (#ecf874), while duplicate log slips become compost for small code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle pixel-font terminal text: 'ONE COMPLETE LOG', nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-27/PR-14030.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing a tiny librarian visor as she places one neat error-log scroll beside a retro terminal glowing lime green (#ecf874), while duplicate log slips become compost for small code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle pixel-font terminal text: 'ONE COMPLETE LOG', nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-27T03:56:45.390104+00:00"
+}

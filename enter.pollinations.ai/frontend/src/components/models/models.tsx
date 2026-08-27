@@ -8,10 +8,10 @@ import {
     ClockIcon,
     Dropdown,
     DropdownItem,
+    EditableCombobox,
     ExternalLinkButton,
     GitHubIcon,
     InlineLink,
-    Input,
     SearchIcon,
     Section,
     SparklesIcon,
@@ -35,7 +35,11 @@ import {
     fetchModelCatalog,
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
-import { matchesModelQuery, parseModelQuery } from "./model-query.ts";
+import {
+    getModelQuerySuggestions,
+    matchesModelQuery,
+    parseModelQuery,
+} from "./model-query.ts";
 import type { ModelScope, ModelSort } from "./model-search.ts";
 import { sortModels } from "./model-sort.ts";
 import {
@@ -181,6 +185,8 @@ export const Models: FC = () => {
     const activeSort = modelSearch.sort ?? "newest";
     const urlSearch = modelSearch.q ?? "";
     const [search, setSearch] = useState(urlSearch);
+    const [searchFocused, setSearchFocused] = useState(false);
+    const [searchOpen, setSearchOpen] = useState(false);
     const lastPushedSearchRef = useRef(urlSearch);
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
     const [catalogError, setCatalogError] = useState<string | null>(null);
@@ -208,6 +214,14 @@ export const Models: FC = () => {
                 : scopedModels,
         [parsedQuery, query, scopedModels],
     );
+    const searchOptions = useMemo(
+        () => getModelQuerySuggestions(search, scopedModels),
+        [search, scopedModels],
+    );
+
+    useEffect(() => {
+        setSearchOpen(searchFocused && searchOptions.length > 0);
+    }, [searchFocused, searchOptions]);
 
     const loadModelCatalog = useCallback(
         () =>
@@ -427,34 +441,29 @@ export const Models: FC = () => {
                             })}
                         </div>
                     </div>
-                    <div className="flex w-full flex-wrap items-start justify-between gap-2">
+                    <div className="flex w-full flex-wrap items-center justify-between gap-2">
                         <div className="min-w-0 max-w-md flex-1 basis-[240px]">
                             <div className="relative">
-                                <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />
-                                <Input
-                                    type="search"
+                                <SearchIcon className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />
+                                <EditableCombobox
                                     value={search}
-                                    onChange={(event) =>
-                                        setSearch(event.target.value)
-                                    }
+                                    options={searchOptions}
+                                    onChange={setSearch}
+                                    open={searchOpen}
+                                    onOpenChange={setSearchOpen}
+                                    onFocus={() => setSearchFocused(true)}
                                     onBlur={() => {
+                                        setSearchFocused(false);
                                         const normalizedSearch = search.trim();
                                         setSearch(normalizedSearch);
                                         pushSearch(normalizedSearch);
                                     }}
                                     placeholder={`Search ${searchTarget}…`}
                                     aria-label={`Search ${searchTarget}`}
-                                    aria-describedby="model-search-filter-help"
-                                    className="w-full pl-9"
+                                    autoComplete="off"
+                                    className="pl-9"
                                 />
                             </div>
-                            <p
-                                id="model-search-filter-help"
-                                className="mt-1 text-xs text-theme-text-muted"
-                            >
-                                Filters: access:, publisher:, id:, type:,
-                                capability:
-                            </p>
                         </div>
                         <Dropdown
                             align="end"

@@ -31,7 +31,7 @@ test("lists the MCP servers exposed through Gen", async () => {
                 id: "ffmpeg",
                 name: "FFmpeg",
                 description:
-                    "Run FFmpeg against public HTTPS media and return hosted outputs.",
+                    "Trim, convert, resize, compress, and remix audio and video.",
                 url: "https://gen.pollinations.ai/mcp/ffmpeg",
             },
             {

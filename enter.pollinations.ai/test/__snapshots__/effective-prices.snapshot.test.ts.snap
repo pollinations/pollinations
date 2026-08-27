@@ -1931,6 +1931,20 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptAudioSeconds": 0.0000452777777777778,
     },
   },
+  "z-ai/glm-5.3-flash": {
+    "cost": {
+      "completionTextTokens": 0.00000025,
+      "promptCachedTokens": 0.000000015,
+      "promptImageTokens": 0.000000075,
+      "promptTextTokens": 0.000000075,
+    },
+    "price": {
+      "completionTextTokens": 0.00000025,
+      "promptCachedTokens": 0.000000015,
+      "promptImageTokens": 0.000000075,
+      "promptTextTokens": 0.000000075,
+    },
+  },
   "zimage": {
     "cost": {
       "completionImageTokens": 0.004,

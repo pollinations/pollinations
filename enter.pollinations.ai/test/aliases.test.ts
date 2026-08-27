@@ -87,8 +87,8 @@ test("every public model has one publisher-qualified ID", () => {
         const definition = getRegistryModelDefinition(model);
         if (definition.hidden) continue;
 
-        const publisherQualifiedIds = definition.aliases.filter((alias) =>
-            alias.includes("/"),
+        const publisherQualifiedIds = [model, ...definition.aliases].filter(
+            (id) => id.includes("/"),
         );
 
         expect(publisherQualifiedIds, model).toHaveLength(1);

@@ -172,6 +172,17 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
+    "z-ai/glm-5.3-flash": () =>
+        createOpenRouterModelConfig({
+            model: "z-ai/glm-5.3-flash",
+            defaultOptions: {
+                max_tokens: 64000,
+                provider: {
+                    only: ["z-ai/fp8"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
     "xiaomi/mimo-v2.5": createPinnedOpenRouterConfig(
         "xiaomi/mimo-v2.5",
         "xiaomi/fp8",

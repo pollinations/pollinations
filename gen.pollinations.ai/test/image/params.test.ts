@@ -76,6 +76,22 @@ describe("ImageParamsSchema", () => {
         ).toBe(true);
     });
 
+    it("rejects native-only reference media on OpenAI POST requests", () => {
+        for (const field of [
+            "reference_images",
+            "reference_videos",
+            "reference_audios",
+        ] as const) {
+            const result = CreateImageRequestSchema.safeParse({
+                model: "seedance-2.0",
+                prompt: "a paper boat",
+                [field]: ["https://media.example/reference.bin"],
+            });
+
+            expect(result.success, field).toBe(false);
+        }
+    });
+
     it("enforces the public minimax-h3 contract", () => {
         expect(
             ImageParamsSchema.safeParse({
@@ -154,5 +170,59 @@ describe("ImageParamsSchema", () => {
                 message: "flux does not accept a resolution parameter.",
             });
         }
+    });
+
+    it("parses and validates reference media independently from frame images", () => {
+        const result = ImageParamsSchema.safeParse({
+            model: "seedance-2.0",
+            reference_images:
+                "https://media.example/image,a.png| |https://media.example/image-b.png|",
+            reference_videos: "https://media.example/video.mp4",
+            reference_audios: "https://media.example/audio.mp3",
+        });
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.reference_images).toEqual([
+                "https://media.example/image,a.png",
+                "https://media.example/image-b.png",
+            ]);
+            expect(result.data.reference_videos).toEqual([
+                "https://media.example/video.mp4",
+            ]);
+        }
+    });
+
+    it("rejects reference media on unsupported models", () => {
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "seedance-2.0-mini",
+                reference_images: "https://media.example/image.png",
+            }).success,
+        ).toBe(false);
+    });
+
+    it("passes provider-specific reference combinations through", () => {
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "seedance-2.0",
+                image: "https://media.example/frame.png",
+                reference_images: "https://media.example/image.png",
+            }).success,
+        ).toBe(true);
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "seedance-2.0",
+                reference_audios: "https://media.example/audio.mp3",
+            }).success,
+        ).toBe(true);
+    });
+
+    it("rejects unsafe reference media URLs", () => {
+        const invalidUrl = ImageParamsSchema.safeParse({
+            model: "seedance-2.5",
+            reference_images: "http://127.0.0.1/image.png",
+        });
+        expect(invalidUrl.success).toBe(false);
     });
 });

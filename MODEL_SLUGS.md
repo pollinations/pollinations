@@ -255,13 +255,6 @@ Only the names are changing. Model behavior and pricing stay the same.
 | Perplexity Sonar Pro | `perplexity` | `perplexity/sonar-pro` |
 | Perplexity Sonar Reasoning Pro | `perplexity-reasoning` | `perplexity/sonar-reasoning-pro` |
 
-## Pollinations
-
-| Model | Existing ID | New ID |
-| --- | --- | --- |
-| MIDIjourney | `midijourney` | `pollinations/midijourney` |
-| MIDIjourney Large | `midijourney-large` | `pollinations/midijourney-large` |
-
 ## Poolside
 
 | Model | Existing ID | New ID |

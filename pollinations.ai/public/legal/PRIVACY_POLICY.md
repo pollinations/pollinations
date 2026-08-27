@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Updated: 2026-08-17**
+**Updated: 2026-08-22**
 
 ## 1) Scope & Roles
 
@@ -37,31 +37,42 @@ When you authorize a third-party app, we show you the app identity we have, the 
 
 The app may process prompts, outputs, and other data you provide to that app under its own terms and privacy policy. Only authorize apps you trust. You can revoke app access or adjust app spending caps in the dashboard.
 
-## 5) Model Training & Content Use
+## 5) Community Models & Managed Agents
 
-We do not use your prompts/outputs to train or fine-tune models without your permission. Any training requires explicit opt-in.
+Externally hosted community models run on independent providers' infrastructure, not Pollinations. When you use one, your request is sent to that provider and any configured community fallback providers. A request may include prompts, messages, instructions, files or media, tool definitions and results, and generation settings. We do not send your Pollinations API key.
 
-## 6) Cookies & SDKs
+Community providers are responsible for how they store, share, secure, train on, or otherwise use your request. Their terms and privacy policies apply; Pollinations does not control or verify those practices. Check the provider information before sending credentials, confidential information, or sensitive personal data.
+
+Managed agents run on Pollinations infrastructure. Publishing one does not give its creator access to caller requests, but its selected models and tools may process them. If a selected model is externally hosted, the rules above apply. Public agent instructions may be inferred or extracted, so creators should not include credentials or confidential data.
+
+## 6) Model Training & Content Use
+
+Pollinations does not use your prompts or outputs to train or fine-tune models without explicit opt-in. Community providers may follow different practices under their own policies.
+
+## 7) Cookies & SDKs
 
 We currently use only essential cookies and similar storage needed for login, session, security, and service operation. We do not use third-party analytics or marketing cookies/SDKs at this time. If we add non-essential cookies or SDKs, we will request consent first and provide a way to change preferences.
 
-## 7) Sharing & Recipients
+## 8) Sharing & Recipients
 
 * **Service providers (sub-processors):** we use the **categories** described at /terms#15-dpa-and-sub-processors. **Full named list available on request; we give at least 14 days' prior notice of material changes.**
 
 **Depending on your model/provider selection, prompts and outputs may be sent transiently to our model/inference compute sub-processors (see categories at /terms#15-dpa-and-sub-processors).**
 
+* **Community providers:** when you use an externally hosted community model, your request is sent to its provider and any configured community fallback providers. These independent providers are responsible for their own endpoints and data practices.
 * **Authorized apps:** when you approve an app connection, we share the approved API key/token and authorization details with that app.
 * **Affiliates:** internal operations under this policy.
 * **Authorities:** when required by law or to protect rights/safety.
 
 We do not sell personal data.
 
-## 8) International Transfers
+## 9) International Transfers
 
 Where data leaves the EEA, we use approved safeguards (e.g., EU Standard Contractual Clauses) and appropriate supplementary measures.
 
-## 9) Retention
+Community providers may process data in other countries. Before sending personal data, check that the provider meets any residency or transfer requirements that apply to you.
+
+## 10) Retention
 
 * **Account and profile data:** while the account is active. When an account is deleted, access is revoked immediately and its profile, credentials, connected-app access, balances, and user-owned resources are deleted or de-identified from active systems within 30 days.
 * **Reward-protection records:** an immutable linked GitHub user ID and reward ledger records are retained while needed to prevent the same identity from receiving the same one-time reward more than once. We review this retention while the reward programmes remain available.
@@ -69,6 +80,7 @@ Where data leaves the EEA, we use approved safeguards (e.g., EU Standard Contrac
 * **API usage metadata:** typically 24 months (billing, fraud, capacity, developer-earnings attribution).
 * **Quest and reward records:** reward ledger records follow wallet/accounting retention where needed for balance, audit, fraud, and dispute purposes. Synced public GitHub quest issue records are retained while needed to display, process, and audit quest rewards.
 * **Generated response caches (text, image, audio, video):** typically up to 30 days, plus any downstream public/browser caches.
+* **Community providers:** each provider sets its own retention policy. Review it before sending sensitive content.
 * **Uploaded media files (media.pollinations.ai):** a 30-day lifecycle applies from upload or the latest refresh. Retrieving the file body refreshes the lifecycle only when the file is at least 15 days old, so actively accessed uploads can remain longer.
 * **App authorization records:** while active. Related usage, billing, security, and dispute records may be retained under the retention periods above.
 * **Support conversations:** we don't run a proprietary ticket system. Support happens on third-party channels (GitHub Issues, Discord) and email. GitHub Issues are public and retained by GitHub; Discord and email retention follows those platforms' own policies. Don't share sensitive data in public channels.
@@ -76,25 +88,25 @@ Where data leaves the EEA, we use approved safeguards (e.g., EU Standard Contrac
 
 **Account deletion:** account access is revoked immediately. Personal data is deleted or de-identified from active systems within 30 days except for the reward-protection, billing, usage, fraud-prevention, and legal records described above. Residual backup copies expire through the backup schedule described above. If you later create a new account with the same GitHub identity, rewards already issued to that identity cannot be claimed again.
 
-## 10) Your Rights (GDPR)
+## 11) Your Rights (GDPR)
 
 Access, correction, deletion, restriction, portability, objection to legitimate-interest processing, and withdrawal of consent where applicable.
 
 You can complain to your local authority or the Estonian Data Protection Inspectorate (AKI). **Contact:** hello@pollinations.ai.
 
-## 11) Security
+## 12) Security
 
 We apply industry-standard administrative, technical, and physical safeguards, including encryption in transit, encryption at rest where applicable, access controls, and incident response.
 
-## 12) Children
+## 13) Children
 
 Services are for users 16+. If under-16 data was provided, contact us for removal.
 
-## 13) Automated Decision-Making
+## 14) Automated Decision-Making
 
 No decisions producing legal or similarly significant effects. Rate-limiting, abuse prevention, key-budget checks, app authorization checks, balance checks, and fraud controls may be automated.
 
-## 14) Changes
+## 15) Changes
 
 We may update this policy; we'll post the new date and, for material changes, give reasonable in-app or email notice.
 

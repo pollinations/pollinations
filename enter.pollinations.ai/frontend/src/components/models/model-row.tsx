@@ -114,7 +114,7 @@ export const PerPollenEstimate: FC<{
         ? "This model is free to use."
         : isUnavailable
           ? "Usage data from the last 7 days is unavailable, so this estimate cannot be calculated."
-          : `About ${value} ${requestLabel} per pollen. Estimated from average usage over the last 7 days.`;
+          : `About ${value} ${requestLabel} per pollen. Estimated from the median observed cost over the last 7 days.`;
     const tooltip = isFree ? (
         <span>
             This model is{" "}
@@ -136,7 +136,7 @@ export const PerPollenEstimate: FC<{
                 About {value} {requestLabel} per pollen
             </strong>
             <span className="text-theme-text-muted">
-                Estimated from average usage over the last 7 days.
+                Estimated from the median observed cost over the last 7 days.
             </span>
         </span>
     );

@@ -146,34 +146,40 @@ const ChatCompletionMessageContentPartRedactedThinkingSchema = z.object({
     data: z.string(),
 });
 
-const ChatCompletionRequestSystemMessageSchema = z.object({
-    content: z.union([
-        z.string(),
-        z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
-    ]),
-    role: z.literal("system"),
-    name: z.string().optional(),
-    cache_control: CacheControlSchema,
-});
+const ChatCompletionRequestSystemMessageSchema = z
+    .object({
+        content: z.union([
+            z.string(),
+            z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
+        ]),
+        role: z.literal("system"),
+        name: z.string().optional(),
+        cache_control: CacheControlSchema,
+    })
+    .passthrough();
 
-const ChatCompletionRequestDeveloperMessageSchema = z.object({
-    content: z.union([
-        z.string(),
-        z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
-    ]),
-    role: z.literal("developer"),
-    name: z.string().optional(),
-    cache_control: CacheControlSchema,
-});
+const ChatCompletionRequestDeveloperMessageSchema = z
+    .object({
+        content: z.union([
+            z.string(),
+            z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
+        ]),
+        role: z.literal("developer"),
+        name: z.string().optional(),
+        cache_control: CacheControlSchema,
+    })
+    .passthrough();
 
-const ChatCompletionRequestUserMessageSchema = z.object({
-    content: z.union([
-        z.string(),
-        z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
-    ]),
-    role: z.literal("user"),
-    name: z.string().optional(),
-});
+const ChatCompletionRequestUserMessageSchema = z
+    .object({
+        content: z.union([
+            z.string(),
+            z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
+        ]),
+        role: z.literal("user"),
+        name: z.string().optional(),
+    })
+    .passthrough();
 
 const ChatCompletionMessageToolCallSchema = z.object({
     id: z.string(),
@@ -188,44 +194,51 @@ const ChatCompletionMessageToolCallsSchema = z.array(
     ChatCompletionMessageToolCallSchema,
 );
 
-const ChatCompletionRequestAssistantMessageSchema = z.object({
-    content: z
-        .union([
-            z.string(),
-            z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
-        ])
-        .nullable()
-        .optional(),
-    role: z.literal("assistant"),
-    name: z.string().optional(),
-    tool_calls: ChatCompletionMessageToolCallsSchema.optional(),
-    function_call: z
-        .object({
-            arguments: z.string(),
-            name: z.string(),
-        })
-        .nullable()
-        .optional(),
-    cache_control: CacheControlSchema,
-});
+const ChatCompletionRequestAssistantMessageSchema = z
+    .object({
+        content: z
+            .union([
+                z.string(),
+                z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
+            ])
+            .nullable()
+            .optional(),
+        role: z.literal("assistant"),
+        name: z.string().optional(),
+        tool_calls: ChatCompletionMessageToolCallsSchema.optional(),
+        function_call: z
+            .object({
+                arguments: z.string(),
+                name: z.string(),
+            })
+            .nullable()
+            .optional(),
+        cache_control: CacheControlSchema,
+    })
+    .passthrough();
 
-const ChatCompletionRequestToolMessageSchema = z.object({
-    role: z.literal("tool"),
-    content: z
-        .union([
-            z.string(),
-            z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
-        ])
-        .nullable(),
-    tool_call_id: z.string(),
-    cache_control: CacheControlSchema,
-});
+const ChatCompletionRequestToolMessageSchema = z
+    .object({
+        role: z.literal("tool"),
+        content: z
+            .union([
+                z.string(),
+                z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
+            ])
+            .nullable(),
+        tool_call_id: z.string(),
+        name: z.string().optional(),
+        cache_control: CacheControlSchema,
+    })
+    .passthrough();
 
-const ChatCompletionRequestFunctionMessageSchema = z.object({
-    role: z.literal("function"),
-    content: z.string().nullable(),
-    name: z.string(),
-});
+const ChatCompletionRequestFunctionMessageSchema = z
+    .object({
+        role: z.literal("function"),
+        content: z.string().nullable(),
+        name: z.string(),
+    })
+    .passthrough();
 
 const ChatCompletionRequestMessageSchema = z.union([
     ChatCompletionRequestSystemMessageSchema,
@@ -514,11 +527,12 @@ export type CreateChatCompletionResponse = z.infer<
     typeof CreateChatCompletionResponseSchema
 >;
 
-const OpenAIModelSchema = z
+export const OpenAIModelSchema = z
     .object({
         id: z.string(),
         object: z.literal("model"),
         created: z.number(),
+        owned_by: z.string().optional(),
         input_modalities: z.array(z.string()).optional(),
         output_modalities: z.array(z.string()).optional(),
         supported_endpoints: z.array(z.string()).optional(),
@@ -534,6 +548,8 @@ const OpenAIModelSchema = z
     .meta({
         description: "OpenAI-compatible model object with capability metadata",
     });
+
+export const GetModelResponseSchema = OpenAIModelSchema;
 
 export const GetModelsResponseSchema = z
     .object({
@@ -610,6 +626,12 @@ export const CreateImageRequestSchema = z
                 description:
                     "Reference image URL(s) for image-to-image generation (Pollinations extension)",
             }),
+        // Reference media is supported only by the native GET image/video
+        // routes. Keep these keys explicit so the passthrough extension
+        // policy cannot accidentally expose them on OpenAI POST requests.
+        reference_images: z.never().optional(),
+        reference_videos: z.never().optional(),
+        reference_audios: z.never().optional(),
         resolution: imageResolutionField,
         safe: SafeSchema,
     })

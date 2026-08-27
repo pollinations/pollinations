@@ -1,3 +1,4 @@
+import { defineCostVariants } from "./cost-variants";
 import type { ModelDefinition } from "./registry";
 
 // Voice name to ElevenLabs voice ID mapping
@@ -353,8 +354,8 @@ export const AUDIO_SERVICES = {
         addedDate: new Date("2026-02-08").getTime(),
         priceMultiplier: 1,
         cost: {
-            // OVH Whisper: €0.00004083/sec ≈ $0.0000445/sec
-            promptAudioSeconds: 0.0000445,
+            // OVHcloud USD list price: $0.163/hour.
+            promptAudioSeconds: 0.163 / 3600,
         },
         title: "Whisper Large V3",
         description: "Accurate, affordable speech-to-text transcription",
@@ -450,6 +451,22 @@ export const AUDIO_SERVICES = {
             // AssemblyAI Universal-2: $0.15/hour
             promptAudioSeconds: 0.15 / 3600,
         },
+        ...defineCostVariants(
+            {
+                diarization: {
+                    promptAudioSeconds: 0.17 / 3600,
+                },
+            },
+            ({ input }) => (input?.hasDiarization ? "diarization" : undefined),
+            {
+                diarization: {
+                    label: "Speaker diarization",
+                    description:
+                        "Applies when response_format is diarized_json.",
+                },
+            },
+            "Standard transcription",
+        ),
         title: "AssemblyAI Universal-2",
         description: "Fast transcription with support for 99 languages",
         inputModalities: ["audio"],
@@ -476,6 +493,44 @@ export const AUDIO_SERVICES = {
             // AssemblyAI Universal-3.5 Pro async: $0.21/hour
             promptAudioSeconds: 0.21 / 3600,
         },
+        ...defineCostVariants(
+            {
+                prompting: {
+                    promptAudioSeconds: 0.26 / 3600,
+                },
+                diarization: {
+                    promptAudioSeconds: 0.23 / 3600,
+                },
+                prompting_diarization: {
+                    promptAudioSeconds: 0.28 / 3600,
+                },
+            },
+            ({ input }) => {
+                if (input?.hasPrompt) {
+                    return input.hasDiarization
+                        ? "prompting_diarization"
+                        : "prompting";
+                }
+                return input?.hasDiarization ? "diarization" : undefined;
+            },
+            {
+                prompting: {
+                    label: "Prompting",
+                    description: "Applies when a prompt is provided.",
+                },
+                diarization: {
+                    label: "Speaker diarization",
+                    description:
+                        "Applies when response_format is diarized_json.",
+                },
+                prompting_diarization: {
+                    label: "Prompting and speaker diarization",
+                    description:
+                        "Applies when a prompt is provided and response_format is diarized_json.",
+                },
+            },
+            "Standard transcription",
+        ),
         title: "AssemblyAI Universal-3.5 Pro",
         description:
             "High-accuracy transcription with multilingual code switching and prompts",

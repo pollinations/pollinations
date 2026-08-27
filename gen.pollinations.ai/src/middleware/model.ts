@@ -1,4 +1,7 @@
-import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
+import {
+    type CommunityEndpointRuntime,
+    usesAgentRunToken,
+} from "@shared/community-endpoints.ts";
 import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
 import { DEFAULT_EMBEDDING_MODEL } from "@shared/registry/embeddings.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
@@ -40,12 +43,6 @@ export type ModelVariables = {
         /** Entry that serves the request when this model's upstream fails. */
         fallbackEntries?: GenerationModelEntry[];
     };
-    /**
-     * Set by the generation handlers when the fallback target actually served
-     * the request. Cost and the community owner reward follow it; the price the
-     * caller pays does not — that stays the listing they asked for.
-     */
-    servedModelEntry?: GenerationModelEntry;
     formData?: FormData;
 };
 
@@ -126,9 +123,10 @@ export async function resolveModelDefinition(
         }),
         // An agent run executes tools and spends the caller's balance, so its
         // answer belongs to that caller and must never be replayed to another.
-        ...(entry.communityEndpoint?.kind === "agent" && {
-            cacheScope: `agent:${entry.communityEndpoint.agentId}`,
-        }),
+        ...(entry.communityEndpoint &&
+            usesAgentRunToken(entry.communityEndpoint) && {
+                cacheScope: `agent:${entry.id}`,
+            }),
         ...(entry.fallbackEntries && {
             fallbackEntries: entry.fallbackEntries,
         }),

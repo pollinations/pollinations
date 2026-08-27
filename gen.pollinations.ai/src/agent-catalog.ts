@@ -6,54 +6,16 @@
  * the generic registry: where their runtime is, what their stored config
  * means, and how they present the metadata of the base model they wrap.
  */
+
+import type { McpServerId } from "@shared/registry/mcp.ts";
 import type { ModelCapability } from "@shared/registry/model-info.ts";
 import type { GenerationModelEntry } from "./model-registry.ts";
 
-/** The agent fields the catalog reads out of the stored agent config. */
+/** The agent fields the catalog reads out of the listing payload. */
 export type AgentCatalogConfig = {
     baseModel: string;
-    mcpServers: "pollinations"[];
+    mcpServers: McpServerId[];
 };
-
-/** Every environment binding the agent catalog needs. */
-export type AgentCatalogEnv = Pick<
-    CloudflareBindings,
-    "AGENT_RUNTIME_BASE_URL"
->;
-
-/** Where agent listings send their generation requests. */
-export function agentRuntimeBaseUrl(env: AgentCatalogEnv): string {
-    return env.AGENT_RUNTIME_BASE_URL;
-}
-
-/**
- * The catalog view of a stored agent config, or null when it cannot be read.
- *
- * A row whose config is unreadable still serves traffic through the runtime,
- * which parses it strictly; the catalog only loses the base-model metadata.
- */
-export function parseAgentCatalogConfig(
-    raw: string | null,
-): AgentCatalogConfig | null {
-    if (!raw) return null;
-    try {
-        const parsed = JSON.parse(raw) as Record<string, unknown>;
-        if (typeof parsed.baseModel !== "string" || !parsed.baseModel.trim()) {
-            return null;
-        }
-        return {
-            baseModel: parsed.baseModel,
-            mcpServers: Array.isArray(parsed.mcpServers)
-                ? parsed.mcpServers.filter(
-                      (server): server is "pollinations" =>
-                          server === "pollinations",
-                  )
-                : [],
-        };
-    } catch {
-        return null;
-    }
-}
 
 function applyBaseModelMetadata(
     entry: GenerationModelEntry,

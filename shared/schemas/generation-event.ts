@@ -9,19 +9,25 @@ export type EventType =
     | "generate.embedding"
     | "generate.realtime";
 
+export type TinybirdEventType = EventType | "tool.media" | "tool.search";
+
 // Plain TypeScript type for Tinybird events (no D1 table - events sent directly to Tinybird)
 export type TinybirdEvent = {
     id: string;
 
     // Request
     requestId: string;
+    // Set on generations made with a run token: the requestId of the call that
+    // minted it. Groups one agent call's model steps and tool calls; the parent
+    // row is free, so a run costs the sum over its children.
+    parentRequestId?: string;
     requestPath?: string;
     startTime: Date;
     endTime?: Date;
     responseTime?: number;
     responseStatus?: number;
     environment?: string;
-    eventType: EventType;
+    eventType: TinybirdEventType;
 
     // Cache identity is emitted only for requests that reached cache-backed
     // generation handling. The key is SHA-256 hashed before ingestion.

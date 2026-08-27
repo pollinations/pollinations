@@ -90,6 +90,9 @@ export type VideoCapability =
     | "start_frame"
     | "end_frame"
     | "keyframes"
+    | "reference_images"
+    | "reference_videos"
+    | "reference_audios"
     | "audio_output";
 
 export type BillingAdjustmentRule = {
@@ -146,6 +149,8 @@ export type BillingAdjustment = {
 export type ModelDefinition = {
     aliases: string[];
     provider: string;
+    /** Exact gateway-side request cap per Pollinations user. Null/unset means uncapped. */
+    perUserRpm?: number | null;
     /** Ordered model ids to try when this model's upstream fails. */
     fallbacks?: string[];
     /** Override the shared fallback status list for this model. Network failures always retry. */
@@ -206,6 +211,11 @@ export type ModelDefinition = {
     // Supported output resolutions; first entry is the default.
     resolutions?: string[];
     videoCapabilities?: VideoCapability[]; // Video-only: which frame controls the provider supports
+    minDuration?: number; // Video-only: minimum accepted duration in seconds
+    maxDuration?: number; // Video-only: maximum accepted duration in seconds
+    defaultDuration?: number; // Video-only: duration when caller omits the param
+    allowedDurations?: number[]; // Video-only: explicit set of valid durations (overrides min/max range)
+    durationStep?: number; // Video-only: duration must be a multiple of this value
     maxReferenceImages?: number; // Models with image input: effective accepted reference images
     maxReferenceVideos?: number; // Models with video input: effective accepted reference videos
 };
@@ -636,17 +646,6 @@ export function calculateCostForModelDefinition(
 }
 
 /**
- * Calculate cost from an explicit cost definition.
- */
-export function calculateCostWithDefinition(
-    model: string,
-    usage: Usage,
-    costDefinition: CostDefinition,
-): UsageCost {
-    return calculateLinearCost(model, usage, costDefinition);
-}
-
-/**
  * Calculate price for a model based on usage
  */
 export function calculatePrice(
@@ -672,22 +671,4 @@ export function calculatePriceForModelDefinition(
 ): UsagePrice {
     return calculateUsageBilling({ model, usage, servedBy: svc, output, input })
         .price;
-}
-
-/**
- * Calculate price from an explicit price definition.
- */
-export function calculatePriceWithDefinition(
-    model: string,
-    usage: Usage,
-    priceDefinition: PriceDefinition,
-): UsagePrice {
-    const usagePrice = convertUsage(usage, priceDefinition, model);
-    const totalPrice = roundPollenLedgerAmount(
-        Object.values(usagePrice).reduce((total, price) => total + price, 0),
-    );
-    return {
-        ...usagePrice,
-        totalPrice,
-    };
 }

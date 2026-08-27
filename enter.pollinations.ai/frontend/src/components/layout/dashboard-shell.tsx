@@ -41,7 +41,6 @@ import {
     type DashboardPage,
     type DashboardPath,
 } from "./dashboard-theme.ts";
-import { StatusNoticeBanner } from "./status-notice-banner.tsx";
 
 export type { DashboardPage } from "./dashboard-theme.ts";
 
@@ -243,8 +242,8 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             ),
         },
         {
-            label: "BYOP",
-            href: `${genDocsUrl()}#tag/byop`,
+            label: "Connect User Wallets",
+            href: `${genDocsUrl()}#tag/connect-user-wallets`,
             icon: (
                 <WalletIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />
             ),
@@ -365,7 +364,6 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                     className="min-h-0 min-w-0 flex-1 overscroll-contain px-4 pt-14 pb-8 lg:px-6 lg:pt-10"
                 >
                     <main className="mx-auto flex max-w-[800px] flex-col gap-6">
-                        <StatusNoticeBanner />
                         {children}
                     </main>
                 </ScrollArea>
@@ -436,13 +434,13 @@ const DashboardRail: FC<DashboardRailProps> = ({
                         onClick={onNavigate}
                     >
                         {item.label}
-                        {item.id === "my-models" && (
+                        {(item.id === "my-models" || item.id === "quests") && (
                             <Chip
                                 intent="neutral"
                                 size="sm"
                                 className="ml-auto bg-transparent text-theme-text-soft"
                             >
-                                New!
+                                {item.id === "quests" ? "3 new!" : "New!"}
                             </Chip>
                         )}
                     </NavItem>

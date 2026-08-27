@@ -1,0 +1,34 @@
+{
+  "pr_number": 14031,
+  "title": "fix: reward merged quest PR authors",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14031",
+  "merged_at": "2026-08-27T04:08:36Z",
+  "labels": [],
+  "pr_body_excerpt": "- Rewards the author of the first merged PR that closes a POLLEN-QUEST issue\n- Removes issue assignment from eligibility and keeps open quests available to multiple contributors\n- Updates contributor guidance and focused quest reward tests\n\nTests:\n- `npm run typecheck --workspace pollinations-enter`\n- `npx vitest run test/quests.test.ts`\n- `npx biome check ...`",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "First bloom gets the pollen",
+    "blurb": "Quest rewards now follow the merged code, not an issue assignment. The first contributor whose PR closes a POLLEN-QUEST issue gets the Pollen, while the garden stays open for anyone ready to help.",
+    "summary": "Quest rewards now go to the author of the first merged PR that closes a POLLEN-QUEST issue, replacing issue assignment as the eligibility check and keeping open quests available to all contributors.",
+    "impact": "Contributors can pick up any open POLLEN-QUEST and know that the first merged solution earns its fixed Pollen reward.",
+    "keywords": [
+      "quests",
+      "pollen",
+      "github",
+      "contributions",
+      "rewards",
+      "community"
+    ],
+    "visual_concept": "Depict an open community garden with several friendly contributor paths leading to one blooming quest flower; Polli, wearing a tiny gardener hat and holding a merge-shaped watering can, awards a glowing Pollen seed packet to the first successful gardener. Include a retro terminal showing a simple merged PR checkmark, with open flower beds signaling that quests are not reserved by assignment.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing a tiny gardener hat as she hands a glowing Pollen seed packet to a contributor beside a freshly blooming \"QUEST\" flower; a retro terminal shows a simple merged PR checkmark while several open garden paths and code-plants welcome more helpers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley, with subtle pixel-font text: \"FIRST MERGED\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-27/PR-14031.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing a tiny gardener hat as she hands a glowing Pollen seed packet to a contributor beside a freshly blooming \"QUEST\" flower; a retro terminal shows a simple merged PR checkmark while several open garden paths and code-plants welcome more helpers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley, with subtle pixel-font text: \"FIRST MERGED\"."
+  },
+  "generated_at": "2026-08-27T04:09:33.141532+00:00"
+}

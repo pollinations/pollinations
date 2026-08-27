@@ -67,6 +67,7 @@ jobs:
               204561696, // tomdacatto
               182555207, // YoannDev90
               34513273, // fisventurous
+              189873015, // sharktide
             ]);
             const actor = context.actor;
             const actorId = context.payload.sender?.id;

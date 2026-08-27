@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { PLAY_PAGE } from "../../copy/content/play";
 import { LINKS } from "../../copy/content/socialLinks";
 import { useAuth } from "../../hooks/useAuth";
@@ -14,6 +15,7 @@ import { PageContainer } from "../components/ui/page-container";
 import { Body, Title } from "../components/ui/typography";
 
 function PlayPage() {
+    const [searchParams] = useSearchParams();
     const [selectedModel, setSelectedModel] = useState("flux");
     const [prompt, setPrompt] = useState("");
     const { apiKey, isLoggedIn, login } = useAuth();
@@ -49,6 +51,18 @@ function PlayPage() {
                 (typeOrder[effectiveType(b)] ?? 99),
         );
     }, [registryModels]);
+
+    // Preselect the model named by ?model=<id> once the catalog has loaded.
+    // Only apply when the requested id is actually supported by Play, so an
+    // unknown or mistyped id falls back to the default without clobbering a
+    // user's in-page selection.
+    const modelFromUrl = searchParams.get("model");
+    useEffect(() => {
+        if (modelFromUrl && !isLoadingModels) {
+            const supported = allModels.some((m) => m.id === modelFromUrl);
+            if (supported) setSelectedModel(modelFromUrl);
+        }
+    }, [modelFromUrl, isLoadingModels, allModels]);
 
     const currentModel = allModels.find((m) => m.id === selectedModel);
     const isVideoModel = !!currentModel?.hasVideoOutput;

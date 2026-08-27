@@ -4,9 +4,11 @@ import {
     ClipboardIcon,
     CopyButton,
     cn,
+    RocketIcon,
     Surface,
     Tooltip,
 } from "@pollinations/ui";
+import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import type { FC, ReactNode } from "react";
 import { calculatePerPollen } from "./calculations.ts";
 import {
@@ -185,6 +187,40 @@ export function getModelTitleTooltipContent(model: ModelPrice): ReactNode {
     );
 }
 
+/**
+ * Compact "Try in Play" action: opens the Play page with this model preselected.
+ * Rendered as a small icon link with a tooltip and accessible label.
+ */
+export const TryInPlayLink: FC<{ modelId: string }> = ({ modelId }) => {
+    const playUrl = `${PUBLIC_URLS.root}/play?model=${encodeURIComponent(modelId)}`;
+    return (
+        <Tooltip
+            triggerAs="span"
+            content={
+                <span>
+                    <strong className="font-semibold text-theme-text-strong">
+                        Try in Play
+                    </strong>{" "}
+                    — open this model in the Play page
+                </span>
+            }
+            ariaLabel="Try in Play"
+            tapEnabled
+            displayContents
+        >
+            <a
+                href={playUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`Try ${modelId} in Play`}
+                className="inline-flex shrink-0 items-center justify-center rounded p-1 text-theme-text-muted transition-colors hover:bg-theme-bg-hover hover:text-theme-text-strong"
+            >
+                <RocketIcon className="h-4 w-4" />
+            </a>
+        </Tooltip>
+    );
+};
+
 export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const modelDisplayName = getModelDisplayName(model);
     const brandLogoPath = getModelBrandLogoPath(model);
@@ -275,7 +311,10 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             </span>
                         )}
                     </div>
-                    <ModelId name={model.name} />
+                    <div className="flex min-w-0 items-center gap-2">
+                        <ModelId name={model.name} />
+                        <TryInPlayLink modelId={model.name} />
+                    </div>
                     {model.brandUrl && model.brand && (
                         <a
                             href={model.brandUrl}

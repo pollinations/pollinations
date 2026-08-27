@@ -851,15 +851,6 @@ curl -X POST "https://gen.pollinations.ai/v1/audio/transcriptions" \
   -F "model=whisper-large-v3"
 ```
 
-**Per-model `response_format` support:** The accepted formats are model-dependent and narrower than the full enum. Unsupported combinations return `400` with a message listing the formats that model accepts:
-
-| Model | Supported `response_format` values |
-|---|---|
-| `whisper-large-v3`, `whisper-1` | `json`, `text`, `verbose_json` |
-| `gpt-transcribe` | `json` |
-| `universal-2`, `universal-3.5-pro` | `json`, `text`, `srt`, `vtt`, `diarized_json` |
-| `scribe`, `grok-transcribe` | provider-dependent; check the `400` error message for the accepted list |
-
 ---
 
 #### `GET` `/audio/{text}` — Generate Audio

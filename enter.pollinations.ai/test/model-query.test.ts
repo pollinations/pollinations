@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+    getModelQuerySuggestions,
     matchesModelQuery,
     parseModelQuery,
 } from "../frontend/src/components/models/model-query.ts";
@@ -155,5 +156,47 @@ describe("matchesModelQuery", () => {
 
     it("matches an empty query", () => {
         expect(matches(model(), "   ")).toBe(true);
+    });
+});
+
+describe("getModelQuerySuggestions", () => {
+    const models = [
+        model({ name: "openai/gpt", type: "text" }),
+        model({
+            name: "Alice/quick-coder",
+            community: true,
+            agent: true,
+            capabilities: ["tool_calling"],
+        }),
+        model({ name: "bob/painter", community: true, type: "image" }),
+    ];
+
+    it("suggests filter names and their values", () => {
+        expect(getModelQuerySuggestions("", models)).toEqual([
+            "access:",
+            "capability:",
+            "id:",
+            "publisher:",
+            "type:",
+        ]);
+        expect(getModelQuerySuggestions("access:", models)).toEqual([
+            "access:free ",
+            "access:paid ",
+            "access:quest ",
+        ]);
+        expect(getModelQuerySuggestions("publisher:a", models)).toEqual([
+            "publisher:alice ",
+        ]);
+    });
+
+    it("completes only the current token", () => {
+        expect(getModelQuerySuggestions("fast capability:t", models)).toEqual([
+            "fast capability:tool-calling ",
+        ]);
+        expect(getModelQuerySuggestions("type:", models)).toEqual([
+            "type:agent ",
+            "type:image ",
+            "type:text ",
+        ]);
     });
 });

@@ -178,9 +178,9 @@ Only the names are changing. Model behavior and pricing stay the same.
 
 | Model | Existing ID | New ID |
 | --- | --- | --- |
-| Meta Llama 3.3 70B | `llama-3.3` | `meta-llama/llama-3.3-70b-instruct` |
-| Meta Llama 4 Maverick | `llama-4` | `meta-llama/llama-4-maverick` |
-| Meta Llama 4 Scout | `llama-4-scout` | `meta-llama/llama-4-scout` |
+| Meta Llama 3.3 70B | `llama-3.3` | `meta/llama-3.3-70b-instruct` |
+| Meta Llama 4 Maverick | `llama-4` | `meta/llama-4-maverick` |
+| Meta Llama 4 Scout | `llama-4-scout` | `meta/llama-4-scout` |
 | Muse Glimmer 30B | `muse-glimmer` | `meta/muse-glimmer-30b` |
 | Muse Spark 1.2 | `muse-spark-1.2` | `meta/muse-spark-1.2` |
 

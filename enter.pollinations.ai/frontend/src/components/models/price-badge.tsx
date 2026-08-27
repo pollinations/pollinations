@@ -76,12 +76,13 @@ const formatAdjustmentUnit = ({
     const quantityLabel = compactNumber
         .format(quantity)
         .replace(/^1(?=[A-Z])/, "");
-    if (kind === "search_request") return `${quantityLabel} req`;
-    if (kind === "grounded_prompt") return `${quantityLabel} prompts`;
+    const detail = suffix ? ` · ${suffix}` : "";
+    if (kind === "search_request") return `${quantityLabel} req${detail}`;
+    if (kind === "grounded_prompt") return `${quantityLabel} prompts${detail}`;
     if (kind === "cache_storage") {
-        return `${quantityLabel} tokens`;
+        return `${quantityLabel} tokens${detail}`;
     }
-    return `${quantityLabel} ${unit}${suffix ? ` · ${suffix}` : ""}`;
+    return `${quantityLabel} ${unit}${detail}`;
 };
 
 export type PriceBadgeConfig = Omit<ModelPriceLine, "direction"> & {
@@ -353,7 +354,7 @@ const RequestBasedAdjustmentKinds = new Set([
     "grounded_prompt",
 ]);
 
-const PricingAdjustmentRows: FC<{
+export const PricingAdjustmentRows: FC<{
     adjustments: ModelPriceAdjustment[];
     align: "left" | "right";
 }> = ({ adjustments, align }) =>

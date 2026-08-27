@@ -6,17 +6,23 @@ import {
     InlineLink,
     McpIcon,
 } from "@pollinations/ui";
-import { MCP_SERVERS } from "@shared/registry/mcp.ts";
+import { getMcpPricingInfo, MCP_SERVERS } from "@shared/registry/mcp.ts";
 import type { FC } from "react";
 import { config, genDocsUrl } from "../../config.ts";
+import { PricingAdjustmentRows } from "./price-badge.tsx";
 
 export const McpServerList: FC<{ query: string }> = ({ query }) => {
     const normalizedQuery = query.trim().toLowerCase();
-    const servers = MCP_SERVERS.filter((server) =>
-        [server.id, server.name, server.description].some((value) =>
-            value.toLowerCase().includes(normalizedQuery),
-        ),
-    );
+    const servers = MCP_SERVERS.filter((server) => {
+        const pricing = getMcpPricingInfo(server);
+        return [
+            server.id,
+            server.name,
+            server.description,
+            pricing.description,
+            ...pricing.rates.map(({ label }) => label),
+        ].some((value) => value.toLowerCase().includes(normalizedQuery));
+    });
 
     if (servers.length === 0) {
         return (
@@ -31,6 +37,7 @@ export const McpServerList: FC<{ query: string }> = ({ query }) => {
             <div className="flex flex-col gap-2">
                 {servers.map((server) => {
                     const endpoint = `${config.genBaseUrl}/mcp/${server.id}`;
+                    const pricing = getMcpPricingInfo(server);
                     return (
                         <div
                             key={server.id}
@@ -49,6 +56,22 @@ export const McpServerList: FC<{ query: string }> = ({ query }) => {
                                 <p className="text-sm text-theme-text-muted">
                                     {server.description}
                                 </p>
+                                <div className="pt-1">
+                                    <p className="mb-1 text-xs font-medium text-theme-text-strong">
+                                        Billing
+                                    </p>
+                                    {pricing.rates.length > 0 && (
+                                        <div className="grid w-fit grid-cols-[auto_auto_auto] gap-x-2">
+                                            <PricingAdjustmentRows
+                                                adjustments={pricing.rates}
+                                                align="left"
+                                            />
+                                        </div>
+                                    )}
+                                    <p className="text-xs text-theme-text-muted">
+                                        {pricing.description}
+                                    </p>
+                                </div>
                                 <div className="flex min-w-0 items-center gap-1.5 text-xs">
                                     <span className="min-w-0 truncate font-mono text-theme-text-muted">
                                         {endpoint}

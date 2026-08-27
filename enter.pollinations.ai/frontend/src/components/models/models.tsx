@@ -30,12 +30,12 @@ import {
     useRef,
     useState,
 } from "react";
+import { McpServerList } from "./mcp-server-list.tsx";
 import {
     type ApiModelInfo,
     fetchModelCatalog,
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
-import { McpServerList } from "./mcp-server-list.tsx";
 import {
     getModelQuerySuggestions,
     matchesModelQuery,
@@ -264,8 +264,8 @@ export const Models: FC = () => {
         activeTab === "mcp"
             ? "MCP servers"
             : activeTab === "all"
-            ? `${scopeLabel} models`
-            : `${scopeLabel} ${searchLabel} models`;
+              ? `${scopeLabel} models`
+              : `${scopeLabel} ${searchLabel} models`;
 
     const pushSearch = useCallback(
         (nextSearch: string) => {
@@ -591,44 +591,45 @@ export const Models: FC = () => {
                 )}
                 {activeTab !== "mcp" && (
                     <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
-                    {activeTab === "agent" && (
+                        {activeTab === "agent" && (
+                            <p className="flex items-start gap-1.5">
+                                <BotIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                                <span>
+                                    <strong>agent pricing</strong> — listed
+                                    rates are for the agent&apos;s base model
+                                    running its saved instructions.
+                                </span>
+                            </p>
+                        )}
                         <p className="flex items-start gap-1.5">
-                            <BotIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <SparklesIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
-                                <strong>agent pricing</strong> — listed rates
-                                are for the agent&apos;s base model running its
-                                saved instructions.
+                                <strong>/gen</strong> — flat rate per image or
+                                audio generation.
                             </span>
                         </p>
-                    )}
-                    <p className="flex items-start gap-1.5">
-                        <SparklesIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <span>
-                            <strong>/gen</strong> — flat rate per image or audio
-                            generation.
-                        </span>
-                    </p>
-                    <p className="flex items-start gap-1.5">
-                        <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <span>
-                            <strong>/K · /M</strong> — rates per thousand or
-                            million tokens.
-                        </span>
-                    </p>
-                    <p className="flex items-start gap-1.5">
-                        <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <span>
-                            <strong>/sec</strong> — per second of video/audio;
-                            TTS is estimated from text length.
-                        </span>
-                    </p>
-                    <p className="flex items-start gap-1.5">
-                        <UsageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <span>
-                            <strong>requests /pollen</strong> — estimated from
-                            the median observed cost over the last 7 days.
-                        </span>
-                    </p>
+                        <p className="flex items-start gap-1.5">
+                            <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>
+                                <strong>/K · /M</strong> — rates per thousand or
+                                million tokens.
+                            </span>
+                        </p>
+                        <p className="flex items-start gap-1.5">
+                            <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>
+                                <strong>/sec</strong> — per second of
+                                video/audio; TTS is estimated from text length.
+                            </span>
+                        </p>
+                        <p className="flex items-start gap-1.5">
+                            <UsageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>
+                                <strong>requests /pollen</strong> — estimated
+                                from the median observed cost over the last 7
+                                days.
+                            </span>
+                        </p>
                     </div>
                 )}
             </Section>

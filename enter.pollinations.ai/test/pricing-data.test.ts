@@ -136,6 +136,10 @@ test("display prices stay compact and use a readable token scale", () => {
         value: "0.00001",
         tokenScale: "M",
     });
+    expect(formatDisplayPrice("0.00000778")).toEqual({
+        value: "0.00000778",
+        tokenScale: "M",
+    });
 });
 
 test("catalog prices format token rates through formatPricePer1M", () => {

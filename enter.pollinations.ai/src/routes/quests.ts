@@ -409,8 +409,7 @@ async function buildQuestLeaderboard(
         totals: {
             contributors: contributors.length,
             completedQuests: contributors.reduce(
-                (total, contributor) =>
-                    total + contributor.completedQuests,
+                (total, contributor) => total + contributor.completedQuests,
                 0,
             ),
             totalPollen: roundPollenLedgerAmount(

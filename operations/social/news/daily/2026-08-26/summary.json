@@ -1,0 +1,55 @@
+{
+  "date": "2026-08-26",
+  "period_start": "2026-08-26",
+  "period_end": "2026-08-26",
+  "title": "Discord linking turns joining the community into a Quest",
+  "summary": "A community-heavy day: Discord rewards, three new apps, and MCP agents that can search the web or stitch media together.\n\nAccounts can now link one Discord identity alongside GitHub sign-in, see their Pollinations server connection, and claim 1 Pollen for joining. The Quest path was also simplified behind the scenes: server-side verification and the reward remain, with fewer dashboard requests involved.\n\nThe app directory gained Pollinations App for wallet-connected image generation, Dery AI for collaborative image-making, and Descriptly, which uses vision models to suggest accessible alt text for images changed in pull requests. The README now keeps the recent-apps and project-activity picture current too.\n\nAgents can now search and fetch web content through a private Exa MCP integration without forwarding caller credentials. FFmpeg MCP also learned to accept multiple public inputs, so a single job can combine separate video, audio, and other media files before returning a hosted output.",
+  "pr_count": 11,
+  "prs": [
+    {
+      "number": 13741,
+      "date": "2026-08-26"
+    },
+    {
+      "number": 13941,
+      "date": "2026-08-26"
+    },
+    {
+      "number": 13946,
+      "date": "2026-08-26"
+    },
+    {
+      "number": 13950,
+      "date": "2026-08-26"
+    },
+    {
+      "number": 13969,
+      "date": "2026-08-26"
+    },
+    {
+      "number": 13970,
+      "date": "2026-08-26"
+    },
+    {
+      "number": 13973,
+      "date": "2026-08-26"
+    },
+    {
+      "number": 13982,
+      "date": "2026-08-26"
+    },
+    {
+      "number": 14002,
+      "date": "2026-08-26"
+    },
+    {
+      "number": 14004,
+      "date": "2026-08-26"
+    },
+    {
+      "number": 14013,
+      "date": "2026-08-26"
+    }
+  ],
+  "generated_at": "2026-08-27T09:15:50.518510+00:00"
+}

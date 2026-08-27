@@ -1,0 +1,34 @@
+{
+  "pr_number": 14044,
+  "title": "fix: restore model filter autocomplete",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14044",
+  "merged_at": "2026-08-27T12:32:07Z",
+  "labels": [],
+  "pr_body_excerpt": "- Restores the shared editable-combobox dropdown for model search filters.\n- Suggests filter names and matching values for the token being typed.\n- Keeps selected filters visible while chaining additional filters.\n- Matches official publishers such as `publisher:nvidia` and community publishers by public owner.\n- Leaves the existing URL-backed search and backend unchanged.\n\nFollow-up to #13996 and #13907.\n\nTests: focused model-query tests, frontend TypeScript, Biome, production frontend build, and local browser interaction.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Filters find their way home",
+    "blurb": "The model garden's search box has its little suggestion brain back. Type a filter, pick a publisher, keep chaining—no need to remember the whole taxonomy by hand.",
+    "summary": "Restored the shared editable-combobox autocomplete for the model search, suggesting filter names and token-matched values while preserving selected filters as users chain queries, including official and community publisher filters such as publisher:nvidia.",
+    "impact": "Users can again build URL-backed model searches interactively, with autocomplete for publishers and other filters instead of having to type every filter value manually.",
+    "keywords": [
+      "model-search",
+      "autocomplete",
+      "filters",
+      "publisher",
+      "frontend",
+      "combobox"
+    ],
+    "visual_concept": "A cozy model-library garden where Polli is using a glowing retro search terminal whose dropdown sprouts helpful filter tags such as publisher:nvidia; selected tags stay planted in a neat row while new suggestions bloom. Small code-plants and publisher-label seed packets make the restored autocomplete feel like a tool that helps people find the right model without memorizing the whole catalog.",
+    "image_prompt": "Cozy pixel art scene of the main character, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses as she happily tends a retro terminal with a glowing autocomplete dropdown; filter tags like \"publisher:nvidia\" bloom from a row of code-plants while selected tags remain neatly pinned beside it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm cream garden shelves and tiny flowers, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-27/PR-14044.jpg",
+    "prompt": "Cozy pixel art scene of the main character, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses as she happily tends a retro terminal with a glowing autocomplete dropdown; filter tags like \"publisher:nvidia\" bloom from a row of code-plants while selected tags remain neatly pinned beside it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm cream garden shelves and tiny flowers, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-27T12:33:10.580807+00:00"
+}

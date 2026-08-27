@@ -1,0 +1,33 @@
+{
+  "pr_number": 14064,
+  "title": "feat: expand GitHub Polli whitelist",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/14064",
+  "merged_at": "2026-08-27T17:53:02Z",
+  "labels": [],
+  "pr_body_excerpt": "- Expands GitHub Polli access from 4 to 7 authorized users across both workflows.\n- Adds tomdacatto, YoannDev90, and fisventurous using immutable GitHub user IDs.\n- Keeps usernames beside IDs as comments for maintainability.\n- Covers the !polli assistant for issue and PR review/coding requests, plus automated fixes for issues labeled POLLI.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Three More Keys to the Hive",
+    "blurb": "Polli’s GitHub workbench now recognizes three more trusted gardeners. More people can summon the little assistant when issues need tending.",
+    "summary": "Expanded the GitHub Polli whitelist from 4 to 7 immutable GitHub user IDs in both the !polli assistant workflow and the POLLI-labeled issue auto-fix workflow, with usernames retained as maintenance comments.",
+    "impact": "tomdacatto, YoannDev90, and fisventurous can now use !polli for issue and PR review or coding requests and trigger automated fixes for POLLI-labeled issues.",
+    "keywords": [
+      "github",
+      "polli",
+      "workflows",
+      "automation",
+      "access-control"
+    ],
+    "visual_concept": "A cozy GitHub-style garden gate has seven small nameplates, with three newly planted flowers representing the newly authorized contributors. Polli wears a tiny maintainer cap and checks the access list beside a retro terminal, while code-vines and issue tickets grow nearby.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny maintainer cap, welcoming three new flowers through a garden gate beside a glowing retro GitHub terminal; seven small access badges hang on the gate, code-plants and issue tickets sprout from warm cream pots. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle pixel-font text: \"AUTHORIZED\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-27/PR-14064.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny maintainer cap, welcoming three new flowers through a garden gate beside a glowing retro GitHub terminal; seven small access badges hang on the gate, code-plants and issue tickets sprout from warm cream pots. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle pixel-font text: \"AUTHORIZED\"."
+  },
+  "generated_at": "2026-08-27T17:54:20.073301+00:00"
+}

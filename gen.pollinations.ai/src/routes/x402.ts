@@ -22,7 +22,10 @@ import {
 } from "@shared/registry/registry.ts";
 import { parseUsageHeaders } from "@shared/registry/usage-headers.ts";
 import { CreateChatCompletionRequestSchema } from "@shared/schemas/openai.ts";
-import { weftPaymentMiddlewareHono } from "@weft-labs/sdk/facilitator/middleware";
+import {
+    WEFT_REQUEST_EXTENSION_KEY,
+    weftPaymentMiddlewareHono,
+} from "@weft-labs/sdk/facilitator/middleware";
 import {
     type HTTPRequestContext,
     SETTLEMENT_OVERRIDES_HEADER,
@@ -184,6 +187,27 @@ export function createX402Routes(env: CloudflareBindings) {
                     accepts: [{ scheme: "upto", network, payTo, price }],
                     description:
                         "OpenAI-compatible chat completions, priced per token.",
+                    extensions: {
+                        // Rides the challenge → buyer echo → settlement event,
+                        // so the seller dashboard can label each payment with
+                        // what it bought. Display-only and derived from the
+                        // body alone: the challenge is built once per attempt
+                        // and anything non-deterministic fails the echo check.
+                        [WEFT_REQUEST_EXTENSION_KEY]: async (
+                            context: HTTPRequestContext,
+                        ) => {
+                            const body = await context.adapter.getBody?.();
+                            const model = (body as { model?: unknown })?.model;
+                            const maxTokens = (body as { max_tokens?: unknown })
+                                ?.max_tokens;
+                            return {
+                                ...(typeof model === "string" && { model }),
+                                ...(typeof maxTokens === "number" && {
+                                    max_tokens: maxTokens,
+                                }),
+                            };
+                        },
+                    },
                 },
             },
             {

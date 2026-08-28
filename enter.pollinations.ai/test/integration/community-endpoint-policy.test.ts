@@ -37,10 +37,7 @@ async function postModel(
     return response.json<Record<string, unknown>>();
 }
 
-async function publishPendingModel(
-    sessionToken: string,
-    id: string,
-): Promise<Record<string, unknown>> {
+async function advancePendingPast12Hours(id: string): Promise<void> {
     await drizzle(env.DB)
         .update(schema.communityEndpoint)
         .set({
@@ -49,6 +46,13 @@ async function publishPendingModel(
             ),
         })
         .where(eq(schema.communityEndpoint.id, id));
+}
+
+async function publishPendingModel(
+    sessionToken: string,
+    id: string,
+): Promise<Record<string, unknown>> {
+    await advancePendingPast12Hours(id);
     return postModel(sessionToken, `/${id}/update`, {});
 }
 
@@ -222,7 +226,7 @@ describe("community endpoint configuration policy", () => {
             bearerToken: "test-provider-token",
             promptTextPrice: 0.000001,
         });
-        await publishPendingModel(sessionToken, cheaper.id as string);
+        await advancePendingPast12Hours(cheaper.id as string);
         const expensive = await postModel(sessionToken, "", {
             name: "expensive-fallback",
             title: "Expensive fallback",

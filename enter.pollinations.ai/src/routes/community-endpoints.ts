@@ -3,6 +3,7 @@ import {
     type CommunityEndpointVisibility,
     communityModelId,
     type EndpointAgentListingPayload,
+    effectiveCommunityEndpointVisibility,
     isCommunityEndpointOwnerAllowed,
     normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
@@ -14,7 +15,7 @@ import {
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
-import { and, desc, eq, or } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { Hono } from "hono";
@@ -396,12 +397,6 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 .innerJoin(
                     schema.user,
                     eq(schema.communityEndpoint.ownerUserId, schema.user.id),
-                )
-                .where(
-                    or(
-                        eq(schema.communityEndpoint.visibility, "public"),
-                        eq(schema.communityEndpoint.ownerUserId, user.id),
-                    ),
                 );
             const data = candidates
                 .flatMap(({ endpoint: row, ownerGithubUsername: owner }) => {
@@ -682,7 +677,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["🧩 Community Models"],
             summary: "Update My Model",
             description:
-                "Update a community model owned by the authenticated account. Changing visibility to public publishes it and requires an allowlisted account; public models may be free or priced. API keys require `account:keys`.",
+                "Update a community model owned by the authenticated account. Changing visibility to public requires an allowlisted account and takes effect after 12 hours; public models may be free or priced. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Updated community model",
@@ -729,10 +724,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const pendingReady = pendingCommunityEndpointChangeIsReady(
                 endpoint.pendingAt,
             );
-            const currentVisibility =
-                pendingReady && endpoint.pendingVisibility
-                    ? endpoint.pendingVisibility
-                    : endpoint.visibility;
+            const currentVisibility = effectiveCommunityEndpointVisibility(
+                endpoint.visibility,
+                endpoint.pendingVisibility,
+                endpoint.pendingAt,
+            );
             let pendingPayload = pendingReady ? null : endpoint.pendingPayload;
             let pendingVisibility = pendingReady
                 ? null

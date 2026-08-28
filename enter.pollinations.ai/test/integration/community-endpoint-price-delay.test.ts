@@ -4,6 +4,7 @@ import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
+import { getVisibleModelIdsForUser } from "@shared/registry/visible-model-ids.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect } from "vitest";
@@ -77,9 +78,17 @@ describe("community endpoint 12-hour price-change delay", () => {
             },
         });
 
-        const published = await publishPendingModel(
+        await advancePendingPast12Hours(created.id as string);
+        const visibleModels = await getVisibleModelIdsForUser(
+            env.DB,
+            "another-user",
+        );
+        expect(visibleModels).toContain(created.modelId);
+
+        const published = await postModel(
             sessionToken,
-            created.id as string,
+            `/${created.id as string}/update`,
+            {},
         );
         expect(published).toMatchObject({
             visibility: "public",

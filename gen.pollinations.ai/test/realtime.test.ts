@@ -1660,7 +1660,7 @@ test("includes realtime model in OpenAI-compatible model discovery", async ({
         (model) => model.name === "scribe-realtime",
     );
     expect(scribeRealtime).toMatchObject({
-        aliases: [],
+        aliases: ["elevenlabs/scribe-v2-realtime"],
         brand: "ElevenLabs",
         title: "Scribe v2 Realtime",
         input_modalities: ["audio"],
@@ -1679,7 +1679,7 @@ test("includes realtime model in OpenAI-compatible model discovery", async ({
         (model) => model.name === "gpt-live-transcribe",
     );
     expect(gptLiveTranscribe).toMatchObject({
-        aliases: [],
+        aliases: ["openai/gpt-live-transcribe"],
         brand: "OpenAI",
         title: "GPT Live Transcribe",
         input_modalities: ["audio"],

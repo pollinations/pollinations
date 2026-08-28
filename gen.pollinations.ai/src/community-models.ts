@@ -5,6 +5,7 @@ import {
     communityEndpointPrices,
     communityModelDefinition,
     communityModelId,
+    effectiveCommunityEndpointVisibility,
     parseListingPayload,
     pendingCommunityEndpointChangeIsReady,
     usesAgentRunToken,
@@ -99,10 +100,11 @@ export async function getCommunityModelRegistryEntries(
         const pendingReady = pendingCommunityEndpointChangeIsReady(
             row.pendingAt,
         );
-        const effectiveVisibility =
-            pendingReady && row.pendingVisibility
-                ? row.pendingVisibility
-                : row.visibility;
+        const effectiveVisibility = effectiveCommunityEndpointVisibility(
+            row.visibility,
+            row.pendingVisibility,
+            row.pendingAt,
+        );
         const baseUrl =
             row.type === "prompt_agent"
                 ? env.AGENT_RUNTIME_BASE_URL

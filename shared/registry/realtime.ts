@@ -31,6 +31,7 @@ const OPENAI_REALTIME_COST = {
 export const REALTIME_SERVICES = {
     [DEFAULT_REALTIME_MODEL]: {
         ...OPENAI_REALTIME_BASE,
+        aliases: ["openai/gpt-realtime-2.1"],
         addedDate: new Date("2026-07-16").getTime(),
         cost: OPENAI_REALTIME_COST,
         billing: OPENAI_REALTIME_CACHE_BILLING,
@@ -41,6 +42,7 @@ export const REALTIME_SERVICES = {
     },
     "gpt-realtime-2.1-mini": {
         ...OPENAI_REALTIME_BASE,
+        aliases: ["openai/gpt-realtime-2.1-mini"],
         addedDate: new Date("2026-07-26").getTime(),
         paidOnly: false,
         cost: {
@@ -71,6 +73,7 @@ export const REALTIME_SERVICES = {
     },
     "gpt-realtime-2": {
         ...OPENAI_REALTIME_BASE,
+        aliases: ["openai/gpt-realtime-2"],
         addedDate: new Date("2026-05-23").getTime(),
         cost: OPENAI_REALTIME_COST,
         billing: OPENAI_REALTIME_CACHE_BILLING,
@@ -79,7 +82,7 @@ export const REALTIME_SERVICES = {
         contextLength: 128000,
     },
     "scribe-realtime": {
-        aliases: [],
+        aliases: ["elevenlabs/scribe-v2-realtime"],
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "realtime",
@@ -98,7 +101,7 @@ export const REALTIME_SERVICES = {
         supportedEndpoints: ["/realtime", "/v1/realtime"],
     },
     "gpt-live-transcribe": {
-        aliases: [],
+        aliases: ["openai/gpt-live-transcribe"],
         provider: "azure",
         brand: "OpenAI",
         category: "realtime",

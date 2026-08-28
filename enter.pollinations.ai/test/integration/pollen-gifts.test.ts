@@ -565,7 +565,7 @@ test("paid gift activation is idempotent and redemption is authenticated and sin
     });
 });
 
-test("a refund delivered before checkout fulfillment keeps the gift revoked", async ({
+test("a refund before fulfillment stays revoked until the refund fails", async ({
     mocks,
 }) => {
     await mocks.enable("stripe", "tinybird");
@@ -592,22 +592,20 @@ test("a refund delivered before checkout fulfillment keeps the gift revoked", as
         status: "succeeded",
         metadata: { purpose: POLLEN_GIFT_PURPOSE, giftId },
     });
+    const refund = {
+        id: "re_before_fulfillment",
+        object: "refund",
+        amount: 100,
+        currency: "usd",
+        payment_intent: paymentIntentId,
+        metadata: {},
+    };
     const refundResponse = await postSignedStripeWebhook({
         id: "evt_refund_before_fulfillment",
         type: "refund.created",
         created: 100,
         livemode: false,
-        data: {
-            object: {
-                id: "re_before_fulfillment",
-                object: "refund",
-                amount: 100,
-                currency: "usd",
-                status: "succeeded",
-                payment_intent: paymentIntentId,
-                metadata: {},
-            },
-        },
+        data: { object: { ...refund, status: "succeeded" } },
     });
     expect(refundResponse.status).toBe(200);
 
@@ -646,6 +644,22 @@ test("a refund delivered before checkout fulfillment keeps the gift revoked", as
         status: "refunded",
         stripePaymentIntentId: paymentIntentId,
     });
+
+    const failedRefundResponse = await postSignedStripeWebhook({
+        id: "evt_refund_failed_after_fulfillment",
+        type: "refund.failed",
+        created: 102,
+        livemode: false,
+        data: { object: { ...refund, status: "failed" } },
+    });
+    expect(failedRefundResponse.status).toBe(200);
+
+    const restoredGift = await env.DB.prepare(
+        "SELECT status FROM pollen_gift_code WHERE id = ?",
+    )
+        .bind(giftId)
+        .first<{ status: string }>();
+    expect(restoredGift?.status).toBe("active");
 });
 
 test("expired Checkout Session voids a pending gift", async ({ mocks }) => {

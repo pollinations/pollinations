@@ -504,8 +504,7 @@ async function restorePollenGiftAfterPaymentRecovery(
             .prepare(
                 `UPDATE pollen_gift_code
                  SET status = CASE
-                         WHEN status_before_dispute IN ('pending', 'voided')
-                              AND activated_at IS NOT NULL THEN 'active'
+                         WHEN status_before_dispute IN ('pending', 'voided') THEN 'active'
                          ELSE status_before_dispute
                      END,
                      status_before_dispute = NULL,

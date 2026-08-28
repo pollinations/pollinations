@@ -1,0 +1,34 @@
+{
+  "pr_number": 14085,
+  "title": "fix: preserve Gemini Omni provider errors",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14085",
+  "merged_at": "2026-08-28T16:39:41Z",
+  "labels": [],
+  "pr_body_excerpt": "- Preserves Vertex failure details when an interaction returns no completed video.\n- Allows existing content-policy handling to classify moderation refusals as 422 instead of opaque 502 errors.\n- Adds a focused regression test; model and moderation suites plus typecheck pass.\n\nFollow-up to #14083.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The video oracle speaks",
+    "blurb": "Gemini Omni video errors now arrive with their useful details intact. Polli stopped wrapping a clear moderation refusal in mysterious 502 fog.",
+    "summary": "Gemini Omni video generation now preserves Vertex failure details when no completed video is returned, allowing existing content-policy refusals to be correctly classified as HTTP 422 instead of opaque 502 errors.",
+    "impact": "Developers receive actionable Vertex and moderation error details for refused Gemini Omni video requests, with content-policy cases returning 422 responses they can handle directly.",
+    "keywords": [
+      "gemini-omni",
+      "video-generation",
+      "vertex",
+      "error-handling",
+      "moderation",
+      "api"
+    ],
+    "visual_concept": "Depict a cozy video-generation workstation where Polli acts as a careful error detective, reading a clear pixel terminal message from a Gemini-like crystal video orb instead of a cloud of confusing error smoke. A small code-plant and flowers reinforce that clearer errors help developers diagnose and grow their projects; Polli wears tiny detective glasses.",
+    "image_prompt": "Cozy pixel art scene in a warm garden hackerspace: the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings wears tiny detective glasses while examining a retro terminal showing simple pixel text “422: POLICY” beside a softly glowing video crystal orb; clear error notes replace a fading “502” smoke cloud, with code-plants and flowers in prominent lime green (#ecf874) pots. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, emotionally warm and friendly."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-28/PR-14085.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden hackerspace: the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings wears tiny detective glasses while examining a retro terminal showing simple pixel text “422: POLICY” beside a softly glowing video crystal orb; clear error notes replace a fading “502” smoke cloud, with code-plants and flowers in prominent lime green (#ecf874) pots. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, emotionally warm and friendly."
+  },
+  "generated_at": "2026-08-28T16:40:39.644491+00:00"
+}

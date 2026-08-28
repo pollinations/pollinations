@@ -366,7 +366,7 @@ export const pollenGiftCode = sqliteTable("pollen_gift_code", {
   index("idx_pollen_gift_code_redeemer_user_id").on(table.redeemerUserId),
 ]);
 
-export const pollenGiftAdjustment = sqliteTable("pollen_gift_adjustment", {
+export const pollenGiftPaymentLoss = sqliteTable("pollen_gift_payment_loss", {
   idempotencyKey: text("idempotency_key").primaryKey(),
   giftId: text("gift_id")
     .notNull()
@@ -376,7 +376,7 @@ export const pollenGiftAdjustment = sqliteTable("pollen_gift_adjustment", {
   terminal: integer("terminal", { mode: "boolean" }).default(false).notNull(),
   stripeEventCreated: integer("stripe_event_created").default(0).notNull(),
 }, (table) => [
-  index("idx_pollen_gift_adjustment_gift_id").on(table.giftId),
+  index("idx_pollen_gift_payment_loss_gift_id").on(table.giftId),
 ]);
 
 export const stripeGiftCardFingerprintAttempt = sqliteTable(

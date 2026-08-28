@@ -414,6 +414,13 @@
       "when": 1787924744293,
       "tag": "0058_red_blindfold",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "6",
+      "when": 1787929079949,
+      "tag": "0059_complete_revanche",
+      "breakpoints": true
     }
   ]
 }

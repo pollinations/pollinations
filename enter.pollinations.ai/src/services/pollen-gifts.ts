@@ -371,7 +371,7 @@ async function setPollenGiftPaymentLoss(
     // replayed loss must never supersede a terminal recovery.
     await db
         .prepare(
-            `INSERT INTO pollen_gift_adjustment (
+            `INSERT INTO pollen_gift_payment_loss (
                 idempotency_key, gift_id, reason, active, terminal,
                 stripe_event_created
              ) VALUES (?, ?, ?, ?, ?, ?)
@@ -379,11 +379,11 @@ async function setPollenGiftPaymentLoss(
                 active = excluded.active,
                 terminal = excluded.terminal,
                 stripe_event_created = excluded.stripe_event_created
-             WHERE excluded.stripe_event_created >= pollen_gift_adjustment.stripe_event_created
+             WHERE excluded.stripe_event_created >= pollen_gift_payment_loss.stripe_event_created
                AND (
-                   pollen_gift_adjustment.terminal = 0
+                   pollen_gift_payment_loss.terminal = 0
                    OR (
-                       pollen_gift_adjustment.active = 1
+                       pollen_gift_payment_loss.active = 1
                        AND excluded.active = 0
                    )
                )`,
@@ -412,12 +412,12 @@ async function freezePollenGiftForPaymentLoss(
     giftId: string,
 ): Promise<void> {
     const activeLoss = `EXISTS (
-        SELECT 1 FROM pollen_gift_adjustment
+        SELECT 1 FROM pollen_gift_payment_loss
         WHERE gift_id = pollen_gift_code.id AND active = 1
           AND reason IN ('refund', 'dispute')
     )`;
     const targetStatus = `CASE WHEN EXISTS (
-        SELECT 1 FROM pollen_gift_adjustment
+        SELECT 1 FROM pollen_gift_payment_loss
         WHERE gift_id = pollen_gift_code.id AND active = 1
           AND reason = 'refund'
     ) THEN 'refunded' ELSE 'disputed' END`;
@@ -473,7 +473,7 @@ async function restorePollenGiftAfterPaymentRecovery(
     giftId: string,
 ): Promise<void> {
     const noActiveLoss = `NOT EXISTS (
-        SELECT 1 FROM pollen_gift_adjustment
+        SELECT 1 FROM pollen_gift_payment_loss
         WHERE gift_id = pollen_gift_code.id AND active = 1
           AND reason IN ('refund', 'dispute')
     )`;

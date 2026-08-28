@@ -1,0 +1,63 @@
+{
+  "date": "2026-08-27",
+  "period_start": "2026-08-27",
+  "period_end": "2026-08-27",
+  "title": "The model browser learned to find things",
+  "summary": "A discovery-heavy day: smarter model search, richer generation controls, two new creative studios, and clearer routes for contributors.\n\nModel discovery now supports AND-based search across IDs, publishers, modalities, capabilities, descriptions, and more, with qualifiers such as publisher: and capability:. Autocomplete is back too, so people can build and chain filter queries without memorizing every value. Meanwhile, 157 publisher-qualified canonical model aliases are available ahead of the September naming transition, with existing model IDs continuing to work.\n\nSeedance 2.0 and 2.5 can now take public image, video, and audio references to guide supported image and video generations. The playground also stops treating undocumented image-reference limits as a hard no: if a model declares image input, uploads are allowed. On the text side, GLM-5.3 Flash joined the lineup for multimodal, tool-using, reasoning-heavy work with a 1,048,576-token context window, and the docs now show how to enable reasoning_effort through either text API.\n\nThe chat app directory now includes Pollinations Studio, a plain HTML and JavaScript workspace for image, text, audio, and video generation, alongside AI STUDIO, a collaborative editor for turning generated or local assets into audiovisual projects and adaptive video sequences. The FFmpeg MCP listing also got a clearer description, because tool discovery should not require archaeology.",
+  "pr_count": 13,
+  "prs": [
+    {
+      "number": 13587,
+      "date": "2026-08-27"
+    },
+    {
+      "number": 13927,
+      "date": "2026-08-27"
+    },
+    {
+      "number": 13977,
+      "date": "2026-08-27"
+    },
+    {
+      "number": 13996,
+      "date": "2026-08-27"
+    },
+    {
+      "number": 14010,
+      "date": "2026-08-27"
+    },
+    {
+      "number": 14014,
+      "date": "2026-08-27"
+    },
+    {
+      "number": 14029,
+      "date": "2026-08-27"
+    },
+    {
+      "number": 14031,
+      "date": "2026-08-27"
+    },
+    {
+      "number": 14038,
+      "date": "2026-08-27"
+    },
+    {
+      "number": 14044,
+      "date": "2026-08-27"
+    },
+    {
+      "number": 14046,
+      "date": "2026-08-27"
+    },
+    {
+      "number": 14047,
+      "date": "2026-08-27"
+    },
+    {
+      "number": 14069,
+      "date": "2026-08-27"
+    }
+  ],
+  "generated_at": "2026-08-28T09:22:05.506652+00:00"
+}

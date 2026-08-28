@@ -1,0 +1,34 @@
+{
+  "pr_number": 14079,
+  "title": "fix: route Qwen Vision Pro directly to Alibaba",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14079",
+  "merged_at": "2026-08-28T15:01:00Z",
+  "labels": [],
+  "pr_body_excerpt": "- Routes `qwen-vision-pro` directly to Alibaba Model Studio Singapore after its pinned OpenRouter endpoint became unavailable.\n- Keeps the canonical name, aliases, paid-only access, multiplier `1`, and no fallback unchanged.\n- Records the exact $0.40/M text or image input and $4/M text or reasoning output meters; corrects context to 131,072.\n- Verifies text, image, streaming, tools, JSON, errors, aliases, permissions, cache, wallet/event billing, and a 10-request local burst (10/10 succeeded).\n\nAlibaba schedules this exact checkpoint for retirement on October 10, 2026; its successor should be handled separately before then.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Vision found a new route",
+    "blurb": "Qwen Vision Pro has moved to a direct Alibaba Model Studio route in Singapore. Same model name, same paid-only access, fewer mysterious detours through the provider garden.",
+    "summary": "Rerouted qwen-vision-pro from its unavailable pinned OpenRouter endpoint directly to Alibaba Model Studio Singapore, preserving its canonical name, aliases, paid-only access, multiplier 1, no-fallback behavior, and updating its context window to 131,072 tokens.",
+    "impact": "Qwen Vision Pro text, image, streaming, tool-call, and JSON requests now have a verified direct provider path with recorded $0.40/M input and $4/M output billing meters.",
+    "keywords": [
+      "qwen-vision-pro",
+      "alibaba",
+      "model-routing",
+      "vision",
+      "billing",
+      "text-api"
+    ],
+    "visual_concept": "A cozy provider-routing garden: Polli guides glowing text and image parcels along a newly opened path from a retro terminal labeled QWEN VISION PRO to a warm Singapore Model Studio pavilion, while an old side path is peacefully overgrown with flowers. The direct route represents restored model availability, accurate meters appear as tiny friendly toll signs, and code-plants reinforce the API infrastructure setting.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny courier cap as she guides glowing text scrolls and picture parcels from a retro terminal labeled “QWEN VISION PRO” down a clear garden path to a cozy Alibaba Model Studio pavilion, with code-plants and pixel flowers growing beside the route. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-28/PR-14079.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny courier cap as she guides glowing text scrolls and picture parcels from a retro terminal labeled “QWEN VISION PRO” down a clear garden path to a cozy Alibaba Model Studio pavilion, with code-plants and pixel flowers growing beside the route. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-28T15:01:59.895550+00:00"
+}

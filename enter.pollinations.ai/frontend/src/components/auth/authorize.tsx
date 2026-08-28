@@ -1,8 +1,11 @@
 import {
+    AccountIcon,
     Button,
     Collapsible,
     cn,
     ExternalLinkIcon,
+    GitHubIcon,
+    ImageIcon,
     MailIcon,
     ScrollArea,
     useScrollLock,
@@ -104,8 +107,6 @@ export function Authorize() {
 
     const parsedRedirectUrl = redirect_url ? safeParseUrl(redirect_url) : null;
     const redirectHostname = parsedRedirectUrl?.hostname ?? "";
-    const accountLoginAppName =
-        attribution?.appName ?? (redirectHostname || "This app");
 
     const keyPermissions = useKeyPermissions(
         getAuthorizeInitialPermissions({
@@ -646,6 +647,9 @@ export function Authorize() {
                     ) : (
                         <>
                             <div className="-mx-6 px-6 py-4 bg-theme-bg-pale border-y border-theme-border">
+                                <p className="mb-2 font-body text-xs font-semibold tracking-wide text-theme-text-soft">
+                                    Continue with Pollinations
+                                </p>
                                 <AppAttribution
                                     attribution={attribution}
                                     isDeviceMode={false}
@@ -654,19 +658,40 @@ export function Authorize() {
                                     titleId="login-dialog-title"
                                 />
                             </div>
-                            <div className="flex items-start gap-2 text-sm text-theme-text-base">
-                                <MailIcon className="h-4 w-4 shrink-0 text-theme-text-soft" />
-                                <div>
-                                    <p>
-                                        {accountLoginAppName} will receive your
-                                        name, email address, GitHub username,
-                                        and profile picture.
-                                    </p>
-                                    <p className="mt-2 text-xs text-theme-text-soft">
-                                        Only continue if you trust this
-                                        application.
-                                    </p>
-                                </div>
+                            <div className="text-sm text-theme-text-base">
+                                <p className="mb-3 font-body text-xs font-semibold tracking-wide text-theme-text-soft">
+                                    Share
+                                </p>
+                                <ul className="space-y-3">
+                                    <li className="flex items-center gap-2">
+                                        <AccountIcon
+                                            className="h-4 w-4 shrink-0 text-theme-text-soft"
+                                            aria-hidden="true"
+                                        />
+                                        <span>Your name</span>
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                        <MailIcon
+                                            className="h-4 w-4 shrink-0 text-theme-text-soft"
+                                            aria-hidden="true"
+                                        />
+                                        <span>Your email address</span>
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                        <GitHubIcon
+                                            className="h-4 w-4 shrink-0 text-theme-text-soft"
+                                            aria-hidden="true"
+                                        />
+                                        <span>Your GitHub username</span>
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                        <ImageIcon
+                                            className="h-4 w-4 shrink-0 text-theme-text-soft"
+                                            aria-hidden="true"
+                                        />
+                                        <span>Your profile picture</span>
+                                    </li>
+                                </ul>
                             </div>
                         </>
                     )}

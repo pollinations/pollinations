@@ -33,11 +33,7 @@ export function AppAttribution({
     return (
         <>
             <p id={titleId} className="text-theme-text-strong">
-                <span className="font-bold text-lg">
-                    {isAccountLogin
-                        ? `${displayName} wants to access your Pollinations account`
-                        : displayName}
-                </span>
+                <span className="font-bold text-lg">{displayName}</span>
             </p>
             {attribution?.githubUsername && (
                 <p className="text-sm text-theme-text-base mt-1">

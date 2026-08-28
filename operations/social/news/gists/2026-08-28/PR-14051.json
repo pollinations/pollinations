@@ -1,0 +1,34 @@
+{
+  "pr_number": 14051,
+  "title": "fix: delay initial public community listings",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14051",
+  "merged_at": "2026-08-28T14:43:28Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n- Queues every new public community model or endpoint agent for 12 hours using the existing pending fields.\n- Makes delete and recreate start the same publication wait, while private creation and unpublishing stay immediate.\n- Shows queued values and their effective time in My Models so owners do not see stale private/zero-price form values.\n- Replaces the cooldown-table approach in #13985 with no migration, tombstone, or background job.\n\n## Tests\n- `npx vitest run test/integration/community-endpoint-price-delay.test.ts test/integration/community-endpoint-policy.test.ts test/community-endpoint-rpm-input.test.ts --reporter=verbose` (23 passed)\n- `npm run build:frontend --workspace pollinations-enter`\n- `npm run typecheck --workspace pollinations-enter`\n- `npx biome check` on all changed files\n\nFollow-up to #13800.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "New sprouts take twelve",
+    "blurb": "Fresh public community listings now spend twelve hours in the greenhouse before joining the garden. My Models shows the queued details and their opening time, so the pollen trail stays legible.",
+    "summary": "New public community models and endpoint agents now use the existing pending fields to queue their first publication for 12 hours, including delete-and-recreate flows, while My Models displays the queued price and effective publication time.",
+    "impact": "Community creators get a clear, consistent publication window for new public listings, with private creation and unpublishing still taking effect immediately.",
+    "keywords": [
+      "community models",
+      "community endpoints",
+      "publication delay",
+      "My Models",
+      "pending listings",
+      "pricing"
+    ],
+    "visual_concept": "Depict a cozy greenhouse-style publication queue: Polli tends small code-plants in labeled pots behind a gentle 12-hour garden timer, while a retro terminal shows pending model cards and their future publish times. The scene represents public listings getting a visible settling period before blooming into the shared community garden.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener hat while carefully watering queued code-plants in a greenhouse; a retro terminal displays simple pixel text 'PUBLISHES IN 12H' beside model cards, and blooming flowers wait beyond a small garden gate. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, subtle CRT glow, nature vines and flower pots, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-28/PR-14051.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener hat while carefully watering queued code-plants in a greenhouse; a retro terminal displays simple pixel text 'PUBLISHES IN 12H' beside model cards, and blooming flowers wait beyond a small garden gate. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, subtle CRT glow, nature vines and flower pots, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-28T14:44:29.318163+00:00"
+}

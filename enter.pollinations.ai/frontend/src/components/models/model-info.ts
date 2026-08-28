@@ -161,8 +161,11 @@ export const isAlpha = (model: ModelPrice): boolean => model.alpha === true;
  * @param tokens - context length in tokens.
  * @returns compact label, or undefined for an absent/invalid value.
  */
-export const formatContextLength = (tokens: number | undefined): string | undefined => {
-    if (tokens === undefined || !Number.isFinite(tokens) || tokens <= 0) return undefined;
+export const formatContextLength = (
+    tokens: number | undefined,
+): string | undefined => {
+    if (tokens === undefined || !Number.isFinite(tokens) || tokens <= 0)
+        return undefined;
     if (tokens >= 1_000_000) {
         const m = tokens / 1_000_000;
         return `${Number.isInteger(m) ? m : m.toFixed(1)}M`;
@@ -179,7 +182,9 @@ export const formatContextLength = (tokens: number | undefined): string | undefi
  * @param model - model price entry with optional duration metadata.
  * @returns compact label like "2s–30s" or "5s", or undefined when no metadata exists.
  */
-export const getModelDurationLabel = (model: ModelPrice): string | undefined => {
+export const getModelDurationLabel = (
+    model: ModelPrice,
+): string | undefined => {
     const { minDuration, maxDuration, defaultDuration } = model;
     if (minDuration !== undefined && maxDuration !== undefined) {
         return minDuration === maxDuration

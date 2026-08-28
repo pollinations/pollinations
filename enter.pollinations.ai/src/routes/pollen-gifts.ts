@@ -124,7 +124,7 @@ export const pollenGiftRoutes = new Hono<PollenGiftEnv>()
         }
 
         try {
-            const metadata = {
+            const paymentMetadata = {
                 purpose: POLLEN_GIFT_PURPOSE,
                 giftId: gift.id,
                 pollenAmount: String(amount),
@@ -173,7 +173,7 @@ export const pollenGiftRoutes = new Hono<PollenGiftEnv>()
                     },
                     phone_number_collection: { enabled: true },
                     tax_id_collection: { enabled: true },
-                    payment_intent_data: { metadata },
+                    payment_intent_data: { metadata: paymentMetadata },
                     invoice_creation: {
                         enabled: true,
                         invoice_data: {
@@ -193,7 +193,10 @@ export const pollenGiftRoutes = new Hono<PollenGiftEnv>()
                                 "Your single-use gift code will be included in the paid invoice sent to your email.",
                         },
                     },
-                    metadata,
+                    metadata: {
+                        ...paymentMetadata,
+                        giftCode: gift.code,
+                    },
                     success_url: successUrlWithSession,
                     cancel_url: cancelUrl.toString(),
                 },
@@ -258,7 +261,7 @@ export const pollenGiftRoutes = new Hono<PollenGiftEnv>()
 
         const stripe = createStripeClient(c.env);
         const session = await stripe.checkout.sessions
-            .retrieve(sessionId, { expand: ["invoice"] })
+            .retrieve(sessionId)
             .catch(() => null);
         if (
             !session ||
@@ -273,13 +276,7 @@ export const pollenGiftRoutes = new Hono<PollenGiftEnv>()
             giftId: session.metadata.giftId,
             checkoutSessionId: session.id,
         });
-        const invoice =
-            session.invoice && typeof session.invoice !== "string"
-                ? session.invoice
-                : null;
-        const code = invoice?.custom_fields?.find(
-            (field) => field.name === "Gift code",
-        )?.value;
+        const code = session.metadata.giftCode;
         if (!gift || !code) {
             return c.json({ error: "Gift receipt not found" }, 404);
         }

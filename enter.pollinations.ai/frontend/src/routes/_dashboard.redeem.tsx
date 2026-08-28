@@ -125,7 +125,7 @@ function RedeemPollenPage() {
             });
             setCode("");
             savePendingCode("");
-            await router.invalidate();
+            await router.invalidate().catch(() => undefined);
         } catch {
             setError("This gift code could not be redeemed. Please try again.");
         } finally {

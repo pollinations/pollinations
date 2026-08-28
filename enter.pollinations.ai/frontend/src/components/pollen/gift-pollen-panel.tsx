@@ -32,8 +32,6 @@ type GiftPollenPanelProps = {
     redeemCard?: ReactNode;
 };
 
-const RECEIPT_RETRY_DELAYS_MS = [0, 500, 1_500, 3_000] as const;
-
 function responseError(payload: unknown, fallback: string): string {
     if (
         payload &&
@@ -77,37 +75,28 @@ export function GiftPollenPanel({
         let disposed = false;
 
         async function loadReceipt(): Promise<void> {
-            for (const delayMs of RECEIPT_RETRY_DELAYS_MS) {
-                if (delayMs > 0) {
-                    await new Promise((resolve) =>
-                        window.setTimeout(resolve, delayMs),
-                    );
-                }
-                if (disposed) return;
+            const response = await apiClient["pollen-gifts"].receipt[
+                ":sessionId"
+            ]
+                .$get({ param: { sessionId: receiptSessionId } })
+                .catch(() => null);
+            if (!response) return;
 
-                const response = await apiClient["pollen-gifts"].receipt[
-                    ":sessionId"
-                ]
-                    .$get({ param: { sessionId: receiptSessionId } })
-                    .catch(() => null);
-                if (!response) continue;
-                const payload = (await response
-                    .json()
-                    .catch(() => null)) as unknown;
-                if (
-                    !disposed &&
-                    response.ok &&
-                    payload &&
-                    typeof payload === "object" &&
-                    "code" in payload &&
-                    typeof payload.code === "string"
-                ) {
-                    setPurchasedCode(payload.code);
-                    const url = new URL(window.location.href);
-                    url.searchParams.delete("session_id");
-                    window.history.replaceState(window.history.state, "", url);
-                    return;
-                }
+            const payload = (await response
+                .json()
+                .catch(() => null)) as unknown;
+            if (
+                !disposed &&
+                response.ok &&
+                payload &&
+                typeof payload === "object" &&
+                "code" in payload &&
+                typeof payload.code === "string"
+            ) {
+                setPurchasedCode(payload.code);
+                const url = new URL(window.location.href);
+                url.searchParams.delete("session_id");
+                window.history.replaceState(window.history.state, "", url);
             }
         }
 

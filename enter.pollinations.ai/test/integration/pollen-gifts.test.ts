@@ -151,6 +151,7 @@ test("anonymous gift checkout preserves the Stripe purchase contract", async ({
     expect(body.client_reference_id).toBe(giftId);
     expect(body["metadata[purpose]"]).toBe(POLLEN_GIFT_PURPOSE);
     expect(body["metadata[pollenAmount]"]).toBe(String(amount));
+    expect(body["metadata[giftCode]"]).toBe(code);
     expect(body["metadata[packPollenGrant]"]).toBeUndefined();
     expect(body[`metadata[${POLLEN_GIFT_BUYER_KEY_METADATA}]`]).toBeTruthy();
     expect(body[`metadata[${STRIPE_NEW_CARD_GATE_METADATA.gate}]`]).toBe("ok");
@@ -164,6 +165,7 @@ test("anonymous gift checkout preserves the Stripe purchase contract", async ({
         POLLEN_GIFT_PURPOSE,
     );
     expect(body["payment_intent_data[metadata][giftId]"]).toBe(giftId);
+    expect(body["payment_intent_data[metadata][giftCode]"]).toBeUndefined();
     expect(checkoutRequest.idempotencyKey).toBe(`pollen-gift:${giftId}`);
 
     expect(body["line_items[0][price_data][product_data][name]"]).not.toContain(
@@ -172,10 +174,6 @@ test("anonymous gift checkout preserves the Stripe purchase contract", async ({
     expect(body["invoice_creation[invoice_data][custom_fields][0][name]"]).toBe(
         "Gift code",
     );
-    const metadataValues = Object.entries(body)
-        .filter(([key]) => key.includes("metadata"))
-        .map(([, value]) => value);
-    expect(metadataValues).not.toContain(code);
     expect(body.success_url).not.toContain(code);
     expect(body.cancel_url).not.toContain(code);
     expect(body.success_url).toBe(
@@ -404,17 +402,6 @@ test("paid gift activation is idempotent and redemption is authenticated and sin
     const mockSession = mocks.stripe.state.checkoutSessions[0];
     if (!mockSession) throw new Error("Expected mock Checkout Session");
     mockSession.payment_status = "paid";
-    mockSession.invoice = {
-        id: "in_pollen_gift",
-        object: "invoice",
-        customer: null,
-        status: "paid",
-        amount_due: totalCents,
-        amount_paid: totalCents,
-        currency: "usd",
-        metadata: {},
-        custom_fields: [{ name: "Gift code", value: code }],
-    };
     const paidReceipt = await SELF.fetch(
         `${giftBase}/receipt/${checkoutSessionId}`,
     );
@@ -438,6 +425,7 @@ test("paid gift activation is idempotent and redemption is authenticated and sin
                     purpose: POLLEN_GIFT_PURPOSE,
                     giftId,
                     pollenAmount: String(amount),
+                    giftCode: code,
                 },
                 payment_status: "paid",
                 amount_subtotal: totalCents,
@@ -456,12 +444,14 @@ test("paid gift activation is idempotent and redemption is authenticated and sin
         },
     };
 
-    const firstWebhookResponse = await postSignedStripeWebhook(checkoutEvent);
+    const [firstWebhookResponse, duplicateWebhookResponse] = await Promise.all([
+        postSignedStripeWebhook(checkoutEvent),
+        postSignedStripeWebhook({
+            ...checkoutEvent,
+            id: "evt_pollen_gift_paid_retry",
+        }),
+    ]);
     expect(firstWebhookResponse.status).toBe(200);
-    const duplicateWebhookResponse = await postSignedStripeWebhook({
-        ...checkoutEvent,
-        id: "evt_pollen_gift_paid_retry",
-    });
     expect(duplicateWebhookResponse.status).toBe(200);
 
     expect(mocks.tinybird.state.stripeEvents).toHaveLength(1);
@@ -474,8 +464,9 @@ test("paid gift activation is idempotent and redemption is authenticated and sin
         throw new Error("Expected serialized Stripe analytics payload");
     }
     expect(analyticsPayload).not.toContain("gift-buyer@example.com");
+    expect(analyticsPayload).not.toContain(code);
     expect(JSON.parse(analyticsPayload)).toEqual({
-        id: checkoutEvent.id,
+        id: expect.stringMatching(/^evt_pollen_gift_paid(?:_retry)?$/),
         type: checkoutEvent.type,
         created: checkoutEvent.created,
         livemode: false,

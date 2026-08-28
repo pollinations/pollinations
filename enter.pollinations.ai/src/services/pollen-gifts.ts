@@ -148,29 +148,18 @@ export async function fulfillPollenGiftCheckout(
         return { success: false, message: "Missing gift order metadata" };
     }
 
-    const gift = await loadPollenGiftById(db, giftId);
-    if (!gift) {
-        return { success: false, message: "Gift order not found" };
-    }
-    if (gift.stripeCheckoutSessionId !== session.id) {
-        return { success: false, message: "Checkout Session mismatch" };
-    }
     const paymentIntentId = stripeObjectId(session.payment_intent);
     const presentment = readPollenGiftPresentment(session);
-    const result = await db
+    const activated = await db
         .prepare(
             `UPDATE pollen_gift_code
-             SET status = CASE
-                     WHEN status IN ('pending', 'voided') THEN 'active'
-                     ELSE status
-                 END,
+             SET status = 'active',
                  stripe_payment_intent_id = ?,
                  activated_at = ?
              WHERE id = ?
                AND stripe_checkout_session_id = ?
-               AND status IN (
-                   'pending', 'voided', 'active', 'redeemed', 'refunded', 'disputed'
-               )`,
+               AND status IN ('pending', 'voided')
+             RETURNING pollen_amount AS pollenAmount`,
         )
         .bind(
             paymentIntentId,
@@ -178,21 +167,28 @@ export async function fulfillPollenGiftCheckout(
             giftId,
             session.id,
         )
-        .run();
+        .first<{ pollenAmount: number }>();
 
-    if ((result.meta.changes ?? 0) !== 1) {
-        return { success: false, message: "Could not activate gift order" };
+    if (activated) {
+        return {
+            success: true,
+            message: `Activated ${activated.pollenAmount} Pollen gift`,
+            duplicate: false,
+            pollenAmount: activated.pollenAmount,
+            presentmentCurrency: presentment.presentmentCurrency,
+            presentmentAmount: presentment.presentmentAmount,
+        };
     }
 
     const latest = await loadPollenGiftById(db, giftId);
     if (!latest) return { success: false, message: "Gift order not found" };
+    if (latest.stripeCheckoutSessionId !== session.id) {
+        return { success: false, message: "Checkout Session mismatch" };
+    }
     return {
         success: true,
-        message:
-            latest.status === "active"
-                ? `Activated ${latest.pollenAmount} Pollen gift`
-                : `Gift order already ${latest.status}`,
-        duplicate: latest.status !== "active" || gift.status === "active",
+        message: `Gift order already ${latest.status}`,
+        duplicate: true,
         pollenAmount: latest.pollenAmount,
         presentmentCurrency: presentment.presentmentCurrency,
         presentmentAmount: presentment.presentmentAmount,

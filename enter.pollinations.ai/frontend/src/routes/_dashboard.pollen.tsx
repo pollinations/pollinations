@@ -86,12 +86,12 @@ function PollenPage() {
                     user ? undefined : (
                         <span className="flex flex-col gap-1">
                             <span>
-                                Buy Pollens for someone else. No account is
+                                Buy Pollen for someone else. No account is
                                 needed to purchase.
                             </span>
                             <span>
-                                Find your redeemable pollen gift code on the
-                                invoice emailed after payment.
+                                Find your Pollen gift code on the invoice
+                                emailed after payment.
                             </span>
                         </span>
                     )

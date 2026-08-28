@@ -10,6 +10,8 @@ The new publisher-qualified model IDs are available now. On **September 7, 2026 
 
 Existing IDs will remain available as aliases, so current integrations do not need to change. New integrations can use the new IDs today.
 
+Models introduced during the transition may launch directly with a publisher-qualified canonical ID and no legacy alias.
+
 Only the names are changing. Model behavior and pricing stay the same.
 
 ## Alibaba
@@ -356,3 +358,4 @@ Only the names are changing. Model behavior and pricing stay the same.
 | --- | --- | --- |
 | Z.ai GLM-5.2 | `glm` | `z-ai/glm-5.2` |
 | Z.ai GLM-5.3 | `glm-5.3` | `z-ai/glm-5.3` |
+| Z.ai GLM-5.3 Flash | — | `z-ai/glm-5.3-flash` |

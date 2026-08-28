@@ -421,6 +421,12 @@ const models: ModelDefinition[] = [
         transform: mandatoryReasoning,
     },
     {
+        name: "z-ai/glm-5.3-flash",
+        config: portkeyConfig["z-ai/glm-5.3-flash"],
+        // Reasoning is mandatory; off requests keep the upstream default.
+        transform: mandatoryReasoning,
+    },
+    {
         name: "minimax-m2.7",
         config: portkeyConfig["accounts/fireworks/models/minimax-m2p7"],
         // Reasoning mandatory: rejects "none"/"minimal", accepts low/medium/high.

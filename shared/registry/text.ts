@@ -1695,6 +1695,32 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "z-ai/glm-5.3-flash": {
+        aliases: [],
+        provider: "openrouter",
+        brand: "Z.ai",
+        category: "text",
+        addedDate: new Date("2026-08-27").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter Z.AI FP8 route rates (2026-08-27).
+            promptTextTokens: perMillion(0.075),
+            promptCachedTokens: perMillion(0.015),
+            promptImageTokens: perMillion(0.075),
+            completionTextTokens: perMillion(0.25),
+        },
+        title: "Z.ai GLM-5.3 Flash",
+        description:
+            "Low-cost million-token multimodal reasoning for agents and visual analysis",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10,
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
     "llama": {
         aliases: [
             "llama-3.3",

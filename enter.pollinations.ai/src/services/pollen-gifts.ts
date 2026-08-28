@@ -477,180 +477,162 @@ async function reconcilePollenGiftPaymentLoss(
     giftId: string,
     event: Stripe.Event,
 ): Promise<void> {
-    const loss = await db
-        .prepare(
-            `SELECT
-                COUNT(*) AS activeLossCount,
-                SUM(CASE WHEN reason = 'refund' THEN 1 ELSE 0 END) AS activeRefundCount
-             FROM pollen_gift_adjustment
-             WHERE gift_id = ? AND active = 1
-               AND reason IN ('refund', 'dispute')`,
-        )
-        .bind(giftId)
-        .first<{ activeLossCount: number; activeRefundCount: number }>();
-    const gift = await loadPollenGiftById(db, giftId);
-    if (!gift)
-        throw new Error(`Gift ${giftId} disappeared during reconciliation`);
-
-    if (Number(loss?.activeLossCount ?? 0) > 0) {
-        await freezePollenGiftForPaymentLoss(
-            db,
-            gift,
-            Number(loss?.activeRefundCount ?? 0) > 0 ? "refunded" : "disputed",
-            event,
-        );
-        return;
-    }
-    await restorePollenGiftAfterPaymentRecovery(db, gift, event);
+    await freezePollenGiftForPaymentLoss(db, giftId, event);
+    await restorePollenGiftAfterPaymentRecovery(db, giftId, event);
 }
 
 async function freezePollenGiftForPaymentLoss(
     db: D1Database,
-    gift: PollenGiftRow,
-    targetStatus: "refunded" | "disputed",
+    giftId: string,
     event: Stripe.Event,
 ): Promise<void> {
-    if (gift.status === "refunded" || gift.status === "disputed") {
-        await db
-            .prepare(`UPDATE pollen_gift_code SET status = ? WHERE id = ?`)
-            .bind(targetStatus, gift.id)
-            .run();
-        return;
-    }
-    if (gift.status !== "redeemed" || !gift.redeemerUserId) {
-        await db
-            .prepare(
-                `UPDATE pollen_gift_code
-                 SET status = ?, status_before_dispute = status,
-                     invalidated_at = ?
-                 WHERE id = ? AND status IN ('pending', 'active', 'voided')`,
-            )
-            .bind(targetStatus, Date.now(), gift.id)
-            .run();
-        return;
-    }
-    if (gift.balanceReversed) return;
+    const invalidatedAt = Date.now();
+    const activeLoss = `EXISTS (
+        SELECT 1 FROM pollen_gift_adjustment
+        WHERE gift_id = pollen_gift_code.id AND active = 1
+          AND reason IN ('refund', 'dispute')
+    )`;
+    const targetStatus = `CASE WHEN EXISTS (
+        SELECT 1 FROM pollen_gift_adjustment
+        WHERE gift_id = pollen_gift_code.id AND active = 1
+          AND reason = 'refund'
+    ) THEN 'refunded' ELSE 'disputed' END`;
 
-    // D1 executes a batch transactionally. Each statement after the guarded
-    // status change uses changes() so only the winner debits the wallet.
+    // Every status transition checks the loss ledger in the same statement.
+    // The changes() chain debits a redeemed balance only for the winning update.
     await db.batch([
         db
             .prepare(
                 `UPDATE pollen_gift_code
-                 SET status = ?, status_before_dispute = 'redeemed',
-                     balance_reversed = 1, invalidated_at = ?
-                 WHERE id = ? AND status = 'redeemed' AND balance_reversed = 0`,
+                 SET status = ${targetStatus}, invalidated_at = ?
+                 WHERE id = ? AND status IN ('refunded', 'disputed')
+                   AND ${activeLoss}`,
             )
-            .bind(targetStatus, Date.now(), gift.id),
+            .bind(invalidatedAt, giftId),
+        db
+            .prepare(
+                `UPDATE pollen_gift_code
+                 SET status_before_dispute = status,
+                     status = ${targetStatus}, invalidated_at = ?
+                 WHERE id = ? AND status IN ('pending', 'active', 'voided')
+                   AND ${activeLoss}`,
+            )
+            .bind(invalidatedAt, giftId),
+        db
+            .prepare(
+                `UPDATE pollen_gift_code
+                 SET status = ${targetStatus}, status_before_dispute = 'redeemed',
+                     balance_reversed = 1, invalidated_at = ?
+                 WHERE id = ? AND status = 'redeemed' AND balance_reversed = 0
+                   AND redeemer_user_id IS NOT NULL AND ${activeLoss}`,
+            )
+            .bind(invalidatedAt, giftId),
         db
             .prepare(
                 `INSERT INTO pollen_gift_adjustment (
                     idempotency_key, gift_id, stripe_event_id, user_id,
                     pollen_delta, amount_cents, reason, active, terminal,
                     stripe_event_created, created_at
-                 ) SELECT ?, ?, ?, ?, ?, 0, 'balance_reversed', 0, 1, ?, ?
-                 WHERE changes() = 1`,
+                 ) SELECT ?, id, ?, redeemer_user_id, -pollen_amount, 0,
+                          'balance_reversed', 0, 1, ?, ?
+                   FROM pollen_gift_code
+                  WHERE id = ? AND changes() = 1`,
             )
             .bind(
                 `balance-loss:${event.id}`,
-                gift.id,
                 event.id,
-                gift.redeemerUserId,
-                -gift.pollenAmount,
                 event.created,
                 Date.now(),
+                giftId,
             ),
         db
             .prepare(
                 `UPDATE user
                  SET pack_balance = ROUND(
-                     COALESCE(pack_balance, 0) - ?,
+                     COALESCE(pack_balance, 0) - (
+                         SELECT pollen_amount FROM pollen_gift_code WHERE id = ?
+                     ),
                      ${POLLEN_BILLING_PRECISION}
                  )
-                 WHERE id = ? AND changes() = 1`,
+                 WHERE id = (
+                     SELECT redeemer_user_id FROM pollen_gift_code WHERE id = ?
+                 ) AND changes() = 1`,
             )
-            .bind(gift.pollenAmount, gift.redeemerUserId),
+            .bind(giftId, giftId),
     ]);
 }
 
 async function restorePollenGiftAfterPaymentRecovery(
     db: D1Database,
-    gift: PollenGiftRow,
+    giftId: string,
     event: Stripe.Event,
 ): Promise<void> {
-    if (gift.status !== "refunded" && gift.status !== "disputed") return;
-    const previous = gift.statusBeforePaymentLoss;
-    if (!previous) return;
-    const restoredStatus =
-        (previous === "pending" || previous === "voided") && gift.activatedAt
-            ? "active"
-            : previous;
+    const noActiveLoss = `NOT EXISTS (
+        SELECT 1 FROM pollen_gift_adjustment
+        WHERE gift_id = pollen_gift_code.id AND active = 1
+          AND reason IN ('refund', 'dispute')
+    )`;
 
-    if (
-        restoredStatus === "redeemed" &&
-        gift.balanceReversed &&
-        gift.redeemerUserId
-    ) {
-        // The same changes() chain makes concurrent/replayed recoveries credit
-        // the wallet at most once.
-        await db.batch([
-            db
-                .prepare(
-                    `UPDATE pollen_gift_code
-                     SET status = 'redeemed', status_before_dispute = NULL,
-                         balance_reversed = 0, invalidated_at = NULL
-                     WHERE id = ? AND status IN ('refunded', 'disputed')
-                       AND balance_reversed = 1`,
-                )
-                .bind(gift.id),
-            db
-                .prepare(
-                    `INSERT INTO pollen_gift_adjustment (
-                        idempotency_key, gift_id, stripe_event_id, user_id,
-                        pollen_delta, amount_cents, reason, active, terminal,
-                        stripe_event_created, created_at
-                     ) SELECT ?, ?, ?, ?, ?, 0, 'balance_restored', 0, 1, ?, ?
-                     WHERE changes() = 1`,
-                )
-                .bind(
-                    `balance-recovery:${event.id}`,
-                    gift.id,
-                    event.id,
-                    gift.redeemerUserId,
-                    gift.pollenAmount,
-                    event.created,
-                    Date.now(),
-                ),
-            db
-                .prepare(
-                    `UPDATE user
-                     SET pack_balance = ROUND(
-                         COALESCE(pack_balance, 0) + ?,
-                         ${POLLEN_BILLING_PRECISION}
-                     )
-                     WHERE id = ? AND changes() = 1`,
-                )
-                .bind(gift.pollenAmount, gift.redeemerUserId),
-        ]);
-        return;
-    }
-
-    if (
-        restoredStatus !== "pending" &&
-        restoredStatus !== "active" &&
-        restoredStatus !== "voided"
-    ) {
-        return;
-    }
-    await db
-        .prepare(
-            `UPDATE pollen_gift_code
-             SET status = ?, status_before_dispute = NULL,
-                 balance_reversed = 0, invalidated_at = NULL
-             WHERE id = ? AND status IN ('refunded', 'disputed')`,
-        )
-        .bind(restoredStatus, gift.id)
-        .run();
+    await db.batch([
+        db
+            .prepare(
+                `UPDATE pollen_gift_code
+                 SET status = 'redeemed', status_before_dispute = NULL,
+                     balance_reversed = 0, invalidated_at = NULL
+                 WHERE id = ? AND status IN ('refunded', 'disputed')
+                   AND status_before_dispute = 'redeemed'
+                   AND balance_reversed = 1 AND redeemer_user_id IS NOT NULL
+                   AND ${noActiveLoss}`,
+            )
+            .bind(giftId),
+        db
+            .prepare(
+                `INSERT INTO pollen_gift_adjustment (
+                    idempotency_key, gift_id, stripe_event_id, user_id,
+                    pollen_delta, amount_cents, reason, active, terminal,
+                    stripe_event_created, created_at
+                 ) SELECT ?, id, ?, redeemer_user_id, pollen_amount, 0,
+                          'balance_restored', 0, 1, ?, ?
+                   FROM pollen_gift_code
+                  WHERE id = ? AND changes() = 1`,
+            )
+            .bind(
+                `balance-recovery:${event.id}`,
+                event.id,
+                event.created,
+                Date.now(),
+                giftId,
+            ),
+        db
+            .prepare(
+                `UPDATE user
+                 SET pack_balance = ROUND(
+                     COALESCE(pack_balance, 0) + (
+                         SELECT pollen_amount FROM pollen_gift_code WHERE id = ?
+                     ),
+                     ${POLLEN_BILLING_PRECISION}
+                 )
+                 WHERE id = (
+                     SELECT redeemer_user_id FROM pollen_gift_code WHERE id = ?
+                 ) AND changes() = 1`,
+            )
+            .bind(giftId, giftId),
+        db
+            .prepare(
+                `UPDATE pollen_gift_code
+                 SET status = CASE
+                         WHEN status_before_dispute IN ('pending', 'voided')
+                              AND activated_at IS NOT NULL THEN 'active'
+                         ELSE status_before_dispute
+                     END,
+                     status_before_dispute = NULL,
+                     balance_reversed = 0, invalidated_at = NULL
+                 WHERE id = ? AND status IN ('refunded', 'disputed')
+                   AND status_before_dispute IN ('pending', 'active', 'voided')
+                   AND balance_reversed = 0 AND ${noActiveLoss}`,
+            )
+            .bind(giftId),
+    ]);
 }
 
 async function resolvePollenGiftForPaymentEvent(

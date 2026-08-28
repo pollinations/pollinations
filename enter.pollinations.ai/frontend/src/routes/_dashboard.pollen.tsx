@@ -85,7 +85,7 @@ function PollenPage() {
                 intro={
                     user
                         ? undefined
-                        : "Buy a single-use code for someone else. No account is needed to purchase."
+                        : "Buy a single-use code for someone else. No account is needed to purchase. Delivered by email after payment."
                 }
                 framed
                 id="buy-pollen"

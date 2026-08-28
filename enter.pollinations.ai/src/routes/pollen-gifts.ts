@@ -1,4 +1,4 @@
-import { getRealClientIp, hashIp } from "@shared/client-ip.ts";
+import { hashIp } from "@shared/client-ip.ts";
 import {
     isValidPollenGiftAmount,
     POLLEN_GIFT_AMOUNTS,
@@ -35,6 +35,8 @@ type PollenGiftEnv = {
 
 const CHECKOUT_RATE_LIMIT = 5;
 const CHECKOUT_RATE_WINDOW_MS = 60 * 1000;
+const RECEIPT_RATE_LIMIT = 10;
+const RECEIPT_RATE_WINDOW_MS = 60 * 1000;
 const REDEEM_RATE_LIMIT = 10;
 const REDEEM_RATE_WINDOW_MS = 10 * 60 * 1000;
 const INVALID_GIFT_MESSAGE = "This gift code is invalid or unavailable.";
@@ -56,7 +58,7 @@ export const pollenGiftRoutes = new Hono<PollenGiftEnv>()
         }
 
         const ipHash = await hashIp(
-            getRealClientIp(c),
+            c.req.header("cf-connecting-ip") || "unknown",
             c.env.BETTER_AUTH_SECRET,
         );
         const buyerKey = ipHash ?? "unknown";
@@ -232,6 +234,23 @@ export const pollenGiftRoutes = new Hono<PollenGiftEnv>()
     })
     .get("/receipt/:sessionId", async (c) => {
         c.header("Cache-Control", "no-store");
+        const ipHash = await hashIp(
+            c.req.header("cf-connecting-ip") || "unknown",
+            c.env.BETTER_AUTH_SECRET,
+        );
+        const receiptLimit = await consumePollenGiftRateLimit(c.env.DB, {
+            key: `receipt:${ipHash ?? "unknown"}`,
+            limit: RECEIPT_RATE_LIMIT,
+            windowMs: RECEIPT_RATE_WINDOW_MS,
+        });
+        if (!receiptLimit.allowed) {
+            return c.json(
+                { error: "Too many receipt requests. Please try again later." },
+                429,
+                { "Retry-After": String(receiptLimit.retryAfterSeconds) },
+            );
+        }
+
         const sessionId = c.req.param("sessionId");
         if (!sessionId.startsWith("cs_")) {
             return c.json({ error: "Gift receipt not found" }, 404);
@@ -274,7 +293,7 @@ export const pollenGiftRoutes = new Hono<PollenGiftEnv>()
             c.header("Cache-Control", "no-store");
             const user = c.var.auth.requireUser();
             const ipHash = await hashIp(
-                getRealClientIp(c),
+                c.req.header("cf-connecting-ip") || "unknown",
                 c.env.BETTER_AUTH_SECRET,
             );
             const limits = await Promise.all([

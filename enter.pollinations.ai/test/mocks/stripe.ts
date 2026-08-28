@@ -75,7 +75,6 @@ type StripePortalConfiguration = {
     active: boolean;
     is_default: boolean;
     metadata: Record<string, string>;
-    custom_fields?: Array<{ name: string; value: string }> | null;
     name: string | null;
     default_return_url: string | null;
     business_profile: {
@@ -105,6 +104,7 @@ type StripeInvoice = {
     amount_paid: number;
     currency: string;
     metadata: Record<string, string>;
+    custom_fields?: Array<{ name: string; value: string }> | null;
     hosted_invoice_url?: string | null;
     lines?: {
         object: "list";

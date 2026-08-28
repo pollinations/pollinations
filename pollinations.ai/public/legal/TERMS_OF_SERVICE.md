@@ -2,7 +2,7 @@
 
 **Updated: 2026-08-28**
 
-_2026-08-28 — Clarified gift-code delivery after payment._
+_2026-08-28 — Clarified gift-code delivery, redemption finality, and payment reversals._
 
 _2026-08-27 — Added single-use Pollen gift codes that can be purchased without an account and given to another person before redemption._
 
@@ -77,7 +77,7 @@ Fees are per plan/order/invoice; currency is by default USD. Pollen purchases, i
 
 **Pollen.** "Pollen" is an in-service credit used only to pay for Pollinations API usage. Pollen is not legal tender, e-money, cryptocurrency, a deposit, a bank account balance, or stored value outside the Service. Once credited to a wallet, Pollen is not transferable, withdrawable, or redeemable for cash except where required by law or expressly approved by us as a refund under these Terms.
 
-**Gift codes.** A purchaser may buy a single-use code and give the unredeemed code to another person. The code becomes active only after payment is confirmed and adds its stated amount to the redeemer's Paid Pollen balance. Gift codes do not expire before redemption; after redemption, the credited Pollen is subject to the wallet-inactivity rule below. Treat the code like a bearer credential: anyone who has it may redeem it, and it cannot be moved after redemption.
+**Gift codes.** A purchaser may buy a single-use code and give the unredeemed code to another person. The code becomes active only after payment is confirmed and adds its stated amount to the redeemer's Paid Pollen balance. Gift codes do not expire before redemption; after redemption, the credited Pollen is subject to the wallet-inactivity rule below. Each code can be redeemed once and only for its full value. Once redeemed, the gift is non-refundable and cannot be moved to another wallet, transferred, withdrawn, or exchanged for cash, except where required by law. Treat the code like a bearer credential: anyone who has it may redeem it. If the underlying payment is refunded, disputed, reversed, or fraudulent, we may invalidate the code or reverse its associated Pollen as described in the Refunds & Cancellations Policy.
 
 **Balances.** Your wallet may include:
 

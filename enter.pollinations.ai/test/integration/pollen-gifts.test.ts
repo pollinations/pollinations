@@ -2,6 +2,7 @@ import { env, SELF } from "cloudflare:test";
 import { createHmac } from "node:crypto";
 import { hashIp } from "@shared/client-ip.ts";
 import {
+    hashPollenGiftCode,
     normalizePollenGiftCode,
     POLLEN_GIFT_AMOUNTS,
     POLLEN_GIFT_PURPOSE,
@@ -10,7 +11,12 @@ import {
     calculateServiceFeeCents,
     SERVICE_FEE_NAME,
 } from "@shared/pollen-packs.ts";
+import type Stripe from "stripe";
 import { expect } from "vitest";
+import {
+    recordPollenGiftRefund,
+    redeemPollenGift,
+} from "../../src/services/pollen-gifts.ts";
 import { POLLEN_GIFT_BUYER_KEY_METADATA } from "../../src/utils/pollen-gift-security.ts";
 import { STRIPE_NEW_CARD_GATE_METADATA } from "../../src/utils/stripe-card-gate.ts";
 import { test } from "../fixtures.ts";
@@ -242,6 +248,30 @@ test("gift checkout rejects invalid amounts before creating an order", async ({
     expect(count?.count).toBe(0);
 });
 
+test("gift receipt throttling ignores spoofed forwarding headers", async () => {
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+        const response = await SELF.fetch(
+            `${giftBase}/receipt/cs_missing_${attempt}`,
+            {
+                headers: {
+                    "x-forwarded-host": "enter.pollinations.ai",
+                    "x-original-client-ip": `spoofed-${attempt}`,
+                },
+            },
+        );
+        expect(response.status).toBe(404);
+    }
+
+    const blocked = await SELF.fetch(`${giftBase}/receipt/cs_missing_blocked`, {
+        headers: {
+            "x-forwarded-host": "enter.pollinations.ai",
+            "x-original-client-ip": "another-spoofed-value",
+        },
+    });
+    expect(blocked.status).toBe(429);
+    expect(blocked.headers.get("Retry-After")).toBeTruthy();
+});
+
 test("gift checkout blocks a buyer after four distinct failed cards", async ({
     mocks,
 }) => {
@@ -448,8 +478,13 @@ test("paid gift activation is idempotent and redemption is authenticated and sin
     const analyticsEvent = mocks.tinybird.state.stripeEvents[0];
     expect(analyticsEvent?.customer_email).toBe("");
     expect(analyticsEvent?.user_id).toBe("");
-    expect(analyticsEvent?.payload).not.toContain("gift-buyer@example.com");
-    expect(JSON.parse(analyticsEvent?.payload ?? "{}")).toEqual({
+    const analyticsPayload = analyticsEvent?.payload;
+    expect(analyticsPayload).toBeTypeOf("string");
+    if (typeof analyticsPayload !== "string") {
+        throw new Error("Expected serialized Stripe analytics payload");
+    }
+    expect(analyticsPayload).not.toContain("gift-buyer@example.com");
+    expect(JSON.parse(analyticsPayload)).toEqual({
         id: checkoutEvent.id,
         type: checkoutEvent.type,
         created: checkoutEvent.created,
@@ -758,6 +793,87 @@ test("a full refund reverses redeemed Pollen exactly once", async ({
         .bind(user.id)
         .first<{ packBalance: number }>();
     expect(balance?.packBalance).toBe(100 - pollenAmount);
+});
+
+test("redemption racing a refund never leaves spendable Pollen", async ({
+    sessionToken,
+}) => {
+    void sessionToken;
+    const user = await env.DB.prepare("SELECT id FROM user LIMIT 1").first<{
+        id: string;
+    }>();
+    if (!user) throw new Error("Expected seeded test user");
+    await env.DB.prepare("UPDATE user SET pack_balance = 100 WHERE id = ?")
+        .bind(user.id)
+        .run();
+
+    const giftId = "gift_refund_redemption_race";
+    const paymentIntentId = "pi_gift_refund_redemption_race";
+    const code = "POLLEN-AAAAA-AAAAA-AAAAA-AAAAA-AAAAA-A";
+    const pollenAmount = 20;
+    const faceValueCents = pollenAmount * 100;
+    const serviceFeeCents = calculateServiceFeeCents(faceValueCents);
+    const paidAmountCents = faceValueCents + serviceFeeCents;
+    const now = Date.now();
+    await env.DB.prepare(
+        `INSERT INTO pollen_gift_code (
+            id, code_hash, pollen_amount, face_value_cents, service_fee_cents,
+            paid_amount_cents, paid_currency, status, stripe_checkout_session_id,
+            stripe_payment_intent_id, created_at, activated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, 'usd', 'active', ?, ?, ?, ?)`,
+    )
+        .bind(
+            giftId,
+            await hashPollenGiftCode(code),
+            pollenAmount,
+            faceValueCents,
+            serviceFeeCents,
+            paidAmountCents,
+            `cs_${giftId}`,
+            paymentIntentId,
+            now,
+            now,
+        )
+        .run();
+
+    const refund = {
+        id: "re_gift_redemption_race",
+        object: "refund",
+        amount: paidAmountCents,
+        currency: "usd",
+        status: "succeeded",
+        payment_intent: paymentIntentId,
+        metadata: {},
+    } as Stripe.Refund;
+    const event = {
+        id: "evt_gift_redemption_race",
+        type: "refund.created",
+        created: Math.floor(now / 1000),
+        livemode: false,
+        data: { object: refund },
+    } as Stripe.Event;
+
+    const [redemption, giftRelated] = await Promise.all([
+        redeemPollenGift(env.DB, { code, userId: user.id }),
+        recordPollenGiftRefund(env.DB, event, refund),
+    ]);
+
+    expect(giftRelated).toBe(true);
+    const gift = await env.DB.prepare(
+        `SELECT status, balance_reversed AS balanceReversed
+         FROM pollen_gift_code WHERE id = ?`,
+    )
+        .bind(giftId)
+        .first<{ status: string; balanceReversed: number }>();
+    expect(gift?.status).toBe("refunded");
+    expect(gift?.balanceReversed).toBe(redemption.redeemed ? 1 : 0);
+
+    const balance = await env.DB.prepare(
+        "SELECT pack_balance AS packBalance FROM user WHERE id = ?",
+    )
+        .bind(user.id)
+        .first<{ packBalance: number }>();
+    expect(balance?.packBalance).toBe(100);
 });
 
 test("a failed refund restores a redeemed gift and its Pollen", async ({

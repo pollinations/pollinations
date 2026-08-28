@@ -1,9 +1,9 @@
 import {
     Alert,
     Button,
-    ClockIcon,
-    GlobeIcon,
-    MailIcon,
+    GiftIcon,
+    InlineLink,
+    LockIcon,
     Surface,
     Tooltip,
     WalletIcon,
@@ -29,6 +29,8 @@ type GiftPollenPanelProps = {
     autoTopUpPanel?: ReactNode;
     redeemCard?: ReactNode;
 };
+
+const RECEIPT_RETRY_DELAYS_MS = [0, 500, 1_500, 3_000] as const;
 
 function responseError(payload: unknown, fallback: string): string {
     if (
@@ -69,15 +71,29 @@ export function GiftPollenPanel({
 
     useEffect(() => {
         if (!success || !sessionId) return;
-        let canceled = false;
-        void apiClient["pollen-gifts"].receipt[":sessionId"]
-            .$get({ param: { sessionId } })
-            .then(async (response) => {
+        const receiptSessionId = sessionId;
+        let disposed = false;
+
+        async function loadReceipt(): Promise<void> {
+            for (const delayMs of RECEIPT_RETRY_DELAYS_MS) {
+                if (delayMs > 0) {
+                    await new Promise((resolve) =>
+                        window.setTimeout(resolve, delayMs),
+                    );
+                }
+                if (disposed) return;
+
+                const response = await apiClient["pollen-gifts"].receipt[
+                    ":sessionId"
+                ]
+                    .$get({ param: { sessionId: receiptSessionId } })
+                    .catch(() => null);
+                if (!response) continue;
                 const payload = (await response
                     .json()
                     .catch(() => null)) as unknown;
                 if (
-                    !canceled &&
+                    !disposed &&
                     response.ok &&
                     payload &&
                     typeof payload === "object" &&
@@ -85,18 +101,34 @@ export function GiftPollenPanel({
                     typeof payload.code === "string"
                 ) {
                     setPurchasedCode(payload.code);
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete("session_id");
+                    window.history.replaceState(window.history.state, "", url);
+                    return;
                 }
-            })
-            .catch(() => undefined);
+            }
+        }
+
+        void loadReceipt();
         return () => {
-            canceled = true;
+            disposed = true;
         };
     }, [sessionId, success]);
 
+    useEffect(() => {
+        if (!copied) return;
+        const timeout = window.setTimeout(() => setCopied(false), 2_000);
+        return () => window.clearTimeout(timeout);
+    }, [copied]);
+
     async function copyPurchasedCode(): Promise<void> {
         if (!purchasedCode) return;
-        await navigator.clipboard.writeText(purchasedCode);
-        setCopied(true);
+        try {
+            await navigator.clipboard.writeText(purchasedCode);
+            setCopied(true);
+        } catch {
+            setError("We couldn't copy the code. Please copy it manually.");
+        }
     }
 
     function selectAmount(amount: number): void {
@@ -247,22 +279,19 @@ export function GiftPollenPanel({
             <div className="mt-1 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
                 <PaymentTrustBadge className="mt-0 pt-0" />
                 <p className="flex items-start gap-1.5">
-                    <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>Gift codes are single-use and never expire.</span>
+                    <GiftIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span>Single-use gift code · Does not expire</span>
                 </p>
                 <p className="flex items-start gap-1.5">
-                    <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <LockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                     <span>
-                        Prices exclude tax — VAT or sales tax is added at
-                        checkout from the buyer's billing address.
-                    </span>
-                </p>
-                <p className="flex items-start gap-1.5">
-                    <MailIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>
-                        Stripe collects the buyer's email, billing address,
-                        country, and phone number, then emails the gift code
-                        after payment.
+                        Redeemed gift codes are non-refundable.{" "}
+                        <InlineLink
+                            href="https://pollinations.ai/terms"
+                            showIcon={false}
+                        >
+                            Terms
+                        </InlineLink>
                     </span>
                 </p>
             </div>

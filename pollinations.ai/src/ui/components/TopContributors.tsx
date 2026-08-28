@@ -118,11 +118,11 @@ export function TopContributors() {
     }, []);
 
     if (loadingContributors && contributors.length === 0) {
-        return null;
+        return <QuestLeaderboard />;
     }
 
     if (!loadingContributors && contributors.length === 0) {
-        return null;
+        return <QuestLeaderboard />;
     }
 
     return (

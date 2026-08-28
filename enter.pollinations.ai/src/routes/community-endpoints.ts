@@ -372,13 +372,22 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 throw new HTTPException(404, { message: "Model not found" });
             }
             if (endpoint.type !== "proxy") return c.json({ data: [] });
-            const endpointPayload = parseListingPayload(
+            const currentPayload = parseListingPayload(
                 "proxy",
                 endpoint.payload,
             );
-            if (!endpointPayload) {
+            if (!currentPayload) {
                 throw new Error(`Invalid proxy payload for ${endpoint.id}`);
             }
+            const pendingPayload = pendingCommunityEndpointChangeIsReady(
+                endpoint.pendingAt,
+            )
+                ? parseListingPayload("proxy", endpoint.pendingPayload)
+                : null;
+            const endpointPayload = applyPendingProxyPricing(
+                currentPayload,
+                pendingPayload,
+            );
             const primary: FallbackPrimary = {
                 modelId: communityModelId(ownerGithubUsername, endpoint.name),
                 ownerUserId: user.id,

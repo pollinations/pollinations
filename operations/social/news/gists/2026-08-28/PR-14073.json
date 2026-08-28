@@ -1,0 +1,36 @@
+{
+  "pr_number": 14073,
+  "title": "Add DemoWeaver to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/14073",
+  "merged_at": "2026-08-28T02:06:17Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [DemoWeaver](https://mebularts.github.io/DemoWeaver) to build\n- DemoWeaver is an open-source AI-powered product walkthrough generator that turns a running web application into a browser-verified, professionally narrated product video. Instead of manually recording\n\nFixes #14070",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Demos, woven fresh",
+    "blurb": "DemoWeaver joined the garden: a tool that watches a running web app and weaves its clicks into a browser-verified, narrated walkthrough video. Manual screen-recording rituals may now rest quietly.",
+    "summary": "Added DemoWeaver to the app build registry, making the open-source tool available for turning running web applications into browser-verified, professionally narrated product walkthrough videos.",
+    "impact": "Builders can discover and use DemoWeaver to create polished product demos from real browser interactions rather than assembling recordings by hand.",
+    "keywords": [
+      "DemoWeaver",
+      "product demos",
+      "video",
+      "browser automation",
+      "community app",
+      "open source"
+    ],
+    "visual_concept": "Depict DemoWeaver as a cozy loom-like retro workstation that turns a small browser window and its click-path into a neatly woven film reel. Polli, wearing a tiny director beret, guides the thread while a CRT monitor robot happily watches the verified walkthrough; code-plants and flowers make the build feel like a community garden.",
+    "image_prompt": "A cozy pixel art garden-studio where Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears a tiny director beret and guides a loom-like retro computer weaving a browser window into a narrated film reel; a chunky CRT-monitor robot watches beside blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: 'DEMO WEAVER', nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-28/PR-14073.jpg",
+    "prompt": "A cozy pixel art garden-studio where Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears a tiny director beret and guides a loom-like retro computer weaving a browser window into a narrated film reel; a chunky CRT-monitor robot watches beside blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: 'DEMO WEAVER', nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-28T02:07:16.708917+00:00",
+  "app_name": "DemoWeaver",
+  "app_url": "https://mebularts.github.io/DemoWeaver"
+}

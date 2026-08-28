@@ -18,6 +18,7 @@ import {
     XIcon,
 } from "@pollinations/ui";
 import { communityEndpointPriceFieldsForModality } from "@shared/community-endpoints.ts";
+import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { PriceBadge, type PriceBadgeConfig } from "../models/price-badge.tsx";
 import type { PriceKind } from "../models/types.ts";

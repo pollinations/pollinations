@@ -12,6 +12,7 @@ import {
 import type { ImageParams } from "../../src/image/params.ts";
 
 const VIDEO_FRAME_LIMITS = [
+    ["google/gemini-omni-1.1-flash", 2],
     ["veo", 2],
     ["seedance-pro", 1],
     ["seedance-2.0", 2],

@@ -592,7 +592,7 @@ const imageQualityField = z
             "Image quality. OpenAI 'standard'/'hd' mapped to Pollinations equivalents",
     });
 const imageResolutionField = z
-    .enum(["1k", "2k", "480p", "720p", "768p", "1080p"])
+    .enum(["1k", "2k", "360p", "480p", "720p", "768p", "1080p", "4k"])
     .optional()
     .meta({
         description:

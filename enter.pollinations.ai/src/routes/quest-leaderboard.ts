@@ -78,9 +78,10 @@ async function buildQuestLeaderboard(
     const rows = await db
         .select({
             githubLogin,
-            completedQuests: sql<number>`count(${rewardsTable.id})`.mapWith(
-                Number,
-            ),
+            completedQuests:
+                sql<number>`count(distinct ${rewardsTable.questId})`.mapWith(
+                    Number,
+                ),
             totalPollen:
                 sql<number>`coalesce(sum(${rewardsTable.pollenAmount}), 0)`.mapWith(
                     Number,

@@ -18,7 +18,6 @@ export function TopContributors() {
     const { copy } = usePageCopy(COMMUNITY_PAGE);
 
     const [contributors, setContributors] = useState<Contributor[]>([]);
-    const [loadingContributors, setLoadingContributors] = useState(true);
 
     useEffect(() => {
         const CACHE_KEY = "top_contributors_v1";
@@ -31,7 +30,6 @@ export function TopContributors() {
                 const { data, day } = JSON.parse(cached);
                 if (day === today) {
                     setContributors(data);
-                    setLoadingContributors(false);
                     return;
                 }
             }
@@ -109,19 +107,13 @@ export function TopContributors() {
                 }
             } catch (err) {
                 console.error("Contributor aggregation failed:", err);
-            } finally {
-                setLoadingContributors(false);
             }
         };
 
         fetchTopContributors365();
     }, []);
 
-    if (loadingContributors && contributors.length === 0) {
-        return <QuestLeaderboard />;
-    }
-
-    if (!loadingContributors && contributors.length === 0) {
+    if (contributors.length === 0) {
         return <QuestLeaderboard />;
     }
 

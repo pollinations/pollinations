@@ -76,6 +76,15 @@ test("leaderboard limits rows without truncating aggregate totals", async () => 
             pollenAmount: 0.2,
             balanceBucket: "tier",
         },
+        {
+            id: "leaderboard-reward-51-bonus",
+            idempotencyKey: "manual:github:issue:30002:bonus",
+            userId: "leaderboard-user-51-alias",
+            questId: "github:issue:30002",
+            title: "Quest 30002 bonus",
+            pollenAmount: 0.5,
+            balanceBucket: "tier",
+        },
     ]);
 
     // A large product reward must not affect the public GitHub quest board.
@@ -117,7 +126,7 @@ test("leaderboard limits rows without truncating aggregate totals", async () => 
     expect(payload.leaderboard[0]).toEqual({
         githubLogin: "builder-51",
         completedQuests: 3,
-        totalPollen: 51.3,
+        totalPollen: 51.8,
     });
     expect(payload.leaderboard.at(-1)).toEqual({
         githubLogin: "builder-2",
@@ -125,11 +134,12 @@ test("leaderboard limits rows without truncating aggregate totals", async () => 
         totalPollen: 2,
     });
 
-    // 1 + ... + 51 + 0.1 + 0.2 = 1326.3. Totals cover all contributors.
+    // 1 + ... + 51 + 0.1 + 0.2 + 0.5 = 1326.8. The bonus contributes
+    // Pollen without counting the same quest twice.
     expect(payload.totals).toEqual({
         contributors: 51,
         completedQuests: 53,
-        totalPollen: 1326.3,
+        totalPollen: 1326.8,
     });
 });
 
@@ -155,6 +165,7 @@ test("rendered leaderboard shows GitHub identity, quest counts, Pollen, and CTA"
     expect(html).toContain("2 completed");
     expect(html).toContain("12.5 Pollen");
     expect(html).toContain('href="https://github.com/alice"');
+    expect(html).toContain('src="https://github.com/alice.png?size=64"');
     expect(html).toContain('href="https://enter.pollinations.ai/quests"');
     expect(html).toContain("19.5");
 });

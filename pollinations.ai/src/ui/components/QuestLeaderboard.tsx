@@ -84,7 +84,7 @@ export function QuestLeaderboardContent({
 
             <ol className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {visible.map((entry, index) => (
-                    <li key={`${entry.githubLogin}-${index}`}>
+                    <li key={entry.githubLogin}>
                         <a
                             href={`https://github.com/${encodeURIComponent(entry.githubLogin)}`}
                             target="_blank"
@@ -97,6 +97,15 @@ export function QuestLeaderboardContent({
                             >
                                 {index + 1}
                             </span>
+                            <img
+                                src={`https://github.com/${encodeURIComponent(entry.githubLogin)}.png?size=64`}
+                                alt=""
+                                className="h-8 w-8 shrink-0 rounded-full"
+                                loading="lazy"
+                                decoding="async"
+                                width={32}
+                                height={32}
+                            />
                             <span className="min-w-0 flex-1">
                                 <span className="block truncate font-headline text-xs font-black text-dark">
                                     @{entry.githubLogin}

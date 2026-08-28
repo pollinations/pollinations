@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🎬",
+    "name": "Automated Video App",
+    "url": "https://automatedvideoapp.com",
+    "description": "**Resubmission of #13411, with the callback issue fixed.** That submission was closed because the app sent a redirect_uri that was not registered on the App Key. The cause: the connect page built the ",
+    "language": "en",
+    "category": "video_audio",
+    "platform": "web",
+    "githubUsername": "ackhmez",
+    "githubUserId": "312036605",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-08-28",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/14077",
+    "approvedDate": "2026-08-28",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🖼️",
     "name": "Pixel Forge",
     "url": "https://b3b41020.github.io/pixel-forge",

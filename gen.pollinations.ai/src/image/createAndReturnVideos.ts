@@ -7,6 +7,7 @@ import { HttpError } from "@shared/http-error.ts";
 import { getVideoModelIds, IMAGE_SERVICES } from "@shared/registry/image.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import debug from "debug";
+import { callGeminiOmniAPI } from "./models/geminiOmniVideoModel.ts";
 import { callMinimaxH3API } from "./models/minimaxH3Model.ts";
 import { callNovaReelAPI } from "./models/novaReelModel.ts";
 import {
@@ -64,6 +65,9 @@ export async function createAndReturnVideo(
 
     let result: VideoGenerationResult;
     switch (safeParams.model) {
+        case "google/gemini-omni-1.1-flash":
+            result = await callGeminiOmniAPI(prompt, safeParams);
+            break;
         case "veo":
             result = await callVeoAPI(prompt, safeParams);
             break;

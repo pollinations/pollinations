@@ -1,0 +1,37 @@
+{
+  "pr_number": 14074,
+  "title": "Add Pixel Forge to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/14074",
+  "merged_at": "2026-08-28T02:56:46Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Pixel Forge](https://b3b41020.github.io/pixel-forge) to image\n- AI image generation studio powered by Pollinations. Users enter a prompt, select a model (Flux, Dreamshaper, Klein, GPT Image 2, Zimage, Nanobanana) and image size, then generate. Built with the Polli\n\nFixes #14065",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Pixels enter the forge",
+    "blurb": "Pixel Forge joined the garden: a small AI image studio where a prompt, a model, and a canvas size become something visible. Polli brought the sparks and wisely stayed away from the hot bits.",
+    "summary": "Added Pixel Forge, a Pollinations-powered image generation studio where users can choose Flux, Dreamshaper, Klein, GPT Image 2, Zimage, or Nanobanana along with an image size before generating.",
+    "impact": "People can now use Pixel Forge as a focused visual workspace for comparing Pollinations image models and turning prompts into images at their chosen dimensions.",
+    "keywords": [
+      "Pixel Forge",
+      "image generation",
+      "community app",
+      "image models",
+      "Flux",
+      "Nanobanana",
+      "creative tools"
+    ],
+    "visual_concept": "Depict Pixel Forge as a cozy little pixel-art workshop: a retro image-generation console with prompt cards, model selector dials, and freshly made pixel pictures emerging from a warm forge-like printer. Polli, wearing tiny safety goggles and a tool belt, adjusts the model dial while code-plants and flowers grow around the workstation, making the studio feel handmade rather than industrial.",
+    "image_prompt": "A cozy pixel art image-generation workshop called Pixel Forge, with a retro CRT console showing a prompt field, chunky model selector dials labeled Flux, Dreamshaper, Klein, GPT Image 2, Zimage, and Nanobanana, and small pixel artworks emerging like warm prints from a friendly forge. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny safety goggles and a tool belt while tuning the console beside code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle CRT glow, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-28/PR-14074.jpg",
+    "prompt": "A cozy pixel art image-generation workshop called Pixel Forge, with a retro CRT console showing a prompt field, chunky model selector dials labeled Flux, Dreamshaper, Klein, GPT Image 2, Zimage, and Nanobanana, and small pixel artworks emerging like warm prints from a friendly forge. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny safety goggles and a tool belt while tuning the console beside code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle CRT glow, emotionally warm."
+  },
+  "generated_at": "2026-08-28T02:57:47.592634+00:00",
+  "app_name": "Pixel Forge",
+  "app_url": "https://b3b41020.github.io/pixel-forge"
+}

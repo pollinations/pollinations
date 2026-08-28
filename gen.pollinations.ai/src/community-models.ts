@@ -1,9 +1,13 @@
 import {
+    applyPendingProxyPricing,
+    COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
     type CommunityEndpointRuntime,
     communityEndpointPrices,
     communityModelDefinition,
     communityModelId,
+    effectiveCommunityEndpointVisibility,
     parseListingPayload,
+    pendingCommunityEndpointChangeIsReady,
     usesAgentRunToken,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
@@ -76,6 +80,9 @@ export async function getCommunityModelRegistryEntries(
             baseUrl: schema.communityEndpoint.baseUrl,
             upstreamModel: schema.communityEndpoint.upstreamModel,
             payload: schema.communityEndpoint.payload,
+            pendingPayload: schema.communityEndpoint.pendingPayload,
+            pendingVisibility: schema.communityEndpoint.pendingVisibility,
+            pendingAt: schema.communityEndpoint.pendingAt,
             visibility: schema.communityEndpoint.visibility,
             hiddenAt: schema.communityEndpoint.hiddenAt,
             hiddenReason: schema.communityEndpoint.hiddenReason,
@@ -90,6 +97,14 @@ export async function getCommunityModelRegistryEntries(
 
     return rows.flatMap((row): CommunityModelRegistryEntry[] => {
         if (!row.ownerGithubUsername) return [];
+        const pendingReady = pendingCommunityEndpointChangeIsReady(
+            row.pendingAt,
+        );
+        const effectiveVisibility = effectiveCommunityEndpointVisibility(
+            row.visibility,
+            row.pendingVisibility,
+            row.pendingAt,
+        );
         const baseUrl =
             row.type === "prompt_agent"
                 ? env.AGENT_RUNTIME_BASE_URL
@@ -107,7 +122,7 @@ export async function getCommunityModelRegistryEntries(
             providerUrl: row.providerUrl,
             baseUrl,
             upstreamModel: row.upstreamModel,
-            visibility: row.visibility,
+            visibility: effectiveVisibility,
             hiddenAt: row.hiddenAt ? row.hiddenAt.getTime() : null,
             hiddenReason: row.hiddenReason,
         };
@@ -163,8 +178,18 @@ export async function getCommunityModelRegistryEntries(
                 break;
             }
             case "proxy": {
-                const payload = parseListingPayload("proxy", row.payload);
-                if (!payload) return [];
+                const currentPayload = parseListingPayload(
+                    "proxy",
+                    row.payload,
+                );
+                if (!currentPayload) return [];
+                const pendingPayload = parseListingPayload(
+                    "proxy",
+                    row.pendingPayload,
+                );
+                const payload = pendingReady
+                    ? applyPendingProxyPricing(currentPayload, pendingPayload)
+                    : currentPayload;
                 communityEndpoint = {
                     ...identity,
                     type: "proxy",
@@ -185,14 +210,38 @@ export async function getCommunityModelRegistryEntries(
             addedDate: row.createdAt.getTime(),
             hidden: communityEndpoint.hiddenAt !== null,
         });
+        const info = modelInfoFromDefinition(modelId, definition, {
+            community: true,
+            agent: usesAgentRunToken(communityEndpoint),
+        });
+        const pendingPayload = parseListingPayload("proxy", row.pendingPayload);
+        if (
+            !pendingReady &&
+            row.pendingAt &&
+            row.visibility === "public" &&
+            pendingPayload
+        ) {
+            const pendingDefinition = communityModelDefinition({
+                ...communityEndpoint,
+                paidOnly: pendingPayload.paidOnly,
+                imagePricing: pendingPayload.imagePricing,
+                ...pendingPayload.prices,
+            });
+            info.pending_change = {
+                effective_at: new Date(
+                    row.pendingAt.getTime() +
+                        COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
+                ).toISOString(),
+                paid_only: pendingPayload.paidOnly,
+                pricing: modelInfoFromDefinition(modelId, pendingDefinition)
+                    .pricing,
+            };
+        }
         return [
             {
                 id: modelId,
                 aliases: definition.aliases,
-                info: modelInfoFromDefinition(modelId, definition, {
-                    community: true,
-                    agent: usesAgentRunToken(communityEndpoint),
-                }),
+                info,
                 definition,
                 communityEndpoint,
                 agentConfig,

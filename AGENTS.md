@@ -42,8 +42,8 @@ Primary: `https://gen.pollinations.ai` → routes to `enter.pollinations.ai` for
 - Billing: Pollen credits ($1 ≈ 1 Pollen). Full docs: `./APIDOCS.md`
 - Pack checkout: Stripe. Polar is retired from runtime; do not add Polar SDKs,
   Worker bindings, webhooks, or automated writes. Historical Polar handling
-  (pre-Stripe pack revenue, Nov 2025–Jan 2026) lives in the economics ingest
-  connector prompt (`operations/economics/ingest/agent.system.txt`).
+  (pre-Stripe pack revenue, Nov 2025–Jan 2026) lives in the Economics provider
+  collection skill (`.claude/skills/economics-provider-collection/`).
 - Services: Text (Portkey, multi-provider), Image (gen Worker dispatch to providers/GPU backends), Video (Wan/Veo/LTX), Audio (ElevenLabs, TTM)
 - Wallet: Pollen is earned by completing Quests; balances live in the `tier_balance` (shown as Quest Pollen) and `pack_balance` (Paid) buckets. The legacy `tier` D1 column and `tier_balance` wire name are kept for compatibility; see `shared/db/better-auth.ts`.
 - Referral links must use the canonical landing page with a short `?ref=` value; record analytics behind the page instead of exposing a tracking API as the destination URL.
@@ -138,6 +138,22 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - Timeouts: use `uniq()` not `uniqExact()`; avoid CTE+JOIN; single-pass queries; for large time ranges use `start_date` parameter week-by-week
 - Full procedure: `.claude/skills/tinybird-deploy/SKILL.md`
 
+## Economics Environment Safety
+
+- `operations/economics/web` local development must read Tinybird staging
+  (`pollinations_enter_staging`) through
+  `operations/economics/secrets/web.dev.json`.
+- Production Economics deployments read
+  `operations/economics/secrets/web.json`. Never decrypt that production file
+  directly into the local `.dev.vars` file.
+- After switching, merging, or rebasing an Economics branch, rerun
+  `npm run decrypt-vars` before trusting the local dashboard. The generated
+  `.dev.vars` must combine the shared password with the staging-only read
+  token via `scripts/write-dev-vars.mjs`.
+- A local dashboard showing production-only or stale provider rows is an
+  environment-routing failure; fix the local reader before changing ledger
+  data or publishing another correction.
+
 ## Code Style & Workflow
 
 - Modern JS/TS, ES modules (all `.js` are ESM). Follow existing formatting. Comment complex logic.
@@ -167,6 +183,7 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - Before model changes, read and follow `.claude/skills/model-management/SKILL.md`.
 - Don't request PR reviews or comment `polli` unless the user explicitly asks.
 - Model descriptions must describe only capabilities or differentiators; never repeat the model title or name.
+- `packages/sdk` keeps its own `package-lock.json` because it is published standalone. After changing `packages/sdk/package.json`, regenerate it with `npm install --prefix packages/sdk --workspaces=false --package-lock-only`; a plain workspace install updates only the root lockfile.
 
 ## Testing
 
@@ -212,12 +229,17 @@ Preserve during compaction: modified files + line numbers, all code/diffs/impl d
 
 ## Git Workflow
 
+- Stay on the current user-approved branch and its single PR. Never create,
+  checkout, switch to, or work from another branch or worktree unless the user
+  explicitly approves that branch change first.
+- Integrate follow-up work directly on the active branch. If continuing would
+  require a new branch or PR, stop and ask before creating it.
 - Feature branches target `main`. Promote `main` to `production` only through a separate promotion PR; never target `production` directly with feature or fix work.
 - "send to git" = git status, diff, branch, commit all, push, PR description.
 - Verify branch: `git branch --show-current` and confirm if unsure (branch mix-ups are a recurring mistake).
 - Avoid force pushes (`--force`, `--force-with-lease`) — prefer follow-up commits.
 - Run biome check before committing.
-- If PR already merged: open a new branch/PR for follow-ups.
+- If the active PR is already merged, ask before opening a follow-up branch or PR.
 
 ## Communication Style
 

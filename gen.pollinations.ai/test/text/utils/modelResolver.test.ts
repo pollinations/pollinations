@@ -248,10 +248,25 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins GLM-5.3 Flash to Z.AI FP8 on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "z-ai/glm-5.3-flash",
+        });
+
+        expect(result.options.model).toBe("z-ai/glm-5.3-flash");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openrouter",
+            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
+        });
+        expect(result.options.provider).toEqual({
+            only: ["z-ai/fp8"],
+            allow_fallbacks: false,
+        });
+    });
+
     it.each([
         ["qwen-coder-large", "qwen/qwen3-coder-next", "parasail/bf16"],
         ["qwen-vision", "qwen/qwen3-vl-30b-a3b-instruct", "alibaba"],
-        ["qwen-vision-pro", "qwen/qwen3-vl-235b-a22b-thinking", "alibaba"],
         [
             "mistral-small-3.2",
             "mistralai/mistral-small-3.2-24b-instruct",
@@ -261,7 +276,6 @@ describe("resolveModelConfig", () => {
         ["gemma-4-31b", "google/gemma-4-31b-it", "novita/bf16"],
         ["mimo-v2.5", "xiaomi/mimo-v2.5", "xiaomi/fp8"],
         ["mimo-v2.5-pro", "xiaomi/mimo-v2.5-pro", "xiaomi/fp8"],
-        ["mistral", "mistralai/mistral-small-2603", "mistral"],
         ["llama-scout", "meta-llama/llama-4-scout", "deepinfra/fp8"],
     ])("pins %s to %s through %s without fallback", (model, route, provider) => {
         const result = resolveModelConfig(messages, { model });
@@ -269,6 +283,31 @@ describe("resolveModelConfig", () => {
         expect(result.options.model).toBe(route);
         expect(result.options.provider).toEqual({
             only: [provider],
+            allow_fallbacks: false,
+        });
+    });
+
+    it("routes Qwen Vision Pro directly to Alibaba without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "qwen-vision-pro",
+        });
+
+        expect(result.options.model).toBe("qwen3-vl-235b-a22b-thinking");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            directEndpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
+    it("excludes Mistral's non-standard endpoint variants", () => {
+        const result = resolveModelConfig(messages, { model: "mistral" });
+
+        expect(result.options.model).toBe("mistralai/mistral-small-2603");
+        expect(result.options.provider).toEqual({
+            only: ["mistral"],
+            ignore: ["mistral/zdr", "mistral/us", "mistral/eu"],
             allow_fallbacks: false,
         });
     });

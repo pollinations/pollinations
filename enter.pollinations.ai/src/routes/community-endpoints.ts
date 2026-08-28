@@ -1,18 +1,21 @@
 import {
+    applyPendingProxyPricing,
     type CommunityEndpointVisibility,
     communityModelId,
     type EndpointAgentListingPayload,
+    effectiveCommunityEndpointVisibility,
     isCommunityEndpointOwnerAllowed,
     normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
     normalizeCommunityProviderUrl,
     type ProxyListingPayload,
     parseListingPayload,
+    pendingCommunityEndpointChangeIsReady,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
-import { and, desc, eq, or } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { Hono } from "hono";
@@ -37,6 +40,9 @@ import {
     changesProxyPayload,
     deriveCreateProxyPolicy,
     deriveUpdatedProxyPolicy,
+    hasProxyPricingInput,
+    proxyPricingChanged,
+    withoutProxyPricingChanges,
 } from "./community-endpoints/proxy-policy.ts";
 import {
     assertValidUpdate,
@@ -366,13 +372,22 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 throw new HTTPException(404, { message: "Model not found" });
             }
             if (endpoint.type !== "proxy") return c.json({ data: [] });
-            const endpointPayload = parseListingPayload(
+            const currentPayload = parseListingPayload(
                 "proxy",
                 endpoint.payload,
             );
-            if (!endpointPayload) {
+            if (!currentPayload) {
                 throw new Error(`Invalid proxy payload for ${endpoint.id}`);
             }
+            const pendingPayload = pendingCommunityEndpointChangeIsReady(
+                endpoint.pendingAt,
+            )
+                ? parseListingPayload("proxy", endpoint.pendingPayload)
+                : null;
+            const endpointPayload = applyPendingProxyPricing(
+                currentPayload,
+                pendingPayload,
+            );
             const primary: FallbackPrimary = {
                 modelId: communityModelId(ownerGithubUsername, endpoint.name),
                 ownerUserId: user.id,
@@ -391,12 +406,6 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 .innerJoin(
                     schema.user,
                     eq(schema.communityEndpoint.ownerUserId, schema.user.id),
-                )
-                .where(
-                    or(
-                        eq(schema.communityEndpoint.visibility, "public"),
-                        eq(schema.communityEndpoint.ownerUserId, user.id),
-                    ),
                 );
             const data = candidates
                 .flatMap(({ endpoint: row, ownerGithubUsername: owner }) => {
@@ -416,7 +425,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["🤖 Community Agents"],
             summary: "Create Endpoint Agent",
             description:
-                "Register an agent running on an external OpenAI-compatible endpoint. Pollinations sends a short-lived agent run token instead of a stored bearer credential. Private is the default; public agents require an allowlisted account. API keys require `account:keys`.",
+                "Register an agent running on an external OpenAI-compatible endpoint. Pollinations sends a short-lived agent run token instead of a stored bearer credential. Private is the default; public agents require an allowlisted account and become public after 12 hours. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Created endpoint agent",
@@ -443,6 +452,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             );
             await ensureModelNameAvailable(db, user.id, input.name);
             await enforcePublishingAccess(db, user.id, input.visibility);
+            const queuesPublication = input.visibility === "public";
             const payload: EndpointAgentListingPayload = {
                 perUserRpm: input.perUserRpm,
             };
@@ -454,7 +464,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     name: input.name,
                     title: input.title,
                     description: input.description || null,
-                    visibility: input.visibility,
+                    visibility: queuesPublication
+                        ? "private"
+                        : input.visibility,
+                    pendingVisibility: queuesPublication ? "public" : null,
+                    pendingAt: queuesPublication ? new Date() : null,
                     type: "endpoint_agent",
                     baseUrl: normalizeInputBaseUrl(input.baseUrl),
                     upstreamModel: input.upstreamModel ?? input.name,
@@ -478,7 +492,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["🧩 Community Models"],
             summary: "Create My Model",
             description:
-                "Register a private or public community text, image, or transcription model. Private is the default. Public models require an allowlisted account and may be free or priced. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
+                "Register a private or public community text, image, or transcription model. Private is the default. Public models require an allowlisted account and become public after 12 hours. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
             responses: {
                 200: {
                     description: "Created community model",
@@ -504,21 +518,27 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 user.id,
             );
             await ensureModelNameAvailable(db, user.id, input.name);
-            const policy = deriveCreateProxyPolicy(input);
+            const targetPolicy = deriveCreateProxyPolicy(input);
+            const queuesPublication = input.visibility === "public";
+            const policy = queuesPublication
+                ? deriveCreateProxyPolicy({ ...input, visibility: "private" })
+                : targetPolicy;
             const modelId = communityModelId(ownerGithubUsername, input.name);
+            const bearerTokenCiphertext = await encryptSecret(
+                normalizeInputBearerToken(input.bearerToken),
+                c.env.BETTER_AUTH_SECRET,
+            );
+            const fallbacks = input.fallbacks
+                ? await resolveFallbacks(db, input.fallbacks, {
+                      modelId,
+                      ownerUserId: user.id,
+                      ...targetPolicy,
+                  })
+                : [];
             const payload: ProxyListingPayload = {
-                bearerTokenCiphertext: await encryptSecret(
-                    normalizeInputBearerToken(input.bearerToken),
-                    c.env.BETTER_AUTH_SECRET,
-                ),
+                bearerTokenCiphertext,
                 ...policy,
-                fallbacks: input.fallbacks
-                    ? await resolveFallbacks(db, input.fallbacks, {
-                          modelId,
-                          ownerUserId: user.id,
-                          ...policy,
-                      })
-                    : [],
+                fallbacks,
             };
             await enforcePublishingAccess(db, user.id, input.visibility);
             const [row] = await db
@@ -529,11 +549,22 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     name: input.name,
                     title: input.title,
                     description: input.description || null,
-                    visibility: input.visibility,
+                    visibility: queuesPublication
+                        ? "private"
+                        : input.visibility,
                     type: "proxy",
                     baseUrl: normalizeInputBaseUrl(input.baseUrl),
                     upstreamModel: input.upstreamModel ?? input.name,
                     payload: JSON.stringify(payload),
+                    pendingPayload: queuesPublication
+                        ? JSON.stringify({
+                              bearerTokenCiphertext,
+                              ...targetPolicy,
+                              fallbacks,
+                          } satisfies ProxyListingPayload)
+                        : null,
+                    pendingVisibility: queuesPublication ? "public" : null,
+                    pendingAt: queuesPublication ? new Date() : null,
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 })
@@ -655,7 +686,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["🧩 Community Models"],
             summary: "Update My Model",
             description:
-                "Update a community model owned by the authenticated account. Changing visibility to public publishes it and requires an allowlisted account; public models may be free or priced. API keys require `account:keys`.",
+                "Update a community model owned by the authenticated account. Changing visibility to public requires an allowlisted account and takes effect after 12 hours; public models may be free or priced. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Updated community model",
@@ -699,6 +730,19 @@ export const communityEndpointsRoutes = new Hono<Env>()
             > = {
                 updatedAt: new Date(),
             };
+            const pendingReady = pendingCommunityEndpointChangeIsReady(
+                endpoint.pendingAt,
+            );
+            const currentVisibility = effectiveCommunityEndpointVisibility(
+                endpoint.visibility,
+                endpoint.pendingVisibility,
+                endpoint.pendingAt,
+            );
+            let pendingPayload = pendingReady ? null : endpoint.pendingPayload;
+            let pendingVisibility = pendingReady
+                ? null
+                : endpoint.pendingVisibility;
+            let pendingAt = pendingReady ? null : endpoint.pendingAt;
             if (input.name !== undefined) update.name = input.name;
             if (input.title !== undefined) update.title = input.title;
             if (input.description !== undefined) {
@@ -709,9 +753,25 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 update.hiddenReason = input.hidden ? "Hidden by owner" : null;
                 update.hiddenBy = input.hidden ? "owner" : null;
             }
-            const effectiveVisibility = input.visibility ?? endpoint.visibility;
-            await enforcePublishingAccess(db, user.id, effectiveVisibility);
-            update.visibility = effectiveVisibility;
+            await enforcePublishingAccess(
+                db,
+                user.id,
+                input.visibility ?? currentVisibility,
+            );
+            let nextVisibility = currentVisibility;
+            if (input.visibility === "private") {
+                nextVisibility = "private";
+                pendingPayload = null;
+                pendingVisibility = null;
+                pendingAt = null;
+            } else if (
+                input.visibility === "public" &&
+                currentVisibility === "private"
+            ) {
+                pendingVisibility = "public";
+                pendingAt ??= new Date();
+            }
+            update.visibility = nextVisibility;
             if (endpoint.type === "prompt_agent") {
                 // Prompt configuration is edited through /account/agents.
                 // This route only updates shared listing state such as hidden.
@@ -733,14 +793,41 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     });
                 }
             } else {
-                const stored = parseListingPayload("proxy", endpoint.payload);
-                if (!stored) {
+                const current = parseListingPayload("proxy", endpoint.payload);
+                if (!current) {
                     throw new Error(`Invalid proxy payload for ${endpoint.id}`);
                 }
+                const maturedPending = pendingReady
+                    ? parseListingPayload("proxy", endpoint.pendingPayload)
+                    : null;
+                const stored = applyPendingProxyPricing(
+                    current,
+                    maturedPending,
+                );
+                const queued = parseListingPayload("proxy", pendingPayload);
+                const targetBase = queued ?? stored;
+                const targetVisibility = pendingVisibility ?? nextVisibility;
+                const targetPolicy = deriveUpdatedProxyPolicy(
+                    targetBase,
+                    input,
+                    targetVisibility,
+                );
+                const delayPricing =
+                    targetVisibility === "public" &&
+                    (currentVisibility === "public" ||
+                        pendingVisibility === "public") &&
+                    hasProxyPricingInput(input);
+                const pricingChanged = proxyPricingChanged(
+                    targetBase,
+                    targetPolicy,
+                );
+                const immediateInput = delayPricing
+                    ? withoutProxyPricingChanges(input)
+                    : input;
                 const policy = deriveUpdatedProxyPolicy(
                     stored,
-                    input,
-                    effectiveVisibility,
+                    immediateInput,
+                    nextVisibility,
                 );
                 const fallbacks =
                     input.fallbacks === undefined
@@ -751,31 +838,47 @@ export const communityEndpointsRoutes = new Hono<Env>()
                                   input.name ?? endpoint.name,
                               ),
                               ownerUserId: user.id,
-                              ...policy,
+                              ...targetPolicy,
                           });
+                const bearerTokenCiphertext =
+                    input.bearerToken === undefined
+                        ? stored.bearerTokenCiphertext
+                        : await encryptSecret(
+                              normalizeInputBearerToken(input.bearerToken),
+                              c.env.BETTER_AUTH_SECRET,
+                          );
                 if (input.baseUrl !== undefined) {
                     update.baseUrl = normalizeInputBaseUrl(input.baseUrl);
                 }
                 if (input.upstreamModel !== undefined) {
                     update.upstreamModel = input.upstreamModel;
                 }
-                if (changesProxyPayload(input)) {
+                if (pendingReady || changesProxyPayload(input)) {
                     const payload: ProxyListingPayload = {
-                        bearerTokenCiphertext:
-                            input.bearerToken === undefined
-                                ? stored.bearerTokenCiphertext
-                                : await encryptSecret(
-                                      normalizeInputBearerToken(
-                                          input.bearerToken,
-                                      ),
-                                      c.env.BETTER_AUTH_SECRET,
-                                  ),
+                        bearerTokenCiphertext,
                         ...policy,
                         fallbacks,
                     };
                     update.payload = JSON.stringify(payload);
                 }
+                const queuesPublication =
+                    input.visibility === "public" &&
+                    currentVisibility === "private";
+                if ((delayPricing && pricingChanged) || queuesPublication) {
+                    const targetPayload: ProxyListingPayload = {
+                        bearerTokenCiphertext,
+                        ...targetPolicy,
+                        fallbacks,
+                    };
+                    pendingPayload = JSON.stringify(targetPayload);
+                    if (pricingChanged) {
+                        pendingAt = new Date();
+                    }
+                }
             }
+            update.pendingPayload = pendingPayload;
+            update.pendingVisibility = pendingVisibility;
+            update.pendingAt = pendingAt;
             const [row] = await db
                 .update(schema.communityEndpoint)
                 .set(update)

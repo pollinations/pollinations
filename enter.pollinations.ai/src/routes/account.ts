@@ -29,6 +29,7 @@ import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
+import { discordConfigFromEnv } from "../services/discord.ts";
 import { QUEST_CATEGORIES } from "../services/quests/definitions.ts";
 import { listQuestCards } from "../services/quests/index.ts";
 import {
@@ -648,6 +649,9 @@ const profileResponseSchema = z.object({
         .describe(
             "Whether the account is allowed to manage community endpoints.",
         ),
+    discordAvailable: z
+        .boolean()
+        .describe("Whether Discord account connections are available."),
     name: z
         .string()
         .nullable()
@@ -791,6 +795,14 @@ const usageResponseSchema = z.object({
  */
 export const accountRoutes = new Hono<Env>()
     .use(auth({ allowApiKey: true, allowSessionCookie: true }))
+    // Account responses are per-user and must never be cached by browsers or
+    // intermediary proxies. Applied once here so nested routes (agents,
+    // my-models, keys, ...) inherit it without repeating it per handler.
+    .use("*", async (c, next) => {
+        await next();
+        c.header("Cache-Control", "private, no-store, max-age=0");
+        c.header("Pragma", "no-cache");
+    })
     .route("/agents", agentsRoutes)
     .route("/my-models", communityEndpointsRoutes)
     .get(
@@ -841,6 +853,7 @@ export const accountRoutes = new Hono<Env>()
                 image: profile.image ?? null,
                 communityEndpointsAllowed:
                     isCommunityEndpointOwnerAllowed(profile),
+                discordAvailable: Boolean(discordConfigFromEnv(c.env)),
                 ...(includeProfilePII && {
                     name: profile.name ?? null,
                     email: profile.email ?? null,
@@ -1398,7 +1411,6 @@ export const accountRoutes = new Hono<Env>()
                 ? await getVisibleModelIdsForUser(c.env.DB, user.id)
                 : null;
 
-            c.header("Cache-Control", "private, no-store, max-age=0");
             return c.json({
                 data: keys.map((key, index) => ({
                     id: key.id,

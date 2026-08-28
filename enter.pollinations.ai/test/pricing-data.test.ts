@@ -34,6 +34,8 @@ import { getModelPricesFromCatalog } from "../frontend/src/components/models/mod
 import { getCommunityModelIcon } from "../frontend/src/components/models/model-icons.tsx";
 import {
     getModelBrandLogoPath,
+    getModelCapabilities,
+    getModelCapabilityLabel,
     hasPollinationsTools,
 } from "../frontend/src/components/models/model-info.ts";
 import { ModelRow } from "../frontend/src/components/models/model-row.tsx";
@@ -348,6 +350,21 @@ test("Pollinations tools are shown only for agents with the MCP capability", () 
     ).toContain(">Tools</span>");
 });
 
+test("tool calling is shown through the shared model capability display", () => {
+    const model: ComponentProps<typeof ModelRow>["model"] = {
+        name: "example/tools-model",
+        type: "text",
+        capabilities: ["tool_calling"],
+        prices: [],
+    };
+
+    expect(getModelCapabilities(model)).toEqual(["tool_calling"]);
+    expect(getModelCapabilityLabel(model)).toBe("Tool calling");
+    expect(renderToStaticMarkup(createElement(ModelRow, { model }))).toContain(
+        'aria-label="Tool calling"',
+    );
+});
+
 test("cached modality adjustments remain visible without a matching base row", () => {
     const pricing: ComponentProps<typeof ModelPricingLedger>["pricing"] = {
         prices: [
@@ -479,6 +496,22 @@ test("reasoning token usage bills through completion text rates", () => {
             (price.completionReasoningTokens ?? 0) - 1e-9,
         );
     }
+});
+
+test("Gemini Omni bills exact Vertex modality usage", () => {
+    const model = "google/gemini-omni-1.1-flash";
+    const usage = {
+        promptTextTokens: 31,
+        completionVideoTokens: 5_793,
+        completionReasoningTokens: 276,
+    };
+    const cost = calculateCost(model, usage);
+
+    expect(cost.totalCost).toBeCloseTo(
+        31 * 0.0000015 + 5_793 * 0.0000175 + 276 * 0.000009,
+        10,
+    );
+    expect(calculatePrice(model, usage).totalPrice).toBe(cost.totalCost);
 });
 
 test("Claude Fable 5 is paid-only and billed at current standard rates", () => {

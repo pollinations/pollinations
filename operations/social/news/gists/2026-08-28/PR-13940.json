@@ -1,0 +1,35 @@
+{
+  "pr_number": 13940,
+  "title": "feat: open any model directly in Play via /play?model=<id>",
+  "author": "xiaotian1171",
+  "url": "https://github.com/pollinations/pollinations/pull/13940",
+  "merged_at": "2026-08-28T16:25:23Z",
+  "labels": [],
+  "pr_body_excerpt": "Closes #13903\n\n## Changes\n- Adds a compact **Try in Play** action for model types supported by Play.\n- Opens the shared public `/play?model=<model-id>` URL.\n- Preselects the requested model and shows its Image, Text, Audio, or Video category.\n- Keeps the change frontend-only and reuses existing model-category logic.\n\nIncludes the simpler category-selection behavior from #13920 by @davealan74.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Every model gets a playground",
+    "blurb": "Model listings now carry a small shortcut to Play. Pick a model, open the link, and it arrives already sitting in the right kind of sandbox.",
+    "summary": "Added a compact Try in Play action to supported model rows that opens the public `/play?model=<model-id>` URL, preselecting the model and its Image, Text, Audio, or Video category.",
+    "impact": "People browsing models can now jump directly from a model listing into a correctly configured Play session instead of selecting the model and category again.",
+    "keywords": [
+      "play",
+      "models",
+      "model-selector",
+      "frontend",
+      "image",
+      "text",
+      "audio"
+    ],
+    "visual_concept": "Depict Polli guiding a set of small labeled model seeds from a model catalog into a cozy shared playground, where four gentle stations represent Image, Text, Audio, and Video. A retro monitor shows the simple route `/play?model=...`, while code-plants and flowers make the shortcut feel like a well-marked garden path.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny explorer scarf, guiding little model seed packets from a retro catalog shelf into four cozy garden play stations for Image, Text, Audio, and Video; a CRT monitor softly displays `/play?model=...` in simple dark-purple pixel text. Lime green (#ecf874) is prominent in the path and monitor glow, with code-plants, flowers, warm cream and pastel lavender-to-peach gradients; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-28/PR-13940.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny explorer scarf, guiding little model seed packets from a retro catalog shelf into four cozy garden play stations for Image, Text, Audio, and Video; a CRT monitor softly displays `/play?model=...` in simple dark-purple pixel text. Lime green (#ecf874) is prominent in the path and monitor glow, with code-plants, flowers, warm cream and pastel lavender-to-peach gradients; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, emotionally warm."
+  },
+  "generated_at": "2026-08-28T16:26:22.239223+00:00"
+}

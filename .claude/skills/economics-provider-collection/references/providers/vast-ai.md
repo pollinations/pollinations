@@ -15,13 +15,15 @@ Primary evidence sources:
 - CLI: `vastai show invoices --raw -s <YYYY-MM-DD> -e <YYYY-MM-DD>`
 - Transaction context: `economics_bank_ledger` vendor `vast.ai`, usually Wise EUR card charge.
 
+Required credential: `VAST_API_KEY`.
+
 Collection steps:
 
 1. For invoice evidence, place the PDF or receipt in `data/inbox/`.
 2. For usage evidence, prefer the CLI raw export:
 
    ```bash
-   vastai show invoices --raw -s <period-start> -e <period-end>
+   vastai --api-key "$VAST_API_KEY" show invoices --raw -s <period-start> -e <period-end>
    ```
 
    Save stdout to `data/inbox/vast-ai-<period>.json`.

@@ -1,0 +1,36 @@
+{
+  "pr_number": 14087,
+  "title": "Add Automated Video App to video_audio",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/14087",
+  "merged_at": "2026-08-28T18:20:40Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Automated Video App](https://automatedvideoapp.com) to video_audio\n- **Resubmission of #13411, with the callback issue fixed.** That submission was closed because the app sent a redirect_uri that was not registered on the App Key. The cause: the connect page built the \n\nFixes #14077",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A new video flower blooms",
+    "blurb": "Automated Video App has joined the video-and-audio garden, this time with its OAuth callback path properly paved. Polli checked the redirect sign twice. Sensible bee behavior.",
+    "summary": "Added Automated Video App to the video_audio app registry after fixing its OAuth connect page to send the redirect_uri registered on its App Key.",
+    "impact": "Users can now discover and connect Automated Video App through the supported video_audio ecosystem without the previous callback mismatch.",
+    "keywords": [
+      "community",
+      "video_audio",
+      "automated-video-app",
+      "app-registry",
+      "oauth",
+      "app-keys"
+    ],
+    "visual_concept": "Depict Automated Video App as a friendly retro video workstation with a tiny film reel and play-button screen, now connected by a clearly labeled, glowing callback path to the pollinations garden. Polli, wearing a small director's beret, points warmly at the successful connection while code-vines and flowers grow around the app registry sign.",
+    "image_prompt": "A cozy pixel art garden workshop where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wears a tiny director's beret and guides a glowing callback cable from a retro Automated Video App workstation with a film reel and play-button screen into a lime green (#ecf874) app-registry garden; code-plants and soft pastel flowers bloom around the successful connection. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, pixel-font text: 'CONNECTED', nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-28/PR-14087.jpg",
+    "prompt": "A cozy pixel art garden workshop where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wears a tiny director's beret and guides a glowing callback cable from a retro Automated Video App workstation with a film reel and play-button screen into a lime green (#ecf874) app-registry garden; code-plants and soft pastel flowers bloom around the successful connection. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, pixel-font text: 'CONNECTED', nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-28T18:21:38.083839+00:00",
+  "app_name": "Automated Video App",
+  "app_url": "https://automatedvideoapp.com"
+}

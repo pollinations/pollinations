@@ -1,0 +1,33 @@
+{
+  "pr_number": 14082,
+  "title": "fix: remove leaked key incident banner",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14082",
+  "merged_at": "2026-08-28T13:37:51Z",
+  "labels": [],
+  "pr_body_excerpt": "- Removes the historical leaked-key warning from the Keys page\n- Removes filtering logic used only by that banner\n- Keeps publishable-key budget and direct-spending enforcement unchanged\n\nChecks:\n- `npx biome check --write enter.pollinations.ai/frontend/src/components/keys/api-key-list.tsx`\n- `npm run typecheck --workspace enter.pollinations.ai`\n- `npm run build:frontend --workspace enter.pollinations.ai`\n\nFollow-up to #13338.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The old warning flew home",
+    "blurb": "The Keys page has stopped carrying a historical incident banner around like an expired sticky note. Key budgets and direct-spending safeguards remain exactly where they belong.",
+    "summary": "Removed the historical leaked-key incident banner and its banner-only filtering logic from the Keys page while preserving publishable-key budget and direct-spending enforcement.",
+    "impact": "Users managing API keys now get a cleaner Keys page without the obsolete warning, with the existing budget and spending protections unchanged.",
+    "keywords": [
+      "api-keys",
+      "keys-page",
+      "frontend",
+      "cleanup",
+      "billing-safeguards"
+    ],
+    "visual_concept": "A cozy API key garden after an old warning placard has been carefully removed: Polli tidies the clean key-management desk while a small protected key vault and budget meter remain visibly intact. The scene should communicate that stale UI clutter is gone, not that safeguards were removed; use code-plants and flowers to reinforce healthy maintenance.",
+    "image_prompt": "A cozy pixel art key-management garden where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears a tiny janitor scarf while removing an old faded warning placard from beside a glowing protected API-key vault and a small budget meter; code-plants and pixel flowers bloom around a retro terminal. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font text: 'KEYS', nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-28/PR-14082.jpg",
+    "prompt": "A cozy pixel art key-management garden where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears a tiny janitor scarf while removing an old faded warning placard from beside a glowing protected API-key vault and a small budget meter; code-plants and pixel flowers bloom around a retro terminal. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font text: 'KEYS', nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-28T13:39:15.284415+00:00"
+}

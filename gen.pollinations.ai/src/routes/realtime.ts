@@ -1,3 +1,7 @@
+import {
+    extractAllowedModelIds,
+    resolveModelPollenType,
+} from "@shared/auth/api-key.ts";
 import { getUserBalance, payerBucketToMeter } from "@shared/billing/balance.ts";
 import {
     handleBalanceDeduction,
@@ -106,6 +110,7 @@ type RealtimeBillingContext = {
     identity: UserData & { userId: string };
     apiKeyPollenBalance?: number | null;
     apiKeyReservedAmount?: number;
+    keyPollenType?: "quest" | "paid" | null;
     byopClientKeyId?: string | null;
     modelRequested: string;
     resolvedModelRequested: string;
@@ -132,8 +137,8 @@ type RealtimeBillingContext = {
 };
 
 function requireAllowedModel(c: Context<Env>, model: string): void {
-    const allowedModels = c.var.auth.apiKey?.permissions?.models;
-    if (allowedModels && !allowedModels.includes(model)) {
+    const allowedIds = extractAllowedModelIds(c.var.auth.apiKey?.permissions);
+    if (allowedIds && !allowedIds.includes(model)) {
         throw new HTTPException(403, {
             message: `Model '${model}' is not allowed for this API key`,
         });
@@ -856,6 +861,7 @@ async function settleRealtimeSession(
             apiKeyId: tracking.identity.apiKeyId,
             apiKeyPollenBalance: tracking.apiKeyPollenBalance,
             apiKeyReservedAmount: tracking.apiKeyReservedAmount,
+            keyPollenType: tracking.keyPollenType,
             byopClientKeyId: tracking.byopClientKeyId,
             modelPaidOnly: tracking.modelDefinition.paidOnly,
         });
@@ -1395,10 +1401,25 @@ async function createRealtimeBillingContext(
         );
     }
 
+    // Resolve effective pollen type with precedence:
+    // 1. paidOnly models always use pack (ignore everything else)
+    // 2. Per-model override from permissions.models
+    // 3. Key-level pollenType restriction
+    const isPaidOnly = modelInfo.definition.paidOnly ?? false;
+    const keyPollenType = c.var.auth.apiKey?.pollenType ?? null;
+    const effectivePollenType = isPaidOnly
+        ? null
+        : resolveModelPollenType(
+              c.var.auth.apiKey?.permissions,
+              modelInfo.resolved,
+              keyPollenType,
+          );
+
     return {
         // requireUser() above proves the id, which the optional field cannot.
         identity: { ...requestIdentity(c.var.auth), userId: user.id },
         apiKeyPollenBalance: c.var.auth.apiKey?.pollenBalance,
+        keyPollenType: effectivePollenType,
         byopClientKeyId: c.var.auth.apiKey?.byopClientKeyId,
         modelRequested: modelInfo.requested,
         resolvedModelRequested: modelInfo.resolved,

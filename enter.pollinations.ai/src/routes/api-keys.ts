@@ -1,3 +1,4 @@
+import type { ModelPermissionEntry } from "@shared/auth/api-key.ts";
 import {
     createApiKeyForUser,
     validateRedirectUriFormat,
@@ -7,7 +8,7 @@ import { sanitizeAuthorizeAccountPermissions } from "@shared/auth/authorize-conf
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import {
-    canonicalizeModelPermissionIds,
+    canonicalizeModelPermissionEntries,
     filterPermissionsToVisibleModels,
     getVisibleModelIdsForUser,
 } from "@shared/registry/visible-model-ids.ts";
@@ -22,6 +23,16 @@ import { auth } from "../middleware/auth.ts";
 
 const SECONDS_PER_DAY = 24 * 60 * 60;
 
+const ModelPermissionEntrySchema = z.union([
+    z.string(),
+    z.object({
+        id: z.string(),
+        pollenType: z.enum(["quest", "paid"]),
+    }),
+]);
+
+type ApiKeyPermissions = Record<string, string[] | ModelPermissionEntry[]>;
+
 function setPrivateNoStoreHeaders(c: {
     header: (name: string, value: string) => void;
 }): void {
@@ -34,10 +45,10 @@ function setPrivateNoStoreHeaders(c: {
  * Returns undefined if no permission fields were provided.
  */
 function buildUpdatedPermissions(
-    existing: Record<string, string[]>,
-    allowedModels?: string[] | null,
+    existing: ApiKeyPermissions,
+    allowedModels?: ModelPermissionEntry[] | null,
     accountPermissions?: string[] | null,
-): Record<string, string[]> | undefined {
+): ApiKeyPermissions | undefined {
     if (allowedModels === undefined && accountPermissions === undefined) {
         return undefined;
     }
@@ -46,7 +57,7 @@ function buildUpdatedPermissions(
         updated,
         "models",
         Array.isArray(allowedModels)
-            ? canonicalizeModelPermissionIds(allowedModels)
+            ? canonicalizeModelPermissionEntries(allowedModels)
             : allowedModels,
     );
     applyPermissionField(updated, "account", accountPermissions);
@@ -54,9 +65,9 @@ function buildUpdatedPermissions(
 }
 
 function applyPermissionField(
-    target: Record<string, string[]>,
+    target: ApiKeyPermissions,
     key: string,
-    value: string[] | null | undefined,
+    value: string[] | ModelPermissionEntry[] | null | undefined,
 ): void {
     if (value === undefined) return;
     if (value === null) {
@@ -69,7 +80,7 @@ function applyPermissionField(
 /**
  * Parse permissions JSON, returning null for empty objects or invalid JSON.
  */
-function parsePermissions(raw: string): Record<string, string[]> | null {
+function parsePermissions(raw: string): ApiKeyPermissions | null {
     try {
         const parsed = JSON.parse(raw);
         return Object.keys(parsed).length > 0 ? parsed : null;
@@ -118,16 +129,14 @@ async function updateKeyMetadata(
 
 /**
  * Schema for updating an API key.
- * Uses better-auth's server API which supports server-only fields like permissions.
- *
- * Permissions format: { models?: string[], account?: string[] }
- * - models: ["flux", "openai"] = restrict to specific models
+ * Permissions format: { models?: ModelPermissionEntry[], account?: string[] }
+ * - models: ["flux", { id: "openai", pollenType: "quest" }] = restrict models
  * - account: ["profile", "usage", "keys"] = allow access to account endpoints
  */
 const UpdateApiKeySchema = z.object({
     name: z.string().optional().describe("Name for the API key"),
     allowedModels: z
-        .array(z.string())
+        .array(ModelPermissionEntrySchema)
         .nullable()
         .optional()
         .describe("Model IDs this key can access. null = all models allowed"),
@@ -136,6 +145,13 @@ const UpdateApiKeySchema = z.object({
         .nullable()
         .optional()
         .describe("Pollen budget cap for this key. null = unlimited"),
+    pollenType: z
+        .enum(["quest", "paid"])
+        .nullable()
+        .optional()
+        .describe(
+            "Restrict this key to only use quest or paid pollen. null = unrestricted",
+        ),
     accountPermissions: z
         .array(z.string())
         .nullable()
@@ -167,7 +183,7 @@ const CreateApiKeySchema = z.object({
         .optional()
         .describe("Expiry in seconds from now (max 365 days)"),
     allowedModels: z
-        .array(z.string())
+        .array(ModelPermissionEntrySchema)
         .nullable()
         .optional()
         .describe("Model IDs this key can access. null = all models allowed"),
@@ -177,6 +193,13 @@ const CreateApiKeySchema = z.object({
         .optional()
         .describe(
             "Pollen budget cap. Publishable keys accept only null, omission, or 0 and always use 0; secret keys use null for unlimited",
+        ),
+    pollenType: z
+        .enum(["quest", "paid"])
+        .nullable()
+        .optional()
+        .describe(
+            "Restrict this key to only use quest or paid pollen. null = unrestricted",
         ),
     accountPermissions: z
         .array(z.string())
@@ -239,6 +262,7 @@ export const apiKeysRoutes = new Hono<Env>()
                 expiresIn: input.expiresIn,
                 allowedModels: input.allowedModels,
                 pollenBudget: input.pollenBudget,
+                pollenType: input.pollenType,
                 accountPermissions: input.accountPermissions,
                 metadata: input.metadata,
                 allowAccountKeysPermission: true,
@@ -295,6 +319,7 @@ export const apiKeysRoutes = new Hono<Env>()
                         : parsedPermissions[index],
                     metadata: key.metadata ? parseMetadata(key.metadata) : null,
                     pollenBalance: key.pollenBalance,
+                    pollenType: key.pollenType ?? null,
                     byopClientKeyId: key.byopClientKeyId,
                 })),
             });
@@ -302,7 +327,6 @@ export const apiKeysRoutes = new Hono<Env>()
     )
     /**
      * Update an API key's permissions.
-     * Uses auth.api.updateApiKey() which supports server-only fields like permissions.
      */
     .post(
         "/:id/update",
@@ -314,12 +338,12 @@ export const apiKeysRoutes = new Hono<Env>()
         validator("json", UpdateApiKeySchema),
         async (c) => {
             const user = c.var.auth.requireUser();
-            const authClient = c.var.auth.client;
             const { id } = c.req.param();
             const {
                 name,
                 allowedModels,
                 pollenBudget,
+                pollenType,
                 accountPermissions,
                 expiresAt,
             } = c.req.valid("json");
@@ -344,21 +368,23 @@ export const apiKeysRoutes = new Hono<Env>()
                 sanitizedAccountPerms,
             );
 
-            if (updatedPermissions) {
-                await authClient.api.updateApiKey({
-                    body: {
-                        keyId: id,
-                        userId: user.id,
-                        permissions: updatedPermissions,
-                    },
-                });
+            const d1Updates: Partial<typeof schema.apikey.$inferInsert> = {};
+            if (updatedPermissions !== undefined) {
+                d1Updates.permissions =
+                    Object.keys(updatedPermissions).length > 0
+                        ? JSON.stringify(updatedPermissions)
+                        : null;
             }
-
-            const d1Updates: Record<string, string | number | Date | null> = {};
             if (name !== undefined) d1Updates.name = name;
             if (pollenBudget !== undefined)
                 d1Updates.pollenBalance = pollenBudget;
-            if (expiresAt !== undefined) d1Updates.expiresAt = expiresAt;
+            if (pollenType !== undefined) d1Updates.pollenType = pollenType;
+            if (expiresAt !== undefined) {
+                d1Updates.expiresAt =
+                    expiresAt === null || expiresAt instanceof Date
+                        ? expiresAt
+                        : new Date(expiresAt);
+            }
 
             if (Object.keys(d1Updates).length > 0) {
                 await db
@@ -390,6 +416,7 @@ export const apiKeysRoutes = new Hono<Env>()
                 name: updated?.name,
                 permissions: responsePermissions,
                 pollenBalance: updated?.pollenBalance ?? null,
+                pollenType: updated?.pollenType ?? null,
                 expiresAt: updated?.expiresAt ?? null,
             });
         },

@@ -1,12 +1,4 @@
-import {
-    ArrowRightIcon,
-    CheckIcon,
-    Chip,
-    cn,
-    InlineLink,
-    Surface,
-    WarningIcon,
-} from "@pollinations/ui";
+import { ArrowRightIcon, cn, Surface } from "@pollinations/ui";
 import { type FC, type ReactNode, useEffect, useState } from "react";
 
 const HIGHLIGHTS_RAW_URL =
@@ -165,24 +157,24 @@ const CanonicalModelSlugAnnouncement: FC = () => (
     <Surface
         id="canonical-model-slugs"
         variant="card"
-        className="scroll-mt-4 overflow-hidden p-0"
+        className="scroll-mt-4 leading-relaxed"
     >
-        <div className="bg-intent-warning-bg-light p-4 sm:p-5">
-            <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-theme-text-muted">
-                Scheduled change · Sep 7, 2026 at 14:00 UTC
-            </div>
-            <div className="flex items-baseline gap-2 font-semibold text-ink-900 text-base sm:text-lg">
-                <WarningIcon className="h-[1em] w-[1em] shrink-0 self-center text-intent-danger-text" />
-                <span>New model IDs are available now</span>
-            </div>
-            <p className="mt-1 text-sm text-ink-700">
-                The new publisher-qualified IDs work today. On September 7, they
-                will become canonical. Existing IDs will remain available as
-                aliases.
-            </p>
+        <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-theme-text-muted">
+            Scheduled change · Sep 7, 2026 at 14:00 UTC
         </div>
+        <div className="flex items-baseline gap-2 font-semibold text-ink-900 text-base sm:text-lg">
+            <span aria-hidden="true" className="shrink-0">
+                🧪
+            </span>
+            <span>New model IDs are available now</span>
+        </div>
+        <p className="mt-1 text-sm text-ink-700">
+            The new publisher-qualified IDs work today. On September 7, they
+            will become canonical. Existing IDs will remain available as
+            aliases.
+        </p>
 
-        <div className="p-4 sm:p-5">
+        <div className="mt-4 border-y border-divider py-4">
             <div className="text-[11px] font-semibold uppercase tracking-wider text-theme-text-muted">
                 Example
             </div>
@@ -191,37 +183,30 @@ const CanonicalModelSlugAnnouncement: FC = () => (
                     <div className="mb-1 text-xs font-medium text-theme-text-muted">
                         Existing ID
                     </div>
-                    <Chip intent="danger" size="lg" className="font-mono">
+                    <span className="font-mono text-sm font-semibold text-intent-danger-text">
                         flux
-                    </Chip>
+                    </span>
                 </div>
                 <ArrowRightIcon className="h-5 w-5 self-center text-theme-text-strong rotate-90 min-[480px]:mb-1 min-[480px]:self-auto min-[480px]:rotate-0" />
                 <div className="flex min-w-0 flex-col items-start gap-1">
                     <div className="mb-1 text-xs font-medium text-theme-text-muted">
                         New ID
                     </div>
-                    <Chip
-                        size="lg"
-                        className="max-w-full font-mono !bg-intent-success-bg-bright !text-intent-success-text-on-bright"
-                    >
+                    <span className="max-w-full break-all font-mono text-sm font-semibold text-intent-free-text">
                         black-forest-labs/flux.1-schnell
-                    </Chip>
+                    </span>
                 </div>
             </div>
-
-            <ul className="mt-5 space-y-2 border-t border-divider pt-4 text-sm text-theme-text-muted">
-                <li className="flex items-start gap-2">
-                    <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-intent-free-text" />
-                    <span>Existing IDs will keep working.</span>
-                </li>
-                <li className="flex items-start gap-2">
-                    <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-intent-free-text" />
-                    <InlineLink href="https://github.com/pollinations/pollinations/blob/main/MODEL_SLUGS.md">
-                        View all model ID changes
-                    </InlineLink>
-                </li>
-            </ul>
         </div>
+
+        <ul className="mt-4 list-disc space-y-2 pl-5 text-sm text-theme-text-muted marker:text-theme-text-soft">
+            <li>Existing IDs will keep working.</li>
+            <li>
+                {renderWithLinks(
+                    "[View all model ID changes](https://github.com/pollinations/pollinations/blob/main/MODEL_SLUGS.md)",
+                )}
+            </li>
+        </ul>
     </Surface>
 );
 

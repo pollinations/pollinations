@@ -104,6 +104,8 @@ export function Authorize() {
 
     const parsedRedirectUrl = redirect_url ? safeParseUrl(redirect_url) : null;
     const redirectHostname = parsedRedirectUrl?.hostname ?? "";
+    const accountLoginAppName =
+        attribution?.appName ?? (redirectHostname || "This app");
 
     const keyPermissions = useKeyPermissions(
         getAuthorizeInitialPermissions({
@@ -555,7 +557,11 @@ export function Authorize() {
         const displayedError = error ?? signInError;
         return (
             <AuthModal
-                dialog={{ label: "Sign in to authorize" }}
+                dialog={{
+                    label: isAccountLogin
+                        ? "Sign in with Pollinations"
+                        : "Sign in to authorize",
+                }}
                 tone={displayedError ? "error" : undefined}
             >
                 <AuthModalHeader />
@@ -573,7 +579,7 @@ export function Authorize() {
                             />
                             <p className="text-sm text-theme-text-base mt-3">
                                 {isAccountLogin
-                                    ? "Pollinations will confirm your identity to this app."
+                                    ? "Sign in to Pollinations to review this request."
                                     : "Sign in to review and approve the requested access."}
                             </p>
                         </AuthInfoCard>
@@ -586,7 +592,7 @@ export function Authorize() {
                             intent="danger"
                             disabled={isSigningIn}
                         >
-                            Deny
+                            {isAccountLogin ? "Cancel" : "Deny"}
                         </Button>
                         {!error && (
                             <Button
@@ -610,7 +616,7 @@ export function Authorize() {
             <AuthModal
                 dialog={
                     error
-                        ? { label: "Login error" }
+                        ? { label: "Sign-in error" }
                         : { labelledBy: "login-dialog-title" }
                 }
                 tone={error ? "error" : undefined}
@@ -640,25 +646,27 @@ export function Authorize() {
                     ) : (
                         <>
                             <div className="-mx-6 px-6 py-4 bg-theme-bg-pale border-y border-theme-border">
-                                <p
-                                    id="login-dialog-title"
-                                    className="font-body text-xs font-semibold text-theme-text-soft tracking-wide mb-2"
-                                >
-                                    Log in with Pollinations
-                                </p>
                                 <AppAttribution
                                     attribution={attribution}
                                     isDeviceMode={false}
                                     redirectHostname={redirectHostname}
                                     isAccountLogin
+                                    titleId="login-dialog-title"
                                 />
                             </div>
                             <div className="flex items-start gap-2 text-sm text-theme-text-base">
                                 <MailIcon className="h-4 w-4 shrink-0 text-theme-text-soft" />
-                                <span>
-                                    Share your name, email, GitHub username, and
-                                    profile picture.
-                                </span>
+                                <div>
+                                    <p>
+                                        {accountLoginAppName} will receive your
+                                        name, email address, GitHub username,
+                                        and profile picture.
+                                    </p>
+                                    <p className="mt-2 text-xs text-theme-text-soft">
+                                        Only continue if you trust this
+                                        application.
+                                    </p>
+                                </div>
                             </div>
                         </>
                     )}
@@ -678,7 +686,9 @@ export function Authorize() {
                             onClick={handleAuthorize}
                             disabled={!canAuthorize || isAuthorizing}
                         >
-                            {isAuthorizing ? "Logging in..." : "Continue"}
+                            {isAuthorizing
+                                ? "Continuing..."
+                                : "Continue with Pollinations"}
                         </Button>
                     )}
                 </div>

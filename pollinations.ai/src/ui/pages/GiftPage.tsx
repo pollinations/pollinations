@@ -300,7 +300,7 @@ function GiftPage() {
                             ))}
                         </span>
                     </div>
-                    <p>{pageCopy.giftCodeNote}</p>
+                    <p>{pageCopy.taxNote}</p>
                     <p>
                         {pageCopy.refundNote}{" "}
                         <a
@@ -308,6 +308,13 @@ function GiftPage() {
                             className="text-dark underline decoration-2 underline-offset-2"
                         >
                             {pageCopy.termsLabel}
+                        </a>{" "}
+                        ·{" "}
+                        <a
+                            href="/refunds"
+                            className="text-dark underline decoration-2 underline-offset-2"
+                        >
+                            {pageCopy.refundsLabel}
                         </a>
                     </p>
                 </div>

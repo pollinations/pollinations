@@ -1,9 +1,11 @@
 import {
     Alert,
     Button,
+    CopyButton,
     GiftIcon,
+    GlobeIcon,
     InlineLink,
-    LockIcon,
+    MailIcon,
     Surface,
     Tooltip,
     WalletIcon,
@@ -280,10 +282,6 @@ export function GiftPollenPanel({
                 <PaymentTrustBadge className="mt-0 pt-0" />
                 <p className="flex items-start gap-1.5">
                     <GiftIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>Single-use gift code · Does not expire</span>
-                </p>
-                <p className="flex items-start gap-1.5">
-                    <LockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                     <span>
                         Redeemed gift codes are non-refundable.{" "}
                         <InlineLink
@@ -291,7 +289,36 @@ export function GiftPollenPanel({
                             showIcon={false}
                         >
                             Terms
+                        </InlineLink>{" "}
+                        ·{" "}
+                        <InlineLink
+                            href="https://pollinations.ai/refunds"
+                            showIcon={false}
+                        >
+                            Refund
                         </InlineLink>
+                    </span>
+                </p>
+                <p className="flex items-start gap-1.5">
+                    <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span>
+                        Prices exclude tax — VAT or sales tax is added at
+                        checkout.
+                    </span>
+                </p>
+                <p className="flex items-start gap-1.5">
+                    <MailIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span>
+                        Payment issue or missing pollen?{" "}
+                        <CopyButton
+                            value="billing@pollinations.ai"
+                            className="underline decoration-theme-text-soft/30 underline-offset-2 transition-colors hover:text-theme-text-soft"
+                        >
+                            {(copied) =>
+                                copied ? "Copied!" : "billing@pollinations.ai"
+                            }
+                        </CopyButton>{" "}
+                        — we reply same day.
                     </span>
                 </p>
             </div>

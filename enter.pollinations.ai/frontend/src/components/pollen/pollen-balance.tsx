@@ -354,7 +354,8 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                 <p className="flex items-start gap-1.5">
                     <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                     <span>
-                        Credits are instant, never expire, and follow our{" "}
+                        Credits are instant and expire after 12 months of
+                        account inactivity.{" "}
                         <InlineLink href={REFUND_POLICY_URL}>
                             Refund Policy
                         </InlineLink>

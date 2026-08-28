@@ -83,9 +83,18 @@ function PollenPage() {
             <Section
                 title={user ? "Top-up" : "Gift Pollen"}
                 intro={
-                    user
-                        ? undefined
-                        : "Buy a single-use code for someone else. No account is needed to purchase. Delivered by email after payment."
+                    user ? undefined : (
+                        <span className="flex flex-col gap-1">
+                            <span>
+                                Buy a single-use code for someone else. No
+                                account is needed to purchase.
+                            </span>
+                            <span>
+                                Find your gift code on the invoice emailed after
+                                payment.
+                            </span>
+                        </span>
+                    )
                 }
                 framed
                 id="buy-pollen"

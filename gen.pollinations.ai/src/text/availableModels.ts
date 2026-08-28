@@ -151,7 +151,7 @@ const models: ModelDefinition[] = [
     {
         name: "qwen-vision-pro",
         config: portkeyConfig["qwen3-vl-235b-a22b-thinking"],
-        // Reasoning mandatory: rejects "none" but accepts low/medium/high.
+        // Alibaba thinking-only model; strip "none" to preserve always-on reasoning.
         transform: mandatoryReasoning,
     },
     {

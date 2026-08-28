@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-08-27",
+  "period_start": "2026-08-27",
+  "period_end": "2026-08-27",
+  "generated_at": "2026-08-28T09:22:05.506652+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-08-27/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped 13 PRs: canonical slugs; model search filters; Seedance reference media; and GLM-5.3 Flash. Pollinations Studio joined chat, AI Studio joined image generation, and contributors and model makers get clearer links to the work they shipped."
+}

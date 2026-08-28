@@ -1,0 +1,33 @@
+{
+  "pr_number": 14075,
+  "title": "chore: update app metrics 2026-08-28",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/14075",
+  "merged_at": "2026-08-28T06:37:24Z",
+  "labels": [],
+  "pr_body_excerpt": "Daily automated update of app request and repository metrics",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The garden count grew",
+    "blurb": "The hive took its daily census of apps, requests, and repos. Even the bees need to know which flowers are getting visited.",
+    "summary": "Updated the automated app-management metrics snapshot for 2026-08-28, refreshing tracked app request and repository data in operations/app-management/app.json.",
+    "impact": "Internal app-management reporting now reflects the latest ecosystem activity for maintainers and community tracking.",
+    "keywords": [
+      "metrics",
+      "app-management",
+      "automation",
+      "repository-data",
+      "community"
+    ],
+    "visual_concept": "Depict Polli as a tiny garden keeper with a clipboard, counting glowing code-flowers in a cozy app garden while a CRT monitor robot displays simple request and repository charts. The visual metaphor is a daily census of a growing ecosystem rather than a product launch.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing a tiny gardener hat and holding a clipboard as she counts code-flowers in a thriving app garden; a friendly CRT monitor robot shows simple glowing request and repository charts beside her. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel cream-lavender gradient background, chunky retro sprites, warm lighting, retro gaming vibes, with subtle pixel-font text: 'DAILY METRICS'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-28/PR-14075.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing a tiny gardener hat and holding a clipboard as she counts code-flowers in a thriving app garden; a friendly CRT monitor robot shows simple glowing request and repository charts beside her. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel cream-lavender gradient background, chunky retro sprites, warm lighting, retro gaming vibes, with subtle pixel-font text: 'DAILY METRICS'."
+  },
+  "generated_at": "2026-08-28T06:38:23.619342+00:00"
+}

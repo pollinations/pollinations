@@ -56,6 +56,9 @@ type StripeCheckoutSession = {
     mode: string;
     customer: string | null;
     url: string;
+    payment_status: string;
+    metadata: Record<string, string>;
+    invoice: string | StripeInvoice | null;
 };
 
 type StripePortalSession = {
@@ -72,6 +75,7 @@ type StripePortalConfiguration = {
     active: boolean;
     is_default: boolean;
     metadata: Record<string, string>;
+    custom_fields?: Array<{ name: string; value: string }> | null;
     name: string | null;
     default_return_url: string | null;
     business_profile: {
@@ -264,8 +268,19 @@ export function createMockStripe(): MockAPI<MockStripeState> {
                 mode: form.get("mode") ?? "payment",
                 customer: form.get("customer"),
                 url: `https://checkout.stripe.test/${state.checkoutSessions.length + 1}`,
+                payment_status: "unpaid",
+                metadata: parseMetadata(form),
+                invoice: null,
             };
             state.checkoutSessions.push(session);
+            return c.json(session);
+        })
+        .get("/v1/checkout/sessions/:id", (c) => {
+            recordRequest(c, state);
+            const session = state.checkoutSessions.find(
+                (item) => item.id === c.req.param("id"),
+            );
+            if (!session) return stripeNotFound(c);
             return c.json(session);
         })
         .post("/v1/billing_portal/sessions", async (c) => {

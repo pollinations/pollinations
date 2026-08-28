@@ -40,7 +40,7 @@ const PINNED_NEWS: Highlight[] = [
         description:
             "Buy a single-use Pollen gift code for someone else — no account needed. Choose 5, 10, 20, 50, or 100 Pollen and pay through Stripe. [Buy a gift](/pollen?mode=gift).",
         details: [
-            "The buyer receives the gift code by email after payment.",
+            "The gift code is shown after payment and included in the buyer's Stripe invoice email.",
             "The recipient redeems it into their Paid Pollen balance.",
         ],
     },

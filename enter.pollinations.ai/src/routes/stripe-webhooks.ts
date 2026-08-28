@@ -14,6 +14,10 @@ import {
     recordPollenGiftRefund,
     voidPendingPollenGiftCheckout,
 } from "../services/pollen-gifts.ts";
+import {
+    POLLEN_GIFT_BUYER_KEY_METADATA,
+    recordStripeGiftCardFingerprintAttempt,
+} from "../utils/pollen-gift-security.ts";
 import { createStripeClient, verifyWebhookSignature } from "../utils/stripe.ts";
 import {
     creditAutoTopUpInvoice,
@@ -27,10 +31,11 @@ type SanitizedStripeEvent = Pick<
 > & {
     data?: {
         object: {
-            metadata: {
+            id?: string;
+            reason?: string | null;
+            metadata?: {
                 purpose: string;
                 pollenAmount?: string;
-                packPollenGrant?: string;
             };
         };
     };
@@ -89,10 +94,16 @@ function stripePayloadForTinybird(
                     ...(metadata?.pollenAmount
                         ? { pollenAmount: metadata.pollenAmount }
                         : {}),
-                    ...(metadata?.packPollenGrant
-                        ? { packPollenGrant: metadata.packPollenGrant }
-                        : {}),
                 },
+            },
+        };
+    } else if (giftRelated && event.type.startsWith("refund.")) {
+        const refund = event.data.object as Stripe.Refund;
+        sanitized.data = {
+            object: {
+                id: refund.id,
+                reason: refund.reason,
+                metadata: { purpose: POLLEN_GIFT_PURPOSE },
             },
         };
     }
@@ -168,17 +179,31 @@ async function recordFailedCardFingerprintFromCharge({
     charge,
     snapshot,
     fallbackUserId = "",
+    fallbackGiftBuyerKey = "",
 }: {
     env: CloudflareBindings;
     event: Stripe.Event;
     charge: Stripe.Charge | null | undefined;
     snapshot: ChargeSnapshot;
     fallbackUserId?: string;
+    fallbackGiftBuyerKey?: string;
 }): Promise<void> {
     if (!charge || !snapshot.cardFingerprint) return;
+    const giftBuyerKey =
+        charge.metadata?.[POLLEN_GIFT_BUYER_KEY_METADATA] ||
+        fallbackGiftBuyerKey;
     const userId = readUserIdFromMetadata(charge.metadata) || fallbackUserId;
 
     try {
+        if (giftBuyerKey) {
+            await recordStripeGiftCardFingerprintAttempt(env.DB, {
+                eventId: event.id,
+                buyerKey: giftBuyerKey,
+                cardFingerprint: snapshot.cardFingerprint,
+                createdAt: event.created ? event.created * 1000 : Date.now(),
+            });
+            return;
+        }
         await recordStripeCardFingerprintAttempt(env.DB, {
             eventId: event.id,
             userId,
@@ -229,6 +254,19 @@ async function fetchChargeForPaymentIntent(
         );
         return null;
     }
+}
+
+async function pollenGiftIdFromPaymentIntent(
+    stripe: Stripe,
+    paymentIntent: string | Stripe.PaymentIntent | null,
+): Promise<string | null> {
+    if (!paymentIntent) return null;
+    const resolved =
+        typeof paymentIntent === "string"
+            ? await stripe.paymentIntents.retrieve(paymentIntent)
+            : paymentIntent;
+    if (!hasPollenGiftPurpose(resolved.metadata)) return null;
+    return resolved.metadata.giftId || null;
 }
 
 function readPresentment(session: Stripe.Checkout.Session): {
@@ -491,6 +529,10 @@ function emitPaymentIntentAnalytics(
                     charge,
                     snapshot,
                     fallbackUserId: paymentIntent.metadata?.userId || "",
+                    fallbackGiftBuyerKey:
+                        paymentIntent.metadata?.[
+                            POLLEN_GIFT_BUYER_KEY_METADATA
+                        ] || "",
                 });
             }
             await sendStripeEventToTinybird(c.env, {
@@ -880,11 +922,30 @@ export const stripeWebhooksRoutes = new Hono<Env>()
             case "refund.updated":
             case "refund.failed": {
                 const refund = event.data.object as Stripe.Refund;
-                const giftRelated = await recordPollenGiftRefund(
+                let giftRelated = await recordPollenGiftRefund(
                     c.env.DB,
                     event,
                     refund,
                 );
+                if (!giftRelated) {
+                    const giftId = await pollenGiftIdFromPaymentIntent(
+                        stripe,
+                        refund.payment_intent,
+                    );
+                    if (giftId) {
+                        giftRelated = await recordPollenGiftRefund(
+                            c.env.DB,
+                            event,
+                            refund,
+                            giftId,
+                        );
+                        if (!giftRelated) {
+                            throw new Error(
+                                `Gift refund ${refund.id} could not be linked`,
+                            );
+                        }
+                    }
+                }
                 console.log(`Refund ${event.type}: ${refund.id}`);
                 c.executionCtx.waitUntil(
                     sendStripeEventToTinybird(c.env, {
@@ -910,13 +971,35 @@ export const stripeWebhooksRoutes = new Hono<Env>()
             }
 
             case "charge.dispute.created":
+            case "charge.dispute.updated":
+            case "charge.dispute.funds_withdrawn":
+            case "charge.dispute.funds_reinstated":
             case "charge.dispute.closed": {
                 const dispute = event.data.object as Stripe.Dispute;
-                const giftRelated = await handlePollenGiftDispute(
+                let giftRelated = await handlePollenGiftDispute(
                     c.env.DB,
                     event,
                     dispute,
                 );
+                if (!giftRelated) {
+                    const giftId = await pollenGiftIdFromPaymentIntent(
+                        stripe,
+                        dispute.payment_intent,
+                    );
+                    if (giftId) {
+                        giftRelated = await handlePollenGiftDispute(
+                            c.env.DB,
+                            event,
+                            dispute,
+                            giftId,
+                        );
+                        if (!giftRelated) {
+                            throw new Error(
+                                `Gift dispute ${dispute.id} could not be linked`,
+                            );
+                        }
+                    }
+                }
                 if (!giftRelated) {
                     console.log(`Unhandled Stripe event type: ${event.type}`);
                 }

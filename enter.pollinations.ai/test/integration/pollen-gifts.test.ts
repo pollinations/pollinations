@@ -1,5 +1,6 @@
 import { env, SELF } from "cloudflare:test";
 import { createHmac } from "node:crypto";
+import { hashIp } from "@shared/client-ip.ts";
 import {
     normalizePollenGiftCode,
     POLLEN_GIFT_AMOUNTS,
@@ -10,6 +11,8 @@ import {
     SERVICE_FEE_NAME,
 } from "@shared/pollen-packs.ts";
 import { expect } from "vitest";
+import { POLLEN_GIFT_BUYER_KEY_METADATA } from "../../src/utils/pollen-gift-security.ts";
+import { STRIPE_NEW_CARD_GATE_METADATA } from "../../src/utils/stripe-card-gate.ts";
 import { test } from "../fixtures.ts";
 
 const giftBase = "http://localhost:3000/api/pollen-gifts";
@@ -124,6 +127,8 @@ test("anonymous gift checkout preserves the Stripe purchase contract", async ({
     expect(body.customer_email).toBeUndefined();
     expect(body.customer_creation).toBe("always");
     expect(body.billing_address_collection).toBe("required");
+    expect(body["name_collection[individual][enabled]"]).toBe("true");
+    expect(body["name_collection[individual][optional]"]).toBe("false");
     expect(body["phone_number_collection[enabled]"]).toBe("true");
     expect(body["automatic_tax[enabled]"]).toBe("true");
     expect(body["tax_id_collection[enabled]"]).toBe("true");
@@ -144,14 +149,22 @@ test("anonymous gift checkout preserves the Stripe purchase contract", async ({
     expect(body.client_reference_id).toBe(giftId);
     expect(body["metadata[purpose]"]).toBe(POLLEN_GIFT_PURPOSE);
     expect(body["metadata[pollenAmount]"]).toBe(String(amount));
-    expect(body["metadata[packPollenGrant]"]).toBe(String(amount));
+    expect(body["metadata[packPollenGrant]"]).toBeUndefined();
+    expect(body[`metadata[${POLLEN_GIFT_BUYER_KEY_METADATA}]`]).toBeTruthy();
+    expect(body[`metadata[${STRIPE_NEW_CARD_GATE_METADATA.gate}]`]).toBe("ok");
+    expect(body[`metadata[${STRIPE_NEW_CARD_GATE_METADATA.count24h}]`]).toBe(
+        "0",
+    );
+    expect(body[`metadata[${STRIPE_NEW_CARD_GATE_METADATA.limit24h}]`]).toBe(
+        "4",
+    );
     expect(body["payment_intent_data[metadata][purpose]"]).toBe(
         POLLEN_GIFT_PURPOSE,
     );
     expect(body["payment_intent_data[metadata][giftId]"]).toBe(giftId);
     expect(checkoutRequest.idempotencyKey).toBe(`pollen-gift:${giftId}`);
 
-    expect(body["line_items[0][price_data][product_data][name]"]).toContain(
+    expect(body["line_items[0][price_data][product_data][name]"]).not.toContain(
         code,
     );
     expect(body["invoice_creation[invoice_data][custom_fields][0][name]"]).toBe(
@@ -164,7 +177,7 @@ test("anonymous gift checkout preserves the Stripe purchase contract", async ({
     expect(body.success_url).not.toContain(code);
     expect(body.cancel_url).not.toContain(code);
     expect(body.success_url).toBe(
-        "http://localhost:3000/pollen?mode=gift&success=true",
+        "http://localhost:3000/pollen?mode=gift&success=true&session_id={CHECKOUT_SESSION_ID}",
     );
     expect(body.cancel_url).toBe(
         "http://localhost:3000/pollen?mode=gift&canceled=true",
@@ -229,6 +242,104 @@ test("gift checkout rejects invalid amounts before creating an order", async ({
     expect(count?.count).toBe(0);
 });
 
+test("gift checkout blocks a buyer after four distinct failed cards", async ({
+    mocks,
+}) => {
+    await mocks.enable("stripe");
+    const buyerIp = "203.0.113.19";
+    const buyerKey = await hashIp(buyerIp, env.BETTER_AUTH_SECRET);
+    expect(buyerKey).toBeTruthy();
+    if (!buyerKey) throw new Error("Expected hashed buyer key");
+
+    await env.DB.batch(
+        Array.from({ length: 4 }, (_, index) =>
+            env.DB.prepare(
+                `INSERT INTO stripe_gift_card_fingerprint_attempt (
+                    event_id, buyer_key, card_fingerprint, created_at
+                 ) VALUES (?, ?, ?, ?)`,
+            ).bind(
+                `evt_failed_${index}`,
+                buyerKey,
+                `fingerprint_${index}`,
+                Date.now(),
+            ),
+        ),
+    );
+
+    const response = await SELF.fetch(`${giftBase}/checkout`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "CF-Connecting-IP": buyerIp,
+        },
+        body: JSON.stringify({ amount: 20 }),
+    });
+    expect(response.status).toBe(429);
+    expect(response.headers.get("Retry-After")).toBe("86400");
+    expect(
+        mocks.stripe.state.requests.some(
+            (request) => request.path === "/v1/checkout/sessions",
+        ),
+    ).toBe(false);
+});
+
+test("failed gift card fingerprints are recorded against the anonymous buyer", async ({
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const buyerKey = "hashed-anonymous-buyer";
+    const paymentIntent = {
+        id: "pi_failed_gift_card",
+        object: "payment_intent" as const,
+        status: "requires_payment_method",
+        amount: 2_100,
+        currency: "usd",
+        metadata: {
+            purpose: POLLEN_GIFT_PURPOSE,
+            giftId: "gift_failed_card",
+            [POLLEN_GIFT_BUYER_KEY_METADATA]: buyerKey,
+        },
+        payment_method_types: ["card"],
+        latest_charge: {
+            id: "ch_failed_gift_card",
+            object: "charge",
+            metadata: {},
+            payment_method_details: {
+                type: "card",
+                card: {
+                    fingerprint: "fp_failed_gift_card",
+                    country: "US",
+                    brand: "visa",
+                    network: "visa",
+                },
+            },
+            outcome: { risk_level: "elevated", risk_score: 72 },
+        },
+    };
+    mocks.stripe.state.paymentIntents.push(paymentIntent);
+
+    const response = await postSignedStripeWebhook({
+        id: "evt_failed_gift_card",
+        type: "payment_intent.payment_failed",
+        created: Math.floor(Date.now() / 1000),
+        livemode: false,
+        data: { object: paymentIntent },
+    });
+    expect(response.status).toBe(200);
+
+    const attempt = await env.DB.prepare(
+        `SELECT buyer_key AS buyerKey, card_fingerprint AS cardFingerprint
+         FROM stripe_gift_card_fingerprint_attempt
+         WHERE event_id = ?`,
+    )
+        .bind("evt_failed_gift_card")
+        .first<{ buyerKey: string; cardFingerprint: string }>();
+    expect(attempt).toEqual({
+        buyerKey,
+        cardFingerprint: "fp_failed_gift_card",
+    });
+});
+
 test("paid gift activation is idempotent and redemption is authenticated and single-use", async ({
     mocks,
     sessionToken,
@@ -266,6 +377,33 @@ test("paid gift activation is idempotent and redemption is authenticated and sin
     }
 
     const totalCents = amount * 100 + calculateServiceFeeCents(amount * 100);
+    const unpaidReceipt = await SELF.fetch(
+        `${giftBase}/receipt/${checkoutSessionId}`,
+    );
+    expect(unpaidReceipt.status).toBe(404);
+    const mockSession = mocks.stripe.state.checkoutSessions[0];
+    if (!mockSession) throw new Error("Expected mock Checkout Session");
+    mockSession.payment_status = "paid";
+    mockSession.invoice = {
+        id: "in_pollen_gift",
+        object: "invoice",
+        customer: null,
+        status: "paid",
+        amount_due: totalCents,
+        amount_paid: totalCents,
+        currency: "usd",
+        metadata: {},
+        custom_fields: [{ name: "Gift code", value: code }],
+    };
+    const paidReceipt = await SELF.fetch(
+        `${giftBase}/receipt/${checkoutSessionId}`,
+    );
+    expect(paidReceipt.status).toBe(200);
+    await expect(paidReceipt.json()).resolves.toEqual({
+        code,
+        pollenAmount: amount,
+    });
+
     const checkoutEvent = {
         id: "evt_pollen_gift_paid",
         type: "checkout.session.completed",
@@ -280,7 +418,6 @@ test("paid gift activation is idempotent and redemption is authenticated and sin
                     purpose: POLLEN_GIFT_PURPOSE,
                     giftId,
                     pollenAmount: String(amount),
-                    packPollenGrant: String(amount),
                 },
                 payment_status: "paid",
                 amount_subtotal: totalCents,
@@ -322,7 +459,6 @@ test("paid gift activation is idempotent and redemption is authenticated and sin
                 metadata: {
                     purpose: POLLEN_GIFT_PURPOSE,
                     pollenAmount: String(amount),
-                    packPollenGrant: String(amount),
                 },
             },
         },
@@ -416,6 +552,89 @@ test("paid gift activation is idempotent and redemption is authenticated and sin
     expect(redeemedGift).toEqual({
         status: "redeemed",
         redeemerUserId: userBefore.id,
+    });
+});
+
+test("a refund delivered before checkout fulfillment keeps the gift revoked", async ({
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const amount = 20;
+    const checkoutResponse = await SELF.fetch(`${giftBase}/checkout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount }),
+    });
+    expect(checkoutResponse.status).toBe(200);
+    const checkoutRequest = mocks.stripe.state.requests.find(
+        (request) => request.path === "/v1/checkout/sessions",
+    );
+    const giftId = checkoutRequest?.body["metadata[giftId]"];
+    const checkoutSessionId = mocks.stripe.state.checkoutSessions[0]?.id;
+    if (!giftId || !checkoutSessionId) {
+        throw new Error("Expected pending gift checkout");
+    }
+
+    const paymentIntentId = "pi_refund_before_fulfillment";
+    mocks.stripe.state.paymentIntents.push({
+        id: paymentIntentId,
+        object: "payment_intent",
+        status: "succeeded",
+        metadata: { purpose: POLLEN_GIFT_PURPOSE, giftId },
+    });
+    const refundResponse = await postSignedStripeWebhook({
+        id: "evt_refund_before_fulfillment",
+        type: "refund.created",
+        created: 100,
+        livemode: false,
+        data: {
+            object: {
+                id: "re_before_fulfillment",
+                object: "refund",
+                amount: 100,
+                currency: "usd",
+                status: "succeeded",
+                payment_intent: paymentIntentId,
+                metadata: {},
+            },
+        },
+    });
+    expect(refundResponse.status).toBe(200);
+
+    const totalCents = amount * 100 + calculateServiceFeeCents(amount * 100);
+    const fulfillmentResponse = await postSignedStripeWebhook({
+        id: "evt_checkout_after_refund",
+        type: "checkout.session.completed",
+        created: 101,
+        livemode: false,
+        data: {
+            object: {
+                id: checkoutSessionId,
+                object: "checkout.session",
+                metadata: {
+                    purpose: POLLEN_GIFT_PURPOSE,
+                    giftId,
+                    pollenAmount: String(amount),
+                },
+                payment_status: "paid",
+                amount_total: totalCents,
+                currency: "usd",
+                payment_intent: paymentIntentId,
+                invoice: "in_after_refund",
+            },
+        },
+    });
+    expect(fulfillmentResponse.status).toBe(200);
+
+    const gift = await env.DB.prepare(
+        `SELECT status, stripe_payment_intent_id AS stripePaymentIntentId
+         FROM pollen_gift_code WHERE id = ?`,
+    )
+        .bind(giftId)
+        .first<{ status: string; stripePaymentIntentId: string }>();
+    expect(gift).toEqual({
+        status: "refunded",
+        stripePaymentIntentId: paymentIntentId,
     });
 });
 
@@ -541,6 +760,138 @@ test("a full refund reverses redeemed Pollen exactly once", async ({
     expect(balance?.packBalance).toBe(100 - pollenAmount);
 });
 
+test("a failed refund restores a redeemed gift and its Pollen", async ({
+    mocks,
+    sessionToken,
+}) => {
+    void sessionToken;
+    await mocks.enable("tinybird");
+    const user = await env.DB.prepare("SELECT id FROM user LIMIT 1").first<{
+        id: string;
+    }>();
+    if (!user) throw new Error("Expected seeded test user");
+    await env.DB.prepare("UPDATE user SET pack_balance = 100 WHERE id = ?")
+        .bind(user.id)
+        .run();
+
+    const giftId = "gift_refund_failed";
+    const paymentIntentId = "pi_gift_refund_failed";
+    const pollenAmount = 20;
+    const paidAmountCents = await insertRedeemedGift({
+        giftId,
+        paymentIntentId,
+        userId: user.id,
+        pollenAmount,
+    });
+    const refund = {
+        id: "re_gift_failed",
+        object: "refund",
+        amount: paidAmountCents,
+        currency: "usd",
+        payment_intent: paymentIntentId,
+        metadata: {},
+    };
+
+    const succeeded = await postSignedStripeWebhook({
+        id: "evt_gift_refund_succeeded",
+        type: "refund.created",
+        created: 100,
+        livemode: false,
+        data: { object: { ...refund, status: "succeeded" } },
+    });
+    expect(succeeded.status).toBe(200);
+    const failed = await postSignedStripeWebhook({
+        id: "evt_gift_refund_failed",
+        type: "refund.failed",
+        created: 101,
+        livemode: false,
+        data: { object: { ...refund, status: "failed" } },
+    });
+    expect(failed.status).toBe(200);
+
+    const gift = await env.DB.prepare(
+        `SELECT status, balance_reversed AS balanceReversed,
+                refunded_amount_cents AS refundedAmountCents
+         FROM pollen_gift_code WHERE id = ?`,
+    )
+        .bind(giftId)
+        .first<{
+            status: string;
+            balanceReversed: number;
+            refundedAmountCents: number;
+        }>();
+    expect(gift).toEqual({
+        status: "redeemed",
+        balanceReversed: 0,
+        refundedAmountCents: 0,
+    });
+    const balance = await env.DB.prepare(
+        "SELECT pack_balance AS packBalance FROM user WHERE id = ?",
+    )
+        .bind(user.id)
+        .first<{ packBalance: number }>();
+    expect(balance?.packBalance).toBe(100);
+});
+
+test("card-network inquiries do not revoke or debit a redeemed gift", async ({
+    mocks,
+    sessionToken,
+}) => {
+    void sessionToken;
+    await mocks.enable("tinybird");
+    const user = await env.DB.prepare("SELECT id FROM user LIMIT 1").first<{
+        id: string;
+    }>();
+    if (!user) throw new Error("Expected seeded test user");
+    await env.DB.prepare("UPDATE user SET pack_balance = 100 WHERE id = ?")
+        .bind(user.id)
+        .run();
+
+    const giftId = "gift_warning_inquiry";
+    const paymentIntentId = "pi_gift_warning_inquiry";
+    const amount = await insertRedeemedGift({
+        giftId,
+        paymentIntentId,
+        userId: user.id,
+        pollenAmount: 20,
+    });
+    const dispute = {
+        id: "dp_gift_warning",
+        object: "dispute",
+        amount,
+        currency: "usd",
+        payment_intent: paymentIntentId,
+    };
+
+    for (const [type, status, created] of [
+        ["charge.dispute.created", "warning_needs_response", 100],
+        ["charge.dispute.closed", "warning_closed", 101],
+    ] as const) {
+        const response = await postSignedStripeWebhook({
+            id: `evt_${status}`,
+            type,
+            created,
+            livemode: false,
+            data: { object: { ...dispute, status } },
+        });
+        expect(response.status).toBe(200);
+    }
+
+    const gift = await env.DB.prepare(
+        `SELECT status, balance_reversed AS balanceReversed
+         FROM pollen_gift_code WHERE id = ?`,
+    )
+        .bind(giftId)
+        .first<{ status: string; balanceReversed: number }>();
+    expect(gift).toEqual({ status: "redeemed", balanceReversed: 0 });
+    const balance = await env.DB.prepare(
+        "SELECT pack_balance AS packBalance FROM user WHERE id = ?",
+    )
+        .bind(user.id)
+        .first<{ packBalance: number }>();
+    expect(balance?.packBalance).toBe(100);
+});
+
 test("a won dispute restores a redeemed gift balance exactly once", async ({
     mocks,
     sessionToken,
@@ -604,6 +955,14 @@ test("a won dispute restores a redeemed gift balance exactly once", async ({
         });
         expect(response.status).toBe(200);
     }
+    const staleCreatedResponse = await postSignedStripeWebhook({
+        id: "evt_gift_dispute_created_stale",
+        type: "charge.dispute.created",
+        created: 1,
+        livemode: false,
+        data: { object: { ...dispute, status: "needs_response" } },
+    });
+    expect(staleCreatedResponse.status).toBe(200);
 
     const gift = await env.DB.prepare(
         `SELECT status, status_before_dispute AS statusBeforeDispute,

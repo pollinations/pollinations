@@ -8,7 +8,11 @@ import {
     Text,
 } from "@pollinations/ui";
 import { formatPollen } from "@pollinations/ui/wallet";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import {
+    createFileRoute,
+    useNavigate,
+    useRouter,
+} from "@tanstack/react-router";
 import { type FormEvent, useState } from "react";
 import { apiClient } from "../api.ts";
 import { Route as DashboardRoute } from "./_dashboard.tsx";
@@ -59,6 +63,7 @@ function responseError(payload: unknown, fallback: string): string {
 function RedeemPollenPage() {
     const { user } = DashboardRoute.useLoaderData();
     const navigate = useNavigate({ from: "/redeem" });
+    const router = useRouter();
     const [code, setCode] = useState(loadPendingCode);
     const [isRedeeming, setIsRedeeming] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -120,6 +125,7 @@ function RedeemPollenPage() {
             });
             setCode("");
             savePendingCode("");
+            await router.invalidate();
         } catch {
             setError("This gift code could not be redeemed. Please try again.");
         } finally {

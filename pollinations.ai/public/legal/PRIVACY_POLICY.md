@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Updated: 2026-08-27**
+**Updated: 2026-08-28**
 
 ## 1) Scope & Roles
 
@@ -12,7 +12,7 @@ This policy covers (a) the paid dashboard/API and (b) the pollinations.ai commun
 
 * **Accounts & auth (commercial):** email, name/handle, org, password hash or SSO IDs.
 * **API keys & app authorization:** key type, key ID, scopes, model restrictions, expiry, Pollen budget/cap, app name, redirect URI, GitHub identity shown on consent screens, connected-app records, revocations, and developer-earnings settings.
-* **Billing & wallet (commercial):** plan, invoices, payment status, VAT ID, company details, Pollen and gift-code purchases, gift status and redemption records, Quest Pollen balance, Paid Pollen balance, grants, rewards, developer earnings, refunds, chargebacks, and wallet adjustments. For guest gift purchases, Stripe collects the buyer's email, billing address, country, and phone number. Stripe handles those billing details and card data; our gift ledger retains Stripe payment identifiers, gift status, and redemption records, but does not duplicate the buyer's email, address, phone number, or card data.
+* **Billing & wallet (commercial):** plan, invoices, payment status, VAT ID, company details, Pollen and gift-code purchases, gift status and redemption records, Quest Pollen balance, Paid Pollen balance, grants, rewards, developer earnings, refunds, chargebacks, and wallet adjustments. For guest gift purchases, Stripe collects the buyer's name, email, billing address, country, phone number, IP address, and payment details for payment, tax, and fraud prevention. Stripe handles those billing details and card data; our gift ledger retains Stripe payment identifiers, gift status, and redemption records. For abuse prevention, we also retain an irreversible IP-derived buyer key and Stripe's card fingerprint after failed card attempts, but we do not duplicate the buyer's name, email, address, phone number, raw IP address, or card data.
 * **Service usage & API metadata (commercial):** timestamps, endpoints/models, token/Pollen usage, balance bucket used, baseline model cost, app markup/developer credit where applicable, rate-limit events, IP, user-agent, and error logs.
 * **Quests & rewards (commercial/community):** quest availability, progress, completions, reward amounts, credited balance bucket, source references, and display/audit metadata such as quest titles, app names/URLs, app-directory approval records, GitHub issue/PR numbers, issue titles/URLs, assignees, labels, and completion timestamps.
 * **Prompts/outputs (commercial & demos):** processed transiently to deliver results; not retained beyond what's necessary to run the Service, except configuration you save and short-lived response caches. Generated responses may be cached temporarily for performance, reliability, cost control, and abuse prevention. Generated media cache identifiers and image metadata may include prompt-derived data.

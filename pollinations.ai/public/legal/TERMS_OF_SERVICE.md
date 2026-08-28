@@ -1,6 +1,8 @@
 # Terms of Service
 
-**Updated: 2026-08-27**
+**Updated: 2026-08-28**
+
+_2026-08-28 — Clarified gift-code delivery after payment._
 
 _2026-08-27 — Added single-use Pollen gift codes that can be purchased without an account and given to another person before redemption._
 
@@ -94,7 +96,7 @@ Developer earnings are credited as Pollen to the developer wallet in the same ba
 
 **Taxes.** Prices for Pollen purchases are shown exclusive of tax. Applicable VAT or similar transaction taxes are calculated and added at checkout based on the purchaser's billing details, including for gift codes. Estonian standard VAT is 24% where applicable. For eligible EU B2B customers with a valid VAT ID, reverse-charge rules may apply.
 
-**Payments.** Payments are processed by Stripe Payments Europe, Limited. Stripe sends purchase invoices by email; a gift purchase invoice includes the gift code and redemption address.
+**Payments.** Payments are processed by Stripe Payments Europe, Limited. Stripe sends purchase invoices by email; a gift purchase invoice includes the gift code and redemption address. After a successful gift payment, the code is also displayed on the confirmation page.
 
 **No late payments.** All Pollen is prepaid: there are no invoices, due dates, or late fees. A balance can go below zero when final usage on a request exceeds the pre-flight estimate or when Pollen tied to a refund, chargeback, or payment dispute is reversed after use. A negative balance clears through later credits to that balance or future top-ups. We may refuse new paid-model requests until a negative Paid Pollen balance is covered.
 

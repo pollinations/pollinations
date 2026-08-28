@@ -20,6 +20,7 @@ type PollenSearch = {
     mode?: "gift";
     success?: boolean;
     canceled?: boolean;
+    session_id?: string;
 };
 
 export const Route = createFileRoute("/_dashboard/pollen")({
@@ -37,12 +38,16 @@ export const Route = createFileRoute("/_dashboard/pollen")({
             search.canceled === true || search.canceled === "true"
                 ? true
                 : undefined,
+        session_id:
+            typeof search.session_id === "string"
+                ? search.session_id
+                : undefined,
     }),
     component: PollenPage,
 });
 
 function PollenPage() {
-    const { pack, mode, success, canceled } = Route.useSearch();
+    const { pack, mode, success, canceled, session_id } = Route.useSearch();
     const navigate = useNavigate({ from: "/pollen" });
     const { user, tierBalance, packBalance, paidWeek, tierWeek, billingState } =
         DashboardRoute.useLoaderData();
@@ -89,6 +94,7 @@ function PollenPage() {
                     <GiftPollenPanel
                         success={success}
                         canceled={canceled}
+                        sessionId={session_id}
                         onBuyForSelf={
                             user ? () => selectMode("self") : undefined
                         }

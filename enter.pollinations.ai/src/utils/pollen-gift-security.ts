@@ -1,0 +1,104 @@
+import {
+    STRIPE_NEW_CARD_LIMIT,
+    STRIPE_NEW_CARD_WINDOW_MS,
+    type StripeNewCardGateStatus,
+} from "./stripe-card-gate.ts";
+
+export const POLLEN_GIFT_BUYER_KEY_METADATA = "app_gift_buyer_key";
+
+export async function getStripeGiftCardGateStatus(
+    db: D1Database,
+    buyerKey: string,
+    now = Date.now(),
+): Promise<StripeNewCardGateStatus> {
+    const row = await db
+        .prepare(
+            `SELECT COUNT(DISTINCT card_fingerprint) AS count
+             FROM stripe_gift_card_fingerprint_attempt
+             WHERE buyer_key = ? AND created_at >= ?`,
+        )
+        .bind(buyerKey, now - STRIPE_NEW_CARD_WINDOW_MS)
+        .first<{ count: number | null }>();
+    const distinctFailedCardCount24h = Number(row?.count ?? 0);
+
+    return {
+        gate:
+            distinctFailedCardCount24h >= STRIPE_NEW_CARD_LIMIT
+                ? "locked"
+                : "ok",
+        distinctFailedCardCount24h,
+        limit: STRIPE_NEW_CARD_LIMIT,
+    };
+}
+
+export async function recordStripeGiftCardFingerprintAttempt(
+    db: D1Database,
+    input: {
+        eventId: string;
+        buyerKey: string;
+        cardFingerprint: string;
+        createdAt?: number;
+    },
+): Promise<boolean> {
+    if (!input.eventId || !input.buyerKey || !input.cardFingerprint) {
+        return false;
+    }
+
+    const result = await db
+        .prepare(
+            `INSERT OR IGNORE INTO stripe_gift_card_fingerprint_attempt (
+                event_id, buyer_key, card_fingerprint, created_at
+             ) VALUES (?, ?, ?, ?)`,
+        )
+        .bind(
+            input.eventId,
+            input.buyerKey,
+            input.cardFingerprint,
+            input.createdAt ?? Date.now(),
+        )
+        .run();
+
+    return (result.meta.changes ?? 0) === 1;
+}
+
+export async function consumePollenGiftRateLimit(
+    db: D1Database,
+    input: {
+        key: string;
+        limit: number;
+        windowMs: number;
+        now?: number;
+    },
+): Promise<{ allowed: boolean; retryAfterSeconds: number }> {
+    const now = input.now ?? Date.now();
+    const cutoff = now - input.windowMs;
+    const row = await db
+        .prepare(
+            `INSERT INTO pollen_gift_rate_limit (
+                key, window_started_at, attempts, updated_at
+             ) VALUES (?, ?, 1, ?)
+             ON CONFLICT(key) DO UPDATE SET
+                attempts = CASE
+                    WHEN window_started_at <= ? THEN 1
+                    ELSE attempts + 1
+                END,
+                window_started_at = CASE
+                    WHEN window_started_at <= ? THEN excluded.window_started_at
+                    ELSE window_started_at
+                END,
+                updated_at = excluded.updated_at
+             RETURNING attempts, window_started_at AS windowStartedAt`,
+        )
+        .bind(input.key, now, now, cutoff, cutoff)
+        .first<{ attempts: number; windowStartedAt: number }>();
+
+    if (!row) throw new Error("Gift rate limit update failed");
+    const retryAfterMs = Math.max(
+        0,
+        row.windowStartedAt + input.windowMs - now,
+    );
+    return {
+        allowed: row.attempts <= input.limit,
+        retryAfterSeconds: Math.max(1, Math.ceil(retryAfterMs / 1000)),
+    };
+}

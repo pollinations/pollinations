@@ -352,7 +352,8 @@ export const pollenGiftCode = sqliteTable("pollen_gift_code", {
   status: text("status", {
     enum: ["pending", "active", "redeemed", "voided", "refunded", "disputed"],
   }).default("pending").notNull(),
-  statusBeforeDispute: text("status_before_dispute"),
+  // Original wallet state while a refund or dispute freezes this gift.
+  statusBeforePaymentLoss: text("status_before_dispute"),
   balanceReversed: integer("balance_reversed", { mode: "boolean" })
     .default(false)
     .notNull(),
@@ -385,6 +386,9 @@ export const pollenGiftAdjustment = sqliteTable("pollen_gift_adjustment", {
   pollenDelta: real("pollen_delta").notNull(),
   amountCents: integer("amount_cents").default(0).notNull(),
   reason: text("reason").notNull(),
+  active: integer("active", { mode: "boolean" }).default(false).notNull(),
+  terminal: integer("terminal", { mode: "boolean" }).default(false).notNull(),
+  stripeEventCreated: integer("stripe_event_created").default(0).notNull(),
   createdAt: integer("created_at", { mode: "timestamp_ms" })
     .defaultNow()
     .notNull(),
@@ -392,6 +396,32 @@ export const pollenGiftAdjustment = sqliteTable("pollen_gift_adjustment", {
   index("idx_pollen_gift_adjustment_gift_id").on(table.giftId),
   index("idx_pollen_gift_adjustment_user_id").on(table.userId),
 ]);
+
+export const stripeGiftCardFingerprintAttempt = sqliteTable(
+  "stripe_gift_card_fingerprint_attempt",
+  {
+    eventId: text("event_id").primaryKey(),
+    buyerKey: text("buyer_key").notNull(),
+    cardFingerprint: text("card_fingerprint").notNull(),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("idx_stripe_gift_card_attempt_buyer_created").on(
+      table.buyerKey,
+      table.createdAt,
+    ),
+  ],
+);
+
+export const pollenGiftRateLimit = sqliteTable("pollen_gift_rate_limit", {
+  key: text("key").primaryKey(),
+  windowStartedAt: integer("window_started_at", { mode: "timestamp_ms" })
+    .notNull(),
+  attempts: integer("attempts").notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
+});
 
 export const stripeCheckoutCredits = sqliteTable("stripe_checkout_credits", {
   sessionId: text("session_id").primaryKey(),

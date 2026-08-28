@@ -16,7 +16,7 @@ import {
     calculateServiceFeeCents,
     formatUsdCentsCompact,
 } from "@shared/pollen-packs.ts";
-import { type FormEvent, type ReactNode, useState } from "react";
+import { type FormEvent, type ReactNode, useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
 import { PollenPackSlider } from "./pollen-pack-controls.tsx";
@@ -24,6 +24,7 @@ import { PollenPackSlider } from "./pollen-pack-controls.tsx";
 type GiftPollenPanelProps = {
     success?: boolean;
     canceled?: boolean;
+    sessionId?: string;
     onBuyForSelf?: () => void;
     autoTopUpPanel?: ReactNode;
     redeemCard?: ReactNode;
@@ -44,6 +45,7 @@ function responseError(payload: unknown, fallback: string): string {
 export function GiftPollenPanel({
     success = false,
     canceled = false,
+    sessionId,
     onBuyForSelf,
     autoTopUpPanel,
     redeemCard,
@@ -53,6 +55,8 @@ export function GiftPollenPanel({
     );
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [purchasedCode, setPurchasedCode] = useState<string | null>(null);
+    const [copied, setCopied] = useState(false);
     const selectedPack =
         POLLEN_GIFT_PACKS.find((pack) => pack.amountUsd === selectedAmount) ??
         POLLEN_GIFT_PACKS[0];
@@ -62,6 +66,38 @@ export function GiftPollenPanel({
     const subtotalBeforeTaxCents =
         (selectedPack?.amountUsd ?? 0) * 100 + serviceFeeCents;
     const chargeLabel = formatUsdCentsCompact(subtotalBeforeTaxCents);
+
+    useEffect(() => {
+        if (!success || !sessionId) return;
+        let canceled = false;
+        void apiClient["pollen-gifts"].receipt[":sessionId"]
+            .$get({ param: { sessionId } })
+            .then(async (response) => {
+                const payload = (await response
+                    .json()
+                    .catch(() => null)) as unknown;
+                if (
+                    !canceled &&
+                    response.ok &&
+                    payload &&
+                    typeof payload === "object" &&
+                    "code" in payload &&
+                    typeof payload.code === "string"
+                ) {
+                    setPurchasedCode(payload.code);
+                }
+            })
+            .catch(() => undefined);
+        return () => {
+            canceled = true;
+        };
+    }, [sessionId, success]);
+
+    async function copyPurchasedCode(): Promise<void> {
+        if (!purchasedCode) return;
+        await navigator.clipboard.writeText(purchasedCode);
+        setCopied(true);
+    }
 
     function selectAmount(amount: number): void {
         setSelectedAmount(amount);
@@ -115,7 +151,22 @@ export function GiftPollenPanel({
         <div className="flex flex-col gap-4">
             {success && (
                 <Alert title="Gift purchased">
-                    Stripe will email your gift code after payment is confirmed.
+                    {purchasedCode ? (
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                            <code className="break-all font-mono font-semibold">
+                                {purchasedCode}
+                            </code>
+                            <Button
+                                type="button"
+                                size="sm"
+                                onClick={() => void copyPurchasedCode()}
+                            >
+                                {copied ? "Copied" : "Copy code"}
+                            </Button>
+                        </div>
+                    ) : (
+                        "Stripe will email your gift code after payment is confirmed."
+                    )}
                 </Alert>
             )}
             {canceled && (

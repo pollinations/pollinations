@@ -9,23 +9,37 @@ import {
     SERVICE_FEE_NAME,
     SERVICE_FEE_TAX_CODE,
 } from "@shared/pollen-packs.ts";
-import { getPublicOrigin } from "@shared/public-origin.ts";
+import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import { Hono } from "hono";
-import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
+import { type AuthVariables, auth } from "../middleware/auth.ts";
 import {
     attachPollenGiftCheckoutSession,
+    canRevealPollenGiftCode,
     createPendingPollenGift,
     redeemPollenGift,
     voidPendingPollenGift,
 } from "../services/pollen-gifts.ts";
+import {
+    consumePollenGiftRateLimit,
+    getStripeGiftCardGateStatus,
+    POLLEN_GIFT_BUYER_KEY_METADATA,
+} from "../utils/pollen-gift-security.ts";
 import { createStripeClient } from "../utils/stripe.ts";
+import { stripeNewCardGateMetadata } from "../utils/stripe-card-gate.ts";
 
-const CHECKOUT_THROTTLE_SECONDS = 3;
-const CHECKOUT_THROTTLE_TTL_SECONDS = 60;
+type PollenGiftEnv = {
+    Bindings: Env["Bindings"];
+    Variables: Env["Variables"] & AuthVariables;
+};
+
+const CHECKOUT_RATE_LIMIT = 5;
+const CHECKOUT_RATE_WINDOW_MS = 60 * 1000;
+const REDEEM_RATE_LIMIT = 10;
+const REDEEM_RATE_WINDOW_MS = 10 * 60 * 1000;
 const INVALID_GIFT_MESSAGE = "This gift code is invalid or unavailable.";
 
-export const pollenGiftRoutes = new Hono<Env>()
+export const pollenGiftRoutes = new Hono<PollenGiftEnv>()
     .post("/checkout", async (c) => {
         c.header("Cache-Control", "no-store");
         const body = (await c.req.json().catch(() => null)) as {
@@ -45,23 +59,32 @@ export const pollenGiftRoutes = new Hono<Env>()
             getRealClientIp(c),
             c.env.BETTER_AUTH_SECRET,
         );
-        const throttleKey = `pollen-gift-checkout:${ipHash ?? "unknown"}`;
-        const lastCheckoutAt = Number(await c.env.KV.get(throttleKey));
-        if (
-            Number.isFinite(lastCheckoutAt) &&
-            Date.now() - lastCheckoutAt < CHECKOUT_THROTTLE_SECONDS * 1000
-        ) {
+        const buyerKey = ipHash ?? "unknown";
+        const checkoutLimit = await consumePollenGiftRateLimit(c.env.DB, {
+            key: `checkout:${buyerKey}`,
+            limit: CHECKOUT_RATE_LIMIT,
+            windowMs: CHECKOUT_RATE_WINDOW_MS,
+        });
+        if (!checkoutLimit.allowed) {
             return c.json(
                 {
-                    error: "Please wait a moment before starting another checkout.",
+                    error: "Too many checkout attempts. Please try again later.",
                 },
                 429,
-                { "Retry-After": String(CHECKOUT_THROTTLE_SECONDS) },
+                { "Retry-After": String(checkoutLimit.retryAfterSeconds) },
             );
         }
-        await c.env.KV.put(throttleKey, String(Date.now()), {
-            expirationTtl: CHECKOUT_THROTTLE_TTL_SECONDS,
-        });
+
+        const cardGate = await getStripeGiftCardGateStatus(c.env.DB, buyerKey);
+        if (cardGate.gate === "locked") {
+            return c.json(
+                {
+                    error: "Too many failed payment methods. Please try again later.",
+                },
+                429,
+                { "Retry-After": "86400" },
+            );
+        }
 
         const pmcId = c.env.STRIPE_PMC;
         if (!pmcId) {
@@ -82,10 +105,12 @@ export const pollenGiftRoutes = new Hono<Env>()
             return c.json({ error: "Failed to create gift order" }, 500);
         }
         const stripe = createStripeClient(c.env);
-        const baseUrl = getPublicOrigin(c);
+        const baseUrl =
+            c.env.STRIPE_SUCCESS_URL || PUBLIC_URLS.enter.production;
         const successUrl = new URL("/pollen", baseUrl);
         successUrl.searchParams.set("mode", "gift");
         successUrl.searchParams.set("success", "true");
+        const successUrlWithSession = `${successUrl.toString()}&session_id={CHECKOUT_SESSION_ID}`;
         const cancelUrl = new URL("/pollen", baseUrl);
         cancelUrl.searchParams.set("mode", "gift");
         cancelUrl.searchParams.set("canceled", "true");
@@ -101,8 +126,8 @@ export const pollenGiftRoutes = new Hono<Env>()
                 purpose: POLLEN_GIFT_PURPOSE,
                 giftId: gift.id,
                 pollenAmount: String(amount),
-                // Existing economics queries read this field for non-pack purchases.
-                packPollenGrant: String(amount),
+                [POLLEN_GIFT_BUYER_KEY_METADATA]: buyerKey,
+                ...stripeNewCardGateMetadata(cardGate),
             };
             const checkoutSession = await stripe.checkout.sessions.create(
                 {
@@ -117,7 +142,7 @@ export const pollenGiftRoutes = new Hono<Env>()
                                 unit_amount: gift.faceValueCents,
                                 tax_behavior: "exclusive",
                                 product_data: {
-                                    name: `🎁 ${amount} Pollen gift — ${gift.code}`,
+                                    name: `🎁 ${amount} Pollen gift`,
                                     description: `Redeem at ${redeemUrl}`,
                                     images: [packProduct.checkoutImageUrl],
                                     tax_code: packProduct.taxCode,
@@ -141,6 +166,9 @@ export const pollenGiftRoutes = new Hono<Env>()
                     adaptive_pricing: { enabled: true },
                     automatic_tax: { enabled: true },
                     billing_address_collection: "required",
+                    name_collection: {
+                        individual: { enabled: true, optional: false },
+                    },
                     phone_number_collection: { enabled: true },
                     tax_id_collection: { enabled: true },
                     payment_intent_data: { metadata },
@@ -164,7 +192,7 @@ export const pollenGiftRoutes = new Hono<Env>()
                         },
                     },
                     metadata,
-                    success_url: successUrl.toString(),
+                    success_url: successUrlWithSession,
                     cancel_url: cancelUrl.toString(),
                 },
                 { idempotencyKey: `pollen-gift:${gift.id}` },
@@ -202,30 +230,89 @@ export const pollenGiftRoutes = new Hono<Env>()
             return c.json({ error: "Failed to create checkout session" }, 500);
         }
     })
-    .post("/redeem", async (c) => {
+    .get("/receipt/:sessionId", async (c) => {
         c.header("Cache-Control", "no-store");
-        const auth = createAuth(c.env, c.executionCtx);
-        const session = await auth.api.getSession({
-            headers: c.req.raw.headers,
+        const sessionId = c.req.param("sessionId");
+        if (!sessionId.startsWith("cs_")) {
+            return c.json({ error: "Gift receipt not found" }, 404);
+        }
+
+        const stripe = createStripeClient(c.env);
+        const session = await stripe.checkout.sessions
+            .retrieve(sessionId, { expand: ["invoice"] })
+            .catch(() => null);
+        if (
+            !session ||
+            session.payment_status !== "paid" ||
+            session.metadata?.purpose !== POLLEN_GIFT_PURPOSE ||
+            !session.metadata.giftId
+        ) {
+            return c.json({ error: "Gift receipt not found" }, 404);
+        }
+
+        const gift = await canRevealPollenGiftCode(c.env.DB, {
+            giftId: session.metadata.giftId,
+            checkoutSessionId: session.id,
         });
-        if (!session?.user?.id) {
-            return c.json({ error: "Authentication required" }, 401);
+        const invoice =
+            session.invoice && typeof session.invoice !== "string"
+                ? session.invoice
+                : null;
+        const code = invoice?.custom_fields?.find(
+            (field) => field.name === "Gift code",
+        )?.value;
+        if (!gift || !code) {
+            return c.json({ error: "Gift receipt not found" }, 404);
         }
 
-        const body = (await c.req.json().catch(() => null)) as {
-            code?: unknown;
-        } | null;
-        if (!body || typeof body.code !== "string") {
-            return c.json({ error: INVALID_GIFT_MESSAGE }, 400);
-        }
+        return c.json({ code, pollenAmount: gift.pollenAmount });
+    })
+    .post(
+        "/redeem",
+        auth({ allowApiKey: false, allowSessionCookie: true }),
+        async (c) => {
+            c.header("Cache-Control", "no-store");
+            const user = c.var.auth.requireUser();
+            const ipHash = await hashIp(
+                getRealClientIp(c),
+                c.env.BETTER_AUTH_SECRET,
+            );
+            const limits = await Promise.all([
+                consumePollenGiftRateLimit(c.env.DB, {
+                    key: `redeem-user:${user.id}`,
+                    limit: REDEEM_RATE_LIMIT,
+                    windowMs: REDEEM_RATE_WINDOW_MS,
+                }),
+                consumePollenGiftRateLimit(c.env.DB, {
+                    key: `redeem-ip:${ipHash ?? "unknown"}`,
+                    limit: REDEEM_RATE_LIMIT,
+                    windowMs: REDEEM_RATE_WINDOW_MS,
+                }),
+            ]);
+            const blockedLimit = limits.find((limit) => !limit.allowed);
+            if (blockedLimit) {
+                return c.json(
+                    { error: "Too many attempts. Please try again later." },
+                    429,
+                    { "Retry-After": String(blockedLimit.retryAfterSeconds) },
+                );
+            }
 
-        const result = await redeemPollenGift(c.env.DB, {
-            code: body.code,
-            userId: session.user.id,
-        });
-        if (!result.redeemed) {
-            return c.json({ error: INVALID_GIFT_MESSAGE }, 400);
-        }
+            const body = (await c.req.json().catch(() => null)) as {
+                code?: unknown;
+            } | null;
+            if (!body || typeof body.code !== "string") {
+                return c.json({ error: INVALID_GIFT_MESSAGE }, 400);
+            }
 
-        return c.json(result);
-    });
+            const result = await redeemPollenGift(c.env.DB, {
+                code: body.code,
+                userId: user.id,
+            });
+            if (!result.redeemed) {
+                return c.json({ error: INVALID_GIFT_MESSAGE }, 400);
+            }
+
+            return c.json(result);
+        },
+    );

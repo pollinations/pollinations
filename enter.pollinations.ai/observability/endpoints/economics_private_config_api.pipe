@@ -1,0 +1,21 @@
+DESCRIPTION >
+    Latest private Economics runtime configuration. Access is restricted to
+    the authenticated Economics Worker through the operations_read token.
+
+TOKEN "operations_read" READ
+
+NODE endpoint
+SQL >
+    SELECT
+        config,
+        formatDateTime(latest_recorded_at, '%F %T.%f') AS recorded_at
+    FROM
+    (
+        SELECT
+            argMax(config, recorded_at) AS config,
+            max(recorded_at) AS latest_recorded_at
+        FROM economics_private_config
+        HAVING count() > 0
+    )
+
+TYPE ENDPOINT

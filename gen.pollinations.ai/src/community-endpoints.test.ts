@@ -222,6 +222,17 @@ afterEach(() => {
     vi.restoreAllMocks();
 });
 
+async function maturePendingCommunityEndpoint(id: string): Promise<void> {
+    await db
+        .update(communityEndpointTable)
+        .set({
+            pendingAt: new Date(
+                Date.now() - COMMUNITY_ENDPOINT_CHANGE_DELAY_MS - 1,
+            ),
+        })
+        .where(eq(communityEndpointTable.id, id));
+}
+
 async function createEnterCommunityApi(): Promise<Hono<Env>> {
     const routePath =
         "../../enter.pollinations.ai/src/routes/community-endpoints.ts";
@@ -3207,10 +3218,16 @@ fixtureTest(
             modelId: communityModelId(ownerGithubUsername, modelName),
             baseUrl: "https://gen.pollinations.ai/v1",
             upstreamModel: "openai",
-            visibility: "public",
-            promptTextPrice: 0.00001,
-            completionTextPrice: 0.00001,
+            visibility: "private",
+            promptTextPrice: 0,
+            completionTextPrice: 0,
+            pending: {
+                visibility: "public",
+                promptTextPrice: 0.00001,
+                completionTextPrice: 0.00001,
+            },
         });
+        await maturePendingCommunityEndpoint(registered.id);
 
         const testResponse = await fetchEnterApi(
             enterApi,
@@ -3473,8 +3490,14 @@ fixtureTest(
             baseUrl: "https://api.example.com/v1/images/generations",
             upstreamModel: "gpt-image-1",
             promptTextPrice: 0,
-            completionImagePrice: 0.03,
+            completionImagePrice: 0,
+            pending: {
+                visibility: "public",
+                promptTextPrice: 0,
+                completionImagePrice: 0.03,
+            },
         });
+        await maturePendingCommunityEndpoint(registered.id);
 
         const testResponse = await fetchEnterApi(
             enterApi,
@@ -3897,8 +3920,13 @@ fixtureTest(
             inputModalities: ["audio"],
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "whisper-1",
-            promptAudioPrice: 0.0000445,
+            promptAudioPrice: 0,
+            pending: {
+                visibility: "public",
+                promptAudioPrice: 0.0000445,
+            },
         });
+        await maturePendingCommunityEndpoint(registered.id);
 
         const testResponse = await fetchEnterApi(
             enterApi,
@@ -5372,6 +5400,7 @@ fixtureTest("validates community fallback targets on write", async () => {
         fallbacks: string[];
     };
     expect(created.fallbacks).toEqual([cheapModelId]);
+    await maturePendingCommunityEndpoint(created.id);
 
     // One bad id fails the whole list, so a partial order is never stored.
     const partiallyBad = await createWithFallback(

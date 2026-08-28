@@ -59,6 +59,8 @@ type SeedQuestIssue = {
     closed?: boolean;
     // When set, a merged PR closes the issue (→ "completed" / payable).
     completedByPrNumber?: number | null;
+    completedByGithubId?: number | null;
+    completedByLogin?: string | null;
     createdAt?: Date;
     updatedAt?: Date;
 };
@@ -69,6 +71,8 @@ function seedQuestIssue(github: MockGithubState, issue: SeedQuestIssue): void {
     const assigneeGithubId = issue.assigneeGithubId ?? null;
     const assigneeLogin = issue.assigneeLogin ?? null;
     const completedBy = issue.completedByPrNumber ?? null;
+    const completedByGithubId = issue.completedByGithubId ?? null;
+    const completedByLogin = issue.completedByLogin ?? null;
     const created = issue.createdAt ?? new Date("2026-06-01T00:00:00Z");
     const updated = issue.updatedAt ?? new Date("2026-06-02T00:00:00Z");
 
@@ -89,14 +93,20 @@ function seedQuestIssue(github: MockGithubState, issue: SeedQuestIssue): void {
         labels: [{ name: "POLLEN-QUEST" }],
         closedByPullRequestsReferences:
             completedBy !== null
-                ? [{ number: completedBy, mergedAt: updated.toISOString() }]
+                ? [
+                      {
+                          number: completedBy,
+                          mergedAt: updated.toISOString(),
+                          author: { databaseId: completedByGithubId },
+                      },
+                  ]
                 : [],
     });
 
-    if (completedBy !== null && assigneeLogin) {
+    if (completedBy !== null && completedByLogin) {
         github.mergedPullRequests.push({
             number: completedBy,
-            authorLogin: assigneeLogin,
+            authorLogin: completedByLogin,
             mergedAt: updated.toISOString(),
         });
     }
@@ -462,6 +472,8 @@ test("catalog excludes closed GitHub quest issues without merged PRs", async ({
         title: "Open bounty",
         goal: "Still available.",
         reward: 3,
+        assigneeGithubId: 123456,
+        assigneeLogin: "interested-contributor",
     });
     seedQuestIssue(mocks.github.state, {
         issueNumber: 802,
@@ -1476,7 +1488,7 @@ test("quest check records elixpo intern easter egg once", async ({
     });
 });
 
-test("quest check records completed GitHub quest issue rewards through shared path", async ({
+test("quest check rewards the merged quest PR author, not the issue assignee", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -1488,21 +1500,8 @@ test("quest check records completed GitHub quest issue rewards through shared pa
     const issueNumber = 777;
     const issueQuestId = `github:issue:${issueNumber}`;
     const issueTitle = "Ship a focused fix";
-
-    seedQuestIssue(mocks.github.state, {
-        issueNumber,
-        title: issueTitle,
-        goal: "Merge the quest PR.",
-        reward: 17,
-        assigneeGithubId: user.githubId,
-        assigneeLogin: user.githubUsername,
-        completedByPrNumber: 888,
-    });
-
-    const first = await checkQuestsForUser(env, user.id);
-    expect(first.recorded).toBeGreaterThanOrEqual(1);
-
     const otherGithubId = 987654;
+
     await db.insert(schema.user).values({
         id: "github-quest-other-user",
         name: "Other Dev",
@@ -1516,12 +1515,21 @@ test("quest check records completed GitHub quest issue rewards through shared pa
         tierBalance: 0,
         packBalance: 0,
     });
-    const mockedIssue = mocks.github.state.questIssues.find(
-        (issue) => issue.number === issueNumber,
-    );
-    if (!mockedIssue) throw new Error("Expected mocked quest issue");
-    mockedIssue.assignees = [{ login: "other-dev", databaseId: otherGithubId }];
-    mockedIssue.updated_at = "2026-06-13T00:00:00Z";
+
+    seedQuestIssue(mocks.github.state, {
+        issueNumber,
+        title: issueTitle,
+        goal: "Merge the quest PR.",
+        reward: 17,
+        assigneeGithubId: otherGithubId,
+        assigneeLogin: "other-dev",
+        completedByPrNumber: 888,
+        completedByGithubId: user.githubId,
+        completedByLogin: user.githubUsername,
+    });
+
+    const first = await checkQuestsForUser(env, user.id);
+    expect(first.recorded).toBeGreaterThanOrEqual(1);
 
     const second = await checkQuestsForUser(env, "github-quest-other-user");
     expect(second.recorded).toBe(0);
@@ -1551,7 +1559,7 @@ test("quest check records completed GitHub quest issue rewards through shared pa
         .where(eq(schema.rewards.questId, issueQuestId));
 
     // scope:"once" idempotency: exactly one reward, keyed WITHOUT a userId, owned
-    // by the original assignee who triggered the first recording.
+    // by the merged PR author who triggered the first recording.
     expect(rewards).toHaveLength(1);
     expect(rewards[0]).toMatchObject({
         idempotencyKey: `quest:github:issue:${issueNumber}`,
@@ -1592,14 +1600,14 @@ test("two lazy GitHub issue bounties each record independently", async ({
     const issues = [
         {
             issueNumber: 901,
-            assigneeGithubId: user.githubId,
-            assigneeLogin: user.githubUsername,
+            authorGithubId: user.githubId,
+            authorLogin: user.githubUsername,
             reward: 11,
         },
         {
             issueNumber: 902,
-            assigneeGithubId: secondGithubId,
-            assigneeLogin: "second-dev",
+            authorGithubId: secondGithubId,
+            authorLogin: "second-dev",
             reward: 13,
         },
     ];
@@ -1609,9 +1617,9 @@ test("two lazy GitHub issue bounties each record independently", async ({
             title: `Community bounty #${issue.issueNumber}`,
             goal: "Merge the linked PR.",
             reward: issue.reward,
-            assigneeGithubId: issue.assigneeGithubId,
-            assigneeLogin: issue.assigneeLogin,
             completedByPrNumber: issue.issueNumber + 1000,
+            completedByGithubId: issue.authorGithubId,
+            completedByLogin: issue.authorLogin,
         });
     }
 
@@ -1641,7 +1649,7 @@ test("two lazy GitHub issue bounties each record independently", async ({
         "quest:github:issue:901",
         "quest:github:issue:902",
     ]);
-    // Both assignees have their own issue's reward (901→user, 902→other).
+    // Both PR authors have their own issue's reward (901→user, 902→other).
     expect(
         issueRewards.find((g) => g.userId === user.id)?.pollenAmount,
     ).toBeCloseTo(11);

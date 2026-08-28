@@ -1,14 +1,17 @@
 import {
+    applyPendingProxyPricing,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     type CommunityEndpointImagePricing,
     type CommunityEndpointModality,
     type CommunityEndpointPrices,
     communityModelId,
+    effectiveCommunityEndpointVisibility,
     isCommunityFallbackBalanceAllowed,
     isCommunityFallbackPricingAllowed,
     normalizeCommunityEndpointInputModalities,
     parseCommunityModelId,
     parseListingPayload,
+    pendingCommunityEndpointChangeIsReady,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import type { ModelInputModality } from "@shared/registry/registry.ts";
@@ -43,7 +46,12 @@ function shouldConcealTarget(
 ): boolean {
     return (
         target.ownerUserId !== primary.ownerUserId &&
-        (target.visibility === "private" || target.hiddenAt !== null)
+        (effectiveCommunityEndpointVisibility(
+            target.visibility,
+            target.pendingVisibility,
+            target.pendingAt,
+        ) === "private" ||
+            target.hiddenAt !== null)
     );
 }
 
@@ -63,15 +71,25 @@ export function fallbackTargetRejection(
         return `Fallback target ${modelId} cannot delegate generation`;
     }
     if (
-        target.visibility === "private" &&
+        effectiveCommunityEndpointVisibility(
+            target.visibility,
+            target.pendingVisibility,
+            target.pendingAt,
+        ) === "private" &&
         target.ownerUserId !== primary.ownerUserId
     ) {
         return `Fallback target ${modelId} must be public or owned by you`;
     }
-    const payload = parseListingPayload("proxy", target.payload);
-    if (!payload) {
+    const currentPayload = parseListingPayload("proxy", target.payload);
+    if (!currentPayload) {
         return `Fallback target ${modelId} has invalid configuration`;
     }
+    const pendingPayload = pendingCommunityEndpointChangeIsReady(
+        target.pendingAt,
+    )
+        ? parseListingPayload("proxy", target.pendingPayload)
+        : null;
+    const payload = applyPendingProxyPricing(currentPayload, pendingPayload);
     if (payload.modality !== primary.modality) {
         return `Fallback target ${modelId} is a ${payload.modality} model, not ${primary.modality}`;
     }

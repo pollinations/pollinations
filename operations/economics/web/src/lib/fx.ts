@@ -38,10 +38,16 @@ const FX_TABLES: Record<string, Record<string, number>> = {
     CAD: FX_CAD_USD,
 };
 
+export function canConvertToUsd(currency: string): boolean {
+    return ["EUR", "CAD", "USD", "POLLEN", ""].includes(
+        String(currency ?? "").toUpperCase(),
+    );
+}
+
 // A past month with no table rate is a missing append — throw so it surfaces
 // instead of bending every margin. Future months cannot have a published
 // rate yet, so forecasts convert at the latest known rate; those months are
-// listed per-month on the Data Quality tab via fxEstimatedMonths.
+// surfaced by the monthly Audit via fxEstimatedMonths.
 function tableRate(currency: string, month: string): number {
     const table = FX_TABLES[currency];
     const rate = table[month];
@@ -51,10 +57,6 @@ function tableRate(currency: string, month: string): number {
     throw new Error(
         `Missing ${currency}→USD rate for ${month} — append it to FX_${currency}_USD in lib/fx.ts`,
     );
-}
-
-export function eurUsdRate(month: string): number {
-    return tableRate("EUR", month);
 }
 
 // Months with EUR/CAD rows converting at the estimated (latest known) rate.
@@ -69,7 +71,6 @@ export function fxEstimatedMonths(data: Data): string[] {
     for (const row of data.opTransactions ?? []) check(row.currency, row.date);
     for (const row of data.opCloud ?? []) check(row.currency, row.start);
     for (const row of data.opPollen ?? []) check(row.currency, row.month);
-    for (const row of data.opRunway ?? []) check(row.currency, row.date);
     return [...months].sort();
 }
 
@@ -81,7 +82,8 @@ export function toUsd(
     currency: string,
     period: string,
 ): number {
-    switch (currency.toUpperCase()) {
+    const normalizedCurrency = String(currency ?? "").toUpperCase();
+    switch (normalizedCurrency) {
         case "EUR":
         case "CAD":
             return (
@@ -89,8 +91,10 @@ export function toUsd(
             );
         case "USD":
         case "POLLEN":
-        case "":
             return amount;
+        case "":
+            if (amount === 0) return 0;
+            throw new Error("Missing currency for non-zero amount");
         default:
             throw new Error(`Unknown currency: ${currency}`);
     }

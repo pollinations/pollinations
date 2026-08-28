@@ -2,8 +2,6 @@ import { useEffect, useState } from "react";
 import { COMMUNITY_PAGE } from "../../copy/content/community";
 import { LINKS } from "../../copy/content/socialLinks";
 import { usePageCopy } from "../../hooks/usePageCopy";
-import { Divider } from "./ui/divider";
-import { Body, Heading } from "./ui/typography";
 
 export type QuestLeaderboardEntry = {
     githubUsername: string;
@@ -37,16 +35,15 @@ export function QuestLeaderboardContent({
             >
                 <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                     <div>
-                        <Heading
+                        <h2
                             id="quest-leaderboard-heading"
-                            variant="section"
-                            spacing="tight"
+                            className="mb-2 border-l-4 border-dark pl-4 font-headline text-2xl font-black uppercase tracking-widest text-dark md:text-3xl"
                         >
                             {copy.questLeaderboardTitle}
-                        </Heading>
-                        <Body size="sm" spacing="none">
+                        </h2>
+                        <p className="font-body text-sm leading-relaxed text-dark">
                             {copy.questLeaderboardDescription}
-                        </Body>
+                        </p>
                     </div>
                     <a
                         href={`${LINKS.enter}/quests`}
@@ -105,7 +102,7 @@ export function QuestLeaderboardContent({
                     ))}
                 </ol>
             </section>
-            <Divider />
+            <hr className="my-12 border-t-2 border-white" />
         </>
     );
 }

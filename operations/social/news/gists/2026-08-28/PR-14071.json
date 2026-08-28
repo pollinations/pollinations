@@ -1,0 +1,34 @@
+{
+  "pr_number": 14071,
+  "title": "chore: backfill and retain community app screenshots",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14071",
+  "merged_at": "2026-08-28T16:56:43Z",
+  "labels": [],
+  "pr_body_excerpt": "**Summary**\n\n- Adds 66 reviewed community-app screenshots.\n- Removes 21 unusable or policy-ineligible apps (22 rows because Neurix was duplicated).\n- Adds a weekly full-body GET keepalive for every catalog screenshot.\n\n**Removed: broken or invalid**\n\n- **Unreachable or server failure:** Perplexio (timeout and deleted repository); The Stream Church Webapp (unreachable); Quent, Viralent, and Genhub (502); AI router, BrainrotMaker, GPTAI.host, and Neurix (timeouts); Island (connection closed); WorksparkAI (500).\n- **Unavailable or inaccessible distribution:** Neuro Mate (store listing unavailable); LiberKey (TLS certificate failure); Lilith (invalid Discord invite); Onyx (private Vercel login and deleted repository).\n- **Repurposed or unsafe destination:** Versemind (parked domain); Petfuse Image Generator (fake macOS security-warning page).\n- **Broken deployment:** Generator AI Image (invalid redirect); AI 儿童故事 (empty deployment with no runnable app bundle).\n\n**Removed: sexual content**\n\n- **AI Girlfriend:** explicitly sexual companion content and presentation, outside the community catalog policy.\n\n**Verification**\n\n- 835 active apps with zero missing screenshots.\n- Refreshed all 822 unique media URLs.\n- Catalog validation, 11 focused tests, and all GitHub checks pass.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The app garden got tended",
+    "blurb": "66 community apps now have reviewed screenshots, and the catalog’s 835 active apps are all visually accounted for. A weekly keeper bot will politely check that the pictures remain alive.",
+    "summary": "Backfilled 66 reviewed community-app screenshots, removed 21 broken, inaccessible, unsafe, or policy-ineligible apps, and added a weekly full-body GET keepalive for every catalog screenshot URL.",
+    "impact": "Community catalog visitors now get a complete visual preview across all 835 active apps, with automated weekly checks helping screenshots stay available.",
+    "keywords": [
+      "community apps",
+      "app catalog",
+      "screenshots",
+      "keepalive",
+      "catalog quality",
+      "github actions"
+    ],
+    "visual_concept": "Depict the community app catalog as a cozy garden of tiny retro app windows growing from flower pots, each with a healthy screenshot framed like a blossom. Polli wears a gardener hat and uses a watering can labeled GET while a friendly CRT Monitor Robot carefully checks a row of picture frames; a few empty, wilted pots have been tidily cleared away, emphasizing a well-kept catalog rather than failure.",
+    "image_prompt": "A cozy pixel art community-app garden where rows of tiny retro computer windows display colorful app screenshots like blooming flowers, all glowing against a prominent lime green (#ecf874) and warm cream pastel background. Polli, the cute yellow-and-brown striped pixel bee with pink cheek blush and light blue wings, wears a tiny gardener hat and waters the frames with a can labeled \"GET,\" while a cheerful CRT monitor robot inspects them beside code-vines; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) pixel-font sign reading \"835 APPS\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-28/PR-14071.jpg",
+    "prompt": "A cozy pixel art community-app garden where rows of tiny retro computer windows display colorful app screenshots like blooming flowers, all glowing against a prominent lime green (#ecf874) and warm cream pastel background. Polli, the cute yellow-and-brown striped pixel bee with pink cheek blush and light blue wings, wears a tiny gardener hat and waters the frames with a can labeled \"GET,\" while a cheerful CRT monitor robot inspects them beside code-vines; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) pixel-font sign reading \"835 APPS\"."
+  },
+  "generated_at": "2026-08-28T16:57:44.384412+00:00"
+}

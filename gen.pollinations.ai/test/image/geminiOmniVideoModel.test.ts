@@ -205,6 +205,25 @@ describe("geminiOmniVideoModel", () => {
         ).rejects.toMatchObject({ status: 502 });
     });
 
+    it("preserves a provider failure message for moderation classification", async () => {
+        setGoogleEnv();
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            Response.json({
+                status: "failed",
+                error: {
+                    message: "Content policy violation detected in response.",
+                },
+            }),
+        );
+
+        await expect(
+            callGeminiOmniAPI("test", baseParams),
+        ).rejects.toMatchObject({
+            status: 502,
+            message: expect.stringContaining("Content policy violation"),
+        });
+    });
+
     it("returns 502 when Vertex omits billable video usage", async () => {
         setGoogleEnv();
         vi.spyOn(globalThis, "fetch").mockResolvedValue(

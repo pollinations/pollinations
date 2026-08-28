@@ -20,6 +20,9 @@ type ModalityTokens = {
 
 type GeminiOmniResponse = {
     status?: string;
+    error?: {
+        message?: string;
+    };
     usage?: {
         input_tokens_by_modality?: ModalityTokens[];
         output_tokens_by_modality?: ModalityTokens[];
@@ -143,8 +146,10 @@ export async function callGeminiOmniAPI(
         ?.flatMap((step) => step.content ?? [])
         .find((content) => content.type === "video" && content.data);
     if (data.status !== "completed" || !video?.data) {
+        const detail =
+            data.error?.message ?? `status: ${data.status ?? "unknown"}`;
         throw new HttpError(
-            "Gemini Omni API returned no completed video",
+            `Gemini Omni API returned no completed video (${detail})`,
             502,
             undefined,
             endpoint,

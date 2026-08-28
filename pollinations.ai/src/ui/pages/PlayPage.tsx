@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { PLAY_PAGE } from "../../copy/content/play";
 import { LINKS } from "../../copy/content/socialLinks";
@@ -16,9 +16,8 @@ import { Body, Title } from "../components/ui/typography";
 
 function PlayPage() {
     const [searchParams] = useSearchParams();
-    const requestedModel = searchParams.get("model");
     const [selectedModel, setSelectedModel] = useState(
-        requestedModel ?? "flux",
+        searchParams.get("model") ?? "flux",
     );
     const [prompt, setPrompt] = useState("");
     const { apiKey, isLoggedIn, login } = useAuth();
@@ -54,18 +53,6 @@ function PlayPage() {
                 (typeOrder[effectiveType(b)] ?? 99),
         );
     }, [registryModels]);
-
-    // Fall back to the default model if the URL requests an unknown one.
-    useEffect(() => {
-        if (
-            requestedModel &&
-            !isLoadingModels &&
-            allModels.length > 0 &&
-            !allModels.some((m) => m.id === requestedModel)
-        ) {
-            setSelectedModel("flux");
-        }
-    }, [allModels, isLoadingModels, requestedModel]);
 
     const currentModel = allModels.find((m) => m.id === selectedModel);
     const isVideoModel = !!currentModel?.hasVideoOutput;

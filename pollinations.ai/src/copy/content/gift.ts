@@ -3,7 +3,7 @@ export const GIFT_PAGE = {
     pageDescription:
         "Buy a Pollen gift code for someone to redeem into their Pollinations wallet.",
     title: "Gift Pollen",
-    intro: "Choose a value and buy a single-use code for someone else. No account is needed to purchase. Find your gift code on the invoice emailed after payment.",
+    intro: "Buy Pollens for someone else. No account is needed to purchase. Find your redeemable pollen gift code on the invoice emailed after payment.",
     amountLabel: "Select gift amount",
     pollenNote: "1 Pollen is approximately $1 USD.",
     buyButton: "Buy gift",

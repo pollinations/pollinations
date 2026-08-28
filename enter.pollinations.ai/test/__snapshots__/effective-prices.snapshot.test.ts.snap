@@ -1519,11 +1519,15 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "qwen-vision-pro": {
     "cost": {
+      "completionReasoningTokens": 0.000004,
       "completionTextTokens": 0.000004,
+      "promptImageTokens": 0.0000004,
       "promptTextTokens": 0.0000004,
     },
     "price": {
+      "completionReasoningTokens": 0.000004,
       "completionTextTokens": 0.000004,
+      "promptImageTokens": 0.0000004,
       "promptTextTokens": 0.0000004,
     },
   },

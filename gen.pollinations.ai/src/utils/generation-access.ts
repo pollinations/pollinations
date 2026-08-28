@@ -1,3 +1,4 @@
+import { resolveModelPollenType } from "@shared/auth/api-key.ts";
 import { createBalanceCheckResult } from "@shared/billing/balance.ts";
 import { canCoverEstimatedCharge } from "@shared/billing/bucket-selection.ts";
 import {
@@ -33,6 +34,14 @@ export async function checkBalance(
     if (!auth.user?.id) return;
 
     const isPaidOnly = model.definition.paidOnly ?? false;
+    const keyPollenType = auth.apiKey?.pollenType ?? null;
+    const effectivePollenType = resolveModelPollenType(
+        auth.apiKey?.permissions,
+        model.resolved,
+        keyPollenType,
+        isPaidOnly,
+        auth.apiKey?.questPollenOnly ?? false,
+    );
     const estimatedCost = withByopMarkup(
         getEstimatedPrice(
             await getModelStats(env.KV, log),
@@ -51,10 +60,21 @@ export async function checkBalance(
 
     const userBalance = await balance.getBalance(auth.user.id);
 
-    if (!canCoverEstimatedCharge(userBalance, estimatedCost, isPaidOnly)) {
+    if (
+        !canCoverEstimatedCharge(
+            userBalance,
+            estimatedCost,
+            isPaidOnly,
+            effectivePollenType,
+        )
+    ) {
         const available = isPaidOnly
             ? userBalance.packBalance
-            : Math.max(userBalance.tierBalance, userBalance.packBalance);
+            : effectivePollenType === "quest"
+              ? userBalance.tierBalance
+              : effectivePollenType === "paid"
+                ? userBalance.packBalance
+                : Math.max(userBalance.tierBalance, userBalance.packBalance);
         throw new HTTPException(402, {
             message: `Insufficient balance. This request costs ~${estimatedCost.toFixed(4)} pollen, but your available balance is ${Math.max(0, available).toFixed(4)}.`,
         });

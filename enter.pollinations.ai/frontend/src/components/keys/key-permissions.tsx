@@ -5,20 +5,31 @@ import { useOwnCommunityModels } from "../models/use-own-community-models.ts";
 import { AccountPermissionsInput } from "./account-permissions-input.tsx";
 import { ExpiryDaysInput } from "./expiry-days-input.tsx";
 import { PollenBudgetInput } from "./pollen-budget-input.tsx";
+import { PollenTypeInput } from "./pollen-type-input.tsx";
+import { QuestPollenOnlyToggle } from "./quest-pollen-only-toggle.tsx";
+import type { ModelPermissionEntry } from "./types.ts";
 
 export interface KeyPermissions {
-    allowedModels: string[] | null;
+    allowedModels: (string | ModelPermissionEntry)[] | null;
     pollenBudget: number | null;
+    pollenType: "quest" | "paid" | null;
+    questPollenOnly: boolean | null;
     expiryDays: number | null;
     accountPermissions: string[] | null;
 }
 
 export function useKeyPermissions(initial: Partial<KeyPermissions> = {}) {
-    const [allowedModels, setAllowedModels] = useState(
-        initial.allowedModels ?? null,
-    );
+    const [allowedModels, setAllowedModels] = useState<
+        (string | ModelPermissionEntry)[] | null
+    >(initial.allowedModels ?? null);
     const [pollenBudget, setPollenBudget] = useState(
         initial.pollenBudget ?? null,
+    );
+    const [pollenType, setPollenType] = useState<"quest" | "paid" | null>(
+        initial.pollenType ?? null,
+    );
+    const [questPollenOnly, setQuestPollenOnly] = useState<boolean | null>(
+        initial.questPollenOnly ?? null,
     );
     const [expiryDays, setExpiryDays] = useState(initial.expiryDays ?? null);
     const [accountPermissions, setAccountPermissions] = useState<
@@ -29,11 +40,15 @@ export function useKeyPermissions(initial: Partial<KeyPermissions> = {}) {
         permissions: {
             allowedModels,
             pollenBudget,
+            pollenType,
+            questPollenOnly,
             expiryDays,
             accountPermissions,
         },
         setAllowedModels,
         setPollenBudget,
+        setPollenType,
+        setQuestPollenOnly,
         setExpiryDays,
         setAccountPermissions,
     };
@@ -59,6 +74,8 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
         permissions,
         setAllowedModels,
         setPollenBudget,
+        setPollenType,
+        setQuestPollenOnly,
         setExpiryDays,
         setAccountPermissions,
     } = value;
@@ -76,6 +93,18 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
                 disabled={disabled}
                 inline={inline}
             />
+            <PollenTypeInput
+                value={permissions.pollenType}
+                onChange={setPollenType}
+                disabled={disabled}
+                inline={inline}
+            />
+            <QuestPollenOnlyToggle
+                value={permissions.questPollenOnly}
+                onChange={setQuestPollenOnly}
+                disabled={disabled}
+                inline={inline}
+            />
             <ExpiryDaysInput
                 value={permissions.expiryDays}
                 onChange={setExpiryDays}
@@ -87,8 +116,23 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
                 value={permissions.accountPermissions}
                 onChange={setAccountPermissions}
                 disabled={disabled}
-                allowedModels={permissions.allowedModels}
-                onModelsChange={setAllowedModels}
+                allowedModels={
+                    permissions.allowedModels?.map((e) =>
+                        typeof e === "string" ? e : e.id,
+                    ) ?? null
+                }
+                onModelsChange={(models) =>
+                    setAllowedModels(
+                        models?.map(
+                            (modelId) =>
+                                permissions.allowedModels?.find(
+                                    (entry) =>
+                                        typeof entry !== "string" &&
+                                        entry.id === modelId,
+                                ) ?? modelId,
+                        ) ?? null,
+                    )
+                }
                 modelsInitiallyExpanded={modelsInitiallyExpanded}
                 modelCategories={modelCategories}
             />

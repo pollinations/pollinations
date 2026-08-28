@@ -117,8 +117,12 @@ export function Authorize() {
     // models just as their dashboard keys do — but the anonymous catalog omits
     // them, so the consent screen has to learn them separately.
     const modelCategories = useModelCategories(useOwnCommunityModels(!!user));
+    const allowedModelIds =
+        keyPermissions.permissions.allowedModels?.map((entry) =>
+            typeof entry === "string" ? entry : entry.id,
+        ) ?? null;
     const modalities = computeCategoryModalities(
-        keyPermissions.permissions.allowedModels,
+        allowedModelIds,
         modelCategories,
     );
     // Which optional scopes the caller requested. Stays constant once set —
@@ -770,10 +774,20 @@ export function Authorize() {
                                         .accountPermissions
                                 }
                                 onChange={keyPermissions.setAccountPermissions}
-                                allowedModels={
-                                    keyPermissions.permissions.allowedModels
+                                allowedModels={allowedModelIds}
+                                onModelsChange={(modelIds) =>
+                                    keyPermissions.setAllowedModels(
+                                        modelIds?.map(
+                                            (modelId) =>
+                                                keyPermissions.permissions.allowedModels?.find(
+                                                    (entry) =>
+                                                        typeof entry !==
+                                                            "string" &&
+                                                        entry.id === modelId,
+                                                ) ?? modelId,
+                                        ) ?? null,
+                                    )
                                 }
-                                onModelsChange={keyPermissions.setAllowedModels}
                                 visiblePermissions={visibleOptionalPermissions}
                                 showApiName={false}
                                 modelsInitiallyExpanded

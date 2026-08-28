@@ -1,3 +1,4 @@
+import { extractAllowedModelIds } from "@shared/auth/api-key.ts";
 import { type Context, Hono } from "hono";
 import { every } from "hono/combine";
 import { resolver as baseResolver, describeRoute } from "hono-openapi";
@@ -225,7 +226,9 @@ const modelsListHandler = (
             const { community } = c.req.valid(
                 "query" as never,
             ) as ModelListQueryParams;
-            const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+            const allowedModels =
+                extractAllowedModelIds(c.var.auth?.apiKey?.permissions) ??
+                undefined;
             const paidBalance = hasPaidBalance(c);
             return c.json(
                 filterEntriesByCommunityParam(
@@ -366,7 +369,9 @@ export const proxyRoutes = new Hono<Env>()
             const { community } = c.req.valid(
                 "query" as never,
             ) as ModelListQueryParams;
-            const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+            const allowedModels =
+                extractAllowedModelIds(c.var.auth?.apiKey?.permissions) ??
+                undefined;
             const paidBalance = hasPaidBalance(c);
             const modelEntries = filterEntriesByCommunityParam(
                 filterEntriesByPermissions(
@@ -415,7 +420,8 @@ export const proxyRoutes = new Hono<Env>()
             // Same permission and paid-only semantics as the list endpoint.
             const [entry] = filterEntriesByPermissions(
                 [visible],
-                c.var.auth?.apiKey?.permissions?.models,
+                extractAllowedModelIds(c.var.auth?.apiKey?.permissions) ??
+                    undefined,
                 hasPaidBalance(c),
             );
             if (!entry) {

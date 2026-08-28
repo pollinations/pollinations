@@ -6,6 +6,7 @@ import {
     type CreateApiKey,
     type CreateApiKeyResponse,
 } from "../components/keys";
+import type { ApiKeyUpdateParams } from "../components/keys/types.ts";
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
 import { Route as DashboardRoute } from "./_dashboard.tsx";
 
@@ -47,6 +48,8 @@ function KeysPage() {
             permissions: {
                 allowedModels: formState.allowedModels,
                 pollenBudget: formState.pollenBudget,
+                pollenType: formState.pollenType,
+                questPollenOnly: formState.questPollenOnly,
                 accountPermissions: formState.accountPermissions?.length
                     ? formState.accountPermissions
                     : undefined,
@@ -69,18 +72,14 @@ function KeysPage() {
 
     async function handleUpdateApiKey(
         id: string,
-        updates: {
-            name?: string;
-            allowedModels?: string[] | null;
-            pollenBudget?: number | null;
-            accountPermissions?: string[] | null;
-            expiresAt?: Date | null;
-        },
+        updates: ApiKeyUpdateParams,
     ): Promise<void> {
         const response = await apiClient["api-keys"][":id"].update.$post({
             param: { id },
             json: {
                 ...updates,
+                allowedModels: updates.allowedModels ?? null,
+                questPollenOnly: updates.questPollenOnly ?? undefined,
                 expiresAt:
                     updates.expiresAt instanceof Date
                         ? updates.expiresAt.toISOString()

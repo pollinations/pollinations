@@ -1,4 +1,5 @@
 import type { Logger } from "@logtape/logtape";
+import type { AuthenticatedApiKey } from "@shared/auth/api-key.ts";
 import {
     type ApiKeyType,
     createApiKeyForUser,
@@ -60,10 +61,7 @@ type UsageDebugBindings = CloudflareBindings & {
 export function resolveUsageTargetUserId(
     env: CloudflareBindings,
     currentUserId: string,
-    apiKey?: {
-        permissions?: Record<string, string[]>;
-        metadata?: Record<string, unknown>;
-    },
+    apiKey?: AuthenticatedApiKey,
 ): { userId: string; overridden: boolean } {
     if (apiKey) {
         return { userId: currentUserId, overridden: false };
@@ -1585,10 +1583,21 @@ export const accountRoutes = new Hono<Env>()
                                     permissions: z
                                         .object({
                                             models: z
-                                                .array(z.string())
+                                                .array(
+                                                    z.union([
+                                                        z.string(),
+                                                        z.object({
+                                                            id: z.string(),
+                                                            pollenType: z.enum([
+                                                                "quest",
+                                                                "paid",
+                                                            ]),
+                                                        }),
+                                                    ]),
+                                                )
                                                 .nullable()
                                                 .describe(
-                                                    "List of allowed model IDs, null = all models allowed",
+                                                    "Allowed model IDs with optional per-model pollen restrictions, null = all models allowed",
                                                 ),
                                             account: z
                                                 .array(z.string())
@@ -1603,6 +1612,17 @@ export const accountRoutes = new Hono<Env>()
                                         .nullable()
                                         .describe(
                                             "Remaining pollen budget for this key, null = unlimited (uses user balance)",
+                                        ),
+                                    pollenType: z
+                                        .enum(["quest", "paid"])
+                                        .nullable()
+                                        .describe(
+                                            "Key-level pollen bucket restriction, null = unrestricted",
+                                        ),
+                                    questPollenOnly: z
+                                        .boolean()
+                                        .describe(
+                                            "Whether non-paid-only models are restricted to Quest Pollen",
                                         ),
                                     rateLimitEnabled: z
                                         .boolean()
@@ -1733,6 +1753,8 @@ export const accountRoutes = new Hono<Env>()
                 expiresIn,
                 permissions,
                 pollenBudget: apiKey.pollenBalance ?? null,
+                pollenType: apiKey.pollenType ?? null,
+                questPollenOnly: apiKey.questPollenOnly ?? false,
                 // Generation rate limiting applies to publishable keys only.
                 rateLimitEnabled: keyType === "publishable",
                 // Server-attested identity. Downstream services (media catalog)

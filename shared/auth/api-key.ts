@@ -18,18 +18,65 @@ const PUBLISHABLE_KEY_PREFIX = "pk";
 
 export type AuthUser = typeof schema.user.$inferSelect;
 
+export type ModelPermissionEntry =
+    | string
+    | { id: string; pollenType: "quest" | "paid" };
+
 export interface AuthenticatedApiKey {
     id: string;
     name?: string;
-    permissions?: Record<string, string[]>;
+    permissions?: Record<string, string[] | ModelPermissionEntry[]>;
     metadata?: Record<string, unknown>;
     pollenBalance?: number | null;
+    pollenType?: "quest" | "paid" | null;
+    questPollenOnly?: boolean;
     byopClientKeyId?: string | null;
     byopClientName?: string | null;
     byopClientUserId?: string | null;
     /** True when deduction will add BYOP markup. Set at auth so preflight matches. */
     byopMarkupApplies?: boolean;
     rawKey?: string;
+}
+
+/**
+ * Resolve the effective pollen type for a specific model.
+ * Per-model overrides in permissions.models take precedence over key-level pollenType.
+ */
+export function resolveModelPollenType(
+    permissions: Record<string, string[] | ModelPermissionEntry[]> | undefined,
+    modelId: string | undefined,
+    keyPollenType?: "quest" | "paid" | null,
+    isPaidOnly = false,
+    questPollenOnly = false,
+): "quest" | "paid" | null {
+    if (isPaidOnly) return null;
+    if (questPollenOnly) return "quest";
+
+    const modelPerms = permissions?.models;
+    if (Array.isArray(modelPerms)) {
+        for (const entry of modelPerms) {
+            if (typeof entry === "object" && entry !== null && "id" in entry) {
+                if (entry.id === modelId) {
+                    return entry.pollenType;
+                }
+            }
+        }
+    }
+    return keyPollenType ?? null;
+}
+
+/**
+ * Extract the list of allowed model IDs from permissions.models.
+ * Handles both string and object formats.
+ */
+export function extractAllowedModelIds(
+    permissions: Record<string, string[] | ModelPermissionEntry[]> | undefined,
+): string[] | null {
+    const modelPerms = permissions?.models;
+    if (!Array.isArray(modelPerms)) return null;
+    return modelPerms.map((entry) =>
+        typeof entry === "string" ? entry : entry.id,
+    );
 }
 
 export interface ApiKeyAuthResult {
@@ -330,6 +377,9 @@ async function loadActiveApiKeyAuthResult(opts: {
             ),
             metadata: normalizeMetadata(parseMetadata(row.apiKey.metadata)),
             pollenBalance: row.apiKey.pollenBalance ?? null,
+            pollenType:
+                (row.apiKey.pollenType as "quest" | "paid" | null) ?? null,
+            questPollenOnly: row.apiKey.questPollenOnly ?? false,
             byopClientKeyId: row.apiKey.byopClientKeyId ?? null,
             byopClientName: row.byopClientName ?? null,
             byopClientUserId: row.byopClientUserId ?? null,
@@ -351,19 +401,50 @@ async function loadActiveApiKeyAuthResult(opts: {
 
 function normalizePermissions(
     value: unknown,
-): Record<string, string[]> | undefined {
+): Record<string, string[] | ModelPermissionEntry[]> | undefined {
     if (!value || typeof value !== "object" || Array.isArray(value)) {
         return undefined;
     }
 
-    const permissions: Record<string, string[]> = {};
+    const permissions: Record<string, string[] | ModelPermissionEntry[]> = {};
     for (const [key, scopes] of Object.entries(value)) {
         if (!Array.isArray(scopes)) continue;
-        const safeScopes = scopes.filter(
-            (scope): scope is string => typeof scope === "string",
-        );
-        if (safeScopes.length || key === "models") {
-            permissions[key] = safeScopes;
+        if (key === "models") {
+            // Models can be strings or {id, pollenType} objects
+            const safeEntries: ModelPermissionEntry[] = [];
+            for (const entry of scopes) {
+                if (typeof entry === "string") {
+                    safeEntries.push(entry);
+                } else if (
+                    typeof entry === "object" &&
+                    entry !== null &&
+                    "id" in entry &&
+                    typeof (entry as { id: unknown }).id === "string"
+                ) {
+                    const obj = entry as { id: string; pollenType?: unknown };
+                    if (
+                        obj.pollenType === "quest" ||
+                        obj.pollenType === "paid"
+                    ) {
+                        safeEntries.push({
+                            id: obj.id,
+                            pollenType: obj.pollenType,
+                        });
+                    } else {
+                        safeEntries.push(obj.id);
+                    }
+                }
+            }
+            if (safeEntries.length || key === "models") {
+                permissions[key] = safeEntries;
+            }
+        } else {
+            const safeScopes = scopes.filter(
+                (scope): scope is string => typeof scope === "string",
+            );
+            if (safeScopes.length) {
+                permissions[key] = safeScopes;
+            }
         }
     }
     return Object.keys(permissions).length ? permissions : undefined;

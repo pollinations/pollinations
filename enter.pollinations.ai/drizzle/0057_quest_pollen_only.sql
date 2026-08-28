@@ -1,0 +1,1 @@
+ALTER TABLE `apikey` ADD `quest_pollen_only` integer DEFAULT false;

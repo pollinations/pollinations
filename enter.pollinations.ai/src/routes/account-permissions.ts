@@ -1,9 +1,10 @@
+import type { ModelPermissionEntry } from "@shared/auth/api-key.ts";
 import { HTTPException } from "hono/http-exception";
 
 export type AccountPermission = "profile" | "usage" | "keys";
 
 export type AccountPermissionApiKey = {
-    permissions?: Record<string, string[]>;
+    permissions?: Record<string, string[] | ModelPermissionEntry[]>;
 };
 
 export function hasAccountPermission(

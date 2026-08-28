@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "789d39a2-1c11-4452-befe-e59872c14b1b",
-  "prevId": "e139f3f2-7a00-4878-b145-95c3ce0e28fb",
+  "id": "44ba12cc-54be-4177-b69d-764d1df09aac",
+  "prevId": "ced2fa08-22f6-4196-9b18-32f23c2fc35a",
   "tables": {
     "account": {
       "name": "account",
@@ -282,6 +282,22 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
+        },
+        "pollen_type": {
+          "name": "pollen_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": null
+        },
+        "quest_pollen_only": {
+          "name": "quest_pollen_only",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": 0
         },
         "pollen_balance": {
           "name": "pollen_balance",

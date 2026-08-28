@@ -14,7 +14,6 @@ import { Button } from "./ui/button";
 const tabKeys = [
     { path: "/", copyKey: "navHello" as const },
     { path: "/play", copyKey: "navPlay" as const },
-    { path: "/gift", copyKey: "navGift" as const },
     { path: "/apps", copyKey: "navApps" as const },
     { path: "/community", copyKey: "navCommunity" as const },
 ];

@@ -407,6 +407,13 @@
       "when": 1787911150003,
       "tag": "0057_flippant_pestilence",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "6",
+      "when": 1787924744293,
+      "tag": "0058_red_blindfold",
+      "breakpoints": true
     }
   ]
 }

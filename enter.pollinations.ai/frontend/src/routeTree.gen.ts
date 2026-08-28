@@ -25,7 +25,6 @@ import { Route as DashboardNewsRouteImport } from './routes/_dashboard.news'
 import { Route as DashboardMyModelsRouteImport } from './routes/_dashboard.my-models'
 import { Route as DashboardModelsRouteImport } from './routes/_dashboard.models'
 import { Route as DashboardKeysRouteImport } from './routes/_dashboard.keys'
-import { Route as DashboardGiftRouteImport } from './routes/_dashboard.gift'
 import { Route as DashboardActivityRouteImport } from './routes/_dashboard.activity'
 import { Route as DashboardAccountRouteImport } from './routes/_dashboard.account'
 
@@ -108,11 +107,6 @@ const DashboardKeysRoute = DashboardKeysRouteImport.update({
   path: '/keys',
   getParentRoute: () => DashboardRoute,
 } as any)
-const DashboardGiftRoute = DashboardGiftRouteImport.update({
-  id: '/gift',
-  path: '/gift',
-  getParentRoute: () => DashboardRoute,
-} as any)
 const DashboardActivityRoute = DashboardActivityRouteImport.update({
   id: '/activity',
   path: '/activity',
@@ -135,7 +129,6 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/account': typeof DashboardAccountRoute
   '/activity': typeof DashboardActivityRoute
-  '/gift': typeof DashboardGiftRoute
   '/keys': typeof DashboardKeysRoute
   '/models': typeof DashboardModelsRoute
   '/my-models': typeof DashboardMyModelsRoute
@@ -155,7 +148,6 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/account': typeof DashboardAccountRoute
   '/activity': typeof DashboardActivityRoute
-  '/gift': typeof DashboardGiftRoute
   '/keys': typeof DashboardKeysRoute
   '/models': typeof DashboardModelsRoute
   '/my-models': typeof DashboardMyModelsRoute
@@ -177,7 +169,6 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/_dashboard/account': typeof DashboardAccountRoute
   '/_dashboard/activity': typeof DashboardActivityRoute
-  '/_dashboard/gift': typeof DashboardGiftRoute
   '/_dashboard/keys': typeof DashboardKeysRoute
   '/_dashboard/models': typeof DashboardModelsRoute
   '/_dashboard/my-models': typeof DashboardMyModelsRoute
@@ -199,7 +190,6 @@ export interface FileRouteTypes {
     | '/terms'
     | '/account'
     | '/activity'
-    | '/gift'
     | '/keys'
     | '/models'
     | '/my-models'
@@ -219,7 +209,6 @@ export interface FileRouteTypes {
     | '/terms'
     | '/account'
     | '/activity'
-    | '/gift'
     | '/keys'
     | '/models'
     | '/my-models'
@@ -240,7 +229,6 @@ export interface FileRouteTypes {
     | '/terms'
     | '/_dashboard/account'
     | '/_dashboard/activity'
-    | '/_dashboard/gift'
     | '/_dashboard/keys'
     | '/_dashboard/models'
     | '/_dashboard/my-models'
@@ -376,13 +364,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardKeysRouteImport
       parentRoute: typeof DashboardRoute
     }
-    '/_dashboard/gift': {
-      id: '/_dashboard/gift'
-      path: '/gift'
-      fullPath: '/gift'
-      preLoaderRoute: typeof DashboardGiftRouteImport
-      parentRoute: typeof DashboardRoute
-    }
     '/_dashboard/activity': {
       id: '/_dashboard/activity'
       path: '/activity'
@@ -403,7 +384,6 @@ declare module '@tanstack/react-router' {
 interface DashboardRouteChildren {
   DashboardAccountRoute: typeof DashboardAccountRoute
   DashboardActivityRoute: typeof DashboardActivityRoute
-  DashboardGiftRoute: typeof DashboardGiftRoute
   DashboardKeysRoute: typeof DashboardKeysRoute
   DashboardModelsRoute: typeof DashboardModelsRoute
   DashboardMyModelsRoute: typeof DashboardMyModelsRoute
@@ -416,7 +396,6 @@ interface DashboardRouteChildren {
 const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardAccountRoute: DashboardAccountRoute,
   DashboardActivityRoute: DashboardActivityRoute,
-  DashboardGiftRoute: DashboardGiftRoute,
   DashboardKeysRoute: DashboardKeysRoute,
   DashboardModelsRoute: DashboardModelsRoute,
   DashboardMyModelsRoute: DashboardMyModelsRoute,

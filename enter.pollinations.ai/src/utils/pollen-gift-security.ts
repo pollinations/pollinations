@@ -75,8 +75,8 @@ export async function consumePollenGiftRateLimit(
     const row = await db
         .prepare(
             `INSERT INTO pollen_gift_rate_limit (
-                key, window_started_at, attempts, updated_at
-             ) VALUES (?, ?, 1, ?)
+                key, window_started_at, attempts
+             ) VALUES (?, ?, 1)
              ON CONFLICT(key) DO UPDATE SET
                 attempts = CASE
                     WHEN window_started_at <= ? THEN 1
@@ -85,11 +85,10 @@ export async function consumePollenGiftRateLimit(
                 window_started_at = CASE
                     WHEN window_started_at <= ? THEN excluded.window_started_at
                     ELSE window_started_at
-                END,
-                updated_at = excluded.updated_at
+                END
              RETURNING attempts, window_started_at AS windowStartedAt`,
         )
-        .bind(input.key, now, now, cutoff, cutoff)
+        .bind(input.key, now, cutoff, cutoff)
         .first<{ attempts: number; windowStartedAt: number }>();
 
     if (!row) throw new Error("Gift rate limit update failed");

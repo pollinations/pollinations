@@ -19,11 +19,6 @@ type PollenGiftRow = {
     id: string;
     codeHash: string;
     pollenAmount: number;
-    faceValueCents: number;
-    serviceFeeCents: number;
-    paidAmountCents: number | null;
-    paidCurrency: string | null;
-    refundedAmountCents: number;
     status: PollenGiftStatus;
     statusBeforePaymentLoss: PollenGiftStatus | null;
     balanceReversed: number;
@@ -73,20 +68,11 @@ export async function createPendingPollenGift(
                         id,
                         code_hash,
                         pollen_amount,
-                        face_value_cents,
-                        service_fee_cents,
                         status,
                         created_at
-                    ) VALUES (?, ?, ?, ?, ?, 'pending', ?)`,
+                    ) VALUES (?, ?, ?, 'pending', ?)`,
                 )
-                .bind(
-                    id,
-                    codeHash,
-                    pollenAmount,
-                    faceValueCents,
-                    serviceFeeCents,
-                    Date.now(),
-                )
+                .bind(id, codeHash, pollenAmount, Date.now())
                 .run();
 
             return { id, code, faceValueCents, serviceFeeCents };
@@ -124,10 +110,10 @@ export async function voidPendingPollenGift(
     await db
         .prepare(
             `UPDATE pollen_gift_code
-             SET status = 'voided', invalidated_at = ?
+             SET status = 'voided'
              WHERE id = ? AND status = 'pending'`,
         )
-        .bind(Date.now(), giftId)
+        .bind(giftId)
         .run();
 }
 
@@ -142,12 +128,12 @@ export async function voidPendingPollenGiftCheckout(
     await db
         .prepare(
             `UPDATE pollen_gift_code
-             SET status = 'voided', invalidated_at = ?
+             SET status = 'voided'
              WHERE id = ?
                AND stripe_checkout_session_id = ?
                AND status = 'pending'`,
         )
-        .bind(Date.now(), giftId, session.id)
+        .bind(giftId, session.id)
         .run();
     return true;
 }
@@ -170,7 +156,6 @@ export async function fulfillPollenGiftCheckout(
         return { success: false, message: "Checkout Session mismatch" };
     }
     const paymentIntentId = stripeObjectId(session.payment_intent);
-    const invoiceId = stripeObjectId(session.invoice);
     const presentment = readPollenGiftPresentment(session);
     const result = await db
         .prepare(
@@ -179,14 +164,7 @@ export async function fulfillPollenGiftCheckout(
                      WHEN status IN ('pending', 'voided') THEN 'active'
                      ELSE status
                  END,
-                 invalidated_at = CASE
-                     WHEN status IN ('pending', 'voided') THEN NULL
-                     ELSE invalidated_at
-                 END,
-                 paid_amount_cents = ?,
-                 paid_currency = ?,
                  stripe_payment_intent_id = ?,
-                 stripe_invoice_id = ?,
                  activated_at = ?
              WHERE id = ?
                AND stripe_checkout_session_id = ?
@@ -195,10 +173,7 @@ export async function fulfillPollenGiftCheckout(
                )`,
         )
         .bind(
-            session.amount_total ?? null,
-            session.currency ?? null,
             paymentIntentId,
-            invoiceId,
             event.created ? event.created * 1000 : Date.now(),
             giftId,
             session.id,
@@ -244,7 +219,7 @@ export async function redeemPollenGift(
     if (!gift || gift.status !== "active") return { redeemed: false };
 
     const redeemedAt = Date.now();
-    const [, , creditResult] = await db.batch([
+    const [, creditResult] = await db.batch([
         db
             .prepare(
                 `UPDATE pollen_gift_code
@@ -254,23 +229,6 @@ export async function redeemPollenGift(
                    AND EXISTS (SELECT 1 FROM user WHERE id = ?)`,
             )
             .bind(userId, redeemedAt, gift.id, userId),
-        db
-            .prepare(
-                `INSERT INTO pollen_gift_adjustment (
-                    idempotency_key, gift_id, stripe_event_id, user_id,
-                    pollen_delta, amount_cents, reason, active, terminal,
-                    stripe_event_created, created_at
-                 ) SELECT ?, ?, ?, ?, ?, 0, 'redeem', 0, 1, 0, ?
-                 WHERE changes() = 1`,
-            )
-            .bind(
-                `redeem:${gift.id}`,
-                gift.id,
-                `redeem:${gift.id}`,
-                userId,
-                gift.pollenAmount,
-                redeemedAt,
-            ),
         db
             .prepare(
                 `UPDATE user
@@ -318,15 +276,12 @@ export async function recordPollenGiftRefund(
     }
     await setPollenGiftPaymentLoss(db, gift.id, {
         idempotencyKey: `refund:${refund.id}`,
-        stripeEventId: event.id,
         stripeEventCreated: event.created,
-        amountCents: refund.amount,
         reason: "refund",
         active: refund.status === "succeeded",
         terminal: refund.status === "failed",
     });
-    await updatePollenGiftRefundTotal(db, gift.id);
-    await reconcilePollenGiftPaymentLoss(db, gift.id, event);
+    await reconcilePollenGiftPaymentLoss(db, gift.id);
     return true;
 }
 
@@ -349,13 +304,11 @@ export async function handlePollenGiftDispute(
 
     await setPollenGiftPaymentLoss(db, gift.id, {
         idempotencyKey: `dispute:${dispute.id}`,
-        stripeEventId: event.id,
         stripeEventCreated: event.created,
-        amountCents: dispute.amount,
         reason: "dispute",
         ...loss,
     });
-    await reconcilePollenGiftPaymentLoss(db, gift.id, event);
+    await reconcilePollenGiftPaymentLoss(db, gift.id);
     return true;
 }
 
@@ -407,9 +360,7 @@ async function setPollenGiftPaymentLoss(
     giftId: string,
     input: {
         idempotencyKey: string;
-        stripeEventId: string;
         stripeEventCreated: number;
-        amountCents: number;
         reason: PaymentLossReason;
         active: boolean;
         terminal: boolean;
@@ -421,13 +372,10 @@ async function setPollenGiftPaymentLoss(
     await db
         .prepare(
             `INSERT INTO pollen_gift_adjustment (
-                idempotency_key, gift_id, stripe_event_id, user_id,
-                pollen_delta, amount_cents, reason, active, terminal,
-                stripe_event_created, created_at
-             ) VALUES (?, ?, ?, NULL, 0, ?, ?, ?, ?, ?, ?)
+                idempotency_key, gift_id, reason, active, terminal,
+                stripe_event_created
+             ) VALUES (?, ?, ?, ?, ?, ?)
              ON CONFLICT(idempotency_key) DO UPDATE SET
-                stripe_event_id = excluded.stripe_event_id,
-                amount_cents = excluded.amount_cents,
                 active = excluded.active,
                 terminal = excluded.terminal,
                 stripe_event_created = excluded.stripe_event_created
@@ -443,50 +391,26 @@ async function setPollenGiftPaymentLoss(
         .bind(
             input.idempotencyKey,
             giftId,
-            input.stripeEventId,
-            input.amountCents,
             input.reason,
             input.active ? 1 : 0,
             input.terminal ? 1 : 0,
             input.stripeEventCreated,
-            Date.now(),
         )
-        .run();
-}
-
-async function updatePollenGiftRefundTotal(
-    db: D1Database,
-    giftId: string,
-): Promise<void> {
-    await db
-        .prepare(
-            `UPDATE pollen_gift_code
-             SET refunded_amount_cents = COALESCE((
-                 SELECT SUM(amount_cents)
-                 FROM pollen_gift_adjustment
-                 WHERE gift_id = ? AND reason = 'refund' AND active = 1
-             ), 0)
-             WHERE id = ?`,
-        )
-        .bind(giftId, giftId)
         .run();
 }
 
 async function reconcilePollenGiftPaymentLoss(
     db: D1Database,
     giftId: string,
-    event: Stripe.Event,
 ): Promise<void> {
-    await freezePollenGiftForPaymentLoss(db, giftId, event);
-    await restorePollenGiftAfterPaymentRecovery(db, giftId, event);
+    await freezePollenGiftForPaymentLoss(db, giftId);
+    await restorePollenGiftAfterPaymentRecovery(db, giftId);
 }
 
 async function freezePollenGiftForPaymentLoss(
     db: D1Database,
     giftId: string,
-    event: Stripe.Event,
 ): Promise<void> {
-    const invalidatedAt = Date.now();
     const activeLoss = `EXISTS (
         SELECT 1 FROM pollen_gift_adjustment
         WHERE gift_id = pollen_gift_code.id AND active = 1
@@ -504,47 +428,29 @@ async function freezePollenGiftForPaymentLoss(
         db
             .prepare(
                 `UPDATE pollen_gift_code
-                 SET status = ${targetStatus}, invalidated_at = ?
+                 SET status = ${targetStatus}
                  WHERE id = ? AND status IN ('refunded', 'disputed')
                    AND ${activeLoss}`,
             )
-            .bind(invalidatedAt, giftId),
+            .bind(giftId),
         db
             .prepare(
                 `UPDATE pollen_gift_code
                  SET status_before_dispute = status,
-                     status = ${targetStatus}, invalidated_at = ?
+                     status = ${targetStatus}
                  WHERE id = ? AND status IN ('pending', 'active', 'voided')
                    AND ${activeLoss}`,
             )
-            .bind(invalidatedAt, giftId),
+            .bind(giftId),
         db
             .prepare(
                 `UPDATE pollen_gift_code
                  SET status = ${targetStatus}, status_before_dispute = 'redeemed',
-                     balance_reversed = 1, invalidated_at = ?
+                     balance_reversed = 1
                  WHERE id = ? AND status = 'redeemed' AND balance_reversed = 0
                    AND redeemer_user_id IS NOT NULL AND ${activeLoss}`,
             )
-            .bind(invalidatedAt, giftId),
-        db
-            .prepare(
-                `INSERT INTO pollen_gift_adjustment (
-                    idempotency_key, gift_id, stripe_event_id, user_id,
-                    pollen_delta, amount_cents, reason, active, terminal,
-                    stripe_event_created, created_at
-                 ) SELECT ?, id, ?, redeemer_user_id, -pollen_amount, 0,
-                          'balance_reversed', 0, 1, ?, ?
-                   FROM pollen_gift_code
-                  WHERE id = ? AND changes() = 1`,
-            )
-            .bind(
-                `balance-loss:${event.id}`,
-                event.id,
-                event.created,
-                Date.now(),
-                giftId,
-            ),
+            .bind(giftId),
         db
             .prepare(
                 `UPDATE user
@@ -565,7 +471,6 @@ async function freezePollenGiftForPaymentLoss(
 async function restorePollenGiftAfterPaymentRecovery(
     db: D1Database,
     giftId: string,
-    event: Stripe.Event,
 ): Promise<void> {
     const noActiveLoss = `NOT EXISTS (
         SELECT 1 FROM pollen_gift_adjustment
@@ -578,31 +483,13 @@ async function restorePollenGiftAfterPaymentRecovery(
             .prepare(
                 `UPDATE pollen_gift_code
                  SET status = 'redeemed', status_before_dispute = NULL,
-                     balance_reversed = 0, invalidated_at = NULL
+                     balance_reversed = 0
                  WHERE id = ? AND status IN ('refunded', 'disputed')
                    AND status_before_dispute = 'redeemed'
                    AND balance_reversed = 1 AND redeemer_user_id IS NOT NULL
                    AND ${noActiveLoss}`,
             )
             .bind(giftId),
-        db
-            .prepare(
-                `INSERT INTO pollen_gift_adjustment (
-                    idempotency_key, gift_id, stripe_event_id, user_id,
-                    pollen_delta, amount_cents, reason, active, terminal,
-                    stripe_event_created, created_at
-                 ) SELECT ?, id, ?, redeemer_user_id, pollen_amount, 0,
-                          'balance_restored', 0, 1, ?, ?
-                   FROM pollen_gift_code
-                  WHERE id = ? AND changes() = 1`,
-            )
-            .bind(
-                `balance-recovery:${event.id}`,
-                event.id,
-                event.created,
-                Date.now(),
-                giftId,
-            ),
         db
             .prepare(
                 `UPDATE user
@@ -626,7 +513,7 @@ async function restorePollenGiftAfterPaymentRecovery(
                          ELSE status_before_dispute
                      END,
                      status_before_dispute = NULL,
-                     balance_reversed = 0, invalidated_at = NULL
+                     balance_reversed = 0
                  WHERE id = ? AND status IN ('refunded', 'disputed')
                    AND status_before_dispute IN ('pending', 'active', 'voided')
                    AND balance_reversed = 0 AND ${noActiveLoss}`,
@@ -711,11 +598,6 @@ const POLLEN_GIFT_SELECT = `SELECT
     id,
     code_hash AS codeHash,
     pollen_amount AS pollenAmount,
-    face_value_cents AS faceValueCents,
-    service_fee_cents AS serviceFeeCents,
-    paid_amount_cents AS paidAmountCents,
-    paid_currency AS paidCurrency,
-    refunded_amount_cents AS refundedAmountCents,
     status,
     status_before_dispute AS statusBeforePaymentLoss,
     balance_reversed AS balanceReversed,

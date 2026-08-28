@@ -64,19 +64,15 @@ async function insertRedeemedGift({
     const now = Date.now();
     await env.DB.prepare(
         `INSERT INTO pollen_gift_code (
-            id, code_hash, pollen_amount, face_value_cents, service_fee_cents,
-            paid_amount_cents, paid_currency, status, stripe_checkout_session_id,
-            stripe_payment_intent_id, redeemer_user_id, created_at, activated_at,
-            redeemed_at
-        ) VALUES (?, ?, ?, ?, ?, ?, 'usd', 'redeemed', ?, ?, ?, ?, ?, ?)`,
+            id, code_hash, pollen_amount, status, stripe_checkout_session_id,
+            stripe_payment_intent_id, redeemer_user_id, created_at,
+            activated_at, redeemed_at
+        ) VALUES (?, ?, ?, 'redeemed', ?, ?, ?, ?, ?, ?)`,
     )
         .bind(
             giftId,
             `hash_${giftId}`,
             pollenAmount,
-            faceValueCents,
-            serviceFeeCents,
-            paidAmountCents,
             `cs_${giftId}`,
             paymentIntentId,
             userId,
@@ -194,8 +190,6 @@ test("anonymous gift checkout preserves the Stripe purchase contract", async ({
             code_hash AS codeHash,
             status,
             pollen_amount AS pollenAmount,
-            face_value_cents AS faceValueCents,
-            service_fee_cents AS serviceFeeCents,
             stripe_checkout_session_id AS stripeCheckoutSessionId
          FROM pollen_gift_code
          WHERE id = ?`,
@@ -205,15 +199,11 @@ test("anonymous gift checkout preserves the Stripe purchase contract", async ({
             codeHash: string;
             status: string;
             pollenAmount: number;
-            faceValueCents: number;
-            serviceFeeCents: number;
             stripeCheckoutSessionId: string | null;
         }>();
     expect(storedGift).toMatchObject({
         status: "pending",
         pollenAmount: amount,
-        faceValueCents: amount * 100,
-        serviceFeeCents: calculateServiceFeeCents(amount * 100),
         stripeCheckoutSessionId: "cs_mock_1",
     });
     expect(storedGift?.codeHash).toMatch(/^[a-f0-9]{64}$/);
@@ -502,8 +492,6 @@ test("paid gift activation is idempotent and redemption is authenticated and sin
     const activeGift = await env.DB.prepare(
         `SELECT
             status,
-            paid_amount_cents AS paidAmountCents,
-            paid_currency AS paidCurrency,
             stripe_payment_intent_id AS stripePaymentIntentId
          FROM pollen_gift_code
          WHERE id = ?`,
@@ -511,14 +499,10 @@ test("paid gift activation is idempotent and redemption is authenticated and sin
         .bind(giftId)
         .first<{
             status: string;
-            paidAmountCents: number;
-            paidCurrency: string;
             stripePaymentIntentId: string;
         }>();
     expect(activeGift).toEqual({
         status: "active",
-        paidAmountCents: totalCents,
-        paidCurrency: "usd",
         stripePaymentIntentId: "pi_pollen_gift",
     });
 
@@ -715,14 +699,11 @@ test("expired Checkout Session voids a pending gift", async ({ mocks }) => {
     expect(webhookResponse.status).toBe(200);
 
     const gift = await env.DB.prepare(
-        `SELECT status, invalidated_at AS invalidatedAt
-         FROM pollen_gift_code
-         WHERE id = ?`,
+        `SELECT status FROM pollen_gift_code WHERE id = ?`,
     )
         .bind(giftId)
-        .first<{ status: string; invalidatedAt: number | null }>();
+        .first<{ status: string }>();
     expect(gift?.status).toBe("voided");
-    expect(gift?.invalidatedAt).toBeTypeOf("number");
 });
 
 test("a full refund reverses redeemed Pollen exactly once", async ({
@@ -772,20 +753,17 @@ test("a full refund reverses redeemed Pollen exactly once", async ({
     }
 
     const gift = await env.DB.prepare(
-        `SELECT status, balance_reversed AS balanceReversed,
-                refunded_amount_cents AS refundedAmountCents
+        `SELECT status, balance_reversed AS balanceReversed
          FROM pollen_gift_code WHERE id = ?`,
     )
         .bind(giftId)
         .first<{
             status: string;
             balanceReversed: number;
-            refundedAmountCents: number;
         }>();
     expect(gift).toEqual({
         status: "refunded",
         balanceReversed: 1,
-        refundedAmountCents: paidAmountCents,
     });
     const balance = await env.DB.prepare(
         "SELECT pack_balance AS packBalance FROM user WHERE id = ?",
@@ -817,18 +795,14 @@ test("redemption racing a refund never leaves spendable Pollen", async ({
     const now = Date.now();
     await env.DB.prepare(
         `INSERT INTO pollen_gift_code (
-            id, code_hash, pollen_amount, face_value_cents, service_fee_cents,
-            paid_amount_cents, paid_currency, status, stripe_checkout_session_id,
+            id, code_hash, pollen_amount, status, stripe_checkout_session_id,
             stripe_payment_intent_id, created_at, activated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, 'usd', 'active', ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, 'active', ?, ?, ?, ?)`,
     )
         .bind(
             giftId,
             await hashPollenGiftCode(code),
             pollenAmount,
-            faceValueCents,
-            serviceFeeCents,
-            paidAmountCents,
             `cs_${giftId}`,
             paymentIntentId,
             now,
@@ -926,20 +900,17 @@ test("a failed refund restores a redeemed gift and its Pollen", async ({
     expect(failed.status).toBe(200);
 
     const gift = await env.DB.prepare(
-        `SELECT status, balance_reversed AS balanceReversed,
-                refunded_amount_cents AS refundedAmountCents
+        `SELECT status, balance_reversed AS balanceReversed
          FROM pollen_gift_code WHERE id = ?`,
     )
         .bind(giftId)
         .first<{
             status: string;
             balanceReversed: number;
-            refundedAmountCents: number;
         }>();
     expect(gift).toEqual({
         status: "redeemed",
         balanceReversed: 0,
-        refundedAmountCents: 0,
     });
     const balance = await env.DB.prepare(
         "SELECT pack_balance AS packBalance FROM user WHERE id = ?",

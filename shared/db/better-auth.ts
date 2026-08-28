@@ -344,11 +344,6 @@ export const pollenGiftCode = sqliteTable("pollen_gift_code", {
   id: text("id").primaryKey(),
   codeHash: text("code_hash").notNull().unique(),
   pollenAmount: integer("pollen_amount").notNull(),
-  faceValueCents: integer("face_value_cents").notNull(),
-  serviceFeeCents: integer("service_fee_cents").notNull(),
-  paidAmountCents: integer("paid_amount_cents"),
-  paidCurrency: text("paid_currency"),
-  refundedAmountCents: integer("refunded_amount_cents").default(0).notNull(),
   status: text("status", {
     enum: ["pending", "active", "redeemed", "voided", "refunded", "disputed"],
   }).default("pending").notNull(),
@@ -359,7 +354,6 @@ export const pollenGiftCode = sqliteTable("pollen_gift_code", {
     .notNull(),
   stripeCheckoutSessionId: text("stripe_checkout_session_id").unique(),
   stripePaymentIntentId: text("stripe_payment_intent_id").unique(),
-  stripeInvoiceId: text("stripe_invoice_id").unique(),
   redeemerUserId: text("redeemer_user_id").references(() => user.id, {
     onDelete: "set null",
   }),
@@ -368,9 +362,7 @@ export const pollenGiftCode = sqliteTable("pollen_gift_code", {
     .notNull(),
   activatedAt: integer("activated_at", { mode: "timestamp_ms" }),
   redeemedAt: integer("redeemed_at", { mode: "timestamp_ms" }),
-  invalidatedAt: integer("invalidated_at", { mode: "timestamp_ms" }),
 }, (table) => [
-  index("idx_pollen_gift_code_status").on(table.status),
   index("idx_pollen_gift_code_redeemer_user_id").on(table.redeemerUserId),
 ]);
 
@@ -379,22 +371,12 @@ export const pollenGiftAdjustment = sqliteTable("pollen_gift_adjustment", {
   giftId: text("gift_id")
     .notNull()
     .references(() => pollenGiftCode.id),
-  stripeEventId: text("stripe_event_id").notNull(),
-  userId: text("user_id").references(() => user.id, {
-    onDelete: "set null",
-  }),
-  pollenDelta: real("pollen_delta").notNull(),
-  amountCents: integer("amount_cents").default(0).notNull(),
   reason: text("reason").notNull(),
   active: integer("active", { mode: "boolean" }).default(false).notNull(),
   terminal: integer("terminal", { mode: "boolean" }).default(false).notNull(),
   stripeEventCreated: integer("stripe_event_created").default(0).notNull(),
-  createdAt: integer("created_at", { mode: "timestamp_ms" })
-    .defaultNow()
-    .notNull(),
 }, (table) => [
   index("idx_pollen_gift_adjustment_gift_id").on(table.giftId),
-  index("idx_pollen_gift_adjustment_user_id").on(table.userId),
 ]);
 
 export const stripeGiftCardFingerprintAttempt = sqliteTable(
@@ -420,7 +402,6 @@ export const pollenGiftRateLimit = sqliteTable("pollen_gift_rate_limit", {
   windowStartedAt: integer("window_started_at", { mode: "timestamp_ms" })
     .notNull(),
   attempts: integer("attempts").notNull(),
-  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
 });
 
 export const stripeCheckoutCredits = sqliteTable("stripe_checkout_credits", {

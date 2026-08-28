@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🖼️",
+    "name": "Pixel Forge",
+    "url": "https://b3b41020.github.io/pixel-forge",
+    "description": "AI image generation studio powered by Pollinations. Users enter a prompt, select a model (Flux, Dreamshaper, Klein, GPT Image 2, Zimage, Nanobanana) and image size, then generate. Built with the Polli",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "b3b41020",
+    "githubUserId": "40296960",
+    "repositoryUrl": "https://github.com/b3b41020/pixel-forge",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-08-27",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/14065",
+    "approvedDate": "2026-08-28",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🛠️",
     "name": "DemoWeaver",
     "url": "https://mebularts.github.io/DemoWeaver",

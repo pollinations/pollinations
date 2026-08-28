@@ -286,17 +286,6 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             {model.brand}
                         </a>
                     )}
-                    {model.contextLength && (
-                        <span className="text-[11px] text-theme-text-muted">
-                            {model.contextLength >= 1000000
-                                ? `${(model.contextLength / 1000000).toFixed(1)}M`
-                                : model.contextLength >= 1000
-                                  ? `${Math.round(model.contextLength / 1000)}K`
-                                  : model.contextLength}{" "}
-                            context
-                        </span>
-                    )}
-
                     {model.type !== "embedding" && !model.agent && (
                         <a
                             href={`https://pollinations.ai/play?model=${encodeURIComponent(model.name)}`}

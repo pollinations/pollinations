@@ -28,6 +28,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🖼️ Pixel Forge](https://b3b41020.github.io/pixel-forge) | AI image generation studio powered by Pollinations. Users enter a prompt, select a model (Flux, Dreamshaper, Klein, GPT Image 2, Zimage, Nanobanana) and image size, then generate. Built with the Polli | [@b3b41020](https://github.com/b3b41020) |
 | [🛠️ DemoWeaver](https://mebularts.github.io/DemoWeaver) | DemoWeaver is an open-source AI-powered product walkthrough generator that turns a running web application into a browser-verified, professionally narrated product video. Instead of manually recording | [@mebularts](https://github.com/mebularts) |
 | [🖼️ AI STUDIO — RealTime AUDIO & VIDEO CREATOR](https://noanswers.website/WebAnimation) | Creates collaborative images using the Pollinations image API integration. Thereby, allowing users to add generated content or uploaded from the local machines and create slide/videos adaptive to FPS | [@noanswers-website](https://github.com/noanswers-website) |
 | [💬 Pollinations Studio](https://sankezhiyyds.github.io/pollinations-app) | A pure HTML/JavaScript AI generation studio with no framework dependencies. It supports image, text, audio, and video generation via the Pollinations API. Users bring their own API key (sk_ or pk_) fo | [@sankezhiyyds](https://github.com/sankezhiyyds) |
@@ -37,7 +38,6 @@
 | [🖼️ EAS AI STUDIO](https://www.ekin-ai-studio.my.id) | Create collaborative images using the Pollinations image API | [@EkinLiu](https://github.com/EkinLiu) |
 | [💬 App Submission: FreeChat CLI](https://github.com/xiaotian1171/freechat-cli) | A zero-config command-line chat tool powered by the Pollinations free API. No API key required. Features include multi-model switching, streaming responses, conversation history, and save/load. Uses t | [@xiaotian1171](https://github.com/xiaotian1171) |
 | [✍️ StoryForge](https://storyforge.wiradifit-makmur-sejahtera.duckdns.org) | Turn any idea into an illustrated AI micro-story. The user signs in via the official BYOP OAuth flow (PKCE) with a self-chosen pollen budget, describes an idea, picks a genre (fantasy / sci-fi / myste | [@wiradifit](https://github.com/wiradifit) |
-| [🖼️ vaia-ai-studio.my.id](https://vaia-ai-studio.my.id) | Create collaborative images using the Pollinations image API | [@vaiaaistudio](https://github.com/vaiaaistudio) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

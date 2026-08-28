@@ -70,6 +70,7 @@ export function Authorize() {
         app_key,
         state,
         response_type,
+        purpose,
         code_challenge,
         code_challenge_method,
         models,
@@ -83,6 +84,7 @@ export function Authorize() {
     // OAuth 2.1 authorization-code flow: the callback carries ?code=...
     // instead of the legacy #api_key=... fragment.
     const isCodeFlow = !isDeviceMode && response_type === "code";
+    const isAccountLogin = isCodeFlow && purpose === "login";
 
     const { data: session, isPending } = authClient.useSession();
     const user = session?.user as User | undefined;
@@ -322,7 +324,7 @@ export function Authorize() {
     ]);
 
     useEffect(() => {
-        if (!user) return;
+        if (!user || isAccountLogin) return;
 
         apiClient.customer.balance
             .$get()
@@ -334,7 +336,7 @@ export function Authorize() {
                 );
             })
             .catch(() => {});
-    }, [user]);
+    }, [user, isAccountLogin]);
 
     async function handleAuthorize(): Promise<void> {
         if (!canAuthorize || isAuthorizing) return;
@@ -343,6 +345,47 @@ export function Authorize() {
         setError(null);
 
         try {
+            if (isAccountLogin) {
+                if (
+                    !parsedRedirectUrl ||
+                    !app_key ||
+                    !code_challenge ||
+                    !redirect_url
+                ) {
+                    throw new Error(
+                        "Missing client_id, redirect_uri, or PKCE code_challenge",
+                    );
+                }
+                const res = await apiClient.oauth.code
+                    .$post({
+                        json: {
+                            purpose: "login",
+                            clientId: app_key,
+                            redirectUri: redirect_url,
+                            codeChallenge: code_challenge,
+                            codeChallengeMethod: "S256",
+                        },
+                    })
+                    .catch(() => null);
+                if (!res || !res.ok) {
+                    const data = (await res?.json().catch(() => null)) as {
+                        message?: string;
+                        error?: { message?: string };
+                    } | null;
+                    throw new Error(
+                        data?.message ||
+                            data?.error?.message ||
+                            "Failed to create authorization code",
+                    );
+                }
+                const { code } = (await res.json()) as { code: string };
+                const url = new URL(parsedRedirectUrl.href);
+                url.searchParams.set("code", code);
+                if (state) url.searchParams.set("state", state);
+                window.location.href = url.toString();
+                return;
+            }
+
             const { allowedModels, pollenBudget, accountPermissions } =
                 keyPermissions.permissions;
             const grantedAccountPermissions =
@@ -526,10 +569,12 @@ export function Authorize() {
                                 isDeviceMode={isDeviceMode}
                                 userCode={user_code}
                                 redirectHostname={redirectHostname}
+                                isAccountLogin={isAccountLogin}
                             />
                             <p className="text-sm text-theme-text-base mt-3">
-                                Sign in to review and approve the requested
-                                access.
+                                {isAccountLogin
+                                    ? "Pollinations will confirm your identity to this app."
+                                    : "Sign in to review and approve the requested access."}
                             </p>
                         </AuthInfoCard>
                     )}
@@ -555,6 +600,87 @@ export function Authorize() {
                             </Button>
                         )}
                     </div>
+                </div>
+            </AuthModal>
+        );
+    }
+
+    if (isAccountLogin) {
+        return (
+            <AuthModal
+                dialog={
+                    error
+                        ? { label: "Login error" }
+                        : { labelledBy: "login-dialog-title" }
+                }
+                tone={error ? "error" : undefined}
+            >
+                <AuthModalHeader>
+                    <a
+                        href={config.baseUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 min-w-0"
+                    >
+                        {user.image && (
+                            <img
+                                src={user.image}
+                                alt=""
+                                className="w-6 h-6 rounded-full shrink-0"
+                            />
+                        )}
+                        <span className="text-sm font-medium text-theme-text-strong truncate">
+                            {user.githubUsername || user.email}
+                        </span>
+                    </a>
+                </AuthModalHeader>
+                <div className="px-6 py-5 space-y-5">
+                    {error ? (
+                        <ErrorBanner>{error}</ErrorBanner>
+                    ) : (
+                        <>
+                            <div className="-mx-6 px-6 py-4 bg-theme-bg-pale border-y border-theme-border">
+                                <p
+                                    id="login-dialog-title"
+                                    className="font-body text-xs font-semibold text-theme-text-soft tracking-wide mb-2"
+                                >
+                                    Log in with Pollinations
+                                </p>
+                                <AppAttribution
+                                    attribution={attribution}
+                                    isDeviceMode={false}
+                                    redirectHostname={redirectHostname}
+                                    isAccountLogin
+                                />
+                            </div>
+                            <div className="flex items-start gap-2 text-sm text-theme-text-base">
+                                <MailIcon className="h-4 w-4 shrink-0 text-theme-text-soft" />
+                                <span>
+                                    Share your name, email, GitHub username, and
+                                    profile picture.
+                                </span>
+                            </div>
+                        </>
+                    )}
+                </div>
+                <div className="flex justify-end gap-2 border-t border-divider p-6 pt-4">
+                    <Button
+                        as="button"
+                        onClick={handleDeny}
+                        intent="danger"
+                        disabled={isAuthorizing}
+                    >
+                        Cancel
+                    </Button>
+                    {!error && (
+                        <Button
+                            as="button"
+                            onClick={handleAuthorize}
+                            disabled={!canAuthorize || isAuthorizing}
+                        >
+                            {isAuthorizing ? "Logging in..." : "Continue"}
+                        </Button>
+                    )}
                 </div>
             </AuthModal>
         );

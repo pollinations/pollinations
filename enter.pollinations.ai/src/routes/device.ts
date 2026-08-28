@@ -348,9 +348,17 @@ export async function handleUserinfo(c: AuthedContext) {
         c.var.auth.apiKey,
         "profile",
     );
-    const db = drizzle(c.env.DB, { schema });
+    return c.json(await getUserinfoForUser(c.env, user.id, includeProfilePII));
+}
+
+export async function getUserinfoForUser(
+    env: Env["Bindings"],
+    userId: string,
+    includeProfilePII: boolean,
+) {
+    const db = drizzle(env.DB, { schema });
     const row = await db.query.user.findFirst({
-        where: eq(schema.user.id, user.id),
+        where: eq(schema.user.id, userId),
         columns: {
             id: true,
             name: true,
@@ -362,10 +370,10 @@ export async function handleUserinfo(c: AuthedContext) {
     if (!row) {
         throw new HTTPException(404, { message: "User not found" });
     }
-    return c.json({
+    return {
         sub: row.id,
         ...(includeProfilePII && { name: row.name, email: row.email }),
         picture: row.image,
         preferred_username: row.githubUsername,
-    });
+    };
 }

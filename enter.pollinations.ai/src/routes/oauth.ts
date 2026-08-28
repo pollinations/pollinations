@@ -12,22 +12,40 @@ import {
     type DeviceTokenRequest,
     exchangeDeviceCode,
     generateCode,
+    getUserinfoForUser,
     handleUserinfo,
     parseFormOrJsonBody,
 } from "./device.ts";
 
 const KV_TTL = 600; // 10 minutes — codes are single-use and short-lived
+const LOGIN_TOKEN_TTL = 60; // identity token is only used for one userinfo call
 const CODE_LENGTH = 40;
 export const DEVICE_CODE_GRANT = "urn:ietf:params:oauth:grant-type:device_code";
 
-/** What the consent page stored when the user approved the request. */
-type StoredCode = {
+type StoredApiCode = {
+    purpose?: "api";
     key: string;
     clientId: string;
     redirectUri: string;
     scope: string | null;
     codeChallenge: string;
     expiresIn: number | null;
+};
+
+type StoredLoginCode = {
+    purpose: "login";
+    userId: string;
+    clientId: string;
+    redirectUri: string;
+    scope: "profile";
+    codeChallenge: string;
+};
+
+/** What the consent page stored when the user approved the request. */
+type StoredCode = StoredApiCode | StoredLoginCode;
+
+type StoredLoginToken = {
+    userId: string;
 };
 
 /**
@@ -57,22 +75,31 @@ function tokenError(c: Context<Env>, error: string, description?: string) {
     );
 }
 
-const CreateCodeSchema = z.object({
-    apiKey: z.string().min(1),
+const CodeBindingSchema = z.object({
     clientId: z.string().startsWith("pk_"),
     redirectUri: z.string().min(1),
-    scope: z.string().optional(),
     codeChallenge: z.string().regex(PKCE_S256_CHALLENGE_REGEX),
     codeChallengeMethod: z.literal("S256"),
-    expiresIn: z.number().int().positive().nullish(),
 });
 
+const CreateCodeSchema = z.discriminatedUnion("purpose", [
+    CodeBindingSchema.extend({
+        purpose: z.literal("login"),
+    }),
+    CodeBindingSchema.extend({
+        purpose: z.literal("api").optional(),
+        apiKey: z.string().min(1),
+        scope: z.string().optional(),
+        expiresIn: z.number().int().positive().nullish(),
+    }),
+]);
+
 /**
- * OAuth 2.1 authorization-code grant with PKCE (S256 only), layered on the
- * same trust model as the device flow: the consent page mints the sk_ in the
- * browser and hands it to the server, which parks it in KV behind a
- * single-use authorization code. The legacy fragment (#api_key=) flow is
- * untouched — this is an additional issuance path, not a replacement.
+ * OAuth 2.1 authorization-code grant with PKCE (S256 only). API delegation
+ * parks a browser-minted sk_ behind the code. Account login instead parks the
+ * signed-in user id and exchanges it for a short-lived, identity-only token
+ * that cannot call generation APIs. The legacy fragment (#api_key=) flow is
+ * untouched.
  *
  * POST /code     — called by the consent page after the user approves
  * POST /token    — code+PKCE (and device_code) exchange, RFC 6749 §3.2
@@ -84,7 +111,7 @@ export const oauthRoutes = new Hono<Env>()
         auth({ allowApiKey: false, allowSessionCookie: true }),
         validator("json", CreateCodeSchema),
         async (c) => {
-            c.var.auth.requireUser();
+            const user = c.var.auth.requireUser();
             const body = c.req.valid("json");
 
             // Re-validate the client/redirect binding server-side; the same
@@ -113,16 +140,28 @@ export const oauthRoutes = new Hono<Env>()
             }
 
             const code = generateCode(CODE_LENGTH);
-            const stored: StoredCode = {
-                key: body.apiKey,
-                clientId: body.clientId,
-                redirectUri: body.redirectUri,
-                // "" is meaningful: the user narrowed a requested scope to
-                // zero, and RFC 6749 §5.1 requires the token response to say so
-                scope: body.scope ?? null,
-                codeChallenge: body.codeChallenge,
-                expiresIn: body.expiresIn ?? null,
-            };
+            const stored: StoredCode =
+                body.purpose === "login"
+                    ? {
+                          purpose: "login",
+                          userId: user.id,
+                          clientId: body.clientId,
+                          redirectUri: body.redirectUri,
+                          scope: "profile",
+                          codeChallenge: body.codeChallenge,
+                      }
+                    : {
+                          purpose: "api",
+                          key: body.apiKey,
+                          clientId: body.clientId,
+                          redirectUri: body.redirectUri,
+                          // "" is meaningful: the user narrowed a requested
+                          // scope to zero, and RFC 6749 §5.1 requires the token
+                          // response to say so.
+                          scope: body.scope ?? null,
+                          codeChallenge: body.codeChallenge,
+                          expiresIn: body.expiresIn ?? null,
+                      };
             await c.env.KV.put(`oauth-code:${code}`, JSON.stringify(stored), {
                 expirationTtl: KV_TTL,
             });
@@ -194,6 +233,22 @@ export const oauthRoutes = new Hono<Env>()
             return tokenError(c, "invalid_grant", "PKCE verification failed");
         }
 
+        if (stored.purpose === "login") {
+            const accessToken = `oauth_${generateCode(CODE_LENGTH)}`;
+            const loginToken: StoredLoginToken = { userId: stored.userId };
+            await c.env.KV.put(
+                `oauth-login-token:${accessToken}`,
+                JSON.stringify(loginToken),
+                { expirationTtl: LOGIN_TOKEN_TTL },
+            );
+            return c.json({
+                access_token: accessToken,
+                token_type: "bearer",
+                expires_in: LOGIN_TOKEN_TTL,
+                scope: stored.scope,
+            });
+        }
+
         return c.json({
             access_token: stored.key,
             token_type: "bearer",
@@ -203,6 +258,34 @@ export const oauthRoutes = new Hono<Env>()
     })
     .get(
         "/userinfo",
+        async (c, next) => {
+            c.header("Cache-Control", "no-store");
+            const authorization = c.req.header("Authorization") ?? "";
+            const [scheme, accessToken, extra] = authorization.split(" ");
+            if (!accessToken?.startsWith("oauth_")) return next();
+            if (scheme?.toLowerCase() !== "bearer" || extra) {
+                c.header("WWW-Authenticate", "Bearer");
+                return c.json({ error: "invalid_token" }, 401);
+            }
+
+            const kvKey = `oauth-login-token:${accessToken}`;
+            const stored = (await c.env.KV.get(
+                kvKey,
+                "json",
+            )) as StoredLoginToken | null;
+            if (!stored?.userId) {
+                c.header("WWW-Authenticate", "Bearer");
+                return c.json({ error: "invalid_token" }, 401);
+            }
+
+            const profile = await getUserinfoForUser(
+                c.env,
+                stored.userId,
+                true,
+            );
+            await c.env.KV.delete(kvKey);
+            return c.json(profile);
+        },
         auth({ allowApiKey: true, allowSessionCookie: true }),
         (c) => handleUserinfo(c),
     );

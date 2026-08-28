@@ -62,38 +62,66 @@ function Tile({ label, value, format, current, previous }) {
     );
 }
 
-function LoadingScreen({ done, active }) {
+function AccountControls({ accountUser }) {
     return (
-        <main className="mx-auto flex w-full max-w-sm flex-col gap-4 px-4 py-16">
-            <Text as="p" tone="soft">
-                Loading KPIs from all data sources…
-            </Text>
-            <div className="flex flex-col gap-1.5">
-                {SOURCE_LABELS.map((label) => {
-                    const complete = done.includes(label);
-                    const running = !complete && active === label;
-                    return (
-                        <Text
-                            key={label}
-                            as="div"
-                            size="sm"
-                            tone={
-                                running ? "strong" : complete ? "base" : "muted"
-                            }
-                            className="flex items-center gap-2"
-                        >
-                            <span
-                                aria-hidden="true"
-                                className="w-4 text-center"
+        <>
+            <ColorModeToggle />
+            {accountUser && (
+                <AccountMenu
+                    name={accountName(accountUser)}
+                    avatarUrl={accountUser.picture}
+                    onSignOut={() => window.location.assign("/auth/logout")}
+                />
+            )}
+        </>
+    );
+}
+
+function LoadingScreen({ done, active, accountUser }) {
+    return (
+        <div className="min-h-screen bg-app-bg">
+            <AppHeader
+                navLabel="KPI dashboard links"
+                innerClassName="polli:max-w-7xl polli:flex-row polli:items-center polli:justify-end"
+                navClassName="polli:items-center"
+            >
+                <AccountControls accountUser={accountUser} />
+            </AppHeader>
+            <main className="mx-auto flex w-full max-w-sm flex-col gap-4 px-4 py-16">
+                <Text as="p" tone="soft">
+                    Loading KPIs from all data sources…
+                </Text>
+                <div className="flex flex-col gap-1.5">
+                    {SOURCE_LABELS.map((label) => {
+                        const complete = done.includes(label);
+                        const running = !complete && active === label;
+                        return (
+                            <Text
+                                key={label}
+                                as="div"
+                                size="sm"
+                                tone={
+                                    running
+                                        ? "strong"
+                                        : complete
+                                          ? "base"
+                                          : "muted"
+                                }
+                                className="flex items-center gap-2"
                             >
-                                {complete ? "✓" : running ? "◍" : "·"}
-                            </span>
-                            {label}
-                        </Text>
-                    );
-                })}
-            </div>
-        </main>
+                                <span
+                                    aria-hidden="true"
+                                    className="w-4 text-center"
+                                >
+                                    {complete ? "✓" : running ? "◍" : "·"}
+                                </span>
+                                {label}
+                            </Text>
+                        );
+                    })}
+                </div>
+            </main>
+        </div>
     );
 }
 
@@ -148,7 +176,15 @@ export default function App() {
         previousWeek,
     } = useKpiData();
 
-    if (loading) return <LoadingScreen done={done} active={active} />;
+    if (loading) {
+        return (
+            <LoadingScreen
+                done={done}
+                active={active}
+                accountUser={accountUser}
+            />
+        );
+    }
 
     const wapc = currentWeek?.packPurchases || 0;
     const funnelStages = currentWeek
@@ -188,14 +224,7 @@ export default function App() {
                         Export CSV
                     </span>
                 </Button>
-                <ColorModeToggle />
-                {accountUser && (
-                    <AccountMenu
-                        name={accountName(accountUser)}
-                        avatarUrl={accountUser.picture}
-                        onSignOut={() => window.location.assign("/auth/logout")}
-                    />
-                )}
+                <AccountControls accountUser={accountUser} />
             </AppHeader>
 
             <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-5 sm:px-6 md:py-7">

@@ -15,6 +15,7 @@ type Env = {
     GITHUB_TOKEN?: string;
     GITHUB_REPO: string;
     POLLINATIONS_AUTH_ALLOWED_EMAILS: string;
+    POLLINATIONS_AUTH_BASE_URL?: string;
     POLLINATIONS_AUTH_SESSION_SECRET: string;
     POLLINATIONS_OAUTH_CLIENT_ID: string;
     ASSETS: Fetcher;
@@ -164,6 +165,7 @@ app.use("*", async (c, next) => {
             clientId: c.env.POLLINATIONS_OAUTH_CLIENT_ID,
             sessionSecret: c.env.POLLINATIONS_AUTH_SESSION_SECRET,
             allowedEmails: c.env.POLLINATIONS_AUTH_ALLOWED_EMAILS,
+            baseUrl: c.env.POLLINATIONS_AUTH_BASE_URL,
         });
     } catch {
         return c.json({ error: "KPI configuration unavailable" }, 500);

@@ -365,6 +365,93 @@ describe("POST /api/oauth/code (consent-side code creation)", () => {
         expect(token.scope).toBe("profile");
     }, 30000);
 
+    test("account login exchanges for a one-time identity token, not an API key", async ({
+        sessionToken,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "github");
+
+        const createRes = await SELF.fetch(`${BASE}/api/api-keys`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({
+                name: "internal-login-test",
+                type: "publishable",
+            }),
+        });
+        expect(createRes.status).toBe(200);
+        const client = (await createRes.json()) as { id: string; key: string };
+        await SELF.fetch(`${BASE}/api/api-keys/${client.id}/metadata`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({ redirectUris: [REDIRECT_URI] }),
+        });
+
+        const codeRes = await SELF.fetch(`${BASE}/api/oauth/code`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({
+                purpose: "login",
+                clientId: client.key,
+                redirectUri: REDIRECT_URI,
+                codeChallenge: await s256(VERIFIER),
+                codeChallengeMethod: "S256",
+            }),
+        });
+        expect(codeRes.status).toBe(200);
+        const { code } = (await codeRes.json()) as { code: string };
+
+        const tokenRes = await SELF.fetch(
+            `${BASE}/api/oauth/token`,
+            formPost({
+                grant_type: "authorization_code",
+                code,
+                client_id: client.key,
+                redirect_uri: REDIRECT_URI,
+                code_verifier: VERIFIER,
+            }),
+        );
+        expect(tokenRes.status).toBe(200);
+        const token = (await tokenRes.json()) as {
+            access_token: string;
+            expires_in: number;
+            scope: string;
+        };
+        expect(token.access_token).toMatch(/^oauth_/);
+        expect(token.access_token).not.toMatch(/^sk_/);
+        expect(token.expires_in).toBe(60);
+        expect(token.scope).toBe("profile");
+
+        const accountApi = await SELF.fetch(`${BASE}/api/account/profile`, {
+            headers: { Authorization: `Bearer ${token.access_token}` },
+        });
+        expect(accountApi.status).toBe(401);
+
+        const loginUserinfo = await SELF.fetch(`${BASE}/api/oauth/userinfo`, {
+            headers: { Authorization: `Bearer ${token.access_token}` },
+        });
+        expect(loginUserinfo.status).toBe(200);
+        expect(loginUserinfo.headers.get("Cache-Control")).toBe("no-store");
+        const profile = (await loginUserinfo.json()) as Record<string, unknown>;
+        expect(profile.sub).toBeTruthy();
+        expect(profile.email).toBeTruthy();
+        expect(profile).toHaveProperty("preferred_username");
+
+        const replay = await SELF.fetch(`${BASE}/api/oauth/userinfo`, {
+            headers: { Authorization: `Bearer ${token.access_token}` },
+        });
+        expect(replay.status).toBe(401);
+    }, 30000);
+
     test("rejects an unregistered redirect_uri", async ({
         sessionToken,
         mocks,

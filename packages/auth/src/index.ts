@@ -1,6 +1,4 @@
-const AUTHORIZE_URL = "https://enter.pollinations.ai/authorize";
-const TOKEN_URL = "https://enter.pollinations.ai/api/oauth/token";
-const USERINFO_URL = "https://enter.pollinations.ai/api/oauth/userinfo";
+const DEFAULT_AUTH_BASE_URL = "https://enter.pollinations.ai";
 const LOGIN_PATH = "/auth/login";
 const CALLBACK_PATH = "/auth/callback";
 const LOGOUT_PATH = "/auth/logout";
@@ -9,7 +7,6 @@ const FLOW_COOKIE = "pollinations_oauth_flow";
 const SESSION_COOKIE = "pollinations_session";
 const FLOW_MAX_AGE_SECONDS = 600;
 const SESSION_MAX_AGE_SECONDS = 43_200;
-const OAUTH_TOKEN_EXPIRY_DAYS = 15 / (24 * 60);
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
@@ -37,6 +34,7 @@ export type PollinationsAuthConfig = {
     clientId: string;
     sessionSecret: string;
     allowedEmails: string;
+    baseUrl?: string;
     fetch?: typeof fetch;
 };
 
@@ -88,6 +86,11 @@ function cookieValue(request: Request, name: string) {
         }
     }
     return "";
+}
+
+function requestCookieName(request: Request, name: string) {
+    const port = new URL(request.url).port;
+    return port ? `${name}_${port}` : name;
 }
 
 function cookie(
@@ -160,6 +163,10 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
     }
 
     const requestFetch = config.fetch ?? fetch;
+    const authBaseUrl = new URL(config.baseUrl ?? DEFAULT_AUTH_BASE_URL);
+    const authorizeUrl = new URL("/authorize", authBaseUrl);
+    const tokenUrl = new URL("/api/oauth/token", authBaseUrl).toString();
+    const userinfoUrl = new URL("/api/oauth/userinfo", authBaseUrl).toString();
     const key = hmacKey(config.sessionSecret);
 
     function isAllowedUser(user: Pick<PollinationsUser, "email">) {
@@ -197,27 +204,23 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
             returnTo: safeReturnTo(requestUrl.searchParams.get("return_to")),
         };
         const redirectUri = `${requestUrl.origin}${CALLBACK_PATH}`;
-        const authorizeUrl = new URL(AUTHORIZE_URL);
-        authorizeUrl.searchParams.set("response_type", "code");
-        authorizeUrl.searchParams.set("client_id", config.clientId);
-        authorizeUrl.searchParams.set("redirect_uri", redirectUri);
-        authorizeUrl.searchParams.set("state", flow.state);
-        authorizeUrl.searchParams.set(
+        const loginUrl = new URL(authorizeUrl);
+        loginUrl.searchParams.set("response_type", "code");
+        loginUrl.searchParams.set("client_id", config.clientId);
+        loginUrl.searchParams.set("redirect_uri", redirectUri);
+        loginUrl.searchParams.set("state", flow.state);
+        loginUrl.searchParams.set(
             "code_challenge",
             await codeChallenge(verifier),
         );
-        authorizeUrl.searchParams.set("code_challenge_method", "S256");
-        authorizeUrl.searchParams.set("scope", "profile");
-        authorizeUrl.searchParams.set("budget", "0");
-        authorizeUrl.searchParams.set(
-            "expiry",
-            String(OAUTH_TOKEN_EXPIRY_DAYS),
-        );
+        loginUrl.searchParams.set("code_challenge_method", "S256");
+        loginUrl.searchParams.set("scope", "profile");
+        loginUrl.searchParams.set("purpose", "login");
 
-        return redirect(authorizeUrl.toString(), [
+        return redirect(loginUrl.toString(), [
             cookie(
                 request,
-                FLOW_COOKIE,
+                requestCookieName(request, FLOW_COOKIE),
                 encodeJson(flow),
                 FLOW_MAX_AGE_SECONDS,
                 CALLBACK_PATH,
@@ -227,10 +230,11 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
 
     async function finishLogin(request: Request) {
         const requestUrl = new URL(request.url);
-        const clearFlow = cookie(request, FLOW_COOKIE, "", 0, CALLBACK_PATH);
+        const flowCookie = requestCookieName(request, FLOW_COOKIE);
+        const clearFlow = cookie(request, flowCookie, "", 0, CALLBACK_PATH);
         const code = requestUrl.searchParams.get("code");
         const state = requestUrl.searchParams.get("state");
-        const storedFlow = cookieValue(request, FLOW_COOKIE);
+        const storedFlow = cookieValue(request, flowCookie);
         let flow: Flow;
         try {
             flow = decodeJson<Flow>(storedFlow);
@@ -242,7 +246,7 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
         }
 
         const redirectUri = `${requestUrl.origin}${CALLBACK_PATH}`;
-        const tokenResponse = await requestFetch(TOKEN_URL, {
+        const tokenResponse = await requestFetch(tokenUrl, {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
             body: new URLSearchParams({
@@ -260,7 +264,7 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
             return authError("OAuth token exchange failed", 502, clearFlow);
         }
 
-        const userResponse = await requestFetch(USERINFO_URL, {
+        const userResponse = await requestFetch(userinfoUrl, {
             headers: { Authorization: `Bearer ${token.access_token}` },
         });
         const user = (await userResponse
@@ -289,7 +293,7 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
                 clearFlow,
                 cookie(
                     request,
-                    SESSION_COOKIE,
+                    requestCookieName(request, SESSION_COOKIE),
                     sessionCookie,
                     SESSION_MAX_AGE_SECONDS,
                 ),
@@ -298,7 +302,10 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
     }
 
     async function getUser(request: Request): Promise<PollinationsUser | null> {
-        const value = cookieValue(request, SESSION_COOKIE);
+        const value = cookieValue(
+            request,
+            requestCookieName(request, SESSION_COOKIE),
+        );
         const [payload, signature, extra] = value.split(".");
         if (
             !payload ||
@@ -343,7 +350,12 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
         }
         if (url.pathname === LOGOUT_PATH) {
             return redirect(new URL("/", url.origin).toString(), [
-                cookie(request, SESSION_COOKIE, "", 0),
+                cookie(
+                    request,
+                    requestCookieName(request, SESSION_COOKIE),
+                    "",
+                    0,
+                ),
             ]);
         }
         return null;

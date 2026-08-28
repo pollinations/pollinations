@@ -149,9 +149,9 @@ Check if a file exists without downloading.
 List the public gallery for a tag: every published item carrying that tag, any
 owner, newest first. Fully public — no API key.
 
-**Query params:** `tag` (required), `limit` (1–100, default 20), `cursor` (opaque, from a prior response's `nextCursor`).
+**Query params:** `tag` (required), `limit` (1–100, default 20), `cursor` (opaque, from a prior response's `nextCursor`), `user` (optional GitHub username; only return uploads from that Pollinations account).
 
-**Response:** `{ items, nextCursor, hasMore }`. Pass `nextCursor` back as `?cursor=` while `hasMore` is true. Items never expose who uploaded them.
+**Response:** `{ items, nextCursor, hasMore, user? }`. Pass `nextCursor` back as `?cursor=` while `hasMore` is true. `user` echoes a requested username; items never expose who uploaded them.
 
 **Errors:**
 - `400` - Missing/empty `tag`, or invalid `limit`/`cursor`

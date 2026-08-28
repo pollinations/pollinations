@@ -96,7 +96,24 @@ export const COMMUNITY_PAGE = {
     commitLabel: "commit",
     votesLabel: "votes",
 
-    // Section 5 — Build Diary + Supporters
+    // Community model providers and leaderboards
+    providersTitle: "Community model providers",
+    providersSubtitle:
+        "Independent providers sharing their models with everyone on Pollinations.",
+    providerModelLabel: "model",
+    providerModelsLabel: "models",
+    providersLoading: "Loading community providers…",
+    providersEmpty: "No provider profiles are available right now.",
+    leaderboardsTitle: "Community model leaderboards",
+    leaderboardsSubtitle:
+        "Daily rankings from real usage across community-hosted models.",
+    textLeaderboardLabel: "Text models",
+    imageLeaderboardLabel: "Image models",
+    leaderboardUpdatedLabel: "Updated",
+    leaderboardsLoading: "Loading the latest leaderboards…",
+    leaderboardsEmpty: "No leaderboard images are available right now.",
+
+    // Build Diary + Supporters
     buildDiaryTitle: "Build diary",
     buildDiarySubtitle: "A visual log of what we ship every day.",
 

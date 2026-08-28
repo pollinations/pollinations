@@ -1,5 +1,6 @@
 import googleCloudAuth from "../auth/googleCloudAuth.js";
 import {
+    createAlibabaModelConfig,
     createAzureModelConfig,
     createBedrockNativeConfig,
     createDeepInfraModelConfig,
@@ -505,10 +506,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         "qwen/qwen3-vl-30b-a3b-instruct",
         "alibaba",
     ),
-    "qwen/qwen3-vl-235b-a22b-thinking": createPinnedOpenRouterConfig(
-        "qwen/qwen3-vl-235b-a22b-thinking",
-        "alibaba",
-    ),
+    "qwen3-vl-235b-a22b-thinking": () =>
+        createAlibabaModelConfig({
+            model: "qwen3-vl-235b-a22b-thinking",
+        }),
 
     // -- OpenRouter (StepFun) -------------------------------------------------
     "stepfun/step-3.5-flash": () =>

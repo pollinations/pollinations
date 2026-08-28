@@ -307,13 +307,17 @@ function shortPriceLabel(label: string): string {
 export function savedEndpointPriceKeys(
     endpoint: CommunityEndpoint | undefined,
 ): Set<PriceFieldKey> {
+    const pending = endpoint?.pending;
     return new Set(
         endpoint?.type === "proxy"
             ? communityEndpointPriceFieldsForModality(
                   endpoint.modality,
-                  endpoint.imagePricing,
+                  pending?.imagePricing ?? endpoint.imagePricing,
               )
-                  .filter((field) => endpoint[field.key] > 0)
+                  .filter(
+                      (field) =>
+                          (pending?.[field.key] ?? endpoint[field.key]) > 0,
+                  )
                   .map((field) => field.key)
             : [],
     );

@@ -1,4 +1,5 @@
 import {
+    AccountMenu,
     Alert,
     AppHeader,
     Button,
@@ -9,7 +10,7 @@ import {
     Surface,
     Text,
 } from "@pollinations/ui";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FunnelBars } from "./components/FunnelBars";
 import { KPITrendTable } from "./components/KPITrendTable";
 import { KpiExplorer } from "./components/KpiExplorer";
@@ -98,11 +99,30 @@ function LoadingScreen({ done, active }) {
 
 const EXPLORER_ID = "kpi-explorer";
 
+function accountName(user) {
+    return user.preferred_username || user.name || user.email;
+}
+
 export default function App() {
     // Which unit each cycling row is showing, and which row the explorer plots.
     // Both live here so the chart follows the table.
     const [viewIndex, setViewIndex] = useState({});
     const [explored, setExplored] = useState("registrations:0");
+    const [accountUser, setAccountUser] = useState(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        fetch("/auth/session", { headers: { Accept: "application/json" } })
+            .then((response) => (response.ok ? response.json() : null))
+            .then((session) => {
+                if (!cancelled) setAccountUser(session?.user ?? null);
+            })
+            .catch(() => undefined);
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const cycleView = (key) =>
         setViewIndex((prev) => ({ ...prev, [key]: (prev[key] ?? 0) + 1 }));
@@ -156,6 +176,7 @@ export default function App() {
                 navLabel="KPI dashboard links"
                 autoHide
                 innerClassName="polli:max-w-7xl polli:flex-row polli:items-center polli:justify-between"
+                navClassName="polli:items-center"
             >
                 <Button
                     size="sm"
@@ -168,6 +189,13 @@ export default function App() {
                     </span>
                 </Button>
                 <ColorModeToggle />
+                {accountUser && (
+                    <AccountMenu
+                        name={accountName(accountUser)}
+                        avatarUrl={accountUser.picture}
+                        onSignOut={() => window.location.assign("/auth/logout")}
+                    />
+                )}
             </AppHeader>
 
             <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-5 sm:px-6 md:py-7">

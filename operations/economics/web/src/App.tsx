@@ -1,4 +1,5 @@
 import {
+    AccountMenu,
     Alert,
     Button,
     Chip,
@@ -63,6 +64,22 @@ import { OpTransactionsTab } from "./views/OpTransactionsTab";
 import { ProviderCloseTab } from "./views/ProviderCloseTab";
 import { RunwayTab } from "./views/RunwayTab";
 import { ManagedInferenceTab, VendorsTab } from "./views/UnitEconomicsTab";
+
+type AccountUser = {
+    email: string;
+    name?: string;
+    picture?: string;
+    preferred_username?: string;
+};
+
+const FIXTURE_ACCOUNT_USER: AccountUser = {
+    email: "fixture@pollinations.ai",
+    name: "Fixture User",
+};
+
+function accountName(user: AccountUser) {
+    return user.preferred_username || user.name || user.email;
+}
 
 type InsightTab =
     | "close"
@@ -632,6 +649,9 @@ function viewInfoContent(activeView: ActiveView) {
 
 export default function App() {
     const fixtures = fixturesMode();
+    const [accountUser, setAccountUser] = useState<AccountUser | null>(() =>
+        fixtures ? FIXTURE_ACCOUNT_USER : null,
+    );
     const [error, setError] = useState<string | null>(null);
     const [data, setData] = useState<Data | null>(null);
     const [activeView, setActiveView] = useState<ActiveView>("runway");
@@ -640,6 +660,26 @@ export default function App() {
     const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     const [attempt, setAttempt] = useState(0);
+
+    useEffect(() => {
+        if (fixtures) return;
+
+        let cancelled = false;
+        fetch("/auth/session", { headers: { Accept: "application/json" } })
+            .then(async (response) =>
+                response.ok
+                    ? ((await response.json()) as { user?: AccountUser })
+                    : null,
+            )
+            .then((session) => {
+                if (!cancelled) setAccountUser(session?.user ?? null);
+            })
+            .catch(() => undefined);
+
+        return () => {
+            cancelled = true;
+        };
+    }, [fixtures]);
 
     useEffect(() => {
         const retryKey = attempt;
@@ -715,6 +755,17 @@ export default function App() {
 
     const drawerFooter = (
         <>
+            {accountUser && (
+                <AccountMenu
+                    name={accountName(accountUser)}
+                    avatarUrl={accountUser.picture}
+                    onSignOut={() =>
+                        window.location.assign(fixtures ? "/" : "/auth/logout")
+                    }
+                    className="polli:w-full"
+                    side="top"
+                />
+            )}
             <div className="flex flex-wrap items-center gap-2">
                 {fixtures && <Chip intent="alpha">fixtures</Chip>}
             </div>

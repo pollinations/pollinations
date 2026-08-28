@@ -53,6 +53,10 @@ export {
     periodBucketKeyToDate,
 } from "./lib/period.ts";
 export { useScrollLock } from "./lib/use-scroll-lock.ts";
+export {
+    AccountMenu,
+    type AccountMenuProps,
+} from "./modules/account-menu/AccountMenu.tsx";
 export { Button, type ButtonProps } from "./primitives/Button.tsx";
 export {
     ButtonGroup,

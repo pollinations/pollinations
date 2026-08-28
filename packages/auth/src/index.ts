@@ -4,6 +4,7 @@ const USERINFO_URL = "https://enter.pollinations.ai/api/oauth/userinfo";
 const LOGIN_PATH = "/auth/login";
 const CALLBACK_PATH = "/auth/callback";
 const LOGOUT_PATH = "/auth/logout";
+const SESSION_PATH = "/auth/session";
 const FLOW_COOKIE = "pollinations_oauth_flow";
 const SESSION_COOKIE = "pollinations_session";
 const FLOW_MAX_AGE_SECONDS = 600;
@@ -161,6 +162,10 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
     const requestFetch = config.fetch ?? fetch;
     const key = hmacKey(config.sessionSecret);
 
+    function isAllowedUser(user: Pick<PollinationsUser, "email">) {
+        return allowedEmails.has(normalizeEmail(user.email));
+    }
+
     async function sign(payload: string) {
         const signature = await crypto.subtle.sign(
             "HMAC",
@@ -265,7 +270,7 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
             !userResponse.ok ||
             !user?.sub ||
             !user.email ||
-            !allowedEmails.has(normalizeEmail(user.email))
+            !isAllowedUser(user)
         ) {
             return authError("Forbidden", 403, clearFlow);
         }
@@ -311,7 +316,7 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
                 session.aud !== new URL(request.url).origin ||
                 !Number.isInteger(session.exp) ||
                 session.exp <= Math.floor(Date.now() / 1000) ||
-                !allowedEmails.has(normalizeEmail(session.email))
+                !isAllowedUser(session)
             ) {
                 return null;
             }
@@ -326,6 +331,16 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
         const url = new URL(request.url);
         if (url.pathname === LOGIN_PATH) return startLogin(request);
         if (url.pathname === CALLBACK_PATH) return finishLogin(request);
+        if (url.pathname === SESSION_PATH && request.method === "GET") {
+            const user = await getUser(request);
+            return Response.json(
+                { user },
+                {
+                    status: user ? 200 : 401,
+                    headers: { "Cache-Control": "no-store" },
+                },
+            );
+        }
         if (url.pathname === LOGOUT_PATH) {
             return redirect(new URL("/", url.origin).toString(), [
                 cookie(request, SESSION_COOKIE, "", 0),

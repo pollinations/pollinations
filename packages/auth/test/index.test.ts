@@ -88,6 +88,15 @@ describe("Pollinations OAuth", () => {
             email: "alice@example.com",
             preferred_username: "alice",
         });
+
+        const sessionResponse = await auth.handle(
+            new Request("https://kpi.pollinations.ai/auth/session", {
+                headers: { Cookie: `pollinations_session=${session}` },
+            }),
+        );
+        expect(sessionResponse?.status).toBe(200);
+        expect(await sessionResponse?.json()).toEqual({ user });
+        expect(sessionResponse?.headers.get("Cache-Control")).toBe("no-store");
     });
 
     it("denies users outside the email allowlist", async () => {
@@ -138,5 +147,15 @@ describe("Pollinations OAuth", () => {
             "pollinations_session=;",
         );
         expect(response?.headers.get("Set-Cookie")).toContain("Max-Age=0");
+    });
+
+    it("does not expose a session without a valid cookie", async () => {
+        const auth = createPollinationsAuth(config);
+        const response = await auth.handle(
+            new Request("https://kpi.pollinations.ai/auth/session"),
+        );
+
+        expect(response?.status).toBe(401);
+        expect(await response?.json()).toEqual({ user: null });
     });
 });

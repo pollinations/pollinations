@@ -2212,16 +2212,18 @@ export const TEXT_SERVICES = {
             "qwen-vl-pro",
             "qwen/qwen3-vl-235b-a22b-thinking",
         ],
-        provider: "openrouter",
+        provider: "alibaba",
         brand: "Qwen",
         addedDate: new Date("2026-05-15").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         category: "text",
         cost: {
-            // OpenRouter Alibaba endpoint, verified 2026-08-22.
+            // Alibaba Model Studio Singapore PAYG, verified 2026-08-28.
             promptTextTokens: perMillion(0.4),
+            promptImageTokens: perMillion(0.4),
             completionTextTokens: perMillion(4),
+            completionReasoningTokens: perMillion(4),
         },
         title: "Qwen3 VL 235B A22B Thinking",
         description:
@@ -2230,7 +2232,7 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
-        contextLength: 262144,
+        contextLength: 131072,
         isSpecialized: false,
     },
     "step-flash": {

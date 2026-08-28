@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🛠️",
+    "name": "DemoWeaver",
+    "url": "https://mebularts.github.io/DemoWeaver",
+    "description": "DemoWeaver is an open-source AI-powered product walkthrough generator that turns a running web application into a browser-verified, professionally narrated product video. Instead of manually recording",
+    "language": "en",
+    "category": "build",
+    "platform": "web",
+    "githubUsername": "mebularts",
+    "githubUserId": "113755353",
+    "repositoryUrl": "https://github.com/mebularts/DemoWeaver",
+    "repositoryStars": null,
+    "discordUsername": "mebularts",
+    "other": null,
+    "submittedDate": "2026-08-27",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/14070",
+    "approvedDate": "2026-08-28",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🖼️",
     "name": "AI STUDIO — RealTime AUDIO & VIDEO CREATOR",
     "url": "https://noanswers.website/WebAnimation",

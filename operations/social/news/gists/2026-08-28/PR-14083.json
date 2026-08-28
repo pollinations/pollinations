@@ -1,0 +1,35 @@
+{
+  "pr_number": 14083,
+  "title": "feat: add Gemini Omni 1.1 Flash video",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14083",
+  "merged_at": "2026-08-28T16:15:32Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds paid-only canonical `google/gemini-omni-1.1-flash` with no aliases, fallback, or Pollinations GPU.\n- Uses Vertex global Interactions route `gemini-omni-1.1-flash-preview` with exact provider-reported modality-token billing at $1.50/M input, $9/M text/thought output, and $17.50/M video output.\n- Supports text or two keyframes, synchronized audio, 3–10 seconds, 24 FPS, 16:9/9:16, and 360p/720p/1080p/4K.\n- Verifies direct provider calls and full local E2E across every resolution, URL/base64 formats, cache, paid-only/error paths, one-upstream burst deduplication, and three concurrent unique requests.\n\nSources: [Vertex model docs](https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/omni) · [Vertex pricing](https://cloud.google.com/vertex-ai/generative-ai/pricing)",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Two frames, then cinema",
+    "blurb": "A new paid video model has landed in the garden: Gemini Omni 1.1 Flash. Give it a prompt or two keyframes, add synchronized audio, and let the pixels figure out the in-between bits.",
+    "summary": "Added the paid-only canonical model `google/gemini-omni-1.1-flash`, powered by Vertex's `gemini-omni-1.1-flash-preview`, for 3–10 second 24 FPS videos from text or two keyframes with synchronized audio, 16:9 or 9:16 output, and 360p through 4K resolution.",
+    "impact": "Developers can now generate short, high-resolution narrated or sound-synced video clips with Gemini Omni 1.1 Flash, with exact modality-token billing and support for URL or base64 keyframes.",
+    "keywords": [
+      "video",
+      "gemini",
+      "vertex-ai",
+      "keyframes",
+      "audio",
+      "4k",
+      "paid-models"
+    ],
+    "visual_concept": "Depict Gemini Omni as a cozy miniature pixel film studio: two image keyframes mounted on a retro animation stand flow through a glowing projector into a sequence of video frames, with musical notes showing synchronized audio and a small resolution dial marked 360p to 4K. Polli, wearing a tiny director beret and holding a clapperboard, watches the frames bloom into a film-strip vine; include small flowers and code-plants to make the new video capability feel like something growing in the garden.",
+    "image_prompt": "Cozy pixel art scene of a miniature garden film studio where two framed keyframes feed into a warm retro projector and emerge as a glowing film-strip vine, with tiny music notes and a resolution dial from 360p to 4K. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny director beret, holds a clapperboard, and warmly watches the video frames grow among flowers and code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: 'OMNI VIDEO', nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-28/PR-14083.jpg",
+    "prompt": "Cozy pixel art scene of a miniature garden film studio where two framed keyframes feed into a warm retro projector and emerge as a glowing film-strip vine, with tiny music notes and a resolution dial from 360p to 4K. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny director beret, holds a clapperboard, and warmly watches the video frames grow among flowers and code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: 'OMNI VIDEO', nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-28T16:16:32.507043+00:00"
+}

@@ -1,0 +1,34 @@
+{
+  "pr_number": 14081,
+  "title": "fix: refine model ID announcements",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14081",
+  "merged_at": "2026-08-28T12:54:34Z",
+  "labels": [],
+  "pr_body_excerpt": "- Reworks the News announcement with consistent bullets, link behavior, and inline model ID colors.\n- Uses the model test-tube emoji and separates the example with simple dividers.\n- Gives the Models notice a neutral elevated surface with nectar-accented links and no borders.\n- Verifies the Enter frontend with `npm run typecheck`.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Model IDs, properly labeled",
+    "blurb": "The news hive got a small editorial cleanup: model IDs now stand out, links behave consistently, and the test tube has found its rightful place.",
+    "summary": "Refined the Enter frontend's News and Models announcements with consistent bullet lists and links, color-coded inline model IDs, a test-tube example divider, and a neutral elevated Models notice surface.",
+    "impact": "Users browsing Enter announcements can more easily spot and copy the relevant model IDs while reading cleaner, more consistent update notices.",
+    "keywords": [
+      "enter",
+      "frontend",
+      "announcements",
+      "model-ids",
+      "ui",
+      "models"
+    ],
+    "visual_concept": "Depict Polli as a meticulous lab assistant in a cozy garden laboratory, arranging glowing model-ID labels beside a tiny test tube and a neat bulletin board. Use code-plants and nectar-colored link ribbons to represent clearer model announcements and navigation.",
+    "image_prompt": "A cozy pixel art garden laboratory where Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny round scientist glasses, carefully pins colorful model-ID labels onto a clean bulletin board beside a glowing test tube; code-plants bloom from pots and soft nectar-colored link ribbons connect the notes. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with small pixel-font text: 'MODEL ID'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-28/PR-14081.jpg",
+    "prompt": "A cozy pixel art garden laboratory where Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny round scientist glasses, carefully pins colorful model-ID labels onto a clean bulletin board beside a glowing test tube; code-plants bloom from pots and soft nectar-colored link ribbons connect the notes. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with small pixel-font text: 'MODEL ID'."
+  },
+  "generated_at": "2026-08-28T12:55:33.947212+00:00"
+}

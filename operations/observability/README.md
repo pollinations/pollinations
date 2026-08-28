@@ -11,9 +11,9 @@ Grafana OSS dashboard for Pollinations platform observability.
 ```
 Local:   Browser -> localhost:3000 -> Grafana -> Tinybird
 Prod:    Browser -> observability.pollinations.ai -> Cloudflare Worker
-         -> Grafana container -> Tinybird
+         -> Pollinations OAuth -> Grafana container -> Tinybird
 Origin:  Browser -> observability.myceli.ai -> Cloudflare Worker
-         -> Grafana container -> Tinybird
+         -> Pollinations OAuth -> Grafana container -> Tinybird
 ```
 
 The Cloudflare Worker attaches both hostnames directly in the Myceli Cloudflare
@@ -72,6 +72,9 @@ Secrets are stored in `.env` locally and as Worker secrets in production.
 | `TINYBIRD_READ_TOKEN` | Read token for the `pollinations_enter` Tinybird workspace |
 | `TINYBIRD_LEGACY_READ_TOKEN` | Read token for the legacy `pollinations_ai` workspace |
 | `DISCORD_WEBHOOK_URL` | Discord webhook for alerts |
+| `POLLINATIONS_AUTH_ALLOWED_EMAILS` | Comma-separated, case-insensitive login allowlist |
+| `POLLINATIONS_AUTH_SESSION_SECRET` | Signs the Worker's private session cookie |
+| `POLLINATIONS_OAUTH_CLIENT_ID` | Publishable `pk_` OAuth client ID |
 
 `CLOUDFLARE_TUNNEL_TOKEN` is only used by the legacy DigitalOcean deployment.
 

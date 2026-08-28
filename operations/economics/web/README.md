@@ -17,15 +17,15 @@ npm run dev
 
 The dev server is pinned to `http://127.0.0.1:4180`.
 
-Auth uses a password gate backed by the Cloudflare Worker. For local development,
-the shared password and the staging-only Tinybird reader are assembled from
+Auth uses Pollinations OAuth backed by the Cloudflare Worker. For local development,
+the OAuth configuration and the staging-only Tinybird reader are assembled from
 `../secrets/web.json` and `../secrets/web.dev.json` into the ignored `.dev.vars`
 file. Production deployment continues to use `../secrets/web.json`. No secret is
 bundled or stored in the browser.
 
 ## Fixtures Mode
 
-`http://127.0.0.1:4180/?fixtures=1` renders bundled sample data with no password
+`http://127.0.0.1:4180/?fixtures=1` renders bundled sample data with no login
 and no network calls.
 
 ## Data Contract

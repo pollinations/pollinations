@@ -12,7 +12,6 @@ import {
     Heading,
     IconButton,
     InfoTip,
-    Input,
     MenuIcon,
     NavItem,
     RocketIcon,
@@ -631,69 +630,8 @@ function viewInfoContent(activeView: ActiveView) {
     return null;
 }
 
-async function checkSession() {
-    const res = await fetch("/api/auth/session");
-    if (!res.ok) return false;
-    const body = (await res.json()) as { authenticated?: boolean };
-    return body.authenticated === true;
-}
-
-async function login(password: string) {
-    const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
-    });
-    if (!res.ok) {
-        throw new Error(res.status === 401 ? "Wrong password" : "Login failed");
-    }
-}
-
-function PasswordGate({
-    error,
-    onSubmit,
-}: {
-    error: string | null;
-    onSubmit: (password: string) => void;
-}) {
-    const [value, setValue] = useState("");
-
-    return (
-        <div className="mx-auto mt-24 flex max-w-md flex-col gap-4 px-4">
-            <Heading as="h1">Economics</Heading>
-            <Text tone="soft">
-                Enter the economics password. Tinybird tokens stay on the
-                server.
-            </Text>
-            {error && <Alert intent="warning">{error}</Alert>}
-            <form
-                className="flex gap-2"
-                onSubmit={(event) => {
-                    event.preventDefault();
-                    if (value) onSubmit(value);
-                }}
-            >
-                <Input
-                    type="password"
-                    autoFocus
-                    placeholder="Password"
-                    value={value}
-                    onChange={(event) => setValue(event.target.value)}
-                    className="flex-1"
-                />
-                <Button type="submit" className="self-start">
-                    Connect
-                </Button>
-            </form>
-        </div>
-    );
-}
-
 export default function App() {
     const fixtures = fixturesMode();
-    const [authenticated, setAuthenticated] = useState(fixtures);
-    const [sessionChecked, setSessionChecked] = useState(fixtures);
-    const [authError, setAuthError] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [data, setData] = useState<Data | null>(null);
     const [activeView, setActiveView] = useState<ActiveView>("runway");
@@ -702,34 +640,8 @@ export default function App() {
     const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     const [attempt, setAttempt] = useState(0);
-    const ready = fixtures || (sessionChecked && authenticated);
 
     useEffect(() => {
-        if (fixtures) return;
-
-        let cancelled = false;
-        checkSession()
-            .then((ok) => {
-                if (!cancelled) {
-                    setAuthenticated(ok);
-                    setSessionChecked(true);
-                }
-            })
-            .catch(() => {
-                if (!cancelled) {
-                    setAuthenticated(false);
-                    setSessionChecked(true);
-                }
-            });
-
-        return () => {
-            cancelled = true;
-        };
-    }, [fixtures]);
-
-    useEffect(() => {
-        if (!ready) return;
-
         const retryKey = attempt;
         let cancelled = false;
         setError(null);
@@ -744,11 +656,7 @@ export default function App() {
                     caught instanceof TbError &&
                     (caught.status === 401 || caught.status === 403)
                 ) {
-                    setAuthenticated(false);
-                    setSessionChecked(true);
-                    setAuthError(
-                        `Session rejected (${caught.message}) - enter the password again.`,
-                    );
+                    window.location.assign("/auth/login");
                 } else {
                     setError(
                         caught instanceof Error
@@ -761,7 +669,7 @@ export default function App() {
         return () => {
             cancelled = true;
         };
-    }, [ready, attempt]);
+    }, [attempt]);
 
     const months = useMemo(() => (data ? collectMonths(data) : []), [data]);
     const reportingYears = useMemo(() => yearsOf(months), [months]);
@@ -804,46 +712,6 @@ export default function App() {
         showRunwayYearFilter ||
         showVendorFilter ||
         showCategoryFilter;
-
-    if (!sessionChecked) {
-        return (
-            <div className="flex h-dvh min-h-0 flex-col overflow-hidden bg-app-bg font-body text-theme-text-strong">
-                <ScrollArea axis="y" className="min-h-0 flex-1">
-                    <div className="mx-auto mt-24 max-w-md px-4">
-                        <Text tone="soft">Checking session...</Text>
-                    </div>
-                </ScrollArea>
-            </div>
-        );
-    }
-
-    if (!ready) {
-        return (
-            <div className="flex h-dvh min-h-0 flex-col overflow-hidden bg-app-bg font-body text-theme-text-strong">
-                <ScrollArea axis="y" className="min-h-0 flex-1">
-                    <PasswordGate
-                        error={authError}
-                        onSubmit={(password) => {
-                            login(password)
-                                .then(() => {
-                                    setAuthError(null);
-                                    setAuthenticated(true);
-                                    setSessionChecked(true);
-                                    setAttempt((current) => current + 1);
-                                })
-                                .catch((caught: unknown) => {
-                                    setAuthError(
-                                        caught instanceof Error
-                                            ? caught.message
-                                            : String(caught),
-                                    );
-                                });
-                        }}
-                    />
-                </ScrollArea>
-            </div>
-        );
-    }
 
     const drawerFooter = (
         <>

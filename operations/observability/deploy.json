@@ -8,5 +8,10 @@
   "verify": [
     "https://observability.myceli.ai/api/health",
     "https://observability.pollinations.ai/api/health"
+  ],
+  "watch": [
+    "packages/auth/",
+    "package.json",
+    "package-lock.json"
   ]
 }

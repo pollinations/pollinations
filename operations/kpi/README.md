@@ -3,9 +3,9 @@
 Weekly KPIs for pollinations.ai — `kpi.pollinations.ai` (origin
 `kpi.myceli.ai`), Worker `myceli-kpi` on the Myceli Cloudflare account.
 
-Everything sits behind Basic auth: the Worker runs before any asset is served,
-so the SPA shell is gated too. All Tinybird and GitHub reads go through the
-Worker; no token reaches the browser.
+Everything sits behind Pollinations OAuth: the Worker runs before any asset is
+served, so the SPA shell is gated too. All Tinybird and GitHub reads go through
+the Worker; no provider token reaches the browser.
 
 ## Data
 
@@ -22,13 +22,12 @@ North star: weekly active paying customers.
 
 ```bash
 npm ci --prefix ../.. && npm ci
-npm run decrypt-vars          # TINYBIRD_READ_TOKEN → .dev.vars (needs the age key)
-echo 'DASHBOARD_PASSWORD=dev' >> .dev.vars
+npm run decrypt-vars          # Worker configuration → .dev.vars (needs the age key)
 npm run dev                   # http://127.0.0.1:3456
 ```
 
-`DASHBOARD_PASSWORD` is not in `secrets/env.json` — set it locally as above and
-log in with any username.
+`POLLINATIONS_AUTH_ALLOWED_EMAILS` is a comma-separated, case-insensitive email
+allowlist shared by the three internal apps. An empty allowlist denies everyone.
 
 ## Deploy
 

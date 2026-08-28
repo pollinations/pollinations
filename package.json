@@ -5,6 +5,7 @@
     "shared",
     "enter.pollinations.ai",
     "gen.pollinations.ai",
+    "packages/auth",
     "packages/sdk",
     "packages/ui",
     "apps/react",

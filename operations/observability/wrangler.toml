@@ -1,7 +1,7 @@
 name = "myceli-observability-grafana"
 main = "src/index.js"
 compatibility_date = "2026-07-01"
-workers_dev = true
+workers_dev = false
 
 routes = [
   { pattern = "observability.myceli.ai", zone_name = "myceli.ai", custom_domain = true },
@@ -39,3 +39,6 @@ GF_ADMIN_EMAIL = "hi@myceli.ai"
 # - TINYBIRD_READ_TOKEN
 # - TINYBIRD_LEGACY_READ_TOKEN
 # - DISCORD_WEBHOOK_URL
+# - POLLINATIONS_AUTH_ALLOWED_EMAILS
+# - POLLINATIONS_AUTH_SESSION_SECRET
+# - POLLINATIONS_OAUTH_CLIENT_ID

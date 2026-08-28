@@ -7,6 +7,7 @@ on:
       - "apps/**"
       - "operations/**"
       - "packages/sdk/**"
+      - "packages/auth/**"
       - "packages/ui/**"
       - "packages/mcp/**"
       - "package.json"

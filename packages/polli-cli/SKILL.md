@@ -43,7 +43,7 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 | List your quests + claim state | `polli quests` (filters: `--open --claimable --claimed --coming-soon`) |
 | Manage prompt agents | `polli agents list` |
 | Manage invite-only community models | `polli my-models list` |
-| Connect a coding harness to Pollinations | `polli harness dsh on` (available adapters: `polli harness --help`) |
+| Connect a coding harness to Pollinations | `polli harness dsh on` or `polli harness opencode on` (available adapters: `polli harness --help`) |
 | Machine-readable output | append `--json` to any command |
 
 ## Setup
@@ -206,13 +206,21 @@ polli keys revoke <id>                                             # id comes fr
 
 ### Connect a coding harness
 ```bash
-polli harness --help                # supported harnesses
-polli harness dsh on                # login if needed, mint key "polli-harness-dsh", write provider + default model
-polli harness dsh on --model kimi   # any tool-calling text model from `polli models`
-polli harness dsh on --no-mcp       # configure the provider and skill without MCP tools
-polli harness dsh off               # restore the config backed up before "on"
+polli harness --help                      # supported harnesses
+polli harness dsh on                      # login if needed, mint key "polli-harness-dsh", write provider + default model
+polli harness dsh on --model kimi         # any tool-calling text model from `polli models`
+polli harness dsh on --no-mcp            # configure the provider and skill without MCP tools
+polli harness dsh off                     # restore the config backed up before "on"
+
+polli harness opencode on                 # login if needed, mint key, write provider + plugin to ~/.config/opencode/opencode.json
+polli harness opencode on --model gemini  # choose a default tool-calling text model
+polli harness opencode on --no-mcp       # add provider only, skip the opencode-pollinations-plugin entry
+polli harness opencode status            # show whether OpenCode is connected to Pollinations
+polli harness opencode off               # restore the config backed up before "on"
 ```
-The DSH adapter globally configures the Pollinations provider, hosted Pollinations MCP, and this skill under `$DSH_HOME` (default `~/.dsh`). It stores one dedicated child key in `$DSH_HOME/.env` for the provider and MCP, plus a private snapshot under `~/.pollinations/harnesses/`. Reruns reuse a valid key already in the harness config. Other adapters may use their harness's official plugin or installer instead. Guide: `polli docs` section "Coding Harnesses".
+The DSH adapter globally configures the Pollinations provider, hosted Pollinations MCP, and this skill under `$DSH_HOME` (default `~/.dsh`). It stores one dedicated child key in `$DSH_HOME/.env` for the provider and MCP, plus a private snapshot under `~/.pollinations/harnesses/`. Reruns reuse a valid key already in the harness config.
+
+The OpenCode adapter writes to `~/.config/opencode/opencode.json` (or `$OPENCODE_CONFIG_DIR/opencode.json`). It adds a `provider.pollinations` block (OpenAI-compatible, pointing to `gen.pollinations.ai/v1`) and the `opencode-pollinations-plugin` entry. The plugin reads the API key from the provider block, so no second login is needed inside OpenCode. Other adapters may use their harness's official plugin or installer instead. Guide: `polli docs` section "Coding Harnesses".
 
 ### Read API docs
 ```bash

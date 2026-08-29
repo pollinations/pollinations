@@ -129,16 +129,33 @@ key for the harness, backs up its config, and writes the provider; `off`
 restores the backup.
 
 ```bash
-polli harness --help            # supported harnesses
-polli harness dsh on            # DeepSeek Harness → Pollinations (default model: deepseek)
+polli harness --help                      # supported harnesses
+
+# DeepSeek Harness
+polli harness dsh on                      # DeepSeek Harness → Pollinations (default model: deepseek)
 polli harness dsh on --model kimi
-polli harness dsh on --no-mcp   # skip MCP tool configuration
+polli harness dsh on --no-mcp            # skip MCP tool configuration
 polli harness dsh status
 polli harness dsh off
+
+# OpenCode
+polli harness opencode on                 # OpenCode → Pollinations (default model: openai)
+polli harness opencode on --model gemini  # choose a different tool-calling text model
+polli harness opencode on --no-mcp       # add provider only, skip the Pollinations plugin
+polli harness opencode status
+polli harness opencode off
 ```
 
 The DSH adapter configures the Pollinations provider, hosted Pollinations MCP,
 and Polli CLI skill globally under `$DSH_HOME` (default `~/.dsh`).
+
+The OpenCode adapter writes to `~/.config/opencode/opencode.json` (or
+`$OPENCODE_CONFIG_DIR/opencode.json`). It registers the Pollinations
+OpenAI-compatible provider, adds a dedicated API key (no second login needed
+inside OpenCode), lists all current tool-calling text models, and enables the
+`opencode-pollinations-plugin` for media generation, usage tracking, and quest
+capabilities. If OpenCode is not installed, the adapter prints the install
+command and continues writing the config so it is ready when OpenCode is added.
 
 See [Coding Harnesses](https://github.com/pollinations/pollinations/blob/main/CODING_HARNESSES.md) for what each profile changes and how to add one.
 

@@ -237,8 +237,23 @@ async def _sse_events(
             if isinstance(item, Exception):
                 raise item
             if item["type"] == "tool_start":
-                name = str(item["name"]).replace("\r", " ").replace("\n", " ")
-                yield f": progress {name}\n\n"
+                yield _sse_frame(
+                    chunk_id,
+                    model,
+                    {
+                        "tool_calls": [
+                            {
+                                "index": 0,
+                                "id": item["id"],
+                                "type": "function",
+                                "function": {
+                                    "name": item["name"],
+                                    "arguments": item["arguments"],
+                                },
+                            }
+                        ]
+                    },
+                )
             elif item["type"] == "nudge":
                 reason = str(item["reason"]).replace("\r", " ").replace("\n", " ")
                 yield f": progress {reason}\n\n"

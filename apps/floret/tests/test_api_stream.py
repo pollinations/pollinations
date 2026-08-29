@@ -172,7 +172,12 @@ def test_stream_routing_is_validated_once_and_propagated(monkeypatch):
 
 def test_stream_true_returns_openai_sse_chunks(monkeypatch):
     async def fake_events(messages, **kwargs):
-        yield {"type": "tool_start", "name": "generate_image"}
+        yield {
+            "type": "tool_start",
+            "id": "call_image_1",
+            "name": "generate_image",
+            "arguments": '{"prompt":"cat"}',
+        }
         yield {
             "type": "final",
             "text": "done!",
@@ -205,7 +210,22 @@ def test_stream_true_returns_openai_sse_chunks(monkeypatch):
     assert "generate_image" not in content  # tool progress never enters history
     assert "done!" in content  # final text is streamed
     assert "http://img/x.png" in content  # media embedded as markdown
-    assert ": progress generate_image" in body
+    tool_calls = [
+        call
+        for payload in payloads
+        for call in payload["choices"][0]["delta"].get("tool_calls", [])
+    ]
+    assert tool_calls == [
+        {
+            "index": 0,
+            "id": "call_image_1",
+            "type": "function",
+            "function": {
+                "name": "generate_image",
+                "arguments": '{"prompt":"cat"}',
+            },
+        }
+    ]
 
 
 def test_stream_emits_keepalives_during_silence(monkeypatch):

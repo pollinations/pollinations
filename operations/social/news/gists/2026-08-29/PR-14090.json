@@ -1,0 +1,34 @@
+{
+  "pr_number": 14090,
+  "title": "docs: record DreamShaper Vast replacement",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14090",
+  "merged_at": "2026-08-29T00:26:36Z",
+  "labels": [],
+  "pr_body_excerpt": "- Replaces DreamShaper instance `48108043` with production instance `49063196` in the fleet inventory.\n- Records the RTX 3060 qualification, production cutover evidence, and completed old-instance cleanup.\n- Updates DreamShaper spend to `$0.169444/hr` and total Vast fleet burn to `$1.130556/hr` (`$814.00/30d`).\n- Documents `$19.76/30d` in Vast-credit savings.\n\nValidation: live Vast inventory, production registry, public canary render, worker logs, and model monitor.",
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "DreamShaper Gets Its Papers",
+    "blurb": "The DreamShaper worker registry has been tidied after its production move. Polli checked the canary render, logs, and inventory, then filed the old hive address away.",
+    "summary": "Updated the GPU fleet inventory to record DreamShaper's move from Vast instance 48108043 to production instance 49063196, including RTX 3060 qualification, canary evidence, worker-log checks, and old-instance cleanup.",
+    "impact": "Maintainers now have an auditable record of the active DreamShaper RTX 3060 worker and the validation trail behind its production cutover.",
+    "keywords": [
+      "DreamShaper",
+      "Vast",
+      "GPU fleet",
+      "RTX 3060",
+      "infrastructure",
+      "inventory"
+    ],
+    "visual_concept": "Depict Polli as a careful fleet gardener with a tiny clipboard, inspecting a cozy RTX 3060 server that has a DreamShaper label and sprouts small code-flowers. An old server pot is neatly packed away while a monitor robot displays a successful green canary check, representing the documented production handoff.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny clipboard, inspecting a chunky RTX 3060 server sprouting code-flowers while a friendly CRT monitor robot shows a lime green (#ecf874) pixel checkmark; an old server crate is neatly stored nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream garden-shed background and subtle pixel-font text: 'DREAMSHAPER READY'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-29/PR-14090.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny clipboard, inspecting a chunky RTX 3060 server sprouting code-flowers while a friendly CRT monitor robot shows a lime green (#ecf874) pixel checkmark; an old server crate is neatly stored nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream garden-shed background and subtle pixel-font text: 'DREAMSHAPER READY'."
+  },
+  "generated_at": "2026-08-29T00:27:34.381755+00:00"
+}

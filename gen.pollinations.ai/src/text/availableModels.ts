@@ -416,9 +416,9 @@ const models: ModelDefinition[] = [
     },
     {
         name: "glm-5.3",
-        config: portkeyConfig["z-ai/glm-5.3"],
+        config: portkeyConfig["accounts/fireworks/models/glm-5p3"],
         // Reasoning is mandatory; off requests keep the upstream default.
-        transform: mandatoryReasoning,
+        transform: pipe(stripCacheControl, mandatoryReasoning),
     },
     {
         name: "z-ai/glm-5.3-flash",

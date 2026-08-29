@@ -1676,12 +1676,13 @@ export const TEXT_SERVICES = {
     },
     "glm-5.3": {
         aliases: ["z-ai/glm-5.3"],
-        provider: "openrouter",
+        provider: "fireworks",
         brand: "Z.ai",
         category: "text",
         addedDate: new Date("2026-08-19").getTime(),
-        paidOnly: true,
+        paidOnly: false,
         priceMultiplier: 1,
+        // Fireworks standard serverless rates (2026-08-29).
         cost: {
             promptTextTokens: perMillion(1.4),
             promptCachedTokens: perMillion(0.26),

@@ -43,6 +43,22 @@ import {
 } from "./price-badge.tsx";
 import type { ModelPrice } from "./types.ts";
 
+function formatVideoDuration(model: ModelPrice): string | null {
+    if (model.allowedDurations?.length) {
+        const ds = [...model.allowedDurations].sort((a, b) => a - b);
+        if (ds.length === 1) return `${ds[0]}s`;
+        return `${ds[0]}–${ds[ds.length - 1]}s`;
+    }
+    if (model.minDuration != null && model.maxDuration != null) {
+        return model.minDuration === model.maxDuration
+            ? `${model.minDuration}s`
+            : `${model.minDuration}–${model.maxDuration}s`;
+    }
+    if (model.minDuration != null) return `${model.minDuration}s+`;
+    if (model.maxDuration != null) return `≤${model.maxDuration}s`;
+    return null;
+}
+
 type ModelRowProps = {
     model: ModelPrice;
 };
@@ -171,18 +187,44 @@ export const PerPollenEstimate: FC<{
 
 export function getModelTitleTooltipContent(model: ModelPrice): ReactNode {
     const modelDescription = getModelDescriptionWithoutName(model);
+    const videoDuration = formatVideoDuration(model);
 
-    if (!model.agent || !model.baseModel) return modelDescription;
+    if (
+        !modelDescription &&
+        (!model.agent || !model.baseModel) &&
+        model.contextLength == null &&
+        !videoDuration
+    ) {
+        return null;
+    }
 
     return (
         <span className="flex max-w-sm flex-col gap-1.5 text-left">
             {modelDescription && <span>{modelDescription}</span>}
-            <span className="text-xs text-theme-text-muted">
-                <strong className="font-semibold text-theme-text-base">
-                    Base model:
-                </strong>{" "}
-                <span className="font-mono">{model.baseModel}</span>
-            </span>
+            {model.agent && model.baseModel && (
+                <span className="text-xs text-theme-text-muted">
+                    <strong className="font-semibold text-theme-text-base">
+                        Base model:
+                    </strong>{" "}
+                    <span className="font-mono">{model.baseModel}</span>
+                </span>
+            )}
+            {model.contextLength != null && (
+                <span className="text-xs text-theme-text-muted">
+                    <strong className="font-semibold text-theme-text-base">
+                        Context window:
+                    </strong>{" "}
+                    {model.contextLength.toLocaleString()} tokens
+                </span>
+            )}
+            {videoDuration && (
+                <span className="text-xs text-theme-text-muted">
+                    <strong className="font-semibold text-theme-text-base">
+                        Video duration:
+                    </strong>{" "}
+                    {videoDuration}
+                </span>
+            )}
         </span>
     );
 }

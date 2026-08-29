@@ -122,6 +122,22 @@ Creating an agent also creates its callable model listing. See [Publish an Agent
 
 `polli auth login` creates a key with all account permissions Polli needs: `profile`, `usage`, and `keys`. Use `account:usage` for narrow read-only account state like usage and quests. Use `account:keys` to manage keys and, where invite-only My Models access is enabled, my-models. Quest claiming remains in the dashboard.
 
+## Coding harnesses
+
+Point an agentic coding tool at Pollinations. `on` logs in if needed, mints a
+key for the harness, backs up its config, and writes the provider; `off`
+restores the backup.
+
+```bash
+polli harness list              # supported harnesses and whether they are on
+polli harness dsh on            # DeepSeek Harness → Pollinations (default model: deepseek)
+polli harness dsh on --model kimi
+polli harness dsh status
+polli harness dsh off
+```
+
+See [Coding Harnesses](https://github.com/pollinations/pollinations/blob/main/CODING_HARNESSES.md) for what each profile changes and how to add one.
+
 ## Links
 
 - [gen.pollinations.ai](https://gen.pollinations.ai) — API

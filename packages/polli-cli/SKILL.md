@@ -43,6 +43,7 @@ Install: `npm i -g @pollinations/cli@latest` (provides the `polli` binary).
 | List your quests + claim state | `polli quests` (filters: `--open --claimable --claimed --coming-soon`) |
 | Manage prompt agents | `polli agents list` |
 | Manage invite-only community models | `polli my-models list` |
+| Connect a coding harness to Pollinations | `polli harness dsh on` (list: `polli harness list`) |
 | Machine-readable output | append `--json` to any command |
 
 ## Setup
@@ -202,6 +203,15 @@ polli keys create --name "my-app" --type publishable --redirect-uri https://app.
 polli keys revoke <id>                                             # id comes from `keys list --json`
 ```
 `--permissions <perms...>` scopes what the new key can do on the account (e.g. `profile usage` lets it call `polli --key <new> usage`). **Without `--permissions`, new scoped keys can generate media but cannot read account state** — `polli --key <new> usage` will 403. `"keys"` is auto-stripped from the list so a scoped key can never mint further keys. Existing keys with `account:keys` can manage my-models where that invite-only feature is enabled, but still need `account:usage` for read-only account state. Publishable app keys default developer earnings off; pass `--earnings` to enable them. To inspect a specific key other than the current one, use `polli keys list --json | jq '.[] | select(.id == "<id>")'`. `keys info` is intentionally scoped to the caller's own key.
+
+### Connect a coding harness
+```bash
+polli harness list                  # supported harnesses (dsh = DeepSeek Harness) and on/off state
+polli harness dsh on                # login if needed, mint key "polli-harness-dsh", write provider + default model
+polli harness dsh on --model kimi   # any tool-calling text model from `polli models`
+polli harness dsh off               # restore the config backed up before "on"
+```
+`on` edits the harness's own config files (dsh: `$DSH_HOME/settings.yaml` and `.credentials.yaml`, default `~/.dsh`) and backs them up to `~/.pollinations/harnesses/<id>.json`. Reruns reuse the key already in the harness config. Guide: `polli docs` section "Coding Harnesses".
 
 ### Read API docs
 ```bash

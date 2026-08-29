@@ -7,6 +7,7 @@ import { authCommand } from "./commands/auth.js";
 import { docsCommand } from "./commands/docs.js";
 import { earningsCommand } from "./commands/earnings.js";
 import { createGenCommand } from "./commands/gen/index.js";
+import { harnessesCommand } from "./commands/harness.js";
 import { keysCommand } from "./commands/keys.js";
 import { modelsCommand } from "./commands/models.js";
 import { myModelsCommand } from "./commands/my-models.js";
@@ -68,6 +69,9 @@ program.addCommand(earningsCommand);
 program.addCommand(questsCommand);
 program.addCommand(agentsCommand);
 program.addCommand(myModelsCommand);
+
+// Coding harness integrations
+program.addCommand(harnessesCommand);
 
 // Generation
 program.addCommand(createGenCommand());

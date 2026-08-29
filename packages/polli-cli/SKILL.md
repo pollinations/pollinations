@@ -1,6 +1,6 @@
 ---
 name: polli
-description: Generate images, text, audio, video, and transcribe speech via the Pollinations API using the polli CLI. Use when asked to generate media, call pollinations.ai, check pollen balance, list models, manage API keys, inspect quests, manage agents or my-models, or run polli commands.
+description: Generate images, text, audio, video, and transcribe speech via the Pollinations API using the polli CLI. Use when asked to generate media, call pollinations.ai, check pollen balance, list models, manage API keys, inspect quests, configure coding harnesses, manage agents or my-models, or run polli commands.
 allowed-tools: Bash(polli *)
 ---
 
@@ -41,6 +41,7 @@ Install: `npm i -g @pollinations/cli@latest` (provides the `polli` binary).
 | Check balance | `polli usage` |
 | Developer earnings | `polli earnings` (`--days <n>`, max 90) |
 | List your quests + claim state | `polli quests` (filters: `--open --claimable --claimed --coming-soon`) |
+| Configure a coding harness | `polli harness opencode on` |
 | Manage prompt agents | `polli agents list` |
 | Manage invite-only community models | `polli my-models list` |
 | Machine-readable output | append `--json` to any command |
@@ -51,6 +52,8 @@ One-time: `polli auth login` (device-flow; creates a key with `profile`, `usage`
 `printf '%s' "$POLLINATIONS_API_KEY" | polli auth login --with-token`. Verify
 with `polli auth status`.
 Override the stored key for a single command with `--key <key>`.
+
+Coding harness setup does not require Polli authentication. Run `polli harness --help` for available adapters, then use `polli harness <id> on|off|status`. `on` installs a missing harness with its official installer before configuring it. The OpenCode adapter installs `opencode-ai@latest` through npm when needed, enables `opencode-pollinations-plugin`, then asks the user to restart OpenCode and run `/poll login`.
 
 ## Recipes
 

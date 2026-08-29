@@ -68,6 +68,8 @@ polli docs /image            # one endpoint
 polli docs --open            # open in browser
 polli quests                 # public quest catalog
 polli quests --claimed       # already-completed and earned quest status
+polli harness --help         # supported coding harnesses
+polli harness opencode on    # install OpenCode if needed, then enable Pollinations
 ```
 
 ## Account

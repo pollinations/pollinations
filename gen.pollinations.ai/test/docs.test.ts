@@ -237,6 +237,7 @@ describe("docs routes", () => {
         expect(resources?.tags).not.toContain("Publish a Model");
         expect(integrations?.tags).toContain("Publish an Agent");
         expect(integrations?.tags).not.toContain("Community Agents");
+        expect(integrations?.tags).toContain("Coding Harnesses");
         expect(resources?.tags).toContain("Community Agents");
         expect(resources?.tags).not.toContain("Publish an Agent");
         expect(schema.tags.map((tag) => tag.name)).toContain(
@@ -253,6 +254,17 @@ describe("docs routes", () => {
             "Community Agents",
         );
         expect(schema.tags.map((tag) => tag.name)).toContain("CLI");
+        expect(schema.tags.map((tag) => tag.name)).toContain(
+            "Coding Harnesses",
+        );
+        expect(
+            schema.tags.find((tag) => tag.name === "Coding Harnesses")
+                ?.description,
+        ).toContain("polli harness opencode on");
+        expect(
+            schema.tags.find((tag) => tag.name === "Coding Harnesses")
+                ?.description,
+        ).toContain("npm install --global opencode-ai@latest");
         expect(schema.tags.map((tag) => tag.name)).toContain("MCP Server");
         expect(schema.tags.map((tag) => tag.name)).toContain("Quests");
         expect(schema.tags.map((tag) => tag.name)).toContain("Media Storage");
@@ -533,6 +545,18 @@ describe("docs routes", () => {
         const agentsBody = await agentsRes.text();
         expect(agentsBody).toContain("## Publish an Agent");
         expect(agentsBody).toContain("/account/agents");
+
+        const harnessesRes = await worker.fetch(
+            new Request(
+                "https://gen.pollinations.ai/docs/llm.txt?section=coding-harnesses",
+            ),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        expect(harnessesRes.status).toBe(200);
+        const harnessesBody = await harnessesRes.text();
+        expect(harnessesBody).toContain("## Coding Harnesses");
+        expect(harnessesBody).toContain("polli harness opencode on");
 
         const badRes = await worker.fetch(
             new Request("https://gen.pollinations.ai/docs/llm.txt?section=bad"),

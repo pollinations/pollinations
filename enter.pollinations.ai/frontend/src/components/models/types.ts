@@ -94,7 +94,5 @@ export type ModelPrice = {
     contextLength?: number;
     minDuration?: number;
     maxDuration?: number;
-    defaultDuration?: number;
     allowedDurations?: number[];
-    durationStep?: number;
 };

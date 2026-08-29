@@ -62,7 +62,6 @@ function formatVideoDuration(model: ModelPrice): string | null {
     }
     if (model.minDuration != null) return `${model.minDuration}s+`;
     if (model.maxDuration != null) return `≤${model.maxDuration}s`;
-    if (model.defaultDuration != null) return `${model.defaultDuration}s`;
     return null;
 }
 

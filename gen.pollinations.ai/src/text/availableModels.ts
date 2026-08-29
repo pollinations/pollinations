@@ -135,7 +135,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "qwen3.8-max",
-        config: portkeyConfig["qwen/qwen3.8-max"],
+        config: portkeyConfig["accounts/fireworks/models/qwen3p8-max"],
     },
     {
         name: "qwen3.7-flash",

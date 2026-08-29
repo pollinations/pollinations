@@ -222,16 +222,9 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
-    "qwen/qwen3.8-max": () =>
-        createOpenRouterModelConfig({
-            model: "qwen/qwen3.8-max",
-            defaultOptions: {
-                max_tokens: 64000,
-                provider: {
-                    only: ["Alibaba"],
-                    allow_fallbacks: false,
-                },
-            },
+    "accounts/fireworks/models/qwen3p8-max": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/qwen3p8-max",
         }),
     "qwen/qwen3.7-flash": () =>
         createOpenRouterModelConfig({

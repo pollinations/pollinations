@@ -2081,8 +2081,8 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "qwen3.8-max": {
-        aliases: ["qwen/qwen3.8-max"],
-        provider: "openrouter",
+        aliases: ["accounts/fireworks/models/qwen3p8-max"],
+        provider: "fireworks",
         brand: "Qwen",
         category: "text",
         addedDate: new Date("2026-08-04").getTime(),

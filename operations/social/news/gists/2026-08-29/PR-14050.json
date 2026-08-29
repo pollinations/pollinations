@@ -1,0 +1,33 @@
+{
+  "pr_number": 14050,
+  "title": "docs: add concise community model naming tips",
+  "author": "TRDEFI",
+  "url": "https://github.com/pollinations/pollinations/pull/14050",
+  "merged_at": "2026-08-29T10:52:24Z",
+  "labels": [],
+  "pr_body_excerpt": "Closes #12885\n\n- Adds one short naming paragraph to the existing Publish a Model guide.\n- Links the Model ID helper in the Add Model form to that paragraph.\n- Keeps naming guidance separate from validation and enforcement.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Names need good roots",
+    "blurb": "Community model names now have a small patch of guidance before they grow wild. The Model ID helper points directly to it, because a friendly signpost beats guessing.",
+    "summary": "Added a concise naming paragraph to the Publish a Model guide and linked the Add Model form’s Model ID helper directly to it, while keeping guidance separate from validation rules.",
+    "impact": "Community publishers get clearer Model ID naming conventions exactly where they choose an ID, making model listings easier to create and recognize.",
+    "keywords": [
+      "community-models",
+      "model-id",
+      "publishing",
+      "documentation",
+      "form-ux"
+    ],
+    "visual_concept": "Polli acts as a patient garden keeper labeling small code-plants with neat Model ID name tags, while a friendly CRT monitor robot holds a guidebook and points to a signpost labeled “NAMING TIPS.” The scene represents lightweight guidance rather than strict enforcement: a welcoming garden path, labels, and organized sprouts.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny gardener hat, carefully attaching neat name tags to code-plants in lime green (#ecf874) pots while a cute CRT monitor robot holds an open guidebook beside a pixel sign reading “NAMING TIPS.” Cozy 8-bit pixel art aesthetic, soft lime green and pastel lavender-to-cream gradients, warm lighting, flowers and vines, retro gaming vibes like Stardew Valley, emotionally warm and inviting."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-29/PR-14050.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny gardener hat, carefully attaching neat name tags to code-plants in lime green (#ecf874) pots while a cute CRT monitor robot holds an open guidebook beside a pixel sign reading “NAMING TIPS.” Cozy 8-bit pixel art aesthetic, soft lime green and pastel lavender-to-cream gradients, warm lighting, flowers and vines, retro gaming vibes like Stardew Valley, emotionally warm and inviting."
+  },
+  "generated_at": "2026-08-29T10:53:21.060004+00:00"
+}

@@ -39,20 +39,3 @@ The account key stored by `polli auth login` is never written into a harness; ea
 | [OpenCode](https://opencode.ai) | `opencode-pollinations-plugin` | `opencode.json`, `auth.json` | Community plugin that registers a Pollinations provider. A future adapter can install OpenCode when missing, enable the plugin, and store a dedicated child key in OpenCode's native auth file. |
 
 Any harness that accepts an OpenAI-compatible chat completions provider works with `base_url = https://gen.pollinations.ai/v1` and `Authorization: Bearer sk_…` set by hand. Codex CLI (needs `/v1/responses`) and Claude Code (needs `/v1/messages`) are not supported until those endpoints exist.
-
-<!-- scalar-docs-end -->
-
-## Add a harness
-
-New harness adapters are welcome and are usually posted as [quests](https://github.com/pollinations/pollinations/issues?q=is%3Aissue+label%3APOLLEN-QUEST+harness). One adapter is one file:
-
-1. Add `packages/polli-cli/src/harnesses/<id>.ts` exporting a `HarnessAdapter` (`packages/polli-cli/src/harnesses/types.ts`) with `on`, `off`, and `status` methods.
-   - Keep installation, authentication, and configuration inside the adapter.
-   - Direct-provider harnesses can reuse the key, model, and snapshot helpers used by `dsh.ts`.
-   - Plugin-based harnesses can run their official installer directly and reuse the key helper when the plugin accepts a Pollinations key.
-   - Preserve unrelated settings. Use `applyWithSnapshot` for reversible file changes, or remove only entries the adapter owns.
-2. Register it in `packages/polli-cli/src/harnesses/index.ts`.
-3. Add `<id>.test.ts` next to it. Tests run against a temporary home (`ctx.home`) and never touch the real config — see `dsh.test.ts`.
-4. Add a row to the table above.
-
-Rules: resolve the harness home from its own env var (`DSH_HOME`, `OPENCODE_CONFIG_DIR`, …) before falling back to `ctx.home`; write secrets with mode `0600`; never print the key; use `writeTextAtomic` from `harnesses/fs.ts` for every write.

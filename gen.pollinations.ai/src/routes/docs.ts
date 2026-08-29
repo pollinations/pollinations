@@ -204,9 +204,7 @@ const stripLeadingHeading = (md: string) =>
 const USER_WALLETS_DOCS = stripLeadingHeading(BYOP_MD.trim());
 const PUBLISH_MODEL_DOCS = stripLeadingHeading(COMMUNITY_MODELS_MD.trim());
 const PUBLISH_AGENT_DOCS = stripLeadingHeading(AGENTS_MD.trim());
-const CODING_HARNESSES_DOCS = stripLeadingHeading(
-    CODING_HARNESSES_MD.split("<!-- scalar-docs-end -->", 1)[0].trim(),
-);
+const CODING_HARNESSES_DOCS = stripLeadingHeading(CODING_HARNESSES_MD.trim());
 
 // Dynamic registry values get injected into the markdown via {{PLACEHOLDER}}
 // substitution. The placeholders live in the .md files so the prose stays in

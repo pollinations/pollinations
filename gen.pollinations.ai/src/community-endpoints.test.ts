@@ -37,7 +37,6 @@ import {
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
     normalizeCommunityAssetUrl,
-    normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
     normalizeCommunityEndpointImagePricing,
     normalizeCommunityEndpointInputModalities,
@@ -46,7 +45,7 @@ import {
     PROMPT_AGENT_BASE_URL_PLACEHOLDER,
     type PromptAgentListingPayload,
     parseCommunityModelId,
-    validateCommunityVideoEndpointUrl,
+    validateCommunityEndpointUrl,
 } from "@shared/community-endpoints.ts";
 import {
     communityEndpoint as communityEndpointTable,
@@ -550,17 +549,14 @@ describe("community endpoint helpers", () => {
         expect(parseCommunityModelId("openai")).toBeNull();
     });
 
-    it("normalizes OpenAI-compatible endpoint URLs", () => {
-        expect(
-            normalizeCommunityEndpointBaseUrl("https://api.example.com/v1/"),
-        ).toBe("https://api.example.com/v1");
-        expect(
-            normalizeCommunityEndpointBaseUrl(
-                "https://api.example.com/v1?ignored=1#section",
-            ),
-        ).toBe("https://api.example.com/v1");
+    it("validates endpoint URLs without rewriting them", () => {
+        const endpoint = "https://api.example.com/v1/?version=1";
+        expect(validateCommunityEndpointUrl(endpoint)).toBe(endpoint);
         expect(communityChatCompletionsUrl("https://api.example.com/v1")).toBe(
             "https://api.example.com/v1/chat/completions",
+        );
+        expect(communityChatCompletionsUrl(endpoint)).toBe(
+            "https://api.example.com/v1/chat/completions?version=1",
         );
         expect(communityImageGenerationsUrl("https://api.example.com/v1")).toBe(
             "https://api.example.com/v1/images/generations",
@@ -570,14 +566,14 @@ describe("community endpoint helpers", () => {
         );
         expect(
             communityChatCompletionsUrl(
-                "https://api.example.com/v1/chat/completions",
+                "https://api.example.com/v1/chat/completions/?version=1",
             ),
-        ).toBe("https://api.example.com/v1/chat/completions");
+        ).toBe("https://api.example.com/v1/chat/completions/?version=1");
         expect(
             communityImageGenerationsUrl(
-                "https://api.example.com/v1/images/generations",
+                "https://api.example.com/v1/images/generations?version=1",
             ),
-        ).toBe("https://api.example.com/v1/images/generations");
+        ).toBe("https://api.example.com/v1/images/generations?version=1");
         expect(
             communityImageEditsUrl(
                 "https://api.example.com/v1/images/generations",
@@ -607,21 +603,19 @@ describe("community endpoint helpers", () => {
             ),
         ).toThrow("HTTP image URL must use the endpoint host");
         expect(() =>
-            normalizeCommunityEndpointBaseUrl("http://api.example.com/v1"),
+            validateCommunityEndpointUrl("http://api.example.com/v1"),
         ).toThrow("Endpoint URL must use https");
         expect(() =>
-            normalizeCommunityEndpointBaseUrl("https://localhost/v1"),
+            validateCommunityEndpointUrl("https://localhost/v1"),
         ).toThrow("Endpoint URL cannot target a private host");
-    });
-
-    it("validates video endpoints without rewriting them", () => {
-        const endpoint = "https://api.example.com/generate/?version=1";
-        expect(validateCommunityVideoEndpointUrl(endpoint)).toBe(endpoint);
         expect(() =>
-            validateCommunityVideoEndpointUrl(`${endpoint}#section`),
+            validateCommunityEndpointUrl(" https://api.example.com/v1 "),
+        ).toThrow("Endpoint URL cannot include surrounding whitespace");
+        expect(() =>
+            validateCommunityEndpointUrl(`${endpoint}#section`),
         ).toThrow("Endpoint URL cannot include a fragment");
         expect(() =>
-            validateCommunityVideoEndpointUrl(
+            validateCommunityEndpointUrl(
                 "https://user:password@api.example.com/generate",
             ),
         ).toThrow("Endpoint URL cannot include credentials");
@@ -3639,6 +3633,7 @@ fixtureTest(
             }
 
             if (isCommunityImageGenerationsRequest(request)) {
+                expect(new URL(request.url).search).toBe("?version=1");
                 const body = (await request.clone().json()) as Record<
                     string,
                     unknown
@@ -3685,6 +3680,7 @@ fixtureTest(
             }
 
             if (isCommunityImageEditsRequest(request)) {
+                expect(new URL(request.url).search).toBe("?version=1");
                 expect(request.headers.get("authorization")).toBe(
                     "Bearer sk_image_upstream",
                 );
@@ -3733,7 +3729,7 @@ fixtureTest(
             modality: "image",
             inputModalities: ["text", "image"],
             visibility: "public",
-            baseUrl: "https://api.example.com/v1/images/generations",
+            baseUrl: "https://api.example.com/v1/images/generations?version=1",
             upstreamModel: "gpt-image-1",
             bearerToken: "Bearer sk_image_upstream",
             promptTextPrice: 0.000002,
@@ -3783,7 +3779,7 @@ fixtureTest(
             modelId: communityModelId(ownerGithubUsername, modelName),
             modality: "image",
             inputModalities: ["text", "image"],
-            baseUrl: "https://api.example.com/v1/images/generations",
+            baseUrl: "https://api.example.com/v1/images/generations?version=1",
             upstreamModel: "gpt-image-1",
             promptTextPrice: 0,
             completionImagePrice: 0,

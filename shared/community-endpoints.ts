@@ -773,20 +773,10 @@ export function parseCommunityModelId(
     return { ownerGithubUsername, modelName };
 }
 
-export function normalizeCommunityEndpointBaseUrl(value: string): string {
-    const url = new URL(value);
-    if (url.protocol !== "https:") {
-        throw new Error("Endpoint URL must use https");
+export function validateCommunityEndpointUrl(value: string): string {
+    if (value !== value.trim()) {
+        throw new Error("Endpoint URL cannot include surrounding whitespace");
     }
-    if (isBlockedHostname(url.hostname)) {
-        throw new Error("Endpoint URL cannot target a private host");
-    }
-    url.search = "";
-    url.hash = "";
-    return url.toString().replace(/\/+$/, "");
-}
-
-export function validateCommunityVideoEndpointUrl(value: string): string {
     const url = new URL(value);
     if (url.protocol !== "https:") {
         throw new Error("Endpoint URL must use https");
@@ -987,15 +977,15 @@ export function decodeCommunityBase64(value: string): Uint8Array | null {
 }
 
 export function communityChatCompletionsUrl(baseUrl: string): string {
-    return `${communityOpenAIBaseUrl(baseUrl)}/chat/completions`;
+    return communityOpenAIEndpointUrl(baseUrl, "/chat/completions");
 }
 
 export function communityImageGenerationsUrl(baseUrl: string): string {
-    return `${communityOpenAIBaseUrl(baseUrl)}/images/generations`;
+    return communityOpenAIEndpointUrl(baseUrl, "/images/generations");
 }
 
 export function communityImageEditsUrl(baseUrl: string): string {
-    return `${communityOpenAIBaseUrl(baseUrl)}/images/edits`;
+    return communityOpenAIEndpointUrl(baseUrl, "/images/edits");
 }
 
 async function fetchCommunityVideoBytes(
@@ -1045,7 +1035,7 @@ async function fetchCommunityVideoBytes(
 }
 
 export function communityAudioTranscriptionsUrl(baseUrl: string): string {
-    return `${communityOpenAIBaseUrl(baseUrl)}/audio/transcriptions`;
+    return communityOpenAIEndpointUrl(baseUrl, "/audio/transcriptions");
 }
 
 /**
@@ -1073,19 +1063,38 @@ export function communityTranscriptionSeconds(body: unknown): number | null {
     return null;
 }
 
+const COMMUNITY_OPENAI_ENDPOINT_SUFFIXES = [
+    "/chat/completions",
+    "/images/generations",
+    "/images/edits",
+    "/audio/transcriptions",
+] as const;
+
+function configuredCommunityEndpointSuffix(url: URL): string | undefined {
+    const pathname = url.pathname.replace(/\/+$/, "");
+    return COMMUNITY_OPENAI_ENDPOINT_SUFFIXES.find((suffix) =>
+        pathname.endsWith(suffix),
+    );
+}
+
 export function communityOpenAIBaseUrl(baseUrl: string): string {
-    const normalized = normalizeCommunityEndpointBaseUrl(baseUrl);
-    for (const suffix of [
-        "/chat/completions",
-        "/images/generations",
-        "/images/edits",
-        "/audio/transcriptions",
-    ]) {
-        if (normalized.endsWith(suffix)) {
-            return normalized.slice(0, -suffix.length);
-        }
+    const validated = validateCommunityEndpointUrl(baseUrl);
+    const url = new URL(validated);
+    const suffix = configuredCommunityEndpointSuffix(url);
+    if (!suffix) return validated;
+    const pathname = url.pathname.replace(/\/+$/, "");
+    url.pathname = pathname.slice(0, -suffix.length);
+    return url.toString();
+}
+
+function communityOpenAIEndpointUrl(baseUrl: string, suffix: string): string {
+    const validated = validateCommunityEndpointUrl(baseUrl);
+    if (configuredCommunityEndpointSuffix(new URL(validated)) === suffix) {
+        return validated;
     }
-    return normalized;
+    const url = new URL(communityOpenAIBaseUrl(validated));
+    url.pathname = `${url.pathname.replace(/\/+$/, "")}${suffix}`;
+    return url.toString();
 }
 
 export function communityPriceDefinition(

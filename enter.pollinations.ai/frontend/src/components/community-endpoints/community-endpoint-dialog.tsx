@@ -152,7 +152,7 @@ export function CommunityEndpointDialog({
         try {
             const response = await apiClient.account["my-models"].models.$post({
                 json: {
-                    baseUrl: form.baseUrl.trim(),
+                    baseUrl: form.baseUrl,
                     ...tokenForRequest,
                 },
             });
@@ -182,7 +182,7 @@ export function CommunityEndpointDialog({
         try {
             const response = await apiClient.account["my-models"].test.$post({
                 json: {
-                    baseUrl: form.baseUrl.trim(),
+                    baseUrl: form.baseUrl,
                     bearerToken: form.bearerToken.trim(),
                     modality: form.modality,
                     ...(form.modality !== "video" && {

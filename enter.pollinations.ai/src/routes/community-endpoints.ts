@@ -1,18 +1,16 @@
 import {
     applyPendingProxyPricing,
-    type CommunityEndpointModality,
     type CommunityEndpointVisibility,
     communityModelId,
     type EndpointAgentListingPayload,
     effectiveCommunityEndpointVisibility,
     isCommunityEndpointOwnerAllowed,
-    normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
     normalizeCommunityProviderUrl,
     type ProxyListingPayload,
     parseListingPayload,
     pendingCommunityEndpointChangeIsReady,
-    validateCommunityVideoEndpointUrl,
+    validateCommunityEndpointUrl,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
@@ -68,14 +66,9 @@ import {
 
 const ENDPOINT_PROBE_THROTTLE_SECONDS = 30;
 type Db = ReturnType<typeof drizzle<typeof schema>>;
-function validateInputEndpointUrl(
-    value: string,
-    modality?: CommunityEndpointModality,
-): string {
+function validateInputEndpointUrl(value: string): string {
     try {
-        return modality === "video"
-            ? validateCommunityVideoEndpointUrl(value)
-            : normalizeCommunityEndpointBaseUrl(value);
+        return validateCommunityEndpointUrl(value);
     } catch (error) {
         throw new HTTPException(400, {
             message:
@@ -562,10 +555,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         ? "private"
                         : input.visibility,
                     type: "proxy",
-                    baseUrl: validateInputEndpointUrl(
-                        input.baseUrl,
-                        input.modality,
-                    ),
+                    baseUrl: validateInputEndpointUrl(input.baseUrl),
                     upstreamModel: input.upstreamModel ?? input.name,
                     payload: JSON.stringify(payload),
                     pendingPayload: queuesPublication
@@ -671,10 +661,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             try {
                 const endpointInput = {
                     ...input,
-                    baseUrl: validateInputEndpointUrl(
-                        input.baseUrl,
-                        input.modality,
-                    ),
+                    baseUrl: validateInputEndpointUrl(input.baseUrl),
                 };
                 let result: CommunityEndpointTestResult;
                 if (input.modality === "video") {
@@ -883,10 +870,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                               c.env.BETTER_AUTH_SECRET,
                           );
                 if (input.baseUrl !== undefined) {
-                    update.baseUrl = validateInputEndpointUrl(
-                        input.baseUrl,
-                        stored.modality,
-                    );
+                    update.baseUrl = validateInputEndpointUrl(input.baseUrl);
                 }
                 if (input.upstreamModel !== undefined) {
                     update.upstreamModel = input.upstreamModel;

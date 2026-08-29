@@ -507,7 +507,7 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
             },
             modality,
         ),
-        baseUrl: form.baseUrl.trim(),
+        baseUrl: form.baseUrl,
         upstreamModel: form.upstreamModel.trim() || form.name.trim(),
         paidOnly: form.visibility === "public" ? form.paidOnly : false,
         // Private models carry no public pricing, so their fallbacks cannot be

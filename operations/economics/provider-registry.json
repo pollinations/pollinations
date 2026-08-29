@@ -1,5 +1,5 @@
 {
-  "version": 13,
+  "version": 14,
   "providers": [
     {
       "id": "airforce",
@@ -233,6 +233,31 @@
         {
           "workspace": "myceli.ai",
           "url": "https://cloud.digitalocean.com/organizations/4a4e317f-17c7-4fdb-9c79-907331a02d2b/billing"
+        }
+      ]
+    },
+    {
+      "id": "e2b",
+      "label": "E2B",
+      "meteringBasis": "capacity",
+      "aliases": [],
+      "connector": "e2b",
+      "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "da33283c-f2bf-414e-87e3-ab8e20cffc46",
+          "label": "Elliot's Project",
+          "activeFrom": "2026-08",
+          "activeTo": null
+        }
+      ],
+      "balanceTracking": true,
+      "collectionMethod": "dashboard",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://console.e2b.dev/project/elliots-project/billing",
+          "accountId": "da33283c-f2bf-414e-87e3-ab8e20cffc46"
         }
       ]
     },

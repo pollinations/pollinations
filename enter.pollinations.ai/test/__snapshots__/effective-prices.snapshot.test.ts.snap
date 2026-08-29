@@ -244,22 +244,22 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "gemini": {
     "cost": {
-      "completionTextTokens": 0.000001875,
-      "promptAudioTokens": 0.000000375,
-      "promptCacheWriteTokens": 0.000000375,
-      "promptCachedTokens": 0.0000000375,
-      "promptImageTokens": 0.000000375,
-      "promptTextTokens": 0.000000375,
-      "promptVideoTokens": 0.000000375,
+      "completionTextTokens": 0.00000375,
+      "promptAudioTokens": 0.00000075,
+      "promptCacheWriteTokens": 0.00000075,
+      "promptCachedTokens": 0.000000075,
+      "promptImageTokens": 0.00000075,
+      "promptTextTokens": 0.00000075,
+      "promptVideoTokens": 0.00000075,
     },
     "price": {
-      "completionTextTokens": 0.000001875,
-      "promptAudioTokens": 0.000000375,
-      "promptCacheWriteTokens": 0.000000375,
-      "promptCachedTokens": 0.0000000375,
-      "promptImageTokens": 0.000000375,
-      "promptTextTokens": 0.000000375,
-      "promptVideoTokens": 0.000000375,
+      "completionTextTokens": 0.00000375,
+      "promptAudioTokens": 0.00000075,
+      "promptCacheWriteTokens": 0.00000075,
+      "promptCachedTokens": 0.000000075,
+      "promptImageTokens": 0.00000075,
+      "promptTextTokens": 0.00000075,
+      "promptVideoTokens": 0.00000075,
     },
   },
   "gemini-2": {
@@ -428,6 +428,20 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionTextTokens": 0.0000044,
       "promptCachedTokens": 0.00000026,
       "promptTextTokens": 0.0000014,
+    },
+  },
+  "google/gemini-omni-1.1-flash": {
+    "cost": {
+      "completionTextTokens": 0.000009,
+      "completionVideoTokens": 0.0000175,
+      "promptImageTokens": 0.0000015,
+      "promptTextTokens": 0.0000015,
+    },
+    "price": {
+      "completionTextTokens": 0.000009,
+      "completionVideoTokens": 0.0000175,
+      "promptImageTokens": 0.0000015,
+      "promptTextTokens": 0.0000015,
     },
   },
   "gpt-5.4": {
@@ -1519,11 +1533,15 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "qwen-vision-pro": {
     "cost": {
+      "completionReasoningTokens": 0.000004,
       "completionTextTokens": 0.000004,
+      "promptImageTokens": 0.0000004,
       "promptTextTokens": 0.0000004,
     },
     "price": {
+      "completionReasoningTokens": 0.000004,
       "completionTextTokens": 0.000004,
+      "promptImageTokens": 0.0000004,
       "promptTextTokens": 0.0000004,
     },
   },
@@ -1929,6 +1947,20 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
     "price": {
       "promptAudioSeconds": 0.0000452777777777778,
+    },
+  },
+  "z-ai/glm-5.3-flash": {
+    "cost": {
+      "completionTextTokens": 0.00000025,
+      "promptCachedTokens": 0.000000015,
+      "promptImageTokens": 0.000000075,
+      "promptTextTokens": 0.000000075,
+    },
+    "price": {
+      "completionTextTokens": 0.00000025,
+      "promptCachedTokens": 0.000000015,
+      "promptImageTokens": 0.000000075,
+      "promptTextTokens": 0.000000075,
     },
   },
   "zimage": {

@@ -1,9 +1,13 @@
+import { communityEndpointPrices } from "@shared/community-endpoints.ts";
 import { describe, expect, it } from "vitest";
+import { savedEndpointPriceKeys } from "../frontend/src/components/community-endpoints/price-table.tsx";
 import {
     agentListingToForm,
     emptyAgentForm,
     emptyForm,
+    endpointToForm,
     isValidPerUserRpm,
+    type ProxyCommunityEndpoint,
     publicCommunityFallbackOptions,
     toAgentListingPayload,
     toAgentPayload,
@@ -37,6 +41,46 @@ describe("community endpoint per-user RPM input", () => {
             baseModel: "openai",
             mcpServers: ["pollinations"],
         });
+    });
+
+    it("edits queued publication values instead of the current private values", () => {
+        const endpoint: ProxyCommunityEndpoint = {
+            id: "endpoint-id",
+            modelId: "owner/model",
+            name: "model",
+            title: "Model",
+            description: null,
+            type: "proxy",
+            modality: "text",
+            imagePricing: "request",
+            inputModalities: ["text"],
+            advertised: {},
+            perUserRpm: null,
+            paidOnly: false,
+            fallbacks: [],
+            baseUrl: "https://example.com/v1",
+            upstreamModel: "model",
+            visibility: "private",
+            pending: {
+                effectiveAt: "2026-08-28T12:00:00.000Z",
+                visibility: "public",
+                paidOnly: true,
+                promptTextPrice: 0.000002,
+                promptCachedPrice: 0.000001,
+            },
+            hidden: false,
+            hiddenReason: null,
+            hiddenAt: null,
+            ...communityEndpointPrices({}),
+        };
+        const form = endpointToForm(endpoint);
+
+        expect(form).toMatchObject({
+            visibility: "public",
+            paidOnly: true,
+            promptTextPrice: "2",
+        });
+        expect(savedEndpointPriceKeys(endpoint)).toContain("promptCachedPrice");
     });
 
     it("does not offer agent listings as fallback models", () => {

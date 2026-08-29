@@ -302,13 +302,15 @@ export function CommunityEndpointDialog({
     );
     const hasValidPerUserRpm = isValidPerUserRpm(form.perUserRpm);
     // First-time publishing of an external endpoint re-observes its billed
-    // buckets, so it needs a successful test. A model already saved as public
-    // has server-validated pricing, so re-editing it (e.g. a price or
-    // description tweak) does not force another test. Private models defer
-    // pricing entirely. External endpoints always need a token to be callable
-    // at all.
-    const alreadyPublic = isEdit && endpoint?.visibility === "public";
-    const needsTest = isShared && !alreadyPublic;
+    // buckets, so it needs a successful test. A model already public or queued
+    // for publication has server-validated pricing, so re-editing it does not
+    // force another test. Private models defer pricing entirely. External
+    // endpoints always need a token to be callable at all.
+    const isPublicOrPending =
+        isEdit &&
+        (endpoint?.visibility === "public" ||
+            endpoint?.pending?.visibility === "public");
+    const needsTest = isShared && !isPublicOrPending;
     const testRequirementMet =
         testState.status === "success" && returnedFields.length > 0;
     const saveRequirementMet =
@@ -400,6 +402,16 @@ export function CommunityEndpointDialog({
             >
                 <ScrollArea className="min-h-0 flex-1 space-y-4 overscroll-contain px-6 pb-2">
                     {error && <Alert intent="danger">{error}</Alert>}
+
+                    {endpoint?.pending && (
+                        <Alert intent="info" title="Changes queued">
+                            This form shows the queued values. They take effect{" "}
+                            {new Date(
+                                endpoint.pending.effectiveAt,
+                            ).toLocaleString()}
+                            .
+                        </Alert>
+                    )}
 
                     {!isEndpointAgent && (
                         <FieldStack

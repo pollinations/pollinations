@@ -3,6 +3,7 @@ import {
     COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
     communityEndpointTitle,
     communityModelId,
+    effectiveCommunityEndpointVisibility,
     normalizeCommunityEndpointAdvertised,
     parseListingPayload,
     pendingCommunityEndpointChangeIsReady,
@@ -49,10 +50,11 @@ export function toCommunityEndpointResponse(
         description: row.description,
         baseUrl: row.type === "prompt_agent" ? agentRuntimeUrl : row.baseUrl,
         upstreamModel: row.upstreamModel,
-        visibility:
-            pendingReady && row.pendingVisibility
-                ? row.pendingVisibility
-                : row.visibility,
+        visibility: effectiveCommunityEndpointVisibility(
+            row.visibility,
+            row.pendingVisibility,
+            row.pendingAt,
+        ),
         pending: pendingBase,
         hidden: row.hiddenAt !== null,
         hiddenReason: row.hiddenReason,

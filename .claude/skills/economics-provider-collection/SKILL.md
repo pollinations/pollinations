@@ -79,10 +79,13 @@ name or an undocumented ratio.
   create a second identity for the same fact.
 - Treat the current month as partial.
 
-Use the generic validated ledger publishers for writes. First prepare and show
-the exact proposed rows and totals. Never write Tinybird without the user's
-explicit approval for the named batch and environment. Validate staging first;
-do not touch production unless the user separately requests it.
+Keep ledger writes task-scoped; do not add permanent ingest code. Before a
+write, query the effective datasource, save and verify a complete local backup,
+and show the exact proposed rows and totals. Existing `entry_id` corrections
+must include the current base version, use a later `recorded_at`, and preserve
+immutable identity fields. Append only after explicit approval for the named
+batch and environment, then re-query every written ID and save a verified
+after-snapshot. Validate staging first; production requires separate approval.
 
 ## Completion
 

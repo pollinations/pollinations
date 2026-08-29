@@ -212,7 +212,10 @@ function printModels(models: MyModel[]) {
                 model.type === "proxy" && model.paidOnly
                     ? `${model.visibility} (paid only)`
                     : model.visibility,
-            upstream: model.upstreamModel,
+            upstream:
+                model.type === "proxy" && model.modality === "video"
+                    ? "-"
+                    : model.upstreamModel,
             base_url: model.baseUrl,
             fallbacks:
                 model.type === "proxy"
@@ -254,12 +257,18 @@ const list = new Command("list")
 
 const create = addPriceOptions(
     new Command("create")
-        .description("Register an OpenAI-compatible model endpoint")
+        .description("Register a community model endpoint")
         .requiredOption("--name <name>", "Model name")
         .requiredOption("--title <title>", "Display title shown in the catalog")
         .option("--description <text>", "Model description")
-        .option("--base-url <url>", "OpenAI-compatible base URL")
-        .option("--upstream-model <model>", "Upstream model id")
+        .option(
+            "--base-url <url>",
+            "OpenAI-compatible base URL, or exact video endpoint URL",
+        )
+        .option(
+            "--upstream-model <model>",
+            "Upstream model id (not used for video)",
+        )
         .option("--bearer-token <token>", "Upstream bearer token")
         .option(
             "--visibility <visibility>",
@@ -311,8 +320,14 @@ const update = addPriceOptions(
         .option("--name <name>", "Model name")
         .option("--title <title>", "Display title shown in the catalog")
         .option("--description <text>", "Model description")
-        .option("--base-url <url>", "OpenAI-compatible base URL")
-        .option("--upstream-model <model>", "Upstream model id")
+        .option(
+            "--base-url <url>",
+            "OpenAI-compatible base URL, or exact video endpoint URL",
+        )
+        .option(
+            "--upstream-model <model>",
+            "Upstream model id (not used for video)",
+        )
         .option("--bearer-token <token>", "Upstream bearer token")
         .option(
             "--visibility <visibility>",

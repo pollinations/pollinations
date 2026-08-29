@@ -209,7 +209,7 @@ export function CommunityEndpointDialog({
                     form.modality === "image"
                         ? "Endpoint responded, but did not return image data"
                         : form.modality === "video"
-                          ? "Endpoint responded, but did not return playable video and duration"
+                          ? "Endpoint responded, but did not return playable video"
                           : form.modality === "transcription"
                             ? "Endpoint responded, but did not return transcription text or usage"
                             : "Endpoint responded, but did not return billable usage",
@@ -484,8 +484,16 @@ export function CommunityEndpointDialog({
 
                     <div className="grid gap-4 sm:grid-cols-2">
                         <FieldStack
-                            label="Endpoint URL"
-                            helper="OpenAI-compatible /v1 base URL, or full chat/image/edit/video/transcription URL."
+                            label={
+                                form.modality === "video"
+                                    ? "Video endpoint URL"
+                                    : "Endpoint URL"
+                            }
+                            helper={
+                                form.modality === "video"
+                                    ? "The exact URL Pollinations calls to generate a video."
+                                    : "OpenAI-compatible /v1 base URL, or full chat/image/edit/transcription URL."
+                            }
                             alignLabelRow
                         >
                             <Input
@@ -493,7 +501,11 @@ export function CommunityEndpointDialog({
                                 type="url"
                                 inputMode="url"
                                 value={form.baseUrl}
-                                placeholder="https://api.example.com/v1"
+                                placeholder={
+                                    form.modality === "video"
+                                        ? "https://api.example.com/generate-video"
+                                        : "https://api.example.com/v1"
+                                }
                                 autoComplete="off"
                                 autoCapitalize="none"
                                 spellCheck={false}
@@ -503,7 +515,7 @@ export function CommunityEndpointDialog({
                                 }
                             />
                         </FieldStack>
-                        {isEndpointAgent ? (
+                        {isEndpointAgent && (
                             <FieldStack
                                 label="Agent model ID"
                                 helper="Model ID sent to the endpoint with each request."
@@ -524,7 +536,8 @@ export function CommunityEndpointDialog({
                                     }
                                 />
                             </FieldStack>
-                        ) : (
+                        )}
+                        {!isEndpointAgent && form.modality !== "video" && (
                             <FieldStack
                                 label="Provider model ID"
                                 helper={providerModelHelper(
@@ -558,12 +571,9 @@ export function CommunityEndpointDialog({
                                     placeholder={
                                         form.modality === "image"
                                             ? "gpt-image-2"
-                                            : form.modality === "video"
-                                              ? "video-1"
-                                              : form.modality ===
-                                                  "transcription"
-                                                ? "whisper-1"
-                                                : "gpt-4o-mini"
+                                            : form.modality === "transcription"
+                                              ? "whisper-1"
+                                              : "gpt-4o-mini"
                                     }
                                     align="end"
                                     open={providerModelMenuOpen}

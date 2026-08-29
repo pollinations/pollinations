@@ -628,7 +628,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["🧩 Community Models"],
             summary: "Test My Model Endpoint",
             description:
-                "Test an OpenAI-compatible upstream model before registering it. Image tests detect the image pricing mode and probe the derived `/images/edits` endpoint; video tests validate completed MP4 data and its duration. Limited to one probe every 30 seconds per account. API keys require `account:keys`.",
+                "Test an upstream model before registering it. Image tests detect the image pricing mode and probe the derived `/images/edits` endpoint; video tests call the exact configured URL and validate completed MP4 data. Limited to one probe every 30 seconds per account. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Endpoint test result",
@@ -674,7 +674,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                                 ? "Generation and editing endpoints responded with image data"
                                 : "Generation endpoint responded; editing is not supported"
                             : input.modality === "video"
-                              ? "Endpoint responded with playable video and duration"
+                              ? "Endpoint responded with playable video"
                               : input.modality === "transcription"
                                 ? "Endpoint responded with transcription text"
                                 : "Endpoint responded with usage",

@@ -8,6 +8,7 @@ import {
     type ModelDefinition,
     type ModelInputModality,
     type PriceDefinition,
+    type VideoCapability,
 } from "./registry/registry.ts";
 import {
     OPENAI_CHAT_USAGE_PATHS,
@@ -65,7 +66,6 @@ export const MAX_COMMUNITY_VIDEO_BYTES = 20 * 1024 * 1024;
 // small amount of room for the envelope while still bounding provider output.
 export const MAX_COMMUNITY_MEDIA_RESPONSE_BYTES =
     Math.ceil((MAX_COMMUNITY_VIDEO_BYTES * 4) / 3) + 64 * 1024;
-export const MIN_COMMUNITY_VIDEO_DURATION_SECONDS = 0.5;
 // How long we wait on a community endpoint before giving up. Generous because
 // these are self-hosted hobby GPUs that cold-start, and in line with the text
 // providers (Portkey and Azure both use 290s). Workers impose no wall-clock
@@ -80,7 +80,7 @@ export type CommunityEndpointModality =
 export const COMMUNITY_ENDPOINT_INPUT_MODALITIES = {
     text: MODEL_INPUT_MODALITIES,
     image: ["text", "image"],
-    video: ["text"],
+    video: MODEL_INPUT_MODALITIES,
     transcription: ["audio"],
 } as const satisfies Record<
     CommunityEndpointModality,
@@ -244,14 +244,13 @@ const COMMUNITY_TRANSCRIPTION_PRICE_FIELD = {
     rawUsagePaths: ["duration"],
 } as const;
 
-// Community video endpoints report the completed clip duration alongside the
-// media. That duration is the only billable unit for this modality.
+// Community video endpoints are billed from the duration Pollinations sends.
 const COMMUNITY_VIDEO_PRICE_FIELD = {
     key: "completionVideoPrice",
     usageType: "completionVideoSeconds",
     label: "Generated video",
     priceUnit: "video_second",
-    rawUsagePaths: ["duration_seconds"],
+    rawUsagePaths: ["duration"],
 } as const;
 
 export const COMMUNITY_ENDPOINT_PRICE_FIELDS = [
@@ -863,23 +862,16 @@ export async function firstCommunityImageBytes(
     return null;
 }
 
-export type CommunityVideoData = {
-    bytes: Uint8Array;
-    durationSeconds: number;
-};
-
 /**
  * Read one completed clip from the synchronous community video contract.
  * Publishers return OpenAI-images-style `data` with either `b64_json` or a
- * downloadable URL, plus the measured output duration used for billing. When
- * a requested duration is supplied, it is also a lower bound: accepting a
- * provider-reported fraction of the requested clip would underbill callers.
+ * downloadable URL. Billing uses the duration accepted by Pollinations, not
+ * publisher-provided metadata.
  */
-export async function firstCommunityVideoData(
+export async function firstCommunityVideoBytes(
     body: unknown,
     endpointBaseUrl: string,
-    requestedDurationSeconds?: number,
-): Promise<CommunityVideoData | null> {
+): Promise<Uint8Array | null> {
     if (
         !body ||
         typeof body !== "object" ||
@@ -888,21 +880,8 @@ export async function firstCommunityVideoData(
     ) {
         return null;
     }
-    const minimumDuration = Math.max(
-        MIN_COMMUNITY_VIDEO_DURATION_SECONDS,
-        requestedDurationSeconds ?? 0,
-    );
     for (const video of body.data) {
         if (!video || typeof video !== "object") continue;
-        const durationSeconds =
-            "duration_seconds" in video &&
-            typeof video.duration_seconds === "number" &&
-            Number.isFinite(video.duration_seconds) &&
-            video.duration_seconds >= minimumDuration
-                ? video.duration_seconds
-                : null;
-        if (durationSeconds === null) continue;
-
         if (
             "b64_json" in video &&
             typeof video.b64_json === "string" &&
@@ -922,20 +901,14 @@ export async function firstCommunityVideoData(
             if (bytes.byteLength > MAX_COMMUNITY_VIDEO_BYTES) {
                 throw new HttpError("Endpoint video is larger than 20 MB", 502);
             }
-            return { bytes, durationSeconds };
+            return bytes;
         }
         if (
             "url" in video &&
             typeof video.url === "string" &&
             video.url.length > 0
         ) {
-            return {
-                bytes: await fetchCommunityVideoBytes(
-                    video.url,
-                    endpointBaseUrl,
-                ),
-                durationSeconds,
-            };
+            return fetchCommunityVideoBytes(video.url, endpointBaseUrl);
         }
     }
     return null;
@@ -976,18 +949,11 @@ async function fetchCommunityImageBytes(
             url,
         );
     }
-    try {
-        return await readResponseBytes(
-            response,
-            MAX_COMMUNITY_IMAGE_BYTES,
-            () => new HttpError("Endpoint image is larger than 20 MB", 502),
-        );
-    } catch (error) {
-        if (error instanceof HttpError) throw error;
-        throw new HttpError("Endpoint image could not be read", 502, {
-            error: error instanceof Error ? error.message : String(error),
-        });
-    }
+    return readResponseBytes(
+        response,
+        MAX_COMMUNITY_IMAGE_BYTES,
+        () => new HttpError("Endpoint image is larger than 20 MB", 502),
+    );
 }
 
 export function decodeCommunityBase64(value: string): Uint8Array | null {
@@ -1062,10 +1028,6 @@ async function fetchCommunityVideoBytes(
     }
 }
 
-export function communityVideoGenerationsUrl(baseUrl: string): string {
-    return `${communityOpenAIBaseUrl(baseUrl)}/videos/generations`;
-}
-
 export function communityAudioTranscriptionsUrl(baseUrl: string): string {
     return `${communityOpenAIBaseUrl(baseUrl)}/audio/transcriptions`;
 }
@@ -1101,7 +1063,6 @@ export function communityOpenAIBaseUrl(baseUrl: string): string {
         "/chat/completions",
         "/images/generations",
         "/images/edits",
-        "/videos/generations",
         "/audio/transcriptions",
     ]) {
         if (normalized.endsWith(suffix)) {
@@ -1174,6 +1135,16 @@ export function communityModelDefinition(
         endpoint.inputModalities,
         modality,
     );
+    const videoCapabilities: VideoCapability[] = [];
+    if (isVideo && inputModalities.includes("image")) {
+        videoCapabilities.push("start_frame", "end_frame", "reference_images");
+    }
+    if (isVideo && inputModalities.includes("video")) {
+        videoCapabilities.push("reference_videos");
+    }
+    if (isVideo && inputModalities.includes("audio")) {
+        videoCapabilities.push("reference_audios");
+    }
     const providerName = endpoint.providerName?.trim();
     const providerUrl = endpoint.providerUrl?.trim();
     const { capabilities = [], ...advertised } =
@@ -1198,6 +1169,7 @@ export function communityModelDefinition(
         description: description || undefined,
         inputModalities,
         outputModalities: isImage ? ["image"] : isVideo ? ["video"] : ["text"],
+        ...(videoCapabilities.length > 0 ? { videoCapabilities } : {}),
         hidden: endpoint.hidden,
         ...(endpoint.fallbacks?.length
             ? { fallbacks: endpoint.fallbacks }

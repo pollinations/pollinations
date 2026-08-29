@@ -5,9 +5,8 @@ import {
     communityEndpointErrorDetail,
     communityImageEditsUrl,
     communityImageGenerationsUrl,
-    communityVideoGenerationsUrl,
     firstCommunityImageBytes,
-    firstCommunityVideoData,
+    firstCommunityVideoBytes,
     MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
@@ -88,8 +87,11 @@ export async function callCommunityImageEndpoint(
 }
 
 type CommunityVideoParams = {
-    model: string;
     duration?: number;
+    image?: string[];
+    reference_images?: string[];
+    reference_videos?: string[];
+    reference_audios?: string[];
 };
 
 export async function callCommunityVideoEndpoint(
@@ -107,37 +109,46 @@ export async function callCommunityVideoEndpoint(
         endpoint.bearerTokenCiphertext,
         secret,
     );
+    if (safeParams.duration === undefined) {
+        throw new HttpError(
+            "duration is required for community video models",
+            400,
+        );
+    }
     const body = await fetchCommunityMediaJson(
-        communityVideoGenerationsUrl(endpoint.baseUrl),
+        endpoint.baseUrl,
         bearerToken,
         JSON.stringify({
-            model: endpoint.upstreamModel,
             prompt,
-            ...(safeParams.duration !== undefined
-                ? { duration: safeParams.duration }
+            duration: safeParams.duration,
+            ...(safeParams.image?.length ? { image: safeParams.image } : {}),
+            ...(safeParams.reference_images?.length
+                ? { reference_images: safeParams.reference_images }
+                : {}),
+            ...(safeParams.reference_videos?.length
+                ? { reference_videos: safeParams.reference_videos }
+                : {}),
+            ...(safeParams.reference_audios?.length
+                ? { reference_audios: safeParams.reference_audios }
                 : {}),
         }),
         "video",
     );
-    const video = await firstCommunityVideoData(
-        body,
-        endpoint.baseUrl,
-        safeParams.duration,
-    );
-    const mimeType = video && detectVideoMimeType(video.bytes);
-    if (!video || !mimeType) {
+    const bytes = await firstCommunityVideoBytes(body, endpoint.baseUrl);
+    const mimeType = bytes && detectVideoMimeType(bytes);
+    if (!bytes || !mimeType) {
         throw new HttpError(
-            "Community video endpoint did not return a supported video with duration_seconds",
+            "Community video endpoint did not return a supported video",
             502,
         );
     }
     return {
-        buffer: Buffer.from(video.bytes),
+        buffer: Buffer.from(bytes),
         mimeType,
-        durationSeconds: video.durationSeconds,
+        durationSeconds: safeParams.duration,
         trackingData: {
             actualModel: endpoint.modelId,
-            usage: { completionVideoSeconds: video.durationSeconds },
+            usage: { completionVideoSeconds: safeParams.duration },
         },
     };
 }

@@ -163,11 +163,14 @@ export function CommunityEndpointCard({
                                 value={endpoint.modality}
                             />
                         )}
-                        <CommunityDetailRow
-                            icon={<TerminalIcon className="h-3.5 w-3.5" />}
-                            label="Upstream model"
-                            value={endpoint.upstreamModel}
-                        />
+                        {(endpoint.type !== "proxy" ||
+                            endpoint.modality !== "video") && (
+                            <CommunityDetailRow
+                                icon={<TerminalIcon className="h-3.5 w-3.5" />}
+                                label="Upstream model"
+                                value={endpoint.upstreamModel}
+                            />
+                        )}
                         {endpoint.perUserRpm !== null && (
                             <CommunityDetailRow
                                 icon={<TerminalIcon className="h-3.5 w-3.5" />}

@@ -25,7 +25,6 @@ import {
     communityModelId,
     communityOpenAIBaseUrl,
     communityPriceDefinition,
-    communityVideoGenerationsUrl,
     type EndpointAgentCommunityEndpointRuntime,
     isCommunityEndpointOwnerAllowed,
     isCommunityFallbackPricingAllowed,
@@ -631,17 +630,6 @@ describe("community endpoint helpers", () => {
         ]);
     });
 
-    it("derives the synchronous community video URL", () => {
-        expect(communityVideoGenerationsUrl("https://api.example.com/v1")).toBe(
-            "https://api.example.com/v1/videos/generations",
-        );
-        expect(
-            communityVideoGenerationsUrl(
-                "https://api.example.com/v1/videos/generations",
-            ),
-        ).toBe("https://api.example.com/v1/videos/generations");
-    });
-
     it("advertises community videos on the existing public media routes", () => {
         expect(communityVideoSupportedEndpoints()).toEqual([
             "/v1/images/generations",
@@ -828,13 +816,21 @@ describe("community endpoint helpers", () => {
             modelId,
             description: "Community video model",
             modality: "video",
+            inputModalities: ["text", "image", "audio", "video"],
             ...communityEndpointPrices({ completionVideoPrice: 0.08 }),
         });
 
         expect(definition).toMatchObject({
             category: "video",
-            inputModalities: ["text"],
+            inputModalities: ["text", "image", "audio", "video"],
             outputModalities: ["video"],
+            videoCapabilities: [
+                "start_frame",
+                "end_frame",
+                "reference_images",
+                "reference_videos",
+                "reference_audios",
+            ],
             cost: { completionVideoSeconds: 0.08 },
         });
         expect(
@@ -1059,7 +1055,7 @@ describe("community endpoint helpers", () => {
                 modality: "image",
                 imagePricing,
                 inputModalities: null,
-                baseUrl: "https://api.example.com/v1",
+                baseUrl: "https://api.example.com/generate-video",
                 upstreamModel: "gpt-image-1",
                 visibility: "public",
                 paidOnly: false,
@@ -1250,7 +1246,7 @@ describe("community endpoint helpers", () => {
                 modality: "video",
                 imagePricing: "request",
                 inputModalities: ["text"],
-                baseUrl: "https://api.example.com/v1",
+                baseUrl: "https://api.example.com/generate-video",
                 upstreamModel: "video-1",
                 visibility: "public",
                 paidOnly: false,
@@ -1266,27 +1262,28 @@ describe("community endpoint helpers", () => {
             };
         }
 
-        it("returns playable MP4 and bills the reported duration", async () => {
+        it("calls the configured URL and bills the requested duration", async () => {
             const fetchMock = vi.fn(async (input, init) => {
                 const request = new Request(input, init);
                 expect(request.url).toBe(
-                    "https://api.example.com/v1/videos/generations",
+                    "https://api.example.com/generate-video",
                 );
                 expect(request.headers.get("authorization")).toBe(
                     "Bearer sk_saved_token",
                 );
                 await expect(request.json()).resolves.toEqual({
-                    model: "video-1",
                     prompt: "a sprout",
                     duration: 4,
+                    image: [
+                        "https://media.example.com/start.jpg",
+                        "https://media.example.com/end.jpg",
+                    ],
+                    reference_images: ["https://media.example.com/style.jpg"],
+                    reference_videos: ["https://media.example.com/motion.mp4"],
+                    reference_audios: ["https://media.example.com/audio.mp3"],
                 });
                 return Response.json({
-                    data: [
-                        {
-                            b64_json: TEST_MP4_BASE64,
-                            duration_seconds: 4.25,
-                        },
-                    ],
+                    data: [{ b64_json: TEST_MP4_BASE64 }],
                 });
             });
             vi.stubGlobal("fetch", fetchMock);
@@ -1294,14 +1291,23 @@ describe("community endpoint helpers", () => {
             const result = await callCommunityVideoEndpoint(
                 await videoEndpoint(),
                 "a sprout",
-                { model: "video-1", duration: 4 },
+                {
+                    duration: 4,
+                    image: [
+                        "https://media.example.com/start.jpg",
+                        "https://media.example.com/end.jpg",
+                    ],
+                    reference_images: ["https://media.example.com/style.jpg"],
+                    reference_videos: ["https://media.example.com/motion.mp4"],
+                    reference_audios: ["https://media.example.com/audio.mp3"],
+                },
                 secret,
             );
 
             expect(result.mimeType).toBe("video/mp4");
-            expect(result.durationSeconds).toBe(4.25);
+            expect(result.durationSeconds).toBe(4);
             expect(result.trackingData.usage).toEqual({
-                completionVideoSeconds: 4.25,
+                completionVideoSeconds: 4,
             });
             expect(Array.from(result.buffer)).toEqual(TEST_MP4_BYTES);
         });
@@ -1309,12 +1315,15 @@ describe("community endpoint helpers", () => {
         it("downloads URL responses and still validates the MP4 payload", async () => {
             const fetchMock = vi.fn(async (input, init) => {
                 const request = new Request(input, init);
-                if (request.url.endsWith("/videos/generations")) {
+                if (request.url.endsWith("/generate-video")) {
+                    await expect(request.json()).resolves.toEqual({
+                        prompt: "a sprout",
+                        duration: 3,
+                    });
                     return Response.json({
                         data: [
                             {
                                 url: "https://api.example.com/assets/clip.mp4",
-                                duration_seconds: 2.5,
                             },
                         ],
                     });
@@ -1332,11 +1341,11 @@ describe("community endpoint helpers", () => {
             const result = await callCommunityVideoEndpoint(
                 await videoEndpoint(),
                 "a sprout",
-                { model: "video-1" },
+                { duration: 3 },
                 secret,
             );
 
-            expect(result.durationSeconds).toBe(2.5);
+            expect(result.durationSeconds).toBe(3);
             expect(Array.from(result.buffer)).toEqual(TEST_MP4_BYTES);
             expect(fetchMock).toHaveBeenCalledTimes(2);
         });
@@ -1344,12 +1353,11 @@ describe("community endpoint helpers", () => {
         it("maps URL response stream failures to a provider error", async () => {
             const fetchMock = vi.fn(async (input) => {
                 const url = String(input);
-                if (url.endsWith("/videos/generations")) {
+                if (url.endsWith("/generate-video")) {
                     return Response.json({
                         data: [
                             {
                                 url: "https://api.example.com/assets/clip.mp4",
-                                duration_seconds: 2.5,
                             },
                         ],
                     });
@@ -1370,7 +1378,7 @@ describe("community endpoint helpers", () => {
                 callCommunityVideoEndpoint(
                     await videoEndpoint(),
                     "a sprout",
-                    { model: "video-1" },
+                    { duration: 3 },
                     secret,
                 ),
             ).rejects.toMatchObject({
@@ -1379,17 +1387,12 @@ describe("community endpoint helpers", () => {
             });
         });
 
-        it("rejects a non-MP4 payload even when duration is present", async () => {
+        it("rejects a non-MP4 payload", async () => {
             vi.stubGlobal(
                 "fetch",
                 vi.fn(async () =>
                     Response.json({
-                        data: [
-                            {
-                                b64_json: TEST_INVALID_IMAGE_BASE64,
-                                duration_seconds: 2,
-                            },
-                        ],
+                        data: [{ b64_json: TEST_INVALID_IMAGE_BASE64 }],
                     }),
                 ),
             );
@@ -1398,7 +1401,7 @@ describe("community endpoint helpers", () => {
                 callCommunityVideoEndpoint(
                     await videoEndpoint(),
                     "a sprout",
-                    { model: "video-1" },
+                    { duration: 2 },
                     secret,
                 ),
             ).rejects.toMatchObject({ status: 502 });
@@ -1409,12 +1412,7 @@ describe("community endpoint helpers", () => {
                 "fetch",
                 vi.fn(async () =>
                     Response.json({
-                        data: [
-                            {
-                                b64_json: TEST_BARE_MP4_BASE64,
-                                duration_seconds: 2,
-                            },
-                        ],
+                        data: [{ b64_json: TEST_BARE_MP4_BASE64 }],
                     }),
                 ),
             );
@@ -1423,55 +1421,25 @@ describe("community endpoint helpers", () => {
                 callCommunityVideoEndpoint(
                     await videoEndpoint(),
                     "a sprout",
-                    { model: "video-1" },
+                    { duration: 2 },
                     secret,
                 ),
             ).rejects.toMatchObject({ status: 502 });
         });
 
-        it("rejects missing duration instead of billing zero", async () => {
-            vi.stubGlobal(
-                "fetch",
-                vi.fn(async () =>
-                    Response.json({
-                        data: [{ b64_json: TEST_MP4_BASE64 }],
-                    }),
-                ),
-            );
+        it("requires a request duration before calling the endpoint", async () => {
+            const fetchMock = vi.fn();
+            vi.stubGlobal("fetch", fetchMock);
 
             await expect(
                 callCommunityVideoEndpoint(
                     await videoEndpoint(),
                     "a sprout",
-                    { model: "video-1" },
+                    {},
                     secret,
                 ),
-            ).rejects.toMatchObject({ status: 502 });
-        });
-
-        it("rejects implausibly short durations instead of underbilling", async () => {
-            vi.stubGlobal(
-                "fetch",
-                vi.fn(async () =>
-                    Response.json({
-                        data: [
-                            {
-                                b64_json: TEST_MP4_BASE64,
-                                duration_seconds: 0.5,
-                            },
-                        ],
-                    }),
-                ),
-            );
-
-            await expect(
-                callCommunityVideoEndpoint(
-                    await videoEndpoint(),
-                    "a sprout",
-                    { model: "video-1", duration: 10 },
-                    secret,
-                ),
-            ).rejects.toMatchObject({ status: 502 });
+            ).rejects.toMatchObject({ status: 400 });
+            expect(fetchMock).not.toHaveBeenCalled();
         });
 
         it("preserves upstream video failures", async () => {
@@ -1489,7 +1457,7 @@ describe("community endpoint helpers", () => {
                 callCommunityVideoEndpoint(
                     await videoEndpoint(),
                     "a sprout",
-                    { model: "video-1" },
+                    { duration: 3 },
                     secret,
                 ),
             ).rejects.toMatchObject({
@@ -4139,23 +4107,26 @@ fixtureTest(
         const enterApi = await createEnterCommunityApi();
         const fetchMock = vi.fn(async (input, init) => {
             const request = new Request(input, init);
-            if (new URL(request.url).pathname.endsWith("/videos/generations")) {
+            if (request.url === "https://api.example.com/generate-video") {
                 expect(request.headers.get("authorization")).toBe(
                     "Bearer sk_video_upstream",
                 );
                 const body = (await request.json()) as {
-                    model: string;
                     prompt: string;
-                    duration?: number;
+                    duration: number;
                 };
-                expect(body.model).toBe("community-video-1");
+                expect(Object.keys(body).sort()).toEqual([
+                    "duration",
+                    "prompt",
+                ]);
+                expect(body.duration).toBe(
+                    body.prompt ===
+                        "A green sprout gently moving in the breeze."
+                        ? 5
+                        : 4,
+                );
                 return Response.json({
-                    data: [
-                        {
-                            b64_json: TEST_MP4_BASE64,
-                            duration_seconds: body.duration ?? 4,
-                        },
-                    ],
+                    data: [{ b64_json: TEST_MP4_BASE64 }],
                 });
             }
             if (isBillingFetch(request)) return Response.json({ data: [] });
@@ -4169,7 +4140,7 @@ fixtureTest(
                 method: "POST",
                 headers: { "Content-Type": "application/json", Cookie: cookie },
                 body: JSON.stringify({
-                    baseUrl: "https://api.example.com/v1",
+                    baseUrl: "https://api.example.com/generate-video",
                     bearerToken: "sk_video_upstream",
                     model: "community-video-1",
                     modality: "video",
@@ -4178,9 +4149,9 @@ fixtureTest(
         );
         expect(probeResponse.status).toBe(200);
         await expect(probeResponse.json()).resolves.toMatchObject({
-            message: "Endpoint responded with playable video and duration",
-            usage: { duration_seconds: 1 },
-            billableUsage: { completionVideoSeconds: 1 },
+            message: "Endpoint responded with playable video",
+            usage: { duration: 5 },
+            billableUsage: { completionVideoSeconds: 5 },
         });
 
         const registerResponse = await fetchEnterApi(
@@ -4194,8 +4165,7 @@ fixtureTest(
                     description: "Synchronous community video endpoint",
                     modality: "video",
                     visibility: "public",
-                    baseUrl: "https://api.example.com/v1",
-                    upstreamModel: "community-video-1",
+                    baseUrl: "https://api.example.com/generate-video",
                     bearerToken: "sk_video_upstream",
                     completionVideoPrice: 0.08,
                 }),
@@ -4211,8 +4181,9 @@ fixtureTest(
         expect(registered).toMatchObject({
             modelId: communityModelId(ownerGithubUsername, modelName),
             modality: "video",
-            completionVideoPrice: 0.08,
+            completionVideoPrice: 0,
         });
+        await maturePendingCommunityEndpoint(registered.id);
 
         const generationResponse = await fetchGen(
             new Request(

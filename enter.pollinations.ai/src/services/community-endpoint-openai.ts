@@ -8,10 +8,9 @@ import {
     communityImageGenerationsUrl,
     communityOpenAIBaseUrl,
     communityTranscriptionSeconds,
-    communityVideoGenerationsUrl,
     decodeCommunityBase64,
     firstCommunityImageBytes,
-    firstCommunityVideoData,
+    firstCommunityVideoBytes,
     MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
@@ -233,36 +232,29 @@ export async function testCommunityImageEndpoint({
 }
 
 // Video registration uses the same synchronous contract as request-time
-// generation: the endpoint must finish within the shared timeout and return
-// playable media together with the measured duration used for billing.
+// generation: the exact configured URL must return completed playable media.
 export async function testCommunityVideoEndpoint({
     baseUrl,
     bearerToken,
-    model,
 }: EndpointTestInput): Promise<CommunityEndpointTestResult> {
-    const body = await fetchJson(communityVideoGenerationsUrl(baseUrl), {
+    const body = await fetchJson(baseUrl, {
         method: "POST",
         headers: {
             ...authorizationHeaders(bearerToken),
             "Content-Type": "application/json",
         },
         body: JSON.stringify({
-            model,
             prompt: "A green sprout gently moving in the breeze.",
-            duration: 1,
+            duration: 5,
         }),
     });
-    const video = await firstCommunityVideoData(body, baseUrl, 1);
-    if (!video || !detectVideoMimeType(video.bytes)) {
-        throw new Error(
-            "Endpoint did not return a supported video with duration_seconds",
-        );
+    const video = await firstCommunityVideoBytes(body, baseUrl);
+    if (!video || !detectVideoMimeType(video)) {
+        throw new Error("Endpoint did not return a supported video");
     }
     return {
-        usage: { duration_seconds: video.durationSeconds },
-        billableUsage: {
-            completionVideoSeconds: video.durationSeconds,
-        },
+        usage: { duration: 5 },
+        billableUsage: { completionVideoSeconds: 5 },
     };
 }
 

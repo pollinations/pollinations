@@ -12,6 +12,7 @@ import {
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MAX_COMMUNITY_PRICE_PER_SECOND,
+    MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     normalizeCommunityEndpointAdvertised,
     normalizeCommunityEndpointInputModalities,
@@ -303,7 +304,9 @@ export function isValidPriceInput(
             ? MAX_COMMUNITY_PRICE_PER_IMAGE
             : priceUnit === "second"
               ? MAX_COMMUNITY_PRICE_PER_SECOND
-              : MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS;
+              : priceUnit === "video"
+                ? MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND
+                : MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS;
     return (
         Number.isFinite(parsed) &&
         parsed >= 0 &&

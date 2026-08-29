@@ -4,6 +4,7 @@ import {
     testCommunityEndpoint,
     testCommunityImageEndpoint,
     testCommunityTranscriptionEndpoint,
+    testCommunityVideoEndpoint,
 } from "../src/services/community-endpoint-openai.ts";
 
 afterEach(() => {
@@ -449,5 +450,85 @@ describe("community endpoint OpenAI service", () => {
                 model: "whisper-1",
             }),
         ).rejects.toThrow("Endpoint did not return OpenAI transcription text");
+    });
+});
+
+
+describe("community video endpoint probe", () => {
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    // Minimal MP4-shaped bytes: a size header followed by the "ftyp" brand.
+    const MP4_B64 = Buffer.from([
+        0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70, 0x6d, 0x70, 0x34, 0x32,
+        0x00, 0x00, 0x00, 0x00,
+    ]).toString("base64");
+
+    it("probes /videos/generations and reports the billable seconds", async () => {
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            expect(request.url).toBe(
+                "https://api.example.com/v1/videos/generations",
+            );
+            expect(request.headers.get("authorization")).toBe(
+                "Bearer sk_saved_token",
+            );
+            await expect(request.json()).resolves.toMatchObject({
+                model: "clip-5",
+                duration: 5,
+            });
+            return Response.json({
+                data: [{ b64_json: MP4_B64 }],
+                usage: { video_seconds: 5 },
+            });
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        await expect(
+            testCommunityVideoEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "clip-5",
+            }),
+        ).resolves.toEqual({
+            usage: { video_seconds: 5 },
+            billableUsage: { completionVideoSeconds: 5 },
+        });
+    });
+
+    it("rejects endpoints that do not report a billable duration", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => Response.json({ data: [{ b64_json: MP4_B64 }] })),
+        );
+
+        await expect(
+            testCommunityVideoEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "clip-5",
+            }),
+        ).rejects.toThrow(/did not report the video duration/);
+    });
+
+    it("rejects endpoints that return something other than video", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json({
+                    data: [{ b64_json: "iVBORw0KGgo=" }],
+                    usage: { video_seconds: 5 },
+                }),
+            ),
+        );
+
+        await expect(
+            testCommunityVideoEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "clip-5",
+            }),
+        ).rejects.toThrow(/supported video/);
     });
 });

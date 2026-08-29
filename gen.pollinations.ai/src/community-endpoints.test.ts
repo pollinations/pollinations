@@ -25,6 +25,8 @@ import {
     communityModelId,
     communityOpenAIBaseUrl,
     communityPriceDefinition,
+    communityVideoGenerationsUrl,
+    communityVideoSeconds,
     type EndpointAgentCommunityEndpointRuntime,
     isCommunityEndpointOwnerAllowed,
     isCommunityFallbackPricingAllowed,
@@ -33,6 +35,7 @@ import {
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MAX_COMMUNITY_PRICE_PER_SECOND,
     MAX_COMMUNITY_PRICE_PER_TOKEN,
+    MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
     normalizeCommunityAssetUrl,
@@ -86,7 +89,10 @@ import {
     communityTranscriptionSupportedEndpoints,
     getCommunityModelRegistryEntries,
 } from "./community-models.ts";
-import { callCommunityImageEndpoint } from "./image/communityEndpoint.ts";
+import {
+    callCommunityImageEndpoint,
+    callCommunityVideoEndpoint,
+} from "./image/communityEndpoint.ts";
 import worker from "./index.ts";
 import {
     getGenerationModelRegistry,
@@ -6312,3 +6318,218 @@ fixtureTest(
         expect(direct.status).toBe(403);
     },
 );
+
+describe("community video helpers", () => {
+    it("derives the OpenAI-compatible video generations URL", () => {
+        expect(
+            communityVideoGenerationsUrl("https://api.example.com/v1"),
+        ).toBe("https://api.example.com/v1/videos/generations");
+        expect(
+            communityOpenAIBaseUrl(
+                "https://api.example.com/v1/videos/generations",
+            ),
+        ).toBe("https://api.example.com/v1");
+    });
+
+    it("reads the billed duration from every documented response shape", () => {
+        expect(communityVideoSeconds({ usage: { video_seconds: 5 } })).toBe(5);
+        expect(communityVideoSeconds({ usage: { duration: 6 } })).toBe(6);
+        expect(communityVideoSeconds({ duration: 7 })).toBe(7);
+        expect(communityVideoSeconds({ usage: {} })).toBeNull();
+        expect(communityVideoSeconds(null)).toBeNull();
+    });
+
+    it("prices video endpoints per generated second", () => {
+        expect(communityEndpointPriceFieldsForModality("video")).toEqual([
+            {
+                key: "completionVideoPrice",
+                usageType: "completionVideoSeconds",
+                label: "Generated video",
+                priceUnit: "video",
+                rawUsagePaths: ["video_seconds"],
+            },
+        ]);
+        expect(MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND).toBe(0.5);
+    });
+
+    it("builds community video models with video catalog fields", () => {
+        const definition = communityModelDefinition({
+            type: "proxy",
+            id: "community-endpoint-id",
+            ownerUserId: "owner-id",
+            modelId: "voodoohop/clipvideo",
+            name: "clipvideo",
+            title: "Clip Video",
+            description: null,
+            modality: "video",
+            imagePricing: "request",
+            inputModalities: ["text"],
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "clip-5",
+            visibility: "public",
+            paidOnly: false,
+            perUserRpm: null,
+            fallbacks: [],
+            hiddenAt: null,
+            hiddenReason: null,
+            bearerTokenCiphertext: "v1:test:test",
+            ...communityEndpointPrices({ completionVideoPrice: 0.2 }),
+        });
+        expect(definition.category).toBe("video");
+        expect(definition.outputModalities).toEqual(["video"]);
+        expect(definition.inputModalities).toEqual(["text"]);
+    });
+});
+
+describe("community video endpoint billing", () => {
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    const secret = "test-secret";
+
+    // Minimal MP4-shaped bytes: a size header followed by the "ftyp" brand.
+    const MP4_B64 = Buffer.from([
+        0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70, 0x6d, 0x70, 0x34, 0x32,
+        0x00, 0x00, 0x00, 0x00,
+    ]).toString("base64");
+
+    async function videoEndpoint(): Promise<CommunityEndpointRuntime> {
+        return {
+            type: "proxy",
+            id: "community-endpoint-id",
+            ownerUserId: "owner-id",
+            modelId: "voodoohop/clipvideo",
+            name: "clipvideo",
+            title: "Clip Video",
+            description: null,
+            modality: "video",
+            imagePricing: "request",
+            inputModalities: ["text"],
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "clip-5",
+            visibility: "public",
+            paidOnly: false,
+            perUserRpm: null,
+            fallbacks: [],
+            hiddenAt: null,
+            hiddenReason: null,
+            bearerTokenCiphertext: await encryptSecret("sk_saved_token", secret),
+            ...communityEndpointPrices({ completionVideoPrice: 0.2 }),
+        };
+    }
+
+    const videoParams = {
+        model: "clip-5",
+        width: 1280,
+        height: 720,
+        duration: 8,
+    } as unknown as Parameters<typeof callCommunityVideoEndpoint>[2];
+
+    it("bills per generated second and returns playable media", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json({
+                    data: [{ b64_json: MP4_B64 }],
+                    usage: { video_seconds: 5 },
+                }),
+            ),
+        );
+
+        const result = await callCommunityVideoEndpoint(
+            await videoEndpoint(),
+            "a sprout",
+            videoParams,
+            secret,
+        );
+        expect(result.mimeType).toBe("video/mp4");
+        expect(result.durationSeconds).toBe(5);
+        expect(result.trackingData?.usage).toEqual({
+            completionVideoSeconds: 5,
+        });
+    });
+
+    it("forwards the caller's duration in seconds", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                expect(request.url).toBe(
+                    "https://api.example.com/v1/videos/generations",
+                );
+                await expect(request.json()).resolves.toMatchObject({
+                    model: "clip-5",
+                    prompt: "a sprout",
+                    duration: 8,
+                });
+                return Response.json({
+                    data: [{ b64_json: MP4_B64 }],
+                    usage: { video_seconds: 8 },
+                });
+            }),
+        );
+
+        await callCommunityVideoEndpoint(
+            await videoEndpoint(),
+            "a sprout",
+            videoParams,
+            secret,
+        );
+    });
+
+    it("fails endpoints that stop reporting the billed duration", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json({ data: [{ b64_json: MP4_B64 }] }),
+            ),
+        );
+
+        await expect(
+            callCommunityVideoEndpoint(
+                await videoEndpoint(),
+                "a sprout",
+                videoParams,
+                secret,
+            ),
+        ).rejects.toMatchObject({
+            status: 502,
+            message: expect.stringContaining("video duration"),
+        });
+    });
+
+    it("rejects payloads that are not playable video", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json({
+                    data: [{ b64_json: "iVBORw0KGgo=" }],
+                    usage: { video_seconds: 5 },
+                }),
+            ),
+        );
+
+        await expect(
+            callCommunityVideoEndpoint(
+                await videoEndpoint(),
+                "a sprout",
+                videoParams,
+                secret,
+            ),
+        ).rejects.toMatchObject({
+            status: 502,
+            message: expect.stringContaining("supported video format"),
+        });
+    });
+
+    it("never routes community video through managed agents", async () => {
+        const endpoint = {
+            ...(await videoEndpoint()),
+            type: "prompt_agent",
+        } as CommunityEndpointRuntime;
+        await expect(
+            callCommunityVideoEndpoint(endpoint, "a sprout", videoParams, secret),
+        ).rejects.toThrow(/managed agent/);
+    });
+});

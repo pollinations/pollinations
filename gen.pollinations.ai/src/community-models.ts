@@ -46,6 +46,10 @@ export function communityImageSupportedEndpoints(
     ];
 }
 
+export function communityVideoSupportedEndpoints(): string[] {
+    return ["/v1/images/generations", "/image/{prompt}", "/video/{prompt}"];
+}
+
 export type CommunityModelRegistryEntry = {
     id: string;
     aliases: string[];

@@ -22,6 +22,7 @@ export const COMMUNITY_ENDPOINT_CHANGE_DELAY_MS = 12 * 60 * 60 * 1000;
 export const COMMUNITY_ENDPOINT_MODALITIES = [
     "text",
     "image",
+    "video",
     "transcription",
 ] as const;
 // How a community image endpoint is billed. "request" charges the fixed
@@ -49,6 +50,14 @@ export const MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS = 50;
 export const MAX_COMMUNITY_PRICE_PER_TOKEN =
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS / 1_000_000;
 export const MAX_COMMUNITY_PRICE_PER_IMAGE = 0.25;
+// Video prices are per second of generated output. $0.50/sec is double the
+// priciest first-party rate (seedance peaks at $0.25/sec), which leaves room
+// for hobby GPUs while keeping typos and malicious listings from exposing
+// callers to extreme charges.
+export const MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND = 0.5;
+// Output videos are bounded like images so a runaway upstream cannot make the
+// worker buffer unbounded bytes. Generous: a 5-10s 720p clip is 5-20 MB.
+export const MAX_COMMUNITY_VIDEO_BYTES = 50 * 1024 * 1024;
 // Per-second audio (STT/TTS) prices are tiny compared to per-token rates, so
 // this ceiling is written per minute and divided down: $0.012/min is ~2x
 // OpenAI whisper ($0.006/min) and ~3x the priciest first-party STT model
@@ -70,6 +79,7 @@ export type CommunityEndpointModality =
 export const COMMUNITY_ENDPOINT_INPUT_MODALITIES = {
     text: MODEL_INPUT_MODALITIES,
     image: ["text", "image"],
+    video: ["text"],
     transcription: ["audio"],
 } as const satisfies Record<
     CommunityEndpointModality,
@@ -233,9 +243,22 @@ const COMMUNITY_TRANSCRIPTION_PRICE_FIELD = {
     rawUsagePaths: ["duration"],
 } as const;
 
+// Video endpoints bill generated output duration in seconds against the same
+// completion video price column the first-party video models use (cost keyed
+// on completionVideoSeconds at a per-second rate). The probe normalizes the
+// upstream duration shapes to `video_seconds`, so that is the only key here.
+const COMMUNITY_VIDEO_PRICE_FIELD = {
+    key: "completionVideoPrice",
+    usageType: "completionVideoSeconds",
+    label: "Generated video",
+    priceUnit: "video",
+    rawUsagePaths: ["video_seconds"],
+} as const;
+
 export const COMMUNITY_ENDPOINT_PRICE_FIELDS = [
     ...COMMUNITY_TEXT_PRICE_FIELDS,
     COMMUNITY_IMAGE_PRICE_FIELD,
+    COMMUNITY_VIDEO_PRICE_FIELD,
     COMMUNITY_TRANSCRIPTION_PRICE_FIELD,
 ] as const;
 
@@ -250,6 +273,10 @@ const COMMUNITY_IMAGE_ENDPOINT_PRICE_FIELDS = [
     COMMUNITY_IMAGE_PRICE_FIELD,
 ] as const;
 
+const COMMUNITY_VIDEO_ENDPOINT_PRICE_FIELDS = [
+    COMMUNITY_VIDEO_PRICE_FIELD,
+] as const;
+
 const COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS = [
     COMMUNITY_TRANSCRIPTION_PRICE_FIELD,
 ] as const;
@@ -258,6 +285,7 @@ export function communityEndpointPriceFieldsForModality(
     modality: CommunityEndpointModality,
     imagePricing: CommunityEndpointImagePricing = "request",
 ) {
+    if (modality === "video") return COMMUNITY_VIDEO_ENDPOINT_PRICE_FIELDS;
     if (modality === "transcription") {
         return COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS;
     }
@@ -357,6 +385,7 @@ export function normalizeCommunityEndpointModality(
     value: string | null | undefined,
 ): CommunityEndpointModality {
     if (value === "transcription") return "transcription";
+    if (value === "video") return "video";
     return value === "image" ? "image" : "text";
 }
 
@@ -793,19 +822,40 @@ export function normalizeCommunityAssetUrl(
     return url.toString();
 }
 
-/**
- * Pull the first usable image out of an OpenAI images response: inline base64
- * when present, otherwise the URL it points at, fetched under the shared
- * timeout and size cap.
- *
- * Returns null when the body carries no usable image, so each caller can
- * phrase that in its own words. A URL that is unsafe, unreachable, or oversized
- * throws HttpError(502) — the gen funnel renders that status directly, and the
- * enter probe flattens it to a 400 with the same message.
- */
 export async function firstCommunityImageBytes(
     body: unknown,
     endpointBaseUrl: string,
+): Promise<Uint8Array | null> {
+    return firstCommunityMediaBytes(body, endpointBaseUrl, {
+        noun: "image",
+        maxBytes: MAX_COMMUNITY_IMAGE_BYTES,
+    });
+}
+
+export async function firstCommunityVideoBytes(
+    body: unknown,
+    endpointBaseUrl: string,
+): Promise<Uint8Array | null> {
+    return firstCommunityMediaBytes(body, endpointBaseUrl, {
+        noun: "video",
+        maxBytes: MAX_COMMUNITY_VIDEO_BYTES,
+    });
+}
+
+/**
+ * Pull the first usable media entry out of an OpenAI-style `{ data: [...] }`
+ * response: inline base64 when present, otherwise the URL it points at,
+ * fetched under the shared timeout and size cap.
+ *
+ * Returns null when the body carries no usable entry, so each caller can
+ * phrase that in its own words. A URL that is unsafe, unreachable, or
+ * oversized throws HttpError(502) — the gen funnel renders that status
+ * directly, and the enter probe flattens it to a 400 with the same message.
+ */
+async function firstCommunityMediaBytes(
+    body: unknown,
+    endpointBaseUrl: string,
+    limits: { noun: string; maxBytes: number },
 ): Promise<Uint8Array | null> {
     if (
         !body ||
@@ -815,35 +865,39 @@ export async function firstCommunityImageBytes(
     ) {
         return null;
     }
-    for (const image of body.data) {
-        if (!image || typeof image !== "object") continue;
+    for (const media of body.data) {
+        if (!media || typeof media !== "object") continue;
         if (
-            "b64_json" in image &&
-            typeof image.b64_json === "string" &&
-            image.b64_json.length > 0
+            "b64_json" in media &&
+            typeof media.b64_json === "string" &&
+            media.b64_json.length > 0
         ) {
-            return decodeCommunityBase64(image.b64_json);
+            return decodeCommunityBase64(media.b64_json);
         }
         if (
-            "url" in image &&
-            typeof image.url === "string" &&
-            image.url.length > 0
+            "url" in media &&
+            typeof media.url === "string" &&
+            media.url.length > 0
         ) {
-            return fetchCommunityImageBytes(image.url, endpointBaseUrl);
+            return fetchCommunityMediaBytes(media.url, endpointBaseUrl, limits);
         }
     }
     return null;
 }
 
-async function fetchCommunityImageBytes(
+async function fetchCommunityMediaBytes(
     value: string,
     endpointBaseUrl: string,
+    limits: { noun: string; maxBytes: number },
 ): Promise<Uint8Array> {
     let url: string;
     try {
         url = normalizeCommunityAssetUrl(value, endpointBaseUrl);
     } catch {
-        throw new HttpError("Endpoint returned an unsafe image URL", 502);
+        throw new HttpError(
+            `Endpoint returned an unsafe ${limits.noun} URL`,
+            502,
+        );
     }
     let response: Response;
     try {
@@ -856,7 +910,7 @@ async function fetchCommunityImageBytes(
         });
     } catch (error) {
         throw new HttpError(
-            "Endpoint image URL timed out or could not connect",
+            `Endpoint ${limits.noun} URL timed out or could not connect`,
             502,
             { error: error instanceof Error ? error.message : String(error) },
             url,
@@ -864,7 +918,7 @@ async function fetchCommunityImageBytes(
     }
     if (!response.ok) {
         throw new HttpError(
-            `Endpoint image URL responded ${response.status}`,
+            `Endpoint ${limits.noun} URL responded ${response.status}`,
             502,
             undefined,
             url,
@@ -872,8 +926,12 @@ async function fetchCommunityImageBytes(
     }
     return readResponseBytes(
         response,
-        MAX_COMMUNITY_IMAGE_BYTES,
-        () => new HttpError("Endpoint image is larger than 20 MB", 502),
+        limits.maxBytes,
+        () =>
+            new HttpError(
+                `Endpoint ${limits.noun} is larger than ${limits.maxBytes / (1024 * 1024)} MB`,
+                502,
+            ),
     );
 }
 
@@ -907,6 +965,10 @@ export function communityAudioTranscriptionsUrl(baseUrl: string): string {
     return `${communityOpenAIBaseUrl(baseUrl)}/audio/transcriptions`;
 }
 
+export function communityVideoGenerationsUrl(baseUrl: string): string {
+    return `${communityOpenAIBaseUrl(baseUrl)}/videos/generations`;
+}
+
 /**
  * Audio duration reported by an OpenAI-compatible transcription response.
  *
@@ -932,6 +994,34 @@ export function communityTranscriptionSeconds(body: unknown): number | null {
     return null;
 }
 
+/**
+ * Video duration reported by an OpenAI-compatible video response.
+ *
+ * `usage.video_seconds` is the shape our probe documents; `usage.duration` and
+ * a top-level `duration` cover servers that echo whisper-style timing. Returns
+ * null when none of them carry a usable number — callers decide what that
+ * means, and both the registration probe and the request path treat it as a
+ * failure so an endpoint that cannot be metered is never billed at zero.
+ */
+export function communityVideoSeconds(body: unknown): number | null {
+    if (!body || typeof body !== "object") return null;
+    const record = body as Record<string, unknown>;
+    const usage =
+        record.usage && typeof record.usage === "object"
+            ? (record.usage as Record<string, unknown>)
+            : undefined;
+    for (const value of [
+        usage?.video_seconds,
+        usage?.duration,
+        record.duration,
+    ]) {
+        if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+            return value;
+        }
+    }
+    return null;
+}
+
 export function communityOpenAIBaseUrl(baseUrl: string): string {
     const normalized = normalizeCommunityEndpointBaseUrl(baseUrl);
     for (const suffix of [
@@ -939,6 +1029,7 @@ export function communityOpenAIBaseUrl(baseUrl: string): string {
         "/images/generations",
         "/images/edits",
         "/audio/transcriptions",
+        "/videos/generations",
     ]) {
         if (normalized.endsWith(suffix)) {
             return normalized.slice(0, -suffix.length);
@@ -1001,6 +1092,7 @@ export function communityModelDefinition(
         endpoint.imagePricing,
     );
     const isImage = modality === "image";
+    const isVideo = modality === "video";
     const isTranscription = modality === "transcription";
     // Token-priced image endpoints bill like text models (usage × per-token
     // rates), so only fixed per-request image endpoints are flat-rate.
@@ -1019,14 +1111,24 @@ export function communityModelDefinition(
         perUserRpm: endpoint.perUserRpm,
         brand: providerName || "Community",
         brandUrl: providerName && providerUrl ? providerUrl : undefined,
-        category: isImage ? "image" : isTranscription ? "audio" : "text",
+        category: isImage
+            ? "image"
+            : isVideo
+              ? "video"
+              : isTranscription
+                ? "audio"
+                : "text",
         cost: communityPriceDefinition(endpoint, modality, imagePricing),
         priceMultiplier: 1,
         addedDate: endpoint.addedDate ?? 0,
         title: communityEndpointTitle(endpoint),
         description: description || undefined,
         inputModalities,
-        outputModalities: isImage ? ["image"] : ["text"],
+        outputModalities: isImage
+            ? ["image"]
+            : isVideo
+              ? ["video"]
+              : ["text"],
         hidden: endpoint.hidden,
         ...(endpoint.fallbacks?.length
             ? { fallbacks: endpoint.fallbacks }

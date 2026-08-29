@@ -17,6 +17,7 @@ import {
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MAX_COMMUNITY_PRICE_PER_SECOND,
+    MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND,
 } from "@shared/community-endpoints.ts";
 import { PRICE_ICON } from "../models/model-icons.tsx";
 import type { PriceKind } from "../models/types.ts";
@@ -186,7 +187,7 @@ function PriceInputCell({
     const unitLabel =
         field.priceUnit === "image"
             ? "/image"
-            : field.priceUnit === "second"
+            : field.priceUnit === "second" || field.priceUnit === "video"
               ? "/sec"
               : "/1M";
     const maximum =
@@ -194,7 +195,9 @@ function PriceInputCell({
             ? MAX_COMMUNITY_PRICE_PER_IMAGE
             : field.priceUnit === "second"
               ? MAX_COMMUNITY_PRICE_PER_SECOND
-              : MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS;
+              : field.priceUnit === "video"
+                ? MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND
+                : MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS;
 
     return (
         <TableCell align="right" className="w-40 align-top">
@@ -226,7 +229,8 @@ function PriceInputCell({
                 {hasError && (
                     <p className="mt-1 text-right text-xs text-intent-danger-text">
                         {field.priceUnit === "image" ||
-                        field.priceUnit === "second"
+                        field.priceUnit === "second" ||
+                        field.priceUnit === "video"
                             ? `Enter 0–${maximum} ${unitLabel}.`
                             : `Enter 0 or up to ${maximum} ${unitLabel}.`}
                     </p>
@@ -297,6 +301,7 @@ function priceKind(field: PriceField): PriceKind {
         return field.usageType.startsWith("prompt") ? "audioIn" : "audioOut";
     }
     if (field.usageType.includes("Image")) return "image";
+    if (field.usageType.includes("Video")) return "video";
     return "text";
 }
 

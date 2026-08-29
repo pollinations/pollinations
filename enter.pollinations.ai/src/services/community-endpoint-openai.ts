@@ -8,11 +8,14 @@ import {
     communityImageGenerationsUrl,
     communityOpenAIBaseUrl,
     communityTranscriptionSeconds,
+    communityVideoGenerationsUrl,
+    communityVideoSeconds,
     decodeCommunityBase64,
     firstCommunityImageBytes,
+    firstCommunityVideoBytes,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
-import { detectImageMimeType } from "@shared/image-mime.ts";
+import { detectImageMimeType, detectVideoMimeType } from "@shared/image-mime.ts";
 import type { ModelInputModality, Usage } from "@shared/registry/registry.ts";
 import {
     getOpenAIImageUsage,
@@ -27,6 +30,9 @@ type EndpointAuth = {
 };
 
 type EndpointTestInput = EndpointAuth & { model: string };
+
+// Short probe prompt; the endpoint picks its own output size.
+const SAMPLE_VIDEO_PROMPT = "A five-second timelapse of a sprout growing.";
 
 export type CommunityEndpointUsage = Record<string, unknown>;
 
@@ -210,6 +216,49 @@ export async function testCommunityImageEndpoint({
         billableUsage: { completionImageTokens: 1 },
         imagePricing: "request",
         inputModalities,
+    };
+}
+
+// Video endpoints are billed against the generated video's duration in
+// seconds, mirroring the first-party per-second video models. The probe
+// generates a short clip and validates that the response carries both a
+// playable video and the duration the endpoint will be billed on — an
+// endpoint that cannot report it would earn nothing on every request.
+export async function testCommunityVideoEndpoint({
+    baseUrl,
+    bearerToken,
+    model,
+}: EndpointTestInput): Promise<CommunityEndpointTestResult> {
+    const body = await fetchJson(communityVideoGenerationsUrl(baseUrl), {
+        method: "POST",
+        headers: {
+            ...authorizationHeaders(bearerToken),
+            "Content-Type": "application/json",
+        },
+        // The same `duration` field (in seconds) the request path forwards,
+        // so what the probe proves is what callers actually get.
+        body: JSON.stringify({ model, prompt: SAMPLE_VIDEO_PROMPT, duration: 5 }),
+    });
+
+    const videoBytes = await firstCommunityVideoBytes(body, baseUrl);
+    if (!videoBytes || !detectVideoMimeType(videoBytes)) {
+        throw new Error("Endpoint did not return a supported video");
+    }
+
+    const videoSeconds = communityVideoSeconds(body);
+    if (videoSeconds === null) {
+        throw new Error(
+            "Endpoint did not report the video duration (expected usage.video_seconds or usage.duration), which is required to bill video",
+        );
+    }
+
+    return {
+        // The pricing UI marks the generated-video row against a usage key
+        // named in that field's rawUsagePaths, and the duration is the only
+        // thing billed here — so report it directly rather than echoing an
+        // upstream usage object that may not carry it.
+        usage: { video_seconds: videoSeconds },
+        billableUsage: { completionVideoSeconds: videoSeconds },
     };
 }
 

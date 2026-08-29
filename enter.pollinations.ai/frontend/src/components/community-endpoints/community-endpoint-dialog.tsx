@@ -207,9 +207,11 @@ export function CommunityEndpointDialog({
                 throw new Error(
                     form.modality === "image"
                         ? "Endpoint responded, but did not return image data"
-                        : form.modality === "transcription"
-                          ? "Endpoint responded, but did not return transcription text or usage"
-                          : "Endpoint responded, but did not return billable usage",
+                        : form.modality === "video"
+                          ? "Endpoint responded, but did not return video data"
+                          : form.modality === "transcription"
+                            ? "Endpoint responded, but did not return transcription text or usage"
+                            : "Endpoint responded, but did not return billable usage",
                 );
             }
             setForm((current) => ({
@@ -281,9 +283,11 @@ export function CommunityEndpointDialog({
     const basePriceKeys =
         form.modality === "image"
             ? (["completionImagePrice"] as const)
-            : form.modality === "transcription"
-              ? BASE_TRANSCRIPTION_PRICE_KEYS
-              : BASE_TEXT_PRICE_KEYS;
+            : form.modality === "video"
+              ? (["completionVideoPrice"] as const)
+              : form.modality === "transcription"
+                ? BASE_TRANSCRIPTION_PRICE_KEYS
+                : BASE_TEXT_PRICE_KEYS;
     const visiblePriceKeys = new Set(
         isShared
             ? visiblePriceFieldKeys(savedPriceKeys, returnedFields, [
@@ -420,7 +424,12 @@ export function CommunityEndpointDialog({
                         >
                             <ButtonGroup aria-label="Modality">
                                 {(
-                                    ["text", "image", "transcription"] as const
+                                    [
+                                        "text",
+                                        "image",
+                                        "video",
+                                        "transcription",
+                                    ] as const
                                 ).map((modality) => (
                                     <TabButton
                                         key={modality}

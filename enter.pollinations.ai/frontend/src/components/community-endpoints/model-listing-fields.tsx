@@ -119,8 +119,7 @@ export function ModelListingFields({
                             "Public ID: {username}/{id}."
                         ) : (
                             <>
-                                Public ID: {"{username}"}/
-                                {"{model-id}"}.{" "}
+                                Public ID: {"{username}"}/{"{model-id}"}.{" "}
                                 <InlineLink
                                     href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_MODEL.md#model-names"
                                     target="_blank"

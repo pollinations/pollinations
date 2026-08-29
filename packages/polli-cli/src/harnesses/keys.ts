@@ -1,14 +1,21 @@
 import { loginWithDeviceFlow } from "../commands/auth.js";
-import { gen } from "../lib/api.js";
+import { ApiError, gen } from "../lib/api.js";
 import { resolveApiKey } from "../lib/config.js";
 import { printInfo, printSuccess } from "../lib/output.js";
 
 // gen's response cache can answer an unauthenticated prompt, so a chat
 // completion proves nothing — check the key itself.
-const keyIsValid = (key: string) =>
-    gen<{ valid: boolean }>("/account/key", { apiKey: key })
-        .then((info) => info.valid === true)
-        .catch(() => false);
+const keyIsValid = async (key: string) => {
+    try {
+        const info = await gen<{ valid: boolean }>("/account/key", {
+            apiKey: key,
+        });
+        return info.valid === true;
+    } catch (error) {
+        if (error instanceof ApiError && error.status === 401) return false;
+        throw error;
+    }
+};
 
 /**
  * Key the harness will call gen with: the one already in its config if still

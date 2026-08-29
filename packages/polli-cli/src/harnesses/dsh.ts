@@ -1,4 +1,4 @@
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { parseDocument } from "yaml";
 import { BASE_URL } from "../lib/config.js";
 import { readTextIfExists, writeTextAtomic } from "./fs.js";
@@ -27,8 +27,17 @@ const KEY_PATH = ["refs", KEY_ENV];
 // Never fold long scalars (the API key) across lines.
 const YAML_OUT = { lineWidth: 0 };
 
-export const dshHome = (ctx: HarnessContext) =>
-    ctx.env.DSH_HOME ?? join(ctx.home, ".dsh");
+export const dshHome = (ctx: HarnessContext) => {
+    const configured = ctx.env.DSH_HOME;
+    if (!configured?.trim()) return join(ctx.home, ".dsh");
+    const expanded =
+        configured === "~"
+            ? ctx.home
+            : configured.startsWith("~/") || configured.startsWith("~\\")
+              ? join(ctx.home, configured.slice(2))
+              : configured;
+    return resolve(expanded);
+};
 const settingsPath = (ctx: HarnessContext) =>
     join(dshHome(ctx), "settings.yaml");
 const credentialsPath = (ctx: HarnessContext) =>
@@ -84,7 +93,7 @@ const writeConfig = (ctx: HarnessContext, settings: DshSettings) => {
         DEFAULT_MODEL_PATH,
         doc.createNode({ provider: PROVIDER, model: settings.model }),
     );
-    writeTextAtomic(settingsPath(ctx), doc.toString(YAML_OUT));
+    writeTextAtomic(settingsPath(ctx), doc.toString(YAML_OUT), 0o600);
 
     // dsh reads secrets from its own owner-only document:
     // `version: 1` with a `refs:` map of env-style names.
@@ -105,7 +114,8 @@ const stripConfig = (ctx: HarnessContext) => {
         doc.deleteIn(DEFAULT_MODEL_PATH);
         changed = true;
     }
-    if (changed) writeTextAtomic(settingsPath(ctx), doc.toString(YAML_OUT));
+    if (changed)
+        writeTextAtomic(settingsPath(ctx), doc.toString(YAML_OUT), 0o600);
 
     const creds = loadYaml(credentialsPath(ctx));
     if (creds.hasIn(KEY_PATH)) {
@@ -123,8 +133,12 @@ const result = (ctx: HarnessContext): HarnessResult => {
         harness: ID,
         label: LABEL,
         configured:
-            doc.hasIn(PROVIDER_PATH) &&
-            doc.getIn([...DEFAULT_MODEL_PATH, "provider"]) === PROVIDER,
+            doc.getIn([...PROVIDER_PATH, "apiKeyEnv"]) === KEY_ENV &&
+            doc.getIn([...PROVIDER_PATH, "api"]) === "openai-completions" &&
+            doc.getIn([...PROVIDER_PATH, "baseURL"]) === `${BASE_URL}/v1` &&
+            doc.getIn([...DEFAULT_MODEL_PATH, "provider"]) === PROVIDER &&
+            typeof model === "string" &&
+            readKey(ctx) !== null,
         model: typeof model === "string" ? model : undefined,
         files: files(ctx),
     };

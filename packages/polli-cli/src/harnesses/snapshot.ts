@@ -11,7 +11,6 @@ interface FileSnapshot {
 }
 
 export interface Snapshot {
-    savedAt: string;
     complete: boolean;
     files: Record<string, FileSnapshot>;
 }
@@ -62,11 +61,7 @@ export const loadSnapshot = (
 ): Snapshot | null => {
     const text = readTextIfExists(snapshotPath(ctx, id, paths));
     if (!text) return null;
-    try {
-        return JSON.parse(text) as Snapshot;
-    } catch {
-        return null;
-    }
+    return JSON.parse(text) as Snapshot;
 };
 
 /**
@@ -82,7 +77,6 @@ export const applyWithSnapshot = (
     const existing = loadSnapshot(ctx, id, paths);
     const rollback = captureFiles(paths);
     const snapshot = existing ?? {
-        savedAt: new Date().toISOString(),
         complete: false,
         files: rollback,
     };

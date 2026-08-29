@@ -6,6 +6,7 @@ import {
     readFileSync,
     rmSync,
     statSync,
+    unlinkSync,
     writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -70,7 +71,9 @@ describe("dsh harness", () => {
             version: 1,
             refs: { POLLINATIONS_API_KEY: "sk_test_key" },
         });
+        expect(statSync(settingsFile()).mode & 0o777).toBe(0o600);
         expect(statSync(credsFile()).mode & 0o777).toBe(0o600);
+        expect(statSync(join(home, ".dsh")).mode & 0o777).toBe(0o700);
         expect(dsh.status(ctx)).toMatchObject({
             configured: true,
             model: "deepseek",
@@ -100,6 +103,7 @@ describe("dsh harness", () => {
             DEEPSEEK_API_KEY: "ds-secret",
             POLLINATIONS_API_KEY: "sk_test_key",
         });
+        expect(statSync(settingsFile()).mode & 0o777).toBe(0o600);
         expect(statSync(credsFile()).mode & 0o777).toBe(0o600);
     });
 
@@ -168,6 +172,39 @@ describe("dsh harness", () => {
         configureDsh({ home, env: { DSH_HOME: custom } }, settings);
         expect(existsSync(join(custom, "settings.yaml"))).toBe(true);
         expect(existsSync(settingsFile())).toBe(false);
+    });
+
+    it("treats an empty DSH_HOME as unset", () => {
+        configureDsh({ home, env: { DSH_HOME: "  " } }, settings);
+        expect(existsSync(settingsFile())).toBe(true);
+    });
+
+    it("expands a tilde in DSH_HOME", () => {
+        configureDsh({ home, env: { DSH_HOME: "~/custom-dsh" } }, settings);
+        expect(existsSync(join(home, "custom-dsh", "settings.yaml"))).toBe(
+            true,
+        );
+    });
+
+    it("reports unconfigured when the credential is missing", () => {
+        configureDsh(ctx, settings);
+        unlinkSync(credsFile());
+        expect(dsh.status(ctx).configured).toBe(false);
+    });
+
+    it("preserves a corrupt snapshot and refuses to disable", () => {
+        configureDsh(ctx, settings);
+        const snapshot = join(
+            home,
+            ".pollinations",
+            "harnesses",
+            snapshotFiles()[0],
+        );
+        writeFileSync(snapshot, "{");
+
+        expect(() => disableDsh(ctx)).toThrow();
+        expect(snapshotFiles()).toHaveLength(1);
+        expect(dsh.status(ctx).configured).toBe(true);
     });
 
     it("rolls back the first file when writing the second file fails", () => {

@@ -62,11 +62,9 @@ const harnessSubcommand = (harness: HarnessAdapter) => {
     ).action((options: HarnessOnOptions) => runOn(harness, options));
 
     command.addCommand(
-        withOnOptions(
-            new Command("on").description(
-                `Connect ${harness.label} to Pollinations`,
-            ),
-        ).action((options: HarnessOnOptions) => runOn(harness, options)),
+        new Command("on")
+            .description(`Connect ${harness.label} to Pollinations`)
+            .action(() => runOn(harness, command.opts<HarnessOnOptions>())),
     );
     command.addCommand(
         new Command("off")

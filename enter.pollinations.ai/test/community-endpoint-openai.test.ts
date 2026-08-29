@@ -4,7 +4,18 @@ import {
     testCommunityEndpoint,
     testCommunityImageEndpoint,
     testCommunityTranscriptionEndpoint,
+    testCommunityVideoEndpoint,
 } from "../src/services/community-endpoint-openai.ts";
+
+// A structurally valid 20-byte MP4 "ftyp" box, enough for mime detection.
+const MP4_BYTES = new Uint8Array([
+    0, 0, 0, 0x14, 0x66, 0x74, 0x79, 0x70, 0x69, 0x73, 0x6f, 0x6d, 0, 0, 0, 0,
+    0x69, 0x73, 0x6f, 0x6d,
+]);
+
+function videoBase64(bytes: Uint8Array): string {
+    return btoa(String.fromCharCode(...bytes));
+}
 
 afterEach(() => {
     vi.unstubAllGlobals();
@@ -449,5 +460,101 @@ describe("community endpoint OpenAI service", () => {
                 model: "whisper-1",
             }),
         ).rejects.toThrow("Endpoint did not return OpenAI transcription text");
+    });
+
+    it("probes video endpoints over /v1/video/generations with inline base64 and usage duration", async () => {
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            expect(request.url).toBe(
+                "https://api.example.com/v1/video/generations",
+            );
+            expect(request.headers.get("authorization")).toBe(
+                "Bearer sk_saved_token",
+            );
+            const body = await request.json();
+            expect(body).toMatchObject({
+                model: "veo-3",
+                prompt: "A short sample clip for endpoint validation.",
+            });
+            return Response.json({
+                data: [{ b64_json: videoBase64(MP4_BYTES) }],
+                usage: { video_seconds: 3 },
+            });
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        await expect(
+            testCommunityVideoEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "veo-3",
+            }),
+        ).resolves.toEqual({
+            usage: { duration: 3 },
+            billableUsage: { completionVideoSeconds: 3 },
+        });
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("follows a video URL when no base64 is present and bills the fixed sample duration", async () => {
+        const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+            const url = new URL(input);
+            if (url.pathname === "/v1/video/generations") {
+                return Response.json({
+                    data: [{ url: "https://cdn.example.com/clip.mp4" }],
+                });
+            }
+            expect(url.hostname).toBe("cdn.example.com");
+            return new Response(MP4_BYTES);
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        await expect(
+            testCommunityVideoEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "veo-3",
+            }),
+        ).resolves.toEqual({
+            usage: { video_seconds: 4 },
+            billableUsage: { completionVideoSeconds: 4 },
+        });
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    it("rejects video endpoints that return no video data", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => Response.json({ usage: { duration: 2 } })),
+        );
+
+        await expect(
+            testCommunityVideoEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "veo-3",
+            }),
+        ).rejects.toThrow("Endpoint did not return supported video data");
+    });
+
+    it("rejects video bytes that are not a supported video container", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json({
+                    data: [
+                        { b64_json: videoBase64(new Uint8Array([1, 2, 3])) },
+                    ],
+                }),
+            ),
+        );
+
+        await expect(
+            testCommunityVideoEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "veo-3",
+            }),
+        ).rejects.toThrow("Endpoint did not return supported video data");
     });
 });

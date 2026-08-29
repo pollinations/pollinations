@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { isCommunityModelAllowedGithubId } from "./auth/github-id-list.ts";
 import { HttpError } from "./http-error.ts";
+import { detectVideoMimeType } from "./image-mime.ts";
 import { MCP_SERVER_IDS } from "./registry/mcp.ts";
 import type { ModelCapability } from "./registry/model-info.ts";
 import {
@@ -56,7 +57,7 @@ export const MAX_COMMUNITY_PRICE_PER_IMAGE = 0.25;
 // Video prices are per second of output. $0.10/sec is generous for hobby GPUs
 // (first-party models range from $0.01 to $0.18/sec) but keeps community
 // endpoints from charging extreme rates.
-export const MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND = 0.10;
+export const MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND = 0.1;
 export const MAX_COMMUNITY_VIDEO_BYTES = 20 * 1024 * 1024;
 // Per-second audio (STT/TTS) prices are tiny compared to per-token rates, so
 // this ceiling is written per minute and divided down: $0.012/min is ~2x
@@ -254,7 +255,7 @@ const COMMUNITY_VIDEO_PRICE_FIELD = {
     key: "completionVideoPrice",
     usageType: "completionVideoSeconds",
     label: "Generated video",
-    priceUnit: "second",
+    priceUnit: "videoSecond",
     rawUsagePaths: ["video_seconds", "duration"],
 } as const;
 
@@ -262,6 +263,7 @@ export const COMMUNITY_ENDPOINT_PRICE_FIELDS = [
     ...COMMUNITY_TEXT_PRICE_FIELDS,
     COMMUNITY_IMAGE_PRICE_FIELD,
     COMMUNITY_TRANSCRIPTION_PRICE_FIELD,
+    COMMUNITY_VIDEO_PRICE_FIELD,
 ] as const;
 
 const COMMUNITY_TEXT_ENDPOINT_PRICE_FIELDS =
@@ -928,6 +930,74 @@ export function decodeCommunityBase64(value: string): Uint8Array | null {
     }
 }
 
+/**
+ * Pull the first usable video out of an OpenAI-compatible video response:
+ * inline base64 when present, otherwise the URL it points at, fetched under
+ * the shared timeout and size cap. Also accepts `b64_json`/`url` at the top
+ * level for endpoints that flatten the output.
+ *
+ * Returns null when the body carries no usable video, so each caller can
+ * phrase that in its own words. Unsafe or unreachable URLs and undecodable
+ * payloads are skipped rather than thrown, so the scanning continues.
+ */
+export async function firstCommunityVideoBytes(
+    body: unknown,
+    endpointBaseUrl: string,
+): Promise<Uint8Array | null> {
+    if (!body || typeof body !== "object") return null;
+    const record = body as Record<string, unknown>;
+    const dataItems = Array.isArray(record.data)
+        ? record.data.filter(
+              (item): item is Record<string, unknown> =>
+                  Boolean(item) && typeof item === "object",
+          )
+        : [];
+    for (const item of [...dataItems, record]) {
+        if (typeof item.b64_json === "string" && item.b64_json.length > 0) {
+            const decoded = decodeCommunityBase64(item.b64_json);
+            if (decoded && detectVideoMimeType(decoded)) return decoded;
+        }
+        const url = item.url;
+        if (typeof url === "string" && url.length > 0) {
+            const bytes = await fetchCommunityVideoUrlBytes(
+                url,
+                endpointBaseUrl,
+            );
+            if (bytes && detectVideoMimeType(bytes)) return bytes;
+        }
+    }
+    return null;
+}
+
+async function fetchCommunityVideoUrlBytes(
+    value: string,
+    endpointBaseUrl: string,
+): Promise<Uint8Array | null> {
+    let url: string;
+    try {
+        url = normalizeCommunityAssetUrl(value, endpointBaseUrl);
+    } catch {
+        return null;
+    }
+    try {
+        // The URL is validated against https + the private-host blocklist
+        // above; following redirects would let the endpoint bounce us to an
+        // unvalidated destination.
+        const response = await fetch(url, {
+            redirect: "manual",
+            signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
+        });
+        if (!response.ok) return null;
+        return readResponseBytes(
+            response,
+            MAX_COMMUNITY_VIDEO_BYTES,
+            () => new HttpError("Endpoint video is larger than 20 MB", 502),
+        );
+    } catch {
+        return null;
+    }
+}
+
 export function communityChatCompletionsUrl(baseUrl: string): string {
     return `${communityOpenAIBaseUrl(baseUrl)}/chat/completions`;
 }
@@ -1075,11 +1145,7 @@ export function communityModelDefinition(
         title: communityEndpointTitle(endpoint),
         description: description || undefined,
         inputModalities,
-        outputModalities: isVideo
-            ? ["video"]
-            : isImage
-              ? ["image"]
-              : ["text"],
+        outputModalities: isVideo ? ["video"] : isImage ? ["image"] : ["text"],
         hidden: endpoint.hidden,
         ...(endpoint.fallbacks?.length
             ? { fallbacks: endpoint.fallbacks }

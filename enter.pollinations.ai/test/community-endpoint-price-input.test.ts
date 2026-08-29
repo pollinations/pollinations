@@ -1,7 +1,9 @@
 import {
+    communityModelDefinition,
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MAX_COMMUNITY_PRICE_PER_SECOND,
+    MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
 } from "@shared/community-endpoints.ts";
@@ -84,5 +86,43 @@ describe("community endpoint price input", () => {
         ).toBe(false);
         // Per-second rates are tiny; the per-million floor must not apply.
         expect(isValidPriceInput("0.0000000000001", "second")).toBe(true);
+    });
+
+    it("keeps per-video-second prices unscaled with the video ceiling", () => {
+        expect(formPriceToStoredPrice("0.08", "videoSecond")).toBe(0.08);
+        expect(storedPriceToFormValue(0.08, "videoSecond")).toBe("0.08");
+        expect(isValidPriceInput("0.08", "videoSecond")).toBe(true);
+        expect(
+            isValidPriceInput(
+                String(MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND),
+                "videoSecond",
+            ),
+        ).toBe(true);
+        expect(
+            isValidPriceInput(
+                String(MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND + 0.01),
+                "videoSecond",
+            ),
+        ).toBe(false);
+    });
+
+    it("bills video endpoint definitions per generated video second", () => {
+        const definition = communityModelDefinition({
+            modelId: "@alice/community-clip",
+            description: "Community video endpoint",
+            modality: "video",
+            completionVideoPrice: 0.08,
+            completionTokenPrice: 0,
+            promptTokenPrice: 0,
+            completionImagePrice: 0,
+            promptAudioPrice: 0,
+        });
+        expect(definition.category).toBe("video");
+        expect(definition.outputModalities).toEqual(["video"]);
+        expect(definition.supportedEndpoints).toEqual([
+            "/v1/video/generations",
+            "/video",
+        ]);
+        expect(definition.cost).toEqual({ completionVideoSeconds: 0.08 });
     });
 });

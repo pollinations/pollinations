@@ -17,6 +17,7 @@ import {
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MAX_COMMUNITY_PRICE_PER_SECOND,
+    MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND,
 } from "@shared/community-endpoints.ts";
 import { PRICE_ICON } from "../models/model-icons.tsx";
 import type { PriceKind } from "../models/types.ts";
@@ -186,7 +187,7 @@ function PriceInputCell({
     const unitLabel =
         field.priceUnit === "image"
             ? "/image"
-            : field.priceUnit === "second"
+            : field.priceUnit === "second" || field.priceUnit === "videoSecond"
               ? "/sec"
               : "/1M";
     const maximum =
@@ -194,7 +195,9 @@ function PriceInputCell({
             ? MAX_COMMUNITY_PRICE_PER_IMAGE
             : field.priceUnit === "second"
               ? MAX_COMMUNITY_PRICE_PER_SECOND
-              : MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS;
+              : field.priceUnit === "videoSecond"
+                ? MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND
+                : MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS;
 
     return (
         <TableCell align="right" className="w-40 align-top">
@@ -226,7 +229,8 @@ function PriceInputCell({
                 {hasError && (
                     <p className="mt-1 text-right text-xs text-intent-danger-text">
                         {field.priceUnit === "image" ||
-                        field.priceUnit === "second"
+                        field.priceUnit === "second" ||
+                        field.priceUnit === "videoSecond"
                             ? `Enter 0–${maximum} ${unitLabel}.`
                             : `Enter 0 or up to ${maximum} ${unitLabel}.`}
                     </p>
@@ -296,6 +300,7 @@ function priceKind(field: PriceField): PriceKind {
     if (field.usageType.includes("Audio")) {
         return field.usageType.startsWith("prompt") ? "audioIn" : "audioOut";
     }
+    if (field.usageType.includes("Video")) return "video";
     if (field.usageType.includes("Image")) return "image";
     return "text";
 }
@@ -335,6 +340,10 @@ export const BASE_TEXT_PRICE_KEYS: PriceFieldKey[] = [
 export const BASE_TRANSCRIPTION_PRICE_KEYS: PriceFieldKey[] = [
     "promptAudioPrice",
 ];
+
+// Video endpoints bill per second of generated output, so their single price
+// field is revealed alongside the text fields once the model is public.
+export const BASE_VIDEO_PRICE_KEYS: PriceFieldKey[] = ["completionVideoPrice"];
 
 export function returnedPriceFields(
     testState: ActionState,

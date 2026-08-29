@@ -7,13 +7,17 @@ import {
     communityImageEditsUrl,
     communityImageGenerationsUrl,
     communityOpenAIBaseUrl,
-    communityVideoUrl,
     communityTranscriptionSeconds,
+    communityVideoUrl,
     decodeCommunityBase64,
     firstCommunityImageBytes,
+    firstCommunityVideoBytes,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
-import { detectImageMimeType, detectVideoMimeType } from "@shared/image-mime.ts";
+import {
+    detectImageMimeType,
+    detectVideoMimeType,
+} from "@shared/image-mime.ts";
 import type { ModelInputModality, Usage } from "@shared/registry/registry.ts";
 import {
     getOpenAIImageUsage,
@@ -238,7 +242,7 @@ export async function testCommunityVideoEndpoint({
         }),
     });
 
-    const videoBytes = await firstCommunityVideoBytes(body);
+    const videoBytes = await firstCommunityVideoBytes(body, baseUrl);
     if (!videoBytes) {
         throw new Error("Endpoint did not return supported video data");
     }
@@ -267,29 +271,11 @@ function getCommunityVideoDurationSeconds(body: unknown): number | null {
     const record = body as Record<string, unknown>;
     // Common shapes: usage.video_seconds, usage.duration, top-level duration.
     const raw =
-        record.usage &&
-        typeof record.usage === "object"
-            ? (record.usage as Record<string, unknown>)?.video_seconds ??
-              (record.usage as Record<string, unknown>)?.duration
+        record.usage && typeof record.usage === "object"
+            ? ((record.usage as Record<string, unknown>)?.video_seconds ??
+              (record.usage as Record<string, unknown>)?.duration)
             : record.duration;
     if (typeof raw === "number" && raw > 0) return raw;
-    return null;
-}
-
-async function firstCommunityVideoBytes(body: unknown): Promise<Uint8Array | null> {
-    if (!body || typeof body !== "object") return null;
-    const record = body as Record<string, unknown>;
-    const videoField = record.video ?? record.output ?? record.url;
-    if (typeof videoField === "string") return null;
-    if (videoField instanceof Uint8Array) return videoField;
-    if (videoField && typeof (videoField as any).arrayBuffer === "function") {
-        try {
-            const buf = await (videoField as any).arrayBuffer();
-            return new Uint8Array(buf);
-        } catch {
-            return null;
-        }
-    }
     return null;
 }
 

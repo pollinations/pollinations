@@ -6,11 +6,9 @@
 
 # Model ID changes
 
-The new publisher-qualified model IDs are available now. On **September 7, 2026 at 14:00 UTC**, they will become the canonical IDs.
+On **September 7, 2026 at 14:00 UTC**, we're standardizing model IDs. They will use the publisher and official model name.
 
-Existing IDs will remain available as aliases, so current integrations do not need to change. New integrations can use the new IDs today.
-
-Models introduced during the transition may launch directly with a publisher-qualified canonical ID and no legacy alias.
+You can use the new IDs now. Existing IDs will keep working, so current integrations do not need to change.
 
 Only the names are changing. Model behavior and pricing stay the same.
 

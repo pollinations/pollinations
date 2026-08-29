@@ -1,0 +1,33 @@
+{
+  "pr_number": 14127,
+  "title": "docs: simplify coding harness guide",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14127",
+  "merged_at": "2026-08-29T22:59:25Z",
+  "labels": [],
+  "pr_body_excerpt": "- Explains the shared `polli harness` lifecycle first\n- Marks DeepSeek Harness as the only currently available profile\n- Lists planned harnesses and only their unique integration details\n\nTest: `npx vitest run test/docs.test.ts` from `gen.pollinations.ai`",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "One harness, clearer trails",
+    "blurb": "The coding harness guide now starts with the shared `polli harness` lifecycle, rather than making every future tool explain the same garden path. DeepSeek Harness is marked as the profile currently ready to use.",
+    "summary": "Simplified `CODING_HARNESSES.md` by documenting the shared `polli harness` lifecycle first, identifying DeepSeek Harness as the only available profile, and separating planned harnesses into their integration-specific details.",
+    "impact": "Developers can now see the common harness workflow immediately, know that DeepSeek is available today, and find future integration notes without rereading shared setup steps.",
+    "keywords": [
+      "documentation",
+      "coding harness",
+      "polli harness",
+      "DeepSeek",
+      "developer guide"
+    ],
+    "visual_concept": "Polli acts as a cozy trail guide in a code-garden, pointing from one clearly labeled shared `polli harness` path toward a ready DeepSeek terminal, while small signposts for future harnesses branch off with only their unique tools. The scene represents removing duplicated directions and making the currently usable route obvious.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing a tiny explorer scarf and pointing at a clear garden trail sign reading `polli harness`; a retro terminal labeled `DeepSeek` glows beside her while small flower-lined paths lead toward future tool sheds. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and vines, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-29/PR-14127.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing a tiny explorer scarf and pointing at a clear garden trail sign reading `polli harness`; a retro terminal labeled `DeepSeek` glows beside her while small flower-lined paths lead toward future tool sheds. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and vines, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-29T23:00:27.517150+00:00"
+}

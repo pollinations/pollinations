@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { join } from "node:path";
 import { readTextIfExists, removeIfExists, writeTextAtomic } from "./fs.js";
 import type { HarnessContext } from "./types.js";
@@ -16,14 +17,22 @@ export interface Snapshot {
 
 export type RestoreOutcome = "restored" | "modified" | "missing";
 
-const snapshotPath = (ctx: HarnessContext, id: string) =>
-    join(ctx.home, ".pollinations", "harnesses", `${id}.json`);
+// Keyed by the file set, so `off` after moving the harness home (e.g. a
+// different DSH_HOME) never restores a backup taken for other files.
+const snapshotPath = (ctx: HarnessContext, id: string, paths: string[]) => {
+    const key = createHash("sha256")
+        .update(paths.join("\n"))
+        .digest("hex")
+        .slice(0, 12);
+    return join(ctx.home, ".pollinations", "harnesses", `${id}.${key}.json`);
+};
 
 export const loadSnapshot = (
     ctx: HarnessContext,
     id: string,
+    paths: string[],
 ): Snapshot | null => {
-    const text = readTextIfExists(snapshotPath(ctx, id));
+    const text = readTextIfExists(snapshotPath(ctx, id, paths));
     if (!text) return null;
     try {
         return JSON.parse(text) as Snapshot;
@@ -38,7 +47,7 @@ export const captureBefore = (
     id: string,
     paths: string[],
 ): Snapshot => {
-    const snapshot = loadSnapshot(ctx, id) ?? {
+    const snapshot = loadSnapshot(ctx, id, paths) ?? {
         savedAt: new Date().toISOString(),
         files: {},
     };
@@ -62,7 +71,7 @@ export const recordAfter = (
     }
     // The snapshot holds the harness's credentials file, so keep it owner-only.
     writeTextAtomic(
-        snapshotPath(ctx, id),
+        snapshotPath(ctx, id, paths),
         JSON.stringify(snapshot, null, 2),
         0o600,
     );
@@ -72,8 +81,9 @@ export const recordAfter = (
 export const restoreSnapshot = (
     ctx: HarnessContext,
     id: string,
+    paths: string[],
 ): RestoreOutcome => {
-    const snapshot = loadSnapshot(ctx, id);
+    const snapshot = loadSnapshot(ctx, id, paths);
     if (!snapshot) return "missing";
     const entries = Object.entries(snapshot.files);
     if (entries.some(([path, file]) => readTextIfExists(path) !== file.after)) {
@@ -83,9 +93,12 @@ export const restoreSnapshot = (
         if (file.before === null) removeIfExists(path);
         else writeTextAtomic(path, file.before);
     }
-    removeIfExists(snapshotPath(ctx, id));
+    removeIfExists(snapshotPath(ctx, id, paths));
     return "restored";
 };
 
-export const clearSnapshot = (ctx: HarnessContext, id: string) =>
-    removeIfExists(snapshotPath(ctx, id));
+export const clearSnapshot = (
+    ctx: HarnessContext,
+    id: string,
+    paths: string[],
+) => removeIfExists(snapshotPath(ctx, id, paths));

@@ -2,6 +2,7 @@ import {
     existsSync,
     mkdirSync,
     mkdtempSync,
+    readdirSync,
     readFileSync,
     rmSync,
     statSync,
@@ -33,7 +34,12 @@ afterEach(() => rmSync(home, { recursive: true, force: true }));
 
 const settingsFile = () => join(home, ".dsh", "settings.yaml");
 const credsFile = () => join(home, ".dsh", ".credentials.yaml");
-const snapshotFile = () => join(home, ".pollinations", "harnesses", "dsh.json");
+const snapshotFiles = () => {
+    const dir = join(home, ".pollinations", "harnesses");
+    return existsSync(dir)
+        ? readdirSync(dir).filter((f) => f.startsWith("dsh."))
+        : [];
+};
 const read = (path: string) => readFileSync(path, "utf-8");
 
 describe("dsh harness", () => {
@@ -105,13 +111,13 @@ describe("dsh harness", () => {
         writeFileSync(settingsFile(), original);
 
         enableHarness(dsh, ctx, settings);
-        expect(existsSync(snapshotFile())).toBe(true);
+        expect(snapshotFiles()).toHaveLength(1);
         const result = disableHarness(dsh, ctx);
 
-        expect(result.restored).toBe(true);
+        expect(result.outcome).toBe("restored");
         expect(read(settingsFile())).toBe(original);
         expect(existsSync(credsFile())).toBe(false);
-        expect(existsSync(snapshotFile())).toBe(false);
+        expect(snapshotFiles()).toHaveLength(0);
         expect(harnessStatus(dsh, ctx).configured).toBe(false);
     });
 
@@ -123,13 +129,30 @@ describe("dsh harness", () => {
 
         const result = disableHarness(dsh, ctx);
 
-        expect(result.restored).toBe(false);
+        expect(result.outcome).toBe("stripped");
         const doc = parse(read(settingsFile()));
         expect(doc["agent-presets"]).toEqual({ default: "mine" });
         expect(doc["agent-default-model"]).toBeUndefined();
         expect(doc["llm-pi-ai"].providers.pollinations).toBeUndefined();
         expect(parse(read(credsFile())).refs).toEqual({});
-        expect(existsSync(snapshotFile())).toBe(false);
+        expect(snapshotFiles()).toHaveLength(0);
+    });
+
+    it("reports unchanged when off runs on a harness that was never on", () => {
+        expect(disableHarness(dsh, ctx).outcome).toBe("unchanged");
+    });
+
+    it("keeps one backup per harness home", () => {
+        enableHarness(dsh, ctx, settings);
+        const moved = { home, env: { DSH_HOME: join(home, "moved") } };
+        enableHarness(dsh, moved, settings);
+        expect(snapshotFiles()).toHaveLength(2);
+
+        expect(disableHarness(dsh, moved).outcome).toBe("restored");
+        expect(existsSync(join(home, "moved", "settings.yaml"))).toBe(false);
+        // The original location is untouched and still has its own backup.
+        expect(harnessStatus(dsh, ctx).configured).toBe(true);
+        expect(snapshotFiles()).toHaveLength(1);
     });
 
     it("re-running on switches the model and keeps the pre-on backup", () => {

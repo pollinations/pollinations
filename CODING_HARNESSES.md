@@ -10,6 +10,7 @@ npx @pollinations/cli harness dsh on
 
 What `on` does:
 
+0. If the harness is not installed and has an official installer, runs it as-is (streamed to your terminal). DeepSeek Harness has no install step: `npx @deepseek-ai/dsh web` fetches it on first launch.
 1. Logs you in with the browser device flow if `polli` has no stored key (`polli auth login`).
 2. Mints a secret key named `polli-harness-<id>` for the harness. A key already in the harness config is reused if it is still valid.
 3. Loads `GET /v1/models` and registers every first-party text model with tool calling as a provider.
@@ -23,7 +24,7 @@ polli harness dsh status
 polli harness dsh off                 # remove Pollinations again
 ```
 
-`off` restores the backed-up files byte-for-byte when they are unchanged since `on`. If you edited them in between, only the Pollinations entries are removed.
+`off` restores the backed-up files byte-for-byte when they are unchanged since `on` (`outcome: restored`). If you edited them in between, or the harness home moved, only the Pollinations entries are removed (`stripped`). A harness that was never on reports `unchanged`.
 
 The account key stored by `polli auth login` is never written into a harness; each harness gets its own child key, so revoking it (`polli keys revoke <id>`) does not affect anything else.
 
@@ -47,6 +48,7 @@ New harness profiles are welcome and are usually posted as [quests](https://gith
    - `enable(ctx, { apiKey, model, models })` — write the provider, default model, and key. Edit in place; keep the user's other entries and comments.
    - `disable(ctx)` — remove only what `enable` added.
    - `status(ctx)` — whether Pollinations is the active provider and which model.
+   - `install` (optional) — `{ installed(ctx), command }` with the harness's **official** one-line installer; `on` runs it verbatim when `installed` is false. Leave it out for harnesses launched through `npx`.
 2. Register it in `packages/polli-cli/src/harnesses/index.ts`.
 3. Add `<id>.test.ts` next to it. Tests run against a temporary home (`ctx.home`) and never touch the real config — see `dsh.test.ts`.
 4. Add a row to the table above.

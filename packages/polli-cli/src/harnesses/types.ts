@@ -40,8 +40,17 @@ export interface HarnessProfile {
     /** Pollinations key already stored in the harness config, if any. */
     readKey(ctx: HarnessContext): string | null;
     enable(ctx: HarnessContext, settings: HarnessSettings): void;
-    /** Strip Pollinations from the config. Used when the backup can't be restored. */
-    disable(ctx: HarnessContext): void;
+    /**
+     * Strip Pollinations from the config. Used when the backup can't be
+     * restored. Returns whether anything was changed.
+     */
+    disable(ctx: HarnessContext): boolean;
     status(ctx: HarnessContext): HarnessStatus;
+    /**
+     * Official installer for harnesses that need one: `on` runs `command`
+     * through the shell when `installed(ctx)` is false. Omit for harnesses
+     * that fetch themselves on launch (`npx …`).
+     */
+    install?: { installed(ctx: HarnessContext): boolean; command: string };
     restartHint: string;
 }

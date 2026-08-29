@@ -56,8 +56,9 @@ export const dsh: HarnessProfile = {
     label: "DeepSeek Harness",
     docsUrl: "https://github.com/deepseek-ai/deepseek-harness",
     defaultModel: "deepseek",
+    // dsh has no install step: `npx` fetches it on first launch.
     restartHint:
-        "Restart dsh (`npx @deepseek-ai/dsh web`) to load the new provider.",
+        "Start (or restart) DeepSeek Harness: npx @deepseek-ai/dsh web",
 
     files: (ctx) => [settingsPath(ctx), credentialsPath(ctx)],
 
@@ -107,7 +108,9 @@ export const dsh: HarnessProfile = {
                 creds.toString(YAML_OUT),
                 0o600,
             );
+            changed = true;
         }
+        return changed;
     },
 
     status: (ctx) => {

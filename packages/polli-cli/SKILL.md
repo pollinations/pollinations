@@ -211,7 +211,7 @@ polli harness dsh on                # login if needed, mint key "polli-harness-d
 polli harness dsh on --model kimi   # any tool-calling text model from `polli models`
 polli harness dsh off               # restore the config backed up before "on"
 ```
-`on` edits the harness's own config files (dsh: `$DSH_HOME/settings.yaml` and `.credentials.yaml`, default `~/.dsh`) and backs them up to `~/.pollinations/harnesses/<id>.json`. Reruns reuse the key already in the harness config. Guide: `polli docs` section "Coding Harnesses".
+`on` runs the harness's official installer first if it is missing (dsh needs none — `npx @deepseek-ai/dsh web`), then edits the harness's own config files (dsh: `$DSH_HOME/settings.yaml` and `.credentials.yaml`, default `~/.dsh`) and backs them up to `~/.pollinations/harnesses/<id>.json`. Reruns reuse the key already in the harness config. Guide: `polli docs` section "Coding Harnesses".
 
 ### Read API docs
 ```bash

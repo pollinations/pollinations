@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { modelBody } from "./my-models.js";
+import { endpointAgentBody, modelBody } from "./my-models.js";
 
 describe("modelBody", () => {
     it("builds image model registration fields supported by the API", () => {
@@ -74,5 +74,30 @@ describe("modelBody", () => {
                 true,
             ),
         ).toMatchObject({ modality: "transcription" });
+    });
+});
+
+describe("endpointAgentBody", () => {
+    it("builds the endpoint-agent registration body without proxy fields", () => {
+        expect(
+            endpointAgentBody({
+                name: "floret",
+                title: "Floret",
+                description: "Agent orchestration endpoint",
+                baseUrl: "https://floret.example.com/v1",
+                upstreamModel: "floret",
+                visibility: "private",
+                perUserRpm: "10",
+                bearerToken: "must-not-send",
+            }),
+        ).toEqual({
+            name: "floret",
+            title: "Floret",
+            description: "Agent orchestration endpoint",
+            baseUrl: "https://floret.example.com/v1",
+            upstreamModel: "floret",
+            visibility: "private",
+            perUserRpm: 10,
+        });
     });
 });

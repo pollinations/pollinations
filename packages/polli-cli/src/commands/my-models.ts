@@ -176,6 +176,36 @@ export function modelBody(
     return body;
 }
 
+export function endpointAgentBody(opts: Record<string, unknown>) {
+    const body: Record<string, unknown> = {};
+    for (const field of [
+        "name",
+        "title",
+        "description",
+        "baseUrl",
+        "upstreamModel",
+    ] as const) {
+        if (opts[field] !== undefined) body[field] = opts[field];
+    }
+
+    if (opts.visibility !== undefined) {
+        if (opts.visibility !== "private" && opts.visibility !== "public") {
+            fail("--visibility must be 'private' or 'public'");
+        }
+        body.visibility = opts.visibility;
+    }
+
+    if (opts.perUserRpm !== undefined) {
+        const perUserRpm = Number(opts.perUserRpm);
+        if (!Number.isFinite(perUserRpm) || perUserRpm <= 0) {
+            fail("--per-user-rpm must be a positive number");
+        }
+        body.perUserRpm = perUserRpm;
+    }
+
+    return body;
+}
+
 function printModels(models: MyModel[]) {
     if (getOutputMode() === "json") {
         printResult(models);
@@ -292,6 +322,45 @@ const create = addPriceOptions(
         fail("Failed to create model", err);
     }
 });
+
+const createEndpointAgent = new Command("create-endpoint-agent")
+    .description("Register an agent running on an OpenAI-compatible endpoint")
+    .requiredOption("--name <name>", "Agent model name")
+    .requiredOption("--title <title>", "Display title shown in the catalog")
+    .requiredOption("--base-url <url>", "OpenAI-compatible base URL")
+    .option("--description <text>", "Agent description")
+    .option(
+        "--upstream-model <model>",
+        "Upstream model id (defaults to --name)",
+    )
+    .option(
+        "--visibility <visibility>",
+        "Agent visibility: private (default) or public",
+    )
+    .option(
+        "--per-user-rpm <number>",
+        "Maximum requests per minute for each Pollinations user",
+    )
+    .action(async (opts) => {
+        const key = requireKey();
+        try {
+            const created = await gen<EndpointAgentMyModel>(
+                "/account/my-models/endpoint-agents",
+                {
+                    apiKey: key,
+                    method: "POST",
+                    body: endpointAgentBody(opts),
+                },
+            );
+            if (getOutputMode() === "json") printResult(created);
+            else {
+                printSuccess(`Endpoint agent registered: ${created.modelId}`);
+                printModels([created]);
+            }
+        } catch (err) {
+            fail("Failed to create endpoint agent", err);
+        }
+    });
 
 const update = addPriceOptions(
     new Command("update")
@@ -439,11 +508,10 @@ const test = new Command("test")
     });
 
 export const myModelsCommand = new Command("my-models")
-    .description(
-        "Manage private and published community text, image, and transcription models",
-    )
+    .description("Manage community models and endpoint agents")
     .addCommand(list)
     .addCommand(create)
+    .addCommand(createEndpointAgent)
     .addCommand(update)
     .addCommand(remove)
     .addCommand(models)

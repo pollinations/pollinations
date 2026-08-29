@@ -3,11 +3,7 @@ import { parseEnv } from "node:util";
 import { isMap, isSeq, parseDocument, Scalar } from "yaml";
 import polliSkill from "../../SKILL.md?raw";
 import { BASE_URL } from "../lib/config.js";
-import {
-    readTextIfExists,
-    removeIfExists,
-    writeTextAtomic,
-} from "./fs.js";
+import { readTextIfExists, removeIfExists, writeTextAtomic } from "./fs.js";
 import { resolveHarnessKey } from "./keys.js";
 import { fetchHarnessModels } from "./models.js";
 import {
@@ -81,12 +77,14 @@ const keyLine = new RegExp(`^\\s*(?:export\\s+)?${KEY_ENV}\\s*=`, "u");
 const setEnvKey = (ctx: HarnessContext, key: string) => {
     const lines = (readTextIfExists(envPath(ctx)) ?? "").split("\n");
     const index = lines.findIndex((line) => keyLine.test(line));
-    const filtered = lines.filter((line, i) => i === index || !keyLine.test(line));
+    const filtered = lines.filter(
+        (line, i) => i === index || !keyLine.test(line),
+    );
     if (index === -1) {
-        const insertAt = filtered.at(-1) === "" ? filtered.length - 1 : filtered.length;
+        const insertAt =
+            filtered.at(-1) === "" ? filtered.length - 1 : filtered.length;
         filtered.splice(insertAt, 0, envLine(key));
-    }
-    else filtered[index] = envLine(key);
+    } else filtered[index] = envLine(key);
     writeTextAtomic(envPath(ctx), filtered.join("\n"), 0o600);
 };
 

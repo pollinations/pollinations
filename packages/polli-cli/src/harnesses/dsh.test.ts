@@ -74,7 +74,7 @@ describe("dsh harness", () => {
         expect(parseEnv(read(envFile())).POLLI_DSH_API_KEY).toBe("sk_test_key");
         const patch = read(patchFile());
         expect(patch).toContain("id: mcp-pollinations");
-        expect(patch).toContain("name: \"@deepseek-ai/dsh-mcp-client\"");
+        expect(patch).toContain('name: "@deepseek-ai/dsh-mcp-client"');
         expect(patch).toContain("serverName: pollinations");
         expect(patch).toContain("transport: streamable-http");
         expect(patch).toContain(
@@ -101,11 +101,9 @@ describe("dsh harness", () => {
             settingsFile(),
             "# my notes\nui-onboarding:\n  welcomeNoticeVersion: 1\nagent-default-model:\n  provider: deepseek\n  model: deepseek-chat\n",
         );
-        writeFileSync(
-            envFile(),
-            "# local env\nDEEPSEEK_API_KEY=ds-secret\n",
-            { mode: 0o644 },
-        );
+        writeFileSync(envFile(), "# local env\nDEEPSEEK_API_KEY=ds-secret\n", {
+            mode: 0o644,
+        });
         writeFileSync(
             patchFile(),
             "# my plugins\n- insert:\n    - id: mcp-local\n      name: local-mcp\n",

@@ -124,12 +124,12 @@ function authError(message: string, status: number, clearCookie: string) {
 }
 
 function safeReturnTo(value: unknown, origin: string) {
-    if (typeof value !== "string") return "/";
+    if (typeof value !== "string") return `${origin}/`;
     try {
         const url = new URL(value, origin);
-        return url.origin === origin ? `${url.pathname}${url.search}` : "/";
+        return url.origin === origin ? url.toString() : `${origin}/`;
     } catch {
-        return "/";
+        return `${origin}/`;
     }
 }
 
@@ -303,21 +303,15 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
         };
         const payload = encodeJson(session);
         const sessionCookie = `${payload}.${await sign(payload)}`;
-        return redirect(
-            new URL(
-                safeReturnTo(flow.returnTo, requestUrl.origin),
-                requestUrl.origin,
-            ).toString(),
-            [
-                clearFlow,
-                cookie(
-                    request,
-                    requestCookieName(request, SESSION_COOKIE),
-                    sessionCookie,
-                    SESSION_MAX_AGE_SECONDS,
-                ),
-            ],
-        );
+        return redirect(safeReturnTo(flow.returnTo, requestUrl.origin), [
+            clearFlow,
+            cookie(
+                request,
+                requestCookieName(request, SESSION_COOKIE),
+                sessionCookie,
+                SESSION_MAX_AGE_SECONDS,
+            ),
+        ]);
     }
 
     async function getUser(request: Request): Promise<PollinationsUser | null> {

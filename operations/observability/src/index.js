@@ -58,7 +58,7 @@ export class ObservabilityGrafana extends Container {
         GF_AUTH_PROXY_HEADER_NAME: "X-WEBAUTH-USER",
         GF_AUTH_PROXY_HEADER_PROPERTY: "email",
         GF_AUTH_PROXY_AUTO_SIGN_UP: "true",
-        GF_USERS_AUTO_ASSIGN_ORG_ROLE: "Admin",
+        GF_USERS_AUTO_ASSIGN_ORG_ROLE: "Editor",
         GF_AUTH_SIGNOUT_REDIRECT_URL: `${ROOT_URL}/auth/logout`,
         GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH:
             "/etc/grafana/provisioning/dashboards/platform-usage-rebuild.json",

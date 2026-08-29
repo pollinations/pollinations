@@ -13,6 +13,12 @@ function cookieFrom(response: Response, name: string) {
         ?.match(new RegExp(`${name}=([^;]+)`))?.[1];
 }
 
+function flowFromCookie(value: string) {
+    const base64 = value.replaceAll("-", "+").replaceAll("_", "/");
+    const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
+    return JSON.parse(atob(padded)) as { returnTo: string };
+}
+
 async function begin(auth: ReturnType<typeof createPollinationsAuth>) {
     const response = await auth.handle(
         new Request(
@@ -61,7 +67,7 @@ afterEach(() => {
 describe("Pollinations OAuth", () => {
     it("starts an identity-only authorization-code flow with PKCE", async () => {
         const auth = createPollinationsAuth(config);
-        const { response, location } = await begin(auth);
+        const { response, location, flow } = await begin(auth);
 
         expect(response.status).toBe(302);
         expect(location.origin).toBe("https://enter.pollinations.ai");
@@ -81,6 +87,9 @@ describe("Pollinations OAuth", () => {
         );
         expect(response.headers.get("Set-Cookie")).toContain(
             "HttpOnly; Secure; SameSite=Lax",
+        );
+        expect(flowFromCookie(flow).returnTo).toBe(
+            "https://kpi.pollinations.ai/weekly?x=1",
         );
     });
 
@@ -109,15 +118,22 @@ describe("Pollinations OAuth", () => {
             String.raw`/\/evil.example`,
             "//evil.example",
             "https://evil.example/",
+            "/..//evil.example",
+            "/foo/../..//evil.example",
         ];
 
         for (const returnTo of maliciousPaths) {
-            const loginUrl = new URL("https://kpi.pollinations.ai/auth/login");
+            const appOrigin = "https://kpi.pollinations.ai";
+            const loginUrl = new URL(`${appOrigin}/auth/login`);
             loginUrl.searchParams.set("return_to", returnTo);
             const login = await auth.handle(new Request(loginUrl));
             if (!login) throw new Error("Expected login response");
             const authorizeUrl = new URL(login.headers.get("Location") || "");
             const flow = cookieFrom(login, "pollinations_oauth_flow");
+            if (!flow) throw new Error("Expected flow cookie");
+            expect(new URL(flowFromCookie(flow).returnTo).origin).toBe(
+                appOrigin,
+            );
             const callback = await auth.handle(
                 new Request(
                     `https://kpi.pollinations.ai/auth/callback?code=code-return&state=${authorizeUrl.searchParams.get("state")}`,
@@ -129,8 +145,11 @@ describe("Pollinations OAuth", () => {
                 ),
             );
 
+            const resolved = new URL(returnTo, appOrigin);
             expect(callback?.headers.get("Location")).toBe(
-                "https://kpi.pollinations.ai/",
+                resolved.origin === appOrigin
+                    ? resolved.toString()
+                    : `${appOrigin}/`,
             );
         }
     });

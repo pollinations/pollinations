@@ -50,12 +50,16 @@ function toCompactUnit(n: number, divisor: number, suffix: string): string {
 }
 
 function renderContextBadge(length: number): JSX.Element | null {
-    if (length >= 1_000_000) return <>{toCompactUnit(length, 1_000_000, "M")} ctx</>;
+    if (length >= 1_000_000)
+        return <>{toCompactUnit(length, 1_000_000, "M")} ctx</>;
     if (length >= 1_000) return <>{toCompactUnit(length, 1_000, "K")} ctx</>;
     return <>{length} ctx</>;
 }
 
-function formatDuration(maxD: number | undefined, defaultD: number | undefined): string | null {
+function formatDuration(
+    maxD: number | undefined,
+    defaultD: number | undefined,
+): string | null {
     if (maxD != null && defaultD != null && maxD !== defaultD) {
         return `${defaultD}s–${maxD}s`;
     }
@@ -318,7 +322,9 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                         )}
                     </div>
                     <ModelId name={model.name} />
-                    {(model.contextLength != null || model.maxDuration != null || model.defaultDuration != null) && (
+                    {(model.contextLength != null ||
+                        model.maxDuration != null ||
+                        model.defaultDuration != null) && (
                         <div className="mt-1 flex flex-wrap items-center gap-1">
                             {model.contextLength != null && (
                                 <span className="inline-flex rounded bg-surface-secondary px-1.5 py-0.5 font-mono text-[10px] leading-none text-theme-text-muted">
@@ -326,7 +332,10 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                 </span>
                             )}
                             {(() => {
-                                const dur = formatDuration(model.maxDuration, model.defaultDuration);
+                                const dur = formatDuration(
+                                    model.maxDuration,
+                                    model.defaultDuration,
+                                );
                                 return dur ? (
                                     <span className="inline-flex rounded bg-surface-secondary px-1.5 py-0.5 font-mono text-[10px] leading-none text-theme-text-muted">
                                         {dur}

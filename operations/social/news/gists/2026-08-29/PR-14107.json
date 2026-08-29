@@ -1,0 +1,34 @@
+{
+  "pr_number": 14107,
+  "title": "feat(cli): add polli harness with DeepSeek Harness profile",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14107",
+  "merged_at": "2026-08-29T21:46:50Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `polli harness dsh on|off|status`; `polli harness --help` discovers adapters.\n- Configures DeepSeek Harness as a native Pollinations provider with live tool-capable models.\n- Logs in when needed, mints a dedicated `polli-harness-dsh` child key, and stores it in owner-only DSH files.\n- Keeps the shared command layer thin so future adapters can own direct-provider or plugin-based setup.\n- Persists snapshots before configuration, fails loudly on damaged backups, rolls back partial failures, and restores or surgically strips changes on `off`.\n- Adds Scalar, CLI, and contributor documentation.\n\nTests: `npm test` (24 passed), `npm run build`, Biome, command help smoke checks, and packed-install `on → status → key reuse → off → invalid model` end-to-end flow.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Polli harnesses DeepSeek",
+    "blurb": "The CLI grew a harness for DeepSeek Harness, so Pollinations models can move into a tool-capable coding setup without manual key wrangling. Polli packs a dedicated key, saves a snapshot, and knows how to put the shed back the way she found it.",
+    "summary": "Added `polli harness dsh on|off|status`, which configures DeepSeek Harness as a native Pollinations provider with live tool-capable models, a dedicated `polli-harness-dsh` child key, snapshots, rollback, and clean removal.",
+    "impact": "Developers can connect DeepSeek Harness to Pollinations through one CLI command, reuse its dedicated key safely, inspect its status, and restore or surgically remove the configuration with `off`.",
+    "keywords": [
+      "polli-cli",
+      "DeepSeek Harness",
+      "harness",
+      "tool calling",
+      "API keys",
+      "developer tools"
+    ],
+    "visual_concept": "Depict Polli as a careful stable hand fitting a small harness onto the eager CRT Monitor Robot, representing DeepSeek Harness gaining a native Pollinations connection. A cozy terminal shows `polli harness dsh on`, while a tiny labeled key, backup snapshot jar, and flowering code-plants communicate secure setup, rollback, and future adapter growth.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-hackerspace: the cute pixel art bee mascot with a yellow body, dark brown stripes, pink cheek blush, light blue wings, and a tiny tool belt carefully fastens a gentle harness cable between an eager chunky CRT monitor robot and a retro terminal glowing lime green (#ecf874), with pixel-font text `polli harness dsh on`. A small key labeled `DSH`, a backup snapshot jar, and code-plants blooming from pots sit nearby; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-29/PR-14107.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-hackerspace: the cute pixel art bee mascot with a yellow body, dark brown stripes, pink cheek blush, light blue wings, and a tiny tool belt carefully fastens a gentle harness cable between an eager chunky CRT monitor robot and a retro terminal glowing lime green (#ecf874), with pixel-font text `polli harness dsh on`. A small key labeled `DSH`, a backup snapshot jar, and code-plants blooming from pots sit nearby; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-08-29T21:47:49.741978+00:00"
+}

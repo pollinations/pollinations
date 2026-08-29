@@ -1,0 +1,33 @@
+{
+  "pr_number": 14101,
+  "title": "fix(app-management): update LND AI apps GitHub link LND78 -> NamanSoni78 (#14033)",
+  "author": "g33ky00",
+  "url": "https://github.com/pollinations/pollinations/pull/14101",
+  "merged_at": "2026-08-29T22:55:02Z",
+  "labels": [],
+  "pr_body_excerpt": "Closes #14033\n\n## What\nThe issue author asked to update the GitHub profile link for their two apps (LND AI Text to Image, LND AI) from the old profile `LND78` to the current `NamanSoni78`.\n\nThis PR changes only the `githubUsername` field for both apps in `operations/app-management/app.json` (`LND78` -> `NamanSoni78`). The generated `/apps` page link (`https://github.com/${githubUsername}`, built by `update-readme.js`) now points to the correct profile.\n\n## Why githubUserId is untouched\nVerified via the GitHub API that `NamanSoni78` and the old `LND78` resolve to the **same GitHub user id `170070104`** — this is an account rename, not a new owner. Keeping `githubUserId` preserves internal ownership/metrics matching. `LND78` now returns no user (renamed).\n\n## Scope / safety\n- 2 lines changed, 836-app JSON stays valid (verified parse).\n- No schema change, no other apps touched — `app.test.js` field validation unaffected.\n- `update-readme.js` regenerates the README link in CI from this field, so no separate doc edit is needed.\n\n## Note on existing PR #13981\nPR #13981 (\"Add NamanSoni78 to the list\") is NOT a valid fix: its diff rewrites the entire `app.json` and deletes ~125 apps at the top of the file (fork desynced from main). This PR is the surgical, correct alternative.",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The garden sign points home",
+    "blurb": "LND AI and LND AI Text to Image have their GitHub trail corrected. Same builder, same apps, one less stale link wandering around the garden.",
+    "summary": "Updated the `githubUsername` for LND AI and LND AI Text to Image from `LND78` to `NamanSoni78`, so their generated `/apps` GitHub profile links resolve to the contributor’s current account while preserving the existing owner ID.",
+    "impact": "Visitors to the two app listings can now follow the GitHub link to `NamanSoni78` instead of the renamed `LND78` profile.",
+    "keywords": [
+      "community-apps",
+      "app-directory",
+      "github",
+      "LND AI",
+      "contributor"
+    ],
+    "visual_concept": "Depict Polli as a tiny garden guide replacing an old directional sign reading “LND78” with a fresh sign reading “NamanSoni78” beside two small code-plants representing the LND AI apps. A cozy retro computer can show a GitHub profile page, with flowers and vines making the corrected path feel welcoming.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, carefully swapping an old garden sign labeled “LND78” for one labeled “NamanSoni78” beside two blooming code-plants and a retro monitor showing a GitHub profile. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-29/PR-14101.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, carefully swapping an old garden sign labeled “LND78” for one labeled “NamanSoni78” beside two blooming code-plants and a retro monitor showing a GitHub profile. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm."
+  },
+  "generated_at": "2026-08-29T22:56:16.442574+00:00"
+}

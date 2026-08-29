@@ -69,7 +69,6 @@ const COMMUNITY_SECTION_ORDER: SectionType[] = [
 ];
 const SCOPE_ORDER: ModelScope[] = ["pollinations", "community"];
 
-const MODEL_SLUG_ANNOUNCEMENT_URL = "/news#canonical-model-slugs";
 const MODEL_SLUG_LIST_URL =
     "https://github.com/pollinations/pollinations/blob/main/MODEL_SLUGS.md";
 
@@ -371,17 +370,19 @@ export const Models: FC = () => {
                     </div>
                     <div className="mb-1.5 flex items-center gap-2 text-base font-bold text-theme-text-strong">
                         <BeakerIcon className="h-4 w-4 shrink-0" />
-                        <span>Publisher-qualified IDs are available now</span>
+                        <span>
+                            Model IDs will include publishers starting September
+                            7
+                        </span>
                     </div>
-                    You can adopt them today. On September 7,
-                    publisher-qualified IDs become the canonical model IDs, and
-                    current IDs become aliases.{" "}
-                    <a
-                        href={MODEL_SLUG_ANNOUNCEMENT_URL}
-                        className="font-semibold text-theme-text-soft hover:text-theme-text-strong hover:underline"
-                    >
-                        Learn more →
-                    </a>
+                    Model IDs are changing to include the publisher and official
+                    model name—for example,{" "}
+                    <code className="font-semibold">flux</code> →{" "}
+                    <code className="font-semibold">
+                        black-forest-labs/flux.1-schnell
+                    </code>
+                    . You can start using the new IDs today. Existing IDs will
+                    keep working after the change.
                     <a
                         href={MODEL_SLUG_LIST_URL}
                         className="mt-2 flex w-fit items-center gap-1.5 font-semibold text-theme-text-soft hover:text-theme-text-strong hover:underline"

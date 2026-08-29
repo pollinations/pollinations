@@ -1,4 +1,4 @@
-import { ArrowRightIcon, cn, Surface } from "@pollinations/ui";
+import { cn, Surface } from "@pollinations/ui";
 import { type FC, type ReactNode, useEffect, useState } from "react";
 
 const HIGHLIGHTS_RAW_URL =
@@ -154,47 +154,23 @@ const CanonicalModelSlugAnnouncement: FC = () => (
             <span aria-hidden="true" className="shrink-0">
                 🧪
             </span>
-            <span>New model IDs are available now</span>
+            <span>Model IDs will include publishers</span>
         </div>
         <p className="mt-1 text-sm text-ink-700">
-            The new publisher-qualified IDs work today. On September 7, they
-            will become canonical. Existing IDs will remain available as
-            aliases.
+            Model IDs are changing to include the publisher and official model
+            name—for example,{" "}
+            <code>flux</code> →{" "}
+            <code>black-forest-labs/flux.1-schnell</code>. You can start using
+            the new IDs today. Existing IDs will keep working after the change.
         </p>
-
-        <div className="mt-4 border-y border-divider py-4">
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-theme-text-muted">
-                Example
-            </div>
-            <div className="mt-2 flex flex-col items-start gap-3 min-[480px]:flex-row min-[480px]:items-end">
-                <div className="flex flex-col items-start gap-1">
-                    <div className="mb-1 text-xs font-medium text-theme-text-muted">
-                        Existing ID
-                    </div>
-                    <span className="font-mono text-sm font-semibold text-intent-danger-text">
-                        flux
-                    </span>
-                </div>
-                <ArrowRightIcon className="h-5 w-5 self-center text-theme-text-strong rotate-90 min-[480px]:mb-1 min-[480px]:self-auto min-[480px]:rotate-0" />
-                <div className="flex min-w-0 flex-col items-start gap-1">
-                    <div className="mb-1 text-xs font-medium text-theme-text-muted">
-                        New ID
-                    </div>
-                    <span className="max-w-full break-all font-mono text-sm font-semibold text-intent-free-text">
-                        black-forest-labs/flux.1-schnell
-                    </span>
-                </div>
-            </div>
-        </div>
-
-        <ul className="mt-4 list-disc space-y-2 pl-5 text-sm text-theme-text-muted marker:text-theme-text-soft">
-            <li>Existing IDs will keep working.</li>
-            <li>
-                {renderWithLinks(
-                    "[View all model ID changes](https://github.com/pollinations/pollinations/blob/main/MODEL_SLUGS.md)",
-                )}
-            </li>
-        </ul>
+        <a
+            href="https://github.com/pollinations/pollinations/blob/main/MODEL_SLUGS.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 block w-fit text-sm font-semibold text-theme-text-soft hover:text-theme-text-strong hover:underline"
+        >
+            View all model ID changes →
+        </a>
     </Surface>
 );
 

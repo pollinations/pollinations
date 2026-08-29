@@ -45,6 +45,8 @@ SQL >
         {% elif defined(before) %} AND timestamp < {{ DateTime(before) }}
         {% end %}
     ORDER BY timestamp DESC, event_id DESC
+    -- The writer retries the same event after ambiguous network/5xx failures,
+    -- so an event_id can be inserted twice. Deduplicate during the sorted read.
     LIMIT 1 BY event_id
     LIMIT {{ Int32(limit, 100) }}
 

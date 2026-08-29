@@ -129,7 +129,7 @@ key for the harness, backs up its config, and writes the provider; `off`
 restores the backup.
 
 ```bash
-polli harness list              # supported harnesses and whether they are on
+polli harness --help            # supported harnesses
 polli harness dsh on            # DeepSeek Harness → Pollinations (default model: deepseek)
 polli harness dsh on --model kimi
 polli harness dsh status

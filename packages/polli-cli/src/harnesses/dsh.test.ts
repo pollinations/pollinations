@@ -12,8 +12,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { parse, stringify } from "yaml";
-import { dsh } from "./dsh.js";
-import { disableHarness, enableHarness, harnessStatus } from "./engine.js";
+import { configureDsh, disableDsh, dsh } from "./dsh.js";
 import type { HarnessContext } from "./types.js";
 
 const models = [
@@ -44,7 +43,7 @@ const read = (path: string) => readFileSync(path, "utf-8");
 
 describe("dsh harness", () => {
     it("writes the provider, default model, and credentials from scratch", () => {
-        const result = enableHarness(dsh, ctx, settings);
+        const result = configureDsh(ctx, settings);
         expect(result).toMatchObject({
             harness: "dsh",
             configured: true,
@@ -72,8 +71,7 @@ describe("dsh harness", () => {
             refs: { POLLINATIONS_API_KEY: "sk_test_key" },
         });
         expect(statSync(credsFile()).mode & 0o777).toBe(0o600);
-        expect(dsh.readKey(ctx)).toBe("sk_test_key");
-        expect(harnessStatus(dsh, ctx)).toMatchObject({
+        expect(dsh.status(ctx)).toMatchObject({
             configured: true,
             model: "deepseek",
         });
@@ -88,10 +86,10 @@ describe("dsh harness", () => {
         writeFileSync(
             credsFile(),
             "version: 1\nrefs:\n  DEEPSEEK_API_KEY: ds-secret\n",
-            { mode: 0o600 },
+            { mode: 0o644 },
         );
 
-        enableHarness(dsh, ctx, settings);
+        configureDsh(ctx, settings);
 
         const text = read(settingsFile());
         expect(text).toContain("# my notes");
@@ -102,6 +100,7 @@ describe("dsh harness", () => {
             DEEPSEEK_API_KEY: "ds-secret",
             POLLINATIONS_API_KEY: "sk_test_key",
         });
+        expect(statSync(credsFile()).mode & 0o777).toBe(0o600);
     });
 
     it("restores the original files byte-for-byte on off", () => {
@@ -110,24 +109,24 @@ describe("dsh harness", () => {
             "agent-default-model: {provider: deepseek, model: deepseek-chat}\n";
         writeFileSync(settingsFile(), original);
 
-        enableHarness(dsh, ctx, settings);
+        configureDsh(ctx, settings);
         expect(snapshotFiles()).toHaveLength(1);
-        const result = disableHarness(dsh, ctx);
+        const result = disableDsh(ctx);
 
         expect(result.outcome).toBe("restored");
         expect(read(settingsFile())).toBe(original);
         expect(existsSync(credsFile())).toBe(false);
         expect(snapshotFiles()).toHaveLength(0);
-        expect(harnessStatus(dsh, ctx).configured).toBe(false);
+        expect(dsh.status(ctx).configured).toBe(false);
     });
 
     it("only strips the Pollinations entries when the config changed since on", () => {
-        enableHarness(dsh, ctx, settings);
+        configureDsh(ctx, settings);
         const edited = parse(read(settingsFile()));
         edited["agent-presets"] = { default: "mine" };
         writeFileSync(settingsFile(), stringify(edited));
 
-        const result = disableHarness(dsh, ctx);
+        const result = disableDsh(ctx);
 
         expect(result.outcome).toBe("stripped");
         const doc = parse(read(settingsFile()));
@@ -139,35 +138,50 @@ describe("dsh harness", () => {
     });
 
     it("reports unchanged when off runs on a harness that was never on", () => {
-        expect(disableHarness(dsh, ctx).outcome).toBe("unchanged");
+        expect(disableDsh(ctx).outcome).toBe("unchanged");
     });
 
     it("keeps one backup per harness home", () => {
-        enableHarness(dsh, ctx, settings);
+        configureDsh(ctx, settings);
         const moved = { home, env: { DSH_HOME: join(home, "moved") } };
-        enableHarness(dsh, moved, settings);
+        configureDsh(moved, settings);
         expect(snapshotFiles()).toHaveLength(2);
 
-        expect(disableHarness(dsh, moved).outcome).toBe("restored");
+        expect(disableDsh(moved).outcome).toBe("restored");
         expect(existsSync(join(home, "moved", "settings.yaml"))).toBe(false);
         // The original location is untouched and still has its own backup.
-        expect(harnessStatus(dsh, ctx).configured).toBe(true);
+        expect(dsh.status(ctx).configured).toBe(true);
         expect(snapshotFiles()).toHaveLength(1);
     });
 
     it("re-running on switches the model and keeps the pre-on backup", () => {
-        enableHarness(dsh, ctx, settings);
-        enableHarness(dsh, ctx, { ...settings, model: "kimi" });
-        expect(harnessStatus(dsh, ctx).model).toBe("kimi");
+        configureDsh(ctx, settings);
+        configureDsh(ctx, { ...settings, model: "kimi" });
+        expect(dsh.status(ctx).model).toBe("kimi");
 
-        disableHarness(dsh, ctx);
+        disableDsh(ctx);
         expect(existsSync(settingsFile())).toBe(false);
     });
 
     it("honors DSH_HOME", () => {
         const custom = join(home, "custom-dsh");
-        enableHarness(dsh, { home, env: { DSH_HOME: custom } }, settings);
+        configureDsh({ home, env: { DSH_HOME: custom } }, settings);
         expect(existsSync(join(custom, "settings.yaml"))).toBe(true);
         expect(existsSync(settingsFile())).toBe(false);
+    });
+
+    it("rolls back the first file when writing the second file fails", () => {
+        mkdirSync(join(home, ".dsh"), { recursive: true });
+        const original =
+            "agent-default-model: {provider: deepseek, model: deepseek-chat}\n";
+        writeFileSync(settingsFile(), original);
+        const invalidCredentials = "refs: [";
+        writeFileSync(credsFile(), invalidCredentials, { mode: 0o600 });
+
+        expect(() => configureDsh(ctx, settings)).toThrow();
+
+        expect(read(settingsFile())).toBe(original);
+        expect(read(credsFile())).toBe(invalidCredentials);
+        expect(snapshotFiles()).toHaveLength(0);
     });
 });

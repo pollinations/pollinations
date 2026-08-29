@@ -2,7 +2,6 @@ import { loginWithDeviceFlow } from "../commands/auth.js";
 import { gen } from "../lib/api.js";
 import { resolveApiKey } from "../lib/config.js";
 import { printInfo, printSuccess } from "../lib/output.js";
-import type { HarnessContext, HarnessProfile } from "./types.js";
 
 // gen's response cache can answer an unauthenticated prompt, so a chat
 // completion proves nothing — check the key itself.
@@ -17,27 +16,26 @@ const keyIsValid = (key: string) =>
  * login (logging in first if needed).
  */
 export const resolveHarnessKey = async (
-    profile: HarnessProfile,
-    ctx: HarnessContext,
-    opts: { browser?: boolean },
+    harness: { id: string; label: string; existingKey: string | null },
+    options: { browser?: boolean },
 ): Promise<string> => {
-    const existing = profile.readKey(ctx);
+    const existing = harness.existingKey;
     if (existing && (await keyIsValid(existing))) {
         printInfo(
-            `Reusing the Pollinations key already stored for ${profile.label}.`,
+            `Reusing the Pollinations key already stored for ${harness.label}.`,
         );
         return existing;
     }
 
     const accountKey =
         resolveApiKey() ??
-        (await loginWithDeviceFlow({ browser: opts.browser }));
-    const name = `polli-harness-${profile.id}`;
+        (await loginWithDeviceFlow({ browser: options.browser }));
+    const name = `polli-harness-${harness.id}`;
     const created = await gen<{ key: string }>("/account/keys", {
         method: "POST",
         apiKey: accountKey,
         body: { name, type: "secret" },
     });
-    printSuccess(`Created API key "${name}" for ${profile.label}.`);
+    printSuccess(`Created API key "${name}" for ${harness.label}.`);
     return created.key;
 };

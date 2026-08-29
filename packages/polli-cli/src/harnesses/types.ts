@@ -4,6 +4,11 @@ export interface HarnessContext {
     env: NodeJS.ProcessEnv;
 }
 
+export interface HarnessOnOptions {
+    model?: string;
+    browser?: boolean;
+}
+
 export interface HarnessModel {
     id: string;
     contextWindow: number;
@@ -11,46 +16,27 @@ export interface HarnessModel {
     input: string[];
 }
 
-export interface HarnessSettings {
-    apiKey: string;
-    /** Model the harness should use by default. */
-    model: string;
-    /** Models to register with the harness. */
-    models: HarnessModel[];
-}
+export type OffOutcome = "restored" | "stripped" | "unchanged";
 
-export interface HarnessStatus {
-    /** True when Pollinations is the harness's active provider. */
+export interface HarnessResult {
+    harness: string;
+    label: string;
     configured: boolean;
     model?: string;
+    files: string[];
+    outcome?: OffOutcome;
 }
 
-/**
- * One coding harness integration. A profile only knows how to read and edit
- * that harness's own config files; login, key minting, backups, and the CLI
- * surface are shared by the engine so adding a harness is one file.
- */
-export interface HarnessProfile {
+/** One harness integration. Each adapter owns its setup strategy. */
+export interface HarnessAdapter {
     id: string;
     label: string;
-    docsUrl: string;
-    defaultModel: string;
-    /** Config files `enable` may touch. Backed up before the first `on`. */
-    files(ctx: HarnessContext): string[];
-    /** Pollinations key already stored in the harness config, if any. */
-    readKey(ctx: HarnessContext): string | null;
-    enable(ctx: HarnessContext, settings: HarnessSettings): void;
-    /**
-     * Strip Pollinations from the config. Used when the backup can't be
-     * restored. Returns whether anything was changed.
-     */
-    disable(ctx: HarnessContext): boolean;
-    status(ctx: HarnessContext): HarnessStatus;
-    /**
-     * Official installer for harnesses that need one: `on` runs `command`
-     * through the shell when `installed(ctx)` is false. Omit for harnesses
-     * that fetch themselves on launch (`npx …`).
-     */
-    install?: { installed(ctx: HarnessContext): boolean; command: string };
+    description: string;
     restartHint: string;
+    on(
+        ctx: HarnessContext,
+        options: HarnessOnOptions,
+    ): Promise<HarnessResult>;
+    off(ctx: HarnessContext): Promise<HarnessResult> | HarnessResult;
+    status(ctx: HarnessContext): Promise<HarnessResult> | HarnessResult;
 }

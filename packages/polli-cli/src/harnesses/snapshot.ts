@@ -12,6 +12,7 @@ interface FileSnapshot {
 
 export interface Snapshot {
     savedAt: string;
+    complete: boolean;
     files: Record<string, FileSnapshot>;
 }
 
@@ -25,6 +26,33 @@ const snapshotPath = (ctx: HarnessContext, id: string, paths: string[]) => {
         .digest("hex")
         .slice(0, 12);
     return join(ctx.home, ".pollinations", "harnesses", `${id}.${key}.json`);
+};
+
+const writeSnapshot = (
+    ctx: HarnessContext,
+    id: string,
+    paths: string[],
+    snapshot: Snapshot,
+) =>
+    writeTextAtomic(
+        snapshotPath(ctx, id, paths),
+        JSON.stringify(snapshot, null, 2),
+        0o600,
+    );
+
+const captureFiles = (paths: string[]) =>
+    Object.fromEntries(
+        paths.map((path) => [
+            path,
+            { before: readTextIfExists(path), after: null },
+        ]),
+    );
+
+const restoreFiles = (files: Record<string, FileSnapshot>) => {
+    for (const [path, file] of Object.entries(files)) {
+        if (file.before === null) removeIfExists(path);
+        else writeTextAtomic(path, file.before);
+    }
 };
 
 export const loadSnapshot = (
@@ -41,40 +69,46 @@ export const loadSnapshot = (
     }
 };
 
-/** Capture each file as it is before `on`. An existing snapshot keeps its original `before`. */
-export const captureBefore = (
+/**
+ * Apply a config update with a persisted pre-change snapshot. A failed update
+ * is rolled back immediately; a successful update stays reversible with `off`.
+ */
+export const applyWithSnapshot = (
     ctx: HarnessContext,
     id: string,
     paths: string[],
-): Snapshot => {
-    const snapshot = loadSnapshot(ctx, id, paths) ?? {
+    apply: () => void,
+): void => {
+    const existing = loadSnapshot(ctx, id, paths);
+    const rollback = captureFiles(paths);
+    const snapshot = existing ?? {
         savedAt: new Date().toISOString(),
-        files: {},
+        complete: false,
+        files: rollback,
     };
-    for (const path of paths) {
-        snapshot.files[path] ??= {
-            before: readTextIfExists(path),
-            after: null,
-        };
-    }
-    return snapshot;
-};
 
-export const recordAfter = (
-    ctx: HarnessContext,
-    id: string,
-    snapshot: Snapshot,
-    paths: string[],
-) => {
+    if (!existing) writeSnapshot(ctx, id, paths, snapshot);
+
+    try {
+        apply();
+    } catch (error) {
+        try {
+            restoreFiles(rollback);
+            if (!existing) clearSnapshot(ctx, id, paths);
+        } catch (rollbackError) {
+            throw new AggregateError(
+                [error, rollbackError],
+                "Harness setup failed and its config could not be restored",
+            );
+        }
+        throw error;
+    }
+
     for (const path of paths) {
         snapshot.files[path].after = readTextIfExists(path);
     }
-    // The snapshot holds the harness's credentials file, so keep it owner-only.
-    writeTextAtomic(
-        snapshotPath(ctx, id, paths),
-        JSON.stringify(snapshot, null, 2),
-        0o600,
-    );
+    snapshot.complete = true;
+    writeSnapshot(ctx, id, paths, snapshot);
 };
 
 /** Put the files back byte-for-byte, unless something else edited them since `on`. */
@@ -85,14 +119,18 @@ export const restoreSnapshot = (
 ): RestoreOutcome => {
     const snapshot = loadSnapshot(ctx, id, paths);
     if (!snapshot) return "missing";
+
+    if (!snapshot.complete) {
+        restoreFiles(snapshot.files);
+        removeIfExists(snapshotPath(ctx, id, paths));
+        return "restored";
+    }
+
     const entries = Object.entries(snapshot.files);
     if (entries.some(([path, file]) => readTextIfExists(path) !== file.after)) {
         return "modified";
     }
-    for (const [path, file] of entries) {
-        if (file.before === null) removeIfExists(path);
-        else writeTextAtomic(path, file.before);
-    }
+    restoreFiles(snapshot.files);
     removeIfExists(snapshotPath(ctx, id, paths));
     return "restored";
 };

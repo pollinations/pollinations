@@ -43,7 +43,7 @@ Install: `npm i -g @pollinations/cli@latest` (provides the `polli` binary).
 | List your quests + claim state | `polli quests` (filters: `--open --claimable --claimed --coming-soon`) |
 | Manage prompt agents | `polli agents list` |
 | Manage invite-only community models | `polli my-models list` |
-| Connect a coding harness to Pollinations | `polli harness dsh on` (list: `polli harness list`) |
+| Connect a coding harness to Pollinations | `polli harness dsh on` (available adapters: `polli harness --help`) |
 | Machine-readable output | append `--json` to any command |
 
 ## Setup
@@ -206,12 +206,12 @@ polli keys revoke <id>                                             # id comes fr
 
 ### Connect a coding harness
 ```bash
-polli harness list                  # supported harnesses (dsh = DeepSeek Harness) and on/off state
+polli harness --help                # supported harnesses
 polli harness dsh on                # login if needed, mint key "polli-harness-dsh", write provider + default model
 polli harness dsh on --model kimi   # any tool-calling text model from `polli models`
 polli harness dsh off               # restore the config backed up before "on"
 ```
-`on` runs the harness's official installer first if it is missing (dsh needs none — `npx @deepseek-ai/dsh web`), then edits the harness's own config files (dsh: `$DSH_HOME/settings.yaml` and `.credentials.yaml`, default `~/.dsh`) and backs them up to `~/.pollinations/harnesses/<id>.json`. Reruns reuse the key already in the harness config. Guide: `polli docs` section "Coding Harnesses".
+The DSH adapter edits `$DSH_HOME/settings.yaml` and `.credentials.yaml` (default `~/.dsh`) and stores a private snapshot under `~/.pollinations/harnesses/`. Reruns reuse a valid key already in the harness config. Other adapters may use their harness's official plugin or installer instead. Guide: `polli docs` section "Coding Harnesses".
 
 ### Read API docs
 ```bash

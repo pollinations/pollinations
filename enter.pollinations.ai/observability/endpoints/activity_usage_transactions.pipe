@@ -45,7 +45,6 @@ SQL >
         {% elif defined(before) %} AND timestamp < {{ DateTime(before) }}
         {% end %}
     ORDER BY timestamp DESC, event_id DESC
-    LIMIT 1 BY event_id
     LIMIT {{ Int32(limit, 100) }}
 
 TYPE endpoint

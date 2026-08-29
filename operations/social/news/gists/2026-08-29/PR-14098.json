@@ -1,0 +1,34 @@
+{
+  "pr_number": 14098,
+  "title": "fix: update Gemini 3.7 Flash pricing after promo",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14098",
+  "merged_at": "2026-08-29T10:33:25Z",
+  "labels": [],
+  "pr_body_excerpt": "- Updates `gemini` on the pinned `google-vertex/global` route to the live $0.75/M input, $0.075/M cache-read, and $3.75/M output rates.\n- Updates cache storage to $0.50/M-token-hour; the existing $14/1K search fee remains unchanged.\n- Preserves canonical name, aliases, provider pin, `paidOnly: true`, multiplier 1, and no fallback.\n- Replaces #13352 because its branch has unrelated Git history and cannot be refreshed safely.\n\nVerified against the live OpenRouter endpoint on 2026-08-29. Focused pricing tests: 41 passed. Typecheck and Biome pass.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The price tags bloomed",
+    "blurb": "Gemini 3.7 Flash's pinned Vertex route now has price tags matching the live endpoint. The hive's calculator has been given the current pollen exchange rate.",
+    "summary": "Updated the pinned google-vertex/global Gemini 3.7 Flash pricing to live rates: $0.75/M input, $0.075/M cache-read, $3.75/M output, and $0.50/M-token-hour cache storage, while retaining the $14/1K search fee.",
+    "impact": "Developers using the paid-only Gemini route now get cost estimates and billing aligned with the verified live OpenRouter rates, without changes to its aliases, provider pin, multiplier, or fallback behavior.",
+    "keywords": [
+      "Gemini 3.7 Flash",
+      "Google Vertex",
+      "pricing",
+      "billing",
+      "OpenRouter",
+      "text models"
+    ],
+    "visual_concept": "A cozy garden-market price board represents refreshed model pricing: Polli carefully replaces old tags beside a glowing Gemini-style star flower and a retro terminal showing input, cache, output, and storage counters. Small code-plants and a calculator make the billing update feel precise but friendly.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wearing tiny accountant glasses as she updates a garden-market price board beside a glowing Gemini star-shaped flower and retro terminal; the board has simple pixel text: \"$0.75 IN · $3.75 OUT\". Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, code-plants in pots, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-29/PR-14098.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wearing tiny accountant glasses as she updates a garden-market price board beside a glowing Gemini star-shaped flower and retro terminal; the board has simple pixel text: \"$0.75 IN · $3.75 OUT\". Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, code-plants in pots, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-29T10:34:27.353072+00:00"
+}

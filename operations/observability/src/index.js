@@ -113,7 +113,11 @@ export default {
         }
 
         if (url.pathname === "/api/health") {
-            return (await grafana(env)).fetch(request);
+            await grafana(env);
+            return Response.json(
+                { ok: true },
+                { headers: { "Cache-Control": "no-store" } },
+            );
         }
 
         const authResponse = await pollinationsAuth.handle(request);
@@ -131,6 +135,22 @@ export default {
         }
 
         const response = await container.fetch(authenticatedRequest);
+        if (
+            url.pathname === "/logout" &&
+            response.status >= 300 &&
+            response.status < 400
+        ) {
+            const headers = new Headers(response.headers);
+            headers.set(
+                "Location",
+                new URL("/auth/logout", url.origin).toString(),
+            );
+            return new Response(response.body, {
+                status: response.status,
+                statusText: response.statusText,
+                headers,
+            });
+        }
         const contentType = response.headers.get("content-type") || "";
         if (contentType.includes("text/html")) {
             return new HTMLRewriter()

@@ -123,12 +123,14 @@ function authError(message: string, status: number, clearCookie: string) {
     });
 }
 
-function safeReturnTo(value: unknown) {
-    return typeof value === "string" &&
-        value.startsWith("/") &&
-        !value.startsWith("//")
-        ? value
-        : "/";
+function safeReturnTo(value: unknown, origin: string) {
+    if (typeof value !== "string") return "/";
+    try {
+        const url = new URL(value, origin);
+        return url.origin === origin ? `${url.pathname}${url.search}` : "/";
+    } catch {
+        return "/";
+    }
 }
 
 function normalizeEmail(value: string) {
@@ -201,7 +203,10 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
         const flow: Flow = {
             state: randomValue(),
             verifier,
-            returnTo: safeReturnTo(requestUrl.searchParams.get("return_to")),
+            returnTo: safeReturnTo(
+                requestUrl.searchParams.get("return_to"),
+                requestUrl.origin,
+            ),
         };
         const redirectUri = `${requestUrl.origin}${CALLBACK_PATH}`;
         const loginUrl = new URL(authorizeUrl);
@@ -234,6 +239,7 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
         const clearFlow = cookie(request, flowCookie, "", 0, CALLBACK_PATH);
         const code = requestUrl.searchParams.get("code");
         const state = requestUrl.searchParams.get("state");
+        const error = requestUrl.searchParams.get("error");
         const storedFlow = cookieValue(request, flowCookie);
         let flow: Flow;
         try {
@@ -241,9 +247,19 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
         } catch {
             return authError("Invalid OAuth state", 400, clearFlow);
         }
-        if (!code || !state || state !== flow.state || !flow.verifier) {
+        if (!state || state !== flow.state || !flow.verifier) {
             return authError("Invalid OAuth state", 400, clearFlow);
         }
+        if (error) {
+            return authError(
+                error === "access_denied"
+                    ? "Login cancelled"
+                    : "OAuth login failed",
+                400,
+                clearFlow,
+            );
+        }
+        if (!code) return authError("Invalid OAuth state", 400, clearFlow);
 
         const redirectUri = `${requestUrl.origin}${CALLBACK_PATH}`;
         const tokenResponse = await requestFetch(tokenUrl, {
@@ -288,7 +304,10 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
         const payload = encodeJson(session);
         const sessionCookie = `${payload}.${await sign(payload)}`;
         return redirect(
-            new URL(safeReturnTo(flow.returnTo), requestUrl.origin).toString(),
+            new URL(
+                safeReturnTo(flow.returnTo, requestUrl.origin),
+                requestUrl.origin,
+            ).toString(),
             [
                 clearFlow,
                 cookie(

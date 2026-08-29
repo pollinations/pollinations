@@ -101,6 +101,10 @@ describe("economics Worker auth", () => {
         );
 
         expect(response.status).toBe(401);
+        await expect(response.json()).resolves.toEqual({
+            error: "Unauthorized",
+            code: "AUTH_REQUIRED",
+        });
         expect(mock).not.toHaveBeenCalled();
     });
 

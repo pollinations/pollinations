@@ -452,6 +452,28 @@ describe("POST /api/oauth/code (consent-side code creation)", () => {
         expect(replay.status).toBe(401);
     }, 30000);
 
+    test("consumes an identity token before loading its user", async () => {
+        const accessToken = `oauth_${crypto.randomUUID()}`;
+        const kvKey = `oauth-login-token:${accessToken}`;
+        await env.KV.put(
+            kvKey,
+            JSON.stringify({ userId: `missing-${crypto.randomUUID()}` }),
+            { expirationTtl: 60 },
+        );
+
+        const response = await SELF.fetch(`${BASE}/api/oauth/userinfo`, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+        });
+
+        expect(response.status).toBe(404);
+        expect(await env.KV.get(kvKey)).toBeNull();
+
+        const replay = await SELF.fetch(`${BASE}/api/oauth/userinfo`, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        expect(replay.status).toBe(401);
+    });
+
     test("rejects an unregistered redirect_uri", async ({
         sessionToken,
         mocks,

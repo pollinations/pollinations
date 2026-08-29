@@ -1,6 +1,5 @@
 import { createPollinationsAuth } from "@pollinations/auth";
 import { Hono } from "hono";
-import { cors } from "hono/cors";
 
 // Data start date - Oct 1, 2025
 const DATA_START_DATE = "2025-10-01";
@@ -155,8 +154,6 @@ async function fetchTinybirdByWeek(
 }
 
 const app = new Hono<{ Bindings: Env }>();
-
-app.use("*", cors());
 
 app.use("*", async (c, next) => {
     let auth: ReturnType<typeof createPollinationsAuth>;

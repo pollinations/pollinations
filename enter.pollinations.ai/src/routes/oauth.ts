@@ -278,12 +278,12 @@ export const oauthRoutes = new Hono<Env>()
                 return c.json({ error: "invalid_token" }, 401);
             }
 
+            await c.env.KV.delete(kvKey);
             const profile = await getUserinfoForUser(
                 c.env,
                 stored.userId,
                 true,
             );
-            await c.env.KV.delete(kvKey);
             return c.json(profile);
         },
         auth({ allowApiKey: true, allowSessionCookie: true }),

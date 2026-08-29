@@ -119,7 +119,7 @@ async function handleRequest(request: Request, env: Env) {
 
     if (!(await pollinationsAuth.getUser(request))) {
         return url.pathname.startsWith("/api/")
-            ? json({ error: "Unauthorized" }, 401)
+            ? json({ error: "Unauthorized", code: "AUTH_REQUIRED" }, 401)
             : pollinationsAuth.signIn(request);
     }
 

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { createPollinationsAuth } from "../src/index";
 
 const config = {
@@ -25,6 +25,38 @@ async function begin(auth: ReturnType<typeof createPollinationsAuth>) {
     if (!flow) throw new Error("Expected flow cookie");
     return { response, location, flow };
 }
+
+function allowedUserUpstream() {
+    return vi.fn(async (input: RequestInfo | URL) =>
+        String(input).endsWith("/api/oauth/token")
+            ? Response.json({ access_token: "oauth_login" })
+            : Response.json({
+                  sub: "user-1",
+                  email: "alice@example.com",
+                  preferred_username: "alice",
+              }),
+    );
+}
+
+async function authenticatedSession(
+    auth: ReturnType<typeof createPollinationsAuth>,
+) {
+    const { location, flow } = await begin(auth);
+    const callback = await auth.handle(
+        new Request(
+            `https://kpi.pollinations.ai/auth/callback?code=code-session&state=${location.searchParams.get("state")}`,
+            { headers: { Cookie: `pollinations_oauth_flow=${flow}` } },
+        ),
+    );
+    if (!callback) throw new Error("Expected callback response");
+    const session = cookieFrom(callback, "pollinations_session");
+    if (!session) throw new Error("Expected session cookie");
+    return session;
+}
+
+afterEach(() => {
+    vi.useRealTimers();
+});
 
 describe("Pollinations OAuth", () => {
     it("starts an identity-only authorization-code flow with PKCE", async () => {
@@ -65,6 +97,42 @@ describe("Pollinations OAuth", () => {
         expect(location.origin).toBe("http://127.0.0.1:3000");
         expect(location.pathname).toBe("/authorize");
         expect(location.searchParams.get("purpose")).toBe("login");
+    });
+
+    it("rejects return paths that resolve outside the app origin", async () => {
+        const auth = createPollinationsAuth({
+            ...config,
+            fetch: allowedUserUpstream(),
+        });
+        const maliciousPaths = [
+            String.raw`/\evil.example`,
+            String.raw`/\/evil.example`,
+            "//evil.example",
+            "https://evil.example/",
+        ];
+
+        for (const returnTo of maliciousPaths) {
+            const loginUrl = new URL("https://kpi.pollinations.ai/auth/login");
+            loginUrl.searchParams.set("return_to", returnTo);
+            const login = await auth.handle(new Request(loginUrl));
+            if (!login) throw new Error("Expected login response");
+            const authorizeUrl = new URL(login.headers.get("Location") || "");
+            const flow = cookieFrom(login, "pollinations_oauth_flow");
+            const callback = await auth.handle(
+                new Request(
+                    `https://kpi.pollinations.ai/auth/callback?code=code-return&state=${authorizeUrl.searchParams.get("state")}`,
+                    {
+                        headers: {
+                            Cookie: `pollinations_oauth_flow=${flow}`,
+                        },
+                    },
+                ),
+            );
+
+            expect(callback?.headers.get("Location")).toBe(
+                "https://kpi.pollinations.ai/",
+            );
+        }
     });
 
     it("exchanges the code and creates an allowlisted session", async () => {
@@ -159,6 +227,76 @@ describe("Pollinations OAuth", () => {
 
         expect(response?.status).toBe(400);
         expect(upstream).not.toHaveBeenCalled();
+    });
+
+    it("reports a cancelled consent without exchanging a code", async () => {
+        const upstream = vi.fn();
+        const auth = createPollinationsAuth({ ...config, fetch: upstream });
+        const { location, flow } = await begin(auth);
+        const response = await auth.handle(
+            new Request(
+                `https://kpi.pollinations.ai/auth/callback?error=access_denied&state=${location.searchParams.get("state")}`,
+                { headers: { Cookie: `pollinations_oauth_flow=${flow}` } },
+            ),
+        );
+
+        expect(response?.status).toBe(400);
+        await expect(response?.text()).resolves.toBe("Login cancelled");
+        expect(response?.headers.get("Set-Cookie")).toContain("Max-Age=0");
+        expect(upstream).not.toHaveBeenCalled();
+    });
+
+    it("rejects a tampered session signature", async () => {
+        const auth = createPollinationsAuth({
+            ...config,
+            fetch: allowedUserUpstream(),
+        });
+        const session = await authenticatedSession(auth);
+
+        await expect(
+            auth.getUser(
+                new Request("https://kpi.pollinations.ai/api/private", {
+                    headers: {
+                        Cookie: `pollinations_session=${session}x`,
+                    },
+                }),
+            ),
+        ).resolves.toBeNull();
+    });
+
+    it("rejects an expired session", async () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date("2026-08-29T10:00:00Z"));
+        const auth = createPollinationsAuth({
+            ...config,
+            fetch: allowedUserUpstream(),
+        });
+        const session = await authenticatedSession(auth);
+        vi.advanceTimersByTime(43_201_000);
+
+        await expect(
+            auth.getUser(
+                new Request("https://kpi.pollinations.ai/api/private", {
+                    headers: { Cookie: `pollinations_session=${session}` },
+                }),
+            ),
+        ).resolves.toBeNull();
+    });
+
+    it("rejects a valid session on a different origin", async () => {
+        const auth = createPollinationsAuth({
+            ...config,
+            fetch: allowedUserUpstream(),
+        });
+        const session = await authenticatedSession(auth);
+
+        await expect(
+            auth.getUser(
+                new Request("https://economics.pollinations.ai/api/private", {
+                    headers: { Cookie: `pollinations_session=${session}` },
+                }),
+            ),
+        ).resolves.toBeNull();
     });
 
     it("clears the session on logout", async () => {

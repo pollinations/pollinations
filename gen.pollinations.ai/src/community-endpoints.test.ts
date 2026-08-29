@@ -6525,4 +6525,31 @@ describe("community video endpoint billing", () => {
             ),
         ).rejects.toThrow(/managed agent/);
     });
+
+    it("propagates upstream failures instead of billing", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(
+                async () =>
+                    new Response(
+                        JSON.stringify({ error: { message: "gpu busy" } }),
+                        {
+                            status: 500,
+                        },
+                    ),
+            ),
+        );
+
+        await expect(
+            callCommunityVideoEndpoint(
+                await videoEndpoint(),
+                "a sprout",
+                videoParams,
+                secret,
+            ),
+        ).rejects.toMatchObject({
+            status: 500,
+            message: expect.stringContaining("responded 500"),
+        });
+    });
 });

@@ -12,10 +12,13 @@ Model publishing and [connecting user wallets](./BRING_YOUR_OWN_POLLEN.md) solve
 | Image | `POST /v1/images/generations` | `GET /image/{prompt}` or `POST /v1/images/generations` |
 | Image editing | `POST /v1/images/edits` in addition to image generation | `POST /v1/images/edits` |
 | Speech to text | `POST /v1/audio/transcriptions` | `POST /v1/audio/transcriptions` |
+| Video | `POST /v1/videos/generations` | `GET /image/{prompt}?model=...&duration=N` |
 
 Image providers must return `b64_json`. During testing, Pollinations checks whether an image provider supports edits and whether it reports OpenAI image-token usage.
 
-Video, text-to-speech, embeddings, realtime, and 3D endpoints cannot currently be registered through this workflow.
+Video providers must return playable MP4 or WebM media and report the billed duration (`usage.video_seconds` or `usage.duration`, in seconds). During registration testing, Pollinations sends a short prompt with a 5-second duration and rejects providers that return no playable video or cannot report a duration; generation requests whose endpoint stops reporting a duration fail instead of billing at zero. Video models are priced per generated second, capped at $0.5 per second.
+
+Text-to-speech, embeddings, realtime, and 3D endpoints cannot currently be registered through this workflow.
 
 ## Private and Public Models
 
@@ -28,6 +31,7 @@ Public models appear in the model catalog and can be called by other Pollination
 - Text models use the token categories reported by the upstream endpoint.
 - Image models use per-token pricing when the registration test finds valid OpenAI image usage; otherwise they use a fixed price per generated image.
 - Transcription models are priced from reported audio duration.
+- Video models are priced per generated second (duration reported by the upstream endpoint).
 - A zero price makes the public model free.
 
 Owners receive 75% of the Pollen spent on their models. Paid and Quest Pollen earnings remain in their respective wallet buckets. Cash payouts are not currently available.
@@ -36,7 +40,7 @@ Owners receive 75% of the Pollen spent on their models. Paid and Quest Pollen ea
 
 1. Open [My Models](https://enter.pollinations.ai/my-models).
 2. Choose **Add model**.
-3. Select text, image, or transcription and enter the upstream base URL, model id, and bearer token.
+3. Select text, image, video, or transcription and enter the upstream base URL, model id, and bearer token.
 4. Fetch the upstream model list or run the endpoint test before saving.
 5. Save the model as private, then call its `owner/model` id through the normal Pollinations endpoint.
 6. If your account has publisher access, change visibility to public and set prices when it is ready for other users.

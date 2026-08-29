@@ -493,6 +493,39 @@ describe("resolution cost variants", () => {
         }
     });
 
+    it("uses the Replicate video-in rates for Seedance reference videos", () => {
+        expect(
+            bill("seedance-2.0", { completionVideoSeconds: 4 }).cost.totalCost,
+        ).toBeCloseTo(4 * 0.18, 12);
+        expect(
+            bill("seedance-2.5", { completionVideoSeconds: 4 }).cost.totalCost,
+        ).toBeCloseTo(4 * 0.1028, 12);
+
+        const seedance20 = bill(
+            "seedance-2.0",
+            { completionVideoSeconds: 4 },
+            { hasReferenceVideo: true },
+        );
+        expect(seedance20.costVariant).toBe("video_in");
+        expect(seedance20.cost.totalCost).toBeCloseTo(4 * 0.22, 12);
+
+        const seedance25_480p = bill(
+            "seedance-2.5",
+            { completionVideoSeconds: 4 },
+            { hasReferenceVideo: true },
+        );
+        expect(seedance25_480p.costVariant).toBe("video_in_480p");
+        expect(seedance25_480p.cost.totalCost).toBeCloseTo(4 * 0.4304, 12);
+
+        const seedance25_720p = bill(
+            "seedance-2.5",
+            { completionVideoSeconds: 4 },
+            { hasReferenceVideo: true, resolution: "720p" },
+        );
+        expect(seedance25_720p.costVariant).toBe("video_in_720p");
+        expect(seedance25_720p.cost.totalCost).toBeCloseTo(4 * 0.9676, 12);
+    });
+
     it("publishes supported resolutions with effective variant pricing", () => {
         const definition = getRegistryModelDefinition("p-video");
         const info = modelInfoFromDefinition("p-video", definition);
@@ -723,6 +756,14 @@ describe("registry-wide variant invariants", () => {
     it("every advertised non-default resolution selects a variant", () => {
         for (const model of getModels()) {
             const definition = getRegistryModelDefinition(model);
+            // Token-metered video routes keep one per-token rate; resolution
+            // changes the provider-reported output-token quantity instead.
+            if (
+                definition.cost.completionVideoTokens !== undefined &&
+                !definition.costVariants
+            ) {
+                continue;
+            }
             for (const resolution of definition.resolutions?.slice(1) ?? []) {
                 const variant = definition.selectCostVariant?.({
                     usage: {},

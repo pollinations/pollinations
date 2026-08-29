@@ -2,8 +2,8 @@
  * ByteDance Seedance 2.0 family video generation via Replicate.
  *
  * The full model remains 720p locked. All three use the existing
- * safeParams.image convention for T2V/I2V/reference modes. We don't expose
- * reference_videos, which would trigger Replicate's "video_in" price tier.
+ * safeParams.image convention for T2V/I2V/frame modes. Reference media uses
+ * Replicate's native multimodal input fields and remains URL-based.
  */
 
 import { HttpError } from "@shared/http-error.ts";
@@ -15,7 +15,6 @@ import type { ImageParams } from "../params.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { toDataUri } from "../utils/imageDownload.ts";
 import {
-    ReplicateError,
     runReplicatePrediction,
     toReplicateHttpError,
 } from "../utils/replicateClient.ts";
@@ -75,6 +74,9 @@ interface SeedanceV2Input {
     seed?: number;
     image?: string;
     last_frame_image?: string;
+    reference_images?: string[];
+    reference_videos?: string[];
+    reference_audios?: string[];
 }
 
 export async function callSeedanceV2API(
@@ -112,12 +114,28 @@ export async function callSeedanceV2API(
     }
     if (images.length >= 1) input.image = await toDataUri(images[0]);
     if (images.length >= 2) input.last_frame_image = await toDataUri(images[1]);
+    if (safeParams.reference_images?.length) {
+        input.reference_images = safeParams.reference_images;
+    }
+    if (safeParams.reference_videos?.length) {
+        input.reference_videos = safeParams.reference_videos;
+    }
+    if (safeParams.reference_audios?.length) {
+        input.reference_audios = safeParams.reference_audios;
+    }
 
     logOps(`${definition.title} input:`, {
-        ...input,
         prompt: prompt.slice(0, 80),
+        duration: input.duration,
+        resolution: input.resolution,
+        aspect_ratio: input.aspect_ratio,
+        generate_audio: input.generate_audio,
+        seed: input.seed,
         image: input.image ? "[url]" : undefined,
         last_frame_image: input.last_frame_image ? "[url]" : undefined,
+        reference_images: input.reference_images?.map(() => "[url]"),
+        reference_videos: input.reference_videos?.map(() => "[url]"),
+        reference_audios: input.reference_audios?.map(() => "[url]"),
     });
 
     let videoUrl: string;
@@ -136,12 +154,6 @@ export async function callSeedanceV2API(
         });
     } catch (err) {
         logError(`${definition.title} prediction call failed:`, err);
-        if (err instanceof ReplicateError) {
-            logError("Replicate raw error details:", {
-                message: err.message,
-                status: err.status,
-            });
-        }
         throw toReplicateHttpError(
             err,
             `${definition.title} generation failed`,

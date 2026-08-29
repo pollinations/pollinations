@@ -4,9 +4,11 @@ import {
     ClipboardIcon,
     CopyButton,
     cn,
+    RocketIcon,
     Surface,
     Tooltip,
 } from "@pollinations/ui";
+import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import type { FC, ReactNode } from "react";
 import { calculatePerPollen } from "./calculations.ts";
 import {
@@ -242,6 +244,10 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const showNew = isNewModel(model);
     const showPaidOnly = isPaidOnly(model);
     const showAlpha = isAlpha(model);
+    const playSupported =
+        model.type !== "3d" &&
+        model.type !== "embedding" &&
+        model.type !== "realtime";
     const balanceAccess: BalanceAccess = model.free
         ? "free"
         : showPaidOnly
@@ -315,6 +321,23 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             <span className="min-w-0 truncate text-base font-medium leading-tight">
                                 {publicModelName}
                             </span>
+                        )}
+                        {playSupported && (
+                            <Tooltip
+                                content="Try in Play"
+                                ariaLabel={`Try ${publicModelName} in Play`}
+                                tapEnabled
+                                displayContents
+                            >
+                                <a
+                                    href={`${PUBLIC_URLS.root}/play?model=${encodeURIComponent(model.name)}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex shrink-0 text-theme-text-muted transition-colors hover:text-theme-text-soft"
+                                >
+                                    <RocketIcon className="h-4 w-4" />
+                                </a>
+                            </Tooltip>
                         )}
                     </div>
                     <ModelId name={model.name} />

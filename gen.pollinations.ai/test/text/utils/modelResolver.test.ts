@@ -234,10 +234,24 @@ describe("resolveModelConfig", () => {
         });
     });
 
-    it("pins GLM-5.3 to Z.AI FP8 on OpenRouter without fallback", () => {
+    it("routes GLM-5.3 directly to Fireworks without fallback", () => {
         const result = resolveModelConfig(messages, { model: "glm-5.3" });
 
-        expect(result.options.model).toBe("z-ai/glm-5.3");
+        expect(result.options.model).toBe("accounts/fireworks/models/glm-5p3");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.fireworks.ai/inference/v1",
+        });
+        expect(result.options.provider).toBeUndefined();
+        expect(result.options.max_tokens).toBe(64000);
+    });
+
+    it("pins GLM-5.3 Flash to Z.AI FP8 on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "z-ai/glm-5.3-flash",
+        });
+
+        expect(result.options.model).toBe("z-ai/glm-5.3-flash");
         expect(result.options.modelConfig).toMatchObject({
             provider: "openrouter",
             directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
@@ -251,7 +265,6 @@ describe("resolveModelConfig", () => {
     it.each([
         ["qwen-coder-large", "qwen/qwen3-coder-next", "parasail/bf16"],
         ["qwen-vision", "qwen/qwen3-vl-30b-a3b-instruct", "alibaba"],
-        ["qwen-vision-pro", "qwen/qwen3-vl-235b-a22b-thinking", "alibaba"],
         [
             "mistral-small-3.2",
             "mistralai/mistral-small-3.2-24b-instruct",
@@ -270,6 +283,20 @@ describe("resolveModelConfig", () => {
             only: [provider],
             allow_fallbacks: false,
         });
+    });
+
+    it("routes Qwen Vision Pro directly to Alibaba without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "qwen-vision-pro",
+        });
+
+        expect(result.options.model).toBe("qwen3-vl-235b-a22b-thinking");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            directEndpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
+        });
+        expect(result.options.provider).toBeUndefined();
     });
 
     it("excludes Mistral's non-standard endpoint variants", () => {

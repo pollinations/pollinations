@@ -53,6 +53,7 @@ export function EditableCombobox({
         <Combobox.Root
             collection={collection}
             inputValue={value}
+            value={[]}
             allowCustomValue
             openOnClick={hasOptions}
             openOnChange={() => hasOptions}

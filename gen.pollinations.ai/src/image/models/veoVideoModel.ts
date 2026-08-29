@@ -1,4 +1,5 @@
 import { HttpError } from "@shared/http-error.ts";
+import type { Usage } from "@shared/registry/registry.ts";
 import debug from "debug";
 import googleCloudAuth from "@/text/auth/googleCloudAuth.ts";
 import { getImageEnv } from "../env.ts";
@@ -44,12 +45,7 @@ export interface VideoGenerationResult {
     durationSeconds: number;
     trackingData: {
         actualModel: string;
-        usage: {
-            completionVideoSeconds?: number; // For Veo, Wan (billed by seconds)
-            completionVideoTokens?: number; // For Seedance (billed by tokens)
-            completionAudioSeconds?: number; // Output audio billed by seconds
-            totalTokenCount?: number;
-        };
+        usage: Usage & { totalTokenCount?: number };
     };
 }
 

@@ -1,5 +1,6 @@
 import googleCloudAuth from "../auth/googleCloudAuth.js";
 import {
+    createAlibabaModelConfig,
     createAzureModelConfig,
     createBedrockNativeConfig,
     createDeepInfraModelConfig,
@@ -172,6 +173,17 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
+    "z-ai/glm-5.3-flash": () =>
+        createOpenRouterModelConfig({
+            model: "z-ai/glm-5.3-flash",
+            defaultOptions: {
+                max_tokens: 64000,
+                provider: {
+                    only: ["z-ai/fp8"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
     "xiaomi/mimo-v2.5": createPinnedOpenRouterConfig(
         "xiaomi/mimo-v2.5",
         "xiaomi/fp8",
@@ -331,11 +343,18 @@ export const portkeyConfig: PortkeyConfigMap = {
         "mistralai/mistral-small-3.2-24b-instruct",
         "deepinfra/fp8",
     ),
-    "mistral-small-2603": createPinnedOpenRouterConfig(
-        "mistralai/mistral-small-2603",
-        "mistral",
-        64000,
-    ),
+    "mistral-small-2603": () =>
+        createOpenRouterModelConfig({
+            model: "mistralai/mistral-small-2603",
+            defaultOptions: {
+                max_tokens: 64000,
+                provider: {
+                    only: ["mistral"],
+                    ignore: ["mistral/zdr", "mistral/us", "mistral/eu"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
 
     // -- Azure (Myceli Prod — eastus, Mistral Large) -------------------------
     "Mistral-Large-3": () =>
@@ -487,10 +506,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         "qwen/qwen3-vl-30b-a3b-instruct",
         "alibaba",
     ),
-    "qwen/qwen3-vl-235b-a22b-thinking": createPinnedOpenRouterConfig(
-        "qwen/qwen3-vl-235b-a22b-thinking",
-        "alibaba",
-    ),
+    "qwen3-vl-235b-a22b-thinking": () =>
+        createAlibabaModelConfig({
+            model: "qwen3-vl-235b-a22b-thinking",
+        }),
 
     // -- OpenRouter (StepFun) -------------------------------------------------
     "stepfun/step-3.5-flash": () =>

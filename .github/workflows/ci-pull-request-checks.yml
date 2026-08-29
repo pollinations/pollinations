@@ -44,6 +44,13 @@ jobs:
             echo "any_changed=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: Verify SDK package lock
+        run: |
+          if ! git diff --quiet "origin/${{ github.base_ref }}...HEAD" -- \
+            packages/sdk/package.json packages/sdk/package-lock.json; then
+            npm ci --ignore-scripts --prefix packages/sdk
+          fi
+
       - name: Run Biome on changed files
         if: steps.changed-files.outputs.any_changed == 'true'
         run: |

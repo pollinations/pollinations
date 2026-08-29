@@ -3,6 +3,9 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import type { Logger } from "@logtape/logtape";
+import { ValidationError } from "@shared/http/validation-error.ts";
+import { validator } from "@shared/middleware/validator.ts";
+import { CreateImageRequestSchema } from "@shared/schemas/openai.ts";
 import { createTestR2Bucket } from "@shared/test/mocks/r2.ts";
 import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
@@ -23,6 +26,53 @@ const testLog = {
 } as unknown as Logger;
 
 describe("OpenAI image cache", () => {
+    it("rejects native-only references before they can reach the POST cache", async () => {
+        let originHits = 0;
+        const app = new Hono<Env>();
+        app.onError((error) => {
+            if (error instanceof ValidationError) {
+                return new Response(error.message, { status: 400 });
+            }
+            return new Response("unexpected error", { status: 500 });
+        });
+        app.post(
+            "/v1/images/generations",
+            validator("json", CreateImageRequestSchema),
+            prepareOpenAIImageGeneration,
+            imageCache,
+            () => {
+                originHits += 1;
+                return new Response("origin");
+            },
+        );
+
+        for (const field of [
+            "reference_images",
+            "reference_videos",
+            "reference_audios",
+        ] as const) {
+            const response = await app.fetch(
+                new Request(
+                    "https://gen.pollinations.ai/v1/images/generations",
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            prompt: "a paper boat",
+                            model: "seedance-2.0",
+                            [field]: [`https://media.example/${field}-one.bin`],
+                        }),
+                    },
+                ),
+                {} as CloudflareBindings,
+            );
+
+            expect(response.status, field).toBe(400);
+        }
+
+        expect(originHits).toBe(0);
+    });
+
     it("serves objects cached before model metadata was stored", async () => {
         const bucket = createTestR2Bucket();
         const cacheUrl = new URL(

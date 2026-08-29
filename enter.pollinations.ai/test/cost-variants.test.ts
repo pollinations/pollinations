@@ -203,16 +203,16 @@ describe("long-context cost variants", () => {
             12,
         );
         expect(billing.priceDefinition).toMatchObject({
-            promptTextTokens: 10 / 1e6,
-            promptCachedTokens: 1 / 1e6,
-            completionTextTokens: 45 / 1e6,
+            promptTextTokens: (10 / 1e6) * 0.75,
+            promptCachedTokens: (1 / 1e6) * 0.75,
+            completionTextTokens: (45 / 1e6) * 0.75,
         });
     });
 
     it.each([
-        ["gpt-5.6-sol", 10, 1, 12.5, 45, 0.5],
-        ["gpt-5.6-terra", 4, 0.4, 5, 18, 0.625],
-        ["gpt-5.6-luna", 0.4, 0.04, 0.5, 1.8, 1],
+        ["gpt-5.6-sol", 10, 1, 12.5, 45, 1 / 3],
+        ["gpt-5.6-terra", 4, 0.4, 5, 18, 0.75],
+        ["gpt-5.6-luna", 0.4, 0.04, 0.5, 1.8, 0.75],
     ] satisfies [
         ModelName,
         number,
@@ -415,6 +415,23 @@ describe("request-mode cost variants", () => {
 });
 
 describe("resolution cost variants", () => {
+    it.each([
+        [1024, 1024, 0.04, undefined],
+        [1008, 1040, 0.06, "2048"],
+        [1024, 1040, 0.06, "2048"],
+        [2048, 2048, 0.06, "2048"],
+    ] as const)("nova-canvas bills %sx%s at $%s/image", (width, height, rate, variant) => {
+        const billing = bill(
+            "nova-canvas",
+            { completionImageTokens: 1 },
+            { maxImageDimension: Math.max(width, height) },
+        );
+
+        expect(billing.costVariant).toBe(variant);
+        expect(billing.cost.totalCost).toBeCloseTo(rate, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(rate, 12);
+    });
+
     it("p-video bills the 720p base and 1080p variant", () => {
         expect(
             bill("p-video", { completionVideoSeconds: 10 }).cost.totalCost,
@@ -474,6 +491,39 @@ describe("resolution cost variants", () => {
             );
             expect(billing.cost.totalCost).toBeCloseTo(6 * rate, 12);
         }
+    });
+
+    it("uses the Replicate video-in rates for Seedance reference videos", () => {
+        expect(
+            bill("seedance-2.0", { completionVideoSeconds: 4 }).cost.totalCost,
+        ).toBeCloseTo(4 * 0.18, 12);
+        expect(
+            bill("seedance-2.5", { completionVideoSeconds: 4 }).cost.totalCost,
+        ).toBeCloseTo(4 * 0.1028, 12);
+
+        const seedance20 = bill(
+            "seedance-2.0",
+            { completionVideoSeconds: 4 },
+            { hasReferenceVideo: true },
+        );
+        expect(seedance20.costVariant).toBe("video_in");
+        expect(seedance20.cost.totalCost).toBeCloseTo(4 * 0.22, 12);
+
+        const seedance25_480p = bill(
+            "seedance-2.5",
+            { completionVideoSeconds: 4 },
+            { hasReferenceVideo: true },
+        );
+        expect(seedance25_480p.costVariant).toBe("video_in_480p");
+        expect(seedance25_480p.cost.totalCost).toBeCloseTo(4 * 0.4304, 12);
+
+        const seedance25_720p = bill(
+            "seedance-2.5",
+            { completionVideoSeconds: 4 },
+            { hasReferenceVideo: true, resolution: "720p" },
+        );
+        expect(seedance25_720p.costVariant).toBe("video_in_720p");
+        expect(seedance25_720p.cost.totalCost).toBeCloseTo(4 * 0.9676, 12);
     });
 
     it("publishes supported resolutions with effective variant pricing", () => {
@@ -706,6 +756,14 @@ describe("registry-wide variant invariants", () => {
     it("every advertised non-default resolution selects a variant", () => {
         for (const model of getModels()) {
             const definition = getRegistryModelDefinition(model);
+            // Token-metered video routes keep one per-token rate; resolution
+            // changes the provider-reported output-token quantity instead.
+            if (
+                definition.cost.completionVideoTokens !== undefined &&
+                !definition.costVariants
+            ) {
+                continue;
+            }
             for (const resolution of definition.resolutions?.slice(1) ?? []) {
                 const variant = definition.selectCostVariant?.({
                     usage: {},

@@ -16,7 +16,7 @@ type McpServerDefinitionBase = {
     binding: McpBindingName;
 };
 
-export type McpBindingName = "POLLINATIONS_MCP";
+export type McpBindingName = "POLLINATIONS_MCP" | "FFMPEG_MCP" | "EXA_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -36,6 +36,26 @@ export const MCP_SERVERS = [
             "Access Pollinations models and API capabilities through agent tools.",
         binding: "POLLINATIONS_MCP",
         billing: "downstream",
+    },
+    {
+        id: "ffmpeg",
+        name: "FFmpeg",
+        description:
+            "Trim, convert, resize, compress, and remix audio and video.",
+        binding: "FFMPEG_MCP",
+        billing: "usage_receipt",
+        provider: "cloudflare",
+        eventType: "tool.media",
+    },
+    {
+        id: "exa",
+        name: "Exa Search",
+        description:
+            "Search the live web and fetch clean content from source pages.",
+        binding: "EXA_MCP",
+        billing: "usage_receipt",
+        provider: "exa",
+        eventType: "tool.search",
     },
 ] as const satisfies readonly McpServerDefinition[];
 

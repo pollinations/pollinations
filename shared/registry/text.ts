@@ -57,6 +57,7 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         maxReferenceImages: 10, // Azure OpenAI vision limit: 10 images/chat request (provider cap).
         tools: true,
+        reasoning: true,
         contextLength: 400000,
         isSpecialized: false,
     },
@@ -79,6 +80,7 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         maxReferenceImages: 10, // Azure OpenAI vision limit: 10 images/chat request (provider cap).
         tools: true,
+        reasoning: true,
         contextLength: 400000,
         isSpecialized: false,
     },
@@ -167,6 +169,7 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         maxReferenceImages: 10, // Azure OpenAI vision limit: 10 images/chat request (provider cap).
         tools: true,
+        reasoning: true,
         contextLength: 400000,
         isSpecialized: false,
     },

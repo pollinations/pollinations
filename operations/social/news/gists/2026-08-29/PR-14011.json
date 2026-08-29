@@ -1,0 +1,34 @@
+{
+  "pr_number": 14011,
+  "title": "feat(models): show context window and video duration limits in catalog",
+  "author": "TRDEFI",
+  "url": "https://github.com/pollinations/pollinations/pull/14011",
+  "merged_at": "2026-08-29T11:25:22Z",
+  "labels": [],
+  "pr_body_excerpt": "Closes #13905\n\nShows model limits without adding more visible badges:\n\n- Preserves `context_length`, `min_duration`, `max_duration`, and `allowed_durations` from the catalog.\n- Adds the available context window and video duration to the existing model-details tooltip.\n- Reuses the same tooltip on desktop and mobile.\n\nOnly declared limits are shown; `default_duration` is not treated as a limit.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Limits, now less mysterious",
+    "blurb": "The model catalog now keeps the useful fine print where it belongs: right beside the model. Hover or tap to see how much context or video time the little machine can actually hold.",
+    "summary": "The model catalog now preserves declared context_length, min_duration, max_duration, and allowed_durations fields and shows context-window and video-duration limits in the existing model-details tooltip on both desktop and mobile.",
+    "impact": "People choosing chat or video models can now check each model's available context window and declared video durations without extra catalog badges or guessing from a default duration.",
+    "keywords": [
+      "model catalog",
+      "context window",
+      "video generation",
+      "tooltips",
+      "mobile",
+      "frontend"
+    ],
+    "visual_concept": "Depict Polli helping a curious CRT monitor robot inspect a cozy seed-catalog shelf of AI models, with a magnifying-glass tooltip revealing a scroll-like context window and a tiny hourglass/video reel marked with duration choices. The scene represents limits as useful labels on seed packets rather than warnings, with code-plants and flowers making the catalog feel like a garden reference desk.",
+    "image_prompt": "A cozy pixel art model-garden catalog scene where the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings wears tiny librarian glasses and points at a floating tooltip above seed-packet-like AI model cards; the tooltip shows a scroll for “CONTEXT” and a small video reel with gentle duration marks, while a cute chunky CRT monitor robot eagerly reads beside code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font text: “MODEL DETAILS”, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-29/PR-14011.jpg",
+    "prompt": "A cozy pixel art model-garden catalog scene where the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings wears tiny librarian glasses and points at a floating tooltip above seed-packet-like AI model cards; the tooltip shows a scroll for “CONTEXT” and a small video reel with gentle duration marks, while a cute chunky CRT monitor robot eagerly reads beside code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font text: “MODEL DETAILS”, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-29T11:26:22.272579+00:00"
+}

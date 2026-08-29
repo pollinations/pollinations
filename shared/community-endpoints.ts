@@ -597,6 +597,18 @@ export function pendingCommunityEndpointChangeIsReady(
     );
 }
 
+export function effectiveCommunityEndpointVisibility(
+    visibility: CommunityEndpointVisibility,
+    pendingVisibility: CommunityEndpointVisibility | null,
+    pendingAt: Date | null,
+    now = Date.now(),
+): CommunityEndpointVisibility {
+    return pendingVisibility &&
+        pendingCommunityEndpointChangeIsReady(pendingAt, now)
+        ? pendingVisibility
+        : visibility;
+}
+
 /** Apply only the delayed price policy, preserving newer credentials/settings. */
 export function applyPendingProxyPricing(
     current: ProxyListingPayload,

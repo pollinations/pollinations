@@ -538,6 +538,7 @@ export async function generateImageOrVideoResponse(
         resolution: safeParams.resolution,
         quality: safeParams.quality,
         hasImage: (safeParams.image?.length ?? 0) > 0,
+        hasReferenceVideo: (safeParams.reference_videos?.length ?? 0) > 0,
         maxImageDimension: Math.max(
             pricingDimensions.width,
             pricingDimensions.height,

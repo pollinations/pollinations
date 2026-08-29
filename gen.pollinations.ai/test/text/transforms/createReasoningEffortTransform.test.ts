@@ -105,6 +105,7 @@ describe("reasoning_effort model wiring", () => {
 
     it.each([
         "glm-5.3",
+        "z-ai/glm-5.3-flash",
         "minimax-m2.7",
         "step-3.5-flash",
         "step-flash",

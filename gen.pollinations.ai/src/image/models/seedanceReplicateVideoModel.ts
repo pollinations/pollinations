@@ -19,7 +19,6 @@ import { closestRatioLogSpace } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { toDataUri } from "../utils/imageDownload.ts";
 import {
-    ReplicateError,
     runReplicatePrediction,
     toReplicateHttpError,
 } from "../utils/replicateClient.ts";
@@ -153,12 +152,6 @@ async function generateSeedanceVideo(
         });
     } catch (err) {
         logError(`${config.displayName} prediction call failed:`, err);
-        if (err instanceof ReplicateError) {
-            logError("Replicate raw error details:", {
-                message: err.message,
-                status: err.status,
-            });
-        }
         throw toReplicateHttpError(
             err,
             `${config.displayName} generation failed`,

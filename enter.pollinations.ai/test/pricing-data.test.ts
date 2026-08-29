@@ -498,6 +498,22 @@ test("reasoning token usage bills through completion text rates", () => {
     }
 });
 
+test("Gemini Omni bills exact Vertex modality usage", () => {
+    const model = "google/gemini-omni-1.1-flash";
+    const usage = {
+        promptTextTokens: 31,
+        completionVideoTokens: 5_793,
+        completionReasoningTokens: 276,
+    };
+    const cost = calculateCost(model, usage);
+
+    expect(cost.totalCost).toBeCloseTo(
+        31 * 0.0000015 + 5_793 * 0.0000175 + 276 * 0.000009,
+        10,
+    );
+    expect(calculatePrice(model, usage).totalPrice).toBe(cost.totalCost);
+});
+
 test("Claude Fable 5 is paid-only and billed at current standard rates", () => {
     const definition = getRegistryModelDefinition("claude-fable-5");
 

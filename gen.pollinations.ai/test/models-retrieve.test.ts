@@ -23,6 +23,20 @@ test("retrieves a model by canonical ID", async () => {
     expect(typeof body.owned_by).toBe("string");
 });
 
+test("retrieves a publisher-qualified canonical ID", async ({ paidApiKey }) => {
+    const model = "z-ai/glm-5.3-flash";
+    const response = await fetchWorker(
+        `/v1/models/${encodeURIComponent(model)}`,
+        {
+            headers: { Authorization: `Bearer ${paidApiKey}` },
+        },
+    );
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { id: string };
+    expect(body.id).toBe(model);
+});
+
 test("resolves an alias to the canonical ID with identical metadata", async () => {
     const byAlias = await fetchWorker("/v1/models/gpt-5-nano");
     expect(byAlias.status).toBe(200);

@@ -22,11 +22,32 @@ async function decodeStream(stream) {
 export class FfmpegContainer extends Container {
     enableInternet = false;
 
-    async run(input, args, outputExtension, deadlineMs) {
+    async run(inputs, args, outputExtension, deadlineMs) {
         const runtime = this.ctx.container;
         if (!runtime.running) {
             await this.start({ enableInternet: false });
         }
+
+        for (const [index, input] of inputs.entries()) {
+            const write = await runtime.exec(
+                ["tee", `${WORK_DIR}/input${index}`],
+                {
+                    stdin: input,
+                    stdout: "ignore",
+                },
+            );
+            const [writeExitCode, writeError] = await Promise.all([
+                write.exitCode,
+                decodeStream(write.stderr),
+            ]);
+            if (writeExitCode !== 0) {
+                return {
+                    ok: false,
+                    stderr: writeError || "FFmpeg input could not be saved",
+                };
+            }
+        }
+
         const remainingMs = deadlineMs - Date.now();
         if (remainingMs <= 0) {
             return {
@@ -44,12 +65,10 @@ export class FfmpegContainer extends Container {
                 "error",
                 "-nostdin",
                 "-y",
-                "-i",
-                "pipe:0",
                 ...args,
                 outputPath,
             ],
-            { stdin: input, stdout: "ignore" },
+            { stdout: "ignore" },
         );
         const timer = setTimeout(() => process.kill(9), remainingMs);
         const [exitCode, stderr] = await Promise.all([

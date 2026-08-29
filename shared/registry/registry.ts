@@ -90,6 +90,9 @@ export type VideoCapability =
     | "start_frame"
     | "end_frame"
     | "keyframes"
+    | "reference_images"
+    | "reference_videos"
+    | "reference_audios"
     | "audio_output";
 
 export type BillingAdjustmentRule = {

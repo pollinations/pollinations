@@ -371,18 +371,16 @@ export const Models: FC = () => {
                     <div className="mb-1.5 flex items-center gap-2 text-base font-bold text-theme-text-strong">
                         <BeakerIcon className="h-4 w-4 shrink-0" />
                         <span>
-                            Model IDs will include publishers starting September
-                            7
+                            We're standardizing model IDs on September 7
                         </span>
                     </div>
-                    Model IDs are changing to include the publisher and official
-                    model name—for example,{" "}
-                    <code className="font-semibold">flux</code> →{" "}
+                    Model IDs will use the publisher and official model name—for
+                    example, <code className="font-semibold">flux</code> →{" "}
                     <code className="font-semibold">
                         black-forest-labs/flux.1-schnell
                     </code>
-                    . You can start using the new IDs today. Existing IDs will
-                    keep working after the change.
+                    . You can use the new IDs now. Existing IDs will keep
+                    working.
                     <a
                         href={MODEL_SLUG_LIST_URL}
                         className="mt-2 flex w-fit items-center gap-1.5 font-semibold text-theme-text-soft hover:text-theme-text-strong hover:underline"

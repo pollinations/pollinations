@@ -6,9 +6,9 @@
 
 # Model ID changes
 
-Starting **September 7, 2026 at 14:00 UTC**, Pollinations model IDs will include the publisher and official model name.
+On **September 7, 2026 at 14:00 UTC**, we're standardizing model IDs. They will use the publisher and official model name.
 
-You can start using the new IDs today. Existing IDs will keep working after the change, so current integrations do not need to change.
+You can use the new IDs now. Existing IDs will keep working, so current integrations do not need to change.
 
 Models introduced during the transition may launch with only a new-style ID.
 

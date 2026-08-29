@@ -154,14 +154,13 @@ const CanonicalModelSlugAnnouncement: FC = () => (
             <span aria-hidden="true" className="shrink-0">
                 🧪
             </span>
-            <span>Model IDs will include publishers</span>
+            <span>We're standardizing model IDs</span>
         </div>
         <p className="mt-1 text-sm text-ink-700">
-            Model IDs are changing to include the publisher and official model
-            name—for example,{" "}
-            <code>flux</code> →{" "}
-            <code>black-forest-labs/flux.1-schnell</code>. You can start using
-            the new IDs today. Existing IDs will keep working after the change.
+            Model IDs will use the publisher and official model name—for
+            example, <code>flux</code> →{" "}
+            <code>black-forest-labs/flux.1-schnell</code>. You can use the new
+            IDs now. Existing IDs will keep working.
         </p>
         <a
             href="https://github.com/pollinations/pollinations/blob/main/MODEL_SLUGS.md"

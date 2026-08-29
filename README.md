@@ -15,9 +15,9 @@
 </div>
 
 > [!IMPORTANT]
-> **Model IDs will include publishers starting September 7**
+> **We're standardizing model IDs on September 7**
 >
-> Model IDs are changing to include the publisher and official model name—for example, `flux` → `black-forest-labs/flux.1-schnell`. You can start using the new IDs today. Existing IDs will keep working after the change.
+> Model IDs will use the publisher and official model name—for example, `flux` → `black-forest-labs/flux.1-schnell`. You can use the new IDs now. Existing IDs will keep working.
 >
 > [View all model ID changes →](MODEL_SLUGS.md)
 
@@ -65,7 +65,7 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2026-08-27** – **🚀 GLM-5.3 Flash** is now available for paid API users: multimodal input, tool use, mandatory reasoning, and a frankly unnecessary-but-useful 1M-token context window. [Browse models](https://gen.pollinations.ai/v1/models)
 - **2026-08-27** – **🎨 Seedance reference media** lets Seedance 2.0 and 2.5 use public image, video, and audio URLs as creative references for image and video generation. [Check the API docs](https://gen.pollinations.ai/docs)
 - **2026-08-27** – **✨ Model search filters** make the model browser substantially less like rummaging through a seed drawer: search by publisher, modality, capability, ID, and access level.
-- **2026-08-27** – **💡 Model IDs will include publishers starting September 7**, for example `flux` → `black-forest-labs/flux.1-schnell`. You can start using the new IDs today; existing IDs will keep working.
+- **2026-08-27** – **💡 We're standardizing model IDs on September 7.** IDs will use the publisher and official model name—for example, `flux` → `black-forest-labs/flux.1-schnell`. Existing IDs will keep working.
 - **2026-08-27** – **🎯 Quests reward merged work** — pick up any open POLLEN-QUEST, and the first merged solution earns the fixed Pollen reward. [Contribute](https://github.com/pollinations/pollinations/blob/master/CONTRIBUTING.md)
 - **2026-08-27** – **🌟 Pollinations Studio** puts image, text, audio, and video generation in one browser workspace, using your own Pollinations API key. [Try it](https://sankezhiyyds.github.io/pollinations-app) <!-- app -->
 ---

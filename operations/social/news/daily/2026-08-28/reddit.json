@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-08-28",
+  "period_start": "2026-08-28",
+  "period_end": "2026-08-28",
+  "generated_at": "2026-08-29T06:25:52.816079+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-08-28/images/reddit.jpg"
+    }
+  ],
+  "title": "Play model links, video updates, and community fixes",
+  "text": "13 PRs merged today. The useful changes are mostly about making the catalog less of a scavenger hunt.\n\nPlay can now open a model directly with `/play?model=<id>` (#13940). That makes model links shareable and removes a few clicks when comparing outputs. Model-ID announcements were also tightened up (#14081), which is a small thing until an ID is copied into somebody’s app.\n\nVideo got Gemini Omni 1.1 Flash (#14083), plus provider errors from Gemini Omni are now preserved instead of being flattened into less useful failures (#14085). Qwen Vision Pro now routes directly to Alibaba (#14079).\n\nCommunity has an accurate Quest leaderboard (#13966). Public community listings are delayed on first publish (#14051), and app screenshots are now backfilled and retained (#14071). In other words: fewer blank or prematurely public catalog entries.\n\nNew entries landed for DemoWeaver, Pixel Forge, and Automated Video App (#14073, #14074, #14087). The leaked-key incident banner was removed after cleanup (#14082).\n\nREADME also got its 2026-08-28 refresh (#14078).\n\nCode and PR history: https://github.com/pollinations/pollinations\nDocs: https://github.com/pollinations/pollinations/blob/master/README.md\n\nThe direct Play URL is deliberately boring infrastructure. It should stay that way."
+}

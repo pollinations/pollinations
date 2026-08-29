@@ -132,6 +132,7 @@ restores the backup.
 polli harness --help            # supported harnesses
 polli harness dsh on            # DeepSeek Harness → Pollinations (default model: deepseek)
 polli harness dsh on --model kimi
+polli harness dsh on --no-mcp   # skip MCP tool configuration
 polli harness dsh status
 polli harness dsh off
 ```

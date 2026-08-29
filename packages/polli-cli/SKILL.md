@@ -209,6 +209,7 @@ polli keys revoke <id>                                             # id comes fr
 polli harness --help                # supported harnesses
 polli harness dsh on                # login if needed, mint key "polli-harness-dsh", write provider + default model
 polli harness dsh on --model kimi   # any tool-calling text model from `polli models`
+polli harness dsh on --no-mcp       # configure the provider and skill without MCP tools
 polli harness dsh off               # restore the config backed up before "on"
 ```
 The DSH adapter globally configures the Pollinations provider, hosted Pollinations MCP, and this skill under `$DSH_HOME` (default `~/.dsh`). It stores one dedicated child key in `$DSH_HOME/.env` for the provider and MCP, plus a private snapshot under `~/.pollinations/harnesses/`. Reruns reuse a valid key already in the harness config. Other adapters may use their harness's official plugin or installer instead. Guide: `polli docs` section "Coding Harnesses".

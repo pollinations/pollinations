@@ -51,6 +51,7 @@ const runStatus = async (harness: HarnessAdapter) => {
 const withOnOptions = (command: Command) =>
     command
         .option("--model <id>", "Default model for the harness")
+        .option("--no-mcp", "Skip MCP tool configuration")
         .option(
             "--no-browser",
             "Print the login URL instead of opening a browser",

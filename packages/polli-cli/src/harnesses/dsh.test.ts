@@ -52,6 +52,7 @@ describe("dsh harness", () => {
             harness: "dsh",
             configured: true,
             model: "deepseek",
+            mcp: true,
         });
 
         const doc = parse(read(settingsFile()));
@@ -168,6 +169,14 @@ describe("dsh harness", () => {
 
     it("reports unchanged when off runs on a harness that was never on", () => {
         expect(disableDsh(ctx).outcome).toBe("unchanged");
+    });
+
+    it("can skip MCP configuration", () => {
+        const result = configureDsh(ctx, { ...settings, mcp: false });
+
+        expect(result).toMatchObject({ configured: true, mcp: false });
+        expect(existsSync(patchFile())).toBe(false);
+        expect(existsSync(skillFile())).toBe(true);
     });
 
     it("keeps one backup per harness home", () => {

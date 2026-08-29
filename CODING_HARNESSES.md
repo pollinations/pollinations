@@ -20,6 +20,7 @@ For DeepSeek Harness, `on`:
 ```bash
 polli harness --help                  # supported harnesses
 polli harness dsh on --model kimi     # pick the default model (default: deepseek)
+polli harness dsh on --no-mcp         # configure the provider and skill without MCP tools
 polli harness dsh on --no-browser     # print the login URL instead of opening it
 polli harness dsh status
 polli harness dsh off                 # remove Pollinations again

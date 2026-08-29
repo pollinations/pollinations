@@ -7,6 +7,7 @@ export interface HarnessContext {
 export interface HarnessOnOptions {
     model?: string;
     browser?: boolean;
+    mcp?: boolean;
 }
 
 export interface HarnessModel {
@@ -23,6 +24,7 @@ export interface HarnessResult {
     label: string;
     configured: boolean;
     model?: string;
+    mcp?: boolean;
     files: string[];
     outcome?: OffOutcome;
 }

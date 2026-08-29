@@ -207,6 +207,7 @@ interface DshSettings {
     apiKey: string;
     model: string;
     models: HarnessModel[];
+    mcp?: boolean;
 }
 
 const writeConfig = (ctx: HarnessContext, settings: DshSettings) => {
@@ -219,7 +220,8 @@ const writeConfig = (ctx: HarnessContext, settings: DshSettings) => {
     writeTextAtomic(settingsPath(ctx), doc.toString(YAML_OUT), 0o600);
     // DSH's provider and MCP loader both read its user environment layer.
     setEnvKey(ctx, settings.apiKey);
-    writeMcpEntry(ctx);
+    if (settings.mcp === false) removeMcpEntry(ctx);
+    else writeMcpEntry(ctx);
     if (readTextIfExists(skillPath(ctx)) === null) {
         writeTextAtomic(skillPath(ctx), polliSkill, 0o600);
     }
@@ -261,9 +263,9 @@ const result = (ctx: HarnessContext): HarnessResult => {
             doc.getIn([...DEFAULT_MODEL_PATH, "provider"]) === PROVIDER &&
             typeof model === "string" &&
             readKey(ctx) !== null &&
-            hasMcpEntry(ctx) &&
             readTextIfExists(skillPath(ctx)) !== null,
         model: typeof model === "string" ? model : undefined,
+        mcp: hasMcpEntry(ctx),
         files: files(ctx),
     };
 };
@@ -306,7 +308,12 @@ export const dsh: HarnessAdapter = {
             { id: ID, label: LABEL, existingKey: readKey(ctx) },
             { browser: options.browser },
         );
-        return configureDsh(ctx, { apiKey, model, models });
+        return configureDsh(ctx, {
+            apiKey,
+            model,
+            models,
+            mcp: options.mcp,
+        });
     },
 
     off: disableDsh,

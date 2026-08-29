@@ -14,6 +14,7 @@ import {
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MAX_COMMUNITY_PRICE_PER_SECOND,
     MAX_COMMUNITY_PRICE_PER_TOKEN,
+    MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND,
     normalizeCommunityEndpointInputModalities,
     type ProxyListingPayload,
 } from "@shared/community-endpoints.ts";
@@ -59,12 +60,28 @@ function assertPriceLimits(
         modality,
         imagePricing,
     )) {
-        const limit = PRICE_LIMIT_BY_UNIT[field.priceUnit];
+        const limit = priceLimitFor(field.priceUnit, modality);
         if (prices[field.key] <= limit.maximum) continue;
         throw new HTTPException(400, {
             message: `${field.label} price must not exceed ${limit.label}`,
         });
     }
+}
+
+// Audio/transcription share the global per-second ceiling. Video is allowed
+// up to a higher per-second rate so a few seconds of HD video can still
+// recover the underlying GPU cost.
+function priceLimitFor(
+    priceUnit: "image" | "second" | "token" | "million",
+    modality: CommunityEndpointModality,
+): { maximum: number; label: string } {
+    if (priceUnit === "second" && modality === "video") {
+        return {
+            maximum: MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND,
+            label: `${MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND} Pollen per second`,
+        };
+    }
+    return PRICE_LIMIT_BY_UNIT[priceUnit];
 }
 
 function assertInputModalities(

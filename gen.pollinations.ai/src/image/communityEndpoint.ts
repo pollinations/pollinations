@@ -5,6 +5,7 @@ import {
     communityEndpointErrorDetail,
     communityImageEditsUrl,
     communityImageGenerationsUrl,
+    communityVideoGenerationsUrl,
     firstCommunityImageBytes,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
@@ -142,6 +143,85 @@ function communityImageUsage(
         );
     }
     return usage;
+}
+
+export async function callCommunityVideoEndpoint(
+    endpoint: CommunityEndpointRuntime,
+    prompt: string,
+    safeParams: CommunityImageParams,
+    secret: string,
+): Promise<ImageGenerationResult> {
+    if (endpoint.type !== "proxy") {
+        throw new Error(
+            `Community video endpoint '${endpoint.modelId}' is a managed agent`,
+        );
+    }
+    const bearerToken = await decryptSecret(
+        endpoint.bearerTokenCiphertext,
+        secret,
+    );
+    const upstreamUrl = communityVideoGenerationsUrl(endpoint.baseUrl);
+    const body = await fetchCommunityVideoJson(upstreamUrl, bearerToken, {
+        model: endpoint.upstreamModel,
+        prompt,
+    });
+
+    const bytes = await firstCommunityVideoBytes(body, endpoint.baseUrl);
+    if (!bytes) {
+        throw new HttpError(
+            "Community video endpoint did not return a supported video",
+            502,
+        );
+    }
+    return {
+        buffer: Buffer.from(bytes),
+        isMature: false,
+        isChild: false,
+        trackingData: {
+            usage: communityVideoUsage(),
+        },
+    };
+}
+
+function communityVideoUsage(): Usage {
+    return { completionVideoSeconds: 5 };
+}
+
+async function firstCommunityVideoBytes(
+    body: unknown,
+    endpointBaseUrl: string,
+): Promise<Uint8Array | null> {
+    // Reuse image helper for base64/url extraction — video responses use the same shape.
+    return firstCommunityImageBytes(body, endpointBaseUrl);
+}
+
+async function fetchCommunityVideoJson(
+    url: string,
+    bearerToken: string,
+    body: Record<string, unknown>,
+): Promise<unknown> {
+    const response = await fetchWithTimeout(url, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${normalizeCommunityEndpointBearerToken(bearerToken)}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+    });
+    const text = await response.text();
+    const parsed = parseJson(text);
+    if (!response.ok) {
+        throw new HttpError(
+            endpointErrorMessage(response.status, parsed).replace(
+                "image",
+                "video",
+            ),
+            response.status,
+            { body: text },
+            url,
+        );
+    }
+    return parsed;
 }
 
 async function fetchCommunityImageJson(

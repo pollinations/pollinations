@@ -9,6 +9,7 @@ import {
     communityImageGenerationsUrl,
     communityOpenAIBaseUrl,
     communityTranscriptionSeconds,
+    communityVideoGenerationsUrl,
     decodeCommunityBase64,
     firstCommunityImageBytes,
     normalizeCommunityEndpointBearerToken,
@@ -333,6 +334,42 @@ export async function testCommunityEmbeddingEndpoint({
     return {
         usage,
         billableUsage: { promptTextTokens: usage.prompt_tokens },
+    };
+}
+
+export async function testCommunityVideoEndpoint({
+    baseUrl,
+    bearerToken,
+    model,
+}: EndpointTestInput): Promise<CommunityEndpointTestResult> {
+    const body = await fetchJson(communityVideoGenerationsUrl(baseUrl), {
+        method: "POST",
+        headers: {
+            ...authorizationHeaders(bearerToken),
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            model,
+            prompt: "A short looping video of a green sprout, 3 seconds",
+        }),
+    });
+
+    const videoBytes = await firstCommunityImageBytes(body, baseUrl);
+    if (!videoBytes) {
+        const hasVideoData =
+            body !== null &&
+            typeof body === "object" &&
+            "data" in body &&
+            Array.isArray((body as Record<string, unknown>).data) &&
+            (body as { data: unknown[] }).data.length > 0;
+        if (!hasVideoData) {
+            throw new Error("Endpoint did not return a supported video");
+        }
+    }
+
+    return {
+        usage: { duration: 5 },
+        billableUsage: { completionVideoSeconds: 5 },
     };
 }
 

@@ -20,7 +20,10 @@ import {
     setServerRegistryBinding,
     VALID_TYPES,
 } from "./availableServers.ts";
-import { callCommunityImageEndpoint } from "./communityEndpoint.ts";
+import {
+    callCommunityImageEndpoint,
+    callCommunityVideoEndpoint,
+} from "./communityEndpoint.ts";
 import {
     type AuthResult,
     createAndReturnImageCached,
@@ -426,12 +429,20 @@ async function generateMediaWithFallback(
         async (attempt) => {
             const params = { ...safeParams, model: attempt.id };
             if (attempt.communityEndpoint) {
-                const generated = await callCommunityImageEndpoint(
-                    attempt.communityEndpoint,
-                    prompt,
-                    params,
-                    c.env.BETTER_AUTH_SECRET,
-                );
+                const generated =
+                    attempt.communityEndpoint.modality === "video"
+                        ? await callCommunityVideoEndpoint(
+                              attempt.communityEndpoint,
+                              prompt,
+                              params,
+                              c.env.BETTER_AUTH_SECRET,
+                          )
+                        : await callCommunityImageEndpoint(
+                              attempt.communityEndpoint,
+                              prompt,
+                              params,
+                              c.env.BETTER_AUTH_SECRET,
+                          );
                 assertNonEmptyMedia(
                     generated.buffer,
                     "Community image endpoint",

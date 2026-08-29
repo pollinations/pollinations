@@ -23,6 +23,7 @@ export const COMMUNITY_ENDPOINT_CHANGE_DELAY_MS = 12 * 60 * 60 * 1000;
 export const COMMUNITY_ENDPOINT_MODALITIES = [
     "text",
     "image",
+    "video",
     "transcription",
     "embedding",
 ] as const;
@@ -57,6 +58,10 @@ export const MAX_COMMUNITY_PRICE_PER_IMAGE = 0.25;
 // (scribe, $0.00367/min). Keep the division visible — a bare 0.006 here reads
 // like OpenAI's per-minute rate but would bill 60x that per second.
 export const MAX_COMMUNITY_PRICE_PER_SECOND = 0.012 / 60;
+// Community video generation bills per second at well over audio rates
+// (the priciest first-party video model is ~0.5 Pollen/sec), so the per-second
+// ceiling is written separately. 2 Pollen/sec caps a 5-second clip at 10 Pollen.
+export const MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND = 2;
 export const MAX_COMMUNITY_IMAGE_BYTES = 20 * 1024 * 1024;
 // How long we wait on a community endpoint before giving up. Generous because
 // these are self-hosted hobby GPUs that cold-start, and in line with the text
@@ -72,6 +77,7 @@ export type CommunityEndpointModality =
 export const COMMUNITY_ENDPOINT_INPUT_MODALITIES = {
     text: MODEL_INPUT_MODALITIES,
     image: ["text", "image"],
+    video: ["text"],
     transcription: ["audio"],
     embedding: ["text"],
 } as const satisfies Record<
@@ -236,10 +242,19 @@ const COMMUNITY_TRANSCRIPTION_PRICE_FIELD = {
     rawUsagePaths: ["duration"],
 } as const;
 
+const COMMUNITY_VIDEO_PRICE_FIELD = {
+    key: "completionVideoPrice",
+    usageType: "completionVideoSeconds",
+    label: "Generated video",
+    priceUnit: "second",
+    rawUsagePaths: ["duration"],
+} as const;
+
 export const COMMUNITY_ENDPOINT_PRICE_FIELDS = [
     ...COMMUNITY_TEXT_PRICE_FIELDS,
     COMMUNITY_IMAGE_PRICE_FIELD,
     COMMUNITY_TRANSCRIPTION_PRICE_FIELD,
+    COMMUNITY_VIDEO_PRICE_FIELD,
 ] as const;
 
 const COMMUNITY_TEXT_ENDPOINT_PRICE_FIELDS =
@@ -269,10 +284,17 @@ const COMMUNITY_EMBEDDING_ENDPOINT_PRICE_FIELDS = [
     },
 ] as const;
 
+const COMMUNITY_VIDEO_ENDPOINT_PRICE_FIELDS = [
+    COMMUNITY_VIDEO_PRICE_FIELD,
+] as const;
+
 export function communityEndpointPriceFieldsForModality(
     modality: CommunityEndpointModality,
     imagePricing: CommunityEndpointImagePricing = "request",
 ) {
+    if (modality === "video") {
+        return COMMUNITY_VIDEO_ENDPOINT_PRICE_FIELDS;
+    }
     if (modality === "transcription") {
         return COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS;
     }
@@ -378,6 +400,7 @@ export function isCommunityFallbackBalanceAllowed(
 export function normalizeCommunityEndpointModality(
     value: string | null | undefined,
 ): CommunityEndpointModality {
+    if (value === "video") return "video";
     if (value === "transcription") return "transcription";
     if (value === "image") return "image";
     if (value === "embedding") return "embedding";
@@ -582,18 +605,6 @@ export function pendingCommunityEndpointChangeIsReady(
         pendingAt !== null &&
         now >= pendingAt.getTime() + COMMUNITY_ENDPOINT_CHANGE_DELAY_MS
     );
-}
-
-export function effectiveCommunityEndpointVisibility(
-    visibility: CommunityEndpointVisibility,
-    pendingVisibility: CommunityEndpointVisibility | null,
-    pendingAt: Date | null,
-    now = Date.now(),
-): CommunityEndpointVisibility {
-    return pendingVisibility &&
-        pendingCommunityEndpointChangeIsReady(pendingAt, now)
-        ? pendingVisibility
-        : visibility;
 }
 
 /** Apply only the delayed price policy, preserving newer credentials/settings. */
@@ -931,6 +942,10 @@ export function communityAudioTranscriptionsUrl(baseUrl: string): string {
     return `${communityOpenAIBaseUrl(baseUrl)}/audio/transcriptions`;
 }
 
+export function communityVideoGenerationsUrl(baseUrl: string): string {
+    return `${communityOpenAIBaseUrl(baseUrl)}/videos/generations`;
+}
+
 /**
  * Audio duration reported by an OpenAI-compatible transcription response.
  *
@@ -1030,6 +1045,7 @@ export function communityModelDefinition(
         endpoint.imagePricing,
     );
     const isImage = modality === "image";
+    const isVideo = modality === "video";
     const isTranscription = modality === "transcription";
     const isEmbedding = modality === "embedding";
     // Token-priced image endpoints bill like text models (usage × per-token
@@ -1049,31 +1065,37 @@ export function communityModelDefinition(
         perUserRpm: endpoint.perUserRpm,
         brand: providerName || "Community",
         brandUrl: providerName && providerUrl ? providerUrl : undefined,
-        category: isImage
-            ? "image"
-            : isEmbedding
-              ? "embedding"
-              : isTranscription
-                ? "audio"
-                : "text",
+        category: isVideo
+            ? "video"
+            : isImage
+              ? "image"
+              : isEmbedding
+                ? "embedding"
+                : isTranscription
+                  ? "audio"
+                  : "text",
         cost: communityPriceDefinition(endpoint, modality, imagePricing),
         priceMultiplier: 1,
         addedDate: endpoint.addedDate ?? 0,
         title: communityEndpointTitle(endpoint),
         description: description || undefined,
         inputModalities,
-        outputModalities: isImage
-            ? ["image"]
-            : isEmbedding
-              ? ["embedding"]
-              : ["text"],
+        outputModalities: isVideo
+            ? ["video"]
+            : isImage
+              ? ["image"]
+              : isEmbedding
+                ? ["embedding"]
+                : ["text"],
         hidden: endpoint.hidden,
         ...(endpoint.fallbacks?.length
             ? { fallbacks: endpoint.fallbacks }
             : {}),
-        ...(isTranscription
-            ? { supportedEndpoints: ["/v1/audio/transcriptions"] }
-            : {}),
+        ...(isVideo
+            ? { supportedEndpoints: ["/v1/videos/generations"] }
+            : isTranscription
+              ? { supportedEndpoints: ["/v1/audio/transcriptions"] }
+              : {}),
         paidOnly: endpoint.paidOnly ?? false,
         alpha: true,
         // Explicit false (not omitted) for token-priced image endpoints: the

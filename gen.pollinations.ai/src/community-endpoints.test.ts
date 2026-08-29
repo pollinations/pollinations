@@ -6354,25 +6354,12 @@ describe("community video helpers", () => {
 
     it("builds community video models with video catalog fields", () => {
         const definition = communityModelDefinition({
-            type: "proxy",
-            id: "community-endpoint-id",
-            ownerUserId: "owner-id",
             modelId: "voodoohop/clipvideo",
-            name: "clipvideo",
             title: "Clip Video",
             description: null,
             modality: "video",
-            imagePricing: "request",
             inputModalities: ["text"],
-            baseUrl: "https://api.example.com/v1",
-            upstreamModel: "clip-5",
-            visibility: "public",
             paidOnly: false,
-            perUserRpm: null,
-            fallbacks: [],
-            hiddenAt: null,
-            hiddenReason: null,
-            bearerTokenCiphertext: "v1:test:test",
             ...communityEndpointPrices({ completionVideoPrice: 0.2 }),
         });
         expect(definition.category).toBe("video");

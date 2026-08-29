@@ -756,6 +756,14 @@ describe("registry-wide variant invariants", () => {
     it("every advertised non-default resolution selects a variant", () => {
         for (const model of getModels()) {
             const definition = getRegistryModelDefinition(model);
+            // Token-metered video routes keep one per-token rate; resolution
+            // changes the provider-reported output-token quantity instead.
+            if (
+                definition.cost.completionVideoTokens !== undefined &&
+                !definition.costVariants
+            ) {
+                continue;
+            }
             for (const resolution of definition.resolutions?.slice(1) ?? []) {
                 const variant = definition.selectCostVariant?.({
                     usage: {},

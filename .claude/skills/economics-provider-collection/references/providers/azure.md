@@ -39,6 +39,7 @@ Collection steps:
    - `AZURE_CLIENT_SECRET`
    - `AZURE_BILLING_ACCOUNT`
    - `AZURE_BILLING_PROFILE`
+   - `AZURE_SUBSCRIPTION_ID`
 5. Token flow:
 
    ```bash

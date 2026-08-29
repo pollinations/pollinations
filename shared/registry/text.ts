@@ -1695,6 +1695,32 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "z-ai/glm-5.3-flash": {
+        aliases: [],
+        provider: "openrouter",
+        brand: "Z.ai",
+        category: "text",
+        addedDate: new Date("2026-08-27").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter Z.AI FP8 route rates (2026-08-27).
+            promptTextTokens: perMillion(0.075),
+            promptCachedTokens: perMillion(0.015),
+            promptImageTokens: perMillion(0.075),
+            completionTextTokens: perMillion(0.25),
+        },
+        title: "Z.ai GLM-5.3 Flash",
+        description:
+            "Low-cost million-token multimodal reasoning for agents and visual analysis",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10,
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
     "llama": {
         aliases: [
             "llama-3.3",
@@ -2186,16 +2212,18 @@ export const TEXT_SERVICES = {
             "qwen-vl-pro",
             "qwen/qwen3-vl-235b-a22b-thinking",
         ],
-        provider: "openrouter",
+        provider: "alibaba",
         brand: "Qwen",
         addedDate: new Date("2026-05-15").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         category: "text",
         cost: {
-            // OpenRouter Alibaba endpoint, verified 2026-08-22.
+            // Alibaba Model Studio Singapore PAYG, verified 2026-08-28.
             promptTextTokens: perMillion(0.4),
+            promptImageTokens: perMillion(0.4),
             completionTextTokens: perMillion(4),
+            completionReasoningTokens: perMillion(4),
         },
         title: "Qwen3 VL 235B A22B Thinking",
         description:
@@ -2204,7 +2232,7 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
-        contextLength: 262144,
+        contextLength: 131072,
         isSpecialized: false,
     },
     "step-flash": {

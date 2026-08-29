@@ -41,14 +41,6 @@ import {
 } from "./price-badge.tsx";
 import type { ModelPrice } from "./types.ts";
 
-function formatContextLength(n: number): string {
-    if (n >= 1_000_000) {
-        const v = n / 1_000_000;
-        return `${Number.isInteger(v) ? v : v.toFixed(1).replace(/\.0$/, "")}M`;
-    }
-    return `${Math.round(n / 1000)}k`;
-}
-
 function formatVideoDuration(model: ModelPrice): string | null {
     if (model.allowedDurations?.length) {
         const ds = [...model.allowedDurations].sort((a, b) => a - b);
@@ -193,18 +185,44 @@ export const PerPollenEstimate: FC<{
 
 export function getModelTitleTooltipContent(model: ModelPrice): ReactNode {
     const modelDescription = getModelDescriptionWithoutName(model);
+    const videoDuration = formatVideoDuration(model);
 
-    if (!model.agent || !model.baseModel) return modelDescription;
+    if (
+        !modelDescription &&
+        (!model.agent || !model.baseModel) &&
+        model.contextLength == null &&
+        !videoDuration
+    ) {
+        return null;
+    }
 
     return (
         <span className="flex max-w-sm flex-col gap-1.5 text-left">
             {modelDescription && <span>{modelDescription}</span>}
-            <span className="text-xs text-theme-text-muted">
-                <strong className="font-semibold text-theme-text-base">
-                    Base model:
-                </strong>{" "}
-                <span className="font-mono">{model.baseModel}</span>
-            </span>
+            {model.agent && model.baseModel && (
+                <span className="text-xs text-theme-text-muted">
+                    <strong className="font-semibold text-theme-text-base">
+                        Base model:
+                    </strong>{" "}
+                    <span className="font-mono">{model.baseModel}</span>
+                </span>
+            )}
+            {model.contextLength != null && (
+                <span className="text-xs text-theme-text-muted">
+                    <strong className="font-semibold text-theme-text-base">
+                        Context window:
+                    </strong>{" "}
+                    {model.contextLength.toLocaleString()} tokens
+                </span>
+            )}
+            {videoDuration && (
+                <span className="text-xs text-theme-text-muted">
+                    <strong className="font-semibold text-theme-text-base">
+                        Video duration:
+                    </strong>{" "}
+                    {videoDuration}
+                </span>
+            )}
         </span>
     );
 }
@@ -406,36 +424,6 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             access={balanceAccess}
                             className="whitespace-nowrap"
                         />
-                        {model.contextLength != null && (
-                            <Tooltip
-                                content={`Context window: ${model.contextLength.toLocaleString()} tokens`}
-                                ariaLabel={`Context window ${formatContextLength(model.contextLength)}`}
-                                tapEnabled
-                            >
-                                <Chip
-                                    size="sm"
-                                    className="whitespace-nowrap tabular-nums"
-                                >
-                                    {formatContextLength(model.contextLength)}{" "}
-                                    ctx
-                                </Chip>
-                            </Tooltip>
-                        )}
-                        {model.type === "video" &&
-                            formatVideoDuration(model) && (
-                                <Tooltip
-                                    content={`Supported duration: ${formatVideoDuration(model)}`}
-                                    ariaLabel={`Video duration ${formatVideoDuration(model)}`}
-                                    tapEnabled
-                                >
-                                    <Chip
-                                        size="sm"
-                                        className="whitespace-nowrap tabular-nums"
-                                    >
-                                        {formatVideoDuration(model)}
-                                    </Chip>
-                                </Tooltip>
-                            )}
                     </div>
                 </div>
             </div>

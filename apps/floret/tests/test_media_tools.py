@@ -106,6 +106,33 @@ async def test_toolset_dispatches_media_tools(monkeypatch):
     assert "clip1.mp4" in down.brain
 
 
+async def test_generated_images_are_published_before_becoming_artifacts(monkeypatch):
+    generated = [
+        "https://gen.pollinations.ai/image/cat?model=flux&seed=1",
+        "https://gen.pollinations.ai/image/cat?model=flux&seed=2",
+    ]
+    uploads = []
+
+    async def fake_generate_image(**kwargs):
+        return generated
+
+    async def fake_upload(source, filename=None):
+        uploads.append((source, filename))
+        return f"https://media.pollinations.ai/image-{len(uploads)}.jpg"
+
+    monkeypatch.setattr(toolset.gen, "generate_image", fake_generate_image)
+    monkeypatch.setattr(toolset.media, "upload_media", fake_upload)
+
+    result = await toolset.dispatch("generate_image", {"prompt": "cat", "n": 2})
+
+    assert uploads == [(generated[0], "image-1.jpg"), (generated[1], "image-2.jpg")]
+    assert result.artifacts == [
+        {"type": "image", "url": "https://media.pollinations.ai/image-1.jpg"},
+        {"type": "image", "url": "https://media.pollinations.ai/image-2.jpg"},
+    ]
+    assert "gen.pollinations.ai" not in result.brain
+
+
 async def test_uploaded_video_and_audio_become_artifacts(monkeypatch):
     """A hosted deliverable must attach to the reply even if the brain forgets it."""
 

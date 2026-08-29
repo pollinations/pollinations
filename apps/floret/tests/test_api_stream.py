@@ -202,9 +202,10 @@ def test_stream_true_returns_openai_sse_chunks(monkeypatch):
     assert payloads[-1]["choices"][0]["finish_reason"] == "stop"
 
     content = "".join(p["choices"][0]["delta"].get("content") or "" for p in payloads)
-    assert "generate_image" in content  # tool progress is surfaced
+    assert "generate_image" not in content  # tool progress never enters history
     assert "done!" in content  # final text is streamed
     assert "http://img/x.png" in content  # media embedded as markdown
+    assert ": progress generate_image" in body
 
 
 def test_stream_emits_keepalives_during_silence(monkeypatch):

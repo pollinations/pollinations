@@ -266,9 +266,13 @@ async def dispatch(
     try:
         if name == "generate_image":
             urls = await gen.generate_image(**call_args)
-            arts = [{"type": "image", "url": u} for u in urls]
+            hosted_urls = [
+                await media.upload_media(url, filename=f"image-{index}.jpg")
+                for index, url in enumerate(urls, start=1)
+            ]
+            arts = [{"type": "image", "url": url} for url in hosted_urls]
             return ToolResult(
-                brain="Generated images:\n" + "\n".join(urls), artifacts=arts
+                brain="Generated images:\n" + "\n".join(hosted_urls), artifacts=arts
             )
 
         if name == "edit_image":

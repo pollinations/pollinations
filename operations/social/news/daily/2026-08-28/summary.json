@@ -1,0 +1,63 @@
+{
+  "date": "2026-08-28",
+  "period_start": "2026-08-28",
+  "period_end": "2026-08-28",
+  "title": "Play, browse, and compare models with fewer clicks",
+  "summary": "A buzzing day for getting from model discovery to working output: direct Play links, a new 4K video model, healthier community catalogs, and a Quest scoreboard.\n\nSupported models now include a Try in Play action that opens a correctly configured Play session directly from the listing. Pixel Forge also joined the community app catalog as a focused image studio for comparing Flux, Dreamshaper, Klein, GPT Image 2, Zimage, and Nanobanana at chosen dimensions.\n\nGemini Omni 1.1 Flash is now available for short text- or keyframe-driven videos with synchronized audio, vertical or widescreen output, and resolutions up to 4K. When a request cannot complete, Gemini Omni now returns useful provider and moderation details instead of the traditional mysterious 502 fog.\n\nThe app catalog now has visual previews across all 835 active apps, backed by weekly screenshot keepalives, while DemoWeaver and Automated Video App joined the build and video ecosystem. New public models and endpoint agents also get a clear scheduled publication window, shown directly in My Models.",
+  "pr_count": 13,
+  "prs": [
+    {
+      "number": 13940,
+      "date": "2026-08-28"
+    },
+    {
+      "number": 13966,
+      "date": "2026-08-28"
+    },
+    {
+      "number": 14051,
+      "date": "2026-08-28"
+    },
+    {
+      "number": 14071,
+      "date": "2026-08-28"
+    },
+    {
+      "number": 14073,
+      "date": "2026-08-28"
+    },
+    {
+      "number": 14074,
+      "date": "2026-08-28"
+    },
+    {
+      "number": 14078,
+      "date": "2026-08-28"
+    },
+    {
+      "number": 14079,
+      "date": "2026-08-28"
+    },
+    {
+      "number": 14081,
+      "date": "2026-08-28"
+    },
+    {
+      "number": 14082,
+      "date": "2026-08-28"
+    },
+    {
+      "number": 14083,
+      "date": "2026-08-28"
+    },
+    {
+      "number": 14085,
+      "date": "2026-08-28"
+    },
+    {
+      "number": 14087,
+      "date": "2026-08-28"
+    }
+  ],
+  "generated_at": "2026-08-29T06:25:52.816079+00:00"
+}

@@ -1,5 +1,6 @@
 import googleCloudAuth from "../auth/googleCloudAuth.js";
 import {
+    createAlibabaModelConfig,
     createAzureModelConfig,
     createBedrockNativeConfig,
     createDeepInfraModelConfig,
@@ -158,12 +159,9 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
-    // GLM-5.3 is a mandatory-reasoning model (see registry entry), making it
-    // just as exposed to the blank-answer/billed-tokens bug as the Qwen
-    // models above if z-ai/fp8's own max_tokens default is ever too low.
-    "z-ai/glm-5.3": () =>
+    "z-ai/glm-5.3-flash": () =>
         createOpenRouterModelConfig({
-            model: "z-ai/glm-5.3",
+            model: "z-ai/glm-5.3-flash",
             defaultOptions: {
                 max_tokens: 64000,
                 provider: {
@@ -331,11 +329,18 @@ export const portkeyConfig: PortkeyConfigMap = {
         "mistralai/mistral-small-3.2-24b-instruct",
         "deepinfra/fp8",
     ),
-    "mistral-small-2603": createPinnedOpenRouterConfig(
-        "mistralai/mistral-small-2603",
-        "mistral",
-        64000,
-    ),
+    "mistral-small-2603": () =>
+        createOpenRouterModelConfig({
+            model: "mistralai/mistral-small-2603",
+            defaultOptions: {
+                max_tokens: 64000,
+                provider: {
+                    only: ["mistral"],
+                    ignore: ["mistral/zdr", "mistral/us", "mistral/eu"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
 
     // -- Azure (Myceli Prod — eastus, Mistral Large) -------------------------
     "Mistral-Large-3": () =>
@@ -435,6 +440,11 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/glm-5p2",
         }),
+    "accounts/fireworks/models/glm-5p3": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/glm-5p3",
+            defaultOptions: { max_tokens: 64000 },
+        }),
     "accounts/fireworks/models/minimax-m2p7": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/minimax-m2p7",
@@ -487,10 +497,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         "qwen/qwen3-vl-30b-a3b-instruct",
         "alibaba",
     ),
-    "qwen/qwen3-vl-235b-a22b-thinking": createPinnedOpenRouterConfig(
-        "qwen/qwen3-vl-235b-a22b-thinking",
-        "alibaba",
-    ),
+    "qwen3-vl-235b-a22b-thinking": () =>
+        createAlibabaModelConfig({
+            model: "qwen3-vl-235b-a22b-thinking",
+        }),
 
     // -- OpenRouter (StepFun) -------------------------------------------------
     "stepfun/step-3.5-flash": () =>

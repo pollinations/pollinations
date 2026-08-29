@@ -109,6 +109,18 @@ export function createOpenRouterModelConfig(
     };
 }
 
+export function createAlibabaModelConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return {
+        provider: "openai",
+        directEndpoint:
+            "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
+        authKey: process.env.DASHSCOPE_API_KEY,
+        ...overrides,
+    };
+}
+
 export function createVercelAIGatewayModelConfig(
     overrides: ModelOverride = {},
 ): ProviderConfig {

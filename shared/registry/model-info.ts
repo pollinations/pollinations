@@ -106,6 +106,15 @@ export const ModelInfoSchema = z.object({
     voices: z.array(z.string()).optional(),
     is_specialized: z.boolean().optional(),
     paid_only: z.boolean().optional(),
+    pending_change: z
+        .object({
+            effective_at: z.string().datetime(),
+            paid_only: z.boolean(),
+            pricing: z
+                .record(z.string(), z.string())
+                .and(z.object({ currency: z.literal("pollen") })),
+        })
+        .optional(),
     alpha: z.boolean().optional(),
     flat_rate: z.boolean().optional(),
     added_date: z.number().optional(),

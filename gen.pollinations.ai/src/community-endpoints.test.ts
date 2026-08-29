@@ -8,6 +8,7 @@ import type { Logger } from "@logtape/logtape";
 import { verifyAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import { COMMUNITY_MODEL_ALLOWED_GITHUB_IDS } from "@shared/auth/github-id-list.ts";
 import {
+    COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     type CommunityEndpointImagePricing,
     type CommunityEndpointModality,
@@ -220,6 +221,17 @@ afterEach(() => {
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
 });
+
+async function maturePendingCommunityEndpoint(id: string): Promise<void> {
+    await db
+        .update(communityEndpointTable)
+        .set({
+            pendingAt: new Date(
+                Date.now() - COMMUNITY_ENDPOINT_CHANGE_DELAY_MS - 1,
+            ),
+        })
+        .where(eq(communityEndpointTable.id, id));
+}
 
 async function createEnterCommunityApi(): Promise<Hono<Env>> {
     const routePath =
@@ -1868,7 +1880,7 @@ fixtureTest(
 );
 
 fixtureTest(
-    "a private model is owner-only and a zero-priced public model is free",
+    "a private model is owner-only and a zero-priced public model is free for funded callers",
     async ({ apiKey }) => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `private-${crypto.randomUUID().slice(0, 8)}`;
@@ -1877,9 +1889,9 @@ fixtureTest(
         const ownerUserId = await createTestUser({
             githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
-            // Owner-only private models have no Pollinations charge and remain
-            // callable without a Pollinations balance.
-            tierBalance: 0,
+            // Owner-only private models have no Pollinations charge, but every
+            // request still needs a positive balance in some bucket.
+            tierBalance: 1,
         });
         // A key belonging to the endpoint owner — its calls are owner calls.
         const { key: ownerApiKey } = await createTestApiKey({
@@ -1986,29 +1998,38 @@ fixtureTest(
         await expect(catalogIncludesModel(apiKey)).resolves.toBe(false);
         await expect(catalogIncludesModel()).resolves.toBe(false);
 
-        // Publishing the same zero-priced endpoint makes it globally callable
-        // without requiring a Pollinations balance.
+        // Publishing the same zero-priced endpoint makes it globally callable.
+        // It is never charged, but preflight still requires a positive balance
+        // in some bucket, so an empty wallet is rejected before the call.
         await db
             .update(communityEndpointTable)
             .set({ visibility: "public" })
             .where(eq(communityEndpointTable.id, endpointId));
         resetGenerationModelRegistryCache();
+        const callFreePublicModel = async (callerKey: string) =>
+            fetchGen(
+                new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${callerKey}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: modelId,
+                        messages: [{ role: "user", content: "free public" }],
+                    }),
+                }),
+            );
         const { key: zeroBalanceCallerKey } = await createTestApiKey({
             user: { tierBalance: 0, packBalance: 0 },
         });
-        const freePublicResponse = await fetchGen(
-            new Request("https://gen.pollinations.ai/v1/chat/completions", {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${zeroBalanceCallerKey}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    model: modelId,
-                    messages: [{ role: "user", content: "free public" }],
-                }),
-            }),
+        expect((await callFreePublicModel(zeroBalanceCallerKey)).status).toBe(
+            402,
         );
+        const { key: fundedCallerKey } = await createTestApiKey({
+            user: { tierBalance: 1, packBalance: 0 },
+        });
+        const freePublicResponse = await callFreePublicModel(fundedCallerKey);
         expect(freePublicResponse.status).toBe(200);
         await expect(freePublicResponse.json()).resolves.toMatchObject({
             choices: [{ message: { content: "ok" } }],
@@ -3197,10 +3218,16 @@ fixtureTest(
             modelId: communityModelId(ownerGithubUsername, modelName),
             baseUrl: "https://gen.pollinations.ai/v1",
             upstreamModel: "openai",
-            visibility: "public",
-            promptTextPrice: 0.00001,
-            completionTextPrice: 0.00001,
+            visibility: "private",
+            promptTextPrice: 0,
+            completionTextPrice: 0,
+            pending: {
+                visibility: "public",
+                promptTextPrice: 0.00001,
+                completionTextPrice: 0.00001,
+            },
         });
+        await maturePendingCommunityEndpoint(registered.id);
 
         const testResponse = await fetchEnterApi(
             enterApi,
@@ -3463,8 +3490,14 @@ fixtureTest(
             baseUrl: "https://api.example.com/v1/images/generations",
             upstreamModel: "gpt-image-1",
             promptTextPrice: 0,
-            completionImagePrice: 0.03,
+            completionImagePrice: 0,
+            pending: {
+                visibility: "public",
+                promptTextPrice: 0,
+                completionImagePrice: 0.03,
+            },
         });
+        await maturePendingCommunityEndpoint(registered.id);
 
         const testResponse = await fetchEnterApi(
             enterApi,
@@ -3887,8 +3920,13 @@ fixtureTest(
             inputModalities: ["audio"],
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "whisper-1",
-            promptAudioPrice: 0.0000445,
+            promptAudioPrice: 0,
+            pending: {
+                visibility: "public",
+                promptAudioPrice: 0.0000445,
+            },
         });
+        await maturePendingCommunityEndpoint(registered.id);
 
         const testResponse = await fetchEnterApi(
             enterApi,
@@ -4179,13 +4217,27 @@ fixtureTest(
         await expect(updateResponse.json()).resolves.toMatchObject({
             title: "Updated Model Title",
             description: "Updated description",
-            visibility: "public",
-            paidOnly: true,
-            promptTextPrice: 0.00001,
-            completionTextPrice: 0.00002,
+            visibility: "private",
+            paidOnly: false,
+            promptTextPrice: 0,
+            completionTextPrice: 0,
+            pending: {
+                visibility: "public",
+                paidOnly: true,
+                promptTextPrice: 0.00001,
+                completionTextPrice: 0.00002,
+            },
             hidden: true,
             hiddenReason: "was failing",
         });
+        await db
+            .update(communityEndpointTable)
+            .set({
+                pendingAt: new Date(
+                    Date.now() - COMMUNITY_ENDPOINT_CHANGE_DELAY_MS - 1,
+                ),
+            })
+            .where(eq(communityEndpointTable.id, createdId));
 
         const relistResponse = await fetchEnterApi(
             enterApi,
@@ -4248,7 +4300,8 @@ fixtureTest(
         );
         expect(tinyPriceResponse.status).toBe(200);
         await expect(tinyPriceResponse.json()).resolves.toMatchObject({
-            promptTextPrice: 1e-12,
+            promptTextPrice: 0.00001,
+            pending: { promptTextPrice: 1e-12 },
         });
 
         const negativePriceResponse = await fetchEnterApi(
@@ -4291,9 +4344,27 @@ fixtureTest(
         await expect(priceOnlyResponse.json()).resolves.toMatchObject({
             visibility: "public",
             paidOnly: true,
-            promptTextPrice: 0.00003,
+            promptTextPrice: 0.00001,
             completionTextPrice: 0.00002,
+            pending: {
+                promptTextPrice: 0.00003,
+                completionTextPrice: 0.00002,
+            },
         });
+        const pendingRegistryEntry = (
+            await getCommunityModelRegistryEntries(env)
+        ).find((entry) => entry.id === `${ownerGithubUsername}/my-test-model`);
+        expect(pendingRegistryEntry?.info.pending_change).toMatchObject({
+            paid_only: true,
+            pricing: {
+                currency: "pollen",
+                promptTextTokens: "0.00003",
+                completionTextTokens: "0.00002",
+            },
+        });
+        expect(pendingRegistryEntry?.info.pending_change?.effective_at).toEqual(
+            expect.any(String),
+        );
 
         // Making the model private clears all owner-set prices, and with them
         // the paid-only choice: a free listing that still demanded paid balance
@@ -4322,8 +4393,8 @@ fixtureTest(
             completionTextPrice: 0,
         });
 
-        // Republishing without prices is allowed: zero makes the public model
-        // explicitly free while publishing remains allowlist-gated.
+        // Republishing remains free, but becomes visible after the notice
+        // period rather than immediately.
         const republishResponse = await fetchEnterApi(
             enterApi,
             new Request(
@@ -4342,9 +4413,10 @@ fixtureTest(
         );
         expect(republishResponse.status).toBe(200);
         await expect(republishResponse.json()).resolves.toMatchObject({
-            visibility: "public",
+            visibility: "private",
             promptTextPrice: 0,
             completionTextPrice: 0,
+            pending: { visibility: "public" },
         });
 
         const secondListResponse = await fetchEnterApi(
@@ -4472,7 +4544,10 @@ fixtureTest(
         );
         expect(minimumResponse.status).toBe(200);
         await expect(minimumResponse.json()).resolves.toMatchObject({
-            promptTextPrice: MIN_COMMUNITY_PRICE_PER_TOKEN,
+            promptTextPrice: 0,
+            pending: {
+                promptTextPrice: MIN_COMMUNITY_PRICE_PER_TOKEN,
+            },
         });
 
         const maximumResponse = await updatePrice(
@@ -4480,7 +4555,10 @@ fixtureTest(
         );
         expect(maximumResponse.status).toBe(200);
         await expect(maximumResponse.json()).resolves.toMatchObject({
-            promptTextPrice: MAX_COMMUNITY_PRICE_PER_TOKEN,
+            promptTextPrice: 0,
+            pending: {
+                promptTextPrice: MAX_COMMUNITY_PRICE_PER_TOKEN,
+            },
         });
 
         const aboveMaximumResponse = await updatePrice(
@@ -5322,6 +5400,7 @@ fixtureTest("validates community fallback targets on write", async () => {
         fallbacks: string[];
     };
     expect(created.fallbacks).toEqual([cheapModelId]);
+    await maturePendingCommunityEndpoint(created.id);
 
     // One bad id fails the whole list, so a partial order is never stored.
     const partiallyBad = await createWithFallback(

@@ -683,7 +683,7 @@ test("Gemini search cost follows each route's provider metadata", () => {
     // OpenRouter search-capable routes bill per reported web search request.
     expect(gemini3FlashCost.totalCost).toBeCloseTo(3.528, 8);
     expect(geminiSearchFastCost.totalCost).toBeCloseTo(2.828, 8);
-    expect(geminiSearchLargeCost.totalCost).toBeCloseTo(2.278, 8);
+    expect(geminiSearchLargeCost.totalCost).toBeCloseTo(4.528, 8);
     expect(ungroundedGeminiSearchFastCost.totalCost).toBeCloseTo(2.8, 8);
 });
 
@@ -1097,7 +1097,7 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
     expect(proCacheWrite[0].unitCost).toBeCloseTo(4.5 / 12_000_000, 15);
     expect(proCacheWrite[0].cost).toBeCloseTo(0.375, 15);
 
-    const discountedCacheWrite = calculateBillingAdjustments(
+    const geminiCacheWrite = calculateBillingAdjustments(
         getRegistryModelDefinition("gemini"),
         {
             usage: {
@@ -1106,9 +1106,9 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
         },
         "gemini",
     );
-    expect(discountedCacheWrite).toHaveLength(1);
-    expect(discountedCacheWrite[0].unitCost).toBeCloseTo(0.25 / 12_000_000, 15);
-    expect(discountedCacheWrite[0].cost).toBeCloseTo(0.25 / 12, 15);
+    expect(geminiCacheWrite).toHaveLength(1);
+    expect(geminiCacheWrite[0].unitCost).toBeCloseTo(0.5 / 12_000_000, 15);
+    expect(geminiCacheWrite[0].cost).toBeCloseTo(0.5 / 12, 15);
 
     for (const model of [
         "gemini-3-flash",

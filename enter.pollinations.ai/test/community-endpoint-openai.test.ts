@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { TestEndpointSchema } from "../src/routes/community-endpoints/schemas.ts";
 import {
     listCommunityEndpointModels,
     testCommunityEndpoint,
@@ -9,6 +10,24 @@ import {
 
 afterEach(() => {
     vi.unstubAllGlobals();
+});
+
+describe("community endpoint test input", () => {
+    const endpoint = {
+        baseUrl: "https://api.example.com/generate-video",
+        bearerToken: "sk_saved_token",
+    };
+
+    it("does not require an upstream model for video", () => {
+        expect(
+            TestEndpointSchema.safeParse({ ...endpoint, modality: "video" })
+                .success,
+        ).toBe(true);
+    });
+
+    it("requires an upstream model for OpenAI-compatible modalities", () => {
+        expect(TestEndpointSchema.safeParse(endpoint).success).toBe(false);
+    });
 });
 
 describe("community endpoint OpenAI service", () => {
@@ -325,7 +344,9 @@ describe("community endpoint OpenAI service", () => {
     it("probes the exact synchronous video endpoint", async () => {
         const fetchMock = vi.fn(async (input, init) => {
             const request = new Request(input, init);
-            expect(request.url).toBe("https://api.example.com/generate-video");
+            expect(request.url).toBe(
+                "https://api.example.com/generate-video?version=1",
+            );
             expect(request.headers.get("authorization")).toBe(
                 "Bearer sk_saved_token",
             );
@@ -345,9 +366,8 @@ describe("community endpoint OpenAI service", () => {
 
         await expect(
             testCommunityVideoEndpoint({
-                baseUrl: "https://api.example.com/generate-video",
+                baseUrl: "https://api.example.com/generate-video?version=1",
                 bearerToken: "sk_saved_token",
-                model: "video-1",
             }),
         ).resolves.toEqual({
             usage: { duration: 5 },

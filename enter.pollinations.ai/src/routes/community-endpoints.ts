@@ -1,5 +1,6 @@
 import {
     applyPendingProxyPricing,
+    type CommunityEndpointModality,
     type CommunityEndpointVisibility,
     communityModelId,
     type EndpointAgentListingPayload,
@@ -11,6 +12,7 @@ import {
     type ProxyListingPayload,
     parseListingPayload,
     pendingCommunityEndpointChangeIsReady,
+    validateCommunityVideoEndpointUrl,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
@@ -24,6 +26,7 @@ import { describeRoute, resolver } from "hono-openapi";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import {
+    type CommunityEndpointTestResult,
     listCommunityEndpointModels,
     testCommunityEndpoint,
     testCommunityImageEndpoint,
@@ -65,9 +68,14 @@ import {
 
 const ENDPOINT_PROBE_THROTTLE_SECONDS = 30;
 type Db = ReturnType<typeof drizzle<typeof schema>>;
-function normalizeInputBaseUrl(value: string): string {
+function validateInputEndpointUrl(
+    value: string,
+    modality?: CommunityEndpointModality,
+): string {
     try {
-        return normalizeCommunityEndpointBaseUrl(value);
+        return modality === "video"
+            ? validateCommunityVideoEndpointUrl(value)
+            : normalizeCommunityEndpointBaseUrl(value);
     } catch (error) {
         throw new HTTPException(400, {
             message:
@@ -471,7 +479,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     pendingVisibility: queuesPublication ? "public" : null,
                     pendingAt: queuesPublication ? new Date() : null,
                     type: "endpoint_agent",
-                    baseUrl: normalizeInputBaseUrl(input.baseUrl),
+                    baseUrl: validateInputEndpointUrl(input.baseUrl),
                     upstreamModel: input.upstreamModel ?? input.name,
                     payload: JSON.stringify(payload),
                     createdAt: new Date(),
@@ -554,7 +562,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         ? "private"
                         : input.visibility,
                     type: "proxy",
-                    baseUrl: normalizeInputBaseUrl(input.baseUrl),
+                    baseUrl: validateInputEndpointUrl(
+                        input.baseUrl,
+                        input.modality,
+                    ),
                     upstreamModel: input.upstreamModel ?? input.name,
                     payload: JSON.stringify(payload),
                     pendingPayload: queuesPublication
@@ -658,14 +669,33 @@ export const communityEndpointsRoutes = new Hono<Env>()
             );
             if (throttled) return throttled;
             try {
-                const result =
-                    input.modality === "image"
-                        ? await testCommunityImageEndpoint(input)
-                        : input.modality === "video"
-                          ? await testCommunityVideoEndpoint(input)
-                          : input.modality === "transcription"
-                            ? await testCommunityTranscriptionEndpoint(input)
-                            : await testCommunityEndpoint(input);
+                const endpointInput = {
+                    ...input,
+                    baseUrl: validateInputEndpointUrl(
+                        input.baseUrl,
+                        input.modality,
+                    ),
+                };
+                let result: CommunityEndpointTestResult;
+                if (input.modality === "video") {
+                    result = await testCommunityVideoEndpoint(endpointInput);
+                } else {
+                    if (!input.model) {
+                        throw new HTTPException(400, {
+                            message:
+                                "model is required unless modality is video",
+                        });
+                    }
+                    const modelInput = { ...endpointInput, model: input.model };
+                    result =
+                        input.modality === "image"
+                            ? await testCommunityImageEndpoint(modelInput)
+                            : input.modality === "transcription"
+                              ? await testCommunityTranscriptionEndpoint(
+                                    modelInput,
+                                )
+                              : await testCommunityEndpoint(modelInput);
+                }
                 return c.json({
                     ok: true,
                     message:
@@ -787,7 +817,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     );
                 }
                 if (input.baseUrl !== undefined) {
-                    update.baseUrl = normalizeInputBaseUrl(input.baseUrl);
+                    update.baseUrl = validateInputEndpointUrl(input.baseUrl);
                 }
                 if (input.upstreamModel !== undefined) {
                     update.upstreamModel = input.upstreamModel;
@@ -853,7 +883,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
                               c.env.BETTER_AUTH_SECRET,
                           );
                 if (input.baseUrl !== undefined) {
-                    update.baseUrl = normalizeInputBaseUrl(input.baseUrl);
+                    update.baseUrl = validateInputEndpointUrl(
+                        input.baseUrl,
+                        stored.modality,
+                    );
                 }
                 if (input.upstreamModel !== undefined) {
                     update.upstreamModel = input.upstreamModel;

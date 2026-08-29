@@ -8,7 +8,6 @@ import {
     type ModelDefinition,
     type ModelInputModality,
     type PriceDefinition,
-    type VideoCapability,
 } from "./registry/registry.ts";
 import {
     OPENAI_CHAT_USAGE_PATHS,
@@ -787,6 +786,23 @@ export function normalizeCommunityEndpointBaseUrl(value: string): string {
     return url.toString().replace(/\/+$/, "");
 }
 
+export function validateCommunityVideoEndpointUrl(value: string): string {
+    const url = new URL(value);
+    if (url.protocol !== "https:") {
+        throw new Error("Endpoint URL must use https");
+    }
+    if (url.username || url.password) {
+        throw new Error("Endpoint URL cannot include credentials");
+    }
+    if (isBlockedHostname(url.hostname)) {
+        throw new Error("Endpoint URL cannot target a private host");
+    }
+    if (url.hash) {
+        throw new Error("Endpoint URL cannot include a fragment");
+    }
+    return value;
+}
+
 export function normalizeCommunityProviderUrl(value: string): string {
     const url = new URL(value.trim());
     if (url.protocol !== "https:") {
@@ -1135,16 +1151,6 @@ export function communityModelDefinition(
         endpoint.inputModalities,
         modality,
     );
-    const videoCapabilities: VideoCapability[] = [];
-    if (isVideo && inputModalities.includes("image")) {
-        videoCapabilities.push("start_frame", "end_frame", "reference_images");
-    }
-    if (isVideo && inputModalities.includes("video")) {
-        videoCapabilities.push("reference_videos");
-    }
-    if (isVideo && inputModalities.includes("audio")) {
-        videoCapabilities.push("reference_audios");
-    }
     const providerName = endpoint.providerName?.trim();
     const providerUrl = endpoint.providerUrl?.trim();
     const { capabilities = [], ...advertised } =
@@ -1169,7 +1175,6 @@ export function communityModelDefinition(
         description: description || undefined,
         inputModalities,
         outputModalities: isImage ? ["image"] : isVideo ? ["video"] : ["text"],
-        ...(videoCapabilities.length > 0 ? { videoCapabilities } : {}),
         hidden: endpoint.hidden,
         ...(endpoint.fallbacks?.length
             ? { fallbacks: endpoint.fallbacks }

@@ -425,9 +425,12 @@ const models = new Command("models")
 
 const test = new Command("test")
     .description("Test an endpoint/model before registering it")
-    .requiredOption("--base-url <url>", "OpenAI-compatible base URL")
+    .requiredOption(
+        "--base-url <url>",
+        "OpenAI-compatible base URL, or exact video endpoint URL",
+    )
     .requiredOption("--bearer-token <token>", "Upstream bearer token")
-    .requiredOption("--model <model>", "Upstream model id")
+    .option("--model <model>", "Upstream model id (not used for video)")
     .option(
         "--modality <modality>",
         "Model family: text (default), image, video, or transcription",
@@ -445,6 +448,10 @@ const test = new Command("test")
                 "--modality must be 'text', 'image', 'video', or 'transcription'",
             );
         }
+        const modality = opts.modality ?? "text";
+        if (modality !== "video" && !opts.model) {
+            fail("--model is required unless --modality is video");
+        }
         try {
             const res = await gen<Record<string, unknown>>(
                 "/account/my-models/test",
@@ -454,10 +461,8 @@ const test = new Command("test")
                     body: {
                         baseUrl: opts.baseUrl,
                         bearerToken: opts.bearerToken,
-                        model: opts.model,
-                        ...(opts.modality !== undefined && {
-                            modality: opts.modality,
-                        }),
+                        ...(opts.model && { model: opts.model }),
+                        modality,
                     },
                 },
             );

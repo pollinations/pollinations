@@ -208,10 +208,19 @@ export const TestEndpointSchema = z
     .object({
         baseUrl: z.string().url(),
         bearerToken: z.string().min(1),
-        model: z.string().trim().min(1).max(253),
+        model: z.string().trim().min(1).max(253).optional(),
         modality: ModalitySchema.optional().default("text"),
     })
-    .strict();
+    .strict()
+    .superRefine((input, ctx) => {
+        if (input.modality !== "video" && !input.model) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["model"],
+                message: "model is required unless modality is video",
+            });
+        }
+    });
 const ResponsePriceFieldsSchema = Object.fromEntries(
     COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [field.key, z.number()]),
 ) as unknown as Record<CommunityEndpointPriceKey, z.ZodType<number>>;

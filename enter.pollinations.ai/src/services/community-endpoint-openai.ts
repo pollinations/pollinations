@@ -30,7 +30,7 @@ type EndpointAuth = {
     bearerToken: string;
 };
 
-type EndpointTestInput = EndpointAuth & { model: string };
+type ModelEndpointTestInput = EndpointAuth & { model: string };
 
 export type CommunityEndpointUsage = Record<string, unknown>;
 
@@ -133,7 +133,7 @@ export async function testCommunityEndpoint({
     baseUrl,
     bearerToken,
     model,
-}: EndpointTestInput): Promise<CommunityEndpointTestResult> {
+}: ModelEndpointTestInput): Promise<CommunityEndpointTestResult> {
     const body = await fetchJson(communityChatCompletionsUrl(baseUrl), {
         method: "POST",
         headers: {
@@ -181,7 +181,7 @@ export async function testCommunityImageEndpoint({
     baseUrl,
     bearerToken,
     model,
-}: EndpointTestInput): Promise<CommunityEndpointTestResult> {
+}: ModelEndpointTestInput): Promise<CommunityEndpointTestResult> {
     const body = await fetchJson(communityImageGenerationsUrl(baseUrl), {
         method: "POST",
         headers: {
@@ -236,7 +236,7 @@ export async function testCommunityImageEndpoint({
 export async function testCommunityVideoEndpoint({
     baseUrl,
     bearerToken,
-}: EndpointTestInput): Promise<CommunityEndpointTestResult> {
+}: EndpointAuth): Promise<CommunityEndpointTestResult> {
     const body = await fetchJson(baseUrl, {
         method: "POST",
         headers: {
@@ -265,7 +265,7 @@ export async function testCommunityTranscriptionEndpoint({
     baseUrl,
     bearerToken,
     model,
-}: EndpointTestInput): Promise<CommunityEndpointTestResult> {
+}: ModelEndpointTestInput): Promise<CommunityEndpointTestResult> {
     const sampleBytes = decodeCommunityBase64(SAMPLE_AUDIO_BASE64);
     if (!sampleBytes) {
         throw new Error("Failed to decode sample audio");
@@ -332,7 +332,7 @@ export async function testCommunityTranscriptionEndpoint({
 }
 
 async function testCommunityImageEdits(
-    { baseUrl, bearerToken, model }: EndpointTestInput,
+    { baseUrl, bearerToken, model }: ModelEndpointTestInput,
     imageBytes: Uint8Array,
     imageMimeType: string,
 ): Promise<boolean> {

@@ -185,7 +185,9 @@ export function CommunityEndpointDialog({
                     baseUrl: form.baseUrl.trim(),
                     bearerToken: form.bearerToken.trim(),
                     modality: form.modality,
-                    model: form.upstreamModel.trim() || form.name.trim(),
+                    ...(form.modality !== "video" && {
+                        model: form.upstreamModel.trim() || form.name.trim(),
+                    }),
                 },
             });
             if (!response.ok) throw new Error(await readError(response));

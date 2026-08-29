@@ -46,6 +46,7 @@ import {
     PROMPT_AGENT_BASE_URL_PLACEHOLDER,
     type PromptAgentListingPayload,
     parseCommunityModelId,
+    validateCommunityVideoEndpointUrl,
 } from "@shared/community-endpoints.ts";
 import {
     communityEndpoint as communityEndpointTable,
@@ -613,6 +614,19 @@ describe("community endpoint helpers", () => {
         ).toThrow("Endpoint URL cannot target a private host");
     });
 
+    it("validates video endpoints without rewriting them", () => {
+        const endpoint = "https://api.example.com/generate/?version=1";
+        expect(validateCommunityVideoEndpointUrl(endpoint)).toBe(endpoint);
+        expect(() =>
+            validateCommunityVideoEndpointUrl(`${endpoint}#section`),
+        ).toThrow("Endpoint URL cannot include a fragment");
+        expect(() =>
+            validateCommunityVideoEndpointUrl(
+                "https://user:password@api.example.com/generate",
+            ),
+        ).toThrow("Endpoint URL cannot include credentials");
+    });
+
     it("derives the OpenAI-compatible audio transcription URL", () => {
         expect(
             communityAudioTranscriptionsUrl("https://api.example.com/v1"),
@@ -824,15 +838,9 @@ describe("community endpoint helpers", () => {
             category: "video",
             inputModalities: ["text", "image", "audio", "video"],
             outputModalities: ["video"],
-            videoCapabilities: [
-                "start_frame",
-                "end_frame",
-                "reference_images",
-                "reference_videos",
-                "reference_audios",
-            ],
             cost: { completionVideoSeconds: 0.08 },
         });
+        expect(definition).not.toHaveProperty("videoCapabilities");
         expect(
             calculateUsageBilling({
                 model: modelId,
@@ -1055,7 +1063,7 @@ describe("community endpoint helpers", () => {
                 modality: "image",
                 imagePricing,
                 inputModalities: null,
-                baseUrl: "https://api.example.com/generate-video",
+                baseUrl: "https://api.example.com/v1",
                 upstreamModel: "gpt-image-1",
                 visibility: "public",
                 paidOnly: false,
@@ -4105,25 +4113,32 @@ fixtureTest(
         });
         const cookie = await signedSessionCookie(sessionToken);
         const enterApi = await createEnterCommunityApi();
+        const videoEndpointUrl =
+            "https://api.example.com/generate-video?version=1";
         const fetchMock = vi.fn(async (input, init) => {
             const request = new Request(input, init);
-            if (request.url === "https://api.example.com/generate-video") {
+            if (request.url === videoEndpointUrl) {
                 expect(request.headers.get("authorization")).toBe(
                     "Bearer sk_video_upstream",
                 );
                 const body = (await request.json()) as {
                     prompt: string;
                     duration: number;
+                    reference_images?: string[];
                 };
-                expect(Object.keys(body).sort()).toEqual([
-                    "duration",
-                    "prompt",
-                ]);
-                expect(body.duration).toBe(
+                const isProbe =
                     body.prompt ===
-                        "A green sprout gently moving in the breeze."
-                        ? 5
-                        : 4,
+                    "A green sprout gently moving in the breeze.";
+                expect(body).toEqual(
+                    isProbe
+                        ? { prompt: body.prompt, duration: 5 }
+                        : {
+                              prompt: "green sprout",
+                              duration: 4,
+                              reference_images: [
+                                  "https://media.example.com/style.jpg",
+                              ],
+                          },
                 );
                 return Response.json({
                     data: [{ b64_json: TEST_MP4_BASE64 }],
@@ -4140,9 +4155,8 @@ fixtureTest(
                 method: "POST",
                 headers: { "Content-Type": "application/json", Cookie: cookie },
                 body: JSON.stringify({
-                    baseUrl: "https://api.example.com/generate-video",
+                    baseUrl: videoEndpointUrl,
                     bearerToken: "sk_video_upstream",
-                    model: "community-video-1",
                     modality: "video",
                 }),
             }),
@@ -4165,7 +4179,7 @@ fixtureTest(
                     description: "Synchronous community video endpoint",
                     modality: "video",
                     visibility: "public",
-                    baseUrl: "https://api.example.com/generate-video",
+                    baseUrl: videoEndpointUrl,
                     bearerToken: "sk_video_upstream",
                     completionVideoPrice: 0.08,
                 }),
@@ -4187,7 +4201,7 @@ fixtureTest(
 
         const generationResponse = await fetchGen(
             new Request(
-                `https://gen.pollinations.ai/video/green%20sprout?model=${encodeURIComponent(registered.modelId)}&duration=4`,
+                `https://gen.pollinations.ai/video/green%20sprout?model=${encodeURIComponent(registered.modelId)}&duration=4&reference_images=${encodeURIComponent("https://media.example.com/style.jpg")}`,
                 { headers: { Authorization: `Bearer ${apiKey}` } },
             ),
         );

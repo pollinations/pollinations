@@ -37,7 +37,11 @@ import {
 import { getImageEnv, syncImageEnv } from "./env.ts";
 import { setKleinVpcBinding } from "./models/fluxKleinModel.ts";
 import { clampNovaCanvasDimensions } from "./models/novaCanvasModel.ts";
-import { type ImageParams, ImageParamsSchema } from "./params.ts";
+import {
+    CommunityReferenceParamsSchema,
+    type ImageParams,
+    ImageParamsSchema,
+} from "./params.ts";
 import { sanitizeString, sleep } from "./util.ts";
 import {
     CONTENT_POLICY_ERROR_CODE,
@@ -129,16 +133,30 @@ function parseImageParams(
 ): RuntimeImageParams {
     const queryParams = Object.fromEntries(new URL(c.req.url).searchParams);
     const resolvedModel = c.var.model.resolved;
-    const mergedParams = {
+    const mergedParams: Record<string, unknown> = {
         ...queryParams,
         ...body,
         model: c.var.model.communityEndpoint
             ? DEFAULT_IMAGE_MODEL
             : resolvedModel,
     };
-    delete (mergedParams as Record<string, unknown>).prompt;
-    delete (mergedParams as Record<string, unknown>).key;
+    delete mergedParams.prompt;
+    delete mergedParams.key;
 
+    const communityReferences = c.var.model.communityEndpoint
+        ? CommunityReferenceParamsSchema.safeParse(mergedParams)
+        : null;
+    if (communityReferences && !communityReferences.success) {
+        throw new UpstreamError(400, {
+            message: `Invalid parameters: ${communityReferences.error.issues[0]?.message || "validation failed"}`,
+            cause: communityReferences.error.issues,
+        });
+    }
+    if (communityReferences) {
+        delete mergedParams.reference_images;
+        delete mergedParams.reference_videos;
+        delete mergedParams.reference_audios;
+    }
     const parseResult = ImageParamsSchema.safeParse(mergedParams);
     if (!parseResult.success) {
         throw new UpstreamError(400, {
@@ -148,6 +166,7 @@ function parseImageParams(
     }
     return {
         ...parseResult.data,
+        ...(communityReferences?.data ?? {}),
         model: resolvedModel,
     };
 }

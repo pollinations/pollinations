@@ -56,6 +56,12 @@ const referenceUrl = z.string().superRefine((value, ctx) => {
 
 const referenceUrls = z.preprocess(parseReferenceUrls, z.array(referenceUrl));
 
+export const CommunityReferenceParamsSchema = z.object({
+    reference_images: referenceUrls.optional(),
+    reference_videos: referenceUrls.optional(),
+    reference_audios: referenceUrls.optional(),
+});
+
 function adjustImageSizeForModel(
     model: ImageModelName,
     width?: number,

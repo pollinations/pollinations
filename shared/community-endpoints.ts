@@ -1124,11 +1124,7 @@ export function communityModelDefinition(
         title: communityEndpointTitle(endpoint),
         description: description || undefined,
         inputModalities,
-        outputModalities: isImage
-            ? ["image"]
-            : isVideo
-              ? ["video"]
-              : ["text"],
+        outputModalities: isImage ? ["image"] : isVideo ? ["video"] : ["text"],
         hidden: endpoint.hidden,
         ...(endpoint.fallbacks?.length
             ? { fallbacks: endpoint.fallbacks }

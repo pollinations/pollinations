@@ -158,18 +158,22 @@ async function fetchCommunityJson(
     noun: string,
     body: string | FormData,
 ): Promise<unknown> {
-    const response = await fetchWithTimeout(url, {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${normalizeCommunityEndpointBearerToken(
-                bearerToken,
-            )}`,
-            ...(typeof body === "string"
-                ? { "Content-Type": "application/json" }
-                : {}),
+    const response = await fetchWithTimeout(
+        url,
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${normalizeCommunityEndpointBearerToken(
+                    bearerToken,
+                )}`,
+                ...(typeof body === "string"
+                    ? { "Content-Type": "application/json" }
+                    : {}),
+            },
+            body,
         },
-        body,
-    }, noun);
+        noun,
+    );
     const text = await response.text();
     const parsed = parseJson(text);
 

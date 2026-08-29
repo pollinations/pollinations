@@ -453,7 +453,6 @@ describe("community endpoint OpenAI service", () => {
     });
 });
 
-
 describe("community video endpoint probe", () => {
     afterEach(() => {
         vi.unstubAllGlobals();

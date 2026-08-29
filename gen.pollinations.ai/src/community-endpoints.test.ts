@@ -6321,9 +6321,9 @@ fixtureTest(
 
 describe("community video helpers", () => {
     it("derives the OpenAI-compatible video generations URL", () => {
-        expect(
-            communityVideoGenerationsUrl("https://api.example.com/v1"),
-        ).toBe("https://api.example.com/v1/videos/generations");
+        expect(communityVideoGenerationsUrl("https://api.example.com/v1")).toBe(
+            "https://api.example.com/v1/videos/generations",
+        );
         expect(
             communityOpenAIBaseUrl(
                 "https://api.example.com/v1/videos/generations",
@@ -6414,7 +6414,10 @@ describe("community video endpoint billing", () => {
             fallbacks: [],
             hiddenAt: null,
             hiddenReason: null,
-            bearerTokenCiphertext: await encryptSecret("sk_saved_token", secret),
+            bearerTokenCiphertext: await encryptSecret(
+                "sk_saved_token",
+                secret,
+            ),
             ...communityEndpointPrices({ completionVideoPrice: 0.2 }),
         };
     }
@@ -6481,9 +6484,7 @@ describe("community video endpoint billing", () => {
     it("fails endpoints that stop reporting the billed duration", async () => {
         vi.stubGlobal(
             "fetch",
-            vi.fn(async () =>
-                Response.json({ data: [{ b64_json: MP4_B64 }] }),
-            ),
+            vi.fn(async () => Response.json({ data: [{ b64_json: MP4_B64 }] })),
         );
 
         await expect(
@@ -6529,7 +6530,12 @@ describe("community video endpoint billing", () => {
             type: "prompt_agent",
         } as CommunityEndpointRuntime;
         await expect(
-            callCommunityVideoEndpoint(endpoint, "a sprout", videoParams, secret),
+            callCommunityVideoEndpoint(
+                endpoint,
+                "a sprout",
+                videoParams,
+                secret,
+            ),
         ).rejects.toThrow(/managed agent/);
     });
 });

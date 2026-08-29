@@ -15,7 +15,10 @@ import {
     firstCommunityVideoBytes,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
-import { detectImageMimeType, detectVideoMimeType } from "@shared/image-mime.ts";
+import {
+    detectImageMimeType,
+    detectVideoMimeType,
+} from "@shared/image-mime.ts";
 import type { ModelInputModality, Usage } from "@shared/registry/registry.ts";
 import {
     getOpenAIImageUsage,
@@ -237,7 +240,11 @@ export async function testCommunityVideoEndpoint({
         },
         // The same `duration` field (in seconds) the request path forwards,
         // so what the probe proves is what callers actually get.
-        body: JSON.stringify({ model, prompt: SAMPLE_VIDEO_PROMPT, duration: 5 }),
+        body: JSON.stringify({
+            model,
+            prompt: SAMPLE_VIDEO_PROMPT,
+            duration: 5,
+        }),
     });
 
     const videoBytes = await firstCommunityVideoBytes(body, baseUrl);

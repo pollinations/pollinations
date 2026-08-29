@@ -1,0 +1,17 @@
+{
+  "name": "pollinations-storage-mcp",
+  "main": "worker.js",
+  "compatibility_date": "2026-08-14",
+  "compatibility_flags": ["nodejs_compat"],
+  "routes": [
+    {
+      "pattern": "storage-mcp.pollinations.ai",
+      "zone_name": "pollinations.ai",
+      "custom_domain": true,
+    },
+  ],
+  "observability": { "enabled": true },
+  "artifacts": {
+    "binding": "ARTIFACTS",
+  },
+}

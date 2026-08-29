@@ -1,0 +1,35 @@
+{
+  "pr_number": 14103,
+  "title": "feat: route GLM-5.3 through Fireworks",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14103",
+  "merged_at": "2026-08-29T11:20:13Z",
+  "labels": [],
+  "pr_body_excerpt": "- Routes canonical GLM-5.3 and its existing alias directly to Fireworks serverless accounts/fireworks/models/glm-5p3.\n- Sets paidOnly to false; preserves the $1.40/$0.26/$4.40 per-million cost sheet, multiplier 1, 1,048,576 context, mandatory reasoning, and no fallback.\n- Strips unsupported cache-control annotations before the Fireworks request.\n- Verified direct reasoning, JSON, tools, streaming, cached usage, and 10/10 burst; full local E2E passed both wallet paths, cache, errors, aliases, catalog, and 10/10 burst. Tinybird reconciled provider, meters, units, and exact settlement.\n\nPricing: https://fireworks.ai/models/fireworks/glm-5p3",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "GLM finds a faster flower",
+    "blurb": "GLM-5.3 and its alias now fly directly through Fireworks. The route is tidier, the reasoning stays mandatory, and the hive checked every cache crumb twice.",
+    "summary": "Routed canonical GLM-5.3 and its existing alias to Fireworks serverless at accounts/fireworks/models/glm-5p3, retaining its $1.40/$0.26/$4.40 per-million pricing, 1,048,576-token context window, mandatory reasoning, and no-fallback behavior.",
+    "impact": "Users can access GLM-5.3 without paid-only gating while retaining tested reasoning, JSON, tool calling, streaming, cache accounting, aliases, and burst handling through the Fireworks provider.",
+    "keywords": [
+      "GLM-5.3",
+      "Fireworks",
+      "text models",
+      "reasoning",
+      "streaming",
+      "tool calling",
+      "API routing"
+    ],
+    "visual_concept": "Depict GLM-5.3 as a glowing lime-green model packet being carefully routed through a cozy Fireworks-powered terminal and along a garden path of code-vines. Polli, wearing a tiny courier cap, guides the packet while the eager CRT Monitor Robot confirms clean streams, JSON braces, tool icons, and a very large context-scroll; small flowers and cache-control labels being gently swept aside show the request cleanup.",
+    "image_prompt": "A cozy garden-hackerspace scene where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, black antennae and oval eyes, bright pink rectangular cheek blushes, a happy smile, and small rounded light-blue translucent wings, wears a tiny courier cap and guides a glowing GLM-5.3 code parcel into a warm Fireworks terminal; a chunky CRT monitor robot watches JSON braces, tool icons, and a long context scroll drift through code-vines and pixel flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradients, dark purple (#110518) outlines, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, pixel text: \"GLM-5.3 → FIREWORKS\", nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-29/PR-14103.jpg",
+    "prompt": "A cozy garden-hackerspace scene where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, black antennae and oval eyes, bright pink rectangular cheek blushes, a happy smile, and small rounded light-blue translucent wings, wears a tiny courier cap and guides a glowing GLM-5.3 code parcel into a warm Fireworks terminal; a chunky CRT monitor robot watches JSON braces, tool icons, and a long context scroll drift through code-vines and pixel flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradients, dark purple (#110518) outlines, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, pixel text: \"GLM-5.3 → FIREWORKS\", nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-08-29T11:21:09.183316+00:00"
+}

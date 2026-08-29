@@ -11,6 +11,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { parseEnv } from "node:util";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { parse, stringify } from "yaml";
 import { configureDsh, disableDsh, dsh } from "./dsh.js";
@@ -33,7 +34,9 @@ beforeEach(() => {
 afterEach(() => rmSync(home, { recursive: true, force: true }));
 
 const settingsFile = () => join(home, ".dsh", "settings.yaml");
-const credsFile = () => join(home, ".dsh", ".credentials.yaml");
+const envFile = () => join(home, ".dsh", ".env");
+const patchFile = () => join(home, ".dsh", "cordis.patch.yml");
+const skillFile = () => join(home, ".dsh", "skills", "polli", "SKILL.md");
 const snapshotFiles = () => {
     const dir = join(home, ".pollinations", "harnesses");
     return existsSync(dir)
@@ -43,7 +46,7 @@ const snapshotFiles = () => {
 const read = (path: string) => readFileSync(path, "utf-8");
 
 describe("dsh harness", () => {
-    it("writes the provider, default model, and credentials from scratch", () => {
+    it("writes the provider, MCP, skill, and credential from scratch", () => {
         const result = configureDsh(ctx, settings);
         expect(result).toMatchObject({
             harness: "dsh",
@@ -59,7 +62,7 @@ describe("dsh harness", () => {
         const provider = doc["llm-pi-ai"].providers.pollinations;
         expect(provider).toMatchObject({
             api: "openai-completions",
-            apiKeyEnv: "POLLINATIONS_API_KEY",
+            apiKeyEnv: "POLLI_DSH_API_KEY",
             baseURL: "https://gen.pollinations.ai/v1",
         });
         expect(provider.models.map((m: { id: string }) => m.id)).toEqual([
@@ -67,12 +70,23 @@ describe("dsh harness", () => {
             "kimi",
         ]);
 
-        expect(parse(read(credsFile()))).toEqual({
-            version: 1,
-            refs: { POLLINATIONS_API_KEY: "sk_test_key" },
-        });
+        expect(parseEnv(read(envFile())).POLLI_DSH_API_KEY).toBe("sk_test_key");
+        const patch = read(patchFile());
+        expect(patch).toContain("id: mcp-pollinations");
+        expect(patch).toContain("name: \"@deepseek-ai/dsh-mcp-client\"");
+        expect(patch).toContain("serverName: pollinations");
+        expect(patch).toContain("transport: streamable-http");
+        expect(patch).toContain(
+            "url: https://gen.pollinations.ai/mcp/pollinations",
+        );
+        expect(patch).toContain(
+            "!!js '`Bearer ${process.env.POLLI_DSH_API_KEY}`'",
+        );
+        expect(read(skillFile())).toContain("name: polli");
         expect(statSync(settingsFile()).mode & 0o777).toBe(0o600);
-        expect(statSync(credsFile()).mode & 0o777).toBe(0o600);
+        expect(statSync(envFile()).mode & 0o777).toBe(0o600);
+        expect(statSync(patchFile()).mode & 0o777).toBe(0o600);
+        expect(statSync(skillFile()).mode & 0o777).toBe(0o600);
         expect(statSync(join(home, ".dsh")).mode & 0o777).toBe(0o700);
         expect(dsh.status(ctx)).toMatchObject({
             configured: true,
@@ -80,16 +94,20 @@ describe("dsh harness", () => {
         });
     });
 
-    it("keeps existing settings, comments, and other credentials", () => {
+    it("keeps existing settings, comments, environment, and MCP entries", () => {
         mkdirSync(join(home, ".dsh"), { recursive: true });
         writeFileSync(
             settingsFile(),
             "# my notes\nui-onboarding:\n  welcomeNoticeVersion: 1\nagent-default-model:\n  provider: deepseek\n  model: deepseek-chat\n",
         );
         writeFileSync(
-            credsFile(),
-            "version: 1\nrefs:\n  DEEPSEEK_API_KEY: ds-secret\n",
+            envFile(),
+            "# local env\nDEEPSEEK_API_KEY=ds-secret\n",
             { mode: 0o644 },
+        );
+        writeFileSync(
+            patchFile(),
+            "# my plugins\n- insert:\n    - id: mcp-local\n      name: local-mcp\n",
         );
 
         configureDsh(ctx, settings);
@@ -99,12 +117,15 @@ describe("dsh harness", () => {
         expect(parse(text)["ui-onboarding"]).toEqual({
             welcomeNoticeVersion: 1,
         });
-        expect(parse(read(credsFile())).refs).toEqual({
+        expect(read(envFile())).toContain("# local env");
+        expect(parseEnv(read(envFile()))).toMatchObject({
             DEEPSEEK_API_KEY: "ds-secret",
-            POLLINATIONS_API_KEY: "sk_test_key",
+            POLLI_DSH_API_KEY: "sk_test_key",
         });
+        expect(read(patchFile())).toContain("# my plugins");
+        expect(read(patchFile())).toContain("id: mcp-local");
         expect(statSync(settingsFile()).mode & 0o777).toBe(0o600);
-        expect(statSync(credsFile()).mode & 0o777).toBe(0o600);
+        expect(statSync(envFile()).mode & 0o777).toBe(0o600);
     });
 
     it("restores the original files byte-for-byte on off", () => {
@@ -119,7 +140,9 @@ describe("dsh harness", () => {
 
         expect(result.outcome).toBe("restored");
         expect(read(settingsFile())).toBe(original);
-        expect(existsSync(credsFile())).toBe(false);
+        expect(existsSync(envFile())).toBe(false);
+        expect(existsSync(patchFile())).toBe(false);
+        expect(existsSync(skillFile())).toBe(false);
         expect(snapshotFiles()).toHaveLength(0);
         expect(dsh.status(ctx).configured).toBe(false);
     });
@@ -137,7 +160,9 @@ describe("dsh harness", () => {
         expect(doc["agent-presets"]).toEqual({ default: "mine" });
         expect(doc["agent-default-model"]).toBeUndefined();
         expect(doc["llm-pi-ai"].providers.pollinations).toBeUndefined();
-        expect(parse(read(credsFile())).refs).toEqual({});
+        expect(parseEnv(read(envFile())).POLLI_DSH_API_KEY).toBeUndefined();
+        expect(read(patchFile())).not.toContain("mcp-pollinations");
+        expect(existsSync(skillFile())).toBe(false);
         expect(snapshotFiles()).toHaveLength(0);
     });
 
@@ -188,7 +213,7 @@ describe("dsh harness", () => {
 
     it("reports unconfigured when the credential is missing", () => {
         configureDsh(ctx, settings);
-        unlinkSync(credsFile());
+        unlinkSync(envFile());
         expect(dsh.status(ctx).configured).toBe(false);
     });
 
@@ -207,18 +232,19 @@ describe("dsh harness", () => {
         expect(dsh.status(ctx).configured).toBe(true);
     });
 
-    it("rolls back the first file when writing the second file fails", () => {
+    it("rolls back earlier files when the MCP config is invalid", () => {
         mkdirSync(join(home, ".dsh"), { recursive: true });
         const original =
             "agent-default-model: {provider: deepseek, model: deepseek-chat}\n";
         writeFileSync(settingsFile(), original);
-        const invalidCredentials = "refs: [";
-        writeFileSync(credsFile(), invalidCredentials, { mode: 0o600 });
+        const invalidPatch = "{}\n";
+        writeFileSync(patchFile(), invalidPatch, { mode: 0o600 });
 
         expect(() => configureDsh(ctx, settings)).toThrow();
 
         expect(read(settingsFile())).toBe(original);
-        expect(read(credsFile())).toBe(invalidCredentials);
+        expect(existsSync(envFile())).toBe(false);
+        expect(read(patchFile())).toBe(invalidPatch);
         expect(snapshotFiles()).toHaveLength(0);
     });
 });

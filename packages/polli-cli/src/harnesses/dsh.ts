@@ -1,7 +1,13 @@
 import { join, resolve } from "node:path";
-import { parseDocument } from "yaml";
+import { parseEnv } from "node:util";
+import { isMap, isSeq, parseDocument, Scalar } from "yaml";
+import polliSkill from "../../SKILL.md?raw";
 import { BASE_URL } from "../lib/config.js";
-import { readTextIfExists, writeTextAtomic } from "./fs.js";
+import {
+    readTextIfExists,
+    removeIfExists,
+    writeTextAtomic,
+} from "./fs.js";
 import { resolveHarnessKey } from "./keys.js";
 import { fetchHarnessModels } from "./models.js";
 import {
@@ -20,12 +26,17 @@ const ID = "dsh";
 const LABEL = "DeepSeek Harness";
 const PROVIDER = "pollinations";
 const DEFAULT_MODEL = "deepseek";
-const KEY_ENV = "POLLINATIONS_API_KEY";
+const KEY_ENV = "POLLI_DSH_API_KEY";
+const MCP_ID = "mcp-pollinations";
+const MCP_URL = `${BASE_URL}/mcp/pollinations`;
 const PROVIDER_PATH = ["llm-pi-ai", "providers", PROVIDER];
 const DEFAULT_MODEL_PATH = ["agent-default-model"];
-const KEY_PATH = ["refs", KEY_ENV];
 // Never fold long scalars (the API key) across lines.
 const YAML_OUT = { lineWidth: 0 };
+const JS_TAG = {
+    tag: "tag:yaml.org,2002:js",
+    resolve: (value: string) => value,
+};
 
 export const dshHome = (ctx: HarnessContext) => {
     const configured = ctx.env.DSH_HOME;
@@ -40,20 +51,132 @@ export const dshHome = (ctx: HarnessContext) => {
 };
 const settingsPath = (ctx: HarnessContext) =>
     join(dshHome(ctx), "settings.yaml");
-const credentialsPath = (ctx: HarnessContext) =>
-    join(dshHome(ctx), ".credentials.yaml");
+const envPath = (ctx: HarnessContext) => join(dshHome(ctx), ".env");
+const patchPath = (ctx: HarnessContext) =>
+    join(dshHome(ctx), "cordis.patch.yml");
+const skillPath = (ctx: HarnessContext) =>
+    join(dshHome(ctx), "skills", "polli", "SKILL.md");
 
 // parseDocument keeps comments and untouched entries intact on rewrite.
-const loadYaml = (path: string) => parseDocument(readTextIfExists(path) ?? "");
+const loadYaml = (path: string) =>
+    parseDocument(readTextIfExists(path) ?? "", { customTags: [JS_TAG] });
 
 const files = (ctx: HarnessContext) => [
     settingsPath(ctx),
-    credentialsPath(ctx),
+    envPath(ctx),
+    patchPath(ctx),
+    skillPath(ctx),
 ];
 
 const readKey = (ctx: HarnessContext) => {
-    const key = loadYaml(credentialsPath(ctx)).getIn(KEY_PATH);
-    return typeof key === "string" ? key : null;
+    const text = readTextIfExists(envPath(ctx));
+    if (text === null) return null;
+    const key = parseEnv(text)[KEY_ENV];
+    return key || null;
+};
+
+const envLine = (key: string) => `${KEY_ENV}=${JSON.stringify(key)}`;
+const keyLine = new RegExp(`^(?:export\\s+)?${KEY_ENV}\\s*=`, "u");
+
+const setEnvKey = (ctx: HarnessContext, key: string) => {
+    const lines = (readTextIfExists(envPath(ctx)) ?? "").split("\n");
+    const index = lines.findIndex((line) => keyLine.test(line));
+    const filtered = lines.filter((line, i) => i === index || !keyLine.test(line));
+    if (index === -1) {
+        const insertAt = filtered.at(-1) === "" ? filtered.length - 1 : filtered.length;
+        filtered.splice(insertAt, 0, envLine(key));
+    }
+    else filtered[index] = envLine(key);
+    writeTextAtomic(envPath(ctx), filtered.join("\n"), 0o600);
+};
+
+const deleteEnvKey = (ctx: HarnessContext) => {
+    const text = readTextIfExists(envPath(ctx));
+    if (text === null) return false;
+    const lines = text.split("\n");
+    const filtered = lines.filter((line) => !keyLine.test(line));
+    if (filtered.length === lines.length) return false;
+    writeTextAtomic(envPath(ctx), filtered.join("\n"), 0o600);
+    return true;
+};
+
+const stripMcpEntry = (doc: ReturnType<typeof loadYaml>) => {
+    if (!isSeq(doc.contents)) return false;
+    let changed = false;
+    for (let i = doc.contents.items.length - 1; i >= 0; i--) {
+        const patch = doc.contents.items[i];
+        if (!isMap(patch)) continue;
+        if (patch.get("id") === MCP_ID) {
+            doc.contents.items.splice(i, 1);
+            changed = true;
+            continue;
+        }
+        const inserted = patch.get("insert", true);
+        if (!isSeq(inserted)) continue;
+        const before = inserted.items.length;
+        inserted.items = inserted.items.filter(
+            (entry) => !isMap(entry) || entry.get("id") !== MCP_ID,
+        );
+        changed ||= inserted.items.length !== before;
+        if (inserted.items.length === 0 && patch.items.length === 1) {
+            doc.contents.items.splice(i, 1);
+        }
+    }
+    return changed;
+};
+
+const removeMcpEntry = (ctx: HarnessContext) => {
+    const doc = loadYaml(patchPath(ctx));
+    if (!stripMcpEntry(doc)) return false;
+    writeTextAtomic(patchPath(ctx), doc.toString(YAML_OUT), 0o600);
+    return true;
+};
+
+const writeMcpEntry = (ctx: HarnessContext) => {
+    const doc = loadYaml(patchPath(ctx));
+    if (doc.contents === null) doc.contents = doc.createNode([]);
+    if (!isSeq(doc.contents)) {
+        throw new Error(`${patchPath(ctx)} must contain a YAML list`);
+    }
+    stripMcpEntry(doc);
+    const authorization = doc.createNode(
+        `\`Bearer \${process.env.${KEY_ENV}}\``,
+    );
+    authorization.tag = "tag:yaml.org,2002:js";
+    authorization.type = Scalar.QUOTE_SINGLE;
+    doc.add({
+        insert: [
+            {
+                id: MCP_ID,
+                name: "@deepseek-ai/dsh-mcp-client",
+                config: {
+                    serverName: "pollinations",
+                    transport: "streamable-http",
+                    url: MCP_URL,
+                    headers: { Authorization: authorization },
+                },
+            },
+        ],
+    });
+    writeTextAtomic(patchPath(ctx), doc.toString(YAML_OUT), 0o600);
+};
+
+const hasMcpEntry = (ctx: HarnessContext) => {
+    const doc = loadYaml(patchPath(ctx));
+    if (!isSeq(doc.contents)) return false;
+    return doc.contents.items.some((patch) => {
+        if (!isMap(patch)) return false;
+        const inserted = patch.get("insert", true);
+        return (
+            isSeq(inserted) &&
+            inserted.items.some(
+                (entry) =>
+                    isMap(entry) &&
+                    entry.get("id") === MCP_ID &&
+                    entry.getIn(["config", "url"]) === MCP_URL,
+            )
+        );
+    });
 };
 
 // Provider block in the pi-ai schema dsh shares with Pi and Prime Agent. The
@@ -94,13 +217,12 @@ const writeConfig = (ctx: HarnessContext, settings: DshSettings) => {
         doc.createNode({ provider: PROVIDER, model: settings.model }),
     );
     writeTextAtomic(settingsPath(ctx), doc.toString(YAML_OUT), 0o600);
-
-    // dsh reads secrets from its own owner-only document:
-    // `version: 1` with a `refs:` map of env-style names.
-    const creds = loadYaml(credentialsPath(ctx));
-    creds.set("version", 1);
-    creds.setIn(KEY_PATH, settings.apiKey);
-    writeTextAtomic(credentialsPath(ctx), creds.toString(YAML_OUT), 0o600);
+    // DSH's provider and MCP loader both read its user environment layer.
+    setEnvKey(ctx, settings.apiKey);
+    writeMcpEntry(ctx);
+    if (readTextIfExists(skillPath(ctx)) === null) {
+        writeTextAtomic(skillPath(ctx), polliSkill, 0o600);
+    }
 };
 
 const stripConfig = (ctx: HarnessContext) => {
@@ -117,10 +239,10 @@ const stripConfig = (ctx: HarnessContext) => {
     if (changed)
         writeTextAtomic(settingsPath(ctx), doc.toString(YAML_OUT), 0o600);
 
-    const creds = loadYaml(credentialsPath(ctx));
-    if (creds.hasIn(KEY_PATH)) {
-        creds.deleteIn(KEY_PATH);
-        writeTextAtomic(credentialsPath(ctx), creds.toString(YAML_OUT), 0o600);
+    changed = deleteEnvKey(ctx) || changed;
+    changed = removeMcpEntry(ctx) || changed;
+    if (readTextIfExists(skillPath(ctx)) === polliSkill) {
+        removeIfExists(skillPath(ctx));
         changed = true;
     }
     return changed;
@@ -138,7 +260,9 @@ const result = (ctx: HarnessContext): HarnessResult => {
             doc.getIn([...PROVIDER_PATH, "baseURL"]) === `${BASE_URL}/v1` &&
             doc.getIn([...DEFAULT_MODEL_PATH, "provider"]) === PROVIDER &&
             typeof model === "string" &&
-            readKey(ctx) !== null,
+            readKey(ctx) !== null &&
+            hasMcpEntry(ctx) &&
+            readTextIfExists(skillPath(ctx)) !== null,
         model: typeof model === "string" ? model : undefined,
         files: files(ctx),
     };

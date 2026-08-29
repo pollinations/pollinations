@@ -136,6 +136,9 @@ polli harness dsh status
 polli harness dsh off
 ```
 
+The DSH adapter configures the Pollinations provider, hosted Pollinations MCP,
+and Polli CLI skill globally under `$DSH_HOME` (default `~/.dsh`).
+
 See [Coding Harnesses](https://github.com/pollinations/pollinations/blob/main/CODING_HARNESSES.md) for what each profile changes and how to add one.
 
 ## Links

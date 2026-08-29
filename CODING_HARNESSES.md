@@ -13,7 +13,9 @@ For DeepSeek Harness, `on`:
 1. Logs you in with the browser device flow if `polli` has no stored key (`polli auth login`).
 2. Mints a secret key named `polli-harness-dsh`. A still-valid key already in the DSH config is reused.
 3. Loads `GET /v1/models` and registers every first-party text model with tool calling.
-4. Saves a private snapshot before writing the provider, default model, and key.
+4. Saves a private snapshot before changing any DSH files.
+5. Enables the hosted Pollinations MCP so DSH can generate images, audio, and video as native tools.
+6. Installs the packaged `polli` skill globally for DSH.
 
 ```bash
 polli harness --help                  # supported harnesses
@@ -31,7 +33,7 @@ The account key stored by `polli auth login` is never written into a harness; ea
 
 | Harness | Command | Files | Notes |
 | --- | --- | --- | --- |
-| [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) | `polli harness dsh on` | `$DSH_HOME/settings.yaml`, `$DSH_HOME/.credentials.yaml` (default `~/.dsh`) | Adds provider `pollinations` under `llm-pi-ai.providers` and sets `agent-default-model`. The key goes into the `refs` map of the credentials document. Changes apply on the next request. |
+| [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) | `polli harness dsh on` | `$DSH_HOME/settings.yaml`, `.env`, `cordis.patch.yml`, and `skills/polli/SKILL.md` (default `~/.dsh`) | Adds the Pollinations provider, hosted Pollinations MCP, and Polli CLI skill globally. One dedicated key in `.env` authenticates both the provider and MCP. Changes apply on the next request. |
 | [OpenClaw](https://github.com/openclaw/openclaw) | `apps/openclaw/setup-pollinations.sh` | `~/.openclaw/openclaw.json` | Shell script in this repo, not yet a `polli harness` profile. See [apps/openclaw](./apps/openclaw/README.md). |
 | [OpenCode](https://opencode.ai) | `opencode-pollinations-plugin` | `opencode.json`, `auth.json` | Community plugin that registers a Pollinations provider. A future adapter can install OpenCode when missing, enable the plugin, and store a dedicated child key in OpenCode's native auth file. |
 

@@ -8,7 +8,7 @@ allowed-tools: Bash(polli *)
 
 Thin wrapper around `gen.pollinations.ai`. Generates images, text, audio, video; transcribes speech; manages API keys, usage, quests, agents, and invite-only my-models.
 
-Install: `npm i -g @pollinations/cli@latest` (provides the `polli` binary).
+If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides the `polli` binary).
 
 ## When to use this skill
 
@@ -211,7 +211,7 @@ polli harness dsh on                # login if needed, mint key "polli-harness-d
 polli harness dsh on --model kimi   # any tool-calling text model from `polli models`
 polli harness dsh off               # restore the config backed up before "on"
 ```
-The DSH adapter edits `$DSH_HOME/settings.yaml` and `.credentials.yaml` (default `~/.dsh`) and stores a private snapshot under `~/.pollinations/harnesses/`. Reruns reuse a valid key already in the harness config. Other adapters may use their harness's official plugin or installer instead. Guide: `polli docs` section "Coding Harnesses".
+The DSH adapter globally configures the Pollinations provider, hosted Pollinations MCP, and this skill under `$DSH_HOME` (default `~/.dsh`). It stores one dedicated child key in `$DSH_HOME/.env` for the provider and MCP, plus a private snapshot under `~/.pollinations/harnesses/`. Reruns reuse a valid key already in the harness config. Other adapters may use their harness's official plugin or installer instead. Guide: `polli docs` section "Coding Harnesses".
 
 ### Read API docs
 ```bash

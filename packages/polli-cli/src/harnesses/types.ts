@@ -33,10 +33,7 @@ export interface HarnessAdapter {
     label: string;
     description: string;
     restartHint: string;
-    on(
-        ctx: HarnessContext,
-        options: HarnessOnOptions,
-    ): Promise<HarnessResult>;
+    on(ctx: HarnessContext, options: HarnessOnOptions): Promise<HarnessResult>;
     off(ctx: HarnessContext): Promise<HarnessResult> | HarnessResult;
     status(ctx: HarnessContext): Promise<HarnessResult> | HarnessResult;
 }

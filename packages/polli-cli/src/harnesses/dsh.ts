@@ -79,10 +79,7 @@ interface DshSettings {
 
 const writeConfig = (ctx: HarnessContext, settings: DshSettings) => {
     const doc = loadYaml(settingsPath(ctx));
-    doc.setIn(
-        PROVIDER_PATH,
-        doc.createNode(providerConfig(settings.models)),
-    );
+    doc.setIn(PROVIDER_PATH, doc.createNode(providerConfig(settings.models)));
     doc.setIn(
         DEFAULT_MODEL_PATH,
         doc.createNode({ provider: PROVIDER, model: settings.model }),
@@ -113,11 +110,7 @@ const stripConfig = (ctx: HarnessContext) => {
     const creds = loadYaml(credentialsPath(ctx));
     if (creds.hasIn(KEY_PATH)) {
         creds.deleteIn(KEY_PATH);
-        writeTextAtomic(
-            credentialsPath(ctx),
-            creds.toString(YAML_OUT),
-            0o600,
-        );
+        writeTextAtomic(credentialsPath(ctx), creds.toString(YAML_OUT), 0o600);
         changed = true;
     }
     return changed;

@@ -1,0 +1,35 @@
+{
+  "pr_number": 14109,
+  "title": "fix: stop retrying Tinybird event payloads",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14109",
+  "merged_at": "2026-08-29T15:31:15Z",
+  "labels": [],
+  "pr_body_excerpt": "- Sends each Tinybird generation-event payload exactly once at the application level, including on 5xx, 429, and network failures.\n- Removes exponential backoff and retry state from the shared sender used by generation, realtime, and MCP tracking.\n- Removes the usage-history full-window aggregation and read-time deduplication; historical rows are returned as stored.\n- The direct 30-day production query completed in 0.03s / 95k rows read, versus 15.9s / 11.3M rows for the previous aggregation.\n- Adds regression tests for failed HTTP responses and network errors; each asserts one fetch call.\n- Tests: `npm run test -- test/events.test.ts test/account-usage.test.ts test/account-key-usage.test.ts` (17/17).\n- Requires normal staging-first Tinybird rollout and the standard Cloudflare deployment after merge; no deployment was performed.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "One event, one flight",
+    "blurb": "The event courier has stopped circling the same flower. Generation, realtime, and MCP tracking now send each Tinybird payload once, while usage history reads the rows already in the garden at a much healthier pace.",
+    "summary": "Tinybird generation-event delivery now makes exactly one application-level send attempt across generation, realtime, and MCP tracking, and usage-history queries now return stored rows directly instead of full-window aggregation and read-time deduplication.",
+    "impact": "Usage history can read a 30-day, 95k-row production window in 0.03 seconds instead of 15.9 seconds over 11.3M aggregated rows, with event sends no longer repeated after 5xx, 429, or network responses.",
+    "keywords": [
+      "Tinybird",
+      "usage history",
+      "event tracking",
+      "MCP",
+      "realtime",
+      "performance",
+      "reliability"
+    ],
+    "visual_concept": "A cozy mail-and-garden metaphor for exactly-once event delivery and faster history lookup: Polli carries one sealed pollen packet to a Tinybird-inspired data garden while a retro terminal displays a short, tidy row of stored records rather than a tangled pile of duplicate scrolls. Include code-plants and a small stopwatch to represent the 0.03-second query, with Polli wearing a tiny courier cap.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny courier cap and delivering one sealed pollen packet to a friendly Tinybird-inspired data garden; beside her, a retro CRT terminal glows with one neat row of history records and a tiny stopwatch, while code-plants and pastel flowers grow from pots. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle scanlines, pixel-font text: \"ONE SEND\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-29/PR-14109.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny courier cap and delivering one sealed pollen packet to a friendly Tinybird-inspired data garden; beside her, a retro CRT terminal glows with one neat row of history records and a tiny stopwatch, while code-plants and pastel flowers grow from pots. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle scanlines, pixel-font text: \"ONE SEND\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-29T15:32:12.708711+00:00"
+}

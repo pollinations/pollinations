@@ -1,0 +1,42 @@
+name: CI / Brick router
+
+"on":
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/brick-router/**"
+      - ".github/workflows/ci-brick-router.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: apps/brick-router/package-lock.json
+
+      - name: Test Worker boundary
+        working-directory: apps/brick-router
+        run: npm ci --silent && npm test
+
+      - name: Build container
+        run: docker build --platform linux/amd64 -t brick-router:test apps/brick-router
+
+      - name: Smoke test container
+        run: |
+          docker run --rm -d --name brick-router-test -p 8000:8000 brick-router:test
+          trap 'docker logs brick-router-test || true; docker stop brick-router-test || true' EXIT
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:8000/health; then
+              exit 0
+            fi
+            sleep 2
+          done
+          exit 1

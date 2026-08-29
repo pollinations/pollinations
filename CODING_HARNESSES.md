@@ -40,6 +40,8 @@ The account key stored by `polli auth login` is never written into a harness; ea
 
 Any harness that accepts an OpenAI-compatible chat completions provider works with `base_url = https://gen.pollinations.ai/v1` and `Authorization: Bearer sk_…` set by hand. Codex CLI (needs `/v1/responses`) and Claude Code (needs `/v1/messages`) are not supported until those endpoints exist.
 
+<!-- scalar-docs-end -->
+
 ## Add a harness
 
 New harness adapters are welcome and are usually posted as [quests](https://github.com/pollinations/pollinations/issues?q=is%3Aissue+label%3APOLLEN-QUEST+harness). One adapter is one file:

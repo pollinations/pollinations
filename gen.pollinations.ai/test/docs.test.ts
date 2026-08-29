@@ -550,6 +550,7 @@ describe("docs routes", () => {
         const harnessBody = await harnessRes.text();
         expect(harnessBody).toContain("## Coding Harnesses");
         expect(harnessBody).toContain("polli harness dsh on");
+        expect(harnessBody).not.toContain("## Add a harness");
 
         const badRes = await worker.fetch(
             new Request("https://gen.pollinations.ai/docs/llm.txt?section=bad"),

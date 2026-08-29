@@ -2,6 +2,7 @@ import {
     ButtonGroup,
     CheckIcon,
     FieldStack,
+    InlineLink,
     Input,
     TabButton,
 } from "@pollinations/ui";
@@ -110,24 +111,26 @@ export function ModelListingFields({
                 </FieldStack>
             )}
 
-            <div className="mb-2 text-xs text-theme-text-muted">
-                <a
-                    href="https://github.com/pollinations/pollinations/blob/main/COMMUNITY_MODEL_NAMING.md"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="underline decoration-current/40 underline-offset-2 hover:text-theme-text-strong"
-                >
-                    Naming guide
-                </a>
-                {" — stable ID, short title, and transparent description."}
-            </div>
             <div className="grid gap-4 sm:grid-cols-2">
                 <FieldStack
                     label={isAgent ? "ID" : "Model ID"}
                     helper={
-                        isAgent
-                            ? "Public ID: {username}/{id}."
-                            : "Public ID: {username}/{model-id}."
+                        isAgent ? (
+                            "Public ID: {username}/{id}."
+                        ) : (
+                            <>
+                                Public ID: {"{username}"}/
+                                {"{model-id}"}.{" "}
+                                <InlineLink
+                                    href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_MODEL.md#model-names"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                >
+                                    Naming tips
+                                </InlineLink>
+                                .
+                            </>
+                        )
                     }
                     alignLabelRow
                 >

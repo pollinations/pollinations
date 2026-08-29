@@ -1,6 +1,6 @@
 # Publish a Model
 
-Publishing a model lets you connect an OpenAI-compatible endpoint to Pollinations and call it through `gen.pollinations.ai` under an `owner/model` id. Pollinations handles authentication, Pollen billing, model discovery, and routing; the model continues to run on infrastructure you control. See the [community model naming guide](./COMMUNITY_MODEL_NAMING.md) for ID, title, and description tips.
+Publishing a model lets you connect an OpenAI-compatible endpoint to Pollinations and call it through `gen.pollinations.ai` under an `owner/model` id. Pollinations handles authentication, Pollen billing, model discovery, and routing; the model continues to run on infrastructure you control.
 
 Model publishing and [connecting user wallets](./BRING_YOUR_OWN_POLLEN.md) solve different problems. Model publishing supplies a model to the Pollinations catalog. The wallet flow lets users authorize an app to spend their own Pollen. An app can use either or both.
 
@@ -40,6 +40,10 @@ Owners receive 75% of the Pollen spent on their models. Paid and Quest Pollen ea
 4. Fetch the upstream model list or run the endpoint test before saving.
 5. Save the model as private, then call its `owner/model` id through the normal Pollinations endpoint.
 6. If your account has publisher access, change visibility to public and set prices when it is ready for other users.
+
+### Model names
+
+Choose a short, stable slug for the model ID (`owner/slug`) and a clear title for the catalog. Keep details that may change, such as price, hosting provider, routing, or context size, out of the slug. Use the description to identify the upstream model or explain what a router or rebranded model does. For example, use `owner/llama-3.1-8b` with the title `Llama 3.1 8B` and the description `Direct proxy to Meta Llama 3.1 8B via Groq`, or `owner/fast-router` with the title `Fast Chat Router` and the description `Routes between Llama and Mistral based on latency`.
 
 The upstream credential is used by Pollinations to proxy requests to your endpoint. Do not place it in a model name, description, public URL, or example.
 

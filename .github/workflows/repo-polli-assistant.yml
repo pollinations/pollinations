@@ -59,7 +59,16 @@ jobs:
               return;
             }
 
-            const authorizedUserIds = new Set([5099901, 36901823, 74301576, 158852059]);
+            const authorizedUserIds = new Set([
+              5099901, // voodoohop
+              36901823, // ElliotEtag
+              158852059, // Itachi-1824
+              74301576, // Circuit-Overtime
+              204561696, // tomdacatto
+              182555207, // YoannDev90
+              34513273, // fisventurous
+              189873015, // sharktide
+            ]);
             const actor = context.actor;
             const actorId = context.payload.sender?.id;
             if (!authorizedUserIds.has(actorId)) {

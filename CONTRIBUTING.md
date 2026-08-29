@@ -12,7 +12,7 @@ Before you start, please refer to the main `README.md` file of the `pollinations
 
 Look for issues that interest you and feel free to tackle them!
 
-Issues labeled `POLLEN-QUEST` are open to multiple solutions; you do not need to claim the issue or wait for assignment before starting. Link your PR with `Fixes #N`. Maintainers compare completed approaches and assign the selected contributor before merge so they can claim the stated reward.
+Issues labeled `POLLEN-QUEST` are open to multiple solutions; you do not need to claim the issue or wait for assignment before starting. Link your PR with `Fixes #N`. Maintainers compare completed approaches, and the author of the selected merged PR can claim the stated reward.
 
 ### 2. Understand the Issue and Build an MVP
 

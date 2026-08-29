@@ -150,8 +150,8 @@ const models: ModelDefinition[] = [
     },
     {
         name: "qwen-vision-pro",
-        config: portkeyConfig["qwen/qwen3-vl-235b-a22b-thinking"],
-        // Reasoning mandatory: rejects "none" but accepts low/medium/high.
+        config: portkeyConfig["qwen3-vl-235b-a22b-thinking"],
+        // Alibaba thinking-only model; strip "none" to preserve always-on reasoning.
         transform: mandatoryReasoning,
     },
     {
@@ -417,6 +417,12 @@ const models: ModelDefinition[] = [
     {
         name: "glm-5.3",
         config: portkeyConfig["z-ai/glm-5.3"],
+        // Reasoning is mandatory; off requests keep the upstream default.
+        transform: mandatoryReasoning,
+    },
+    {
+        name: "z-ai/glm-5.3-flash",
+        config: portkeyConfig["z-ai/glm-5.3-flash"],
         // Reasoning is mandatory; off requests keep the upstream default.
         transform: mandatoryReasoning,
     },

@@ -1,0 +1,34 @@
+{
+  "pr_number": 14115,
+  "title": "fix: simplify model ID announcement",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14115",
+  "merged_at": "2026-08-29T20:44:02Z",
+  "labels": [],
+  "pr_body_excerpt": "- Introduces the September 7 model ID change without assuming a previous announcement.\n- Replaces “canonical” and “publisher-qualified” jargon with one example and a clear compatibility statement.\n- Keeps the updated rollout date, current styling, and complete model ID mapping link.\n\nFollow-up to #13587 and #14081.\n\nTest: `npm run typecheck` in `enter.pollinations.ai`",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Model names, less pollen",
+    "blurb": "The September 7 model ID notice got a small pruning. One clear example, a compatibility note, and the full mapping link now do the talking.",
+    "summary": "Clarified the September 7 model ID rollout across the README, model list, and news banner with a concrete ID example, a compatibility statement, and a link to the complete model mapping.",
+    "impact": "Developers can more quickly understand which model IDs to use after September 7 and confirm that existing compatible IDs continue to work.",
+    "keywords": [
+      "model IDs",
+      "September 7",
+      "compatibility",
+      "documentation",
+      "model mapping",
+      "frontend"
+    ],
+    "visual_concept": "Depict Polli tidying a garden of neatly labeled model-ID seed packets beside a cozy retro terminal, with an old confusing sign replaced by one simple example and a map. The scene represents clearer naming and a compatibility path rather than a new model; use a small model-mapping scroll, code-plants, and a few flowers.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses while she replaces a cluttered garden sign with a simple model-ID seed packet and a folded mapping scroll beside a lime-green (#ecf874) glowing retro terminal; code-plants and pastel flowers grow around her. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle pixel-font text: \"MODEL MAP\", nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-29/PR-14115.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses while she replaces a cluttered garden sign with a simple model-ID seed packet and a folded mapping scroll beside a lime-green (#ecf874) glowing retro terminal; code-plants and pastel flowers grow around her. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle pixel-font text: \"MODEL MAP\", nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-08-29T20:45:03.834249+00:00"
+}

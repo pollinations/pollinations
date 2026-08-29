@@ -6,26 +6,29 @@ import type { HarnessContext } from "./types.js";
 interface FileSnapshot {
     /** Content before the first `on`; null when the file did not exist. */
     before: string | null;
-    /** Content right after the last `on`, to detect edits made since. */
-    after: string | null;
+    /** Digest after the last `on`, used to detect edits without copying secrets. */
+    afterHash: string | null;
 }
 
-export interface Snapshot {
+interface Snapshot {
     complete: boolean;
     files: Record<string, FileSnapshot>;
 }
 
-export type RestoreOutcome = "restored" | "modified" | "missing";
+type RestoreOutcome = "restored" | "modified" | "missing";
+
+const sha256 = (content: string) =>
+    createHash("sha256").update(content).digest("hex");
 
 // Keyed by the file set, so `off` after moving the harness home (e.g. a
 // different DSH_HOME) never restores a backup taken for other files.
 const snapshotPath = (ctx: HarnessContext, id: string, paths: string[]) => {
-    const key = createHash("sha256")
-        .update(paths.join("\n"))
-        .digest("hex")
-        .slice(0, 12);
+    const key = sha256(paths.join("\n")).slice(0, 12);
     return join(ctx.home, ".pollinations", "harnesses", `${id}.${key}.json`);
 };
+
+const contentHash = (content: string | null) =>
+    content === null ? null : sha256(content);
 
 const writeSnapshot = (
     ctx: HarnessContext,
@@ -43,7 +46,7 @@ const captureFiles = (paths: string[]) =>
     Object.fromEntries(
         paths.map((path) => [
             path,
-            { before: readTextIfExists(path), after: null },
+            { before: readTextIfExists(path), afterHash: null },
         ]),
     );
 
@@ -54,7 +57,7 @@ const restoreFiles = (files: Record<string, FileSnapshot>) => {
     }
 };
 
-export const loadSnapshot = (
+const loadSnapshot = (
     ctx: HarnessContext,
     id: string,
     paths: string[],
@@ -99,7 +102,7 @@ export const applyWithSnapshot = (
     }
 
     for (const path of paths) {
-        snapshot.files[path].after = readTextIfExists(path);
+        snapshot.files[path].afterHash = contentHash(readTextIfExists(path));
     }
     snapshot.complete = true;
     writeSnapshot(ctx, id, paths, snapshot);
@@ -121,7 +124,12 @@ export const restoreSnapshot = (
     }
 
     const entries = Object.entries(snapshot.files);
-    if (entries.some(([path, file]) => readTextIfExists(path) !== file.after)) {
+    if (
+        entries.some(
+            ([path, file]) =>
+                contentHash(readTextIfExists(path)) !== file.afterHash,
+        )
+    ) {
         return "modified";
     }
     restoreFiles(snapshot.files);

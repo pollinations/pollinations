@@ -76,7 +76,7 @@ const readKey = (ctx: HarnessContext) => {
 };
 
 const envLine = (key: string) => `${KEY_ENV}=${JSON.stringify(key)}`;
-const keyLine = new RegExp(`^(?:export\\s+)?${KEY_ENV}\\s*=`, "u");
+const keyLine = new RegExp(`^\\s*(?:export\\s+)?${KEY_ENV}\\s*=`, "u");
 
 const setEnvKey = (ctx: HarnessContext, key: string) => {
     const lines = (readTextIfExists(envPath(ctx)) ?? "").split("\n");
@@ -106,11 +106,6 @@ const stripMcpEntry = (doc: ReturnType<typeof loadYaml>) => {
     for (let i = doc.contents.items.length - 1; i >= 0; i--) {
         const patch = doc.contents.items[i];
         if (!isMap(patch)) continue;
-        if (patch.get("id") === MCP_ID) {
-            doc.contents.items.splice(i, 1);
-            changed = true;
-            continue;
-        }
         const inserted = patch.get("insert", true);
         if (!isSeq(inserted)) continue;
         const before = inserted.items.length;

@@ -58,7 +58,7 @@ interface MyModelBase {
 interface ProxyMyModel extends MyModelBase {
     type: "proxy";
     paidOnly: boolean;
-    modality: "text" | "image" | "transcription";
+    modality: "text" | "image" | "transcription" | "embedding";
     imagePricing: "request" | "tokens";
     completionImagePrice: number;
     // /account/my-models/test detects edit support from endpoint probes.
@@ -131,9 +131,12 @@ export function modelBody(
         if (
             opts.modality !== "text" &&
             opts.modality !== "image" &&
-            opts.modality !== "transcription"
+            opts.modality !== "transcription" &&
+            opts.modality !== "embedding"
         ) {
-            fail("--modality must be 'text', 'image', or 'transcription'");
+            fail(
+                "--modality must be 'text', 'image', 'transcription', or 'embedding'",
+            );
         }
         body.modality = opts.modality;
     }
@@ -269,7 +272,7 @@ const create = addPriceOptions(
         )
         .option(
             "--modality <modality>",
-            "Model family: text (default), image, or transcription",
+            "Model family: text (default), image, transcription, or embedding",
         )
         .option(
             "--image-pricing <mode>",
@@ -404,7 +407,7 @@ const test = new Command("test")
     .requiredOption("--model <model>", "Upstream model id")
     .option(
         "--modality <modality>",
-        "Model family: text (default), image, or transcription",
+        "Model family: text (default), image, transcription, or embedding",
     )
     .action(async (opts) => {
         const key = requireKey();
@@ -412,9 +415,12 @@ const test = new Command("test")
             opts.modality !== undefined &&
             opts.modality !== "text" &&
             opts.modality !== "image" &&
-            opts.modality !== "transcription"
+            opts.modality !== "transcription" &&
+            opts.modality !== "embedding"
         ) {
-            fail("--modality must be 'text', 'image', or 'transcription'");
+            fail(
+                "--modality must be 'text', 'image', 'transcription', or 'embedding'",
+            );
         }
         try {
             const res = await gen<Record<string, unknown>>(
@@ -440,7 +446,7 @@ const test = new Command("test")
 
 export const myModelsCommand = new Command("my-models")
     .description(
-        "Manage private and published community text, image, and transcription models",
+        "Manage private and published community text, image, transcription, and embedding models",
     )
     .addCommand(list)
     .addCommand(create)

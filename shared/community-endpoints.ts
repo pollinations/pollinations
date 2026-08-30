@@ -12,6 +12,7 @@ import {
 import {
     OPENAI_CHAT_USAGE_PATHS,
     OPENAI_CHAT_USAGE_TYPES,
+    OPENAI_EMBEDDING_USAGE_PATHS,
     type OpenAIChatUsageType,
 } from "./registry/usage-headers.ts";
 import { readResponseBytes } from "./response-bytes.ts";
@@ -23,6 +24,7 @@ export const COMMUNITY_ENDPOINT_MODALITIES = [
     "text",
     "image",
     "transcription",
+    "embedding",
 ] as const;
 // How a community image endpoint is billed. "request" charges the fixed
 // per-image price once per generation; "tokens" charges the provider-returned
@@ -71,6 +73,7 @@ export const COMMUNITY_ENDPOINT_INPUT_MODALITIES = {
     text: MODEL_INPUT_MODALITIES,
     image: ["text", "image"],
     transcription: ["audio"],
+    embedding: ["text"],
 } as const satisfies Record<
     CommunityEndpointModality,
     readonly ModelInputModality[]
@@ -254,6 +257,18 @@ const COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS = [
     COMMUNITY_TRANSCRIPTION_PRICE_FIELD,
 ] as const;
 
+// Embedding endpoints bill token usage per 1M like text models. Token-only
+// billing through promptTextPrice — no fixed per-request mode.
+const COMMUNITY_EMBEDDING_ENDPOINT_PRICE_FIELDS = [
+    {
+        key: "promptTextPrice",
+        usageType: "promptTextTokens",
+        label: "Prompt text",
+        priceUnit: "million",
+        rawUsagePaths: OPENAI_EMBEDDING_USAGE_PATHS.promptTextTokens,
+    },
+] as const;
+
 export function communityEndpointPriceFieldsForModality(
     modality: CommunityEndpointModality,
     imagePricing: CommunityEndpointImagePricing = "request",
@@ -261,15 +276,22 @@ export function communityEndpointPriceFieldsForModality(
     if (modality === "transcription") {
         return COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS;
     }
-    if (modality !== "image") return COMMUNITY_TEXT_ENDPOINT_PRICE_FIELDS;
-    return imagePricing === "tokens"
-        ? COMMUNITY_IMAGE_TOKEN_PRICE_FIELDS
-        : COMMUNITY_IMAGE_ENDPOINT_PRICE_FIELDS;
+    if (modality === "image") {
+        return imagePricing === "tokens"
+            ? COMMUNITY_IMAGE_TOKEN_PRICE_FIELDS
+            : COMMUNITY_IMAGE_ENDPOINT_PRICE_FIELDS;
+    }
+    if (modality === "embedding") {
+        return COMMUNITY_EMBEDDING_ENDPOINT_PRICE_FIELDS;
+    }
+    return COMMUNITY_TEXT_ENDPOINT_PRICE_FIELDS;
 }
 
 export type CommunityEndpointPriceField =
     | (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number]
-    | (typeof COMMUNITY_IMAGE_TOKEN_PRICE_FIELDS)[number];
+    | (typeof COMMUNITY_IMAGE_TOKEN_PRICE_FIELDS)[number]
+    | (typeof COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS)[number]
+    | (typeof COMMUNITY_EMBEDDING_ENDPOINT_PRICE_FIELDS)[number];
 
 export type CommunityEndpointPriceKey =
     (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number]["key"];
@@ -357,7 +379,9 @@ export function normalizeCommunityEndpointModality(
     value: string | null | undefined,
 ): CommunityEndpointModality {
     if (value === "transcription") return "transcription";
-    return value === "image" ? "image" : "text";
+    if (value === "image") return "image";
+    if (value === "embedding") return "embedding";
+    return "text";
 }
 
 export function normalizeCommunityEndpointImagePricing(
@@ -932,6 +956,10 @@ export function communityTranscriptionSeconds(body: unknown): number | null {
     return null;
 }
 
+export function communityEmbeddingsUrl(baseUrl: string): string {
+    return `${communityOpenAIBaseUrl(baseUrl)}/embeddings`;
+}
+
 export function communityOpenAIBaseUrl(baseUrl: string): string {
     const normalized = normalizeCommunityEndpointBaseUrl(baseUrl);
     for (const suffix of [
@@ -939,6 +967,7 @@ export function communityOpenAIBaseUrl(baseUrl: string): string {
         "/images/generations",
         "/images/edits",
         "/audio/transcriptions",
+        "/embeddings",
     ]) {
         if (normalized.endsWith(suffix)) {
             return normalized.slice(0, -suffix.length);
@@ -1002,6 +1031,7 @@ export function communityModelDefinition(
     );
     const isImage = modality === "image";
     const isTranscription = modality === "transcription";
+    const isEmbedding = modality === "embedding";
     // Token-priced image endpoints bill like text models (usage × per-token
     // rates), so only fixed per-request image endpoints are flat-rate.
     const isFlatRateImage = isImage && imagePricing === "request";
@@ -1019,14 +1049,24 @@ export function communityModelDefinition(
         perUserRpm: endpoint.perUserRpm,
         brand: providerName || "Community",
         brandUrl: providerName && providerUrl ? providerUrl : undefined,
-        category: isImage ? "image" : isTranscription ? "audio" : "text",
+        category: isImage
+            ? "image"
+            : isEmbedding
+              ? "embedding"
+              : isTranscription
+                ? "audio"
+                : "text",
         cost: communityPriceDefinition(endpoint, modality, imagePricing),
         priceMultiplier: 1,
         addedDate: endpoint.addedDate ?? 0,
         title: communityEndpointTitle(endpoint),
         description: description || undefined,
         inputModalities,
-        outputModalities: isImage ? ["image"] : ["text"],
+        outputModalities: isImage
+            ? ["image"]
+            : isEmbedding
+              ? ["embedding"]
+              : ["text"],
         hidden: endpoint.hidden,
         ...(endpoint.fallbacks?.length
             ? { fallbacks: endpoint.fallbacks }

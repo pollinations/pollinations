@@ -420,7 +420,12 @@ export function CommunityEndpointDialog({
                         >
                             <ButtonGroup aria-label="Modality">
                                 {(
-                                    ["text", "image", "transcription"] as const
+                                    [
+                                        "text",
+                                        "image",
+                                        "transcription",
+                                        "embedding",
+                                    ] as const
                                 ).map((modality) => (
                                     <TabButton
                                         key={modality}
@@ -550,7 +555,9 @@ export function CommunityEndpointDialog({
                                             ? "gpt-image-2"
                                             : form.modality === "transcription"
                                               ? "whisper-1"
-                                              : "gpt-4o-mini"
+                                              : form.modality === "embedding"
+                                                ? "text-embedding-3-small"
+                                                : "gpt-4o-mini"
                                     }
                                     align="end"
                                     open={providerModelMenuOpen}

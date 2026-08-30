@@ -18,7 +18,7 @@ const intentClasses: Record<IconButtonIntent, string> = {
 const variantClasses: Record<IconButtonVariant, string> = {
     tile:
         "polli:bg-theme-bg-active polli:hover:bg-theme-bg-hover " +
-        "polli:text-theme-text-soft polli:hover:text-theme-text-strong",
+        "polli:text-theme-text-soft polli:hover:text-theme-text-hover",
     ghost:
         "polli:bg-transparent polli:hover:bg-transparent " +
         "polli:text-theme-text-muted polli:hover:text-theme-text-soft",

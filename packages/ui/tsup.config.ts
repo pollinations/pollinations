@@ -9,6 +9,7 @@ export default defineConfig([
             "app-user-menu/sdk": "src/modules/app-user-menu/sdk.ts",
             "gen/index": "src/modules/gen/index.ts",
             "wallet/index": "src/modules/wallet/index.ts",
+            markdown: "src/markdown.ts",
         },
         format: ["esm", "cjs"],
         dts: true,

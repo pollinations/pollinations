@@ -1,222 +1,310 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Full token adoption — same entry point as enter's frontend, so the site and
+   the dashboard resolve every colour, font and shadow from the same
+   `--polli-*` tokens. Brings Tailwind v4 with it; there is no tailwind.config.
+   It also ships the app-wide prefers-reduced-motion reset, so this file does
+   not repeat one.
 
-/* Hide scrollbar but keep functionality */
-@layer utilities {
-    .scrollbar-hide {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
+   IMPORTANT: this app's Tailwind build is UNPREFIXED. `polli:*` utilities come
+   from the package's own build, which never scans this source — writing them
+   here produces classes that exist only if a package component happens to use
+   the same utility. Site source writes plain `flex`, `gap-4`, `text-sm`. */
+@import "@pollinations/ui/app.css";
+
+/* ── Header dissolve ──────────────────────────────────────────────────
+   The sticky navigation has no bar, rule or shadow. Once it overlaps page
+   content, this desk-colored veil lets that content dissolve naturally behind
+   the controls. A mask keeps the fade theme-aware without interpolating the
+   desk colour toward transparent black. */
+.site-header-dissolve {
+    background: var(--polli-color-app-bg);
+    mask-image: linear-gradient(to bottom, black 0%, black 38%, transparent 100%);
+}
+
+@media (max-width: 43.749rem) {
+    html {
+        scrollbar-gutter: stable both-edges;
     }
-    .scrollbar-hide::-webkit-scrollbar {
-        display: none;
+}
+
+@media (min-width: 48rem) and (max-width: 63.999rem) {
+    .site-header-gutter {
+        padding-inline: clamp(2rem, calc(18vw - 7rem), 4.5rem);
     }
 }
 
-/* Hide number input spinners (brutalist design) */
-input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
+.site-primary-nav-button {
+    border-color: transparent;
+    background-color: transparent;
+    color: var(--polli-color-text-strong);
+    gap: calc(var(--polli-spacing) * 2);
+    font-weight: 700;
+    letter-spacing: 0.01em;
 }
 
-input[type="number"] {
-    -moz-appearance: textfield;
-    appearance: textfield;
+.site-primary-nav-button:hover {
+    border-color: transparent;
+    background-color: var(--polli-color-brand-accent);
+    color: var(--polli-color-brand-dark);
 }
 
-/* Hide select dropdown arrow (brutalist design) */
-select {
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-    background-image: none;
+.site-primary-nav-button[aria-current="page"],
+.site-primary-nav-button[aria-current="page"]:hover {
+    border-color: transparent;
+    background-color: var(--polli-color-brand-dark);
+    color: var(--polli-color-brand-accent);
 }
 
-/* Fade in animation for page transitions */
-@keyframes fade-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
+.site-home-nav-group:has(.site-home-logo:hover)
+    .site-home-nav-button:not([aria-current="page"]) {
+    background-color: var(--polli-color-brand-accent);
+    color: var(--polli-color-brand-dark);
 }
 
-.animate-fade-in {
-    animation: fade-in 0.3s ease-out;
+.site-home-nav-group:has(.site-home-nav-button:hover) .site-home-logo {
+    transform: translateY(-0.125rem);
 }
 
-/* Style range slider thumb (brutalist) */
-input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 20px;
-    height: 20px;
-    background: rgb(var(--secondary-strong));
-    cursor: pointer;
-    border: 2px solid rgb(var(--dark));
+.site-home-nav-group:has(.site-home-nav-button:hover) .site-home-logo-accent {
+    opacity: 1;
 }
 
-input[type="range"]::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
-    background: rgb(var(--secondary-strong));
-    cursor: pointer;
-    border: 2px solid rgb(var(--dark));
-    border-radius: 0;
+.site-external-link,
+.site-external-link:hover,
+.site-external-link:focus-visible {
+    background-color: transparent;
+    box-shadow: none;
+    filter: none;
+    transform: none;
 }
 
-/* Base styles (Tailwind preflight handles box-sizing/margin/padding reset) */
-body,
-html {
-    background-color: rgb(var(--cream));
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+.site-external-link {
+    color: var(--polli-color-text-base);
+}
+
+.site-external-link:hover,
+.site-external-link:focus-visible {
+    color: var(--polli-color-text-muted);
+}
+
+.site-drawer-social-label {
+    text-decoration-line: underline;
+    text-decoration-color: transparent;
+    text-underline-offset: 0.2em;
+    transition:
+        color 160ms ease,
+        text-decoration-color 160ms ease;
+}
+
+.site-drawer-social-link:hover .site-drawer-social-label,
+.site-drawer-social-link:focus-visible .site-drawer-social-label {
+    color: var(--polli-color-text-strong);
+    text-decoration-color: currentColor;
+}
+
+.apps-featured-rail {
+    scrollbar-width: none;
+}
+
+.apps-featured-rail::-webkit-scrollbar {
+    display: none;
+}
+
+.polli-playground-modality-button {
+    background-color: var(--playground-mode-background);
+}
+
+.polli-playground-modality-button:not([aria-pressed="true"]):hover {
+    background-color: var(--playground-mode-hover);
+    color: var(--playground-mode-hover-text) !important;
+}
+
+.play-routing-value[data-customized="false"] {
+    color: var(--polli-color-text-muted);
+}
+
+.play-routing-value[data-customized="true"] {
+    color: var(--play-routing-accent);
+}
+
+.play-routing-value:hover {
+    color: var(--play-routing-accent, var(--polli-color-text-strong));
+}
+
+.play-routing-badge {
+    background-color: var(--polli-color-bg-hover);
+    color: var(--polli-color-text-strong);
+}
+
+.play-routing-toggle:hover {
+    color: var(--polli-color-text-strong);
+}
+
+.play-routing-toggle:hover .play-routing-badge {
+    background-color: var(--polli-color-bg-hover);
+    color: var(--polli-color-text-strong);
+}
+
+.play-chat-window {
+    height: 42rem;
+}
+
+.play-chat-transcript {
+    min-height: 0;
+    scrollbar-width: auto;
+}
+
+.play-chat-transcript::-webkit-scrollbar {
+    width: 16px;
+}
+
+.play-chat-transcript::-webkit-scrollbar-thumb {
+    min-height: 64px;
+    border-width: 3px;
+}
+
+.play-chat-transcript[data-scrollbar-active="true"] {
+    scrollbar-color: var(--polli-color-scrollbar-thumb) transparent;
+}
+
+.play-chat-transcript[data-scrollbar-active="true"]::-webkit-scrollbar-thumb {
+    background-color: var(--polli-color-scrollbar-thumb);
+}
+
+.play-chat-input {
+    overflow: hidden;
+    border: 1px solid var(--polli-color-border);
+    border-radius: 0.5rem;
+    background: var(--polli-color-bg-pale);
+}
+
+.play-chat-input:focus-within {
+    box-shadow: 0 0 0 1px var(--polli-color-border);
+}
+
+.play-chat-input .polli-textarea,
+.play-chat-input .polli-textarea:focus,
+.play-chat-input .polli-textarea:focus-visible {
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+}
+
+.play-chat-message {
+    width: fit-content;
+    max-width: min(46rem, 88%);
+    overflow-wrap: anywhere;
+}
+
+.play-chat-message pre,
+.play-chat-message table {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.play-chat-media {
+    width: 100%;
+    max-height: 34rem;
+    object-fit: contain;
+}
+
+@media (max-width: 639px) {
+    .play-chat-window {
+        height: 38rem;
+    }
+
+    .play-chat-transcript {
+        min-height: 0;
+    }
+
+    .play-chat-message {
+        max-width: 96%;
+    }
+
+}
+
+/* The hero scene is positioned and dips below its section, so every later
+   sibling needs a position too — a positioned element paints above earlier
+   positioned ones in DOM order, which puts sections over the fading art
+   instead of under it. Harmless for everything else. */
+main > * {
+    position: relative;
+}
+
+/* ── Hero scene dissolve ───────────────────────────────────────────────
+   The painted scene melts into the sheet on two axes. Bottom: always — the
+   prompt paints a fade toward #fef8eb and this mask guarantees the seam
+   (the model never hits the exact hex). Left: desktop only, where the text
+   overlays the art — the prompts ask for an empty left two-thirds, but the
+   model keeps drifting scenery toward the centre (seed 4103's stalls reached
+   27% and a reroll still hit 46%), so the mask is what actually guarantees
+   the text's ground. Full opacity returns by 62%, right of every character.
+   The same mask applies at every width because the composition itself no
+   longer changes position—the scene simply scales with the page. */
+.hero-scene {
+    mask-image:
+        linear-gradient(to right, transparent 38%, black 62%),
+        linear-gradient(to bottom, black 55%, transparent 100%);
+    mask-composite: intersect;
+}
+
+/* ── /play ─────────────────────────────────────────────────────────────
+   Layout that needs container queries or sticky positioning, which is
+   clearer as CSS than as a wall of arbitrary variants. */
+body.polli-ui-shell {
+    height: auto;
+    min-height: 100dvh;
     overflow-x: hidden;
+    overflow-y: auto;
 }
 
-/* ═══════════════ SCENE BACKGROUND ═══════════════ */
-
-/* Subtle fallback gradient — visible if images fail to load */
-.bg-gradient-scene {
-    background: linear-gradient(
-        to bottom,
-        rgb(var(--secondary-light)) 0%,
-        rgb(var(--cream)) 25%,
-        rgb(var(--cream)) 100%
-    );
+body.polli-ui-shell #root {
+    height: auto;
+    min-height: 100dvh;
 }
 
-/* ═══════════════ SKY SCENE ═══════════════ */
-
-/* Sky scene — desktop */
-.scene-sky {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: clamp(420px, 45vh, 900px);
-    background-image: url('/scene-sky-desktop.webp');
-    background-repeat: no-repeat;
-    background-position: center top;
-    background-size: cover;
-    -webkit-mask-image: linear-gradient(to bottom, black 0%, black 60%, transparent 100%);
-    mask-image: linear-gradient(to bottom, black 0%, black 60%, transparent 100%);
-    -webkit-mask-repeat: no-repeat;
-    mask-repeat: no-repeat;
-    -webkit-mask-size: 100% 100%;
-    mask-size: 100% 100%;
+.polli-playground-main-grid {
+    display: grid;
+    gap: 0;
+    overflow: clip;
+    padding: 0;
 }
 
-/* Sky scene — mobile */
-@media (max-width: 767px) {
-    .scene-sky {
-        height: clamp(320px, 50vh, 700px);
-        background-image: url('/scene-sky-mobile.webp');
+.polli-playground-audio {
+    height: 2.5rem;
+    border-radius: 9999px;
+    background: var(--polli-color-surface-opaque);
+}
+
+.polli-playground-audio::-webkit-media-controls-enclosure {
+    border-radius: 9999px;
+    background: var(--polli-color-surface-opaque);
+}
+
+.polli-playground-settings-grid {
+    display: grid;
+}
+
+.polli-playground-settings-grid {
+    gap: 0.75rem;
+}
+
+.polli-playground-frame-grid {
+    display: grid;
+    gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+    .polli-playground-frame-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .polli-playground-settings-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 }
 
-/* ═══════════════ GROUND SCENE ═══════════════ */
-
-/* Ground scene — desktop */
-.scene-ground {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: clamp(420px, 38vh, 900px);
-    background-image: url('/scene-ground-desktop.webp');
-    background-size: cover;
-    background-position: center bottom;
-    background-repeat: no-repeat;
-    -webkit-mask-image: linear-gradient(to top, black 0%, black 52%, transparent 100%);
-    mask-image: linear-gradient(to top, black 0%, black 52%, transparent 100%);
-    -webkit-mask-repeat: no-repeat;
-    mask-repeat: no-repeat;
-    -webkit-mask-size: 100% 100%;
-    mask-size: 100% 100%;
-}
-
-/* Ground scene — mobile */
-@media (max-width: 767px) {
-    .scene-ground {
-        height: clamp(380px, 50vh, 800px);
-        background-image: url('/scene-ground-mobile.webp');
-    }
-}
-
-/* ═══════════════ POLLEN PARTICLES ═══════════════ */
-
-.pollen-particle {
-    position: absolute;
-    bottom: 10%;
-    width: 4px;
-    height: 4px;
-    border-radius: 50%;
-    background: rgb(var(--accent-strong));
-    box-shadow: 0 0 6px rgb(var(--accent-strong) / 0.6), 0 0 12px rgb(var(--accent-strong) / 0.3);
-    opacity: 0;
-    animation: pollenFloat linear infinite;
-}
-
-.pollen-blue {
-    width: 3px;
-    height: 3px;
-    background: rgba(200, 220, 255, 0.8);
-    box-shadow: 0 0 4px rgba(200, 220, 255, 0.5);
-}
-
-@keyframes pollenFloat {
-    0% { opacity: 0; transform: translateY(0) translateX(0) scale(0); }
-    8% { opacity: 0.7; transform: translateY(-5vh) translateX(4px) scale(1); }
-    25% { opacity: 0.5; transform: translateY(-20vh) translateX(-6px) scale(0.9); }
-    50% { opacity: 0.4; transform: translateY(-45vh) translateX(8px) scale(0.8); }
-    75% { opacity: 0.3; transform: translateY(-65vh) translateX(-4px) scale(0.7); }
-    100% { opacity: 0; transform: translateY(-85vh) translateX(2px) scale(0); }
-}
-
-/* ═══════════════ CRT OVERLAY ═══════════════ */
-
-/* Subtle CRT scanline texture */
-body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 9998;
-    background: repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 2px,
-        rgb(var(--dark) / 0.015) 2px,
-        rgb(var(--dark) / 0.015) 4px
-    );
-}
-
-#root {
-    min-height: 100vh;
-}
-
-/* Accessibility: Remove focus outline for mouse, keep for keyboard */
-:focus:not(:focus-visible) {
-    outline: none;
-}
-
-:focus-visible {
-    outline: 2px solid rgb(var(--dark));
-    outline-offset: 2px;
-}
-
-/* Reduced motion: disable animations for users who prefer it */
-@media (prefers-reduced-motion: reduce) {
-    .pollen-particle {
-        animation: none;
-        opacity: 0;
-    }
-    .animate-fade-in {
-        animation: none;
-    }
-    *,
-    *::before,
-    *::after {
-        animation-duration: 0.01ms !important;
-        transition-duration: 0.01ms !important;
+@media (min-width: 1024px) {
+    .polli-playground-textarea {
+        min-height: 14rem;
     }
 }

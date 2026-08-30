@@ -26,11 +26,17 @@
     --polli-font-heading:    "LCT Mogi", ui-sans-serif, sans-serif;
     --polli-font-subheading: "Fraunces", ui-serif, serif;
     --polli-font-body:       "Uncut Sans", ui-sans-serif, sans-serif;
-    --polli-font-pixel:      "Pixelify Sans", ui-monospace, monospace;
+    --polli-font-pixel:      "Geist Pixel Square", ui-monospace, monospace;
     --polli-text-micro:      10px;
     --polli-text-base:       16px;
 
+    /* Brand constants — hue-themed, but never flipped by `.dark`. Use these
+       when an element must keep its identity on top of a dark panel: inside
+       `.dark`, bg-active resolves to a muted oklch(0.496 …) that reads as
+       muddy brown, which is right for a dark UI and wrong for a CTA that is
+       supposed to be the brightest thing on the page. */
     --polli-color-brand-dark: #110518;
+    --polli-color-brand-accent: oklch(calc(0.876 + var(--polli-nudge)) 0.135 var(--polli-hue));
 
     /* Level 0 — Desk (neutral, identical on every page) */
     --polli-color-app-bg:              oklch(0.902 0.013 80);
@@ -44,6 +50,8 @@
     --polli-color-text-strong:         oklch(0.25 0.02 80);
     --polli-color-text-base:           oklch(0.40 0.017 80);
     --polli-color-text-muted:          oklch(0.49 0.013 80);
+    --polli-color-text-on-accent:      oklch(0.98 0.005 80);
+    --polli-color-text-hover:          var(--polli-color-text-strong);
 
     /* Neutral separator line — subtle hairline for dividers/hr/table rows.
        Calibrated to stay visible-but-quiet on every surface in BOTH modes
@@ -95,6 +103,7 @@
     --polli-color-border:          var(--polli-color-bg-hover);
     --polli-color-scrollbar-thumb: oklch(calc(0.728 + var(--polli-nudge)) 0.17 var(--polli-hue) / 0.7);
     --polli-color-text-soft:       oklch(0.47 0.13 var(--polli-hue));
+    --polli-color-text-hover:      var(--polli-color-text-strong);
 }
 
 /* Neutral — the no-hue member of the theme set. Global chrome (the dashboard
@@ -109,6 +118,7 @@
     --polli-color-border:          color-mix(in oklab, var(--polli-color-text-muted) 50%, transparent);
     --polli-color-scrollbar-thumb: color-mix(in oklab, var(--polli-color-text-muted) 55%, transparent);
     --polli-color-text-soft:       var(--polli-color-text-muted);
+    --polli-color-text-hover:      var(--polli-color-text-strong);
 }
 
 /* Intent tokens — LIGHT (semantic, theme-independent). Two distinct groups:
@@ -293,7 +303,7 @@
     --font-heading:    "LCT Mogi", ui-sans-serif, sans-serif;
     --font-subheading: "Fraunces", ui-serif, serif;
     --font-body:       "Uncut Sans", ui-sans-serif, sans-serif;
-    --font-pixel:      "Pixelify Sans", ui-monospace, monospace;
+    --font-pixel:      "Geist Pixel Square", ui-monospace, monospace;
     --text-micro:      10px;
     --text-base:       16px;
 
@@ -305,6 +315,7 @@
     --color-inherit:     inherit;
 
     --color-brand-dark:  var(--polli-color-brand-dark);
+    --color-brand-accent: var(--polli-color-brand-accent);
 
     --color-app-bg:      var(--polli-color-app-bg);
     --color-divider:     var(--polli-color-divider);
@@ -325,6 +336,8 @@
     --color-theme-text-strong: var(--polli-color-text-strong);
     --color-theme-text-soft:   var(--polli-color-text-soft);
     --color-theme-text-muted:  var(--polli-color-text-muted);
+    --color-theme-text-on-accent: var(--polli-color-text-on-accent);
+    --color-theme-text-hover: var(--polli-color-text-hover);
     --color-theme-border:      var(--polli-color-border);
     --color-theme-bg-subtle:   var(--polli-color-bg-subtle);
     --color-theme-bg-active:   var(--polli-color-bg-active);

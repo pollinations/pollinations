@@ -1,0 +1,143 @@
+import {
+    BrandLockup,
+    Button,
+    DiscordIcon,
+    GitHubIcon,
+    InstagramIcon,
+    LinkedInIcon,
+    XSocialIcon,
+} from "@pollinations/ui";
+import { Link } from "@tanstack/react-router";
+import { ArrowLink, GUTTER, PixelLabel, SHELL } from "./kit";
+
+const COLUMNS = [
+    {
+        heading: "Build",
+        links: [
+            { href: "https://gen.pollinations.ai/docs", label: "API docs" },
+            { href: "https://gen.pollinations.ai/models", label: "Models" },
+            { href: "https://enter.pollinations.ai", label: "Dashboard" },
+        ],
+    },
+    {
+        heading: "Explore",
+        links: [
+            { to: "/", label: "Hello" },
+            { to: "/apps", label: "Apps" },
+            { to: "/play", label: "Play" },
+            { to: "/community", label: "Community" },
+        ],
+    },
+    {
+        heading: "Project",
+        links: [
+            { to: "/privacy", label: "Privacy" },
+            { to: "/terms", label: "Terms" },
+            // A real route with a real page that nothing linked to. Payment
+            // providers generally require this to be reachable.
+            { to: "/refunds", label: "Refunds" },
+        ],
+    },
+] as const;
+
+const SOCIAL = [
+    {
+        href: "https://github.com/pollinations/pollinations",
+        label: "GitHub",
+        Icon: GitHubIcon,
+    },
+    {
+        href: "https://discord.gg/pollinations-ai-885844321461485618",
+        label: "Discord",
+        Icon: DiscordIcon,
+    },
+    {
+        href: "https://instagram.com/pollinations_ai",
+        label: "Instagram",
+        Icon: InstagramIcon,
+    },
+    {
+        href: "https://x.com/pollinations_ai",
+        label: "Twitter",
+        Icon: XSocialIcon,
+    },
+    {
+        href: "https://www.linkedin.com/company/pollinations-ai",
+        label: "LinkedIn",
+        Icon: LinkedInIcon,
+    },
+] as const;
+
+export function SiteFooter() {
+    return (
+        <footer className={SHELL}>
+            <div
+                className={`${GUTTER} flex flex-wrap justify-between gap-10 pt-11 pb-14`}
+            >
+                <div className="flex max-w-xs flex-col gap-4">
+                    <BrandLockup
+                        height={26}
+                        className="text-theme-text-strong"
+                        label=""
+                    />
+                    <p className="text-sm text-theme-text-muted">
+                        <span className="block">
+                            Open infrastructure for AI apps
+                        </span>
+                        <span className="block">
+                            Built with the community, in the open
+                        </span>
+                    </p>
+                    <nav aria-label="Social links" className="flex gap-1">
+                        {SOCIAL.map(({ href, label, Icon }) => (
+                            <Button
+                                key={href}
+                                as="a"
+                                href={href}
+                                size="sm"
+                                aria-label={label}
+                                title={label}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="site-external-link h-8 w-8 shrink-0 p-0"
+                            >
+                                <Icon className="h-4 w-4" />
+                            </Button>
+                        ))}
+                    </nav>
+                </div>
+                <div className="flex flex-wrap gap-12">
+                    {COLUMNS.map((column) => (
+                        <div
+                            key={column.heading}
+                            className="flex flex-col gap-2"
+                        >
+                            <PixelLabel variant="chrome">
+                                {column.heading}
+                            </PixelLabel>
+                            {column.links.map((link) =>
+                                "to" in link ? (
+                                    <Link
+                                        key={link.label}
+                                        to={link.to}
+                                        className="text-sm text-theme-text-base hover:text-theme-text-strong"
+                                    >
+                                        {link.label}
+                                    </Link>
+                                ) : (
+                                    <ArrowLink
+                                        key={link.label}
+                                        href={link.href}
+                                        className="font-normal text-theme-text-base"
+                                    >
+                                        {link.label}
+                                    </ArrowLink>
+                                ),
+                            )}
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </footer>
+    );
+}

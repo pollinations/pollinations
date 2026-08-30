@@ -1,0 +1,58 @@
+import { Link } from "@tanstack/react-router";
+import { useAppShowcase } from "../../data/publicStats";
+import { AppCarousel } from "../apps/AppCarousel";
+import { ArrowLink, ScrollStrip, SectionHeader } from "../site/kit";
+
+/**
+ * A wide shelf you skim sideways — the same strip the Apps spotlight uses, so
+ * Hello shows eight covers instead of three tiles in yet another 3-up grid.
+ * Missing screenshots use the shared Polli fallback, so the shelf remains
+ * visual without pretending generated art is the real app.
+ */
+export function LiveApps() {
+    const { data: featured, loading, failed } = useAppShowcase();
+    const totalApps = featured[0]?.total_apps ?? 0;
+
+    // Only disappears when the directory loaded fine and genuinely had
+    // nothing to show — a failure gets a line, not a silent hole.
+    if (!loading && !failed && featured.length === 0) return null;
+
+    return (
+        <section className="flex flex-col gap-5">
+            <SectionHeader
+                eyebrow="Live now"
+                title={
+                    loading || failed
+                        ? "Apps built on Pollinations."
+                        : `${totalApps} apps built on Pollinations.`
+                }
+                action={
+                    <ArrowLink as={Link} to="/apps">
+                        Browse the ecosystem
+                    </ArrowLink>
+                }
+            />
+            {loading ? (
+                <ScrollStrip ariaLabel="Loading apps built on Pollinations">
+                    {[0, 1, 2].map((i) => (
+                        <div
+                            key={`skeleton-${i}`}
+                            aria-hidden="true"
+                            className="h-64 w-59 flex-none animate-pulse rounded-2xl bg-theme-bg-subtle"
+                        />
+                    ))}
+                </ScrollStrip>
+            ) : failed ? (
+                <p className="rounded-2xl border border-theme-border border-dashed px-5 py-6 text-sm text-theme-text-muted">
+                    The app directory couldn’t be loaded right now.
+                </p>
+            ) : (
+                <AppCarousel
+                    apps={featured}
+                    size="compact"
+                    ariaLabel="Apps built on Pollinations"
+                />
+            )}
+        </section>
+    );
+}

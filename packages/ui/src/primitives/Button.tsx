@@ -1,8 +1,8 @@
 import type { PropsWithChildren } from "react";
 import { cn } from "../lib/cn.ts";
 
-/** `danger` (red) and `info` (edit/links, blue). Label recipes live on Chip. */
-type ButtonIntent = "danger" | "info";
+/** Semantic soft-fill roles. Label recipes live on Chip. */
+type ButtonIntent = "danger" | "info" | "neutral";
 
 const sizes = {
     xs: "polli:h-5 polli:px-1.5 polli:py-0 polli:text-[11px] polli:leading-none",
@@ -14,7 +14,7 @@ const sizes = {
 // Cascade-driven base — reads [data-theme] vars.
 const themeClasses =
     "polli:bg-theme-bg-active polli:text-theme-text-strong " +
-    "polli:hover:bg-theme-bg-hover polli:transition-colors";
+    "polli:hover:bg-theme-bg-hover polli:hover:text-theme-text-hover polli:transition-colors";
 
 // Soft intent recipes — light tile + deep text, slightly deeper bg on hover.
 // No filled CTAs anywhere.
@@ -25,6 +25,9 @@ const intentClasses: Record<ButtonIntent, string> = {
     info:
         "polli:bg-intent-info-bg-light polli:text-intent-info-text " +
         "polli:hover:bg-intent-info-bg-hover polli:transition-colors",
+    neutral:
+        "polli:bg-theme-bg-subtle polli:text-theme-text-base " +
+        "polli:hover:bg-theme-bg-hover polli:hover:text-theme-text-hover polli:transition-colors",
 };
 
 type BaseButtonProps = {

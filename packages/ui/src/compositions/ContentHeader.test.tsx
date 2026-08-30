@@ -40,4 +40,15 @@ describe("content compositions", () => {
         expect(html).toContain("dark polli:bg-brand-dark");
         expect(html).toContain("Build in the open");
     });
+
+    test("keeps themed callouts on the panel surface", () => {
+        const html = renderToStaticMarkup(
+            <Callout title="Build" body="Start with one API">
+                <a href="/keys">Get a key</a>
+            </Callout>,
+        );
+
+        expect(html).toContain("polli:bg-theme-bg-pale");
+        expect(html).not.toContain("polli:bg-theme-bg-active");
+    });
 });

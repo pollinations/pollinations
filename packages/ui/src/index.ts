@@ -1,10 +1,15 @@
 export { Alert, type AlertProps } from "./compositions/Alert.tsx";
 export { AppHeader, type AppHeaderProps } from "./compositions/AppHeader.tsx";
+export { Callout, type CalloutProps } from "./compositions/Callout.tsx";
 export { CodeBlock, type CodeBlockProps } from "./compositions/CodeBlock.tsx";
 export {
     Collapsible,
     type CollapsibleProps,
 } from "./compositions/Collapsible.tsx";
+export {
+    ContentHeader,
+    type ContentHeaderProps,
+} from "./compositions/ContentHeader.tsx";
 export {
     CopyButton,
     type CopyButtonProps,
@@ -45,6 +50,11 @@ export {
 } from "./compositions/PeriodPicker.tsx";
 export { Section, type SectionProps } from "./compositions/Section.tsx";
 export { StatCard, type StatCardProps } from "./compositions/StatCard.tsx";
+export {
+    StatList,
+    type StatListItem,
+    type StatListProps,
+} from "./compositions/StatList.tsx";
 export { cn } from "./lib/cn-app.ts";
 export {
     currentPeriod,
@@ -90,6 +100,7 @@ export {
     DropdownItem,
     type DropdownItemProps,
 } from "./primitives/DropdownItem.tsx";
+export { Eyebrow, type EyebrowProps } from "./primitives/Eyebrow.tsx";
 export { Field } from "./primitives/Field.tsx";
 export {
     IconButton,

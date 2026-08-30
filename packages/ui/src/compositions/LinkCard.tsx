@@ -47,7 +47,7 @@ export function LinkCard<T extends React.ElementType = "a">({
                 className={cn(
                     "polli:relative polli:flex polli:h-full polli:flex-col polli:gap-2 polli:bg-surface-opaque/80 polli:p-5",
                     showIcon && isExternal && "polli:pr-10",
-                    "polli:transition polli:group-hover:-translate-y-0.5 polli:group-hover:bg-surface-opaque/95",
+                    "polli:transition-colors polli:group-hover:bg-surface-opaque/95",
                     "polli:group-focus-visible:ring-2 polli:group-focus-visible:ring-theme-border",
                     surfaceClassName,
                 )}

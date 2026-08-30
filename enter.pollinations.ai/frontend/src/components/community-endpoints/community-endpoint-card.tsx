@@ -305,9 +305,9 @@ function communityPriceGroups(
                 unit:
                     field.priceUnit === "million"
                         ? "token"
-                        : field.priceUnit === "second"
-                          ? "second"
-                          : "request",
+                        : field.priceUnit === "image"
+                          ? "request"
+                          : "second",
             },
         });
     }
@@ -334,6 +334,7 @@ function communityPriceKind(usageType: string): PriceKind {
     if (usageType === "completionReasoningTokens") return "reasoning";
     if (usageType === "promptAudioTokens") return "audioIn";
     if (usageType === "completionAudioTokens") return "audioOut";
+    if (usageType.includes("Video")) return "video";
     if (usageType.includes("Image")) return "image";
     return "text";
 }

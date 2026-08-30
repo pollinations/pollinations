@@ -35,3 +35,50 @@ export function detectImageMimeType(bytes: Uint8Array): ImageMimeType | null {
     if (bytes[0] === 0x42 && bytes[1] === 0x4d) return "image/bmp";
     return null;
 }
+
+export type VideoMimeType = "video/mp4" | "video/webm" | "video/quicktime";
+
+/**
+ * Detect video containers by header bytes: MP4/QuickTime ISO BMFF boxes
+ * (`ftyp`/`moov` at offset 4) and WebM/MKV EBML. QuickTime files are
+ * ISO BMFF with a `qt  ` brand and share the MP4 box structure, so the
+ * same header rule recognises them.
+ */
+export function detectVideoMimeType(bytes: Uint8Array): VideoMimeType | null {
+    if (bytes.length < 4) return null;
+    // MP4 / QuickTime: box size + "ftyp" or "moov" at offset 4.
+    if (
+        bytes[4] === 0x66 &&
+        bytes[5] === 0x74 &&
+        bytes[6] === 0x79 &&
+        bytes[7] === 0x70
+    ) {
+        if (
+            bytes[8] === 0x71 &&
+            bytes[9] === 0x74 &&
+            bytes[10] === 0x20 &&
+            bytes[11] === 0x20
+        ) {
+            return "video/quicktime";
+        }
+        return "video/mp4";
+    }
+    if (
+        bytes[4] === 0x6d &&
+        bytes[5] === 0x6f &&
+        bytes[6] === 0x6f &&
+        bytes[7] === 0x76
+    ) {
+        return "video/mp4";
+    }
+    // WebM / MKV: EBML header 0x1A 0x45 0xDF 0xA3.
+    if (
+        bytes[0] === 0x1a &&
+        bytes[1] === 0x45 &&
+        bytes[2] === 0xdf &&
+        bytes[3] === 0xa3
+    ) {
+        return "video/webm";
+    }
+    return null;
+}

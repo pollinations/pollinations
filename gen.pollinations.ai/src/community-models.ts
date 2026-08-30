@@ -36,6 +36,16 @@ export function communityTranscriptionSupportedEndpoints(): string[] {
     return ["/v1/audio/transcriptions"];
 }
 
+/**
+ * Pollinations routes that can serve a community video model. Video models
+ * share the `generate.image` event type with image models, so they are
+ * callable on the OpenAI-compatible image endpoint and both public media
+ * routes.
+ */
+export function communityVideoSupportedEndpoints(): string[] {
+    return ["/v1/images/generations", "/image/{prompt}", "/video/{prompt}"];
+}
+
 export function communityImageSupportedEndpoints(
     inputModalities: readonly ModelInputModality[] = ["text"],
 ): string[] {

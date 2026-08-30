@@ -75,4 +75,23 @@ describe("modelBody", () => {
             ),
         ).toMatchObject({ modality: "transcription" });
     });
+
+    it("supports video model registration with a per-second price", () => {
+        expect(
+            modelBody(
+                {
+                    name: "video-provider",
+                    title: "Video Provider",
+                    baseUrl: "https://example.com/v1",
+                    bearerToken: "upstream-token",
+                    modality: "video",
+                    completionVideoPrice: "0.001",
+                },
+                true,
+            ),
+        ).toMatchObject({
+            modality: "video",
+            completionVideoPrice: 0.001,
+        });
+    });
 });

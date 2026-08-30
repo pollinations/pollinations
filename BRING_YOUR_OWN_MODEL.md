@@ -36,7 +36,7 @@ Owners receive 75% of the Pollen spent on their models. Paid and Quest Pollen ea
 
 1. Open [My Models](https://enter.pollinations.ai/my-models).
 2. Choose **Add model**.
-3. Select text, image, or transcription and enter the upstream base URL, model id, and bearer token.
+3. Select text, image, video, or transcription and enter the upstream base URL, model id, and bearer token.
 4. Fetch the upstream model list or run the endpoint test before saving.
 5. Save the model as private, then call its `owner/model` id through the normal Pollinations endpoint.
 6. If your account has publisher access, change visibility to public and set prices when it is ready for other users.
@@ -49,7 +49,7 @@ The upstream credential is used by Pollinations to proxy requests to your endpoi
 
 ## Register with the CLI
 
-The CLI manages text, image, and transcription model registrations. Sign in, test the endpoint, then create the model:
+The CLI manages text, image, video, and transcription model registrations. Sign in, test the endpoint, then create the model:
 
 ```bash
 npx @pollinations/cli auth login
@@ -84,7 +84,7 @@ Public models support these owner controls in the dashboard or Account API:
 - The provider profile at `POST /account/my-models/provider` sets the public provider name and service URL shared by your models.
 - Owners can hide or relist their models without deleting them.
 
-Token prices cannot exceed 50 Pollen per 1M tokens. Fixed image prices cannot exceed 0.25 Pollen per image, and transcription prices cannot exceed 0.012 Pollen per minute. See the [Community Models API reference](https://gen.pollinations.ai/docs#tag/community-models) for the exact fields.
+Token prices cannot exceed 50 Pollen per 1M tokens. Fixed image prices cannot exceed 0.25 Pollen per image, video prices cannot exceed 0.1 Pollen per second of output, and transcription prices cannot exceed 0.012 Pollen per minute. See the [Community Models API reference](https://gen.pollinations.ai/docs#tag/community-models) for the exact fields.
 
 ## Call Your Model
 

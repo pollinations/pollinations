@@ -4,6 +4,7 @@ import {
     testCommunityEndpoint,
     testCommunityImageEndpoint,
     testCommunityTranscriptionEndpoint,
+    testCommunityVideoEndpoint,
 } from "../src/services/community-endpoint-openai.ts";
 
 afterEach(() => {
@@ -414,6 +415,138 @@ describe("community endpoint OpenAI service", () => {
                 model: "whisper-1",
             }),
         ).rejects.toThrow("did not return OpenAI transcription text");
+    });
+
+    it("probes video endpoints and reports the returned duration", async () => {
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            expect(request.url).toBe(
+                "https://api.example.com/v1/videos/generations",
+            );
+            expect(request.headers.get("authorization")).toBe(
+                "Bearer sk_saved_token",
+            );
+            await expect(request.json()).resolves.toMatchObject({
+                model: "kling-2",
+                prompt: "A short sample clip for endpoint validation.",
+            });
+            // Minimal valid MP4: box-size + ftyp
+            return Response.json({
+                data: [
+                    {
+                        b64_json: Buffer.from(
+                            new Uint8Array([
+                                0, 0, 0, 24, 0x66, 0x74, 0x79, 0x70, 0x69, 0x73,
+                                0x6f, 0x6d, 0, 0, 0, 0, 0x69, 0x73, 0x6f, 0x6d,
+                                0x69, 0x73, 0x6f, 0x32,
+                            ]),
+                        ).toString("base64"),
+                    },
+                ],
+                usage: { video_seconds: 5 },
+            });
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        await expect(
+            testCommunityVideoEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "Bearer sk_saved_token",
+                model: "kling-2",
+            }),
+        ).resolves.toEqual({
+            usage: { duration: 5 },
+            billableUsage: { completionVideoSeconds: 5 },
+        });
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("accepts video URL responses and a top-level duration", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input) => {
+                if (String(input).endsWith("/sample.mp4")) {
+                    return new Response(
+                        new Uint8Array([
+                            0, 0, 0, 24, 0x66, 0x74, 0x79, 0x70, 0x69, 0x73,
+                            0x6f, 0x6d, 0, 0, 0, 0, 0x69, 0x73, 0x6f, 0x6d,
+                            0x69, 0x73, 0x6f, 0x32,
+                        ]),
+                        { headers: { "Content-Type": "video/mp4" } },
+                    );
+                }
+                return Response.json({
+                    data: [
+                        {
+                            url: "http://api.example.com/assets/sample.mp4",
+                        },
+                    ],
+                    usage: { duration: 4 },
+                });
+            }),
+        );
+
+        await expect(
+            testCommunityVideoEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "kling-2",
+            }),
+        ).resolves.toEqual({
+            usage: { duration: 4 },
+            billableUsage: { completionVideoSeconds: 4 },
+        });
+    });
+
+    it("rejects upstreams that return non-video payloads", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json({
+                    data: [{ b64_json: "bm90IGEgdmlkZW8=" }],
+                }),
+            ),
+        );
+
+        await expect(
+            testCommunityVideoEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "kling-2",
+            }),
+        ).rejects.toThrow("Endpoint did not return supported video data");
+    });
+
+    it("falls back to a fixed sample duration when the upstream omits it", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json({
+                    data: [
+                        {
+                            b64_json: Buffer.from(
+                                new Uint8Array([
+                                    0, 0, 0, 24, 0x66, 0x74, 0x79, 0x70, 0x69,
+                                    0x73, 0x6f, 0x6d, 0, 0, 0, 0, 0x69, 0x73,
+                                    0x6f, 0x6d, 0x69, 0x73, 0x6f, 0x32,
+                                ]),
+                            ).toString("base64"),
+                        },
+                    ],
+                }),
+            ),
+        );
+
+        await expect(
+            testCommunityVideoEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "kling-2",
+            }),
+        ).resolves.toEqual({
+            usage: { video_seconds: 4 },
+            billableUsage: { completionVideoSeconds: 4 },
+        });
     });
 
     it("explains the verbose_json requirement when the endpoint rejects it", async () => {

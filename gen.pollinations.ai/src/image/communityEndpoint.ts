@@ -5,11 +5,17 @@ import {
     communityEndpointErrorDetail,
     communityImageEditsUrl,
     communityImageGenerationsUrl,
+    communityVideoDuration,
+    communityVideoGenerationsUrl,
     firstCommunityImageBytes,
+    firstCommunityVideoBytes,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
 import { HttpError } from "@shared/http-error.ts";
-import { detectImageMimeType } from "@shared/image-mime.ts";
+import {
+    detectImageMimeType,
+    detectVideoMimeType,
+} from "@shared/image-mime.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 import {
     getOpenAIImageUsage,
@@ -17,6 +23,7 @@ import {
 } from "@shared/registry/usage-headers.ts";
 import { decryptSecret } from "@shared/secret-encryption.ts";
 import type { ImageGenerationResult } from "./createAndReturnImages.ts";
+import type { VideoGenerationResult } from "./createAndReturnVideos.ts";
 import type { ImageParams } from "./params.ts";
 import {
     bufferToUint8Array,
@@ -24,6 +31,87 @@ import {
 } from "./utils/imageDownload.ts";
 
 type CommunityImageParams = Omit<ImageParams, "model"> & { model: string };
+
+export async function callCommunityVideoEndpoint(
+    endpoint: CommunityEndpointRuntime,
+    prompt: string,
+    safeParams: CommunityImageParams,
+    secret: string,
+): Promise<VideoGenerationResult> {
+    // Managed agents are text-only, so a video endpoint is always external.
+    if (endpoint.type !== "proxy") {
+        throw new Error(
+            `Community video endpoint '${endpoint.modelId}' is a managed agent`,
+        );
+    }
+    const bearerToken = await decryptSecret(
+        endpoint.bearerTokenCiphertext,
+        secret,
+    );
+    const upstreamUrl = communityVideoGenerationsUrl(endpoint.baseUrl);
+    const body = await fetchCommunityVideoJson(
+        upstreamUrl,
+        bearerToken,
+        JSON.stringify({
+            model: endpoint.upstreamModel,
+            prompt,
+            duration: safeParams.duration ?? 5,
+            width: safeParams.width ?? 1280,
+            height: safeParams.height ?? 720,
+            ...(safeParams.image.length > 0
+                ? { image: safeParams.image[0] }
+                : {}),
+        }),
+    );
+    const bytes = await firstCommunityVideoBytes(body, endpoint.baseUrl);
+    const mimeType = bytes ? detectVideoMimeType(bytes) : null;
+    if (!bytes || !mimeType) {
+        throw new HttpError(
+            "Community video endpoint did not return a supported video",
+            502,
+        );
+    }
+    const durationSeconds =
+        communityVideoDuration(body) ?? safeParams.duration ?? 5;
+    return {
+        buffer: Buffer.from(bytes),
+        mimeType,
+        durationSeconds,
+        trackingData: {
+            actualModel: endpoint.modelId,
+            usage: { completionVideoSeconds: durationSeconds },
+        },
+    };
+}
+
+async function fetchCommunityVideoJson(
+    url: string,
+    bearerToken: string,
+    body: string,
+): Promise<unknown> {
+    const response = await fetchWithTimeout(url, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${normalizeCommunityEndpointBearerToken(
+                bearerToken,
+            )}`,
+            "Content-Type": "application/json",
+        },
+        body,
+    });
+    const text = await response.text();
+    const parsed = parseJson(text);
+
+    if (!response.ok) {
+        throw new HttpError(
+            endpointErrorMessage("video", response.status, parsed),
+            response.status,
+            { body: text },
+            url,
+        );
+    }
+    return parsed;
+}
 
 export async function callCommunityImageEndpoint(
     endpoint: CommunityEndpointRuntime,
@@ -166,7 +254,7 @@ async function fetchCommunityImageJson(
 
     if (!response.ok) {
         throw new HttpError(
-            endpointErrorMessage(response.status, parsed),
+            endpointErrorMessage("image", response.status, parsed),
             response.status,
             { body: text },
             url,
@@ -187,7 +275,7 @@ async function fetchWithTimeout(
         });
     } catch (error) {
         throw new HttpError(
-            "Community image endpoint timed out or could not connect",
+            "Community media endpoint timed out or could not connect",
             502,
             { error: error instanceof Error ? error.message : String(error) },
             input,
@@ -203,9 +291,13 @@ function parseJson(text: string): unknown {
     }
 }
 
-function endpointErrorMessage(status: number, body: unknown): string {
+function endpointErrorMessage(
+    modality: "image" | "video",
+    status: number,
+    body: unknown,
+): string {
     const message = communityEndpointErrorDetail(body);
     return message
-        ? `Community image endpoint responded ${status}: ${message}`
-        : `Community image endpoint responded ${status}`;
+        ? `Community ${modality} endpoint responded ${status}: ${message}`
+        : `Community ${modality} endpoint responded ${status}`;
 }

@@ -8,11 +8,17 @@ import {
     communityImageGenerationsUrl,
     communityOpenAIBaseUrl,
     communityTranscriptionSeconds,
+    communityVideoDuration,
+    communityVideoGenerationsUrl,
     decodeCommunityBase64,
     firstCommunityImageBytes,
+    firstCommunityVideoBytes,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
-import { detectImageMimeType } from "@shared/image-mime.ts";
+import {
+    detectImageMimeType,
+    detectVideoMimeType,
+} from "@shared/image-mime.ts";
 import type { ModelInputModality, Usage } from "@shared/registry/registry.ts";
 import {
     getOpenAIImageUsage,
@@ -210,6 +216,45 @@ export async function testCommunityImageEndpoint({
         billableUsage: { completionImageTokens: 1 },
         imagePricing: "request",
         inputModalities,
+    };
+}
+
+// Video endpoints are billed per second of generated output. The probe sends a
+// short text-only prompt, collects the bytes from the video response, validates
+// the container (mp4/webm/qt), and reports the duration from the usage shape —
+// or a fixed sample when no duration is reported.
+export async function testCommunityVideoEndpoint({
+    baseUrl,
+    bearerToken,
+    model,
+}: EndpointTestInput): Promise<CommunityEndpointTestResult> {
+    const body = await fetchJson(communityVideoGenerationsUrl(baseUrl), {
+        method: "POST",
+        headers: {
+            ...authorizationHeaders(bearerToken),
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            model,
+            prompt: "A short sample clip for endpoint validation.",
+        }),
+    });
+
+    const videoBytes = await firstCommunityVideoBytes(body, baseUrl);
+    if (!videoBytes || !detectVideoMimeType(videoBytes)) {
+        throw new Error("Endpoint did not return supported video data");
+    }
+
+    const durationSeconds = communityVideoDuration(body);
+    if (durationSeconds !== null) {
+        return {
+            usage: { duration: durationSeconds },
+            billableUsage: { completionVideoSeconds: durationSeconds },
+        };
+    }
+    return {
+        usage: { video_seconds: 4 },
+        billableUsage: { completionVideoSeconds: 4 },
     };
 }
 

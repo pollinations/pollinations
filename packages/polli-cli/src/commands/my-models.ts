@@ -25,6 +25,10 @@ const PRICE_FLAGS = [
         "--completion-image-price <number>",
         "Generated-image price (per image when --image-pricing request; per token when --image-pricing tokens)",
     ],
+    [
+        "--completion-video-price <number>",
+        "Generated-video price per second of output",
+    ],
 ] as const;
 
 const PRICE_OPTION_KEYS = [
@@ -37,6 +41,7 @@ const PRICE_OPTION_KEYS = [
     "completionReasoningPrice",
     "completionAudioPrice",
     "completionImagePrice",
+    "completionVideoPrice",
 ] as const;
 
 type PriceOptionKey = (typeof PRICE_OPTION_KEYS)[number];
@@ -58,9 +63,10 @@ interface MyModelBase {
 interface ProxyMyModel extends MyModelBase {
     type: "proxy";
     paidOnly: boolean;
-    modality: "text" | "image" | "transcription";
+    modality: "text" | "image" | "video" | "transcription";
     imagePricing: "request" | "tokens";
     completionImagePrice: number;
+    completionVideoPrice: number;
     // /account/my-models/test detects edit support from endpoint probes.
     inputModalities: string[];
     fallbacks: string[];
@@ -131,9 +137,12 @@ export function modelBody(
         if (
             opts.modality !== "text" &&
             opts.modality !== "image" &&
+            opts.modality !== "video" &&
             opts.modality !== "transcription"
         ) {
-            fail("--modality must be 'text', 'image', or 'transcription'");
+            fail(
+                "--modality must be 'text', 'image', 'video', or 'transcription'",
+            );
         }
         body.modality = opts.modality;
     }
@@ -193,7 +202,9 @@ function printModels(models: MyModel[]) {
             image_price:
                 model.type === "proxy" && model.modality === "image"
                     ? `${model.completionImagePrice}/${model.imagePricing === "tokens" ? "token" : "req"}`
-                    : "-",
+                    : model.type === "proxy" && model.modality === "video"
+                      ? `${model.completionVideoPrice}/sec`
+                      : "-",
             inputs:
                 model.type === "proxy"
                     ? model.inputModalities?.join(", ") || "-"
@@ -269,7 +280,7 @@ const create = addPriceOptions(
         )
         .option(
             "--modality <modality>",
-            "Model family: text (default), image, or transcription",
+            "Model family: text (default), image, video, or transcription",
         )
         .option(
             "--image-pricing <mode>",

@@ -2,6 +2,7 @@ import {
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MAX_COMMUNITY_PRICE_PER_SECOND,
+    MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
 } from "@shared/community-endpoints.ts";
@@ -84,5 +85,29 @@ describe("community endpoint price input", () => {
         ).toBe(false);
         // Per-second rates are tiny; the per-million floor must not apply.
         expect(isValidPriceInput("0.0000000000001", "second")).toBe(true);
+    });
+
+    it("keeps per-video-second prices unscaled with a per-second ceiling", () => {
+        expect(formPriceToStoredPrice("0.0000445", "videoSecond")).toBe(
+            0.0000445,
+        );
+        expect(storedPriceToFormValue(0.0000445, "videoSecond")).toBe(
+            "0.0000445",
+        );
+        expect(isValidPriceInput("0.0000445", "videoSecond")).toBe(true);
+        expect(
+            isValidPriceInput(
+                String(MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND),
+                "videoSecond",
+            ),
+        ).toBe(true);
+        expect(
+            isValidPriceInput(
+                String(MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND + 0.001),
+                "videoSecond",
+            ),
+        ).toBe(false);
+        // Like audio seconds, tiny rates are valid per video second.
+        expect(isValidPriceInput("0.0000000000001", "videoSecond")).toBe(true);
     });
 });

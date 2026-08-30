@@ -1,0 +1,1152 @@
+From c38e6d9f351c5f2697bdb95b4ae2562d6a41cbbc Mon Sep 17 00:00:00 2001
+From: Polli Harness Patch <patch@example.com>
+Date: Sun, 30 Aug 2026 03:32:11 +0000
+Subject: [PATCH] polli harness openclaw: single Pollinations setup path for
+ OpenClaw
+
+Adds `polli harness openclaw` alongside the existing DeepSeek Harness
+integration, following the same on/off/status contract:
+
+- `on` mints OpenClaw a dedicated Pollinations key (via the existing
+  harness login/key flow), and either runs OpenClaw's own non-interactive
+  onboarding (fresh install) or edits the existing openclaw.json in place.
+- The pollinations provider's model list comes from the live
+  gen.pollinations.ai/v1/models catalog (fetchHarnessModels), so there is
+  no second hardcoded model registry to fall out of sync -- this is the
+  same helper the dsh harness already uses.
+- If the openclaw binary is missing, `on` stops and prints the official
+  installer instead of guessing at one.
+- `status` reports whether the provider, default model, key, and Polli
+  skill are all in place.
+- `off` restores the exact config/skill files from before `on` ran when
+  nothing else has touched them since, or otherwise strips only the
+  pollinations provider, the pollinations/* default model, and the Polli
+  skill, leaving unrelated config (channels, other providers, workspace)
+  untouched.
+
+The old apps/openclaw/setup-pollinations.sh hardcoded a 9-model list
+(pollinations/pollinations#8595) and had no revert path. It is now a
+thin backward-compatible shim that forwards to `polli harness openclaw
+on`; the README documents the new command as the primary path and keeps
+a manual-JSON fallback for people who don't want to run the CLI.
+
+CODING_HARNESSES.md (embedded verbatim into the Scalar docs at
+gen.pollinations.ai/docs) documents on/off/status, model selection, the
+missing-binary and fresh-install behavior, and what off does and does
+not touch.
+
+Tested: full polli-cli vitest suite (43/43) and tsup build pass; added
+openclaw.test.ts (config/snapshot/restore logic, mirroring dsh.test.ts)
+and openclaw.onboarding.test.ts (mocked-CLI coverage for the
+missing-binary and fresh-install-bootstrap paths). Also manually
+smoke-tested the built CLI end-to-end against a fake openclaw binary
+and a fake Pollinations API server: fresh-install bootstrap preserves
+the onboarded workspace/gateway/channels, on/status/off round-trip
+correctly, and off-after-unrelated-edit strips only Pollinations keys.
+---
+ CODING_HARNESSES.md                           |  23 +-
+ apps/openclaw/README.md                       | 106 +++---
+ apps/openclaw/setup-pollinations.sh           | 189 +----------
+ packages/polli-cli/src/harnesses/index.ts     |   3 +-
+ .../src/harnesses/openclaw.onboarding.test.ts | 107 ++++++
+ .../polli-cli/src/harnesses/openclaw.test.ts  | 229 +++++++++++++
+ packages/polli-cli/src/harnesses/openclaw.ts  | 316 ++++++++++++++++++
+ 7 files changed, 739 insertions(+), 234 deletions(-)
+ mode change 100644 => 100755 apps/openclaw/setup-pollinations.sh
+ create mode 100644 packages/polli-cli/src/harnesses/openclaw.onboarding.test.ts
+ create mode 100644 packages/polli-cli/src/harnesses/openclaw.test.ts
+ create mode 100644 packages/polli-cli/src/harnesses/openclaw.ts
+
+diff --git a/CODING_HARNESSES.md b/CODING_HARNESSES.md
+index 9024afc..b004bb1 100644
+--- a/CODING_HARNESSES.md
++++ b/CODING_HARNESSES.md
+@@ -2,7 +2,7 @@
+ 
+ Use `polli harness` to connect a supported coding harness to Pollinations. It handles Polli login, a dedicated API key, model setup, and any Pollinations capabilities supported by that harness.
+ 
+-> **Available now:** DeepSeek Harness is currently the only integrated `polli harness` profile. OpenCode, Pi, Prime Agent, and OpenClaw are coming soon.
++> **Available now:** DeepSeek Harness and OpenClaw are integrated `polli harness` profiles. OpenCode, Pi, and Prime Agent are coming soon.
+ 
+ ## Use a harness
+ 
+@@ -26,10 +26,10 @@ If Polli is not installed yet, run the first setup through `npx @pollinations/cl
+ | Harness | Status | What is unique |
+ | --- | --- | --- |
+ | [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) | **Available now** — `polli harness dsh on` | Adds the Pollinations provider, hosted Pollinations MCP, and Polli skill. Uses `deepseek` by default. |
++| [OpenClaw](https://github.com/openclaw/openclaw) | **Available now** — `polli harness openclaw on` | Adds the Pollinations provider and Polli skill, and runs OpenClaw's own onboarding for fresh installs. Uses `kimi` by default. |
+ | [OpenCode](https://opencode.ai) | Coming soon | Will use the existing [Pollinations OpenCode plugin](https://github.com/fkom13/opencode-pollinations-plugin) for models, media tools, usage, and quests. |
+ | [Pi](https://github.com/earendil-works/pi) | Coming soon | Will use its native provider support and the Polli skill; Pi does not include built-in MCP support. |
+ | [Prime Agent](https://github.com/PrimeIntellect-ai/prime-agent) | Coming soon | Will add Pollinations while preserving the agent's memories, sessions, and skills. |
+-| [OpenClaw](https://github.com/openclaw/openclaw) | Coming soon | Will bring the [existing Pollinations setup](./apps/openclaw/README.md) into the shared `polli harness` workflow. |
+ 
+ ## DeepSeek Harness
+ 
+@@ -40,3 +40,22 @@ polli harness dsh off
+ ```
+ 
+ Choose another default model with `--model <id>`. Add `--no-mcp` if you do not want the hosted Pollinations media tools.
++
++## OpenClaw
++
++```bash
++npx @pollinations/cli harness openclaw on
++polli harness openclaw status
++polli harness openclaw off
++```
++
++- If the `openclaw` command is not found, `on` stops and prints the official installer (`curl -fsSL https://openclaw.ai/install.sh | bash` on macOS/Linux/WSL2, `iwr -useb https://openclaw.ai/install.ps1 | iex` on Windows). Install it, then re-run `polli harness openclaw on`.
++- On a fresh machine that has never run `openclaw onboard`, `on` runs OpenClaw's own non-interactive onboarding first, so you still get a normal workspace, gateway token, and agent — not just a config file. This bootstrap step happens before any Pollinations-specific keys are written, so `off` never has to undo it.
++- On an existing installation, `on` only adds a `pollinations` entry to `models.providers` in `openclaw.json` and sets it as the default model (`agents.defaults.model.primary`). Every other agent, channel, and config value is left exactly as it was.
++- The model list comes from `polli models` at run time — there is no separate hardcoded model list to fall out of date. Pass `--model <id>` to pick a default other than `kimi`; run `polli models` to see current choices.
++- The Pollinations key lives in `openclaw.json`'s `env.vars.POLLI_OPENCLAW_API_KEY` and is referenced from the provider as `${POLLI_OPENCLAW_API_KEY}`, so it never appears twice in the file.
++- `polli harness openclaw status` reports whether the provider, default model, key, and Polli skill are all in place, and which files are managed.
++- `off` restores the exact `openclaw.json` and skill file from before `on` ran, byte-for-byte, as long as nothing else edited them in between. If something else did, `off` instead strips only the `pollinations` provider, the `pollinations/*` default model, and the Polli skill, leaving every unrelated setting untouched.
++- Restart a running gateway afterward with `openclaw gateway restart` to pick up the change immediately; otherwise it applies on the next request.
++
++This replaces the old `apps/openclaw/setup-pollinations.sh` script, which hardcoded a fixed model list. That script now forwards to this harness for backward compatibility.
+diff --git a/apps/openclaw/README.md b/apps/openclaw/README.md
+index aa72efd..20da255 100644
+--- a/apps/openclaw/README.md
++++ b/apps/openclaw/README.md
+@@ -1,105 +1,95 @@
+ # Pollinations x OpenClaw
+ 
+-Use **25+ AI models** as your OpenClaw brain through a single API.
+-
+-**Kimi K2.5** as default (256K context, vision, tools, reasoning), with DeepSeek, GLM 5, and Claude Haiku as free alternatives. Premium models (Claude Opus, Gemini 3 Pro) available on paid tier.
++Use Pollinations' current text models as your OpenClaw brain through a single API, with a dedicated key, a Polli skill, and no manually maintained model list to fall out of date.
+ 
+ ## Setup
+ 
+-**Step 1:** Get your API key (comes with free credits) at [enter.pollinations.ai](https://enter.pollinations.ai/keys)
++```bash
++npx @pollinations/cli harness openclaw on
++```
++
++This works for both fresh installs and existing OpenClaw setups:
++
++- If `openclaw` is not installed, it stops and prints the official installer instead of guessing at one — install it, then re-run the command.
++- If OpenClaw has never been onboarded, it runs OpenClaw's own non-interactive onboarding first (workspace, gateway token, agent), the same way `openclaw onboard` normally would.
++- It logs in to Pollinations (browser device flow by default) and mints a Pollinations API key dedicated to this OpenClaw install — separate from any other key on your account.
++- It adds a `pollinations` provider to `models.providers` in `openclaw.json`, populated from the **current** Pollinations text-model catalog (`gen.pollinations.ai/v1/models`), and sets it as the default model.
++- It installs the [Polli skill](https://github.com/pollinations/pollinations/tree/main/packages/polli-cli) so the agent can also generate images, audio, and video, and use the rest of the `polli` CLI.
++- Every other agent, channel, and config value already in `openclaw.json` is left untouched.
++
++Check anytime with:
++
++```bash
++polli harness openclaw status
++```
++
++Restart a running gateway to pick up the change immediately:
++
++```bash
++openclaw gateway restart
++```
+ 
+-**Step 2:** Run the setup script (requires `jq`):
++### Choosing a model
+ 
+ ```bash
+-curl -fsSL https://raw.githubusercontent.com/pollinations/pollinations/main/apps/openclaw/setup-pollinations.sh | bash -s -- YOUR_API_KEY
++npx @pollinations/cli harness openclaw on --model deepseek
+ ```
+ 
+-This works for both fresh installs and existing OpenClaw setups. It:
+-- Runs `openclaw onboard` for fresh installs (creates config + workspace)
+-- Adds the Pollinations provider with 9 models to `~/.openclaw/openclaw.json`
+-- Sets Kimi K2.5 as default with DeepSeek + GLM fallbacks
++`kimi` is the default. Run `polli models` to see the current list of tool-calling text models — this comes straight from the API, so it is always current; there is nothing to look up in this README.
+ 
+-**Step 3 (fresh install only):** Start the gateway:
++Switch models later without re-running setup:
+ 
+ ```bash
+-openclaw gateway start
++openclaw models set pollinations/<model-id>
+ ```
+ 
+-## Available Models
++### Removing the integration
+ 
+-Switch models anytime in chat with `/model pollinations/<name>`:
++```bash
++polli harness openclaw off
++```
+ 
+-| Model | ID | Best for |
+-|---|---|---|
+-| **Kimi K2.5** (default) | `pollinations/kimi` | Agentic tasks, vision, reasoning (256K context) |
+-| **Kimi K2.6** | `pollinations/kimi-k2.6` | Flagship agentic, vision, reasoning (262K context, paid) |
+-| **DeepSeek V4 Flash** | `pollinations/deepseek` | Fast reasoning & tool calling (paid) |
+-| **DeepSeek V4 Pro** | `pollinations/deepseek-pro` | Advanced reasoning & coding (paid) |
+-| **GLM 5.1** | `pollinations/glm` | Coding, reasoning, agentic workflows |
+-| **Gemini + Search** | `pollinations/gemini-search` | Web search grounded answers |
+-| **Claude Haiku 4.5** | `pollinations/claude-fast` | Fast with good reasoning |
+-| **Claude Opus 4.6** | `pollinations/claude-large` | Most intelligent (paid) |
+-| **Gemini 3.1 Pro** | `pollinations/gemini-large` | 1M context (paid) |
++Restores `openclaw.json` to what it was before `on` ran (or, if something else edited it since, strips only the `pollinations` provider, the `pollinations/*` default model, and the Polli skill).
+ 
+-## Manual Setup
++## Manual setup
+ 
+-If you prefer not to run the script, edit `~/.openclaw/openclaw.json` directly. Add a `pollinations` provider under `models.providers`:
++If you prefer not to run the CLI, add a `pollinations` provider under `models.providers` in `~/.openclaw/openclaw.json` yourself:
+ 
+ ```json
+ {
++  "env": {
++    "vars": { "POLLI_OPENCLAW_API_KEY": "YOUR_API_KEY" }
++  },
+   "models": {
++    "mode": "merge",
+     "providers": {
+       "pollinations": {
+         "baseUrl": "https://gen.pollinations.ai/v1",
+-        "apiKey": "YOUR_API_KEY",
++        "apiKey": "${POLLI_OPENCLAW_API_KEY}",
+         "api": "openai-completions",
+         "models": [
+-          {
+-            "id": "kimi",
+-            "name": "Kimi K2.5",
+-            "reasoning": true,
+-            "input": ["text", "image"],
+-            "contextWindow": 256000,
+-            "maxTokens": 8192
+-          },
+-          {
+-            "id": "kimi-k2.6",
+-            "name": "Kimi K2.6",
+-            "reasoning": true,
+-            "input": ["text", "image"],
+-            "contextWindow": 262000,
+-            "maxTokens": 8192
+-          }
++          { "id": "kimi", "name": "kimi", "input": ["text", "image"], "contextWindow": 256000 }
+         ]
+       }
+     }
++  },
++  "agents": {
++    "defaults": { "model": { "primary": "pollinations/kimi" } }
+   }
+ }
+ ```
+ 
+-Then set the default model:
++See the current model list at [gen.pollinations.ai/v1/models](https://gen.pollinations.ai/v1/models), then:
+ 
+ ```bash
+-openclaw models set pollinations/kimi
+-openclaw models fallbacks add pollinations/deepseek
+-openclaw models fallbacks add pollinations/glm
+ openclaw gateway restart
+ ```
+ 
+-See all available models at [gen.pollinations.ai/v1/models](https://gen.pollinations.ai/v1/models).
+-
+-## Pollinations Skill (Image/Video/Audio)
+-
+-The [Pollinations skill](https://github.com/pollinations/pollinations/tree/main/apps/openclaw) gives your agent image, video, and audio generation:
+-
+-```
+-/skill install isaacgounton/pollinations
+-```
+-
+ ## Links
+ 
+ - **API Docs:** https://gen.pollinations.ai/docs
+ - **Get API Key:** https://enter.pollinations.ai/keys
+ - **Models:** https://gen.pollinations.ai/v1/models
++- **Coding Harnesses guide:** https://github.com/pollinations/pollinations/blob/main/CODING_HARNESSES.md
+ - **GitHub:** https://github.com/pollinations/pollinations
+ - **Discord:** https://discord.gg/pollinations-ai-885844321461485618
+diff --git a/apps/openclaw/setup-pollinations.sh b/apps/openclaw/setup-pollinations.sh
+old mode 100644
+new mode 100755
+index ddea0ee..a5a72d1
+--- a/apps/openclaw/setup-pollinations.sh
++++ b/apps/openclaw/setup-pollinations.sh
+@@ -1,180 +1,23 @@
+ #!/bin/bash
+ 
+-# Configure OpenClaw to use Pollinations.ai models
+-# Works on: macOS, Linux, Windows (WSL/Git Bash/MSYS2)
+-# Usage: curl ... | bash -s -- YOUR_API_KEY
++# DEPRECATED: this script used to hardcode OpenClaw's config and a fixed
++# Pollinations model list directly in bash. That logic now lives in
++# `polli harness openclaw`, which fetches the current model catalog instead
++# of a list that goes stale (see CODING_HARNESSES.md). This script is kept
++# only so the old
++#   curl ... | bash -s -- YOUR_API_KEY
++# one-liner keeps working; it forwards to the CLI and does nothing else.
++#
++# Prefer running directly:
++#   npx @pollinations/cli harness openclaw on
+ 
+ set -e
+ 
+-if [ -z "$1" ]; then
+-    echo "Usage: $0 <POLLINATIONS_API_KEY>"
+-    echo ""
+-    echo "Get your API key (with free credits) at: https://enter.pollinations.ai/keys"
+-    exit 1
++if [ -n "$1" ]; then
++    echo "Note: this script no longer uses the API key argument directly."
++    echo "It stores it as your Polli account key, then mints a dedicated"
++    echo "OpenClaw key from it (so OpenClaw never shares a key with anything else)."
++    printf '%s' "$1" | npx -y @pollinations/cli@latest auth login --with-token
+ fi
+ 
+-API_KEY="$1"
+-
+-if ! command -v openclaw >/dev/null 2>&1; then
+-    echo "OpenClaw not found. Install it first:"
+-    echo "  curl -fsSL https://openclaw.ai/install.sh | bash"
+-    exit 1
+-fi
+-
+-if ! command -v jq >/dev/null 2>&1; then
+-    echo "jq not found. Install it: brew install jq (macOS) or apt install jq (Linux)"
+-    exit 1
+-fi
+-
+-CONFIG_FILE="${HOME}/.openclaw/openclaw.json"
+-
+-# --- Step 1: Fresh install — run onboard to create config + workspace ---
+-
+-if [ ! -f "$CONFIG_FILE" ]; then
+-    echo "Fresh install — running OpenClaw setup..."
+-    openclaw onboard \
+-      --non-interactive \
+-      --accept-risk \
+-      --mode local \
+-      --flow quickstart \
+-      --auth-choice custom-api-key \
+-      --custom-base-url "https://gen.pollinations.ai/v1" \
+-      --custom-provider-id pollinations \
+-      --custom-model-id kimi \
+-      --custom-api-key "$API_KEY" \
+-      --secret-input-mode plaintext \
+-      --skip-channels \
+-      --skip-daemon \
+-      --skip-skills \
+-      --skip-ui \
+-      --skip-health \
+-      2>&1 | grep -v "^$" || true
+-fi
+-
+-# --- Step 2: Patch openclaw.json with full Pollinations provider + models ---
+-
+-echo "Adding Pollinations models..."
+-
+-# Patch provider + web search into openclaw.json (preserves all other config)
+-POLLINATIONS_PROVIDER=$(cat <<'EOF'
+-{
+-  "baseUrl": "https://gen.pollinations.ai/v1",
+-  "apiKey": "",
+-  "api": "openai-completions",
+-  "models": [
+-    {
+-      "id": "kimi",
+-      "name": "Kimi K2.5 — 256K context, vision, tools, reasoning",
+-      "reasoning": true,
+-      "input": ["text", "image"],
+-      "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
+-      "contextWindow": 256000,
+-      "maxTokens": 8192
+-    },
+-    {
+-      "id": "kimi-k2.6",
+-      "name": "Kimi K2.6 — Flagship agentic, vision, reasoning (paid)",
+-      "reasoning": true,
+-      "input": ["text", "image"],
+-      "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
+-      "contextWindow": 262000,
+-      "maxTokens": 8192
+-    },
+-    {
+-      "id": "deepseek",
+-      "name": "DeepSeek V4 Flash — Fast reasoning & tool calling (paid)",
+-      "reasoning": true,
+-      "input": ["text"],
+-      "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
+-      "contextWindow": 1000000,
+-      "maxTokens": 8192
+-    },
+-    {
+-      "id": "deepseek-pro",
+-      "name": "DeepSeek V4 Pro — Advanced reasoning & coding (paid)",
+-      "reasoning": true,
+-      "input": ["text"],
+-      "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
+-      "contextWindow": 65536,
+-      "maxTokens": 8192
+-    },
+-    {
+-      "id": "glm",
+-      "name": "GLM 5 — Coding, reasoning, agentic workflows",
+-      "reasoning": false,
+-      "input": ["text"],
+-      "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
+-      "contextWindow": 128000,
+-      "maxTokens": 8192
+-    },
+-    {
+-      "id": "gemini-search",
+-      "name": "Gemini + Search — Web search grounded answers",
+-      "reasoning": false,
+-      "input": ["text", "image"],
+-      "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
+-      "contextWindow": 128000,
+-      "maxTokens": 8192
+-    },
+-    {
+-      "id": "claude-fast",
+-      "name": "Claude Haiku 4.5 — Fast with good reasoning",
+-      "reasoning": false,
+-      "input": ["text", "image"],
+-      "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
+-      "contextWindow": 200000,
+-      "maxTokens": 8192
+-    },
+-    {
+-      "id": "claude-large",
+-      "name": "Claude Opus 4.6 — Most intelligent (paid)",
+-      "reasoning": false,
+-      "input": ["text", "image"],
+-      "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
+-      "contextWindow": 200000,
+-      "maxTokens": 8192
+-    },
+-    {
+-      "id": "gemini-large",
+-      "name": "Gemini 3 Pro — 1M context (paid)",
+-      "reasoning": true,
+-      "input": ["text", "image"],
+-      "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
+-      "contextWindow": 1000000,
+-      "maxTokens": 8192
+-    }
+-  ]
+-}
+-EOF
+-)
+-
+-jq --argjson provider "$POLLINATIONS_PROVIDER" --arg key "$API_KEY" \
+-  '(.models.providers.pollinations = ($provider | .apiKey = $key)) | .models.mode = "merge" |
+-   .tools.web.search = {"provider":"perplexity","perplexity":{"baseUrl":"https://gen.pollinations.ai/v1","apiKey":$key,"model":"perplexity-fast"}}' \
+-  "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" && mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
+-
+-# --- Step 3: Set default model + fallbacks via CLI ---
+-
+-openclaw models set pollinations/kimi >/dev/null
+-openclaw models fallbacks add pollinations/deepseek >/dev/null
+-openclaw models fallbacks add pollinations/glm >/dev/null
+-
+-# --- Step 4: Restart gateway if running ---
+-
+-openclaw gateway restart >/dev/null 2>&1 || true
+-
+-# --- Done ---
+-
+-MASKED="${API_KEY:0:8}...${API_KEY: -4}"
+-echo ""
+-echo "Done! Pollinations.ai is ready."
+-echo ""
+-echo "  API Key:   $MASKED"
+-echo "  Default:   pollinations/kimi (256K context, vision, reasoning)"
+-echo "  Fallbacks: deepseek, glm"
+-echo ""
+-echo "  Switch models:  /model pollinations/deepseek or /model pollinations/deepseek-pro"
+-echo "  Your account:   https://enter.pollinations.ai"
+-echo ""
+-echo "  Free: kimi, glm, gemini-search, claude-fast"
+-echo "  Paid: deepseek, deepseek-pro, claude-large, gemini-large"
++exec npx -y @pollinations/cli@latest harness openclaw on "${@:2}"
+diff --git a/packages/polli-cli/src/harnesses/index.ts b/packages/polli-cli/src/harnesses/index.ts
+index 2497e11..7bcc8e0 100644
+--- a/packages/polli-cli/src/harnesses/index.ts
++++ b/packages/polli-cli/src/harnesses/index.ts
+@@ -1,4 +1,5 @@
+ import { dsh } from "./dsh.js";
++import { openclaw } from "./openclaw.js";
+ import type { HarnessAdapter } from "./types.js";
+ 
+-export const HARNESSES: HarnessAdapter[] = [dsh];
++export const HARNESSES: HarnessAdapter[] = [dsh, openclaw];
+diff --git a/packages/polli-cli/src/harnesses/openclaw.onboarding.test.ts b/packages/polli-cli/src/harnesses/openclaw.onboarding.test.ts
+new file mode 100644
+index 0000000..80ac019
+--- /dev/null
++++ b/packages/polli-cli/src/harnesses/openclaw.onboarding.test.ts
+@@ -0,0 +1,107 @@
++import {
++    mkdirSync,
++    mkdtempSync,
++    readFileSync,
++    rmSync,
++    writeFileSync,
++} from "node:fs";
++import { tmpdir } from "node:os";
++import { join } from "node:path";
++import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
++import type { HarnessContext } from "./types.js";
++
++const spawnSyncMock = vi.hoisted(() => vi.fn());
++vi.mock("node:child_process", () => ({ spawnSync: spawnSyncMock }));
++
++const resolveHarnessKeyMock = vi.hoisted(() => vi.fn());
++vi.mock("./keys.js", () => ({ resolveHarnessKey: resolveHarnessKeyMock }));
++
++const fetchHarnessModelsMock = vi.hoisted(() => vi.fn());
++vi.mock("./models.js", () => ({ fetchHarnessModels: fetchHarnessModelsMock }));
++
++let home: string;
++let ctx: HarnessContext;
++let openclaw: typeof import("./openclaw.js").openclaw;
++
++beforeEach(async () => {
++    home = mkdtempSync(join(tmpdir(), "polli-harness-"));
++    ctx = { home, env: {} };
++    spawnSyncMock.mockReset();
++    resolveHarnessKeyMock.mockReset().mockResolvedValue("sk_minted");
++    fetchHarnessModelsMock
++        .mockReset()
++        .mockResolvedValue([
++            { id: "kimi", contextWindow: 256000, input: ["text", "image"] },
++        ]);
++    ({ openclaw } = await import("./openclaw.js"));
++});
++
++afterEach(() => rmSync(home, { recursive: true, force: true }));
++
++const configFile = () => join(home, ".openclaw", "openclaw.json");
++
++describe("openclaw harness on()", () => {
++    it("stops with the official installer when openclaw is not installed", async () => {
++        spawnSyncMock.mockReturnValue({
++            status: null,
++            error: new Error("ENOENT"),
++        });
++
++        await expect(openclaw.on(ctx, {})).rejects.toThrow(
++            /openclaw\.ai\/install\.sh/,
++        );
++        expect(fetchHarnessModelsMock).not.toHaveBeenCalled();
++    });
++
++    it("runs onboarding first on a fresh install, then writes the config", async () => {
++        spawnSyncMock.mockImplementation((_bin: string, args: string[]) => {
++            if (args[0] === "--version") return { status: 0, error: undefined };
++            if (args[0] === "onboard") {
++                // Simulate the CLI creating the baseline config.
++                mkdirSync(join(home, ".openclaw"), { recursive: true });
++                writeFileSync(
++                    configFile(),
++                    JSON.stringify({ workspace: join(home, "workspace") }),
++                );
++                return { status: 0, error: undefined };
++            }
++            return { status: 0, error: undefined };
++        });
++
++        const result = await openclaw.on(ctx, {});
++
++        expect(result.configured).toBe(true);
++        const onboardCall = spawnSyncMock.mock.calls.find(
++            ([, args]) => args[0] === "onboard",
++        );
++        expect(onboardCall).toBeDefined();
++        expect(onboardCall?.[1]).toContain("--non-interactive");
++        expect(onboardCall?.[1]).toContain("sk_minted");
++
++        const config = JSON.parse(readFileSync(configFile(), "utf-8"));
++        // The pre-existing workspace value from "onboarding" survives.
++        expect(config.workspace).toBe(join(home, "workspace"));
++        expect(config.models.providers.pollinations).toBeDefined();
++    });
++
++    it("skips onboarding when a config already exists", async () => {
++        mkdirSync(join(home, ".openclaw"), { recursive: true });
++        writeFileSync(configFile(), JSON.stringify({ workspace: "/existing" }));
++
++        spawnSyncMock.mockReturnValue({ status: 0, error: undefined });
++
++        await openclaw.on(ctx, {});
++
++        expect(
++            spawnSyncMock.mock.calls.some(([, args]) => args[0] === "onboard"),
++        ).toBe(false);
++    });
++
++    it("rejects a model that is not in the current catalog", async () => {
++        spawnSyncMock.mockReturnValue({ status: 0, error: undefined });
++
++        await expect(
++            openclaw.on(ctx, { model: "not-a-real-model" }),
++        ).rejects.toThrow(/not a tool-calling text model/);
++    });
++});
+diff --git a/packages/polli-cli/src/harnesses/openclaw.test.ts b/packages/polli-cli/src/harnesses/openclaw.test.ts
+new file mode 100644
+index 0000000..6f811b9
+--- /dev/null
++++ b/packages/polli-cli/src/harnesses/openclaw.test.ts
+@@ -0,0 +1,229 @@
++import {
++    existsSync,
++    mkdirSync,
++    mkdtempSync,
++    readdirSync,
++    readFileSync,
++    rmSync,
++    statSync,
++    writeFileSync,
++} from "node:fs";
++import { tmpdir } from "node:os";
++import { join } from "node:path";
++import { afterEach, beforeEach, describe, expect, it } from "vitest";
++import { configureOpenclaw, disableOpenclaw, openclaw } from "./openclaw.js";
++import type { HarnessContext } from "./types.js";
++
++const models = [
++    { id: "kimi", contextWindow: 256000, input: ["text", "image"] },
++    { id: "deepseek", contextWindow: 1000000, input: ["text"] },
++];
++const settings = { apiKey: "sk_test_key", model: "kimi", models };
++
++let home: string;
++let ctx: HarnessContext;
++
++beforeEach(() => {
++    home = mkdtempSync(join(tmpdir(), "polli-harness-"));
++    ctx = { home, env: {} };
++});
++
++afterEach(() => rmSync(home, { recursive: true, force: true }));
++
++const configFile = () => join(home, ".openclaw", "openclaw.json");
++const skillFile = () => join(home, ".openclaw", "skills", "polli", "SKILL.md");
++const snapshotFiles = () => {
++    const dir = join(home, ".pollinations", "harnesses");
++    return existsSync(dir)
++        ? readdirSync(dir).filter((f) => f.startsWith("openclaw."))
++        : [];
++};
++const read = (path: string) => readFileSync(path, "utf-8");
++const readConfig = () => JSON.parse(read(configFile()));
++
++describe("openclaw harness", () => {
++    it("writes the provider, default model, key, and skill from scratch", () => {
++        const result = configureOpenclaw(ctx, settings);
++        expect(result).toMatchObject({
++            harness: "openclaw",
++            configured: true,
++            model: "kimi",
++        });
++
++        const config = readConfig();
++        expect(config.agents.defaults.model.primary).toBe("pollinations/kimi");
++        expect(config.models.mode).toBe("merge");
++        expect(config.env.vars.POLLI_OPENCLAW_API_KEY).toBe("sk_test_key");
++        const provider = config.models.providers.pollinations;
++        expect(provider).toMatchObject({
++            api: "openai-completions",
++            baseUrl: "https://gen.pollinations.ai/v1",
++            // biome-ignore lint/suspicious/noTemplateCurlyInString: this is OpenClaw's own ${VAR} substitution syntax, not a JS template
++            apiKey: "${POLLI_OPENCLAW_API_KEY}",
++        });
++        expect(provider.models.map((m: { id: string }) => m.id)).toEqual([
++            "kimi",
++            "deepseek",
++        ]);
++
++        expect(read(skillFile())).toContain("name: polli");
++        expect(statSync(configFile()).mode & 0o777).toBe(0o600);
++        expect(statSync(skillFile()).mode & 0o777).toBe(0o600);
++        expect(openclaw.status(ctx)).toMatchObject({
++            configured: true,
++            model: "kimi",
++        });
++    });
++
++    it("keeps existing config, agents, and channels untouched", () => {
++        mkdirSync(join(home, ".openclaw"), { recursive: true });
++        writeFileSync(
++            configFile(),
++            JSON.stringify(
++                {
++                    channels: { telegram: { token: "abc" } },
++                    models: {
++                        mode: "replace",
++                        providers: { openai: { apiKey: "sk-openai" } },
++                    },
++                    agents: {
++                        defaults: { model: { primary: "openai/gpt-5.6" } },
++                    },
++                },
++                null,
++                2,
++            ),
++        );
++
++        configureOpenclaw(ctx, settings);
++
++        const config = readConfig();
++        expect(config.channels).toEqual({ telegram: { token: "abc" } });
++        expect(config.models.providers.openai).toEqual({ apiKey: "sk-openai" });
++        // An explicit prior choice of "replace" is not silently overridden.
++        expect(config.models.mode).toBe("replace");
++        expect(config.agents.defaults.model.primary).toBe("pollinations/kimi");
++    });
++
++    it("restores the original config and skill byte-for-byte on off", () => {
++        mkdirSync(join(home, ".openclaw"), { recursive: true });
++        const original = JSON.stringify({ workspace: "/home/me/agent" });
++        writeFileSync(configFile(), original);
++
++        configureOpenclaw(ctx, settings);
++        expect(snapshotFiles()).toHaveLength(1);
++        const result = disableOpenclaw(ctx);
++
++        expect(result.outcome).toBe("restored");
++        expect(read(configFile())).toBe(original);
++        expect(existsSync(skillFile())).toBe(false);
++        expect(snapshotFiles()).toHaveLength(0);
++        expect(openclaw.status(ctx).configured).toBe(false);
++    });
++
++    it("only strips Pollinations entries when the config changed since on", () => {
++        configureOpenclaw(ctx, settings);
++        const edited = readConfig();
++        edited.channels = { discord: { token: "xyz" } };
++        writeFileSync(configFile(), JSON.stringify(edited, null, 2));
++
++        const result = disableOpenclaw(ctx);
++
++        expect(result.outcome).toBe("stripped");
++        const config = readConfig();
++        expect(config.channels).toEqual({ discord: { token: "xyz" } });
++        expect(config.models.providers.pollinations).toBeUndefined();
++        expect(config.agents.defaults.model.primary).toBeUndefined();
++        expect(config.env.vars.POLLI_OPENCLAW_API_KEY).toBeUndefined();
++        expect(existsSync(skillFile())).toBe(false);
++        expect(snapshotFiles()).toHaveLength(0);
++    });
++
++    it("does not strip an unrelated default model on off", () => {
++        configureOpenclaw(ctx, settings);
++        const edited = readConfig();
++        edited.agents.defaults.model.primary = "openai/gpt-5.6";
++        writeFileSync(configFile(), JSON.stringify(edited, null, 2));
++
++        disableOpenclaw(ctx);
++
++        expect(readConfig().agents.defaults.model.primary).toBe(
++            "openai/gpt-5.6",
++        );
++    });
++
++    it("reports unchanged when off runs on a harness that was never on", () => {
++        expect(disableOpenclaw(ctx).outcome).toBe("unchanged");
++    });
++
++    it("re-running on switches the model and keeps the pre-on backup", () => {
++        configureOpenclaw(ctx, settings);
++        configureOpenclaw(ctx, { ...settings, model: "deepseek" });
++        expect(openclaw.status(ctx).model).toBe("deepseek");
++
++        disableOpenclaw(ctx);
++        expect(existsSync(configFile())).toBe(false);
++    });
++
++    it("honors OPENCLAW_HOME", () => {
++        const custom = join(home, "custom-home");
++        configureOpenclaw({ home, env: { OPENCLAW_HOME: custom } }, settings);
++        expect(existsSync(join(custom, ".openclaw", "openclaw.json"))).toBe(
++            true,
++        );
++        expect(existsSync(configFile())).toBe(false);
++    });
++
++    it("honors OPENCLAW_STATE_DIR", () => {
++        const custom = join(home, "state");
++        configureOpenclaw(
++            { home, env: { OPENCLAW_STATE_DIR: custom } },
++            settings,
++        );
++        expect(existsSync(join(custom, "openclaw.json"))).toBe(true);
++    });
++
++    it("honors OPENCLAW_CONFIG_PATH", () => {
++        const custom = join(home, "custom.json");
++        configureOpenclaw(
++            { home, env: { OPENCLAW_CONFIG_PATH: custom } },
++            settings,
++        );
++        expect(existsSync(custom)).toBe(true);
++        expect(existsSync(configFile())).toBe(false);
++    });
++
++    it("reports unconfigured when the credential is missing", () => {
++        configureOpenclaw(ctx, settings);
++        const edited = readConfig();
++        delete edited.env.vars.POLLI_OPENCLAW_API_KEY;
++        writeFileSync(configFile(), JSON.stringify(edited, null, 2));
++        expect(openclaw.status(ctx).configured).toBe(false);
++    });
++
++    it("preserves a corrupt snapshot and refuses to disable", () => {
++        configureOpenclaw(ctx, settings);
++        const snapshot = join(
++            home,
++            ".pollinations",
++            "harnesses",
++            snapshotFiles()[0],
++        );
++        writeFileSync(snapshot, "{");
++
++        expect(() => disableOpenclaw(ctx)).toThrow();
++        expect(snapshotFiles()).toHaveLength(1);
++        expect(openclaw.status(ctx).configured).toBe(true);
++    });
++
++    it("rejects a config file that is not valid JSON", () => {
++        mkdirSync(join(home, ".openclaw"), { recursive: true });
++        writeFileSync(configFile(), "{not json");
++        expect(() => configureOpenclaw(ctx, settings)).toThrow(/valid JSON/);
++    });
++
++    it("reports the managed files", () => {
++        const status = openclaw.status(ctx);
++        expect(status.files).toEqual([configFile(), skillFile()]);
++    });
++});
+diff --git a/packages/polli-cli/src/harnesses/openclaw.ts b/packages/polli-cli/src/harnesses/openclaw.ts
+new file mode 100644
+index 0000000..4e7517b
+--- /dev/null
++++ b/packages/polli-cli/src/harnesses/openclaw.ts
+@@ -0,0 +1,316 @@
++import { spawnSync } from "node:child_process";
++import { join, resolve } from "node:path";
++import polliSkill from "../../SKILL.md?raw";
++import { BASE_URL } from "../lib/config.js";
++import { printInfo } from "../lib/output.js";
++import { readTextIfExists, removeIfExists, writeTextAtomic } from "./fs.js";
++import { resolveHarnessKey } from "./keys.js";
++import { fetchHarnessModels } from "./models.js";
++import {
++    applyWithSnapshot,
++    clearSnapshot,
++    restoreSnapshot,
++} from "./snapshot.js";
++import type {
++    HarnessAdapter,
++    HarnessContext,
++    HarnessModel,
++    HarnessResult,
++} from "./types.js";
++
++const ID = "openclaw";
++const LABEL = "OpenClaw";
++const PROVIDER = "pollinations";
++const DEFAULT_MODEL = "kimi";
++const KEY_ENV = "POLLI_OPENCLAW_API_KEY";
++const SKILL_ID = "polli";
++
++const PROVIDER_PATH = ["models", "providers", PROVIDER];
++const MODE_PATH = ["models", "mode"];
++const ENV_VAR_PATH = ["env", "vars", KEY_ENV];
++const DEFAULT_MODEL_PATH = ["agents", "defaults", "model", "primary"];
++
++const INSTALL_HINT = [
++    "OpenClaw is not installed. Run the official installer, then re-run this command:",
++    "  macOS/Linux/WSL2:  curl -fsSL https://openclaw.ai/install.sh | bash",
++    "  Windows:           iwr -useb https://openclaw.ai/install.ps1 | iex",
++].join("\n");
++
++const expandTilde = (home: string, value: string) =>
++    value === "~"
++        ? home
++        : value.startsWith("~/") || value.startsWith("~\\")
++          ? join(home, value.slice(2))
++          : value;
++
++/** ~/.openclaw by default; OPENCLAW_HOME or OPENCLAW_STATE_DIR relocate it. */
++export const openclawStateDir = (ctx: HarnessContext) => {
++    const stateDir = ctx.env.OPENCLAW_STATE_DIR;
++    if (stateDir?.trim()) return resolve(expandTilde(ctx.home, stateDir));
++    const home = ctx.env.OPENCLAW_HOME;
++    const resolvedHome = !home?.trim()
++        ? ctx.home
++        : resolve(expandTilde(ctx.home, home));
++    return join(resolvedHome, ".openclaw");
++};
++
++/** OPENCLAW_CONFIG_PATH points straight at the file, bypassing the state dir. */
++export const openclawConfigPath = (ctx: HarnessContext) => {
++    const configPath = ctx.env.OPENCLAW_CONFIG_PATH;
++    if (configPath?.trim()) return resolve(expandTilde(ctx.home, configPath));
++    return join(openclawStateDir(ctx), "openclaw.json");
++};
++
++const skillPath = (ctx: HarnessContext) =>
++    join(openclawStateDir(ctx), "skills", SKILL_ID, "SKILL.md");
++
++const files = (ctx: HarnessContext) => [
++    openclawConfigPath(ctx),
++    skillPath(ctx),
++];
++
++type JsonObject = Record<string, unknown>;
++
++const isRecord = (value: unknown): value is JsonObject =>
++    typeof value === "object" && value !== null && !Array.isArray(value);
++
++const getPath = (obj: JsonObject, path: string[]): unknown =>
++    path.reduce<unknown>(
++        (node, key) => (isRecord(node) ? node[key] : undefined),
++        obj,
++    );
++
++const setPath = (obj: JsonObject, path: string[], value: unknown) => {
++    let node = obj;
++    for (const key of path.slice(0, -1)) {
++        if (!isRecord(node[key])) node[key] = {};
++        node = node[key] as JsonObject;
++    }
++    node[path.at(-1) as string] = value;
++};
++
++const deletePath = (obj: JsonObject, path: string[]): boolean => {
++    let node: unknown = obj;
++    for (const key of path.slice(0, -1)) {
++        if (!isRecord(node)) return false;
++        node = node[key];
++    }
++    if (!isRecord(node) || !((path.at(-1) as string) in node)) return false;
++    delete node[path.at(-1) as string];
++    return true;
++};
++
++const readConfig = (ctx: HarnessContext): JsonObject => {
++    const text = readTextIfExists(openclawConfigPath(ctx));
++    if (text === null) return {};
++    try {
++        const parsed = JSON.parse(text);
++        if (!isRecord(parsed)) {
++            throw new Error("expected a JSON object at the top level");
++        }
++        return parsed;
++    } catch (error) {
++        throw new Error(
++            `${openclawConfigPath(ctx)} is not valid JSON: ${(error as Error).message}`,
++        );
++    }
++};
++
++const writeConfig = (ctx: HarnessContext, config: JsonObject) =>
++    writeTextAtomic(
++        openclawConfigPath(ctx),
++        `${JSON.stringify(config, null, 2)}\n`,
++        0o600,
++    );
++
++const readKey = (ctx: HarnessContext): string | null => {
++    const value = getPath(readConfig(ctx), ENV_VAR_PATH);
++    return typeof value === "string" && value.length > 0 ? value : null;
++};
++
++const commandExists = (bin: string) => {
++    const result = spawnSync(bin, ["--version"], { stdio: "ignore" });
++    return !result.error && result.status === 0;
++};
++
++/**
++ * Fresh installs need OpenClaw's own onboarding to create the workspace,
++ * agent directory, and gateway token — a JSON config file alone is not
++ * enough. This runs once, before the snapshot is taken, so the resulting
++ * baseline config (not "no file at all") is what `off` restores to.
++ */
++const bootstrapOpenclaw = (
++    ctx: HarnessContext,
++    settings: { apiKey: string; model: string },
++) => {
++    const result = spawnSync(
++        "openclaw",
++        [
++            "onboard",
++            "--non-interactive",
++            "--accept-risk",
++            "--mode",
++            "local",
++            "--flow",
++            "quickstart",
++            "--auth-choice",
++            "custom-api-key",
++            "--custom-base-url",
++            `${BASE_URL}/v1`,
++            "--custom-provider-id",
++            PROVIDER,
++            "--custom-model-id",
++            settings.model,
++            "--custom-api-key",
++            settings.apiKey,
++            "--secret-input-mode",
++            "plaintext",
++            "--skip-channels",
++            "--skip-daemon",
++            "--skip-skills",
++            "--skip-ui",
++            "--skip-health",
++        ],
++        { stdio: "ignore", env: ctx.env },
++    );
++    if (result.error) throw result.error;
++    if (result.status !== 0) {
++        throw new Error(`openclaw onboard exited with code ${result.status}`);
++    }
++};
++
++// Field names match the documented models.providers.<id> schema shared by
++// every OpenClaw custom provider (see docs.openclaw.ai/concepts/models).
++const providerConfig = (models: HarnessModel[]) => ({
++    baseUrl: `${BASE_URL}/v1`,
++    apiKey: `\${${KEY_ENV}}`,
++    api: "openai-completions",
++    models: models.map((model) => ({
++        id: model.id,
++        name: model.id,
++        input: model.input,
++        contextWindow: model.contextWindow,
++    })),
++});
++
++interface OpenclawSettings {
++    apiKey: string;
++    model: string;
++    models: HarnessModel[];
++}
++
++const applyConfig = (ctx: HarnessContext, settings: OpenclawSettings) => {
++    const config = readConfig(ctx);
++    setPath(config, PROVIDER_PATH, providerConfig(settings.models));
++    // Merge is OpenClaw's own default; only set it when the user hasn't
++    // already made an explicit choice (e.g. "replace").
++    if (getPath(config, MODE_PATH) === undefined) {
++        setPath(config, MODE_PATH, "merge");
++    }
++    setPath(config, ENV_VAR_PATH, settings.apiKey);
++    setPath(config, DEFAULT_MODEL_PATH, `${PROVIDER}/${settings.model}`);
++    writeConfig(ctx, config);
++
++    if (readTextIfExists(skillPath(ctx)) === null) {
++        writeTextAtomic(skillPath(ctx), polliSkill, 0o600);
++    }
++};
++
++const stripConfig = (ctx: HarnessContext) => {
++    const config = readConfig(ctx);
++    let changed = deletePath(config, PROVIDER_PATH);
++    const defaultModel = getPath(config, DEFAULT_MODEL_PATH);
++    if (
++        typeof defaultModel === "string" &&
++        defaultModel.startsWith(`${PROVIDER}/`)
++    ) {
++        changed = deletePath(config, DEFAULT_MODEL_PATH) || changed;
++    }
++    changed = deletePath(config, ENV_VAR_PATH) || changed;
++    if (changed) writeConfig(ctx, config);
++
++    if (readTextIfExists(skillPath(ctx)) === polliSkill) {
++        removeIfExists(skillPath(ctx));
++        changed = true;
++    }
++    return changed;
++};
++
++const result = (ctx: HarnessContext): HarnessResult => {
++    const config = readConfig(ctx);
++    const model = getPath(config, DEFAULT_MODEL_PATH);
++    const provider = getPath(config, PROVIDER_PATH);
++    const modelId =
++        typeof model === "string" && model.startsWith(`${PROVIDER}/`)
++            ? model.slice(PROVIDER.length + 1)
++            : undefined;
++    return {
++        harness: ID,
++        label: LABEL,
++        configured:
++            isRecord(provider) &&
++            provider.apiKey === `\${${KEY_ENV}}` &&
++            provider.api === "openai-completions" &&
++            provider.baseUrl === `${BASE_URL}/v1` &&
++            modelId !== undefined &&
++            readKey(ctx) !== null &&
++            readTextIfExists(skillPath(ctx)) !== null,
++        model: modelId,
++        files: files(ctx),
++    };
++};
++
++export const configureOpenclaw = (
++    ctx: HarnessContext,
++    settings: OpenclawSettings,
++): HarnessResult => {
++    applyWithSnapshot(ctx, ID, files(ctx), () => applyConfig(ctx, settings));
++    return result(ctx);
++};
++
++export const disableOpenclaw = (ctx: HarnessContext): HarnessResult => {
++    const managedFiles = files(ctx);
++    let outcome: HarnessResult["outcome"] = "restored";
++    if (restoreSnapshot(ctx, ID, managedFiles) !== "restored") {
++        outcome = stripConfig(ctx) ? "stripped" : "unchanged";
++        clearSnapshot(ctx, ID, managedFiles);
++    }
++    return { ...result(ctx), configured: false, outcome };
++};
++
++export const openclaw: HarnessAdapter = {
++    id: ID,
++    label: LABEL,
++    description: "Configure OpenClaw as a Pollinations provider",
++    restartHint:
++        "Changes apply on the next request. Restart a running gateway with: openclaw gateway restart",
++
++    async on(ctx, options) {
++        if (!commandExists("openclaw")) throw new Error(INSTALL_HINT);
++
++        const model = options.model ?? DEFAULT_MODEL;
++        const models = await fetchHarnessModels();
++        if (!models.some((candidate) => candidate.id === model)) {
++            throw new Error(
++                `Model "${model}" is not a tool-calling text model. Run: polli models`,
++            );
++        }
++
++        const apiKey = await resolveHarnessKey(
++            { id: ID, label: LABEL, existingKey: readKey(ctx) },
++            { browser: options.browser },
++        );
++
++        if (readTextIfExists(openclawConfigPath(ctx)) === null) {
++            printInfo(
++                "No OpenClaw config found — running the official onboarding flow first.",
++            );
++            bootstrapOpenclaw(ctx, { apiKey, model });
++        }
++
++        return configureOpenclaw(ctx, { apiKey, model, models });
++    },
++
++    off: disableOpenclaw,
++    status: result,
++};
+-- 
+2.43.0
+

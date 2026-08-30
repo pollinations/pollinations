@@ -26,6 +26,7 @@ import {
     usePlatformStats,
 } from "../data/publicStats";
 import { routeHead } from "../routeMeta";
+import { QuestLeaderboard } from "../ui/components/QuestLeaderboard";
 import {
     ActionButton,
     ArrowLink,
@@ -807,6 +808,8 @@ function CommunityPage() {
     return (
         <>
             <CommunityParticipation />
+
+            <QuestLeaderboard />
 
             <BuildDiary />
 

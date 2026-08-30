@@ -64,7 +64,7 @@ Defaults: `zimage`, 1024x1024. Pick a different model with `--model flux` (see `
 ### Upload a local file to get a public URL
 ```bash
 URL=$(polli upload cat.png)
-polli gen image "make this cat purple" --image "$URL" --output purple.png
+polli gen image "make the cat purple" --image "$URL" --output purple.png
 ```
 `polli upload <file>` posts a multipart upload to `media.pollinations.ai` (100MB max; 30-day lifecycle, refreshed by GETs once the object is at least 15 days old). Each upload receives a unique id. Human mode: URL on stdout and id/size/contentType on stderr. `--json`: full upload response on stdout. The returned URL is public (no auth to fetch) and works anywhere `--image` is accepted — `gen image`, `gen video`, etc.
 
@@ -115,7 +115,7 @@ Text-to-sound-effect via ElevenLabs (aliases: `sfx`, `sound-effects`). `--durati
 ```bash
 polli gen audio "Bonjour, ceci est un test" --model multilingual-v2 --voice rachel --output fr.mp3
 ```
-Stable, lifelike TTS across 29 languages (aliases: `multilingual`, `multilingual-v2`) — a non-alpha alternative to the default v3.
+Stable, lifelike TTS across 29 languages (aliases: `multilingual-v2`, `eleven-v2`) — a non-alpha alternative to the default v3.
 
 ### Generate video
 ```bash

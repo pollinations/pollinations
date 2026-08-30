@@ -9,6 +9,8 @@ DESCRIPTION >
     Supports start_date param for single-week queries to avoid Tinybird timeouts.
     Public: aggregate request volume, availability, and latency only — no
     per-user, revenue, or cost data.
+    Also returns official_availability, which excludes community model ids
+    (owner/model) and reports Pollinations-managed model reliability only.
 
 TOKEN tinybird_read_public READ
 TOKEN tinybird_read READ
@@ -30,6 +32,29 @@ SQL >
             ),
             2
         ) AS availability,
+        round(
+            countIf(
+                resolved_model_requested != 'undefined'
+                AND position(resolved_model_requested, '/') = 0
+                AND response_status >= 200
+                AND response_status < 300
+            ) * 100.0
+            / nullIf(
+                countIf(
+                    resolved_model_requested != 'undefined'
+                    AND position(resolved_model_requested, '/') = 0
+                    AND response_status >= 200
+                    AND response_status < 300
+                )
+                + countIf(
+                    resolved_model_requested != 'undefined'
+                    AND position(resolved_model_requested, '/') = 0
+                    AND response_status >= 500
+                ),
+                0
+            ),
+            2
+        ) AS official_availability,
         round(quantileIf(0.50)(response_time, response_status >= 200 AND response_status < 300), 0) AS latency_p50_ms,
         round(quantileIf(0.95)(response_time, response_status >= 200 AND response_status < 300), 0) AS latency_p95_ms
     FROM generation_event_v2

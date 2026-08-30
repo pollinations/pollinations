@@ -7,11 +7,9 @@ account_id = "b6ec751c0862027ba269faf7029b2501"
 directory = "dist"
 binding = "ASSETS"
 not_found_handling = "single-page-application"
-# Run the worker on every request so the SEO HTMLRewriter fires on navigations.
-# Without this, compatibility_date >= 2025-04-01 serves navigation requests as
-# static assets and skips the worker, so per-route meta never gets rewritten.
-# Non-HTML responses are passed through unchanged (see src/worker.ts).
-run_worker_first = true
+# Run HTML routes through the SEO worker while serving asset directories
+# directly from Cloudflare's static asset layer.
+run_worker_first = ["/*", "!/assets/*", "!/characters/*", "!/heroes/*", "!/app-art/*", "!/legal/*"]
 
 # Public hostnames are attached directly in the Myceli account.
 [env.production]
@@ -47,3 +45,8 @@ custom_domain = true
 pattern = "staging.pollinations.ai"
 zone_name = "pollinations.ai"
 custom_domain = true
+
+# Persistent website V2 preview. It has its own Worker and workers.dev URL,
+# with no staging or production custom-domain routes.
+[env.website-v2]
+workers_dev = true

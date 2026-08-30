@@ -43,6 +43,8 @@ export interface ImageGenerateOptions extends RequestOptions {
     width?: number;
     /** Image height in pixels (default: 1024) */
     height?: number;
+    /** Model-specific output resolution tier (for example, "1k" or "2k") */
+    resolution?: string;
     /** Seed for reproducible generation (default: random) */
     seed?: number;
     /** Enable safety content filters (default: false) */
@@ -93,6 +95,8 @@ export interface VideoGenerateOptions extends RequestOptions {
     duration?: number;
     /** Aspect ratio (e.g., '16:9', '9:16', '1:1') */
     aspectRatio?: string;
+    /** Model-specific output resolution tier (for example, "720p" or "1080p") */
+    resolution?: string;
     /** Seed for reproducible generation */
     seed?: number;
     /** Enable audio generation where supported by the selected video model */
@@ -254,10 +258,28 @@ export type BuiltInToolType =
     | "computer_use"
     | "file_search";
 
+/** Capabilities that router models can delegate to downstream models. */
+export const CHAT_ROUTING_CAPABILITIES = [
+    "text",
+    "web_search",
+    "image_generation",
+    "image_editing",
+    "video",
+    "audio",
+] as const;
+
+/** Capability names accepted by router-model routing preferences. */
+export type ChatRoutingCapability = (typeof CHAT_ROUTING_CAPABILITIES)[number];
+
+/** Optional downstream-model overrides for router models. */
+export type ChatRouting = Partial<Record<ChatRoutingCapability, string>>;
+
 /** Options for chat completions (POST endpoint) */
 export interface ChatOptions extends RequestOptions {
     /** Text model to use (server default: 'openai') */
     model?: TextModel;
+    /** Per-capability downstream model overrides for router models. */
+    routing?: ChatRouting;
     /** Temperature 0-2 (default: 1) */
     temperature?: number;
     /** Top P sampling 0-1 (default: 1) */
@@ -899,6 +921,7 @@ export interface ModelInfo {
     input_modalities?: ModelInputModality[];
     output_modalities?: ModelOutputModality[];
     video_capabilities?: VideoCapability[];
+    resolutions?: string[];
     min_duration?: number;
     max_duration?: number;
     default_duration?: number;

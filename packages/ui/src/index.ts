@@ -27,7 +27,7 @@ export {
 } from "./compositions/FileUpload.tsx";
 export { InfoTip } from "./compositions/InfoTip.tsx";
 export { LinkCard, type LinkCardProps } from "./compositions/LinkCard.tsx";
-export { Markdown, type MarkdownProps } from "./compositions/Markdown.tsx";
+// Markdown and Prose live at @pollinations/ui/markdown — see src/markdown.ts.
 export {
     MediaPlaceholder,
     type MediaPlaceholderProps,
@@ -41,7 +41,6 @@ export {
     PeriodPicker,
     type PeriodPickerProps,
 } from "./compositions/PeriodPicker.tsx";
-export { Prose, type ProseProps } from "./compositions/Prose.tsx";
 export { Section, type SectionProps } from "./compositions/Section.tsx";
 export { StatCard, type StatCardProps } from "./compositions/StatCard.tsx";
 export { cn } from "./lib/cn-app.ts";
@@ -53,6 +52,11 @@ export {
     periodBucketKeyToDate,
 } from "./lib/period.ts";
 export { useScrollLock } from "./lib/use-scroll-lock.ts";
+export {
+    BrandLockup,
+    type BrandLockupProps,
+    type BrandVariant,
+} from "./primitives/BrandLockup.tsx";
 export { Button, type ButtonProps } from "./primitives/Button.tsx";
 export {
     ButtonGroup,
@@ -87,7 +91,7 @@ export { Input, type InputProps } from "./primitives/Input.tsx";
 export * from "./primitives/icons/index.tsx";
 export { ScrollArea, type ScrollAreaProps } from "./primitives/ScrollArea.tsx";
 export { Slider, type SliderProps } from "./primitives/Slider.tsx";
-export { Surface } from "./primitives/Surface.tsx";
+export { Surface, type SurfaceProps } from "./primitives/Surface.tsx";
 export {
     Switch,
     type SwitchProps,

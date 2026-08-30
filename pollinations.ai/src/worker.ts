@@ -3,15 +3,18 @@
  * Serves static assets and rewrites meta tags per route for SEO.
  *
  * The site talks to the public APIs (gen/enter) directly from the browser using
- * the publishable BYOP app key (see src/api.config.ts), so this worker does no
+ * the publishable BYOP app key (see src/config.ts), so this worker does no
  * API proxying — it only serves assets and rewrites SEO metadata.
  */
+
+import { NOT_FOUND_META, ROUTE_META } from "./routeMeta";
 
 // Cloudflare Workers types (minimal, avoids conflicts with DOM types)
 interface CfElement {
     setAttribute(name: string, value: string): void;
     setInnerContent(content: string): void;
     append(content: string, options?: { html: boolean }): void;
+    remove(): void;
 }
 interface CfElementHandler {
     element(el: CfElement): void;
@@ -25,43 +28,6 @@ interface Env {
     ASSETS: { fetch: (request: Request) => Promise<Response> };
 }
 
-const ROUTE_META: Record<string, { title: string; description: string }> = {
-    "/": {
-        title: "pollinations.ai",
-        description:
-            "Build AI apps with one API, user wallets, and developer earnings",
-    },
-    "/play": {
-        title: "Play | pollinations.ai",
-        description: "Generate images, text, audio and video with AI models",
-    },
-    "/apps": {
-        title: "Apps | pollinations.ai",
-        description: "Community-built apps powered by Pollinations AI",
-    },
-    "/community": {
-        title: "Community | pollinations.ai",
-        description: "Contributors, voting, and build diary",
-    },
-    "/terms": {
-        title: "Terms | pollinations.ai",
-        description: "Terms of service for pollinations.ai",
-    },
-    "/privacy": {
-        title: "Privacy | pollinations.ai",
-        description: "Privacy policy for pollinations.ai",
-    },
-    "/refunds": {
-        title: "Refunds | pollinations.ai",
-        description: "Refunds and cancellations policy for pollinations.ai",
-    },
-    "/night": {
-        title: "Pollinations AI Night | 16 July 2026, Block1 Berlin",
-        description:
-            "A free evening for anyone curious about AI. Show & tell, real or fake? songs, images and news, and a robot DJ. Thu 16 July 2026, 17:30-22:00, Block1, Gaswerksiedlung, Berlin.",
-    },
-};
-
 const JSON_LD_HOME = JSON.stringify({
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -74,7 +40,7 @@ const JSON_LD_HOME = JSON.stringify({
         "https://x.com/pollinations_ai",
     ],
     description:
-        "Build AI apps with one API, user wallets, and developer earnings",
+        "Open infrastructure for text, image, audio and video generation, with one wallet and one API.",
 });
 
 const JSON_LD_PLAY = JSON.stringify({
@@ -109,9 +75,18 @@ export default {
         // Normalize: strip trailing slash (except root)
         const normalizedPath =
             path !== "/" && path.endsWith("/") ? path.slice(0, -1) : path;
-        const meta = ROUTE_META[normalizedPath] || ROUTE_META["/"];
+        const knownRoute = normalizedPath in ROUTE_META;
+        const meta = knownRoute ? ROUTE_META[normalizedPath] : NOT_FOUND_META;
         const canonical = `https://pollinations.ai${normalizedPath === "/" ? "" : normalizedPath}`;
         const jsonLd = getJsonLd(normalizedPath);
+
+        const htmlResponse = knownRoute
+            ? response
+            : new Response(response.body, {
+                  status: 404,
+                  statusText: "Not Found",
+                  headers: response.headers,
+              });
 
         return new HTMLRewriter()
             .on("title", {
@@ -121,7 +96,8 @@ export default {
             })
             .on('link[rel="canonical"]', {
                 element(el) {
-                    el.setAttribute("href", canonical);
+                    if (knownRoute) el.setAttribute("href", canonical);
+                    else el.remove();
                 },
             })
             .on('meta[name="description"]', {
@@ -141,7 +117,8 @@ export default {
             })
             .on('meta[property="og:url"]', {
                 element(el) {
-                    el.setAttribute("content", canonical);
+                    if (knownRoute) el.setAttribute("content", canonical);
+                    else el.remove();
                 },
             })
             .on('meta[name="twitter:title"]', {
@@ -164,6 +141,6 @@ export default {
                     }
                 },
             })
-            .transform(response);
+            .transform(htmlResponse);
     },
 };

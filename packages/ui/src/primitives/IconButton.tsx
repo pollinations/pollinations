@@ -17,7 +17,7 @@ const intentClasses: Record<IconButtonIntent, string> = {
 // Default (no intent): cascade-driven theme tile, deeper on hover.
 const defaultClasses =
     "polli:bg-theme-bg-active polli:hover:bg-theme-bg-hover " +
-    "polli:text-theme-text-soft polli:hover:text-theme-text-strong";
+    "polli:text-theme-text-soft polli:hover:text-theme-text-hover";
 
 export type IconButtonProps = {
     intent?: IconButtonIntent;

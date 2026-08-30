@@ -363,18 +363,21 @@ describe("Pollinations seed handling", () => {
             }),
         );
 
-        await client.image("a cat", { seed: -1 });
+        await client.image("a cat", { seed: -1, resolution: "2k" });
         await client.video("a long scene", {
             model: "nova-reel",
             duration: 120,
+            resolution: "1080p",
             seed: -1,
         });
 
-        const imageUrl = fetchMock.mock.calls[0][0] as string;
+        const imageUrl = new URL(fetchMock.mock.calls[0][0] as string);
         const videoUrl = new URL(fetchMock.mock.calls[1][0] as string);
-        expect(seedFromUrl(imageUrl)).toBe("-1");
+        expect(seedFromUrl(imageUrl.toString())).toBe("-1");
+        expect(imageUrl.searchParams.get("resolution")).toBe("2k");
         expect(videoUrl.searchParams.get("seed")).toBe("-1");
         expect(videoUrl.searchParams.get("duration")).toBe("120");
+        expect(videoUrl.searchParams.get("resolution")).toBe("1080p");
     });
 
     it("passes seed through text and chat requests consistently", async () => {
@@ -432,6 +435,82 @@ describe("Pollinations seed handling", () => {
         expect(body.reasoning_effort).toBe("medium");
         expect("thinking" in body).toBe(false);
         expect("thinking_budget" in body).toBe(false);
+    });
+});
+
+describe("Pollinations chat routing", () => {
+    it("serializes per-capability routing for chat requests", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValue(
+            makeResponse({ choices: [{ message: { content: "ok" } }] }),
+        );
+
+        await client.chat([{ role: "user", content: "hello" }], {
+            model: "floret",
+            routing: {
+                text: "openai",
+                web_search: "perplexity-fast",
+                image_generation: "flux",
+                image_editing: "nanobanana",
+                video: "veo",
+                audio: "elevenlabs",
+            },
+        });
+
+        expect(bodyOf(fetchMock.mock.calls[0])).toMatchObject({
+            model: "floret",
+            stream: false,
+            routing: {
+                text: "openai",
+                web_search: "perplexity-fast",
+                image_generation: "flux",
+                image_editing: "nanobanana",
+                video: "veo",
+                audio: "elevenlabs",
+            },
+        });
+    });
+
+    it("serializes partial routing for streaming chat requests", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValue(
+            makeResponse(
+                'data: {"choices":[{"index":0,"delta":{"content":"ok"},"finish_reason":null}]}\n',
+                {
+                    kind: "stream",
+                    contentType: "text/event-stream",
+                },
+            ),
+        );
+
+        for await (const _chunk of client.chatStream(
+            [{ role: "user", content: "hello" }],
+            {
+                model: "floret",
+                routing: { video: "veo" },
+            },
+        )) {
+            // Consume the stream.
+        }
+
+        expect(bodyOf(fetchMock.mock.calls[0])).toMatchObject({
+            model: "floret",
+            stream: true,
+            routing: { video: "veo" },
+        });
+    });
+
+    it("omits routing when no override is provided", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValue(
+            makeResponse({ choices: [{ message: { content: "ok" } }] }),
+        );
+
+        await client.chat([{ role: "user", content: "hello" }], {
+            model: "floret",
+        });
+
+        expect(bodyOf(fetchMock.mock.calls[0]).routing).toBeUndefined();
     });
 });
 

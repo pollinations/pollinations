@@ -298,6 +298,7 @@ export class Pollinations {
             model: options.model,
             width: options.width,
             height: options.height,
+            resolution: options.resolution,
             seed: options.seed,
             safe: options.safe,
             quality: options.quality,
@@ -589,6 +590,7 @@ export class Pollinations {
             model: options.model,
             duration: options.duration,
             aspectRatio: options.aspectRatio,
+            resolution: options.resolution,
             seed: options.seed,
             audio: options.audio,
             image: options.referenceImage,
@@ -769,6 +771,7 @@ export class Pollinations {
         return this.stripUndefined({
             messages,
             model: options.model,
+            routing: options.routing,
             temperature: options.temperature,
             top_p: options.topP,
             max_tokens: options.maxTokens,

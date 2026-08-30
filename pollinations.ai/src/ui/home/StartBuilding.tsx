@@ -1,4 +1,4 @@
-import { ActionButton, CalloutPanel } from "../site/kit";
+import { Button, Callout } from "@pollinations/ui";
 
 /**
  * The closing CTA, at the normal section width. It does NOT break out to the
@@ -7,19 +7,26 @@ import { ActionButton, CalloutPanel } from "../site/kit";
  */
 export function StartBuilding() {
     return (
-        <CalloutPanel
+        <Callout
             title="Start building"
             body="One API. Free Pollen from Quests to start, earnings when your app gets used."
         >
-            <ActionButton href="https://enter.pollinations.ai/keys" tone="dark">
+            <Button
+                as="a"
+                href="https://enter.pollinations.ai/keys"
+                appearance="raised"
+                className="bg-brand-dark text-theme-bg-active"
+            >
                 Get an API key
-            </ActionButton>
-            <ActionButton
+            </Button>
+            <Button
+                as="a"
                 href="https://discord.gg/pollinations-ai-885844321461485618"
-                tone="plain"
+                appearance="raised"
+                className="bg-surface-opaque"
             >
                 Join the Discord
-            </ActionButton>
-        </CalloutPanel>
+            </Button>
+        </Callout>
     );
 }

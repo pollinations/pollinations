@@ -1,4 +1,4 @@
-import { ExternalLinkButton } from "@pollinations/ui";
+import { ContentHeader, ExternalLinkButton, StatList } from "@pollinations/ui";
 import { createFileRoute } from "@tanstack/react-router";
 import { compact, usePlatformStats } from "../data/publicStats";
 import { routeHead } from "../routeMeta";
@@ -7,7 +7,7 @@ import { LiveApps } from "../ui/home/LiveApps";
 import { MoneyMoves } from "../ui/home/MoneyMoves";
 import { OnTheWay } from "../ui/home/OnTheWay";
 import { StartBuilding } from "../ui/home/StartBuilding";
-import { Hero, PageHeader, StatRow } from "../ui/site/kit";
+import { HeroScene } from "../ui/site/HeroScene";
 
 export const Route = createFileRoute("/")({
     head: () => routeHead("/"),
@@ -45,8 +45,8 @@ function HelloPage() {
     return (
         <>
             {/* Polli herself opens the site — the one the brand already had. */}
-            <Hero scene="/heroes/home.webp">
-                <PageHeader
+            <HeroScene scene="/heroes/home.webp">
+                <ContentHeader
                     eyebrow="Open infrastructure for AI apps"
                     title="Every model, one wallet."
                     subtitle={
@@ -56,6 +56,7 @@ function HelloPage() {
                             and video with one API and one wallet.
                         </>
                     }
+                    variant="page"
                 />
                 <div className="flex flex-wrap gap-3">
                     <ExternalLinkButton
@@ -72,8 +73,8 @@ function HelloPage() {
                         Read the docs
                     </ExternalLinkButton>
                 </div>
-                <StatRow stats={stats} />
-            </Hero>
+                <StatList stats={stats} />
+            </HeroScene>
 
             <DevKit />
             {/* Dark panel is inset inside the cream sheet, not a sibling of

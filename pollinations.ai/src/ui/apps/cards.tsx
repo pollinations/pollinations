@@ -1,11 +1,14 @@
 import {
+    Chip,
     ClockIcon,
     GitHubIcon,
+    InlineLink,
+    LinkCard,
     TrendUpIcon,
     WalletIcon,
 } from "@pollinations/ui";
 import { Markdown } from "@pollinations/ui/markdown";
-import { type ReactNode, useState } from "react";
+import { useState } from "react";
 import {
     type DirectoryApp,
     formatStars,
@@ -15,13 +18,11 @@ import {
     isPollen,
     platformsOf,
 } from "../../data/publicStats";
-import { ArrowLink, Card, PixelBadge } from "../site/kit";
 import { appCover, isAppScreenshot, MISSING_SCREENSHOT } from "./cover";
 
 /**
- * The three shapes an app takes on this site. They live together because
- * Hello's shelf and the Apps spotlight are the same card at two sizes — when
- * they were written separately they drifted immediately.
+ * The app tile and compact directory row share their signals, cover fallback,
+ * and link behavior here so the two views cannot drift apart.
  */
 
 function AppSignals({ app }: { app: DirectoryApp }) {
@@ -98,11 +99,12 @@ export function AppTile({
     const cover = appCover(app.name, app.screenshot_url);
 
     return (
-        <Card
-            as="a"
+        <LinkCard
             href={appHref(app)}
             tabIndex={tabIndex}
-            className={`overflow-hidden rounded-2xl p-0 ${className ?? ""}`}
+            showIcon={false}
+            className={className}
+            surfaceClassName="overflow-hidden rounded-2xl p-0"
         >
             <AppCoverImage src={cover} className={imageClassName} />
             <div className="flex flex-col gap-1.5 px-5 py-4">
@@ -113,61 +115,7 @@ export function AppTile({
                     {app.description}
                 </p>
             </div>
-        </Card>
-    );
-}
-
-/**
- * The big one: a complete 2:1 cover on mobile, a 240px image on larger screens,
- * a badge beside the name, and a footer that says where the link goes.
- */
-export function AppHero({
-    href,
-    title,
-    badge,
-    badgeTone = "pale",
-    description,
-    meta,
-    image,
-    action,
-}: {
-    href: string;
-    title: string;
-    badge: string;
-    badgeTone?: "pale" | "accent";
-    description: string;
-    meta: string;
-    image: string | null;
-    action: ReactNode;
-}) {
-    return (
-        <Card
-            as="a"
-            href={href}
-            className="overflow-hidden rounded-[18px] p-0 hover:shadow-[5px_5px_0_var(--polli-color-bg-active)]"
-        >
-            <AppCoverImage
-                src={image}
-                className="aspect-[2/1] sm:h-60 sm:aspect-auto"
-            />
-            <div className="flex flex-1 flex-col gap-2 px-6.5 py-5.5">
-                <div className="flex items-center gap-2.5">
-                    <span className="font-body text-2xl font-semibold text-theme-text-strong">
-                        {title}
-                    </span>
-                    <PixelBadge tone={badgeTone}>{badge}</PixelBadge>
-                </div>
-                <p className="text-[15px] leading-relaxed text-theme-text-base">
-                    {description}
-                </p>
-                <div className="mt-auto flex items-center justify-between gap-3 pt-1.5">
-                    <span className="text-[13px] text-theme-text-muted">
-                        {meta}
-                    </span>
-                    {action}
-                </div>
-            </div>
-        </Card>
+        </LinkCard>
     );
 }
 
@@ -221,14 +169,17 @@ export function AppRow({ app }: { app: DirectoryApp }) {
                     )}
                     {stars && <span>⭐ {stars}</span>}
                     {platform && (
-                        <PixelBadge className="px-1.5 py-0.5 text-[9px] leading-none">
+                        <Chip
+                            size="sm"
+                            className="h-auto px-1.5 py-0.5 font-pixel text-[9px] leading-none uppercase"
+                        >
                             {platform}
-                        </PixelBadge>
+                        </Chip>
                     )}
                     {href && (
-                        <ArrowLink href={href} className="ml-auto text-xs">
+                        <InlineLink href={href} className="ml-auto text-xs">
                             Open
-                        </ArrowLink>
+                        </InlineLink>
                     )}
                 </div>
             </div>

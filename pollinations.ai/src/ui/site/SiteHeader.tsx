@@ -3,9 +3,11 @@ import {
     BrandLockup,
     Button,
     Chip,
+    ColorModeToggle,
     DiscordIcon,
     Dropdown,
     DropdownItem,
+    Eyebrow,
     GitHubIcon,
     InstagramIcon,
     LinkedInIcon,
@@ -19,7 +21,6 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { useState } from "react";
 import { useDiscordPresence, useRepoStars } from "../../data/community";
 import { compact } from "../../data/publicStats";
-import { GUTTER, SHELL } from "./kit";
 import { useHideOnScroll, useScrolled } from "./useHideOnScroll";
 
 const NAV = [
@@ -63,6 +64,8 @@ const SOCIAL = [
 ] as const;
 
 const REPO_STARS_FALLBACK = 5_000;
+const DESKTOP_ACTION_CLASS =
+    "hidden h-9 w-9 shrink-0 bg-surface-opaque p-0 text-theme-text-strong shadow-well transition-all duration-200 hover:-translate-y-0.5 hover:bg-theme-bg-hover hover:shadow-lg min-[700px]:inline-flex min-[800px]:w-auto min-[800px]:gap-1.5 min-[800px]:px-3 motion-reduce:hover:translate-y-0";
 
 const isCurrent = (to: string, pathname: string) =>
     to === "/" ? pathname === "/" : pathname.startsWith(to);
@@ -96,10 +99,8 @@ export function SiteHeader() {
                     scrolled && !hidden ? "opacity-100" : "opacity-0"
                 }`}
             />
-            <div className={`${SHELL} relative z-10`}>
-                <div
-                    className={`${GUTTER} site-header-gutter flex items-center justify-between gap-4 sm:gap-6`}
-                >
+            <div className="site-shell relative z-10">
+                <div className="site-gutter site-header-gutter flex items-center justify-between gap-4 sm:gap-6">
                     <div className="site-home-nav-group flex min-w-0 items-center gap-6">
                         <Link
                             to="/"
@@ -170,7 +171,7 @@ export function SiteHeader() {
                             size="sm"
                             aria-label="Docs"
                             title="Docs"
-                            className="hidden h-9 w-9 shrink-0 bg-surface-opaque p-0 text-theme-text-strong shadow-well transition-all duration-200 hover:-translate-y-0.5 hover:bg-theme-bg-hover hover:shadow-lg min-[700px]:inline-flex min-[800px]:w-auto min-[800px]:gap-1.5 min-[800px]:px-3 motion-reduce:hover:translate-y-0"
+                            className={DESKTOP_ACTION_CLASS}
                         >
                             <BookIcon className="h-4 w-4" />
                             <span className="hidden min-[800px]:inline">
@@ -209,7 +210,7 @@ export function SiteHeader() {
                             size="sm"
                             aria-label="Login"
                             title="Login"
-                            className="hidden h-9 w-9 shrink-0 bg-surface-opaque p-0 text-theme-text-strong shadow-well transition-all duration-200 hover:-translate-y-0.5 hover:bg-theme-bg-hover hover:shadow-lg min-[700px]:inline-flex min-[800px]:w-auto min-[800px]:gap-1.5 min-[800px]:px-3 motion-reduce:hover:translate-y-0"
+                            className={DESKTOP_ACTION_CLASS}
                         >
                             <LogInIcon className="h-4 w-4" />
                             <span className="hidden min-[800px]:inline">
@@ -299,6 +300,13 @@ export function SiteHeader() {
                                         </Button>
                                     </div>
                                     <span className="mx-2 my-1 h-px bg-theme-border min-[700px]:hidden" />
+                                    <div className="flex items-center justify-between px-3 py-2">
+                                        <Eyebrow size="chrome">
+                                            Appearance
+                                        </Eyebrow>
+                                        <ColorModeToggle />
+                                    </div>
+                                    <span className="mx-2 my-1 h-px bg-theme-border" />
                                     <DropdownItem
                                         as="a"
                                         href={EXTERNAL[1].href}

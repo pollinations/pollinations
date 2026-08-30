@@ -1,8 +1,13 @@
 import {
     ArrowRightIcon,
     Button,
+    Callout,
     Chip,
+    ContentHeader,
+    Eyebrow,
     GitPullRequestIcon,
+    InlineLink,
+    LinkCard,
     Surface,
     TabButton,
 } from "@pollinations/ui";
@@ -27,16 +32,7 @@ import {
 } from "../data/publicStats";
 import { routeHead } from "../routeMeta";
 import { QuestLeaderboard } from "../ui/components/QuestLeaderboard";
-import {
-    ActionButton,
-    ArrowLink,
-    CalloutPanel,
-    Card,
-    Hero,
-    PageHeader,
-    PixelLabel,
-    SectionHeader,
-} from "../ui/site/kit";
+import { HeroScene } from "../ui/site/HeroScene";
 
 export const Route = createFileRoute("/community")({
     head: () => routeHead("/community"),
@@ -183,8 +179,8 @@ function CommunityParticipation() {
 
     return (
         <section className="flex flex-col gap-7">
-            <Hero scene="/heroes/community.webp">
-                <PageHeader
+            <HeroScene scene="/heroes/community.webp">
+                <ContentHeader
                     eyebrow="Open source, open roadmap"
                     title="Contribute"
                     subtitle={
@@ -196,16 +192,18 @@ function CommunityParticipation() {
                             it, and help decide what comes next.
                         </>
                     }
+                    variant="page"
                 />
-            </Hero>
+            </HeroScene>
 
             <div className="grid grid-cols-1 gap-5 min-[540px]:grid-cols-2 xl:grid-cols-4">
                 {ways.map((way) => (
-                    <Card
+                    <Surface
+                        variant="card"
                         key={way.label}
-                        className="gap-2.5 p-7 min-[700px]:p-5 lg:p-7"
+                        className="flex flex-col gap-2.5 p-7 min-[700px]:p-5 lg:p-7"
                     >
-                        <PixelLabel>{way.label}</PixelLabel>
+                        <Eyebrow>{way.label}</Eyebrow>
                         <h3 className="font-body text-xl font-semibold text-theme-text-strong">
                             {way.title}
                         </h3>
@@ -234,18 +232,20 @@ function CommunityParticipation() {
                         </dl>
                         <div className="flex flex-wrap gap-2 pt-2">
                             {way.links.map((link) => (
-                                <ActionButton
+                                <Button
+                                    as="a"
                                     key={link.label}
                                     href={link.href}
                                     size="sm"
+                                    appearance="raised"
                                     className="gap-2 whitespace-nowrap"
                                 >
                                     {link.label}
                                     <ArrowRightIcon className="size-3.5" />
-                                </ActionButton>
+                                </Button>
                             ))}
                         </div>
-                    </Card>
+                    </Surface>
                 ))}
             </div>
 
@@ -255,7 +255,7 @@ function CommunityParticipation() {
             >
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex max-w-xl flex-col gap-2">
-                        <PixelLabel>Have your say</PixelLabel>
+                        <Eyebrow>Have your say</Eyebrow>
                         <h3 className="font-subheading text-2xl leading-tight text-theme-text-strong sm:text-3xl">
                             Open votes
                         </h3>
@@ -275,31 +275,34 @@ function CommunityParticipation() {
                 ) : (
                     <div className="grid grid-cols-1 gap-3 min-[700px]:grid-cols-3">
                         {issues.map((issue) => (
-                            <Card
+                            <Surface
+                                variant="card"
                                 key={issue.number}
-                                className="gap-5 rounded-2xl p-5"
+                                className="flex flex-col gap-5 rounded-2xl p-5"
                             >
                                 <span className="font-semibold leading-snug text-theme-text-strong">
                                     {issue.title}
                                 </span>
                                 <span className="mt-auto flex items-center justify-between gap-3">
-                                    <PixelLabel
-                                        variant="chrome"
+                                    <Eyebrow
+                                        size="chrome"
                                         className="tabular-nums"
                                     >
                                         {issue.votes} vote
                                         {issue.votes === 1 ? "" : "s"}
-                                    </PixelLabel>
-                                    <ActionButton
+                                    </Eyebrow>
+                                    <Button
+                                        as="a"
                                         href={issue.url}
                                         size="sm"
+                                        appearance="raised"
                                         className="gap-1.5"
                                     >
                                         Vote
                                         <ArrowRightIcon className="size-3.5" />
-                                    </ActionButton>
+                                    </Button>
                                 </span>
-                            </Card>
+                            </Surface>
                         ))}
                     </div>
                 )}
@@ -512,7 +515,7 @@ function BuildDiary() {
 
     return (
         <section className="flex flex-col gap-5">
-            <SectionHeader
+            <ContentHeader
                 eyebrow="Build diary"
                 title="What we shipped in the community"
                 subtitle="See the full history by year, the current year by month, or the current month day by day."
@@ -690,9 +693,9 @@ function BuildDiary() {
                             />
                             <div className="flex min-w-0 flex-col gap-4 p-5 sm:p-7">
                                 <div className="flex flex-wrap items-center gap-2.5">
-                                    <PixelLabel variant="chrome">
+                                    <Eyebrow size="chrome">
                                         {formatDate(selected.date, true)}
-                                    </PixelLabel>
+                                    </Eyebrow>
                                     <Chip size="sm">
                                         {selected.prCount} PR
                                         {selected.prCount === 1 ? "" : "s"}
@@ -706,13 +709,13 @@ function BuildDiary() {
                                 </p>
                                 <div className="mt-auto flex flex-wrap items-center justify-between gap-4 pt-2">
                                     {selected.url && (
-                                        <ArrowLink href={selected.url}>
+                                        <InlineLink href={selected.url}>
                                             {selected.url.includes(
                                                 "/tree/news/",
                                             )
                                                 ? "See the day’s PRs"
                                                 : "Open the pull request"}
-                                        </ArrowLink>
+                                        </InlineLink>
                                     )}
                                     <div className="ml-auto flex items-center gap-2">
                                         <Button
@@ -760,12 +763,12 @@ function Contributors() {
 
     return (
         <section className="flex flex-col gap-5">
-            <SectionHeader
+            <ContentHeader
                 eyebrow="Contributors"
                 title="Top contributors"
                 subtitle="These contributors have helped build and improve the platform. Want to join them?"
                 action={
-                    <ArrowLink href={REPO_URL}>Open the repository</ArrowLink>
+                    <InlineLink href={REPO_URL}>Open the repository</InlineLink>
                 }
             />
             {bare && (
@@ -778,11 +781,11 @@ function Contributors() {
             )}
             <div className="grid grid-cols-[repeat(auto-fit,minmax(min(190px,100%),1fr))] gap-3.5">
                 {people.map((person) => (
-                    <Card
+                    <LinkCard
                         key={person.login}
-                        as="a"
                         href={person.profileUrl}
-                        className="flex-row items-center gap-3.5 rounded-2xl p-4"
+                        showIcon={false}
+                        surfaceClassName="flex-row items-center gap-3.5 rounded-2xl p-4"
                     >
                         <img
                             src={`${person.avatarUrl}&s=80`}
@@ -801,7 +804,7 @@ function Contributors() {
                                 {person.commits.toLocaleString()} commits
                             </span>
                         </span>
-                    </Card>
+                    </LinkCard>
                 ))}
             </div>
         </section>
@@ -820,7 +823,7 @@ function CommunityPage() {
             <Contributors />
 
             <section className="flex flex-col gap-5">
-                <SectionHeader
+                <ContentHeader
                     eyebrow="Supporters"
                     title="Who keeps the GPUs warm"
                     subtitle="Their credits and infrastructure help people start building with free Pollen earned through Quests."
@@ -858,18 +861,23 @@ function CommunityPage() {
                 </div>
             </section>
 
-            <CalloutPanel
+            <Callout
                 tone="dark"
                 title="Join the conversation"
                 body="Builders are in there swapping prompts, debugging each other's apps, and telling us what to build next."
             >
-                <ActionButton href={DISCORD_URL} tone="bright">
+                <Button
+                    as="a"
+                    href={DISCORD_URL}
+                    appearance="raised"
+                    className="bg-brand-accent text-brand-dark"
+                >
                     Join Discord
-                </ActionButton>
-                <ArrowLink href={REPO_URL} className="px-2 text-base">
+                </Button>
+                <InlineLink href={REPO_URL} className="px-2 text-base">
                     Browse the repo
-                </ArrowLink>
-            </CalloutPanel>
+                </InlineLink>
+            </Callout>
         </>
     );
 }

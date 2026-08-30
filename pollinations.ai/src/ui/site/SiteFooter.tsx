@@ -1,14 +1,16 @@
 import {
     BrandLockup,
     Button,
+    ColorModeToggle,
     DiscordIcon,
+    Eyebrow,
     GitHubIcon,
+    InlineLink,
     InstagramIcon,
     LinkedInIcon,
     XSocialIcon,
 } from "@pollinations/ui";
 import { Link } from "@tanstack/react-router";
-import { ArrowLink, GUTTER, PixelLabel, SHELL } from "./kit";
 
 const COLUMNS = [
     {
@@ -70,10 +72,8 @@ const SOCIAL = [
 
 export function SiteFooter() {
     return (
-        <footer className={SHELL}>
-            <div
-                className={`${GUTTER} flex flex-wrap justify-between gap-10 pt-11 pb-14`}
-            >
+        <footer className="site-shell">
+            <div className="site-gutter flex flex-wrap justify-between gap-10 pt-11 pb-14">
                 <div className="flex max-w-xs flex-col gap-4">
                     <BrandLockup
                         height={26}
@@ -88,6 +88,10 @@ export function SiteFooter() {
                             Built with the community, in the open
                         </span>
                     </p>
+                    <div className="hidden items-center gap-3 min-[900px]:flex">
+                        <Eyebrow size="chrome">Appearance</Eyebrow>
+                        <ColorModeToggle />
+                    </div>
                     <nav aria-label="Social links" className="flex gap-1">
                         {SOCIAL.map(({ href, label, Icon }) => (
                             <Button
@@ -112,9 +116,7 @@ export function SiteFooter() {
                             key={column.heading}
                             className="flex flex-col gap-2"
                         >
-                            <PixelLabel variant="chrome">
-                                {column.heading}
-                            </PixelLabel>
+                            <Eyebrow size="chrome">{column.heading}</Eyebrow>
                             {column.links.map((link) =>
                                 "to" in link ? (
                                     <Link
@@ -125,13 +127,13 @@ export function SiteFooter() {
                                         {link.label}
                                     </Link>
                                 ) : (
-                                    <ArrowLink
+                                    <InlineLink
                                         key={link.label}
                                         href={link.href}
                                         className="font-normal text-theme-text-base"
                                     >
                                         {link.label}
-                                    </ArrowLink>
+                                    </InlineLink>
                                 ),
                             )}
                         </div>

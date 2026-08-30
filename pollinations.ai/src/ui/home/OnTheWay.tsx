@@ -1,4 +1,4 @@
-import { CardGrid, SectionHeader } from "../site/kit";
+import { ContentHeader } from "@pollinations/ui";
 
 const UPCOMING = [
     {
@@ -22,12 +22,12 @@ const UPCOMING = [
 export function OnTheWay() {
     return (
         <section className="flex flex-col gap-6">
-            <SectionHeader
+            <ContentHeader
                 eyebrow="On the way"
                 title={`${UPCOMING.length} things we’re building.`}
             />
             {/* Dashed and unlifted on purpose: nothing here is clickable yet. */}
-            <CardGrid min="narrow" gap="gap-4">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(260px,100%),1fr))] gap-4">
                 {UPCOMING.map((item) => (
                     <div
                         key={item.title}
@@ -41,7 +41,7 @@ export function OnTheWay() {
                         </p>
                     </div>
                 ))}
-            </CardGrid>
+            </div>
         </section>
     );
 }

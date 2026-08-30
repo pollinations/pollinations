@@ -10,6 +10,36 @@
    the same utility. Site source writes plain `flex`, `gap-4`, `text-sm`. */
 @import "@pollinations/ui/app.css";
 
+/* The public website uses a wider sheet than apps and dashboards. This is
+   site layout, not a reusable package component. Header, page and footer use
+   the same two classes so their content stays on one axis. */
+.site-shell {
+    width: 100%;
+    max-width: 1240px;
+    margin-inline: auto;
+    padding-inline: 1rem;
+}
+
+.site-gutter {
+    padding-inline: 1rem;
+}
+
+@media (min-width: 40rem) {
+    .site-shell {
+        padding-inline: 1.5rem;
+    }
+
+    .site-gutter {
+        padding-inline: 2rem;
+    }
+}
+
+@media (min-width: 48rem) {
+    .site-gutter {
+        padding-inline: 4.5rem;
+    }
+}
+
 /* ── Header dissolve ──────────────────────────────────────────────────
    The sticky navigation has no bar, rule or shadow. Once it overlaps page
    content, this desk-colored veil lets that content dissolve naturally behind

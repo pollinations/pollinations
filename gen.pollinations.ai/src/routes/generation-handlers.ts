@@ -170,7 +170,7 @@ export async function generateEmbeddingsResponse(
                 candidate.id,
             );
         },
-        c.var.track?.failedCalls,
+        c.var.track?.attempts,
         (candidate) => enforceModelRateLimit(c, candidate),
     );
 }

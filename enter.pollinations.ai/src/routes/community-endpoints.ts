@@ -42,6 +42,7 @@ import {
     deriveCreateProxyPolicy,
     deriveUpdatedProxyPolicy,
     hasProxyPricingInput,
+    isAdversePricingChange,
     proxyPricingChanged,
     withoutProxyPricingChanges,
 } from "./community-endpoints/proxy-policy.ts";
@@ -821,7 +822,8 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     targetVisibility === "public" &&
                     (currentVisibility === "public" ||
                         pendingVisibility === "public") &&
-                    hasProxyPricingInput(input);
+                    hasProxyPricingInput(input) &&
+                    isAdversePricingChange(targetBase, targetPolicy);
                 const pricingChanged = proxyPricingChanged(
                     targetBase,
                     targetPolicy,

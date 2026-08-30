@@ -231,6 +231,23 @@ export function proxyPricingChanged(
     );
 }
 
+/**
+ * True when the pricing change is adverse to consumers — any price field
+ * increased, or paidOnly was enabled. A mix of increases and reductions
+ * within the same update is treated as adverse (one queued effective time).
+ * Price reductions, paidOnly disabling, and imagePricing changes alone
+ * are consumer-beneficial and take effect immediately.
+ */
+export function isAdversePricingChange(
+    current: Pick<ProxyListingPayload, "paidOnly" | "prices">,
+    target: Pick<ProxyListingPayload, "paidOnly" | "prices">,
+): boolean {
+    if (!current.paidOnly && target.paidOnly) return true;
+    return COMMUNITY_ENDPOINT_PRICE_FIELDS.some(
+        ({ key }) => target.prices[key] > current.prices[key],
+    );
+}
+
 export function hasProxyPricingInput(input: ProxyUpdateInput): boolean {
     return (
         input.paidOnly !== undefined ||

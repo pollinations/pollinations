@@ -431,4 +431,87 @@ describe("community endpoint 12-hour price-change delay", () => {
             pending: { visibility: "public" },
         });
     });
+
+    test("price reduction on a public model takes effect immediately", async ({
+        sessionToken,
+    }) => {
+        await approveCommunityModels();
+        const created = await postModel(sessionToken, "", {
+            name: "price-reduce-model",
+            title: "Price reduce model",
+            visibility: "public",
+            baseUrl: "https://text.example.com/v1",
+            bearerToken: "tok",
+            promptTextPrice: 0.000005,
+        });
+        await publishPendingModel(sessionToken, created.id as string);
+
+        const updated = await postModel(
+            sessionToken,
+            `/${created.id as string}/update`,
+            { promptTextPrice: 0.000001 },
+        );
+
+        // Price reduction takes effect immediately — no pending price.
+        expect(updated).toMatchObject({ promptTextPrice: 0.000001 });
+        expect(updated.pending).toBeNull();
+    });
+
+    test("disabling paidOnly on a public model takes effect immediately", async ({
+        sessionToken,
+    }) => {
+        await approveCommunityModels();
+        const created = await postModel(sessionToken, "", {
+            name: "paidonly-disable-model",
+            title: "PaidOnly disable model",
+            visibility: "public",
+            baseUrl: "https://text.example.com/v1",
+            bearerToken: "tok",
+            paidOnly: true,
+        });
+        await publishPendingModel(sessionToken, created.id as string);
+
+        const updated = await postModel(
+            sessionToken,
+            `/${created.id as string}/update`,
+            { paidOnly: false },
+        );
+
+        // Disabling paidOnly takes effect immediately — no pending change.
+        expect(updated).toMatchObject({ paidOnly: false });
+        expect(updated.pending).toBeNull();
+    });
+
+    test("mixed price increase and reduction remains queued as one policy", async ({
+        sessionToken,
+    }) => {
+        await approveCommunityModels();
+        const created = await postModel(sessionToken, "", {
+            name: "mixed-price-model",
+            title: "Mixed price model",
+            visibility: "public",
+            baseUrl: "https://text.example.com/v1",
+            bearerToken: "tok",
+            promptTextPrice: 0.000003,
+            completionTextPrice: 0.000006,
+        });
+        await publishPendingModel(sessionToken, created.id as string);
+
+        // Increase one field, reduce another — mixed change is adverse.
+        const updated = await postModel(
+            sessionToken,
+            `/${created.id as string}/update`,
+            { promptTextPrice: 0.000005, completionTextPrice: 0.000001 },
+        );
+
+        // Current prices unchanged; pending shows both new values.
+        expect(updated).toMatchObject({
+            promptTextPrice: 0.000003,
+            completionTextPrice: 0.000006,
+        });
+        expect(updated.pending).toMatchObject({
+            promptTextPrice: 0.000005,
+            completionTextPrice: 0.000001,
+        });
+    });
 });

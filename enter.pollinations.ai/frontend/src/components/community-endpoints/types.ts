@@ -13,7 +13,6 @@ import {
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MAX_COMMUNITY_PRICE_PER_SECOND,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
-    MIN_COMMUNITY_PRICE_PER_UNIT,
     normalizeCommunityEndpointAdvertised,
     normalizeCommunityEndpointInputModalities,
     normalizeCommunityEndpointModality,
@@ -306,18 +305,13 @@ export function isValidPriceInput(
             : priceUnit === "second"
               ? MAX_COMMUNITY_PRICE_PER_SECOND
               : MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS;
-    const minimum =
-        priceUnit === "million"
-            ? MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS
-            : MIN_COMMUNITY_PRICE_PER_UNIT;
     return (
         Number.isFinite(parsed) &&
         parsed >= 0 &&
         parsed <= maximum &&
-        (priceUnit === "image" ||
-            priceUnit === "second" ||
+        (priceUnit !== "million" ||
             parsed === 0 ||
-            parsed >= minimum)
+            parsed >= MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS)
     );
 }
 

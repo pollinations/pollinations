@@ -325,27 +325,8 @@ export async function testCommunityEmbeddingEndpoint({
         throw new Error("Endpoint did not return OpenAI embedding data");
     }
 
-    if ("task_type" in body || "input_type" in body) {
-        throw new Error(
-            "Endpoint returned unsupported OpenAI embedding parameters (task_type or input_type); Pollinations does not support these fields",
-        );
-    }
-
     const usage = getOpenAIEmbeddingUsage(body);
-    if (usage && usage.prompt_tokens > 0) {
-        return {
-            usage,
-            billableUsage: { promptTextTokens: usage.prompt_tokens },
-        };
-    }
-
-    if (
-        !usage ||
-        typeof usage !== "object" ||
-        !("prompt_tokens" in usage) ||
-        typeof usage.prompt_tokens !== "number" ||
-        usage.prompt_tokens <= 0
-    ) {
+    if (!usage || usage.prompt_tokens <= 0) {
         throw new Error("Endpoint did not return billable OpenAI token usage");
     }
 

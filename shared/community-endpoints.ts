@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { isCommunityModelAllowedGithubId } from "./auth/github-id-list.ts";
-import { POLLEN_BILLING_PRECISION } from "./billing/precision.ts";
 import { HttpError } from "./http-error.ts";
 import { MCP_SERVER_IDS } from "./registry/mcp.ts";
 import type { ModelCapability } from "./registry/model-info.ts";
@@ -46,17 +45,12 @@ export const COMMUNITY_PROVIDER_URL_MAX_LENGTH = 2048;
 export const MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS = 0.000001;
 export const MIN_COMMUNITY_PRICE_PER_TOKEN =
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS / 1_000_000;
-// Fixed per-request prices (per-request embedding mode, per-image image
-// mode) floor at the smallest billable pollen unit instead of the per-token
-// rate, which only makes sense for token-priced usage buckets.
-export const MIN_COMMUNITY_PRICE_PER_UNIT = 10 ** -POLLEN_BILLING_PRECISION;
 // Keep typos and malicious configurations from exposing callers to extreme
 // charges.
 export const MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS = 50;
 export const MAX_COMMUNITY_PRICE_PER_TOKEN =
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS / 1_000_000;
 export const MAX_COMMUNITY_PRICE_PER_IMAGE = 0.25;
-export const MAX_COMMUNITY_PRICE_PER_REQUEST = 0.25;
 // Per-second audio (STT/TTS) prices are tiny compared to per-token rates, so
 // this ceiling is written per minute and divided down: $0.012/min is ~2x
 // OpenAI whisper ($0.006/min) and ~3x the priciest first-party STT model

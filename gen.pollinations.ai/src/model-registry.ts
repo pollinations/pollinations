@@ -142,9 +142,9 @@ function communityEntryToGenerationEntry(
                   )
                 : eventType === "generate.audio"
                   ? communityTranscriptionSupportedEndpoints()
-                : eventType === "generate.embedding"
-                  ? communityEmbeddingSupportedEndpoints()
-                  : communityTextSupportedEndpoints(),
+                  : eventType === "generate.embedding"
+                    ? communityEmbeddingSupportedEndpoints()
+                    : communityTextSupportedEndpoints(),
         definition: entry.definition,
         info: entry.info,
         communityEndpoint: entry.communityEndpoint,

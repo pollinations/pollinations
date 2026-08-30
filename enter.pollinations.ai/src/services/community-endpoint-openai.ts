@@ -325,10 +325,7 @@ export async function testCommunityEmbeddingEndpoint({
         throw new Error("Endpoint did not return OpenAI embedding data");
     }
 
-    if (
-        "task_type" in body ||
-        "input_type" in body
-    ) {
+    if ("task_type" in body || "input_type" in body) {
         throw new Error(
             "Endpoint returned unsupported OpenAI embedding parameters (task_type or input_type); Pollinations does not support these fields",
         );

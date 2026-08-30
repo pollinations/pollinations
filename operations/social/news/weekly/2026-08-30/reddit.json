@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "weekly",
+  "date": "2026-08-30",
+  "period_start": "2026-08-23",
+  "period_end": "2026-08-29",
+  "generated_at": "2026-08-30T06:27:26.163568+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-08-30/images/reddit.jpg"
+    }
+  ],
+  "title": "Weekly update: agents, catalog, video, accounting",
+  "text": "99 PRs merged this week. The visible changes are mostly about making the growing parts of the system less mysterious.\n\nAgents can now be registered through the API, and the hosted MCP shelf gained a registry/Gen proxy, audio transcription, FFmpeg (including multiple inputs), and Exa Search. Tool responses stay non-streaming where that matters, which is boring until an agent tries to parse a stream as a completed answer.\n\nThe model catalog now has search filters, tool-calling capability, context-window and video-duration limits, canonical slugs, and direct links into Play via `/play?model=<id>`. Quest Pollen model filtering was adjusted a few times this week; the final behavior should be less surprising than the first draft.\n\nVideo gained Wan 3.0, Gemini Omni 1.1 Flash, Seedance reference-media inputs, and registry-enforced frame limits. We also routed Qwen Vision Pro directly to Alibaba and GLM-5.3 through Fireworks.\n\nLess photogenic work: atomic API-key budget reservation, blocking overdrawn wallets, ledger-rounded real-time billing, fallback attribution/rewards, no-store account routes, and preserved request IDs in SDK errors.\n\nCommunity model price/visibility changes now have a 12-hour delay, creators can link model cards to earnings activity, and merged Quest PR authors get their rewards.\n\nCode and issue trail: https://github.com/pollinations/pollinations\nDocs: https://pollinations.ai/docs"
+}

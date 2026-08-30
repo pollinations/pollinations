@@ -125,20 +125,33 @@ Creating an agent also creates its callable model listing. See [Publish an Agent
 ## Coding harnesses
 
 Point an agentic coding tool at Pollinations. `on` logs in if needed, mints a
-key for the harness, backs up its config, and writes the provider; `off`
-restores the backup.
+dedicated key for the harness, backs up its config, and writes the provider;
+`off` restores the backup or strips only Pollinations-owned entries.
 
 ```bash
 polli harness --help            # supported harnesses
-polli harness dsh on            # DeepSeek Harness → Pollinations (default model: deepseek)
-polli harness dsh on --model kimi
-polli harness dsh on --no-mcp   # skip MCP tool configuration
-polli harness dsh status
-polli harness dsh off
+polli harness dsh on            # DeepSeek Harness (default model: deepseek)
+polli harness opencode on       # OpenCode (default model: openai)
+polli harness pi on             # Pi (default model: deepseek)
+polli harness prime on          # Prime Agent (default model: deepseek)
+polli harness openclaw on       # OpenClaw (default model: kimi)
+polli harness <harness> on --model <id>
+polli harness <harness> status
+polli harness <harness> off
 ```
 
-The DSH adapter configures the Pollinations provider, hosted Pollinations MCP,
-and Polli CLI skill globally under `$DSH_HOME` (default `~/.dsh`).
+Every adapter configures the Pollinations provider with the current
+tool-calling model catalog (fetched live, no hardcoded model list) and installs
+the Polli skill:
+
+- `dsh` — provider + hosted Pollinations MCP under `$DSH_HOME` (default `~/.dsh`).
+- `opencode` — OpenAI-compatible provider and `opencode-pollinations-plugin` in `opencode.json` (`$OPENCODE_CONFIG_DIR`).
+- `pi` — `~/.pi/agent/models.json` provider, `settings.json` default, and global skill.
+- `prime` — `~/.prime/agent/models.json` provider, `settings.json` default, and global skill; memories/sessions are untouched.
+- `openclaw` — `models.providers.pollinations` in `~/.openclaw/openclaw.json`, primary model, and managed skill.
+
+Pass `--no-mcp` to skip plugin/tool configuration where the harness supports
+MCP or plugin-style tools.
 
 See [Coding Harnesses](https://github.com/pollinations/pollinations/blob/main/CODING_HARNESSES.md) for what each profile changes and how to add one.
 

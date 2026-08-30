@@ -43,7 +43,7 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 | List your quests + claim state | `polli quests` (filters: `--open --claimable --claimed --coming-soon`) |
 | Manage prompt agents | `polli agents list` |
 | Manage invite-only community models | `polli my-models list` |
-| Connect a coding harness to Pollinations | `polli harness dsh on` (available adapters: `polli harness --help`) |
+| Connect a coding harness to Pollinations | `polli harness dsh on` (also `opencode`, `pi`, `prime`, `openclaw`; list: `polli harness --help`) |
 | Machine-readable output | append `--json` to any command |
 
 ## Setup
@@ -208,11 +208,16 @@ polli keys revoke <id>                                             # id comes fr
 ```bash
 polli harness --help                # supported harnesses
 polli harness dsh on                # login if needed, mint key "polli-harness-dsh", write provider + default model
-polli harness dsh on --model kimi   # any tool-calling text model from `polli models`
-polli harness dsh on --no-mcp       # configure the provider and skill without MCP tools
-polli harness dsh off               # restore the config backed up before "on"
+polli harness opencode on           # OpenCode: opencode.json provider + opencode-pollinations-plugin
+polli harness pi on                 # Pi: ~/.pi/agent/models.json + settings.json default
+polli harness prime on              # Prime Agent: ~/.prime/agent/models.json + settings.json default
+polli harness openclaw on           # OpenClaw: ~/.openclaw/openclaw.json provider + primary model
+polli harness <harness> on --model kimi   # any tool-calling text model from `polli models`
+polli harness <harness> on --no-mcp       # configure the provider and skill without plugin/MCP tools
+polli harness <harness> status          # show whether the integration is ready
+polli harness <harness> off             # restore the config backed up before "on"
 ```
-The DSH adapter globally configures the Pollinations provider, hosted Pollinations MCP, and this skill under `$DSH_HOME` (default `~/.dsh`). It stores one dedicated child key in `$DSH_HOME/.env` for the provider and MCP, plus a private snapshot under `~/.pollinations/harnesses/`. Reruns reuse a valid key already in the harness config. Other adapters may use their harness's official plugin or installer instead. Guide: `polli docs` section "Coding Harnesses".
+Every adapter fetches the live tool-calling model catalog, mints a dedicated `polli-harness-<id>` key, and installs this skill alongside the harness config. Config files are merged (never rewritten), so existing agents, memories, sessions, and unrelated settings survive. Snapshots live under `~/.pollinations/harnesses/`; reruns reuse a valid key already in the harness config. Guide: `polli docs` section "Coding Harnesses".
 
 ### Read API docs
 ```bash

@@ -57,7 +57,11 @@ export {
     type BrandLockupProps,
     type BrandVariant,
 } from "./primitives/BrandLockup.tsx";
-export { Button, type ButtonProps } from "./primitives/Button.tsx";
+export {
+    Button,
+    type ButtonAppearance,
+    type ButtonProps,
+} from "./primitives/Button.tsx";
 export {
     ButtonGroup,
     type ButtonGroupProps,

@@ -198,11 +198,7 @@ function AppsPage() {
                         </>
                     }
                 />
-            </Hero>
-
-            <div className="-mt-5 flex flex-col gap-5 sm:-mt-8">
-                <AppCarousel apps={spotlight} />
-                <div className="mx-auto flex w-fit flex-wrap items-center justify-center gap-4">
+                <div className="flex flex-wrap items-center gap-4">
                     <span className="font-semibold text-sm text-theme-text-strong">
                         Built something with Pollinations?
                     </span>
@@ -210,6 +206,10 @@ function AppsPage() {
                         Share your App
                     </ActionButton>
                 </div>
+            </Hero>
+
+            <div className="-mt-5 sm:-mt-8">
+                <AppCarousel apps={spotlight} />
             </div>
 
             <section className="flex flex-col gap-5">

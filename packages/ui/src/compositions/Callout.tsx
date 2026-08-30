@@ -25,9 +25,7 @@ export function Callout({
             variant="panel"
             className={cn(
                 "polli:flex polli:flex-wrap polli:items-center polli:justify-between polli:gap-8 polli:rounded-3xl polli:px-6 polli:py-9 polli:sm:gap-10 polli:sm:px-10 polli:sm:py-12",
-                tone === "dark"
-                    ? "dark polli:bg-brand-dark"
-                    : "polli:bg-theme-bg-active",
+                tone === "dark" ? "dark polli:bg-brand-dark" : undefined,
                 className,
             )}
         >

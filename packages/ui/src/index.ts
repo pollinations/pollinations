@@ -69,11 +69,6 @@ export {
     type AccountMenuProps,
 } from "./modules/account-menu/AccountMenu.tsx";
 export {
-    BrandLockup,
-    type BrandLockupProps,
-    type BrandVariant,
-} from "./primitives/BrandLockup.tsx";
-export {
     Button,
     type ButtonAppearance,
     type ButtonProps,

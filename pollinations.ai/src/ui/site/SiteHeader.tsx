@@ -1,6 +1,5 @@
 import {
     BookIcon,
-    BrandLockup,
     Button,
     Chip,
     ColorModeToggle,
@@ -17,8 +16,10 @@ import {
     XIcon,
     XSocialIcon,
 } from "@pollinations/ui";
+import lockupUrl from "@pollinations/ui/brand/lockup-horizontal.svg";
+import markUrl from "@pollinations/ui/brand/mark.svg";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { useState } from "react";
+import { type CSSProperties, useState } from "react";
 import { useDiscordPresence, useRepoStars } from "../../data/community";
 import { compact } from "../../data/publicStats";
 import { useHideOnScroll, useScrolled } from "./useHideOnScroll";
@@ -64,6 +65,24 @@ const SOCIAL = [
 ] as const;
 
 const REPO_STARS_FALLBACK = 5_000;
+const maskStyle = (
+    url: string,
+    width: number,
+    height: number,
+): CSSProperties => {
+    const mask = `url('${url}') center / contain no-repeat`;
+
+    return {
+        width,
+        height,
+        backgroundColor: "currentColor",
+        WebkitMask: mask,
+        mask,
+    };
+};
+const MARK_STYLE = maskStyle(markUrl, 32, 32);
+const DESKTOP_LOCKUP_STYLE = maskStyle(lockupUrl, 244, 30);
+const DRAWER_LOCKUP_STYLE = maskStyle(lockupUrl, 195, 24);
 const DESKTOP_ACTION_CLASS =
     "hidden h-9 w-9 shrink-0 bg-surface-opaque p-0 text-theme-text-strong shadow-well transition-all duration-200 hover:-translate-y-0.5 hover:bg-theme-bg-hover hover:shadow-lg min-[700px]:inline-flex min-[800px]:w-auto min-[800px]:gap-1.5 min-[800px]:px-3 motion-reduce:hover:translate-y-0";
 
@@ -108,37 +127,35 @@ export function SiteHeader() {
                             aria-label="pollinations.ai — home"
                         >
                             <span className="relative inline-flex min-[1080px]:hidden">
-                                <BrandLockup
-                                    variant="mark"
-                                    height={32}
-                                    label=""
+                                <span
+                                    aria-hidden="true"
+                                    style={MARK_STYLE}
                                     className={`site-home-logo-accent absolute translate-x-[3px] translate-y-[3px] text-theme-bg-active transition-opacity duration-200 motion-reduce:transition-none ${
                                         pathname === "/"
                                             ? "opacity-100"
                                             : "opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100"
                                     }`}
                                 />
-                                <BrandLockup
-                                    variant="mark"
-                                    height={32}
-                                    label=""
-                                    className="relative z-10"
+                                <span
+                                    aria-hidden="true"
+                                    style={MARK_STYLE}
+                                    className="relative z-10 block shrink-0"
                                 />
                             </span>
                             <span className="relative hidden min-[1080px]:inline-flex">
-                                <BrandLockup
-                                    height={30}
-                                    label=""
+                                <span
+                                    aria-hidden="true"
+                                    style={DESKTOP_LOCKUP_STYLE}
                                     className={`site-home-logo-accent absolute translate-x-[3px] translate-y-[3px] text-theme-bg-active transition-opacity duration-200 motion-reduce:transition-none ${
                                         pathname === "/"
                                             ? "opacity-100"
                                             : "opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100"
                                     }`}
                                 />
-                                <BrandLockup
-                                    height={30}
-                                    label=""
-                                    className="relative z-10"
+                                <span
+                                    aria-hidden="true"
+                                    style={DESKTOP_LOCKUP_STYLE}
+                                    className="relative z-10 block shrink-0"
                                 />
                             </span>
                         </Link>
@@ -248,9 +265,10 @@ export function SiteHeader() {
                                                 aria-label="pollinations.ai — home"
                                                 className="rounded-md text-theme-text-strong focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-theme-border"
                                             >
-                                                <BrandLockup
-                                                    height={24}
-                                                    label=""
+                                                <span
+                                                    aria-hidden="true"
+                                                    style={DRAWER_LOCKUP_STYLE}
+                                                    className="block shrink-0"
                                                 />
                                             </Link>
                                         </div>

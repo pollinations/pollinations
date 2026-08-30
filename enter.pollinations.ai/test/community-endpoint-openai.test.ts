@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
     listCommunityEndpointModels,
-    testCommunityEndpoint,
     testCommunityEmbeddingEndpoint,
+    testCommunityEndpoint,
     testCommunityImageEndpoint,
     testCommunityTranscriptionEndpoint,
 } from "../src/services/community-endpoint-openai.ts";
@@ -459,13 +459,12 @@ describe("community endpoint OpenAI service", () => {
                 Response.json({
                     data: [
                         {
-                            embedding: Array.from(
-                                { length: 4 },
-                                () => Math.random(),
+                            embedding: Array.from({ length: 4 }, () =>
+                                Math.random(),
                             ),
                         },
                     ],
-                    usage: { prompt_tokens: 12 },
+                    usage: { prompt_tokens: 12, total_tokens: 12 },
                 }),
             ),
         );
@@ -477,7 +476,7 @@ describe("community endpoint OpenAI service", () => {
                 model: "text-embedding-3-small",
             }),
         ).resolves.toEqual({
-            usage: { prompt_tokens: 12 },
+            usage: { prompt_tokens: 12, total_tokens: 12 },
             billableUsage: { promptTextTokens: 12 },
         });
     });
@@ -489,9 +488,8 @@ describe("community endpoint OpenAI service", () => {
                 Response.json({
                     data: [
                         {
-                            embedding: Array.from(
-                                { length: 4 },
-                                () => Math.random(),
+                            embedding: Array.from({ length: 4 }, () =>
+                                Math.random(),
                             ),
                         },
                     ],
@@ -505,7 +503,9 @@ describe("community endpoint OpenAI service", () => {
                 bearerToken: "Bearer sk_saved_token",
                 model: "text-embedding-3-small",
             }),
-        ).rejects.toThrow("Endpoint did not return billable OpenAI token usage");
+        ).rejects.toThrow(
+            "Endpoint did not return billable OpenAI token usage",
+        );
     });
 
     it("rejects embedding upstreams that return unsupported task_type or input_type fields", async () => {
@@ -515,9 +515,8 @@ describe("community endpoint OpenAI service", () => {
                 Response.json({
                     data: [
                         {
-                            embedding: Array.from(
-                                { length: 4 },
-                                () => Math.random(),
+                            embedding: Array.from({ length: 4 }, () =>
+                                Math.random(),
                             ),
                         },
                     ],

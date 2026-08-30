@@ -43,7 +43,7 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 | List your quests + claim state | `polli quests` (filters: `--open --claimable --claimed --coming-soon`) |
 | Manage prompt agents | `polli agents list` |
 | Manage invite-only community models | `polli my-models list` |
-| Connect a coding harness to Pollinations | `polli harness dsh on` (available adapters: `polli harness --help`) |
+| Connect a coding harness to Pollinations | `polli harness dsh on` or `polli harness openclaw on` (available adapters: `polli harness --help`) |
 | Machine-readable output | append `--json` to any command |
 
 ## Setup
@@ -64,7 +64,7 @@ Defaults: `zimage`, 1024x1024. Pick a different model with `--model flux` (see `
 ### Upload a local file to get a public URL
 ```bash
 URL=$(polli upload cat.png)
-polli gen image "make the cat purple" --image "$URL" --output purple.png
+polli gen image "make this cat purple" --image "$URL" --output purple.png
 ```
 `polli upload <file>` posts a multipart upload to `media.pollinations.ai` (100MB max; 30-day lifecycle, refreshed by GETs once the object is at least 15 days old). Each upload receives a unique id. Human mode: URL on stdout and id/size/contentType on stderr. `--json`: full upload response on stdout. The returned URL is public (no auth to fetch) and works anywhere `--image` is accepted — `gen image`, `gen video`, etc.
 
@@ -115,7 +115,7 @@ Text-to-sound-effect via ElevenLabs (aliases: `sfx`, `sound-effects`). `--durati
 ```bash
 polli gen audio "Bonjour, ceci est un test" --model multilingual-v2 --voice rachel --output fr.mp3
 ```
-Stable, lifelike TTS across 29 languages (aliases: `multilingual-v2`, `eleven-v2`) — a non-alpha alternative to the default v3.
+Stable, lifelike TTS across 29 languages (aliases: `multilingual`, `multilingual-v2`) — a non-alpha alternative to the default v3.
 
 ### Generate video
 ```bash
@@ -211,8 +211,11 @@ polli harness dsh on                # login if needed, mint key "polli-harness-d
 polli harness dsh on --model kimi   # any tool-calling text model from `polli models`
 polli harness dsh on --no-mcp       # configure the provider and skill without MCP tools
 polli harness dsh off               # restore the config backed up before "on"
+polli harness openclaw on           # login if needed, mint key "polli-harness-openclaw", write provider + default model
+polli harness openclaw on --model deepseek  # any tool-calling text model from `polli models`
+polli harness openclaw off          # restore the config backed up before "on"
 ```
-The DSH adapter globally configures the Pollinations provider, hosted Pollinations MCP, and this skill under `$DSH_HOME` (default `~/.dsh`). It stores one dedicated child key in `$DSH_HOME/.env` for the provider and MCP, plus a private snapshot under `~/.pollinations/harnesses/`. Reruns reuse a valid key already in the harness config. Other adapters may use their harness's official plugin or installer instead. Guide: `polli docs` section "Coding Harnesses".
+The DSH adapter globally configures the Pollinations provider, hosted Pollinations MCP, and this skill under `$DSH_HOME` (default `~/.dsh`). It stores one dedicated child key in `$DSH_HOME/.env` for the provider and MCP, plus a private snapshot under `~/.pollinations/harnesses/`. Reruns reuse a valid key already in the harness config. The OpenClaw adapter writes `~/.openclaw/openclaw.json` with the Pollinations provider (models fetched live from the API), sets `agents.defaults.model.primary`, stores its dedicated key in `env.vars.POLLI_OPENCLAW_API_KEY`, and installs this skill under `~/.openclaw/skills/polli/`; on a fresh machine it runs OpenClaw's own onboarding first. Other adapters may use their harness's official plugin or installer instead. Guide: `polli docs` section "Coding Harnesses".
 
 ### Read API docs
 ```bash

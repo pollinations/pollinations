@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "weekly",
+  "date": "2026-08-30",
+  "period_start": "2026-08-23",
+  "period_end": "2026-08-29",
+  "generated_at": "2026-08-30T06:27:26.163568+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-08-30/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-08-30/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-08-30/images/instagram-3.jpg"
+    }
+  ],
+  "text": "99 PRs merged this week. The garden acquired a hosted MCP tool shelf, a model catalog that behaves more like a map, more video and reference inputs, and better ways for community model owners to see what their plants are doing. Also: lots of accounting, retries, limits, and pricing fixes—the irrigation system of software. 🌱🐝\n\nEverything is in the open: github.com/pollinations\n\n#pollinations #opensource #aitools #pixelart #creativecoding #buildinpublic #indiedev #aiagents #mcp #generativeai #aivideo #devtools",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

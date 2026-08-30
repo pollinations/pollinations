@@ -129,6 +129,24 @@ async def generate_image(
     return urls
 
 
+async def generate_text(prompt: str, model: str, system: str | None = None) -> str:
+    """Delegate a text task to any catalogued text model."""
+    messages = []
+    if system:
+        messages.append({"role": "system", "content": system})
+    messages.append({"role": "user", "content": prompt})
+    r = await _http_client().post(
+        f"{_v1()}/chat/completions",
+        headers={
+            "Authorization": f"Bearer {_key()}",
+            "Content-Type": "application/json",
+        },
+        json={"model": model, "messages": messages},
+    )
+    r.raise_for_status()
+    return (r.json()["choices"][0]["message"].get("content") or "").strip()
+
+
 async def edit_image(
     prompt: str,
     image_url: str,
@@ -178,6 +196,16 @@ async def edit_image(
 # drop it and produce a start-frame-only animation.
 END_FRAME_MODELS = ("wan-fast", "veo", "wan-pro", "wan-pro-1080p", "seedance-2.0")
 
+
+def supports_end_frame(model: str) -> bool:
+    from floret.registry import get_model_params
+
+    capabilities = get_model_params(model).get("video_capabilities")
+    if isinstance(capabilities, list):
+        return "end_frame" in capabilities
+    return model in END_FRAME_MODELS
+
+
 # veo's upstream (Vertex) only renders image-to-video at these lengths.
 _VEO_I2V_DURATIONS = (4, 6, 8)
 
@@ -200,7 +228,7 @@ async def generate_video(
     model: str | None = None,
     image: str | None = None,
     end_image: str | None = None,
-    duration: int = 5,
+    duration: int | None = None,
     aspect: str = "16:9",
     **extra: Any,
 ) -> str:
@@ -211,11 +239,20 @@ async def generate_video(
     """
     from floret.registry import pick_model
 
-    if end_image and (model is None or model not in END_FRAME_MODELS):
-        # Silently producing a start-only clip would look like success; pick a model
-        # that actually interpolates to the end frame.
-        model = "wan-fast"
     model = model or pick_model("video", settings.default_tier, prompt) or "wan-fast"
+
+    if end_image and not supports_end_frame(model):
+        model = "wan-fast"
+
+    from floret.registry import get_model_params
+
+    model_params = get_model_params(model)
+    if duration is None:
+        duration = int(
+            model_params.get("default_duration")
+            or model_params.get("min_duration")
+            or 5
+        )
 
     frames = [await _public_frame_url(f) for f in (image, end_image) if f]
     if frames and model.startswith("veo") and duration not in _VEO_I2V_DURATIONS:
@@ -283,12 +320,48 @@ async def text_to_speech(
     }
 
 
+async def generate_audio(
+    text: str,
+    model: str,
+    voice: str | None = None,
+    fmt: str = "mp3",
+    duration: float | None = None,
+    seed: int | None = None,
+) -> dict[str, Any]:
+    """Generate speech, music, or sound through the catalogued audio route."""
+    payload = {
+        "model": model,
+        "input": text,
+        "voice": voice,
+        "response_format": fmt,
+        "duration": duration,
+        "seed": seed,
+    }
+    r = await _http_client().post(
+        f"{_v1()}/audio/speech",
+        headers={
+            "Authorization": f"Bearer {_key()}",
+            "Content-Type": "application/json",
+        },
+        json={key: value for key, value in payload.items() if value is not None},
+    )
+    r.raise_for_status()
+    b64 = base64.b64encode(r.content).decode()
+    mime = r.headers.get("content-type", "audio/mpeg").split(";", 1)[0]
+    return {
+        "data_uri": f"data:{mime};base64,{b64}",
+        "b64": b64,
+        "transcript": text,
+        "format": fmt,
+    }
+
+
 # --------------------------------------------------------------------------- #
 # Transcription  (POST chat completions with input_audio content part)
 # --------------------------------------------------------------------------- #
 async def transcribe(
     audio_url: str,
-    model: str = "gemini",
+    model: str = "whisper",
     instruction: str = "Transcribe this audio verbatim.",
 ) -> str:
     """Speech-to-text. Accepts an audio/video URL or a data: URI."""
@@ -303,27 +376,45 @@ async def transcribe(
     if fmt in ("mpeg", "mpga"):
         fmt = "mp3"
 
-    payload = {
-        "model": model,
-        "messages": [
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": instruction},
-                    {
-                        "type": "input_audio",
-                        "input_audio": {"data": b64, "format": fmt},
-                    },
-                ],
-            }
-        ],
-    }
-    headers = {"Authorization": f"Bearer {_key()}", "Content-Type": "application/json"}
+    payload = base64.b64decode(b64)
+    headers = {"Authorization": f"Bearer {_key()}"}
     r = await _http_client().post(
-        f"{_base()}/v1/chat/completions", headers=headers, json=payload
+        f"{_v1()}/audio/transcriptions",
+        headers=headers,
+        data={"model": model, "prompt": instruction},
+        files={"file": (f"audio.{fmt}", payload, f"audio/{fmt}")},
     )
     r.raise_for_status()
-    return (r.json()["choices"][0]["message"].get("content") or "").strip()
+    return (r.json().get("text") or "").strip()
+
+
+async def transform_audio(
+    audio_url: str,
+    endpoint: str,
+    model: str,
+    voice: str | None = None,
+    fmt: str = "mp3",
+) -> dict[str, Any]:
+    """Call a multipart audio transformation endpoint and return playable audio."""
+    payload = await _fetch_bytes(audio_url)
+    data = {"model": model, "response_format": fmt}
+    if voice:
+        data["voice"] = voice
+    r = await _http_client().post(
+        f"{_v1()}/audio/{endpoint}",
+        headers={"Authorization": f"Bearer {_key()}"},
+        data=data,
+        files={"audio": ("audio.mp3", payload, "audio/mpeg")},
+    )
+    r.raise_for_status()
+    b64 = base64.b64encode(r.content).decode()
+    mime = r.headers.get("content-type", "audio/mpeg").split(";", 1)[0]
+    return {
+        "data_uri": f"data:{mime};base64,{b64}",
+        "b64": b64,
+        "transcript": endpoint.replace("-", " "),
+        "format": fmt,
+    }
 
 
 # --------------------------------------------------------------------------- #

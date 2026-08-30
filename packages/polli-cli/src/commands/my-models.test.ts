@@ -75,4 +75,23 @@ describe("modelBody", () => {
             ),
         ).toMatchObject({ modality: "transcription" });
     });
+
+    it("supports embedding model registration", () => {
+        expect(
+            modelBody(
+                {
+                    name: "embedding-provider",
+                    title: "Embedding Provider",
+                    baseUrl: "https://example.com/v1",
+                    bearerToken: "upstream-token",
+                    modality: "embedding",
+                    promptTextPrice: "0.000001",
+                },
+                true,
+            ),
+        ).toMatchObject({
+            modality: "embedding",
+            promptTextPrice: 0.000001,
+        });
+    });
 });

@@ -15,6 +15,7 @@ import {
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     normalizeCommunityEndpointAdvertised,
     normalizeCommunityEndpointInputModalities,
+    normalizeCommunityEndpointModality,
 } from "@shared/community-endpoints.ts";
 import type { McpServerId } from "@shared/registry/mcp.ts";
 import type { ModelInputModality, Usage } from "@shared/registry/registry.ts";
@@ -130,15 +131,15 @@ export function publicCommunityFallbackOptions(
                 !model.agent &&
                 (model.type === "text" ||
                     model.type === "image" ||
-                    model.type === "audio"),
+                    model.type === "embedding"),
         )
         .map((model) => ({
             modelId: model.name,
             modality:
                 model.type === "image"
                     ? "image"
-                    : model.type === "audio"
-                      ? "transcription"
+                    : model.type === "embedding"
+                      ? "embedding"
                       : "text",
         }));
 }
@@ -535,12 +536,7 @@ export function nextFormState(
     value: string,
 ): EndpointFormState {
     if (key === "modality") {
-        const modality =
-            value === "image"
-                ? "image"
-                : value === "transcription"
-                  ? "transcription"
-                  : "text";
+        const modality = normalizeCommunityEndpointModality(value);
         return {
             ...current,
             modality,

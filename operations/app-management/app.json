@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🖼️",
+    "name": "AI Story & Image Studio",
+    "url": "https://adventuretreehouse.com",
+    "description": "A minimal interactive studio that generates short stories and matching illustrations simultaneously using Pollinations text and image APIs with seamless PKCE OAuth authentication.",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "tlandcoder",
+    "githubUserId": "301499514",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-08-29",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/14114",
+    "approvedDate": "2026-08-30",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🎬",
     "name": "Automated Video App",
     "url": "https://automatedvideoapp.com",

@@ -15,7 +15,7 @@ export function StartBuilding() {
                 as="a"
                 href="https://enter.pollinations.ai/keys"
                 appearance="raised"
-                className="bg-brand-dark text-theme-bg-active"
+                className="bg-brand-accent text-brand-dark"
             >
                 Get an API key
             </Button>

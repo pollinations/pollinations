@@ -1,0 +1,35 @@
+{
+  "pr_number": 14106,
+  "title": "feat: expand Floret model and media support",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/14106",
+  "merged_at": "2026-08-30T13:13:41Z",
+  "labels": [],
+  "pr_body_excerpt": "- Discovers text, image, video, audio, transcription, and audio-transform models from the live catalog\\n- Adds generic text delegation and standard audio, transcription, voice-change, and isolation calls\\n- Uses registry video defaults and publicly hosts generated image/video artifacts with detected media types\\n- Streams tool progress through OpenAI-compatible delta.tool_calls without polluting assistant content\\n- Excludes embedding, realtime, and 3D models",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Floret grew more petals",
+    "blurb": "Floret now follows the live model garden instead of carrying a tiny fixed bouquet. It can route words, pixels, sound, video, transcription, and audio transformations through one much busier little agent.",
+    "summary": "Floret now discovers supported text, image, video, audio, transcription, and audio-transform models from the live catalog, adds generic generation and media tools, publicly hosts generated image/video artifacts with detected media types, and streams tool progress as OpenAI-compatible delta.tool_calls.",
+    "impact": "Floret users can access the current catalog of supported media models through standard tools, receive usable public image/video URLs, and see streaming tool activity without it appearing in assistant messages.",
+    "keywords": [
+      "floret",
+      "media",
+      "model catalog",
+      "audio",
+      "video",
+      "streaming",
+      "tool calls"
+    ],
+    "visual_concept": "Depict Floret as a cozy branching garden-workbench where one agent terminal routes different kinds of creative media: a text scroll, framed image, tiny film reel, musical note, microphone transcript, and waveform being transformed. Polli should be the observant gardener, wearing a small tool belt and tending the branching connections, while a CRT monitor robot happily watches tool-progress bubbles travel along the branches; visible public image and video cards represent hosted artifacts.",
+    "image_prompt": "A cozy pixel art garden-workbench where the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings wears a tiny tool belt and tends a branching Floret terminal that grows text scrolls, image cards, a film reel, music notes, a microphone transcript, and soft waveform flowers. A cute CRT-monitor robot watches little tool-progress bubbles flow through the branches beside publicly displayed image and video cards, with pixel flowers and code-plants throughout; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with lime green #ecf874 prominently glowing against warm cream and dark purple #110518 outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-30/PR-14106.jpg",
+    "prompt": "A cozy pixel art garden-workbench where the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings wears a tiny tool belt and tends a branching Floret terminal that grows text scrolls, image cards, a film reel, music notes, a microphone transcript, and soft waveform flowers. A cute CRT-monitor robot watches little tool-progress bubbles flow through the branches beside publicly displayed image and video cards, with pixel flowers and code-plants throughout; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with lime green #ecf874 prominently glowing against warm cream and dark purple #110518 outlines."
+  },
+  "generated_at": "2026-08-30T13:14:40.071691+00:00"
+}

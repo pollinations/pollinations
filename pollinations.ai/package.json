@@ -19,8 +19,8 @@
         "deploy:production": "npm run build:production && wrangler deploy --config dist/pollinations_ai/wrangler.json"
     },
     "dependencies": {
-        "@pollinations/sdk": "*",
-        "@pollinations/ui": "*",
+        "@pollinations/sdk": "file:../packages/sdk",
+        "@pollinations/ui": "file:../packages/ui",
         "@tanstack/react-router": "^1.139.3",
         "react": "^19.2.0",
         "react-dom": "^19.2.0"

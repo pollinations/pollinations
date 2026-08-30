@@ -20,7 +20,7 @@ const ID = "opencode";
 const LABEL = "OpenCode";
 const PROVIDER_ID = "pollinations";
 const DEFAULT_MODEL = "openai";
-const KEY_ENV = "POLLI_OPENCODE_API_KEY";
+const _KEY_ENV = "POLLI_OPENCODE_API_KEY";
 
 const configDir = (ctx: HarnessContext) => {
     const configured = ctx.env.OPENCODE_CONFIG_DIR;
@@ -63,7 +63,7 @@ const readConfig = (ctx: HarnessContext): OpenCodeConfig => {
 };
 
 const writeConfig = (ctx: HarnessContext, config: OpenCodeConfig) => {
-    writeTextAtomic(configPath(ctx), JSON.stringify(config, null, 2) + "\n");
+    writeTextAtomic(configPath(ctx), `${JSON.stringify(config, null, 2)}\n`);
 };
 
 const readKey = (ctx: HarnessContext): string | null => {
@@ -89,7 +89,7 @@ const writeKey = (ctx: HarnessContext, key: string) => {
         }
     }
     auth[PROVIDER_ID] = key;
-    writeTextAtomic(authPath(ctx), JSON.stringify(auth, null, 2) + "\n", 0o600);
+    writeTextAtomic(authPath(ctx), `${JSON.stringify(auth, null, 2)}\n`, 0o600);
 };
 
 const deleteKey = (ctx: HarnessContext): boolean => {
@@ -101,7 +101,7 @@ const deleteKey = (ctx: HarnessContext): boolean => {
         delete auth[PROVIDER_ID];
         writeTextAtomic(
             authPath(ctx),
-            JSON.stringify(auth, null, 2) + "\n",
+            `${JSON.stringify(auth, null, 2)}\n`,
             0o600,
         );
         return true;
@@ -156,7 +156,9 @@ const stripProviderConfig = (ctx: HarnessContext): boolean => {
 const result = (ctx: HarnessContext): HarnessResult => {
     const config = readConfig(ctx);
     const providers = (config.provider ?? {}) as Record<string, unknown>;
-    const provider = providers[PROVIDER_ID] as Record<string, unknown> | undefined;
+    const provider = providers[PROVIDER_ID] as
+        | Record<string, unknown>
+        | undefined;
     const model = config.model;
     return {
         harness: ID,

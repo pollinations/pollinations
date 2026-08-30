@@ -1,6 +1,6 @@
 import { join, resolve } from "node:path";
 import { parseEnv } from "node:util";
-import { isMap, isSeq, parseDocument } from "yaml";
+import { isMap, parseDocument } from "yaml";
 import polliSkill from "../../SKILL.md?raw";
 import { BASE_URL } from "../lib/config.js";
 import { readTextIfExists, removeIfExists, writeTextAtomic } from "./fs.js";
@@ -181,9 +181,7 @@ export const configureOpenClaw = (
     ctx: HarnessContext,
     settings: OpenClawSettings,
 ): HarnessResult => {
-    applyWithSnapshot(ctx, ID, files(ctx), () =>
-        writeConfig(ctx, settings),
-    );
+    applyWithSnapshot(ctx, ID, files(ctx), () => writeConfig(ctx, settings));
     return result(ctx);
 };
 

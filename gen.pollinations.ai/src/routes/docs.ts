@@ -35,6 +35,7 @@ const FAVICON_DATA_URI =
 import COMMUNITY_MODELS_MD from "../../../BRING_YOUR_OWN_MODEL.md?raw";
 import BYOP_MD from "../../../BRING_YOUR_OWN_POLLEN.md?raw";
 import AGENTS_MD from "../../../BUILD_YOUR_OWN_AGENT.md?raw";
+import CODING_HARNESSES_MD from "../../../CODING_HARNESSES.md?raw";
 import MCP_README from "../../../packages/mcp/README.md?raw";
 import CLI_README from "../../../packages/polli-cli/README.md?raw";
 import MODEL3D_GENERATION_MD from "../docs/3d-generation.md?raw";
@@ -64,6 +65,7 @@ const DOC_TAGS = {
     publishAgent: "Publish an Agent",
     communityAgents: "Community Agents",
     cli: "CLI",
+    codingHarnesses: "Coding Harnesses",
     mcpServer: "MCP Server",
     errors: "Errors",
     safety: "Safety",
@@ -134,6 +136,9 @@ const DOC_TAG_ICON_HTML: Record<string, string> = {
     [DOC_TAGS.cli]: docsIcon(
         '<polyline points="4 8 8 12 4 16" /><line x1="12" y1="20" x2="20" y2="20" />',
     ),
+    [DOC_TAGS.codingHarnesses]: docsIcon(
+        '<path d="M4 7h16" /><path d="M4 17h16" /><circle cx="9" cy="7" r="2" fill="currentColor" /><circle cx="15" cy="17" r="2" fill="currentColor" />',
+    ),
     [DOC_TAGS.mcpServer]: docsIcon(
         '<rect x="2" y="7" width="8" height="10" rx="1.5" /><rect x="14" y="7" width="8" height="10" rx="1.5" /><path d="M10 12h4" />',
     ),
@@ -199,6 +204,7 @@ const stripLeadingHeading = (md: string) =>
 const USER_WALLETS_DOCS = stripLeadingHeading(BYOP_MD.trim());
 const PUBLISH_MODEL_DOCS = stripLeadingHeading(COMMUNITY_MODELS_MD.trim());
 const PUBLISH_AGENT_DOCS = stripLeadingHeading(AGENTS_MD.trim());
+const CODING_HARNESSES_DOCS = stripLeadingHeading(CODING_HARNESSES_MD.trim());
 
 // Dynamic registry values get injected into the markdown via {{PLACEHOLDER}}
 // substitution. The placeholders live in the .md files so the prose stays in
@@ -352,6 +358,7 @@ const USER_WALLETS_SECTION = `## Connect User Wallets\n\n${USER_WALLETS_DOCS}`;
 const PUBLISH_MODEL_SECTION = `## Publish a Model\n\n${PUBLISH_MODEL_DOCS}`;
 const PUBLISH_AGENT_SECTION = `## Publish an Agent\n\n${PUBLISH_AGENT_DOCS}`;
 const CLI_SECTION = `## CLI\n\n${CLI_DOCS}`;
+const CODING_HARNESSES_SECTION = `## Coding Harnesses\n\n${CODING_HARNESSES_DOCS}`;
 const MCP_SECTION = `## MCP Server\n\n${MCP_DOCS}`;
 
 const LLM_DOC_TEXT = [
@@ -360,6 +367,7 @@ const LLM_DOC_TEXT = [
     PUBLISH_MODEL_SECTION,
     PUBLISH_AGENT_SECTION,
     CLI_SECTION,
+    CODING_HARNESSES_SECTION,
     MCP_SECTION,
 ].join("\n\n");
 
@@ -369,6 +377,7 @@ const LLM_DOC_SECTIONS: Record<string, string> = {
     "publish-a-model": PUBLISH_MODEL_SECTION,
     "publish-an-agent": PUBLISH_AGENT_SECTION,
     cli: CLI_SECTION,
+    "coding-harnesses": CODING_HARNESSES_SECTION,
     mcp: MCP_SECTION,
 };
 
@@ -492,6 +501,7 @@ function generationDocumentation(): OpenApiSchema {
                     DOC_TAGS.publishAgent,
                     DOC_TAGS.mcpServer,
                     DOC_TAGS.cli,
+                    DOC_TAGS.codingHarnesses,
                 ],
             },
             {
@@ -555,6 +565,10 @@ function generationDocumentation(): OpenApiSchema {
             {
                 name: DOC_TAGS.cli,
                 description: CLI_DOCS,
+            },
+            {
+                name: DOC_TAGS.codingHarnesses,
+                description: CODING_HARNESSES_DOCS,
             },
             {
                 name: DOC_TAGS.mcpServer,

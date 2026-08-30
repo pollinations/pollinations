@@ -1,6 +1,6 @@
+import { Button, ContentHeader } from "@pollinations/ui";
 import { createRootRoute, HeadContent, Outlet } from "@tanstack/react-router";
 import { NOT_FOUND_META } from "../routeMeta";
-import { ActionButton, PageHeader, SHELL } from "../ui/site/kit";
 import { SiteFooter } from "../ui/site/SiteFooter";
 import { SiteHeader } from "../ui/site/SiteHeader";
 
@@ -18,13 +18,16 @@ export const Route = createRootRoute({
 function NotFoundPage() {
     return (
         <section className="flex min-h-[28rem] flex-col justify-center gap-8">
-            <PageHeader
+            <ContentHeader
                 eyebrow="404"
                 title="That page flew away."
                 subtitle="The link may be outdated, or the page may have moved."
+                variant="page"
             />
             <div>
-                <ActionButton href="/">Back to Pollinations</ActionButton>
+                <Button as="a" href="/" appearance="raised">
+                    Back to Pollinations
+                </Button>
             </div>
         </section>
     );
@@ -53,9 +56,7 @@ function RootLayout() {
         <div className="flex min-h-dvh flex-col bg-app-bg font-body text-theme-text-base">
             <HeadContent />
             <SiteHeader />
-            <div
-                className={`${SHELL} mb-6 flex flex-1 flex-col pt-4 min-[700px]:pt-0`}
-            >
+            <div className="site-shell mb-6 flex flex-1 flex-col pt-4 min-[700px]:pt-0">
                 <main className="flex flex-1 flex-col gap-12 overflow-clip rounded-[28px] bg-theme-bg-pale px-4 py-10 shadow-container sm:gap-18 sm:px-8 sm:py-16 md:px-18">
                     <Outlet />
                 </main>

@@ -3,6 +3,7 @@ import {
     BeakerIcon,
     Chip,
     CloudUploadIcon,
+    ContentHeader,
     ExternalLinkButton,
     GenApiIcon,
     Heading,
@@ -26,7 +27,6 @@ type Feature = {
     linkLabel: string;
     href: string;
     icon: ComponentType<IconProps>;
-    emphasized?: boolean;
 };
 
 const BUILD_FOUNDATIONS: Feature[] = [
@@ -46,7 +46,6 @@ const BUILD_FOUNDATIONS: Feature[] = [
         linkLabel: "Connect a wallet",
         href: "https://gen.pollinations.ai/docs#tag/connect-user-wallets",
         icon: WalletIcon,
-        emphasized: true,
     },
     {
         label: "OAuth 2.1",
@@ -84,6 +83,8 @@ const BUILD_TOOLS: Feature[] = [
         icon: McpIcon,
     },
 ];
+
+const BUILD_FEATURES = [...BUILD_FOUNDATIONS, ...BUILD_TOOLS];
 
 const PUBLISH_FEATURES: Feature[] = [
     {
@@ -127,7 +128,7 @@ function FeatureCard({
 
     return (
         <Surface
-            variant={feature.emphasized ? "card-themed" : "card"}
+            variant="card"
             className="flex h-full flex-col gap-5 p-5 sm:p-6"
         >
             <div className="flex items-center gap-3">
@@ -138,7 +139,7 @@ function FeatureCard({
                     <Chip size="sm" intent="neutral" className="self-start">
                         {feature.label}
                     </Chip>
-                    <Heading as="h3" size="card" className="whitespace-nowrap">
+                    <Heading as="h3" size="card">
                         {feature.title}
                     </Heading>
                 </div>
@@ -161,33 +162,24 @@ function FeatureCard({
 }
 
 function FeatureGroup({
+    eyebrow,
     title,
     description,
     children,
 }: {
+    eyebrow: string;
     title: string;
     description: string;
     children: ReactNode;
 }) {
-    const titleId = `${title.toLowerCase().replace(/\s+/g, "-")}-title`;
-
     return (
-        <section className="flex flex-col gap-4" aria-labelledby={titleId}>
-            <header className="px-1">
-                <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-4">
-                    <Heading
-                        as="h2"
-                        size="section"
-                        id={titleId}
-                        className="shrink-0"
-                    >
-                        {title}
-                    </Heading>
-                    <Text size="sm" tone="muted">
-                        {description}
-                    </Text>
-                </div>
-            </header>
+        <section className="flex flex-col gap-5">
+            <ContentHeader
+                eyebrow={eyebrow}
+                title={title}
+                subtitle={description}
+                className="px-1"
+            />
             {children}
         </section>
     );
@@ -200,13 +192,11 @@ export function DevKit() {
     return (
         <section className="flex flex-col gap-10">
             <FeatureGroup
-                title="Start free"
+                eyebrow="Start free"
+                title="Make your first API call"
                 description="Earn Pollen through Quests, then make your first API call."
             >
-                <Surface
-                    variant="panel"
-                    className="grid items-center gap-6 sm:grid-cols-[auto_1fr] lg:grid-cols-[auto_1fr_auto]"
-                >
+                <div className="grid items-center gap-6 px-1 sm:grid-cols-[auto_1fr] lg:grid-cols-[auto_1fr_auto]">
                     <div className="flex size-12 items-center justify-center rounded-xl bg-theme-bg-active text-theme-text-strong">
                         <SproutIcon className="size-7" />
                     </div>
@@ -237,24 +227,16 @@ export function DevKit() {
                             Get an API key
                         </ExternalLinkButton>
                     </div>
-                </Surface>
+                </div>
             </FeatureGroup>
 
             <FeatureGroup
-                title="Build"
-                description="The foundations and tools for production AI apps."
+                eyebrow="Build"
+                title="Tools for production AI apps"
+                description="Connect users, call every model, and bring the workflow into your existing tools."
             >
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {BUILD_FOUNDATIONS.map((feature) => (
-                        <FeatureCard
-                            key={feature.label}
-                            feature={feature}
-                            modelCount={modelCount}
-                        />
-                    ))}
-                </div>
-                <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {BUILD_TOOLS.map((feature) => (
+                    {BUILD_FEATURES.map((feature) => (
                         <FeatureCard
                             key={feature.label}
                             feature={feature}
@@ -265,7 +247,8 @@ export function DevKit() {
             </FeatureGroup>
 
             <FeatureGroup
-                title="Publish and earn"
+                eyebrow="Publish and earn"
+                title="Turn what you build into a product"
                 description="Turn apps, models and agents into products people can discover and use."
             >
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

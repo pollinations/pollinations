@@ -1,11 +1,11 @@
 import { PolliProvider } from "@pollinations/sdk/react";
-import { ExternalLinkButton } from "@pollinations/ui";
+import { ContentHeader, ExternalLinkButton } from "@pollinations/ui";
 import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
 import { createFileRoute } from "@tanstack/react-router";
 import { ENTER_URL, POLLI_APP_KEY } from "../config";
 import { routeHead } from "../routeMeta";
 import { Playground } from "../ui/play/Playground";
-import { Hero, PageHeader } from "../ui/site/kit";
+import { HeroScene } from "../ui/site/HeroScene";
 
 export const Route = createFileRoute("/play")({
     head: () => routeHead("/play"),
@@ -36,9 +36,8 @@ function SignInAction() {
  * keeps @pollinations/sdk inside this chunk, so every other page stays as
  * light as it was before.
  *
- * The playground's ColorModeToggle is deliberately left out. It sets `.dark`
- * on <html>, which every other page inherits, and the marketing pages aren't
- * designed for dark yet.
+ * Color mode belongs to the shared site chrome, so Play inherits the same
+ * token-driven light/dark choice as every other route.
  */
 function PlayPage() {
     return (
@@ -48,8 +47,8 @@ function PlayPage() {
             permissions={["profile", "usage"]}
         >
             {/* The monitor robot, showing off something it just made. */}
-            <Hero scene="/heroes/play.webp">
-                <PageHeader
+            <HeroScene scene="/heroes/play.webp">
+                <ContentHeader
                     eyebrow="Official models, in the browser"
                     title="Try it out."
                     subtitle={
@@ -63,6 +62,7 @@ function PlayPage() {
                             .
                         </>
                     }
+                    variant="page"
                 />
                 <ExternalLinkButton
                     href={`${ENTER_URL}/keys`}
@@ -71,7 +71,7 @@ function PlayPage() {
                 >
                     Get an API key
                 </ExternalLinkButton>
-            </Hero>
+            </HeroScene>
             <Playground toolbarAction={<SignInAction />} />
         </PolliProvider>
     );

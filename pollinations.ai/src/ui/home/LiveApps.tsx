@@ -1,7 +1,7 @@
+import { ContentHeader, InlineLink, ScrollArea } from "@pollinations/ui";
 import { Link } from "@tanstack/react-router";
 import { useAppShowcase } from "../../data/publicStats";
 import { AppCarousel } from "../apps/AppCarousel";
-import { ArrowLink, ScrollStrip, SectionHeader } from "../site/kit";
 
 /**
  * A wide shelf you skim sideways — the same strip the Apps spotlight uses, so
@@ -19,7 +19,7 @@ export function LiveApps() {
 
     return (
         <section className="flex flex-col gap-5">
-            <SectionHeader
+            <ContentHeader
                 eyebrow="Live now"
                 title={
                     loading || failed
@@ -27,13 +27,18 @@ export function LiveApps() {
                         : `${totalApps} apps built on Pollinations.`
                 }
                 action={
-                    <ArrowLink as={Link} to="/apps">
+                    <InlineLink as={Link} to="/apps" directional>
                         Browse the ecosystem
-                    </ArrowLink>
+                    </InlineLink>
                 }
             />
             {loading ? (
-                <ScrollStrip ariaLabel="Loading apps built on Pollinations">
+                <ScrollArea
+                    axis="x"
+                    tabIndex={0}
+                    aria-label="Loading apps built on Pollinations"
+                    className="flex gap-4 pb-2.5"
+                >
                     {[0, 1, 2].map((i) => (
                         <div
                             key={`skeleton-${i}`}
@@ -41,7 +46,7 @@ export function LiveApps() {
                             className="h-64 w-59 flex-none animate-pulse rounded-2xl bg-theme-bg-subtle"
                         />
                     ))}
-                </ScrollStrip>
+                </ScrollArea>
             ) : failed ? (
                 <p className="rounded-2xl border border-theme-border border-dashed px-5 py-6 text-sm text-theme-text-muted">
                     The app directory couldn’t be loaded right now.

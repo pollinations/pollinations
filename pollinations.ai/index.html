@@ -3,9 +3,26 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <!-- Apply the saved/system color mode before first paint. The shared UI
+         toggle becomes the source of truth after React mounts. -->
+    <script>
+      (() => {
+        try {
+          let mode = localStorage.getItem("polli-color-mode");
+          if (mode !== "light" && mode !== "dark") {
+            mode = matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light";
+          }
+          if (mode === "dark") document.documentElement.classList.add("dark");
+        } catch {
+          /* Ignore unavailable storage or system preference APIs. */
+        }
+      })();
+    </script>
     
-    <!-- Theme & Description -->
-    <meta name="theme-color" content="#E7E1D5" />
+    <!-- Description -->
     <meta name="description" content="Open infrastructure for text, image, audio and video generation, with one wallet and one API." />
     
     <!-- Favicons -->

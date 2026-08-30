@@ -1,5 +1,4 @@
-import { Surface } from "@pollinations/ui";
-import { ActionButton, ArrowLink, SectionHeader } from "../site/kit";
+import { Button, ContentHeader, InlineLink, Surface } from "@pollinations/ui";
 
 const STEPS = [
     "A user signs in to your app with Pollinations, holding Pollen they bought or earned from Quests",
@@ -27,26 +26,26 @@ export function MoneyMoves() {
     return (
         <section className="dark -mx-2 grid grid-cols-[repeat(auto-fit,minmax(min(360px,100%),1fr))] items-center gap-12 rounded-3xl bg-brand-dark px-8 py-14 md:-mx-12 md:px-14">
             <div className="flex flex-col gap-5">
-                <SectionHeader
+                <ContentHeader
                     eyebrow="How the money moves"
                     title={<>Your app doesn&rsquo;t need a budget to launch.</>}
                     subtitle="Most platforms charge you for every user you win. With Pollinations, users spend their own Pollen — the platform credit ($1 ≈ 1 Pollen), bought or earned through Quests. As usage grows, your bill doesn’t; 20% of what they spend comes back to you."
                 />
                 <div className="mt-1 flex flex-wrap items-center gap-5">
-                    {/* `bright`, not `accent` — see the tone table in kit.tsx:
-                        bg-active flips muddy inside `.dark`. */}
-                    <ActionButton
+                    <Button
+                        as="a"
                         href="https://enter.pollinations.ai"
-                        tone="bright"
+                        appearance="raised"
+                        className="bg-brand-accent text-brand-dark"
                     >
                         Start earning
-                    </ActionButton>
-                    <ArrowLink
+                    </Button>
+                    <InlineLink
                         href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md#developer-earnings"
                         className="text-theme-text-strong"
                     >
                         See how the split works
-                    </ArrowLink>
+                    </InlineLink>
                 </div>
             </div>
 

@@ -4,6 +4,7 @@ import {
     ChevronIcon,
     Chip,
     ClockIcon,
+    ContentHeader,
     Dropdown,
     Input,
     MultiSelect,
@@ -27,7 +28,7 @@ import SPOTLIGHT from "../data/spotlight.json";
 import { routeHead } from "../routeMeta";
 import { AppCarousel } from "../ui/apps/AppCarousel";
 import { AppRow } from "../ui/apps/cards";
-import { ActionButton, Hero, PageHeader, SectionHeader } from "../ui/site/kit";
+import { HeroScene } from "../ui/site/HeroScene";
 import {
     APP_CATEGORIES,
     APP_PLATFORMS,
@@ -180,8 +181,8 @@ function AppsPage() {
 
     return (
         <>
-            <Hero scene="/heroes/apps.webp">
-                <PageHeader
+            <HeroScene scene="/heroes/apps.webp">
+                <ContentHeader
                     eyebrow={
                         loading
                             ? "Apps built on Pollinations"
@@ -197,23 +198,28 @@ function AppsPage() {
                             . Browse, try, ship your own.
                         </>
                     }
+                    variant="page"
                 />
                 <div className="flex flex-wrap items-center gap-4">
                     <span className="font-semibold text-sm text-theme-text-strong">
                         Built something with Pollinations?
                     </span>
-                    <ActionButton href="https://github.com/pollinations/pollinations/issues/new?template=APP-SUBMISSION.yml">
+                    <Button
+                        as="a"
+                        href="https://github.com/pollinations/pollinations/issues/new?template=APP-SUBMISSION.yml"
+                        appearance="raised"
+                    >
                         Share your App
-                    </ActionButton>
+                    </Button>
                 </div>
-            </Hero>
+            </HeroScene>
 
             <div className="-mt-5 sm:-mt-8">
                 <AppCarousel apps={spotlight} />
             </div>
 
             <section className="flex flex-col gap-5">
-                <SectionHeader
+                <ContentHeader
                     eyebrow="Directory"
                     title="Browse them all"
                     subtitle="Explore apps built with Pollinations, from creative experiments to tools people use every day."
@@ -374,13 +380,13 @@ function AppsPage() {
                         </div>
                         {filtered.length > visible.length && (
                             <div className="flex flex-col items-center gap-2">
-                                <ActionButton
-                                    as="button"
-                                    tone="plain"
+                                <Button
+                                    appearance="raised"
                                     onClick={() => setShown((n) => n + PAGE)}
+                                    className="bg-surface-opaque"
                                 >
                                     Show more
-                                </ActionButton>
+                                </Button>
                                 <p className="text-sm text-theme-text-muted">
                                     {visible.length} of {filtered.length}
                                 </p>

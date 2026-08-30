@@ -1,4 +1,9 @@
-import type { ComponentPropsWithoutRef, ElementType, ReactNode } from "react";
+import type {
+    ComponentPropsWithoutRef,
+    ElementType,
+    MouseEvent as ReactMouseEvent,
+    ReactNode,
+} from "react";
 import { cn } from "../lib/cn.ts";
 
 type TabButtonOwnProps = {
@@ -63,6 +68,12 @@ const variantClasses = {
     },
 } as const;
 
+const neutralClasses = {
+    active: "polli:bg-theme-bg-active polli:text-theme-text-strong polli:hover:bg-theme-bg-hover polli:hover:text-theme-text-hover",
+    inactive:
+        "polli:bg-theme-bg-subtle polli:text-theme-text-base polli:hover:bg-theme-bg-hover polli:hover:text-theme-text-hover",
+} as const;
+
 export function TabButton<T extends ElementType = "button">({
     as,
     active,
@@ -79,12 +90,21 @@ export function TabButton<T extends ElementType = "button">({
     const Component: ElementType = as || "button";
     const isButton = Component === "button";
     const classes = variantClasses[variant];
+    const handleClick = disabled
+        ? (event: ReactMouseEvent) => {
+              event.preventDefault();
+              event.stopPropagation();
+          }
+        : onClick;
 
     return (
         <Component
             {...rest}
             {...(isButton ? { type: "button", disabled } : {})}
-            onClick={onClick}
+            {...(!isButton && disabled
+                ? { "aria-disabled": true, tabIndex: -1 }
+                : {})}
+            onClick={handleClick}
             aria-label={ariaLabel}
             // aria-pressed is for toggles; a link that navigates announces its
             // selected state with aria-current instead.
@@ -95,11 +115,14 @@ export function TabButton<T extends ElementType = "button">({
                 tabButtonBaseClass,
                 classes.base,
                 intent === "neutral"
-                    ? "polli:bg-theme-bg-subtle polli:text-theme-text-base polli:hover:bg-theme-bg-hover"
+                    ? active
+                        ? neutralClasses.active
+                        : neutralClasses.inactive
                     : active
                       ? classes.active
                       : classes.inactive,
-                disabled && "polli:cursor-not-allowed polli:opacity-50",
+                disabled &&
+                    "polli:pointer-events-none polli:cursor-not-allowed polli:opacity-50",
                 tabButtonSizeClass[size],
                 className,
             )}

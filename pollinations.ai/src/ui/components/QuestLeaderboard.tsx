@@ -1,6 +1,13 @@
+import {
+    Chip,
+    ExternalLinkButton,
+    Heading,
+    Section,
+    StatCard,
+    Surface,
+    Text,
+} from "@pollinations/ui";
 import { useEffect, useState } from "react";
-import { COMMUNITY_PAGE } from "../../copy/content/community";
-import { usePageCopy } from "../../hooks/usePageCopy";
 
 export type QuestLeaderboardEntry = {
     githubLogin: string;
@@ -17,9 +24,48 @@ export type QuestLeaderboardData = {
     };
 };
 
+type QuestLeaderboardState =
+    | { status: "loading" }
+    | { status: "ready"; data: QuestLeaderboardData }
+    | { status: "failed" };
+
 const LEADERBOARD_API = "https://enter.pollinations.ai/api/quests/leaderboard";
 const QUESTS_PAGE_URL = "https://enter.pollinations.ai/quests";
 const VISIBLE_CONTRIBUTORS = 8;
+
+function formatNumber(value: number) {
+    return value.toLocaleString("en-US", { maximumFractionDigits: 2 });
+}
+
+function isLeaderboardData(value: unknown): value is QuestLeaderboardData {
+    if (!value || typeof value !== "object") return false;
+
+    const candidate = value as Partial<QuestLeaderboardData>;
+    return (
+        Array.isArray(candidate.leaderboard) &&
+        candidate.leaderboard.every(
+            (entry) =>
+                typeof entry.githubLogin === "string" &&
+                typeof entry.completedQuests === "number" &&
+                typeof entry.totalPollen === "number",
+        ) &&
+        typeof candidate.totals?.contributors === "number" &&
+        typeof candidate.totals.completedQuests === "number" &&
+        typeof candidate.totals.totalPollen === "number"
+    );
+}
+
+function LeaderboardAction() {
+    return (
+        <ExternalLinkButton
+            href={QUESTS_PAGE_URL}
+            size="sm"
+            appearance="raised"
+        >
+            Browse open quests
+        </ExternalLinkButton>
+    );
+}
 
 /** Pure view exported so the rendered leaderboard can be tested without fetch. */
 export function QuestLeaderboardContent({
@@ -27,143 +73,171 @@ export function QuestLeaderboardContent({
 }: {
     data: QuestLeaderboardData;
 }) {
-    const { copy } = usePageCopy(COMMUNITY_PAGE);
     const visible = data.leaderboard.slice(0, VISIBLE_CONTRIBUTORS);
 
     return (
-        <section className="mb-12" aria-labelledby="quest-leaderboard-heading">
-            <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                    <h2
-                        id="quest-leaderboard-heading"
-                        className="mb-3 border-l-4 border-dark pl-4 font-headline text-2xl font-black uppercase tracking-widest text-dark md:text-3xl"
-                    >
-                        {copy.questLeaderboardTitle}
-                    </h2>
-                    <p className="font-body text-sm leading-relaxed text-dark">
-                        {copy.questLeaderboardDescription}
-                    </p>
-                </div>
-                <a
-                    href={QUESTS_PAGE_URL}
-                    className="w-fit bg-accent-strong px-2 py-1 font-headline text-xs font-black text-dark hover:underline"
-                >
-                    {copy.questLeaderboardCta}
-                </a>
-            </div>
-
+        <Section
+            title="Quest leaderboard"
+            intro="Builders who completed public GitHub Pollen Quests."
+            action={<LeaderboardAction />}
+            framed
+            panelClassName="gap-6"
+        >
             <dl
-                className="mb-4 grid grid-cols-3 gap-2"
-                aria-label={copy.questLeaderboardTotalsLabel}
+                className="grid grid-cols-1 gap-3 min-[440px]:grid-cols-3"
+                aria-label="Quest leaderboard totals"
             >
-                <div className="rounded-sub-card border border-border-subtle bg-white/60 p-3">
-                    <dd className="font-headline text-lg font-black text-dark">
-                        {data.totals.contributors}
-                    </dd>
-                    <dt className="font-body text-xs text-subtle">
-                        {copy.questLeaderboardBuildersLabel}
-                    </dt>
-                </div>
-                <div className="rounded-sub-card border border-border-subtle bg-white/60 p-3">
-                    <dd className="font-headline text-lg font-black text-dark">
-                        {data.totals.completedQuests}
-                    </dd>
-                    <dt className="font-body text-xs text-subtle">
-                        {copy.questLeaderboardCompletedLabel}
-                    </dt>
-                </div>
-                <div className="rounded-sub-card border border-border-subtle bg-white/60 p-3">
-                    <dd className="font-headline text-lg font-black text-dark">
-                        {data.totals.totalPollen}
-                    </dd>
-                    <dt className="font-body text-xs text-subtle">
-                        {copy.questLeaderboardPollenLabel}
-                    </dt>
-                </div>
+                <Surface as="div" variant="card">
+                    <StatCard
+                        label="Builders"
+                        value={formatNumber(data.totals.contributors)}
+                    />
+                </Surface>
+                <Surface as="div" variant="card">
+                    <StatCard
+                        label="Completed quests"
+                        value={formatNumber(data.totals.completedQuests)}
+                    />
+                </Surface>
+                <Surface as="div" variant="card">
+                    <StatCard
+                        label="Quest Pollen"
+                        value={formatNumber(data.totals.totalPollen)}
+                    />
+                </Surface>
             </dl>
 
-            <ol className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                {visible.map((entry, index) => (
-                    <li key={entry.githubLogin}>
-                        <a
-                            href={`https://github.com/${encodeURIComponent(entry.githubLogin)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-3 rounded-sub-card border border-border-subtle bg-white/60 px-3 py-3 transition hover:translate-x-[1px] hover:translate-y-[1px]"
-                        >
-                            <span
-                                aria-hidden="true"
-                                className="w-6 shrink-0 text-center font-headline text-xs font-black text-muted"
+            {visible.length > 0 ? (
+                <ol className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    {visible.map((entry, index) => (
+                        <li key={entry.githubLogin}>
+                            <Surface
+                                as="a"
+                                variant="card"
+                                href={`https://github.com/${encodeURIComponent(entry.githubLogin)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex h-full items-center gap-3 transition-colors hover:bg-theme-bg-subtle"
                             >
-                                {index + 1}
-                            </span>
-                            <img
-                                src={`https://github.com/${encodeURIComponent(entry.githubLogin)}.png?size=64`}
-                                alt=""
-                                className="h-8 w-8 shrink-0 rounded-full"
-                                loading="lazy"
-                                decoding="async"
-                                width={32}
-                                height={32}
-                            />
-                            <span className="min-w-0 flex-1">
-                                <span className="block truncate font-headline text-xs font-black text-dark">
-                                    @{entry.githubLogin}
+                                <Chip
+                                    intent="neutral"
+                                    size="sm"
+                                    aria-label={`Rank ${index + 1}`}
+                                    className="w-8"
+                                >
+                                    {index + 1}
+                                </Chip>
+                                <img
+                                    src={`https://github.com/${encodeURIComponent(entry.githubLogin)}.png?size=64`}
+                                    alt=""
+                                    aria-hidden="true"
+                                    className="size-9 shrink-0 rounded-full bg-theme-bg-subtle"
+                                    loading="lazy"
+                                    decoding="async"
+                                    width={36}
+                                    height={36}
+                                />
+                                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                                    <Heading
+                                        as="span"
+                                        size="card"
+                                        className="truncate"
+                                    >
+                                        @{entry.githubLogin}
+                                    </Heading>
+                                    <Text as="span" size="xs" tone="muted">
+                                        {formatNumber(entry.completedQuests)}{" "}
+                                        completed
+                                    </Text>
                                 </span>
-                                <span className="block font-body text-xs text-subtle">
-                                    {entry.completedQuests}{" "}
-                                    {copy.questLeaderboardRowCompletedLabel}
-                                </span>
-                            </span>
-                            <strong className="shrink-0 font-headline text-xs font-black text-dark">
-                                {entry.totalPollen}{" "}
-                                {copy.questLeaderboardRowPollenLabel}
-                            </strong>
-                        </a>
-                    </li>
-                ))}
-            </ol>
-        </section>
+                                <Text
+                                    as="strong"
+                                    size="xs"
+                                    tone="strong"
+                                    weight="bold"
+                                    className="shrink-0 tabular-nums"
+                                >
+                                    {formatNumber(entry.totalPollen)} Pollen
+                                </Text>
+                            </Surface>
+                        </li>
+                    ))}
+                </ol>
+            ) : (
+                <Text size="sm" tone="muted">
+                    No completed public quests yet.
+                </Text>
+            )}
+        </Section>
     );
 }
 
-/** Fetches the small public aggregate; failure keeps the optional section hidden. */
 export function QuestLeaderboard() {
-    const [data, setData] = useState<QuestLeaderboardData | null>(null);
+    const [state, setState] = useState<QuestLeaderboardState>({
+        status: "loading",
+    });
 
     useEffect(() => {
-        let cancelled = false;
+        const controller = new AbortController();
 
-        fetch(LEADERBOARD_API, { headers: { Accept: "application/json" } })
+        fetch(LEADERBOARD_API, {
+            headers: { Accept: "application/json" },
+            signal: controller.signal,
+        })
             .then(async (response) => {
-                if (!response.ok) return null;
-                return (await response.json()) as QuestLeaderboardData;
+                if (!response.ok) throw new Error("Quest leaderboard failed");
+                return response.json() as Promise<unknown>;
             })
             .then((body) => {
-                if (
-                    !cancelled &&
-                    body &&
-                    Array.isArray(body.leaderboard) &&
-                    body.leaderboard.length > 0
-                ) {
-                    setData(body);
-                }
+                setState(
+                    isLeaderboardData(body)
+                        ? { status: "ready", data: body }
+                        : { status: "failed" },
+                );
             })
-            .catch(() => {
-                // Optional community section: leave it hidden on network failure.
+            .catch((error: unknown) => {
+                if (
+                    error instanceof DOMException &&
+                    error.name === "AbortError"
+                ) {
+                    return;
+                }
+                setState({ status: "failed" });
             });
 
-        return () => {
-            cancelled = true;
-        };
+        return () => controller.abort();
     }, []);
 
-    if (!data) return null;
+    if (state.status === "ready") {
+        return <QuestLeaderboardContent data={state.data} />;
+    }
 
     return (
-        <>
-            <QuestLeaderboardContent data={data} />
-            <hr className="my-12 border-t-2 border-white" />
-        </>
+        <Section
+            title="Quest leaderboard"
+            intro="Builders who completed public GitHub Pollen Quests."
+            action={<LeaderboardAction />}
+            framed
+        >
+            {state.status === "loading" ? (
+                <output
+                    className="grid grid-cols-1 gap-3 sm:grid-cols-2"
+                    aria-label="Loading Quest leaderboard"
+                    aria-busy="true"
+                >
+                    {Array.from({ length: 4 }, (_, index) => (
+                        <div
+                            key={`leaderboard-placeholder-${index + 1}`}
+                            aria-hidden="true"
+                            className="h-16 animate-pulse rounded-xl bg-theme-bg-subtle"
+                        />
+                    ))}
+                </output>
+            ) : (
+                <Text size="sm" tone="muted">
+                    The Quest leaderboard couldn’t be loaded right now.
+                </Text>
+            )}
+        </Section>
     );
 }

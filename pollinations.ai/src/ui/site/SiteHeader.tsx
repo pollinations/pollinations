@@ -100,7 +100,7 @@ export function SiteHeader() {
                 <div
                     className={`${GUTTER} site-header-gutter flex items-center justify-between gap-4 sm:gap-6`}
                 >
-                    <div className="site-home-nav-group flex min-w-0 items-center gap-4">
+                    <div className="site-home-nav-group flex min-w-0 items-center gap-6">
                         <Link
                             to="/"
                             className="site-home-logo group relative hidden items-center rounded-md text-theme-text-strong transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-theme-border min-[700px]:flex motion-reduce:transition-none motion-reduce:hover:translate-y-0"

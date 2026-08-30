@@ -81,7 +81,8 @@ describe("dsh harness", () => {
             "url: https://gen.pollinations.ai/mcp/pollinations",
         );
         expect(patch).toContain(
-            "!!js '`Bearer ${process.env.POLLI_DSH_API_KEY}`'",
+            // biome-ignore lint/suspicious/noTemplateCurlyInString: intentional literal string being tested
+            "!!js 'Bearer ${process.env.POLLI_DSH_API_KEY}'",
         );
         expect(read(skillFile())).toContain("name: polli");
         expect(statSync(settingsFile()).mode & 0o777).toBe(0o600);

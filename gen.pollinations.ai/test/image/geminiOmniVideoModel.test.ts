@@ -161,22 +161,25 @@ describe("geminiOmniVideoModel", () => {
         [1024, 1024, "16:9"],
         [1280, 720, "16:9"],
         [720, 1280, "9:16"],
-    ] as const)("maps explicit %sx%s dimensions to %s", async (width, height, aspectRatio) => {
-        setGoogleEnv();
-        const requests: Array<Record<string, unknown>> = [];
-        mockGeminiOmniFetch(requests);
+    ] as const)(
+        "maps explicit %sx%s dimensions to %s",
+        async (width, height, aspectRatio) => {
+            setGoogleEnv();
+            const requests: Array<Record<string, unknown>> = [];
+            mockGeminiOmniFetch(requests);
 
-        await callGeminiOmniAPI("test", {
-            ...baseParams,
-            width,
-            height,
-            dimensionsExplicit: true,
-        });
+            await callGeminiOmniAPI("test", {
+                ...baseParams,
+                width,
+                height,
+                dimensionsExplicit: true,
+            });
 
-        expect(requests[0]).toMatchObject({
-            response_format: [{ aspect_ratio: aspectRatio }],
-        });
-    });
+            expect(requests[0]).toMatchObject({
+                response_format: [{ aspect_ratio: aspectRatio }],
+            });
+        },
+    );
 
     it("rejects unsupported duration and FPS before calling Vertex", async () => {
         setGoogleEnv();

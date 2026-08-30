@@ -15,6 +15,7 @@
  */
 export class HttpError extends Error {
     status: number;
+    // biome-ignore lint/suspicious/noExplicitAny: generic error details
     details?: any;
     upstreamUrl?: string;
     errorCode?: string;
@@ -22,6 +23,7 @@ export class HttpError extends Error {
     constructor(
         message: string,
         status: number = 500,
+        // biome-ignore lint/suspicious/noExplicitAny: generic error details
         details?: any,
         upstreamUrl?: string,
         errorCode?: string,

@@ -178,12 +178,10 @@ export function useTranslateAndPrettify<T, K extends keyof T>(
     const itemsKey = useMemo(() => JSON.stringify(items), [items]);
 
     // Keep in sync when items change
-    // biome-ignore lint/correctness/useExhaustiveDependencies: itemsKey is a stable serialization
     useEffect(() => {
         setProcessed(items);
     }, [itemsKey]);
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: itemsKey is a stable serialization
     useEffect(() => {
         if (!ENABLED || items.length === 0) return;
 

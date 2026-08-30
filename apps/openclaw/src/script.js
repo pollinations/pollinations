@@ -1,6 +1,6 @@
 const OPENCLAW_APP_KEY = "pk_6qmH5idGyIiJdbgA";
 
-function copyCode(id) {
+function _copyCode(id) {
     const el = document.getElementById(id);
     const inner = el.querySelector(".code-inner") || el;
     const text = inner.textContent.trim();
@@ -13,7 +13,7 @@ function copyCode(id) {
     });
 }
 
-function toggleManual() {
+function _toggleManual() {
     const el = document.getElementById("manual-config");
     el.classList.toggle("open");
     el.previousElementSibling.textContent = el.classList.contains("open")
@@ -21,7 +21,7 @@ function toggleManual() {
         : "Manual JSON config ▾";
 }
 
-function startAuthorize() {
+function _startAuthorize() {
     const redirectUrl = encodeURIComponent(
         window.location.origin + window.location.pathname,
     );
@@ -38,7 +38,7 @@ function startAuthorize() {
     window.location.href = `https://enter.pollinations.ai/authorize?${params}${appKey}`;
 }
 
-function switchTab(tab, btn) {
+function _switchTab(tab, btn) {
     document.querySelectorAll(".tab-btn").forEach((b) => {
         b.classList.remove("active");
     });

@@ -86,10 +86,9 @@ function hpBadge(success) {
                 ? [1, "warn"]
                 : [0, "bad"];
     if (n === 0) return '<i class="skull"></i>';
-    return Array.from(
-        { length: n },
-        () => '<i class="ph ' + cls + '"></i>',
-    ).join("");
+    return Array.from({ length: n }, () => `<i class="ph ${cls}"></i>`).join(
+        "",
+    );
 }
 
 function formatTokens(n) {

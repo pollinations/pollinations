@@ -87,7 +87,7 @@ async function generateResponseWithHistory(
         if (history) {
             transcript = formatHistory(
                 Array.from(history.values()).reverse(),
-                client.user!.id,
+                client.user?.id,
                 config,
             );
             log("Fetched conversation history for channel %s", channelId);
@@ -107,7 +107,7 @@ async function generateResponseWithHistory(
     // Generate response — no system prompt, everything in the user message
     const response = await generateText(apiMessages, config.model);
 
-    if (response && response.trim()) {
+    if (response?.trim()) {
         return cleanResponse(response, config.model);
     }
 
@@ -182,7 +182,7 @@ function formatHistory(
             const tag = isBot ? "bot" : "human";
             const content =
                 msg.content.length > 4000
-                    ? msg.content.slice(0, 4000) + "..."
+                    ? `${msg.content.slice(0, 4000)}...`
                     : msg.content;
             return `[${name}${id}] (${tag}): ${content}`;
         })
@@ -462,9 +462,9 @@ export async function runBot(
             setTimeout(async () => {
                 try {
                     const channelId =
-                        config.globalChannelIds![
+                        config.globalChannelIds?.[
                             Math.floor(
-                                Math.random() * config.globalChannelIds!.length,
+                                Math.random() * config.globalChannelIds?.length,
                             )
                         ];
                     const channel = client.channels.cache.get(channelId);

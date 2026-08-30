@@ -61,7 +61,7 @@ export function TopContributors() {
                     if (!Array.isArray(commits) || commits.length === 0) break;
 
                     for (const c of commits) {
-                        if (!c.author || !c.author.login) continue;
+                        if (!c.author?.login) continue;
 
                         const login = c.author.login;
                         if (

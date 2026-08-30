@@ -85,10 +85,7 @@ function createBotConfig(args: ReturnType<typeof parseArgs>): BotConfig {
     // Get global conversation channels from environment as fallback
     let globalChannels: string[] | undefined;
 
-    if (
-        process.env.CONVERSATION_CHANNELS &&
-        process.env.CONVERSATION_CHANNELS.trim()
-    ) {
+    if (process.env.CONVERSATION_CHANNELS?.trim()) {
         globalChannels = process.env.CONVERSATION_CHANNELS.split(",")
             .map((id) => id.trim())
             .filter(Boolean);

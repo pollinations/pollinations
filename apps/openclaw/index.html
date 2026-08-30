@@ -24,8 +24,7 @@
     <link rel="apple-touch-icon" sizes="167x167" href="./public/apple-touch-icon-167x167.png" />
     <link rel="manifest" href="./public/manifest.json" />
     <meta name="theme-color" content="#d1fae5" />
-
-
+</head>
 
 <body>
 
@@ -36,7 +35,7 @@
                 <span>OpenClaw</span>
             </div>
             <div class="header-links">
-                <a href="#" onclick="startAuthorize(); return false;">Get API Key</a>
+                <button type="button" onclick="startAuthorize()" style="background:none;border:none;color:inherit;text-decoration:underline;cursor:pointer;font:inherit;padding:0;">Get API Key</button>
                 <a href="https://github.com/pollinations/pollinations">GitHub</a>
             </div>
         </div>
@@ -73,7 +72,7 @@
                     </div>
                     <div class="step-content">
                         <div class="step-text">Free credits included — connect to get started:</div>
-                        <button class="connect-btn" id="connect-btn" onclick="startAuthorize()">Connect with
+                        <button type="button" class="connect-btn" id="connect-btn" onclick="startAuthorize()">Connect with
                             pollinations.ai</button>
                         <div class="step-text" style="margin-top:8px; font-size:13px;">or paste your key manually: <a
                                 href="https://enter.pollinations.ai/keys">enter.pollinations.ai</a></div>
@@ -100,21 +99,21 @@
                     </div>
                     <div class="step-content">
                         <div class="tab-bar">
-                            <button class="tab-btn active" onclick="switchTab('install', this)">🧑‍💻 Fresh
+                            <button type="button" class="tab-btn active" onclick="switchTab('install', this)">🧑‍💻 Fresh
                                 Install</button>
-                            <button class="tab-btn" onclick="switchTab('agent', this)">🦞 For Your Agent</button>
+                            <button type="button" class="tab-btn" onclick="switchTab('agent', this)">🦞 For Your Agent</button>
                         </div>
 
                         <div class="tab-panel active" id="tab-install">
                             <div class="step-text">Install OpenClaw, then run the setup script:</div>
-                            <div class="code-block" id="install-cmd"><button class="copy-btn"
+                            <div class="code-block" id="install-cmd"><button type="button" class="copy-btn"
                                     onclick="copyCode('install-cmd')">Copy</button>
                                 <div class="code-inner">curl -fsSL https://openclaw.ai/install.sh | bash</div>
                             </div>
                             <div class="step-text" style="margin-top:16px">Run the <a
                                     href="https://github.com/pollinations/pollinations/blob/main/apps/openclaw/setup-pollinations.sh"
                                     target="_blank" style="font-weight:600; color:var(--text)">setup script</a>:</div>
-                            <div class="code-block" id="setup-cmd"><button class="copy-btn"
+                            <div class="code-block" id="setup-cmd"><button type="button" class="copy-btn"
                                     onclick="copyCode('setup-cmd')">Copy</button>
                                 <div class="code-inner">
     curl -fsSL
@@ -134,12 +133,12 @@
                                         pollinations.ai</em> (preserves existing if already set)</li>
                             </ul>
 
-                            <button class="toggle-btn" onclick="toggleManual()">Manual JSON config ▾</button>
+                            <button type="button" class="toggle-btn" onclick="toggleManual()">Manual JSON config ▾</button>
                             <div class="manual-config" id="manual-config">
                                 <div class="step-text">Or paste this into <code
                                         style="color:var(--accent)">~/.openclaw/openclaw.json</code>:</div>
                                 <div class="code-block" id="json-config" style="font-size:12px;"><button
-                                        class="copy-btn" onclick="copyCode('json-config')">Copy</button>
+                                        type="button" class="copy-btn" onclick="copyCode('json-config')">Copy</button>
                                     <div class="code-inner">{
                                         "env": { "POLLINATIONS_API_KEY": "<span class="key-in-json">YOUR_API_KEY</span>"
                                         },
@@ -215,7 +214,7 @@
                                 provider:</div>
                             <p style="margin-bottom:8px;">Add pollinations.ai as a model provider. Run this command:</p>
                             <div class="code-block" id="agent-msg" style="font-size:12px; line-height:1.6"><button
-                                    class="copy-btn" onclick="copyCode('agent-msg')">Copy</button>
+                                    type="button" class="copy-btn" onclick="copyCode('agent-msg')">Copy</button>
                                 <div class="code-inner" style="white-space:pre-wrap">
         curl -fsSL
         https://raw.githubusercontent.com/pollinations/pollinations/main/apps/openclaw/setup-pollinations.sh
@@ -290,7 +289,7 @@
                         href="https://github.com/isaacgounton" target="_blank">@isaacgounton</a> — gives your agent
                     multi-modal generation.</p>
                 <div class="skill-box">
-                    <div class="code-block" id="skill-cmd"><button class="copy-btn"
+                    <div class="code-block" id="skill-cmd"><button type="button" class="copy-btn"
                             onclick="copyCode('skill-cmd')">Copy</button>
                         <div class="code-inner">/skill install isaacgounton/pollinations</div>
                     </div>

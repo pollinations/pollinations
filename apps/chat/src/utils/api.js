@@ -278,7 +278,7 @@ export const formatMessagesForAPI = (messages, _modelId) => {
 const containsChartRequest = (messages = []) => {
     if (!Array.isArray(messages) || messages.length === 0) return false;
     const last = messages[messages.length - 1];
-    if (!last || last.role !== "user") return false;
+    if (last?.role !== "user") return false;
     const content =
         typeof last.content === "string" ? last.content.toLowerCase() : "";
     return /(chart|graph|plot|visualiz|scatter|line\s+chart|bar\s+chart|pie\s+chart|histogram|trend)/.test(

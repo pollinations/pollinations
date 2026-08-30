@@ -209,9 +209,9 @@
   }
   var src = params.get("src");
   if (src) {
-    try { sessionStorage.setItem("night-src", src); } catch (e) {}
+    try { sessionStorage.setItem("night-src", src); } catch (_e) {}
   } else {
-    try { src = sessionStorage.getItem("night-src"); } catch (e) {}
+    try { src = sessionStorage.getItem("night-src"); } catch (_e) {}
   }
   if (src) document.getElementById("came-from").value = src.slice(0, 40);
 </script>

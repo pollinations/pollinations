@@ -1,0 +1,36 @@
+{
+  "pr_number": 14128,
+  "title": "Add AI Story & Image Studio to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/14128",
+  "merged_at": "2026-08-30T03:10:26Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [AI Story & Image Studio](https://adventuretreehouse.com) to image\n- A minimal interactive studio that generates short stories and matching illustrations simultaneously using Pollinations text and image APIs with seamless PKCE OAuth authentication.\n\nFixes #14114",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Stories grow pictures now",
+    "blurb": "A new little treehouse has appeared in the garden. AI Story & Image Studio writes short adventures and draws their illustrations in the same breath.",
+    "summary": "Added AI Story & Image Studio, an interactive app at adventuretreehouse.com that simultaneously generates short stories and matching illustrations with Pollinations text and image APIs through PKCE OAuth.",
+    "impact": "People can now sign in seamlessly and turn a prompt into a paired story-and-image experience instead of stitching text and visuals together themselves.",
+    "keywords": [
+      "community-app",
+      "storytelling",
+      "image-generation",
+      "text-generation",
+      "OAuth",
+      "PKCE"
+    ],
+    "visual_concept": "Depict a cozy treehouse writing studio where a story scroll becomes illustrated as it unrolls: a retro terminal produces both words and small framed scenes. Polli, wearing a tiny writer's beret, helps a friendly monitor robot hang the new illustrations among vines, flowers, and code-plants, representing seamless text-and-image creation and sign-in.",
+    "image_prompt": "Cozy pixel art scene inside a warm woodland story treehouse: a retro terminal glows lime green (#ecf874) as a scrolling story page transforms into matching tiny illustrated landscape panels, with flowers and code-plants growing around the desk. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny writer's beret and warmly helps a chunky CRT-monitor robot pin pictures to a vine-covered wall. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle pixel-font text: 'STORY + IMAGE'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-30/PR-14128.jpg",
+    "prompt": "Cozy pixel art scene inside a warm woodland story treehouse: a retro terminal glows lime green (#ecf874) as a scrolling story page transforms into matching tiny illustrated landscape panels, with flowers and code-plants growing around the desk. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny writer's beret and warmly helps a chunky CRT-monitor robot pin pictures to a vine-covered wall. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle pixel-font text: 'STORY + IMAGE'."
+  },
+  "generated_at": "2026-08-30T03:11:21.864456+00:00",
+  "app_name": "AI Story & Image Studio",
+  "app_url": "https://adventuretreehouse.com"
+}

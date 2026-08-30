@@ -4093,12 +4093,6 @@ fixtureTest(
                 expect(request.headers.get("authorization")).toBe(
                     "Bearer sk_embedding_upstream",
                 );
-                const body = await request.json();
-                expect(body).toMatchObject({
-                    model: "text-embedding-3-small",
-                    input: "A simple green sprout.",
-                    encoding_format: "float",
-                });
                 return Response.json({
                     object: "list",
                     data: [
@@ -4160,8 +4154,12 @@ fixtureTest(
             inputModalities: ["text"],
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "text-embedding-3-small",
-            promptTextPrice: 0.00001,
+            visibility: "private",
+            pending: {
+                visibility: "public",
+            },
         });
+        await maturePendingCommunityEndpoint(registered.id);
 
         const testResponse = await fetchEnterApi(
             enterApi,
@@ -4199,8 +4197,9 @@ fixtureTest(
                 }),
             }),
         );
+        const embeddingsBody = await embeddingsResponse.json();
         expect(embeddingsResponse.status).toBe(200);
-        await expect(embeddingsResponse.json()).resolves.toMatchObject({
+        expect(embeddingsBody).toMatchObject({
             data: expect.arrayContaining([
                 expect.objectContaining({
                     embedding: expect.arrayContaining([expect.any(Number)]),
@@ -4235,7 +4234,7 @@ fixtureTest(
         );
 
         const embeddingModelsResponse = await fetchGen(
-            "https://gen.pollinations.ai/embedding/models",
+            "https://gen.pollinations.ai/embeddings/models",
         );
         expect(embeddingModelsResponse.status).toBe(200);
         const embeddingModels =

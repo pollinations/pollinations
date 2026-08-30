@@ -161,6 +161,7 @@ polli quests --claimable # only rewards ready to claim
 polli my-models list
 polli my-models models --base-url https://api.example.com/v1 --bearer-token "$UPSTREAM_KEY"
 polli my-models create --name my-model --title "My Model" --base-url https://api.example.com/v1 --bearer-token "$UPSTREAM_KEY" --upstream-model gpt-4.1-mini
+polli my-models create-endpoint-agent --name my-agent --title "My Agent" --base-url https://agent.example.com/v1
 polli my-models create --name my-image --title "My Image" --modality image --image-pricing request --completion-image-price 0.01 --base-url https://api.example.com/v1 --bearer-token "$UPSTREAM_KEY" --upstream-model flux
 polli my-models update <id> --description "Updated description"
 polli my-models update <id> --paid-only            # only accept Paid Pollen; --no-paid-only reverts

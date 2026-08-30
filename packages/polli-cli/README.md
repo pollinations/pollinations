@@ -95,7 +95,7 @@ polli usage --daily          # daily spend
 polli earnings               # developer earnings (default 30 days, --days up to 90)
 polli quests --claimable     # only rewards ready to claim
 polli agents list            # managed prompt agents
-polli my-models list         # invite-only community text, image, and transcription models
+polli my-models list         # community models and endpoint agents
 ```
 
 Manage agents with API-shaped JSON config files plus their callable model name
@@ -106,6 +106,7 @@ polli agents get <id>
 polli agents create --config agent.json --name my-agent --title "My Agent"
 polli agents update <id> --config agent.json
 polli agents delete <id>
+polli my-models create-endpoint-agent --name my-endpoint-agent --title "My Endpoint Agent" --base-url https://agent.example.com/v1
 ```
 
 `agent.json` contains the complete configuration:
@@ -118,7 +119,7 @@ polli agents delete <id>
 }
 ```
 
-Creating an agent also creates its callable model listing. See [Publish an Agent](https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md) for visibility, billing, and lifecycle details.
+Creating a managed agent also creates its callable model listing. Use `my-models create-endpoint-agent` for an agent running on your own server; it receives a short-lived agent run token instead of a stored bearer credential. See [Publish an Agent](https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md) for visibility, billing, and lifecycle details.
 
 `polli auth login` creates a key with all account permissions Polli needs: `profile`, `usage`, and `keys`. Use `account:usage` for narrow read-only account state like usage and quests. Use `account:keys` to manage keys and, where invite-only My Models access is enabled, my-models. Quest claiming remains in the dashboard.
 

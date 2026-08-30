@@ -1,4 +1,5 @@
 import {
+    COMMUNITY_ENDPOINT_TIMEOUT_MS,
     type CommunityEndpointRuntime,
     communityEmbeddingsUrl,
     normalizeCommunityEndpointBearerToken,
@@ -14,8 +15,6 @@ import { CreateEmbeddingResponseSchema } from "@/schemas/embeddings.ts";
 import { badRequest, inputToText, normalizeInputs } from "./input.ts";
 import type { EmbeddingRequest } from "./types.ts";
 
-const REQUEST_TIMEOUT_MS = 120_000;
-
 export async function generateCommunityEmbeddings(
     endpoint: CommunityEndpointRuntime,
     request: EmbeddingRequest,
@@ -25,17 +24,30 @@ export async function generateCommunityEmbeddings(
     if (request.task_type) {
         badRequest("task_type is not supported by community embedding models");
     }
+    if (request.input_type) {
+        badRequest("input_type is not supported by community embedding models");
+    }
 
     const inputs = normalizeInputs(request.input).map(inputToText);
     if (inputs.length === 0) {
         return embeddingResponse(responseModel, [], 0, {});
     }
 
+    const upstreamUrl = communityEmbeddingsUrl(endpoint.baseUrl);
+
+    // Managed agents are text-only, so an embedding endpoint is always
+    // external and carries an upstream bearer credential.
+    if (endpoint.type !== "proxy") {
+        throw new UpstreamError(502, {
+            message: `Community embedding endpoint '${endpoint.modelId}' is a managed agent`,
+            requestUrl: new URL(upstreamUrl),
+        });
+    }
+
     const bearerToken = await decryptSecret(
         endpoint.bearerTokenCiphertext,
         secret,
     );
-    const upstreamUrl = communityEmbeddingsUrl(endpoint.baseUrl);
     let response: Response;
     try {
         response = await fetch(upstreamUrl, {
@@ -55,7 +67,7 @@ export async function generateCommunityEmbeddings(
                     : {}),
             }),
             redirect: "manual",
-            signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+            signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
         });
     } catch (error) {
         throw new UpstreamError(502, {
@@ -102,19 +114,21 @@ export async function generateCommunityEmbeddings(
         );
     }
 
-    if (endpoint.promptTextPrice > 0 && !usage) {
+    if (
+        !usage ||
+        typeof usage.prompt_tokens !== "number" ||
+        usage.prompt_tokens <= 0
+    ) {
         throw invalidResponse(
             upstreamUrl,
-            "Community embedding endpoint did not return token usage required by its pricing",
+            "Community embedding endpoint did not return positive prompt token usage required for billing",
         );
     }
-    const billableUsage: Usage = usage
-        ? { promptTextTokens: usage.prompt_tokens }
-        : { promptTextTokens: 0 };
+    const billableUsage: Usage = { promptTextTokens: usage.prompt_tokens };
     return embeddingResponse(
         responseModel,
         data,
-        usage?.prompt_tokens ?? 0,
+        usage.prompt_tokens,
         billableUsage,
     );
 }

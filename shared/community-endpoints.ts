@@ -24,6 +24,7 @@ export const COMMUNITY_ENDPOINT_CHANGE_DELAY_MS = 12 * 60 * 60 * 1000;
 export const COMMUNITY_ENDPOINT_MODALITIES = [
     "text",
     "image",
+    "transcription",
     "embedding",
 ] as const;
 // How a community image endpoint is billed. "request" charges the fixed
@@ -77,6 +78,7 @@ export type CommunityEndpointModality =
 export const COMMUNITY_ENDPOINT_INPUT_MODALITIES = {
     text: MODEL_INPUT_MODALITIES,
     image: ["text", "image"],
+    transcription: ["audio"],
     embedding: ["text"],
 } as const satisfies Record<
     CommunityEndpointModality,

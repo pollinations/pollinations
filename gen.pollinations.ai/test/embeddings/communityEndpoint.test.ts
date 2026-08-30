@@ -17,6 +17,7 @@ function buildRuntime(
 ): CommunityEndpointRuntime {
     return {
         id: "ep-1",
+        type: "proxy",
         ownerUserId: "user-1",
         modelId: "owner/bge",
         name: "bge",
@@ -37,7 +38,7 @@ function buildRuntime(
             promptTextPrice: 0.00001,
         }),
         ...overrides,
-    } as CommunityEndpointRuntime;
+    } as unknown as CommunityEndpointRuntime;
 }
 
 function upstreamResponse(
@@ -147,6 +148,25 @@ describe("generateCommunityEmbeddings", () => {
         ).rejects.toMatchObject({ status: 400 });
     });
 
+    it("rejects input_type for community embedding models", async () => {
+        const endpoint = buildRuntime();
+        vi.stubGlobal("fetch", vi.fn());
+
+        await expect(
+            generateCommunityEmbeddings(
+                endpoint,
+                {
+                    model: "upstream-model",
+                    encoding_format: "float",
+                    input: "hello",
+                    input_type: "query",
+                },
+                "owner/bge",
+                SECRET,
+            ),
+        ).rejects.toMatchObject({ status: 400 });
+    });
+
     it("returns an empty list without calling upstream for empty input", async () => {
         const endpoint = buildRuntime();
         const fetchMock = vi.fn();
@@ -168,7 +188,7 @@ describe("generateCommunityEmbeddings", () => {
         expect(body.usage.prompt_tokens).toBe(0);
     });
 
-    it("requires token usage for token-priced endpoints", async () => {
+    it("requires positive token usage from the upstream", async () => {
         const endpoint = buildRuntime();
         vi.stubGlobal(
             "fetch",
@@ -184,7 +204,43 @@ describe("generateCommunityEmbeddings", () => {
                             },
                         ],
                         model: "upstream-model",
-                        usage: { prompt_tokens: 1, total_tokens: 2 },
+                        usage: { prompt_tokens: 0, total_tokens: 0 },
+                    }),
+                    { status: 200 },
+                ),
+            ),
+        );
+
+        await expect(
+            generateCommunityEmbeddings(
+                endpoint,
+                {
+                    model: "upstream-model",
+                    encoding_format: "float",
+                    input: "hello",
+                },
+                "owner/bge",
+                SECRET,
+            ),
+        ).rejects.toMatchObject({ status: 502 });
+    });
+
+    it("rejects an upstream that omits token usage entirely", async () => {
+        const endpoint = buildRuntime();
+        vi.stubGlobal(
+            "fetch",
+            vi.fn().mockResolvedValue(
+                new Response(
+                    JSON.stringify({
+                        object: "list",
+                        data: [
+                            {
+                                object: "embedding",
+                                embedding: [0.1, 0.2],
+                                index: 0,
+                            },
+                        ],
+                        model: "upstream-model",
                     }),
                     { status: 200 },
                 ),
@@ -235,7 +291,7 @@ describe("generateCommunityEmbeddings", () => {
         ).toBeNull();
     });
 
-    it("allows free endpoints to return no usage", async () => {
+    it("requires positive token usage even for free endpoints", async () => {
         const endpoint = buildRuntime(
             communityEndpointPrices({ promptTextPrice: 0 }),
         );
@@ -248,17 +304,17 @@ describe("generateCommunityEmbeddings", () => {
                 ),
         );
 
-        const response = await generateCommunityEmbeddings(
-            endpoint,
-            {
-                model: "upstream-model",
-                encoding_format: "float",
-                input: "hello",
-            },
-            "owner/bge",
-            SECRET,
-        );
-
-        expect(response.status).toBe(200);
+        await expect(
+            generateCommunityEmbeddings(
+                endpoint,
+                {
+                    model: "upstream-model",
+                    encoding_format: "float",
+                    input: "hello",
+                },
+                "owner/bge",
+                SECRET,
+            ),
+        ).rejects.toMatchObject({ status: 502 });
     });
 });

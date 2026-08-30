@@ -22,5 +22,5 @@ Gemini task instructions count toward prompt token usage. Cohere requests contai
 Owners can publish their own embedding backend as a community endpoint. A community embedding endpoint proxies `POST /v1/embeddings` to the owner's OpenAI-compatible upstream (`/embeddings` appended to the endpoint base URL) and is listed alongside the hosted models in `/embeddings/models` and `/v1/models`.
 
 - **Input:** text only (`input` as a string or array of strings, up to the embedding batch limit). `task_type`, `input_type`, and multimodal content parts are not supported by community embedding models and are rejected.
-- **Billing:** token-priced endpoints bill `promptTextPrice` per 1M prompt tokens using the upstream `usage.prompt_tokens`; fixed-price endpoints charge `completionTextPrice` once per request. Usage is emitted through the standard `x-usage-*` headers.
-- **Validation:** the upstream response must be a valid OpenAI embeddings object. Token-priced endpoints must return `usage.prompt_tokens` (with `total_tokens` equal to `prompt_tokens`) or the request fails.
+- **Billing:** community embedding models are token-only, billing `promptTextPrice` per 1M prompt tokens using the upstream `usage.prompt_tokens`. Usage is emitted through the standard `x-usage-*` headers.
+- **Validation:** the upstream response must be a valid OpenAI embeddings object and must report a positive `usage.prompt_tokens` (with `total_tokens` equal to `prompt_tokens`), or the request fails.

@@ -11,7 +11,6 @@ import {
     communityEndpointPriceFieldsForModality,
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
-    MAX_COMMUNITY_PRICE_PER_REQUEST,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_UNIT,
     normalizeCommunityEndpointAdvertised,
@@ -302,9 +301,7 @@ export function isValidPriceInput(
     const maximum =
         priceUnit === "image"
             ? MAX_COMMUNITY_PRICE_PER_IMAGE
-            : priceUnit === "request"
-              ? MAX_COMMUNITY_PRICE_PER_REQUEST
-              : MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS;
+            : MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS;
     const minimum =
         priceUnit === "million"
             ? MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS
@@ -314,7 +311,6 @@ export function isValidPriceInput(
         parsed >= 0 &&
         parsed <= maximum &&
         (priceUnit === "image" ||
-            priceUnit === "request" ||
             priceUnit === "second" ||
             parsed === 0 ||
             parsed >= minimum)

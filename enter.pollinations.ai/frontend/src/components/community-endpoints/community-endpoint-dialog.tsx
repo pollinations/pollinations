@@ -8,17 +8,13 @@ import {
     DialogTitle,
     Dropdown,
     DropdownItem,
+    EditableCombobox,
     FieldStack,
     Input,
     ScrollArea,
     TabButton,
 } from "@pollinations/ui";
-import {
-    COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
-    COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH,
-    type CommunityEndpointVisibility,
-    MAX_FALLBACK_TARGETS,
-} from "@shared/community-endpoints.ts";
+import { MAX_FALLBACK_TARGETS } from "@shared/community-endpoints.ts";
 import type { ModelInputModality } from "@shared/registry/registry.ts";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
@@ -424,7 +420,12 @@ export function CommunityEndpointDialog({
                         >
                             <ButtonGroup aria-label="Modality">
                                 {(
-                                    ["text", "image", "transcription", "embedding"] as const
+                                    [
+                                        "text",
+                                        "image",
+                                        "transcription",
+                                        "embedding",
+                                    ] as const
                                 ).map((modality) => (
                                     <TabButton
                                         key={modality}
@@ -545,109 +546,34 @@ export function CommunityEndpointDialog({
                                     </Button>
                                 }
                             >
-                            {modelOptions.length > 0 ? (
-                                <Dropdown
-                                    align="end"
-                                    open={providerModelMenuOpen}
-                                    onOpenChange={setProviderModelMenuOpen}
-                                    className="w-[var(--reference-width)] min-w-0 p-1"
-                                    trigger={(menuOpen) => (
-                                        <div className="relative w-full">
-                                            <Input
-                                                name="community-upstream-id"
-                                                value={form.upstreamModel}
-                                                placeholder={
-                                                    form.modality === "image"
-                                                        ? "gpt-image-2"
-                                                        : form.modality ===
-                                                            "embedding"
-                                                          ? "text-embedding-3-small"
-                                                          : "gpt-4o-mini"
-                                                }
-                                                className="w-full pr-10"
-                                                autoComplete="off"
-                                                autoCapitalize="none"
-                                                spellCheck={false}
-                                                data-lpignore="true"
-                                                data-1p-ignore="true"
-                                                data-bwignore="true"
-                                                onChange={(e) =>
-                                                    updateForm(
-                                                        "upstreamModel",
-                                                        e.target.value,
-                                                    )
-                                                }
-                                            />
-                                            <ChevronIcon
-                                                expanded={menuOpen}
-                                                className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-theme-text-muted transition-transform"
-                                            />
-                                        </div>
-                                    )}
-                                >
-                                    {(close) =>
-                                        visibleModelOptions.length > 0 ? (
-                                            <ScrollArea className="max-h-64">
-                                                <div className="flex flex-col">
-                                                    {visibleModelOptions.map(
-                                                        (model) => (
-                                                            <DropdownItem
-                                                                key={model}
-                                                                className={
-                                                                    form.upstreamModel ===
-                                                                    model
-                                                                        ? "bg-theme-bg-active font-medium text-theme-text-strong"
-                                                                        : undefined
-                                                                }
-                                                                onClick={() => {
-                                                                    updateForm(
-                                                                        "upstreamModel",
-                                                                        model,
-                                                                    );
-                                                                    close();
-                                                                }}
-                                                            >
-                                                                <span className="truncate font-mono">
-                                                                    {model}
-                                                                </span>
-                                                            </DropdownItem>
-                                                        ),
-                                                    )}
-                                                </div>
-                                            </ScrollArea>
-                                        ) : (
-                                            <p className="m-0 px-2 py-2 text-sm text-theme-text-soft">
-                                                No fetched models match.
-                                            </p>
-                                        )
-                                    }
-                                </Dropdown>
-                            ) : (
-                                <Input
+                                <EditableCombobox
                                     name="community-upstream-id"
                                     value={form.upstreamModel}
+                                    options={modelOptions}
                                     placeholder={
                                         form.modality === "image"
                                             ? "gpt-image-2"
-                                            : form.modality === "embedding"
-                                              ? "text-embedding-3-small"
-                                              : "gpt-4o-mini"
+                                            : form.modality === "transcription"
+                                              ? "whisper-1"
+                                              : form.modality === "embedding"
+                                                ? "text-embedding-3-small"
+                                                : "gpt-4o-mini"
                                     }
+                                    align="end"
+                                    open={providerModelMenuOpen}
+                                    onOpenChange={setProviderModelMenuOpen}
+                                    emptyMessage="No fetched models match."
                                     autoComplete="off"
                                     autoCapitalize="none"
                                     spellCheck={false}
                                     data-lpignore="true"
                                     data-1p-ignore="true"
                                     data-bwignore="true"
-                                    onChange={(e) =>
-                                        updateForm(
-                                            "upstreamModel",
-                                            e.target.value,
-                                        )
+                                    onChange={(value) =>
+                                        updateForm("upstreamModel", value)
                                     }
                                 />
-                            )}
-                        </FieldStack>
+                            </FieldStack>
                         )}
                     </div>
 
@@ -776,10 +702,7 @@ export function CommunityEndpointDialog({
                             <div className="flex flex-col gap-2">
                                 {fallbackRows.map((selected, index) => (
                                     <Dropdown
-                                        // Rows are positional: the same slot
-                                        // keeps its identity as targets change.
-                                        // biome-ignore lint/suspicious/noArrayIndexKey: positional by design
-                                        key={index}
+                                        key={selected || "new-fallback"}
                                         align="start"
                                         className="w-[var(--reference-width)] min-w-0 p-1"
                                         trigger={(open) => (

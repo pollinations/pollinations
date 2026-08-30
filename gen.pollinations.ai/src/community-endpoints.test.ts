@@ -4100,14 +4100,18 @@ fixtureTest(
                     encoding_format: "float",
                 });
                 return Response.json({
+                    object: "list",
                     data: [
                         {
+                            object: "embedding",
+                            index: 0,
                             embedding: Array.from({ length: 4 }, () =>
                                 Math.random(),
                             ),
                         },
                     ],
-                    usage: { prompt_tokens: 12 },
+                    model: "text-embedding-3-small",
+                    usage: { prompt_tokens: 12, total_tokens: 12 },
                 });
             }
             if (isBillingFetch(request)) {
@@ -4234,9 +4238,12 @@ fixtureTest(
             "https://gen.pollinations.ai/embedding/models",
         );
         expect(embeddingModelsResponse.status).toBe(200);
-        const embeddingModels = await embeddingModelsResponse.json();
+        const embeddingModels =
+            (await embeddingModelsResponse.json()) as Array<{
+                name: string;
+            }>;
         const listedEmbeddingModel = embeddingModels.find(
-            (model: { name: string }) => model.name === registered.modelId,
+            (model) => model.name === registered.modelId,
         );
         expect(listedEmbeddingModel).toMatchObject({
             name: registered.modelId,

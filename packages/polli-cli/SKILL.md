@@ -43,7 +43,7 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 | List your quests + claim state | `polli quests` (filters: `--open --claimable --claimed --coming-soon`) |
 | Manage prompt agents | `polli agents list` |
 | Manage invite-only community models | `polli my-models list` |
-| Connect a coding harness to Pollinations | `polli harness dsh on` (available adapters: `polli harness --help`) |
+| Connect a coding harness to Pollinations | `polli harness dsh on` or `polli harness pi on` (available adapters: `polli harness --help`) |
 | Machine-readable output | append `--json` to any command |
 
 ## Setup
@@ -207,12 +207,19 @@ polli keys revoke <id>                                             # id comes fr
 ### Connect a coding harness
 ```bash
 polli harness --help                # supported harnesses
-polli harness dsh on                # login if needed, mint key "polli-harness-dsh", write provider + default model
+polli harness dsh on                # login if needed, mint a unique "polli-harness-dsh-*" key, write provider + default model
 polli harness dsh on --model kimi   # any tool-calling text model from `polli models`
 polli harness dsh on --no-mcp       # configure the provider and skill without MCP tools
 polli harness dsh off               # restore the config backed up before "on"
+
+polli harness pi on                 # configure Pi's official ~/.pi/agent directory
+polli harness pi on --model kimi    # choose a live tool-capable text model
+polli harness pi status             # check local config, key, skill, and live model compatibility
+polli harness pi off                # restore or surgically remove Pollinations changes
 ```
 The DSH adapter globally configures the Pollinations provider, hosted Pollinations MCP, and this skill under `$DSH_HOME` (default `~/.dsh`). It stores one dedicated child key in `$DSH_HOME/.env` for the provider and MCP, plus a private snapshot under `~/.pollinations/harnesses/`. Reruns reuse a valid key already in the harness config. Other adapters may use their harness's official plugin or installer instead. Guide: `polli docs` section "Coding Harnesses".
+
+The Pi adapter writes the native JSON files under `~/.pi/agent` (or the explicit `PI_CODING_AGENT_DIR` override): `models.json` for the Pollinations OpenAI-completions provider, `auth.json` for a dedicated uniquely named `polli-harness-pi-*` key, and `settings.json` for the default provider/model. It installs `skills/polli/SKILL.md` only when that path is empty, and never uses YAML or MCP configuration. `status` verifies the exact provider/API endpoint, key validity, selected model against the live compatible catalog, and the Polli skill. `off` restores an untouched setup byte-for-byte or removes only Pollinations-owned entries after user edits.
 
 ### Read API docs
 ```bash

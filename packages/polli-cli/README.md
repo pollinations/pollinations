@@ -135,10 +135,16 @@ polli harness dsh on --model kimi
 polli harness dsh on --no-mcp   # skip MCP tool configuration
 polli harness dsh status
 polli harness dsh off
+polli harness pi on          # Pi → Pollinations (official ~/.pi/agent config)
+polli harness pi on --model kimi
+polli harness pi status
+polli harness pi off
 ```
 
 The DSH adapter configures the Pollinations provider, hosted Pollinations MCP,
-and Polli CLI skill globally under `$DSH_HOME` (default `~/.dsh`).
+and Polli CLI skill globally under `$DSH_HOME` (default `~/.dsh`). Pi uses its
+native JSON files under `~/.pi/agent` (or `PI_CODING_AGENT_DIR`), and does not
+have an MCP option.
 
 See [Coding Harnesses](https://github.com/pollinations/pollinations/blob/main/CODING_HARNESSES.md) for what each profile changes and how to add one.
 

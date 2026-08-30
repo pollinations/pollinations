@@ -1,10 +1,11 @@
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { cn } from "../lib/cn.ts";
-import { Button } from "../primitives/Button.tsx";
+import { Button, type ButtonAppearance } from "../primitives/Button.tsx";
 import { ExternalLinkIcon } from "../primitives/icons/index.tsx";
 
 type ExternalLinkButtonBaseProps = {
     size?: "sm" | "md" | "lg";
+    appearance?: ButtonAppearance;
     className?: string;
     children: ReactNode;
 };
@@ -21,7 +22,7 @@ export type ExternalLinkButtonProps =
     | ExternalLinkButtonNativeButtonProps;
 
 export function ExternalLinkButton(props: ExternalLinkButtonProps) {
-    const { size = "md", className, children } = props;
+    const { size = "md", appearance, className, children } = props;
     const content = (
         <>
             <span>{children}</span>
@@ -38,6 +39,7 @@ export function ExternalLinkButton(props: ExternalLinkButtonProps) {
             target = "_blank",
             rel = target === "_blank" ? "noopener noreferrer" : undefined,
             size: _size,
+            appearance: _appearance,
             className: _className,
             children: _children,
             ...anchorProps
@@ -50,6 +52,7 @@ export function ExternalLinkButton(props: ExternalLinkButtonProps) {
                 target={target}
                 rel={rel}
                 size={size}
+                appearance={appearance}
                 className={cn("polli:gap-2", className)}
                 {...anchorProps}
             >
@@ -61,6 +64,7 @@ export function ExternalLinkButton(props: ExternalLinkButtonProps) {
     const {
         type = "button",
         size: _size,
+        appearance: _appearance,
         className: _className,
         children: _children,
         ...buttonProps
@@ -71,6 +75,7 @@ export function ExternalLinkButton(props: ExternalLinkButtonProps) {
             as="button"
             type={type}
             size={size}
+            appearance={appearance}
             className={cn("polli:gap-2", className)}
             {...buttonProps}
         >

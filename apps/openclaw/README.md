@@ -1,53 +1,55 @@
 # Pollinations x OpenClaw
 
-Use **25+ AI models** as your OpenClaw brain through a single API.
+Use **25+ AI models** as your OpenClaw brain through a single API, with one setup command: `polli harness openclaw on`.
 
-**Kimi K2.5** as default (256K context, vision, tools, reasoning), with DeepSeek, GLM 5, and Claude Haiku as free alternatives. Premium models (Claude Opus, Gemini 3 Pro) available on paid tier.
+**Kimi** as default (256K context, vision, tools, reasoning), with DeepSeek, GLM, and Claude fast models as free alternatives. Premium models (Claude Opus, Gemini Pro) available on the paid tier.
 
 ## Setup
 
-**Step 1:** Get your API key (comes with free credits) at [enter.pollinations.ai](https://enter.pollinations.ai/keys)
-
-**Step 2:** Run the setup script (requires `jq`):
+The one supported path is the Polli CLI harness. It fetches the current tool-calling model catalog, mints a dedicated Pollinations key, and configures OpenClaw for you:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/pollinations/pollinations/main/apps/openclaw/setup-pollinations.sh | bash -s -- YOUR_API_KEY
+npm install -g @pollinations/cli    # if polli is not installed
+polli harness openclaw on           # configure provider + skill
+polli harness openclaw status       # verify
+polli harness openclaw off          # remove only Pollinations-owned changes
 ```
 
-This works for both fresh installs and existing OpenClaw setups. It:
-- Runs `openclaw onboard` for fresh installs (creates config + workspace)
-- Adds the Pollinations provider with 9 models to `~/.openclaw/openclaw.json`
-- Sets Kimi K2.5 as default with DeepSeek + GLM fallbacks
+`on`:
 
-**Step 3 (fresh install only):** Start the gateway:
+- Ensures Polli is logged in (device flow) and creates a dedicated `polli-harness-openclaw` key.
+- Adds the Pollinations provider with live models to `~/.openclaw/openclaw.json` (`models.providers.pollinations`), preserving all other config.
+- Sets `pollinations/kimi` as the primary model (`agents.defaults.model.primary`).
+- Installs the Polli skill (media, usage, quests) under `~/.openclaw/skills/polli/`.
+- Prints the install command if OpenClaw is not installed, and tells you to run `openclaw gateway restart` when it is.
+
+Switch models anytime with `/model pollinations/<name>` or `openclaw models set pollinations/<name>`. Pick the default at setup time with `--model <id>`:
 
 ```bash
-openclaw gateway start
+polli harness openclaw on --model deepseek
 ```
+
+The old `curl | bash` setup script has been replaced by this harness — no competing setup path remains.
 
 ## Available Models
 
-Switch models anytime in chat with `/model pollinations/<name>`:
+The harness fetches models live from `gen.pollinations.ai/v1/models`; the catalog is not hardcoded. Current tool-calling text models include:
 
 | Model | ID | Best for |
 |---|---|---|
-| **Kimi K2.5** (default) | `pollinations/kimi` | Agentic tasks, vision, reasoning (256K context) |
-| **Kimi K2.6** | `pollinations/kimi-k2.6` | Flagship agentic, vision, reasoning (262K context, paid) |
-| **DeepSeek V4 Flash** | `pollinations/deepseek` | Fast reasoning & tool calling (paid) |
-| **DeepSeek V4 Pro** | `pollinations/deepseek-pro` | Advanced reasoning & coding (paid) |
-| **GLM 5.1** | `pollinations/glm` | Coding, reasoning, agentic workflows |
-| **Gemini + Search** | `pollinations/gemini-search` | Web search grounded answers |
-| **Claude Haiku 4.5** | `pollinations/claude-fast` | Fast with good reasoning |
-| **Claude Opus 4.6** | `pollinations/claude-large` | Most intelligent (paid) |
-| **Gemini 3.1 Pro** | `pollinations/gemini-large` | 1M context (paid) |
+| **Kimi** (default) | `pollinations/kimi` | Agentic tasks, vision, reasoning (256K context) |
+| **DeepSeek** | `pollinations/deepseek` | Fast reasoning & tool calling |
+| **GLM** | `pollinations/glm` | Coding, reasoning, agentic workflows |
+| **Claude fast** | `pollinations/claude-fast` | Fast with good reasoning |
 
 ## Manual Setup
 
-If you prefer not to run the script, edit `~/.openclaw/openclaw.json` directly. Add a `pollinations` provider under `models.providers`:
+Prefer to edit by hand? Write the following into `~/.openclaw/openclaw.json` (get a key at [enter.pollinations.ai/keys](https://enter.pollinations.ai/keys)):
 
 ```json
 {
   "models": {
+    "mode": "merge",
     "providers": {
       "pollinations": {
         "baseUrl": "https://gen.pollinations.ai/v1",
@@ -56,45 +58,30 @@ If you prefer not to run the script, edit `~/.openclaw/openclaw.json` directly. 
         "models": [
           {
             "id": "kimi",
-            "name": "Kimi K2.5",
+            "name": "Kimi",
             "reasoning": true,
             "input": ["text", "image"],
             "contextWindow": 256000,
-            "maxTokens": 8192
-          },
-          {
-            "id": "kimi-k2.6",
-            "name": "Kimi K2.6",
-            "reasoning": true,
-            "input": ["text", "image"],
-            "contextWindow": 262000,
-            "maxTokens": 8192
+            "maxTokens": 8192,
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 }
           }
         ]
       }
+    }
+  },
+  "agents": {
+    "defaults": {
+      "model": { "primary": "pollinations/kimi" }
     }
   }
 }
 ```
 
-Then set the default model:
+Then restart the gateway: `openclaw gateway restart`.
 
-```bash
-openclaw models set pollinations/kimi
-openclaw models fallbacks add pollinations/deepseek
-openclaw models fallbacks add pollinations/glm
-openclaw gateway restart
-```
+## Pollinations Skill
 
-See all available models at [gen.pollinations.ai/v1/models](https://gen.pollinations.ai/v1/models).
-
-## Pollinations Skill (Image/Video/Audio)
-
-The [Pollinations skill](https://github.com/pollinations/pollinations/tree/main/apps/openclaw) gives your agent image, video, and audio generation:
-
-```
-/skill install isaacgounton/pollinations
-```
+The Polli skill gives your agent image, video, and audio generation instructions. `polli harness openclaw on` installs it at `~/.openclaw/skills/polli/SKILL.md`; you can also install the community version interactively with `/skill install isaacgounton/pollinations`.
 
 ## Links
 

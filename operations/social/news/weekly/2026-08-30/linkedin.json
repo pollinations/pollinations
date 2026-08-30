@@ -1,0 +1,14 @@
+{
+  "platform": "linkedin",
+  "scope": "weekly",
+  "date": "2026-08-30",
+  "period_start": "2026-08-23",
+  "period_end": "2026-08-29",
+  "generated_at": "2026-08-30T06:27:26.163568+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-08-30/images/linkedin.jpg"
+    }
+  ],
+  "text": "·˚✿ POLLINATIONS WEEKLY ✿˚·\n    vol.34 — tools, maps, receipts\n\n99 PRs merged. The infrastructure now has more doors, better labels, and fewer opportunities for accounting to improvise.\n\n───\n\n1. AGENTS GOT A TOOL SHELF\nHosted MCP registry, plus transcription, FFmpeg, and Exa Search MCPs. Endpoint agents can now register through the API.\n\n2. THE MODEL CATALOG BECAME A MAP\nSearch filters, tool-calling capability, context windows, video limits, canonical slugs, and direct Play links. A wall of model IDs is not a catalog. It is an escape room.\n\n3. VIDEO GOT MORE MATERIAL\nWan 3.0, Gemini Omni 1.1 Flash, Seedance reference-media inputs, and registry-enforced frame limits.\n\n4. COMMUNITY GARDENING\nCreator earnings are available in the SDK and CLI. Community listings now delay visibility/price changes for 12 hours, and merged Quest PR authors get their rewards.\n\n5. BORING SYSTEMS, WORKING\nAtomic API-key budget reservations, overdrawn-wallet blocking, clearer billed prices, and more reliable fallback tracking.\n\nPlus new community apps across image, writing, chat, and video. The repo is public: https://github.com/pollinations/pollinations\n\n#OpenSource #AI #DevTools #MCP"
+}

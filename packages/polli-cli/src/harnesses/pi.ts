@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { createHash } from "node:crypto";
+import { createHash, scryptSync } from "node:crypto";
 import { join, resolve } from "node:path";
 import polliSkill from "../../SKILL.md?raw";
 import { BASE_URL } from "../lib/config.js";
@@ -168,10 +168,19 @@ const readKey = (auth: JsonObject): string | null => {
 const hash = (value: string) =>
     createHash("sha256").update(value).digest("hex");
 
+// Keep the ownership fingerprint deterministic while making API-key guesses
+// expensive if the local metadata is exposed.
+const hashSecret = (value: string) =>
+    scryptSync(value, "polli-pi-auth-v1", 32, {
+        N: 16384,
+        r: 8,
+        p: 1,
+    }).toString("hex");
+
 const managedMetadata = (settings: PiConfig) => ({
     pi: {
         providerHash: hash(JSON.stringify(providerConfig(settings.models))),
-        authHash: hash(
+        authHash: hashSecret(
             JSON.stringify({ type: "api_key", key: settings.apiKey.trim() }),
         ),
         defaultProvider: PROVIDER,
@@ -449,7 +458,8 @@ const stripConfig = (
     );
     const authIsOwned =
         Object.hasOwn(currentAuth, PROVIDER) &&
-        ownership?.authHash === hash(JSON.stringify(currentAuth[PROVIDER]));
+        ownership?.authHash ===
+            hashSecret(JSON.stringify(currentAuth[PROVIDER]));
     if (authIsOwned) {
         if (beforeAuth && Object.hasOwn(beforeAuth, PROVIDER)) {
             currentAuth[PROVIDER] = beforeAuth[PROVIDER];

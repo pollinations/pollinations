@@ -271,6 +271,19 @@ describe("pi harness", () => {
         });
     });
 
+    it("preserves a user-changed Pollinations credential during surgical off", () => {
+        configurePi(ctx, settings);
+
+        const authData = readJson(authFile());
+        (authData.pollinations as Record<string, unknown>).key = "sk_user_key";
+        writeFileSync(authFile(), `${JSON.stringify(authData, null, 2)}\n`);
+
+        expect(disablePi(ctx).outcome).toBe("stripped");
+        expect(readJson(authFile())).toEqual({
+            pollinations: { type: "api_key", key: "sk_user_key" },
+        });
+    });
+
     it("rejects a pre-existing Pollinations slot with a user-owned skill", () => {
         mkdirSync(join(agentDir(), "skills", "polli"), { recursive: true });
         const originalProvider = {

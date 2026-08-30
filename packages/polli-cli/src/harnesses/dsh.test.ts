@@ -81,7 +81,7 @@ describe("dsh harness", () => {
             "url: https://gen.pollinations.ai/mcp/pollinations",
         );
         expect(patch).toContain(
-            "!!js '`Bearer ${process.env.POLLI_DSH_API_KEY}`'",
+            "!!js '`Bearer " + "$" + "{process.env.POLLI_DSH_API_KEY}`'",
         );
         expect(read(skillFile())).toContain("name: polli");
         expect(statSync(settingsFile()).mode & 0o777).toBe(0o600);
@@ -175,6 +175,11 @@ describe("dsh harness", () => {
         expect(result).toMatchObject({ configured: true, mcp: false });
         expect(existsSync(patchFile())).toBe(false);
         expect(existsSync(skillFile())).toBe(true);
+    });
+
+    it("normalizes a secret key before writing the DSH environment", () => {
+        configureDsh(ctx, { ...settings, apiKey: "  sk_test_key  " });
+        expect(parseEnv(read(envFile())).POLLI_DSH_API_KEY).toBe("sk_test_key");
     });
 
     it("keeps one backup per harness home", () => {

@@ -135,10 +135,22 @@ polli harness dsh on --model kimi
 polli harness dsh on --no-mcp   # skip MCP tool configuration
 polli harness dsh status
 polli harness dsh off
+polli harness prime on          # Prime Agent → Pollinations (default model: openai)
+polli harness prime on --model kimi
+polli harness prime status
+polli harness prime off
 ```
 
 The DSH adapter configures the Pollinations provider, hosted Pollinations MCP,
 and Polli CLI skill globally under `$DSH_HOME` (default `~/.dsh`).
+
+The Prime Agent adapter uses `~/.prime/agent` (or
+`PRIME_AGENT_CODING_AGENT_DIR`) and writes only its official `models.json`,
+`settings.json`, and `skills/polli/SKILL.md` files. It discovers live
+tool-capable text models, sets Prime's `defaultProvider`/`defaultModel`, and
+uses a dedicated `polli-harness-prime` key without printing it. If Prime Agent
+is missing, `on` prints the official install command. `off` restores untouched
+files byte-for-byte or removes only Pollinations-owned entries after edits.
 
 See [Coding Harnesses](https://github.com/pollinations/pollinations/blob/main/CODING_HARNESSES.md) for what each profile changes and how to add one.
 

@@ -43,7 +43,7 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 | List your quests + claim state | `polli quests` (filters: `--open --claimable --claimed --coming-soon`) |
 | Manage prompt agents | `polli agents list` |
 | Manage invite-only community models | `polli my-models list` |
-| Connect a coding harness to Pollinations | `polli harness dsh on` (available adapters: `polli harness --help`) |
+| Connect a coding harness to Pollinations | `polli harness dsh on` or `polli harness prime on` (available adapters: `polli harness --help`) |
 | Machine-readable output | append `--json` to any command |
 
 ## Setup
@@ -207,12 +207,19 @@ polli keys revoke <id>                                             # id comes fr
 ### Connect a coding harness
 ```bash
 polli harness --help                # supported harnesses
-polli harness dsh on                # login if needed, mint key "polli-harness-dsh", write provider + default model
+polli harness dsh on                # login if needed, mint a unique "polli-harness-dsh-*" key, write provider + default model
 polli harness dsh on --model kimi   # any tool-calling text model from `polli models`
 polli harness dsh on --no-mcp       # configure the provider and skill without MCP tools
 polli harness dsh off               # restore the config backed up before "on"
+
+polli harness prime on              # connect Prime Agent (default model: openai)
+polli harness prime on --model kimi # choose a live tool-capable text model
+polli harness prime status          # validate provider, defaults, credential, and skill
+polli harness prime off             # restore or surgically remove Pollinations setup
 ```
-The DSH adapter globally configures the Pollinations provider, hosted Pollinations MCP, and this skill under `$DSH_HOME` (default `~/.dsh`). It stores one dedicated child key in `$DSH_HOME/.env` for the provider and MCP, plus a private snapshot under `~/.pollinations/harnesses/`. Reruns reuse a valid key already in the harness config. Other adapters may use their harness's official plugin or installer instead. Guide: `polli docs` section "Coding Harnesses".
+The DSH adapter globally configures the Pollinations provider, hosted Pollinations MCP, and this skill under `$DSH_HOME` (default `~/.dsh`). It stores one dedicated uniquely named child key in `$DSH_HOME/.env` for the provider and MCP, plus a private snapshot under `~/.pollinations/harnesses/`. Reruns reuse a valid key already in the harness config. Other adapters may use their harness's official plugin or installer instead. Guide: `polli docs` section "Coding Harnesses".
+
+The Prime Agent adapter uses Prime's official global config directory (`~/.prime/agent`, or `PRIME_AGENT_CODING_AGENT_DIR` when set). It writes only `models.json`, `settings.json`, and `skills/polli/SKILL.md`, preserving other providers, models, settings, sessions, and memories. It reuses a valid Pollinations harness key or creates a uniquely named `polli-harness-prime-*` child key; the key is never printed. If Prime Agent is not installed, `on` prints the official install command. `status` validates the exact provider/API endpoint, defaults, credential, selected model against the live compatible catalog, and Polli skill. `off` restores unchanged files byte-for-byte and otherwise removes only Pollinations-owned entries.
 
 ### Read API docs
 ```bash

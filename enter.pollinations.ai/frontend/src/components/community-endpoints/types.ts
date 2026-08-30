@@ -11,6 +11,7 @@ import {
     communityEndpointPriceFieldsForModality,
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+    MAX_COMMUNITY_PRICE_PER_SECOND,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_UNIT,
     normalizeCommunityEndpointAdvertised,
@@ -128,6 +129,7 @@ export function publicCommunityFallbackOptions(
         .filter(
             (model) =>
                 model.community &&
+                !model.agent &&
                 (model.type === "text" ||
                     model.type === "image" ||
                     model.type === "embedding"),
@@ -301,7 +303,9 @@ export function isValidPriceInput(
     const maximum =
         priceUnit === "image"
             ? MAX_COMMUNITY_PRICE_PER_IMAGE
-            : MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS;
+            : priceUnit === "second"
+              ? MAX_COMMUNITY_PRICE_PER_SECOND
+              : MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS;
     const minimum =
         priceUnit === "million"
             ? MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS

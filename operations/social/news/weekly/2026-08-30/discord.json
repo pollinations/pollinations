@@ -1,0 +1,14 @@
+{
+  "platform": "discord",
+  "scope": "weekly",
+  "date": "2026-08-30",
+  "period_start": "2026-08-23",
+  "period_end": "2026-08-29",
+  "generated_at": "2026-08-30T06:27:26.163568+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-08-30/images/discord.jpg"
+    }
+  ],
+  "text": "## Weekly Update - 2026-08-30\n\nhey <@&1424461167883194418> — 99 merges this week. The garden acquired several useful new rooms.\n\n### 🧰 Agents & MCP\n- Hosted MCP registry and Gen proxy are live, plus hosted `FFmpeg` and `Exa Search` MCP servers.\n- Agents can be registered through the API, composed together, and MCP now supports audio transcription and multi-input FFmpeg jobs.\n- CLI grew `polli earnings` and `polli harness`, including a DeepSeek Harness profile.\n\n### 🗺️ Models, but navigable\n- Model search filters, tool-calling capability, context windows, and video-duration limits now live in the catalog.\n- Canonical model slugs are announced; open any model straight in Play with `/play?model=<id>`.\n- New arrivals: `GLM-5.3 Flash`, `Wan 3.0`, and `Gemini Omni 1.1 Flash` video.\n\n### 🎬 Inputs & community\n- Seedance now accepts reference media inputs. Video frame limits are enforced from the registry, so fewer interpretive dances from the API.\n- Community model price/visibility changes get a 12-hour delay; self-owned community model calls are free.\n- Model owners can inspect earnings in the SDK, CLI, and linked activity cards. Quest leaderboard accuracy also got a real upgrade.\n\n### 🌱 The unglamorous good stuff\n- Atomic API-key budget reservation, overdrawn-wallet blocking, clearer UTC activity timestamps, and more faithful billing/price reporting.\n\nDocs: https://docs.pollinations.ai • code: https://github.com/pollinations/pollinations"
+}

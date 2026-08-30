@@ -1,3 +1,4 @@
+import { ExternalLinkButton } from "@pollinations/ui";
 import { createFileRoute } from "@tanstack/react-router";
 import { compact, usePlatformStats } from "../data/publicStats";
 import { routeHead } from "../routeMeta";
@@ -6,7 +7,7 @@ import { LiveApps } from "../ui/home/LiveApps";
 import { MoneyMoves } from "../ui/home/MoneyMoves";
 import { OnTheWay } from "../ui/home/OnTheWay";
 import { StartBuilding } from "../ui/home/StartBuilding";
-import { ActionButton, Hero, PageHeader, StatRow } from "../ui/site/kit";
+import { Hero, PageHeader, StatRow } from "../ui/site/kit";
 
 export const Route = createFileRoute("/")({
     head: () => routeHead("/"),
@@ -50,25 +51,26 @@ function HelloPage() {
                     title="Every model, one wallet."
                     subtitle={
                         <>
-                            Text, image, audio and video from a single endpoint,
-                            with{" "}
-                            <strong>a Pollen balance behind every call</strong>.
-                            Pay as you go, let your users bring their own
-                            Pollen, or publish a model and earn every time
-                            it&rsquo;s called.
+                            <strong>Start for free</strong> with Pollen earned
+                            through Quests. Then build across text, image, audio
+                            and video with one API and one wallet.
                         </>
                     }
                 />
                 <div className="flex flex-wrap gap-3">
-                    <ActionButton href="https://enter.pollinations.ai/keys">
-                        Get an API key
-                    </ActionButton>
-                    <ActionButton
+                    <ExternalLinkButton
+                        href="https://enter.pollinations.ai/quests"
+                        appearance="raised"
+                    >
+                        Start for free
+                    </ExternalLinkButton>
+                    <ExternalLinkButton
                         href="https://gen.pollinations.ai/docs"
-                        tone="plain"
+                        appearance="raised"
+                        className="bg-surface-opaque"
                     >
                         Read the docs
-                    </ActionButton>
+                    </ExternalLinkButton>
                 </div>
                 <StatRow stats={stats} />
             </Hero>

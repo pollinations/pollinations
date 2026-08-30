@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
     listCommunityEndpointModels,
+    testCommunityEmbeddingEndpoint,
     testCommunityEndpoint,
     testCommunityImageEndpoint,
     testCommunityTranscriptionEndpoint,
@@ -449,5 +450,61 @@ describe("community endpoint OpenAI service", () => {
                 model: "whisper-1",
             }),
         ).rejects.toThrow("Endpoint did not return OpenAI transcription text");
+    });
+
+    it("probes embedding endpoints and returns billable prompt tokens", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json({
+                    data: [
+                        {
+                            embedding: Array.from({ length: 4 }, () =>
+                                Math.random(),
+                            ),
+                        },
+                    ],
+                    usage: { prompt_tokens: 12, total_tokens: 12 },
+                }),
+            ),
+        );
+
+        await expect(
+            testCommunityEmbeddingEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "Bearer sk_saved_token",
+                model: "text-embedding-3-small",
+            }),
+        ).resolves.toEqual({
+            usage: { prompt_tokens: 12, total_tokens: 12 },
+            billableUsage: { promptTextTokens: 12 },
+        });
+    });
+
+    it("rejects embedding upstreams that omit billable token usage", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json({
+                    data: [
+                        {
+                            embedding: Array.from({ length: 4 }, () =>
+                                Math.random(),
+                            ),
+                        },
+                    ],
+                }),
+            ),
+        );
+
+        await expect(
+            testCommunityEmbeddingEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "Bearer sk_saved_token",
+                model: "text-embedding-3-small",
+            }),
+        ).rejects.toThrow(
+            "Endpoint did not return billable OpenAI token usage",
+        );
     });
 });

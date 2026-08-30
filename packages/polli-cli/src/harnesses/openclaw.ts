@@ -64,10 +64,7 @@ const readKey = (ctx: HarnessContext) => {
 };
 
 const envLine = (key: string) => `${KEY_ENV}=${JSON.stringify(key)}`;
-const keyLine = new RegExp(
-    `^\\s*(?:export\\s+)?${KEY_ENV}\\s*=`,
-    "u",
-);
+const keyLine = new RegExp(`^\\s*(?:export\\s+)?${KEY_ENV}\\s*=`, "u");
 
 const setEnvKey = (ctx: HarnessContext, key: string) => {
     const lines = (readTextIfExists(envPath(ctx)) ?? "").split("\n");

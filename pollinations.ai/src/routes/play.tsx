@@ -1,10 +1,11 @@
 import { PolliProvider } from "@pollinations/sdk/react";
+import { ExternalLinkButton } from "@pollinations/ui";
 import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
 import { createFileRoute } from "@tanstack/react-router";
 import { ENTER_URL, POLLI_APP_KEY } from "../config";
 import { routeHead } from "../routeMeta";
 import { Playground } from "../ui/play/Playground";
-import { ActionButton, Hero, PageHeader } from "../ui/site/kit";
+import { Hero, PageHeader } from "../ui/site/kit";
 
 export const Route = createFileRoute("/play")({
     head: () => routeHead("/play"),
@@ -63,9 +64,13 @@ function PlayPage() {
                         </>
                     }
                 />
-                <ActionButton href={`${ENTER_URL}/keys`}>
+                <ExternalLinkButton
+                    href={`${ENTER_URL}/keys`}
+                    appearance="raised"
+                    className="self-start whitespace-nowrap"
+                >
                     Get an API key
-                </ActionButton>
+                </ExternalLinkButton>
             </Hero>
             <Playground toolbarAction={<SignInAction />} />
         </PolliProvider>

@@ -43,7 +43,7 @@ export const Route = createFileRoute("/community")({
     component: CommunityPage,
 });
 
-/** The three doors in, in the order they cost you effort. */
+/** Four ways to contribute, from publishing work to shaping the platform. */
 const WAYS_IN = [
     {
         label: "Apps",
@@ -75,6 +75,10 @@ const WAYS_IN = [
             {
                 label: "Good first issues",
                 href: `${REPO_URL}/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22`,
+            },
+            {
+                label: "Submit a feature",
+                href: `${REPO_URL}/issues/new?title=Feature%3A%20`,
             },
         ],
     },
@@ -195,7 +199,7 @@ function CommunityParticipation() {
                 />
             </Hero>
 
-            <div className="grid grid-cols-1 gap-5 min-[540px]:grid-cols-2 min-[960px]:grid-cols-4">
+            <div className="grid grid-cols-1 gap-5 min-[540px]:grid-cols-2 xl:grid-cols-4">
                 {ways.map((way) => (
                     <Card
                         key={way.label}
@@ -234,7 +238,7 @@ function CommunityParticipation() {
                                     key={link.label}
                                     href={link.href}
                                     size="sm"
-                                    className="gap-2"
+                                    className="gap-2 whitespace-nowrap"
                                 >
                                     {link.label}
                                     <ArrowRightIcon className="size-3.5" />

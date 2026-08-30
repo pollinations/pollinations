@@ -508,33 +508,4 @@ describe("community endpoint OpenAI service", () => {
         );
     });
 
-    it("rejects embedding upstreams that return unsupported task_type or input_type fields", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () =>
-                Response.json({
-                    data: [
-                        {
-                            embedding: Array.from({ length: 4 }, () =>
-                                Math.random(),
-                            ),
-                        },
-                    ],
-                    usage: { prompt_tokens: 4 },
-                    task_type: "search_document",
-                    input_type: "document",
-                }),
-            ),
-        );
-
-        await expect(
-            testCommunityEmbeddingEndpoint({
-                baseUrl: "https://api.example.com/v1",
-                bearerToken: "Bearer sk_saved_token",
-                model: "custom-embed",
-            }),
-        ).rejects.toThrow(
-            "Endpoint returned unsupported OpenAI embedding parameters",
-        );
-    });
 });

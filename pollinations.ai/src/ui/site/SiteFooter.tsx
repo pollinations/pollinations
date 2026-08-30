@@ -1,5 +1,4 @@
 import {
-    BrandLockup,
     Button,
     ColorModeToggle,
     DiscordIcon,
@@ -10,7 +9,18 @@ import {
     LinkedInIcon,
     XSocialIcon,
 } from "@pollinations/ui";
+import lockupUrl from "@pollinations/ui/brand/lockup-horizontal.svg";
 import { Link } from "@tanstack/react-router";
+import type { CSSProperties } from "react";
+
+const lockupMask = `url('${lockupUrl}') center / contain no-repeat`;
+const LOCKUP_STYLE: CSSProperties = {
+    width: 211,
+    height: 26,
+    backgroundColor: "currentColor",
+    WebkitMask: lockupMask,
+    mask: lockupMask,
+};
 
 const COLUMNS = [
     {
@@ -75,10 +85,10 @@ export function SiteFooter() {
         <footer className="site-shell">
             <div className="site-gutter flex flex-wrap justify-between gap-10 pt-11 pb-14">
                 <div className="flex max-w-xs flex-col gap-4">
-                    <BrandLockup
-                        height={26}
-                        className="text-theme-text-strong"
-                        label=""
+                    <span
+                        aria-hidden="true"
+                        style={LOCKUP_STYLE}
+                        className="block shrink-0 text-theme-text-strong"
                     />
                     <p className="text-sm text-theme-text-muted">
                         <span className="block">

@@ -63,11 +63,6 @@ export {
 } from "./lib/period.ts";
 export { useScrollLock } from "./lib/use-scroll-lock.ts";
 export {
-    BrandLockup,
-    type BrandLockupProps,
-    type BrandVariant,
-} from "./primitives/BrandLockup.tsx";
-export {
     Button,
     type ButtonAppearance,
     type ButtonProps,

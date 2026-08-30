@@ -36,6 +36,10 @@ export function communityTranscriptionSupportedEndpoints(): string[] {
     return ["/v1/audio/transcriptions"];
 }
 
+export function communityEmbeddingSupportedEndpoints(): string[] {
+    return ["/v1/embeddings"];
+}
+
 export function communityImageSupportedEndpoints(
     inputModalities: readonly ModelInputModality[] = ["text"],
 ): string[] {

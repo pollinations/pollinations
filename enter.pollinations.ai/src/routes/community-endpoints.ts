@@ -25,6 +25,7 @@ import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import {
     listCommunityEndpointModels,
+    testCommunityEmbeddingEndpoint,
     testCommunityEndpoint,
     testCommunityImageEndpoint,
     testCommunityTranscriptionEndpoint,
@@ -492,7 +493,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["🧩 Community Models"],
             summary: "Create My Model",
             description:
-                "Register a private or public community text, image, or transcription model. Private is the default. Public models require an allowlisted account and become public after 12 hours. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
+                "Register a private or public community text, image, transcription, or embedding model. Private is the default. Public models require an allowlisted account and become public after 12 hours. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
             responses: {
                 200: {
                     description: "Created community model",
@@ -662,7 +663,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         ? await testCommunityImageEndpoint(input)
                         : input.modality === "transcription"
                           ? await testCommunityTranscriptionEndpoint(input)
-                          : await testCommunityEndpoint(input);
+                          : input.modality === "embedding"
+                            ? await testCommunityEmbeddingEndpoint(input)
+                            : await testCommunityEndpoint(input);
                 return c.json({
                     ok: true,
                     message:
@@ -672,7 +675,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
                                 : "Generation endpoint responded; editing is not supported"
                             : input.modality === "transcription"
                               ? "Endpoint responded with transcription text"
-                              : "Endpoint responded with usage",
+                              : input.modality === "embedding"
+                                ? "Endpoint responded with embedding data"
+                                : "Endpoint responded with usage",
                     ...result,
                 });
             } catch (error) {

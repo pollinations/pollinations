@@ -507,5 +507,4 @@ describe("community endpoint OpenAI service", () => {
             "Endpoint did not return billable OpenAI token usage",
         );
     });
-
 });

@@ -5,7 +5,7 @@ import { Dropdown } from "../../primitives/Dropdown.tsx";
 import { DropdownItem } from "../../primitives/DropdownItem.tsx";
 import {
     KeyIcon,
-    LockIcon,
+    LogInIcon,
     LogOutIcon,
 } from "../../primitives/icons/index.tsx";
 import {
@@ -39,6 +39,9 @@ const defaultLabels: AppUserMenuLabels = {
     topUpAccount: "Top up account",
     logout: "Log out",
 };
+
+const actionTriggerClass =
+    "polli:min-h-14 polli:rounded-xl polli:border-r-4 polli:border-b-4 polli:border-solid polli:border-brand-dark/20 polli:py-2 polli:hover:border-brand-dark/45";
 
 export function AppUserMenu({
     dashboardHref,
@@ -76,8 +79,15 @@ function AppUserMenuContent({
             className="polli:flex polli:shrink-0 polli:justify-end"
         >
             <WhenLoggedOut>
-                <LoginButton className="polli:gap-1.5 polli:whitespace-nowrap">
-                    <LockIcon className="polli:h-4 polli:w-4 polli:shrink-0" />
+                <LoginButton
+                    appearance={triggerVariant === "action" ? "raised" : "pill"}
+                    className={cn(
+                        "polli:gap-1.5 polli:whitespace-nowrap",
+                        triggerVariant === "action" &&
+                            `${actionTriggerClass} polli:px-4`,
+                    )}
+                >
+                    <LogInIcon className="polli:h-4 polli:w-4 polli:shrink-0" />
                     {labels.authorize}
                 </LoginButton>
             </WhenLoggedOut>
@@ -94,7 +104,7 @@ function AppUserMenuContent({
                             className={cn(
                                 "polli-control polli:flex polli:min-w-0 polli:items-center polli:gap-2 polli:bg-theme-bg-active polli:text-theme-text-base polli:transition-colors polli:hover:bg-theme-bg-hover",
                                 triggerVariant === "action"
-                                    ? "polli:min-h-14 polli:rounded-xl polli:border-r-4 polli:border-b-4 polli:border-solid polli:border-brand-dark/20 polli:py-2 polli:pl-2 polli:pr-4 polli:hover:border-brand-dark/45"
+                                    ? `${actionTriggerClass} polli:pl-2 polli:pr-4`
                                     : "polli:rounded-full polli:py-1 polli:pl-1 polli:pr-3",
                             )}
                         >

@@ -107,6 +107,8 @@ export function Authorize() {
 
     const parsedRedirectUrl = redirect_url ? safeParseUrl(redirect_url) : null;
     const redirectHostname = parsedRedirectUrl?.hostname ?? "";
+    const loginDestination =
+        attribution?.appName || redirectHostname || "this app";
 
     const keyPermissions = useKeyPermissions(
         getAuthorizeInitialPermissions({
@@ -648,7 +650,7 @@ export function Authorize() {
                         <>
                             <div className="-mx-6 px-6 py-4 bg-theme-bg-pale border-y border-theme-border">
                                 <p className="mb-2 font-body text-xs font-semibold tracking-wide text-theme-text-soft">
-                                    Continue with Pollinations
+                                    Pollinations account
                                 </p>
                                 <AppAttribution
                                     attribution={attribution}
@@ -713,7 +715,7 @@ export function Authorize() {
                         >
                             {isAuthorizing
                                 ? "Continuing..."
-                                : "Continue with Pollinations"}
+                                : `Continue to ${loginDestination}`}
                         </Button>
                     )}
                 </div>

@@ -175,6 +175,18 @@ describe("openclaw lifecycle", () => {
         });
     });
 
+    it("stays configured when a user changes the models mode", async () => {
+        configureOpenclaw(ctx, settings);
+        const config = readConfig();
+        config.models.mode = "replace";
+        writeFileSync(configFile(), `${JSON.stringify(config, null, 2)}\n`);
+
+        await expect(openclaw.status(ctx)).resolves.toMatchObject({
+            configured: true,
+            model: "kimi",
+        });
+    });
+
     it("trims the secret key once before storing it", () => {
         configureOpenclaw(ctx, { ...settings, apiKey: "  sk_trimmed  " });
         expect(readConfig().env.vars.POLLI_OPENCLAW_API_KEY).toBe("sk_trimmed");

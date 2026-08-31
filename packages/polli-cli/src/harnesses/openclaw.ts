@@ -557,7 +557,6 @@ const localStatus = (ctx: HarnessContext): HarnessResult => {
             provider.api === "openai-completions" &&
             provider.apiKey === KEY_REFERENCE &&
             configuredKey(config) !== null &&
-            models?.mode === "merge" &&
             typeof primary === "string" &&
             primary.startsWith(`${PROVIDER}/`) &&
             providerModels.length > 0 &&

@@ -1,14 +1,34 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { TestEndpointSchema } from "../src/routes/community-endpoints/schemas.ts";
 import {
     listCommunityEndpointModels,
     testCommunityEmbeddingEndpoint,
     testCommunityEndpoint,
     testCommunityImageEndpoint,
     testCommunityTranscriptionEndpoint,
+    testCommunityVideoEndpoint,
 } from "../src/services/community-endpoint-openai.ts";
 
 afterEach(() => {
     vi.unstubAllGlobals();
+});
+
+describe("community endpoint test input", () => {
+    const endpoint = {
+        baseUrl: "https://api.example.com/generate-video",
+        bearerToken: "sk_saved_token",
+    };
+
+    it("does not require an upstream model for video", () => {
+        expect(
+            TestEndpointSchema.safeParse({ ...endpoint, modality: "video" })
+                .success,
+        ).toBe(true);
+    });
+
+    it("requires an upstream model for OpenAI-compatible modalities", () => {
+        expect(TestEndpointSchema.safeParse(endpoint).success).toBe(false);
+    });
 });
 
 describe("community endpoint OpenAI service", () => {
@@ -33,6 +53,42 @@ describe("community endpoint OpenAI service", () => {
         ).resolves.toEqual(["gpt-4.1", "gpt-4.1-mini"]);
 
         expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("preserves endpoint query strings when building the models URL", async () => {
+        const fetchMock = vi.fn(async (input) => {
+            expect(String(input)).toBe(
+                "https://api.example.com/v1/models?api-version=2026-08-01",
+            );
+            return Response.json({ data: [{ id: "gpt-4.1" }] });
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        await expect(
+            listCommunityEndpointModels({
+                baseUrl: "https://api.example.com/v1/?api-version=2026-08-01",
+                bearerToken: "sk_saved_token",
+            }),
+        ).resolves.toEqual(["gpt-4.1"]);
+    });
+
+    it("bounds model-list responses before parsing provider JSON", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(
+                async () =>
+                    new Response("{}", {
+                        headers: { "content-length": "999999999" },
+                    }),
+            ),
+        );
+
+        await expect(
+            listCommunityEndpointModels({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+            }),
+        ).rejects.toThrow("Endpoint response is too large");
     });
 
     it("sends the bearer token when testing an endpoint", async () => {
@@ -301,6 +357,40 @@ describe("community endpoint OpenAI service", () => {
         ).rejects.toThrow(
             "Endpoint responded 401 after we sent Authorization: Authentication required",
         );
+    });
+
+    it("probes the exact synchronous video endpoint", async () => {
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            expect(request.url).toBe(
+                "https://api.example.com/generate-video?version=1",
+            );
+            expect(request.headers.get("authorization")).toBe(
+                "Bearer sk_saved_token",
+            );
+            await expect(request.json()).resolves.toEqual({
+                prompt: "A green sprout gently moving in the breeze.",
+                duration: 5,
+            });
+            return Response.json({
+                data: [
+                    {
+                        b64_json: "AAAAFGZ0eXBpc29tAAAAAGlzb20AAAAJbWRhdAA=",
+                    },
+                ],
+            });
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        await expect(
+            testCommunityVideoEndpoint({
+                baseUrl: "https://api.example.com/generate-video?version=1",
+                bearerToken: "sk_saved_token",
+            }),
+        ).resolves.toEqual({
+            usage: { duration: 5 },
+            billableUsage: { completionVideoSeconds: 5 },
+        });
     });
 
     it("probes transcription endpoints with a sample audio file and OpenAI duration usage", async () => {

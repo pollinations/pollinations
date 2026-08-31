@@ -14,6 +14,7 @@ import {
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MAX_COMMUNITY_PRICE_PER_SECOND,
     MAX_COMMUNITY_PRICE_PER_TOKEN,
+    MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND,
     normalizeCommunityEndpointInputModalities,
     type ProxyListingPayload,
 } from "@shared/community-endpoints.ts";
@@ -39,6 +40,10 @@ const PRICE_LIMIT_BY_UNIT = {
     second: {
         maximum: MAX_COMMUNITY_PRICE_PER_SECOND,
         label: `${MAX_COMMUNITY_PRICE_PER_SECOND} Pollen per second`,
+    },
+    video_second: {
+        maximum: MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND,
+        label: `${MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND} Pollen per second`,
     },
     token: {
         maximum: MAX_COMMUNITY_PRICE_PER_TOKEN,

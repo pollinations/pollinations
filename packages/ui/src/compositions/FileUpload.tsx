@@ -7,6 +7,7 @@ import {
     useState,
 } from "react";
 import { cn } from "../lib/cn.ts";
+import { acquireDocumentFileDropGuard } from "../lib/document-file-drop-guard.ts";
 import { partitionFiles, type RejectedFile } from "../lib/partition-files.ts";
 import { IconButton } from "../primitives/IconButton.tsx";
 import { ImageIcon, PlusIcon, XIcon } from "../primitives/icons/index.tsx";
@@ -181,19 +182,9 @@ export function FileUpload({
     disabled = false,
     className,
 }: FileUploadProps) {
-    // A file dropped anywhere outside the zone otherwise triggers the browser's
-    // default action — navigating the tab to that file (a blank/file page).
-    // Suppress that document-wide so a near-miss drop is a no-op, not a page
-    // takeover. (Same intent as react-dropzone's `preventDropOnDocument`.)
-    useEffect(() => {
-        const prevent = (event: DragEvent) => event.preventDefault();
-        document.addEventListener("dragover", prevent);
-        document.addEventListener("drop", prevent);
-        return () => {
-            document.removeEventListener("dragover", prevent);
-            document.removeEventListener("drop", prevent);
-        };
-    }, []);
+    // A near-miss file drop should not navigate the browser away from the app.
+    // Mounted upload controls share one document-level guard.
+    useEffect(() => acquireDocumentFileDropGuard(document), []);
 
     // Only `disabled` blocks drop handling. At the file limit the browse/add
     // controls disappear, but over-limit drops still flow through partitionFiles

@@ -166,6 +166,30 @@ export function DownloadIcon(props: IconProps) {
     );
 }
 
+export function ExpandIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M8 3H3v5M16 3h5v5M21 16v5h-5M3 16v5h5" />
+        </svg>
+    );
+}
+
+export function PlayIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...props}>
+            <path fill="currentColor" d="M7 4.5v15l12-7.5z" />
+        </svg>
+    );
+}
+
+export function PauseIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...props}>
+            <path fill="currentColor" d="M6 4h4v16H6zM14 4h4v16h-4z" />
+        </svg>
+    );
+}
+
 export function CloudUploadIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>

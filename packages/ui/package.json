@@ -65,7 +65,7 @@
         "build:brand": "mkdir -p dist/brand && cp -R src/brand/. dist/brand/",
         "build:licenses": "mkdir -p dist/licenses && cp src/licenses/*.txt dist/licenses/",
         "build:js": "tsup",
-        "build:css": "tailwindcss -i src/styles/index.css -o dist/styles.css --minify && sed 's|@pollinations/ui/styles.css|./styles.css|' src/styles/app.css > dist/app.css",
+        "build:css": "tailwindcss -i src/styles/index.css -o dist/styles.css --minify && cp src/styles/theme.css dist/theme.css && sed 's|@pollinations/ui/styles.css|./styles.css|' src/styles/app.css > dist/app.css",
         "brand": "node scripts/brand/generate.mjs",
         "prepublishOnly": "npm run build",
         "typecheck": "tsc --noEmit",

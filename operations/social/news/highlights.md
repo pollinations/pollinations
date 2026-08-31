@@ -1,3 +1,6 @@
+- **2026-08-30** – **🚀 Community Embeddings** Community embedding models now work through the standard OpenAI-compatible `/v1/embeddings` endpoint. The vector garden is open.
+- **2026-08-30** – **✨ Floret Media Tools** Floret now discovers the live catalog for text, images, video, audio, transcription, and audio transforms—returning usable public media URLs and streaming tool progress.
+- **2026-08-30** – **🎨 AI Story & Image Studio** Turn a prompt into a short story with matching illustrations in one go. [Try it](https://adventuretreehouse.com) <!-- app -->
 - **2026-08-28** – **🚀 Every model gets a playground** Open any supported Image, Text, Audio, or Video model directly in a preconfigured [Play session](https://pollinations.ai/play).
 - **2026-08-28** – **🎯 The quest garden has rankings** The Community page now shows the top Quest contributors, completed quests, and Pollen earned. Useful motivation, mildly dangerous for your sleep schedule.
 - **2026-08-28** – **🎨 Two frames, then cinema** Generate 3–10 second, audio-synced video clips with `google/gemini-omni-1.1-flash`: text or two keyframes in, 360p to 4K video out. [Check the API docs](https://gen.pollinations.ai/docs).

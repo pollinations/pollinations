@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "36667f68-057d-446b-8773-e3929671c364",
+  "id": "e3d4652a-2e0f-463c-83df-390a49d625e8",
   "prevId": "789d39a2-1c11-4452-befe-e59872c14b1b",
   "tables": {
     "account": {
@@ -764,116 +764,6 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "pollen_gift_adjustment": {
-      "name": "pollen_gift_adjustment",
-      "columns": {
-        "idempotency_key": {
-          "name": "idempotency_key",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "gift_id": {
-          "name": "gift_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "stripe_event_id": {
-          "name": "stripe_event_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "pollen_delta": {
-          "name": "pollen_delta",
-          "type": "real",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "amount_cents": {
-          "name": "amount_cents",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
-        },
-        "reason": {
-          "name": "reason",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(cast((julianday('now') - 2440587.5)*86400000 as integer))"
-        }
-      },
-      "indexes": {
-        "idx_pollen_gift_adjustment_gift_id": {
-          "name": "idx_pollen_gift_adjustment_gift_id",
-          "columns": [
-            "gift_id"
-          ],
-          "isUnique": false
-        },
-        "idx_pollen_gift_adjustment_user_id": {
-          "name": "idx_pollen_gift_adjustment_user_id",
-          "columns": [
-            "user_id"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {
-        "pollen_gift_adjustment_gift_id_pollen_gift_code_id_fk": {
-          "name": "pollen_gift_adjustment_gift_id_pollen_gift_code_id_fk",
-          "tableFrom": "pollen_gift_adjustment",
-          "tableTo": "pollen_gift_code",
-          "columnsFrom": [
-            "gift_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "pollen_gift_adjustment_user_id_user_id_fk": {
-          "name": "pollen_gift_adjustment_user_id_user_id_fk",
-          "tableFrom": "pollen_gift_adjustment",
-          "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
     "pollen_gift_code": {
       "name": "pollen_gift_code",
       "columns": {
@@ -897,42 +787,6 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
-        },
-        "face_value_cents": {
-          "name": "face_value_cents",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "service_fee_cents": {
-          "name": "service_fee_cents",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "paid_amount_cents": {
-          "name": "paid_amount_cents",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "paid_currency": {
-          "name": "paid_currency",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "refunded_amount_cents": {
-          "name": "refunded_amount_cents",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
         },
         "status": {
           "name": "status",
@@ -971,13 +825,6 @@
           "notNull": false,
           "autoincrement": false
         },
-        "stripe_invoice_id": {
-          "name": "stripe_invoice_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "redeemer_user_id": {
           "name": "redeemer_user_id",
           "type": "text",
@@ -1006,13 +853,6 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
-        },
-        "invalidated_at": {
-          "name": "invalidated_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
         }
       },
       "indexes": {
@@ -1037,20 +877,6 @@
           ],
           "isUnique": true
         },
-        "pollen_gift_code_stripe_invoice_id_unique": {
-          "name": "pollen_gift_code_stripe_invoice_id_unique",
-          "columns": [
-            "stripe_invoice_id"
-          ],
-          "isUnique": true
-        },
-        "idx_pollen_gift_code_status": {
-          "name": "idx_pollen_gift_code_status",
-          "columns": [
-            "status"
-          ],
-          "isUnique": false
-        },
         "idx_pollen_gift_code_redeemer_user_id": {
           "name": "idx_pollen_gift_code_redeemer_user_id",
           "columns": [
@@ -1074,6 +900,114 @@
           "onUpdate": "no action"
         }
       },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "pollen_gift_payment_loss": {
+      "name": "pollen_gift_payment_loss",
+      "columns": {
+        "idempotency_key": {
+          "name": "idempotency_key",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "gift_id": {
+          "name": "gift_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "active": {
+          "name": "active",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        },
+        "terminal": {
+          "name": "terminal",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        },
+        "stripe_event_created": {
+          "name": "stripe_event_created",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        }
+      },
+      "indexes": {
+        "idx_pollen_gift_payment_loss_gift_id": {
+          "name": "idx_pollen_gift_payment_loss_gift_id",
+          "columns": [
+            "gift_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "pollen_gift_payment_loss_gift_id_pollen_gift_code_id_fk": {
+          "name": "pollen_gift_payment_loss_gift_id_pollen_gift_code_id_fk",
+          "tableFrom": "pollen_gift_payment_loss",
+          "tableTo": "pollen_gift_code",
+          "columnsFrom": [
+            "gift_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "pollen_gift_rate_limit": {
+      "name": "pollen_gift_rate_limit",
+      "columns": {
+        "key": {
+          "name": "key",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "window_started_at": {
+          "name": "window_started_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "attempts": {
+          "name": "attempts",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}
@@ -1543,6 +1477,54 @@
           "onUpdate": "no action"
         }
       },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "stripe_gift_card_fingerprint_attempt": {
+      "name": "stripe_gift_card_fingerprint_attempt",
+      "columns": {
+        "event_id": {
+          "name": "event_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "buyer_key": {
+          "name": "buyer_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "card_fingerprint": {
+          "name": "card_fingerprint",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(cast((julianday('now') - 2440587.5)*86400000 as integer))"
+        }
+      },
+      "indexes": {
+        "idx_stripe_gift_card_attempt_buyer_created": {
+          "name": "idx_stripe_gift_card_attempt_buyer_created",
+          "columns": [
+            "buyer_key",
+            "created_at"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}

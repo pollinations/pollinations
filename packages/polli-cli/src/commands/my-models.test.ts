@@ -75,4 +75,42 @@ describe("modelBody", () => {
             ),
         ).toMatchObject({ modality: "transcription" });
     });
+
+    it("supports per-second video model registration", () => {
+        expect(
+            modelBody(
+                {
+                    name: "video-provider",
+                    title: "Video Provider",
+                    baseUrl: "https://example.com/v1",
+                    bearerToken: "upstream-token",
+                    modality: "video",
+                    completionVideoPrice: "0.08",
+                },
+                true,
+            ),
+        ).toMatchObject({
+            modality: "video",
+            completionVideoPrice: 0.08,
+        });
+    });
+
+    it("supports embedding model registration", () => {
+        expect(
+            modelBody(
+                {
+                    name: "embedding-provider",
+                    title: "Embedding Provider",
+                    baseUrl: "https://example.com/v1",
+                    bearerToken: "upstream-token",
+                    modality: "embedding",
+                    promptTextPrice: "0.000001",
+                },
+                true,
+            ),
+        ).toMatchObject({
+            modality: "embedding",
+            promptTextPrice: 0.000001,
+        });
+    });
 });

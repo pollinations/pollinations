@@ -58,16 +58,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-08-30** – **🚀 Community Embeddings** Community embedding models now work through the standard OpenAI-compatible `/v1/embeddings` endpoint. The vector garden is open.
+- **2026-08-30** – **✨ Floret Media Tools** Floret now discovers the live catalog for text, images, video, audio, transcription, and audio transforms—returning usable public media URLs and streaming tool progress.
+- **2026-08-30** – **🎨 AI Story & Image Studio** Turn a prompt into a short story with matching illustrations in one go. [Try it](https://adventuretreehouse.com) <!-- app -->
 - **2026-08-28** – **🚀 Every model gets a playground** Open any supported Image, Text, Audio, or Video model directly in a preconfigured [Play session](https://pollinations.ai/play).
 - **2026-08-28** – **🎯 The quest garden has rankings** The Community page now shows the top Quest contributors, completed quests, and Pollen earned. Useful motivation, mildly dangerous for your sleep schedule.
 - **2026-08-28** – **🎨 Two frames, then cinema** Generate 3–10 second, audio-synced video clips with `google/gemini-omni-1.1-flash`: text or two keyframes in, 360p to 4K video out. [Check the API docs](https://gen.pollinations.ai/docs).
 - **2026-08-28** – **✨ Pixels enter the forge** Pixel Forge is a focused image studio for comparing Flux, Dreamshaper, Klein, GPT Image 2, Zimage, and Nanobanana at the dimensions you choose. [Try it](https://b3b41020.github.io/pixel-forge) <!-- app -->
-- **2026-08-27** – **🚀 GLM-5.3 Flash** is now available for paid API users: multimodal input, tool use, mandatory reasoning, and a frankly unnecessary-but-useful 1M-token context window. [Browse models](https://gen.pollinations.ai/v1/models)
+- **2026-08-27** – **🚀 GLM-5.3 Flash** is now available through the API: multimodal input, tool use, mandatory reasoning, and a frankly unnecessary-but-useful 1M-token context window. [Browse models](https://gen.pollinations.ai/v1/models)
 - **2026-08-27** – **🎨 Seedance reference media** lets Seedance 2.0 and 2.5 use public image, video, and audio URLs as creative references for image and video generation. [Check the API docs](https://gen.pollinations.ai/docs)
 - **2026-08-27** – **✨ Model search filters** make the model browser substantially less like rummaging through a seed drawer: search by publisher, modality, capability, ID, and access level.
-- **2026-08-27** – **💡 Canonical model slugs** are available now, including publisher-qualified IDs like `black-forest-labs/flux.1-schnell`; existing model IDs continue working as before.
-- **2026-08-27** – **🎯 Quests reward merged work** — pick up any open POLLEN-QUEST, and the first merged solution earns the fixed Pollen reward. [Contribute](https://github.com/pollinations/pollinations/blob/master/CONTRIBUTING.md)
-- **2026-08-27** – **🌟 Pollinations Studio** puts image, text, audio, and video generation in one browser workspace, using your own Pollinations API key. [Try it](https://sankezhiyyds.github.io/pollinations-app) <!-- app -->
 ---
 
 ## 🌱 Introduction

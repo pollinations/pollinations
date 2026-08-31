@@ -23,6 +23,7 @@ import { ModelListingFields } from "./model-listing-fields.tsx";
 import {
     BASE_TEXT_PRICE_KEYS,
     BASE_TRANSCRIPTION_PRICE_KEYS,
+    BASE_VIDEO_PRICE_KEYS,
     formWithVisiblePrices,
     hasValidVisibleFormPrices,
     PriceGroups,
@@ -151,7 +152,7 @@ export function CommunityEndpointDialog({
         try {
             const response = await apiClient.account["my-models"].models.$post({
                 json: {
-                    baseUrl: form.baseUrl.trim(),
+                    baseUrl: form.baseUrl,
                     ...tokenForRequest,
                 },
             });
@@ -181,10 +182,12 @@ export function CommunityEndpointDialog({
         try {
             const response = await apiClient.account["my-models"].test.$post({
                 json: {
-                    baseUrl: form.baseUrl.trim(),
+                    baseUrl: form.baseUrl,
                     bearerToken: form.bearerToken.trim(),
                     modality: form.modality,
-                    model: form.upstreamModel.trim() || form.name.trim(),
+                    ...(form.modality !== "video" && {
+                        model: form.upstreamModel.trim() || form.name.trim(),
+                    }),
                 },
             });
             if (!response.ok) throw new Error(await readError(response));
@@ -207,9 +210,11 @@ export function CommunityEndpointDialog({
                 throw new Error(
                     form.modality === "image"
                         ? "Endpoint responded, but did not return image data"
-                        : form.modality === "transcription"
-                          ? "Endpoint responded, but did not return transcription text or usage"
-                          : "Endpoint responded, but did not return billable usage",
+                        : form.modality === "video"
+                          ? "Endpoint responded, but did not return playable video"
+                          : form.modality === "transcription"
+                            ? "Endpoint responded, but did not return transcription text or usage"
+                            : "Endpoint responded, but did not return billable usage",
                 );
             }
             setForm((current) => ({
@@ -281,9 +286,11 @@ export function CommunityEndpointDialog({
     const basePriceKeys =
         form.modality === "image"
             ? (["completionImagePrice"] as const)
-            : form.modality === "transcription"
-              ? BASE_TRANSCRIPTION_PRICE_KEYS
-              : BASE_TEXT_PRICE_KEYS;
+            : form.modality === "video"
+              ? BASE_VIDEO_PRICE_KEYS
+              : form.modality === "transcription"
+                ? BASE_TRANSCRIPTION_PRICE_KEYS
+                : BASE_TEXT_PRICE_KEYS;
     const visiblePriceKeys = new Set(
         isShared
             ? visiblePriceFieldKeys(savedPriceKeys, returnedFields, [
@@ -420,7 +427,13 @@ export function CommunityEndpointDialog({
                         >
                             <ButtonGroup aria-label="Modality">
                                 {(
-                                    ["text", "image", "transcription"] as const
+                                    [
+                                        "text",
+                                        "image",
+                                        "video",
+                                        "transcription",
+                                        "embedding",
+                                    ] as const
                                 ).map((modality) => (
                                     <TabButton
                                         key={modality}
@@ -474,8 +487,16 @@ export function CommunityEndpointDialog({
 
                     <div className="grid gap-4 sm:grid-cols-2">
                         <FieldStack
-                            label="Endpoint URL"
-                            helper="OpenAI-compatible /v1 base URL, or full chat/image/edit/transcription URL."
+                            label={
+                                form.modality === "video"
+                                    ? "Video endpoint URL"
+                                    : "Endpoint URL"
+                            }
+                            helper={
+                                form.modality === "video"
+                                    ? "The exact URL Pollinations calls to generate a video."
+                                    : "OpenAI-compatible /v1 base URL, or full chat/image/edit/transcription URL."
+                            }
                             alignLabelRow
                         >
                             <Input
@@ -483,7 +504,11 @@ export function CommunityEndpointDialog({
                                 type="url"
                                 inputMode="url"
                                 value={form.baseUrl}
-                                placeholder="https://api.example.com/v1"
+                                placeholder={
+                                    form.modality === "video"
+                                        ? "https://api.example.com/generate-video"
+                                        : "https://api.example.com/v1"
+                                }
                                 autoComplete="off"
                                 autoCapitalize="none"
                                 spellCheck={false}
@@ -493,7 +518,7 @@ export function CommunityEndpointDialog({
                                 }
                             />
                         </FieldStack>
-                        {isEndpointAgent ? (
+                        {isEndpointAgent && (
                             <FieldStack
                                 label="Agent model ID"
                                 helper="Model ID sent to the endpoint with each request."
@@ -514,7 +539,8 @@ export function CommunityEndpointDialog({
                                     }
                                 />
                             </FieldStack>
-                        ) : (
+                        )}
+                        {!isEndpointAgent && form.modality !== "video" && (
                             <FieldStack
                                 label="Provider model ID"
                                 helper={providerModelHelper(
@@ -550,7 +576,9 @@ export function CommunityEndpointDialog({
                                             ? "gpt-image-2"
                                             : form.modality === "transcription"
                                               ? "whisper-1"
-                                              : "gpt-4o-mini"
+                                              : form.modality === "embedding"
+                                                ? "text-embedding-3-small"
+                                                : "gpt-4o-mini"
                                     }
                                     align="end"
                                     open={providerModelMenuOpen}

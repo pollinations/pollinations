@@ -1,0 +1,33 @@
+{
+  "pr_number": 14221,
+  "title": "fix: show queued community model changes",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14221",
+  "merged_at": "2026-08-31T23:17:44Z",
+  "labels": [],
+  "pr_body_excerpt": "- Replaces the hover-only queued chip with visible effective visibility, access, pricing, and activation time\n- Warns publishers before saving as Private cancels a queued change and restarts the publication wait\n- Keeps the UI logic local without test-only exports or helper abstractions\n\nFixes #14006",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The queue grows windows",
+    "blurb": "Queued community model changes no longer hide in a hover chip like a shy little beetle. Publishers can now see what is scheduled before the garden gate opens.",
+    "summary": "Community endpoint cards now visibly show queued effective visibility, access, pricing, and activation time, while the editor warns that saving as Private cancels the queued update and restarts its publication wait.",
+    "impact": "Publishers can verify exactly how and when a pending community model change will take effect, with a clear warning before replacing that queued change by saving privately.",
+    "keywords": [
+      "community-models",
+      "endpoint-settings",
+      "publication-queue",
+      "pricing",
+      "frontend"
+    ],
+    "visual_concept": "A cozy community-model publishing board shows a clear queued-change card with tiny visibility, access, price-tag, and clock icons instead of a hidden hover hint. Polli, wearing a tiny publisher visor and holding a clipboard, points at the schedule while a small code-plant waits beside a garden gate; include a gentle warning sign near a Private button to represent restarting the publication wait.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel bee mascot with a yellow body, dark brown stripes, pink rectangular blush, light blue wings, and a tiny publisher visor, reviewing a visible queued community-model card on a retro terminal; the card has simple pixel icons for access, a price tag, and a clock, while a code-plant waits beside a garden gate and a small warm warning sign sits by a \"PRIVATE\" button. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-31/PR-14221.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel bee mascot with a yellow body, dark brown stripes, pink rectangular blush, light blue wings, and a tiny publisher visor, reviewing a visible queued community-model card on a retro terminal; the card has simple pixel icons for access, a price tag, and a clock, while a code-plant waits beside a garden gate and a small warm warning sign sits by a \"PRIVATE\" button. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-31T23:18:39.325596+00:00"
+}

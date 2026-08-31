@@ -19,7 +19,7 @@ SET permissions = json_set(
             SELECT
                 CASE
                     WHEN model.type = 'text'
-                      AND model.value IN ('gpt-realtime-2', 'gpt-realtime-2.1')
+                      AND model.value IN ('gpt-realtime-2', 'openai/gpt-realtime-2', 'gpt-realtime-2.1')
                         THEN 'gpt-realtime-2.1'
                     ELSE model.value
                 END AS model_id,
@@ -27,25 +27,26 @@ SET permissions = json_set(
             FROM json_each(apikey.permissions, '$.models') AS model
             WHERE NOT (
                 model.type = 'text'
-                AND model.value IN ('gpt-realtime-2', 'gpt-realtime-2.1')
+                AND model.value IN ('gpt-realtime-2', 'openai/gpt-realtime-2', 'gpt-realtime-2.1')
                 AND EXISTS (
                     SELECT 1
                     FROM json_each(apikey.permissions, '$.models') AS earlier
                     WHERE CAST(earlier.key AS integer) < CAST(model.key AS integer)
                       AND earlier.type = 'text'
-                      AND earlier.value IN ('gpt-realtime-2', 'gpt-realtime-2.1')
+                      AND earlier.value IN ('gpt-realtime-2', 'openai/gpt-realtime-2', 'gpt-realtime-2.1')
                 )
             )
         )
     ))
 )
 WHERE CASE
-    WHEN instr(permissions, '"gpt-realtime-2"') = 0 THEN 0
+    WHEN instr(permissions, 'gpt-realtime-2') = 0 THEN 0
     WHEN NOT json_valid(permissions) THEN 0
     WHEN json_type(permissions, '$.models') != 'array' THEN 0
     ELSE EXISTS (
         SELECT 1
         FROM json_each(permissions, '$.models') AS model
-        WHERE model.type = 'text' AND model.value = 'gpt-realtime-2'
+        WHERE model.type = 'text'
+          AND model.value IN ('gpt-realtime-2', 'openai/gpt-realtime-2')
     )
 END;

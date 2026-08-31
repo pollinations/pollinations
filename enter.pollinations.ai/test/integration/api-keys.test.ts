@@ -910,6 +910,7 @@ describe("API Key Management", () => {
                     "flux",
                     "nanobanana2",
                     "gpt-realtime-2",
+                    "openai/gpt-realtime-2",
                     "retired-model",
                 ],
             });

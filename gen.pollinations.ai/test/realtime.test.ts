@@ -1386,6 +1386,7 @@ test("does not retry a partially completed realtime deduction", async () => {
 
 test.each([
     "gpt-realtime-2",
+    "openai/gpt-realtime-2",
     "gpt-realtime-2.1",
 ] as const)("bills %s cached image tokens at $0.50/M", async (model) => {
     const session = await openPaidRealtimeSession({
@@ -1661,7 +1662,11 @@ test("includes realtime model in OpenAI-compatible model discovery", async ({
     expect(
         richModels.find((model) => model.name === "gpt-realtime-2.1"),
     ).toMatchObject({
-        aliases: ["openai/gpt-realtime-2.1", "gpt-realtime-2"],
+        aliases: [
+            "openai/gpt-realtime-2.1",
+            "gpt-realtime-2",
+            "openai/gpt-realtime-2",
+        ],
     });
     expect(scribeRealtime).toMatchObject({
         aliases: ["elevenlabs/scribe-v2-realtime"],

@@ -1,0 +1,34 @@
+{
+  "pr_number": 14189,
+  "title": "refactor: make ModelInfo the catalog contract",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14189",
+  "merged_at": "2026-08-31T12:29:44Z",
+  "labels": [],
+  "pr_body_excerpt": "- Document every detailed model-list response with `ModelInfoSchema`\n- Reuse one list schema across model categories\n- Derive the dashboard catalog type from `Partial<ModelInfo>`\n- Fix the documented `output_modalities` field name\n\nTests: Gen and Enter typechecks; OpenAPI, catalog, and pricing tests",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "One catalog, fewer ghosts",
+    "blurb": "The model catalog stopped carrying several nearly identical maps of the same garden. Dashboard and API docs now grow from the same ModelInfo seed.",
+    "summary": "Standardized detailed model-list responses on ModelInfoSchema, reused one schema across model categories, derived the dashboard catalog from Partial<ModelInfo>, and corrected the documented output_modalities field name.",
+    "impact": "Developers and dashboard users get a more consistent model catalog, with API documentation and frontend model metadata describing the same fields.",
+    "keywords": [
+      "model-catalog",
+      "ModelInfo",
+      "OpenAPI",
+      "dashboard",
+      "output_modalities",
+      "types"
+    ],
+    "visual_concept": "Polli tends a single well-labeled model catalog plant whose branches feed both a retro API terminal and a dashboard CRT, representing one shared ModelInfo contract. Small signs on the branches read \"API\", \"Dashboard\", and \"output_modalities\", with the monitor robot happily comparing matching catalog cards.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing tiny librarian glasses as she waters one lime green (#ecf874) code-plant labeled \"ModelInfo\"; its neat branches feed a retro API terminal and a CRT dashboard showing matching model cards, while a cheerful monitor robot holds a corrected \"output_modalities\" label. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, pixel flowers and vines, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-31/PR-14189.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing tiny librarian glasses as she waters one lime green (#ecf874) code-plant labeled \"ModelInfo\"; its neat branches feed a retro API terminal and a CRT dashboard showing matching model cards, while a cheerful monitor robot holds a corrected \"output_modalities\" label. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, pixel flowers and vines, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-08-31T12:30:48.417730+00:00"
+}

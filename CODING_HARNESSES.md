@@ -2,7 +2,7 @@
 
 Use `polli harness` to connect a supported coding harness to Pollinations. It handles Polli login, a dedicated API key, model setup, and any Pollinations capabilities supported by that harness.
 
-> **Available now:** DeepSeek Harness is currently the only integrated `polli harness` profile. OpenCode, Pi, Prime Agent, and OpenClaw are coming soon.
+> **Available now:** DeepSeek Harness and OpenClaw have integrated `polli harness` profiles. OpenCode, Pi, and Prime Agent are coming soon.
 
 ## Use a harness
 
@@ -29,7 +29,7 @@ If Polli is not installed yet, run the first setup through `npx @pollinations/cl
 | [OpenCode](https://opencode.ai) | Coming soon | Will use the existing [Pollinations OpenCode plugin](https://github.com/fkom13/opencode-pollinations-plugin) for models, media tools, usage, and quests. |
 | [Pi](https://github.com/earendil-works/pi) | Coming soon | Will use its native provider support and the Polli skill; Pi does not include built-in MCP support. |
 | [Prime Agent](https://github.com/PrimeIntellect-ai/prime-agent) | Coming soon | Will add Pollinations while preserving the agent's memories, sessions, and skills. |
-| [OpenClaw](https://github.com/openclaw/openclaw) | Coming soon | Will bring the [existing Pollinations setup](./apps/openclaw/README.md) into the shared `polli harness` workflow. |
+| [OpenClaw](https://github.com/openclaw/openclaw) | **Available now** — `polli harness openclaw on` | Adds the Pollinations OpenAI-compatible provider, live tool-capable models, environment-backed key, and default model. |
 
 ## DeepSeek Harness
 

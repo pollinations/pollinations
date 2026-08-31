@@ -211,8 +211,16 @@ polli harness dsh on                # login if needed, mint key "polli-harness-d
 polli harness dsh on --model kimi   # any tool-calling text model from `polli models`
 polli harness dsh on --no-mcp       # configure the provider and skill without MCP tools
 polli harness dsh off               # restore the config backed up before "on"
+polli harness openclaw on           # configure OpenClaw with live tool models
+polli harness openclaw status
+polli harness openclaw off
 ```
 The DSH adapter globally configures the Pollinations provider, hosted Pollinations MCP, and this skill under `$DSH_HOME` (default `~/.dsh`). It stores one dedicated child key in `$DSH_HOME/.env` for the provider and MCP, plus a private snapshot under `~/.pollinations/harnesses/`. Reruns reuse a valid key already in the harness config. Other adapters may use their harness's official plugin or installer instead. Guide: `polli docs` section "Coding Harnesses".
+
+OpenClaw uses `~/.openclaw/openclaw.json` by default. `OPENCLAW_CONFIG_PATH`
+overrides the file; otherwise `OPENCLAW_STATE_DIR` and then `OPENCLAW_HOME`
+select its state location. The key is stored in
+`env.vars.POLLI_OPENCLAW_API_KEY` and referenced as `${POLLI_OPENCLAW_API_KEY}`.
 
 ### Read API docs
 ```bash

@@ -2,35 +2,53 @@ import { gen } from "../lib/api.js";
 import type { HarnessModel } from "./types.js";
 
 interface CatalogModel {
-    id: string;
+    id?: unknown;
     input_modalities?: string[];
     output_modalities?: string[];
     tools?: boolean;
     context_length?: number;
     agent?: unknown;
+    supported_endpoints?: string[];
 }
 
+export const isValidHarnessModelId = (id: unknown): id is string =>
+    typeof id === "string" &&
+    id.length > 0 &&
+    id.trim() === id &&
+    !/[\s\p{Cc}]/u.test(id);
+
 /**
- * First-party text models with tool calling — what an agentic harness can
- * drive. Community models (`owner/name`) and published agents are left out:
- * they come and go, and they would triple the list.
+ * Text models with tool calling — what an agentic harness can drive. The
+ * catalog metadata, rather than a hardcoded allowlist, is authoritative.
  */
-export const fetchHarnessModels = async (): Promise<HarnessModel[]> => {
-    const { data } = await gen<{ data: CatalogModel[] }>("/v1/models");
+export const fetchHarnessModels = async (
+    apiKey?: string,
+): Promise<HarnessModel[]> => {
+    const { data } = await gen<{ data: CatalogModel[] }>("/v1/models", {
+        ...(apiKey ? { apiKey } : {}),
+    });
     return data
         .filter(
             (m) =>
+                isValidHarnessModelId(m.id) &&
                 m.tools === true &&
-                m.output_modalities?.includes("text") &&
-                m.context_length &&
-                !m.agent &&
-                !m.id.includes("/"),
+                Array.isArray(m.input_modalities) &&
+                m.input_modalities.includes("text") &&
+                m.input_modalities.every(
+                    (modality) => modality === "text" || modality === "image",
+                ) &&
+                Array.isArray(m.output_modalities) &&
+                m.output_modalities.includes("text") &&
+                Array.isArray(m.supported_endpoints) &&
+                m.supported_endpoints.includes("/v1/chat/completions") &&
+                typeof m.context_length === "number" &&
+                Number.isFinite(m.context_length) &&
+                m.context_length > 0 &&
+                (m.agent === undefined || m.agent === null),
         )
         .map((m) => ({
-            id: m.id,
+            id: m.id as string,
             contextWindow: m.context_length as number,
-            input: (m.input_modalities ?? ["text"]).filter(
-                (modality) => modality === "text" || modality === "image",
-            ),
+            input: m.input_modalities as string[],
         }));
 };

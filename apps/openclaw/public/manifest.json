@@ -1,7 +1,7 @@
 {
   "name": "Pollinations × OpenClaw",
   "short_name": "openclaw",
-  "description": "Use 25+ AI models as your OpenClaw brain through Pollinations' unified API",
+  "description": "Connect OpenClaw to the live Pollinations model catalog through the Polli CLI",
   "start_url": "/",
   "display": "standalone",
   "theme_color": "#a3e635",

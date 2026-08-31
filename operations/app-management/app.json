@@ -10879,7 +10879,7 @@
     "emoji": "🦞",
     "name": "Pollinations × OpenClaw",
     "url": "https://openclaw.pollinations.ai",
-    "description": "Use 25+ AI models as your OpenClaw agent brain via one setup script",
+    "description": "Connect OpenClaw to the live Pollinations model catalog through the Polli CLI.",
     "language": "en",
     "category": "build",
     "platform": "web",

@@ -88,7 +88,7 @@ export function validateModelSearch(
         scope: scope === "community" ? scope : undefined,
         category:
             category !== "all" &&
-            (scope === "community" || category !== "agent")
+            category !== (scope === "community" ? "mcp" : "agent")
                 ? category
                 : undefined,
         q: query || undefined,

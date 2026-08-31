@@ -71,9 +71,9 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 
 ## Durable Media Requests
 
-- Media generation uses the durable generation coordinator. Do not add a
-  request-wide wall-clock deadline solely to cap total runtime; allow callers
-  to disconnect and rejoin long-running generations that complete successfully.
+- Media generation uses the durable generation coordinator so callers can
+  disconnect and rejoin long-running generations. Add a request-wide deadline
+  only when a concrete provider or product contract requires one.
 - Prove identical-request disconnect/rejoin, one upstream execution, completed
   R2 cache retrieval, one wallet debit, and one billed Tinybird event.
 

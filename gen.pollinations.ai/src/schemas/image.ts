@@ -27,7 +27,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
     model: modelSchema(DEFAULT_IMAGE_MODEL),
     width: z.coerce.number().int().nonnegative().optional().default(1024).meta({
         description:
-            "Width in pixels. For images, exact pixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier.",
+            "Width in pixels. For images, exact pixels; `flux-2-pro` and `flux-2-flex` require multiples of 16. For video models, used for aspect ratio; use `resolution` to select a resolution tier.",
     }),
     height: z.coerce
         .number()
@@ -37,7 +37,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         .default(1024)
         .meta({
             description:
-                "Height in pixels. For images, exact pixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier.",
+                "Height in pixels. For images, exact pixels; `flux-2-pro` and `flux-2-flex` require multiples of 16. For video models, used for aspect ratio; use `resolution` to select a resolution tier.",
         }),
     seed: z.coerce
         .number()
@@ -84,7 +84,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         )
         .meta({
             description:
-                "Reference image URL(s) for image editing or video generation. Separate multiple URLs with `|` or `,`. **Image models:** Used for editing/style reference (kontext, gptimage, seedream, klein, nanobanana). **Video models:** `image[0]` = starting frame (I2V); `image[1]` = ending frame for first+last-frame interpolation. End-frame supported by `veo`, the `seedance-2.0` family, `seedance-2.5`, `wan-fast`, and `wan-pro`. Requests exceeding the selected model's `max_reference_images` return 400. See `video_capabilities` on `/image/models` or `/models` for per-model support.",
+                "Reference image URL(s) for image editing or video generation. Separate multiple URLs with `|` or `,`. **Image models:** Used for editing/style reference (kontext, flux-2-pro, flux-2-flex, gptimage, seedream, klein, nanobanana). **Video models:** `image[0]` = starting frame (I2V); `image[1]` = ending frame for first+last-frame interpolation. End-frame supported by `veo`, the `seedance-2.0` family, `seedance-2.5`, `wan-fast`, and `wan-pro`. Requests exceeding the selected model's `max_reference_images` return 400. See `video_capabilities` on `/image/models` or `/models` for per-model support.",
         }),
     reference_images: z
         .string()

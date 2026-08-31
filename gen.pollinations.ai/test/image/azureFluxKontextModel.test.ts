@@ -349,13 +349,13 @@ describe("callAzureFlux2", () => {
                 {
                     ...baseParams,
                     model: "flux-2-pro",
-                    image: Array(3).fill(INPUT_IMAGE_URL),
+                    image: Array(9).fill(INPUT_IMAGE_URL),
                 },
                 USER_INFO,
             ),
         ).rejects.toMatchObject({
             status: 400,
-            message: "FLUX.2 Pro supports at most 2 reference images",
+            message: "FLUX.2 Pro supports at most 8 reference images",
         });
     });
 

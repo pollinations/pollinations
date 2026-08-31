@@ -35,7 +35,7 @@ const AZURE_FLUX_2_CONFIG = {
         upstreamModel: "FLUX.2-pro",
         modelPath: "flux-2-pro",
         title: "FLUX.2 Pro",
-        maxReferenceImages: 2,
+        maxReferenceImages: 8,
     },
     "flux-2-flex": {
         upstreamModel: "FLUX.2-flex",

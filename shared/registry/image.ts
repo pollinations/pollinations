@@ -97,7 +97,7 @@ const IMAGE_BASE_SERVICES = {
             "High-fidelity generation and multi-reference editing with strong prompt adherence",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
-        maxReferenceImages: 2, // Pollinations latency cap; larger Azure edits exceeded 120 seconds.
+        maxReferenceImages: 8, // Azure FLUX.2 Pro route limit.
     },
     "flux-2-flex": {
         aliases: ["black-forest-labs/flux.2-flex"],

@@ -79,6 +79,10 @@
       "http://localhost:5174"
     ]
   },
+  "human_model": {
+    "channel_id": 1522236212666961930,
+    "response_timeout_seconds": 270
+  },
   "webhook": {
     "enabled": false,
     "port": 8002

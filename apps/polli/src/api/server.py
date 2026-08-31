@@ -5,10 +5,11 @@ from typing import Any
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-from ..utils.uuid import uuid4_hex
 from ..ai.client import UpstreamAuthError, _auth_override
+from ..utils.uuid import uuid4_hex
+from .humans import HumanService
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +17,14 @@ logger = logging.getLogger(__name__)
 class Message(BaseModel):
     role: str
     content: str | list | None = None
+
+
+class CallerMetadata(BaseModel):
+    id: str
+
+
+class PollinationsMetadata(BaseModel):
+    caller: CallerMetadata | None = None
 
 
 class ChatRequest(BaseModel):
@@ -26,11 +35,12 @@ class ChatRequest(BaseModel):
     """
 
     messages: list[Message]
-    model: str | None = None  # ignored — always routes to polli
+    model: str | None = None
 
     # Generation parameters — all passed through to the underlying LLM
     temperature: float | None = None
     max_tokens: int | None = None
+    max_completion_tokens: int | None = None
     top_p: float | None = None
     top_k: int | None = None
     frequency_penalty: float | None = None
@@ -72,6 +82,8 @@ class ChatRequest(BaseModel):
     image_urls: list[str] | None = None
     video_urls: list[str] | None = None
     file_urls: list[str] | None = None
+    conversation_id: str | None = None
+    pollinations_metadata: PollinationsMetadata | None = Field(default=None, alias="_pollinations")
 
     model_config = {"extra": "ignore"}
 
@@ -104,7 +116,7 @@ _PASSTHROUGH_KEYS = (
 )
 
 
-def create_api_app(pollinations_client, config):
+def create_api_app(pollinations_client, config, human_service: HumanService | None = None):
     """Create FastAPI app that shares the bot's services.
 
     No lifespan — bot handles init/shutdown.
@@ -131,6 +143,48 @@ def create_api_app(pollinations_client, config):
                 status_code=401,
                 detail="Authorization header required. Use 'Bearer <your-pollinations-api-key>'",
             )
+
+        if request.model == "humans":
+            if human_service is None:
+                raise HTTPException(status_code=503, detail="The humans model is not configured")
+            try:
+                human_service.authorize(auth_header)
+            except PermissionError:
+                raise HTTPException(status_code=401, detail="Unauthorized")
+            if request.stream:
+                raise HTTPException(status_code=400, detail="Streaming is not supported for the humans model")
+            caller = request.pollinations_metadata and request.pollinations_metadata.caller
+            if not caller:
+                raise HTTPException(status_code=400, detail="Trusted caller metadata is required")
+            if not request.messages or any(
+                message.role not in {"assistant", "developer", "system", "user"} or not isinstance(message.content, str)
+                for message in request.messages
+            ):
+                raise HTTPException(status_code=400, detail="Only text chat messages are supported")
+            for name, value in (
+                ("max_tokens", request.max_tokens),
+                ("max_completion_tokens", request.max_completion_tokens),
+            ):
+                if value is not None and value <= 0:
+                    raise HTTPException(status_code=400, detail=f"{name} must be a positive integer")
+            try:
+                return JSONResponse(
+                    content=await human_service.complete(
+                        caller_id=caller.id,
+                        messages=[message.model_dump() for message in request.messages],
+                        conversation_id=request.conversation_id,
+                        max_tokens=request.max_tokens,
+                        max_completion_tokens=request.max_completion_tokens,
+                    )
+                )
+            except LookupError as error:
+                raise HTTPException(status_code=404, detail=str(error))
+            except TimeoutError:
+                raise HTTPException(status_code=504, detail="No human response before timeout")
+            except RuntimeError as error:
+                logger.error("Human model unavailable: %s", error)
+                raise HTTPException(status_code=503, detail=str(error))
+
         _auth_override.set(auth_header)
 
         if request.stream:

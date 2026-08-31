@@ -1,0 +1,219 @@
+"""Discord-backed OpenAI-compatible human responses."""
+
+from __future__ import annotations
+
+import asyncio
+import hmac
+import re
+import time
+from functools import cache
+from pathlib import Path
+from typing import Protocol
+
+import aiosqlite
+import tiktoken
+
+import discord
+
+from ..utils.uuid import uuid4_hex
+
+_URL = re.compile(r"https?://\S+", re.IGNORECASE)
+_MENTION = re.compile(r"<[@#][!&]?\d+>")
+_MAX_DISCORD_CONTENT = 1_900
+
+
+class HumanReply(Protocol):
+    content: str
+    author: discord.abc.User
+
+
+class HumanGateway(Protocol):
+    async def create_thread(self) -> int: ...
+
+    async def ask(self, thread_id: int, messages: list[dict], timeout: float) -> HumanReply: ...
+
+
+class DiscordHumanGateway:
+    def __init__(self, bot: discord.Client, guild_id: int, channel_id: int):
+        self.bot = bot
+        self.guild_id = guild_id
+        self.channel_id = channel_id
+
+    async def create_thread(self) -> int:
+        if not self.bot.is_ready():
+            raise RuntimeError("Discord bot is not ready")
+        guild = self.bot.get_guild(self.guild_id)
+        channel = guild and guild.get_channel(self.channel_id)
+        if not isinstance(channel, discord.TextChannel):
+            raise RuntimeError("Human model channel is unavailable")
+        thread = await channel.create_thread(
+            name=f"human-{uuid4_hex()[:12]}",
+            type=discord.ChannelType.public_thread,
+            auto_archive_duration=60,
+            reason="Human community model conversation",
+        )
+        return thread.id
+
+    async def ask(self, thread_id: int, messages: list[dict], timeout: float) -> discord.Message:
+        channel = self.bot.get_channel(thread_id)
+        if not isinstance(channel, discord.Thread):
+            channel = await self.bot.fetch_channel(thread_id)
+        if not isinstance(channel, discord.Thread):
+            raise RuntimeError("Human model conversation is unavailable")
+
+        last_prompt: discord.Message | None = None
+        for content in format_transcript(messages):
+            last_prompt = await channel.send(
+                content,
+                allowed_mentions=discord.AllowedMentions.none(),
+                suppress_embeds=True,
+            )
+        if last_prompt is None:
+            raise RuntimeError("Human model prompt is empty")
+
+        def eligible(message: discord.Message) -> bool:
+            return (
+                message.channel.id == channel.id
+                and not message.author.bot
+                and message.webhook_id is None
+                and not message.is_system()
+                and bool(message.content.strip())
+                and not message.attachments
+                and not message.stickers
+            )
+
+        waiter = asyncio.create_task(self.bot.wait_for("message", check=eligible, timeout=timeout))
+        async for message in channel.history(limit=100, after=last_prompt, oldest_first=True):
+            if eligible(message):
+                waiter.cancel()
+                return message
+        return await waiter
+
+
+class HumanService:
+    def __init__(self, api_token: str, database_path: Path, gateway: HumanGateway, response_timeout: float):
+        self.api_token = api_token
+        self.database_path = database_path
+        self.gateway = gateway
+        self.response_timeout = response_timeout
+        self.database: aiosqlite.Connection | None = None
+
+    async def start(self) -> None:
+        self.database_path.parent.mkdir(parents=True, exist_ok=True)
+        self.database = await aiosqlite.connect(self.database_path)
+        await self.database.execute("PRAGMA journal_mode = WAL")
+        await self.database.execute(
+            """
+            CREATE TABLE IF NOT EXISTS human_conversation (
+                caller_id TEXT NOT NULL,
+                conversation_id TEXT NOT NULL,
+                thread_id INTEGER NOT NULL,
+                PRIMARY KEY (caller_id, conversation_id)
+            ) STRICT
+            """
+        )
+        await self.database.commit()
+
+    async def close(self) -> None:
+        if self.database:
+            await self.database.close()
+            self.database = None
+
+    def authorize(self, authorization: str) -> None:
+        prefix = "Bearer "
+        if not authorization.startswith(prefix) or not hmac.compare_digest(
+            authorization[len(prefix) :], self.api_token
+        ):
+            raise PermissionError("Unauthorized")
+
+    async def complete(
+        self,
+        *,
+        caller_id: str,
+        messages: list[dict],
+        conversation_id: str | None,
+        max_tokens: int | None,
+        max_completion_tokens: int | None,
+    ) -> dict:
+        if not self.database:
+            raise RuntimeError("Human model is not configured")
+
+        if conversation_id:
+            thread_id = await self._thread_id(caller_id, conversation_id)
+            if thread_id is None:
+                raise LookupError("Conversation not found")
+            prompt = [messages[-1]]
+        else:
+            conversation_id = uuid4_hex()
+            thread_id = await self.gateway.create_thread()
+            await self.database.execute(
+                "INSERT INTO human_conversation (caller_id, conversation_id, thread_id) VALUES (?, ?, ?)",
+                (caller_id, conversation_id, thread_id),
+            )
+            await self.database.commit()
+            prompt = messages
+
+        reply = await self.gateway.ask(thread_id, prompt, self.response_timeout)
+
+        limit_values = [value for value in (max_tokens, max_completion_tokens) if value is not None]
+        limit = min(limit_values) if limit_values else None
+        answer, completion_tokens, truncated = truncate_tokens(reply.content.strip(), limit)
+        prompt_tokens = count_prompt_tokens(messages)
+        return {
+            "id": f"chatcmpl-human-{uuid4_hex()}",
+            "object": "chat.completion",
+            "created": int(time.time()),
+            "model": "humans",
+            "conversation_id": conversation_id,
+            "choices": [
+                {
+                    "index": 0,
+                    "message": {"role": "assistant", "content": answer},
+                    "finish_reason": "length" if truncated else "stop",
+                }
+            ],
+            "usage": {
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": completion_tokens,
+                "total_tokens": prompt_tokens + completion_tokens,
+            },
+            "_pollinations": {"responder": {"discordId": str(reply.author.id)}},
+        }
+
+    async def _thread_id(self, caller_id: str, conversation_id: str) -> int | None:
+        assert self.database
+        async with self.database.execute(
+            "SELECT thread_id FROM human_conversation WHERE caller_id = ? AND conversation_id = ?",
+            (caller_id, conversation_id),
+        ) as cursor:
+            row = await cursor.fetchone()
+        return int(row[0]) if row else None
+
+
+def harden_content(content: str) -> str:
+    content = _URL.sub("[link removed]", content)
+    content = _MENTION.sub("[mention]", content)
+    return discord.utils.escape_markdown(content)
+
+
+def format_transcript(messages: list[dict]) -> list[str]:
+    text = "\n\n".join(f"{message['role'].upper()}: {harden_content(message['content'])}" for message in messages)
+    return [text[offset : offset + _MAX_DISCORD_CONTENT] for offset in range(0, len(text), _MAX_DISCORD_CONTENT)]
+
+
+def count_prompt_tokens(messages: list[dict]) -> int:
+    return 3 + sum(
+        3 + len(encoding().encode(message["role"])) + len(encoding().encode(message["content"])) for message in messages
+    )
+
+
+def truncate_tokens(text: str, limit: int | None) -> tuple[str, int, bool]:
+    tokens = encoding().encode(text)
+    if limit is None or len(tokens) <= limit:
+        return text, len(tokens), False
+    return encoding().decode(tokens[:limit]), limit, True
+
+
+@cache
+def encoding():
+    return tiktoken.get_encoding("cl100k_base")

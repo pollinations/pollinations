@@ -1,0 +1,34 @@
+{
+  "pr_number": 14200,
+  "title": "fix: preserve omitted text parameters",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14200",
+  "merged_at": "2026-08-31T18:03:29Z",
+  "labels": [],
+  "pr_body_excerpt": "- Stops injecting `frequency_penalty`, `presence_penalty`, and `logprobs` when callers omit them.\n- Removes the Grok 4.6 compatibility transform added in #14185; explicit unsupported parameters now reach Azure and fail upstream.\n- Preserves explicitly supplied values and updates the affected VCR snapshots.\n- Tests: Gen typecheck; 17 schema/transform tests; 2 VCR replay tests.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Defaults stopped freelancing",
+    "blurb": "The text API now leaves omitted tuning knobs alone. Polli put the mystery settings back in the drawer, where they belong.",
+    "summary": "Text requests now preserve omitted frequency_penalty, presence_penalty, and logprobs fields instead of injecting defaults, while explicitly supplied values continue through unchanged.",
+    "impact": "Developers get request behavior that matches exactly what they send: omitted parameters stay omitted, and Azure reports explicitly unsupported options directly.",
+    "keywords": [
+      "text-api",
+      "openai-schema",
+      "parameters",
+      "azure",
+      "grok",
+      "compatibility"
+    ],
+    "visual_concept": "Depict Polli as a careful API mechanic at a cozy retro terminal, removing three unsolicited settings knobs labeled frequency, presence, and logprobs from a request packet while leaving intentionally selected knobs in place. The scene represents faithful pass-through behavior, with code-plants and a tidy route toward an Azure-blue-but-pastel cloud-shaped server, avoiding any dramatic error imagery.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny mechanic tool belt, carefully packing a clean API request envelope at a retro terminal while three unselected knobs labeled \"frequency\", \"presence\", and \"logprobs\" rest neatly in a drawer; code-plants sprout around the desk and a soft pastel cloud server waits in the background. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-31/PR-14200.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny mechanic tool belt, carefully packing a clean API request envelope at a retro terminal while three unselected knobs labeled \"frequency\", \"presence\", and \"logprobs\" rest neatly in a drawer; code-plants sprout around the desk and a soft pastel cloud server waits in the background. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, emotionally warm."
+  },
+  "generated_at": "2026-08-31T18:04:42.176050+00:00"
+}

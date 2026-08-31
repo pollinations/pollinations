@@ -375,8 +375,7 @@ describe("community endpoint OpenAI service", () => {
             return Response.json({
                 data: [
                     {
-                        b64_json:
-                            "AAAAFGZ0eXBpc29tAAAAAGlzb20AAAAJbW9vdgEAAAAJbWRhdAE=",
+                        b64_json: "AAAAFGZ0eXBpc29tAAAAAGlzb20AAAAJbWRhdAA=",
                     },
                 ],
             });
@@ -550,14 +549,11 @@ describe("community endpoint OpenAI service", () => {
                 Response.json({
                     data: [
                         {
-                            object: "embedding",
-                            index: 0,
                             embedding: Array.from({ length: 4 }, () =>
                                 Math.random(),
                             ),
                         },
                     ],
-                    object: "list",
                     usage: { prompt_tokens: 12, total_tokens: 12 },
                 }),
             ),
@@ -582,46 +578,11 @@ describe("community endpoint OpenAI service", () => {
                 Response.json({
                     data: [
                         {
-                            object: "embedding",
-                            index: 0,
                             embedding: Array.from({ length: 4 }, () =>
                                 Math.random(),
                             ),
                         },
                     ],
-                    object: "list",
-                }),
-            ),
-        );
-
-        await expect(
-            testCommunityEmbeddingEndpoint({
-                baseUrl: "https://api.example.com/v1",
-                bearerToken: "Bearer sk_saved_token",
-                model: "text-embedding-3-small",
-            }),
-        ).rejects.toThrow(
-            "Endpoint did not return billable OpenAI token usage",
-        );
-    });
-
-    it("rejects embedding usage above the request-derived ceiling", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () =>
-                Response.json({
-                    object: "list",
-                    data: [
-                        {
-                            object: "embedding",
-                            index: 0,
-                            embedding: [0.1, 0.2],
-                        },
-                    ],
-                    usage: {
-                        prompt_tokens: 1_000_000,
-                        total_tokens: 1_000_000,
-                    },
                 }),
             ),
         );

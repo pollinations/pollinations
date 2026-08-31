@@ -1,10 +1,7 @@
 import {
     COMMUNITY_ENDPOINT_TIMEOUT_MS,
     type CommunityEndpointRuntime,
-    communityEmbeddingData,
     communityEmbeddingsUrl,
-    MAX_COMMUNITY_EMBEDDING_RESPONSE_BYTES,
-    maxCommunityEmbeddingPromptTokens,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
 import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";
@@ -15,8 +12,12 @@ import {
 } from "@shared/registry/usage-headers.ts";
 import { readResponseText } from "@shared/response-bytes.ts";
 import { decryptSecret } from "@shared/secret-encryption.ts";
+import { CreateEmbeddingResponseSchema } from "@/schemas/embeddings.ts";
 import { badRequest, inputToText, normalizeInputs } from "./input.ts";
 import type { EmbeddingRequest } from "./types.ts";
+
+// Covers the public maximum of 32 inputs × 4096 JSON float values with margin.
+const MAX_COMMUNITY_EMBEDDING_RESPONSE_BYTES = 4 * 1024 * 1024;
 
 export async function generateCommunityEmbeddings(
     endpoint: CommunityEndpointRuntime,
@@ -93,24 +94,51 @@ export async function generateCommunityEmbeddings(
     await ensureUpstreamOk(response, upstreamUrl, responseText);
     const body = parseJson(responseText);
     const usage = getOpenAIEmbeddingUsage(body);
-    const data = communityEmbeddingData(
-        body,
-        inputs.length,
-        request.encoding_format,
-        request.dimensions,
-    );
-    if (!data) {
+
+    const parsed = CreateEmbeddingResponseSchema.safeParse({
+        ...(body && typeof body === "object" ? body : {}),
+        model: responseModel,
+        usage: usage ?? { prompt_tokens: 0, total_tokens: 0 },
+    });
+    if (!parsed.success) {
+        throw invalidResponse(
+            upstreamUrl,
+            "Community embedding endpoint returned an invalid OpenAI response",
+        );
+    }
+
+    const data = [...parsed.data.data].sort((a, b) => a.index - b.index);
+    const expectedEncoding = request.encoding_format === "base64";
+    if (
+        data.length !== inputs.length ||
+        data.some(
+            (item, index) =>
+                item.index !== index ||
+                !isValidEmbedding(
+                    item.embedding,
+                    expectedEncoding,
+                    request.dimensions,
+                ),
+        )
+    ) {
         throw invalidResponse(
             upstreamUrl,
             "Community embedding endpoint returned invalid embedding data",
         );
     }
 
+    // A tokenizer cannot produce more prompt tokens than UTF-8 bytes plus a
+    // small per-input allowance for model-added special tokens.
+    const maxPromptTokens = inputs.reduce(
+        (total, input) =>
+            total + new TextEncoder().encode(input).byteLength + 16,
+        0,
+    );
     if (
         !usage ||
         typeof usage.prompt_tokens !== "number" ||
         usage.prompt_tokens <= 0 ||
-        usage.prompt_tokens > maxCommunityEmbeddingPromptTokens(inputs)
+        usage.prompt_tokens > maxPromptTokens
     ) {
         throw invalidResponse(
             upstreamUrl,
@@ -124,6 +152,31 @@ export async function generateCommunityEmbeddings(
         usage.prompt_tokens,
         billableUsage,
     );
+}
+
+function isValidEmbedding(
+    embedding: number[] | string,
+    base64: boolean,
+    dimensions?: number,
+): boolean {
+    if (!base64) {
+        return (
+            Array.isArray(embedding) &&
+            embedding.length > 0 &&
+            (!dimensions || embedding.length === dimensions)
+        );
+    }
+    if (typeof embedding !== "string" || embedding.length === 0) return false;
+    try {
+        const byteLength = atob(embedding).length;
+        return (
+            byteLength > 0 &&
+            byteLength % 4 === 0 &&
+            (!dimensions || byteLength === dimensions * 4)
+        );
+    } catch {
+        return false;
+    }
 }
 
 function parseJson(text: string): unknown {

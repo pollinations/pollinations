@@ -3,7 +3,6 @@ import {
     type CommunityEndpointImagePricing,
     communityAudioTranscriptionsUrl,
     communityChatCompletionsUrl,
-    communityEmbeddingData,
     communityEmbeddingsUrl,
     communityEndpointAbortSignal,
     communityEndpointErrorDetail,
@@ -14,9 +13,7 @@ import {
     decodeCommunityBase64,
     firstCommunityImageBytes,
     firstCommunityVideoBytes,
-    MAX_COMMUNITY_EMBEDDING_RESPONSE_BYTES,
     MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
-    maxCommunityEmbeddingPromptTokens,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
@@ -64,10 +61,7 @@ function communityModelsUrl(baseUrl: string): string {
 async function fetchJson(
     url: string,
     init: RequestInit,
-    {
-        deadlineMs = Date.now() + COMMUNITY_ENDPOINT_TIMEOUT_MS,
-        maxResponseBytes = MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
-    }: { deadlineMs?: number; maxResponseBytes?: number } = {},
+    deadlineMs = Date.now() + COMMUNITY_ENDPOINT_TIMEOUT_MS,
 ): Promise<unknown> {
     let response: Response;
     try {
@@ -86,7 +80,7 @@ async function fetchJson(
     const body = parseJson(
         await readResponseText(
             response,
-            maxResponseBytes,
+            MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
             () => new Error("Endpoint response is too large"),
         ),
     );
@@ -266,7 +260,7 @@ export async function testCommunityVideoEndpoint({
                 duration: 5,
             }),
         },
-        { deadlineMs },
+        deadlineMs,
     );
     const video = await firstCommunityVideoBytes(body, baseUrl, deadlineMs);
     if (!video || !detectVideoMimeType(video)) {
@@ -356,34 +350,40 @@ export async function testCommunityEmbeddingEndpoint({
     bearerToken,
     model,
 }: ModelEndpointTestInput): Promise<CommunityEndpointTestResult> {
-    const input = "A simple green sprout.";
-    const body = await fetchJson(
-        communityEmbeddingsUrl(baseUrl),
-        {
-            method: "POST",
-            headers: {
-                ...authorizationHeaders(bearerToken),
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                model,
-                input,
-                encoding_format: "float",
-            }),
+    const body = await fetchJson(communityEmbeddingsUrl(baseUrl), {
+        method: "POST",
+        headers: {
+            ...authorizationHeaders(bearerToken),
+            "Content-Type": "application/json",
         },
-        { maxResponseBytes: MAX_COMMUNITY_EMBEDDING_RESPONSE_BYTES },
-    );
+        body: JSON.stringify({
+            model,
+            input: "A simple green sprout.",
+            encoding_format: "float",
+        }),
+    });
 
-    if (!communityEmbeddingData(body, 1, "float")) {
+    if (
+        !body ||
+        typeof body !== "object" ||
+        !("data" in body) ||
+        !Array.isArray(body.data) ||
+        body.data.length !== 1 ||
+        !body.data[0] ||
+        typeof body.data[0] !== "object" ||
+        !("embedding" in body.data[0]) ||
+        !Array.isArray(body.data[0].embedding) ||
+        body.data[0].embedding.length === 0 ||
+        !body.data[0].embedding.every(
+            (value: unknown) =>
+                typeof value === "number" && Number.isFinite(value),
+        )
+    ) {
         throw new Error("Endpoint did not return OpenAI embedding data");
     }
 
     const usage = getOpenAIEmbeddingUsage(body);
-    if (
-        !usage ||
-        usage.prompt_tokens <= 0 ||
-        usage.prompt_tokens > maxCommunityEmbeddingPromptTokens([input])
-    ) {
+    if (!usage || usage.prompt_tokens <= 0) {
         throw new Error("Endpoint did not return billable OpenAI token usage");
     }
 

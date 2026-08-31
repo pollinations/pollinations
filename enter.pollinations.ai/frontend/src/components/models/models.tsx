@@ -41,9 +41,7 @@ import {
     parseModelQuery,
 } from "./model-query.ts";
 import {
-    getAvailableModelCategory,
     getAvailableModelSections,
-    getModelSortSearchValue,
     type ModelScope,
     type ModelSort,
 } from "./model-search.ts";
@@ -193,7 +191,6 @@ export const Models: FC = () => {
     const [searchOpen, setSearchOpen] = useState(false);
     const lastPushedSearchRef = useRef(urlSearch);
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
-    const [catalogLoaded, setCatalogLoaded] = useState(false);
     const [catalogError, setCatalogError] = useState<string | null>(null);
     const { stats } = useModelStats();
     const allModels = useMemo(
@@ -233,13 +230,11 @@ export const Models: FC = () => {
             fetchModelCatalog()
                 .then((models) => {
                     setCatalogModels(models);
-                    setCatalogLoaded(true);
                     setCatalogError(null);
                 })
                 .catch((error) => {
                     console.error("Model catalog fetch failed:", error);
                     setCatalogModels([]);
-                    setCatalogLoaded(false);
                     setCatalogError("Could not load models.");
                 }),
         [],
@@ -253,38 +248,10 @@ export const Models: FC = () => {
         () => categorizeModels(sortModels(filteredModels, activeSort)),
         [activeSort, filteredModels],
     );
-    const sectionOrder = useMemo(
-        () =>
-            activeScope === "community"
-                ? getAvailableModelSections(scopedModels)
-                : POLLINATIONS_SECTION_ORDER,
-        [activeScope, scopedModels],
-    );
-
-    useEffect(() => {
-        if (
-            !catalogLoaded ||
-            activeScope !== "community" ||
-            getAvailableModelCategory(modelSearch.category, sectionOrder) ===
-                modelSearch.category
-        ) {
-            return;
-        }
-
-        void navigate({
-            search: (previous) => ({
-                ...previous,
-                category: undefined,
-            }),
-            replace: true,
-        });
-    }, [
-        activeScope,
-        catalogLoaded,
-        modelSearch.category,
-        navigate,
-        sectionOrder,
-    ]);
+    const sectionOrder =
+        activeScope === "community"
+            ? getAvailableModelSections(scopedModels)
+            : POLLINATIONS_SECTION_ORDER;
 
     const hasAgents = scopedModels.some((model) => model.agent);
     const scopeLabel = SCOPE_LABELS[activeScope];
@@ -344,16 +311,11 @@ export const Models: FC = () => {
                 scope: scope === "pollinations" ? undefined : scope,
                 category:
                     scope === "community"
-                        ? catalogLoaded
-                            ? getAvailableModelCategory(
-                                  previous.category,
-                                  getAvailableModelSections(
-                                      allModels.filter(
-                                          (model) => model.community,
-                                      ),
-                                  ),
-                              )
-                            : previous.category
+                        ? getAvailableModelSections(
+                              allModels.filter((model) => model.community),
+                          ).includes(previous.category ?? "all")
+                            ? previous.category
+                            : undefined
                         : previous.category === "agent"
                           ? undefined
                           : previous.category,
@@ -365,7 +327,7 @@ export const Models: FC = () => {
         void navigate({
             search: (previous) => ({
                 ...previous,
-                sort: getModelSortSearchValue(sort),
+                sort: sort === "popular" ? undefined : sort,
             }),
         });
     };

@@ -144,18 +144,6 @@ function parseImageParams(
     delete mergedParams.prompt;
     delete mergedParams.key;
 
-    if (
-        c.var.model.communityEndpoint?.modality === "image" &&
-        ["reference_images", "reference_videos", "reference_audios"].some(
-            (key) => mergedParams[key] !== undefined,
-        )
-    ) {
-        throw new UpstreamError(400, {
-            message:
-                "Invalid parameters: community image models do not support reference media",
-        });
-    }
-
     const communityReferences =
         c.var.model.communityEndpoint?.modality === "video"
             ? CommunityReferenceParamsSchema.safeParse(mergedParams)

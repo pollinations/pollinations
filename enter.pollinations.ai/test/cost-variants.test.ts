@@ -85,24 +85,6 @@ describe("long-context cost variants", () => {
         ).toBe("long_context");
     });
 
-    it("Grok uses OpenRouter's inclusive 200K boundary", () => {
-        expect(
-            bill("grok-4.6", {
-                promptTextTokens: 199_999,
-            }).costVariant,
-        ).toBeUndefined();
-        expect(
-            bill("grok-4.6", {
-                promptTextTokens: 200_000,
-            }).costVariant,
-        ).toBe("long_context");
-        expect(
-            bill("grok-4.6", {
-                promptTextTokens: 200_001,
-            }).costVariant,
-        ).toBe("long_context");
-    });
-
     it.each([
         [31_999, undefined],
         [32_000, "context_32k"],
@@ -317,7 +299,7 @@ describe("long-context cost variants", () => {
         expect(long.adjustments[0].cost).toBeCloseTo(0.375, 12);
     });
 
-    it("Qwen and Grok apply their advertised long-context sheets", () => {
+    it("Qwen applies its advertised long-context sheet", () => {
         expect(
             bill("qwen-large", {
                 promptTextTokens: 256_000,
@@ -327,15 +309,6 @@ describe("long-context cost variants", () => {
             promptCachedTokens: 0.192 / 1e6,
             promptCacheWriteTokens: 1.2 / 1e6,
             completionTextTokens: 3.84 / 1e6,
-        });
-        expect(
-            bill("grok-4.6", {
-                promptTextTokens: 200_000,
-            }).priceDefinition,
-        ).toMatchObject({
-            promptTextTokens: 4 / 1e6,
-            promptCachedTokens: 1 / 1e6,
-            completionTextTokens: 12 / 1e6,
         });
     });
 

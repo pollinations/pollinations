@@ -1,0 +1,34 @@
+{
+  "pr_number": 14211,
+  "title": "feat: support collaborative issue quests",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14211",
+  "merged_at": "2026-08-31T19:25:24Z",
+  "labels": [],
+  "pr_body_excerpt": "- Rewards each distinct linked GitHub author whose merged PR closes a `POLLEN-QUEST` issue\n- Re-keys legacy issue rewards to the existing per-GitHub identity format so winners cannot be paid twice\n- Hides assigned issues from the open quest board within the existing 60-second catalog cache\n- Adds regression coverage for migration idempotency, multiple authors, assigned, and unassigned cases\n\nProduction read-only audit: 37 legacy rows, 0 missing GitHub identities, and 0 target-key collisions. The existing unique index aborts the migration if a collision appears before deployment.\n\nChecks:\n- `npx biome check --write src/services/quests/definitions.ts src/services/quests/groups/github-contributions.ts test/quests.test.ts`\n- `npx tsc --noEmit`\n- `npx vitest run test/quests.test.ts` (32/32 passed)\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Shared quests, shared pollen",
+    "blurb": "A quest can now reward every distinct GitHub contributor whose merged PR closes it. Polli checked the ledger twice, because duplicate honey is how spreadsheets become folklore.",
+    "summary": "Collaborative POLLEN-QUEST issues now reward each distinct linked GitHub author with a merged closing PR, while legacy issue rewards are migrated to per-GitHub-identity keys and assigned issues stay off the open quest board.",
+    "impact": "Contributors collaborating on the same quest can each claim the fixed reward once, with duplicate payouts prevented and already-assigned quests kept out of the available catalog.",
+    "keywords": [
+      "quests",
+      "pollen",
+      "github",
+      "contributors",
+      "rewards",
+      "migration"
+    ],
+    "visual_concept": "Depict a cozy shared garden quest: Polli in a tiny foreperson cap helps several friendly developer bees place distinct named reward jars beside one flowering code-plant, showing that each collaborator receives their own Pollen reward. A small retro quest board in the background has one assigned card tucked away while open cards remain visible; use vines, flowers, and a glowing terminal to connect GitHub collaboration with the quest system.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny foreperson cap, warmly handing separate lime green (#ecf874) Pollen jars to several small collaborator bees around one blooming code-plant; a retro quest board keeps an assigned card tucked behind the open cards. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with flowers, vines, a softly glowing terminal, and subtle pixel-font text: \"ONE QUEST, MANY HANDS\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-31/PR-14211.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny foreperson cap, warmly handing separate lime green (#ecf874) Pollen jars to several small collaborator bees around one blooming code-plant; a retro quest board keeps an assigned card tucked behind the open cards. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with flowers, vines, a softly glowing terminal, and subtle pixel-font text: \"ONE QUEST, MANY HANDS\"."
+  },
+  "generated_at": "2026-08-31T19:26:25.062662+00:00"
+}

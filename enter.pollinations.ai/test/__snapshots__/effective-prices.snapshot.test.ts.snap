@@ -242,6 +242,26 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.002,
     },
   },
+  "flux-2-flex": {
+    "cost": {
+      "completionImageTokens": 0.05,
+      "promptImageTokens": 0.05,
+    },
+    "price": {
+      "completionImageTokens": 0.0375,
+      "promptImageTokens": 0.0375,
+    },
+  },
+  "flux-2-pro": {
+    "cost": {
+      "completionImageTokens": 0.015,
+      "promptImageTokens": 0.015,
+    },
+    "price": {
+      "completionImageTokens": 0.01125,
+      "promptImageTokens": 0.01125,
+    },
+  },
   "gemini": {
     "cost": {
       "completionTextTokens": 0.00000375,

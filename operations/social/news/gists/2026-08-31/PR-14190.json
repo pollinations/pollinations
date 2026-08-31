@@ -1,0 +1,35 @@
+{
+  "pr_number": 14190,
+  "title": "feat: add Azure FLUX.2 Pro and Flex",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14190",
+  "merged_at": "2026-08-31T13:55:24Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds paid-only `flux-2-pro` and `flux-2-flex` through Azure `FLUX.2-pro` and `FLUX.2-flex`, with publisher-qualified aliases, no fallback, and no Pollinations GPU.\n- Applies the approved `0.75` multiplier. Azure metadata confirmed Pro at $0.015/input MP + $0.015/output MP + $0.015 initial output premium, and Flex at $0.05/input or output MP with no premium.\n- Requires 16-pixel dimensions from 256 px through 4,194,304 total pixels; Azure silently snapped nonconforming dimensions, preserved `1008×752`, and accepted `4096×1024`.\n- Restores Pro's Azure limit of eight references after local E2E runs with four and eight references both completed in 15.5 seconds. Intentional disconnect/rejoin produced one upstream generation, identical R2 replay, one wallet debit, and one billed Tinybird row per generation.\n- Verifies Pro guidance at Azure's documented `1.5`, `4.5`, and `10` values through local E2E; all completed in 6.2–6.9 seconds with exact billing, and the same prompt/seed produced distinct low/high-guidance outputs. Handler, route, cache, permission, catalog, format, errors, and capacity checks also pass.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Two new Flux flowers",
+    "blurb": "Azure FLUX.2 Pro and Flex have landed in the garden for paid image generation. Polli brought eight reference pictures; Azure politely kept up.",
+    "summary": "Added paid-only `flux-2-pro` and `flux-2-flex` image models through Azure, with a 0.75 pricing multiplier, 16-pixel dimension support from 256 px to 4,194,304 total pixels, and up to eight reference images for Pro.",
+    "impact": "Paid users can now choose Azure FLUX.2 Pro or Flex for image generation, including wide formats such as 4096×1024, precise Pro guidance values, and reliable replay-safe billing.",
+    "keywords": [
+      "image-generation",
+      "azure",
+      "flux-2-pro",
+      "flux-2-flex",
+      "models",
+      "paid-api",
+      "references"
+    ],
+    "visual_concept": "Depict the two new Azure FLUX.2 model options as a pair of glowing code-flowers in a cozy image lab: one refined Pro bloom surrounded by eight tiny reference picture frames, and one flexible pastel bloom reshaping into a wide landscape canvas. Polli, wearing a tiny artist beret, tends both plants while a friendly CRT robot displays a wide 4096×1024 pixel landscape.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-image laboratory where Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, rounded translucent light-blue wings, and a tiny painter's beret, waters two glowing Azure FLUX.2 code-flowers: a polished Pro flower ringed by eight miniature reference frames and a Flex flower growing into a wide pixel landscape on a CRT monitor. A cute chunky monitor robot watches with happy square eyes beside lime green (#ecf874) flower pots and pastel code-vines; simple pixel text reads “FLUX.2”. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-31/PR-14190.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-image laboratory where Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, rounded translucent light-blue wings, and a tiny painter's beret, waters two glowing Azure FLUX.2 code-flowers: a polished Pro flower ringed by eight miniature reference frames and a Flex flower growing into a wide pixel landscape on a CRT monitor. A cute chunky monitor robot watches with happy square eyes beside lime green (#ecf874) flower pots and pastel code-vines; simple pixel text reads “FLUX.2”. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-31T13:56:29.188792+00:00"
+}

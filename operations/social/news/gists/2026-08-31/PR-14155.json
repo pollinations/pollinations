@@ -1,0 +1,35 @@
+{
+  "pr_number": 14155,
+  "title": "feat(cli): add OpenCode harness profile (#14118)",
+  "author": "singap2002-code",
+  "url": "https://github.com/pollinations/pollinations/pull/14155",
+  "merged_at": "2026-08-31T17:47:32Z",
+  "labels": [],
+  "pr_body_excerpt": "Adds `polli harness opencode on/off/status` so OpenCode users can connect to Pollinations with one command.\r\n\r\n## Background and verification\r\n\r\nI use OpenCode daily with Pollinations, and verified this end to end on Windows:\r\n\r\n- `polli harness opencode on` requires OpenCode to be installed (PATH or the install script's `~/.opencode/bin`), logs in via the shared polli device flow, and mints a dedicated `polli-harness-opencode` key — no second login inside OpenCode.\r\n- The adapter enables the existing opencode-pollinations-plugin (https://github.com/fkom13/opencode-pollinations-plugin) in the user config (`~/.config/opencode/opencode.json`, or `$OPENCODE_CONFIG` / `$OPENCODE_CONFIG_DIR`), stores the key in the plugin's own `config.json` (which the plugin reads first), and sets the default model to `pollinations/enter/openai`. The plugin itself serves the live model catalog, media tools, usage, and `/poll quests` — nothing is duplicated here.\r\n- Verified live: `on` wrote both config files (0600), OpenCode loaded the plugin (132 models registered, key detected), and a real chat completion streamed back through the plugin's proxy from `enter/openai`. `status` reports readiness; `off` restored the original config byte-for-byte.\r\n- One fix needed along the way: the plugin reads pollen quotas via `/account/usage`, so harness keys now optionally carry `accountPermissions` (`[\"profile\", \"usage\"]` for OpenCode). Without it the quota read fails and requests hang. `resolveHarnessKey` forwards the permissions to the key creation endpoint when provided (other adapters unchanged).\r\n- `off` removes only the plugin entry, the `pollinations/enter/*` default model, and the stored key; unrelated OpenCode config is preserved. The snapshot/restore mechanism covers the on/off cycle, with a strip fallback when the config changed in between.\r\n\r\n## Tests\r\n\r\n11 new tests in `opencode.test.ts` (config wiring, preservation, snapshot restore/strip, `OPENCODE_CONFIG`/`OPENCODE_CONFIG_DIR`, objec",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "OpenCode joins the garden",
+    "blurb": "OpenCode can now move into the Pollinations garden with one CLI command. Polli handles the key, config, and model wiring, so nobody has to go hunting through JSON files before breakfast.",
+    "summary": "Added `polli harness opencode on/off/status`, which installs the existing OpenCode Pollinations plugin configuration, mints a dedicated `polli-harness-opencode` key with profile and usage access, and defaults OpenCode to `pollinations/enter/openai`.",
+    "impact": "OpenCode users can connect through the shared Polli device login in one command, access the plugin's live 132-model catalog and media tools, and later remove the integration without disturbing unrelated OpenCode settings.",
+    "keywords": [
+      "polli-cli",
+      "opencode",
+      "harness",
+      "plugin",
+      "authentication",
+      "models",
+      "developer-tools"
+    ],
+    "visual_concept": "Depict Polli as a cozy developer bee helping a friendly retro terminal robot plug an OpenCode-shaped code scroll into a flowering Pollinations garden. The terminal shows a simple connected status and a trail of tiny config-file leaves, while a key-shaped pollen token and code-plants represent the dedicated harness key, automatic setup, and preserved configuration.",
+    "image_prompt": "Cozy pixel art scene of the cute Pollinations bee mascot wearing tiny programmer headphones, warmly helping a chunky CRT monitor robot connect a code scroll labeled \"OpenCode\" to a glowing garden terminal; lime green (#ecf874) code-plants bloom around a small key-shaped pollen token, and the screen says \"CONNECTED\" in simple dark purple pixel text. The bee has a yellow body with dark brown stripes, black antennae and oval eyes, bright pink rectangular cheek blush, a small smile, and rounded translucent light-blue wings; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, like Stardew Valley or A Short Hike."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-31/PR-14155.jpg",
+    "prompt": "Cozy pixel art scene of the cute Pollinations bee mascot wearing tiny programmer headphones, warmly helping a chunky CRT monitor robot connect a code scroll labeled \"OpenCode\" to a glowing garden terminal; lime green (#ecf874) code-plants bloom around a small key-shaped pollen token, and the screen says \"CONNECTED\" in simple dark purple pixel text. The bee has a yellow body with dark brown stripes, black antennae and oval eyes, bright pink rectangular cheek blush, a small smile, and rounded translucent light-blue wings; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, like Stardew Valley or A Short Hike."
+  },
+  "generated_at": "2026-08-31T17:48:53.488545+00:00"
+}

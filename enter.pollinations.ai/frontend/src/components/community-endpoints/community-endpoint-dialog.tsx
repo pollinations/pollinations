@@ -44,6 +44,7 @@ import {
     providerModelHelper,
     readError,
     toEndpointPayload,
+    willCancelPendingChange,
 } from "./types.ts";
 
 type CommunityEndpointDialogProps = {
@@ -294,6 +295,10 @@ export function CommunityEndpointDialog({
         visiblePriceKeys,
     );
     const hasValidPerUserRpm = isValidPerUserRpm(form.perUserRpm);
+    const cancelsPendingChange = willCancelPendingChange(
+        endpoint,
+        form.visibility,
+    );
     // First-time publishing of an external endpoint re-observes its billed
     // buckets, so it needs a successful test. A model already public or queued
     // for publication has server-validated pricing, so re-editing it does not
@@ -403,6 +408,17 @@ export function CommunityEndpointDialog({
                                 endpoint.pending.effectiveAt,
                             ).toLocaleString()}
                             .
+                        </Alert>
+                    )}
+
+                    {cancelsPendingChange && (
+                        <Alert
+                            intent="danger"
+                            title="Queued changes will be cancelled"
+                        >
+                            Saving this model as Private removes its queued
+                            changes. Publishing it again starts a new 12-hour
+                            wait.
                         </Alert>
                     )}
 

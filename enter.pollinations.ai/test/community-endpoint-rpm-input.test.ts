@@ -1,5 +1,8 @@
 import { communityEndpointPrices } from "@shared/community-endpoints.ts";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { PendingChangeNotice } from "../frontend/src/components/community-endpoints/community-endpoint-card.tsx";
 import { savedEndpointPriceKeys } from "../frontend/src/components/community-endpoints/price-table.tsx";
 import {
     agentListingToForm,
@@ -12,6 +15,7 @@ import {
     toAgentListingPayload,
     toAgentPayload,
     toEndpointPayload,
+    willCancelPendingChange,
 } from "../frontend/src/components/community-endpoints/types.ts";
 
 describe("community endpoint per-user RPM input", () => {
@@ -81,6 +85,17 @@ describe("community endpoint per-user RPM input", () => {
             promptTextPrice: "2",
         });
         expect(savedEndpointPriceKeys(endpoint)).toContain("promptCachedPrice");
+        expect(willCancelPendingChange(endpoint, "private")).toBe(true);
+        expect(willCancelPendingChange(endpoint, "public")).toBe(false);
+
+        const notice = renderToStaticMarkup(
+            createElement(PendingChangeNotice, { endpoint }),
+        );
+        expect(notice).toContain("Changes queued");
+        expect(notice).toContain("Visibility:");
+        expect(notice).toContain("Public");
+        expect(notice).toContain("Paid Pollen only");
+        expect(notice).toContain("Pricing:");
     });
 
     it("does not offer agent listings as fallback models", () => {

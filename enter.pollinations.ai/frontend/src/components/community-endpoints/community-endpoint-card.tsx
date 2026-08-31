@@ -74,17 +74,6 @@ export function CommunityEndpointCard({
                                 Agent
                             </Chip>
                         )}
-                        {endpoint.pending && (
-                            <Chip
-                                intent="neutral"
-                                size="sm"
-                                title={`Changes queued — effective ${new Date(
-                                    endpoint.pending.effectiveAt,
-                                ).toLocaleString()}`}
-                            >
-                                Changes queued
-                            </Chip>
-                        )}
                     </div>
                     {endpoint.description && (
                         <p className="mt-1 text-sm text-theme-text-muted">
@@ -138,6 +127,8 @@ export function CommunityEndpointCard({
                     </div>
                 </Alert>
             )}
+
+            <PendingChangeNotice endpoint={endpoint} />
 
             <div className="mt-4 grid gap-2">
                 <CommunityDetailRow
@@ -207,6 +198,61 @@ export function CommunityEndpointCard({
                 </Link>
             </div>
         </Surface>
+    );
+}
+
+export function PendingChangeNotice({
+    endpoint,
+}: {
+    endpoint: CommunityEndpoint;
+}) {
+    const pending = endpoint.pending;
+    if (!pending) return null;
+
+    const visibility = pending.visibility ?? endpoint.visibility;
+    const pendingProxy =
+        endpoint.type === "proxy"
+            ? ({
+                  ...endpoint,
+                  ...pending,
+                  visibility,
+                  paidOnly: pending.paidOnly ?? endpoint.paidOnly,
+                  imagePricing: pending.imagePricing ?? endpoint.imagePricing,
+              } satisfies ProxyCommunityEndpoint)
+            : null;
+    const priceGroups = pendingProxy ? communityPriceGroups(pendingProxy) : [];
+
+    return (
+        <Alert intent="info" className="mt-3" title="Changes queued">
+            <div className="flex flex-col gap-1 text-sm">
+                <span>
+                    Effective {new Date(pending.effectiveAt).toLocaleString()}
+                </span>
+                <span>
+                    Visibility: {VISIBILITY_LABELS[visibility]}
+                    {pendingProxy &&
+                        ` · ${pendingProxy.paidOnly ? "Paid Pollen only" : "Quest and Paid Pollen"}`}
+                </span>
+                {pendingProxy && (
+                    <span className="flex flex-wrap items-center gap-1.5">
+                        <span>Pricing:</span>
+                        {priceGroups.length > 0 ? (
+                            priceGroups.map((group) => (
+                                <span
+                                    key={group.key}
+                                    className="inline-flex items-center gap-1"
+                                >
+                                    {group.label}
+                                    <CommunityPriceBadges group={group} />
+                                </span>
+                            ))
+                        ) : (
+                            <span>Free</span>
+                        )}
+                    </span>
+                )}
+            </div>
+        </Alert>
     );
 }
 

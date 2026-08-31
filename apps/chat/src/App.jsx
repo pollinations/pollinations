@@ -183,7 +183,7 @@ function App() {
         };
         document.addEventListener("keydown", onKey);
         return () => document.removeEventListener("keydown", onKey);
-    }, [addChat]);
+    }, [addChat, handleThemeToggle]);
 
     const handleModelChange = useCallback((m) => {
         setSelectedModel(m);
@@ -405,6 +405,7 @@ function App() {
             updateMessage,
             selectedModel,
             sessionSettings,
+            setIsGenerating,
         ],
     );
 
@@ -457,6 +458,7 @@ function App() {
             imageGenerationOptions,
             addMessage,
             updateMessage,
+            setIsGenerating,
         ],
     );
 
@@ -508,6 +510,7 @@ function App() {
             videoGenerationOptions,
             addMessage,
             updateMessage,
+            setIsGenerating,
         ],
     );
 
@@ -550,7 +553,13 @@ function App() {
             }
             setIsGenerating(false);
         },
-        [isGenerating, selectedAudioModel, addMessage, updateMessage],
+        [
+            isGenerating,
+            selectedAudioModel,
+            addMessage,
+            updateMessage,
+            setIsGenerating,
+        ],
     );
 
     // ── Regenerate ──────────────────────────────────────────────
@@ -619,6 +628,7 @@ function App() {
         updateMessage,
         selectedModel,
         sessionSettings,
+        setIsGenerating,
     ]);
 
     const activeMessages = getActiveChat()?.messages || [];

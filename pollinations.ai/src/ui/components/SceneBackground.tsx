@@ -18,12 +18,7 @@ const PollenParticles = memo(function PollenParticles() {
     return (
         <div className="absolute inset-0 overflow-hidden">
             {PARTICLE_STYLES.map((style, i) => (
-                <div
-                    // biome-ignore lint/suspicious/noArrayIndexKey: static particle list
-                    key={i}
-                    className={PARTICLE_CLASSES[i]}
-                    style={style}
-                />
+                <div key={i} className={PARTICLE_CLASSES[i]} style={style} />
             ))}
         </div>
     );

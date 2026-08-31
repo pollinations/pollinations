@@ -199,6 +199,7 @@ export async function callNovaReelAPI(
 
     const startCommand = new StartAsyncInvokeCommand({
         modelId: "amazon.nova-reel-v1:1",
+        // biome-ignore lint/suspicious/noExplicitAny: AWS SDK model input type
         modelInput: requestBody as any,
         outputDataConfig: {
             s3OutputDataConfig: {

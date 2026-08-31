@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+
 /**
  * R2 to AWS Glacier Deep Archive Transfer Script (Streaming)
  *
@@ -15,22 +16,22 @@
  */
 
 import {
-    S3Client,
-    ListObjectsV2Command,
-    GetObjectCommand,
-    PutObjectCommand,
-} from "@aws-sdk/client-s3";
-import {
-    createWriteStream,
     createReadStream,
-    unlinkSync,
-    mkdirSync,
+    createWriteStream,
     existsSync,
-    writeFileSync,
+    mkdirSync,
     readFileSync,
-} from "fs";
+    unlinkSync,
+    writeFileSync,
+} from "node:fs";
+import { parseArgs } from "node:util";
+import {
+    GetObjectCommand,
+    ListObjectsV2Command,
+    PutObjectCommand,
+    S3Client,
+} from "@aws-sdk/client-s3";
 import archiver from "archiver";
-import { parseArgs } from "util";
 
 const { values: args } = parseArgs({
     options: {
@@ -96,7 +97,7 @@ const aws = new S3Client({
     region: process.env.AWS_REGION || "us-east-1",
 });
 
-const BATCH_SIZE = parseInt(args["batch-size"]);
+const BATCH_SIZE = parseInt(args["batch-size"], 10);
 const TEMP_DIR = "/tmp/r2-glacier";
 const CHECKPOINT_FILE = `/tmp/r2-glacier-${args.bucket}-checkpoint.json`;
 
@@ -173,7 +174,7 @@ async function downloadBatch(objects, concurrency = 20) {
     return results;
 }
 
-const CONCURRENCY = parseInt(args.concurrency);
+const CONCURRENCY = parseInt(args.concurrency, 10);
 
 // Create archive and upload to Glacier
 async function uploadBatch(objects, batchNum) {
@@ -280,7 +281,7 @@ async function transfer() {
     if (startAfter) console.log(`   Starting after: ${startAfter}`);
 
     let batch = [];
-    let continuationToken = undefined;
+    let continuationToken;
     let listingCount = 0;
 
     console.log(`\n📋 Streaming objects...`);
@@ -333,7 +334,7 @@ async function transfer() {
                 // Check max batches limit
                 if (
                     args["max-batches"] &&
-                    batchNum >= parseInt(args["max-batches"])
+                    batchNum >= parseInt(args["max-batches"], 10)
                 ) {
                     console.log(
                         `\n⏹️ Stopped after ${batchNum} batches (--max-batches)`,

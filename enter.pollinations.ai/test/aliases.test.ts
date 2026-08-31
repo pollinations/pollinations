@@ -37,50 +37,53 @@ function requiredCostRate(model: ModelName, field: UsageType): number {
     return rate as number;
 }
 
-test.for(
-    serviceAliasTestCases(TEXT_SERVICES),
-)("Text service alias %s is resolved to %s", ([alias, shouldResolveTo]) => {
-    const resolved = resolveModelName(alias);
-    expect(resolved).toBe(shouldResolveTo);
-});
+test.for(serviceAliasTestCases(TEXT_SERVICES))(
+    "Text service alias %s is resolved to %s",
+    ([alias, shouldResolveTo]) => {
+        const resolved = resolveModelName(alias);
+        expect(resolved).toBe(shouldResolveTo);
+    },
+);
 
-test.for(
-    serviceAliasTestCases(IMAGE_SERVICES),
-)("Image service alias %s is resolved to %s", ([alias, shouldResolveTo]) => {
-    const resolved = resolveModelName(alias);
-    expect(resolved).toBe(shouldResolveTo);
-});
+test.for(serviceAliasTestCases(IMAGE_SERVICES))(
+    "Image service alias %s is resolved to %s",
+    ([alias, shouldResolveTo]) => {
+        const resolved = resolveModelName(alias);
+        expect(resolved).toBe(shouldResolveTo);
+    },
+);
 
-test.for(
-    serviceAliasTestCases(AUDIO_SERVICES),
-)("Audio service alias %s is resolved to %s", ([alias, shouldResolveTo]) => {
-    const resolved = resolveModelName(alias);
-    expect(resolved).toBe(shouldResolveTo);
-});
+test.for(serviceAliasTestCases(AUDIO_SERVICES))(
+    "Audio service alias %s is resolved to %s",
+    ([alias, shouldResolveTo]) => {
+        const resolved = resolveModelName(alias);
+        expect(resolved).toBe(shouldResolveTo);
+    },
+);
 
-test.for(
-    serviceAliasTestCases(EMBEDDING_SERVICES),
-)("Embedding service alias %s is resolved to %s", ([
-    alias,
-    shouldResolveTo,
-]) => {
-    const resolved = resolveModelName(alias);
-    expect(resolved).toBe(shouldResolveTo);
-});
+test.for(serviceAliasTestCases(EMBEDDING_SERVICES))(
+    "Embedding service alias %s is resolved to %s",
+    ([alias, shouldResolveTo]) => {
+        const resolved = resolveModelName(alias);
+        expect(resolved).toBe(shouldResolveTo);
+    },
+);
 
-test.for(
-    serviceAliasTestCases(REALTIME_SERVICES),
-)("Realtime service alias %s is resolved to %s", ([alias, shouldResolveTo]) => {
-    const resolved = resolveModelName(alias);
-    expect(resolved).toBe(shouldResolveTo);
-});
+test.for(serviceAliasTestCases(REALTIME_SERVICES))(
+    "Realtime service alias %s is resolved to %s",
+    ([alias, shouldResolveTo]) => {
+        const resolved = resolveModelName(alias);
+        expect(resolved).toBe(shouldResolveTo);
+    },
+);
 
-test.for(
-    serviceAliasTestCases(MODEL3D_SERVICES),
-)("3D service alias %s is resolved to %s", ([alias, shouldResolveTo]) => {
-    const resolved = resolveModelName(alias);
-    expect(resolved).toBe(shouldResolveTo);
-});
+test.for(serviceAliasTestCases(MODEL3D_SERVICES))(
+    "3D service alias %s is resolved to %s",
+    ([alias, shouldResolveTo]) => {
+        const resolved = resolveModelName(alias);
+        expect(resolved).toBe(shouldResolveTo);
+    },
+);
 
 test("every public model has one publisher-qualified ID", () => {
     for (const model of getModels()) {

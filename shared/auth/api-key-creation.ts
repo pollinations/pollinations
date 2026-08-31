@@ -159,7 +159,7 @@ async function validateClientRedirectBinding(
     const clientKey = await db.query.apikey.findFirst({
         where: eq(schema.apikey.id, clientKeyId),
     });
-    if (!clientKey || clientKey.prefix !== "pk") {
+    if (clientKey?.prefix !== "pk") {
         rejectInvalidClientId();
     }
     const attribution = {
@@ -174,8 +174,7 @@ async function validateClientRedirectBinding(
             ),
         });
         if (
-            !device ||
-            device.status !== "pending" ||
+            device?.status !== "pending" ||
             device.expiresAt < new Date() ||
             device.clientId !== requestedClientId
         ) {

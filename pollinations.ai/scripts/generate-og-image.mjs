@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+
 /**
  * generate-og-image.mjs
  *
@@ -17,16 +18,16 @@
  * Options (edit constants below to tweak without touching logic):
  */
 
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import sharp from "sharp";
-import { fileURLToPath } from "url";
-import path from "path";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // --- Tunable constants ---
 const SOURCE = path.resolve(
-  __dirname,
-  "../public/Generated Image March 07, 2026 - 7_39PM.png"
+    __dirname,
+    "../public/Generated Image March 07, 2026 - 7_39PM.png",
 );
 const OUTPUT = path.resolve(__dirname, "../public/og-image.png");
 
@@ -46,29 +47,29 @@ const COMPRESSION_LEVEL = 9;
 // ---
 
 async function main() {
-  const meta = await sharp(SOURCE).metadata();
-  console.log(`Source: ${meta.width}×${meta.height} (${meta.format})`);
+    const meta = await sharp(SOURCE).metadata();
+    console.log(`Source: ${meta.width}×${meta.height} (${meta.format})`);
 
-  await sharp(SOURCE)
-    .resize(OG_WIDTH, OG_HEIGHT, {
-      fit: FIT,
-      position: POSITION,
-      kernel: KERNEL,
-    })
-    .png({
-      compressionLevel: COMPRESSION_LEVEL,
-      palette: false, // keep full color depth
-    })
-    .toFile(OUTPUT);
+    await sharp(SOURCE)
+        .resize(OG_WIDTH, OG_HEIGHT, {
+            fit: FIT,
+            position: POSITION,
+            kernel: KERNEL,
+        })
+        .png({
+            compressionLevel: COMPRESSION_LEVEL,
+            palette: false, // keep full color depth
+        })
+        .toFile(OUTPUT);
 
-  const { default: fs } = await import("fs");
-  const bytes = fs.statSync(OUTPUT).size;
-  console.log(
-    `Output: ${OUTPUT} — ${OG_WIDTH}×${OG_HEIGHT}, ${(bytes / 1024).toFixed(1)} KB`
-  );
+    const { default: fs } = await import("node:fs");
+    const bytes = fs.statSync(OUTPUT).size;
+    console.log(
+        `Output: ${OUTPUT} — ${OG_WIDTH}×${OG_HEIGHT}, ${(bytes / 1024).toFixed(1)} KB`,
+    );
 }
 
 main().catch((err) => {
-  console.error(err);
-  process.exit(1);
+    console.error(err);
+    process.exit(1);
 });

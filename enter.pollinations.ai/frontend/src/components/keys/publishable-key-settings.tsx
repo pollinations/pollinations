@@ -52,11 +52,7 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                     going to production.
                 </p>
                 {redirectUris.map((uri, index) => (
-                    <div
-                        // biome-ignore lint/suspicious/noArrayIndexKey: stable enough for a small editable list
-                        key={index}
-                        className="flex items-center gap-2"
-                    >
+                    <div key={index} className="flex items-center gap-2">
                         <Input
                             type="text"
                             value={uri}

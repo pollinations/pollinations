@@ -30,6 +30,7 @@ export async function logGptImageError(
     safeParams: ImageParams,
     userInfo = {},
     error: Error,
+    // biome-ignore lint/suspicious/noExplicitAny: content safety results are untyped
     contentSafetyResults: any = null,
 ): Promise<void> {
     try {

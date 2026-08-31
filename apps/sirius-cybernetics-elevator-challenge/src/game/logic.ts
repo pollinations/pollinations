@@ -172,7 +172,6 @@ export const useGuideMessages = (
 
     // floor changed — intentionally only depend on currentFloor to avoid
     // firing on every gameState change (which caused repeated "Now arriving" spam)
-    // biome-ignore lint/correctness/useExhaustiveDependencies: intentional
     useEffect(() => {
         addMessage({
             persona: "guide",

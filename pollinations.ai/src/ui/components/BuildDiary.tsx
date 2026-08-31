@@ -96,7 +96,6 @@ export function BuildDiary() {
     const entrySummaryUrl = entry?.summaryUrl;
 
     // Fetch entry content when the selected entry changes
-    // biome-ignore lint/correctness/useExhaustiveDependencies: prRefs excluded intentionally — it's an object ref that changes when timeline is enriched by getEntryContent, causing an infinite loop
     useEffect(() => {
         if (!entryDate || !entryType) return;
         const request: EntryContentRequest = {
@@ -122,7 +121,6 @@ export function BuildDiary() {
     }, [currentPrRef, onPR, getPRContent]);
 
     // Reset image error on navigation
-    // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally re-run when x/y change
     useEffect(() => {
         setImgError(false);
     }, [x, y]);

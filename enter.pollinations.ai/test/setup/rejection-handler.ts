@@ -1,5 +1,6 @@
 import { getLogger } from "@logtape/logtape";
 
+// biome-ignore lint/suspicious/noExplicitAny: rejection handler receives unknown errors
 function rejectionHandler(reason: any) {
     const log = getLogger(["test", "rejection"]);
     if (reason?.statusCode === 302) {

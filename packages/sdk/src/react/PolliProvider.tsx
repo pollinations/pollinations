@@ -125,7 +125,7 @@ function describeAppKey(appKey: string): string {
 function warnAuthSetup(appKey: string, redirectUrl: string | null): void {
     if (isProductionRuntime()) return;
 
-    if (!appKey || !appKey.startsWith("pk_")) {
+    if (!appKey?.startsWith("pk_")) {
         console.warn(
             `[PolliProvider] appKey should be a publishable pk_ App Key. Received ${describeAppKey(
                 appKey,

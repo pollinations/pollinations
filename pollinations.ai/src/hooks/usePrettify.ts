@@ -22,12 +22,10 @@ export function usePrettify<T, K extends keyof T>(
     const itemsKey = useMemo(() => JSON.stringify(items), [items]);
 
     // Keep in sync when items change
-    // biome-ignore lint/correctness/useExhaustiveDependencies: itemsKey is a stable serialization of items to avoid infinite re-renders
     useEffect(() => {
         setPrettified(items);
     }, [itemsKey]);
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: itemsKey is a stable serialization of items to avoid infinite re-renders
     useEffect(() => {
         if (!PRETTIFY_ENABLED || items.length === 0) return;
 

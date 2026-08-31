@@ -62,17 +62,19 @@ const NON_MODERATION_MESSAGES = [
 ];
 
 describe("isContentPolicyViolation", () => {
-    it.each(
-        REAL_MODERATION_MESSAGES,
-    )("flags real moderation message as content policy: %s", (message) => {
-        expect(isContentPolicyViolation(message)).toBe(true);
-    });
+    it.each(REAL_MODERATION_MESSAGES)(
+        "flags real moderation message as content policy: %s",
+        (message) => {
+            expect(isContentPolicyViolation(message)).toBe(true);
+        },
+    );
 
-    it.each(
-        NON_MODERATION_MESSAGES,
-    )("does NOT flag genuine backend failure: %s", (message) => {
-        expect(isContentPolicyViolation(message)).toBe(false);
-    });
+    it.each(NON_MODERATION_MESSAGES)(
+        "does NOT flag genuine backend failure: %s",
+        (message) => {
+            expect(isContentPolicyViolation(message)).toBe(false);
+        },
+    );
 
     it("returns false for empty, null, or undefined", () => {
         expect(isContentPolicyViolation("")).toBe(false);

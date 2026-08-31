@@ -161,62 +161,68 @@ describe("OpenRouter Grok Imagine Image 2.0", () => {
         ["low", "2k", "2K"],
         ["medium", undefined, "1K"],
         ["medium", "2k", "2K"],
-    ] as const)("forwards %s quality at %s resolution", async (quality, resolution, expectedResolution) => {
-        syncImageEnv(
-            {
-                OPENROUTER_API_KEY: "openrouter-test-key",
-            } as CloudflareBindings,
-            ["OPENROUTER_API_KEY"],
-        );
-        const requests: Record<string, unknown>[] = [];
-        mockOpenRouterFetch(requests);
+    ] as const)(
+        "forwards %s quality at %s resolution",
+        async (quality, resolution, expectedResolution) => {
+            syncImageEnv(
+                {
+                    OPENROUTER_API_KEY: "openrouter-test-key",
+                } as CloudflareBindings,
+                ["OPENROUTER_API_KEY"],
+            );
+            const requests: Record<string, unknown>[] = [];
+            mockOpenRouterFetch(requests);
 
-        const result = await callOpenRouterGrokImagineImage2API("test prompt", {
-            ...baseParams,
-            model: "grok-imagine-image-2.0",
-            quality,
-            resolution,
-            image: [
-                "https://example.com/one.png",
-                "https://example.com/two.png",
-                "https://example.com/three.png",
-            ],
-        });
+            const result = await callOpenRouterGrokImagineImage2API(
+                "test prompt",
+                {
+                    ...baseParams,
+                    model: "grok-imagine-image-2.0",
+                    quality,
+                    resolution,
+                    image: [
+                        "https://example.com/one.png",
+                        "https://example.com/two.png",
+                        "https://example.com/three.png",
+                    ],
+                },
+            );
 
-        expect(requests[0]).toEqual({
-            model: "x-ai/grok-imagine-image-2.0",
-            prompt: "test prompt",
-            n: 1,
-            resolution: expectedResolution,
-            quality,
-            provider: {
-                only: ["xai"],
-                allow_fallbacks: false,
-            },
-            aspect_ratio: "1:1",
-            input_references: [
-                {
-                    type: "image_url",
-                    image_url: { url: "https://example.com/one.png" },
+            expect(requests[0]).toEqual({
+                model: "x-ai/grok-imagine-image-2.0",
+                prompt: "test prompt",
+                n: 1,
+                resolution: expectedResolution,
+                quality,
+                provider: {
+                    only: ["xai"],
+                    allow_fallbacks: false,
                 },
-                {
-                    type: "image_url",
-                    image_url: { url: "https://example.com/two.png" },
+                aspect_ratio: "1:1",
+                input_references: [
+                    {
+                        type: "image_url",
+                        image_url: { url: "https://example.com/one.png" },
+                    },
+                    {
+                        type: "image_url",
+                        image_url: { url: "https://example.com/two.png" },
+                    },
+                    {
+                        type: "image_url",
+                        image_url: { url: "https://example.com/three.png" },
+                    },
+                ],
+            });
+            expect(result.trackingData).toEqual({
+                actualModel: "grok-imagine-image-2.0",
+                usage: {
+                    promptImageTokens: 3,
+                    completionImageTokens: 1,
                 },
-                {
-                    type: "image_url",
-                    image_url: { url: "https://example.com/three.png" },
-                },
-            ],
-        });
-        expect(result.trackingData).toEqual({
-            actualModel: "grok-imagine-image-2.0",
-            usage: {
-                promptImageTokens: 3,
-                completionImageTokens: 1,
-            },
-        });
-    });
+            });
+        },
+    );
 
     it("rejects more than three reference images", async () => {
         await expect(
@@ -399,27 +405,30 @@ describe("OpenRouter Gemini image", () => {
         [1024, 1024, "1K"],
         [1920, 1080, "2K"],
         [3840, 2160, "4K"],
-    ] as const)("maps %sx%s NanoBanana 2 requests to %s", async (width, height, expectedResolution) => {
-        syncImageEnv(
-            {
-                OPENROUTER_API_KEY: "openrouter-test-key",
-            } as CloudflareBindings,
-            ["OPENROUTER_API_KEY"],
-        );
-        const requests: Record<string, unknown>[] = [];
-        mockGeminiFetch(requests);
+    ] as const)(
+        "maps %sx%s NanoBanana 2 requests to %s",
+        async (width, height, expectedResolution) => {
+            syncImageEnv(
+                {
+                    OPENROUTER_API_KEY: "openrouter-test-key",
+                } as CloudflareBindings,
+                ["OPENROUTER_API_KEY"],
+            );
+            const requests: Record<string, unknown>[] = [];
+            mockGeminiFetch(requests);
 
-        await callOpenRouterGeminiImageAPI("test prompt", {
-            ...baseParams,
-            model: "nanobanana-2",
-            width,
-            height,
-            reasoning: "fast",
-        });
+            await callOpenRouterGeminiImageAPI("test prompt", {
+                ...baseParams,
+                model: "nanobanana-2",
+                width,
+                height,
+                reasoning: "fast",
+            });
 
-        expect(requests[0].resolution).toBe(expectedResolution);
-        expect(requests[0].reasoning_effort).toBe("low");
-    });
+            expect(requests[0].resolution).toBe(expectedResolution);
+            expect(requests[0].reasoning_effort).toBe("low");
+        },
+    );
 
     it("pins NanoBanana 2 Lite to 1K Vertex with no fallback", async () => {
         syncImageEnv(
@@ -918,28 +927,28 @@ describe("OpenRouter Recraft vector", () => {
         });
     });
 
-    it.each([
-        null,
-        "image/png",
-    ])("rejects an unsupported %s response media type", async (mediaType) => {
-        syncImageEnv(
-            {
-                OPENROUTER_API_KEY: "openrouter-test-key",
-            } as CloudflareBindings,
-            ["OPENROUTER_API_KEY"],
-        );
-        mockRecraftResponse([], mediaType);
+    it.each([null, "image/png"])(
+        "rejects an unsupported %s response media type",
+        async (mediaType) => {
+            syncImageEnv(
+                {
+                    OPENROUTER_API_KEY: "openrouter-test-key",
+                } as CloudflareBindings,
+                ["OPENROUTER_API_KEY"],
+            );
+            mockRecraftResponse([], mediaType);
 
-        await expect(
-            callOpenRouterRecraftVectorAPI("vector prompt", {
-                ...baseParams,
-                model: "recraft-v4.1-vector",
-            }),
-        ).rejects.toMatchObject({
-            status: 502,
-            upstreamUrl: OPENROUTER_IMAGE_URL,
-        });
-    });
+            await expect(
+                callOpenRouterRecraftVectorAPI("vector prompt", {
+                    ...baseParams,
+                    model: "recraft-v4.1-vector",
+                }),
+            ).rejects.toMatchObject({
+                status: 502,
+                upstreamUrl: OPENROUTER_IMAGE_URL,
+            });
+        },
+    );
 
     it("preserves provider capacity responses as retryable 429 errors", async () => {
         syncImageEnv(

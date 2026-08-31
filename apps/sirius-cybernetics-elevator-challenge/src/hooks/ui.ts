@@ -171,7 +171,7 @@ export function useModelSelector() {
 
 export function useMessageScroll(messages: Message[]) {
     const ref = useRef<HTMLDivElement>(null);
-    // biome-ignore lint/correctness/useExhaustiveDependencies: scroll on new messages
+    // scroll on new messages
     useEffect(() => {
         ref.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);

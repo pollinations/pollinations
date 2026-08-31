@@ -425,7 +425,7 @@ export function Authorize() {
                             },
                         })
                         .catch(() => null);
-                    if (!res || !res.ok) {
+                    if (!res?.ok) {
                         // The key was minted but can't be delivered — don't
                         // leave an active orphan in the account.
                         authClient.apiKey.delete({ keyId: id }).catch(() => {});

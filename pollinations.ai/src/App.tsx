@@ -5,7 +5,7 @@ import Layout from "./ui/components/Layout";
 
 function ScrollToTop() {
     const location = useLocation();
-    // biome-ignore lint/correctness/useExhaustiveDependencies: scroll on route change
+    // scroll on route change
     useEffect(() => {
         window.scrollTo(0, 0);
     }, [location.pathname]);

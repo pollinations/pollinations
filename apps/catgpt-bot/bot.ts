@@ -192,7 +192,7 @@ async function catchUpUnanswered(client: Client): Promise<void> {
     const channel = await client.channels.fetch(CHANNEL_ID);
     if (!channel || !("messages" in channel)) return;
     const messages = await channel.messages.fetch({ limit: 50 });
-    const botId = client.user!.id;
+    const botId = client.user?.id;
     const answered = new Set<string>();
     for (const m of messages.values()) {
         // only a comic attachment counts as answered — the 😾 error fallback doesn't

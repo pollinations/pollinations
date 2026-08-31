@@ -51,6 +51,32 @@
     },
     "overrides": [
         {
+            "includes": ["**/*.svg"],
+            "linter": {
+                "rules": {
+                    "a11y": {
+                        "noSvgWithoutTitle": "off"
+                    }
+                }
+            }
+        },
+        {
+            "includes": ["apps/**"],
+            "linter": {
+                "rules": {
+                    "suspicious": {
+                        "noExplicitAny": "off"
+                    },
+                    "complexity": {
+                        "noStaticOnlyClass": "off"
+                    },
+                    "style": {
+                        "noNonNullAssertion": "off"
+                    }
+                }
+            }
+        },
+        {
             "includes": ["apps/chat/**"],
             "linter": {
                 "rules": {

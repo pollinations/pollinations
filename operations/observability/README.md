@@ -65,6 +65,7 @@ staging read token against the staging workspace.
 ## Secrets
 
 Secrets are stored in `.env` locally and as Worker secrets in production.
+The public OAuth client ID is configured in `wrangler.toml`.
 
 | Variable | Purpose |
 | --- | --- |
@@ -73,7 +74,6 @@ Secrets are stored in `.env` locally and as Worker secrets in production.
 | `TINYBIRD_LEGACY_READ_TOKEN` | Read token for the legacy `pollinations_ai` workspace |
 | `DISCORD_WEBHOOK_URL` | Discord webhook for alerts |
 | `POLLINATIONS_AUTH_SESSION_SECRET` | Signs the Worker's private session cookie |
-| `POLLINATIONS_OAUTH_CLIENT_ID` | Publishable `pk_` OAuth client ID |
 
 Dashboard access requires the `admin` role on the Pollinations account in the
 Better Auth database.

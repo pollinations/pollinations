@@ -19,9 +19,9 @@ run_worker_first = true
 [vars]
 TINYBIRD_API = "https://api.europe-west2.gcp.tinybird.co"
 GITHUB_REPO = "pollinations/pollinations"
+POLLINATIONS_OAUTH_CLIENT_ID = "pk_Bxny9FSNDpousKqW"
 
 # Secrets:
 # - TINYBIRD_READ_TOKEN (read-only, in secrets/env.json)
 # - POLLINATIONS_AUTH_SESSION_SECRET
-# - POLLINATIONS_OAUTH_CLIENT_ID
 # - GITHUB_TOKEN (optional, for higher API rate limits)

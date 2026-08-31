@@ -33,6 +33,7 @@ crons = ["*/5 * * * *"]
 GF_SERVER_ROOT_URL = "https://observability.pollinations.ai"
 GF_ADMIN_USER = "admin"
 GF_ADMIN_EMAIL = "hi@myceli.ai"
+POLLINATIONS_OAUTH_CLIENT_ID = "pk_vVa38CFt1R1gGScW"
 
 # Secrets:
 # - GF_ADMIN_PASSWORD
@@ -40,4 +41,3 @@ GF_ADMIN_EMAIL = "hi@myceli.ai"
 # - TINYBIRD_LEGACY_READ_TOKEN
 # - DISCORD_WEBHOOK_URL
 # - POLLINATIONS_AUTH_SESSION_SECRET
-# - POLLINATIONS_OAUTH_CLIENT_ID

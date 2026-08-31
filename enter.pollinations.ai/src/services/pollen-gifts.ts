@@ -238,6 +238,38 @@ export async function redeemPollenGift(
     };
 }
 
+export async function voidRefundedPollenGift(
+    db: D1Database,
+    refund: Stripe.Refund,
+): Promise<void> {
+    if (refund.status !== "succeeded") return;
+    const paymentIntentId = getStripeId(refund.payment_intent);
+    if (!paymentIntentId) return;
+
+    await db.batch([
+        db
+            .prepare(
+                `UPDATE user
+                 SET pack_balance = ROUND(COALESCE(pack_balance, 0) - (
+                     SELECT pollen_amount FROM pollen_gift_code
+                     WHERE stripe_payment_intent_id = ? AND status = 'redeemed'
+                 ), ${POLLEN_BILLING_PRECISION})
+                 WHERE id = (
+                     SELECT redeemer_user_id FROM pollen_gift_code
+                     WHERE stripe_payment_intent_id = ? AND status = 'redeemed'
+                 )`,
+            )
+            .bind(paymentIntentId, paymentIntentId),
+        db
+            .prepare(
+                `UPDATE pollen_gift_code SET status = 'voided'
+                 WHERE stripe_payment_intent_id = ?
+                   AND status IN ('active', 'redeemed')`,
+            )
+            .bind(paymentIntentId),
+    ]);
+}
+
 export async function canRevealPollenGiftCode(
     db: D1Database,
     input: { giftId: string; checkoutSessionId: string },

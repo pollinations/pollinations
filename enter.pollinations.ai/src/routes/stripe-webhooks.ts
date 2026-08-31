@@ -11,6 +11,7 @@ import {
     fulfillPollenGiftCheckout,
     isPollenGiftCheckoutSession,
     voidPendingPollenGiftCheckout,
+    voidRefundedPollenGift,
 } from "../services/pollen-gifts.ts";
 import { isUniqueConstraintError } from "../utils/d1.ts";
 import {
@@ -890,6 +891,7 @@ export const stripeWebhooksRoutes = new Hono<Env>()
             case "refund.updated":
             case "refund.failed": {
                 const refund = event.data.object as Stripe.Refund;
+                await voidRefundedPollenGift(c.env.DB, refund);
                 console.log(`Refund ${event.type}: ${refund.id}`);
                 c.executionCtx.waitUntil(
                     sendStripeEventToTinybird(c.env, {

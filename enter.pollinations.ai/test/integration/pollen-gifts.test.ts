@@ -339,7 +339,7 @@ test("failed gift card fingerprints are recorded against the anonymous buyer", a
     });
 });
 
-test("paid gift activation is idempotent and redemption is authenticated and single-use", async ({
+test("paid gift lifecycle is authenticated, single-use, and idempotent", async ({
     mocks,
     sessionToken,
 }) => {
@@ -544,6 +544,44 @@ test("paid gift activation is idempotent and redemption is authenticated and sin
         status: "redeemed",
         redeemerUserId: userBefore.id,
     });
+
+    const refundEvent = {
+        id: "evt_pollen_gift_refund",
+        type: "refund.created",
+        created: Math.floor(Date.now() / 1000),
+        livemode: false,
+        data: {
+            object: {
+                id: "re_pollen_gift",
+                object: "refund",
+                amount: totalCents,
+                currency: "usd",
+                status: "succeeded",
+                payment_intent: "pi_pollen_gift",
+                metadata: {},
+            },
+        },
+    };
+    for (const event of [
+        refundEvent,
+        { ...refundEvent, id: "evt_pollen_gift_refund_retry" },
+    ]) {
+        const response = await postSignedStripeWebhook(event);
+        expect(response.status).toBe(200);
+    }
+
+    const refundedGift = await env.DB.prepare(
+        "SELECT status FROM pollen_gift_code WHERE id = ?",
+    )
+        .bind(giftId)
+        .first<{ status: string }>();
+    expect(refundedGift?.status).toBe("voided");
+    const userAfterRefund = await env.DB.prepare(
+        "SELECT pack_balance AS packBalance FROM user WHERE id = ?",
+    )
+        .bind(userBefore.id)
+        .first<{ packBalance: number }>();
+    expect(userAfterRefund?.packBalance).toBe(userBefore.packBalance ?? 0);
 });
 
 test("expired Checkout Session voids a pending gift", async ({ mocks }) => {

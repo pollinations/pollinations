@@ -21,7 +21,6 @@ import {
     communityEndpointPriceFieldsForModality,
     communityEndpointPrices,
     communityEndpointSupportedEndpoints,
-    communityEndpointTitle,
     communityImageEditsUrl,
     communityImageGenerationsUrl,
     communityModelDefinition,
@@ -100,8 +99,9 @@ import { communityEndpointGatewayContext } from "./text/communityEndpoint.ts";
 const db = drizzle(env.DB);
 
 type CommunityEndpointInsert = typeof communityEndpointTable.$inferInsert;
-type CommunityEndpointFixture = CommunityEndpointInsert &
+type CommunityEndpointFixture = Omit<CommunityEndpointInsert, "title"> &
     Partial<CommunityEndpointPrices> & {
+        title?: string;
         modality?: CommunityEndpointModality;
         imagePricing?: CommunityEndpointImagePricing;
         inputModalities?: ModelInputModality[] | null;
@@ -173,6 +173,7 @@ function insertCommunityEndpoints(
                     };
         return {
             ...listing,
+            title: row.title ?? row.name,
             type,
             baseUrl:
                 type === "prompt_agent"
@@ -633,6 +634,7 @@ describe("community endpoint helpers", () => {
     it("restricts community transcription models to the transcription endpoint", () => {
         const definition = communityModelDefinition({
             modelId: "voodoohop/transcription",
+            title: "Transcription",
             description: null,
             modality: "transcription",
             ...communityEndpointPrices({}),
@@ -662,9 +664,10 @@ describe("community endpoint helpers", () => {
         ).toThrow("Provider URL cannot include credentials");
     });
 
-    it("uses the community endpoint description as the model title", () => {
+    it("uses the required community endpoint title", () => {
         const modelDefinition = communityModelDefinition({
             modelId: "voodoohop/openai",
+            title: "OpenAI Community",
             description: "OpenAI via community endpoint",
             ...communityEndpointPrices({
                 promptTextPrice: 0.1,
@@ -672,7 +675,7 @@ describe("community endpoint helpers", () => {
             }),
         });
 
-        expect(modelDefinition.title).toBe("OpenAI via community endpoint");
+        expect(modelDefinition.title).toBe("OpenAI Community");
         expect(modelDefinition.aliases).toEqual(["community/voodoohop/openai"]);
         expect(modelDefinition.description).toBe(
             "OpenAI via community endpoint",
@@ -685,6 +688,7 @@ describe("community endpoint helpers", () => {
         expect(
             communityModelDefinition({
                 modelId: "voodoohop/openai",
+                title: "OpenAI",
                 description: null,
                 ...prices,
             }).paidOnly,
@@ -693,6 +697,7 @@ describe("community endpoint helpers", () => {
         expect(
             communityModelDefinition({
                 modelId: "voodoohop/openai",
+                title: "OpenAI",
                 description: null,
                 paidOnly: true,
                 ...prices,
@@ -729,28 +734,11 @@ describe("community endpoint helpers", () => {
         expect(modelDefinition.brandUrl).toBe("https://example.com/");
     });
 
-    it("falls back to the model name when title and description are unset", () => {
-        expect(
-            communityEndpointTitle({
-                modelId: "voodoohop/openai",
-                title: null,
-                description: null,
-            }),
-        ).toBe("openai");
-        // Whitespace-only titles are treated as unset rather than rendering blank.
-        expect(
-            communityEndpointTitle({
-                modelId: "voodoohop/openai",
-                title: "   ",
-                description: "Community endpoint",
-            }),
-        ).toBe("Community endpoint");
-    });
-
     it("builds community image models with one fixed per-image price", () => {
         const modelId = "voodoohop/flux";
         const definition = communityModelDefinition({
             modelId,
+            title: "Community Image",
             description: "Community image model",
             modality: "image",
             ...communityEndpointPrices({
@@ -788,6 +776,7 @@ describe("community endpoint helpers", () => {
         const modelId = "voodoohop/gptimage";
         const definition = communityModelDefinition({
             modelId,
+            title: "GPT Image",
             description: "Token-priced image model",
             modality: "image",
             imagePricing: "tokens",
@@ -826,6 +815,7 @@ describe("community endpoint helpers", () => {
         const modelId = "voodoohop/video";
         const definition = communityModelDefinition({
             modelId,
+            title: "Community Video",
             description: "Community video model",
             modality: "video",
             inputModalities: ["text", "image", "audio", "video"],
@@ -852,6 +842,7 @@ describe("community endpoint helpers", () => {
         const modelId = "voodoohop/bge";
         const definition = communityModelDefinition({
             modelId,
+            title: "Community Embedding",
             description: "Community embedding model",
             modality: "embedding",
             ...communityEndpointPrices({
@@ -903,6 +894,7 @@ describe("community endpoint helpers", () => {
     it('defaults input modalities to ["text"] when not declared', () => {
         const definition = communityModelDefinition({
             modelId: "voodoohop/openai",
+            title: "OpenAI Community",
             description: "OpenAI via community endpoint",
             ...communityEndpointPrices({
                 promptTextPrice: 0.1,
@@ -916,6 +908,7 @@ describe("community endpoint helpers", () => {
     it("preserves explicitly declared input modalities", () => {
         const definition = communityModelDefinition({
             modelId: "marcosfrgames08/glm-4.6v-flash",
+            title: "GLM Vision",
             description: "Vision model",
             inputModalities: ["image", "video"],
             ...communityEndpointPrices({
@@ -930,6 +923,7 @@ describe("community endpoint helpers", () => {
     it("maps owner-declared catalog metadata onto text models", () => {
         const definition = communityModelDefinition({
             modelId: "voodoohop/openai",
+            title: "OpenAI Community",
             description: "OpenAI via community endpoint",
             advertised: {
                 capabilities: ["tool_calling", "reasoning"],
@@ -948,6 +942,7 @@ describe("community endpoint helpers", () => {
     it("does not advertise text metadata after a model changes modality", () => {
         const definition = communityModelDefinition({
             modelId: "voodoohop/gptimage",
+            title: "GPT Image",
             description: "Image model",
             modality: "image",
             advertised: {
@@ -965,6 +960,7 @@ describe("community endpoint helpers", () => {
     it("filters inputs that image endpoints cannot accept", () => {
         const definition = communityModelDefinition({
             modelId: "voodoohop/gptimage",
+            title: "GPT Image",
             description: "Image model",
             modality: "image",
             inputModalities: ["text", "audio"],
@@ -981,6 +977,7 @@ describe("community endpoint helpers", () => {
         const modelId = "voodoohop/whisper";
         const definition = communityModelDefinition({
             modelId,
+            title: "Community Transcription",
             description: "Community transcription model",
             modality: "transcription",
             ...communityEndpointPrices({ promptAudioPrice: 0.0000445 }),
@@ -2581,6 +2578,7 @@ fixtureTest(
             ownerUserId,
             visibility: "public",
             name: modelName,
+            title: "Public community model",
             description: "Public community model",
             perUserRpm: 0.5,
             baseUrl: "https://api.example.com/v1",

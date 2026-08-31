@@ -31,11 +31,7 @@ const OPENAI_REALTIME_COST = {
 export const REALTIME_SERVICES = {
     [DEFAULT_REALTIME_MODEL]: {
         ...OPENAI_REALTIME_BASE,
-        aliases: [
-            "openai/gpt-realtime-2.1",
-            "gpt-realtime-2",
-            "openai/gpt-realtime-2",
-        ],
+        aliases: ["openai/gpt-realtime-2.1", "gpt-realtime-2"],
         addedDate: new Date("2026-07-16").getTime(),
         cost: OPENAI_REALTIME_COST,
         billing: OPENAI_REALTIME_CACHE_BILLING,

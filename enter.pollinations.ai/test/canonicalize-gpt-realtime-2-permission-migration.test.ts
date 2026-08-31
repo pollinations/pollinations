@@ -31,12 +31,6 @@ describe("canonicalize GPT Realtime 2 permission migration", () => {
                 }),
             ],
             [
-                "retired-namespaced",
-                JSON.stringify({
-                    models: ["openai/gpt-realtime-2", "flux"],
-                }),
-            ],
-            [
                 "retired-before-canonical",
                 JSON.stringify({
                     models: [
@@ -104,9 +98,6 @@ describe("canonicalize GPT Realtime 2 permission migration", () => {
             models: ["gpt-realtime-2.1", "flux"],
             note: "keep",
         });
-        expect(JSON.parse(permissions["retired-namespaced"] as string)).toEqual(
-            { models: ["gpt-realtime-2.1", "flux"] },
-        );
         expect(
             JSON.parse(permissions["retired-before-canonical"] as string),
         ).toEqual({
@@ -148,7 +139,7 @@ describe("canonicalize GPT Realtime 2 permission migration", () => {
                 '$.models'
             ) = 'array'
               AND model.type = 'text'
-              AND model.value IN ('gpt-realtime-2', 'openai/gpt-realtime-2')
+              AND model.value = 'gpt-realtime-2'
         `).first<{ count: number }>();
         expect(retiredAfter?.count).toBe(0);
 

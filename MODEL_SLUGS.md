@@ -246,7 +246,7 @@ Only the names are changing. Model behavior and pricing stay the same.
 | Text Embedding 3 Small | `openai-3-small` | `openai/text-embedding-3-small` |
 | Whisper Large V3 | `whisper` | `openai/whisper-large-v3` |
 
-GPT Realtime 2 retired on August 31, 2026. `gpt-realtime-2` and `openai/gpt-realtime-2` remain compatibility aliases for GPT Realtime 2.1.
+GPT Realtime 2 retired on August 31, 2026. `gpt-realtime-2` remains a compatibility alias for GPT Realtime 2.1; it will not receive a separate namespaced ID.
 
 ## Perplexity
 

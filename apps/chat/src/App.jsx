@@ -636,6 +636,7 @@ function App() {
                     messages={activeMessages}
                     isGenerating={isGenerating}
                     onRegenerate={handleRegenerateMessage}
+                    onOpenBYOP={() => setIsBYOPModalOpen(true)}
                 />
 
                 <ChatInput

@@ -159,6 +159,19 @@ test("issue reward migration embeds the legacy winner's GitHub id", async ({
         .from(schema.rewards)
         .where(eq(schema.rewards.id, legacyKey));
     expect(reward?.idempotencyKey).toBe(`${legacyKey}:github:${user.githubId}`);
+
+    const unmappedKey = "quest:github:issue:unmapped";
+    await db.insert(schema.rewards).values({
+        id: unmappedKey,
+        idempotencyKey: unmappedKey,
+        userId: null,
+        questId: "github:issue:unmapped",
+        title: "Unmapped legacy issue reward",
+        pollenAmount: 5,
+        balanceBucket: "tier",
+        earnedAt: new Date(),
+    });
+    await expect(env.DB.prepare(issueRewardMigration).run()).rejects.toThrow();
 });
 
 /** Distinct GitHub id per fixture account — github_id is unique. */

@@ -587,9 +587,7 @@ test("paid gift activation is idempotent and redemption is authenticated and sin
     });
 });
 
-test("a refund before fulfillment stays revoked until the refund fails", async ({
-    mocks,
-}) => {
+test("a refund before fulfillment stays revoked", async ({ mocks }) => {
     await mocks.enable("stripe", "tinybird");
     const amount = 20;
     const checkoutResponse = await SELF.fetch(`${giftBase}/checkout`, {
@@ -676,12 +674,12 @@ test("a refund before fulfillment stays revoked until the refund fails", async (
     });
     expect(failedRefundResponse.status).toBe(200);
 
-    const restoredGift = await env.DB.prepare(
+    const finalGift = await env.DB.prepare(
         "SELECT status FROM pollen_gift_code WHERE id = ?",
     )
         .bind(giftId)
         .first<{ status: string }>();
-    expect(restoredGift?.status).toBe("active");
+    expect(finalGift?.status).toBe("refunded");
 });
 
 test("stale gift payment metadata is acknowledged without webhook retries", async ({
@@ -699,10 +697,12 @@ test("stale gift payment metadata is acknowledged without webhook retries", asyn
         },
     });
 
-    const events = [
-        {
-            id: "evt_unlinked_gift_refund",
-            type: "refund.created",
+    const response = await postSignedStripeWebhook({
+        id: "evt_unlinked_gift_refund",
+        type: "refund.created",
+        created: 200,
+        livemode: false,
+        data: {
             object: {
                 id: "re_unlinked_gift",
                 object: "refund",
@@ -713,31 +713,8 @@ test("stale gift payment metadata is acknowledged without webhook retries", asyn
                 metadata: {},
             },
         },
-        {
-            id: "evt_unlinked_gift_dispute",
-            type: "charge.dispute.created",
-            object: {
-                id: "dp_unlinked_gift",
-                object: "dispute",
-                amount: 2_000,
-                currency: "usd",
-                status: "needs_response",
-                payment_intent: paymentIntentId,
-                metadata: {},
-            },
-        },
-    ];
-
-    for (const [index, event] of events.entries()) {
-        const response = await postSignedStripeWebhook({
-            id: event.id,
-            type: event.type,
-            created: 200 + index,
-            livemode: false,
-            data: { object: event.object },
-        });
-        expect(response.status).toBe(200);
-    }
+    });
+    expect(response.status).toBe(200);
 });
 
 test("expired Checkout Session voids a pending gift", async ({ mocks }) => {
@@ -836,18 +813,11 @@ test("a full refund reverses redeemed Pollen exactly once", async ({
     }
 
     const gift = await env.DB.prepare(
-        `SELECT status, balance_reversed AS balanceReversed
-         FROM pollen_gift_code WHERE id = ?`,
+        "SELECT status FROM pollen_gift_code WHERE id = ?",
     )
         .bind(giftId)
-        .first<{
-            status: string;
-            balanceReversed: number;
-        }>();
-    expect(gift).toEqual({
-        status: "refunded",
-        balanceReversed: 1,
-    });
+        .first<{ status: string }>();
+    expect(gift?.status).toBe("refunded");
     const balance = await env.DB.prepare(
         "SELECT pack_balance AS packBalance FROM user WHERE id = ?",
     )
@@ -901,28 +871,18 @@ test("redemption racing a refund never leaves spendable Pollen", async ({
         payment_intent: paymentIntentId,
         metadata: {},
     } as Stripe.Refund;
-    const event = {
-        id: "evt_gift_redemption_race",
-        type: "refund.created",
-        created: Math.floor(now / 1000),
-        livemode: false,
-        data: { object: refund },
-    } as Stripe.Event;
-
-    const [redemption, giftRelated] = await Promise.all([
+    const [, giftRelated] = await Promise.all([
         redeemPollenGift(env.DB, { code, userId: user.id }),
-        recordPollenGiftRefund(env.DB, event, refund),
+        recordPollenGiftRefund(env.DB, refund),
     ]);
 
     expect(giftRelated).toBe(true);
     const gift = await env.DB.prepare(
-        `SELECT status, balance_reversed AS balanceReversed
-         FROM pollen_gift_code WHERE id = ?`,
+        "SELECT status FROM pollen_gift_code WHERE id = ?",
     )
         .bind(giftId)
-        .first<{ status: string; balanceReversed: number }>();
+        .first<{ status: string }>();
     expect(gift?.status).toBe("refunded");
-    expect(gift?.balanceReversed).toBe(redemption.redeemed ? 1 : 0);
 
     const balance = await env.DB.prepare(
         "SELECT pack_balance AS packBalance FROM user WHERE id = ?",
@@ -930,229 +890,4 @@ test("redemption racing a refund never leaves spendable Pollen", async ({
         .bind(user.id)
         .first<{ packBalance: number }>();
     expect(balance?.packBalance).toBe(100);
-});
-
-test("a failed refund restores a redeemed gift and its Pollen", async ({
-    mocks,
-    sessionToken,
-}) => {
-    void sessionToken;
-    await mocks.enable("tinybird");
-    const user = await env.DB.prepare("SELECT id FROM user LIMIT 1").first<{
-        id: string;
-    }>();
-    if (!user) throw new Error("Expected seeded test user");
-    await env.DB.prepare("UPDATE user SET pack_balance = 100 WHERE id = ?")
-        .bind(user.id)
-        .run();
-
-    const giftId = "gift_refund_failed";
-    const paymentIntentId = "pi_gift_refund_failed";
-    const pollenAmount = 20;
-    const paidAmountCents = await insertRedeemedGift({
-        giftId,
-        paymentIntentId,
-        userId: user.id,
-        pollenAmount,
-    });
-    const refund = {
-        id: "re_gift_failed",
-        object: "refund",
-        amount: paidAmountCents,
-        currency: "usd",
-        payment_intent: paymentIntentId,
-        metadata: {},
-    };
-
-    const succeeded = await postSignedStripeWebhook({
-        id: "evt_gift_refund_succeeded",
-        type: "refund.created",
-        created: 100,
-        livemode: false,
-        data: { object: { ...refund, status: "succeeded" } },
-    });
-    expect(succeeded.status).toBe(200);
-    const failed = await postSignedStripeWebhook({
-        id: "evt_gift_refund_failed",
-        type: "refund.failed",
-        created: 101,
-        livemode: false,
-        data: { object: { ...refund, status: "failed" } },
-    });
-    expect(failed.status).toBe(200);
-
-    const gift = await env.DB.prepare(
-        `SELECT status, balance_reversed AS balanceReversed
-         FROM pollen_gift_code WHERE id = ?`,
-    )
-        .bind(giftId)
-        .first<{
-            status: string;
-            balanceReversed: number;
-        }>();
-    expect(gift).toEqual({
-        status: "redeemed",
-        balanceReversed: 0,
-    });
-    const balance = await env.DB.prepare(
-        "SELECT pack_balance AS packBalance FROM user WHERE id = ?",
-    )
-        .bind(user.id)
-        .first<{ packBalance: number }>();
-    expect(balance?.packBalance).toBe(100);
-});
-
-test("card-network inquiries do not revoke or debit a redeemed gift", async ({
-    mocks,
-    sessionToken,
-}) => {
-    void sessionToken;
-    await mocks.enable("tinybird");
-    const user = await env.DB.prepare("SELECT id FROM user LIMIT 1").first<{
-        id: string;
-    }>();
-    if (!user) throw new Error("Expected seeded test user");
-    await env.DB.prepare("UPDATE user SET pack_balance = 100 WHERE id = ?")
-        .bind(user.id)
-        .run();
-
-    const giftId = "gift_warning_inquiry";
-    const paymentIntentId = "pi_gift_warning_inquiry";
-    const amount = await insertRedeemedGift({
-        giftId,
-        paymentIntentId,
-        userId: user.id,
-        pollenAmount: 20,
-    });
-    const dispute = {
-        id: "dp_gift_warning",
-        object: "dispute",
-        amount,
-        currency: "usd",
-        payment_intent: paymentIntentId,
-    };
-
-    for (const [type, status, created] of [
-        ["charge.dispute.created", "warning_needs_response", 100],
-        ["charge.dispute.closed", "warning_closed", 101],
-    ] as const) {
-        const response = await postSignedStripeWebhook({
-            id: `evt_${status}`,
-            type,
-            created,
-            livemode: false,
-            data: { object: { ...dispute, status } },
-        });
-        expect(response.status).toBe(200);
-    }
-
-    const gift = await env.DB.prepare(
-        `SELECT status, balance_reversed AS balanceReversed
-         FROM pollen_gift_code WHERE id = ?`,
-    )
-        .bind(giftId)
-        .first<{ status: string; balanceReversed: number }>();
-    expect(gift).toEqual({ status: "redeemed", balanceReversed: 0 });
-    const balance = await env.DB.prepare(
-        "SELECT pack_balance AS packBalance FROM user WHERE id = ?",
-    )
-        .bind(user.id)
-        .first<{ packBalance: number }>();
-    expect(balance?.packBalance).toBe(100);
-});
-
-test("a won dispute restores a redeemed gift balance exactly once", async ({
-    mocks,
-    sessionToken,
-}) => {
-    void sessionToken;
-    await mocks.enable("tinybird");
-
-    const user = await env.DB.prepare("SELECT id FROM user LIMIT 1").first<{
-        id: string;
-    }>();
-    expect(user).toBeTruthy();
-    if (!user) throw new Error("Expected seeded test user");
-    await env.DB.prepare("UPDATE user SET pack_balance = 100 WHERE id = ?")
-        .bind(user.id)
-        .run();
-
-    const giftId = "gift_dispute_once";
-    const paymentIntentId = "pi_gift_dispute_once";
-    const pollenAmount = 20;
-    const paidAmountCents = await insertRedeemedGift({
-        giftId,
-        paymentIntentId,
-        userId: user.id,
-        pollenAmount,
-    });
-    const dispute = {
-        id: "dp_gift_won",
-        object: "dispute",
-        amount: paidAmountCents,
-        currency: "usd",
-        payment_intent: paymentIntentId,
-    };
-
-    for (const eventId of ["evt_gift_dispute", "evt_gift_dispute_retry"]) {
-        const response = await postSignedStripeWebhook({
-            id: eventId,
-            type: "charge.dispute.created",
-            created: Math.floor(Date.now() / 1000),
-            livemode: false,
-            data: { object: { ...dispute, status: "needs_response" } },
-        });
-        expect(response.status).toBe(200);
-    }
-    const disputedBalance = await env.DB.prepare(
-        "SELECT pack_balance AS packBalance FROM user WHERE id = ?",
-    )
-        .bind(user.id)
-        .first<{ packBalance: number }>();
-    expect(disputedBalance?.packBalance).toBe(100 - pollenAmount);
-
-    for (const eventId of [
-        "evt_gift_dispute_won",
-        "evt_gift_dispute_won_retry",
-    ]) {
-        const response = await postSignedStripeWebhook({
-            id: eventId,
-            type: "charge.dispute.closed",
-            created: Math.floor(Date.now() / 1000),
-            livemode: false,
-            data: { object: { ...dispute, status: "won" } },
-        });
-        expect(response.status).toBe(200);
-    }
-    const staleCreatedResponse = await postSignedStripeWebhook({
-        id: "evt_gift_dispute_created_stale",
-        type: "charge.dispute.created",
-        created: 1,
-        livemode: false,
-        data: { object: { ...dispute, status: "needs_response" } },
-    });
-    expect(staleCreatedResponse.status).toBe(200);
-
-    const gift = await env.DB.prepare(
-        `SELECT status, status_before_dispute AS statusBeforeDispute,
-                balance_reversed AS balanceReversed
-         FROM pollen_gift_code WHERE id = ?`,
-    )
-        .bind(giftId)
-        .first<{
-            status: string;
-            statusBeforeDispute: string | null;
-            balanceReversed: number;
-        }>();
-    expect(gift).toEqual({
-        status: "redeemed",
-        statusBeforeDispute: null,
-        balanceReversed: 0,
-    });
-    const restoredBalance = await env.DB.prepare(
-        "SELECT pack_balance AS packBalance FROM user WHERE id = ?",
-    )
-        .bind(user.id)
-        .first<{ packBalance: number }>();
-    expect(restoredBalance?.packBalance).toBe(100);
 });

@@ -9,7 +9,6 @@ import type Stripe from "stripe";
 import type { Env } from "../env.ts";
 import {
     fulfillPollenGiftCheckout,
-    handlePollenGiftDispute,
     isPollenGiftCheckoutSession,
     recordPollenGiftRefund,
     voidPendingPollenGiftCheckout,
@@ -940,12 +939,7 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                     paymentIntent: refund.payment_intent,
                     label: `Gift refund ${refund.id}`,
                     handle: (giftIdHint) =>
-                        recordPollenGiftRefund(
-                            c.env.DB,
-                            event,
-                            refund,
-                            giftIdHint,
-                        ),
+                        recordPollenGiftRefund(c.env.DB, refund, giftIdHint),
                 });
                 console.log(`Refund ${event.type}: ${refund.id}`);
                 c.executionCtx.waitUntil(
@@ -968,30 +962,6 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                         console.error("TinyBird Stripe send failed:", err),
                     ),
                 );
-                break;
-            }
-
-            case "charge.dispute.created":
-            case "charge.dispute.updated":
-            case "charge.dispute.funds_withdrawn":
-            case "charge.dispute.funds_reinstated":
-            case "charge.dispute.closed": {
-                const dispute = event.data.object as Stripe.Dispute;
-                const giftRelated = await linkPollenGiftPaymentEvent({
-                    stripe,
-                    paymentIntent: dispute.payment_intent,
-                    label: `Gift dispute ${dispute.id}`,
-                    handle: (giftIdHint) =>
-                        handlePollenGiftDispute(
-                            c.env.DB,
-                            event,
-                            dispute,
-                            giftIdHint,
-                        ),
-                });
-                if (!giftRelated) {
-                    console.log(`Unhandled Stripe event type: ${event.type}`);
-                }
                 break;
             }
 

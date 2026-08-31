@@ -345,13 +345,8 @@ export const pollenGiftCode = sqliteTable("pollen_gift_code", {
   codeHash: text("code_hash").notNull().unique(),
   pollenAmount: integer("pollen_amount").notNull(),
   status: text("status", {
-    enum: ["pending", "active", "redeemed", "voided", "refunded", "disputed"],
+    enum: ["pending", "active", "redeemed", "voided", "refunded"],
   }).default("pending").notNull(),
-  // Original wallet state while a refund or dispute freezes this gift.
-  statusBeforePaymentLoss: text("status_before_dispute"),
-  balanceReversed: integer("balance_reversed", { mode: "boolean" })
-    .default(false)
-    .notNull(),
   stripeCheckoutSessionId: text("stripe_checkout_session_id").unique(),
   stripePaymentIntentId: text("stripe_payment_intent_id").unique(),
   redeemerUserId: text("redeemer_user_id").references(() => user.id, {
@@ -363,19 +358,6 @@ export const pollenGiftCode = sqliteTable("pollen_gift_code", {
   redeemedAt: integer("redeemed_at", { mode: "timestamp_ms" }),
 }, (table) => [
   index("idx_pollen_gift_code_redeemer_user_id").on(table.redeemerUserId),
-]);
-
-export const pollenGiftPaymentLoss = sqliteTable("pollen_gift_payment_loss", {
-  idempotencyKey: text("idempotency_key").primaryKey(),
-  giftId: text("gift_id")
-    .notNull()
-    .references(() => pollenGiftCode.id),
-  reason: text("reason").notNull(),
-  active: integer("active", { mode: "boolean" }).default(false).notNull(),
-  terminal: integer("terminal", { mode: "boolean" }).default(false).notNull(),
-  stripeEventCreated: integer("stripe_event_created").default(0).notNull(),
-}, (table) => [
-  index("idx_pollen_gift_payment_loss_gift_id").on(table.giftId),
 ]);
 
 export const stripeGiftCardFingerprintAttempt = sqliteTable(

@@ -3,8 +3,6 @@ CREATE TABLE `pollen_gift_code` (
 	`code_hash` text NOT NULL,
 	`pollen_amount` integer NOT NULL,
 	`status` text DEFAULT 'pending' NOT NULL,
-	`status_before_dispute` text,
-	`balance_reversed` integer DEFAULT false NOT NULL,
 	`stripe_checkout_session_id` text,
 	`stripe_payment_intent_id` text,
 	`redeemer_user_id` text,
@@ -17,17 +15,6 @@ CREATE UNIQUE INDEX `pollen_gift_code_code_hash_unique` ON `pollen_gift_code` (`
 CREATE UNIQUE INDEX `pollen_gift_code_stripe_checkout_session_id_unique` ON `pollen_gift_code` (`stripe_checkout_session_id`);--> statement-breakpoint
 CREATE UNIQUE INDEX `pollen_gift_code_stripe_payment_intent_id_unique` ON `pollen_gift_code` (`stripe_payment_intent_id`);--> statement-breakpoint
 CREATE INDEX `idx_pollen_gift_code_redeemer_user_id` ON `pollen_gift_code` (`redeemer_user_id`);--> statement-breakpoint
-CREATE TABLE `pollen_gift_payment_loss` (
-	`idempotency_key` text PRIMARY KEY NOT NULL,
-	`gift_id` text NOT NULL,
-	`reason` text NOT NULL,
-	`active` integer DEFAULT false NOT NULL,
-	`terminal` integer DEFAULT false NOT NULL,
-	`stripe_event_created` integer DEFAULT 0 NOT NULL,
-	FOREIGN KEY (`gift_id`) REFERENCES `pollen_gift_code`(`id`) ON UPDATE no action ON DELETE no action
-);
---> statement-breakpoint
-CREATE INDEX `idx_pollen_gift_payment_loss_gift_id` ON `pollen_gift_payment_loss` (`gift_id`);--> statement-breakpoint
 CREATE TABLE `pollen_gift_rate_limit` (
 	`key` text PRIMARY KEY NOT NULL,
 	`window_started_at` integer NOT NULL,

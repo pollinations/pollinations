@@ -1,0 +1,34 @@
+{
+  "pr_number": 14008,
+  "title": "feat: add video community model modality",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/14008",
+  "merged_at": "2026-08-31T04:03:54Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n\n- Adds community video model registration in the dashboard, Account API, and `polli` CLI.\n- Stores every community endpoint URL exactly as entered and preserves query strings when deriving OpenAI-compatible request paths.\n- Calls video endpoints with the prompt, requested duration, frame URLs, and optional reference media.\n- Accepts synchronous MP4 results through `data[].b64_json` or `data[].url` and bills the requested duration.\n- Documents the publisher contract and adds focused registration, routing, and billing coverage.\n\n## Checks\n\n- Gen full suite: 1,381 passed, 6 skipped\n- Community endpoint tests: 90 passed\n- Enter endpoint tests: 19 passed\n- Gen and Enter typechecks\n- `polli` CLI tests\n- Frontend production build\n- Biome\n\nFixes #13906",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The garden grows movies",
+    "blurb": "Community models can now make moving pictures too. Register a video endpoint, set its duration pricing, and let the hive route prompts, frames, and reference media to it without eating the useful parts of its URL.",
+    "summary": "Added community video model registration across the dashboard, Account API, and polli CLI, with OpenAI-compatible video routing that sends prompts, duration, frame URLs, and optional reference media and accepts MP4 results from data[].b64_json or data[].url.",
+    "impact": "Model publishers can now offer video generation through community endpoints, while callers receive synchronous MP4 outputs and are billed for the requested generation duration.",
+    "keywords": [
+      "community-models",
+      "video-generation",
+      "community-endpoints",
+      "openai-compatible",
+      "polli-cli",
+      "mp4"
+    ],
+    "visual_concept": "Depict community video publishing as a cozy garden film studio: Polli uses a tiny director beret and clapboard while a retro CRT robot projects a short pixel landscape from a community endpoint terminal. Show a winding endpoint URL with its query-string leaves intact feeding into a little video camera, with film frames, an MP4 reel, and code-plants growing around the setup.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with black oval eyes, pink rectangular blush, light blue wings, and a tiny director beret, holding a clapboard beside a friendly chunky CRT monitor robot projecting a looping pixel garden film; a lime green (#ecf874) community-endpoint terminal sends prompt cards, frame images, and a small MP4 film reel through a URL vine with leafy query-string tags. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with code-plants and flowers around the tiny film studio; simple pixel-font text: \"COMMUNITY VIDEO\". Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-31/PR-14008.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with black oval eyes, pink rectangular blush, light blue wings, and a tiny director beret, holding a clapboard beside a friendly chunky CRT monitor robot projecting a looping pixel garden film; a lime green (#ecf874) community-endpoint terminal sends prompt cards, frame images, and a small MP4 film reel through a URL vine with leafy query-string tags. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with code-plants and flowers around the tiny film studio; simple pixel-font text: \"COMMUNITY VIDEO\". Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-31T04:07:50.760447+00:00"
+}

@@ -13,6 +13,7 @@ import {
 import { createMessageTransform } from "./transforms/createMessageTransform.js";
 import { createReasoningEffortTransform } from "./transforms/createReasoningEffortTransform.ts";
 import { createSystemPromptTransform } from "./transforms/createSystemPromptTransform.js";
+import { inputAudioToFireworks } from "./transforms/inputAudioToFireworks.js";
 import { pipe } from "./transforms/pipe.js";
 import { removeToolsForJsonResponse } from "./transforms/removeToolsForJsonResponse.ts";
 import { sanitizeToolSchemas } from "./transforms/sanitizeToolSchemas.js";
@@ -210,7 +211,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "grok-4.6",
-        config: portkeyConfig["x-ai/grok-4.6"],
+        config: portkeyConfig["grok-4.6"],
         transform: stripCacheControl,
     },
     {
@@ -366,6 +367,15 @@ const models: ModelDefinition[] = [
     {
         name: "inkling",
         config: portkeyConfig["thinkingmachines/inkling-small"],
+    },
+    {
+        name: "thinkingmachines/inkling",
+        config: portkeyConfig["accounts/fireworks/models/inkling"],
+        transform: pipe(
+            stripCacheControl,
+            inputAudioToFireworks,
+            mandatoryReasoning,
+        ),
     },
     {
         name: "nemotron",

@@ -50,6 +50,7 @@ describe("stripCacheControl model wiring", () => {
     it.each([
         "grok",
         "nemotron-3.5-lightning",
+        "thinkingmachines/inkling",
     ])("wires cache_control stripping onto %s", async (modelName) => {
         const transform = findModelByName(modelName)?.transform;
         if (!transform) throw new Error(`${modelName} transform missing`);
@@ -76,6 +77,7 @@ describe("stripCacheControl model wiring", () => {
     it.each([
         "grok-large",
         "grok-4.3",
+        "grok-4.6",
     ])("wires stripCacheControl onto %s", (modelName) => {
         expect(findModelByName(modelName)?.transform).toBe(stripCacheControl);
     });

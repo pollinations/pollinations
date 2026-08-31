@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { formatValue } from "../src/lib/format";
 import {
@@ -42,7 +43,7 @@ describe("community models row", () => {
             const view = kpiView(community, i);
             return formatValue(kpiValue(view, week), view.format);
         });
-        expect(shown).toEqual(["12%", "4%", "99%"]);
+        expect(shown).toEqual(["12%", "4%", "98.75%"]);
     });
 
     it("gives each view its own tooltip naming the 4xx treatment", () => {
@@ -58,6 +59,57 @@ describe("community models row", () => {
             expect(kpiValue(view, before)).toBeUndefined();
             expect(formatValue(kpiValue(view, before), view.format)).toBe("—");
         }
+    });
+});
+
+const availability = KPIS.find((row) => row.key === "availability");
+const healthWeek = {
+    availability: 99.12,
+    serverErrors5xx: 36691,
+};
+
+describe("service availability row", () => {
+    it("leads with normalized failures and keeps precise availability", () => {
+        expect([0, 1, 2].map((i) => kpiView(availability, i).name)).toEqual([
+            "Server errors / 1K",
+            "Service availability",
+            "5xx errors",
+        ]);
+        expect(kpiView(availability, 0).lowerIsBetter).toBe(true);
+        expect(kpiView(availability, 1).lowerIsBetter).toBeUndefined();
+        expect(kpiView(availability, 2).lowerIsBetter).toBe(true);
+        expect(
+            [0, 1, 2].map((i) => {
+                const view = kpiView(availability, i);
+                return formatValue(kpiValue(view, healthWeek), view.format);
+            }),
+        ).toEqual(["8.8 / 1K", "99.12%", "36,691"]);
+    });
+
+    it("keeps community traffic out of the service-health population", () => {
+        const regularPipe = readFileSync(
+            new URL(
+                "../../../enter.pollinations.ai/observability/endpoints/weekly_health_stats.pipe",
+                import.meta.url,
+            ),
+            "utf8",
+        );
+        const communityPipe = readFileSync(
+            new URL(
+                "../../../enter.pollinations.ai/observability/endpoints/weekly_usage_stats.pipe",
+                import.meta.url,
+            ),
+            "utf8",
+        );
+
+        expect(regularPipe).toContain("AND model_provider_used != 'community'");
+        expect(communityPipe).toContain("model_provider_used = 'community'");
+    });
+
+    it("does not invent a failure rate when health data is missing", () => {
+        const view = kpiView(availability, 0);
+        expect(kpiValue(view, {})).toBeNull();
+        expect(formatValue(kpiValue(view, {}), view.format)).toBe("—");
     });
 });
 
@@ -108,6 +160,7 @@ describe("explorer view list", () => {
 const margin = KPIS.find((row) => row.key === "grossMargin");
 const coverage = KPIS.find((row) => row.key === "cashCoverage");
 const revenue = KPIS.find((row) => row.key === "revenue");
+const paidPollenShare = KPIS.find((row) => row.key === "paidPollenPct");
 
 // A real week from prod (2026-08-10), trimmed to the fields these rows read.
 const marginWeek = {
@@ -133,6 +186,21 @@ describe("revenue row", () => {
                 }),
             ),
         ).toEqual([2278, 3469, 2278 / 3352]);
+    });
+});
+
+describe("Paid Pollen share", () => {
+    it("is a precise percent KPI available to the history graph", () => {
+        expect(
+            formatValue(
+                kpiValue(paidPollenShare, { paidPollenPct: 33.9 }),
+                paidPollenShare.format,
+            ),
+        ).toBe("33.90%");
+        expect(kpiViewById("paidPollenPct:0")).toMatchObject({
+            name: "Paid Pollen share",
+            category: "Revenue",
+        });
     });
 });
 

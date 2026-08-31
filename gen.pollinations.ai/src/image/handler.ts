@@ -143,9 +143,10 @@ function parseImageParams(
     delete mergedParams.prompt;
     delete mergedParams.key;
 
-    const communityReferences = c.var.model.communityEndpoint
-        ? CommunityReferenceParamsSchema.safeParse(mergedParams)
-        : null;
+    const communityReferences =
+        c.var.model.communityEndpoint?.modality === "video"
+            ? CommunityReferenceParamsSchema.safeParse(mergedParams)
+            : null;
     if (communityReferences && !communityReferences.success) {
         throw new UpstreamError(400, {
             message: `Invalid parameters: ${communityReferences.error.issues[0]?.message || "validation failed"}`,

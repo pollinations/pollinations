@@ -7,6 +7,7 @@ import {
 import type { Logger } from "@logtape/logtape";
 import { verifyAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import { COMMUNITY_MODEL_ALLOWED_GITHUB_IDS } from "@shared/auth/github-id-list.ts";
+import { getUserBalance } from "@shared/billing/balance.ts";
 import {
     COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
@@ -19,7 +20,7 @@ import {
     communityEmbeddingsUrl,
     communityEndpointPriceFieldsForModality,
     communityEndpointPrices,
-    communityEndpointTitle,
+    communityEndpointSupportedEndpoints,
     communityImageEditsUrl,
     communityImageGenerationsUrl,
     communityModelDefinition,
@@ -84,12 +85,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
 import { withInlineGenerationCoordinator } from "../test/helpers/inline-generation-coordinator.ts";
 import { callCommunityTranscriptionEndpoint } from "./audio/communityEndpoint.ts";
-import {
-    communityImageSupportedEndpoints,
-    communityTranscriptionSupportedEndpoints,
-    communityVideoSupportedEndpoints,
-    getCommunityModelRegistryEntries,
-} from "./community-models.ts";
+import { getCommunityModelRegistryEntries } from "./community-models.ts";
 import {
     callCommunityImageEndpoint,
     callCommunityVideoEndpoint,
@@ -104,8 +100,9 @@ import { communityEndpointGatewayContext } from "./text/communityEndpoint.ts";
 const db = drizzle(env.DB);
 
 type CommunityEndpointInsert = typeof communityEndpointTable.$inferInsert;
-type CommunityEndpointFixture = CommunityEndpointInsert &
+type CommunityEndpointFixture = Omit<CommunityEndpointInsert, "title"> &
     Partial<CommunityEndpointPrices> & {
+        title?: string;
         modality?: CommunityEndpointModality;
         imagePricing?: CommunityEndpointImagePricing;
         inputModalities?: ModelInputModality[] | null;
@@ -177,6 +174,7 @@ function insertCommunityEndpoints(
                     };
         return {
             ...listing,
+            title: row.title ?? row.name,
             type,
             baseUrl:
                 type === "prompt_agent"
@@ -698,13 +696,20 @@ describe("community endpoint helpers", () => {
     });
 
     it("restricts community transcription models to the transcription endpoint", () => {
-        expect(communityTranscriptionSupportedEndpoints()).toEqual([
+        const definition = communityModelDefinition({
+            modelId: "voodoohop/transcription",
+            title: "Transcription",
+            description: null,
+            modality: "transcription",
+            ...communityEndpointPrices({}),
+        });
+        expect(definition.supportedEndpoints).toEqual([
             "/v1/audio/transcriptions",
         ]);
     });
 
     it("advertises community videos on the existing public media routes", () => {
-        expect(communityVideoSupportedEndpoints()).toEqual([
+        expect(communityEndpointSupportedEndpoints("video", ["text"])).toEqual([
             "/v1/images/generations",
             "/image/{prompt}",
             "/video/{prompt}",
@@ -723,9 +728,10 @@ describe("community endpoint helpers", () => {
         ).toThrow("Provider URL cannot include credentials");
     });
 
-    it("uses the community endpoint description as the model title", () => {
+    it("uses the required community endpoint title", () => {
         const modelDefinition = communityModelDefinition({
             modelId: "voodoohop/openai",
+            title: "OpenAI Community",
             description: "OpenAI via community endpoint",
             ...communityEndpointPrices({
                 promptTextPrice: 0.1,
@@ -733,7 +739,7 @@ describe("community endpoint helpers", () => {
             }),
         });
 
-        expect(modelDefinition.title).toBe("OpenAI via community endpoint");
+        expect(modelDefinition.title).toBe("OpenAI Community");
         expect(modelDefinition.aliases).toEqual(["community/voodoohop/openai"]);
         expect(modelDefinition.description).toBe(
             "OpenAI via community endpoint",
@@ -746,6 +752,7 @@ describe("community endpoint helpers", () => {
         expect(
             communityModelDefinition({
                 modelId: "voodoohop/openai",
+                title: "OpenAI",
                 description: null,
                 ...prices,
             }).paidOnly,
@@ -754,6 +761,7 @@ describe("community endpoint helpers", () => {
         expect(
             communityModelDefinition({
                 modelId: "voodoohop/openai",
+                title: "OpenAI",
                 description: null,
                 paidOnly: true,
                 ...prices,
@@ -790,28 +798,11 @@ describe("community endpoint helpers", () => {
         expect(modelDefinition.brandUrl).toBe("https://example.com/");
     });
 
-    it("falls back to the model name when title and description are unset", () => {
-        expect(
-            communityEndpointTitle({
-                modelId: "voodoohop/openai",
-                title: null,
-                description: null,
-            }),
-        ).toBe("openai");
-        // Whitespace-only titles are treated as unset rather than rendering blank.
-        expect(
-            communityEndpointTitle({
-                modelId: "voodoohop/openai",
-                title: "   ",
-                description: "Community endpoint",
-            }),
-        ).toBe("Community endpoint");
-    });
-
     it("builds community image models with one fixed per-image price", () => {
         const modelId = "voodoohop/flux";
         const definition = communityModelDefinition({
             modelId,
+            title: "Community Image",
             description: "Community image model",
             modality: "image",
             ...communityEndpointPrices({
@@ -837,18 +828,19 @@ describe("community endpoint helpers", () => {
     });
 
     it("advertises image edits only for models with image input", () => {
-        expect(communityImageSupportedEndpoints(["text"])).not.toContain(
-            "/v1/images/edits",
-        );
-        expect(communityImageSupportedEndpoints(["text", "image"])).toContain(
-            "/v1/images/edits",
-        );
+        expect(
+            communityEndpointSupportedEndpoints("image", ["text"]),
+        ).not.toContain("/v1/images/edits");
+        expect(
+            communityEndpointSupportedEndpoints("image", ["text", "image"]),
+        ).toContain("/v1/images/edits");
     });
 
     it("builds token-priced community image models when the probe detected usage", () => {
         const modelId = "voodoohop/gptimage";
         const definition = communityModelDefinition({
             modelId,
+            title: "GPT Image",
             description: "Token-priced image model",
             modality: "image",
             imagePricing: "tokens",
@@ -887,6 +879,7 @@ describe("community endpoint helpers", () => {
         const modelId = "voodoohop/video";
         const definition = communityModelDefinition({
             modelId,
+            title: "Community Video",
             description: "Community video model",
             modality: "video",
             inputModalities: ["text", "image", "audio", "video"],
@@ -913,6 +906,7 @@ describe("community endpoint helpers", () => {
         const modelId = "voodoohop/bge";
         const definition = communityModelDefinition({
             modelId,
+            title: "Community Embedding",
             description: "Community embedding model",
             modality: "embedding",
             ...communityEndpointPrices({
@@ -964,6 +958,7 @@ describe("community endpoint helpers", () => {
     it('defaults input modalities to ["text"] when not declared', () => {
         const definition = communityModelDefinition({
             modelId: "voodoohop/openai",
+            title: "OpenAI Community",
             description: "OpenAI via community endpoint",
             ...communityEndpointPrices({
                 promptTextPrice: 0.1,
@@ -977,6 +972,7 @@ describe("community endpoint helpers", () => {
     it("preserves explicitly declared input modalities", () => {
         const definition = communityModelDefinition({
             modelId: "marcosfrgames08/glm-4.6v-flash",
+            title: "GLM Vision",
             description: "Vision model",
             inputModalities: ["image", "video"],
             ...communityEndpointPrices({
@@ -991,6 +987,7 @@ describe("community endpoint helpers", () => {
     it("maps owner-declared catalog metadata onto text models", () => {
         const definition = communityModelDefinition({
             modelId: "voodoohop/openai",
+            title: "OpenAI Community",
             description: "OpenAI via community endpoint",
             advertised: {
                 capabilities: ["tool_calling", "reasoning"],
@@ -1009,6 +1006,7 @@ describe("community endpoint helpers", () => {
     it("does not advertise text metadata after a model changes modality", () => {
         const definition = communityModelDefinition({
             modelId: "voodoohop/gptimage",
+            title: "GPT Image",
             description: "Image model",
             modality: "image",
             advertised: {
@@ -1026,6 +1024,7 @@ describe("community endpoint helpers", () => {
     it("filters inputs that image endpoints cannot accept", () => {
         const definition = communityModelDefinition({
             modelId: "voodoohop/gptimage",
+            title: "GPT Image",
             description: "Image model",
             modality: "image",
             inputModalities: ["text", "audio"],
@@ -1042,6 +1041,7 @@ describe("community endpoint helpers", () => {
         const modelId = "voodoohop/whisper";
         const definition = communityModelDefinition({
             modelId,
+            title: "Community Transcription",
             description: "Community transcription model",
             modality: "transcription",
             ...communityEndpointPrices({ promptAudioPrice: 0.0000445 }),
@@ -2642,6 +2642,7 @@ fixtureTest(
             ownerUserId,
             visibility: "public",
             name: modelName,
+            title: "Public community model",
             description: "Public community model",
             perUserRpm: 0.5,
             baseUrl: "https://api.example.com/v1",
@@ -4193,7 +4194,7 @@ fixtureTest(
 
 fixtureTest(
     "registers, catalogs, and serves a billed community video model",
-    async ({ apiKey }) => {
+    async () => {
         const ownerGithubUsername = `video-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `clip-${crypto.randomUUID().slice(0, 8)}`;
         const ownerUserId = await createTestUser({
@@ -4213,6 +4214,16 @@ fixtureTest(
         const enterApi = await createEnterCommunityApi();
         const videoEndpointUrl =
             "https://api.example.com/generate-video?version=1";
+        let markGenerationStarted!: () => void;
+        const generationStarted = new Promise<void>((resolve) => {
+            markGenerationStarted = resolve;
+        });
+        let releaseGeneration!: () => void;
+        const generationReleased = new Promise<void>((resolve) => {
+            releaseGeneration = resolve;
+        });
+        let generationCalls = 0;
+        const ingestedEvents: Record<string, unknown>[] = [];
         const fetchMock = vi.fn(async (input, init) => {
             const request = new Request(input, init);
             if (request.url === videoEndpointUrl) {
@@ -4227,6 +4238,11 @@ fixtureTest(
                 const isProbe =
                     body.prompt ===
                     "A green sprout gently moving in the breeze.";
+                if (!isProbe) {
+                    generationCalls += 1;
+                    markGenerationStarted();
+                    await generationReleased;
+                }
                 expect(body).toEqual(
                     isProbe
                         ? { prompt: body.prompt, duration: 5 }
@@ -4242,7 +4258,14 @@ fixtureTest(
                     data: [{ b64_json: TEST_MP4_BASE64 }],
                 });
             }
-            if (isBillingFetch(request)) return Response.json({ data: [] });
+            if (isBillingFetch(request)) {
+                if (new URL(request.url).pathname === "/v0/events") {
+                    ingestedEvents.push(
+                        ...parseIngestedEvents(await request.text()),
+                    );
+                }
+                return Response.json({ data: [] });
+            }
             throw new Error(`Unexpected fetch: ${request.url}`);
         });
         vi.stubGlobal("fetch", fetchMock);
@@ -4297,13 +4320,38 @@ fixtureTest(
         });
         await maturePendingCommunityEndpoint(registered.id);
 
-        const generationResponse = await fetchGen(
+        const caller = await createTestApiKey({
+            user: { tierBalance: 100, packBalance: 0 },
+        });
+        const balanceBefore = await getUserBalance(db, caller.userId);
+        const coordinatedEnv = withInlineGenerationCoordinator(env);
+        const generationRequest = () =>
             new Request(
                 `https://gen.pollinations.ai/video/green%20sprout?model=${encodeURIComponent(registered.modelId)}&duration=4&reference_images=${encodeURIComponent("https://media.example.com/style.jpg")}`,
-                { headers: { Authorization: `Bearer ${apiKey}` } },
+                { headers: { Authorization: `Bearer ${caller.key}` } },
+            );
+        const disconnectedContext = createExecutionContext();
+        const abort = new AbortController();
+        const disconnected = Promise.resolve(
+            worker.fetch(
+                new Request(generationRequest(), { signal: abort.signal }),
+                coordinatedEnv,
+                disconnectedContext,
             ),
+        ).catch(() => null);
+        await generationStarted;
+        abort.abort();
+
+        const rejoinedContext = createExecutionContext();
+        const rejoined = worker.fetch(
+            generationRequest(),
+            coordinatedEnv,
+            rejoinedContext,
         );
+        releaseGeneration();
+        const generationResponse = await rejoined;
         expect(generationResponse.status).toBe(200);
+        expect(generationResponse.headers.get("x-cache")).toBe("HIT");
         expect(generationResponse.headers.get("content-type")).toBe(
             "video/mp4",
         );
@@ -4315,11 +4363,47 @@ fixtureTest(
         expect(
             Array.from(new Uint8Array(await generationResponse.arrayBuffer())),
         ).toEqual(TEST_MP4_BYTES);
+        const disconnectedResponse = await disconnected;
+        if (disconnectedResponse) {
+            await disconnectedResponse.arrayBuffer();
+        }
+        await Promise.all([
+            waitOnExecutionContext(disconnectedContext),
+            waitOnExecutionContext(rejoinedContext),
+        ]);
+
+        const cachedContext = createExecutionContext();
+        const cachedResponse = await worker.fetch(
+            generationRequest(),
+            coordinatedEnv,
+            cachedContext,
+        );
+        expect(cachedResponse.status).toBe(200);
+        expect(cachedResponse.headers.get("x-cache")).toBe("HIT");
+        expect(
+            Array.from(new Uint8Array(await cachedResponse.arrayBuffer())),
+        ).toEqual(TEST_MP4_BYTES);
+        await waitOnExecutionContext(cachedContext);
+
+        expect(generationCalls).toBe(1);
+        const balanceAfter = await getUserBalance(db, caller.userId);
+        expect(
+            balanceBefore.tierBalance - balanceAfter.tierBalance,
+        ).toBeCloseTo(0.32, 10);
+        await vi.waitFor(() =>
+            expect(
+                ingestedEvents.filter(
+                    (event) =>
+                        event.modelUsed === registered.modelId &&
+                        event.isBilledUsage === true,
+                ),
+            ).toHaveLength(1),
+        );
 
         const invalidDurationResponse = await fetchGen(
             new Request(
                 `https://gen.pollinations.ai/video/green%20sprout?model=${encodeURIComponent(registered.modelId)}&duration=0`,
-                { headers: { Authorization: `Bearer ${apiKey}` } },
+                { headers: { Authorization: `Bearer ${caller.key}` } },
             ),
         );
         expect(invalidDurationResponse.status).toBe(400);
@@ -4355,7 +4439,7 @@ fixtureTest(
         expect(
             openaiCatalog.data.find((model) => model.id === registered.modelId)
                 ?.supported_endpoints,
-        ).toEqual(communityVideoSupportedEndpoints());
+        ).toEqual(communityEndpointSupportedEndpoints("video", ["text"]));
 
         const excessivePriceResponse = await fetchEnterApi(
             enterApi,

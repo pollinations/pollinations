@@ -129,6 +129,14 @@ export const KPIS = [
         ],
     },
     {
+        key: "paidPollenPct",
+        name: "Paid Pollen share",
+        category: "Revenue",
+        format: "percentPrecise",
+        tooltip:
+            "Paid Pollen spent / (Paid + Quest Pollen spent) × 100. Tracks how much generation consumption is funded by purchased credit. Source: Tinybird (weekly_usage_stats).",
+    },
+    {
         key: "grossMargin",
         name: "Gross margin",
         category: "Efficiency",

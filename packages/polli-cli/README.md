@@ -143,8 +143,10 @@ polli harness pi off
 
 The DSH adapter configures the Pollinations provider, hosted Pollinations MCP,
 and Polli CLI skill globally under `$DSH_HOME` (default `~/.dsh`). Pi uses its
-native JSON files under `~/.pi/agent` (or `PI_CODING_AGENT_DIR`), and does not
-have an MCP option.
+native JSON files under `~/.pi/agent` (or `PI_CODING_AGENT_DIR`): provider/model
+metadata is stored in `models.json` and its dedicated credential in `auth.json`.
+Pi does not have an MCP option. The account used to mint a harness key needs
+`account:keys`; each harness key is uniquely named `polli-harness-<id>-*`.
 
 See [Coding Harnesses](https://github.com/pollinations/pollinations/blob/main/CODING_HARNESSES.md) for what each profile changes and how to add one.
 

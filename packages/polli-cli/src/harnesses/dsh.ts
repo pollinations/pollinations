@@ -1,9 +1,14 @@
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 import { parseEnv } from "node:util";
 import { isMap, isSeq, parseDocument, Scalar } from "yaml";
 import polliSkill from "../../SKILL.md?raw";
 import { BASE_URL } from "../lib/config.js";
-import { readTextIfExists, removeIfExists, writeTextAtomic } from "./fs.js";
+import {
+    readTextIfExists,
+    removeIfExists,
+    resolveHarnessPath,
+    writeTextAtomic,
+} from "./fs.js";
 import {
     isHarnessKeyValid,
     normalizeSecretKey,
@@ -42,13 +47,7 @@ const JS_TAG = {
 export const dshHome = (ctx: HarnessContext) => {
     const configured = ctx.env.DSH_HOME;
     if (!configured?.trim()) return join(ctx.home, ".dsh");
-    const expanded =
-        configured === "~"
-            ? ctx.home
-            : configured.startsWith("~/") || configured.startsWith("~\\")
-              ? join(ctx.home, configured.slice(2))
-              : configured;
-    return resolve(expanded);
+    return resolveHarnessPath(configured, ctx.home);
 };
 const settingsPath = (ctx: HarnessContext) =>
     join(dshHome(ctx), "settings.yaml");

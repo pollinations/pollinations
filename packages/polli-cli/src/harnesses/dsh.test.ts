@@ -81,14 +81,18 @@ describe("dsh harness", () => {
             "url: https://gen.pollinations.ai/mcp/pollinations",
         );
         expect(patch).toContain(
-            "!!js '`Bearer ${process.env.POLLI_DSH_API_KEY}`'",
+            "!!js '`Bearer " + "$" + "{process.env.POLLI_DSH_API_KEY}`'",
         );
         expect(read(skillFile())).toContain("name: polli");
-        expect(statSync(settingsFile()).mode & 0o777).toBe(0o600);
-        expect(statSync(envFile()).mode & 0o777).toBe(0o600);
-        expect(statSync(patchFile()).mode & 0o777).toBe(0o600);
-        expect(statSync(skillFile()).mode & 0o777).toBe(0o600);
-        expect(statSync(join(home, ".dsh")).mode & 0o777).toBe(0o700);
+        // POSIX mode bits are not portable on Windows; keep these assertions
+        // on the platforms where the atomic writer promises them.
+        if (process.platform !== "win32") {
+            expect(statSync(settingsFile()).mode & 0o777).toBe(0o600);
+            expect(statSync(envFile()).mode & 0o777).toBe(0o600);
+            expect(statSync(patchFile()).mode & 0o777).toBe(0o600);
+            expect(statSync(skillFile()).mode & 0o777).toBe(0o600);
+            expect(statSync(join(home, ".dsh")).mode & 0o777).toBe(0o700);
+        }
         expect(dsh.status(ctx)).toMatchObject({
             configured: true,
             model: "deepseek",
@@ -123,8 +127,12 @@ describe("dsh harness", () => {
         });
         expect(read(patchFile())).toContain("# my plugins");
         expect(read(patchFile())).toContain("id: mcp-local");
-        expect(statSync(settingsFile()).mode & 0o777).toBe(0o600);
-        expect(statSync(envFile()).mode & 0o777).toBe(0o600);
+        // POSIX mode bits are not portable on Windows; keep these assertions
+        // on the platforms where the atomic writer promises them.
+        if (process.platform !== "win32") {
+            expect(statSync(settingsFile()).mode & 0o777).toBe(0o600);
+            expect(statSync(envFile()).mode & 0o777).toBe(0o600);
+        }
     });
 
     it("restores the original files byte-for-byte on off", () => {
@@ -175,6 +183,11 @@ describe("dsh harness", () => {
         expect(result).toMatchObject({ configured: true, mcp: false });
         expect(existsSync(patchFile())).toBe(false);
         expect(existsSync(skillFile())).toBe(true);
+    });
+
+    it("normalizes a secret key before writing the DSH environment", () => {
+        configureDsh(ctx, { ...settings, apiKey: "  sk_test_key  " });
+        expect(parseEnv(read(envFile())).POLLI_DSH_API_KEY).toBe("sk_test_key");
     });
 
     it("keeps one backup per harness home", () => {

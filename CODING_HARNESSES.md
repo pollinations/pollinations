@@ -19,7 +19,7 @@ polli harness <harness> off
 - `status` shows whether the harness is ready to use Pollinations.
 - `off` removes only the Pollinations setup and preserves unrelated configuration.
 
-If Polli is not installed yet, run the first setup through `npx @pollinations/cli`. Login uses the browser device flow by default. Each harness receives its own API key instead of reusing the account key stored by `polli auth login`.
+If Polli is not installed yet, run the first setup through `npx @pollinations/cli`. Login uses the browser device flow by default; the account key used to mint a harness key needs `account:keys`. Each harness receives its own uniquely named `polli-harness-<id>-*` API key instead of reusing the account key stored by `polli auth login`.
 
 ## Harnesses
 
@@ -50,6 +50,6 @@ polli harness pi status
 polli harness pi off
 ```
 
-Pi setup uses the official `~/.pi/agent` directory (or `PI_CODING_AGENT_DIR` when you intentionally use another Pi agent directory). It writes the native `models.json`, `auth.json`, and `settings.json` files, installs the Polli skill without replacing an existing skill, and preserves unrelated providers and settings. Pi has no built-in MCP support, so `--no-mcp` is not needed.
+Pi setup uses the official `~/.pi/agent` directory (or `PI_CODING_AGENT_DIR` when you intentionally use another Pi agent directory). It writes the native `models.json`, `auth.json`, and `settings.json` files: provider/model metadata goes in `models.json`, while the dedicated harness credential goes in `auth.json`. It installs the Polli skill without replacing an existing skill and preserves unrelated providers and settings. Pi has no built-in MCP support, so `--no-mcp` is not needed.
 
 `on` fetches the current tool-capable Pollinations text models. It uses `deepseek` when it is available and otherwise selects a deterministic compatible model; pass `--model <id>` to choose a specific one. `status` checks the provider URL/API, the selected model against the live compatible catalog, the dedicated key, and the Polli skill. `off` restores untouched files byte-for-byte or removes only Pollinations-owned entries after edits.

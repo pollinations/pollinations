@@ -15,7 +15,7 @@ export interface HarnessModel {
     contextWindow: number;
     /** Input modalities the model accepts, e.g. ["text", "image"]. */
     input: string[];
-    /** Whether Pi should expose reasoning controls for this model. */
+    /** Whether the model supports adjustable reasoning controls. */
     reasoning?: boolean;
 }
 

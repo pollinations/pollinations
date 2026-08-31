@@ -1,10 +1,15 @@
 import { execFileSync } from "node:child_process";
 import { createHash, scryptSync } from "node:crypto";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 import polliSkill from "../../SKILL.md?raw";
 import { BASE_URL } from "../lib/config.js";
 import { printInfo } from "../lib/output.js";
-import { readTextIfExists, removeIfExists, writeTextAtomic } from "./fs.js";
+import {
+    readTextIfExists,
+    removeIfExists,
+    resolveHarnessPath,
+    writeTextAtomic,
+} from "./fs.js";
 import {
     isHarnessKeyValid,
     normalizeSecretKey,
@@ -103,13 +108,7 @@ export const piAgentDir = (ctx: HarnessContext): string => {
     const configured = ctx.env.PI_CODING_AGENT_DIR;
     if (!configured?.trim()) return join(ctx.home, ".pi", "agent");
 
-    const expanded =
-        configured === "~"
-            ? ctx.home
-            : configured.startsWith("~/") || configured.startsWith("~\\")
-              ? join(ctx.home, configured.slice(2))
-              : configured;
-    return resolve(expanded);
+    return resolveHarnessPath(configured, ctx.home);
 };
 
 const modelsPath = (ctx: HarnessContext) =>

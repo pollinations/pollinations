@@ -18,7 +18,7 @@ interface CatalogModel {
  * they come and go, and they would triple the list.
  */
 export const fetchHarnessModels = async (
-    apiKey?: string,
+    apiKey?: string | null,
 ): Promise<HarnessModel[]> => {
     const { data } = await gen<{ data: CatalogModel[] }>(
         "/v1/models",

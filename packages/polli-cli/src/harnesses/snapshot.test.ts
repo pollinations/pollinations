@@ -162,6 +162,69 @@ describe("harness snapshots", () => {
         expect(readFileSync(target, "utf8")).toBe(before);
     });
 
+    it("canonicalizes legacy snapshots that include metadata", () => {
+        const before = "legacy metadata before\n";
+        const after = "legacy metadata after\n";
+        mkdirSync(join(home, "agent"), { recursive: true });
+        writeFileSync(target, after);
+        writeTextAtomic(
+            harnessSnapshotPath(ctx, "test", managed()),
+            JSON.stringify({
+                complete: true,
+                files: {
+                    [target]: {
+                        before,
+                        afterHash: createHash("sha256")
+                            .update(after)
+                            .digest("hex"),
+                    },
+                },
+                metadata: { owner: "legacy" },
+            }),
+        );
+
+        expect(loadHarnessSnapshot(ctx, "test", managed())).toEqual({
+            version: 1,
+            complete: true,
+            modified: false,
+            files: { [target]: { before, afterHash: expect.any(String) } },
+            metadata: { owner: "legacy" },
+        });
+        expect(restoreSnapshot(ctx, "test", managed())).toBe("restored");
+        expect(readFileSync(target, "utf8")).toBe(before);
+    });
+
+    it("rejects malformed legacy metadata and extra keys", () => {
+        const path = harnessSnapshotPath(ctx, "test", managed());
+        const file = { before: null, afterHash: null };
+        for (const metadata of [null, [], "owner"]) {
+            writeTextAtomic(
+                path,
+                JSON.stringify({
+                    complete: true,
+                    files: { [target]: file },
+                    metadata,
+                }),
+            );
+            expect(() => loadHarnessSnapshot(ctx, "test", managed())).toThrow(
+                /unexpected schema|invalid legacy schema/,
+            );
+        }
+
+        writeTextAtomic(
+            path,
+            JSON.stringify({
+                complete: true,
+                files: { [target]: file },
+                metadata: { owner: "legacy" },
+                extra: true,
+            }),
+        );
+        expect(() => loadHarnessSnapshot(ctx, "test", managed())).toThrow(
+            /unexpected schema/,
+        );
+    });
+
     it("reads the Prime transitional integrity schema and restores it", () => {
         const before = "prime before\n";
         const after = "prime after\n";

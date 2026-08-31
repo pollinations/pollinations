@@ -400,6 +400,13 @@
       "when": 1788172800000,
       "tag": "0056_canonicalize_gpt_realtime_2_permission",
       "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "6",
+      "when": 1788182587055,
+      "tag": "0057_require-community-titles",
+      "breakpoints": true
     }
   ]
 }

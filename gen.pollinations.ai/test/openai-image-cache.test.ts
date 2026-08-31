@@ -26,6 +26,46 @@ const testLog = {
 } as unknown as Logger;
 
 describe("OpenAI image cache", () => {
+    it("labels base64 video responses with their media type", async () => {
+        const app = new Hono<Env>()
+            .use("*", async (c, next) => {
+                c.set("model", {
+                    requested: "owner/video",
+                    resolved: "owner/video",
+                    definition: {} as Env["Variables"]["model"]["definition"],
+                });
+                c.req.addValidatedData("json", await c.req.json());
+                await next();
+            })
+            .post(
+                "/v1/images/generations",
+                formatOpenAIImageGeneration,
+                () =>
+                    new Response(new Uint8Array([0, 1, 2, 3]), {
+                        headers: { "Content-Type": "video/mp4" },
+                    }),
+            );
+
+        const response = await app.fetch(
+            new Request("https://gen.pollinations.ai/v1/images/generations", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    prompt: "a paper boat",
+                    model: "owner/video",
+                    response_format: "b64_json",
+                }),
+            }),
+            {} as CloudflareBindings,
+        );
+        const result = await response.json<{
+            data: Array<{ b64_json: string; media_type?: string }>;
+        }>();
+
+        expect(response.status).toBe(200);
+        expect(result.data[0]?.media_type).toBe("video/mp4");
+    });
+
     it("rejects native-only references before they can reach the POST cache", async () => {
         let originHits = 0;
         const app = new Hono<Env>();

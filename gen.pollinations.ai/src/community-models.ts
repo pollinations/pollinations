@@ -40,6 +40,10 @@ export function communityVideoSupportedEndpoints(): string[] {
     return ["/v1/images/generations", "/image/{prompt}", "/video/{prompt}"];
 }
 
+export function communityEmbeddingSupportedEndpoints(): string[] {
+    return ["/v1/embeddings"];
+}
+
 export function communityImageSupportedEndpoints(
     inputModalities: readonly ModelInputModality[] = ["text"],
 ): string[] {

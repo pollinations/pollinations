@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { TestEndpointSchema } from "../src/routes/community-endpoints/schemas.ts";
 import {
     listCommunityEndpointModels,
+    testCommunityEmbeddingEndpoint,
     testCommunityEndpoint,
     testCommunityImageEndpoint,
     testCommunityTranscriptionEndpoint,
@@ -52,6 +53,23 @@ describe("community endpoint OpenAI service", () => {
         ).resolves.toEqual(["gpt-4.1", "gpt-4.1-mini"]);
 
         expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("preserves endpoint query strings when building the models URL", async () => {
+        const fetchMock = vi.fn(async (input) => {
+            expect(String(input)).toBe(
+                "https://api.example.com/v1/models?api-version=2026-08-01",
+            );
+            return Response.json({ data: [{ id: "gpt-4.1" }] });
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        await expect(
+            listCommunityEndpointModels({
+                baseUrl: "https://api.example.com/v1/?api-version=2026-08-01",
+                bearerToken: "sk_saved_token",
+            }),
+        ).resolves.toEqual(["gpt-4.1"]);
     });
 
     it("bounds model-list responses before parsing provider JSON", async () => {
@@ -522,5 +540,61 @@ describe("community endpoint OpenAI service", () => {
                 model: "whisper-1",
             }),
         ).rejects.toThrow("Endpoint did not return OpenAI transcription text");
+    });
+
+    it("probes embedding endpoints and returns billable prompt tokens", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json({
+                    data: [
+                        {
+                            embedding: Array.from({ length: 4 }, () =>
+                                Math.random(),
+                            ),
+                        },
+                    ],
+                    usage: { prompt_tokens: 12, total_tokens: 12 },
+                }),
+            ),
+        );
+
+        await expect(
+            testCommunityEmbeddingEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "Bearer sk_saved_token",
+                model: "text-embedding-3-small",
+            }),
+        ).resolves.toEqual({
+            usage: { prompt_tokens: 12, total_tokens: 12 },
+            billableUsage: { promptTextTokens: 12 },
+        });
+    });
+
+    it("rejects embedding upstreams that omit billable token usage", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json({
+                    data: [
+                        {
+                            embedding: Array.from({ length: 4 }, () =>
+                                Math.random(),
+                            ),
+                        },
+                    ],
+                }),
+            ),
+        );
+
+        await expect(
+            testCommunityEmbeddingEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "Bearer sk_saved_token",
+                model: "text-embedding-3-small",
+            }),
+        ).rejects.toThrow(
+            "Endpoint did not return billable OpenAI token usage",
+        );
     });
 });

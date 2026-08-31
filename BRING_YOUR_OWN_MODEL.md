@@ -13,6 +13,7 @@ Model publishing and [connecting user wallets](./BRING_YOUR_OWN_POLLEN.md) solve
 | Image editing | `POST /v1/images/edits` in addition to image generation | `POST /v1/images/edits` |
 | Video | Exact endpoint URL entered at registration | `GET /video/{prompt}`, `GET /image/{prompt}`, or `POST /v1/images/generations` |
 | Speech to text | `POST /v1/audio/transcriptions` | `POST /v1/audio/transcriptions` |
+| Embeddings | `POST /v1/embeddings` | `POST /v1/embeddings` |
 
 Image providers must return `b64_json`. During testing, Pollinations checks whether an image provider supports edits and whether it reports OpenAI image-token usage.
 
@@ -45,7 +46,7 @@ Return one completed MP4 within 300 seconds as `b64_json` or a public `url`:
 
 Pollinations sends no upstream model id and bills the accepted request duration. Inline and downloaded responses are limited to 20 MB. Do not return an async job id; polling must finish inside the publisher endpoint before it responds.
 
-Text-to-speech, embeddings, realtime, and 3D endpoints cannot currently be registered through this workflow.
+Text-to-speech, realtime, and 3D endpoints cannot currently be registered through this workflow.
 
 ## Private and Public Models
 
@@ -59,6 +60,7 @@ Public models appear in the model catalog and can be called by other Pollination
 - Image models use per-token pricing when the registration test finds valid OpenAI image usage; otherwise they use a fixed price per generated image.
 - Video models are priced from the requested duration in seconds.
 - Transcription models are priced from reported audio duration.
+- Embedding models use the prompt-token count reported by the upstream endpoint.
 - A zero price makes the public model free.
 
 Owners receive 75% of the Pollen spent on their models. Paid and Quest Pollen earnings remain in their respective wallet buckets. Cash payouts are not currently available.
@@ -67,7 +69,7 @@ Owners receive 75% of the Pollen spent on their models. Paid and Quest Pollen ea
 
 1. Open [My Models](https://enter.pollinations.ai/my-models).
 2. Choose **Add model**.
-3. Select text, image, or transcription and enter the upstream base URL, model id, and bearer token. For video, enter the exact generation URL and bearer token.
+3. Select text, image, transcription, or embedding and enter the upstream base URL, model id, and bearer token. For video, enter the exact generation URL and bearer token.
 4. Fetch the upstream model list or run the endpoint test before saving.
 5. Save the model as private, then call its `owner/model` id through the normal Pollinations endpoint.
 6. If your account has publisher access, change visibility to public and set prices when it is ready for other users.
@@ -80,7 +82,7 @@ The upstream credential is used by Pollinations to proxy requests to your endpoi
 
 ## Register with the CLI
 
-The CLI manages text, image, video, and transcription model registrations. Sign in, test the endpoint, then create the model:
+The CLI manages text, image, video, transcription, and embedding model registrations. Sign in, test the endpoint, then create the model:
 
 ```bash
 npx @pollinations/cli auth login
@@ -104,6 +106,8 @@ npx @pollinations/cli my-models create \
 ```
 
 Use `polli my-models list`, `update`, and `delete` for the rest of the lifecycle. API keys used for model management require the `account:keys` permission.
+
+Embedding models use `--modality embedding`. For example, `--prompt-text-price 0.000001` charges 1 Pollen per 1M input tokens.
 
 ## Publishing Controls
 

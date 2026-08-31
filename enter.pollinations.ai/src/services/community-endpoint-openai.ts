@@ -3,6 +3,7 @@ import {
     type CommunityEndpointImagePricing,
     communityAudioTranscriptionsUrl,
     communityChatCompletionsUrl,
+    communityEmbeddingsUrl,
     communityEndpointErrorDetail,
     communityImageEditsUrl,
     communityImageGenerationsUrl,
@@ -17,6 +18,7 @@ import {
 import { detectImageMimeType } from "@shared/image-mime.ts";
 import type { ModelInputModality, Usage } from "@shared/registry/registry.ts";
 import {
+    getOpenAIEmbeddingUsage,
     getOpenAIImageUsage,
     openaiImageUsageToUsage,
     openaiUsageToUsage,
@@ -50,7 +52,9 @@ function authorizationHeaders(bearerToken: string): HeadersInit {
 }
 
 function communityModelsUrl(baseUrl: string): string {
-    return `${communityOpenAIBaseUrl(baseUrl)}/models`;
+    const url = new URL(communityOpenAIBaseUrl(baseUrl));
+    url.pathname = `${url.pathname.replace(/\/+$/, "")}/models`;
+    return url.toString();
 }
 
 async function fetchJson(url: string, init: RequestInit): Promise<unknown> {
@@ -328,6 +332,54 @@ export async function testCommunityTranscriptionEndpoint({
         // usage object that may not carry it.
         usage: { duration: promptAudioSeconds },
         billableUsage: { promptAudioSeconds },
+    };
+}
+
+export async function testCommunityEmbeddingEndpoint({
+    baseUrl,
+    bearerToken,
+    model,
+}: ModelEndpointTestInput): Promise<CommunityEndpointTestResult> {
+    const body = await fetchJson(communityEmbeddingsUrl(baseUrl), {
+        method: "POST",
+        headers: {
+            ...authorizationHeaders(bearerToken),
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            model,
+            input: "A simple green sprout.",
+            encoding_format: "float",
+        }),
+    });
+
+    if (
+        !body ||
+        typeof body !== "object" ||
+        !("data" in body) ||
+        !Array.isArray(body.data) ||
+        body.data.length !== 1 ||
+        !body.data[0] ||
+        typeof body.data[0] !== "object" ||
+        !("embedding" in body.data[0]) ||
+        !Array.isArray(body.data[0].embedding) ||
+        body.data[0].embedding.length === 0 ||
+        !body.data[0].embedding.every(
+            (value: unknown) =>
+                typeof value === "number" && Number.isFinite(value),
+        )
+    ) {
+        throw new Error("Endpoint did not return OpenAI embedding data");
+    }
+
+    const usage = getOpenAIEmbeddingUsage(body);
+    if (!usage || usage.prompt_tokens <= 0) {
+        throw new Error("Endpoint did not return billable OpenAI token usage");
+    }
+
+    return {
+        usage,
+        billableUsage: { promptTextTokens: usage.prompt_tokens },
     };
 }
 

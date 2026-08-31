@@ -4,6 +4,7 @@ import * as schema from "@shared/db/better-auth.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
+import issueRewardMigration from "../drizzle/0058_rekey_issue_rewards.sql?raw";
 import { checkQuestsForUser } from "../src/services/quest-checker.ts";
 import * as discordCommunity from "../src/services/quests/groups/discord-community.ts";
 import * as questIndex from "../src/services/quests/index.ts";
@@ -129,6 +130,36 @@ async function getOnlyUser() {
     if (!user) throw new Error("Expected fixture user");
     return user;
 }
+
+test("issue reward migration embeds the legacy winner's GitHub id", async ({
+    sessionToken: _sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    if (user.githubId === null) throw new Error("Expected fixture GitHub id");
+
+    const questId = "github:issue:legacy-migration";
+    const legacyKey = `quest:${questId}`;
+    await db.insert(schema.rewards).values({
+        id: legacyKey,
+        idempotencyKey: legacyKey,
+        userId: user.id,
+        questId,
+        title: "Legacy issue reward",
+        pollenAmount: 5,
+        balanceBucket: "tier",
+        earnedAt: new Date(),
+    });
+
+    await env.DB.prepare(issueRewardMigration).run();
+    await env.DB.prepare(issueRewardMigration).run();
+
+    const [reward] = await db
+        .select({ idempotencyKey: schema.rewards.idempotencyKey })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.id, legacyKey));
+    expect(reward?.idempotencyKey).toBe(`${legacyKey}:github:${user.githubId}`);
+});
 
 /** Distinct GitHub id per fixture account — github_id is unique. */
 function hashGithubId(seed: string): number {
@@ -1548,12 +1579,12 @@ test("quest check rewards every merged author without duplicating a legacy assig
         mergedAt: new Date("2026-06-03T00:00:00Z").toISOString(),
     });
 
-    // Existing issue rewards used one shared key. Keep recognizing them so the
-    // original winner is not paid twice when per-author rewards launch.
-    const legacyRewardKey = `quest:${issueQuestId}`;
+    // The migration gives an existing winner the same per-author key that new
+    // checks produce, so the normal unique constraint prevents a second reward.
+    const migratedRewardKey = `quest:${issueQuestId}:github:${secondAuthorGithubId}`;
     await db.insert(schema.rewards).values({
-        id: legacyRewardKey,
-        idempotencyKey: legacyRewardKey,
+        id: migratedRewardKey,
+        idempotencyKey: migratedRewardKey,
         userId: "github-quest-second-author",
         questId: issueQuestId,
         title: `Ship bounty #${issueNumber}: ${issueTitle}`,
@@ -1593,11 +1624,11 @@ test("quest check rewards every merged author without duplicating a legacy assig
     expect(rewards).toEqual(
         expect.arrayContaining([
             expect.objectContaining({
-                idempotencyKey: legacyRewardKey,
+                idempotencyKey: migratedRewardKey,
                 userId: "github-quest-second-author",
             }),
             expect.objectContaining({
-                idempotencyKey: `${legacyRewardKey}:github:${user.githubId}`,
+                idempotencyKey: `quest:${issueQuestId}:github:${user.githubId}`,
                 userId: user.id,
                 title: `Ship bounty #${issueNumber}: ${issueTitle}`,
                 pollenAmount: 17,

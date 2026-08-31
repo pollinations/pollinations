@@ -1,10 +1,8 @@
-import { rewards } from "@shared/db/better-auth.ts";
 import {
     getInstallationToken,
     githubAppCredentialsFromEnv,
 } from "@shared/github/app-auth.ts";
 import { graphql } from "@shared/github/client.ts";
-import { eq } from "drizzle-orm";
 import type { QuestDefinition } from "../definitions.ts";
 import {
     type QuestCard,
@@ -232,21 +230,6 @@ function toIssueQuestDefinition(issue: DerivedQuestIssue): QuestDefinition {
     };
 }
 
-async function rewardedIssueIds(
-    ctx: QuestEvaluationContext,
-    userId: string,
-): Promise<Set<string>> {
-    const rows = await ctx.db
-        .select({ questId: rewards.questId })
-        .from(rewards)
-        .where(eq(rewards.userId, userId));
-    return new Set(
-        rows.flatMap(({ questId }) =>
-            questId?.startsWith("github:issue:") ? [questId] : [],
-        ),
-    );
-}
-
 export async function listQuestCards(
     ctx: QuestEvaluationContext,
 ): Promise<QuestCard[]> {
@@ -278,10 +261,9 @@ export async function evaluateUser(
     if (githubId === null) return { proposals: [] };
 
     const token = await githubToken(ctx.env);
-    const [issues, mergedPr, existingIssueRewards] = await Promise.all([
+    const [issues, mergedPr] = await Promise.all([
         loadQuestIssues(token),
         hasMergedPr(token, user),
-        rewardedIssueIds(ctx, user.id),
     ]);
 
     // Payable issue bounties: completed by a merged PR authored by the current
@@ -290,9 +272,6 @@ export async function evaluateUser(
         .filter(
             (issue) =>
                 issue.completedByGithubIds.includes(githubId) &&
-                !existingIssueRewards.has(
-                    `github:issue:${issue.issueNumber}`,
-                ) &&
                 (issue.rewardAmount ?? 0) > 0,
         )
         .map((issue) => ({

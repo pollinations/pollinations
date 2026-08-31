@@ -1,0 +1,35 @@
+{
+  "pr_number": 14156,
+  "title": "feat: add full Inkling through Fireworks",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14156",
+  "merged_at": "2026-08-31T12:02:41Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds canonical model `thinkingmachines/inkling` through Fireworks route `accounts/fireworks/models/inkling` with no aliases or fallback.\n- Sets `paidOnly: true`, multiplier `1`, and exact Fireworks text, cached-input, image, audio, and output token costs.\n- Supports text, images, audio, tools, JSON, streaming, and mandatory reasoning; converts OpenAI audio input to Fireworks format.\n- Verifies direct provider behavior, 10-request burst, local catalogs, permissions, paid-only access, cache reuse, and exact wallet debit.\n- Resolves current-main conflicts while preserving the GLM-5.3 Flash Fireworks route test.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Inkling joins the hive",
+    "blurb": "A new thinker has landed: Inkling now runs through Fireworks with its full multimodal toolkit intact. Give it text, images, audio, tools, or a knotty problem; it has been issued a small desk lamp and mandatory reasoning time.",
+    "summary": "Added the paid-only canonical model `thinkingmachines/inkling` through Fireworks at `accounts/fireworks/models/inkling`, with text, image, audio, tool, JSON, streaming, mandatory-reasoning support, OpenAI-to-Fireworks audio conversion, and exact per-token pricing.",
+    "impact": "Paid API users can now call Inkling directly with multimodal inputs and streaming responses, while cached inputs and wallet debits use the configured Fireworks costs.",
+    "keywords": [
+      "inkling",
+      "fireworks",
+      "text-api",
+      "multimodal",
+      "audio-input",
+      "reasoning",
+      "models"
+    ],
+    "visual_concept": "Depict Inkling as a cozy glowing thought-seed or tiny library spirit inside a Fireworks-powered retro terminal, receiving text pages, picture cards, audio cassette-waveforms, JSON scrolls, and tool icons. Polli, wearing round scholar glasses and a tiny scarf, helps feed the terminal's many input channels while code-plants and small flowers grow around its cables, representing a fully multimodal reasoning model joining the API.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing tiny scholar glasses and a scarf as she guides text scrolls, image cards, audio wave cassettes, JSON papers, and tool icons into a glowing retro Fireworks terminal holding a luminous thought-seed labeled “INKLING.” Code-plants and pixel flowers bloom around lime green (#ecf874) cables in a warm cream, mint, lavender, and peach workshop; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow and scanlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-31/PR-14156.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing tiny scholar glasses and a scarf as she guides text scrolls, image cards, audio wave cassettes, JSON papers, and tool icons into a glowing retro Fireworks terminal holding a luminous thought-seed labeled “INKLING.” Code-plants and pixel flowers bloom around lime green (#ecf874) cables in a warm cream, mint, lavender, and peach workshop; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow and scanlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-31T12:03:42.687709+00:00"
+}

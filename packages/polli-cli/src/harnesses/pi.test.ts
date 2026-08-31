@@ -148,6 +148,24 @@ describe("pi harness", () => {
         expect(snapshotFiles()).toHaveLength(1);
     });
 
+    it("preserves slash-containing model IDs in the emitted provider config", () => {
+        const model = "z-ai/glm-5.3-flash";
+        configurePi(ctx, {
+            ...settings,
+            model,
+            models: [
+                ...models,
+                { id: model, contextWindow: 65536, input: ["text"] },
+            ],
+        });
+
+        const document = readJson(modelsFile());
+        const provider = (document.providers as Record<string, unknown>)
+            .pollinations as { models: { id: string }[] };
+        expect(provider.models.map(({ id }) => id)).toContain(model);
+        expect(readJson(settingsFile()).defaultModel).toBe(model);
+    });
+
     it("rejects malformed existing JSON before creating snapshots or writing any target", () => {
         for (const file of [modelsFile(), authFile(), settingsFile()]) {
             mkdirSync(agentDir(), { recursive: true });

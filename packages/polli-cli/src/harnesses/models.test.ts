@@ -39,6 +39,22 @@ beforeAll(async () => {
                         context_length: 1000,
                     },
                     {
+                        id: "mixed-audio",
+                        input_modalities: ["text", "audio"],
+                        output_modalities: ["text"],
+                        supported_endpoints: ["/v1/chat/completions"],
+                        tools: true,
+                        context_length: 1000,
+                    },
+                    {
+                        id: "mixed-video",
+                        input_modalities: ["text", "video"],
+                        output_modalities: ["text"],
+                        supported_endpoints: ["/v1/chat/completions"],
+                        tools: true,
+                        context_length: 1000,
+                    },
+                    {
                         id: "realtime",
                         input_modalities: ["text"],
                         output_modalities: ["audio"],
@@ -111,9 +127,17 @@ describe("harness model catalog", () => {
         ]);
     });
 
+    it("rejects mixed text/audio and text/video input modalities", async () => {
+        const result = await fetchHarnessModels("");
+        expect(result.map(({ id }) => id)).not.toEqual(
+            expect.arrayContaining(["mixed-audio", "mixed-video"]),
+        );
+    });
+
     it("passes a key for account-scoped model validation", async () => {
+        authorizationHeaders.length = 0;
         await expect(fetchHarnessModels("sk_scoped")).resolves.toHaveLength(3);
-        expect(authorizationHeaders).toEqual([undefined, "Bearer sk_scoped"]);
+        expect(authorizationHeaders).toEqual(["Bearer sk_scoped"]);
     });
 
     it("keeps public preflight requests explicitly anonymous", async () => {

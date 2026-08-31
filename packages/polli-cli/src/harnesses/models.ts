@@ -38,6 +38,9 @@ export const fetchHarnessModels = async (
                 isSafeModelId(m.id) &&
                 Array.isArray(m.input_modalities) &&
                 m.input_modalities.includes("text") &&
+                m.input_modalities.every(
+                    (modality) => modality === "text" || modality === "image",
+                ) &&
                 m.tools === true &&
                 Array.isArray(m.output_modalities) &&
                 m.output_modalities.includes("text") &&
@@ -49,13 +52,10 @@ export const fetchHarnessModels = async (
                 m.agent === undefined,
         )
         .map((m) => {
-            const input = (m.input_modalities as string[]).filter(
-                (modality) => modality === "text" || modality === "image",
-            );
             return {
                 id: m.id,
                 contextWindow: m.context_length as number,
-                input,
+                input: m.input_modalities as string[],
                 ...(m.reasoning === true ? { reasoning: true } : {}),
             };
         });

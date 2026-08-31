@@ -80,6 +80,11 @@ const SORT_OPTIONS: Array<{
     label: string;
     accessibleLabel: string;
 }> = [
+    {
+        value: "popular",
+        label: "Popular",
+        accessibleLabel: "Most popular",
+    },
     { value: "newest", label: "Newest", accessibleLabel: "Newest" },
     { value: "oldest", label: "Oldest", accessibleLabel: "Oldest" },
     {
@@ -179,7 +184,7 @@ export const Models: FC = () => {
     const modelSearch = useSearch({ from: "/_dashboard/models" });
     const activeScope = modelSearch.scope ?? "pollinations";
     const activeTab = modelSearch.category ?? "all";
-    const activeSort = modelSearch.sort ?? "newest";
+    const activeSort = modelSearch.sort ?? "popular";
     const urlSearch = modelSearch.q ?? "";
     const [search, setSearch] = useState(urlSearch);
     const [searchFocused, setSearchFocused] = useState(false);
@@ -328,10 +333,10 @@ export const Models: FC = () => {
 
     const activeSortLabel =
         SORT_OPTIONS.find(({ value }) => value === activeSort)?.label ??
-        "Newest";
+        "Popular";
     const activeSortAccessibleLabel =
         SORT_OPTIONS.find(({ value }) => value === activeSort)
-            ?.accessibleLabel ?? "Newest";
+            ?.accessibleLabel ?? "Most popular";
 
     return (
         <div className="flex flex-col gap-6">

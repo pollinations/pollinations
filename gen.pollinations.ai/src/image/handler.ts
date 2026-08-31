@@ -1,4 +1,3 @@
-import { COMMUNITY_ENDPOINT_TIMEOUT_MS } from "@shared/community-endpoints.ts";
 import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { HttpError } from "@shared/http-error.ts";
@@ -445,10 +444,6 @@ async function generateMediaWithFallback(
     params: RuntimeImageParams;
     servedIndex: number;
 }> {
-    const communityVideoDeadlineMs =
-        c.var.model.communityEndpoint?.modality === "video"
-            ? Date.now() + COMMUNITY_ENDPOINT_TIMEOUT_MS
-            : undefined;
     const { result, index } = await withModelFallback(
         fallbackCandidates(c.var.model),
         async (attempt) => {
@@ -461,7 +456,6 @@ async function generateMediaWithFallback(
                           prompt,
                           params,
                           c.env.BETTER_AUTH_SECRET,
-                          communityVideoDeadlineMs,
                       )
                     : await callCommunityImageEndpoint(
                           attempt.communityEndpoint,

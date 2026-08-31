@@ -2,7 +2,6 @@ import { Buffer } from "node:buffer";
 import {
     COMMUNITY_ENDPOINT_TIMEOUT_MS,
     type CommunityEndpointRuntime,
-    communityEndpointAbortSignal,
     communityEndpointErrorDetail,
     communityImageEditsUrl,
     communityImageGenerationsUrl,
@@ -100,7 +99,6 @@ export async function callCommunityVideoEndpoint(
     prompt: string,
     safeParams: CommunityVideoParams,
     secret: string,
-    deadlineMs = Date.now() + COMMUNITY_ENDPOINT_TIMEOUT_MS,
 ): Promise<VideoGenerationResult> {
     if (endpoint.type !== "proxy") {
         throw new Error(
@@ -135,13 +133,8 @@ export async function callCommunityVideoEndpoint(
                 : {}),
         }),
         "video",
-        deadlineMs,
     );
-    const bytes = await firstCommunityVideoBytes(
-        body,
-        endpoint.baseUrl,
-        deadlineMs,
-    );
+    const bytes = await firstCommunityVideoBytes(body, endpoint.baseUrl);
     const mimeType = bytes && detectVideoMimeType(bytes);
     if (!bytes || !mimeType) {
         throw new HttpError(
@@ -229,9 +222,8 @@ async function fetchCommunityMediaJson(
     bearerToken: string,
     body: string | FormData,
     modality: "image" | "video",
-    deadlineMs = Date.now() + COMMUNITY_ENDPOINT_TIMEOUT_MS,
 ): Promise<unknown> {
-    const response = await fetchWithTimeout(url, modality, deadlineMs, {
+    const response = await fetchWithTimeout(url, modality, {
         method: "POST",
         headers: {
             Authorization: `Bearer ${normalizeCommunityEndpointBearerToken(
@@ -264,14 +256,13 @@ async function fetchCommunityMediaJson(
 async function fetchWithTimeout(
     input: string,
     modality: "image" | "video",
-    deadlineMs: number,
     init?: RequestInit,
 ): Promise<Response> {
     try {
         return await fetch(input, {
             ...init,
             redirect: "manual",
-            signal: communityEndpointAbortSignal(deadlineMs),
+            signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
         });
     } catch (error) {
         throw new HttpError(

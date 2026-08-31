@@ -75,15 +75,6 @@ export const MAX_COMMUNITY_MEDIA_RESPONSE_BYTES =
 export const COMMUNITY_ENDPOINT_TIMEOUT_MS = 300_000;
 const BEARER_PREFIX = /^Bearer(?:\s+|$)/i;
 
-/** Keep every phase of one community request inside one absolute deadline. */
-export function communityEndpointAbortSignal(deadlineMs: number): AbortSignal {
-    const remainingMs = deadlineMs - Date.now();
-    if (remainingMs <= 0) {
-        throw new HttpError("Community endpoint deadline exceeded", 504);
-    }
-    return AbortSignal.timeout(remainingMs);
-}
-
 export type CommunityEndpointModality =
     (typeof COMMUNITY_ENDPOINT_MODALITIES)[number];
 
@@ -911,7 +902,6 @@ export async function firstCommunityImageBytes(
 export async function firstCommunityVideoBytes(
     body: unknown,
     endpointBaseUrl: string,
-    deadlineMs = Date.now() + COMMUNITY_ENDPOINT_TIMEOUT_MS,
 ): Promise<Uint8Array | null> {
     if (
         !body ||
@@ -949,11 +939,7 @@ export async function firstCommunityVideoBytes(
             typeof video.url === "string" &&
             video.url.length > 0
         ) {
-            return fetchCommunityVideoBytes(
-                video.url,
-                endpointBaseUrl,
-                deadlineMs,
-            );
+            return fetchCommunityVideoBytes(video.url, endpointBaseUrl);
         }
     }
     return null;
@@ -1030,7 +1016,6 @@ export function communityImageEditsUrl(baseUrl: string): string {
 async function fetchCommunityVideoBytes(
     value: string,
     endpointBaseUrl: string,
-    deadlineMs: number,
 ): Promise<Uint8Array> {
     let url: string;
     try {
@@ -1042,7 +1027,7 @@ async function fetchCommunityVideoBytes(
     try {
         response = await fetch(url, {
             redirect: "manual",
-            signal: communityEndpointAbortSignal(deadlineMs),
+            signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
         });
     } catch (error) {
         throw new HttpError(

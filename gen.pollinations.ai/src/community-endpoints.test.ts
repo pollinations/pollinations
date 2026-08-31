@@ -11,7 +11,6 @@ import { getUserBalance } from "@shared/billing/balance.ts";
 import {
     COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
-    COMMUNITY_ENDPOINT_TIMEOUT_MS,
     type CommunityEndpointImagePricing,
     type CommunityEndpointModality,
     type CommunityEndpointPrices,
@@ -19,7 +18,6 @@ import {
     communityAudioTranscriptionsUrl,
     communityChatCompletionsUrl,
     communityEmbeddingsUrl,
-    communityEndpointAbortSignal,
     communityEndpointPriceFieldsForModality,
     communityEndpointPrices,
     communityEndpointTitle,
@@ -848,25 +846,6 @@ describe("community endpoint helpers", () => {
         ).toBeCloseTo(0.36, 10);
     });
 
-    it("enforces community request deadlines just below, at, and above 300 seconds", () => {
-        vi.useFakeTimers();
-        const deadline = 1_000 + COMMUNITY_ENDPOINT_TIMEOUT_MS;
-        try {
-            vi.setSystemTime(deadline - 1);
-            expect(() => communityEndpointAbortSignal(deadline)).not.toThrow();
-            vi.setSystemTime(deadline);
-            expect(() => communityEndpointAbortSignal(deadline)).toThrow(
-                "Community endpoint deadline exceeded",
-            );
-            vi.setSystemTime(deadline + 1);
-            expect(() => communityEndpointAbortSignal(deadline)).toThrow(
-                "Community endpoint deadline exceeded",
-            );
-        } finally {
-            vi.useRealTimers();
-        }
-    });
-
     it("builds token-priced community embedding models", () => {
         const modelId = "voodoohop/bge";
         const definition = communityModelDefinition({
@@ -1410,42 +1389,6 @@ describe("community endpoint helpers", () => {
             expect(result.durationSeconds).toBe(3);
             expect(Array.from(result.buffer)).toEqual(TEST_MP4_BYTES);
             expect(fetchMock).toHaveBeenCalledTimes(2);
-        });
-
-        it("does not reset the request deadline before downloading video", async () => {
-            const now = vi.spyOn(Date, "now").mockReturnValue(1_000);
-            const timeout = vi
-                .spyOn(AbortSignal, "timeout")
-                .mockImplementation(() => new AbortController().signal);
-            try {
-                const fetchMock = vi.fn(async () => {
-                    if (fetchMock.mock.calls.length === 1) {
-                        now.mockReturnValue(101_000);
-                        return Response.json({
-                            data: [
-                                {
-                                    url: "https://api.example.com/assets/clip.mp4",
-                                },
-                            ],
-                        });
-                    }
-                    return new Response(new Uint8Array(TEST_MP4_BYTES));
-                });
-                vi.stubGlobal("fetch", fetchMock);
-
-                await callCommunityVideoEndpoint(
-                    await videoEndpoint(),
-                    "a sprout",
-                    { duration: 3 },
-                    secret,
-                    301_000,
-                );
-                expect(fetchMock).toHaveBeenCalledTimes(2);
-                expect(timeout.mock.calls).toEqual([[300_000], [200_000]]);
-            } finally {
-                timeout.mockRestore();
-                now.mockRestore();
-            }
         });
 
         it("maps URL response stream failures to a provider error", async () => {

@@ -71,13 +71,11 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 
 ## Durable Media Requests
 
-- Media generation uses the durable generation coordinator and supports request
-  lifetimes up to 300 seconds. Do not reject a route solely because it exceeds
-  120 seconds or polls an asynchronous provider internally.
+- Media generation uses the durable generation coordinator. Do not add a
+  request-wide wall-clock deadline solely to cap total runtime; allow callers
+  to disconnect and rejoin long-running generations that complete successfully.
 - Prove identical-request disconnect/rejoin, one upstream execution, completed
   R2 cache retrieval, one wallet debit, and one billed Tinybird event.
-- Test behavior just below, at, and above 300 seconds. A route expected to exceed
-  300 seconds requires a separately approved asynchronous public contract.
 
 ## ⚠️ YAGNI — You Aren't Gonna Need It (CRITICAL)
 

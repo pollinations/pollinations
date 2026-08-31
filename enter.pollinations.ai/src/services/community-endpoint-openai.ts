@@ -4,7 +4,6 @@ import {
     communityAudioTranscriptionsUrl,
     communityChatCompletionsUrl,
     communityEmbeddingsUrl,
-    communityEndpointAbortSignal,
     communityEndpointErrorDetail,
     communityImageEditsUrl,
     communityImageGenerationsUrl,
@@ -58,11 +57,7 @@ function communityModelsUrl(baseUrl: string): string {
     return url.toString();
 }
 
-async function fetchJson(
-    url: string,
-    init: RequestInit,
-    deadlineMs = Date.now() + COMMUNITY_ENDPOINT_TIMEOUT_MS,
-): Promise<unknown> {
+async function fetchJson(url: string, init: RequestInit): Promise<unknown> {
     let response: Response;
     try {
         // The base URL is validated against https + the private-host blocklist
@@ -71,7 +66,7 @@ async function fetchJson(
         response = await fetch(url, {
             ...init,
             redirect: "manual",
-            signal: communityEndpointAbortSignal(deadlineMs),
+            signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
         });
     } catch {
         throw new Error("Endpoint request timed out or could not connect");
@@ -246,23 +241,18 @@ export async function testCommunityVideoEndpoint({
     baseUrl,
     bearerToken,
 }: EndpointAuth): Promise<CommunityEndpointTestResult> {
-    const deadlineMs = Date.now() + COMMUNITY_ENDPOINT_TIMEOUT_MS;
-    const body = await fetchJson(
-        baseUrl,
-        {
-            method: "POST",
-            headers: {
-                ...authorizationHeaders(bearerToken),
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                prompt: "A green sprout gently moving in the breeze.",
-                duration: 5,
-            }),
+    const body = await fetchJson(baseUrl, {
+        method: "POST",
+        headers: {
+            ...authorizationHeaders(bearerToken),
+            "Content-Type": "application/json",
         },
-        deadlineMs,
-    );
-    const video = await firstCommunityVideoBytes(body, baseUrl, deadlineMs);
+        body: JSON.stringify({
+            prompt: "A green sprout gently moving in the breeze.",
+            duration: 5,
+        }),
+    });
+    const video = await firstCommunityVideoBytes(body, baseUrl);
     if (!video || !detectVideoMimeType(video)) {
         throw new Error("Endpoint did not return a supported video");
     }

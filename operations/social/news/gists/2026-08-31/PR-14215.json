@@ -1,0 +1,34 @@
+{
+  "pr_number": 14215,
+  "title": "fix: allow publishing community embeddings",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14215",
+  "merged_at": "2026-08-31T19:51:47Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds an embedding-specific base price rule with input tokens only\n- Stops the public-model form from requiring an unsupported completion-token price\n- Adds a regression test for the publishing validation path\n\nFixes #14203",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Embeddings may enter the garden",
+    "blurb": "Community embedding models can now be published without pretending they generate completion tokens. The form has learned that some endpoints simply listen very carefully.",
+    "summary": "Fixed community embedding publishing by adding an input-token-only base price rule and removing the public-model form's unsupported completion-token price requirement.",
+    "impact": "Community model publishers can now submit embedding endpoints with input-token pricing alone, so valid embedding models pass publishing validation.",
+    "keywords": [
+      "community-models",
+      "embeddings",
+      "publishing",
+      "pricing",
+      "validation",
+      "frontend"
+    ],
+    "visual_concept": "Polli, wearing tiny librarian glasses, carefully places a glowing embedding seed packet into a community model garden while a friendly CRT monitor robot checks an input-token-only price tag. Code-plants and small flowers show that the embedding endpoint is now accepted without a needless completion-token box.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, planting a glowing embedding seed in a lime green (#ecf874) community code garden while a cheerful CRT monitor robot stamps a label reading \"INPUT TOKENS\". A crossed-out empty completion-token form sits harmlessly nearby among flowers and code-plants; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-31/PR-14215.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, planting a glowing embedding seed in a lime green (#ecf874) community code garden while a cheerful CRT monitor robot stamps a label reading \"INPUT TOKENS\". A crossed-out empty completion-token form sits harmlessly nearby among flowers and code-plants; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-31T19:52:47.227162+00:00"
+}

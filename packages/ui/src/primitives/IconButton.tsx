@@ -1,4 +1,4 @@
-import { forwardRef, type ReactNode } from "react";
+import { type ButtonHTMLAttributes, forwardRef, type ReactNode } from "react";
 import { cn } from "../lib/cn.ts";
 import { Tooltip } from "./Tooltip.tsx";
 
@@ -6,26 +6,29 @@ import { Tooltip } from "./Tooltip.tsx";
 export type IconButtonIntent = "danger" | "info";
 
 const intentClasses: Record<IconButtonIntent, string> = {
-    danger:
-        "polli:bg-intent-danger-bg-light polli:hover:bg-intent-danger-bg-hover " +
-        "polli:text-intent-danger-text",
-    info:
-        "polli:bg-intent-info-bg-light polli:hover:bg-intent-info-bg-hover " +
-        "polli:text-intent-info-text",
+    danger: "polli:bg-intent-danger-bg-light polli:text-intent-danger-text",
+    info: "polli:bg-intent-info-bg-light polli:text-intent-info-text",
+};
+
+const intentHoverClasses: Record<IconButtonIntent, string> = {
+    danger: "polli:hover:bg-intent-danger-bg-hover",
+    info: "polli:hover:bg-intent-info-bg-hover",
 };
 
 // Default (no intent): cascade-driven theme tile, deeper on hover.
-const defaultClasses =
-    "polli:bg-theme-bg-active polli:hover:bg-theme-bg-hover " +
-    "polli:text-theme-text-soft polli:hover:text-theme-text-hover";
+const defaultClasses = "polli:bg-theme-bg-active polli:text-theme-text-soft";
+const defaultHoverClasses =
+    "polli:hover:bg-theme-bg-hover polli:hover:text-theme-text-hover";
 
-export type IconButtonProps = {
+export type IconButtonProps = Omit<
+    ButtonHTMLAttributes<HTMLButtonElement>,
+    "children" | "className" | "title"
+> & {
     intent?: IconButtonIntent;
     title?: string;
     tooltip?: ReactNode;
     tooltipAlign?: "start" | "center";
     tooltipClampToViewport?: boolean;
-    onClick: () => void;
     children: ReactNode;
     className?: string;
     size?: "sm" | "md";
@@ -44,24 +47,33 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
             tooltip,
             tooltipAlign,
             tooltipClampToViewport,
-            onClick,
             children,
             className,
             size = "sm",
+            disabled = false,
+            ...buttonProps
         },
         ref,
     ) => {
         const button = (
             <button
+                {...buttonProps}
                 ref={ref}
                 type="button"
-                onClick={onClick}
-                aria-label={title}
+                disabled={disabled}
+                aria-label={buttonProps["aria-label"] ?? title}
                 data-intent={intent}
                 className={cn(
-                    "polli-control polli:inline-flex polli:cursor-pointer polli:items-center polli:justify-center polli:transition-colors",
+                    "polli-control polli:inline-flex polli:items-center polli:justify-center polli:transition-colors",
+                    disabled
+                        ? "polli:cursor-not-allowed polli:opacity-50"
+                        : "polli:cursor-pointer",
                     sizeClasses[size],
                     intent ? intentClasses[intent] : defaultClasses,
+                    !disabled &&
+                        (intent
+                            ? intentHoverClasses[intent]
+                            : defaultHoverClasses),
                     className,
                 )}
             >

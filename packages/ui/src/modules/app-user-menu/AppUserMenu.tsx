@@ -41,7 +41,7 @@ const defaultLabels: AppUserMenuLabels = {
 };
 
 const actionTriggerClass =
-    "polli:min-h-14 polli:rounded-xl polli:border-r-4 polli:border-b-4 polli:border-solid polli:border-brand-dark/20 polli:py-2 polli:hover:border-brand-dark/45";
+    "polli:min-h-14 polli:rounded-xl polli:border-r-4 polli:border-b-4 polli:border-solid polli:border-theme-text-strong/20 polli:py-2 polli:hover:border-theme-text-strong/45";
 
 export function AppUserMenu({
     dashboardHref,

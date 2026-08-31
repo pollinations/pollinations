@@ -1,0 +1,34 @@
+{
+  "pr_number": 14110,
+  "title": "feat: route GLM-5.3 Flash through Fireworks",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14110",
+  "merged_at": "2026-08-31T04:30:14Z",
+  "labels": [],
+  "pr_body_excerpt": "- Routes canonical z-ai/glm-5.3-flash directly to Fireworks serverless accounts/fireworks/models/glm-5p3-flash.\n- Sets paidOnly to false; preserves multiplier 1, 1,048,576 context, text/image input, tools, mandatory reasoning, and no fallback.\n- Updates exact Fireworks rates to $0.15 input/image input, $0.029 cached input, and $0.50 output per million; this intentionally replaces the roughly half-price OpenRouter sheet.\n- Direct and full local E2E passed reasoning, JSON, tools, ten-image vision, streaming, native routes, prompt/output cache, errors, both wallet paths, exact Tinybird settlement, and 10/10 bursts.\n\nPricing: https://fireworks.ai/models/fireworks/glm-5p3-flash",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Flash Takes the Fireworks Route",
+    "blurb": "GLM-5.3 Flash has moved onto a direct Fireworks lane. The bee checked the tool calls, vision inputs, cache paths, and ten-image pile; all survived the trip.",
+    "summary": "Routed canonical z-ai/glm-5.3-flash directly to Fireworks' accounts/fireworks/models/glm-5p3-flash, retaining its 1,048,576-token context window, text/image inputs, tools, mandatory reasoning, no fallback, and updated Fireworks rates of $0.15 input, $0.029 cached input, and $0.50 output per million tokens.",
+    "impact": "GLM-5.3 Flash requests now use Fireworks' native serverless route with verified streaming, vision, tool calling, caching, wallet settlement, and burst handling under the provider's exact pricing.",
+    "keywords": [
+      "GLM-5.3 Flash",
+      "Fireworks",
+      "text models",
+      "reasoning",
+      "tool calling",
+      "pricing"
+    ],
+    "visual_concept": "Depict GLM-5.3 Flash as a small glowing message packet taking a clearly marked Fireworks delivery route from a cozy terminal, with Polli acting as a careful route inspector. Include a large context-scroll, tiny tool icons, image cards, and a cache jar to represent the model's preserved capabilities, surrounded by code-plants and soft garden flowers.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny courier cap as she guides a glowing GLM-5.3 Flash message packet along a Fireworks delivery lane beside a retro terminal, a giant context scroll, tool icons, image cards, and a glowing cache jar among code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, pixel-font sign reading \"DIRECT ROUTE\", nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-31/PR-14110.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny courier cap as she guides a glowing GLM-5.3 Flash message packet along a Fireworks delivery lane beside a retro terminal, a giant context scroll, tool icons, image cards, and a glowing cache jar among code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, pixel-font sign reading \"DIRECT ROUTE\", nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-08-31T04:31:12.902525+00:00"
+}

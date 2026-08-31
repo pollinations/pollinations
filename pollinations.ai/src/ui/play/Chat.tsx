@@ -19,16 +19,23 @@ import {
     Chip,
     CloudUploadIcon,
     cn,
+    Dialog,
+    DownloadIcon,
     Dropdown,
+    ExpandIcon,
     FileUpload,
     ImageIcon,
+    PauseIcon,
+    PlayIcon,
     RobotIcon,
     RocketIcon,
     ScrollArea,
+    Slider,
     TabButton,
     Text,
     Textarea,
     TrashIcon,
+    XIcon,
 } from "@pollinations/ui";
 import { Markdown } from "@pollinations/ui/markdown";
 import {
@@ -282,38 +289,288 @@ function AttachmentView({ attachment }: { attachment: PreparedAttachment }) {
 }
 
 function MediaView({ media }: { media: RenderedMedia }) {
-    if (media.kind === "image") {
-        return (
-            <img
+    const [open, setOpen] = useState(false);
+
+    if (media.kind === "audio") {
+        return <AudioPlayer media={media} />;
+    }
+
+    const label = media.label || `Generated ${media.kind}`;
+    const isVideo = media.kind === "video";
+
+    return (
+        <>
+            <div
+                className={cn(
+                    "relative w-full max-w-sm overflow-hidden rounded-xl shadow-well",
+                    isVideo ? "bg-black" : "bg-theme-bg-pale",
+                )}
+            >
+                {isVideo ? (
+                    <VideoPlayer media={media} />
+                ) : (
+                    <button
+                        type="button"
+                        aria-label={`View ${label} larger`}
+                        onClick={() => setOpen(true)}
+                        className="block w-full cursor-zoom-in focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-theme-border"
+                    >
+                        <img
+                            src={media.url}
+                            alt={label}
+                            loading="lazy"
+                            className="play-chat-media-preview"
+                        />
+                    </button>
+                )}
+                <div className="absolute top-2 right-2 flex gap-2">
+                    <Button
+                        type="button"
+                        size="sm"
+                        aria-label={`Enlarge ${media.kind}`}
+                        title={`Enlarge ${media.kind}`}
+                        onClick={() => setOpen(true)}
+                        className="h-9 w-9 min-w-9 rounded-full bg-surface-opaque p-0 shadow-well [&>svg]:size-4"
+                    >
+                        <ExpandIcon />
+                    </Button>
+                    <Button
+                        as="a"
+                        href={media.url}
+                        download={`pollinations-${media.kind}`}
+                        size="sm"
+                        aria-label={`Download ${media.kind}`}
+                        title={`Download ${media.kind}`}
+                        className="h-9 w-9 min-w-9 rounded-full bg-surface-opaque p-0 shadow-well [&>svg]:size-4"
+                    >
+                        <DownloadIcon />
+                    </Button>
+                </div>
+            </div>
+            <Dialog
+                open={open}
+                onOpenChange={setOpen}
+                ariaLabel={`${label} preview`}
+                size="xl"
+                backdropBlur={false}
+                contentClassName="relative border-0 p-3 sm:p-4"
+            >
+                <Button
+                    type="button"
+                    aria-label="Close media preview"
+                    onClick={() => setOpen(false)}
+                    className="absolute top-5 right-5 z-10 h-10 w-10 min-w-10 p-0 [&>svg]:size-5"
+                >
+                    <XIcon />
+                </Button>
+                {open &&
+                    (isVideo ? (
+                        <div className="relative overflow-hidden rounded-lg bg-black">
+                            <VideoPlayer media={media} expanded autoPlay />
+                        </div>
+                    ) : (
+                        <img
+                            src={media.url}
+                            alt={label}
+                            className="max-h-[calc(100dvh-5rem)] w-full rounded-lg object-contain"
+                        />
+                    ))}
+            </Dialog>
+        </>
+    );
+}
+
+function AudioPlayer({ media }: { media: RenderedMedia }) {
+    const audioRef = useRef<HTMLAudioElement>(null);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [currentTime, setCurrentTime] = useState(0);
+    const [duration, setDuration] = useState(0);
+
+    const togglePlayback = () => {
+        const audio = audioRef.current;
+        if (!audio) return;
+        if (audio.paused) {
+            void audio.play().catch(() => setIsPlaying(false));
+        } else {
+            audio.pause();
+        }
+    };
+
+    return (
+        <div className="flex w-full max-w-sm items-center gap-3 rounded-xl bg-theme-bg-pale p-2 shadow-well">
+            {/* biome-ignore lint/a11y/useMediaCaption: Generated media does not include a caption track. */}
+            <audio
+                ref={audioRef}
                 src={media.url}
-                alt={media.label || "Generated image"}
-                loading="lazy"
-                className="play-chat-media rounded-xl bg-theme-bg-pale"
+                preload="metadata"
+                onLoadedMetadata={(event) => {
+                    const nextDuration = event.currentTarget.duration;
+                    setDuration(
+                        Number.isFinite(nextDuration) ? nextDuration : 0,
+                    );
+                }}
+                onTimeUpdate={(event) =>
+                    setCurrentTime(event.currentTarget.currentTime)
+                }
+                onPlay={() => setIsPlaying(true)}
+                onPause={() => setIsPlaying(false)}
+                onEnded={() => setIsPlaying(false)}
+                className="hidden"
             />
-        );
-    }
-    if (media.kind === "video") {
-        return (
-            <>
-                {/* biome-ignore lint/a11y/useMediaCaption: Generated media does not include a caption track. */}
-                <video
-                    src={media.url}
-                    controls
-                    preload="metadata"
-                    className="play-chat-media rounded-xl bg-theme-bg-pale"
-                />
-            </>
-        );
-    }
+            <button
+                type="button"
+                aria-label={isPlaying ? "Pause audio" : "Play audio"}
+                onClick={togglePlayback}
+                className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-surface-opaque text-theme-text-strong shadow-well transition-colors hover:bg-theme-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-border"
+            >
+                {isPlaying ? (
+                    <PauseIcon className="size-4" />
+                ) : (
+                    <PlayIcon className="size-4" />
+                )}
+            </button>
+            <Slider
+                aria-label="Audio timeline"
+                min={0}
+                max={duration || 0}
+                step={0.01}
+                value={Math.min(currentTime, duration || 0)}
+                disabled={duration <= 0}
+                onChange={(event) => {
+                    const nextTime = Number(event.currentTarget.value);
+                    if (audioRef.current)
+                        audioRef.current.currentTime = nextTime;
+                    setCurrentTime(nextTime);
+                }}
+                style={
+                    {
+                        "--polli-slider-fill":
+                            "var(--polli-color-brand-accent)",
+                        "--polli-slider-track": "var(--polli-color-bg-active)",
+                        "--polli-slider-thumb-border":
+                            "var(--polli-color-brand-accent)",
+                    } as CSSProperties
+                }
+            />
+            <Button
+                as="a"
+                href={media.url}
+                download="pollinations-audio"
+                size="sm"
+                aria-label="Download audio"
+                title="Download audio"
+                className="h-9 w-9 min-w-9 shrink-0 rounded-full bg-surface-opaque p-0 shadow-well [&>svg]:size-4"
+            >
+                <DownloadIcon />
+            </Button>
+        </div>
+    );
+}
+
+function VideoPlayer({
+    media,
+    expanded = false,
+    autoPlay = false,
+}: {
+    media: RenderedMedia;
+    expanded?: boolean;
+    autoPlay?: boolean;
+}) {
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [currentTime, setCurrentTime] = useState(0);
+    const [duration, setDuration] = useState(0);
+
+    const togglePlayback = () => {
+        const video = videoRef.current;
+        if (!video) return;
+        if (video.paused) {
+            void video.play().catch(() => setIsPlaying(false));
+        } else {
+            video.pause();
+        }
+    };
+
     return (
         <>
             {/* biome-ignore lint/a11y/useMediaCaption: Generated media does not include a caption track. */}
-            <audio
+            <video
+                ref={videoRef}
                 src={media.url}
-                controls
+                autoPlay={autoPlay}
+                playsInline
                 preload="metadata"
-                className="w-full max-w-xl"
+                onLoadedMetadata={(event) => {
+                    const nextDuration = event.currentTarget.duration;
+                    setDuration(
+                        Number.isFinite(nextDuration) ? nextDuration : 0,
+                    );
+                }}
+                onTimeUpdate={(event) =>
+                    setCurrentTime(event.currentTarget.currentTime)
+                }
+                onPlay={() => setIsPlaying(true)}
+                onPause={() => setIsPlaying(false)}
+                onEnded={() => setIsPlaying(false)}
+                className={cn(
+                    "w-full bg-black object-contain",
+                    expanded
+                        ? "max-h-[calc(100dvh-5rem)]"
+                        : "play-chat-media-preview",
+                )}
             />
+            <div
+                className={cn(
+                    "absolute flex items-center",
+                    expanded
+                        ? "inset-x-0 bottom-0 gap-3 bg-black/65 px-3 py-2 text-white"
+                        : "bottom-2 left-2",
+                )}
+            >
+                <button
+                    type="button"
+                    aria-label={isPlaying ? "Pause video" : "Play video"}
+                    onClick={togglePlayback}
+                    className={cn(
+                        "inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2",
+                        expanded
+                            ? "h-8 w-8 text-white hover:bg-white/15 focus-visible:ring-white"
+                            : "h-9 w-9 bg-surface-opaque text-theme-text-strong shadow-well hover:bg-theme-bg-hover focus-visible:ring-theme-border",
+                    )}
+                >
+                    {isPlaying ? (
+                        <PauseIcon className="size-4" />
+                    ) : (
+                        <PlayIcon className="size-4" />
+                    )}
+                </button>
+                {expanded && (
+                    <Slider
+                        aria-label="Video timeline"
+                        min={0}
+                        max={duration || 0}
+                        step={0.01}
+                        value={Math.min(currentTime, duration || 0)}
+                        disabled={duration <= 0}
+                        onChange={(event) => {
+                            const nextTime = Number(event.currentTarget.value);
+                            if (videoRef.current)
+                                videoRef.current.currentTime = nextTime;
+                            setCurrentTime(nextTime);
+                        }}
+                        style={
+                            {
+                                "--polli-slider-fill":
+                                    "var(--polli-color-brand-accent)",
+                                "--polli-slider-track":
+                                    "rgb(255 255 255 / 0.35)",
+                                "--polli-slider-thumb-border":
+                                    "var(--polli-color-brand-accent)",
+                            } as CSSProperties
+                        }
+                    />
+                )}
+            </div>
         </>
     );
 }
@@ -321,11 +578,13 @@ function MediaView({ media }: { media: RenderedMedia }) {
 function MessageCard({
     message,
     assistantName,
+    streamingStatus,
     canRetry,
     onRetry,
 }: {
     message: ConversationMessage;
     assistantName: string;
+    streamingStatus: string;
     canRetry: boolean;
     onRetry: () => void;
 }) {
@@ -337,92 +596,91 @@ function MessageCard({
     const isUser = message.role === "user";
 
     return (
-        <article
+        <div
             className={cn(
-                "play-chat-message flex min-w-0 flex-col gap-3 rounded-xl px-4 py-3",
-                isUser
-                    ? "ml-auto bg-theme-bg-active text-theme-text-strong"
-                    : "mr-auto bg-surface-opaque text-theme-text-base shadow-well",
+                "play-chat-message flex min-w-0 flex-col gap-3",
+                isUser ? "ml-auto items-end" : "mr-auto items-start",
             )}
             aria-busy={message.status === "streaming"}
         >
-            {isUser ? (
-                <Text
-                    as="div"
-                    size="xs"
-                    tone="muted"
-                    weight="bold"
-                    className="uppercase tracking-wide"
-                >
-                    You
-                </Text>
-            ) : (
-                <RobotIcon className="h-4 w-4 text-theme-text-strong" />
-            )}
-            {isUser
-                ? rendered.markdown && (
-                      <p className="whitespace-pre-wrap break-words">
-                          {rendered.markdown}
-                      </p>
-                  )
-                : rendered.markdown && <Markdown>{rendered.markdown}</Markdown>}
-            {message.attachments.length > 0 && (
-                <div className="grid gap-3 sm:grid-cols-2">
-                    {message.attachments.map((attachment) => (
-                        <AttachmentView
-                            key={attachment.id}
-                            attachment={attachment}
+            <article
+                className={cn(
+                    "flex max-w-full min-w-0 flex-col gap-3 rounded-xl px-4 py-3",
+                    isUser
+                        ? "bg-theme-bg-active text-theme-text-strong"
+                        : "bg-surface-opaque text-theme-text-base shadow-well",
+                )}
+            >
+                {isUser ? (
+                    <Text
+                        as="div"
+                        size="xs"
+                        tone="muted"
+                        weight="bold"
+                        className="uppercase tracking-wide"
+                    >
+                        You
+                    </Text>
+                ) : (
+                    <RobotIcon className="h-4 w-4 text-theme-text-strong" />
+                )}
+                {isUser
+                    ? rendered.markdown && (
+                          <p className="whitespace-pre-wrap break-words">
+                              {rendered.markdown}
+                          </p>
+                      )
+                    : rendered.markdown && (
+                          <Markdown>{rendered.markdown}</Markdown>
+                      )}
+                {message.attachments.length > 0 && (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                        {message.attachments.map((attachment) => (
+                            <AttachmentView
+                                key={attachment.id}
+                                attachment={attachment}
+                            />
+                        ))}
+                    </div>
+                )}
+                {message.status === "streaming" && !rawText && (
+                    <Text size="sm" tone="muted">
+                        {streamingStatus || `${assistantName} is thinking…`}
+                    </Text>
+                )}
+                {message.status === "cancelled" && (
+                    <Text size="xs" tone="muted">
+                        Stopped
+                    </Text>
+                )}
+                {message.status === "error" && (
+                    <Alert intent="danger" title="Response interrupted">
+                        {message.error ||
+                            `${assistantName} could not finish this response.`}
+                    </Alert>
+                )}
+                {canRetry && (
+                    <Button
+                        type="button"
+                        size="sm"
+                        onClick={onRetry}
+                        className="self-start"
+                    >
+                        Retry
+                    </Button>
+                )}
+            </article>
+            {rendered.media.length > 0 && (
+                <div className="flex flex-col gap-3">
+                    {rendered.media.map((media) => (
+                        <MediaView
+                            key={`${media.kind}:${media.url}`}
+                            media={media}
                         />
                     ))}
                 </div>
             )}
-            {rendered.media.length > 0 && (
-                <div className="flex flex-col gap-3">
-                    {rendered.media.map((media) => (
-                        <div
-                            key={`${media.kind}:${media.url}`}
-                            className="flex flex-col gap-2"
-                        >
-                            <MediaView media={media} />
-                            <a
-                                href={media.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="break-all text-xs font-semibold underline"
-                            >
-                                Open {media.kind}
-                            </a>
-                        </div>
-                    ))}
-                </div>
-            )}
-            {message.status === "streaming" && !rawText && (
-                <Text size="sm" tone="muted">
-                    {assistantName} is thinking…
-                </Text>
-            )}
-            {message.status === "cancelled" && (
-                <Text size="xs" tone="muted">
-                    Stopped
-                </Text>
-            )}
-            {message.status === "error" && (
-                <Alert intent="danger" title="Response interrupted">
-                    {message.error ||
-                        `${assistantName} could not finish this response.`}
-                </Alert>
-            )}
-            {canRetry && (
-                <Button
-                    type="button"
-                    size="sm"
-                    onClick={onRetry}
-                    className="self-start"
-                >
-                    Retry
-                </Button>
-            )}
-        </article>
+        </div>
     );
 }
 
@@ -456,7 +714,6 @@ function AgentPicker({
                         className="w-fit max-w-full self-start justify-between gap-2"
                         aria-label={`Agent: ${selected?.title ?? "Unavailable"}`}
                     >
-                        <RobotIcon className="h-4 w-4 shrink-0" />
                         <span className="truncate">
                             {isLoading && agents.length === 0
                                 ? "Loading agents…"
@@ -475,13 +732,12 @@ function AgentPicker({
                                     active={agent.id === selectedAgentId}
                                     size="sm"
                                     variant="ghost"
-                                    className="w-full justify-start gap-2 text-left"
+                                    className="w-full justify-start text-left"
                                     onClick={() => {
                                         onSelectAgent(agent.id);
                                         close();
                                     }}
                                 >
-                                    <RobotIcon className="h-4 w-4 shrink-0" />
                                     <span className="truncate">
                                         {agent.title}
                                     </span>
@@ -973,6 +1229,7 @@ export function Chat() {
                             <MessageCard
                                 message={selectedWelcome}
                                 assistantName={assistantName}
+                                streamingStatus=""
                                 canRetry={false}
                                 onRetry={() => undefined}
                             />
@@ -982,6 +1239,7 @@ export function Chat() {
                                 key={message.id}
                                 message={message}
                                 assistantName={assistantName}
+                                streamingStatus={status}
                                 canRetry={
                                     canRetryLast(message.id) &&
                                     (message.status === "error" ||
@@ -1136,13 +1394,6 @@ export function Chat() {
                                 <CloudUploadIcon className="h-5 w-5 text-theme-text-strong" />
                             </Button>
                         </span>
-                        {(!isHydrated || sending) && (
-                            <Text size="xs" tone="muted" aria-live="polite">
-                                {!isHydrated
-                                    ? "Checking your session…"
-                                    : status}
-                            </Text>
-                        )}
                         <div className="ml-auto flex items-center gap-2">
                             {messages.length > 0 && (
                                 <Button

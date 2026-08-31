@@ -266,4 +266,21 @@ describe("streamed media rendering", () => {
             media: [],
         });
     });
+
+    it("recognizes labelled extensionless Pollinations media links", () => {
+        expect(
+            extractStreamedMedia(
+                "[video](https://media.pollinations.ai/generated-video-id)",
+            ),
+        ).toEqual({
+            markdown: "",
+            media: [
+                {
+                    kind: "video",
+                    url: "https://media.pollinations.ai/generated-video-id",
+                    label: "video",
+                },
+            ],
+        });
+    });
 });

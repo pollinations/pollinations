@@ -31,6 +31,7 @@ type CreateApiKeyForUserInput = {
     expiresIn?: number;
     allowedModels?: string[] | null;
     pollenBudget?: number | null;
+    pollenType?: "quest" | "paid" | null;
     accountPermissions?: string[] | null;
     metadata?: CallerMetadata;
     allowAccountKeysPermission: boolean;
@@ -213,6 +214,7 @@ export async function createApiKeyForUser({
     expiresIn,
     allowedModels,
     pollenBudget,
+    pollenType,
     accountPermissions,
     metadata,
     allowAccountKeysPermission,
@@ -289,6 +291,9 @@ export async function createApiKeyForUser({
     if (effectivePollenBudget != null) {
         d1Updates.pollenBalance = effectivePollenBudget;
     }
+    if (pollenType !== undefined && pollenType !== null) {
+        d1Updates.pollenType = pollenType;
+    }
     if (!isPublishable && attribution) {
         d1Updates.byopClientKeyId = attribution.clientId;
     }
@@ -309,6 +314,7 @@ export async function createApiKeyForUser({
         expiresIn,
         permissions: Object.keys(permissions).length > 0 ? permissions : null,
         pollenBudget: effectivePollenBudget ?? null,
+        pollenType: pollenType ?? null,
         byopClientKeyId:
             !isPublishable && attribution ? attribution.clientId : null,
         metadata: finalMetadata,

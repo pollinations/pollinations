@@ -106,6 +106,7 @@ type RealtimeBillingContext = {
     identity: UserData & { userId: string };
     apiKeyPollenBalance?: number | null;
     apiKeyReservedAmount?: number;
+    keyPollenType?: "quest" | "paid" | null;
     byopClientKeyId?: string | null;
     modelRequested: string;
     resolvedModelRequested: string;
@@ -856,6 +857,7 @@ async function settleRealtimeSession(
             apiKeyId: tracking.identity.apiKeyId,
             apiKeyPollenBalance: tracking.apiKeyPollenBalance,
             apiKeyReservedAmount: tracking.apiKeyReservedAmount,
+            keyPollenType: tracking.keyPollenType,
             byopClientKeyId: tracking.byopClientKeyId,
             modelPaidOnly: tracking.modelDefinition.paidOnly,
         });
@@ -1399,6 +1401,7 @@ async function createRealtimeBillingContext(
         // requireUser() above proves the id, which the optional field cannot.
         identity: { ...requestIdentity(c.var.auth), userId: user.id },
         apiKeyPollenBalance: c.var.auth.apiKey?.pollenBalance,
+        keyPollenType: c.var.auth.apiKey?.pollenType,
         byopClientKeyId: c.var.auth.apiKey?.byopClientKeyId,
         modelRequested: modelInfo.requested,
         resolvedModelRequested: modelInfo.resolved,

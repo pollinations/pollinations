@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "789d39a2-1c11-4452-befe-e59872c14b1b",
+  "id": "ced2fa08-22f6-4196-9b18-32f23c2fc35a",
   "prevId": "e139f3f2-7a00-4878-b145-95c3ce0e28fb",
   "tables": {
     "account": {
@@ -282,6 +282,14 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
+        },
+        "pollen_type": {
+          "name": "pollen_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": null
         },
         "pollen_balance": {
           "name": "pollen_balance",

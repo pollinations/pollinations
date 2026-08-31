@@ -18,12 +18,17 @@ const PUBLISHABLE_KEY_PREFIX = "pk";
 
 export type AuthUser = typeof schema.user.$inferSelect;
 
+export type ModelPermissionEntry =
+    | string
+    | { id: string; pollenType: "quest" | "paid" };
+
 export interface AuthenticatedApiKey {
     id: string;
     name?: string;
     permissions?: Record<string, string[]>;
     metadata?: Record<string, unknown>;
     pollenBalance?: number | null;
+    pollenType?: "quest" | "paid" | null;
     byopClientKeyId?: string | null;
     byopClientName?: string | null;
     byopClientUserId?: string | null;
@@ -330,6 +335,8 @@ async function loadActiveApiKeyAuthResult(opts: {
             ),
             metadata: normalizeMetadata(parseMetadata(row.apiKey.metadata)),
             pollenBalance: row.apiKey.pollenBalance ?? null,
+            pollenType:
+                (row.apiKey.pollenType as "quest" | "paid" | null) ?? null,
             byopClientKeyId: row.apiKey.byopClientKeyId ?? null,
             byopClientName: row.byopClientName ?? null,
             byopClientUserId: row.byopClientUserId ?? null,

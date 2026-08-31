@@ -75,6 +75,8 @@ const readKey = (ctx: HarnessContext): string | null => {
 const providerConfig = (models: HarnessModel[]) => ({
     baseUrl: `${BASE_URL}/v1`,
     api: "openai-completions",
+    // Pi validates custom providers before resolving their auth.json entry.
+    apiKey: PROVIDER,
     compat: {
         supportsStore: false,
         supportsDeveloperRole: false,
@@ -179,7 +181,10 @@ const result = (ctx: HarnessContext): HarnessResult => {
     const providers = modelsData.providers as
         | Record<string, unknown>
         | undefined;
-    const hasProvider = !!providers?.[PROVIDER];
+    const provider = providers?.[PROVIDER] as
+        | Record<string, unknown>
+        | undefined;
+    const hasProvider = provider?.apiKey === PROVIDER;
 
     const authEntry = authData[PROVIDER] as Record<string, unknown> | undefined;
     const hasKey =

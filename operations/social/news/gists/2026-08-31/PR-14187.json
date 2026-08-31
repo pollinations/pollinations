@@ -1,0 +1,34 @@
+{
+  "pr_number": 14187,
+  "title": "refactor: align model modality types",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14187",
+  "merged_at": "2026-08-31T11:53:12Z",
+  "labels": [],
+  "pr_body_excerpt": "- Derive shared category and capability types from their runtime value lists\n- Constrain catalog input and output modalities to supported values\n- Add missing 3D and video capability types to the SDK\n- Add the missing 3D model-selector label\n\nTests: SDK tests and typecheck; Gen and Enter typechecks",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The model garden gets labels",
+    "blurb": "The catalog learned a few missing words: 3D, video, and only the modalities it can actually support. Polli has finished putting tiny signs on the shelves.",
+    "summary": "Aligned SDK model modality types with their runtime value lists, constrained catalog input and output modalities to supported values, and added missing 3D, video, and 3D model-selector labels.",
+    "impact": "SDK users and model-picker users get more accurate type-safe modality metadata, including clear support for 3D and video models.",
+    "keywords": [
+      "sdk",
+      "model-catalog",
+      "modalities",
+      "3d",
+      "video",
+      "type-safety"
+    ],
+    "visual_concept": "Depict a cozy model garden where clearly labeled seed packets and flowering code-plants represent text, image, audio, video, and 3D modalities. Polli, wearing librarian glasses, carefully adds a missing \"3D\" label while the eager CRT Monitor Robot helps sort the supported model cards.",
+    "image_prompt": "A cozy pixel art model garden with labeled code-plants for TEXT, IMAGE, AUDIO, VIDEO, and a freshly placed 3D sign, while Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a happy smile, and rounded light blue translucent wings, wears tiny librarian glasses and organizes the labels beside a helpful CRT monitor robot. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley, subtle pixel-font text: \"3D\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-31/PR-14187.jpg",
+    "prompt": "A cozy pixel art model garden with labeled code-plants for TEXT, IMAGE, AUDIO, VIDEO, and a freshly placed 3D sign, while Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a happy smile, and rounded light blue translucent wings, wears tiny librarian glasses and organizes the labels beside a helpful CRT monitor robot. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley, subtle pixel-font text: \"3D\"."
+  },
+  "generated_at": "2026-08-31T11:54:29.049471+00:00"
+}

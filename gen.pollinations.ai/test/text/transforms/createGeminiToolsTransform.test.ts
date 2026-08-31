@@ -89,6 +89,29 @@ describe("OpenRouter Gemini routing", () => {
             },
         ]);
     });
+
+    it.each(
+        routes.map(([model]) => model),
+    )("preserves tools with structured output for %s", async (model) => {
+        const transform = findModelByName(model)?.transform;
+        if (!transform) throw new Error(`${model} transform missing`);
+        const tools = [
+            {
+                type: "function",
+                function: {
+                    name: "lookup",
+                    parameters: { type: "object", properties: {} },
+                },
+            },
+        ];
+
+        const { options } = await transform([], {
+            tools,
+            response_format: { type: "json_object" },
+        });
+
+        expect(options.tools).toEqual(tools);
+    });
 });
 
 describe("Vertex Gemini Search routing", () => {
@@ -165,7 +188,7 @@ describe("Vertex Gemini Search routing", () => {
         expect(options.logit_bias).toEqual({ "1": -1 });
     });
 
-    it("drops logit_bias from explicit search on the 2.5 general route", async () => {
+    it("preserves logit_bias with explicit search on the 2.5 route", async () => {
         const transform = findModelByName("gemini-fast")?.transform;
         if (!transform) throw new Error("gemini-fast transform missing");
 
@@ -174,7 +197,7 @@ describe("Vertex Gemini Search routing", () => {
             logit_bias: { "1": -1 },
         });
 
-        expect(options.logit_bias).toBeUndefined();
+        expect(options.logit_bias).toEqual({ "1": -1 });
     });
 
     it("preserves logit_bias without native search on the 2.5 route", async () => {

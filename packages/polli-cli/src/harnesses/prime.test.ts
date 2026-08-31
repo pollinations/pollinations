@@ -114,6 +114,24 @@ describe("prime harness", () => {
         );
     });
 
+    it("preserves slash-containing model IDs in the emitted provider config", () => {
+        const model = "z-ai/glm-5.3-flash";
+        configurePrime(ctx, {
+            ...settings,
+            model,
+            models: [
+                ...settings.models,
+                { id: model, contextWindow: 65536, input: ["text"] },
+            ],
+        });
+
+        const provider = readJson(modelsFile()).providers.pollinations;
+        expect(
+            provider.models.map((entry: { id: string }) => entry.id),
+        ).toContain(model);
+        expect(readJson(settingsFile()).defaultModel).toBe(model);
+    });
+
     it("preserves providers/models/settings while merging live model metadata", () => {
         mkdirSync(primeHome(ctx), { recursive: true });
         writeFileSync(

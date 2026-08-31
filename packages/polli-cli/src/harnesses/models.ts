@@ -12,11 +12,17 @@ interface CatalogModel {
     reasoning?: boolean;
 }
 
-/**
- * First-party text models with tool calling — what an agentic harness can
- * drive. Community models (`owner/name`) and published agents are left out:
- * they come and go, and they would triple the list.
- */
+const MAX_MODEL_ID_LENGTH = 256;
+const INVALID_MODEL_ID_CHARS = /[\s\p{Cc}]/u;
+
+const isSafeModelId = (id: unknown): id is string =>
+    typeof id === "string" &&
+    id.length > 0 &&
+    id.length <= MAX_MODEL_ID_LENGTH &&
+    id.trim() === id &&
+    !INVALID_MODEL_ID_CHARS.test(id);
+
+/** Text models with tool calling that an agentic harness can drive. */
 export const fetchHarnessModels = async (
     apiKey?: string | null,
 ): Promise<HarnessModel[]> => {
@@ -29,9 +35,7 @@ export const fetchHarnessModels = async (
     return data
         .filter(
             (m) =>
-                typeof m.id === "string" &&
-                m.id.trim() !== "" &&
-                m.id === m.id.trim() &&
+                isSafeModelId(m.id) &&
                 Array.isArray(m.input_modalities) &&
                 m.input_modalities.includes("text") &&
                 m.tools === true &&
@@ -42,8 +46,7 @@ export const fetchHarnessModels = async (
                 typeof m.context_length === "number" &&
                 Number.isFinite(m.context_length) &&
                 m.context_length > 0 &&
-                m.agent === undefined &&
-                !m.id.includes("/"),
+                m.agent === undefined,
         )
         .map((m) => {
             const input = (m.input_modalities as string[]).filter(

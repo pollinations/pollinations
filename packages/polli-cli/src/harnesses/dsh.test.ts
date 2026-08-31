@@ -12,7 +12,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseEnv } from "node:util";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { parse, stringify } from "yaml";
 import { configureDsh, disableDsh, dsh } from "./dsh.js";
 import type { HarnessContext } from "./types.js";
@@ -97,6 +97,56 @@ describe("dsh harness", () => {
             configured: true,
             model: "deepseek",
         });
+    });
+
+    it("accepts slash-containing model IDs during selection", async () => {
+        const model = "z-ai/glm-5.3-flash";
+        mkdirSync(join(home, ".dsh"), { recursive: true });
+        writeFileSync(envFile(), "POLLI_DSH_API_KEY=sk_test_key\n");
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input: RequestInfo | URL) => {
+                const url = String(input);
+                if (url.endsWith("/account/key")) {
+                    return new Response('{"valid":true}', { status: 200 });
+                }
+                if (url.endsWith("/v1/models")) {
+                    return new Response(
+                        JSON.stringify({
+                            data: [
+                                {
+                                    id: model,
+                                    input_modalities: ["text"],
+                                    output_modalities: ["text"],
+                                    supported_endpoints: [
+                                        "/v1/chat/completions",
+                                    ],
+                                    tools: true,
+                                    context_length: 65536,
+                                },
+                            ],
+                        }),
+                        { status: 200 },
+                    );
+                }
+                return new Response("not found", { status: 404 });
+            }),
+        );
+
+        await expect(dsh.on(ctx, { model })).resolves.toMatchObject({
+            configured: true,
+            model,
+        });
+        const doc = parse(read(settingsFile()));
+        expect(doc["agent-default-model"]).toEqual({
+            provider: "pollinations",
+            model,
+        });
+        expect(
+            doc["llm-pi-ai"].providers.pollinations.models.map(
+                (entry: { id: string }) => entry.id,
+            ),
+        ).toEqual([model]);
     });
 
     it("keeps existing settings, comments, environment, and MCP entries", () => {

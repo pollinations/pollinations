@@ -22,6 +22,31 @@ afterEach(() => {
 });
 
 describe("fetchHarnessModels", () => {
+    it("accepts slash-containing IDs and rejects unsafe IDs", async () => {
+        const valid = {
+            ...response.data[0],
+            id: "z-ai/glm-5.3-flash",
+        };
+        const malformed = [
+            { ...valid, id: " leading-space" },
+            { ...valid, id: "trailing-space " },
+            { ...valid, id: "line\nbreak" },
+            { ...valid, id: "control\u0000character" },
+            { ...valid, id: "x".repeat(257) },
+        ];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => ({
+                ok: true,
+                json: async () => ({ data: [valid, ...malformed] }),
+            })),
+        );
+
+        await expect(fetchHarnessModels()).resolves.toEqual([
+            { id: valid.id, contextWindow: 100, input: ["text"] },
+        ]);
+    });
+
     it("keeps public catalog preflights unauthenticated for empty, null, and undefined keys", async () => {
         const authorization: (string | null)[] = [];
         vi.stubGlobal(

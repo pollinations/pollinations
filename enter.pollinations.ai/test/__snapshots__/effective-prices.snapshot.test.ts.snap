@@ -1816,6 +1816,22 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000002,
     },
   },
+  "thinkingmachines/inkling": {
+    "cost": {
+      "completionTextTokens": 0.00000405,
+      "promptAudioTokens": 0.000001,
+      "promptCachedTokens": 0.00000017,
+      "promptImageTokens": 0.000001,
+      "promptTextTokens": 0.000001,
+    },
+    "price": {
+      "completionTextTokens": 0.00000405,
+      "promptAudioTokens": 0.000001,
+      "promptCachedTokens": 0.00000017,
+      "promptImageTokens": 0.000001,
+      "promptTextTokens": 0.000001,
+    },
+  },
   "trellis-2": {
     "cost": {
       "completionImageTokens": 0.24,

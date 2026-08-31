@@ -246,6 +246,19 @@ describe("resolveModelConfig", () => {
         expect(result.options.max_tokens).toBe(64000);
     });
 
+    it("routes full Inkling directly to Fireworks without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "thinkingmachines/inkling",
+        });
+
+        expect(result.options.model).toBe("accounts/fireworks/models/inkling");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.fireworks.ai/inference/v1",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
     it("routes GLM-5.3 Flash directly to Fireworks without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "z-ai/glm-5.3-flash",

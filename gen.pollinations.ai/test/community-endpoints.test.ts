@@ -85,19 +85,19 @@ import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
-import { withInlineGenerationCoordinator } from "../test/helpers/inline-generation-coordinator.ts";
-import { callCommunityTranscriptionEndpoint } from "./audio/communityEndpoint.ts";
-import { getCommunityModelRegistryEntries } from "./community-models.ts";
+import { callCommunityTranscriptionEndpoint } from "../src/audio/communityEndpoint.ts";
+import { getCommunityModelRegistryEntries } from "../src/community-models.ts";
 import {
     callCommunityImageEndpoint,
     callCommunityVideoEndpoint,
-} from "./image/communityEndpoint.ts";
-import worker from "./index.ts";
+} from "../src/image/communityEndpoint.ts";
+import worker from "../src/index.ts";
 import {
     getGenerationModelRegistry,
     resetGenerationModelRegistryCache,
-} from "./model-registry.ts";
-import { communityEndpointGatewayContext } from "./text/communityEndpoint.ts";
+} from "../src/model-registry.ts";
+import { communityEndpointGatewayContext } from "../src/text/communityEndpoint.ts";
+import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
 
 const db = drizzle(env.DB);
 

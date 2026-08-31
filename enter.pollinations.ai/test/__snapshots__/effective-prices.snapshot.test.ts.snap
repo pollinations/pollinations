@@ -1951,16 +1951,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "z-ai/glm-5.3-flash": {
     "cost": {
-      "completionTextTokens": 0.00000025,
-      "promptCachedTokens": 0.000000015,
-      "promptImageTokens": 0.000000075,
-      "promptTextTokens": 0.000000075,
+      "completionTextTokens": 0.0000005,
+      "promptCachedTokens": 0.000000029,
+      "promptImageTokens": 0.00000015,
+      "promptTextTokens": 0.00000015,
     },
     "price": {
-      "completionTextTokens": 0.00000025,
-      "promptCachedTokens": 0.000000015,
-      "promptImageTokens": 0.000000075,
-      "promptTextTokens": 0.000000075,
+      "completionTextTokens": 0.0000005,
+      "promptCachedTokens": 0.000000029,
+      "promptImageTokens": 0.00000015,
+      "promptTextTokens": 0.00000015,
     },
   },
   "zimage": {

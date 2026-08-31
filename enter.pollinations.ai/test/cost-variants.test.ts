@@ -721,6 +721,37 @@ describe("selection safety and composition", () => {
     });
 });
 
+describe("FLUX.2 image billing", () => {
+    it("bills Pro's initial premium plus rounded input and output megapixels", () => {
+        const billing = bill("flux-2-pro", {
+            promptImageTokens: 2,
+            completionImageTokens: 4,
+        });
+
+        expect(billing.cost.totalCost).toBeCloseTo(0.105, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.07875, 12);
+        expect(billing.adjustments).toMatchObject([
+            {
+                ruleId: "azure.flux_2_pro.initial_output_megapixel.v1",
+                units: 1,
+                cost: 0.015,
+                price: 0.01125,
+            },
+        ]);
+    });
+
+    it("bills Flex input and output megapixels at the same rate", () => {
+        const billing = bill("flux-2-flex", {
+            promptImageTokens: 2,
+            completionImageTokens: 4,
+        });
+
+        expect(billing.cost.totalCost).toBeCloseTo(0.3, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.225, 12);
+        expect(billing.adjustments).toEqual([]);
+    });
+});
+
 describe("registry-wide variant invariants", () => {
     it("variant sheets only contain valid finite rates from the base sheet", () => {
         for (const model of getModels()) {

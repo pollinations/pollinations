@@ -2,6 +2,7 @@ import { env } from "cloudflare:test";
 import { createTestUser } from "@shared/test/fixtures/index.ts";
 import { describe, expect, it } from "vitest";
 import migrationSql from "../drizzle/0053_listing_envelope.sql?raw";
+import requiredTitleMigrationSql from "../drizzle/0056_graceful_expediter.sql?raw";
 
 type Row = {
     id: string;
@@ -248,5 +249,69 @@ describe("community endpoint envelope migration", () => {
         ).first<{ sql: string }>();
         expect(table?.sql).toContain("community_endpoint_base_url");
         expect(table?.sql).toContain("community_endpoint_prompt_agent_model");
+    });
+});
+
+describe("required community endpoint title migration", () => {
+    it("backfills titles before making the column required", async () => {
+        await createTestUser({ id: "title-owner" });
+        await env.DB.prepare(`
+            CREATE TABLE migration_title_endpoint (
+                id TEXT PRIMARY KEY NOT NULL,
+                owner_user_id TEXT NOT NULL,
+                name TEXT NOT NULL,
+                title TEXT,
+                description TEXT,
+                type TEXT DEFAULT 'proxy' NOT NULL,
+                base_url TEXT NOT NULL,
+                upstream_model TEXT NOT NULL,
+                payload TEXT DEFAULT '{}' NOT NULL,
+                visibility TEXT DEFAULT 'private' NOT NULL,
+                pending_payload TEXT,
+                pending_visibility TEXT,
+                pending_at INTEGER,
+                hidden_at INTEGER,
+                hidden_reason TEXT,
+                hidden_by TEXT,
+                created_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL
+            )
+        `).run();
+        await env.DB.prepare(`
+            INSERT INTO migration_title_endpoint (
+                id, owner_user_id, name, title, description, base_url,
+                upstream_model, created_at, updated_at
+            ) VALUES
+                ('description', 'title-owner', 'first', NULL,
+                 ' Friendly description ', 'https://example.com', 'first', 1, 1),
+                ('slug', 'title-owner', 'second', '   ', NULL,
+                 'https://example.com', 'second', 1, 1),
+                ('stored', 'title-owner', 'third', ' Stored title ', 'Ignored',
+                 'https://example.com', 'third', 1, 1)
+        `).run();
+
+        for (const statement of requiredTitleMigrationSql.split(
+            "--> statement-breakpoint",
+        )) {
+            await env.DB.prepare(
+                statement.replaceAll(
+                    "community_endpoint",
+                    "migration_title_endpoint",
+                ),
+            ).run();
+        }
+
+        const titles = await env.DB.prepare(
+            "SELECT id, title FROM migration_title_endpoint ORDER BY id",
+        ).all<{ id: string; title: string }>();
+        expect(titles.results).toEqual([
+            { id: "description", title: "Friendly description" },
+            { id: "slug", title: "second" },
+            { id: "stored", title: "Stored title" },
+        ]);
+        const titleColumn = await env.DB.prepare(
+            "SELECT `notnull` AS required FROM pragma_table_info('migration_title_endpoint') WHERE name = 'title'",
+        ).first<{ required: number }>();
+        expect(titleColumn?.required).toBe(1);
     });
 });

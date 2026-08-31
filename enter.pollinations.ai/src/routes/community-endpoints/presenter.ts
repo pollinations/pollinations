@@ -1,7 +1,6 @@
 import {
     applyPendingProxyPricing,
     COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
-    communityEndpointTitle,
     communityModelId,
     effectiveCommunityEndpointVisibility,
     normalizeCommunityEndpointAdvertised,
@@ -42,11 +41,7 @@ export function toCommunityEndpointResponse(
         id: row.id,
         modelId,
         name: row.name,
-        title: communityEndpointTitle({
-            modelId,
-            title: row.title,
-            description: row.description,
-        }),
+        title: row.title,
         description: row.description,
         baseUrl: row.type === "prompt_agent" ? agentRuntimeUrl : row.baseUrl,
         upstreamModel: row.upstreamModel,

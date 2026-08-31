@@ -261,7 +261,8 @@ describe("callAzureFlux2", () => {
             {
                 ...baseParams,
                 model,
-                width: 1536,
+                width: 1008,
+                height: 752,
                 guidance_scale: 4.5,
             },
             USER_INFO,
@@ -270,8 +271,8 @@ describe("callAzureFlux2", () => {
         expect(requestBody).toEqual({
             prompt: "wide landscape",
             model: upstreamModel,
-            width: 1536,
-            height: 1024,
+            width: 1008,
+            height: 752,
             seed: 42,
             guidance: 4.5,
             output_format: "png",
@@ -322,7 +323,8 @@ describe("callAzureFlux2", () => {
 
     it.each([
         [{ width: 255, height: 1024 }, "at least 256px"],
-        [{ width: 4097, height: 1024 }, "at most 4 megapixels"],
+        [{ width: 1000, height: 750 }, "multiples of 16px"],
+        [{ width: 4112, height: 1024 }, "at most 4,194,304 pixels"],
     ])("rejects unsupported dimensions", async (dimensions, message) => {
         await expect(
             callAzureFlux2(

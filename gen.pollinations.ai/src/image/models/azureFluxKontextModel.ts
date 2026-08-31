@@ -49,6 +49,7 @@ type AzureFlux2Model = keyof typeof AZURE_FLUX_2_CONFIG;
 
 const AZURE_FLUX_2_MAX_PIXELS = 2048 * 2048;
 const AZURE_FLUX_2_MIN_SIDE = 256;
+const AZURE_FLUX_2_DIMENSION_STEP = 16;
 
 function flux2Endpoint(modelPath: string): string {
     return `https://myceli-prod-eastus.cognitiveservices.azure.com/providers/blackforestlabs/v1/${modelPath}?api-version=preview`;
@@ -336,8 +337,20 @@ function validateFlux2Dimensions(
             400,
         );
     }
+    if (
+        width % AZURE_FLUX_2_DIMENSION_STEP !== 0 ||
+        height % AZURE_FLUX_2_DIMENSION_STEP !== 0
+    ) {
+        throw new HttpError(
+            `${modelTitle} requires width and height to be multiples of ${AZURE_FLUX_2_DIMENSION_STEP}px`,
+            400,
+        );
+    }
     if (width * height > AZURE_FLUX_2_MAX_PIXELS) {
-        throw new HttpError(`${modelTitle} supports at most 4 megapixels`, 400);
+        throw new HttpError(
+            `${modelTitle} supports at most 4,194,304 pixels`,
+            400,
+        );
     }
 }
 

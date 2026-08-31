@@ -46,7 +46,9 @@
             "!**/*.yml",
             "!**/*.md",
             // exclude vendored font OFL license texts (must be distributed verbatim)
-            "!packages/ui/src/licenses/**"
+            "!packages/ui/src/licenses/**",
+            // exclude vendored wasm-bindgen glue (generated, must stay verbatim)
+            "!gen.pollinations.ai/src/utils/redact/**"
         ]
     },
     "overrides": [

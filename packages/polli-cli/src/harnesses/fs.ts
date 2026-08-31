@@ -25,3 +25,14 @@ export const writeTextAtomic = (path: string, text: string, mode?: number) => {
 export const removeIfExists = (path: string) => {
     if (existsSync(path)) unlinkSync(path);
 };
+
+/** True when an executable named `command` exists on PATH (no shell spawn). */
+export const commandExists = (command: string): boolean => {
+    const pathEnv = process.env.PATH ?? "";
+    const dirs = pathEnv.split(process.platform === "win32" ? ";" : ":");
+    const exts =
+        process.platform === "win32" ? [".cmd", ".exe", ".exe.ps1", ""] : [""];
+    return dirs.some((dir) =>
+        exts.some((ext) => existsSync(join(dir || ".", `${command}${ext}`))),
+    );
+};

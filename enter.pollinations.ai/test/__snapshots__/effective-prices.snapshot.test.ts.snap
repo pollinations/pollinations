@@ -665,19 +665,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
     "cost": {
       "completionTextTokens": 0.000006,
       "promptCachedTokens": 0.0000005,
+      "promptImageTokens": 0.000002,
       "promptTextTokens": 0.000002,
-    },
-    "costVariants": {
-      "long_context": {
-        "completionTextTokens": 0.000012,
-        "promptCachedTokens": 0.000001,
-        "promptTextTokens": 0.000004,
-      },
     },
     "price": {
-      "completionTextTokens": 0.000006,
-      "promptCachedTokens": 0.0000005,
-      "promptTextTokens": 0.000002,
+      "completionTextTokens": 0.0000045,
+      "promptCachedTokens": 0.000000375,
+      "promptImageTokens": 0.0000015,
+      "promptTextTokens": 0.0000015,
     },
   },
   "grok-imagine": {

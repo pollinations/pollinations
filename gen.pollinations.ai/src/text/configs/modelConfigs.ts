@@ -159,31 +159,6 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
-    // GLM-5.3 is a mandatory-reasoning model (see registry entry), making it
-    // just as exposed to the blank-answer/billed-tokens bug as the Qwen
-    // models above if z-ai/fp8's own max_tokens default is ever too low.
-    "z-ai/glm-5.3": () =>
-        createOpenRouterModelConfig({
-            model: "z-ai/glm-5.3",
-            defaultOptions: {
-                max_tokens: 64000,
-                provider: {
-                    only: ["z-ai/fp8"],
-                    allow_fallbacks: false,
-                },
-            },
-        }),
-    "z-ai/glm-5.3-flash": () =>
-        createOpenRouterModelConfig({
-            model: "z-ai/glm-5.3-flash",
-            defaultOptions: {
-                max_tokens: 64000,
-                provider: {
-                    only: ["z-ai/fp8"],
-                    allow_fallbacks: false,
-                },
-            },
-        }),
     "xiaomi/mimo-v2.5": createPinnedOpenRouterConfig(
         "xiaomi/mimo-v2.5",
         "xiaomi/fp8",
@@ -453,6 +428,16 @@ export const portkeyConfig: PortkeyConfigMap = {
     "accounts/fireworks/models/glm-5p2": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/glm-5p2",
+        }),
+    "accounts/fireworks/models/glm-5p3": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/glm-5p3",
+            defaultOptions: { max_tokens: 64000 },
+        }),
+    "accounts/fireworks/models/glm-5p3-flash": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/glm-5p3-flash",
+            defaultOptions: { max_tokens: 64000 },
         }),
     "accounts/fireworks/models/minimax-m2p7": () =>
         createFireworksModelConfig({

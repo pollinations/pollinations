@@ -56,6 +56,12 @@ const referenceUrl = z.string().superRefine((value, ctx) => {
 
 const referenceUrls = z.preprocess(parseReferenceUrls, z.array(referenceUrl));
 
+export const CommunityReferenceParamsSchema = z.object({
+    reference_images: referenceUrls.optional(),
+    reference_videos: referenceUrls.optional(),
+    reference_audios: referenceUrls.optional(),
+});
+
 function adjustImageSizeForModel(
     model: ImageModelName,
     width?: number,
@@ -112,7 +118,7 @@ export const ImageParamsSchema = z
             .catch("balanced"),
         guidance_scale: z.coerce.number().optional().catch(undefined),
         // Video-specific parameters - pass through to backend, let provider validate
-        duration: z.coerce.number().optional(),
+        duration: z.coerce.number().finite().positive().optional(),
         fps: z.coerce.number().optional(),
         resolution: z
             .enum(["1k", "2k", "360p", "480p", "720p", "768p", "1080p", "4k"])

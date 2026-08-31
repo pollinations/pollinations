@@ -236,6 +236,7 @@ describe("docs routes", () => {
         expect(resources?.tags).toContain("Community Models");
         expect(resources?.tags).not.toContain("Publish a Model");
         expect(integrations?.tags).toContain("Publish an Agent");
+        expect(integrations?.tags).toContain("Coding Harnesses");
         expect(integrations?.tags).not.toContain("Community Agents");
         expect(resources?.tags).toContain("Community Agents");
         expect(resources?.tags).not.toContain("Publish an Agent");
@@ -253,6 +254,10 @@ describe("docs routes", () => {
             "Community Agents",
         );
         expect(schema.tags.map((tag) => tag.name)).toContain("CLI");
+        expect(
+            schema.tags.find((tag) => tag.name === "Coding Harnesses")
+                ?.description,
+        ).toContain("polli harness dsh on");
         expect(schema.tags.map((tag) => tag.name)).toContain("MCP Server");
         expect(schema.tags.map((tag) => tag.name)).toContain("Quests");
         expect(schema.tags.map((tag) => tag.name)).toContain("Media Storage");
@@ -533,6 +538,18 @@ describe("docs routes", () => {
         const agentsBody = await agentsRes.text();
         expect(agentsBody).toContain("## Publish an Agent");
         expect(agentsBody).toContain("/account/agents");
+
+        const harnessRes = await worker.fetch(
+            new Request(
+                "https://gen.pollinations.ai/docs/llm.txt?section=coding-harnesses",
+            ),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        expect(harnessRes.status).toBe(200);
+        const harnessBody = await harnessRes.text();
+        expect(harnessBody).toContain("## Coding Harnesses");
+        expect(harnessBody).toContain("polli harness dsh on");
 
         const badRes = await worker.fetch(
             new Request("https://gen.pollinations.ai/docs/llm.txt?section=bad"),

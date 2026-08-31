@@ -110,6 +110,7 @@ describe("reasoning_effort model wiring", () => {
         "step-3.5-flash",
         "step-flash",
         "qwen-vision-pro",
+        "thinkingmachines/inkling",
     ])("drops off-value on mandatory-reasoning model %s", async (modelName) => {
         const transform = findModelByName(modelName)?.transform;
         if (!transform) throw new Error(`${modelName} transform missing`);

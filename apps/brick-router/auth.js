@@ -8,3 +8,14 @@ export function hasAgentRunToken(request) {
         token.length > 3
     );
 }
+
+export async function validateAgentRunToken(request, fetcher = fetch) {
+    if (!hasAgentRunToken(request)) return false;
+    const response = await fetcher("https://gen.pollinations.ai/account/key", {
+        headers: { authorization: request.headers.get("authorization") },
+        redirect: "error",
+        signal: AbortSignal.timeout(5000),
+    });
+    await response.body?.cancel();
+    return response.ok;
+}

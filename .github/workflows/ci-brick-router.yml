@@ -29,14 +29,27 @@ jobs:
       - name: Build container
         run: docker build --platform linux/amd64 -t brick-router:test apps/brick-router
 
-      - name: Smoke test container
+      - name: Smoke test container and routing
         run: |
           docker run --rm -d --name brick-router-test -p 8000:8000 brick-router:test
           trap 'docker logs brick-router-test || true; docker stop brick-router-test || true' EXIT
           for attempt in $(seq 1 60); do
             if curl --fail --silent http://127.0.0.1:8000/health; then
-              exit 0
+              break
             fi
+            test "$attempt" != 60
             sleep 2
           done
-          exit 1
+          curl --fail --silent http://127.0.0.1:8000/v1/models | grep --quiet '"brick"'
+          status=$(curl --silent --show-error \
+            --dump-header /tmp/brick-headers \
+            --output /tmp/brick-response \
+            --write-out '%{http_code}' \
+            --request POST http://127.0.0.1:8000/v1/chat/completions \
+            --header 'Authorization: Bearer ag_ci-invalid' \
+            --header 'Content-Type: application/json' \
+            --data '{"model":"brick","messages":[{"role":"user","content":"Write a small TypeScript function."}],"max_tokens":1}')
+          test "$status" = 401
+          grep --extended-regexp --ignore-case --quiet \
+            '^x-vsr-selected-model: gpt-5\.6-(luna|terra|sol)' \
+            /tmp/brick-headers

@@ -220,18 +220,18 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
-    it("pins Grok 4.6 to xAI ZDR on OpenRouter without fallback", () => {
+    it("routes Grok 4.6 directly to its Azure deployment", () => {
         const result = resolveModelConfig(messages, { model: "grok-4.6" });
 
-        expect(result.options.model).toBe("x-ai/grok-4.6");
+        expect(result.options.model).toBe("grok-4.6");
         expect(result.options.modelConfig).toMatchObject({
-            provider: "openrouter",
-            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
+            provider: "openai",
+            directEndpoint:
+                "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4.6/chat/completions?api-version=2024-12-01-preview",
+            directAuthHeader: "api-key",
+            model: "grok-4.6",
         });
-        expect(result.options.provider).toEqual({
-            only: ["xai/zdr"],
-            allow_fallbacks: false,
-        });
+        expect(result.options.provider).toBeUndefined();
     });
 
     it("routes GLM-5.3 directly to Fireworks without fallback", () => {
@@ -246,20 +246,33 @@ describe("resolveModelConfig", () => {
         expect(result.options.max_tokens).toBe(64000);
     });
 
-    it("pins GLM-5.3 Flash to Z.AI FP8 on OpenRouter without fallback", () => {
+    it("routes full Inkling directly to Fireworks without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "thinkingmachines/inkling",
+        });
+
+        expect(result.options.model).toBe("accounts/fireworks/models/inkling");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.fireworks.ai/inference/v1",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
+    it("routes GLM-5.3 Flash directly to Fireworks without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "z-ai/glm-5.3-flash",
         });
 
-        expect(result.options.model).toBe("z-ai/glm-5.3-flash");
+        expect(result.options.model).toBe(
+            "accounts/fireworks/models/glm-5p3-flash",
+        );
         expect(result.options.modelConfig).toMatchObject({
-            provider: "openrouter",
-            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
+            provider: "openai",
+            "custom-host": "https://api.fireworks.ai/inference/v1",
         });
-        expect(result.options.provider).toEqual({
-            only: ["z-ai/fp8"],
-            allow_fallbacks: false,
-        });
+        expect(result.options.provider).toBeUndefined();
+        expect(result.options.max_tokens).toBe(64000);
     });
 
     it.each([

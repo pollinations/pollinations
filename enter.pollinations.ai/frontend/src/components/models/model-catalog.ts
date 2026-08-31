@@ -605,8 +605,11 @@ export function getModelPricesFromCatalog(
 
     return prices.map((price) => {
         const stats = modelStats[price.name];
-        return stats?.avgCost
-            ? { ...price, realAvgCost: stats.avgCost }
-            : price;
+        if (!stats) return price;
+        return {
+            ...price,
+            ...(stats.avgCost > 0 ? { realAvgCost: stats.avgCost } : {}),
+            users7d: stats.userCount,
+        };
     });
 }

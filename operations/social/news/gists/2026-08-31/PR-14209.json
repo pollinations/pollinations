@@ -1,0 +1,33 @@
+{
+  "pr_number": 14209,
+  "title": "fix: update quest reward instructions",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14209",
+  "merged_at": "2026-08-31T19:41:25Z",
+  "labels": [],
+  "pr_body_excerpt": "- Removes the obsolete issue-assignment requirement from the community quest template.\n- Aligns the template with the current merged-PR-author reward logic.\n- Keeps the existing competitive selection and dashboard claim flow unchanged.\n\nValidation: YAML parsed successfully; `git diff --check` passed.",
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Quest map, less ancient",
+    "blurb": "The quest instructions have caught up with the hive. Contributors now get the current map: submit useful work, get selected, claim the Pollen.",
+    "summary": "Updated the community quest issue template to remove the obsolete issue-assignment requirement and document that the author of the selected merged PR claims the reward.",
+    "impact": "Quest contributors now see instructions that match the existing competitive selection and dashboard reward-claim flow.",
+    "keywords": [
+      "quests",
+      "pollen",
+      "contributions",
+      "community",
+      "issue-template"
+    ],
+    "visual_concept": "Polli acts as a friendly quest guide, replacing an outdated parchment instruction with a clear current quest map leading from a merged pull request to a Pollen reward flower. Include a small garden bulletin board and a glowing dashboard terminal to represent the unchanged claim flow.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny explorer hat, pinning a fresh quest map over an old crossed-out assignment note on a garden bulletin board; a retro terminal beside her glows with a merged PR checkmark and a Pollen flower reward. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and tiny flowers, warm lighting, retro gaming vibes, pixel-font text: 'QUEST CLAIM'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-31/PR-14209.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny explorer hat, pinning a fresh quest map over an old crossed-out assignment note on a garden bulletin board; a retro terminal beside her glows with a merged PR checkmark and a Pollen flower reward. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and tiny flowers, warm lighting, retro gaming vibes, pixel-font text: 'QUEST CLAIM'."
+  },
+  "generated_at": "2026-08-31T19:43:55.384783+00:00"
+}

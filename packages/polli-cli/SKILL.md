@@ -43,7 +43,7 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 | List your quests + claim state | `polli quests` (filters: `--open --claimable --claimed --coming-soon`) |
 | Manage prompt agents | `polli agents list` |
 | Manage invite-only community models | `polli my-models list` |
-| Connect a coding harness to Pollinations | `polli harness <dsh\|opencode\|pi\|prime> on` (available adapters: `polli harness --help`) |
+| Connect a coding harness to Pollinations | `polli harness <dsh\|openclaw\|opencode\|pi\|prime> on` (available adapters: `polli harness --help`) |
 | Machine-readable output | append `--json` to any command |
 
 ## Setup
@@ -220,6 +220,15 @@ polli harness pi off                # restore the Pi config backed up before "on
 Each adapter checks that its harness can be launched before login, key creation, or configuration. DSH's official launch uses `npx`, so its adapter checks for `npx`; OpenCode and Pi require their installed commands.
 
 The DSH adapter globally configures the Pollinations provider, hosted Pollinations MCP, and this skill under `$DSH_HOME` (default `~/.dsh`). OpenCode enables the existing Pollinations plugin and stores its dedicated key in the plugin config. Pi writes `~/.pi/agent/models.json`, `auth.json`, and `settings.json`, and installs this skill under `~/.pi/agent/skills/polli/`. Guide: `polli docs` section "Coding Harnesses".
+
+### Connect OpenClaw
+```bash
+polli harness openclaw on           # requires the `openclaw` binary; adds pollinations provider + Polli skill
+polli harness openclaw on --model deepseek  # choose the default model from the live catalog
+polli harness openclaw status       # is this OpenClaw ready to use Pollinations?
+polli harness openclaw off          # remove only the Pollinations-owned provider, model, key, and skill
+```
+`on` logs Polli in if needed, mints a dedicated `polli-harness-openclaw` key, and writes it plus the live Pollinations model catalog into `~/.openclaw/openclaw.json`. The Polli skill is installed under `~/.openclaw/skills/polli`. `off` restores a byte-for-byte backup taken before `on`, or strips only the Pollinations-owned entries when the config changed since. See [Pollinations × OpenClaw](https://github.com/pollinations/pollinations/tree/main/apps/openclaw).
 
 ### Read API docs
 ```bash

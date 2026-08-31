@@ -119,47 +119,37 @@
                                 <div class="code-inner">
     curl -fsSL
     https://raw.githubusercontent.com/pollinations/pollinations/main/apps/openclaw/setup-pollinations.sh
-    \
-    | bash -s -- <span id="key-placeholder">YOUR_API_KEY</span></div>
+    | bash</div>
                             </div>
                             <ul style="margin:8px 0 12px 20px; font-size:14px; line-height:1.5; color:var(--muted)">
-                                <li>🔑 Saves API key to <code
+                                <li>🔑 Logs Polli in and mints a dedicated key into <code
                                         style="color:var(--accent); font-size:13px">~/.openclaw/openclaw.json</code>
                                 </li>
-                                <li>🤖 Adds 10 OpenClaw models: 7 free — OpenClaw, Kimi K2.5, DeepSeek, DeepSeek Pro,
-                                    GLM, Gemini + Search, Claude Haiku — plus 3 paid: Kimi K2.6, Claude Large, Gemini
-                                    Large</li>
-                                <li>🔍 Also enables Perplexity Fast for the <code
-                                        style="color:var(--accent); font-size:13px">web_search</code> tool <em>via
-                                        pollinations.ai</em> (preserves existing if already set)</li>
+                                <li>🤖 Adds the current live Pollinations model catalog via the
+                                    <code style="color:var(--accent); font-size:13px">pollinations/*</code> provider
+                                </li>
+                                <li>🤖 Installs the Polli skill for image, video, and audio generation</li>
                             </ul>
 
                             <button class="toggle-btn" onclick="toggleManual()">Manual JSON config ▾</button>
                             <div class="manual-config" id="manual-config">
-                                <div class="step-text">Or paste this into <code
-                                        style="color:var(--accent)">~/.openclaw/openclaw.json</code>:</div>
+                                <div class="step-text">The recommended setup is <code
+                                        style="color:var(--accent)">npx @pollinations/cli harness openclaw on</code> — it
+                                    pulls the live model catalog and the Polli skill automatically. To configure
+                                    manually, paste this into <code
+                                        style="color:var(--accent)">~/.openclaw/openclaw.json</code> (uses the
+                                    <code style="color:var(--accent)">pollinations/*</code> wildcard so every current
+                                    model is switchable; no hardcoded list):</div>
                                 <div class="code-block" id="json-config" style="font-size:12px;"><button
                                         class="copy-btn" onclick="copyCode('json-config')">Copy</button>
                                     <div class="code-inner">{
-                                        "env": { "POLLINATIONS_API_KEY": "<span class="key-in-json">YOUR_API_KEY</span>"
+                                        "env": {
+                                        "vars": { "POLLI_OPENCLAW_API_KEY": "<span class="key-in-json">YOUR_API_KEY</span>" }
                                         },
                                         "agents": {
                                         "defaults": {
-                                        "model": {
-                                        "primary": "pollinations/kimi",
-                                        "fallbacks": ["pollinations/deepseek", "pollinations/glm"]
-                                        },
-                                        "models": {
-                                        "pollinations/kimi": { "alias": "Kimi K2.5" },
-                                        "pollinations/kimi-k2.6": { "alias": "Kimi K2.6" },
-                                        "pollinations/deepseek": { "alias": "DeepSeek V4 Flash" },
-                                        "pollinations/deepseek-pro": { "alias": "DeepSeek V4 Pro" },
-                                        "pollinations/glm": { "alias": "GLM 5.1" },
-                                        "pollinations/gemini-search": { "alias": "Gemini + Search" },
-                                        "pollinations/claude-fast": { "alias": "Claude Haiku 4.5" },
-                                        "pollinations/claude-large": { "alias": "Claude Opus 4.6" },
-                                        "pollinations/gemini-large": { "alias": "Gemini 3 Pro" }
-                                        }
+                                        "model": { "primary": "pollinations/kimi" },
+                                        "models": { "pollinations/*": {} }
                                         }
                                         },
                                         "models": {
@@ -167,41 +157,18 @@
                                         "providers": {
                                         "pollinations": {
                                         "baseUrl": "https://gen.pollinations.ai/v1",
-                                        "apiKey": "${POLLINATIONS_API_KEY}",
+                                        "apiKey": "${POLLI_OPENCLAW_API_KEY}",
                                         "api": "openai-completions",
                                         "models": [
                                         { "id": "kimi", "name": "Kimi K2.5", "reasoning": true,
-                                        "input": ["text","image"], "contextWindow": 256000 },
-                                        { "id": "kimi-k2.6", "name": "Kimi K2.6 (Paid)", "reasoning": true,
-                                        "input": ["text","image"], "contextWindow": 262000 },
-                                        { "id": "deepseek", "name": "DeepSeek V4 Flash",
-                                        "input": ["text"], "contextWindow": 1000000 },
-                                        { "id": "deepseek-pro", "name": "DeepSeek V4 Pro",
-                                        "input": ["text"], "contextWindow": 65536 },
-                                        { "id": "glm", "name": "GLM 5.1",
-                                        "input": ["text"], "contextWindow": 128000 },
-                                        { "id": "gemini-search", "name": "Gemini + Search",
-                                        "input": ["text","image"], "contextWindow": 128000 },
-                                        { "id": "claude-fast", "name": "Claude Haiku 4.5",
-                                        "input": ["text","image"], "contextWindow": 200000 },
-                                        { "id": "claude-large", "name": "Claude Opus 4.6 (Paid)",
-                                        "input": ["text","image"], "contextWindow": 200000 },
-                                        { "id": "gemini-large", "name": "Gemini 3 Pro (Paid)", "reasoning": true,
-                                        "input": ["text","image"], "contextWindow": 1000000 }
+                                        "input": ["text","image"], "contextWindow": 256000 }
                                         ]
                                         }
                                         }
                                         },
-                                        "tools": {
-                                        "web": {
-                                        "search": {
-                                        "provider": "perplexity",
-                                        "perplexity": {
-                                        "baseUrl": "https://gen.pollinations.ai/v1",
-                                        "apiKey": "${POLLINATIONS_API_KEY}",
-                                        "model": "perplexity-fast"
-                                        }
-                                        }
+                                        "skills": {
+                                        "load": {
+                                        "extraDirs": ["~/skills"]
                                         }
                                         },
                                         "gateway": { "mode": "local" }
@@ -217,12 +184,11 @@
                             <div class="code-block" id="agent-msg" style="font-size:12px; line-height:1.6"><button
                                     class="copy-btn" onclick="copyCode('agent-msg')">Copy</button>
                                 <div class="code-inner" style="white-space:pre-wrap">
-        curl -fsSL
-        https://raw.githubusercontent.com/pollinations/pollinations/main/apps/openclaw/setup-pollinations.sh
-        | bash -s -- <span class="key-in-json">YOUR_API_KEY</span></div>
+        npx @pollinations/cli harness openclaw on</div>
                             </div>
-                            <p style="margin-top:8px;">The script will restart the gateway automatically. After that,
-                                switch to the new provider with: <code>/model pollinations/kimi</code></p>
+                            <p style="margin-top:8px;">This installs the Polli skills and restarts the gateway
+                                automatically. After that, switch to the new provider with:
+                                <code>/model pollinations/kimi</code></p>
                         </div>
                     </div>
                 </div>
@@ -286,17 +252,12 @@
 
             <section class="section">
                 <h2 class="section-title">Image, video & audio</h2>
-                <p class="section-subtitle">Community-built <span class="brand">pollinations.ai</span> skill by <a
-                        href="https://github.com/isaacgounton" target="_blank">@isaacgounton</a> — gives your agent
-                    multi-modal generation.</p>
+                <p class="section-subtitle">The <span class="brand">Polli</span> skill gives your agent multi-modal
+                    generation. It is installed automatically by
+                    <code style="color:var(--accent)">polli harness openclaw on</code>.</p>
                 <div class="skill-box">
-                    <div class="code-block" id="skill-cmd"><button class="copy-btn"
-                            onclick="copyCode('skill-cmd')">Copy</button>
-                        <div class="code-inner">/skill install isaacgounton/pollinations</div>
-                    </div>
-                    <p style="margin-top:16px">This adds image generation (Flux, GPT Image, Imagen 4), video (Veo 3.1,
-                        Seedance), text-to-speech (13 voices), and vision analysis to your agent. Separate from the LLM
-                        provider setup above.</p>
+                    <p style="margin:0">This adds image generation (Flux, GPT Image, Imagen), video (Veo, Seedance),
+                        text-to-speech (13 voices), and vision analysis to your agent.</p>
                 </div>
             </section>
 

@@ -2,7 +2,7 @@
 
 Use `polli harness` to connect a supported coding harness to Pollinations. It handles Polli login, a dedicated API key, model setup, and any Pollinations capabilities supported by that harness.
 
-> **Available now:** DeepSeek Harness, OpenCode, Pi, and Prime Agent are integrated `polli harness` profiles. OpenClaw is coming soon.
+> **Available now:** DeepSeek Harness, OpenClaw, OpenCode, Pi, and Prime Agent are integrated `polli harness` profiles.
 
 ## Use a harness
 
@@ -26,10 +26,10 @@ If a harness cannot be launched, `on` stops before login, key creation, or confi
 | Harness | Status | What is unique |
 | --- | --- | --- |
 | [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) | **Available now** — `polli harness dsh on` | Adds the Pollinations provider, hosted Pollinations MCP, and Polli skill. Uses `deepseek` by default. Its official launch uses `npx`, so no separate global DSH installation is required. |
+| [OpenClaw](https://github.com/openclaw/openclaw) (`openclaw`) | **Available now** — `polli harness openclaw on` | Brings the [existing Pollinations OpenClaw setup](./apps/openclaw/README.md) into the shared `polli harness` workflow. Adds the Pollinations provider and Polli skill. Uses `kimi` by default. |
 | [OpenCode](https://opencode.ai) | **Available now** — `polli harness opencode on` | Uses the existing [Pollinations OpenCode plugin](https://github.com/fkom13/opencode-pollinations-plugin) for models, media tools, usage, and quests. Defaults to `openai`. |
 | [Pi](https://github.com/earendil-works/pi) | **Available now** — `polli harness pi on` | Uses Pi's native provider support and the Polli skill. Pi intentionally has no built-in MCP support. Defaults to `deepseek`. |
 | [Prime Agent](https://github.com/PrimeIntellect-ai/prime-agent) | **Available now** — `polli harness prime on` | Uses native provider support and the Polli skill while preserving memories, sessions, and unrelated configuration. |
-| [OpenClaw](https://github.com/openclaw/openclaw) | Coming soon | Will bring the [existing Pollinations setup](./apps/openclaw/README.md) into the shared `polli harness` workflow. |
 
 ## DeepSeek Harness
 
@@ -40,6 +40,16 @@ polli harness dsh off
 ```
 
 DeepSeek Harness is officially run with `npx @deepseek-ai/dsh web`. `on` verifies that `npx` is available before changing configuration. Choose another default model with `--model <id>`. Add `--no-mcp` if you do not want the hosted Pollinations media tools.
+
+## OpenClaw
+
+```bash
+npx @pollinations/cli harness openclaw on
+polli harness openclaw status
+polli harness openclaw off
+```
+
+`on` requires the `openclaw` binary; if it is missing, the official install page is shown. It logs Polli in if needed, mints a dedicated `polli-harness-openclaw` key, adds the Pollinations provider with the current live model catalog, and installs the Polli skill. The default model is `kimi`; choose another with `--model <id>`. `status` shows whether the integration is ready, and `off` removes only the Pollinations-owned provider, model, key, and skill. Existing agents and unrelated configuration are preserved. See [Pollinations × OpenClaw](./apps/openclaw/README.md).
 
 ## OpenCode
 

@@ -284,7 +284,9 @@ export const formatOpenAIImageGeneration = createMiddleware<Env>(
         const body = c.req.valid("json" as never) as CreateImageRequest;
         const usage = responseImageUsage(c, response);
         const mediaData =
-            mediaType === "image/svg+xml" ? { media_type: mediaType } : {};
+            mediaType === "image/svg+xml" || mediaType.startsWith("video/")
+                ? { media_type: mediaType }
+                : {};
 
         if (body.response_format === "url") {
             await response.arrayBuffer();

@@ -1,5 +1,6 @@
 import {
     Alert,
+    BeakerIcon,
     BotIcon,
     Button,
     ChevronIcon,
@@ -7,10 +8,10 @@ import {
     ClockIcon,
     Dropdown,
     DropdownItem,
+    EditableCombobox,
     ExternalLinkButton,
     GitHubIcon,
     InlineLink,
-    Input,
     SearchIcon,
     Section,
     SparklesIcon,
@@ -34,7 +35,11 @@ import {
     fetchModelCatalog,
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
-import { getModelDisplayName } from "./model-info.ts";
+import {
+    getModelQuerySuggestions,
+    matchesModelQuery,
+    parseModelQuery,
+} from "./model-query.ts";
 import type { ModelScope, ModelSort } from "./model-search.ts";
 import { sortModels } from "./model-sort.ts";
 import {
@@ -63,6 +68,9 @@ const COMMUNITY_SECTION_ORDER: SectionType[] = [
     "agent",
 ];
 const SCOPE_ORDER: ModelScope[] = ["pollinations", "community"];
+
+const MODEL_SLUG_LIST_URL =
+    "https://github.com/pollinations/pollinations/blob/main/MODEL_SLUGS.md";
 
 const SCOPE_LABELS: Record<ModelScope, string> = {
     pollinations: "Official",
@@ -115,13 +123,6 @@ const SEARCH_LABELS: Record<SectionType, string> = {
     embedding: "embedding",
     agent: "agent",
 };
-
-function matchesQuery(model: ModelPrice, query: string): boolean {
-    if (!query) return true;
-    const displayName = getModelDisplayName(model) ?? "";
-    const haystack = `${displayName} ${model.brand ?? ""}`.toLowerCase();
-    return haystack.includes(query);
-}
 
 function categorizeModels(
     models: ModelPrice[],
@@ -183,6 +184,8 @@ export const Models: FC = () => {
     const activeSort = modelSearch.sort ?? "newest";
     const urlSearch = modelSearch.q ?? "";
     const [search, setSearch] = useState(urlSearch);
+    const [searchFocused, setSearchFocused] = useState(false);
+    const [searchOpen, setSearchOpen] = useState(false);
     const lastPushedSearchRef = useRef(urlSearch);
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
     const [catalogError, setCatalogError] = useState<string | null>(null);
@@ -191,7 +194,8 @@ export const Models: FC = () => {
         () => getModelPricesFromCatalog(catalogModels, stats),
         [catalogModels, stats],
     );
-    const query = search.trim().toLowerCase();
+    const query = search.trim();
+    const parsedQuery = useMemo(() => parseModelQuery(query), [query]);
     const scopedModels = useMemo(
         () =>
             allModels.filter(
@@ -203,10 +207,20 @@ export const Models: FC = () => {
     const filteredModels = useMemo(
         () =>
             query
-                ? scopedModels.filter((model) => matchesQuery(model, query))
+                ? scopedModels.filter((model) =>
+                      matchesModelQuery(model, parsedQuery),
+                  )
                 : scopedModels,
-        [query, scopedModels],
+        [parsedQuery, query, scopedModels],
     );
+    const searchOptions = useMemo(
+        () => getModelQuerySuggestions(search, scopedModels),
+        [search, scopedModels],
+    );
+
+    useEffect(() => {
+        setSearchOpen(searchFocused && searchOptions.length > 0);
+    }, [searchFocused, searchOptions]);
 
     const loadModelCatalog = useCallback(
         () =>
@@ -350,6 +364,31 @@ export const Models: FC = () => {
                     </div>
                 }
             >
+                <Alert className="mb-4 shadow-well !bg-surface-opaque !text-theme-text-base">
+                    <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-theme-text-soft">
+                        Upcoming change
+                    </div>
+                    <div className="mb-1.5 flex items-center gap-2 text-base font-bold text-theme-text-strong">
+                        <BeakerIcon className="h-4 w-4 shrink-0" />
+                        <span>
+                            We're standardizing model IDs on September 7
+                        </span>
+                    </div>
+                    Model IDs will use the publisher and official model name—for
+                    example, <code className="font-semibold">flux</code> →{" "}
+                    <code className="font-semibold">
+                        black-forest-labs/flux.1-schnell
+                    </code>
+                    . You can use the new IDs now. Existing IDs will keep
+                    working.
+                    <a
+                        href={MODEL_SLUG_LIST_URL}
+                        className="mt-2 flex w-fit items-center gap-1.5 font-semibold text-theme-text-soft hover:text-theme-text-strong hover:underline"
+                    >
+                        <GitHubIcon className="h-4 w-4 shrink-0" />
+                        <span>View all model ID changes →</span>
+                    </a>
+                </Alert>
                 <div className="mb-4 flex flex-col items-start gap-3">
                     <div className="flex flex-col gap-2">
                         <div className="flex flex-wrap gap-1.5">
@@ -404,24 +443,29 @@ export const Models: FC = () => {
                             })}
                         </div>
                     </div>
-                    <div className="flex w-full items-center justify-between gap-2">
-                        <div className="relative min-w-0 max-w-md flex-1">
-                            <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />
-                            <Input
-                                type="search"
-                                value={search}
-                                onChange={(event) =>
-                                    setSearch(event.target.value)
-                                }
-                                onBlur={() => {
-                                    const normalizedSearch = search.trim();
-                                    setSearch(normalizedSearch);
-                                    pushSearch(normalizedSearch);
-                                }}
-                                placeholder={`Search ${searchTarget}…`}
-                                aria-label={`Search ${searchTarget}`}
-                                className="w-full pl-9"
-                            />
+                    <div className="flex w-full flex-wrap items-center justify-between gap-2">
+                        <div className="min-w-0 max-w-md flex-1 basis-[240px]">
+                            <div className="relative">
+                                <SearchIcon className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />
+                                <EditableCombobox
+                                    value={search}
+                                    options={searchOptions}
+                                    onChange={setSearch}
+                                    open={searchOpen}
+                                    onOpenChange={setSearchOpen}
+                                    onFocus={() => setSearchFocused(true)}
+                                    onBlur={() => {
+                                        setSearchFocused(false);
+                                        const normalizedSearch = search.trim();
+                                        setSearch(normalizedSearch);
+                                        pushSearch(normalizedSearch);
+                                    }}
+                                    placeholder={`Search ${searchTarget}…`}
+                                    aria-label={`Search ${searchTarget}`}
+                                    autoComplete="off"
+                                    className="pl-9"
+                                />
+                            </div>
                         </div>
                         <Dropdown
                             align="end"

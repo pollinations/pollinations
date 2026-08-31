@@ -6,6 +6,7 @@ import {
     Chip,
     ClipboardIcon,
     CopyButton,
+    currentPeriod,
     ExternalLinkIcon,
     GlobeIcon,
     IconButton,
@@ -17,6 +18,7 @@ import {
     XIcon,
 } from "@pollinations/ui";
 import { communityEndpointPriceFieldsForModality } from "@shared/community-endpoints.ts";
+import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { PriceBadge, type PriceBadgeConfig } from "../models/price-badge.tsx";
 import type { PriceKind } from "../models/types.ts";
@@ -70,6 +72,17 @@ export function CommunityEndpointCard({
                         {isAgent && (
                             <Chip intent="news" size="sm">
                                 Agent
+                            </Chip>
+                        )}
+                        {endpoint.pending && (
+                            <Chip
+                                intent="neutral"
+                                size="sm"
+                                title={`Changes queued — effective ${new Date(
+                                    endpoint.pending.effectiveAt,
+                                ).toLocaleString()}`}
+                            >
+                                Changes queued
                             </Chip>
                         )}
                     </div>
@@ -150,11 +163,14 @@ export function CommunityEndpointCard({
                                 value={endpoint.modality}
                             />
                         )}
-                        <CommunityDetailRow
-                            icon={<TerminalIcon className="h-3.5 w-3.5" />}
-                            label="Upstream model"
-                            value={endpoint.upstreamModel}
-                        />
+                        {(endpoint.type !== "proxy" ||
+                            endpoint.modality !== "video") && (
+                            <CommunityDetailRow
+                                icon={<TerminalIcon className="h-3.5 w-3.5" />}
+                                label="Upstream model"
+                                value={endpoint.upstreamModel}
+                            />
+                        )}
                         {endpoint.perUserRpm !== null && (
                             <CommunityDetailRow
                                 icon={<TerminalIcon className="h-3.5 w-3.5" />}
@@ -172,6 +188,23 @@ export function CommunityEndpointCard({
                         value={<CommunityPriceBadges group={group} />}
                     />
                 ))}
+            </div>
+            <div className="mt-3">
+                <Link
+                    to="/activity"
+                    search={{
+                        ...currentPeriod(),
+                        earningsModels: [endpoint.modelId],
+                        usageMetric: undefined,
+                        usageKeys: undefined,
+                        usageModels: undefined,
+                        earningsMetric: undefined,
+                        earningsApps: undefined,
+                    }}
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-theme-text-muted underline underline-offset-2 transition-colors hover:text-theme-text-strong"
+                >
+                    View activity
+                </Link>
             </div>
         </Surface>
     );
@@ -275,7 +308,8 @@ function communityPriceGroups(
                 unit:
                     field.priceUnit === "million"
                         ? "token"
-                        : field.priceUnit === "second"
+                        : field.priceUnit === "second" ||
+                            field.priceUnit === "video_second"
                           ? "second"
                           : "request",
             },
@@ -305,5 +339,6 @@ function communityPriceKind(usageType: string): PriceKind {
     if (usageType === "promptAudioTokens") return "audioIn";
     if (usageType === "completionAudioTokens") return "audioOut";
     if (usageType.includes("Image")) return "image";
+    if (usageType.includes("Video")) return "video";
     return "text";
 }

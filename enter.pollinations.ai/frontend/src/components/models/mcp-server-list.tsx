@@ -8,7 +8,7 @@ import {
 import { getMcpPricingInfo, MCP_SERVERS } from "@shared/registry/mcp.ts";
 import type { FC } from "react";
 import { config, genDocsUrl } from "../../config.ts";
-import { PricingAdjustmentRows } from "./price-badge.tsx";
+import { UsagePriceRows } from "./price-badge.tsx";
 
 export const McpServerList: FC<{ query: string }> = ({ query }) => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -69,7 +69,7 @@ export const McpServerList: FC<{ query: string }> = ({ query }) => {
                                     </p>
                                     {pricing.rates.length > 0 && (
                                         <div className="grid w-fit grid-cols-[auto_auto_auto] gap-x-2">
-                                            <PricingAdjustmentRows
+                                            <UsagePriceRows
                                                 adjustments={pricing.rates}
                                                 align="left"
                                             />

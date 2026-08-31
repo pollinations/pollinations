@@ -354,7 +354,7 @@ const RequestBasedAdjustmentKinds = new Set([
     "grounded_prompt",
 ]);
 
-export const PricingAdjustmentRows: FC<{
+export const UsagePriceRows: FC<{
     adjustments: ModelPriceAdjustment[];
     align: "left" | "right";
 }> = ({ adjustments, align }) =>
@@ -643,7 +643,7 @@ export const ModelPricingLedger: FC<{
                 standaloneTokenAdjustments.length > 0) && (
                 <div className="grid col-span-full grid-cols-subgrid">
                     {renderRateRows(cacheRateRows)}
-                    <PricingAdjustmentRows
+                    <UsagePriceRows
                         adjustments={standaloneTokenAdjustments}
                         align={align}
                     />
@@ -663,7 +663,7 @@ export const ModelPricingLedger: FC<{
                             align === "right" ? "col-start-2" : "col-start-1",
                         )}
                     />
-                    <PricingAdjustmentRows
+                    <UsagePriceRows
                         adjustments={requestBasedAdjustments}
                         align={align}
                     />

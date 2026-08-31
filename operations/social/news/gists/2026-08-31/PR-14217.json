@@ -1,0 +1,34 @@
+{
+  "pr_number": 14217,
+  "title": "refactor: use one event type for MCP calls",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14217",
+  "merged_at": "2026-08-31T20:50:46Z",
+  "labels": [],
+  "pr_body_excerpt": "- Records all receipt-billed MCP operations as `mcp.call`\n- Removes capability-specific event types from MCP registry entries\n- Keeps server, provider, pricing adjustment, status, and billing attribution unchanged\n\nTests: `npm run test -- test/mcp-proxy.test.ts`; `npm run typecheck`",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "One buzz, one receipt",
+    "blurb": "MCP billing events have stopped collecting specialty labels like rare stamps. Every receipt-billed tool call now leaves the hive as one tidy `mcp.call` event.",
+    "summary": "Normalized all receipt-billed MCP operations to emit the single `mcp.call` generation event while preserving server, provider, pricing adjustment, status, and billing attribution metadata.",
+    "impact": "MCP billing and usage consumers now receive a consistent `mcp.call` event shape across tools without losing attribution or pricing details.",
+    "keywords": [
+      "mcp",
+      "billing",
+      "events",
+      "receipts",
+      "registry",
+      "analytics"
+    ],
+    "visual_concept": "Depict event normalization as Polli sorting several differently labeled MCP receipt slips into one clearly marked `mcp.call` mailbox, while a cozy terminal preserves the server, provider, pricing, status, and attribution stamps. A small code-plant and flowers make the internal plumbing feel like a well-tended garden.",
+    "image_prompt": "Cozy pixel art scene inside a warm garden-hackerspace where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears a tiny accountant visor while neatly filing several MCP receipt slips into one lime green (#ecf874) mailbox labeled in simple pixel text: `mcp.call`; a retro terminal nearby shows preserved server, provider, price, status, and attribution stamps, with code-plants and tiny flowers growing around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-31/PR-14217.jpg",
+    "prompt": "Cozy pixel art scene inside a warm garden-hackerspace where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears a tiny accountant visor while neatly filing several MCP receipt slips into one lime green (#ecf874) mailbox labeled in simple pixel text: `mcp.call`; a retro terminal nearby shows preserved server, provider, price, status, and attribution stamps, with code-plants and tiny flowers growing around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-08-31T20:51:47.266027+00:00"
+}

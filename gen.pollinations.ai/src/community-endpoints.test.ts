@@ -8,23 +8,27 @@ import type { Logger } from "@logtape/logtape";
 import { verifyAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import { COMMUNITY_MODEL_ALLOWED_GITHUB_IDS } from "@shared/auth/github-id-list.ts";
 import {
+    communityAudioTranscriptionsUrl,
+    communityChatCompletionsUrl,
+    communityEmbeddingsUrl,
+    communityImageEditsUrl,
+    communityImageGenerationsUrl,
+    communityOpenAIBaseUrl,
+    normalizeCommunityAssetUrl,
+    validateCommunityEndpointUrl,
+} from "@shared/community-endpoint-urls.ts";
+import {
     COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     type CommunityEndpointImagePricing,
     type CommunityEndpointModality,
     type CommunityEndpointPrices,
     type CommunityEndpointRuntime,
-    communityAudioTranscriptionsUrl,
-    communityChatCompletionsUrl,
-    communityEmbeddingsUrl,
     communityEndpointPriceFieldsForModality,
     communityEndpointPrices,
     communityEndpointTitle,
-    communityImageEditsUrl,
-    communityImageGenerationsUrl,
     communityModelDefinition,
     communityModelId,
-    communityOpenAIBaseUrl,
     communityPriceDefinition,
     type EndpointAgentCommunityEndpointRuntime,
     isCommunityEndpointOwnerAllowed,
@@ -37,7 +41,6 @@ import {
     MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
-    normalizeCommunityAssetUrl,
     normalizeCommunityEndpointBearerToken,
     normalizeCommunityEndpointImagePricing,
     normalizeCommunityEndpointInputModalities,
@@ -46,7 +49,6 @@ import {
     PROMPT_AGENT_BASE_URL_PLACEHOLDER,
     type PromptAgentListingPayload,
     parseCommunityModelId,
-    validateCommunityEndpointUrl,
 } from "@shared/community-endpoints.ts";
 import {
     communityEndpoint as communityEndpointTable,

@@ -1,3 +1,4 @@
+import { validateCommunityEndpointUrl } from "@shared/community-endpoint-urls.ts";
 import {
     applyPendingProxyPricing,
     type CommunityEndpointVisibility,
@@ -10,7 +11,6 @@ import {
     type ProxyListingPayload,
     parseListingPayload,
     pendingCommunityEndpointChangeIsReady,
-    validateCommunityEndpointUrl,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";

@@ -81,6 +81,15 @@ POLLINATIONS_PROVIDER=$(cat <<'EOF'
       "maxTokens": 8192
     },
     {
+      "id": "kimi-k3",
+      "name": "Kimi K3 — Paid, premium reasoning, vision, and tools",
+      "reasoning": true,
+      "input": ["text", "image"],
+      "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
+      "contextWindow": 1048576,
+      "maxTokens": 8192
+    },
+    {
       "id": "deepseek",
       "name": "DeepSeek V4 Flash — Quest model, fast reasoning & tool calling",
       "reasoning": true,

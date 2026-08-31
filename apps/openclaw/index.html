@@ -152,8 +152,9 @@
                                         "fallbacks": ["pollinations/deepseek", "pollinations/glm"]
                                         },
                                         "models": {
-                                        "pollinations/kimi": { "alias": "Kimi K2.6" },
-                                        "pollinations/kimi-code": { "alias": "Kimi K2.7 Code" },
+                                        "pollinations/kimi": { "alias": "Kimi K2.6 (Quest)" },
+                                        "pollinations/kimi-code": { "alias": "Kimi K2.7 Code (Quest)" },
+                                        "pollinations/kimi-k3": { "alias": "Kimi K3 (Paid)" },
                                         "pollinations/gpt-5.6-luna": { "alias": "GPT-5.6 Luna (Quest)" },
                                         "pollinations/gpt-5.6-sol": { "alias": "GPT-5.6 Sol (Quest)" },
                                         "pollinations/gpt-5.6-terra": { "alias": "GPT-5.6 Terra (Quest)" },
@@ -179,10 +180,12 @@
                                         "apiKey": "${POLLINATIONS_API_KEY}",
                                         "api": "openai-completions",
                                         "models": [
-                                        { "id": "kimi", "name": "Kimi K2.6", "reasoning": true,
+                                        { "id": "kimi", "name": "Kimi K2.6 (Quest)", "reasoning": true,
                                         "input": ["text","image"], "contextWindow": 256000 },
-                                        { "id": "kimi-code", "name": "Kimi Code", "reasoning": true,
+                                        { "id": "kimi-code", "name": "Kimi K2.7 Code (Quest)", "reasoning": true,
                                         "input": ["text","image"], "contextWindow": 262144 },
+                                        { "id": "kimi-k3", "name": "Kimi K3 (Paid)", "reasoning": true,
+                                        "input": ["text","image"], "contextWindow": 1048576 },
                                         { "id": "gpt-5.6-luna", "name": "GPT-5.6 Luna (Quest)", "reasoning": true,
                                         "input": ["text"], "contextWindow": 272000 },
                                         { "id": "gpt-5.6-sol", "name": "GPT-5.6 Sol (Quest)", "reasoning": true,
@@ -252,16 +255,21 @@
 
                 <div class="model-table">
                     <div class="model-row recommended">
-                        <div class="model-label">Kimi K2.6 <span class="model-tag">default · paid</span></div>
+                        <div class="model-label">Kimi K2.6 <span class="model-tag">default · quest</span></div>
                         <div class="model-id">pollinations/kimi</div>
                         <div class="model-note"><strong>Best open model</strong> for agentic coding. <em>256K
                                 context</em>, vision, tools, and reasoning.</div>
                     </div>
                     <div class="model-row">
-                        <div class="model-label">Kimi K2.7 Code <span class="model-tag">coding · paid</span></div>
+                        <div class="model-label">Kimi K2.7 Code <span class="model-tag">coding · quest</span></div>
                         <div class="model-id">pollinations/kimi-code</div>
                         <div class="model-note">Moonshot's coding-focused model with <em>262K context</em>, vision,
                             reasoning, and tool calling.</div>
+                    </div>
+                    <div class="model-row">
+                        <div class="model-label">Kimi K3 <span class="model-tag">premium · paid</span></div>
+                        <div class="model-id">pollinations/kimi-k3</div>
+                        <div class="model-note">Premium Kimi reasoning, vision, and tools with a <em>1M context</em> window.</div>
                     </div>
                     <div class="model-row">
                         <div class="model-label">Gemini 2.5 Flash Lite <span class="model-tag">web search · paid</span></div>

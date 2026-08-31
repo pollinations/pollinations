@@ -31,8 +31,9 @@ Switch models anytime in chat with `/model pollinations/<name>`:
 
 | Model | ID | Best for |
 |---|---|---|
-| **Kimi K2.6** (default) | `pollinations/kimi` | Agentic tasks, vision, reasoning (262K context) |
-| **Kimi K2.7 Code** | `pollinations/kimi-code` | Agentic coding, vision, reasoning (262K context) |
+| **Kimi K2.6** (default, Quest) | `pollinations/kimi` | Agentic tasks, vision, reasoning (262K context) |
+| **Kimi K2.7 Code** (Quest) | `pollinations/kimi-code` | Agentic coding, vision, reasoning (262K context) |
+| **Kimi K3** (Paid) | `pollinations/kimi-k3` | Premium reasoning, vision, and tools (1M context) |
 | **GPT-5.6 Luna** (Quest) | `pollinations/gpt-5.6-luna` | Fast reasoning (272K context) |
 | **GPT-5.6 Sol** (Quest) | `pollinations/gpt-5.6-sol` | Premium reasoning (272K context) |
 | **GPT-5.6 Terra** (Quest) | `pollinations/gpt-5.6-terra` | Higher-capability reasoning (272K context) |

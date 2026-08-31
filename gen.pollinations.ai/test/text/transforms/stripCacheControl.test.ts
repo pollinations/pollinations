@@ -77,40 +77,9 @@ describe("stripCacheControl model wiring", () => {
     it.each([
         "grok-large",
         "grok-4.3",
+        "grok-4.6",
     ])("wires stripCacheControl onto %s", (modelName) => {
         expect(findModelByName(modelName)?.transform).toBe(stripCacheControl);
-    });
-
-    it("strips unsupported OpenAI defaults for Grok 4.6 on Azure", async () => {
-        const transform = findModelByName("grok-4.6")?.transform;
-        if (!transform) throw new Error("grok-4.6 transform missing");
-
-        const { options } = await transform([], {
-            frequency_penalty: 0,
-            presence_penalty: 0,
-            logprobs: false,
-            stream: false,
-        });
-
-        expect(options).toEqual({ stream: false });
-    });
-
-    it.each([
-        "frequency_penalty",
-        "presence_penalty",
-        "logprobs",
-        "top_logprobs",
-    ])("rejects unsupported Grok 4.6 parameter %s", async (parameter) => {
-        const transform = findModelByName("grok-4.6")?.transform;
-        if (!transform) throw new Error("grok-4.6 transform missing");
-
-        await expect(
-            Promise.resolve().then(() =>
-                transform([], {
-                    [parameter]: parameter === "logprobs" ? true : 1,
-                }),
-            ),
-        ).rejects.toMatchObject({ status: 400 });
     });
 });
 

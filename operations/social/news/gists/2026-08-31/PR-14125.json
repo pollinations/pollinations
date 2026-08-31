@@ -1,0 +1,34 @@
+{
+  "pr_number": 14125,
+  "title": "feat(cli): add polli harness with Pi profile",
+  "author": "davealan74",
+  "url": "https://github.com/pollinations/pollinations/pull/14125",
+  "merged_at": "2026-08-31T21:17:14Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n\n- Adds `polli harness pi on|off|status` to connect [Pi](https://github.com/earendil-works/pi) to Pollinations\n- Configures Pi via `~/.pi/agent/models.json` (custom provider), `auth.json` (dedicated child key), and `settings.json` (default model + provider)\n- Installs the packaged `polli` skill to `~/.pi/agent/skills/polli/SKILL.md`, which Pi auto-discovers at startup\n- Offers install instructions when `pi` is not found in PATH\n- Snapshots files before changes and restores byte-for-byte (or surgically strips) on `off`\n- 14 new tests covering all acceptance criteria; all existing tests still pass\n- Updates `CODING_HARNESSES.md` and `packages/polli-cli/SKILL.md`\n\n## Test plan\n\n- [ ] `polli harness pi on` — configures Pi with Pollinations provider and default model\n- [ ] `polli harness pi on --model kimi` — selects alternate model\n- [ ] `polli harness pi status` — reports configured state and active model\n- [ ] `polli harness pi off` — restores original files byte-for-byte\n- [ ] `polli harness pi off` (after user edits) — strips only Pollinations entries, preserves user changes\n- [ ] `PI_CODING_AGENT_DIR` env override, tilde expansion\n- [ ] Existing skill file not overwritten\n- [ ] `npx vitest run packages/polli-cli/src/harnesses/pi.test.ts` — all 14 tests pass\n\nFixes #14119\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Pi joins the garden",
+    "blurb": "The polli CLI can now teach Pi where the good models grow. One command wires up a dedicated key, provider settings, and a freshly packed skill—then tidies up after itself when asked.",
+    "summary": "Added `polli harness pi on|off|status`, which configures Pi through its `models.json`, `auth.json`, and `settings.json`, installs the Pollinations skill, supports alternate models such as `--model kimi`, and safely restores or selectively removes the integration on teardown.",
+    "impact": "Pi users can connect a Pollinations provider and default model with one CLI command, inspect the active setup with `status`, and later remove it without overwriting their own configuration edits.",
+    "keywords": [
+      "polli-cli",
+      "Pi",
+      "coding-harness",
+      "agent-skills",
+      "models",
+      "developer-tools"
+    ],
+    "visual_concept": "Depict Pi as a cozy retro terminal workstation being connected to the Pollinations garden: configuration scrolls labeled models, auth, and settings become healthy code-plants, while a small skill booklet settles into a little shelf. Polli should be actively installing the connection with a tiny tool belt, and the monitor robot can eagerly display a simple \"PI READY\" status, emphasizing one-command setup and careful, reversible configuration.",
+    "image_prompt": "A cozy pixel art garden-hackerspace where the cute Polli bee mascot—with a yellow body, dark brown horizontal stripes, black antennae and oval eyes, bright pink rectangular cheek blushes, small happy smile, rounded translucent light-blue wings, and a tiny tool belt—carefully plugs a retro Pi terminal into blooming code-plants growing from scrolls labeled \"models\", \"auth\", and \"settings\"; a chunky CRT monitor robot watches with happy square eyes and displays \"PI READY\" in simple dark-purple pixel text. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, warm cream details, flowers and vines, chunky retro sprites, subtle CRT glow, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-31/PR-14125.jpg",
+    "prompt": "A cozy pixel art garden-hackerspace where the cute Polli bee mascot—with a yellow body, dark brown horizontal stripes, black antennae and oval eyes, bright pink rectangular cheek blushes, small happy smile, rounded translucent light-blue wings, and a tiny tool belt—carefully plugs a retro Pi terminal into blooming code-plants growing from scrolls labeled \"models\", \"auth\", and \"settings\"; a chunky CRT monitor robot watches with happy square eyes and displays \"PI READY\" in simple dark-purple pixel text. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, warm cream details, flowers and vines, chunky retro sprites, subtle CRT glow, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-08-31T21:18:22.574517+00:00"
+}

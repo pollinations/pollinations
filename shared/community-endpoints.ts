@@ -3,9 +3,11 @@ import { isCommunityModelAllowedGithubId } from "./auth/github-id-list.ts";
 import { MCP_SERVER_IDS } from "./registry/mcp.ts";
 import type { ModelCapability } from "./registry/model-info.ts";
 import {
+    type Category,
     MODEL_INPUT_MODALITIES,
     type ModelDefinition,
     type ModelInputModality,
+    type ModelOutputModality,
     type PriceDefinition,
 } from "./registry/registry.ts";
 import {
@@ -69,17 +71,6 @@ const BEARER_PREFIX = /^Bearer(?:\s+|$)/i;
 
 export type CommunityEndpointModality =
     (typeof COMMUNITY_ENDPOINT_MODALITIES)[number];
-
-export const COMMUNITY_ENDPOINT_INPUT_MODALITIES = {
-    text: MODEL_INPUT_MODALITIES,
-    image: ["text", "image"],
-    video: MODEL_INPUT_MODALITIES,
-    transcription: ["audio"],
-    embedding: ["text"],
-} as const satisfies Record<
-    CommunityEndpointModality,
-    readonly ModelInputModality[]
->;
 
 export const MAX_COMMUNITY_CONTEXT_LENGTH = 10_000_000;
 
@@ -254,14 +245,6 @@ export const COMMUNITY_ENDPOINT_PRICE_FIELDS = [
     COMMUNITY_VIDEO_PRICE_FIELD,
 ] as const;
 
-const COMMUNITY_TEXT_ENDPOINT_PRICE_FIELDS =
-    COMMUNITY_ENDPOINT_PRICE_FIELDS.filter(
-        (field) =>
-            field.usageType !== "completionImageTokens" &&
-            field.usageType !== "promptAudioSeconds" &&
-            field.usageType !== "completionVideoSeconds",
-    );
-
 const COMMUNITY_IMAGE_ENDPOINT_PRICE_FIELDS = [
     COMMUNITY_IMAGE_PRICE_FIELD,
 ] as const;
@@ -286,30 +269,102 @@ const COMMUNITY_EMBEDDING_ENDPOINT_PRICE_FIELDS = [
     },
 ] as const;
 
-export function communityEndpointPriceFieldsForModality(
-    modality: CommunityEndpointModality,
-    imagePricing: CommunityEndpointImagePricing = "request",
-) {
-    if (modality === "transcription") {
-        return COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS;
-    }
-    if (modality === "video") return COMMUNITY_VIDEO_ENDPOINT_PRICE_FIELDS;
-    if (modality === "image") {
-        return imagePricing === "tokens"
-            ? COMMUNITY_IMAGE_TOKEN_PRICE_FIELDS
-            : COMMUNITY_IMAGE_ENDPOINT_PRICE_FIELDS;
-    }
-    if (modality === "embedding") {
-        return COMMUNITY_EMBEDDING_ENDPOINT_PRICE_FIELDS;
-    }
-    return COMMUNITY_TEXT_ENDPOINT_PRICE_FIELDS;
-}
-
 export type CommunityEndpointPriceField =
     | (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number]
     | (typeof COMMUNITY_IMAGE_TOKEN_PRICE_FIELDS)[number]
     | (typeof COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS)[number]
     | (typeof COMMUNITY_EMBEDDING_ENDPOINT_PRICE_FIELDS)[number];
+
+type CommunityModalitySpec = {
+    category: Category;
+    inputModalities: readonly ModelInputModality[];
+    outputModalities: readonly ModelOutputModality[];
+    supportedEndpoints: readonly string[];
+    // Specialized categories such as transcription must reject sibling routes
+    // unless the route explicitly opts into this endpoint list.
+    restrictDefinitionEndpoints?: boolean;
+    endpointsByInputModality?: Partial<
+        Record<ModelInputModality, readonly string[]>
+    >;
+    priceFields: readonly CommunityEndpointPriceField[];
+    tokenPriceFields?: readonly CommunityEndpointPriceField[];
+};
+
+/**
+ * Maps each community upstream API shape to the ordinary catalog contract it
+ * publishes. The upstream modality deliberately remains distinct from the
+ * catalog category: transcription endpoints, for example, are catalogued as
+ * audio models with text output.
+ */
+export const COMMUNITY_MODALITY_SPEC = {
+    text: {
+        category: "text",
+        inputModalities: MODEL_INPUT_MODALITIES,
+        outputModalities: ["text"],
+        supportedEndpoints: ["/v1/chat/completions", "/text", "/text/{prompt}"],
+        priceFields: COMMUNITY_TEXT_PRICE_FIELDS,
+    },
+    image: {
+        category: "image",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        supportedEndpoints: ["/v1/images/generations", "/image/{prompt}"],
+        endpointsByInputModality: { image: ["/v1/images/edits"] },
+        priceFields: COMMUNITY_IMAGE_ENDPOINT_PRICE_FIELDS,
+        tokenPriceFields: COMMUNITY_IMAGE_TOKEN_PRICE_FIELDS,
+    },
+    video: {
+        category: "video",
+        inputModalities: MODEL_INPUT_MODALITIES,
+        outputModalities: ["video"],
+        supportedEndpoints: [
+            "/v1/images/generations",
+            "/image/{prompt}",
+            "/video/{prompt}",
+        ],
+        priceFields: COMMUNITY_VIDEO_ENDPOINT_PRICE_FIELDS,
+    },
+    transcription: {
+        category: "audio",
+        inputModalities: ["audio"],
+        outputModalities: ["text"],
+        supportedEndpoints: ["/v1/audio/transcriptions"],
+        restrictDefinitionEndpoints: true,
+        priceFields: COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS,
+    },
+    embedding: {
+        category: "embedding",
+        inputModalities: ["text"],
+        outputModalities: ["embedding"],
+        supportedEndpoints: ["/v1/embeddings"],
+        priceFields: COMMUNITY_EMBEDDING_ENDPOINT_PRICE_FIELDS,
+    },
+} as const satisfies Record<CommunityEndpointModality, CommunityModalitySpec>;
+
+export function communityEndpointPriceFieldsForModality(
+    modality: CommunityEndpointModality,
+    imagePricing: CommunityEndpointImagePricing = "request",
+): readonly CommunityEndpointPriceField[] {
+    const spec: CommunityModalitySpec = COMMUNITY_MODALITY_SPEC[modality];
+    if (imagePricing === "tokens" && spec.tokenPriceFields) {
+        return spec.tokenPriceFields;
+    }
+    return spec.priceFields;
+}
+
+export function communityEndpointSupportedEndpoints(
+    modality: CommunityEndpointModality,
+    inputModalities: readonly ModelInputModality[],
+): string[] {
+    const spec: CommunityModalitySpec = COMMUNITY_MODALITY_SPEC[modality];
+    const endpoints = [...spec.supportedEndpoints];
+    for (const inputModality of inputModalities) {
+        endpoints.push(
+            ...(spec.endpointsByInputModality?.[inputModality] ?? []),
+        );
+    }
+    return endpoints;
+}
 
 export type CommunityEndpointPriceKey =
     (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number]["key"];
@@ -419,7 +474,7 @@ export function normalizeCommunityEndpointInputModalities(
     // Falling back to a bare "text" would hand a transcription endpoint the
     // one input it cannot accept, which the write path then rejects with a
     // 400 naming an input the owner never chose.
-    const permitted = COMMUNITY_ENDPOINT_INPUT_MODALITIES[endpointModality];
+    const permitted = COMMUNITY_MODALITY_SPEC[endpointModality].inputModalities;
     const declared = new Set(value ?? []);
     const normalized = permitted.filter((modality) => declared.has(modality));
     return normalized.length ? [...normalized] : [permitted[0]];
@@ -467,18 +522,47 @@ export type ListingType = (typeof LISTING_TYPES)[number];
  * Pollinations credential. The only kind that names a price, because it is the
  * only kind whose caller is buying something from the owner.
  */
-export type ProxyListingPayload = {
-    bearerTokenCiphertext: string;
-    // Owner-set: callers may only spend Paid Pollen on this model.
-    paidOnly: boolean;
-    modality: CommunityEndpointModality;
-    imagePricing: CommunityEndpointImagePricing;
-    inputModalities: ModelInputModality[];
-    perUserRpm: number | null;
-    fallbacks: string[];
-    advertised?: CommunityEndpointAdvertised;
-    prices: CommunityEndpointPrices;
-};
+const StoredCommunityEndpointPricesSchema = z.object(
+    Object.fromEntries(
+        COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
+            field.key,
+            z.number().finite().min(0).default(0),
+        ]),
+    ) as Record<CommunityEndpointPriceKey, z.ZodDefault<z.ZodNumber>>,
+);
+
+export const ProxyListingPayloadSchema = z
+    .object({
+        bearerTokenCiphertext: z.string().min(1),
+        // Owner-set: callers may only spend Paid Pollen on this model. Rows
+        // from before paid-only support are public-spend by default.
+        paidOnly: z.boolean().default(false),
+        modality: z.enum(COMMUNITY_ENDPOINT_MODALITIES),
+        imagePricing: z.enum(COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES),
+        inputModalities: z.array(z.enum(MODEL_INPUT_MODALITIES)).min(1),
+        perUserRpm: z.number().finite().positive().nullable(),
+        fallbacks: z
+            .array(z.string().min(1))
+            .transform((fallbacks) => fallbacks.slice(0, MAX_FALLBACK_TARGETS)),
+        advertised: CommunityEndpointAdvertisedSchema.optional(),
+        prices: StoredCommunityEndpointPricesSchema,
+    })
+    .transform(({ advertised: storedAdvertised, ...payload }) => {
+        const advertised = normalizeCommunityEndpointAdvertised(
+            storedAdvertised,
+            payload.modality,
+        );
+        return {
+            ...payload,
+            inputModalities: normalizeCommunityEndpointInputModalities(
+                payload.inputModalities,
+                payload.modality,
+            ),
+            ...(Object.keys(advertised).length ? { advertised } : {}),
+        };
+    });
+
+export type ProxyListingPayload = z.infer<typeof ProxyListingPayloadSchema>;
 
 /**
  * An agent Enter runs itself. Its row id is also the model sent to the shared
@@ -521,6 +605,12 @@ export type ListingPayloadByType = {
     endpoint_agent: EndpointAgentListingPayload;
 };
 
+const LISTING_PAYLOAD_SCHEMA_BY_TYPE = {
+    proxy: ProxyListingPayloadSchema,
+    prompt_agent: PromptAgentConfigSchema,
+    endpoint_agent: EndpointAgentListingPayloadSchema,
+} as const;
+
 /**
  * Read a stored payload back into its typed shape.
  *
@@ -539,58 +629,8 @@ export function parseListingPayload<K extends ListingType>(
     } catch {
         return null;
     }
-    if (parsed === null || typeof parsed !== "object") return null;
-    const source = parsed as Record<string, unknown>;
-
-    if (type === "endpoint_agent") {
-        const result = EndpointAgentListingPayloadSchema.safeParse(source);
-        return result.success ? (result.data as ListingPayloadByType[K]) : null;
-    }
-    if (type === "prompt_agent") {
-        const result = PromptAgentConfigSchema.safeParse(source);
-        return result.success ? (result.data as ListingPayloadByType[K]) : null;
-    }
-
-    const bearerTokenCiphertext =
-        typeof source.bearerTokenCiphertext === "string"
-            ? source.bearerTokenCiphertext
-            : "";
-    if (!bearerTokenCiphertext) return null;
-    const modality = normalizeCommunityEndpointModality(
-        typeof source.modality === "string" ? source.modality : null,
-    );
-    return {
-        bearerTokenCiphertext,
-        paidOnly: source.paidOnly === true,
-        modality,
-        imagePricing: normalizeCommunityEndpointImagePricing(
-            typeof source.imagePricing === "string"
-                ? source.imagePricing
-                : null,
-        ),
-        inputModalities: normalizeCommunityEndpointInputModalities(
-            Array.isArray(source.inputModalities)
-                ? (source.inputModalities as ModelInputModality[])
-                : undefined,
-            modality,
-        ),
-        perUserRpm:
-            typeof source.perUserRpm === "number" ? source.perUserRpm : null,
-        fallbacks: Array.isArray(source.fallbacks)
-            ? source.fallbacks.filter(
-                  (id): id is string => typeof id === "string",
-              )
-            : [],
-        advertised: normalizeCommunityEndpointAdvertised(
-            CommunityEndpointAdvertisedSchema.safeParse(source.advertised).data,
-            modality,
-        ),
-        prices: communityEndpointPrices(
-            (typeof source.prices === "object" && source.prices !== null
-                ? source.prices
-                : {}) as Partial<CommunityEndpointPrices>,
-        ),
-    } as ListingPayloadByType[K];
+    const result = LISTING_PAYLOAD_SCHEMA_BY_TYPE[type].safeParse(parsed);
+    return result.success ? (result.data as ListingPayloadByType[K]) : null;
 }
 
 export function pendingCommunityEndpointChangeIsReady(
@@ -630,14 +670,50 @@ export function applyPendingProxyPricing(
         : current;
 }
 
+export function resolveEffectiveProxyListing(
+    state: {
+        visibility: CommunityEndpointVisibility;
+        payload: ProxyListingPayload;
+        pendingVisibility: CommunityEndpointVisibility | null;
+        pendingPayload: ProxyListingPayload | null;
+        pendingAt: Date | null;
+    },
+    now = Date.now(),
+) {
+    const pendingAt = state.pendingAt;
+    const pendingReady = pendingCommunityEndpointChangeIsReady(pendingAt, now);
+    const hasPending =
+        pendingAt !== null &&
+        (state.pendingVisibility !== null || state.pendingPayload !== null);
+    return {
+        pendingReady,
+        visibility:
+            pendingReady && state.pendingVisibility
+                ? state.pendingVisibility
+                : state.visibility,
+        payload: pendingReady
+            ? applyPendingProxyPricing(state.payload, state.pendingPayload)
+            : state.payload,
+        pending:
+            !pendingReady && hasPending
+                ? {
+                      effectiveAt: new Date(
+                          pendingAt.getTime() +
+                              COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
+                      ),
+                      visibility: state.pendingVisibility,
+                      payload: state.pendingPayload,
+                  }
+                : null,
+    };
+}
+
 type CommunityEndpointRuntimeBase = {
     id: string;
     ownerUserId: string;
     modelId: string;
     name: string;
-    // Null on rows created before titles existed; read paths go through
-    // communityEndpointTitle() rather than using this directly.
-    title: string | null;
+    title: string;
     description: string | null;
     providerName?: string | null;
     providerUrl?: string | null;
@@ -701,7 +777,7 @@ export type CommunityModelDefinitionInput = {
     modelId: string;
     addedDate?: number;
     perUserRpm?: number | null;
-    title?: string | null;
+    title: string;
     description: string | null;
     providerName?: string | null;
     providerUrl?: string | null;
@@ -848,24 +924,6 @@ export function communityPriceDefinition(
     return pricing;
 }
 
-// Titles became a required field after these rows were created, so older
-// endpoints have no stored title. Fall back to what the catalog showed before
-// the column existed (description, then the model slug) so `/models` output is
-// unchanged for un-backfilled rows.
-export function communityEndpointTitle(endpoint: {
-    modelId: string;
-    title?: string | null;
-    description?: string | null;
-}): string {
-    const title = endpoint.title?.trim();
-    if (title) return title;
-    const description = endpoint.description?.trim();
-    if (description) return description;
-    return (
-        parseCommunityModelId(endpoint.modelId)?.modelName ?? endpoint.modelId
-    );
-}
-
 export function communityModelDefinition(
     endpoint: CommunityModelDefinitionInput,
 ): ModelDefinition {
@@ -880,10 +938,8 @@ export function communityModelDefinition(
     const imagePricing = normalizeCommunityEndpointImagePricing(
         endpoint.imagePricing,
     );
+    const spec: CommunityModalitySpec = COMMUNITY_MODALITY_SPEC[modality];
     const isImage = modality === "image";
-    const isVideo = modality === "video";
-    const isTranscription = modality === "transcription";
-    const isEmbedding = modality === "embedding";
     // Token-priced image endpoints bill like text models (usage × per-token
     // rates), so only fixed per-request image endpoints are flat-rate.
     const isFlatRateImage = isImage && imagePricing === "request";
@@ -901,34 +957,25 @@ export function communityModelDefinition(
         perUserRpm: endpoint.perUserRpm,
         brand: providerName || "Community",
         brandUrl: providerName && providerUrl ? providerUrl : undefined,
-        category: isImage
-            ? "image"
-            : isVideo
-              ? "video"
-              : isEmbedding
-                ? "embedding"
-                : isTranscription
-                  ? "audio"
-                  : "text",
+        category: spec.category,
         cost: communityPriceDefinition(endpoint, modality, imagePricing),
         priceMultiplier: 1,
         addedDate: endpoint.addedDate ?? 0,
-        title: communityEndpointTitle(endpoint),
+        title: endpoint.title,
         description: description || undefined,
         inputModalities,
-        outputModalities: isImage
-            ? ["image"]
-            : isVideo
-              ? ["video"]
-              : isEmbedding
-                ? ["embedding"]
-                : ["text"],
+        outputModalities: [...spec.outputModalities],
+        ...(spec.restrictDefinitionEndpoints
+            ? {
+                  supportedEndpoints: communityEndpointSupportedEndpoints(
+                      modality,
+                      inputModalities,
+                  ),
+              }
+            : {}),
         hidden: endpoint.hidden,
         ...(endpoint.fallbacks?.length
             ? { fallbacks: endpoint.fallbacks }
-            : {}),
-        ...(isTranscription
-            ? { supportedEndpoints: ["/v1/audio/transcriptions"] }
             : {}),
         paidOnly: endpoint.paidOnly ?? false,
         alpha: true,

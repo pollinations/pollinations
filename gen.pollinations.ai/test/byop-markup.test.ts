@@ -600,6 +600,7 @@ describe("BYOP markup", () => {
     it("discards a Tinybird average that is wildly above the defined per-request price", async () => {
         const definition = communityModelDefinition({
             modelId: "vendouple/zimage",
+            title: "Z-Image",
             description: null,
             modality: "image",
             imagePricing: "request",
@@ -653,6 +654,7 @@ describe("BYOP markup", () => {
     it("402s community flat-rate preflight against the defined price, not Tinybird", async () => {
         const definition = communityModelDefinition({
             modelId: "vendouple/zimage",
+            title: "Z-Image",
             description: null,
             modality: "image",
             imagePricing: "request",

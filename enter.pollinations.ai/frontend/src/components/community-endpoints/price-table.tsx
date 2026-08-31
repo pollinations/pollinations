@@ -335,6 +335,8 @@ export const BASE_TEXT_PRICE_KEYS: PriceFieldKey[] = [
     "completionTextPrice",
 ];
 
+const BASE_EMBEDDING_PRICE_KEYS: PriceFieldKey[] = ["promptTextPrice"];
+
 // Transcription models bill per audio second, so their single price field is
 // revealed alongside the text fields once the model is public.
 export const BASE_TRANSCRIPTION_PRICE_KEYS: PriceFieldKey[] = [
@@ -342,6 +344,20 @@ export const BASE_TRANSCRIPTION_PRICE_KEYS: PriceFieldKey[] = [
 ];
 
 export const BASE_VIDEO_PRICE_KEYS: PriceFieldKey[] = ["completionVideoPrice"];
+
+export function basePriceKeysForModality(
+    modality: CommunityEndpointModality,
+): PriceFieldKey[] {
+    return modality === "image"
+        ? ["completionImagePrice"]
+        : modality === "video"
+          ? BASE_VIDEO_PRICE_KEYS
+          : modality === "transcription"
+            ? BASE_TRANSCRIPTION_PRICE_KEYS
+            : modality === "embedding"
+              ? BASE_EMBEDDING_PRICE_KEYS
+              : BASE_TEXT_PRICE_KEYS;
+}
 
 export function returnedPriceFields(
     testState: ActionState,

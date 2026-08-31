@@ -1,4 +1,8 @@
-import type { TinybirdEventType } from "../schemas/generation-event.ts";
+import {
+    type BillingRateDefinition,
+    type PublicPriceInfo,
+    publicPriceInfo,
+} from "./public-pricing.ts";
 
 export const MCP_USAGE_HEADERS = {
     cost: "x-pollinations-mcp-cost",
@@ -14,6 +18,17 @@ type McpServerDefinitionBase = {
     name: string;
     description: string;
     binding: McpBindingName;
+    pricing: McpPricingDefinition;
+};
+
+type McpPricingDefinition = {
+    description?: string;
+    rates: readonly BillingRateDefinition[];
+};
+
+export type McpPricingInfo = {
+    description?: string;
+    rates: PublicPriceInfo[];
 };
 
 export type McpBindingName = "POLLINATIONS_MCP" | "FFMPEG_MCP" | "EXA_MCP";
@@ -24,9 +39,14 @@ export type McpServerDefinition = McpServerDefinitionBase &
         | {
               billing: "usage_receipt";
               provider: string;
-              eventType: TinybirdEventType;
           }
     );
+
+export const FFMPEG_MCP_PRICE_PER_SECOND =
+    0.25 * 0.00002 + 1 * 0.0000025 + 4 * 0.00000007;
+
+const EXA_SEARCH_PRICE_PER_REQUEST = 0.007;
+const EXA_CONTENTS_PRICE_PER_PAGE = 0.001;
 
 export const MCP_SERVERS = [
     {
@@ -36,6 +56,11 @@ export const MCP_SERVERS = [
             "Access Pollinations models and API capabilities through agent tools.",
         binding: "POLLINATIONS_MCP",
         billing: "downstream",
+        pricing: {
+            description:
+                "Generation tools use each selected model's listed rate. Discovery and account tools are free.",
+            rates: [],
+        },
     },
     {
         id: "ffmpeg",
@@ -45,7 +70,22 @@ export const MCP_SERVERS = [
         binding: "FFMPEG_MCP",
         billing: "usage_receipt",
         provider: "cloudflare",
-        eventType: "tool.media",
+        pricing: {
+            rates: [
+                {
+                    id: "cloudflare.container.basic_runtime.v1",
+                    description: "Cloudflare container runtime",
+                    kind: "compute",
+                    unit: "second",
+                    unitCost: FFMPEG_MCP_PRICE_PER_SECOND,
+                    publicPricing: {
+                        label: "Runtime",
+                        quantity: 1,
+                        unit: "second",
+                    },
+                },
+            ],
+        },
     },
     {
         id: "exa",
@@ -55,7 +95,35 @@ export const MCP_SERVERS = [
         binding: "EXA_MCP",
         billing: "usage_receipt",
         provider: "exa",
-        eventType: "tool.search",
+        pricing: {
+            rates: [
+                {
+                    id: "exa.search.v1",
+                    description: "Exa auto search request",
+                    kind: "search_request",
+                    unit: "request",
+                    unitCost: EXA_SEARCH_PRICE_PER_REQUEST,
+                    publicPricing: {
+                        label: "Search",
+                        quantity: 1,
+                        unit: "request",
+                        suffix: "up to 10 results",
+                    },
+                },
+                {
+                    id: "exa.contents.text.v1",
+                    description: "Exa text contents page",
+                    kind: "page",
+                    unit: "page",
+                    unitCost: EXA_CONTENTS_PRICE_PER_PAGE,
+                    publicPricing: {
+                        label: "Fetch",
+                        quantity: 1,
+                        unit: "page",
+                    },
+                },
+            ],
+        },
     },
 ] as const satisfies readonly McpServerDefinition[];
 
@@ -69,4 +137,11 @@ export function getMcpServerDefinition(
     id: string,
 ): McpServerDefinition | undefined {
     return MCP_SERVERS.find((server) => server.id === id);
+}
+
+export function getMcpPricingInfo(server: McpServerDefinition): McpPricingInfo {
+    return {
+        description: server.pricing.description,
+        rates: server.pricing.rates.map((rate) => publicPriceInfo(rate)),
+    };
 }

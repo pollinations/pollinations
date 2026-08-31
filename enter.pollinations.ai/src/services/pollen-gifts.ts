@@ -6,6 +6,8 @@ import {
 } from "@shared/pollen-gifts.ts";
 import { calculateServiceFeeCents } from "@shared/pollen-packs.ts";
 import type Stripe from "stripe";
+import { isUniqueConstraintError } from "../utils/d1.ts";
+import { getStripeId } from "../utils/stripe.ts";
 
 export type PollenGiftStatus =
     | "pending"
@@ -25,7 +27,6 @@ type PollenGiftRow = {
     stripeCheckoutSessionId: string | null;
     stripePaymentIntentId: string | null;
     redeemerUserId: string | null;
-    activatedAt: number | null;
 };
 
 export type PollenGiftFulfillmentResult = {
@@ -140,7 +141,6 @@ export async function voidPendingPollenGiftCheckout(
 
 export async function fulfillPollenGiftCheckout(
     db: D1Database,
-    event: Stripe.Event,
     session: Stripe.Checkout.Session,
 ): Promise<PollenGiftFulfillmentResult> {
     const giftId = session.metadata?.giftId;
@@ -148,25 +148,19 @@ export async function fulfillPollenGiftCheckout(
         return { success: false, message: "Missing gift order metadata" };
     }
 
-    const paymentIntentId = stripeObjectId(session.payment_intent);
+    const paymentIntentId = getStripeId(session.payment_intent);
     const presentment = readPollenGiftPresentment(session);
     const activated = await db
         .prepare(
             `UPDATE pollen_gift_code
              SET status = 'active',
-                 stripe_payment_intent_id = ?,
-                 activated_at = ?
+                 stripe_payment_intent_id = ?
              WHERE id = ?
                AND stripe_checkout_session_id = ?
                AND status IN ('pending', 'voided')
              RETURNING pollen_amount AS pollenAmount`,
         )
-        .bind(
-            paymentIntentId,
-            event.created ? event.created * 1000 : Date.now(),
-            giftId,
-            session.id,
-        )
+        .bind(paymentIntentId, giftId, session.id)
         .first<{ pollenAmount: number }>();
 
     if (activated) {
@@ -258,7 +252,7 @@ export async function recordPollenGiftRefund(
     refund: Stripe.Refund,
     giftIdHint?: string,
 ): Promise<boolean> {
-    const paymentIntentId = stripeObjectId(refund.payment_intent);
+    const paymentIntentId = getStripeId(refund.payment_intent);
     if (!paymentIntentId) return false;
     const gift = await resolvePollenGiftForPaymentEvent(
         db,
@@ -287,7 +281,7 @@ export async function handlePollenGiftDispute(
     dispute: Stripe.Dispute,
     giftIdHint?: string,
 ): Promise<boolean> {
-    const paymentIntentId = stripeObjectId(dispute.payment_intent);
+    const paymentIntentId = getStripeId(dispute.payment_intent);
     if (!paymentIntentId) return false;
     const gift = await resolvePollenGiftForPaymentEvent(
         db,
@@ -598,8 +592,7 @@ const POLLEN_GIFT_SELECT = `SELECT
     balance_reversed AS balanceReversed,
     stripe_checkout_session_id AS stripeCheckoutSessionId,
     stripe_payment_intent_id AS stripePaymentIntentId,
-    redeemer_user_id AS redeemerUserId,
-    activated_at AS activatedAt
+    redeemer_user_id AS redeemerUserId
 FROM pollen_gift_code`;
 
 function readPollenGiftPresentment(session: Stripe.Checkout.Session): {
@@ -618,14 +611,4 @@ function readPollenGiftPresentment(session: Stripe.Checkout.Session): {
         presentmentCurrency: details?.presentment_currency ?? "",
         presentmentAmount: details?.presentment_amount ?? 0,
     };
-}
-
-function stripeObjectId(value: { id: string } | string | null): string | null {
-    if (!value) return null;
-    return typeof value === "string" ? value : value.id;
-}
-
-function isUniqueConstraintError(error: unknown): boolean {
-    const message = error instanceof Error ? error.message : String(error);
-    return message.includes("UNIQUE constraint failed");
 }

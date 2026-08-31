@@ -14,6 +14,7 @@ import {
     recordPollenGiftRefund,
     voidPendingPollenGiftCheckout,
 } from "../services/pollen-gifts.ts";
+import { isUniqueConstraintError } from "../utils/d1.ts";
 import {
     POLLEN_GIFT_BUYER_KEY_METADATA,
     recordStripeGiftCardFingerprintAttempt,
@@ -269,6 +270,27 @@ async function pollenGiftIdFromPaymentIntent(
     return resolved.metadata.giftId || null;
 }
 
+async function linkPollenGiftPaymentEvent({
+    stripe,
+    paymentIntent,
+    label,
+    handle,
+}: {
+    stripe: Stripe;
+    paymentIntent: string | Stripe.PaymentIntent | null;
+    label: string;
+    handle: (giftIdHint?: string) => Promise<boolean>;
+}): Promise<boolean> {
+    if (await handle()) return true;
+
+    const giftId = await pollenGiftIdFromPaymentIntent(stripe, paymentIntent);
+    if (!giftId) return false;
+
+    const linked = await handle(giftId);
+    if (!linked) console.error(`${label} could not be linked`);
+    return linked;
+}
+
 function readPresentment(session: Stripe.Checkout.Session): {
     presentmentCurrency: string;
     presentmentAmount: number;
@@ -295,11 +317,6 @@ type CheckoutSessionResult = {
     presentmentCurrency?: string;
     presentmentAmount?: number;
 };
-
-function isUniqueConstraintError(error: unknown): boolean {
-    const message = error instanceof Error ? error.message : String(error);
-    return message.includes("UNIQUE constraint failed");
-}
 
 async function creditCheckoutSessionOnce({
     env,
@@ -754,11 +771,7 @@ export const stripeWebhooksRoutes = new Hono<Env>()
 
                 if (session.payment_status === "paid") {
                     const result = isPollenGiftCheckoutSession(session)
-                        ? await fulfillPollenGiftCheckout(
-                              c.env.DB,
-                              event,
-                              session,
-                          )
+                        ? await fulfillPollenGiftCheckout(c.env.DB, session)
                         : await handleCheckoutSessionCompleted(
                               event,
                               session,
@@ -788,7 +801,7 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                 const session = event.data.object as Stripe.Checkout.Session;
 
                 const result = isPollenGiftCheckoutSession(session)
-                    ? await fulfillPollenGiftCheckout(c.env.DB, event, session)
+                    ? await fulfillPollenGiftCheckout(c.env.DB, session)
                     : await handleCheckoutSessionCompleted(
                           event,
                           session,
@@ -922,30 +935,18 @@ export const stripeWebhooksRoutes = new Hono<Env>()
             case "refund.updated":
             case "refund.failed": {
                 const refund = event.data.object as Stripe.Refund;
-                let giftRelated = await recordPollenGiftRefund(
-                    c.env.DB,
-                    event,
-                    refund,
-                );
-                if (!giftRelated) {
-                    const giftId = await pollenGiftIdFromPaymentIntent(
-                        stripe,
-                        refund.payment_intent,
-                    );
-                    if (giftId) {
-                        giftRelated = await recordPollenGiftRefund(
+                const giftRelated = await linkPollenGiftPaymentEvent({
+                    stripe,
+                    paymentIntent: refund.payment_intent,
+                    label: `Gift refund ${refund.id}`,
+                    handle: (giftIdHint) =>
+                        recordPollenGiftRefund(
                             c.env.DB,
                             event,
                             refund,
-                            giftId,
-                        );
-                        if (!giftRelated) {
-                            throw new Error(
-                                `Gift refund ${refund.id} could not be linked`,
-                            );
-                        }
-                    }
-                }
+                            giftIdHint,
+                        ),
+                });
                 console.log(`Refund ${event.type}: ${refund.id}`);
                 c.executionCtx.waitUntil(
                     sendStripeEventToTinybird(c.env, {
@@ -976,30 +977,18 @@ export const stripeWebhooksRoutes = new Hono<Env>()
             case "charge.dispute.funds_reinstated":
             case "charge.dispute.closed": {
                 const dispute = event.data.object as Stripe.Dispute;
-                let giftRelated = await handlePollenGiftDispute(
-                    c.env.DB,
-                    event,
-                    dispute,
-                );
-                if (!giftRelated) {
-                    const giftId = await pollenGiftIdFromPaymentIntent(
-                        stripe,
-                        dispute.payment_intent,
-                    );
-                    if (giftId) {
-                        giftRelated = await handlePollenGiftDispute(
+                const giftRelated = await linkPollenGiftPaymentEvent({
+                    stripe,
+                    paymentIntent: dispute.payment_intent,
+                    label: `Gift dispute ${dispute.id}`,
+                    handle: (giftIdHint) =>
+                        handlePollenGiftDispute(
                             c.env.DB,
                             event,
                             dispute,
-                            giftId,
-                        );
-                        if (!giftRelated) {
-                            throw new Error(
-                                `Gift dispute ${dispute.id} could not be linked`,
-                            );
-                        }
-                    }
-                }
+                            giftIdHint,
+                        ),
+                });
                 if (!giftRelated) {
                     console.log(`Unhandled Stripe event type: ${event.type}`);
                 }

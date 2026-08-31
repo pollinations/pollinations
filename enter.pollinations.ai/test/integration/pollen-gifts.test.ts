@@ -65,9 +65,8 @@ async function insertRedeemedGift({
     await env.DB.prepare(
         `INSERT INTO pollen_gift_code (
             id, code_hash, pollen_amount, status, stripe_checkout_session_id,
-            stripe_payment_intent_id, redeemer_user_id, created_at,
-            activated_at, redeemed_at
-        ) VALUES (?, ?, ?, 'redeemed', ?, ?, ?, ?, ?, ?)`,
+            stripe_payment_intent_id, redeemer_user_id, created_at, redeemed_at
+        ) VALUES (?, ?, ?, 'redeemed', ?, ?, ?, ?, ?)`,
     )
         .bind(
             giftId,
@@ -76,7 +75,6 @@ async function insertRedeemedGift({
             `cs_${giftId}`,
             paymentIntentId,
             userId,
-            now,
             now,
             now,
         )
@@ -274,7 +272,7 @@ test("gift checkout blocks a buyer after four distinct failed cards", async ({
             key, window_started_at, attempts
          ) VALUES (?, ?, ?)`,
     )
-        .bind("stale-gift-limit", Date.now() - 25 * 60 * 60 * 1000, 1)
+        .bind("stale-gift-limit", Date.now() - 11 * 60 * 1000, 1)
         .run();
 
     await env.DB.batch(
@@ -686,6 +684,62 @@ test("a refund before fulfillment stays revoked until the refund fails", async (
     expect(restoredGift?.status).toBe("active");
 });
 
+test("stale gift payment metadata is acknowledged without webhook retries", async ({
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const paymentIntentId = "pi_unlinked_gift";
+    mocks.stripe.state.paymentIntents.push({
+        id: paymentIntentId,
+        object: "payment_intent",
+        status: "succeeded",
+        metadata: {
+            purpose: POLLEN_GIFT_PURPOSE,
+            giftId: "gift_that_no_longer_exists",
+        },
+    });
+
+    const events = [
+        {
+            id: "evt_unlinked_gift_refund",
+            type: "refund.created",
+            object: {
+                id: "re_unlinked_gift",
+                object: "refund",
+                amount: 2_000,
+                currency: "usd",
+                status: "succeeded",
+                payment_intent: paymentIntentId,
+                metadata: {},
+            },
+        },
+        {
+            id: "evt_unlinked_gift_dispute",
+            type: "charge.dispute.created",
+            object: {
+                id: "dp_unlinked_gift",
+                object: "dispute",
+                amount: 2_000,
+                currency: "usd",
+                status: "needs_response",
+                payment_intent: paymentIntentId,
+                metadata: {},
+            },
+        },
+    ];
+
+    for (const [index, event] of events.entries()) {
+        const response = await postSignedStripeWebhook({
+            id: event.id,
+            type: event.type,
+            created: 200 + index,
+            livemode: false,
+            data: { object: event.object },
+        });
+        expect(response.status).toBe(200);
+    }
+});
+
 test("expired Checkout Session voids a pending gift", async ({ mocks }) => {
     await mocks.enable("stripe", "tinybird");
 
@@ -825,8 +879,8 @@ test("redemption racing a refund never leaves spendable Pollen", async ({
     await env.DB.prepare(
         `INSERT INTO pollen_gift_code (
             id, code_hash, pollen_amount, status, stripe_checkout_session_id,
-            stripe_payment_intent_id, created_at, activated_at
-        ) VALUES (?, ?, ?, 'active', ?, ?, ?, ?)`,
+            stripe_payment_intent_id, created_at
+        ) VALUES (?, ?, ?, 'active', ?, ?, ?)`,
     )
         .bind(
             giftId,
@@ -834,7 +888,6 @@ test("redemption racing a refund never leaves spendable Pollen", async ({
             pollenAmount,
             `cs_${giftId}`,
             paymentIntentId,
-            now,
             now,
         )
         .run();

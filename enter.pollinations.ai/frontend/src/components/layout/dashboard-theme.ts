@@ -25,6 +25,7 @@ export const DASHBOARD_NAV_ITEMS = [
         to: "/my-models",
         label: "My Models",
         icon: CloudUploadIcon,
+        badge: "New!",
     },
     { id: "keys", to: "/keys", label: "Keys", icon: LockIcon },
     { id: "pollen", to: "/pollen", label: "Pollen", icon: WalletIcon },
@@ -34,12 +35,19 @@ export const DASHBOARD_NAV_ITEMS = [
         label: "Activity",
         icon: TrendUpIcon,
     },
-    { id: "quests", to: "/quests", label: "Quests", icon: SparkleIcon },
+    {
+        id: "quests",
+        to: "/quests",
+        label: "Quests",
+        icon: SparkleIcon,
+        badge: "3 new!",
+    },
 ] as const satisfies readonly {
     id: string;
     to: string;
     label: string;
     icon: ComponentType<{ className?: string }>;
+    badge?: string;
 }[];
 
 export type DashboardPage = (typeof DASHBOARD_NAV_ITEMS)[number]["id"];

@@ -840,13 +840,6 @@
           "autoincrement": false,
           "default": "(cast((julianday('now') - 2440587.5)*86400000 as integer))"
         },
-        "activated_at": {
-          "name": "activated_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "redeemed_at": {
           "name": "redeemed_at",
           "type": "integer",

@@ -9,7 +9,6 @@ CREATE TABLE `pollen_gift_code` (
 	`stripe_payment_intent_id` text,
 	`redeemer_user_id` text,
 	`created_at` integer DEFAULT (cast((julianday('now') - 2440587.5)*86400000 as integer)) NOT NULL,
-	`activated_at` integer,
 	`redeemed_at` integer,
 	FOREIGN KEY (`redeemer_user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE set null
 );

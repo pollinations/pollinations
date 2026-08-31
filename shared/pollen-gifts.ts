@@ -1,3 +1,4 @@
+import { bytesToHex } from "./client-ip.ts";
 import { POLLEN_PACKS } from "./pollen-packs.ts";
 
 export const POLLEN_GIFT_PURPOSE = "pollen_gift";
@@ -55,9 +56,7 @@ export async function hashPollenGiftCode(
         "SHA-256",
         new TextEncoder().encode(normalized),
     );
-    return Array.from(new Uint8Array(digest))
-        .map((byte) => byte.toString(16).padStart(2, "0"))
-        .join("");
+    return bytesToHex(digest);
 }
 
 function encodeBase32(bytes: Uint8Array): string {

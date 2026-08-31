@@ -71,7 +71,7 @@ const earlyAdopterQuest: QuestDefinition = {
 const legacyFirstTopUpQuest: QuestDefinition = {
     id: "first_top_up",
     title: "First Pollen top up",
-    description: "[Top up](/pollen#buy-pollen) Pollen.",
+    description: "[Top up](/pollen?pack=p5#buy-pollen) Pollen.",
     category: "grow",
     scope: "perUser",
     rewardAmount: 10,
@@ -83,7 +83,7 @@ const legacyOverHundredPollenQuest: QuestDefinition = {
     id: "top_up_100",
     title: "Top up 100 Pollen",
     description:
-        "You have [topped up](/pollen#buy-pollen) 100 Pollen or more in total.",
+        "You have [topped up](/pollen?pack=p5#buy-pollen) 100 Pollen or more in total.",
     category: "grow",
     scope: "perUser",
     rewardAmount: 50,
@@ -94,7 +94,7 @@ const legacyOverHundredPollenQuest: QuestDefinition = {
 const topUpSinceLaunchQuest: QuestDefinition = {
     id: "top_up_since_launch",
     title: "Top up Pollen",
-    description: `[Top up](/pollen#buy-pollen) Pollen. _(from ${QUEST_REWARDS_LAUNCH_DATE_LABEL})_`,
+    description: `[Top up](/pollen?pack=p5#buy-pollen) Pollen. _(from ${QUEST_REWARDS_LAUNCH_DATE_LABEL})_`,
     category: "grow",
     scope: "perUser",
     rewardAmount: 5,
@@ -104,7 +104,7 @@ const topUpSinceLaunchQuest: QuestDefinition = {
 const overHundredPollenSinceLaunchQuest = {
     id: "top_up_100_since_launch",
     title: "Top up 100 Pollen",
-    description: `You have [topped up](/pollen#buy-pollen) 100 Pollen or more. _(from ${QUEST_REWARDS_LAUNCH_DATE_LABEL})_`,
+    description: `You have [topped up](/pollen?pack=p5#buy-pollen) 100 Pollen or more. _(from ${QUEST_REWARDS_LAUNCH_DATE_LABEL})_`,
     category: "grow",
     scope: "perUser",
     rewardAmount: 50,

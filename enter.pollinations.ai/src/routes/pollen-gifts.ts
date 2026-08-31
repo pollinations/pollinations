@@ -2,12 +2,12 @@ import { hashIp } from "@shared/client-ip.ts";
 import {
     isValidPollenGiftAmount,
     POLLEN_GIFT_AMOUNTS,
-    POLLEN_GIFT_PACKS,
     POLLEN_GIFT_PURPOSE,
 } from "@shared/pollen-gifts.ts";
 import {
-    SERVICE_FEE_NAME,
-    SERVICE_FEE_TAX_CODE,
+    createServiceFeeLineItem,
+    POLLEN_CHECKOUT_IMAGE_URL,
+    POLLEN_TAX_CODE,
 } from "@shared/pollen-packs.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import { Hono } from "hono";
@@ -23,6 +23,7 @@ import {
 import {
     consumePollenGiftRateLimit,
     getStripeGiftCardGateStatus,
+    MAX_POLLEN_GIFT_RATE_LIMIT_WINDOW_MS,
     POLLEN_GIFT_BUYER_KEY_METADATA,
 } from "../utils/pollen-gift-security.ts";
 import { createStripeClient } from "../utils/stripe.ts";
@@ -38,7 +39,7 @@ const CHECKOUT_RATE_WINDOW_MS = 60 * 1000;
 const RECEIPT_RATE_LIMIT = 10;
 const RECEIPT_RATE_WINDOW_MS = 60 * 1000;
 const REDEEM_RATE_LIMIT = 10;
-const REDEEM_RATE_WINDOW_MS = 10 * 60 * 1000;
+const REDEEM_RATE_WINDOW_MS = MAX_POLLEN_GIFT_RATE_LIMIT_WINDOW_MS;
 const INVALID_GIFT_MESSAGE = "This gift code is invalid or unavailable.";
 
 export const pollenGiftRoutes = new Hono<PollenGiftEnv>()
@@ -117,12 +118,6 @@ export const pollenGiftRoutes = new Hono<PollenGiftEnv>()
         cancelUrl.searchParams.set("mode", "gift");
         cancelUrl.searchParams.set("canceled", "true");
         const redeemUrl = new URL("/redeem", baseUrl).toString();
-        const packProduct = POLLEN_GIFT_PACKS[0];
-        if (!packProduct) {
-            await voidPendingPollenGift(c.env.DB, gift.id);
-            return c.json({ error: "Checkout configuration error" }, 500);
-        }
-
         try {
             const paymentMetadata = {
                 purpose: POLLEN_GIFT_PURPOSE,
@@ -146,24 +141,13 @@ export const pollenGiftRoutes = new Hono<PollenGiftEnv>()
                                 product_data: {
                                     name: `🎁 ${amount} Pollen gift`,
                                     description: `Redeem at ${redeemUrl}`,
-                                    images: [packProduct.checkoutImageUrl],
-                                    tax_code: packProduct.taxCode,
+                                    images: [POLLEN_CHECKOUT_IMAGE_URL],
+                                    tax_code: POLLEN_TAX_CODE,
                                 },
                             },
                             quantity: 1,
                         },
-                        {
-                            price_data: {
-                                currency: "usd",
-                                unit_amount: gift.serviceFeeCents,
-                                tax_behavior: "exclusive",
-                                product_data: {
-                                    name: SERVICE_FEE_NAME,
-                                    tax_code: SERVICE_FEE_TAX_CODE,
-                                },
-                            },
-                            quantity: 1,
-                        },
+                        createServiceFeeLineItem(gift.serviceFeeCents),
                     ],
                     adaptive_pricing: { enabled: true },
                     automatic_tax: { enabled: true },
@@ -189,7 +173,7 @@ export const pollenGiftRoutes = new Hono<PollenGiftEnv>()
                     custom_text: {
                         submit: {
                             message:
-                                "Your single-use gift code will be included in the paid invoice sent to your email.",
+                                "Your single-use gift code will be shown after payment and included in your Stripe invoice email.",
                         },
                     },
                     metadata: {
@@ -288,28 +272,16 @@ export const pollenGiftRoutes = new Hono<PollenGiftEnv>()
         async (c) => {
             c.header("Cache-Control", "no-store");
             const user = c.var.auth.requireUser();
-            const ipHash = await hashIp(
-                c.req.header("cf-connecting-ip") || "unknown",
-                c.env.BETTER_AUTH_SECRET,
-            );
-            const limits = await Promise.all([
-                consumePollenGiftRateLimit(c.env.DB, {
-                    key: `redeem-user:${user.id}`,
-                    limit: REDEEM_RATE_LIMIT,
-                    windowMs: REDEEM_RATE_WINDOW_MS,
-                }),
-                consumePollenGiftRateLimit(c.env.DB, {
-                    key: `redeem-ip:${ipHash ?? "unknown"}`,
-                    limit: REDEEM_RATE_LIMIT,
-                    windowMs: REDEEM_RATE_WINDOW_MS,
-                }),
-            ]);
-            const blockedLimit = limits.find((limit) => !limit.allowed);
-            if (blockedLimit) {
+            const redeemLimit = await consumePollenGiftRateLimit(c.env.DB, {
+                key: `redeem-user:${user.id}`,
+                limit: REDEEM_RATE_LIMIT,
+                windowMs: REDEEM_RATE_WINDOW_MS,
+            });
+            if (!redeemLimit.allowed) {
                 return c.json(
                     { error: "Too many attempts. Please try again later." },
                     429,
-                    { "Retry-After": String(blockedLimit.retryAfterSeconds) },
+                    { "Retry-After": String(redeemLimit.retryAfterSeconds) },
                 );
             }
 

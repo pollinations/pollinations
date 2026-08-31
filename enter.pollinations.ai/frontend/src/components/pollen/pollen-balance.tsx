@@ -1,12 +1,9 @@
 import {
     CardIcon,
     ClockIcon,
-    CopyButton,
     ExternalLinkButton,
-    GlobeIcon,
     InfoTip,
     InlineLink,
-    MailIcon,
     SproutIcon,
     Surface,
     Tooltip,
@@ -25,7 +22,7 @@ import {
 import { Link } from "@tanstack/react-router";
 import type { FC, ReactNode } from "react";
 import { AutoTopUpPanel, type BillingState } from "./auto-top-up-panel.tsx";
-import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
+import { PaymentTrustFooter } from "./payment-trust-footer.tsx";
 import { PollenPackSlider } from "./pollen-pack-controls.tsx";
 
 type PollenBalanceProps = {
@@ -349,8 +346,7 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                 <AutoTopUpPanel initialBillingState={initialBillingState} />
             </Surface>
             {redeemCard}
-            <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
-                <PaymentTrustBadge className="mt-0 pt-0" />
+            <PaymentTrustFooter>
                 <p className="flex items-start gap-1.5">
                     <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                     <span>
@@ -362,29 +358,7 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                         .
                     </span>
                 </p>
-                <p className="flex items-start gap-1.5">
-                    <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>
-                        Prices exclude tax — VAT or sales tax is added at
-                        checkout.
-                    </span>
-                </p>
-                <p className="flex items-start gap-1.5">
-                    <MailIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>
-                        Payment issue or missing pollen?{" "}
-                        <CopyButton
-                            value="billing@pollinations.ai"
-                            className="underline decoration-theme-text-soft/30 underline-offset-2 transition-colors hover:text-theme-text-soft"
-                        >
-                            {(copied) =>
-                                copied ? "Copied!" : "billing@pollinations.ai"
-                            }
-                        </CopyButton>{" "}
-                        — we reply same day.
-                    </span>
-                </p>
-            </div>
+            </PaymentTrustFooter>
         </>
     );
 };

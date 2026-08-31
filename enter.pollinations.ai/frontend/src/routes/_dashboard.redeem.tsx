@@ -15,6 +15,7 @@ import {
 } from "@tanstack/react-router";
 import { type FormEvent, useState } from "react";
 import { apiClient } from "../api.ts";
+import { responseError } from "../lib/response-error.ts";
 import { Route as DashboardRoute } from "./_dashboard.tsx";
 
 const PENDING_GIFT_CODE_KEY = "pending_pollen_gift_code";
@@ -46,18 +47,6 @@ function savePendingCode(code: string): void {
     } catch {
         // Redemption still works if browser storage is unavailable.
     }
-}
-
-function responseError(payload: unknown, fallback: string): string {
-    if (
-        payload &&
-        typeof payload === "object" &&
-        "error" in payload &&
-        typeof payload.error === "string"
-    ) {
-        return payload.error;
-    }
-    return fallback;
 }
 
 function RedeemPollenPage() {

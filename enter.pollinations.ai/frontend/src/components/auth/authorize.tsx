@@ -596,7 +596,7 @@ export function Authorize() {
                             </span>
                         )}
                         <a
-                            href={`${config.baseUrl}/pollen#buy-pollen`}
+                            href={`${config.baseUrl}/pollen?pack=p5#buy-pollen`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className={cn(

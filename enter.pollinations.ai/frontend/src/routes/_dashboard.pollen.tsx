@@ -6,7 +6,12 @@ import {
     POLLEN_PACKS,
     type PollenPackKey,
 } from "@shared/pollen-packs.ts";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import {
+    createFileRoute,
+    Link,
+    redirect,
+    useNavigate,
+} from "@tanstack/react-router";
 import {
     BuyPollenPanel,
     GiftPollenPanel,
@@ -43,6 +48,14 @@ export const Route = createFileRoute("/_dashboard/pollen")({
                 ? search.session_id
                 : undefined,
     }),
+    beforeLoad: ({ context, location, search }) => {
+        if (!context.user && search.pack) {
+            throw redirect({
+                to: "/sign-in",
+                search: { next: location.href },
+            });
+        }
+    },
     component: PollenPage,
 });
 
@@ -90,8 +103,8 @@ function PollenPage() {
                                 needed to purchase.
                             </span>
                             <span>
-                                Find your Pollen gift code on the invoice
-                                emailed after payment.
+                                Shown on screen after payment and in your Stripe
+                                invoice email.
                             </span>
                         </span>
                     )
@@ -144,7 +157,7 @@ function RedeemGiftCard() {
                 </p>
             </div>
             <div data-theme="accent" className="shrink-0">
-                <Button as="a" href="/redeem" className="w-full sm:w-auto">
+                <Button as={Link} to="/redeem" className="w-full sm:w-auto">
                     Redeem gift code
                 </Button>
             </div>

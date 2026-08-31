@@ -5,6 +5,7 @@ import {
 } from "./stripe-card-gate.ts";
 
 export const POLLEN_GIFT_BUYER_KEY_METADATA = "app_gift_buyer_key";
+export const MAX_POLLEN_GIFT_RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
 
 export async function getStripeGiftCardGateStatus(
     db: D1Database,
@@ -86,7 +87,7 @@ export async function consumePollenGiftRateLimit(
                 `DELETE FROM pollen_gift_rate_limit
                  WHERE window_started_at < ?`,
             )
-            .bind(now - STRIPE_NEW_CARD_WINDOW_MS),
+            .bind(now - MAX_POLLEN_GIFT_RATE_LIMIT_WINDOW_MS),
         db
             .prepare(
                 `INSERT INTO pollen_gift_rate_limit (

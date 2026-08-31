@@ -360,7 +360,6 @@ export const pollenGiftCode = sqliteTable("pollen_gift_code", {
   createdAt: integer("created_at", { mode: "timestamp_ms" })
     .defaultNow()
     .notNull(),
-  activatedAt: integer("activated_at", { mode: "timestamp_ms" }),
   redeemedAt: integer("redeemed_at", { mode: "timestamp_ms" }),
 }, (table) => [
   index("idx_pollen_gift_code_redeemer_user_id").on(table.redeemerUserId),

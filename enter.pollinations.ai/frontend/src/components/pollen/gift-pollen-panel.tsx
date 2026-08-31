@@ -3,9 +3,7 @@ import {
     Button,
     CopyButton,
     GiftIcon,
-    GlobeIcon,
     InlineLink,
-    MailIcon,
     Surface,
     Tooltip,
     WalletIcon,
@@ -20,7 +18,8 @@ import {
 } from "@shared/pollen-packs.ts";
 import { type FormEvent, type ReactNode, useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
-import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
+import { responseError } from "../../lib/response-error.ts";
+import { PaymentTrustFooter } from "./payment-trust-footer.tsx";
 import { PollenPackSlider } from "./pollen-pack-controls.tsx";
 
 type GiftPollenPanelProps = {
@@ -31,18 +30,6 @@ type GiftPollenPanelProps = {
     autoTopUpPanel?: ReactNode;
     redeemCard?: ReactNode;
 };
-
-function responseError(payload: unknown, fallback: string): string {
-    if (
-        payload &&
-        typeof payload === "object" &&
-        "error" in payload &&
-        typeof payload.error === "string"
-    ) {
-        return payload.error;
-    }
-    return fallback;
-}
 
 export function GiftPollenPanel({
     success = false,
@@ -58,7 +45,6 @@ export function GiftPollenPanel({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [purchasedCode, setPurchasedCode] = useState<string | null>(null);
-    const [copied, setCopied] = useState(false);
     const selectedPack =
         POLLEN_GIFT_PACKS.find((pack) => pack.amountUsd === selectedAmount) ??
         POLLEN_GIFT_PACKS[0];
@@ -105,22 +91,6 @@ export function GiftPollenPanel({
             disposed = true;
         };
     }, [sessionId, success]);
-
-    useEffect(() => {
-        if (!copied) return;
-        const timeout = window.setTimeout(() => setCopied(false), 2_000);
-        return () => window.clearTimeout(timeout);
-    }, [copied]);
-
-    async function copyPurchasedCode(): Promise<void> {
-        if (!purchasedCode) return;
-        try {
-            await navigator.clipboard.writeText(purchasedCode);
-            setCopied(true);
-        } catch {
-            setError("We couldn't copy the code. Please copy it manually.");
-        }
-    }
 
     function selectAmount(amount: number): void {
         setSelectedAmount(amount);
@@ -179,13 +149,18 @@ export function GiftPollenPanel({
                             <code className="break-all font-mono font-semibold">
                                 {purchasedCode}
                             </code>
-                            <Button
-                                type="button"
-                                size="sm"
-                                onClick={() => void copyPurchasedCode()}
+                            <CopyButton
+                                value={purchasedCode}
+                                tooltip={null}
+                                onCopyError={() =>
+                                    setError(
+                                        "We couldn't copy the code. Please copy it manually.",
+                                    )
+                                }
+                                className="inline-flex items-center justify-center rounded-full bg-theme-bg-active px-2 pt-0.5 pb-1 text-sm font-medium text-theme-text-strong transition-colors hover:bg-theme-bg-hover"
                             >
-                                {copied ? "Copied" : "Copy code"}
-                            </Button>
+                                {(copied) => (copied ? "Copied" : "Copy code")}
+                            </CopyButton>
                         </div>
                     ) : (
                         "Stripe will email your gift code after payment is confirmed."
@@ -267,8 +242,7 @@ export function GiftPollenPanel({
 
             {error && <Alert intent="danger">{error}</Alert>}
 
-            <div className="mt-1 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
-                <PaymentTrustBadge className="mt-0 pt-0" />
+            <PaymentTrustFooter className="mt-1">
                 <p className="flex items-start gap-1.5">
                     <GiftIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                     <span>
@@ -288,29 +262,7 @@ export function GiftPollenPanel({
                         </InlineLink>
                     </span>
                 </p>
-                <p className="flex items-start gap-1.5">
-                    <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>
-                        Prices exclude tax — VAT or sales tax is added at
-                        checkout.
-                    </span>
-                </p>
-                <p className="flex items-start gap-1.5">
-                    <MailIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>
-                        Payment issue or missing pollen?{" "}
-                        <CopyButton
-                            value="billing@pollinations.ai"
-                            className="underline decoration-theme-text-soft/30 underline-offset-2 transition-colors hover:text-theme-text-soft"
-                        >
-                            {(copied) =>
-                                copied ? "Copied!" : "billing@pollinations.ai"
-                            }
-                        </CopyButton>{" "}
-                        — we reply same day.
-                    </span>
-                </p>
-            </div>
+            </PaymentTrustFooter>
         </div>
     );
 }

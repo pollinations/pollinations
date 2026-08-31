@@ -47,6 +47,7 @@ import {
     PROMPT_AGENT_BASE_URL_PLACEHOLDER,
     type PromptAgentListingPayload,
     parseCommunityModelId,
+    parseListingPayload,
     validateCommunityEndpointUrl,
 } from "@shared/community-endpoints.ts";
 import {
@@ -488,6 +489,69 @@ async function createCommunityFallbackPair({
 }
 
 describe("community endpoint helpers", () => {
+    it("parses stored proxy payloads into the canonical schema", () => {
+        const payload = parseListingPayload(
+            "proxy",
+            JSON.stringify({
+                bearerTokenCiphertext: "ciphertext",
+                modality: "image",
+                imagePricing: "request",
+                inputModalities: ["image", "image"],
+                perUserRpm: null,
+                fallbacks: ["owner/model"],
+                prices: { completionImagePrice: 0.2 },
+            }),
+        );
+
+        expect(payload).toMatchObject({
+            bearerTokenCiphertext: "ciphertext",
+            paidOnly: false,
+            modality: "image",
+            imagePricing: "request",
+            inputModalities: ["image"],
+            perUserRpm: null,
+            fallbacks: ["owner/model"],
+            prices: {
+                promptTextPrice: 0,
+                completionImagePrice: 0.2,
+                completionVideoPrice: 0,
+            },
+        });
+    });
+
+    it("rejects stored payloads that do not match their listing schema", () => {
+        expect(parseListingPayload("proxy", "not json")).toBeNull();
+        expect(
+            parseListingPayload("proxy", JSON.stringify({ prices: {} })),
+        ).toBeNull();
+        expect(
+            parseListingPayload(
+                "prompt_agent",
+                JSON.stringify({ systemPrompt: "Missing base model" }),
+            ),
+        ).toBeNull();
+        expect(
+            parseListingPayload(
+                "endpoint_agent",
+                JSON.stringify({ perUserRpm: -1 }),
+            ),
+        ).toBeNull();
+        expect(
+            parseListingPayload(
+                "proxy",
+                JSON.stringify({
+                    bearerTokenCiphertext: "ciphertext",
+                    modality: "image",
+                    imagePricing: "request",
+                    inputModalities: ["unsupported"],
+                    perUserRpm: null,
+                    fallbacks: [],
+                    prices: {},
+                }),
+            ),
+        ).toBeNull();
+    });
+
     it("checks the community endpoint owner GitHub ID allowlist", () => {
         expect(
             isCommunityEndpointOwnerAllowed({

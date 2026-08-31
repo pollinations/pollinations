@@ -57,6 +57,50 @@ async function publishPendingModel(
 }
 
 describe("community endpoint configuration policy", () => {
+    test("requires human responder models to be text proxies without fallbacks", async ({
+        sessionToken,
+    }) => {
+        await approveCommunityModels();
+        const request = (overrides: Record<string, unknown>) =>
+            SELF.fetch(endpointUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: `better-auth.session_token=${sessionToken}`,
+                },
+                body: JSON.stringify({
+                    name: `human-${crypto.randomUUID()}`,
+                    title: "Human responders",
+                    visibility: "public",
+                    baseUrl: "https://human.example.com/v1",
+                    bearerToken: "test-provider-token",
+                    humanResponders: true,
+                    ...overrides,
+                }),
+            });
+
+        const notText = await request({ modality: "image" });
+        expect(notText.status).toBe(400);
+        await expect(notText.text()).resolves.toContain(
+            "Human responder models must use the text modality",
+        );
+
+        const withFallback = await request({
+            fallbacks: ["owner/fallback"],
+        });
+        expect(withFallback.status).toBe(400);
+        await expect(withFallback.text()).resolves.toContain(
+            "Human responder models cannot declare fallbacks",
+        );
+
+        const valid = await request({});
+        expect(valid.status, await valid.clone().text()).toBe(200);
+        await expect(valid.json()).resolves.toMatchObject({
+            humanResponders: true,
+            fallbacks: [],
+        });
+    });
+
     test("creates a private endpoint agent without proxy credentials or pricing", async ({
         sessionToken,
     }) => {
@@ -142,6 +186,7 @@ describe("community endpoint configuration policy", () => {
                 inputModalities: ["audio"],
                 advertised: { contextLength: 32000 },
                 paidOnly: false,
+                humanResponders: false,
             }),
         ).toThrow("audio input is not supported for image models");
     });

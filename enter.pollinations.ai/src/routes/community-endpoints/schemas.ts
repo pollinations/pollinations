@@ -73,6 +73,11 @@ const PaidOnlySchema = z
     .describe(
         "Restrict callers to spending Paid Pollen on this model. Use it when the upstream bills per use, so Quest Pollen cannot cover the price and leave you paying the inference cost.",
     );
+const HumanRespondersSchema = z
+    .boolean()
+    .describe(
+        "Treat output as a response written by a linked community member. Requires a text model with no fallbacks.",
+    );
 const PerUserRpmSchema = z
     .number()
     .finite()
@@ -127,6 +132,7 @@ const ProxyCreateSchema = z
         advertised: AdvertisedSchema.optional(),
         perUserRpm: PerUserRpmSchema.optional(),
         paidOnly: PaidOnlySchema.optional().default(false),
+        humanResponders: HumanRespondersSchema.optional().default(false),
         fallbacks: FallbacksSchema.optional(),
         ...UpdatePriceFieldsSchema,
     })
@@ -161,6 +167,7 @@ const ProxyUpdateSchema = z
         bearerToken: EndpointFieldsSchema.bearerToken.optional(),
         perUserRpm: PerUserRpmSchema.optional(),
         paidOnly: PaidOnlySchema.optional(),
+        humanResponders: HumanRespondersSchema.optional(),
         imagePricing: ImagePricingSchema.optional(),
         inputModalities: InputModalitiesSchema.optional(),
         advertised: AdvertisedSchema.optional(),
@@ -265,6 +272,7 @@ const ProxyEndpointResponseSchema = z
         advertised: AdvertisedSchema,
         perUserRpm: PerUserRpmSchema,
         paidOnly: z.boolean(),
+        humanResponders: z.boolean(),
         fallbacks: z.array(z.string()),
         ...ResponsePriceFieldsSchema,
     })

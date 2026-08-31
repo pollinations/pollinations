@@ -111,6 +111,7 @@ type CommunityEndpointFixture = Omit<CommunityEndpointInsert, "title"> &
         bearerTokenCiphertext?: string | null;
         perUserRpm?: number | null;
         fallbacks?: string[] | null;
+        humanResponders?: boolean;
     };
 
 /**
@@ -132,6 +133,7 @@ function insertCommunityEndpoints(
             bearerTokenCiphertext,
             perUserRpm,
             fallbacks,
+            humanResponders,
             promptTextPrice: _promptTextPrice,
             promptCachedPrice: _promptCachedPrice,
             promptCacheWritePrice: _promptCacheWritePrice,
@@ -169,6 +171,7 @@ function insertCommunityEndpoints(
                             ),
                         perUserRpm: perUserRpm ?? null,
                         fallbacks: fallbacks ?? [],
+                        humanResponders: humanResponders ?? false,
                         prices: communityEndpointPrices(row),
                     };
         return {
@@ -2589,6 +2592,7 @@ fixtureTest(
             ),
             promptTextPrice: 0.1 / 1_000_000,
             completionTextPrice: 0.2 / 1_000_000,
+            humanResponders: true,
             createdAt: new Date(),
             updatedAt: new Date(),
         });
@@ -2663,6 +2667,10 @@ fixtureTest(
                 }),
             ]),
         );
+        const registry = await getGenerationModelRegistry(env);
+        expect(registry.resolve(modelId)?.communityEndpoint).toMatchObject({
+            humanResponders: true,
+        });
     },
 );
 

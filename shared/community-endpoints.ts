@@ -532,6 +532,8 @@ export type ListingType = (typeof LISTING_TYPES)[number];
  */
 export type ProxyListingPayload = {
     bearerTokenCiphertext: string;
+    // Marks a text proxy whose completion is written by a linked person.
+    humanResponders: boolean;
     // Owner-set: callers may only spend Paid Pollen on this model.
     paidOnly: boolean;
     modality: CommunityEndpointModality;
@@ -622,8 +624,9 @@ export function parseListingPayload<K extends ListingType>(
     const modality = normalizeCommunityEndpointModality(
         typeof source.modality === "string" ? source.modality : null,
     );
-    return {
+    const payload = {
         bearerTokenCiphertext,
+        humanResponders: source.humanResponders === true,
         paidOnly: source.paidOnly === true,
         modality,
         imagePricing: normalizeCommunityEndpointImagePricing(
@@ -653,7 +656,14 @@ export function parseListingPayload<K extends ListingType>(
                 ? source.prices
                 : {}) as Partial<CommunityEndpointPrices>,
         ),
-    } as ListingPayloadByType[K];
+    } satisfies ProxyListingPayload;
+    if (
+        payload.humanResponders &&
+        (payload.modality !== "text" || payload.fallbacks.length > 0)
+    ) {
+        return null;
+    }
+    return payload as ListingPayloadByType[K];
 }
 
 export function pendingCommunityEndpointChangeIsReady(
@@ -712,6 +722,7 @@ type CommunityEndpointRuntimeBase = {
     upstreamModel: string;
     visibility: CommunityEndpointVisibility;
     paidOnly: boolean;
+    humanResponders?: boolean;
     // Exact gateway-side cap per Pollinations user. Null delegates capacity
     // limits to the upstream, whose 429 then remains a model failure.
     perUserRpm: number | null;

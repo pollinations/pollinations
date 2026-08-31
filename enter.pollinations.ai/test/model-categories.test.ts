@@ -158,7 +158,7 @@ describe("model categories", () => {
             scope: undefined,
             category: undefined,
             q: undefined,
-            sort: undefined,
+            sort: "newest",
         });
     });
 

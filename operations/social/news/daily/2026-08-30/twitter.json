@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-08-30",
+  "period_start": "2026-08-30",
+  "period_end": "2026-08-30",
+  "generated_at": "2026-08-31T06:38:13.255746+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-08-30/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped: community embedding models now work through the standard API; Floret has a live map of the media garden; and AI Story & Image Studio turns one prompt into a pictured story.\n\n4 PRs merged. the garden acquired a plot twist."
+}

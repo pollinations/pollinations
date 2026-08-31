@@ -1,0 +1,35 @@
+{
+  "pr_number": 14180,
+  "title": "refactor: declare community modality behavior",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14180",
+  "merged_at": "2026-08-31T12:46:50Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds one shared modality specification for catalog category, inputs, outputs, routes, and pricing fields\n- Uses the same specification in validation, dashboard controls, and model definitions\n- Replaces five endpoint helpers and the nested community registry branch with one resolver\n- Preserves transcription route restrictions and image-edit detection\n\nTests:\n- `npm run typecheck` in Enter and Gen\n- 6 community endpoint policy tests\n- 9 focused community modality/catalog integration tests",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "One map for the meadow",
+    "blurb": "Community models now grow from one shared little field guide instead of several nearly-identical ones. Polli put the routes, controls, pricing, and validation on the same page; remarkably, they now agree.",
+    "summary": "Community endpoint behavior is now declared in one shared modality specification used for catalog categories, inputs, outputs, routes, pricing fields, validation, dashboard controls, and model definitions, while retaining transcription-route restrictions and image-edit detection.",
+    "impact": "Community model listings and endpoints now draw their rules from the same resolver, making route access, dashboard controls, pricing metadata, transcription handling, and image-edit recognition more consistent.",
+    "keywords": [
+      "community-models",
+      "modalities",
+      "model-catalog",
+      "endpoint-routing",
+      "validation",
+      "dashboard",
+      "pricing"
+    ],
+    "visual_concept": "Depict a cozy garden field guide that unifies several labeled paths—catalog, routes, inputs, outputs, pricing, and validation—into one map. Polli, wearing a tiny cartographer hat, points at the shared map while the eager CRT Monitor Robot happily connects glowing code-vines from the map to a community-model garden; include a small transcription microphone path and an image-edit paintbrush path to represent the preserved special handling.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny cartographer hat and studying one shared garden map labeled in simple pixel text “MODALITIES”; a cute chunky CRT monitor robot connects code-vines from the map to flower beds for catalog, routes, pricing, a microphone, and a paintbrush. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with blooming code-plants and subtle CRT glow; nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-31/PR-14180.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny cartographer hat and studying one shared garden map labeled in simple pixel text “MODALITIES”; a cute chunky CRT monitor robot connects code-vines from the map to flower beds for catalog, routes, pricing, a microphone, and a paintbrush. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with blooming code-plants and subtle CRT glow; nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-31T12:47:49.514531+00:00"
+}

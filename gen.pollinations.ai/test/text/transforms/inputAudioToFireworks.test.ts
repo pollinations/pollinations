@@ -21,6 +21,13 @@ describe("Fireworks audio input", () => {
                                 format: "wav",
                             },
                         },
+                        {
+                            type: "input_audio",
+                            input_audio: {
+                                data: "T2dnUw==",
+                                format: "opus",
+                            },
+                        },
                     ],
                 },
             ],
@@ -33,6 +40,12 @@ describe("Fireworks audio input", () => {
                 type: "audio_url",
                 audio_url: {
                     url: "data:audio/wav;base64,UklGRgAAAABXQVZF",
+                },
+            },
+            {
+                type: "audio_url",
+                audio_url: {
+                    url: "data:audio/ogg;base64,T2dnUw==",
                 },
             },
         ]);

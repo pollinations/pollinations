@@ -1,0 +1,33 @@
+{
+  "pr_number": 14184,
+  "title": "refactor: require community model titles",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14184",
+  "merged_at": "2026-08-31T14:48:19Z",
+  "labels": [],
+  "pr_body_excerpt": "- Backfills legacy titles from the existing title, description, or model slug\n- Makes the community listing title column required\n- Removes runtime title fallbacks from the catalog, dashboard, and agents API\n- Adds migration coverage for all backfill paths",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Every flower gets a name",
+    "blurb": "Community models now arrive with proper name tags instead of making the catalog guess. Polli has put the label maker somewhere safe, allegedly.",
+    "summary": "Community model listing titles are now required, with a migration that backfills legacy titles from each model's existing title, description, or slug and removes catalog, dashboard, and Agents API fallback logic.",
+    "impact": "Community models will show consistent titles across the catalog, dashboard, and Agents API, including older entries that previously depended on runtime fallbacks.",
+    "keywords": [
+      "community-models",
+      "catalog",
+      "agents-api",
+      "database-migration",
+      "metadata"
+    ],
+    "visual_concept": "Depict a cozy community-model garden where every code-flower has a clear pixel nameplate, representing required and backfilled titles. Polli, wearing a tiny librarian hat, carefully labels a previously unnamed plant while a helpful CRT monitor robot holds a roster of model names.",
+    "image_prompt": "A cozy pixel art community-model garden where the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny librarian hat and attaches clear nameplates to code-flowers while a cute chunky CRT monitor robot holds a list of model titles. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley, with subtle pixel-font text reading \"TITLED\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-31/PR-14184.jpg",
+    "prompt": "A cozy pixel art community-model garden where the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny librarian hat and attaches clear nameplates to code-flowers while a cute chunky CRT monitor robot holds a list of model titles. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley, with subtle pixel-font text reading \"TITLED\"."
+  },
+  "generated_at": "2026-08-31T14:49:26.348757+00:00"
+}

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { publicPriceInfo, toFixedPoint } from "./public-pricing";
 import {
     type BillingAdjustmentRule,
     getPriceDefinitionForModel,
@@ -118,14 +119,6 @@ export const ModelInfoSchema = z.object({
 
 export type ModelInfo = z.infer<typeof ModelInfoSchema>;
 
-/**
- * Format a number to fixed-point string, avoiding scientific notation (e.g. 1.65e-7 → "0.000000165").
- * Strips trailing zeros for cleaner output.
- */
-function toFixedPoint(n: number): string {
-    return n.toFixed(12).replace(/\.?0+$/, "");
-}
-
 function getCapabilities(service: ModelDefinition): ModelCapability[] {
     const capabilities: ModelCapability[] = [];
     if (service.tools) capabilities.push("tool_calling");
@@ -158,18 +151,7 @@ function pricingAdjustmentInfoFromRule(
     rule: BillingAdjustmentRule,
     service: ModelDefinition,
 ) {
-    const { label, quantity, unit, suffix, option } = rule.publicPricing;
-    return {
-        name: rule.id,
-        label,
-        kind: rule.kind,
-        price: toFixedPoint(rule.unitCost * quantity * service.priceMultiplier),
-        currency: "pollen" as const,
-        quantity,
-        unit,
-        suffix,
-        option,
-    };
+    return publicPriceInfo(rule, service.priceMultiplier);
 }
 
 export function modelInfoFromDefinition(

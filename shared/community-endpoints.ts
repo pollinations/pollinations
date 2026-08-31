@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { isCommunityModelAllowedGithubId } from "./auth/github-id-list.ts";
-import { HttpError } from "./http-error.ts";
 import { MCP_SERVER_IDS } from "./registry/mcp.ts";
 import type { ModelCapability } from "./registry/model-info.ts";
 import {
@@ -17,7 +16,6 @@ import {
     OPENAI_EMBEDDING_USAGE_PATHS,
     type OpenAIChatUsageType,
 } from "./registry/usage-headers.ts";
-import { readResponseBytes } from "./response-bytes.ts";
 
 export const LEGACY_COMMUNITY_MODEL_PREFIX = "community/";
 export const COMMUNITY_MODEL_REWARD_RATE = 0.75;
@@ -63,12 +61,6 @@ export const MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND = 0.5;
 // (scribe, $0.00367/min). Keep the division visible — a bare 0.006 here reads
 // like OpenAI's per-minute rate but would bill 60x that per second.
 export const MAX_COMMUNITY_PRICE_PER_SECOND = 0.012 / 60;
-export const MAX_COMMUNITY_IMAGE_BYTES = 20 * 1024 * 1024;
-export const MAX_COMMUNITY_VIDEO_BYTES = 20 * 1024 * 1024;
-// A JSON envelope carrying a 20 MB base64 clip is at most ~28 MB; leave a
-// small amount of room for the envelope while still bounding provider output.
-export const MAX_COMMUNITY_MEDIA_RESPONSE_BYTES =
-    Math.ceil((MAX_COMMUNITY_VIDEO_BYTES * 4) / 3) + 64 * 1024;
 // How long we wait on a community endpoint before giving up. Generous because
 // these are self-hosted hobby GPUs that cold-start, and in line with the text
 // providers (Portkey and Azure both use 290s). Workers impose no wall-clock
@@ -678,6 +670,44 @@ export function applyPendingProxyPricing(
         : current;
 }
 
+export function resolveEffectiveProxyListing(
+    state: {
+        visibility: CommunityEndpointVisibility;
+        payload: ProxyListingPayload;
+        pendingVisibility: CommunityEndpointVisibility | null;
+        pendingPayload: ProxyListingPayload | null;
+        pendingAt: Date | null;
+    },
+    now = Date.now(),
+) {
+    const pendingAt = state.pendingAt;
+    const pendingReady = pendingCommunityEndpointChangeIsReady(pendingAt, now);
+    const hasPending =
+        pendingAt !== null &&
+        (state.pendingVisibility !== null || state.pendingPayload !== null);
+    return {
+        pendingReady,
+        visibility:
+            pendingReady && state.pendingVisibility
+                ? state.pendingVisibility
+                : state.visibility,
+        payload: pendingReady
+            ? applyPendingProxyPricing(state.payload, state.pendingPayload)
+            : state.payload,
+        pending:
+            !pendingReady && hasPending
+                ? {
+                      effectiveAt: new Date(
+                          pendingAt.getTime() +
+                              COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
+                      ),
+                      visibility: state.pendingVisibility,
+                      payload: state.pendingPayload,
+                  }
+                : null,
+    };
+}
+
 type CommunityEndpointRuntimeBase = {
     id: string;
     ownerUserId: string;
@@ -836,26 +866,6 @@ export function parseCommunityModelId(
     return { ownerGithubUsername, modelName };
 }
 
-export function validateCommunityEndpointUrl(value: string): string {
-    if (value !== value.trim()) {
-        throw new Error("Endpoint URL cannot include surrounding whitespace");
-    }
-    const url = new URL(value);
-    if (url.protocol !== "https:") {
-        throw new Error("Endpoint URL must use https");
-    }
-    if (url.username || url.password) {
-        throw new Error("Endpoint URL cannot include credentials");
-    }
-    if (isBlockedHostname(url.hostname)) {
-        throw new Error("Endpoint URL cannot target a private host");
-    }
-    if (url.hash) {
-        throw new Error("Endpoint URL cannot include a fragment");
-    }
-    return value;
-}
-
 export function normalizeCommunityProviderUrl(value: string): string {
     const url = new URL(value.trim());
     if (url.protocol !== "https:") {
@@ -866,239 +876,6 @@ export function normalizeCommunityProviderUrl(value: string): string {
     }
     url.hash = "";
     return url.toString();
-}
-
-export function normalizeCommunityAssetUrl(
-    value: string,
-    endpointBaseUrl: string,
-): string {
-    const url = new URL(value);
-    if (url.protocol !== "http:" && url.protocol !== "https:") {
-        throw new Error("Image URL must use http or https");
-    }
-    if (url.username || url.password || isBlockedHostname(url.hostname)) {
-        throw new Error("Image URL cannot target a private host");
-    }
-    if (
-        url.protocol === "http:" &&
-        url.hostname !== new URL(endpointBaseUrl).hostname
-    ) {
-        throw new Error("HTTP image URL must use the endpoint host");
-    }
-    url.hash = "";
-    return url.toString();
-}
-
-/**
- * Pull the first usable image out of an OpenAI images response: inline base64
- * when present, otherwise the URL it points at, fetched under the shared
- * timeout and size cap.
- *
- * Returns null when the body carries no usable image, so each caller can
- * phrase that in its own words. A URL that is unsafe, unreachable, or oversized
- * throws HttpError(502) — the gen funnel renders that status directly, and the
- * enter probe flattens it to a 400 with the same message.
- */
-export async function firstCommunityImageBytes(
-    body: unknown,
-    endpointBaseUrl: string,
-): Promise<Uint8Array | null> {
-    if (
-        !body ||
-        typeof body !== "object" ||
-        !("data" in body) ||
-        !Array.isArray(body.data)
-    ) {
-        return null;
-    }
-    for (const image of body.data) {
-        if (!image || typeof image !== "object") continue;
-        if (
-            "b64_json" in image &&
-            typeof image.b64_json === "string" &&
-            image.b64_json.length > 0
-        ) {
-            return decodeCommunityBase64(image.b64_json);
-        }
-        if (
-            "url" in image &&
-            typeof image.url === "string" &&
-            image.url.length > 0
-        ) {
-            return fetchCommunityImageBytes(image.url, endpointBaseUrl);
-        }
-    }
-    return null;
-}
-
-/**
- * Read one completed clip from the synchronous community video contract.
- * Publishers return OpenAI-images-style `data` with either `b64_json` or a
- * downloadable URL. Billing uses the duration accepted by Pollinations, not
- * publisher-provided metadata.
- */
-export async function firstCommunityVideoBytes(
-    body: unknown,
-    endpointBaseUrl: string,
-): Promise<Uint8Array | null> {
-    if (
-        !body ||
-        typeof body !== "object" ||
-        !("data" in body) ||
-        !Array.isArray(body.data)
-    ) {
-        return null;
-    }
-    for (const video of body.data) {
-        if (!video || typeof video !== "object") continue;
-        if (
-            "b64_json" in video &&
-            typeof video.b64_json === "string" &&
-            video.b64_json.length > 0
-        ) {
-            // Base64 expands bytes by roughly 4/3. Reject oversized inline
-            // payloads before decoding so an untrusted endpoint cannot force a
-            // much larger temporary allocation inside the Worker.
-            if (
-                video.b64_json.length >
-                Math.ceil((MAX_COMMUNITY_VIDEO_BYTES * 4) / 3) + 128
-            ) {
-                throw new HttpError("Endpoint video is larger than 20 MB", 502);
-            }
-            const bytes = decodeCommunityBase64(video.b64_json);
-            if (!bytes) continue;
-            if (bytes.byteLength > MAX_COMMUNITY_VIDEO_BYTES) {
-                throw new HttpError("Endpoint video is larger than 20 MB", 502);
-            }
-            return bytes;
-        }
-        if (
-            "url" in video &&
-            typeof video.url === "string" &&
-            video.url.length > 0
-        ) {
-            return fetchCommunityVideoBytes(video.url, endpointBaseUrl);
-        }
-    }
-    return null;
-}
-
-async function fetchCommunityImageBytes(
-    value: string,
-    endpointBaseUrl: string,
-): Promise<Uint8Array> {
-    let url: string;
-    try {
-        url = normalizeCommunityAssetUrl(value, endpointBaseUrl);
-    } catch {
-        throw new HttpError("Endpoint returned an unsafe image URL", 502);
-    }
-    let response: Response;
-    try {
-        // The URL is validated against https + the private-host blocklist
-        // above; following redirects would let the endpoint bounce us to an
-        // unvalidated destination.
-        response = await fetch(url, {
-            redirect: "manual",
-            signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
-        });
-    } catch (error) {
-        throw new HttpError(
-            "Endpoint image URL timed out or could not connect",
-            502,
-            { error: error instanceof Error ? error.message : String(error) },
-            url,
-        );
-    }
-    if (!response.ok) {
-        throw new HttpError(
-            `Endpoint image URL responded ${response.status}`,
-            502,
-            undefined,
-            url,
-        );
-    }
-    return readResponseBytes(
-        response,
-        MAX_COMMUNITY_IMAGE_BYTES,
-        () => new HttpError("Endpoint image is larger than 20 MB", 502),
-    );
-}
-
-export function decodeCommunityBase64(value: string): Uint8Array | null {
-    try {
-        const encoded = value
-            .replace(/^data:[^,]+,/, "")
-            .replace(/\s/g, "")
-            .replace(/-/g, "+")
-            .replace(/_/g, "/");
-        const decoded = atob(encoded);
-        return Uint8Array.from(decoded, (character) => character.charCodeAt(0));
-    } catch {
-        return null;
-    }
-}
-
-export function communityChatCompletionsUrl(baseUrl: string): string {
-    return communityOpenAIEndpointUrl(baseUrl, "/chat/completions");
-}
-
-export function communityImageGenerationsUrl(baseUrl: string): string {
-    return communityOpenAIEndpointUrl(baseUrl, "/images/generations");
-}
-
-export function communityImageEditsUrl(baseUrl: string): string {
-    return communityOpenAIEndpointUrl(baseUrl, "/images/edits");
-}
-
-async function fetchCommunityVideoBytes(
-    value: string,
-    endpointBaseUrl: string,
-): Promise<Uint8Array> {
-    let url: string;
-    try {
-        url = normalizeCommunityAssetUrl(value, endpointBaseUrl);
-    } catch {
-        throw new HttpError("Endpoint returned an unsafe video URL", 502);
-    }
-    let response: Response;
-    try {
-        response = await fetch(url, {
-            redirect: "manual",
-            signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
-        });
-    } catch (error) {
-        throw new HttpError(
-            "Endpoint video URL timed out or could not connect",
-            502,
-            { error: error instanceof Error ? error.message : String(error) },
-            url,
-        );
-    }
-    if (!response.ok) {
-        throw new HttpError(
-            `Endpoint video URL responded ${response.status}`,
-            502,
-            undefined,
-            url,
-        );
-    }
-    try {
-        return await readResponseBytes(
-            response,
-            MAX_COMMUNITY_VIDEO_BYTES,
-            () => new HttpError("Endpoint video is larger than 20 MB", 502),
-        );
-    } catch (error) {
-        if (error instanceof HttpError) throw error;
-        throw new HttpError("Endpoint video could not be read", 502, {
-            error: error instanceof Error ? error.message : String(error),
-        });
-    }
-}
-
-export function communityAudioTranscriptionsUrl(baseUrl: string): string {
-    return communityOpenAIEndpointUrl(baseUrl, "/audio/transcriptions");
 }
 
 /**
@@ -1124,45 +901,6 @@ export function communityTranscriptionSeconds(body: unknown): number | null {
         }
     }
     return null;
-}
-
-const COMMUNITY_OPENAI_ENDPOINT_SUFFIXES = [
-    "/chat/completions",
-    "/images/generations",
-    "/images/edits",
-    "/audio/transcriptions",
-    "/embeddings",
-] as const;
-
-function configuredCommunityEndpointSuffix(url: URL): string | undefined {
-    const pathname = url.pathname.replace(/\/+$/, "");
-    return COMMUNITY_OPENAI_ENDPOINT_SUFFIXES.find((suffix) =>
-        pathname.endsWith(suffix),
-    );
-}
-
-export function communityEmbeddingsUrl(baseUrl: string): string {
-    return communityOpenAIEndpointUrl(baseUrl, "/embeddings");
-}
-
-export function communityOpenAIBaseUrl(baseUrl: string): string {
-    const validated = validateCommunityEndpointUrl(baseUrl);
-    const url = new URL(validated);
-    const suffix = configuredCommunityEndpointSuffix(url);
-    if (!suffix) return validated;
-    const pathname = url.pathname.replace(/\/+$/, "");
-    url.pathname = pathname.slice(0, -suffix.length);
-    return url.toString();
-}
-
-function communityOpenAIEndpointUrl(baseUrl: string, suffix: string): string {
-    const validated = validateCommunityEndpointUrl(baseUrl);
-    if (configuredCommunityEndpointSuffix(new URL(validated)) === suffix) {
-        return validated;
-    }
-    const url = new URL(communityOpenAIBaseUrl(validated));
-    url.pathname = `${url.pathname.replace(/\/+$/, "")}${suffix}`;
-    return url.toString();
 }
 
 export function communityPriceDefinition(
@@ -1249,39 +987,4 @@ export function communityModelDefinition(
         ...(capabilities.includes("reasoning") ? { reasoning: true } : {}),
         ...advertised,
     };
-}
-
-function isBlockedHostname(hostname: string): boolean {
-    const host = hostname
-        .replace(/^\[|\]$/g, "")
-        .replace(/\.$/, "")
-        .toLowerCase();
-    if (host === "localhost" || host.endsWith(".localhost")) return true;
-    if (host.endsWith(".local")) return true;
-    if (host.includes(":")) return true;
-    if (host.startsWith("127.") || host.startsWith("10.")) return true;
-    if (host.startsWith("169.254.")) return true;
-    if (host.startsWith("100.")) {
-        const second = Number(host.split(".")[1]);
-        if (second >= 64 && second <= 127) return true;
-    }
-    if (host.startsWith("192.168.")) return true;
-    const ipv4 = host.split(".").map(Number);
-    if (
-        ipv4.length === 4 &&
-        ipv4.every(
-            (part) => Number.isInteger(part) && part >= 0 && part <= 255,
-        ) &&
-        (ipv4[0] === 0 ||
-            (ipv4[0] ?? 0) >= 224 ||
-            (ipv4[0] === 198 && (ipv4[1] === 18 || ipv4[1] === 19)))
-    ) {
-        return true;
-    }
-    const match172 = host.match(/^172\.(\d+)\./);
-    if (match172) {
-        const second = Number(match172[1]);
-        if (second >= 16 && second <= 31) return true;
-    }
-    return false;
 }

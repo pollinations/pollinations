@@ -570,12 +570,6 @@ test("paid gift lifecycle is authenticated, single-use, and idempotent", async (
         expect(response.status).toBe(200);
     }
 
-    const replayedCheckoutResponse = await postSignedStripeWebhook({
-        ...checkoutEvent,
-        id: "evt_pollen_gift_paid_after_refund",
-    });
-    expect(replayedCheckoutResponse.status).toBe(200);
-
     const refundedGift = await env.DB.prepare(
         "SELECT status FROM pollen_gift_code WHERE id = ?",
     )

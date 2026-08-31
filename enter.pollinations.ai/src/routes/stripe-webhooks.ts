@@ -536,15 +536,17 @@ function emitPaymentIntentAnalytics(
 }
 
 /**
- * Handle successful checkout session completion.
- * Credits pollen to user's packBalance and persists observability fields.
- * Pollen amount is derived from the selected pack metadata.
+ * Fulfill either a gift or a regular Pollen checkout.
  */
-const handleCheckoutSessionCompleted = async (
+const fulfillCheckoutSession = async (
     event: Stripe.Event,
     session: Stripe.Checkout.Session,
     env: CloudflareBindings,
 ): Promise<CheckoutSessionResult> => {
+    if (isPollenGiftCheckoutSession(session)) {
+        return fulfillPollenGiftCheckout(env.DB, session);
+    }
+
     const metadata = session.metadata;
 
     if (!metadata?.userId) {
@@ -725,13 +727,11 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                 const session = event.data.object as Stripe.Checkout.Session;
 
                 if (session.payment_status === "paid") {
-                    const result = isPollenGiftCheckoutSession(session)
-                        ? await fulfillPollenGiftCheckout(c.env.DB, session)
-                        : await handleCheckoutSessionCompleted(
-                              event,
-                              session,
-                              c.env,
-                          );
+                    const result = await fulfillCheckoutSession(
+                        event,
+                        session,
+                        c.env,
+                    );
 
                     if (result.duplicate) {
                         break;
@@ -755,13 +755,11 @@ export const stripeWebhooksRoutes = new Hono<Env>()
             case "checkout.session.async_payment_succeeded": {
                 const session = event.data.object as Stripe.Checkout.Session;
 
-                const result = isPollenGiftCheckoutSession(session)
-                    ? await fulfillPollenGiftCheckout(c.env.DB, session)
-                    : await handleCheckoutSessionCompleted(
-                          event,
-                          session,
-                          c.env,
-                      );
+                const result = await fulfillCheckoutSession(
+                    event,
+                    session,
+                    c.env,
+                );
 
                 if (result.duplicate) {
                     break;

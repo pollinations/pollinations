@@ -61,6 +61,65 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 1, // Azure FLUX.1 Kontext edit route forwards one input image.
     },
+    "flux-2-pro": {
+        aliases: ["black-forest-labs/flux.2-pro"],
+        provider: "azure",
+        brand: "Black Forest Labs",
+        category: "image",
+        addedDate: new Date("2026-08-31").getTime(),
+        priceMultiplier: 0.75,
+        paidOnly: true,
+        // Azure Global Standard pricing, verified 2026-08-31. Azure rounds
+        // input and output megapixels up to whole billable units.
+        cost: {
+            promptImageTokens: 0.015,
+            completionImageTokens: 0.015,
+        },
+        billing: {
+            adjustments: [
+                {
+                    id: "azure.flux_2_pro.initial_output_megapixel.v1",
+                    description: "FLUX.2 Pro initial output megapixel premium",
+                    kind: "image",
+                    unit: "generation",
+                    unitCost: 0.015,
+                    publicPricing: {
+                        label: "Initial output megapixel premium",
+                        quantity: 1,
+                        unit: "generation",
+                    },
+                    countUnits: () => 1,
+                },
+            ],
+        },
+        title: "FLUX.2 Pro",
+        description:
+            "High-fidelity generation and multi-reference editing with strong prompt adherence",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 8, // Azure FLUX.2 Pro route limit.
+    },
+    "flux-2-flex": {
+        aliases: ["black-forest-labs/flux.2-flex"],
+        provider: "azure",
+        brand: "Black Forest Labs",
+        category: "image",
+        addedDate: new Date("2026-08-31").getTime(),
+        priceMultiplier: 0.75,
+        paidOnly: true,
+        // Azure Global Standard pricing, verified 2026-08-31. Azure rounds
+        // input and output megapixels up to whole billable units.
+        cost: {
+            promptImageTokens: 0.05,
+            completionImageTokens: 0.05,
+        },
+        title: "FLUX.2 Flex",
+        description:
+            "Typography-focused generation and multi-reference editing with adjustable prompt guidance",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 10,
+    },
     "nanobanana": {
         aliases: ["google/gemini-2.5-flash-image"],
         provider: "openrouter",
@@ -427,6 +486,34 @@ const IMAGE_BASE_SERVICES = {
         maxDuration: 8,
         defaultDuration: 4,
         allowedDurations: [4, 6, 8],
+    },
+    "google/gemini-omni-1.1-flash": {
+        aliases: [],
+        provider: "google",
+        brand: "Google",
+        category: "video",
+        addedDate: new Date("2026-08-28").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // Vertex AI pricing verified 2026-08-28:
+        // https://cloud.google.com/vertex-ai/generative-ai/pricing
+        cost: {
+            promptTextTokens: perMillion(1.5),
+            promptImageTokens: perMillion(1.5),
+            completionTextTokens: perMillion(9),
+            completionVideoTokens: perMillion(17.5),
+        },
+        resolutions: ["720p", "360p", "1080p", "4k"],
+        title: "Gemini Omni 1.1 Flash",
+        description:
+            "Cinematic video from text or keyframes with synchronized audio at up to 4K",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video"],
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2,
+        minDuration: 3,
+        maxDuration: 10,
+        defaultDuration: 5,
     },
     "seedance-pro": {
         aliases: ["bytedance/seedance-1-pro-fast"],

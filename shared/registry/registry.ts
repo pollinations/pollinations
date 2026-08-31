@@ -21,14 +21,17 @@ import type { BillingRateDefinition } from "./public-pricing";
 import { REALTIME_SERVICES, type RealtimeModelName } from "./realtime";
 import { TEXT_SERVICES, type TextModelName } from "./text";
 
-export type Category =
-    | "text"
-    | "image"
-    | "audio"
-    | "video"
-    | "3d"
-    | "embedding"
-    | "realtime";
+export const MODEL_CATEGORIES = [
+    "text",
+    "image",
+    "audio",
+    "video",
+    "3d",
+    "embedding",
+    "realtime",
+] as const;
+
+export type Category = (typeof MODEL_CATEGORIES)[number];
 
 export const MODEL_INPUT_MODALITIES = [
     "text",
@@ -38,6 +41,17 @@ export const MODEL_INPUT_MODALITIES = [
 ] as const;
 
 export type ModelInputModality = (typeof MODEL_INPUT_MODALITIES)[number];
+
+export const MODEL_OUTPUT_MODALITIES = [
+    "text",
+    "image",
+    "audio",
+    "video",
+    "embedding",
+    "3d",
+] as const;
+
+export type ModelOutputModality = (typeof MODEL_OUTPUT_MODALITIES)[number];
 
 export type UsageType =
     | "promptTextTokens"
@@ -87,14 +101,17 @@ export type ModelName =
     | RealtimeModelName
     | Model3dName;
 
-export type VideoCapability =
-    | "start_frame"
-    | "end_frame"
-    | "keyframes"
-    | "reference_images"
-    | "reference_videos"
-    | "reference_audios"
-    | "audio_output";
+export const VIDEO_CAPABILITIES = [
+    "start_frame",
+    "end_frame",
+    "keyframes",
+    "reference_images",
+    "reference_videos",
+    "reference_audios",
+    "audio_output",
+] as const;
+
+export type VideoCapability = (typeof VIDEO_CAPABILITIES)[number];
 
 export type BillingAdjustmentRule = BillingRateDefinition & {
     // Counts billable units from the response output (stream outputs carry a
@@ -172,7 +189,7 @@ export type ModelDefinition = {
     // prefix ("Title - description"). Prefer `title` for display names.
     description?: string;
     inputModalities?: ModelInputModality[];
-    outputModalities?: string[];
+    outputModalities?: ModelOutputModality[];
     tools?: boolean;
     reasoning?: boolean;
     search?: boolean;

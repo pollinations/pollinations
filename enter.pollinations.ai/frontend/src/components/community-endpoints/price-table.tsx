@@ -17,6 +17,7 @@ import {
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MAX_COMMUNITY_PRICE_PER_SECOND,
+    MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND,
 } from "@shared/community-endpoints.ts";
 import { PRICE_ICON } from "../models/model-icons.tsx";
 import type { PriceKind } from "../models/types.ts";
@@ -186,15 +187,17 @@ function PriceInputCell({
     const unitLabel =
         field.priceUnit === "image"
             ? "/image"
-            : field.priceUnit === "second"
+            : field.priceUnit === "second" || field.priceUnit === "video_second"
               ? "/sec"
               : "/1M";
     const maximum =
         field.priceUnit === "image"
             ? MAX_COMMUNITY_PRICE_PER_IMAGE
-            : field.priceUnit === "second"
-              ? MAX_COMMUNITY_PRICE_PER_SECOND
-              : MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS;
+            : field.priceUnit === "video_second"
+              ? MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND
+              : field.priceUnit === "second"
+                ? MAX_COMMUNITY_PRICE_PER_SECOND
+                : MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS;
 
     return (
         <TableCell align="right" className="w-40 align-top">
@@ -226,7 +229,8 @@ function PriceInputCell({
                 {hasError && (
                     <p className="mt-1 text-right text-xs text-intent-danger-text">
                         {field.priceUnit === "image" ||
-                        field.priceUnit === "second"
+                        field.priceUnit === "second" ||
+                        field.priceUnit === "video_second"
                             ? `Enter 0–${maximum} ${unitLabel}.`
                             : `Enter 0 or up to ${maximum} ${unitLabel}.`}
                     </p>
@@ -297,6 +301,7 @@ function priceKind(field: PriceField): PriceKind {
         return field.usageType.startsWith("prompt") ? "audioIn" : "audioOut";
     }
     if (field.usageType.includes("Image")) return "image";
+    if (field.usageType.includes("Video")) return "video";
     return "text";
 }
 
@@ -307,13 +312,17 @@ function shortPriceLabel(label: string): string {
 export function savedEndpointPriceKeys(
     endpoint: CommunityEndpoint | undefined,
 ): Set<PriceFieldKey> {
+    const pending = endpoint?.pending;
     return new Set(
         endpoint?.type === "proxy"
             ? communityEndpointPriceFieldsForModality(
                   endpoint.modality,
-                  endpoint.imagePricing,
+                  pending?.imagePricing ?? endpoint.imagePricing,
               )
-                  .filter((field) => endpoint[field.key] > 0)
+                  .filter(
+                      (field) =>
+                          (pending?.[field.key] ?? endpoint[field.key]) > 0,
+                  )
                   .map((field) => field.key)
             : [],
     );
@@ -331,6 +340,8 @@ export const BASE_TEXT_PRICE_KEYS: PriceFieldKey[] = [
 export const BASE_TRANSCRIPTION_PRICE_KEYS: PriceFieldKey[] = [
     "promptAudioPrice",
 ];
+
+export const BASE_VIDEO_PRICE_KEYS: PriceFieldKey[] = ["completionVideoPrice"];
 
 export function returnedPriceFields(
     testState: ActionState,

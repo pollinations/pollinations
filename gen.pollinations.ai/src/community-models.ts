@@ -5,6 +5,7 @@ import {
     communityEndpointPrices,
     communityModelDefinition,
     communityModelId,
+    effectiveCommunityEndpointVisibility,
     parseListingPayload,
     pendingCommunityEndpointChangeIsReady,
     usesAgentRunToken,
@@ -14,36 +15,10 @@ import {
     type ModelInfo,
     modelInfoFromDefinition,
 } from "@shared/registry/model-info.ts";
-import type {
-    ModelDefinition,
-    ModelInputModality,
-} from "@shared/registry/registry.ts";
+import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { eq, isNotNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { AgentCatalogConfig } from "./agent-catalog.ts";
-
-const COMMUNITY_TEXT_ENDPOINTS = [
-    "/v1/chat/completions",
-    "/text",
-    "/text/{prompt}",
-];
-export function communityTextSupportedEndpoints(): string[] {
-    return COMMUNITY_TEXT_ENDPOINTS;
-}
-
-export function communityTranscriptionSupportedEndpoints(): string[] {
-    return ["/v1/audio/transcriptions"];
-}
-
-export function communityImageSupportedEndpoints(
-    inputModalities: readonly ModelInputModality[] = ["text"],
-): string[] {
-    return [
-        "/v1/images/generations",
-        ...(inputModalities.includes("image") ? ["/v1/images/edits"] : []),
-        "/image/{prompt}",
-    ];
-}
 
 export type CommunityModelRegistryEntry = {
     id: string;
@@ -99,10 +74,11 @@ export async function getCommunityModelRegistryEntries(
         const pendingReady = pendingCommunityEndpointChangeIsReady(
             row.pendingAt,
         );
-        const effectiveVisibility =
-            pendingReady && row.pendingVisibility
-                ? row.pendingVisibility
-                : row.visibility;
+        const effectiveVisibility = effectiveCommunityEndpointVisibility(
+            row.visibility,
+            row.pendingVisibility,
+            row.pendingAt,
+        );
         const baseUrl =
             row.type === "prompt_agent"
                 ? env.AGENT_RUNTIME_BASE_URL

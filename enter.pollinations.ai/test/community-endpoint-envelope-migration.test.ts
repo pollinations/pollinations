@@ -2,7 +2,7 @@ import { env } from "cloudflare:test";
 import { createTestUser } from "@shared/test/fixtures/index.ts";
 import { describe, expect, it } from "vitest";
 import migrationSql from "../drizzle/0053_listing_envelope.sql?raw";
-import requiredTitleMigrationSql from "../drizzle/0056_graceful_expediter.sql?raw";
+import requiredTitleMigrationSql from "../drizzle/0057_graceful_expediter.sql?raw";
 
 type Row = {
     id: string;

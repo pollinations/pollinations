@@ -1,0 +1,34 @@
+{
+  "pr_number": 14175,
+  "title": "feat: sort model lists by popularity",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14175",
+  "merged_at": "2026-08-31T09:19:12Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds a Popular model sort based on distinct successful users over the rolling 7-day stats window.\\n- Makes Popular the default for official and community model lists.\\n- Reuses the existing cached model-stats response and keeps unknown popularity values last.\\n- Includes focused sorting and catalog tests plus a validated Tinybird pipe update.\\n\\nFixes #14173",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Let the hive decide",
+    "blurb": "Model lists now lead with the ones people are actually using. Seven days of successful buzzing, turned into a useful default.",
+    "summary": "Added a Popular sort for official and community model catalogs, ranking models by distinct successful users over the rolling seven-day stats window and making it the default view.",
+    "impact": "People browsing models will see widely used options first, while models without popularity data remain neatly at the end of the list.",
+    "keywords": [
+      "model catalog",
+      "model discovery",
+      "popularity",
+      "frontend",
+      "model stats",
+      "sorting"
+    ],
+    "visual_concept": "Depict a cozy model-library garden where glowing model cards are arranged by the number of friendly bee visitors around them, making collective usage visible without making it feel like a leaderboard. Polli acts as the observant catalog keeper, sorting cards into a prominent Popular shelf while small code-plants and flowers grow around a retro terminal.",
+    "image_prompt": "A cozy pixel art model-library garden where glowing model cards are sorted onto a lime green (#ecf874) shelf labeled \"POPULAR,\" with tiny visitor marks showing the most-used cards first and unknown cards resting quietly at the end; code-plants sprout from pastel flower pots beside a warm CRT terminal. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses and carefully arranging the cards. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-31/PR-14175.jpg",
+    "prompt": "A cozy pixel art model-library garden where glowing model cards are sorted onto a lime green (#ecf874) shelf labeled \"POPULAR,\" with tiny visitor marks showing the most-used cards first and unknown cards resting quietly at the end; code-plants sprout from pastel flower pots beside a warm CRT terminal. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses and carefully arranging the cards. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-31T09:20:13.659296+00:00"
+}

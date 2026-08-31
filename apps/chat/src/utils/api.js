@@ -567,7 +567,7 @@ export const generateVideo = async (prompt, options = {}) => {
 
 // Generate speech/audio — GET /audio/{text}?voice=...
 export const generateAudio = async (text, options = {}) => {
-    const { voice = "nova", model = "openai-audio" } = options;
+    const { voice = "nova", model = "elevenlabs" } = options;
 
     const params = new URLSearchParams({ voice, model });
     const url = `${BASE_URL}/audio/${encodeURIComponent(text)}?${params}`;

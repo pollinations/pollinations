@@ -45,7 +45,7 @@ function App() {
     const [selectedImageModel, setSelectedImageModel] = useState("flux");
     const [selectedVideoModel, setSelectedVideoModel] = useState("veo");
     const [selectedAudioModel, setSelectedAudioModel] =
-        useState("openai-audio");
+        useState("elevenlabs");
     const [theme, setTheme] = useState("dark");
     const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false);
     const [isBYOPModalOpen, setIsBYOPModalOpen] = useState(false);
@@ -123,6 +123,15 @@ function App() {
                 setImageModels(imageModels);
                 setVideoModels(videoModels);
                 setAudioModels(audioModels);
+                setSelectedAudioModel((currentModel) => {
+                    if (audioModels[currentModel]) return currentModel;
+                    const fallbackModel =
+                        audioModels.elevenlabs ||
+                        Object.values(audioModels)[0];
+                    const fallbackId = fallbackModel?.id || "elevenlabs";
+                    localStorage.setItem("selectedAudioModel", fallbackId);
+                    return fallbackId;
+                });
                 setModelsLoaded(true);
             },
         );
@@ -136,7 +145,7 @@ function App() {
         const savedVideoModel =
             localStorage.getItem("selectedVideoModel") || "veo";
         const savedAudioModel =
-            localStorage.getItem("selectedAudioModel") || "openai-audio";
+            localStorage.getItem("selectedAudioModel") || "elevenlabs";
         const savedTheme = getTheme();
         setSelectedModel(savedModel);
         setSelectedImageModel(savedImageModel);

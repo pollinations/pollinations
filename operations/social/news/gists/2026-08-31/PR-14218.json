@@ -1,0 +1,33 @@
+{
+  "pr_number": 14218,
+  "title": "test: move gen tests out of src",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14218",
+  "merged_at": "2026-08-31T21:00:30Z",
+  "labels": [],
+  "pr_body_excerpt": "- Moves the three remaining Gen test files from `src/` to `test/`.\n- Updates import paths only; test behavior and runtime code are unchanged.\n- Verified with Biome, Gen typecheck, and all 126 tests in the moved files.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "Tests found a new hive",
+    "blurb": "Three Gen test files moved from src/ to test/, where tests can continue doing their favorite activity: checking things repeatedly.",
+    "summary": "Moved byop-markup, community-endpoints, and model-registry tests from gen.pollinations.ai/src to test/ with import-path updates only; runtime behavior is unchanged.",
+    "impact": "Developers get a cleaner separation between Gen runtime code and its 126-test suite, with no API or user-visible behavior changes.",
+    "keywords": [
+      "gen",
+      "tests",
+      "test-organization",
+      "typecheck",
+      "biome"
+    ],
+    "visual_concept": "Polli tidies three labeled test scrolls from a code shelf into a cozy test-library nook while a small CRT robot verifies them with a green checkmark; tiny code-plants show that the runtime garden remains untouched.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot wearing a tiny librarian scarf, carefully placing three code-test scrolls into a little test-library shelf beside an untouched glowing runtime code-plant. A cheerful CRT monitor robot holds a lime green (#ecf874) checkmark, with warm cream, mint, and lavender pastels, subtle flowers and vines, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-31/PR-14218.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot wearing a tiny librarian scarf, carefully placing three code-test scrolls into a little test-library shelf beside an untouched glowing runtime code-plant. A cheerful CRT monitor robot holds a lime green (#ecf874) checkmark, with warm cream, mint, and lavender pastels, subtle flowers and vines, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-08-31T21:01:31.607570+00:00"
+}

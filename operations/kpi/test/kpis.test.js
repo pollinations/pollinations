@@ -160,6 +160,7 @@ describe("explorer view list", () => {
 const margin = KPIS.find((row) => row.key === "grossMargin");
 const coverage = KPIS.find((row) => row.key === "cashCoverage");
 const revenue = KPIS.find((row) => row.key === "revenue");
+const paidPollenShare = KPIS.find((row) => row.key === "paidPollenPct");
 
 // A real week from prod (2026-08-10), trimmed to the fields these rows read.
 const marginWeek = {
@@ -185,6 +186,21 @@ describe("revenue row", () => {
                 }),
             ),
         ).toEqual([2278, 3469, 2278 / 3352]);
+    });
+});
+
+describe("Paid Pollen share", () => {
+    it("is a precise percent KPI available to the history graph", () => {
+        expect(
+            formatValue(
+                kpiValue(paidPollenShare, { paidPollenPct: 33.9 }),
+                paidPollenShare.format,
+            ),
+        ).toBe("33.90%");
+        expect(kpiViewById("paidPollenPct:0")).toMatchObject({
+            name: "Paid Pollen share",
+            category: "Revenue",
+        });
     });
 });
 

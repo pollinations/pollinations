@@ -124,6 +124,7 @@ export function useKpiData() {
                 // matched to the week's traffic, so it is the revenue side of
                 // gross margin.
                 pollenRevenue: row.revenue_usd,
+                paidPollenPct: row.paid_pollen_pct,
                 communityUserPct: row.served_community_user_pct,
                 communityUserPctAll: row.community_user_pct,
                 communityRequestPct: row.community_request_pct,

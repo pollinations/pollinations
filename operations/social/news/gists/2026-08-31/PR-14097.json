@@ -1,0 +1,34 @@
+{
+  "pr_number": 14097,
+  "title": "fix(leaderboard): filter text leaderboard by event_type to exclude video models",
+  "author": "rekty",
+  "url": "https://github.com/pollinations/pollinations/pull/14097",
+  "merged_at": "2026-08-31T21:56:41Z",
+  "labels": [],
+  "pr_body_excerpt": "## Problem\n\nThe daily community text leaderboard (`build-leaderboard.mjs`) queries `generation_event_v2` without filtering by `event_type`. Community providers can expose video models under the chat/completions path (`/v1/chat/completions`), and those models return the entire video payload (URL or base64 bytes) inside a single completion response. That payload is tokenized as a large completion text, so a model returning a video blob in a fraction of a second appears as a false speed champion (~30K tokens/sec), polluting the text leaderboard's TPS rankings.\n\n**Example:** `CloudCompile/agnes-video-v2.0` recently topped the speed leaderboard with ~30K t/s — physically impossible for text generation.\n\n## Fix\n\nAdd `AND event_type = 'generate.text'` to both Tinybird SQL queries in `build-leaderboard.mjs`:\n\n1. **Main leaderboard query** (line 52) — ranks models by total tokens\n2. **Totals query** (line 65) — platform-wide stats\n\nThis matches the pattern already used by `build-image-leaderboard.mjs`, which filters by `event_type = 'generate.image'`.\n\n## Impact\n\n- Video models no longer pollute text leaderboard TPS rankings\n- No API, registry, pricing, or routing changes\n- Minimal diff: 2 lines changed in 1 file\n\n## References\n\n- Issue: #13639\n- Related: `build-image-leaderboard.mjs` (already filters by event_type)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The leaderboard learned to read",
+    "blurb": "The text leaderboard was briefly impressed by a video blob wearing a trench coat full of tokens. It now counts actual text generations, as nature intended.",
+    "summary": "Filtered both Tinybird queries in the daily text leaderboard to `event_type = 'generate.text'`, preventing video payloads returned through chat completions from inflating text TPS rankings.",
+    "impact": "Community text leaderboard speed and platform totals now reflect text-generation events only, so video models such as `CloudCompile/agnes-video-v2.0` no longer appear as impossible 30K tokens-per-second champions.",
+    "keywords": [
+      "leaderboard",
+      "text-generation",
+      "event-type",
+      "Tinybird",
+      "community",
+      "metrics"
+    ],
+    "visual_concept": "A cozy community leaderboard garden where Polli acts as a careful scorekeeper, sorting genuine text-token flower cards into a `TEXT` scoreboard while a large video reel/blob is gently directed to its own `VIDEO` sign. The scene represents correctly separating generation event types so text speed rankings remain trustworthy.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee with pink rectangular blush, black oval eyes, light blue wings, and a tiny librarian visor, carefully filing glowing text-token flower cards onto a lime green (#ecf874) `TEXT` leaderboard while a harmless pixel video reel is guided toward a separate `VIDEO` garden sign; code-plants and small flowers grow around a warm retro terminal. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with dark purple (#110518) pixel-font labels and a subtle CRT glow."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-31/PR-14097.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee with pink rectangular blush, black oval eyes, light blue wings, and a tiny librarian visor, carefully filing glowing text-token flower cards onto a lime green (#ecf874) `TEXT` leaderboard while a harmless pixel video reel is guided toward a separate `VIDEO` garden sign; code-plants and small flowers grow around a warm retro terminal. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with dark purple (#110518) pixel-font labels and a subtle CRT glow."
+  },
+  "generated_at": "2026-08-31T21:57:37.627393+00:00"
+}

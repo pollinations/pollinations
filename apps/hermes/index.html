@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>pollinations.ai × Hermes — Give your agent a model</title>
+    <meta
+      name="description"
+      content="Connect Nous Research Hermes Agent to Pollinations' live model catalog with one API key."
+    />
+    <meta property="og:title" content="pollinations.ai × Hermes" />
+    <meta
+      property="og:description"
+      content="Set up Hermes Agent with Pollinations' OpenAI-compatible API, current models, and community catalog."
+    />
+    <meta property="og:url" content="https://hermes.pollinations.ai" />
+    <meta name="theme-color" content="#f3ead7" />
+    <link rel="stylesheet" href="./src/style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="wordmark" href="https://pollinations.ai">pollinations.ai</a>
+      <nav>
+        <a href="https://hermes-agent.nousresearch.com/docs/">Hermes docs</a>
+        <a class="nav-cta" href="#setup">Set up Hermes</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero wrap">
+        <p class="eyebrow">A bridge for curious agents</p>
+        <h1>Hermes, meet<br /><em>every model.</em></h1>
+        <p class="hero-copy">
+          Run Nous Research's Hermes Agent on Pollinations: one
+          OpenAI-compatible endpoint, a live catalog, community models, and a
+          key that works across the whole platform.
+        </p>
+        <div class="hero-actions">
+          <a class="button button-dark" href="#setup"
+            >Configure Hermes <span>↓</span></a
+          >
+          <a
+            class="text-link"
+            href="https://gen.pollinations.ai/v1/models"
+            target="_blank"
+            rel="noopener"
+            >Browse live models ↗</a
+          >
+        </div>
+        <div class="signal-row" aria-label="Pollinations API status">
+          <span
+            ><i class="status-dot"></i
+            ><strong id="model-count">Checking</strong> models available</span
+          >
+          <span>OpenAI Chat Completions</span>
+          <span>Text · vision · tools</span>
+        </div>
+      </section>
+
+      <section class="setup wrap" id="setup">
+        <div class="section-intro">
+          <p class="eyebrow">The working path</p>
+          <h2>Three small moves.</h2>
+          <p>
+            Hermes' model wizard is interactive. Keep this page open, copy your
+            key when the wizard asks for it, and choose a model from the live
+            list.
+          </p>
+        </div>
+
+        <div class="steps">
+          <article class="step">
+            <div class="step-number">01</div>
+            <div>
+              <h3>Install Hermes</h3>
+              <p>
+                Linux, macOS, WSL2, and Termux are supported by the official
+                installer.
+              </p>
+              <div class="code" id="install-code">
+                <button
+                  class="copy"
+                  data-copy="install-code"
+                  aria-label="Copy install command"
+                >
+                  Copy</button
+                ><code
+                  >curl -fsSL https://hermes-agent.nousresearch.com/install.sh |
+                  bash</code
+                >
+              </div>
+            </div>
+          </article>
+          <article class="step">
+            <div class="step-number">02</div>
+            <div>
+              <h3>Connect Pollinations</h3>
+              <p>
+                Get a key with starter credits, then launch Hermes' interactive
+                model picker.
+              </p>
+              <a
+                class="button button-light"
+                href="#"
+                onclick="
+                  startAuthorize();
+                  return false;
+                "
+                >Get a Pollinations key <span>↗</span></a
+              >
+              <div class="code" id="model-code">
+                <button
+                  class="copy"
+                  data-copy="model-code"
+                  aria-label="Copy Hermes model command"
+                >
+                  Copy</button
+                ><code>hermes model</code>
+              </div>
+            </div>
+          </article>
+          <article class="step">
+            <div class="step-number">03</div>
+            <div>
+              <h3>Use the proven choices</h3>
+              <p>
+                Enter the values below when Hermes prompts you. The endpoint
+                check should show the current catalog.
+              </p>
+              <dl class="prompt-values">
+                <div>
+                  <dt>API base URL</dt>
+                  <dd>https://gen.pollinations.ai/v1</dd>
+                </div>
+                <div>
+                  <dt>Compatibility</dt>
+                  <dd>Chat Completions</dd>
+                </div>
+                <div>
+                  <dt>Default model</dt>
+                  <dd>kimi</dd>
+                </div>
+                <div>
+                  <dt>Display name</dt>
+                  <dd>Pollinations</dd>
+                </div>
+              </dl>
+            </div>
+          </article>
+        </div>
+        <aside class="note">
+          <strong>What happened during verification:</strong> Hermes verified
+          the endpoint and found the live catalog, then saved a custom provider
+          named <code>Pollinations</code> in <code>~/.hermes/config.yaml</code>.
+          Your key stays in <code>~/.hermes/.env</code>; never paste it into a
+          public config or commit it.
+        </aside>
+      </section>
+
+      <section class="catalog wrap">
+        <div class="section-intro split">
+          <div>
+            <p class="eyebrow">A living catalog</p>
+            <h2>Pick a brain.<br />Keep the rest.</h2>
+          </div>
+          <p>
+            Models and pricing change. This snapshot is a helpful starting
+            point; the API is the source of truth. Community models are
+            published by other builders and can have different availability or
+            pricing.
+          </p>
+        </div>
+        <div class="model-grid">
+          <div class="model-card featured">
+            <span class="tag">Recommended</span>
+            <h3>Kimi</h3>
+            <code>kimi</code>
+            <p>
+              Agentic coding, vision, reasoning, and tools. A strong default for
+              Hermes.
+            </p>
+          </div>
+          <div class="model-card">
+            <span class="tag">Reasoning</span>
+            <h3>DeepSeek</h3>
+            <code>deepseek</code>
+            <p>Careful problem solving and tool calling for difficult tasks.</p>
+          </div>
+          <div class="model-card">
+            <span class="tag">Fast</span>
+            <h3>Gemini Fast</h3>
+            <code>gemini-fast</code>
+            <p>
+              Quick multimodal responses, with search-capable options in the
+              catalog.
+            </p>
+          </div>
+          <div class="model-card">
+            <span class="tag">Community</span>
+            <h3>Floret</h3>
+            <code>pollinations-router/floret</code>
+            <p>
+              A community-routed model. Browse the live response for more
+              community entries.
+            </p>
+          </div>
+        </div>
+        <div class="catalog-links">
+          <a
+            class="button button-dark"
+            href="https://gen.pollinations.ai/v1/models"
+            target="_blank"
+            rel="noopener"
+            >Open full catalog ↗</a
+          ><a
+            href="https://gen.pollinations.ai/docs"
+            target="_blank"
+            rel="noopener"
+            >API docs ↗</a
+          ><a
+            href="https://enter.pollinations.ai/keys"
+            target="_blank"
+            rel="noopener"
+            >Manage keys ↗</a
+          >
+        </div>
+        <p class="pricing-note">
+          Paid models use Pollen according to the current model metadata. New
+          accounts may receive starter credits. Community models are not a
+          promise of free usage: check the live catalog before running a large
+          job.
+        </p>
+      </section>
+    </main>
+
+    <footer class="wrap">
+      <span>pollinations.ai × Hermes Agent</span
+      ><span
+        ><a href="https://github.com/pollinations/pollinations">GitHub</a> ·
+        <a href="https://discord.gg/pollinations-ai-885844321461485618"
+          >Discord</a
+        ></span
+      >
+    </footer>
+    <script src="./src/script.js"></script>
+  </body>
+</html>

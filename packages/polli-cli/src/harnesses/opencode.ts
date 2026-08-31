@@ -8,11 +8,7 @@ import {
     clearSnapshot,
     restoreSnapshot,
 } from "./snapshot.js";
-import type {
-    HarnessAdapter,
-    HarnessContext,
-    HarnessResult,
-} from "./types.js";
+import type { HarnessAdapter, HarnessContext, HarnessResult } from "./types.js";
 
 const ID = "opencode";
 const LABEL = "OpenCode";
@@ -31,12 +27,7 @@ const pollinationsConfigDir = (ctx: HarnessContext) => {
         return join(ctx.env.APPDATA ?? ctx.home, "pollinations");
     }
     if (process.platform === "darwin") {
-        return join(
-            ctx.home,
-            "Library",
-            "Application Support",
-            "pollinations",
-        );
+        return join(ctx.home, "Library", "Application Support", "pollinations");
     }
     const xdg = ctx.env.XDG_CONFIG_HOME?.trim();
     return join(

@@ -176,9 +176,7 @@ describe("opencode harness", () => {
             { home, env: { OPENCODE_CONFIG_DIR: customDir } },
             settings,
         );
-        expect(
-            existsSync(join(customDir, "opencode.json")),
-        ).toBe(true);
+        expect(existsSync(join(customDir, "opencode.json"))).toBe(true);
         expect(existsSync(opencodeFile())).toBe(false);
     });
 
@@ -198,7 +196,10 @@ describe("opencode harness", () => {
             }),
         );
         mkdirSync(configDir(), { recursive: true });
-        writeFileSync(pluginConfig(), JSON.stringify({ apiKey: "sk_test_key" }));
+        writeFileSync(
+            pluginConfig(),
+            JSON.stringify({ apiKey: "sk_test_key" }),
+        );
 
         expect(opencode.status(ctx).configured).toBe(true);
     });

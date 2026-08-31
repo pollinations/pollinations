@@ -1,9 +1,13 @@
 import {
+    AppIcon,
     ArrowRightIcon,
+    BeakerIcon,
     Button,
     Callout,
     Chip,
+    CodeIcon,
     ContentHeader,
+    DiscordIcon,
     Eyebrow,
     GitPullRequestIcon,
     InlineLink,
@@ -43,6 +47,7 @@ export const Route = createFileRoute("/community")({
 const WAYS_IN = [
     {
         label: "Apps",
+        icon: AppIcon,
         title: "Publish an app",
         body: "Share what you built, get feedback, and help users discover it.",
         links: [
@@ -54,6 +59,7 @@ const WAYS_IN = [
     },
     {
         label: "Models",
+        icon: BeakerIcon,
         title: "Publish a model",
         body: "Bring your own model to the public catalog and make it available to builders.",
         links: [
@@ -65,21 +71,19 @@ const WAYS_IN = [
     },
     {
         label: "Code",
-        title: "Fix a bug or improve the docs",
-        body: "Open a PR, close an issue, or improve the examples.",
+        icon: CodeIcon,
+        title: "Submit a feature, fix a bug, or improve the docs",
+        body: "Open a PR, close an issue, propose a feature, or improve the examples.",
         links: [
             {
                 label: "Good first issues",
                 href: `${REPO_URL}/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22`,
             },
-            {
-                label: "Submit a feature",
-                href: `${REPO_URL}/issues/new?title=Feature%3A%20`,
-            },
         ],
     },
     {
         label: "Talk",
+        icon: DiscordIcon,
         title: "Help in Discord",
         body: "Answer questions, share experiments, and tell the team what feels missing.",
         links: [{ label: "Join the Discord", href: DISCORD_URL }],
@@ -197,56 +201,63 @@ function CommunityParticipation() {
             </HeroScene>
 
             <div className="grid grid-cols-1 gap-5 min-[540px]:grid-cols-2 xl:grid-cols-4">
-                {ways.map((way) => (
-                    <Surface
-                        variant="card"
-                        key={way.label}
-                        className="flex flex-col gap-2.5 p-7 min-[700px]:p-5 lg:p-7"
-                    >
-                        <Eyebrow>{way.label}</Eyebrow>
-                        <h3 className="font-body text-xl font-semibold text-theme-text-strong">
-                            {way.title}
-                        </h3>
-                        <p className="text-sm leading-relaxed text-theme-text-base">
-                            {way.body}
-                        </p>
-                        <dl className="mt-auto flex flex-wrap gap-x-6 gap-y-3 pt-3">
-                            {way.metrics.map((metric) => (
-                                <div
-                                    key={metric.label}
-                                    className="flex flex-col gap-0.5"
-                                >
-                                    <dt className="font-heading text-3xl text-theme-text-soft tabular-nums">
-                                        {metric.value ?? (
-                                            <span
-                                                aria-hidden="true"
-                                                className="block h-8 w-14 animate-pulse rounded-md bg-theme-bg-subtle"
-                                            />
-                                        )}
-                                    </dt>
-                                    <dd className="text-xs text-theme-text-muted">
-                                        {metric.label}
-                                    </dd>
-                                </div>
-                            ))}
-                        </dl>
-                        <div className="flex flex-wrap gap-2 pt-2">
-                            {way.links.map((link) => (
-                                <Button
-                                    as="a"
-                                    key={link.label}
-                                    href={link.href}
-                                    size="sm"
-                                    appearance="raised"
-                                    className="gap-2 whitespace-nowrap"
-                                >
-                                    {link.label}
-                                    <ArrowRightIcon className="size-3.5" />
-                                </Button>
-                            ))}
-                        </div>
-                    </Surface>
-                ))}
+                {ways.map((way) => {
+                    const WayIcon = way.icon;
+
+                    return (
+                        <Surface
+                            variant="card"
+                            key={way.label}
+                            className="flex flex-col gap-2.5 p-7 min-[700px]:p-5 lg:p-7"
+                        >
+                            <div className="flex items-center gap-1.5 text-theme-text-muted">
+                                <WayIcon className="size-3.5" />
+                                <Eyebrow>{way.label}</Eyebrow>
+                            </div>
+                            <h3 className="font-body text-xl font-semibold text-theme-text-strong">
+                                {way.title}
+                            </h3>
+                            <p className="text-sm leading-relaxed text-theme-text-base">
+                                {way.body}
+                            </p>
+                            <dl className="mt-auto flex flex-wrap gap-x-6 gap-y-3 pt-3">
+                                {way.metrics.map((metric) => (
+                                    <div
+                                        key={metric.label}
+                                        className="flex flex-col gap-0.5"
+                                    >
+                                        <dt className="font-heading text-3xl text-theme-text-soft tabular-nums">
+                                            {metric.value ?? (
+                                                <span
+                                                    aria-hidden="true"
+                                                    className="block h-8 w-14 animate-pulse rounded-md bg-theme-bg-subtle"
+                                                />
+                                            )}
+                                        </dt>
+                                        <dd className="text-xs text-theme-text-muted">
+                                            {metric.label}
+                                        </dd>
+                                    </div>
+                                ))}
+                            </dl>
+                            <div className="flex flex-wrap gap-2 pt-2">
+                                {way.links.map((link) => (
+                                    <Button
+                                        as="a"
+                                        key={link.label}
+                                        href={link.href}
+                                        size="sm"
+                                        appearance="raised"
+                                        className="gap-2 whitespace-nowrap"
+                                    >
+                                        {link.label}
+                                        <ArrowRightIcon className="size-3.5" />
+                                    </Button>
+                                ))}
+                            </div>
+                        </Surface>
+                    );
+                })}
             </div>
 
             <Surface

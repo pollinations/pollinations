@@ -1,7 +1,6 @@
 import {
     AppIcon,
     BeakerIcon,
-    Chip,
     CloudUploadIcon,
     ContentHeader,
     ExternalLinkButton,
@@ -21,7 +20,6 @@ import type { ComponentType, ReactNode } from "react";
 import { usePlatformStats } from "../../data/publicStats";
 
 type Feature = {
-    label: string;
     title: string;
     body: string | ((modelCount: number | null) => string);
     linkLabel: string;
@@ -31,7 +29,6 @@ type Feature = {
 
 const BUILD_FOUNDATIONS: Feature[] = [
     {
-        label: "API",
         title: "One API, every model",
         body: (modelCount) =>
             `Build text, image, video, audio and multimodal features through one OpenAI-compatible API${modelCount ? ` across ${modelCount} models` : ""}.`,
@@ -40,7 +37,6 @@ const BUILD_FOUNDATIONS: Feature[] = [
         icon: GenApiIcon,
     },
     {
-        label: "Wallet",
         title: "Connect user wallets",
         body: "Let users bring their own Pollen, choose a budget, expiry and access, and pay for their own usage. You avoid payment infrastructure and can earn from every connected call.",
         linkLabel: "Connect a wallet",
@@ -48,7 +44,6 @@ const BUILD_FOUNDATIONS: Feature[] = [
         icon: WalletIcon,
     },
     {
-        label: "OAuth 2.1",
         title: "Pollinations Login",
         body: "Add Pollinations Login to your app. Users connect their account and approve profile and usage access through a standard OAuth flow.",
         linkLabel: "Add Pollinations Login",
@@ -59,7 +54,6 @@ const BUILD_FOUNDATIONS: Feature[] = [
 
 const BUILD_TOOLS: Feature[] = [
     {
-        label: "Media",
         title: "Media hosting",
         body: "Upload generated images, audio and video and receive reusable URLs for apps, agents and workflows.",
         linkLabel: "Store media",
@@ -67,7 +61,6 @@ const BUILD_TOOLS: Feature[] = [
         icon: CloudUploadIcon,
     },
     {
-        label: "Terminal",
         title: "Pollinations CLI",
         body: "Generate every modality, inspect models and manage access, published models and agents from the shell.",
         linkLabel: "Use the CLI",
@@ -75,7 +68,6 @@ const BUILD_TOOLS: Feature[] = [
         icon: TerminalIcon,
     },
     {
-        label: "AI tools",
         title: "Pollinations MCP",
         body: "Bring generation, media, model discovery and account tools into Codex, Claude, Cursor and any MCP-capable product.",
         linkLabel: "Connect the MCP",
@@ -88,7 +80,6 @@ const BUILD_FEATURES = [...BUILD_FOUNDATIONS, ...BUILD_TOOLS];
 
 const PUBLISH_FEATURES: Feature[] = [
     {
-        label: "Apps",
         title: "Publish an app",
         body: "Join the app directory, reach the Pollinations community and earn from connected usage.",
         linkLabel: "Publish an app",
@@ -96,7 +87,6 @@ const PUBLISH_FEATURES: Feature[] = [
         icon: AppIcon,
     },
     {
-        label: "Models",
         title: "Publish a model",
         body: "Connect your endpoint privately, or publish it in the catalog with your own price and earn from usage.",
         linkLabel: "Publish a model",
@@ -104,7 +94,6 @@ const PUBLISH_FEATURES: Feature[] = [
         icon: BeakerIcon,
     },
     {
-        label: "Agents",
         title: "Publish an agent",
         body: "Combine instructions, a base model and Pollinations tools into a reusable model without hosting an agent server.",
         linkLabel: "Publish an agent",
@@ -135,14 +124,9 @@ function FeatureCard({
                 <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-theme-bg-subtle text-theme-text-strong">
                     <Icon className="size-6" />
                 </div>
-                <div className="flex min-w-0 flex-col gap-1">
-                    <Chip size="sm" intent="neutral" className="self-start">
-                        {feature.label}
-                    </Chip>
-                    <Heading as="h3" size="card">
-                        {feature.title}
-                    </Heading>
-                </div>
+                <Heading as="h3" size="card">
+                    {feature.title}
+                </Heading>
             </div>
 
             <Text size="sm" className="flex-1">
@@ -197,20 +181,22 @@ export function DevKit() {
                     title="Make your first API call"
                     subtitle="Earn Pollen through Quests, then make your first API call."
                 />
-                <div className="grid items-center gap-6 sm:grid-cols-[auto_1fr] lg:grid-cols-[auto_1fr_auto]">
-                    <div className="flex size-12 items-center justify-center rounded-xl bg-theme-bg-active text-theme-text-strong">
-                        <SproutIcon className="size-7" />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                        <Heading as="h3" size="card">
-                            Win Pollen with Quests
-                        </Heading>
+                <div className="grid items-end gap-6 lg:grid-cols-[1fr_auto]">
+                    <div className="flex flex-col gap-3">
+                        <div className="flex items-center gap-3">
+                            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-theme-bg-active text-theme-text-strong">
+                                <SproutIcon className="size-6" />
+                            </div>
+                            <Heading as="h3" size="card">
+                                Win Pollen with Quests
+                            </Heading>
+                        </div>
                         <Text size="sm">
                             Contribute to Pollinations, earn free Pollen, and
                             spend it across every model from your own API key.
                         </Text>
                     </div>
-                    <div className="flex flex-wrap gap-2 sm:col-span-2 lg:col-span-1 lg:justify-end">
+                    <div className="flex flex-wrap gap-2 lg:justify-end">
                         <ExternalLinkButton
                             href="https://enter.pollinations.ai/quests"
                             size="sm"
@@ -239,7 +225,7 @@ export function DevKit() {
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {BUILD_FEATURES.map((feature) => (
                         <FeatureCard
-                            key={feature.label}
+                            key={feature.title}
                             feature={feature}
                             modelCount={modelCount}
                         />
@@ -255,7 +241,7 @@ export function DevKit() {
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {PUBLISH_FEATURES.map((feature) => (
                         <FeatureCard
-                            key={feature.label}
+                            key={feature.title}
                             feature={feature}
                             modelCount={modelCount}
                         />

@@ -28,64 +28,44 @@
 
     <main>
       <section class="hero wrap">
-            <span class="tag">Reasoning · paid</span>
-            <h3>GPT-5.6 Luna</h3>
-            <code>gpt-5.6-luna</code>
-            <p>Fast GPT-5.6 reasoning with a 1M context window.</p>
-          OpenAI-compatible endpoint, a live catalog, community models, and a
-          key that works across the whole platform.
-            <span class="tag">Reasoning · paid</span>
-            <h3>GPT-5.6 Terra</h3>
-            <code>gpt-5.6-terra</code>
-            <p>Higher-capability GPT-5.6 reasoning with a 1M context window.</p>
-          >
-          <a
-            <span class="tag">Premium · paid</span>
-            <h3>GPT-5.6 Sol</h3>
-            <code>gpt-5.6-sol</code>
-            <p>Premium GPT-5.6 reasoning with a 1M context window.</p>
-            >Browse live models ↗</a
-          >
-            <span class="tag">Reasoning · quest</span>
-            <h3>DeepSeek V4 Flash</h3>
-            <code>deepseek</code>
-            <p>Fast reasoning and tool calling. A good earned-Pollen starting point.</p>
-            ><strong id="model-count">Checking</strong> models available</span
-          >
-            <span class="tag">Reasoning · paid</span>
-            <h3>DeepSeek V4 Pro</h3>
-            <code>deepseek-pro</code>
-            <p>Advanced reasoning and coding with a 1M context window.</p>
+        <div class="hero-copy">
+          <p class="eyebrow">Pollinations × Hermes Agent</p>
+          <h1>Give Hermes a whole ecosystem of models.</h1>
+          <p class="lede">
+            Connect Hermes to Pollinations' OpenAI-compatible endpoint with a
+            live catalog, quest-backed models, paid models, and community
+            routes.
+          </p>
+          <div class="hero-actions">
+            <a class="button button-dark" href="#setup">Set up Hermes ↘</a>
+            <a
+              href="https://gen.pollinations.ai/v1/models"
+              target="_blank"
+              rel="noopener"
+              >Browse live models ↗</a
+            >
+          </div>
+          <p class="catalog-count">
+            <strong id="model-count">Checking</strong> models available
+          </p>
+        </div>
+      </section>
 
       <section class="setup wrap" id="setup">
-            <span class="tag">Fast · paid</span>
-            <h3>Claude Haiku 4.5</h3>
-            <code>claude-fast</code>
-            <p>Fast multimodal Claude for everyday agent work.</p>
-            Hermes' model wizard is interactive. Keep this page open, copy your
-            key when the wizard asks for it, and choose a model from the live
-            <span class="tag">Premium · paid</span>
-            <h3>Claude Sonnet 5</h3>
-            <code>claude-sonnet-5</code>
-            <p>High-quality reasoning, vision, and tool use.</p>
+        <div class="section-intro">
+          <p class="eyebrow">Three steps</p>
+          <h2>Connected in one sitting.</h2>
+          <p>
+            Run the official installer, launch <code>hermes model</code>, and
+            enter the values below.
+          </p>
+        </div>
         <div class="steps">
           <article class="step">
-            <span class="tag">Premium · paid</span>
-            <h3>Claude Fable 5</h3>
-            <code>claude-fable-5</code>
-            <p>Long-context Claude variant for demanding creative and agent tasks.</p>
-          </div>
-          <div class="model-card">
-            <span class="tag">Community · paid</span>
-            <h3>Claude Opus 5</h3>
-            <code>JustScriptzz/claude-opus-5</code>
-            <p>Community-published route. Check the live catalog for current availability and pricing.</p>
-          </div>
-          <div class="model-card">
-            <span class="tag">Community</span>
-            <h3>Floret</h3>
-            <code>pollinations-router/floret</code>
-            <p>A community-routed model. Browse the live response for more entries.</p>
+            <div class="step-number">01</div>
+            <div>
+              <h3>Install Hermes</h3>
+              <p>
                 Linux, macOS, WSL2, and Termux are supported by the official
                 installer.
               </p>
@@ -95,8 +75,9 @@
                   data-copy="install-code"
                   aria-label="Copy install command"
                 >
-                  Copy</button
-                ><code
+                  Copy
+                </button>
+                <code
                   >curl -fsSL https://hermes-agent.nousresearch.com/install.sh |
                   bash</code
                 >
@@ -107,10 +88,7 @@
             <div class="step-number">02</div>
             <div>
               <h3>Connect Pollinations</h3>
-              <p>
-                Get a key with starter credits, then launch Hermes' interactive
-                model picker.
-              </p>
+              <p>Get a key, then launch Hermes' interactive model picker.</p>
               <a
                 class="button button-light"
                 href="#"
@@ -126,19 +104,17 @@
                   data-copy="model-code"
                   aria-label="Copy Hermes model command"
                 >
-                  Copy</button
-                ><code>hermes model</code>
+                  Copy
+                </button>
+                <code>hermes model</code>
               </div>
             </div>
           </article>
           <article class="step">
             <div class="step-number">03</div>
             <div>
-              <h3>Use the proven choices</h3>
-              <p>
-                Enter the values below when Hermes prompts you. The endpoint
-                check should show the current catalog.
-              </p>
+              <h3>Use these values</h3>
+              <p>The endpoint check should show the current catalog.</p>
               <dl class="prompt-values">
                 <div>
                   <dt>API base URL</dt>
@@ -161,11 +137,9 @@
           </article>
         </div>
         <aside class="note">
-          <strong>What happened during verification:</strong> Hermes verified
-          the endpoint and found the live catalog, then saved a custom provider
-          named <code>Pollinations</code> in <code>~/.hermes/config.yaml</code>.
-          Your key stays in <code>~/.hermes/.env</code>; never paste it into a
-          public config or commit it.
+          <strong>Verified setup:</strong> Hermes saves the custom Pollinations
+          provider in <code>~/.hermes/config.yaml</code>; keep your key in
+          <code>~/.hermes/.env</code>.
         </aside>
       </section>
 
@@ -214,7 +188,10 @@
             <span class="tag">Reasoning · quest</span>
             <h3>DeepSeek V4 Flash</h3>
             <code>deepseek</code>
-            <p>Fast reasoning and tool calling. A good earned-Pollen starting point.</p>
+            <p>
+              Fast reasoning and tool calling. A good earned-Pollen starting
+              point.
+            </p>
           </div>
           <div class="model-card">
             <span class="tag">Community</span>
@@ -247,13 +224,19 @@
             <span class="tag">Premium · paid</span>
             <h3>Claude Fable 5</h3>
             <code>claude-fable-5</code>
-            <p>Long-context Claude variant for demanding creative and agent tasks.</p>
+            <p>
+              Long-context Claude variant for demanding creative and agent
+              tasks.
+            </p>
           </div>
           <div class="model-card">
             <span class="tag">Community · paid</span>
             <h3>Claude Opus 5</h3>
             <code>JustScriptzz/claude-opus-5</code>
-            <p>Community-published route. Check the live catalog for current availability and pricing.</p>
+            <p>
+              Community-published route. Check the live catalog for current
+              availability and pricing.
+            </p>
           </div>
           <div class="model-card">
             <span class="tag">Community</span>

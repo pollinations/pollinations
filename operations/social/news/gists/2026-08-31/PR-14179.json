@@ -1,0 +1,35 @@
+{
+  "pr_number": 14179,
+  "title": "fix: show all community model categories",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14179",
+  "merged_at": "2026-08-31T08:05:04Z",
+  "labels": [],
+  "pr_body_excerpt": "- Derives community tabs from categories present in the loaded catalog\n- Keeps a category when switching scopes only when it exists in the target catalog\n- Accepts community video, audio, and embedding category URLs\n- Adds focused category tests",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Every shelf in the hive",
+    "blurb": "The community model catalog now lets all its shelves exist. Video, audio, and embedding models have stopped hiding behind a slightly overprotective tab bar.",
+    "summary": "Fixed the model catalog so community tabs are derived from the loaded catalog, preserve only categories available in the selected scope, and accept direct community video, audio, and embedding category URLs.",
+    "impact": "People browsing community models can now reliably find video, audio, and embedding categories, including when opening a focused category link or switching catalog scopes.",
+    "keywords": [
+      "community-models",
+      "model-catalog",
+      "categories",
+      "video",
+      "audio",
+      "embeddings",
+      "frontend"
+    ],
+    "visual_concept": "Depict Polli as a cozy librarian bee with tiny round glasses, opening a warm lime-green community model library where previously tucked-away shelves are clearly labeled Video, Audio, and Embeddings. Include a happy CRT monitor robot pointing at the newly visible shelves, with code-plants and small flowers growing between the bookcase compartments to represent a catalog that adapts to what is actually available.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, black antennae, black oval eyes, bright pink rectangular cheek blush, a small happy smile, and rounded light-blue translucent wings, wearing tiny librarian glasses as she opens a warm community model library with visible pixel shelves labeled “VIDEO”, “AUDIO”, and “EMBEDDINGS”. A cute CRT monitor robot points excitedly at the newly revealed shelves while flowers and code-plants grow from lime green (#ecf874) pots; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-31/PR-14179.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, black antennae, black oval eyes, bright pink rectangular cheek blush, a small happy smile, and rounded light-blue translucent wings, wearing tiny librarian glasses as she opens a warm community model library with visible pixel shelves labeled “VIDEO”, “AUDIO”, and “EMBEDDINGS”. A cute CRT monitor robot points excitedly at the newly revealed shelves while flowers and code-plants grow from lime green (#ecf874) pots; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, emotionally warm."
+  },
+  "generated_at": "2026-08-31T08:06:08.805257+00:00"
+}

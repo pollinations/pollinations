@@ -13,7 +13,6 @@ import {
     voidPendingPollenGiftCheckout,
     voidRefundedPollenGift,
 } from "../services/pollen-gifts.ts";
-import { isUniqueConstraintError } from "../utils/d1.ts";
 import {
     POLLEN_GIFT_BUYER_KEY_METADATA,
     recordStripeGiftCardFingerprintAttempt,
@@ -268,11 +267,13 @@ function readPresentment(session: Stripe.Checkout.Session): {
 type CheckoutSessionResult = {
     success: boolean;
     message: string;
-    pollenCredited?: number;
     duplicate?: boolean;
-    presentmentCurrency?: string;
-    presentmentAmount?: number;
 };
+
+function isUniqueConstraintError(error: unknown): boolean {
+    const message = error instanceof Error ? error.message : String(error);
+    return message.includes("UNIQUE constraint failed");
+}
 
 async function creditCheckoutSessionOnce({
     env,
@@ -439,6 +440,7 @@ function emitCheckoutSessionAnalytics(
     failureLabel: string,
 ): void {
     if (result.success && session.metadata) {
+        const presentment = readPresentment(session);
         c.executionCtx.waitUntil(
             sendStripeEventToTinybird(
                 c.env,
@@ -448,8 +450,8 @@ function emitCheckoutSessionAnalytics(
                     session.payment_status || "unknown",
                     (session.payment_method_types ?? []).join(","),
                     {
-                        currency: result.presentmentCurrency ?? "",
-                        amount: result.presentmentAmount ?? 0,
+                        currency: presentment.presentmentCurrency,
+                        amount: presentment.presentmentAmount,
                     },
                 ),
             ).catch((err) =>
@@ -626,9 +628,6 @@ const handleCheckoutSessionCompleted = async (
     return {
         success: true,
         message: `Credited ${pack.amountUsd} pollen to user ${userId}`,
-        pollenCredited: pack.amountUsd,
-        presentmentCurrency: presentment.presentmentCurrency,
-        presentmentAmount: presentment.presentmentAmount,
     };
 };
 

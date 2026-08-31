@@ -20,17 +20,6 @@ Overview of which external services each environment connects to.
 | Staging | Sandbox | `staging.enter.pollinations.ai/api/webhooks/stripe` |
 | Production | Live | `enter.pollinations.ai/api/webhooks/stripe` |
 
-Both Stripe endpoints must subscribe to the gift payment-loss events below:
-
-- `refund.created`
-- `refund.updated`
-- `refund.failed`
-- `charge.dispute.created`
-- `charge.dispute.updated`
-- `charge.dispute.funds_withdrawn`
-- `charge.dispute.funds_reinstated`
-- `charge.dispute.closed`
-
 ## Notes
 
 - **Tinybird**: Two workspaces in the same region. Prod traffic lands in `pollinations_enter`; staging + local-dev traffic lands in `pollinations_enter_staging`. The `environment` column is still populated on each row but is no longer used by pipes for filtering — token-scoped routing handles environment separation. Pipes and datasources must be deployed to **both** workspaces (manually for now — no CI auto-deploy).

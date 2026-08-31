@@ -6,28 +6,21 @@ import {
 } from "@shared/pollen-gifts.ts";
 import { calculateServiceFeeCents } from "@shared/pollen-packs.ts";
 import type Stripe from "stripe";
-import { isUniqueConstraintError } from "../utils/d1.ts";
 import { getStripeId } from "../utils/stripe.ts";
 
-export type PollenGiftStatus = "pending" | "active" | "redeemed" | "voided";
+type PollenGiftStatus = "pending" | "active" | "redeemed" | "voided";
 
 type PollenGiftRow = {
     id: string;
-    codeHash: string;
     pollenAmount: number;
     status: PollenGiftStatus;
     stripeCheckoutSessionId: string | null;
-    stripePaymentIntentId: string | null;
-    redeemerUserId: string | null;
 };
 
-export type PollenGiftFulfillmentResult = {
+type PollenGiftFulfillmentResult = {
     success: boolean;
     message: string;
     duplicate?: boolean;
-    pollenAmount?: number;
-    presentmentCurrency?: string;
-    presentmentAmount?: number;
 };
 
 export function isPollenGiftCheckoutSession(
@@ -48,33 +41,25 @@ export async function createPendingPollenGift(
     const faceValueCents = pollenAmount * 100;
     const serviceFeeCents = calculateServiceFeeCents(faceValueCents);
 
-    for (let attempt = 0; attempt < 3; attempt += 1) {
-        const id = crypto.randomUUID();
-        const code = generatePollenGiftCode();
-        const codeHash = await hashPollenGiftCode(code);
-        if (!codeHash) throw new Error("Generated an invalid Pollen gift code");
+    const id = crypto.randomUUID();
+    const code = generatePollenGiftCode();
+    const codeHash = await hashPollenGiftCode(code);
+    if (!codeHash) throw new Error("Generated an invalid Pollen gift code");
 
-        try {
-            await db
-                .prepare(
-                    `INSERT INTO pollen_gift_code (
-                        id,
-                        code_hash,
-                        pollen_amount,
-                        status,
-                        created_at
-                    ) VALUES (?, ?, ?, 'pending', ?)`,
-                )
-                .bind(id, codeHash, pollenAmount, Date.now())
-                .run();
+    await db
+        .prepare(
+            `INSERT INTO pollen_gift_code (
+                id,
+                code_hash,
+                pollen_amount,
+                status,
+                created_at
+            ) VALUES (?, ?, ?, 'pending', ?)`,
+        )
+        .bind(id, codeHash, pollenAmount, Date.now())
+        .run();
 
-            return { id, code, faceValueCents, serviceFeeCents };
-        } catch (error) {
-            if (!isUniqueConstraintError(error) || attempt === 2) throw error;
-        }
-    }
-
-    throw new Error("Failed to generate a unique Pollen gift code");
+    return { id, code, faceValueCents, serviceFeeCents };
 }
 
 export async function attachPollenGiftCheckoutSession(
@@ -113,10 +98,10 @@ export async function voidPendingPollenGift(
 export async function voidPendingPollenGiftCheckout(
     db: D1Database,
     session: Stripe.Checkout.Session,
-): Promise<boolean> {
-    if (!isPollenGiftCheckoutSession(session)) return false;
+): Promise<void> {
+    if (!isPollenGiftCheckoutSession(session)) return;
     const giftId = session.metadata?.giftId;
-    if (!giftId) return true;
+    if (!giftId) return;
 
     await db
         .prepare(
@@ -128,7 +113,6 @@ export async function voidPendingPollenGiftCheckout(
         )
         .bind(giftId, session.id)
         .run();
-    return true;
 }
 
 export async function fulfillPollenGiftCheckout(
@@ -141,7 +125,6 @@ export async function fulfillPollenGiftCheckout(
     }
 
     const paymentIntentId = getStripeId(session.payment_intent);
-    const presentment = readPollenGiftPresentment(session);
     const activated = await db
         .prepare(
             `UPDATE pollen_gift_code
@@ -149,7 +132,7 @@ export async function fulfillPollenGiftCheckout(
                  stripe_payment_intent_id = ?
              WHERE id = ?
                AND stripe_checkout_session_id = ?
-               AND status IN ('pending', 'voided')
+               AND status = 'pending'
              RETURNING pollen_amount AS pollenAmount`,
         )
         .bind(paymentIntentId, giftId, session.id)
@@ -160,9 +143,6 @@ export async function fulfillPollenGiftCheckout(
             success: true,
             message: `Activated ${activated.pollenAmount} Pollen gift`,
             duplicate: false,
-            pollenAmount: activated.pollenAmount,
-            presentmentCurrency: presentment.presentmentCurrency,
-            presentmentAmount: presentment.presentmentAmount,
         };
     }
 
@@ -175,9 +155,6 @@ export async function fulfillPollenGiftCheckout(
         success: true,
         message: `Gift order already ${latest.status}`,
         duplicate: true,
-        pollenAmount: latest.pollenAmount,
-        presentmentCurrency: presentment.presentmentCurrency,
-        presentmentAmount: presentment.presentmentAmount,
     };
 }
 
@@ -307,28 +284,7 @@ async function loadPollenGiftByCodeHash(
 
 const POLLEN_GIFT_SELECT = `SELECT
     id,
-    code_hash AS codeHash,
     pollen_amount AS pollenAmount,
     status,
-    stripe_checkout_session_id AS stripeCheckoutSessionId,
-    stripe_payment_intent_id AS stripePaymentIntentId,
-    redeemer_user_id AS redeemerUserId
+    stripe_checkout_session_id AS stripeCheckoutSessionId
 FROM pollen_gift_code`;
-
-function readPollenGiftPresentment(session: Stripe.Checkout.Session): {
-    presentmentCurrency: string;
-    presentmentAmount: number;
-} {
-    const details = (
-        session as Stripe.Checkout.Session & {
-            presentment_details?: {
-                presentment_currency?: string | null;
-                presentment_amount?: number | null;
-            };
-        }
-    ).presentment_details;
-    return {
-        presentmentCurrency: details?.presentment_currency ?? "",
-        presentmentAmount: details?.presentment_amount ?? 0,
-    };
-}

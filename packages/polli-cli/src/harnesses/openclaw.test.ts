@@ -12,8 +12,50 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { gen } from "../lib/api.js";
 
 vi.mock("node:child_process", () => ({ spawnSync: vi.fn() }));
+vi.mock("../lib/api.js", () => ({
+    gen: vi.fn(async (path: string) => {
+        if (path === "/account/key") {
+            return {
+                valid: true,
+                type: "secret",
+                permissions: { models: null },
+            };
+        }
+        if (path === "/v1/models") {
+            return {
+                data: [
+                    {
+                        id: "kimi",
+                        input_modalities: ["text", "image"],
+                        output_modalities: ["text"],
+                        supported_endpoints: ["/v1/chat/completions"],
+                        tools: true,
+                        context_length: 262000,
+                    },
+                    {
+                        id: "deepseek",
+                        input_modalities: ["text"],
+                        output_modalities: ["text"],
+                        supported_endpoints: ["/v1/chat/completions"],
+                        tools: true,
+                        context_length: 1048576,
+                    },
+                ],
+            };
+        }
+        throw new Error(`Unexpected API path ${path}`);
+    }),
+    ApiError: class ApiError extends Error {
+        status: number;
+        constructor(status: number, message: string) {
+            super(message);
+            this.status = status;
+        }
+    },
+}));
 
 import {
     configureOpenclaw,
@@ -23,6 +65,7 @@ import {
     openclawConfigPath,
     runOpenclawOnboarding,
 } from "./openclaw.js";
+import { harnessSnapshotPath } from "./snapshot.js";
 import type { HarnessContext } from "./types.js";
 
 const models = [
@@ -34,6 +77,7 @@ const settings = { apiKey: "sk_openclaw_test", model: "kimi", models };
 let home: string;
 let ctx: HarnessContext;
 const mockedSpawnSync = vi.mocked(spawnSync);
+const mockedGen = vi.mocked(gen);
 
 beforeEach(() => {
     home = mkdtempSync(join(tmpdir(), "polli-openclaw-"));
@@ -76,7 +120,7 @@ describe("openclaw paths", () => {
 });
 
 describe("openclaw lifecycle", () => {
-    it("writes a fresh provider using an environment reference and live model shape", () => {
+    it("writes a fresh provider using an environment reference and live model shape", async () => {
         const result = configureOpenclaw(ctx, settings);
         expect(result).toMatchObject({
             harness: "openclaw",
@@ -108,7 +152,20 @@ describe("openclaw lifecycle", () => {
         expect(
             JSON.stringify(config.models.providers.pollinations),
         ).not.toContain(settings.apiKey);
-        expect(openclaw.status(ctx)).toMatchObject({
+        const snapshot = JSON.parse(
+            readFileSync(
+                harnessSnapshotPath(ctx, "openclaw", [configFile()]),
+                "utf8",
+            ),
+        );
+        expect(snapshot.metadata.openclaw).toMatchObject({
+            provider: true,
+            defaultModel: "kimi",
+            modelsMode: true,
+            keyEnv: "POLLI_OPENCLAW_API_KEY",
+            webSearch: true,
+        });
+        await expect(openclaw.status(ctx)).resolves.toMatchObject({
             configured: true,
             model: "kimi",
         });
@@ -135,28 +192,67 @@ describe("openclaw lifecycle", () => {
         );
     });
 
-    it("reports false when a configured model loses chat-compatible metadata", () => {
+    it("reports false when a configured model loses chat-compatible metadata", async () => {
         configureOpenclaw(ctx, settings);
         const config = readConfig();
         config.models.providers.pollinations.models[0].input = ["audio"];
         writeFileSync(configFile(), `${JSON.stringify(config, null, 2)}\n`);
-        expect(openclaw.status(ctx)).toMatchObject({ configured: false });
+        await expect(openclaw.status(ctx)).resolves.toMatchObject({
+            configured: false,
+        });
     });
 
-    it("reports false when a configured model id contains whitespace", () => {
+    it("reports false when a configured model id contains whitespace", async () => {
         configureOpenclaw(ctx, settings);
         const config = readConfig();
         config.models.providers.pollinations.models[0].id = "bad model";
         writeFileSync(configFile(), `${JSON.stringify(config, null, 2)}\n`);
-        expect(openclaw.status(ctx)).toMatchObject({ configured: false });
+        await expect(openclaw.status(ctx)).resolves.toMatchObject({
+            configured: false,
+        });
     });
 
-    it("reports false when the owned web search model is changed", () => {
+    it("reports false when the owned web search model is changed", async () => {
         configureOpenclaw(ctx, settings);
         const config = readConfig();
         config.tools.web.search.perplexity.model = "user-model";
         writeFileSync(configFile(), `${JSON.stringify(config, null, 2)}\n`);
-        expect(openclaw.status(ctx)).toMatchObject({ configured: false });
+        await expect(openclaw.status(ctx)).resolves.toMatchObject({
+            configured: false,
+        });
+    });
+
+    it("reports false for a revoked configured key", async () => {
+        configureOpenclaw(ctx, settings);
+        mockedGen.mockResolvedValueOnce({ valid: false });
+        await expect(openclaw.status(ctx)).resolves.toMatchObject({
+            configured: false,
+        });
+    });
+
+    it("reports false for a key restricted away from the configured model", async () => {
+        configureOpenclaw(ctx, settings);
+        mockedGen.mockResolvedValueOnce({
+            valid: true,
+            type: "secret",
+            permissions: { models: ["deepseek"] },
+        });
+        await expect(openclaw.status(ctx)).resolves.toMatchObject({
+            configured: false,
+        });
+    });
+
+    it("reports false when the keyed catalog no longer contains the model", async () => {
+        configureOpenclaw(ctx, settings);
+        mockedGen.mockResolvedValueOnce({
+            valid: true,
+            type: "secret",
+            permissions: { models: null },
+        });
+        mockedGen.mockResolvedValueOnce({ data: [] });
+        await expect(openclaw.status(ctx)).resolves.toMatchObject({
+            configured: false,
+        });
     });
 
     it("merges Pollinations search fields into existing web search settings", () => {

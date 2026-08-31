@@ -1,10 +1,20 @@
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 import { parseEnv } from "node:util";
 import { isMap, isSeq, parseDocument, Scalar } from "yaml";
 import polliSkill from "../../SKILL.md?raw";
 import { BASE_URL } from "../lib/config.js";
-import { readTextIfExists, removeIfExists, writeTextAtomic } from "./fs.js";
-import { resolveHarnessKey } from "./keys.js";
+import {
+    readTextIfExists,
+    removeIfExists,
+    resolveHarnessPath,
+    writeTextAtomic,
+} from "./fs.js";
+import {
+    isHarnessKeyValid,
+    normalizeSecretKey,
+    resolveHarnessKey,
+    withHarnessKeyLease,
+} from "./keys.js";
 import { fetchHarnessModels } from "./models.js";
 import {
     applyWithSnapshot,
@@ -37,13 +47,7 @@ const JS_TAG = {
 export const dshHome = (ctx: HarnessContext) => {
     const configured = ctx.env.DSH_HOME;
     if (!configured?.trim()) return join(ctx.home, ".dsh");
-    const expanded =
-        configured === "~"
-            ? ctx.home
-            : configured.startsWith("~/") || configured.startsWith("~\\")
-              ? join(ctx.home, configured.slice(2))
-              : configured;
-    return resolve(expanded);
+    return resolveHarnessPath(configured, ctx.home);
 };
 const settingsPath = (ctx: HarnessContext) =>
     join(dshHome(ctx), "settings.yaml");
@@ -67,8 +71,7 @@ const files = (ctx: HarnessContext) => [
 const readKey = (ctx: HarnessContext) => {
     const text = readTextIfExists(envPath(ctx));
     if (text === null) return null;
-    const key = parseEnv(text)[KEY_ENV];
-    return key || null;
+    return normalizeSecretKey(parseEnv(text)[KEY_ENV]);
 };
 
 const envLine = (key: string) => `${KEY_ENV}=${JSON.stringify(key)}`;
@@ -267,7 +270,11 @@ export const configureDsh = (
     ctx: HarnessContext,
     settings: DshSettings,
 ): HarnessResult => {
-    applyWithSnapshot(ctx, ID, files(ctx), () => writeConfig(ctx, settings));
+    const apiKey = normalizeSecretKey(settings.apiKey);
+    if (!apiKey) throw new Error("A Pollinations secret API key is required");
+    applyWithSnapshot(ctx, ID, files(ctx), () =>
+        writeConfig(ctx, { ...settings, apiKey }),
+    );
     return result(ctx);
 };
 
@@ -285,27 +292,62 @@ export const dsh: HarnessAdapter = {
     id: ID,
     label: LABEL,
     description: "Configure DeepSeek Harness as a Pollinations provider",
+    supportsMcp: true,
     restartHint:
         "Changes apply on the next request. Start DeepSeek Harness with: npx @deepseek-ai/dsh web",
 
     async on(ctx, options) {
         const model = options.model ?? DEFAULT_MODEL;
-        const models = await fetchHarnessModels();
-        if (!models.some((candidate) => candidate.id === model)) {
+        const existingKey = readKey(ctx);
+        if (existingKey && (await isHarnessKeyValid(existingKey))) {
+            const models = await fetchHarnessModels(existingKey);
+            if (!models.some((candidate) => candidate.id === model)) {
+                throw new Error(
+                    `Model "${model}" is not a tool-calling text model. Run: polli models`,
+                );
+            }
+            return configureDsh(ctx, {
+                apiKey: existingKey,
+                model,
+                models,
+                mcp: options.mcp,
+            });
+        }
+        const publicModels = await fetchHarnessModels();
+        if (!publicModels.some((candidate) => candidate.id === model)) {
             throw new Error(
                 `Model "${model}" is not a tool-calling text model. Run: polli models`,
             );
         }
-
-        const apiKey = await resolveHarnessKey(
+        const lease = await resolveHarnessKey(
             { id: ID, label: LABEL, existingKey: readKey(ctx) },
-            { browser: options.browser },
+            {
+                browser: options.browser,
+                beforeCreate: async (accountKey) => {
+                    const keyedModels = await fetchHarnessModels(accountKey);
+                    if (
+                        !keyedModels.some((candidate) => candidate.id === model)
+                    ) {
+                        throw new Error(
+                            `Model "${model}" is not a tool-calling text model. Run: polli models`,
+                        );
+                    }
+                },
+            },
         );
-        return configureDsh(ctx, {
-            apiKey,
-            model,
-            models,
-            mcp: options.mcp,
+        return withHarnessKeyLease(lease, async (apiKey) => {
+            const models = await fetchHarnessModels(apiKey);
+            if (!models.some((candidate) => candidate.id === model)) {
+                throw new Error(
+                    `Model "${model}" is not a tool-calling text model. Run: polli models`,
+                );
+            }
+            return configureDsh(ctx, {
+                apiKey,
+                model,
+                models,
+                mcp: options.mcp,
+            });
         });
     },
 

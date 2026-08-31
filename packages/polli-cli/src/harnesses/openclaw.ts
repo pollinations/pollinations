@@ -4,11 +4,19 @@ import { accessSync, constants, existsSync, statSync } from "node:fs";
 import { delimiter, dirname, join } from "node:path";
 import { BASE_URL } from "../lib/config.js";
 import { readTextIfExists, resolveHarnessPath, writeTextAtomic } from "./fs.js";
-import { normalizeHarnessKey, resolveHarnessKeyLease } from "./keys.js";
-import { fetchHarnessModels, isValidHarnessModelId } from "./models.js";
+import {
+    inspectHarnessKey,
+    normalizeSecretKey,
+    resolveHarnessKey,
+    withHarnessKeyLease,
+} from "./keys.js";
+import { fetchHarnessModels } from "./models.js";
+import type { HarnessSnapshot } from "./snapshot.js";
 import {
     applyWithSnapshot,
     clearSnapshot,
+    harnessSnapshotPath,
+    loadHarnessSnapshot,
     restoreSnapshot,
 } from "./snapshot.js";
 import type {
@@ -68,6 +76,13 @@ interface OpenClawConfig {
 const isRecord = (value: unknown): value is JsonObject =>
     typeof value === "object" && value !== null && !Array.isArray(value);
 
+const isValidHarnessModelId = (id: unknown): id is string =>
+    typeof id === "string" &&
+    id.length > 0 &&
+    id.length <= 256 &&
+    id.trim() === id &&
+    !/[\s\p{Cc}]/u.test(id);
+
 const searchConfigHash = () =>
     createHash("sha256")
         .update(
@@ -119,51 +134,6 @@ export const openclawConfigPath = (ctx: HarnessContext): string => {
 };
 
 const files = (ctx: HarnessContext) => [openclawConfigPath(ctx)];
-
-const snapshotPath = (ctx: HarnessContext): string => {
-    const digest = createHash("sha256")
-        .update(files(ctx).join("\n"))
-        .digest("hex")
-        .slice(0, 12);
-    return join(ctx.home, ".pollinations", "harnesses", `${ID}.${digest}.json`);
-};
-
-const loadSnapshot = (ctx: HarnessContext): JsonObject | null => {
-    const text = readTextIfExists(snapshotPath(ctx));
-    if (!text) return null;
-    let value: unknown;
-    try {
-        value = JSON.parse(text);
-    } catch (error) {
-        const detail = error instanceof Error ? error.message : "invalid JSON";
-        throw new Error(
-            `Invalid harness snapshot ${snapshotPath(ctx)}: ${detail}`,
-        );
-    }
-    if (!isRecord(value) || !isRecord(value.files)) {
-        throw new Error(`Invalid harness snapshot ${snapshotPath(ctx)}`);
-    }
-    return value;
-};
-
-const setOwnership = (ctx: HarnessContext, model: string) => {
-    const path = snapshotPath(ctx);
-    const snapshot = loadSnapshot(ctx);
-    if (!snapshot) throw new Error("OpenClaw snapshot was not created");
-    const metadata = isRecord(snapshot.metadata) ? snapshot.metadata : {};
-    snapshot.metadata = {
-        ...metadata,
-        openclaw: {
-            provider: true,
-            defaultModel: model,
-            modelsMode: true,
-            keyEnv: KEY_ENV,
-            webSearch: true,
-            webSearchHash: searchConfigHash(),
-        },
-    };
-    writeTextAtomic(path, `${JSON.stringify(snapshot, null, 2)}\n`, 0o600);
-};
 
 const readDocuments = (ctx: HarnessContext): JsonObject => {
     const path = openclawConfigPath(ctx);
@@ -270,6 +240,7 @@ const existingKey = (config: JsonObject): string | null => {
 const modelConfig = (model: HarnessModel): JsonObject => ({
     id: model.id,
     name: model.id,
+    ...(model.reasoning ? { reasoning: true } : {}),
     input: model.input,
     contextWindow: model.contextWindow,
     maxTokens: 8192,
@@ -380,18 +351,23 @@ const saveConfig = (ctx: HarnessContext, config: JsonObject) =>
         0o600,
     );
 
+const snapshotBefore = (
+    snapshot: HarnessSnapshot | null,
+    path: string,
+): string | null | undefined => snapshot?.files[path]?.before;
+
 const beforeConfig = (
-    snapshot: JsonObject | null,
+    snapshot: HarnessSnapshot | null,
     path: string,
 ): JsonObject | null => {
-    const files = isRecord(snapshot?.files) ? snapshot.files : undefined;
-    const entry = isRecord(files?.[path]) ? files[path] : undefined;
-    return typeof entry?.before === "string"
-        ? parseJsonObject(path, entry.before)
-        : null;
+    const before = snapshotBefore(snapshot, path);
+    return before === undefined ? null : parseJsonObject(path, before);
 };
 
-const stripConfig = (ctx: HarnessContext, snapshot: JsonObject): boolean => {
+const stripConfig = (
+    ctx: HarnessContext,
+    snapshot: HarnessSnapshot | null,
+): boolean => {
     const path = openclawConfigPath(ctx);
     const current = readDocuments(ctx);
     const before = beforeConfig(snapshot, path);
@@ -561,9 +537,40 @@ const localStatus = (ctx: HarnessContext): HarnessResult => {
     return { harness: ID, label: LABEL, configured, model, files: [path] };
 };
 
+const liveStatus = async (ctx: HarnessContext): Promise<HarnessResult> => {
+    const structural = localStatus(ctx);
+    if (!structural.configured || !structural.model) return structural;
+    const config = readDocumentsForStatus(ctx);
+    if (!config) return { ...structural, configured: false };
+    const key = configuredKey(config);
+    if (!key) return { ...structural, configured: false };
+    try {
+        const info = await inspectHarnessKey(key);
+        if (!info) return { ...structural, configured: false };
+        const permittedModels = info.permissions?.models;
+        if (
+            Array.isArray(permittedModels) &&
+            !permittedModels.includes(structural.model)
+        ) {
+            return { ...structural, configured: false };
+        }
+        const models = await fetchHarnessModels(key);
+        return {
+            ...structural,
+            configured: models.some(
+                (candidate) => candidate.id === structural.model,
+            ),
+        };
+    } catch {
+        return { ...structural, configured: false };
+    }
+};
+
 const preflight = (ctx: HarnessContext) => {
     const path = openclawConfigPath(ctx);
-    for (const target of [path, snapshotPath(ctx)]) {
+    const managedFiles = files(ctx);
+    const snapshotPath = harnessSnapshotPath(ctx, ID, managedFiles);
+    for (const target of [path, snapshotPath]) {
         if (existsSync(target) && !statSync(target).isFile()) {
             throw new Error(`Managed path is not a regular file: ${target}`);
         }
@@ -591,11 +598,10 @@ const preflight = (ctx: HarnessContext) => {
             }
         }
     }
-    const snapshot = loadSnapshot(ctx);
+    const snapshot = loadHarnessSnapshot(ctx, ID, managedFiles);
     if (snapshot) {
-        const snapshotFiles = snapshot.files as JsonObject;
-        if (!isRecord(snapshotFiles[path])) {
-            throw new Error(`Invalid harness snapshot ${snapshotPath(ctx)}`);
+        if (!Object.hasOwn(snapshot.files, path)) {
+            throw new Error(`Invalid harness snapshot ${snapshotPath}`);
         }
     }
     readDocuments(ctx);
@@ -655,48 +661,60 @@ export const configureOpenclaw = (
     settings: OpenClawConfig,
 ): HarnessResult => {
     preflight(ctx);
-    const apiKey = normalizeHarnessKey(settings.apiKey);
+    const apiKey = normalizeSecretKey(settings.apiKey);
     if (!apiKey) throw new Error("A Pollinations secret API key is required");
     const model = selectModel(settings.model, settings.models);
     const current = readDocuments(ctx);
     const onboard = settings.onboard && configNeedsOnboarding(ctx, current);
     if (onboard && !isOpenclawInstalled(ctx))
         throw new Error("OpenClaw is not installed");
-    applyWithSnapshot(ctx, ID, files(ctx), () =>
-        (() => {
+    applyWithSnapshot(
+        ctx,
+        ID,
+        files(ctx),
+        () => {
             if (onboard) runOpenclawOnboarding(ctx);
             const base = onboard ? readDocuments(ctx) : current;
             saveConfig(ctx, buildConfig(base, { ...settings, apiKey, model }));
-        })(),
+        },
+        undefined,
+        (existing) => ({
+            ...existing,
+            openclaw: {
+                provider: true,
+                defaultModel: model,
+                modelsMode: true,
+                keyEnv: KEY_ENV,
+                webSearch: true,
+                webSearchHash: searchConfigHash(),
+            },
+        }),
     );
+    const result = localStatus(ctx);
+    if (result.configured) return result;
     try {
-        setOwnership(ctx, model);
-        const result = localStatus(ctx);
-        if (!result.configured)
-            throw new Error("OpenClaw configuration failed local validation");
-        return result;
-    } catch (error) {
-        try {
-            restoreSnapshot(ctx, ID, files(ctx));
-        } catch (rollbackError) {
-            throw new AggregateError(
-                [error, rollbackError],
-                "OpenClaw configuration failed and could not be rolled back",
-            );
-        }
-        throw error;
+        disableOpenclaw(ctx);
+    } catch (rollbackError) {
+        throw new AggregateError(
+            [
+                new Error(
+                    "OpenClaw setup did not produce a configured harness",
+                ),
+                rollbackError,
+            ],
+            "OpenClaw setup failed and its config could not be restored",
+        );
     }
+    throw new Error("OpenClaw setup did not produce a configured harness");
 };
 
 export const disableOpenclaw = (ctx: HarnessContext): HarnessResult => {
     const managedFiles = files(ctx);
+    const snapshot = loadHarnessSnapshot(ctx, ID, managedFiles);
     const restoration = restoreSnapshot(ctx, ID, managedFiles);
     if (restoration === "restored")
         return { ...localStatus(ctx), configured: false, outcome: "restored" };
     if (restoration === "missing")
-        return { ...localStatus(ctx), configured: false, outcome: "unchanged" };
-    const snapshot = loadSnapshot(ctx);
-    if (!snapshot)
         return { ...localStatus(ctx), configured: false, outcome: "unchanged" };
     const changed = stripConfig(ctx, snapshot);
     clearSnapshot(ctx, ID, managedFiles);
@@ -711,6 +729,7 @@ export const openclaw: HarnessAdapter = {
     id: ID,
     label: LABEL,
     description: "Configure OpenClaw as a Pollinations provider",
+    supportsMcp: false,
     restartHint:
         "Restart OpenClaw or its gateway for the new provider to take effect.",
     async on(ctx, options) {
@@ -720,40 +739,31 @@ export const openclaw: HarnessAdapter = {
             );
         }
         preflight(ctx);
-        const publicModels = await fetchHarnessModels();
+        const publicModels = await fetchHarnessModels("");
         selectModel(options.model, publicModels);
         const config = readDocuments(ctx);
         const onboard = configNeedsOnboarding(ctx, config);
-        const lease = await resolveHarnessKeyLease(
+        const lease = await resolveHarnessKey(
             { id: ID, label: LABEL, existingKey: existingKey(config) },
-            { browser: options.browser },
+            {
+                browser: options.browser,
+                beforeCreate: async (accountKey) => {
+                    const keyedModels = await fetchHarnessModels(accountKey);
+                    selectModel(options.model, keyedModels);
+                },
+            },
         );
-        try {
-            const models = await fetchHarnessModels(lease.key);
+        return withHarnessKeyLease(lease, async (apiKey) => {
+            const models = await fetchHarnessModels(apiKey);
             const model = selectModel(options.model, models);
-            const result = configureOpenclaw(ctx, {
-                apiKey: lease.key,
+            return configureOpenclaw(ctx, {
+                apiKey,
                 model,
                 models,
                 onboard,
             });
-            if (!result.configured)
-                throw new Error("OpenClaw configuration is not active");
-            return result;
-        } catch (error) {
-            if (lease.created) {
-                try {
-                    await lease.revoke();
-                } catch (revokeError) {
-                    throw new AggregateError(
-                        [error, revokeError],
-                        "OpenClaw setup failed and its API key could not be revoked",
-                    );
-                }
-            }
-            throw error;
-        }
+        });
     },
     off: disableOpenclaw,
-    status: (ctx) => localStatus(ctx),
+    status: liveStatus,
 };

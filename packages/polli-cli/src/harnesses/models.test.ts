@@ -20,6 +20,7 @@ beforeAll(async () => {
                         supported_endpoints: ["/v1/chat/completions"],
                         tools: true,
                         context_length: 262000,
+                        reasoning: true,
                     },
                     {
                         id: "z-ai/glm-5.3-flash",
@@ -95,7 +96,12 @@ afterAll(async () => {
 describe("harness model catalog", () => {
     it("keeps only tool-capable chat models with valid modalities and context", async () => {
         await expect(fetchHarnessModels()).resolves.toEqual([
-            { id: "kimi", contextWindow: 262000, input: ["text", "image"] },
+            {
+                id: "kimi",
+                contextWindow: 262000,
+                input: ["text", "image"],
+                reasoning: true,
+            },
             {
                 id: "z-ai/glm-5.3-flash",
                 contextWindow: 128000,
@@ -108,5 +114,13 @@ describe("harness model catalog", () => {
     it("passes a key for account-scoped model validation", async () => {
         await expect(fetchHarnessModels("sk_scoped")).resolves.toHaveLength(3);
         expect(authorizationHeaders).toEqual([undefined, "Bearer sk_scoped"]);
+    });
+
+    it("keeps public preflight requests explicitly anonymous", async () => {
+        authorizationHeaders.length = 0;
+        await fetchHarnessModels("");
+        await fetchHarnessModels(null);
+        await fetchHarnessModels(undefined);
+        expect(authorizationHeaders).toEqual([undefined, undefined, undefined]);
     });
 });

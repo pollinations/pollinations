@@ -12,7 +12,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseEnv } from "node:util";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { parse, stringify } from "yaml";
 import { configureDsh, disableDsh, dsh } from "./dsh.js";
 import type { HarnessContext } from "./types.js";
@@ -81,18 +81,72 @@ describe("dsh harness", () => {
             "url: https://gen.pollinations.ai/mcp/pollinations",
         );
         expect(patch).toContain(
-            "!!js '`Bearer ${process.env.POLLI_DSH_API_KEY}`'",
+            "!!js '`Bearer " + "$" + "{process.env.POLLI_DSH_API_KEY}`'",
         );
         expect(read(skillFile())).toContain("name: polli");
-        expect(statSync(settingsFile()).mode & 0o777).toBe(0o600);
-        expect(statSync(envFile()).mode & 0o777).toBe(0o600);
-        expect(statSync(patchFile()).mode & 0o777).toBe(0o600);
-        expect(statSync(skillFile()).mode & 0o777).toBe(0o600);
-        expect(statSync(join(home, ".dsh")).mode & 0o777).toBe(0o700);
+        // POSIX mode bits are not portable on Windows; keep these assertions
+        // on the platforms where the atomic writer promises them.
+        if (process.platform !== "win32") {
+            expect(statSync(settingsFile()).mode & 0o777).toBe(0o600);
+            expect(statSync(envFile()).mode & 0o777).toBe(0o600);
+            expect(statSync(patchFile()).mode & 0o777).toBe(0o600);
+            expect(statSync(skillFile()).mode & 0o777).toBe(0o600);
+            expect(statSync(join(home, ".dsh")).mode & 0o777).toBe(0o700);
+        }
         expect(dsh.status(ctx)).toMatchObject({
             configured: true,
             model: "deepseek",
         });
+    });
+
+    it("accepts slash-containing model IDs during selection", async () => {
+        const model = "z-ai/glm-5.3-flash";
+        mkdirSync(join(home, ".dsh"), { recursive: true });
+        writeFileSync(envFile(), "POLLI_DSH_API_KEY=sk_test_key\n");
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input: RequestInfo | URL) => {
+                const url = String(input);
+                if (url.endsWith("/account/key")) {
+                    return new Response('{"valid":true}', { status: 200 });
+                }
+                if (url.endsWith("/v1/models")) {
+                    return new Response(
+                        JSON.stringify({
+                            data: [
+                                {
+                                    id: model,
+                                    input_modalities: ["text"],
+                                    output_modalities: ["text"],
+                                    supported_endpoints: [
+                                        "/v1/chat/completions",
+                                    ],
+                                    tools: true,
+                                    context_length: 65536,
+                                },
+                            ],
+                        }),
+                        { status: 200 },
+                    );
+                }
+                return new Response("not found", { status: 404 });
+            }),
+        );
+
+        await expect(dsh.on(ctx, { model })).resolves.toMatchObject({
+            configured: true,
+            model,
+        });
+        const doc = parse(read(settingsFile()));
+        expect(doc["agent-default-model"]).toEqual({
+            provider: "pollinations",
+            model,
+        });
+        expect(
+            doc["llm-pi-ai"].providers.pollinations.models.map(
+                (entry: { id: string }) => entry.id,
+            ),
+        ).toEqual([model]);
     });
 
     it("keeps existing settings, comments, environment, and MCP entries", () => {
@@ -123,8 +177,12 @@ describe("dsh harness", () => {
         });
         expect(read(patchFile())).toContain("# my plugins");
         expect(read(patchFile())).toContain("id: mcp-local");
-        expect(statSync(settingsFile()).mode & 0o777).toBe(0o600);
-        expect(statSync(envFile()).mode & 0o777).toBe(0o600);
+        // POSIX mode bits are not portable on Windows; keep these assertions
+        // on the platforms where the atomic writer promises them.
+        if (process.platform !== "win32") {
+            expect(statSync(settingsFile()).mode & 0o777).toBe(0o600);
+            expect(statSync(envFile()).mode & 0o777).toBe(0o600);
+        }
     });
 
     it("restores the original files byte-for-byte on off", () => {
@@ -175,6 +233,11 @@ describe("dsh harness", () => {
         expect(result).toMatchObject({ configured: true, mcp: false });
         expect(existsSync(patchFile())).toBe(false);
         expect(existsSync(skillFile())).toBe(true);
+    });
+
+    it("normalizes a secret key before writing the DSH environment", () => {
+        configureDsh(ctx, { ...settings, apiKey: "  sk_test_key  " });
+        expect(parseEnv(read(envFile())).POLLI_DSH_API_KEY).toBe("sk_test_key");
     });
 
     it("keeps one backup per harness home", () => {

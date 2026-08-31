@@ -43,7 +43,7 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 | List your quests + claim state | `polli quests` (filters: `--open --claimable --claimed --coming-soon`) |
 | Manage prompt agents | `polli agents list` |
 | Manage invite-only community models | `polli my-models list` |
-| Connect a coding harness to Pollinations | `polli harness dsh on` (available adapters: `polli harness --help`) |
+| Connect a coding harness to Pollinations | `polli harness dsh|opencode|pi|prime|openclaw on` |
 | Machine-readable output | append `--json` to any command |
 
 ## Setup
@@ -212,7 +212,7 @@ polli harness dsh on --model kimi   # any tool-calling text model from `polli mo
 polli harness dsh on --no-mcp       # configure the provider and skill without MCP tools
 polli harness dsh off               # restore the config backed up before "on"
 ```
-The DSH adapter globally configures the Pollinations provider, hosted Pollinations MCP, and this skill under `$DSH_HOME` (default `~/.dsh`). It stores one dedicated child key in `$DSH_HOME/.env` for the provider and MCP, plus a private snapshot under `~/.pollinations/harnesses/`. Reruns reuse a valid key already in the harness config. Other adapters may use their harness's official plugin or installer instead. Guide: `polli docs` section "Coding Harnesses".
+The DSH adapter globally configures the Pollinations provider, hosted Pollinations MCP, and this skill under `$DSH_HOME` (default `~/.dsh`). It stores one dedicated child key in `$DSH_HOME/.env` for the provider and MCP, plus a private snapshot under `~/.pollinations/harnesses/`. Reruns reuse a valid key already in the harness config. The OpenCode adapter enables the official Pollinations plugin; Pi and Prime Agent write their native `models.json` provider plus `auth.json` key and startup model; OpenClaw writes an `openclaw.json` provider with a live model catalog. Guide: `polli docs` section "Coding Harnesses".
 
 ### Read API docs
 ```bash

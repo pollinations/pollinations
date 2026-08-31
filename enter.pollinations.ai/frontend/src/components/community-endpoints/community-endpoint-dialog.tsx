@@ -44,7 +44,6 @@ import {
     providerModelHelper,
     readError,
     toEndpointPayload,
-    willCancelPendingChange,
 } from "./types.ts";
 
 type CommunityEndpointDialogProps = {
@@ -295,10 +294,8 @@ export function CommunityEndpointDialog({
         visiblePriceKeys,
     );
     const hasValidPerUserRpm = isValidPerUserRpm(form.perUserRpm);
-    const cancelsPendingChange = willCancelPendingChange(
-        endpoint,
-        form.visibility,
-    );
+    const cancelsPendingChange =
+        Boolean(endpoint?.pending) && form.visibility === "private";
     // First-time publishing of an external endpoint re-observes its billed
     // buckets, so it needs a successful test. A model already public or queued
     // for publication has server-validated pricing, so re-editing it does not

@@ -201,11 +201,7 @@ export function CommunityEndpointCard({
     );
 }
 
-export function PendingChangeNotice({
-    endpoint,
-}: {
-    endpoint: CommunityEndpoint;
-}) {
+function PendingChangeNotice({ endpoint }: { endpoint: CommunityEndpoint }) {
     const pending = endpoint.pending;
     if (!pending) return null;
 

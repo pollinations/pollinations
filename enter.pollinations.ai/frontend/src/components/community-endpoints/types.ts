@@ -377,13 +377,6 @@ export function endpointToForm(endpoint: EditableEndpoint): EndpointFormState {
     };
 }
 
-export function willCancelPendingChange(
-    endpoint: EditableEndpoint | undefined,
-    visibility: CommunityEndpointVisibility,
-): boolean {
-    return Boolean(endpoint?.pending) && visibility === "private";
-}
-
 export function agentListingToForm(
     endpoint?: PromptAgentCommunityEndpoint,
 ): ModelListingFormState {

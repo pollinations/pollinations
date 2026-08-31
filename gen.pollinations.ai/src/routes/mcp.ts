@@ -7,6 +7,7 @@ import {
 } from "@shared/mcp-usage.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
 import {
+    getMcpPricingInfo,
     getMcpServerDefinition,
     MCP_SERVERS,
     MCP_USAGE_HEADERS,
@@ -148,6 +149,7 @@ export const mcpRoutes = new Hono<Env>()
                 name: server.name,
                 description: server.description,
                 url: `${getPublicOrigin(c)}/mcp/${server.id}`,
+                pricing: getMcpPricingInfo(server),
             })),
         }),
     )

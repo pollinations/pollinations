@@ -21,9 +21,7 @@ import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { ModelListingFields } from "./model-listing-fields.tsx";
 import {
-    BASE_TEXT_PRICE_KEYS,
-    BASE_TRANSCRIPTION_PRICE_KEYS,
-    BASE_VIDEO_PRICE_KEYS,
+    basePriceKeysForModality,
     formWithVisiblePrices,
     hasValidVisibleFormPrices,
     PriceGroups,
@@ -283,14 +281,7 @@ export function CommunityEndpointDialog({
         : [];
     // Reveal the modality's base price plus whatever the test observed or the
     // model already had saved. Blank and zero prices mean free.
-    const basePriceKeys =
-        form.modality === "image"
-            ? (["completionImagePrice"] as const)
-            : form.modality === "video"
-              ? BASE_VIDEO_PRICE_KEYS
-              : form.modality === "transcription"
-                ? BASE_TRANSCRIPTION_PRICE_KEYS
-                : BASE_TEXT_PRICE_KEYS;
+    const basePriceKeys = basePriceKeysForModality(form.modality);
     const visiblePriceKeys = new Set(
         isShared
             ? visiblePriceFieldKeys(savedPriceKeys, returnedFields, [

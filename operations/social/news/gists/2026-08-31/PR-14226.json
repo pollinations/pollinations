@@ -1,0 +1,34 @@
+{
+  "pr_number": 14226,
+  "title": "fix(polli-cli): configure Pi provider API key",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14226",
+  "merged_at": "2026-08-31T23:46:28Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds Pi's required custom-provider API key marker\n- Keeps the real credential in `auth.json`\n- Reports older incomplete Pi configs as unconfigured so rerunning setup repairs them\n- Tests: `npm run test` (57 passed), `npm run build`",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Pi Gets Its Pollen",
+    "blurb": "Polli CLI now leaves Pi with the little provider marker it needs to recognize its API key. Existing credentials stay safely tucked in auth.json, where bees keep their important receipts.",
+    "summary": "Fixed Polli CLI's Pi harness setup by adding Pi's required custom-provider API key marker, retaining the real credential in auth.json, and flagging older incomplete configurations so setup can repair them.",
+    "impact": "Developers configuring Pi through Polli CLI will now get a recognized provider configuration, while rerunning setup automatically repairs older incomplete Pi setups.",
+    "keywords": [
+      "polli-cli",
+      "pi",
+      "provider",
+      "api-key",
+      "configuration",
+      "auth"
+    ],
+    "visual_concept": "Depict Polli as a careful CLI mechanic fitting a small key-shaped provider marker into a cozy Pi configuration terminal, while a separate locked auth.json jar keeps the real credential safe. Tiny code-plants and flowers make the repaired setup feel like a garden tending task rather than an ominous authentication ritual.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny mechanic tool belt as she installs a key-shaped custom-provider marker into a retro terminal labeled \"Pi\"; beside it, a small locked jar labeled \"auth.json\" glows safely among code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-31/PR-14226.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny mechanic tool belt as she installs a key-shaped custom-provider marker into a retro terminal labeled \"Pi\"; beside it, a small locked jar labeled \"auth.json\" glows safely among code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-31T23:47:29.593155+00:00"
+}

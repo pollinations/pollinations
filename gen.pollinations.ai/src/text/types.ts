@@ -10,7 +10,7 @@ export interface ChatMessage {
     content?: string | unknown[] | null;
     tool_call_id?: string;
     name?: string;
-    tool_calls?: unknown[];
+    tool_calls?: unknown[] | null;
     function_call?: unknown;
     reasoning_content?: unknown;
     audio?: unknown;

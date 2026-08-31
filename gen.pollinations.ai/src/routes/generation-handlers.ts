@@ -3,6 +3,7 @@ import {
     type CreateChatCompletionRequest,
     type CreateChatCompletionResponse,
     CreateChatCompletionResponseSchema,
+    type CreateResponseRequest,
 } from "@shared/schemas/openai.ts";
 import { SafeSchema, type SafeValue } from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
@@ -26,9 +27,14 @@ import type { CreateEmbeddingRequestSchema } from "@/schemas/embeddings.ts";
 import type { GenerateTextRequestQueryParams } from "@/schemas/text.ts";
 import {
     handleChatCompletionLocal,
+    handleCreateResponseLocal,
     handleSimpleTextLocal,
     handleTextContentLocal,
 } from "@/text/handler.ts";
+import {
+    responseRequestToChatRequest,
+    responsesErrorResponse,
+} from "@/text/responses.ts";
 import { withModelFallbackResponse } from "../fallback.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 
@@ -217,6 +223,30 @@ export async function generateChatCompletion(
             },
         }),
     );
+}
+
+export async function generateCreateResponse(
+    c: Context<Env>,
+): Promise<Response> {
+    const requestBody = {
+        ...(c.req.valid("json" as never) as CreateResponseRequest),
+        model: c.var.model.resolved,
+    };
+    let chatRequest: CreateChatCompletionRequest;
+    try {
+        chatRequest = responseRequestToChatRequest(requestBody);
+    } catch (error) {
+        return responsesErrorResponse(error);
+    }
+
+    const safeChatRequest = await applySafetyToChatRequest(c, chatRequest);
+    const response = await handleCreateResponseLocal(
+        c,
+        requestBody,
+        safeChatRequest,
+    );
+    assertStreamContentType(c, response, c.var.upstreamRequestUrl);
+    return withSafetyHeaders(c, response);
 }
 
 export async function generateTextContent(c: Context<Env>): Promise<Response> {

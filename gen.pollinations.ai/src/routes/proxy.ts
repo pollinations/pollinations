@@ -1,6 +1,10 @@
 import { type Context, Hono } from "hono";
 import { every } from "hono/combine";
-import { resolver as baseResolver, describeRoute } from "hono-openapi";
+import {
+    resolver as baseResolver,
+    describeRoute,
+    validator as openApiValidator,
+} from "hono-openapi";
 import type { Env } from "@/env.ts";
 import { handleRegisterServer } from "@/image/handler.ts";
 import { auth } from "@/middleware/auth.ts";
@@ -49,6 +53,8 @@ import {
     CreateChatCompletionResponseSchema,
     CreateImageRequestSchema,
     CreateImageResponseSchema,
+    CreateResponseRequestSchema,
+    CreateResponseResponseSchema,
     GetModelResponseSchema,
     GetModelsResponseSchema,
 } from "@shared/schemas/openai.ts";
@@ -86,6 +92,7 @@ import {
 import { handleSimpleAudio } from "./audio.ts";
 import {
     generateChatCompletion,
+    generateCreateResponse,
     generateEmbeddingsResponse,
     generateImageVideo,
     generateModel3d,
@@ -142,7 +149,25 @@ function describeRealtimeWebSocket(path: "/realtime" | "/v1/realtime") {
 }
 
 const factory = createFactory<Env>();
-
+const responsesJsonValidator = openApiValidator(
+    "json",
+    CreateResponseRequestSchema,
+    (result, c) => {
+        if (result.success) return;
+        const issue = result.error[0];
+        return c.json(
+            {
+                error: {
+                    message: issue?.message || "Invalid Responses API request",
+                    type: "invalid_request_error",
+                    param: issue?.path?.join(".") || null,
+                    code: "invalid_request_error",
+                },
+            },
+            400,
+        );
+    },
+);
 // Shared handler for image and video generation (used by both /image/ and /video/ routes)
 const imageVideoHandlers = factory.createHandlers(
     track("generate.image"),
@@ -176,6 +201,17 @@ const chatCompletionHandlers = factory.createHandlers(
     generateChatCompletion,
 );
 
+const createResponseHandlers = factory.createHandlers(
+    textBodyLimit,
+    responsesJsonValidator,
+    resolveModel("generate.text"),
+    track("generate.text"),
+    textCache,
+    generationAccess,
+    deduplicateGeneration,
+    apiKeyBudgetReservation,
+    generateCreateResponse,
+);
 // Helper to filter models by API key permissions and paid balance.
 function filterEntriesByPermissions(
     entries: GenerationModelEntry[],
@@ -663,6 +699,32 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         ...chatCompletionHandlers,
+    )
+    .post(
+        "/v1/responses",
+        describeRoute({
+            tags: ["✍️ Text"],
+            summary: "Create Response",
+            description: [
+                "Generate an OpenResponses-compatible, OpenAI-shaped response through the same provider stack as Chat Completions. All text models that list `/v1/responses` in `/v1/models` support the endpoint.",
+                "",
+                "This first version is stateless, like OpenRouter's Responses API: include the complete conversation and tool history in every request. `store` must be `false` or omitted; `previous_response_id`, `conversation`, `background`, reasoning summaries, and encrypted reusable reasoning state are not supported.",
+                "",
+                "Supports text, image, and inline file input, structured text output, custom function tools, and OpenResponses SSE lifecycle events. The current OpenResponses compaction endpoint and WebSocket transport are not implemented. Hosted tools are not supported. Managed prompt agents execute only their configured MCP tools and return the final assistant message.",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(CreateResponseResponseSchema),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500, 502),
+            },
+        }),
+        ...createResponseHandlers,
     )
     .post(
         "/v1/embeddings",

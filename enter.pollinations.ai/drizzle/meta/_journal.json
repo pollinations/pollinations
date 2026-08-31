@@ -407,6 +407,13 @@
       "when": 1788182587055,
       "tag": "0057_require-community-titles",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "6",
+      "when": 1788203007557,
+      "tag": "0058_rekey_issue_rewards",
+      "breakpoints": true
     }
   ]
 }

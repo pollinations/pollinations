@@ -333,13 +333,13 @@ Supports streaming, function calling, vision (image input), structured outputs, 
 | `audio` | `object` | — |
 | `audio.voice` * | enum (13) — `"alloy"`, `"echo"`, `"fable"`, … | — |
 | `audio.format` * | `"wav"` \| `"mp3"` \| `"flac"` \| `"opus"` \| `"pcm16"` | — |
-| `frequency_penalty` | `number` \| `null` | default: `0` |
+| `frequency_penalty` | `number` \| `null` | — |
 | `repetition_penalty` | `number` \| `null` | — |
 | `logit_bias` | `object` \| `null` | default: `null` |
-| `logprobs` | `boolean` \| `null` | default: `false` |
+| `logprobs` | `boolean` \| `null` | — |
 | `top_logprobs` | `integer` \| `null` | — |
 | `max_tokens` | `integer` \| `null` | — |
-| `presence_penalty` | `number` \| `null` | default: `0` |
+| `presence_penalty` | `number` \| `null` | — |
 | `response_format` | `object` | — |
 | `seed` | `integer` \| `null` | — |
 | `stop` | `string` \| `null` \| `string`[] | — |
@@ -435,13 +435,13 @@ Use `/v1/chat/completions` when you need the full OpenAI-compatible JSON respons
 | `audio` | `object` | — |
 | `audio.voice` * | enum (13) — `"alloy"`, `"echo"`, `"fable"`, … | — |
 | `audio.format` * | `"wav"` \| `"mp3"` \| `"flac"` \| `"opus"` \| `"pcm16"` | — |
-| `frequency_penalty` | `number` \| `null` | default: `0` |
+| `frequency_penalty` | `number` \| `null` | — |
 | `repetition_penalty` | `number` \| `null` | — |
 | `logit_bias` | `object` \| `null` | default: `null` |
-| `logprobs` | `boolean` \| `null` | default: `false` |
+| `logprobs` | `boolean` \| `null` | — |
 | `top_logprobs` | `integer` \| `null` | — |
 | `max_tokens` | `integer` \| `null` | — |
-| `presence_penalty` | `number` \| `null` | default: `0` |
+| `presence_penalty` | `number` \| `null` | — |
 | `response_format` | `object` | — |
 | `seed` | `integer` \| `null` | — |
 | `stop` | `string` \| `null` \| `string`[] | — |

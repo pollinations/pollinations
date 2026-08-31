@@ -1,0 +1,34 @@
+{
+  "pr_number": 14206,
+  "title": "feat: add Paid Pollen share KPI",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14206",
+  "merged_at": "2026-08-31T17:26:10Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds the weekly Paid/Quest Pollen consumption split to `weekly_usage_stats`\n- Adds a precise Paid Pollen share KPI under Revenue\n- Makes the KPI available in the existing history graph explorer\n- Adds focused KPI catalog coverage\n\nTests: `npm test -- test/kpis.test.js`; `npm run build`; production Tinybird SQL validated read-only.\n\nAfter merge, deploy the Tinybird pipe to staging and production.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Following the Pollen Trail",
+    "blurb": "The hive’s ledger now separates Paid Pollen from Quest-earned Pollen each week. Polli has put on tiny accountant glasses and, regrettably, enjoys the charts.",
+    "summary": "Added weekly Paid-versus-Quest Pollen consumption data to the `weekly_usage_stats` Tinybird pipe, a precise Paid Pollen share KPI under Revenue, and history-graph support with KPI catalog tests.",
+    "impact": "Operators can now track the exact weekly share of Pollen usage funded through purchases versus Quests directly in the existing KPI explorer.",
+    "keywords": [
+      "pollen",
+      "kpi",
+      "revenue",
+      "analytics",
+      "tinybird",
+      "observability"
+    ],
+    "visual_concept": "A cozy garden ledger scene represents the new consumption split: two labeled streams of Pollen tokens, one from a small payment jar and one from a Quest scroll, flow into a retro KPI monitor showing a weekly pie chart. Polli wears tiny accountant glasses and compares the streams while code-plants and flowers grow around the terminal.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and tiny accountant glasses, inspecting two streams of glowing Pollen tokens flowing from a payment jar and a Quest scroll into a retro CRT monitor with a simple weekly share chart; small code-plants and flowers grow around the desk. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, dark purple (#110518) details, emotionally warm and gently amused."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-31/PR-14206.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and tiny accountant glasses, inspecting two streams of glowing Pollen tokens flowing from a payment jar and a Quest scroll into a retro CRT monitor with a simple weekly share chart; small code-plants and flowers grow around the desk. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, dark purple (#110518) details, emotionally warm and gently amused."
+  },
+  "generated_at": "2026-08-31T17:28:39.966796+00:00"
+}

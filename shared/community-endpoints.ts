@@ -494,7 +494,9 @@ export const ProxyListingPayloadSchema = z
         imagePricing: z.enum(COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES),
         inputModalities: z.array(z.enum(MODEL_INPUT_MODALITIES)).min(1),
         perUserRpm: z.number().finite().positive().nullable(),
-        fallbacks: z.array(z.string().min(1)).max(MAX_FALLBACK_TARGETS),
+        fallbacks: z
+            .array(z.string().min(1))
+            .transform((fallbacks) => fallbacks.slice(0, MAX_FALLBACK_TARGETS)),
         advertised: CommunityEndpointAdvertisedSchema.optional(),
         prices: StoredCommunityEndpointPricesSchema,
     })

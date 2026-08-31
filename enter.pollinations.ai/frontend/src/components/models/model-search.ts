@@ -35,6 +35,35 @@ export type ModelSearch = {
     sort?: ModelSort;
 };
 
+type ModelSectionInput = {
+    type: Exclude<ModelCategory, "all" | "agent">;
+    agent?: boolean;
+};
+
+const MODEL_SECTION_ORDER: ModelCategory[] = [
+    "all",
+    "text",
+    "image",
+    "video",
+    "3d",
+    "audio",
+    "realtime",
+    "embedding",
+    "agent",
+];
+
+/** Model tabs in display order, limited to categories present in the catalog. */
+export function getAvailableModelSections(
+    models: readonly ModelSectionInput[],
+): ModelCategory[] {
+    const present = new Set(
+        models.map((model) => (model.agent ? "agent" : model.type)),
+    );
+    return MODEL_SECTION_ORDER.filter(
+        (category) => category === "all" || present.has(category),
+    );
+}
+
 function includes<T extends string>(
     values: readonly T[],
     value: unknown,
@@ -58,11 +87,7 @@ export function validateModelSearch(
         scope: scope === "community" ? scope : undefined,
         category:
             category !== "all" &&
-            (scope === "community"
-                ? category === "text" ||
-                  category === "image" ||
-                  category === "agent"
-                : category !== "agent")
+            (scope === "community" || category !== "agent")
                 ? category
                 : undefined,
         q: query || undefined,

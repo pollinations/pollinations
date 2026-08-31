@@ -9,23 +9,27 @@ import { verifyAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import { COMMUNITY_MODEL_ALLOWED_GITHUB_IDS } from "@shared/auth/github-id-list.ts";
 import { getUserBalance } from "@shared/billing/balance.ts";
 import {
+    communityAudioTranscriptionsUrl,
+    communityChatCompletionsUrl,
+    communityEmbeddingsUrl,
+    communityImageEditsUrl,
+    communityImageGenerationsUrl,
+    communityOpenAIBaseUrl,
+    normalizeCommunityAssetUrl,
+    validateCommunityEndpointUrl,
+} from "@shared/community-endpoint-urls.ts";
+import {
     COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     type CommunityEndpointImagePricing,
     type CommunityEndpointModality,
     type CommunityEndpointPrices,
     type CommunityEndpointRuntime,
-    communityAudioTranscriptionsUrl,
-    communityChatCompletionsUrl,
-    communityEmbeddingsUrl,
     communityEndpointPriceFieldsForModality,
     communityEndpointPrices,
     communityEndpointSupportedEndpoints,
-    communityImageEditsUrl,
-    communityImageGenerationsUrl,
     communityModelDefinition,
     communityModelId,
-    communityOpenAIBaseUrl,
     communityPriceDefinition,
     type EndpointAgentCommunityEndpointRuntime,
     isCommunityEndpointOwnerAllowed,
@@ -38,7 +42,6 @@ import {
     MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
-    normalizeCommunityAssetUrl,
     normalizeCommunityEndpointBearerToken,
     normalizeCommunityEndpointImagePricing,
     normalizeCommunityEndpointInputModalities,
@@ -50,7 +53,6 @@ import {
     parseCommunityModelId,
     parseListingPayload,
     resolveEffectiveProxyListing,
-    validateCommunityEndpointUrl,
 } from "@shared/community-endpoints.ts";
 import {
     communityEndpoint as communityEndpointTable,

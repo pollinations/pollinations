@@ -33,13 +33,7 @@ import {
     VideoIcon,
 } from "@pollinations/ui";
 import { categoryLabel } from "@pollinations/ui/gen";
-import {
-    type CSSProperties,
-    type ReactNode,
-    useEffect,
-    useMemo,
-    useState,
-} from "react";
+import { type CSSProperties, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Chat } from "./Chat";
 
@@ -698,7 +692,7 @@ async function uploadReferenceImages(
     return uploads.map((upload) => upload.url);
 }
 
-export function Playground({ toolbarAction }: { toolbarAction?: ReactNode }) {
+export function Playground() {
     const { apiKey, isLoggedIn, isHydrated } = useAuthState();
     const { login } = useAuthActions();
     const {
@@ -1137,36 +1131,26 @@ export function Playground({ toolbarAction }: { toolbarAction?: ReactNode }) {
             </FieldStack>
         ) : null;
     return (
-        <div className="flex w-full flex-col gap-3 text-theme-text-base">
-            {toolbarAction && (
-                <div className="relative z-10 flex w-full justify-end">
-                    {toolbarAction}
-                </div>
-            )}
-            <Surface
-                variant="panel"
-                className="play-chat-shell flex flex-col overflow-hidden p-0"
-            >
-                <div className="flex w-full flex-col gap-3 bg-surface-opaque px-3 py-3 sm:px-4 sm:py-4">
-                    <ModalityTabs
-                        activeCategory={activeCategory}
-                        onSelectCategory={selectCategory}
-                    />
-                </div>
+        <div className="-mt-16 -mb-6 flex w-full flex-col gap-3 text-theme-text-base sm:-mt-24 sm:-mb-8 md:mb-0">
+            <Surface variant="panel" className="play-chat-shell flex flex-col">
+                <ModalityTabs
+                    activeCategory={activeCategory}
+                    onSelectCategory={selectCategory}
+                />
 
                 {activeCategory === "text" && <Chat />}
 
                 {activeCategory !== "text" && (
                     <div className="polli-playground-main-grid">
                         {catalogError && (
-                            <div className="px-4 pt-4">
+                            <div className="pt-4">
                                 <Alert intent="danger">
                                     Model catalog failed to load:{" "}
                                     {catalogError.message}
                                 </Alert>
                             </div>
                         )}
-                        <div className="polli-playground-input-panel flex flex-col gap-4 p-4">
+                        <div className="polli-playground-input-panel flex flex-col gap-4 pt-4">
                             <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
                                 {activeCategory === "audio" && (
                                     <AudioTaskPicker

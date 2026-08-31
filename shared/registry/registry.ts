@@ -17,6 +17,7 @@ export {
 import { EMBEDDING_SERVICES, type EmbeddingServiceId } from "./embeddings";
 import { IMAGE_SERVICES, type ImageModelName } from "./image";
 import { MODEL3D_SERVICES, type Model3dName } from "./model3d";
+import type { BillingRateDefinition } from "./public-pricing";
 import { REALTIME_SERVICES, type RealtimeModelName } from "./realtime";
 import { TEXT_SERVICES, type TextModelName } from "./text";
 
@@ -112,24 +113,7 @@ export const VIDEO_CAPABILITIES = [
 
 export type VideoCapability = (typeof VIDEO_CAPABILITIES)[number];
 
-export type BillingAdjustmentRule = {
-    id: string;
-    description: string;
-    kind: string;
-    unit: string;
-    unitCost: number;
-    publicPricing: {
-        label: string;
-        quantity: number;
-        unit: string;
-        suffix?: string;
-        option?: {
-            group: string;
-            value: string;
-            label: string;
-            default?: boolean;
-        };
-    };
+export type BillingAdjustmentRule = BillingRateDefinition & {
     // Counts billable units from the response output (stream outputs carry a
     // `streamEvents` array). Returning 0 skips the rule for this request.
     // Provider-specific parsing lives with the rule's provider module

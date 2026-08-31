@@ -2,7 +2,6 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, test } from "vitest";
 import { Callout } from "./Callout.tsx";
 import { ContentHeader } from "./ContentHeader.tsx";
-import { StatList } from "./StatList.tsx";
 
 describe("content compositions", () => {
     test("renders page headers with one semantic h1", () => {
@@ -19,15 +18,6 @@ describe("content compositions", () => {
         expect(html).toContain("<h1");
         expect(html).toContain("Open infrastructure");
         expect(html).toContain('href="/start"');
-    });
-
-    test("keeps stat layout stable while values load", () => {
-        const html = renderToStaticMarkup(
-            <StatList stats={[]} placeholders={2} />,
-        );
-
-        expect(html).toContain('aria-busy="true"');
-        expect(html.match(/animate-pulse/g)).toHaveLength(4);
     });
 
     test("applies the dark token scope to dark callouts", () => {

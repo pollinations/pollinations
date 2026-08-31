@@ -1,0 +1,34 @@
+{
+  "pr_number": 13566,
+  "title": "refactor: retire GPT Realtime 2",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13566",
+  "merged_at": "2026-08-31T11:24:22Z",
+  "labels": [],
+  "pr_body_excerpt": "- Removes `gpt-realtime-2` as a separate canonical model and its Azure route.\n- Keeps `gpt-realtime-2` working as an alias of canonical `gpt-realtime-2.1`; routing, billing, permissions, and telemetry resolve to 2.1.\n- Migrates 1,011 production restricted-key allowlists to `gpt-realtime-2.1` before worker deployment; staging has none. The migration is idempotent and preserves unrelated permissions.\n- Keeps the existing 2.1 provider, pricing, and no-fallback contract unchanged. No secret or provider-deployment mutation.\n\n### Retirement verification\n\n- Direct Azure WebSocket checks on August 31: both the old deployment and replacement accepted handshakes. The replacement is healthy; Azure's delayed shutdown does not block this change because the public old ID resolves to 2.1.\n- Microsoft schedule: https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirement-schedule?view=foundry-classic\n\n### Validation\n\n- Realtime: 41/41\n- Registry/catalog/pricing: 63/63\n- Migration + API-key canonicalization: 2/2\n- Gen and Enter typechecks; Biome: clean\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Realtime sheds a skin",
+    "blurb": "GPT Realtime 2 has quietly joined its 2.1 sibling, while keeping its old name on the door. Existing apps and 1,011 restricted keys continue finding the same warm, low-latency hive.",
+    "summary": "Retired `gpt-realtime-2` as a separate canonical Azure route while preserving it as an alias to `gpt-realtime-2.1`, including an idempotent migration of 1,011 production restricted-key allowlists to the 2.1 model.",
+    "impact": "Apps using `gpt-realtime-2` continue to work, with routing, billing, permissions, and telemetry consistently resolved through the healthy existing `gpt-realtime-2.1` provider and its unchanged pricing and no-fallback behavior.",
+    "keywords": [
+      "realtime",
+      "gpt-realtime-2.1",
+      "model-aliases",
+      "azure",
+      "api-keys",
+      "migration"
+    ],
+    "visual_concept": "Depict a cozy realtime communications garden where two labeled signal paths merge into one healthy `2.1` path: Polli gently guides an old `2` sign toward a glowing `2.1` terminal, while tiny key-shaped seeds are safely replanted in the new bed. The scene represents backward-compatible model canonicalization and preserved API-key permissions rather than a shutdown.",
+    "image_prompt": "A cozy pixel art garden-server scene where the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, black oval eyes, pink rectangular cheek blushes, a happy smile, light blue translucent wings, and a tiny gardener scarf carefully redirects a glowing cable marked `2` into a warm retro terminal marked `2.1`; key-shaped seedlings bloom safely in lime green (#ecf874) planters, with a few soft pastel flowers and code vines around them. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-31/PR-13566.jpg",
+    "prompt": "A cozy pixel art garden-server scene where the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, black oval eyes, pink rectangular cheek blushes, a happy smile, light blue translucent wings, and a tiny gardener scarf carefully redirects a glowing cable marked `2` into a warm retro terminal marked `2.1`; key-shaped seedlings bloom safely in lime green (#ecf874) planters, with a few soft pastel flowers and code vines around them. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-08-31T11:25:18.904080+00:00"
+}

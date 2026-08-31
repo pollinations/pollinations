@@ -317,26 +317,14 @@ body.polli-ui-shell #root {
     background: var(--polli-color-surface-opaque);
 }
 
-.polli-playground-settings-grid {
-    display: grid;
-}
-
-.polli-playground-settings-grid {
-    gap: 0.75rem;
-}
-
-.polli-playground-frame-grid {
+.polli-playground-two-column-grid {
     display: grid;
     gap: 0.75rem;
 }
 
 @media (min-width: 640px) {
-    .polli-playground-frame-grid {
+    .polli-playground-two-column-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .polli-playground-settings-grid {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 }
 

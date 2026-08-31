@@ -1244,7 +1244,7 @@ export function Playground() {
                             )}
 
                             {isVideoReferenceMode && (
-                                <div className="polli-playground-frame-grid">
+                                <div className="polli-playground-two-column-grid">
                                     <FieldStack label="First frame">
                                         <FileUpload
                                             value={firstFrameFiles}
@@ -1340,13 +1340,16 @@ export function Playground() {
                                 currentModel?.category === "video") && (
                                 <div
                                     className={cn(
-                                        "gap-4",
+                                        "gap-y-4",
                                         currentModel.category === "video"
-                                            ? "grid md:grid-cols-2 xl:grid-cols-3"
+                                            ? "polli-playground-two-column-grid"
                                             : "flex flex-col",
                                     )}
                                 >
-                                    <FieldStack label="Format">
+                                    <FieldStack
+                                        label="Format"
+                                        className="min-w-0 max-w-full"
+                                    >
                                         <ButtonGroup aria-label="Format">
                                             {currentModel.category === "image"
                                                 ? IMAGE_FORMATS.map(
@@ -1461,7 +1464,10 @@ export function Playground() {
                                         )}
 
                                     {currentModel.resolutions.length > 1 && (
-                                        <FieldStack label="Resolution">
+                                        <FieldStack
+                                            label="Resolution"
+                                            className="min-w-0 max-w-full"
+                                        >
                                             <ButtonGroup aria-label="Resolution">
                                                 {currentModel.resolutions.map(
                                                     (resolution) => (
@@ -1489,6 +1495,7 @@ export function Playground() {
                                     {currentModel.category === "video" && (
                                         <FieldStack
                                             label="Duration"
+                                            className="w-full max-w-80"
                                             action={
                                                 <Text
                                                     as="span"

@@ -110,7 +110,7 @@ export function inputAudioToFireworks(
                 return {
                     type: "audio_url",
                     audio_url: {
-                        url: `data:audio/${isPcm16 ? "wav" : format};base64,${encodedAudio}`,
+                        url: `data:audio/${isPcm16 ? "wav" : format === "opus" ? "ogg" : format};base64,${encodedAudio}`,
                     },
                 };
             });

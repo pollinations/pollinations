@@ -228,8 +228,7 @@ export const pi: HarnessAdapter = {
     id: ID,
     label: LABEL,
     description: "Configure Pi as a Pollinations provider",
-    restartHint:
-        "Changes apply on the next Pi session. Start Pi with: pi",
+    restartHint: "Changes apply on the next Pi session. Start Pi with: pi",
 
     async on(ctx, options) {
         if (!commandExists("pi", ctx.env)) {

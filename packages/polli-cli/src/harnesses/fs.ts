@@ -33,7 +33,9 @@ export const commandExists = (
     const candidates = (env.PATH ?? env.Path ?? "")
         .split(delimiter)
         .filter(Boolean)
-        .flatMap((dir) => extensions.map((extension) => join(dir, `${command}${extension}`)));
+        .flatMap((dir) =>
+            extensions.map((extension) => join(dir, `${command}${extension}`)),
+        );
     return [...candidates, ...fallbacks].some(isExecutable);
 };
 

@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { formatValue } from "../src/lib/format";
 import {
@@ -83,6 +84,26 @@ describe("service availability row", () => {
                 return formatValue(kpiValue(view, healthWeek), view.format);
             }),
         ).toEqual(["8.8 / 1K", "99.12%", "36,691"]);
+    });
+
+    it("keeps community traffic out of the service-health population", () => {
+        const regularPipe = readFileSync(
+            new URL(
+                "../../../enter.pollinations.ai/observability/endpoints/weekly_health_stats.pipe",
+                import.meta.url,
+            ),
+            "utf8",
+        );
+        const communityPipe = readFileSync(
+            new URL(
+                "../../../enter.pollinations.ai/observability/endpoints/weekly_usage_stats.pipe",
+                import.meta.url,
+            ),
+            "utf8",
+        );
+
+        expect(regularPipe).toContain("AND model_provider_used != 'community'");
+        expect(communityPipe).toContain("model_provider_used = 'community'");
     });
 
     it("does not invent a failure rate when health data is missing", () => {

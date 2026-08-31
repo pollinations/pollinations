@@ -1,0 +1,34 @@
+{
+  "pr_number": 14182,
+  "title": "refactor: parse listing payloads with schemas",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14182",
+  "merged_at": "2026-08-31T19:37:15Z",
+  "labels": [],
+  "pr_body_excerpt": "- Defines the proxy storage contract as a Zod schema and derives its TypeScript type\n- Dispatches all stored listing payloads through one schema map\n- Rejects corrupt stored rows instead of partially populating them\n- Defaults fields added after the listing-envelope migration\n\nTests:\n- Enter and Gen typechecks\n- 2 focused payload parsing tests\n- 6 community endpoint policy integration tests",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The listings learned to read",
+    "blurb": "Community listings now pass through one proper schema gate instead of arriving assembled from whatever bits survived storage. Polli brought a clipboard; the corrupt rows did not make the guest list.",
+    "summary": "Community listing payloads are now validated through a centralized Zod schema map, with TypeScript types derived from the storage contract, migration-era fields defaulted, and corrupt rows rejected rather than partially populated.",
+    "impact": "Community endpoints now return more consistent listing data, including safe defaults for fields introduced after the listing-envelope migration.",
+    "keywords": [
+      "community",
+      "zod",
+      "schemas",
+      "payload-validation",
+      "api-reliability",
+      "listings"
+    ],
+    "visual_concept": "Depict a cozy community-garden filing station where Polli validates seed-packet-like listing payloads through a single labeled schema gate; healthy packets become neat code-plants while a smudged corrupt packet is gently redirected away. A helpful CRT monitor robot can hold the schema map, making the idea of centralized validation and reliable defaults immediately visible.",
+    "image_prompt": "A cozy pixel art community garden filing station where Polli, a cute pixel bee with a yellow body, dark brown horizontal stripes, black antennae and oval eyes, bright pink rectangular cheek blushes, a happy smile, light blue translucent wings, and a tiny librarian hat, checks seed-packet listing payloads at one glowing schema gate while a chunky CRT monitor robot holds a map labeled \"SCHEMA MAP\"; valid packets sprout into tidy code-plants and one smudged packet is gently placed in a recycle tray. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradients, warm cream background, dark purple (#110518) outlines, soft warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-31/PR-14182.jpg",
+    "prompt": "A cozy pixel art community garden filing station where Polli, a cute pixel bee with a yellow body, dark brown horizontal stripes, black antennae and oval eyes, bright pink rectangular cheek blushes, a happy smile, light blue translucent wings, and a tiny librarian hat, checks seed-packet listing payloads at one glowing schema gate while a chunky CRT monitor robot holds a map labeled \"SCHEMA MAP\"; valid packets sprout into tidy code-plants and one smudged packet is gently placed in a recycle tray. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradients, warm cream background, dark purple (#110518) outlines, soft warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-08-31T19:38:23.641727+00:00"
+}

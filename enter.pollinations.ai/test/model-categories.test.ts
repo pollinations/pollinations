@@ -4,6 +4,7 @@ import {
     getModelCategoriesFromCatalog,
 } from "../frontend/src/components/models/model-categories.ts";
 import {
+    getAvailableModelCategory,
     getAvailableModelSections,
     validateModelSearch,
 } from "../frontend/src/components/models/model-search.ts";
@@ -117,6 +118,16 @@ describe("model categories", () => {
             "embedding",
             "agent",
         ]);
+    });
+
+    it("clears direct URL categories missing from the loaded community catalog", () => {
+        const sections = getAvailableModelSections([
+            { type: "text" },
+            { type: "image" },
+        ]);
+
+        expect(getAvailableModelCategory("text", sections)).toBe("text");
+        expect(getAvailableModelCategory("video", sections)).toBeUndefined();
     });
 
     it("accepts every model category in the community scope", () => {

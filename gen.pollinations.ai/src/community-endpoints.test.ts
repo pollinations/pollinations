@@ -7,6 +7,7 @@ import {
 import type { Logger } from "@logtape/logtape";
 import { verifyAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import { COMMUNITY_MODEL_ALLOWED_GITHUB_IDS } from "@shared/auth/github-id-list.ts";
+import { getUserBalance } from "@shared/billing/balance.ts";
 import {
     COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
@@ -16,7 +17,9 @@ import {
     type CommunityEndpointRuntime,
     communityAudioTranscriptionsUrl,
     communityChatCompletionsUrl,
+    communityEmbeddingData,
     communityEmbeddingsUrl,
+    communityEndpointAbortSignal,
     communityEndpointPriceFieldsForModality,
     communityEndpointPrices,
     communityEndpointTitle,
@@ -30,6 +33,7 @@ import {
     isCommunityEndpointOwnerAllowed,
     isCommunityFallbackPricingAllowed,
     legacyCommunityModelId,
+    MAX_COMMUNITY_EMBEDDING_RESPONSE_BYTES,
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MAX_COMMUNITY_PRICE_PER_SECOND,
@@ -37,6 +41,7 @@ import {
     MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
+    maxCommunityEmbeddingPromptTokens,
     normalizeCommunityAssetUrl,
     normalizeCommunityEndpointBearerToken,
     normalizeCommunityEndpointImagePricing,
@@ -89,6 +94,7 @@ import {
     communityVideoSupportedEndpoints,
     getCommunityModelRegistryEntries,
 } from "./community-models.ts";
+import { generateCommunityEmbeddings } from "./embeddings/communityEndpoint.ts";
 import {
     callCommunityImageEndpoint,
     callCommunityVideoEndpoint,
@@ -206,11 +212,14 @@ const TEST_PNG_BYTES = [137, 80, 78, 71, 13, 10, 26, 10];
 const TEST_INVALID_IMAGE_BASE64 = "bm90IGFuIGltYWdl";
 const TEST_COMMUNITY_IMAGE_URL = "http://api.example.com/assets/image.png";
 const TEST_INPUT_IMAGE_URL = "https://input.example.com/source.png";
-const TEST_MP4_BASE64 = "AAAAFGZ0eXBpc29tAAAAAGlzb20AAAAJbWRhdAA=";
+const TEST_MP4_BASE64 = "AAAAFGZ0eXBpc29tAAAAAGlzb20AAAAJbW9vdgEAAAAJbWRhdAE=";
 const TEST_BARE_MP4_BASE64 = "AAAAFGZ0eXBpc29tAAAAAGlzb20=";
+const TEST_MP4_WITHOUT_MOOV_BASE64 = "AAAAFGZ0eXBpc29tAAAAAGlzb20AAAAJbWRhdAA=";
+const TEST_AVIF_BASE64 = "AAAAFGZ0eXBhdmlmAAAAAGF2aWYAAAAJbW9vdgEAAAAJbWRhdAE=";
 const TEST_MP4_BYTES = [
     0, 0, 0, 20, 102, 116, 121, 112, 105, 115, 111, 109, 0, 0, 0, 0, 105, 115,
-    111, 109, 0, 0, 0, 9, 109, 100, 97, 116, 0,
+    111, 109, 0, 0, 0, 9, 109, 111, 111, 118, 1, 0, 0, 0, 9, 109, 100, 97, 116,
+    1,
 ];
 
 function isPortkeyChatCompletionsRequest(request: Request): boolean {
@@ -845,6 +854,22 @@ describe("community endpoint helpers", () => {
         ).toBeCloseTo(0.36, 10);
     });
 
+    it("enforces community request deadlines just below, at, and above 300 seconds", () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(1_000);
+        try {
+            expect(() => communityEndpointAbortSignal(1_001)).not.toThrow();
+            expect(() => communityEndpointAbortSignal(1_000)).toThrow(
+                "Community endpoint deadline exceeded",
+            );
+            expect(() => communityEndpointAbortSignal(999)).toThrow(
+                "Community endpoint deadline exceeded",
+            );
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
     it("builds token-priced community embedding models", () => {
         const modelId = "voodoohop/bge";
         const definition = communityModelDefinition({
@@ -879,6 +904,152 @@ describe("community endpoint helpers", () => {
         expect(
             communityEmbeddingsUrl("https://example.com/v1/embeddings"),
         ).toBe("https://example.com/v1/embeddings");
+    });
+
+    it("rejects mixed vector dimensions in float and base64 embedding batches", () => {
+        const response = (embeddings: (number[] | string)[]) => ({
+            object: "list",
+            data: embeddings.map((embedding, index) => ({
+                object: "embedding",
+                embedding,
+                index,
+            })),
+        });
+
+        expect(
+            communityEmbeddingData(
+                response([
+                    [0, 1],
+                    [0, 1, 2],
+                ]),
+                2,
+                "float",
+            ),
+        ).toBeNull();
+        expect(
+            communityEmbeddingData(
+                response([btoa("\0".repeat(8)), btoa("\0".repeat(12))]),
+                2,
+                "base64",
+            ),
+        ).toBeNull();
+        expect(
+            communityEmbeddingData(
+                response([
+                    [0, 1],
+                    [2, 3],
+                ]),
+                2,
+                "float",
+            ),
+        ).toHaveLength(2);
+    });
+
+    it("bounds community embedding usage by UTF-8 request bytes plus per-input overhead", () => {
+        expect(maxCommunityEmbeddingPromptTokens(["a", "🌱"])).toBe(
+            1 + 16 + 4 + 16,
+        );
+    });
+
+    describe("community embedding endpoint runtime", () => {
+        const secret = "test-secret";
+
+        async function embeddingEndpoint(): Promise<CommunityEndpointRuntime> {
+            return {
+                type: "proxy",
+                id: "community-embedding-id",
+                ownerUserId: "owner-id",
+                modelId: "owner/embed",
+                name: "embed",
+                title: "Embed",
+                description: null,
+                modality: "embedding",
+                imagePricing: "request",
+                inputModalities: ["text"],
+                baseUrl: "https://api.example.com/v1",
+                upstreamModel: "upstream-embed",
+                visibility: "public",
+                paidOnly: false,
+                perUserRpm: null,
+                fallbacks: [],
+                hiddenAt: null,
+                hiddenReason: null,
+                bearerTokenCiphertext: await encryptSecret(
+                    "sk_saved_token",
+                    secret,
+                ),
+                ...communityEndpointPrices({ promptTextPrice: 0.00001 }),
+            };
+        }
+
+        it.each([
+            200, 500,
+        ])("bounds %i embedding response bodies before buffering", async (status) => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(
+                    async () =>
+                        new Response("{}", {
+                            status,
+                            headers: {
+                                "content-length": String(
+                                    MAX_COMMUNITY_EMBEDDING_RESPONSE_BYTES + 1,
+                                ),
+                            },
+                        }),
+                ),
+            );
+
+            await expect(
+                generateCommunityEmbeddings(
+                    await embeddingEndpoint(),
+                    {
+                        model: "owner/embed",
+                        input: "sprout",
+                        encoding_format: "float",
+                    },
+                    "owner/embed",
+                    secret,
+                ),
+            ).rejects.toThrow(
+                "Community embedding endpoint response is too large",
+            );
+        });
+
+        it("rejects inflated publisher token usage at request time", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({
+                        object: "list",
+                        data: [
+                            {
+                                object: "embedding",
+                                embedding: [0.1, 0.2],
+                                index: 0,
+                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 1_000_000,
+                            total_tokens: 1_000_000,
+                        },
+                    }),
+                ),
+            );
+
+            await expect(
+                generateCommunityEmbeddings(
+                    await embeddingEndpoint(),
+                    {
+                        model: "owner/embed",
+                        input: "sprout",
+                        encoding_format: "float",
+                    },
+                    "owner/embed",
+                    secret,
+                ),
+            ).rejects.toThrow("invalid prompt token usage for billing");
+        });
     });
 
     it("keeps zero prices as explicit zero rates in the price definition", () => {
@@ -1390,6 +1561,42 @@ describe("community endpoint helpers", () => {
             expect(fetchMock).toHaveBeenCalledTimes(2);
         });
 
+        it("does not reset the request deadline before downloading video", async () => {
+            const now = vi.spyOn(Date, "now").mockReturnValue(1_000);
+            const timeout = vi
+                .spyOn(AbortSignal, "timeout")
+                .mockImplementation(() => new AbortController().signal);
+            try {
+                const fetchMock = vi.fn(async () => {
+                    if (fetchMock.mock.calls.length === 1) {
+                        now.mockReturnValue(101_000);
+                        return Response.json({
+                            data: [
+                                {
+                                    url: "https://api.example.com/assets/clip.mp4",
+                                },
+                            ],
+                        });
+                    }
+                    return new Response(new Uint8Array(TEST_MP4_BYTES));
+                });
+                vi.stubGlobal("fetch", fetchMock);
+
+                await callCommunityVideoEndpoint(
+                    await videoEndpoint(),
+                    "a sprout",
+                    { duration: 3 },
+                    secret,
+                    301_000,
+                );
+                expect(fetchMock).toHaveBeenCalledTimes(2);
+                expect(timeout.mock.calls).toEqual([[300_000], [200_000]]);
+            } finally {
+                timeout.mockRestore();
+                now.mockRestore();
+            }
+        });
+
         it("maps URL response stream failures to a provider error", async () => {
             const fetchMock = vi.fn(async (input) => {
                 const url = String(input);
@@ -1453,6 +1660,46 @@ describe("community endpoint helpers", () => {
                 vi.fn(async () =>
                     Response.json({
                         data: [{ b64_json: TEST_BARE_MP4_BASE64 }],
+                    }),
+                ),
+            );
+
+            await expect(
+                callCommunityVideoEndpoint(
+                    await videoEndpoint(),
+                    "a sprout",
+                    { duration: 2 },
+                    secret,
+                ),
+            ).rejects.toMatchObject({ status: 502 });
+        });
+
+        it("rejects MP4 data without movie metadata", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({
+                        data: [{ b64_json: TEST_MP4_WITHOUT_MOOV_BASE64 }],
+                    }),
+                ),
+            );
+
+            await expect(
+                callCommunityVideoEndpoint(
+                    await videoEndpoint(),
+                    "a sprout",
+                    { duration: 2 },
+                    secret,
+                ),
+            ).rejects.toMatchObject({ status: 502 });
+        });
+
+        it("rejects AVIF data carried in the same ISO-BMFF container", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({
+                        data: [{ b64_json: TEST_AVIF_BASE64 }],
                     }),
                 ),
             );
@@ -4129,7 +4376,7 @@ fixtureTest(
 
 fixtureTest(
     "registers, catalogs, and serves a billed community video model",
-    async ({ apiKey }) => {
+    async () => {
         const ownerGithubUsername = `video-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `clip-${crypto.randomUUID().slice(0, 8)}`;
         const ownerUserId = await createTestUser({
@@ -4149,6 +4396,16 @@ fixtureTest(
         const enterApi = await createEnterCommunityApi();
         const videoEndpointUrl =
             "https://api.example.com/generate-video?version=1";
+        let markGenerationStarted!: () => void;
+        const generationStarted = new Promise<void>((resolve) => {
+            markGenerationStarted = resolve;
+        });
+        let releaseGeneration!: () => void;
+        const generationReleased = new Promise<void>((resolve) => {
+            releaseGeneration = resolve;
+        });
+        let generationCalls = 0;
+        const ingestedEvents: Record<string, unknown>[] = [];
         const fetchMock = vi.fn(async (input, init) => {
             const request = new Request(input, init);
             if (request.url === videoEndpointUrl) {
@@ -4163,6 +4420,11 @@ fixtureTest(
                 const isProbe =
                     body.prompt ===
                     "A green sprout gently moving in the breeze.";
+                if (!isProbe) {
+                    generationCalls += 1;
+                    markGenerationStarted();
+                    await generationReleased;
+                }
                 expect(body).toEqual(
                     isProbe
                         ? { prompt: body.prompt, duration: 5 }
@@ -4178,7 +4440,14 @@ fixtureTest(
                     data: [{ b64_json: TEST_MP4_BASE64 }],
                 });
             }
-            if (isBillingFetch(request)) return Response.json({ data: [] });
+            if (isBillingFetch(request)) {
+                if (new URL(request.url).pathname === "/v0/events") {
+                    ingestedEvents.push(
+                        ...parseIngestedEvents(await request.text()),
+                    );
+                }
+                return Response.json({ data: [] });
+            }
             throw new Error(`Unexpected fetch: ${request.url}`);
         });
         vi.stubGlobal("fetch", fetchMock);
@@ -4233,13 +4502,38 @@ fixtureTest(
         });
         await maturePendingCommunityEndpoint(registered.id);
 
-        const generationResponse = await fetchGen(
+        const caller = await createTestApiKey({
+            user: { tierBalance: 100, packBalance: 0 },
+        });
+        const balanceBefore = await getUserBalance(db, caller.userId);
+        const coordinatedEnv = withInlineGenerationCoordinator(env);
+        const generationRequest = () =>
             new Request(
                 `https://gen.pollinations.ai/video/green%20sprout?model=${encodeURIComponent(registered.modelId)}&duration=4&reference_images=${encodeURIComponent("https://media.example.com/style.jpg")}`,
-                { headers: { Authorization: `Bearer ${apiKey}` } },
+                { headers: { Authorization: `Bearer ${caller.key}` } },
+            );
+        const disconnectedContext = createExecutionContext();
+        const abort = new AbortController();
+        const disconnected = Promise.resolve(
+            worker.fetch(
+                new Request(generationRequest(), { signal: abort.signal }),
+                coordinatedEnv,
+                disconnectedContext,
             ),
+        ).catch(() => null);
+        await generationStarted;
+        abort.abort();
+
+        const rejoinedContext = createExecutionContext();
+        const rejoined = worker.fetch(
+            generationRequest(),
+            coordinatedEnv,
+            rejoinedContext,
         );
+        releaseGeneration();
+        const generationResponse = await rejoined;
         expect(generationResponse.status).toBe(200);
+        expect(generationResponse.headers.get("x-cache")).toBe("HIT");
         expect(generationResponse.headers.get("content-type")).toBe(
             "video/mp4",
         );
@@ -4251,11 +4545,47 @@ fixtureTest(
         expect(
             Array.from(new Uint8Array(await generationResponse.arrayBuffer())),
         ).toEqual(TEST_MP4_BYTES);
+        const disconnectedResponse = await disconnected;
+        if (disconnectedResponse) {
+            await disconnectedResponse.arrayBuffer();
+        }
+        await Promise.all([
+            waitOnExecutionContext(disconnectedContext),
+            waitOnExecutionContext(rejoinedContext),
+        ]);
+
+        const cachedContext = createExecutionContext();
+        const cachedResponse = await worker.fetch(
+            generationRequest(),
+            coordinatedEnv,
+            cachedContext,
+        );
+        expect(cachedResponse.status).toBe(200);
+        expect(cachedResponse.headers.get("x-cache")).toBe("HIT");
+        expect(
+            Array.from(new Uint8Array(await cachedResponse.arrayBuffer())),
+        ).toEqual(TEST_MP4_BYTES);
+        await waitOnExecutionContext(cachedContext);
+
+        expect(generationCalls).toBe(1);
+        const balanceAfter = await getUserBalance(db, caller.userId);
+        expect(
+            balanceBefore.tierBalance - balanceAfter.tierBalance,
+        ).toBeCloseTo(0.32, 10);
+        await vi.waitFor(() =>
+            expect(
+                ingestedEvents.filter(
+                    (event) =>
+                        event.modelUsed === registered.modelId &&
+                        event.isBilledUsage === true,
+                ),
+            ).toHaveLength(1),
+        );
 
         const invalidDurationResponse = await fetchGen(
             new Request(
                 `https://gen.pollinations.ai/video/green%20sprout?model=${encodeURIComponent(registered.modelId)}&duration=0`,
-                { headers: { Authorization: `Bearer ${apiKey}` } },
+                { headers: { Authorization: `Bearer ${caller.key}` } },
             ),
         );
         expect(invalidDurationResponse.status).toBe(400);

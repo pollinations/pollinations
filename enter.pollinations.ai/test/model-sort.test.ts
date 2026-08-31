@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { validateModelSearch } from "../frontend/src/components/models/model-search.ts";
+import {
+    getModelSortSearchValue,
+    validateModelSearch,
+} from "../frontend/src/components/models/model-search.ts";
 import { sortModels } from "../frontend/src/components/models/model-sort.ts";
 import type { ModelPrice } from "../frontend/src/components/models/types.ts";
 
@@ -100,6 +103,8 @@ describe("model sorting", () => {
 
 describe("model sort search parameter", () => {
     it("uses popularity by default while preserving explicit sorts", () => {
+        expect(getModelSortSearchValue("popular")).toBeUndefined();
+        expect(getModelSortSearchValue("newest")).toBe("newest");
         expect(validateModelSearch({}).sort).toBeUndefined();
         expect(validateModelSearch({ sort: "popular" }).sort).toBeUndefined();
         expect(validateModelSearch({ sort: "newest" }).sort).toBe("newest");

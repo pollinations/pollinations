@@ -64,6 +64,22 @@ export function getAvailableModelSections(
     );
 }
 
+/** Keep a URL category only when it exists in the loaded catalog. */
+export function getAvailableModelCategory(
+    category: ModelCategory | undefined,
+    availableSections: readonly ModelCategory[],
+): ModelCategory | undefined {
+    return category === undefined || availableSections.includes(category)
+        ? category
+        : undefined;
+}
+
+export function getModelSortSearchValue(
+    sort: ModelSort,
+): ModelSort | undefined {
+    return sort === "popular" ? undefined : sort;
+}
+
 function includes<T extends string>(
     values: readonly T[],
     value: unknown,
@@ -91,6 +107,6 @@ export function validateModelSearch(
                 ? category
                 : undefined,
         q: query || undefined,
-        sort: sort === "popular" ? undefined : sort,
+        sort: getModelSortSearchValue(sort),
     };
 }

@@ -3,7 +3,9 @@ import {
     type CommunityEndpointImagePricing,
     communityAudioTranscriptionsUrl,
     communityChatCompletionsUrl,
+    communityEmbeddingData,
     communityEmbeddingsUrl,
+    communityEndpointAbortSignal,
     communityEndpointErrorDetail,
     communityImageEditsUrl,
     communityImageGenerationsUrl,
@@ -12,7 +14,9 @@ import {
     decodeCommunityBase64,
     firstCommunityImageBytes,
     firstCommunityVideoBytes,
+    MAX_COMMUNITY_EMBEDDING_RESPONSE_BYTES,
     MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
+    maxCommunityEmbeddingPromptTokens,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
@@ -57,7 +61,14 @@ function communityModelsUrl(baseUrl: string): string {
     return url.toString();
 }
 
-async function fetchJson(url: string, init: RequestInit): Promise<unknown> {
+async function fetchJson(
+    url: string,
+    init: RequestInit,
+    {
+        deadlineMs = Date.now() + COMMUNITY_ENDPOINT_TIMEOUT_MS,
+        maxResponseBytes = MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
+    }: { deadlineMs?: number; maxResponseBytes?: number } = {},
+): Promise<unknown> {
     let response: Response;
     try {
         // The base URL is validated against https + the private-host blocklist
@@ -66,7 +77,7 @@ async function fetchJson(url: string, init: RequestInit): Promise<unknown> {
         response = await fetch(url, {
             ...init,
             redirect: "manual",
-            signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
+            signal: communityEndpointAbortSignal(deadlineMs),
         });
     } catch {
         throw new Error("Endpoint request timed out or could not connect");
@@ -75,7 +86,7 @@ async function fetchJson(url: string, init: RequestInit): Promise<unknown> {
     const body = parseJson(
         await readResponseText(
             response,
-            MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
+            maxResponseBytes,
             () => new Error("Endpoint response is too large"),
         ),
     );
@@ -241,18 +252,23 @@ export async function testCommunityVideoEndpoint({
     baseUrl,
     bearerToken,
 }: EndpointAuth): Promise<CommunityEndpointTestResult> {
-    const body = await fetchJson(baseUrl, {
-        method: "POST",
-        headers: {
-            ...authorizationHeaders(bearerToken),
-            "Content-Type": "application/json",
+    const deadlineMs = Date.now() + COMMUNITY_ENDPOINT_TIMEOUT_MS;
+    const body = await fetchJson(
+        baseUrl,
+        {
+            method: "POST",
+            headers: {
+                ...authorizationHeaders(bearerToken),
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                prompt: "A green sprout gently moving in the breeze.",
+                duration: 5,
+            }),
         },
-        body: JSON.stringify({
-            prompt: "A green sprout gently moving in the breeze.",
-            duration: 5,
-        }),
-    });
-    const video = await firstCommunityVideoBytes(body, baseUrl);
+        { deadlineMs },
+    );
+    const video = await firstCommunityVideoBytes(body, baseUrl, deadlineMs);
     if (!video || !detectVideoMimeType(video)) {
         throw new Error("Endpoint did not return a supported video");
     }
@@ -340,40 +356,34 @@ export async function testCommunityEmbeddingEndpoint({
     bearerToken,
     model,
 }: ModelEndpointTestInput): Promise<CommunityEndpointTestResult> {
-    const body = await fetchJson(communityEmbeddingsUrl(baseUrl), {
-        method: "POST",
-        headers: {
-            ...authorizationHeaders(bearerToken),
-            "Content-Type": "application/json",
+    const input = "A simple green sprout.";
+    const body = await fetchJson(
+        communityEmbeddingsUrl(baseUrl),
+        {
+            method: "POST",
+            headers: {
+                ...authorizationHeaders(bearerToken),
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                model,
+                input,
+                encoding_format: "float",
+            }),
         },
-        body: JSON.stringify({
-            model,
-            input: "A simple green sprout.",
-            encoding_format: "float",
-        }),
-    });
+        { maxResponseBytes: MAX_COMMUNITY_EMBEDDING_RESPONSE_BYTES },
+    );
 
-    if (
-        !body ||
-        typeof body !== "object" ||
-        !("data" in body) ||
-        !Array.isArray(body.data) ||
-        body.data.length !== 1 ||
-        !body.data[0] ||
-        typeof body.data[0] !== "object" ||
-        !("embedding" in body.data[0]) ||
-        !Array.isArray(body.data[0].embedding) ||
-        body.data[0].embedding.length === 0 ||
-        !body.data[0].embedding.every(
-            (value: unknown) =>
-                typeof value === "number" && Number.isFinite(value),
-        )
-    ) {
+    if (!communityEmbeddingData(body, 1, "float")) {
         throw new Error("Endpoint did not return OpenAI embedding data");
     }
 
     const usage = getOpenAIEmbeddingUsage(body);
-    if (!usage || usage.prompt_tokens <= 0) {
+    if (
+        !usage ||
+        usage.prompt_tokens <= 0 ||
+        usage.prompt_tokens > maxCommunityEmbeddingPromptTokens([input])
+    ) {
         throw new Error("Endpoint did not return billable OpenAI token usage");
     }
 

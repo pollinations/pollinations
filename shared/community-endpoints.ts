@@ -67,6 +67,7 @@ export const MAX_COMMUNITY_VIDEO_BYTES = 20 * 1024 * 1024;
 // small amount of room for the envelope while still bounding provider output.
 export const MAX_COMMUNITY_MEDIA_RESPONSE_BYTES =
     Math.ceil((MAX_COMMUNITY_VIDEO_BYTES * 4) / 3) + 64 * 1024;
+export const MAX_COMMUNITY_EMBEDDING_RESPONSE_BYTES = 20 * 1024 * 1024;
 // How long we wait on a community endpoint before giving up. Generous because
 // these are self-hosted hobby GPUs that cold-start, and in line with the text
 // providers (Portkey and Azure both use 290s). Workers impose no wall-clock
@@ -74,6 +75,15 @@ export const MAX_COMMUNITY_MEDIA_RESPONSE_BYTES =
 // open until the caller disconnects.
 export const COMMUNITY_ENDPOINT_TIMEOUT_MS = 300_000;
 const BEARER_PREFIX = /^Bearer(?:\s+|$)/i;
+
+/** Keep every phase of one community request inside one absolute deadline. */
+export function communityEndpointAbortSignal(deadlineMs: number): AbortSignal {
+    const remainingMs = deadlineMs - Date.now();
+    if (remainingMs <= 0) {
+        throw new HttpError("Community endpoint deadline exceeded", 504);
+    }
+    return AbortSignal.timeout(remainingMs);
+}
 
 export type CommunityEndpointModality =
     (typeof COMMUNITY_ENDPOINT_MODALITIES)[number];
@@ -902,6 +912,7 @@ export async function firstCommunityImageBytes(
 export async function firstCommunityVideoBytes(
     body: unknown,
     endpointBaseUrl: string,
+    deadlineMs = Date.now() + COMMUNITY_ENDPOINT_TIMEOUT_MS,
 ): Promise<Uint8Array | null> {
     if (
         !body ||
@@ -939,7 +950,11 @@ export async function firstCommunityVideoBytes(
             typeof video.url === "string" &&
             video.url.length > 0
         ) {
-            return fetchCommunityVideoBytes(video.url, endpointBaseUrl);
+            return fetchCommunityVideoBytes(
+                video.url,
+                endpointBaseUrl,
+                deadlineMs,
+            );
         }
     }
     return null;
@@ -1016,6 +1031,7 @@ export function communityImageEditsUrl(baseUrl: string): string {
 async function fetchCommunityVideoBytes(
     value: string,
     endpointBaseUrl: string,
+    deadlineMs: number,
 ): Promise<Uint8Array> {
     let url: string;
     try {
@@ -1027,7 +1043,7 @@ async function fetchCommunityVideoBytes(
     try {
         response = await fetch(url, {
             redirect: "manual",
-            signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
+            signal: communityEndpointAbortSignal(deadlineMs),
         });
     } catch (error) {
         throw new HttpError(
@@ -1105,6 +1121,94 @@ function configuredCommunityEndpointSuffix(url: URL): string | undefined {
 
 export function communityEmbeddingsUrl(baseUrl: string): string {
     return communityOpenAIEndpointUrl(baseUrl, "/embeddings");
+}
+
+export type CommunityEmbeddingData = {
+    object: "embedding";
+    embedding: number[] | string;
+    index: number;
+};
+
+/** Validate the response data shared by registration probes and live requests. */
+export function communityEmbeddingData(
+    body: unknown,
+    inputCount: number,
+    encodingFormat: "float" | "base64",
+    requestedDimensions?: number,
+): CommunityEmbeddingData[] | null {
+    if (!body || typeof body !== "object") return null;
+    const response = body as Record<string, unknown>;
+    if (response.object !== "list" || !Array.isArray(response.data)) {
+        return null;
+    }
+    if (response.data.length !== inputCount) return null;
+
+    const validated: CommunityEmbeddingData[] = [];
+    let batchDimensions: number | undefined;
+    for (const value of response.data) {
+        if (!value || typeof value !== "object") return null;
+        const item = value as Record<string, unknown>;
+        if (
+            item.object !== "embedding" ||
+            typeof item.index !== "number" ||
+            !Number.isInteger(item.index)
+        ) {
+            return null;
+        }
+
+        const dimensions = communityEmbeddingDimensions(
+            item.embedding,
+            encodingFormat,
+        );
+        if (
+            dimensions === null ||
+            (requestedDimensions !== undefined &&
+                dimensions !== requestedDimensions) ||
+            (batchDimensions !== undefined && dimensions !== batchDimensions)
+        ) {
+            return null;
+        }
+        batchDimensions = dimensions;
+        validated.push(item as CommunityEmbeddingData);
+    }
+
+    validated.sort((a, b) => a.index - b.index);
+    return validated.every((item, index) => item.index === index)
+        ? validated
+        : null;
+}
+
+function communityEmbeddingDimensions(
+    embedding: unknown,
+    encodingFormat: "float" | "base64",
+): number | null {
+    if (encodingFormat === "float") {
+        return Array.isArray(embedding) &&
+            embedding.length > 0 &&
+            embedding.every(
+                (value) => typeof value === "number" && Number.isFinite(value),
+            )
+            ? embedding.length
+            : null;
+    }
+    if (typeof embedding !== "string" || embedding.length === 0) return null;
+    try {
+        const byteLength = atob(embedding).length;
+        return byteLength > 0 && byteLength % 4 === 0 ? byteLength / 4 : null;
+    } catch {
+        return null;
+    }
+}
+
+/** Conservative upper bound for publisher-reported prompt tokens. */
+export function maxCommunityEmbeddingPromptTokens(
+    inputs: readonly string[],
+): number {
+    return inputs.reduce(
+        (total, input) =>
+            total + new TextEncoder().encode(input).byteLength + 16,
+        0,
+    );
 }
 
 export function communityOpenAIBaseUrl(baseUrl: string): string {

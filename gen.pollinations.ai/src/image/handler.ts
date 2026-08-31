@@ -1,3 +1,4 @@
+import { COMMUNITY_ENDPOINT_TIMEOUT_MS } from "@shared/community-endpoints.ts";
 import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { HttpError } from "@shared/http-error.ts";
@@ -143,9 +144,22 @@ function parseImageParams(
     delete mergedParams.prompt;
     delete mergedParams.key;
 
-    const communityReferences = c.var.model.communityEndpoint
-        ? CommunityReferenceParamsSchema.safeParse(mergedParams)
-        : null;
+    if (
+        c.var.model.communityEndpoint?.modality === "image" &&
+        ["reference_images", "reference_videos", "reference_audios"].some(
+            (key) => mergedParams[key] !== undefined,
+        )
+    ) {
+        throw new UpstreamError(400, {
+            message:
+                "Invalid parameters: community image models do not support reference media",
+        });
+    }
+
+    const communityReferences =
+        c.var.model.communityEndpoint?.modality === "video"
+            ? CommunityReferenceParamsSchema.safeParse(mergedParams)
+            : null;
     if (communityReferences && !communityReferences.success) {
         throw new UpstreamError(400, {
             message: `Invalid parameters: ${communityReferences.error.issues[0]?.message || "validation failed"}`,
@@ -443,6 +457,10 @@ async function generateMediaWithFallback(
     params: RuntimeImageParams;
     servedIndex: number;
 }> {
+    const communityVideoDeadlineMs =
+        c.var.model.communityEndpoint?.modality === "video"
+            ? Date.now() + COMMUNITY_ENDPOINT_TIMEOUT_MS
+            : undefined;
     const { result, index } = await withModelFallback(
         fallbackCandidates(c.var.model),
         async (attempt) => {
@@ -455,6 +473,7 @@ async function generateMediaWithFallback(
                           prompt,
                           params,
                           c.env.BETTER_AUTH_SECRET,
+                          communityVideoDeadlineMs,
                       )
                     : await callCommunityImageEndpoint(
                           attempt.communityEndpoint,

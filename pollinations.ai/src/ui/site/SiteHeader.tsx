@@ -4,9 +4,9 @@ import {
     Chip,
     ColorModeToggle,
     DiscordIcon,
+    Drawer,
     Dropdown,
     DropdownItem,
-    Eyebrow,
     GitHubIcon,
     InstagramIcon,
     LinkedInIcon,
@@ -81,20 +81,89 @@ const maskStyle = (
     };
 };
 const MARK_STYLE = maskStyle(markUrl, 32, 32);
+const MOBILE_MENU_MARK_STYLE = maskStyle(markUrl, 26, 26);
 const DESKTOP_LOCKUP_STYLE = maskStyle(lockupUrl, 244, 30);
-const DRAWER_LOCKUP_STYLE = maskStyle(lockupUrl, 195, 24);
+const DRAWER_MENU_LOCKUP_STYLE = maskStyle(lockupUrl, 174, 22);
 const DESKTOP_ACTION_CLASS =
     "hidden h-9 w-9 shrink-0 bg-surface-opaque p-0 text-theme-text-strong shadow-well transition-all duration-200 hover:-translate-y-0.5 hover:bg-theme-bg-hover hover:shadow-lg min-[700px]:inline-flex min-[800px]:w-auto min-[800px]:gap-1.5 min-[800px]:px-3 motion-reduce:hover:translate-y-0";
 
 const isCurrent = (to: string, pathname: string) =>
     to === "/" ? pathname === "/" : pathname.startsWith(to);
 
+function MenuUtilities({
+    close,
+    displayedRepoStars,
+    discordOnline,
+}: {
+    close: () => void;
+    displayedRepoStars: string;
+    discordOnline: number | null;
+}) {
+    return (
+        <>
+            <DropdownItem
+                as="a"
+                href={EXTERNAL[1].href}
+                onClick={close}
+                className="site-drawer-social-link site-external-link"
+            >
+                <GitHubIcon className="h-4 w-4 shrink-0" />
+                <span className="site-drawer-social-label">
+                    {EXTERNAL[1].label}
+                </span>
+                <Chip intent="alpha" size="sm" className="ml-auto">
+                    {displayedRepoStars} stars
+                </Chip>
+            </DropdownItem>
+            <DropdownItem
+                as="a"
+                href={EXTERNAL[2].href}
+                onClick={close}
+                className="site-drawer-social-link site-external-link"
+            >
+                <DiscordIcon className="h-4 w-4 shrink-0" />
+                <span className="site-drawer-social-label">
+                    {EXTERNAL[2].label}
+                </span>
+                {discordOnline !== null && (
+                    <Chip intent="info" size="sm" className="ml-auto">
+                        {discordOnline} online
+                    </Chip>
+                )}
+            </DropdownItem>
+            <span className="mx-2 my-1 h-px bg-theme-border" />
+            <footer className="flex items-center justify-between gap-3 px-2 py-2">
+                <div className="flex items-center gap-2">
+                    {SOCIAL.map(({ href, label, Icon }) => (
+                        <Button
+                            key={href}
+                            as="a"
+                            href={href}
+                            size="sm"
+                            aria-label={label}
+                            title={label}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={close}
+                            className="site-external-link h-8 w-8 shrink-0 p-0"
+                        >
+                            <Icon className="h-4 w-4" />
+                        </Button>
+                    ))}
+                </div>
+                <ColorModeToggle />
+            </footer>
+        </>
+    );
+}
+
 export function SiteHeader() {
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
     const { data: repoStars } = useRepoStars();
     const displayedRepoStars = compact(repoStars ?? REPO_STARS_FALLBACK);
     const { data: discordOnline } = useDiscordPresence({
-        enabled: menuOpen,
+        enabled: mobileMenuOpen || menuOpen,
         refreshMs: 30_000,
     });
     const scrolled = useScrolled();
@@ -104,7 +173,7 @@ export function SiteHeader() {
     });
 
     // The header must not slide away while its own menu is open.
-    const hidden = scrolledAway && !menuOpen;
+    const hidden = scrolledAway && !mobileMenuOpen && !menuOpen;
 
     return (
         <header
@@ -234,73 +303,80 @@ export function SiteHeader() {
                                 Login
                             </span>
                         </Button>
-                        <Dropdown
-                            align="end"
-                            open={menuOpen}
-                            onOpenChange={setMenuOpen}
-                            className="w-64 bg-surface-opaque p-2 shadow-well"
-                            trigger={(open) => (
-                                <Button
-                                    aria-label={
-                                        open ? "Close menu" : "Open menu"
-                                    }
-                                    aria-expanded={open}
-                                    aria-controls="site-menu"
-                                    className="mt-2 h-11 w-11 min-w-11 p-0 min-[700px]:mt-0 min-[900px]:hidden [&>svg]:size-6"
-                                >
-                                    {open ? <XIcon /> : <MenuIcon />}
-                                </Button>
-                            )}
+                        <Button
+                            aria-label="Open menu"
+                            aria-expanded={mobileMenuOpen}
+                            aria-controls="mobile-site-menu"
+                            onClick={() => setMobileMenuOpen(true)}
+                            className="mt-2 h-11 min-w-[5.5rem] gap-2 px-3 min-[700px]:hidden [&>svg]:size-6"
                         >
-                            {(close) => (
+                            <span
+                                aria-hidden="true"
+                                style={MOBILE_MENU_MARK_STYLE}
+                                className="block shrink-0"
+                            />
+                            <MenuIcon />
+                        </Button>
+
+                        <Drawer
+                            open={mobileMenuOpen}
+                            onOpenChange={setMobileMenuOpen}
+                            ariaLabel="Site navigation"
+                            side="right"
+                            contentClassName="w-[min(18rem,78vw)] bg-surface-opaque"
+                        >
+                            <div className="flex min-h-0 flex-1 flex-col">
+                                <div className="flex justify-end pb-4 pl-4 pr-8 pt-6">
+                                    <Button
+                                        aria-label="Close menu"
+                                        onClick={() => setMobileMenuOpen(false)}
+                                        className="h-11 w-full justify-between px-3 [&>svg]:size-6"
+                                    >
+                                        <span
+                                            aria-hidden="true"
+                                            style={DRAWER_MENU_LOCKUP_STYLE}
+                                            className="block shrink-0"
+                                        />
+                                        <XIcon />
+                                    </Button>
+                                </div>
+                                <span className="mx-4 h-px bg-theme-border" />
                                 <nav
-                                    id="site-menu"
-                                    className="flex max-h-[calc(100dvh-6rem)] flex-col gap-1 overflow-x-hidden overflow-y-auto"
+                                    id="mobile-site-menu"
+                                    className="flex min-h-0 flex-1 flex-col gap-1 overflow-x-hidden overflow-y-auto p-2"
                                 >
-                                    <div className="contents min-[700px]:hidden">
-                                        <div className="flex items-center px-2 py-2">
-                                            <Link
-                                                to="/"
-                                                onClick={close}
-                                                aria-label="pollinations.ai — home"
-                                                className="rounded-md text-theme-text-strong focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-theme-border"
+                                    {NAV.map((item) => {
+                                        const active = isCurrent(
+                                            item.to,
+                                            pathname,
+                                        );
+                                        return (
+                                            <TabButton
+                                                key={item.to}
+                                                as={Link}
+                                                to={item.to}
+                                                variant="ghost"
+                                                active={active}
+                                                size="lg"
+                                                onClick={() =>
+                                                    setMobileMenuOpen(false)
+                                                }
+                                                className="site-primary-nav-button w-full justify-start"
                                             >
-                                                <span
-                                                    aria-hidden="true"
-                                                    style={DRAWER_LOCKUP_STYLE}
-                                                    className="block shrink-0"
-                                                />
-                                            </Link>
-                                        </div>
-                                        <span className="mx-2 my-1 h-px bg-theme-border" />
-                                        {NAV.map((item) => {
-                                            const active = isCurrent(
-                                                item.to,
-                                                pathname,
-                                            );
-                                            return (
-                                                <TabButton
-                                                    key={item.to}
-                                                    as={Link}
-                                                    to={item.to}
-                                                    variant="ghost"
-                                                    active={active}
-                                                    className="site-primary-nav-button w-full justify-start"
-                                                >
-                                                    {item.label}
-                                                </TabButton>
-                                            );
-                                        })}
-                                        <span className="mx-2 my-1 h-px bg-theme-border" />
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-2 px-1 py-1 min-[700px]:hidden">
+                                                {item.label}
+                                            </TabButton>
+                                        );
+                                    })}
+                                    <span className="mx-2 my-1 h-px bg-theme-border" />
+                                    <div className="grid grid-cols-1 gap-2 px-1 py-1">
                                         <Button
                                             as="a"
                                             href={EXTERNAL[0].href}
-                                            intent="info"
-                                            size="sm"
-                                            onClick={close}
-                                            className="w-full gap-2"
+                                            size="lg"
+                                            onClick={() =>
+                                                setMobileMenuOpen(false)
+                                            }
+                                            className="w-full justify-start gap-2"
                                         >
                                             <BookIcon className="h-4 w-4 shrink-0" />
                                             {EXTERNAL[0].label}
@@ -308,82 +384,67 @@ export function SiteHeader() {
                                         <Button
                                             as="a"
                                             href="https://enter.pollinations.ai"
-                                            intent="info"
-                                            size="sm"
-                                            onClick={close}
-                                            className="w-full gap-2"
+                                            size="lg"
+                                            onClick={() =>
+                                                setMobileMenuOpen(false)
+                                            }
+                                            className="w-full justify-start gap-2"
                                         >
                                             <LogInIcon className="h-4 w-4 shrink-0" />
                                             Login
                                         </Button>
                                     </div>
-                                    <span className="mx-2 my-1 h-px bg-theme-border min-[700px]:hidden" />
-                                    <div className="flex items-center justify-between px-3 py-2">
-                                        <Eyebrow size="chrome">
-                                            Appearance
-                                        </Eyebrow>
-                                        <ColorModeToggle />
+                                    <div className="mt-auto flex flex-col gap-1 pt-4">
+                                        <span className="mx-2 my-1 h-px bg-theme-border" />
+                                        <MenuUtilities
+                                            close={() =>
+                                                setMobileMenuOpen(false)
+                                            }
+                                            displayedRepoStars={
+                                                displayedRepoStars
+                                            }
+                                            discordOnline={discordOnline}
+                                        />
                                     </div>
-                                    <span className="mx-2 my-1 h-px bg-theme-border" />
-                                    <DropdownItem
-                                        as="a"
-                                        href={EXTERNAL[1].href}
-                                        onClick={close}
-                                        className="site-drawer-social-link site-external-link"
-                                    >
-                                        <GitHubIcon className="h-4 w-4 shrink-0" />
-                                        <span className="site-drawer-social-label">
-                                            {EXTERNAL[1].label}
-                                        </span>
-                                        <Chip
-                                            intent="alpha"
-                                            size="sm"
-                                            className="ml-auto"
-                                        >
-                                            {displayedRepoStars} stars
-                                        </Chip>
-                                    </DropdownItem>
-                                    <DropdownItem
-                                        as="a"
-                                        href={EXTERNAL[2].href}
-                                        onClick={close}
-                                        className="site-drawer-social-link site-external-link"
-                                    >
-                                        <DiscordIcon className="h-4 w-4 shrink-0" />
-                                        <span className="site-drawer-social-label">
-                                            {EXTERNAL[2].label}
-                                        </span>
-                                        {discordOnline !== null && (
-                                            <Chip
-                                                intent="info"
-                                                size="sm"
-                                                className="ml-auto"
-                                            >
-                                                {discordOnline} online
-                                            </Chip>
-                                        )}
-                                    </DropdownItem>
-                                    <footer className="flex items-center gap-2 px-2 py-1">
-                                        {SOCIAL.map(({ href, label, Icon }) => (
-                                            <Button
-                                                key={href}
-                                                as="a"
-                                                href={href}
-                                                size="sm"
-                                                aria-label={label}
-                                                title={label}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                onClick={close}
-                                                className="site-external-link h-8 w-8 shrink-0 p-0"
-                                            >
-                                                <Icon className="h-4 w-4" />
-                                            </Button>
-                                        ))}
-                                    </footer>
                                 </nav>
-                            )}
-                        </Dropdown>
+                            </div>
+                        </Drawer>
+
+                        <div className="hidden min-[700px]:block min-[900px]:hidden">
+                            <Dropdown
+                                align="end"
+                                open={menuOpen}
+                                onOpenChange={setMenuOpen}
+                                className="w-64 bg-surface-opaque p-2 shadow-well"
+                                trigger={(open) => (
+                                    <Button
+                                        aria-label={
+                                            open ? "Close menu" : "Open menu"
+                                        }
+                                        aria-expanded={open}
+                                        aria-controls="site-menu"
+                                        className="h-11 w-11 min-w-11 p-0 [&>svg]:size-6"
+                                    >
+                                        {open ? <XIcon /> : <MenuIcon />}
+                                    </Button>
+                                )}
+                            >
+                                {(close) => (
+                                    <nav
+                                        id="site-menu"
+                                        className="flex max-h-[calc(100dvh-6rem)] flex-col gap-1 overflow-x-hidden overflow-y-auto"
+                                    >
+                                        <MenuUtilities
+                                            close={close}
+                                            displayedRepoStars={
+                                                displayedRepoStars
+                                            }
+                                            discordOnline={discordOnline}
+                                        />
+                                    </nav>
+                                )}
+                            </Dropdown>
+                        </div>
                     </div>
                 </div>
             </div>

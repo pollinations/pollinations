@@ -26,7 +26,7 @@ const COLUMNS = [
     {
         heading: "Build",
         links: [
-            { href: "https://gen.pollinations.ai/docs", label: "API docs" },
+            { href: "https://gen.pollinations.ai/docs", label: "Docs" },
             { href: "https://gen.pollinations.ai/models", label: "Models" },
             { href: "https://enter.pollinations.ai", label: "Dashboard" },
         ],
@@ -140,7 +140,7 @@ export function SiteFooter() {
                                     <InlineLink
                                         key={link.label}
                                         href={link.href}
-                                        className="font-normal text-theme-text-base"
+                                        className="text-sm font-normal text-theme-text-base"
                                     >
                                         {link.label}
                                     </InlineLink>

@@ -475,18 +475,45 @@ export type ListingType = (typeof LISTING_TYPES)[number];
  * Pollinations credential. The only kind that names a price, because it is the
  * only kind whose caller is buying something from the owner.
  */
-export type ProxyListingPayload = {
-    bearerTokenCiphertext: string;
-    // Owner-set: callers may only spend Paid Pollen on this model.
-    paidOnly: boolean;
-    modality: CommunityEndpointModality;
-    imagePricing: CommunityEndpointImagePricing;
-    inputModalities: ModelInputModality[];
-    perUserRpm: number | null;
-    fallbacks: string[];
-    advertised?: CommunityEndpointAdvertised;
-    prices: CommunityEndpointPrices;
-};
+const StoredCommunityEndpointPricesSchema = z.object(
+    Object.fromEntries(
+        COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
+            field.key,
+            z.number().finite().min(0).default(0),
+        ]),
+    ) as Record<CommunityEndpointPriceKey, z.ZodDefault<z.ZodNumber>>,
+);
+
+export const ProxyListingPayloadSchema = z
+    .object({
+        bearerTokenCiphertext: z.string().min(1),
+        // Owner-set: callers may only spend Paid Pollen on this model. Rows
+        // from before paid-only support are public-spend by default.
+        paidOnly: z.boolean().default(false),
+        modality: z.enum(COMMUNITY_ENDPOINT_MODALITIES),
+        imagePricing: z.enum(COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES),
+        inputModalities: z.array(z.enum(MODEL_INPUT_MODALITIES)).min(1),
+        perUserRpm: z.number().finite().positive().nullable(),
+        fallbacks: z.array(z.string().min(1)).max(MAX_FALLBACK_TARGETS),
+        advertised: CommunityEndpointAdvertisedSchema.optional(),
+        prices: StoredCommunityEndpointPricesSchema,
+    })
+    .transform(({ advertised: storedAdvertised, ...payload }) => {
+        const advertised = normalizeCommunityEndpointAdvertised(
+            storedAdvertised,
+            payload.modality,
+        );
+        return {
+            ...payload,
+            inputModalities: normalizeCommunityEndpointInputModalities(
+                payload.inputModalities,
+                payload.modality,
+            ),
+            ...(Object.keys(advertised).length ? { advertised } : {}),
+        };
+    });
+
+export type ProxyListingPayload = z.infer<typeof ProxyListingPayloadSchema>;
 
 /**
  * An agent Enter runs itself. Its row id is also the model sent to the shared
@@ -529,6 +556,12 @@ export type ListingPayloadByType = {
     endpoint_agent: EndpointAgentListingPayload;
 };
 
+const LISTING_PAYLOAD_SCHEMA_BY_TYPE = {
+    proxy: ProxyListingPayloadSchema,
+    prompt_agent: PromptAgentConfigSchema,
+    endpoint_agent: EndpointAgentListingPayloadSchema,
+} as const;
+
 /**
  * Read a stored payload back into its typed shape.
  *
@@ -547,58 +580,8 @@ export function parseListingPayload<K extends ListingType>(
     } catch {
         return null;
     }
-    if (parsed === null || typeof parsed !== "object") return null;
-    const source = parsed as Record<string, unknown>;
-
-    if (type === "endpoint_agent") {
-        const result = EndpointAgentListingPayloadSchema.safeParse(source);
-        return result.success ? (result.data as ListingPayloadByType[K]) : null;
-    }
-    if (type === "prompt_agent") {
-        const result = PromptAgentConfigSchema.safeParse(source);
-        return result.success ? (result.data as ListingPayloadByType[K]) : null;
-    }
-
-    const bearerTokenCiphertext =
-        typeof source.bearerTokenCiphertext === "string"
-            ? source.bearerTokenCiphertext
-            : "";
-    if (!bearerTokenCiphertext) return null;
-    const modality = normalizeCommunityEndpointModality(
-        typeof source.modality === "string" ? source.modality : null,
-    );
-    return {
-        bearerTokenCiphertext,
-        paidOnly: source.paidOnly === true,
-        modality,
-        imagePricing: normalizeCommunityEndpointImagePricing(
-            typeof source.imagePricing === "string"
-                ? source.imagePricing
-                : null,
-        ),
-        inputModalities: normalizeCommunityEndpointInputModalities(
-            Array.isArray(source.inputModalities)
-                ? (source.inputModalities as ModelInputModality[])
-                : undefined,
-            modality,
-        ),
-        perUserRpm:
-            typeof source.perUserRpm === "number" ? source.perUserRpm : null,
-        fallbacks: Array.isArray(source.fallbacks)
-            ? source.fallbacks.filter(
-                  (id): id is string => typeof id === "string",
-              )
-            : [],
-        advertised: normalizeCommunityEndpointAdvertised(
-            CommunityEndpointAdvertisedSchema.safeParse(source.advertised).data,
-            modality,
-        ),
-        prices: communityEndpointPrices(
-            (typeof source.prices === "object" && source.prices !== null
-                ? source.prices
-                : {}) as Partial<CommunityEndpointPrices>,
-        ),
-    } as ListingPayloadByType[K];
+    const result = LISTING_PAYLOAD_SCHEMA_BY_TYPE[type].safeParse(parsed);
+    return result.success ? (result.data as ListingPayloadByType[K]) : null;
 }
 
 export function pendingCommunityEndpointChangeIsReady(

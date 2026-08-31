@@ -2,9 +2,9 @@ import { cn, Surface } from "@pollinations/ui";
 import { type FC, type ReactNode, useEffect, useState } from "react";
 
 const HIGHLIGHTS_RAW_URL =
-    "https://raw.githubusercontent.com/pollinations/pollinations/news/social/news/highlights.md";
+    "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/news/operations/social/news/highlights.md";
 export const HIGHLIGHTS_GITHUB_URL =
-    "https://github.com/pollinations/pollinations/blob/news/social/news/highlights.md";
+    "https://github.com/pollinations/pollinations/blob/news/operations/social/news/highlights.md";
 
 const DYNAMIC_NEWS_COUNT = 6;
 
@@ -25,28 +25,32 @@ interface Highlight {
  */
 const PINNED_NEWS: Highlight[] = [
     {
+        date: "2026-08-15",
+        dateLabel: "Alpha",
+        emoji: "🤖",
+        title: "Build your own agents",
+        description:
+            "Create managed prompt agents and call them through the Pollinations API like any other model.",
+        details: [
+            "Choose a base model, add instructions, and optionally enable Pollinations tools.",
+            "Create an agent from [My Models](/my-models).",
+        ],
+    },
+    {
+        date: "2026-08-15",
+        dateLabel: "New quests",
+        emoji: "🌱",
+        title: "More ways to earn Pollen",
+        description:
+            "Earn 15 Pollen for your first external Paid Pollen request, 15 for reaching ten external app users, and 3 for an eligible two-year-old GitHub account. [View quests](/quests).",
+    },
+    {
         date: "2026-07-15",
         dateLabel: "Limited time",
         emoji: "☀️",
         title: "GPT-5.6 launch promotion",
         description:
-            "Try GPT-5.6 Sol, Terra, and Luna at half the provider price for a limited time.",
-        details: [
-            "Per 1M input/output tokens: Sol 2.50/15 Pollen, Terra 1.25/7.50 Pollen, Luna 0.50/3 Pollen.",
-            "Choose a GPT-5.6 model from the [Models tab](/models) and start building.",
-        ],
-    },
-    {
-        date: "2026-06-30",
-        dateLabel: "Now live",
-        emoji: "🎯",
-        title: "Quests are live",
-        description: "Earn Quest Pollen by completing dashboard quests.",
-        details: [
-            "New quests are available for onboarding, app growth, community, and GitHub contributions.",
-            "Open the [Quests tab](/quests) to see available rewards and claim completed quests.",
-            "Tiers have stopped; previous Tier Pollen is now Quest Pollen and balances stay unchanged.",
-        ],
+            "Try GPT-5.6 Sol, Terra, and Luna at half price for a limited time. [View models](/models).",
     },
     {
         date: "2026-06-30",
@@ -127,15 +131,47 @@ function formatNewsDate(date: string): string {
 
 /** Hand-curated, pinned announcements — stacked white cards. */
 export const Announcements: FC = () => {
-    if (PINNED_NEWS.length === 0) return null;
     return (
         <div className="flex flex-col gap-3">
+            <CanonicalModelSlugAnnouncement />
             {PINNED_NEWS.map((item) => (
                 <PinnedNews key={item.title} item={item} />
             ))}
         </div>
     );
 };
+
+const CanonicalModelSlugAnnouncement: FC = () => (
+    <Surface
+        id="canonical-model-slugs"
+        variant="card"
+        className="scroll-mt-4 leading-relaxed"
+    >
+        <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-theme-text-muted">
+            Scheduled change · Sep 7, 2026 at 14:00 UTC
+        </div>
+        <div className="flex items-baseline gap-2 font-semibold text-ink-900 text-base sm:text-lg">
+            <span aria-hidden="true" className="shrink-0">
+                🧪
+            </span>
+            <span>We're standardizing model IDs</span>
+        </div>
+        <p className="mt-1 text-sm text-ink-700">
+            Model IDs will use the publisher and official model name—for
+            example, <code>flux</code> →{" "}
+            <code>black-forest-labs/flux.1-schnell</code>. You can use the new
+            IDs now. Existing IDs will keep working.
+        </p>
+        <a
+            href="https://github.com/pollinations/pollinations/blob/main/MODEL_SLUGS.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 block w-fit text-sm font-semibold text-theme-text-soft hover:text-theme-text-strong hover:underline"
+        >
+            View all model ID changes →
+        </a>
+    </Surface>
+);
 
 export const NewsBanner: FC = () => {
     const [highlights, setHighlights] = useState<Highlight[]>([]);

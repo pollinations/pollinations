@@ -1,0 +1,23 @@
+DESCRIPTION >
+    Daily BYOP app usage split by whether the spending user is the app owner.
+    byop_app_daily cannot answer this: it aggregates spenders into a uniq state,
+    so owner self-spend is indistinguishable from a real user paying in the app.
+    Quests that must not be self-awardable read this instead.
+
+    owner_user_id leads the sorting key because every read is a single-owner
+    lookup; generation_event_v2 sorts by start_time, which makes the equivalent
+    raw-table scan read the whole history per request.
+
+TOKEN "tinybird_read" READ
+
+SCHEMA >
+    `day` Date,
+    `environment` LowCardinality(String),
+    `owner_user_id` String,
+    `is_external` Bool,
+    `billed_paid_calls` AggregateFunction(sum, UInt64),
+    `gross_consumption` AggregateFunction(sum, Float64)
+
+ENGINE AggregatingMergeTree
+ENGINE_PARTITION_KEY toYYYYMM(day)
+ENGINE_SORTING_KEY owner_user_id, day, environment, is_external

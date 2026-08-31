@@ -1,9 +1,12 @@
-import { execSync } from "node:child_process";
 import { join, resolve } from "node:path";
 import polliSkill from "../../SKILL.md?raw";
 import { BASE_URL } from "../lib/config.js";
-import { printInfo } from "../lib/output.js";
-import { readTextIfExists, removeIfExists, writeTextAtomic } from "./fs.js";
+import {
+    commandExists,
+    readTextIfExists,
+    removeIfExists,
+    writeTextAtomic,
+} from "./fs.js";
 import { resolveHarnessKey } from "./keys.js";
 import { fetchHarnessModels } from "./models.js";
 import {
@@ -226,17 +229,14 @@ export const pi: HarnessAdapter = {
     label: LABEL,
     description: "Configure Pi as a Pollinations provider",
     restartHint:
-        "Changes apply on the next Pi session. Start Pi with: pi\nNot installed? npm install -g --ignore-scripts @earendil-works/pi-coding-agent",
+        "Changes apply on the next Pi session. Start Pi with: pi",
 
     async on(ctx, options) {
-        try {
-            execSync("pi --version", { stdio: "ignore" });
-        } catch {
-            printInfo(
-                "Pi is not installed. Install it with:\n  npm install -g --ignore-scripts @earendil-works/pi-coding-agent",
+        if (!commandExists("pi", ctx.env)) {
+            throw new Error(
+                "Pi was not found. Install it first: npm install -g --ignore-scripts @earendil-works/pi-coding-agent",
             );
         }
-
         const model = options.model ?? DEFAULT_MODEL;
         const models = await fetchHarnessModels();
         if (!models.some((candidate) => candidate.id === model)) {

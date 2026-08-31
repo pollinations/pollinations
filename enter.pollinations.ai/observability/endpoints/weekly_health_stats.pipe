@@ -1,5 +1,6 @@
 DESCRIPTION >
-    Weekly service availability metrics.
+    Weekly non-community service availability metrics. Community-provider
+    traffic is reported separately by weekly_usage_stats.
     Availability = 2xx / (2xx + 5xx): server (5xx) failures are downtime, while
     4xx client errors (auth, balance, rate-limit, bad input) are excluded from
     the denominator so they can't dilute the failure rate — matching the model
@@ -39,6 +40,8 @@ SQL >
         {% else %}
         start_time >= now() - INTERVAL {{Int32(weeks_back, 12)}} WEEK
         {% end %}
+        AND is_final  -- one row per request; attempts counted separately
+        AND model_provider_used != 'community'
     GROUP BY week
     ORDER BY week ASC
 

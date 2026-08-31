@@ -6,30 +6,63 @@ export const MODEL_CATEGORIES = [
     "audio",
     "realtime",
     "text",
-    "community-text",
-    "community-image",
     "embedding",
+    "agent",
 ] as const;
 
 export type ModelCategory = (typeof MODEL_CATEGORIES)[number];
 
-export const MODEL_SORT_KEYS = [
-    "name",
-    "perPollen",
-    "input",
-    "output",
-] as const;
-export type ModelSortKey = (typeof MODEL_SORT_KEYS)[number];
+export const MODEL_SCOPES = ["pollinations", "community"] as const;
+export type ModelScope = (typeof MODEL_SCOPES)[number];
 
-export const MODEL_SORT_DIRECTIONS = ["asc", "desc"] as const;
-export type ModelSortDirection = (typeof MODEL_SORT_DIRECTIONS)[number];
+export const MODEL_SORTS = [
+    "popular",
+    "newest",
+    "oldest",
+    "price-low",
+    "price-high",
+    "title",
+    "title-desc",
+    "brand",
+    "brand-desc",
+] as const;
+export type ModelSort = (typeof MODEL_SORTS)[number];
 
 export type ModelSearch = {
+    scope?: ModelScope;
     category?: ModelCategory;
     q?: string;
-    sort?: ModelSortKey;
-    dir?: ModelSortDirection;
+    sort?: ModelSort;
 };
+
+type ModelSectionInput = {
+    type: Exclude<ModelCategory, "all" | "agent">;
+    agent?: boolean;
+};
+
+const MODEL_SECTION_ORDER: ModelCategory[] = [
+    "all",
+    "text",
+    "image",
+    "video",
+    "3d",
+    "audio",
+    "realtime",
+    "embedding",
+    "agent",
+];
+
+/** Model tabs in display order, limited to categories present in the catalog. */
+export function getAvailableModelSections(
+    models: readonly ModelSectionInput[],
+): ModelCategory[] {
+    const present = new Set(
+        models.map((model) => (model.agent ? "agent" : model.type)),
+    );
+    return MODEL_SECTION_ORDER.filter(
+        (category) => category === "all" || present.has(category),
+    );
+}
 
 function includes<T extends string>(
     values: readonly T[],
@@ -41,23 +74,23 @@ function includes<T extends string>(
 export function validateModelSearch(
     search: Record<string, unknown>,
 ): ModelSearch {
+    const scope = includes(MODEL_SCOPES, search.scope)
+        ? search.scope
+        : "pollinations";
+    const category = includes(MODEL_CATEGORIES, search.category)
+        ? search.category
+        : "all";
+    const sort = includes(MODEL_SORTS, search.sort) ? search.sort : "popular";
+    const query = typeof search.q === "string" ? search.q.trim() : "";
+
     return {
+        scope: scope === "community" ? scope : undefined,
         category:
-            includes(MODEL_CATEGORIES, search.category) &&
-            search.category !== "all"
-                ? search.category
+            category !== "all" &&
+            (scope === "community" || category !== "agent")
+                ? category
                 : undefined,
-        q:
-            typeof search.q === "string" && search.q.length > 0
-                ? search.q
-                : undefined,
-        sort:
-            includes(MODEL_SORT_KEYS, search.sort) &&
-            search.sort !== "perPollen"
-                ? search.sort
-                : undefined,
-        dir: includes(MODEL_SORT_DIRECTIONS, search.dir)
-            ? search.dir
-            : undefined,
+        q: query || undefined,
+        sort: sort === "popular" ? undefined : sort,
     };
 }

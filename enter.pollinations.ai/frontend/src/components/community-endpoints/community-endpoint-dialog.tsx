@@ -8,21 +8,22 @@ import {
     DialogTitle,
     Dropdown,
     DropdownItem,
+    EditableCombobox,
     FieldStack,
     Input,
     ScrollArea,
     TabButton,
 } from "@pollinations/ui";
-import {
-    COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
-    COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH,
-    type CommunityEndpointVisibility,
-} from "@shared/community-endpoints.ts";
+import { MAX_FALLBACK_TARGETS } from "@shared/community-endpoints.ts";
+import type { ModelInputModality } from "@shared/registry/registry.ts";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
+import { ModelListingFields } from "./model-listing-fields.tsx";
 import {
     BASE_TEXT_PRICE_KEYS,
+    BASE_TRANSCRIPTION_PRICE_KEYS,
+    BASE_VIDEO_PRICE_KEYS,
     formWithVisiblePrices,
     hasValidVisibleFormPrices,
     PriceGroups,
@@ -32,13 +33,15 @@ import {
 } from "./price-table.tsx";
 import {
     type ActionState,
-    type CommunityEndpoint,
     type CommunityEndpointTestResponse,
+    type EditableEndpoint,
     type EndpointFormState,
     type EndpointPayload,
     emptyForm,
     endpointToForm,
+    type FallbackModelOption,
     idleAction,
+    isValidPerUserRpm,
     nextFormState,
     providerModelHelper,
     readError,
@@ -47,10 +50,12 @@ import {
 
 type CommunityEndpointDialogProps = {
     /** Present in edit mode (prefills the form); omit to create. */
-    endpoint?: CommunityEndpoint;
+    endpoint?: EditableEndpoint;
     // Allowlisted owners can choose Public. Everyone else sees the same
     // lifecycle control with Public disabled.
     canPublish: boolean;
+    /** Public community models offered as fallback targets. */
+    fallbackOptions: FallbackModelOption[];
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSubmit: (payload: EndpointPayload, bearerToken: string) => Promise<void>;
@@ -61,12 +66,14 @@ type CommunityEndpointDialogProps = {
 export function CommunityEndpointDialog({
     endpoint,
     canPublish,
+    fallbackOptions,
     open,
     onOpenChange,
     onSubmit,
     trigger,
 }: CommunityEndpointDialogProps) {
     const isEdit = !!endpoint;
+    const isEndpointAgent = endpoint?.type === "endpoint_agent";
     const [form, setForm] = useState<EndpointFormState>(emptyForm);
     const [modelOptions, setModelOptions] = useState<string[]>([]);
     const [modelListState, setModelListState] =
@@ -75,6 +82,11 @@ export function CommunityEndpointDialog({
     const [testState, setTestState] = useState<ActionState>(idleAction);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    // null until the server answers, so the dropdown can fall back to the
+    // catalog while it loads instead of briefly looking empty.
+    const [fallbackCandidates, setFallbackCandidates] = useState<
+        string[] | null
+    >(null);
     const savedPriceKeys = savedEndpointPriceKeys(endpoint);
 
     // Reset the form on open and clear local state on close so unsaved values
@@ -87,7 +99,32 @@ export function CommunityEndpointDialog({
         setTestState(idleAction);
         setError(null);
         setIsSubmitting(false);
+        setFallbackCandidates(null);
     }, [open, endpoint]);
+
+    // Ask which models this one may fall back to. Only a saved model has an id
+    // to ask about; a failure leaves the catalog list in place rather than
+    // blocking the dialog on a feature the server re-validates on save anyway.
+    const endpointId = endpoint?.id;
+    useEffect(() => {
+        if (!open || !endpointId || isEndpointAgent) return;
+        let active = true;
+        void (async () => {
+            try {
+                const response = await apiClient.account["my-models"][":id"][
+                    "fallback-candidates"
+                ].$get({ param: { id: endpointId } });
+                if (!response.ok) return;
+                const { data } = await response.json();
+                if (active) setFallbackCandidates(data);
+            } catch {
+                // Leave the catalog list in place.
+            }
+        })();
+        return () => {
+            active = false;
+        };
+    }, [open, endpointId, isEndpointAgent]);
 
     const hasToken = form.bearerToken.trim().length > 0;
     const tokenForRequest = { bearerToken: form.bearerToken.trim() };
@@ -108,14 +145,6 @@ export function CommunityEndpointDialog({
             setModelListState(idleAction);
             setProviderModelMenuOpen(false);
         }
-        if (key === "upstreamModel" && modelOptions.length > 0) {
-            setProviderModelMenuOpen(true);
-        }
-    }
-
-    function updateVisibility(visibility: CommunityEndpointVisibility): void {
-        setForm((current) => ({ ...current, visibility }));
-        setError(null);
     }
 
     async function handleFetchModels(): Promise<void> {
@@ -123,7 +152,7 @@ export function CommunityEndpointDialog({
         try {
             const response = await apiClient.account["my-models"].models.$post({
                 json: {
-                    baseUrl: form.baseUrl.trim(),
+                    baseUrl: form.baseUrl,
                     ...tokenForRequest,
                 },
             });
@@ -153,10 +182,12 @@ export function CommunityEndpointDialog({
         try {
             const response = await apiClient.account["my-models"].test.$post({
                 json: {
-                    baseUrl: form.baseUrl.trim(),
+                    baseUrl: form.baseUrl,
                     bearerToken: form.bearerToken.trim(),
                     modality: form.modality,
-                    model: form.upstreamModel.trim() || form.name.trim(),
+                    ...(form.modality !== "video" && {
+                        model: form.upstreamModel.trim() || form.name.trim(),
+                    }),
                 },
             });
             if (!response.ok) throw new Error(await readError(response));
@@ -166,8 +197,6 @@ export function CommunityEndpointDialog({
                 form.modality === "image"
                     ? (body.imagePricing ?? "request")
                     : form.imagePricing;
-            const supportsImageEdits =
-                form.modality === "image" && body.supportsImageEdits === true;
             const returnedFields = returnedPriceFields(
                 {
                     status: "success",
@@ -181,13 +210,21 @@ export function CommunityEndpointDialog({
                 throw new Error(
                     form.modality === "image"
                         ? "Endpoint responded, but did not return image data"
-                        : "Endpoint responded, but did not return billable usage",
+                        : form.modality === "video"
+                          ? "Endpoint responded, but did not return playable video"
+                          : form.modality === "transcription"
+                            ? "Endpoint responded, but did not return transcription text or usage"
+                            : "Endpoint responded, but did not return billable usage",
                 );
             }
             setForm((current) => ({
                 ...current,
                 imagePricing: detectedImagePricing,
-                supportsImageEdits,
+                inputModalities:
+                    current.modality === "image" &&
+                    body.inputModalities?.includes("image")
+                        ? (["text", "image"] as ModelInputModality[])
+                        : current.inputModalities,
                 // Changing pricing mode changes the units of these fields, so
                 // stale values must not carry across modes.
                 ...(detectedImagePricing !== current.imagePricing
@@ -220,12 +257,10 @@ export function CommunityEndpointDialog({
         setIsSubmitting(true);
         setError(null);
         try {
-            await onSubmit(
-                toEndpointPayload(
-                    formWithVisiblePrices(form, visiblePriceKeys),
-                ),
-                form.bearerToken.trim(),
+            const payload = toEndpointPayload(
+                formWithVisiblePrices(form, visiblePriceKeys),
             );
+            await onSubmit(payload, form.bearerToken.trim());
             onOpenChange(false);
         } catch (thrown) {
             setError(
@@ -242,7 +277,7 @@ export function CommunityEndpointDialog({
     // keyed off the LIVE form value so flipping Visibility to Public in place
     // reveals the test + pricing section immediately. Private models carry no
     // pricing (owner is the only caller).
-    const isShared = form.visibility === "public";
+    const isShared = form.visibility === "public" && !isEndpointAgent;
     const returnedFields = isShared
         ? returnedPriceFields(testState, form.modality, form.imagePricing)
         : [];
@@ -251,7 +286,11 @@ export function CommunityEndpointDialog({
     const basePriceKeys =
         form.modality === "image"
             ? (["completionImagePrice"] as const)
-            : BASE_TEXT_PRICE_KEYS;
+            : form.modality === "video"
+              ? BASE_VIDEO_PRICE_KEYS
+              : form.modality === "transcription"
+                ? BASE_TRANSCRIPTION_PRICE_KEYS
+                : BASE_TEXT_PRICE_KEYS;
     const visiblePriceKeys = new Set(
         isShared
             ? visiblePriceFieldKeys(savedPriceKeys, returnedFields, [
@@ -263,32 +302,66 @@ export function CommunityEndpointDialog({
         form,
         visiblePriceKeys,
     );
+    const hasValidPerUserRpm = isValidPerUserRpm(form.perUserRpm);
     // First-time publishing of an external endpoint re-observes its billed
-    // buckets, so it needs a successful test. A model already saved as public
-    // has server-validated pricing, so re-editing it (e.g. a price or
-    // description tweak) does not force another test. Private models defer
-    // pricing entirely. External endpoints always need a token to be callable
-    // at all.
-    const alreadyPublic = isEdit && endpoint?.visibility === "public";
-    const needsTest = isShared && !alreadyPublic;
+    // buckets, so it needs a successful test. A model already public or queued
+    // for publication has server-validated pricing, so re-editing it does not
+    // force another test. Private models defer pricing entirely. External
+    // endpoints always need a token to be callable at all.
+    const isPublicOrPending =
+        isEdit &&
+        (endpoint?.visibility === "public" ||
+            endpoint?.pending?.visibility === "public");
+    const needsTest = isShared && !isPublicOrPending;
     const testRequirementMet =
         testState.status === "success" && returnedFields.length > 0;
-    const saveRequirementMet = needsTest
-        ? testRequirementMet && (isEdit || hasToken)
-        : isEdit || hasToken;
-    const providerModelQuery = form.upstreamModel.trim().toLowerCase();
-    const visibleModelOptions =
-        providerModelQuery === ""
-            ? modelOptions
-            : modelOptions.filter((model) =>
-                  model.toLowerCase().includes(providerModelQuery),
-              );
+    const saveRequirementMet =
+        isEndpointAgent ||
+        (needsTest
+            ? testRequirementMet && (isEdit || hasToken)
+            : isEdit || hasToken);
+    // A saved model's eligible targets are computed server-side with the same
+    // rule the update endpoint validates against, so every id offered can be
+    // saved. Creating a model has no id to ask about yet, so it falls back to
+    // the catalog filtered by modality alone and relies on the save error.
+    const visibleFallbackOptions = [
+        ...new Set([
+            ...(fallbackCandidates ??
+                fallbackOptions
+                    .filter(
+                        (option) =>
+                            option.modality === form.modality &&
+                            option.modelId !== endpoint?.modelId,
+                    )
+                    .map((option) => option.modelId)),
+            // A target that has since become ineligible stays listed so editing
+            // something else does not silently drop it.
+            ...form.fallbacks,
+        ]),
+    ].sort();
+    // One row per chosen target plus an empty row to add the next, so the
+    // order on screen is the order they are tried.
+    const fallbackRows =
+        form.fallbacks.length < MAX_FALLBACK_TARGETS
+            ? [...form.fallbacks, ""]
+            : form.fallbacks;
+
+    // Setting a row to "None" removes it and closes the gap.
+    function setFallbackAt(index: number, modelId: string): void {
+        setForm((current) => {
+            const next = [...current.fallbacks];
+            if (modelId === "") next.splice(index, 1);
+            else next[index] = modelId;
+            return { ...current, fallbacks: next };
+        });
+    }
     const canSubmit =
         !isSubmitting &&
         form.name.trim() !== "" &&
         form.title.trim() !== "" &&
         form.baseUrl.trim() !== "" &&
         hasValidVisiblePrices &&
+        hasValidPerUserRpm &&
         saveRequirementMet;
 
     return (
@@ -302,14 +375,24 @@ export function CommunityEndpointDialog({
         >
             <div className="shrink-0 p-6 pb-4">
                 <DialogTitle className="text-lg font-semibold">
-                    {isEdit ? "Edit Model" : "Add Model"}
+                    {isEndpointAgent
+                        ? "Edit Endpoint Agent"
+                        : isEdit
+                          ? "Edit Model"
+                          : "Add Model"}
                 </DialogTitle>
                 <p className="mt-1 text-sm text-theme-text-muted">
-                    Register an OpenAI-compatible endpoint as a{" "}
-                    <code>
-                        {"{username}"}/{"{model-id}"}
-                    </code>{" "}
-                    model.
+                    {isEndpointAgent ? (
+                        "Update the externally hosted agent listing and its endpoint URL."
+                    ) : (
+                        <>
+                            Register an OpenAI-compatible endpoint as a{" "}
+                            <code>
+                                {"{username}"}/{"{model-id}"}
+                            </code>{" "}
+                            model.
+                        </>
+                    )}
                 </p>
             </div>
 
@@ -322,140 +405,98 @@ export function CommunityEndpointDialog({
                 <ScrollArea className="min-h-0 flex-1 space-y-4 overscroll-contain px-6 pb-2">
                     {error && <Alert intent="danger">{error}</Alert>}
 
-                    <FieldStack
-                        label="Modality"
-                        helper={
-                            isEdit
-                                ? "Existing models keep their registered modality."
-                                : "Choose the public API family this endpoint serves."
-                        }
-                        alignLabelRow
-                    >
-                        <div className="grid grid-cols-2 gap-2">
-                            {(["text", "image"] as const).map((modality) => {
-                                const selected = form.modality === modality;
-                                return (
-                                    <button
+                    {endpoint?.pending && (
+                        <Alert intent="info" title="Changes queued">
+                            This form shows the queued values. They take effect{" "}
+                            {new Date(
+                                endpoint.pending.effectiveAt,
+                            ).toLocaleString()}
+                            .
+                        </Alert>
+                    )}
+
+                    {!isEndpointAgent && (
+                        <FieldStack
+                            label="Modality"
+                            helper={
+                                isEdit
+                                    ? "Existing models keep their registered modality."
+                                    : "Choose the public API family this endpoint serves."
+                            }
+                            alignLabelRow
+                        >
+                            <ButtonGroup aria-label="Modality">
+                                {(
+                                    [
+                                        "text",
+                                        "image",
+                                        "video",
+                                        "transcription",
+                                        "embedding",
+                                    ] as const
+                                ).map((modality) => (
+                                    <TabButton
                                         key={modality}
-                                        type="button"
+                                        active={form.modality === modality}
                                         disabled={isEdit}
-                                        className={`rounded-md border px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
-                                            selected
-                                                ? "border-theme-border-active bg-theme-bg-active text-theme-text-strong"
-                                                : "border-divider bg-surface text-theme-text-muted hover:bg-surface-opaque"
-                                        }`}
                                         onClick={() =>
                                             updateForm("modality", modality)
                                         }
+                                        size="sm"
+                                        className="min-w-20 gap-1.5 capitalize"
                                     >
-                                        {modality === "image"
-                                            ? "Image"
-                                            : "Text"}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </FieldStack>
-
-                    <div className="grid gap-4 sm:grid-cols-2">
-                        <FieldStack
-                            label="Model ID"
-                            helper="Public id: {username}/{model-id}."
-                            alignLabelRow
-                        >
-                            <Input
-                                name="community-model-name"
-                                value={form.name}
-                                placeholder="my-model"
-                                autoComplete="off"
-                                autoCapitalize="none"
-                                spellCheck={false}
-                                required
-                                onChange={(e) =>
-                                    updateForm("name", e.target.value)
-                                }
-                            />
+                                        {form.modality === modality && (
+                                            <CheckIcon className="h-3.5 w-3.5" />
+                                        )}
+                                        {modality}
+                                    </TabButton>
+                                ))}
+                            </ButtonGroup>
                         </FieldStack>
-                        <FieldStack
-                            label="Title"
-                            helper="Display name shown in the Models list."
-                            alignLabelRow
-                        >
-                            <Input
-                                name="community-model-title"
-                                value={form.title}
-                                placeholder="My Model"
-                                autoComplete="off"
-                                maxLength={COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH}
-                                required
-                                onChange={(e) =>
-                                    updateForm("title", e.target.value)
-                                }
-                            />
-                        </FieldStack>
-                    </div>
+                    )}
 
-                    <FieldStack
-                        label="Description"
-                        helper="Optional. One line about what the model is good at."
-                        alignLabelRow
-                    >
-                        <Input
-                            name="community-model-description"
-                            value={form.description}
-                            placeholder="Fast coding model, long context"
-                            autoComplete="off"
-                            maxLength={
-                                COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH
-                            }
-                            onChange={(e) =>
-                                updateForm("description", e.target.value)
-                            }
-                        />
-                    </FieldStack>
-
-                    <FieldStack
-                        label="Visibility"
-                        helper={
-                            isShared
-                                ? "Public: listed in /models and callable by anyone. Set optional usage prices below, or leave them at 0 for free."
-                                : canPublish
-                                  ? "Private: callable only by you and shown only in model lists authenticated with your API key."
-                                  : "Private: callable only by you. Publishing publicly requires approval."
+                    <ModelListingFields
+                        form={form}
+                        modality={form.modality}
+                        canPublish={canPublish}
+                        isAgent={isEndpointAgent}
+                        allowPerUserRpm
+                        onChange={(key, value) => updateForm(key, value)}
+                        onInputModalitiesChange={(inputModalities) =>
+                            setForm((current) => ({
+                                ...current,
+                                inputModalities,
+                            }))
                         }
-                        alignLabelRow
-                    >
-                        <ButtonGroup aria-label="Model visibility">
-                            <TabButton
-                                active={form.visibility === "private"}
-                                onClick={() => updateVisibility("private")}
-                                size="sm"
-                                className="min-w-24 gap-1.5"
-                            >
-                                {form.visibility === "private" && (
-                                    <CheckIcon className="h-3.5 w-3.5" />
-                                )}
-                                Private
-                            </TabButton>
-                            <TabButton
-                                active={form.visibility === "public"}
-                                disabled={!canPublish}
-                                onClick={() => updateVisibility("public")}
-                                size="sm"
-                                className="min-w-24 gap-1.5"
-                            >
-                                {form.visibility === "public" && (
-                                    <CheckIcon className="h-3.5 w-3.5" />
-                                )}
-                                Public
-                            </TabButton>
-                        </ButtonGroup>
-                    </FieldStack>
+                        onCapabilitiesChange={(capabilities) =>
+                            setForm((current) => ({
+                                ...current,
+                                capabilities,
+                            }))
+                        }
+                    />
+
+                    {form.visibility === "public" && (
+                        <Alert intent="warning" title="Public provider duties">
+                            Requests are sent to your endpoint. You are
+                            responsible for securing caller data and disclosing
+                            how you retain, share, train on, or otherwise use
+                            it.
+                        </Alert>
+                    )}
 
                     <div className="grid gap-4 sm:grid-cols-2">
                         <FieldStack
-                            label="Endpoint URL"
-                            helper="OpenAI-compatible /v1 base URL, or full chat/image generation/edit URL."
+                            label={
+                                form.modality === "video"
+                                    ? "Video endpoint URL"
+                                    : "Endpoint URL"
+                            }
+                            helper={
+                                form.modality === "video"
+                                    ? "The exact URL Pollinations calls to generate a video."
+                                    : "OpenAI-compatible /v1 base URL, or full chat/image/edit/transcription URL."
+                            }
                             alignLabelRow
                         >
                             <Input
@@ -463,7 +504,11 @@ export function CommunityEndpointDialog({
                                 type="url"
                                 inputMode="url"
                                 value={form.baseUrl}
-                                placeholder="https://api.example.com/v1"
+                                placeholder={
+                                    form.modality === "video"
+                                        ? "https://api.example.com/generate-video"
+                                        : "https://api.example.com/v1"
+                                }
                                 autoComplete="off"
                                 autoCapitalize="none"
                                 spellCheck={false}
@@ -473,19 +518,37 @@ export function CommunityEndpointDialog({
                                 }
                             />
                         </FieldStack>
-                        <FieldStack
-                            label="Provider model ID"
-                            helper={
-                                canPublish
-                                    ? providerModelHelper(
-                                          modelOptions,
-                                          modelListState,
-                                      )
-                                    : "Enter the upstream model ID manually."
-                            }
-                            alignLabelRow
-                            action={
-                                canPublish ? (
+                        {isEndpointAgent && (
+                            <FieldStack
+                                label="Agent model ID"
+                                helper="Model ID sent to the endpoint with each request."
+                                alignLabelRow
+                            >
+                                <Input
+                                    name="community-upstream-id"
+                                    value={form.upstreamModel}
+                                    autoComplete="off"
+                                    autoCapitalize="none"
+                                    spellCheck={false}
+                                    required
+                                    onChange={(event) =>
+                                        updateForm(
+                                            "upstreamModel",
+                                            event.target.value,
+                                        )
+                                    }
+                                />
+                            </FieldStack>
+                        )}
+                        {!isEndpointAgent && form.modality !== "video" && (
+                            <FieldStack
+                                label="Provider model ID"
+                                helper={providerModelHelper(
+                                    modelOptions,
+                                    modelListState,
+                                )}
+                                alignLabelRow
+                                action={
                                     <Button
                                         type="button"
                                         size="sm"
@@ -502,141 +565,70 @@ export function CommunityEndpointDialog({
                                             ? "Fetching…"
                                             : "Fetch models"}
                                     </Button>
-                                ) : undefined
-                            }
-                        >
-                            {modelOptions.length > 0 ? (
-                                <Dropdown
-                                    align="end"
-                                    open={providerModelMenuOpen}
-                                    onOpenChange={setProviderModelMenuOpen}
-                                    className="w-[var(--reference-width)] min-w-0 p-1"
-                                    trigger={(menuOpen) => (
-                                        <div className="relative w-full">
-                                            <Input
-                                                name="community-upstream-id"
-                                                value={form.upstreamModel}
-                                                placeholder={
-                                                    form.modality === "image"
-                                                        ? "gpt-image-2"
-                                                        : "gpt-4o-mini"
-                                                }
-                                                className="w-full pr-10"
-                                                autoComplete="off"
-                                                autoCapitalize="none"
-                                                spellCheck={false}
-                                                data-lpignore="true"
-                                                data-1p-ignore="true"
-                                                data-bwignore="true"
-                                                onChange={(e) =>
-                                                    updateForm(
-                                                        "upstreamModel",
-                                                        e.target.value,
-                                                    )
-                                                }
-                                            />
-                                            <ChevronIcon
-                                                expanded={menuOpen}
-                                                className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-theme-text-muted transition-transform"
-                                            />
-                                        </div>
-                                    )}
-                                >
-                                    {(close) =>
-                                        visibleModelOptions.length > 0 ? (
-                                            <ScrollArea className="max-h-64">
-                                                <div className="flex flex-col">
-                                                    {visibleModelOptions.map(
-                                                        (model) => (
-                                                            <DropdownItem
-                                                                key={model}
-                                                                className={
-                                                                    form.upstreamModel ===
-                                                                    model
-                                                                        ? "bg-theme-bg-active font-medium text-theme-text-strong"
-                                                                        : undefined
-                                                                }
-                                                                onClick={() => {
-                                                                    updateForm(
-                                                                        "upstreamModel",
-                                                                        model,
-                                                                    );
-                                                                    close();
-                                                                }}
-                                                            >
-                                                                <span className="truncate font-mono">
-                                                                    {model}
-                                                                </span>
-                                                            </DropdownItem>
-                                                        ),
-                                                    )}
-                                                </div>
-                                            </ScrollArea>
-                                        ) : (
-                                            <p className="m-0 px-2 py-2 text-sm text-theme-text-soft">
-                                                No fetched models match.
-                                            </p>
-                                        )
-                                    }
-                                </Dropdown>
-                            ) : (
-                                <Input
+                                }
+                            >
+                                <EditableCombobox
                                     name="community-upstream-id"
                                     value={form.upstreamModel}
+                                    options={modelOptions}
                                     placeholder={
                                         form.modality === "image"
                                             ? "gpt-image-2"
-                                            : "gpt-4o-mini"
+                                            : form.modality === "transcription"
+                                              ? "whisper-1"
+                                              : form.modality === "embedding"
+                                                ? "text-embedding-3-small"
+                                                : "gpt-4o-mini"
                                     }
+                                    align="end"
+                                    open={providerModelMenuOpen}
+                                    onOpenChange={setProviderModelMenuOpen}
+                                    emptyMessage="No fetched models match."
                                     autoComplete="off"
                                     autoCapitalize="none"
                                     spellCheck={false}
                                     data-lpignore="true"
                                     data-1p-ignore="true"
                                     data-bwignore="true"
-                                    onFocus={() => {
-                                        if (modelOptions.length > 0) {
-                                            setProviderModelMenuOpen(true);
-                                        }
-                                    }}
-                                    onChange={(e) =>
-                                        updateForm(
-                                            "upstreamModel",
-                                            e.target.value,
-                                        )
+                                    onChange={(value) =>
+                                        updateForm("upstreamModel", value)
                                     }
                                 />
-                            )}
-                        </FieldStack>
+                            </FieldStack>
+                        )}
                     </div>
 
-                    <FieldStack
-                        label="API bearer token"
-                        helper={
-                            isEdit
-                                ? "Leave blank to keep the saved token. Enter a token to fetch models, test, or replace it."
-                                : "Stored encrypted and sent as Authorization: Bearer to your endpoint."
-                        }
-                        alignLabelRow
-                    >
-                        <Input
-                            name="community-api-bearer-token"
-                            type="password"
-                            value={form.bearerToken}
-                            placeholder={isEdit ? "Re-enter token" : undefined}
-                            autoComplete="new-password"
-                            autoCapitalize="none"
-                            data-lpignore="true"
-                            data-1p-ignore="true"
-                            data-bwignore="true"
-                            required={!isEdit}
-                            onChange={(e) =>
-                                updateForm("bearerToken", e.target.value)
+                    {!isEndpointAgent && (
+                        <FieldStack
+                            label="API bearer token"
+                            helper={
+                                isEdit
+                                    ? "Leave blank to keep the saved token. Enter a token to fetch models, test, or replace it."
+                                    : "Stored encrypted and sent as Authorization: Bearer to your endpoint."
                             }
-                        />
-                    </FieldStack>
+                            alignLabelRow
+                        >
+                            <Input
+                                name="community-api-bearer-token"
+                                type="password"
+                                value={form.bearerToken}
+                                placeholder={
+                                    isEdit ? "Re-enter token" : undefined
+                                }
+                                autoComplete="new-password"
+                                autoCapitalize="none"
+                                data-lpignore="true"
+                                data-1p-ignore="true"
+                                data-bwignore="true"
+                                required={!isEdit}
+                                onChange={(e) =>
+                                    updateForm("bearerToken", e.target.value)
+                                }
+                            />
+                        </FieldStack>
+                    )}
 
-                    {canPublish && (
+                    {!isEndpointAgent && (
                         <div className="flex flex-wrap items-center gap-3">
                             <Button
                                 type="button"
@@ -666,7 +658,6 @@ export function CommunityEndpointDialog({
                                 )}
                         </div>
                     )}
-
                     {isShared && (
                         <PriceGroups
                             form={form}
@@ -677,11 +668,142 @@ export function CommunityEndpointDialog({
                             onChange={updateForm}
                         />
                     )}
+                    {isShared && (
+                        <FieldStack
+                            label="Balance"
+                            helper={
+                                form.paidOnly
+                                    ? "Paid only: callers must spend Paid Pollen. Use this when your upstream bills per use, so free Quest Pollen cannot cover the price."
+                                    : "Any Pollen: callers can pay with Quest or Paid Pollen."
+                            }
+                            alignLabelRow
+                        >
+                            <ButtonGroup aria-label="Accepted balance">
+                                <TabButton
+                                    active={!form.paidOnly}
+                                    onClick={() =>
+                                        setForm((current) => ({
+                                            ...current,
+                                            paidOnly: false,
+                                        }))
+                                    }
+                                    size="sm"
+                                    className="min-w-24 gap-1.5"
+                                >
+                                    {!form.paidOnly && (
+                                        <CheckIcon className="h-3.5 w-3.5" />
+                                    )}
+                                    Any Pollen
+                                </TabButton>
+                                <TabButton
+                                    active={form.paidOnly}
+                                    onClick={() =>
+                                        setForm((current) => ({
+                                            ...current,
+                                            paidOnly: true,
+                                        }))
+                                    }
+                                    size="sm"
+                                    className="min-w-24 gap-1.5"
+                                >
+                                    {form.paidOnly && (
+                                        <CheckIcon className="h-3.5 w-3.5" />
+                                    )}
+                                    Paid only
+                                </TabButton>
+                            </ButtonGroup>
+                        </FieldStack>
+                    )}
+                    {isShared && (
+                        <FieldStack
+                            label="Fallback models"
+                            helper={`Optional. Tried in order when this model's upstream fails, up to ${MAX_FALLBACK_TARGETS}. Each must be another public community model of the same modality, priced at or below this one.`}
+                            alignLabelRow
+                        >
+                            <div className="flex flex-col gap-2">
+                                {fallbackRows.map((selected, index) => (
+                                    <Dropdown
+                                        key={selected || "new-fallback"}
+                                        align="start"
+                                        className="w-[var(--reference-width)] min-w-0 p-1"
+                                        trigger={(open) => (
+                                            <Button
+                                                type="button"
+                                                aria-label={`Fallback model ${index + 1}: ${selected || "None"}`}
+                                                className="w-full min-w-0 self-stretch justify-between gap-2"
+                                            >
+                                                <span className="min-w-0 truncate font-mono text-sm">
+                                                    {selected ||
+                                                        (index === 0
+                                                            ? "None"
+                                                            : "None (remove)")}
+                                                </span>
+                                                <ChevronIcon
+                                                    expanded={open}
+                                                    className="h-4 w-4 shrink-0"
+                                                />
+                                            </Button>
+                                        )}
+                                    >
+                                        {(close) => (
+                                            <ScrollArea className="max-h-64">
+                                                <DropdownItem
+                                                    onClick={() => {
+                                                        setFallbackAt(
+                                                            index,
+                                                            "",
+                                                        );
+                                                        close();
+                                                    }}
+                                                >
+                                                    {index === 0
+                                                        ? "None"
+                                                        : "None (remove)"}
+                                                </DropdownItem>
+                                                {visibleFallbackOptions
+                                                    .filter(
+                                                        (modelId) =>
+                                                            modelId ===
+                                                                selected ||
+                                                            !form.fallbacks.includes(
+                                                                modelId,
+                                                            ),
+                                                    )
+                                                    .map((modelId) => (
+                                                        <DropdownItem
+                                                            key={modelId}
+                                                            className={
+                                                                modelId ===
+                                                                selected
+                                                                    ? "bg-theme-bg-active text-theme-text-strong"
+                                                                    : undefined
+                                                            }
+                                                            onClick={() => {
+                                                                setFallbackAt(
+                                                                    index,
+                                                                    modelId,
+                                                                );
+                                                                close();
+                                                            }}
+                                                        >
+                                                            <span className="truncate font-mono">
+                                                                {modelId}
+                                                            </span>
+                                                        </DropdownItem>
+                                                    ))}
+                                            </ScrollArea>
+                                        )}
+                                    </Dropdown>
+                                ))}
+                            </div>
+                        </FieldStack>
+                    )}
                 </ScrollArea>
 
                 <div className="flex shrink-0 justify-end gap-2 p-6 pt-4">
                     <Button
                         type="button"
+                        intent="danger"
                         className="disabled:opacity-50"
                         onClick={() => onOpenChange(false)}
                         disabled={isSubmitting}

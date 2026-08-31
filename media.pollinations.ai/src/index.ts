@@ -23,6 +23,8 @@ import {
     tagsForItems,
 } from "./catalog.ts";
 
+export { MediaUpload } from "./media-upload.ts";
+
 const DOMAIN = "media.pollinations.ai";
 // gen.pollinations.ai proxies /account/* to enter — using the public path
 // keeps internal services consistent with the documented SDK/external usage.
@@ -40,6 +42,18 @@ interface Env {
     DB: D1Database;
 }
 
+/**
+ * Wire shape of `GET /account/key`. BYOP attribution arrives nested under
+ * `byopApp`, which is null for keys not minted through the BYOP flow.
+ */
+interface KeyVerifyResponse {
+    valid: boolean;
+    type: string;
+    name: string | null;
+    userId: string | null;
+    byopApp: { clientKeyId: string } | null;
+}
+
 interface AuthResult {
     valid: boolean;
     type: string;
@@ -54,7 +68,7 @@ async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
             headers: { Authorization: `Bearer ${apiKey}` },
         });
         if (!res.ok) return null;
-        const data = await res.json<AuthResult>();
+        const data = await res.json<KeyVerifyResponse>();
         if (!data.valid) return null;
         // Normalize: an enter deployment that predates the identity fields
         // omits them, and `undefined` would slip past the `=== null` guards
@@ -64,7 +78,7 @@ async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
             type: data.type,
             name: data.name ?? null,
             userId: data.userId ?? null,
-            byopClientKeyId: data.byopClientKeyId ?? null,
+            byopClientKeyId: data.byopApp?.clientKeyId ?? null,
         };
     } catch {
         return null;
@@ -95,19 +109,6 @@ function splitTags(values: unknown[]): string[] {
         tags.push(...value.split(","));
     }
     return tags;
-}
-
-class TagValidationError extends Error {}
-
-function validateTags(rawTags: string[]): string[] {
-    try {
-        return normalizeTags(rawTags);
-    } catch (error) {
-        if (error instanceof TagError) {
-            throw new TagValidationError(error.message);
-        }
-        throw error;
-    }
 }
 
 // Item shape returned by GET /media — never exposes ownerUserId/appKeyId.
@@ -436,9 +437,9 @@ api.post(
 
             let tags: string[];
             try {
-                tags = validateTags(rawTags);
+                tags = normalizeTags(rawTags);
             } catch (error) {
-                if (error instanceof TagValidationError) {
+                if (error instanceof TagError) {
                     return c.json({ error: error.message }, 400);
                 }
                 throw error;
@@ -480,7 +481,6 @@ api.post(
             // a D1 failure must surface as a 500, not be silently swallowed.
             // `tags` non-empty implies a user-attached key (rejected above
             // otherwise), so ownerUserId is always real here.
-            let storedTags: string[] | undefined;
             if (tags.length > 0 && authResult.userId !== null) {
                 const db = getDb(c.env.DB);
                 await insertUploadCatalogItem(db, {
@@ -491,7 +491,6 @@ api.post(
                     size: fileBuffer.byteLength,
                     tags,
                 });
-                storedTags = tags;
             }
 
             console.log(
@@ -510,7 +509,7 @@ api.post(
                 url: mediaUrl(id),
                 contentType,
                 size: fileBuffer.byteLength,
-                ...(storedTags ? { tags: storedTags } : {}),
+                ...(tags.length > 0 ? { tags } : {}),
             });
         } catch (error) {
             console.error("Upload error:", error);

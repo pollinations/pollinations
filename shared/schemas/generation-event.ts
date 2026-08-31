@@ -9,19 +9,31 @@ export type EventType =
     | "generate.embedding"
     | "generate.realtime";
 
+export type TinybirdEventType = EventType | "tool.media" | "tool.search";
+
 // Plain TypeScript type for Tinybird events (no D1 table - events sent directly to Tinybird)
 export type TinybirdEvent = {
     id: string;
 
     // Request
     requestId: string;
+    // Set on generations made with a run token: the requestId of the call that
+    // minted it. Groups one agent call's model steps and tool calls; the parent
+    // row is free, so a run costs the sum over its children.
+    parentRequestId?: string;
     requestPath?: string;
     startTime: Date;
     endTime?: Date;
     responseTime?: number;
     responseStatus?: number;
     environment?: string;
-    eventType: EventType;
+    eventType: TinybirdEventType;
+
+    // Cache identity is emitted only for requests that reached cache-backed
+    // generation handling. The key is SHA-256 hashed before ingestion.
+    cacheHit?: boolean;
+    cacheType?: string;
+    cacheKey?: string;
 
     // User
     userId?: string;
@@ -61,8 +73,23 @@ export type TinybirdEvent = {
     resolvedModelRequested?: string;
     modelUsed?: string;
     modelProviderUsed?: string;
+    /** Named conditional pricing sheet selected for this billed request. */
+    costVariant?: string;
     /** True when Portkey served from a non-primary fallback target. */
     fallbackUsed?: boolean;
+    /**
+     * True on the row that says how the request ENDED; false on a row recording
+     * one upstream call that was moved on from.
+     *
+     * About grain, not about fallback. This table used to be exactly one row per
+     * request and every consumer relies on that, so counting requests means
+     * counting these. A request that failed over emits one row per call it made,
+     * and only the last of them is the outcome. Rows where this is false carry
+     * the per-call detail: which model was tried, and how it failed.
+     *
+     * Defaults to true, matching every row written before fallback existed.
+     */
+    isFinal?: boolean;
     isBilledUsage: boolean;
 
     // Pricing

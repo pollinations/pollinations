@@ -1,35 +1,51 @@
 import {
     Alert,
+    BeakerIcon,
+    BotIcon,
+    Button,
+    ChevronIcon,
     Chip,
     ClockIcon,
+    Dropdown,
+    DropdownItem,
+    EditableCombobox,
     ExternalLinkButton,
     GitHubIcon,
-    Input,
+    InlineLink,
     SearchIcon,
     Section,
     SparklesIcon,
     TabButton,
     TokensIcon,
     TrendUpIcon,
+    UsageIcon,
 } from "@pollinations/ui";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
     type FC,
+    type KeyboardEvent,
     useCallback,
     useEffect,
     useMemo,
     useRef,
     useState,
 } from "react";
-import { CommunityEndpoints } from "../community-endpoints";
 import {
     type ApiModelInfo,
     fetchModelCatalog,
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
-import { getModelDisplayCategory } from "./model-categories.ts";
-import { getModelDisplayName } from "./model-info.ts";
-import type { ModelSortDirection, ModelSortKey } from "./model-search.ts";
+import {
+    getModelQuerySuggestions,
+    matchesModelQuery,
+    parseModelQuery,
+} from "./model-query.ts";
+import {
+    getAvailableModelSections,
+    type ModelScope,
+    type ModelSort,
+} from "./model-search.ts";
+import { sortModels } from "./model-sort.ts";
 import {
     type SectionType,
     sectionLabels,
@@ -38,25 +54,65 @@ import {
 import type { ModelPrice } from "./types.ts";
 import { useModelStats } from "./use-model-stats.ts";
 
-type ModelsProps = {
-    // Render the owner-scoped "My Models" section (logged-in dashboard only).
-    showCommunityEndpoints?: boolean;
-    // Allowlisted owners can make their models public; everyone else is limited
-    // to private, owner-only models.
-    canPublish?: boolean;
-};
-
-const SECTION_ORDER: SectionType[] = [
+const POLLINATIONS_SECTION_ORDER: SectionType[] = [
     "all",
+    "text",
     "image",
     "video",
     "3d",
     "audio",
     "realtime",
-    "text",
-    "community-text",
-    "community-image",
     "embedding",
+];
+
+const SCOPE_ORDER: ModelScope[] = ["pollinations", "community"];
+
+const MODEL_SLUG_LIST_URL =
+    "https://github.com/pollinations/pollinations/blob/main/MODEL_SLUGS.md";
+
+const SCOPE_LABELS: Record<ModelScope, string> = {
+    pollinations: "Official",
+    community: "Community",
+};
+
+const SORT_OPTIONS: Array<{
+    value: ModelSort;
+    label: string;
+    accessibleLabel: string;
+}> = [
+    {
+        value: "popular",
+        label: "Popular",
+        accessibleLabel: "Most popular",
+    },
+    { value: "newest", label: "Newest", accessibleLabel: "Newest" },
+    { value: "oldest", label: "Oldest", accessibleLabel: "Oldest" },
+    {
+        value: "price-low",
+        label: "Price: Low",
+        accessibleLabel: "Lowest price first",
+    },
+    {
+        value: "price-high",
+        label: "Price: High",
+        accessibleLabel: "Highest price first",
+    },
+    { value: "title", label: "Name: A–Z", accessibleLabel: "Name: A to Z" },
+    {
+        value: "title-desc",
+        label: "Name: Z–A",
+        accessibleLabel: "Name: Z to A",
+    },
+    {
+        value: "brand",
+        label: "Publisher: A–Z",
+        accessibleLabel: "Publisher: A to Z",
+    },
+    {
+        value: "brand-desc",
+        label: "Publisher: Z–A",
+        accessibleLabel: "Publisher: Z to A",
+    },
 ];
 
 const SEARCH_LABELS: Record<SectionType, string> = {
@@ -67,24 +123,9 @@ const SEARCH_LABELS: Record<SectionType, string> = {
     audio: "audio",
     realtime: "realtime",
     text: "text",
-    "community-text": "community text",
-    "community-image": "community image",
     embedding: "embedding",
+    agent: "agent",
 };
-
-const DEFAULT_SORT_DIRECTIONS: Record<ModelSortKey, ModelSortDirection> = {
-    name: "asc",
-    perPollen: "desc",
-    input: "asc",
-    output: "asc",
-};
-
-function matchesQuery(model: ModelPrice, query: string): boolean {
-    if (!query) return true;
-    const displayName = getModelDisplayName(model) ?? "";
-    const haystack = `${displayName} ${model.brand ?? ""}`.toLowerCase();
-    return haystack.includes(query);
-}
 
 function categorizeModels(
     models: ModelPrice[],
@@ -97,31 +138,58 @@ function categorizeModels(
         audio: [],
         realtime: [],
         text: [],
-        "community-text": [],
-        "community-image": [],
         embedding: [],
+        agent: [],
     };
 
     for (const model of models) {
-        categorized[getModelDisplayCategory(model.type, model.community)].push(
-            model,
-        );
+        categorized[model.agent ? "agent" : model.type].push(model);
     }
     return categorized;
 }
 
-export const Models: FC<ModelsProps> = ({
-    showCommunityEndpoints = false,
-    canPublish = false,
-}) => {
+function handleSortMenuKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (
+        event.key !== "ArrowDown" &&
+        event.key !== "ArrowUp" &&
+        event.key !== "Home" &&
+        event.key !== "End"
+    ) {
+        return;
+    }
+
+    const items = Array.from(
+        event.currentTarget.querySelectorAll<HTMLElement>(
+            '[role="menuitemradio"]',
+        ),
+    );
+    if (items.length === 0) return;
+
+    const currentIndex = items.indexOf(document.activeElement as HTMLElement);
+    const nextIndex =
+        event.key === "Home"
+            ? 0
+            : event.key === "End"
+              ? items.length - 1
+              : event.key === "ArrowDown"
+                ? (currentIndex + 1) % items.length
+                : (currentIndex - 1 + items.length) % items.length;
+
+    event.preventDefault();
+    items[nextIndex]?.focus();
+}
+
+export const Models: FC = () => {
     const navigate = useNavigate({ from: "/models" });
     const modelSearch = useSearch({ from: "/_dashboard/models" });
+    const activeScope = modelSearch.scope ?? "pollinations";
     const activeTab = modelSearch.category ?? "all";
+    const activeSort = modelSearch.sort ?? "popular";
     const urlSearch = modelSearch.q ?? "";
     const [search, setSearch] = useState(urlSearch);
+    const [searchFocused, setSearchFocused] = useState(false);
+    const [searchOpen, setSearchOpen] = useState(false);
     const lastPushedSearchRef = useRef(urlSearch);
-    const sortKey = modelSearch.sort ?? "perPollen";
-    const sortDir = modelSearch.dir ?? DEFAULT_SORT_DIRECTIONS[sortKey];
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
     const [catalogError, setCatalogError] = useState<string | null>(null);
     const { stats } = useModelStats();
@@ -129,21 +197,43 @@ export const Models: FC<ModelsProps> = ({
         () => getModelPricesFromCatalog(catalogModels, stats),
         [catalogModels, stats],
     );
-    const query = search.trim().toLowerCase();
+    const query = search.trim();
+    const parsedQuery = useMemo(() => parseModelQuery(query), [query]);
+    const scopedModels = useMemo(
+        () =>
+            allModels.filter(
+                (model) =>
+                    Boolean(model.community) === (activeScope === "community"),
+            ),
+        [activeScope, allModels],
+    );
     const filteredModels = useMemo(
         () =>
-            query ? allModels.filter((m) => matchesQuery(m, query)) : allModels,
-        [allModels, query],
+            query
+                ? scopedModels.filter((model) =>
+                      matchesModelQuery(model, parsedQuery),
+                  )
+                : scopedModels,
+        [parsedQuery, query, scopedModels],
+    );
+    const searchOptions = useMemo(
+        () => getModelQuerySuggestions(search, scopedModels),
+        [search, scopedModels],
     );
 
+    useEffect(() => {
+        setSearchOpen(searchFocused && searchOptions.length > 0);
+    }, [searchFocused, searchOptions]);
+
     const loadModelCatalog = useCallback(
-        (options: { refresh?: boolean } = {}) =>
-            fetchModelCatalog(options)
+        () =>
+            fetchModelCatalog()
                 .then((models) => {
                     setCatalogModels(models);
                     setCatalogError(null);
                 })
-                .catch(() => {
+                .catch((error) => {
+                    console.error("Model catalog fetch failed:", error);
                     setCatalogModels([]);
                     setCatalogError("Could not load models.");
                 }),
@@ -155,20 +245,32 @@ export const Models: FC<ModelsProps> = ({
     }, [loadModelCatalog]);
 
     const sectionModels = useMemo(
-        () => categorizeModels(filteredModels),
-        [filteredModels],
+        () => categorizeModels(sortModels(filteredModels, activeSort)),
+        [activeSort, filteredModels],
     );
+    const sectionOrder =
+        activeScope === "community"
+            ? getAvailableModelSections(scopedModels)
+            : POLLINATIONS_SECTION_ORDER;
+
+    const hasAgents = scopedModels.some((model) => model.agent);
+    const scopeLabel = SCOPE_LABELS[activeScope];
     const searchLabel = SEARCH_LABELS[activeTab];
+    const searchTarget =
+        activeTab === "all"
+            ? `${scopeLabel} models`
+            : `${scopeLabel} ${searchLabel} models`;
 
     const pushSearch = useCallback(
         (nextSearch: string) => {
-            if (nextSearch === lastPushedSearchRef.current) return;
+            const normalizedSearch = nextSearch.trim();
+            if (normalizedSearch === lastPushedSearchRef.current) return;
 
-            lastPushedSearchRef.current = nextSearch;
+            lastPushedSearchRef.current = normalizedSearch;
             void navigate({
                 search: (previous) => ({
                     ...previous,
-                    q: nextSearch || undefined,
+                    q: normalizedSearch || undefined,
                 }),
                 replace: true,
             });
@@ -202,25 +304,40 @@ export const Models: FC<ModelsProps> = ({
         });
     };
 
-    const onSort = (key: ModelSortKey) => {
-        const nextDirection =
-            key === sortKey
-                ? sortDir === "asc"
-                    ? "desc"
-                    : "asc"
-                : DEFAULT_SORT_DIRECTIONS[key];
-
+    const setActiveScope = (scope: ModelScope) => {
         void navigate({
             search: (previous) => ({
                 ...previous,
-                sort: key === "perPollen" ? undefined : key,
-                dir:
-                    nextDirection === DEFAULT_SORT_DIRECTIONS[key]
-                        ? undefined
-                        : nextDirection,
+                scope: scope === "pollinations" ? undefined : scope,
+                category:
+                    scope === "community"
+                        ? getAvailableModelSections(
+                              allModels.filter((model) => model.community),
+                          ).includes(previous.category ?? "all")
+                            ? previous.category
+                            : undefined
+                        : previous.category === "agent"
+                          ? undefined
+                          : previous.category,
             }),
         });
     };
+
+    const setActiveSort = (sort: ModelSort) => {
+        void navigate({
+            search: (previous) => ({
+                ...previous,
+                sort: sort === "popular" ? undefined : sort,
+            }),
+        });
+    };
+
+    const activeSortLabel =
+        SORT_OPTIONS.find(({ value }) => value === activeSort)?.label ??
+        "Popular";
+    const activeSortAccessibleLabel =
+        SORT_OPTIONS.find(({ value }) => value === activeSort)
+            ?.accessibleLabel ?? "Most popular";
 
     return (
         <div className="flex flex-col gap-6">
@@ -251,45 +368,192 @@ export const Models: FC<ModelsProps> = ({
                     </div>
                 }
             >
-                <div className="mb-4 flex flex-col items-start gap-3">
-                    <div className="flex flex-wrap gap-1.5">
-                        {SECTION_ORDER.map((section) => (
-                            <TabButton
-                                key={section}
-                                active={activeTab === section}
-                                onClick={() => setActiveTab(section)}
-                                ariaLabel={
-                                    section === "community-text" ||
-                                    section === "community-image"
-                                        ? `${sectionLabels[section]} alpha models`
-                                        : undefined
-                                }
-                            >
-                                <span className="inline-flex items-center gap-1.5">
-                                    {sectionLabels[section]}
-                                    {(section === "community-text" ||
-                                        section === "community-image") && (
-                                        <Chip intent="alpha" size="sm">
-                                            Alpha
-                                        </Chip>
-                                    )}
-                                </span>
-                            </TabButton>
-                        ))}
+                <Alert className="mb-4 shadow-well !bg-surface-opaque !text-theme-text-base">
+                    <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-theme-text-soft">
+                        Upcoming change
                     </div>
-                    <div className="relative w-full sm:w-72">
-                        <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />
-                        <Input
-                            type="search"
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            onBlur={() => pushSearch(search)}
-                            placeholder={`Search ${searchLabel} models…`}
-                            aria-label={`Search ${searchLabel} models`}
-                            className="w-full pl-9"
-                        />
+                    <div className="mb-1.5 flex items-center gap-2 text-base font-bold text-theme-text-strong">
+                        <BeakerIcon className="h-4 w-4 shrink-0" />
+                        <span>
+                            We're standardizing model IDs on September 7
+                        </span>
+                    </div>
+                    Model IDs will use the publisher and official model name—for
+                    example, <code className="font-semibold">flux</code> →{" "}
+                    <code className="font-semibold">
+                        black-forest-labs/flux.1-schnell
+                    </code>
+                    . You can use the new IDs now. Existing IDs will keep
+                    working.
+                    <a
+                        href={MODEL_SLUG_LIST_URL}
+                        className="mt-2 flex w-fit items-center gap-1.5 font-semibold text-theme-text-soft hover:text-theme-text-strong hover:underline"
+                    >
+                        <GitHubIcon className="h-4 w-4 shrink-0" />
+                        <span>View all model ID changes →</span>
+                    </a>
+                </Alert>
+                <div className="mb-4 flex flex-col items-start gap-3">
+                    <div className="flex flex-col gap-2">
+                        <div className="flex flex-wrap gap-1.5">
+                            {SCOPE_ORDER.map((scope) => (
+                                <TabButton
+                                    key={scope}
+                                    active={activeScope === scope}
+                                    onClick={() => setActiveScope(scope)}
+                                    size="lg"
+                                    ariaLabel={
+                                        scope === "community"
+                                            ? "Community alpha models"
+                                            : undefined
+                                    }
+                                >
+                                    <span className="inline-flex items-center gap-1.5">
+                                        {SCOPE_LABELS[scope]}
+                                        {scope === "community" && (
+                                            <Chip intent="alpha" size="sm">
+                                                Alpha
+                                            </Chip>
+                                        )}
+                                    </span>
+                                </TabButton>
+                            ))}
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                            {sectionOrder.map((section) => {
+                                const showAgentsNew =
+                                    section === "agent" && hasAgents;
+                                return (
+                                    <TabButton
+                                        key={section}
+                                        active={activeTab === section}
+                                        onClick={() => setActiveTab(section)}
+                                        ariaLabel={
+                                            showAgentsNew
+                                                ? "Agents, new"
+                                                : undefined
+                                        }
+                                    >
+                                        <span className="inline-flex items-center gap-1.5">
+                                            {sectionLabels[section]}
+                                            {showAgentsNew && (
+                                                <Chip intent="new" size="sm">
+                                                    New
+                                                </Chip>
+                                            )}
+                                        </span>
+                                    </TabButton>
+                                );
+                            })}
+                        </div>
+                    </div>
+                    <div className="flex w-full flex-wrap items-center justify-between gap-2">
+                        <div className="min-w-0 max-w-md flex-1 basis-[240px]">
+                            <div className="relative">
+                                <SearchIcon className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />
+                                <EditableCombobox
+                                    value={search}
+                                    options={searchOptions}
+                                    onChange={setSearch}
+                                    open={searchOpen}
+                                    onOpenChange={setSearchOpen}
+                                    onFocus={() => setSearchFocused(true)}
+                                    onBlur={() => {
+                                        setSearchFocused(false);
+                                        const normalizedSearch = search.trim();
+                                        setSearch(normalizedSearch);
+                                        pushSearch(normalizedSearch);
+                                    }}
+                                    placeholder={`Search ${searchTarget}…`}
+                                    aria-label={`Search ${searchTarget}`}
+                                    autoComplete="off"
+                                    className="pl-9"
+                                />
+                            </div>
+                        </div>
+                        <Dropdown
+                            align="end"
+                            className="w-max p-2"
+                            trigger={(open) => (
+                                <Button
+                                    type="button"
+                                    size="md"
+                                    aria-label={`Sort models by ${activeSortAccessibleLabel}`}
+                                    className="shrink-0 justify-end gap-2"
+                                >
+                                    <span className="text-right">
+                                        {activeSortLabel}
+                                    </span>
+                                    <ChevronIcon expanded={open} />
+                                </Button>
+                            )}
+                        >
+                            {(close) => (
+                                <div
+                                    role="menu"
+                                    aria-label="Sort models"
+                                    onKeyDown={handleSortMenuKeyDown}
+                                    className="flex flex-col gap-1"
+                                >
+                                    {SORT_OPTIONS.map((option) => (
+                                        <DropdownItem
+                                            key={option.value}
+                                            role="menuitemradio"
+                                            aria-label={option.accessibleLabel}
+                                            aria-checked={
+                                                activeSort === option.value
+                                            }
+                                            onClick={() => {
+                                                setActiveSort(option.value);
+                                                close();
+                                            }}
+                                            className={
+                                                activeSort === option.value
+                                                    ? "justify-end bg-theme-bg-active text-right text-theme-text-strong"
+                                                    : "justify-end text-right"
+                                            }
+                                        >
+                                            <span className="flex-1 text-right">
+                                                {option.label}
+                                            </span>
+                                        </DropdownItem>
+                                    ))}
+                                </div>
+                            )}
+                        </Dropdown>
                     </div>
                 </div>
+                {activeScope === "community" && (
+                    <Alert
+                        intent="warning"
+                        title="Community model privacy"
+                        className="mb-4"
+                    >
+                        <p>
+                            Requests go to independent providers and configured
+                            fallbacks, which handle your data under their own
+                            policies.
+                        </p>
+                        <p className="mt-2">
+                            <strong>Avoid sensitive data.</strong> For text
+                            input, you can use our optional{" "}
+                            <InlineLink
+                                href="https://gen.pollinations.ai/docs#tag/Safety"
+                                showIcon={false}
+                            >
+                                privacy filter
+                            </InlineLink>
+                            . See our{" "}
+                            <InlineLink
+                                href="https://pollinations.ai/privacy"
+                                showIcon={false}
+                            >
+                                Privacy Policy
+                            </InlineLink>
+                            .
+                        </p>
+                    </Alert>
+                )}
                 {catalogError && (
                     <Alert intent="danger" className="mb-4">
                         {catalogError}
@@ -297,12 +561,12 @@ export const Models: FC<ModelsProps> = ({
                 )}
                 {query && sectionModels[activeTab].length === 0 ? (
                     <p className="py-8 text-center text-sm text-theme-text-muted">
-                        No {sectionLabels[activeTab].toLowerCase()} models match
-                        “{search.trim()}”.
+                        No {searchTarget.toLowerCase()} match “{search.trim()}”.
                     </p>
                 ) : (
                     <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                         <UnifiedModelTable
+                            listKey={`${activeScope}:${activeTab}:${query}:${activeSort}`}
                             allModels={sectionModels.all}
                             imageModels={sectionModels.image}
                             videoModels={sectionModels.video}
@@ -310,21 +574,23 @@ export const Models: FC<ModelsProps> = ({
                             audioModels={sectionModels.audio}
                             realtimeModels={sectionModels.realtime}
                             textModels={sectionModels.text}
-                            communityTextModels={
-                                sectionModels["community-text"]
-                            }
-                            communityImageModels={
-                                sectionModels["community-image"]
-                            }
                             embeddingModels={sectionModels.embedding}
+                            agentModels={sectionModels.agent}
                             activeTab={activeTab}
-                            sortKey={sortKey}
-                            sortDir={sortDir}
-                            onSort={onSort}
                         />
                     </div>
                 )}
                 <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
+                    {activeTab === "agent" && (
+                        <p className="flex items-start gap-1.5">
+                            <BotIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>
+                                <strong>agent pricing</strong> — listed rates
+                                are for the agent&apos;s base model running its
+                                saved instructions.
+                            </span>
+                        </p>
+                    )}
                     <p className="flex items-start gap-1.5">
                         <SparklesIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
@@ -335,7 +601,8 @@ export const Models: FC<ModelsProps> = ({
                     <p className="flex items-start gap-1.5">
                         <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
-                            <strong>/M</strong> — per million tokens.
+                            <strong>/K · /M</strong> — rates per thousand or
+                            million tokens.
                         </span>
                     </p>
                     <p className="flex items-start gap-1.5">
@@ -345,16 +612,15 @@ export const Models: FC<ModelsProps> = ({
                             TTS is estimated from text length.
                         </span>
                     </p>
+                    <p className="flex items-start gap-1.5">
+                        <UsageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span>
+                            <strong>requests /pollen</strong> — estimated from
+                            the median observed cost over the last 7 days.
+                        </span>
+                    </p>
                 </div>
             </Section>
-            {showCommunityEndpoints && (
-                <CommunityEndpoints
-                    canPublish={canPublish}
-                    onChange={() => {
-                        void loadModelCatalog({ refresh: true });
-                    }}
-                />
-            )}
         </div>
     );
 };

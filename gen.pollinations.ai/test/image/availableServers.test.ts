@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
     __resetLatencyStateForTests,
     chooseWeightedServer,
+    fetchFromWeightedServer,
     getRegisteredServers,
     recordLatency,
     registerServer,
@@ -82,6 +83,122 @@ describe("chooseWeightedServer", () => {
         for (let n = 0; n < 100; n++) seen.add(chooseWeightedServer(servers));
         // The new, unmeasured server must still be reachable (not starved).
         expect(seen.has("https://new")).toBe(true);
+    });
+});
+
+describe("fetchFromWeightedServer", () => {
+    beforeEach(() => {
+        setServerRegistryBinding(makeKv(), "test");
+        __resetLatencyStateForTests();
+        vi.spyOn(Math, "random").mockReturnValue(0);
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it("retries a distinct worker when the selected worker returns 503", async () => {
+        await registerServer("https://w1", "flux");
+        await registerServer("https://w2", "flux");
+        const errorLog = vi
+            .spyOn(console, "error")
+            .mockImplementation(() => undefined);
+        const warnLog = vi
+            .spyOn(console, "warn")
+            .mockImplementation(() => undefined);
+        const calls: string[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+            const url = input.toString();
+            calls.push(url);
+            return url.startsWith("https://w1/")
+                ? new Response("queue full", { status: 503 })
+                : new Response("image", { status: 200 });
+        });
+
+        const response = await fetchFromWeightedServer("flux", {
+            method: "POST",
+            body: "request-body",
+        });
+
+        expect(response.status).toBe(200);
+        expect(calls).toEqual(["https://w1/generate", "https://w2/generate"]);
+        expect(errorLog).not.toHaveBeenCalled();
+        expect(warnLog).toHaveBeenCalledOnce();
+    });
+
+    it("tries every worker once before returning a terminal 503", async () => {
+        await registerServer("https://w1", "flux");
+        await registerServer("https://w2", "flux");
+        const errorLog = vi
+            .spyOn(console, "error")
+            .mockImplementation(() => undefined);
+        const warnLog = vi
+            .spyOn(console, "warn")
+            .mockImplementation(() => undefined);
+        const calls: string[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+            calls.push(input.toString());
+            return new Response("queue full", { status: 503 });
+        });
+
+        await expect(
+            fetchFromWeightedServer("flux", { method: "POST" }),
+        ).rejects.toMatchObject({
+            status: 503,
+            upstreamUrl: "https://w2/generate",
+        });
+        expect(calls).toEqual(["https://w1/generate", "https://w2/generate"]);
+        expect(errorLog).toHaveBeenCalledOnce();
+        expect(warnLog).toHaveBeenCalledOnce();
+    });
+
+    it("retries a distinct worker after a known network failure", async () => {
+        await registerServer("https://w1", "flux");
+        await registerServer("https://w2", "flux");
+        vi.spyOn(console, "warn").mockImplementation(() => undefined);
+        const calls: string[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+            const url = input.toString();
+            calls.push(url);
+            if (url.startsWith("https://w1/")) {
+                throw new TypeError("fetch failed: connection refused");
+            }
+            return new Response("image", { status: 200 });
+        });
+
+        const response = await fetchFromWeightedServer("flux", {
+            method: "POST",
+            body: "request-body",
+        });
+
+        expect(response.status).toBe(200);
+        expect(calls).toEqual(["https://w1/generate", "https://w2/generate"]);
+    });
+
+    it("does not retry a fetch rejection caused by application code", async () => {
+        await registerServer("https://w1", "flux");
+        await registerServer("https://w2", "flux");
+        const fetchMock = vi
+            .spyOn(globalThis, "fetch")
+            .mockRejectedValue(new TypeError("Cannot read properties of null"));
+
+        await expect(
+            fetchFromWeightedServer("flux", { method: "POST" }),
+        ).rejects.toThrow("Cannot read properties of null");
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("does not retry failures other than queue-full 503", async () => {
+        await registerServer("https://w1", "flux");
+        await registerServer("https://w2", "flux");
+        const fetchMock = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValue(new Response("CUDA error", { status: 500 }));
+
+        await expect(
+            fetchFromWeightedServer("flux", { method: "POST" }),
+        ).rejects.toMatchObject({ status: 500 });
+        expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 });
 

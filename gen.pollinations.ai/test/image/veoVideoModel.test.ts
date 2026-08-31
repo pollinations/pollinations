@@ -1,11 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { syncImageEnv } from "../../src/image/env.ts";
-import {
-    callVeo1080pAPI,
-    callVeoAPI,
-} from "../../src/image/models/veoVideoModel.ts";
+import { callVeoAPI } from "../../src/image/models/veoVideoModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
 import googleCloudAuth from "../../src/text/auth/googleCloudAuth.ts";
+
+const FIRST_FRAME_URL = "https://image.example.com/first.png";
+const LAST_FRAME_URL = "https://image.example.com/last.png";
+const PNG_BYTES = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
 
 const baseParams: ImageParams = {
     model: "veo",
@@ -27,6 +28,11 @@ function mockVeoFetch(requests: Array<Record<string, unknown>>) {
         .spyOn(globalThis, "fetch")
         .mockImplementation(async (url, init) => {
             const href = typeof url === "string" ? url : url.toString();
+            if (href === FIRST_FRAME_URL || href === LAST_FRAME_URL) {
+                return new Response(PNG_BYTES, {
+                    headers: { "Content-Type": "image/png" },
+                });
+            }
             if (href.endsWith(":predictLongRunning")) {
                 requests.push(
                     JSON.parse(init?.body as string) as Record<string, unknown>,
@@ -66,8 +72,8 @@ afterEach(() => {
     vi.restoreAllMocks();
 });
 
-describe("veoVideoModel fixed-resolution tiers", () => {
-    it("locks veo to 720p and omits audio usage when disabled", async () => {
+describe("veoVideoModel resolution selection", () => {
+    it("defaults veo to 720p and omits audio usage when disabled", async () => {
         setGoogleEnv();
         const requests: Array<Record<string, unknown>> = [];
         mockVeoFetch(requests);
@@ -90,14 +96,14 @@ describe("veoVideoModel fixed-resolution tiers", () => {
         });
     });
 
-    it("locks veo-1080p to 1080p and reports enabled audio", async () => {
+    it("passes an explicit 1080p resolution and reports enabled audio", async () => {
         setGoogleEnv();
         const requests: Array<Record<string, unknown>> = [];
         mockVeoFetch(requests);
 
-        const result = await callVeo1080pAPI("a calm ocean at sunrise", {
+        const result = await callVeoAPI("a calm ocean at sunrise", {
             ...baseParams,
-            model: "veo-1080p",
+            resolution: "1080p",
             width: 1280,
             height: 720,
         });
@@ -108,11 +114,39 @@ describe("veoVideoModel fixed-resolution tiers", () => {
             generateAudio: true,
         });
         expect(result.trackingData).toEqual({
-            actualModel: "veo-1080p",
+            actualModel: "veo",
             usage: {
                 completionVideoSeconds: 4,
                 completionAudioSeconds: 4,
             },
+        });
+    });
+
+    it("maps the first and second images to Veo start and end frames", async () => {
+        setGoogleEnv();
+        const requests: Array<Record<string, unknown>> = [];
+        mockVeoFetch(requests);
+
+        await callVeoAPI("move between these frames", {
+            ...baseParams,
+            image: [FIRST_FRAME_URL, LAST_FRAME_URL],
+        });
+
+        expect(requests[0]).toMatchObject({
+            instances: [
+                {
+                    image: {
+                        bytesBase64Encoded:
+                            Buffer.from(PNG_BYTES).toString("base64"),
+                        mimeType: "image/png",
+                    },
+                    lastFrame: {
+                        bytesBase64Encoded:
+                            Buffer.from(PNG_BYTES).toString("base64"),
+                        mimeType: "image/png",
+                    },
+                },
+            ],
         });
     });
 });

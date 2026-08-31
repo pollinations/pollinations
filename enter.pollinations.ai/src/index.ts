@@ -1,10 +1,10 @@
 import { handleError } from "@shared/error.ts";
+import { requestId } from "@shared/middleware/request-id.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
-import { requestId } from "hono/request-id";
 import { api } from "./api.ts";
 import type { Env } from "./env.ts";
 import { logger } from "./middleware/logger.ts";
@@ -84,8 +84,6 @@ app.notFound(async (c: Context<Env>) => {
 });
 
 app.onError(handleError);
-
-export type AppRoutes = typeof app;
 
 export default {
     fetch: app.fetch,

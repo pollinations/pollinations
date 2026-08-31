@@ -247,4 +247,10 @@ describe("pi harness", () => {
         configurePi(ctx, settings);
         expect(read(skillFile())).toBe("custom content");
     });
+
+    it("stops before configuration when Pi is unavailable", async () => {
+        await expect(pi.on(ctx, {})).rejects.toThrow("Pi was not found");
+        expect(existsSync(agentDir())).toBe(false);
+        expect(snapshotFiles()).toHaveLength(0);
+    });
 });

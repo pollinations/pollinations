@@ -75,6 +75,10 @@ describe("createReasoningEffortTransform — strip", () => {
 });
 
 describe("reasoning_effort model wiring", () => {
+    it("leaves Inkling reasoning and tool schemas to OpenRouter", () => {
+        expect(findModelByName("inkling")?.transform).toBeUndefined();
+    });
+
     it.each([
         "glm",
         "kimi",
@@ -83,9 +87,13 @@ describe("reasoning_effort model wiring", () => {
         "deepseek",
         "qwen-large",
         "qwen3.7-flash",
+        "qwen3.8-27b",
+        "qwen3.8-2.4t-a95b",
         "longcat",
         "nemotron",
+        "nemotron-3.5-lightning",
         "minimax",
+        "muse-glimmer",
     ])("disables thinking via reasoning_effort=none on %s", async (modelName) => {
         const transform = findModelByName(modelName)?.transform;
         if (!transform) throw new Error(`${modelName} transform missing`);
@@ -96,10 +104,13 @@ describe("reasoning_effort model wiring", () => {
     });
 
     it.each([
+        "glm-5.3",
+        "z-ai/glm-5.3-flash",
         "minimax-m2.7",
         "step-3.5-flash",
         "step-flash",
         "qwen-vision-pro",
+        "thinkingmachines/inkling",
     ])("drops off-value on mandatory-reasoning model %s", async (modelName) => {
         const transform = findModelByName(modelName)?.transform;
         if (!transform) throw new Error(`${modelName} transform missing`);
@@ -110,7 +121,6 @@ describe("reasoning_effort model wiring", () => {
     });
 
     it.each([
-        "grok",
         "mistral-large",
         "llama",
         "qwen-coder",
@@ -123,14 +133,7 @@ describe("reasoning_effort model wiring", () => {
         expect(options.reasoning_effort).toBeUndefined();
     });
 
-    it("strips unsupported effort controls while Command A+ reasons automatically", async () => {
-        const transform = findModelByName("command-a-plus")?.transform;
-        if (!transform) throw new Error("command-a-plus transform missing");
-
-        const { options } = await transform([{ role: "user", content: "hi" }], {
-            reasoning_effort: "high",
-        });
-
-        expect(options.reasoning_effort).toBeUndefined();
+    it("passes Command A+ requests through without a model-specific transform", () => {
+        expect(findModelByName("command-a-plus")?.transform).toBeUndefined();
     });
 });

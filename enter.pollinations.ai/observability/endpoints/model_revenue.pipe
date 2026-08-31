@@ -22,6 +22,7 @@ SQL >
         round(sumIf(total_price, selected_meter_slug = 'v1:meter:tier' AND response_status >= 200 AND response_status < 300), 4) as tier_value
     FROM generation_event_v2
     WHERE start_time >= now() - interval {{Int32(minutes, 60)}} minute
+    AND is_final  -- one row per request; attempts counted separately
     GROUP BY model, event_type
     ORDER BY paid_revenue DESC
 

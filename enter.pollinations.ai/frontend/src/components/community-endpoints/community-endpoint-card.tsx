@@ -6,6 +6,7 @@ import {
     Chip,
     ClipboardIcon,
     CopyButton,
+    currentPeriod,
     ExternalLinkIcon,
     GlobeIcon,
     IconButton,
@@ -17,11 +18,13 @@ import {
     XIcon,
 } from "@pollinations/ui";
 import { communityEndpointPriceFieldsForModality } from "@shared/community-endpoints.ts";
+import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { PriceBadge, type PriceBadgeConfig } from "../models/price-badge.tsx";
 import type { PriceKind } from "../models/types.ts";
 import {
     type CommunityEndpoint,
+    type ProxyCommunityEndpoint,
     storedPriceToFormValue,
     VISIBILITY_LABELS,
 } from "./types.ts";
@@ -42,18 +45,20 @@ export function CommunityEndpointCard({
     onDelete,
 }: CommunityEndpointCardProps) {
     const isPublic = endpoint.visibility === "public";
-    const priceGroups = communityPriceGroups(endpoint);
+    const isAgent = endpoint.type !== "proxy";
+    const priceGroups =
+        endpoint.type === "proxy" ? communityPriceGroups(endpoint) : [];
 
     return (
         <Surface
             className={`transition-colors hover:bg-surface-opaque/90 ${
-                endpoint.disabled ? "opacity-60" : ""
+                endpoint.hidden ? "opacity-60" : ""
             }`}
         >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
-                    <div className="flex min-w-0 items-center gap-2">
-                        <h3 className="min-w-0 truncate text-base font-semibold text-theme-text-strong">
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                        <h3 className="min-w-0 basis-full truncate text-base font-semibold text-theme-text-strong sm:basis-auto">
                             {endpoint.title}
                         </h3>
                         <Chip intent={isPublic ? "news" : "neutral"} size="sm">
@@ -64,6 +69,22 @@ export function CommunityEndpointCard({
                             )}
                             {VISIBILITY_LABELS[endpoint.visibility]}
                         </Chip>
+                        {isAgent && (
+                            <Chip intent="news" size="sm">
+                                Agent
+                            </Chip>
+                        )}
+                        {endpoint.pending && (
+                            <Chip
+                                intent="neutral"
+                                size="sm"
+                                title={`Changes queued — effective ${new Date(
+                                    endpoint.pending.effectiveAt,
+                                ).toLocaleString()}`}
+                            >
+                                Changes queued
+                            </Chip>
+                        )}
                     </div>
                     {endpoint.description && (
                         <p className="mt-1 text-sm text-theme-text-muted">
@@ -75,20 +96,20 @@ export function CommunityEndpointCard({
                     <Button
                         type="button"
                         size="sm"
-                        intent={endpoint.disabled ? "info" : "danger"}
+                        intent={endpoint.hidden ? "info" : "danger"}
                         disabled={isToggling}
                         onClick={onToggle}
                     >
                         {isToggling
                             ? "Saving…"
-                            : endpoint.disabled
-                              ? "Reactivate"
-                              : "Deactivate"}
+                            : endpoint.hidden
+                              ? "Relist"
+                              : "Hide"}
                     </Button>
                     <IconButton
                         intent="info"
-                        title="Edit model"
-                        tooltip="Edit model"
+                        title={isAgent ? "Edit agent" : "Edit model"}
+                        tooltip={isAgent ? "Edit agent" : "Edit model"}
                         tooltipAlign="center"
                         onClick={onEdit}
                     >
@@ -106,13 +127,13 @@ export function CommunityEndpointCard({
                 </div>
             </div>
 
-            {endpoint.disabled && (
+            {endpoint.hidden && (
                 <Alert intent="danger" className="mt-3">
                     <div className="flex flex-col gap-1">
-                        <span className="font-semibold">Model deactivated</span>
+                        <span className="font-semibold">Model hidden</span>
                         <span className="text-sm">
-                            {endpoint.disabledReason ??
-                                "Deactivated due to repeated failures."}
+                            {endpoint.hiddenReason ??
+                                "Hidden due to repeated failures."}
                         </span>
                     </div>
                 </Alert>
@@ -125,22 +146,40 @@ export function CommunityEndpointCard({
                     value={endpoint.modelId}
                     copyLabel="Copy model id"
                 />
-                <CommunityDetailRow
-                    icon={<ExternalLinkIcon className="h-3.5 w-3.5" />}
-                    label="Endpoint"
-                    value={endpoint.baseUrl}
-                    copyLabel="Copy endpoint"
-                />
-                <CommunityDetailRow
-                    icon={<TerminalIcon className="h-3.5 w-3.5" />}
-                    label="Modality"
-                    value={endpoint.modality}
-                />
-                <CommunityDetailRow
-                    icon={<TerminalIcon className="h-3.5 w-3.5" />}
-                    label="Upstream model"
-                    value={endpoint.upstreamModel}
-                />
+                {endpoint.type !== "prompt_agent" && (
+                    <CommunityDetailRow
+                        icon={<ExternalLinkIcon className="h-3.5 w-3.5" />}
+                        label="Endpoint"
+                        value={endpoint.baseUrl}
+                        copyLabel="Copy endpoint"
+                    />
+                )}
+                {endpoint.type !== "prompt_agent" && (
+                    <>
+                        {endpoint.type === "proxy" && (
+                            <CommunityDetailRow
+                                icon={<TerminalIcon className="h-3.5 w-3.5" />}
+                                label="Modality"
+                                value={endpoint.modality}
+                            />
+                        )}
+                        {(endpoint.type !== "proxy" ||
+                            endpoint.modality !== "video") && (
+                            <CommunityDetailRow
+                                icon={<TerminalIcon className="h-3.5 w-3.5" />}
+                                label="Upstream model"
+                                value={endpoint.upstreamModel}
+                            />
+                        )}
+                        {endpoint.perUserRpm !== null && (
+                            <CommunityDetailRow
+                                icon={<TerminalIcon className="h-3.5 w-3.5" />}
+                                label="Per-user limit"
+                                value={`${endpoint.perUserRpm} RPM/user`}
+                            />
+                        )}
+                    </>
+                )}
                 {priceGroups.map((group) => (
                     <CommunityDetailRow
                         key={group.key}
@@ -149,6 +188,23 @@ export function CommunityEndpointCard({
                         value={<CommunityPriceBadges group={group} />}
                     />
                 ))}
+            </div>
+            <div className="mt-3">
+                <Link
+                    to="/activity"
+                    search={{
+                        ...currentPeriod(),
+                        earningsModels: [endpoint.modelId],
+                        usageMetric: undefined,
+                        usageKeys: undefined,
+                        usageModels: undefined,
+                        earningsMetric: undefined,
+                        earningsApps: undefined,
+                    }}
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-theme-text-muted underline underline-offset-2 transition-colors hover:text-theme-text-strong"
+                >
+                    View activity
+                </Link>
             </div>
         </Surface>
     );
@@ -228,7 +284,7 @@ type CommunityPriceBadge = {
 };
 
 function communityPriceGroups(
-    endpoint: CommunityEndpoint,
+    endpoint: ProxyCommunityEndpoint,
 ): CommunityPriceGroup[] {
     const groups: Record<CommunityPriceGroup["key"], CommunityPriceBadge[]> = {
         input: [],
@@ -249,7 +305,13 @@ function communityPriceGroups(
                 price: storedPriceToFormValue(price, field.priceUnit),
                 kind,
                 subKinds: [kind],
-                unit: field.priceUnit === "million" ? "token" : "request",
+                unit:
+                    field.priceUnit === "million"
+                        ? "token"
+                        : field.priceUnit === "second" ||
+                            field.priceUnit === "video_second"
+                          ? "second"
+                          : "request",
             },
         });
     }
@@ -277,5 +339,6 @@ function communityPriceKind(usageType: string): PriceKind {
     if (usageType === "promptAudioTokens") return "audioIn";
     if (usageType === "completionAudioTokens") return "audioOut";
     if (usageType.includes("Image")) return "image";
+    if (usageType.includes("Video")) return "video";
     return "text";
 }

@@ -6,10 +6,10 @@ import { graphql } from "@shared/github/client.ts";
 import type { QuestDefinition, QuestState } from "../definitions.ts";
 import {
     type QuestCard,
+    type QuestEvaluation,
     type QuestEvaluationContext,
     type QuestUser,
     questToCard,
-    type RewardProposal,
 } from "../types.ts";
 
 /**
@@ -44,7 +44,7 @@ const solveGithubIssueQuest: QuestDefinition = {
     id: "solve_github_issue",
     title: "Solve a quest issue in GitHub",
     description:
-        "Pick an open POLLEN-QUEST issue, get assigned, and ship a PR. Claim your reward after merge.",
+        "Pick an open POLLEN-QUEST issue and submit a focused PR. Multiple contributors may submit; the author of the selected merged PR earns the reward.",
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",
     rewardAmount: 0,
@@ -61,12 +61,10 @@ type DerivedQuestIssue = {
     rewardAmount: number | null;
     // "available" = open bounty; "completed" = closed by a merged PR.
     state: "available" | "completed";
-    assigneeGithubId: number | null;
-    completedByPrNumber: number | null;
+    completedByGithubId: number | null;
 };
 
 type GitHubUser = {
-    login?: string;
     databaseId?: number;
 };
 
@@ -76,10 +74,13 @@ type GitHubIssueNode = {
     title: string;
     url: string;
     body: string | null;
-    assignees: { nodes: GitHubUser[] };
     labels: { nodes: { name: string }[] };
     closedByPullRequestsReferences: {
-        nodes: { number: number; mergedAt: string | null }[];
+        nodes: {
+            number: number;
+            mergedAt: string | null;
+            author: GitHubUser | null;
+        }[];
     };
 };
 
@@ -100,9 +101,10 @@ query($query:String!){
     nodes{
       ... on Issue{
         number state title url body
-        assignees(first:10){ nodes{ login ... on User{ databaseId } } }
         labels(first:100){ nodes{ name } }
-        closedByPullRequestsReferences(first:10){ nodes{ number mergedAt } }
+        closedByPullRequestsReferences(first:10){
+          nodes{ number mergedAt author{ ... on User{ databaseId } } }
+        }
       }
     }
   }
@@ -165,20 +167,21 @@ function hasQuestLabel(labels: { name: string }[]): boolean {
     return labels.some((label) => label.name === QUEST_LABEL);
 }
 
-function firstMergedCloser(issue: GitHubIssueNode): number | null {
-    const merged = issue.closedByPullRequestsReferences.nodes
-        .filter((pr) => pr.mergedAt !== null)
-        .map((pr) => pr.number)
-        .sort((a, b) => a - b);
-    return merged[0] ?? null;
+function firstMergedCloser(issue: GitHubIssueNode) {
+    return (
+        issue.closedByPullRequestsReferences.nodes
+            .flatMap((pr) =>
+                pr.mergedAt === null ? [] : [{ ...pr, mergedAt: pr.mergedAt }],
+            )
+            .sort((a, b) => a.mergedAt.localeCompare(b.mergedAt))[0] ?? null
+    );
 }
 
 function toDerivedQuestIssue(issue: GitHubIssueNode): DerivedQuestIssue {
     const body = issue.body ?? "";
-    const completedByPrNumber = firstMergedCloser(issue);
+    const completedBy = firstMergedCloser(issue);
     const state: DerivedQuestIssue["state"] =
-        completedByPrNumber !== null ? "completed" : "available";
-    const firstAssignee = issue.assignees.nodes[0];
+        completedBy !== null ? "completed" : "available";
     return {
         issueNumber: issue.number,
         title: issue.title,
@@ -186,8 +189,7 @@ function toDerivedQuestIssue(issue: GitHubIssueNode): DerivedQuestIssue {
         url: issue.url,
         rewardAmount: parseReward(body),
         state,
-        assigneeGithubId: firstAssignee?.databaseId ?? null,
-        completedByPrNumber,
+        completedByGithubId: completedBy?.author?.databaseId ?? null,
     };
 }
 
@@ -208,15 +210,8 @@ async function loadQuestIssues(token: string): Promise<DerivedQuestIssue[]> {
         .filter((issue) => issue.rewardAmount !== null);
 }
 
-// State is a two-state BOARD concept: "available" = an open bounty
-// anyone can take; "completed" = off the open board. Only a genuinely open
-// issue (not completed, nobody assigned) is shown; the moment it's claimed
-// (someone's working it) or completed it leaves the board — it reappears only
-// for the user who earned it, via their reward (see the frontend). So both
-// claimed and completed map to "completed" (off-board).
 function issueState(issue: DerivedQuestIssue): QuestState {
-    const open = issue.state === "available" && issue.assigneeGithubId === null;
-    return open ? "available" : "completed";
+    return issue.state;
 }
 
 function toIssueQuestDefinition(issue: DerivedQuestIssue): QuestDefinition {
@@ -260,11 +255,11 @@ async function hasMergedPr(token: string, user: QuestUser): Promise<boolean> {
     return data.search.nodes.some((pr) => pr.mergedAt !== null);
 }
 
-export async function findRewardProposalsForUser(
+export async function evaluateUser(
     ctx: QuestEvaluationContext,
     user: QuestUser,
-): Promise<RewardProposal[]> {
-    if (user.githubId === null) return [];
+): Promise<QuestEvaluation> {
+    if (user.githubId === null) return { proposals: [] };
 
     const token = await githubToken(ctx.env);
     const [issues, mergedPr] = await Promise.all([
@@ -272,14 +267,13 @@ export async function findRewardProposalsForUser(
         hasMergedPr(token, user),
     ]);
 
-    // Payable issue bounties: completed by a merged PR, with a positive reward
-    // and assigned to the current user's linked GitHub account.
+    // Payable issue bounties: completed by a merged PR authored by the current
+    // user's linked GitHub account, with a positive reward.
     const issueProposals = issues
         .filter(
             (issue) =>
                 issue.state === "completed" &&
-                issue.completedByPrNumber !== null &&
-                issue.assigneeGithubId === user.githubId &&
+                issue.completedByGithubId === user.githubId &&
                 (issue.rewardAmount ?? 0) > 0,
         )
         .map((issue) => ({
@@ -287,8 +281,12 @@ export async function findRewardProposalsForUser(
             userId: user.id,
         }));
 
-    return [
-        ...issueProposals,
-        ...(mergedPr ? [{ quest: firstMergedPrQuest, userId: user.id }] : []),
-    ];
+    return {
+        proposals: [
+            ...issueProposals,
+            ...(mergedPr
+                ? [{ quest: firstMergedPrQuest, userId: user.id }]
+                : []),
+        ],
+    };
 }

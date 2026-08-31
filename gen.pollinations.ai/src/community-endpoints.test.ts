@@ -92,7 +92,6 @@ import {
     communityVideoSupportedEndpoints,
     getCommunityModelRegistryEntries,
 } from "./community-models.ts";
-import { generateCommunityEmbeddings } from "./embeddings/communityEndpoint.ts";
 import {
     callCommunityImageEndpoint,
     callCommunityVideoEndpoint,
@@ -902,105 +901,6 @@ describe("community endpoint helpers", () => {
         expect(
             communityEmbeddingsUrl("https://example.com/v1/embeddings"),
         ).toBe("https://example.com/v1/embeddings");
-    });
-
-    describe("community embedding endpoint runtime", () => {
-        const secret = "test-secret";
-
-        async function embeddingEndpoint(): Promise<CommunityEndpointRuntime> {
-            return {
-                type: "proxy",
-                id: "community-embedding-id",
-                ownerUserId: "owner-id",
-                modelId: "owner/embed",
-                name: "embed",
-                title: "Embed",
-                description: null,
-                modality: "embedding",
-                imagePricing: "request",
-                inputModalities: ["text"],
-                baseUrl: "https://api.example.com/v1",
-                upstreamModel: "upstream-embed",
-                visibility: "public",
-                paidOnly: false,
-                perUserRpm: null,
-                fallbacks: [],
-                hiddenAt: null,
-                hiddenReason: null,
-                bearerTokenCiphertext: await encryptSecret(
-                    "sk_saved_token",
-                    secret,
-                ),
-                ...communityEndpointPrices({ promptTextPrice: 0.00001 }),
-            };
-        }
-
-        it.each([
-            200, 500,
-        ])("bounds %i embedding response bodies before buffering", async (status) => {
-            vi.stubGlobal(
-                "fetch",
-                vi.fn(
-                    async () =>
-                        new Response("{}", {
-                            status,
-                            headers: {
-                                "content-length": String(4 * 1024 * 1024 + 1),
-                            },
-                        }),
-                ),
-            );
-
-            await expect(
-                generateCommunityEmbeddings(
-                    await embeddingEndpoint(),
-                    {
-                        model: "owner/embed",
-                        input: "sprout",
-                        encoding_format: "float",
-                    },
-                    "owner/embed",
-                    secret,
-                ),
-            ).rejects.toThrow(
-                "Community embedding endpoint response is too large",
-            );
-        });
-
-        it("rejects inflated publisher token usage at request time", async () => {
-            vi.stubGlobal(
-                "fetch",
-                vi.fn(async () =>
-                    Response.json({
-                        object: "list",
-                        data: [
-                            {
-                                object: "embedding",
-                                embedding: [0.1, 0.2],
-                                index: 0,
-                            },
-                        ],
-                        usage: {
-                            prompt_tokens: 1_000_000,
-                            total_tokens: 1_000_000,
-                        },
-                    }),
-                ),
-            );
-
-            await expect(
-                generateCommunityEmbeddings(
-                    await embeddingEndpoint(),
-                    {
-                        model: "owner/embed",
-                        input: "sprout",
-                        encoding_format: "float",
-                    },
-                    "owner/embed",
-                    secret,
-                ),
-            ).rejects.toThrow("invalid prompt token usage for billing");
-        });
     });
 
     it("keeps zero prices as explicit zero rates in the price definition", () => {

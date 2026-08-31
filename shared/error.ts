@@ -89,10 +89,9 @@ export function collectUpstreamHeaders(
 export async function ensureUpstreamOk(
     response: Response,
     requestUrl: string | URL,
-    responseBodyOverride?: string,
 ): Promise<Response> {
     if (response.ok) return response;
-    const responseBody = responseBodyOverride ?? (await response.text());
+    const responseBody = await response.text();
     const rawMessage =
         extractUpstreamMessage(responseBody) ||
         getDefaultErrorMessage(response.status);

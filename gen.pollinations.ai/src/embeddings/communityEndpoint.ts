@@ -10,14 +10,10 @@ import {
     buildUsageHeaders,
     getOpenAIEmbeddingUsage,
 } from "@shared/registry/usage-headers.ts";
-import { readResponseText } from "@shared/response-bytes.ts";
 import { decryptSecret } from "@shared/secret-encryption.ts";
 import { CreateEmbeddingResponseSchema } from "@/schemas/embeddings.ts";
 import { badRequest, inputToText, normalizeInputs } from "./input.ts";
 import type { EmbeddingRequest } from "./types.ts";
-
-// Covers the public maximum of 32 inputs × 4096 JSON float values with margin.
-const MAX_COMMUNITY_EMBEDDING_RESPONSE_BYTES = 4 * 1024 * 1024;
 
 export async function generateCommunityEmbeddings(
     endpoint: CommunityEndpointRuntime,
@@ -82,17 +78,8 @@ export async function generateCommunityEmbeddings(
         });
     }
 
-    const responseText = await readResponseText(
-        response,
-        MAX_COMMUNITY_EMBEDDING_RESPONSE_BYTES,
-        () =>
-            invalidResponse(
-                upstreamUrl,
-                "Community embedding endpoint response is too large",
-            ),
-    );
-    await ensureUpstreamOk(response, upstreamUrl, responseText);
-    const body = parseJson(responseText);
+    await ensureUpstreamOk(response, upstreamUrl);
+    const body = await response.json().catch(() => null);
     const usage = getOpenAIEmbeddingUsage(body);
 
     const parsed = CreateEmbeddingResponseSchema.safeParse({
@@ -127,22 +114,14 @@ export async function generateCommunityEmbeddings(
         );
     }
 
-    // A tokenizer cannot produce more prompt tokens than UTF-8 bytes plus a
-    // small per-input allowance for model-added special tokens.
-    const maxPromptTokens = inputs.reduce(
-        (total, input) =>
-            total + new TextEncoder().encode(input).byteLength + 16,
-        0,
-    );
     if (
         !usage ||
         typeof usage.prompt_tokens !== "number" ||
-        usage.prompt_tokens <= 0 ||
-        usage.prompt_tokens > maxPromptTokens
+        usage.prompt_tokens <= 0
     ) {
         throw invalidResponse(
             upstreamUrl,
-            "Community embedding endpoint returned invalid prompt token usage for billing",
+            "Community embedding endpoint did not return positive prompt token usage required for billing",
         );
     }
     const billableUsage: Usage = { promptTextTokens: usage.prompt_tokens };
@@ -176,14 +155,6 @@ function isValidEmbedding(
         );
     } catch {
         return false;
-    }
-}
-
-function parseJson(text: string): unknown {
-    try {
-        return JSON.parse(text);
-    } catch {
-        return null;
     }
 }
 

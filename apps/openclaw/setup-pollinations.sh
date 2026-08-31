@@ -72,17 +72,17 @@ POLLINATIONS_PROVIDER=$(cat <<'EOF'
       "maxTokens": 8192
     },
     {
-      "id": "kimi-k2.6",
-      "name": "Kimi K2.6 — Flagship agentic, vision, reasoning (paid)",
+      "id": "kimi-code",
+      "name": "Kimi Code — Agentic coding, vision, reasoning",
       "reasoning": true,
       "input": ["text", "image"],
       "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
-      "contextWindow": 262000,
+      "contextWindow": 262144,
       "maxTokens": 8192
     },
     {
       "id": "deepseek",
-      "name": "DeepSeek V4 Flash — Fast reasoning & tool calling (paid)",
+      "name": "DeepSeek — Fast reasoning & tool calling",
       "reasoning": true,
       "input": ["text"],
       "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
@@ -91,7 +91,7 @@ POLLINATIONS_PROVIDER=$(cat <<'EOF'
     },
     {
       "id": "deepseek-pro",
-      "name": "DeepSeek V4 Pro — Advanced reasoning & coding (paid)",
+      "name": "DeepSeek Pro — Advanced reasoning & coding",
       "reasoning": true,
       "input": ["text"],
       "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
@@ -100,7 +100,7 @@ POLLINATIONS_PROVIDER=$(cat <<'EOF'
     },
     {
       "id": "glm",
-      "name": "GLM 5 — Coding, reasoning, agentic workflows",
+      "name": "GLM — Coding, reasoning, agentic workflows",
       "reasoning": false,
       "input": ["text"],
       "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
@@ -108,8 +108,8 @@ POLLINATIONS_PROVIDER=$(cat <<'EOF'
       "maxTokens": 8192
     },
     {
-      "id": "gemini-search",
-      "name": "Gemini + Search — Web search grounded answers",
+      "id": "gemini-fast",
+      "name": "Gemini Fast — Fast multimodal model with web search",
       "reasoning": false,
       "input": ["text", "image"],
       "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
@@ -118,7 +118,7 @@ POLLINATIONS_PROVIDER=$(cat <<'EOF'
     },
     {
       "id": "claude-fast",
-      "name": "Claude Haiku 4.5 — Fast with good reasoning",
+      "name": "Claude Fast — Fast multimodal Claude",
       "reasoning": false,
       "input": ["text", "image"],
       "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
@@ -126,8 +126,8 @@ POLLINATIONS_PROVIDER=$(cat <<'EOF'
       "maxTokens": 8192
     },
     {
-      "id": "claude-large",
-      "name": "Claude Opus 4.6 — Most intelligent (paid)",
+      "id": "claude-opus-4.6",
+      "name": "Claude Opus 4.6 — Deep reasoning and tool calling",
       "reasoning": false,
       "input": ["text", "image"],
       "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
@@ -136,7 +136,7 @@ POLLINATIONS_PROVIDER=$(cat <<'EOF'
     },
     {
       "id": "gemini-large",
-      "name": "Gemini 3 Pro — 1M context (paid)",
+      "name": "Gemini Large — 1M context, reasoning, web search",
       "reasoning": true,
       "input": ["text", "image"],
       "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
@@ -173,8 +173,8 @@ echo "  API Key:   $MASKED"
 echo "  Default:   pollinations/kimi (256K context, vision, reasoning)"
 echo "  Fallbacks: deepseek, glm"
 echo ""
-echo "  Switch models:  /model pollinations/deepseek or /model pollinations/deepseek-pro"
+echo "  Switch models:  /model pollinations/deepseek or /model pollinations/gemini-fast"
 echo "  Your account:   https://enter.pollinations.ai"
 echo ""
-echo "  Free: kimi, glm, gemini-search, claude-fast"
-echo "  Paid: deepseek, deepseek-pro, claude-large, gemini-large"
+echo "  Pricing:       metered in Pollen; included credits apply to new accounts"
+echo "  Catalog:       https://gen.pollinations.ai/v1/models"

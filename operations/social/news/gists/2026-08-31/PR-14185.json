@@ -1,0 +1,34 @@
+{
+  "pr_number": 14185,
+  "title": "feat: move Grok 4.6 to Azure (draft: verify pricing)",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14185",
+  "merged_at": "2026-08-31T12:11:01Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n\n- Routes `grok-4.6` and its existing aliases directly to Azure Global Standard, with no fallback.\n- Keeps the model paid-only (`paidOnly: true`), sets multiplier `0.75`, and publishes Azure's 200K context limit.\n- Retains the current $2/$0.50 cached/$6 provisional sheet and bills Azure-reported image tokens at the input rate.\n- Removes defaults Azure rejects; explicit penalties and logprobs return a clear 400.\n\n## Verification\n\n- Direct probes: roles, JSON, tools, 1/10 images, cached usage, streaming, invalid input, and 10/10 concurrent burst.\n- Local E2E: catalogs, canonical name and aliases, Quest-only billing, usage headers, streaming, identical-request cache, auth/error paths, and no fallback.\n- Focused tests: gen 62, enter 524; both typechecks, Biome, and development build passed.\n\n## Do not merge yet\n\n- Azure has not published an exact Grok 4.6 meter; the registry sheet remains provisional.\n- Confirm accepting Azure's lack of non-default `frequency_penalty`, `presence_penalty`, and logprobs support versus OpenRouter.\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Grok finds a new grove",
+    "blurb": "Grok 4.6 is taking the Azure path: a direct route, a roomy 200K-token context window, and fewer mysterious detours through the provider forest.",
+    "summary": "Routed grok-4.6 and its aliases directly through Azure Global Standard with no fallback, publishing a 200K context limit, a 0.75 multiplier, paid-only access, and clear validation for Azure-unsupported penalties and logprobs.",
+    "impact": "Developers using Grok 4.6 get Azure-backed generation with 200K-token conversations, streamed responses, tool and image support, Azure image-token billing at the input rate, and explicit 400 errors for unsupported non-default frequency_penalty, presence_penalty, and logprobs settings.",
+    "keywords": [
+      "grok-4.6",
+      "azure",
+      "text-api",
+      "model-routing",
+      "context-window",
+      "billing"
+    ],
+    "visual_concept": "Depict Grok 4.6 as a large, friendly cloud-and-terminal garden service arriving through a clearly marked Azure-blue-but-pastel sky bridge, with a long glowing 200K-token vine connecting it to the Pollinations text API. Polli wears a tiny cloud navigator cap and guides neat prompt scrolls into the direct route while a CRT monitor robot checks a sign reading \"200K\"; code-plants and flowers make the provider migration feel stable and welcoming.",
+    "image_prompt": "A cozy pixel art garden-server scene where Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings, wears a tiny cloud navigator cap while guiding glowing prompt-scrolls along a direct sky bridge to a friendly pastel cloud terminal labeled \"GROK 4.6\"; a chunky CRT monitor robot happily points at a pixel sign reading \"200K,\" surrounded by blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow and scanlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-31/PR-14185.jpg",
+    "prompt": "A cozy pixel art garden-server scene where Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings, wears a tiny cloud navigator cap while guiding glowing prompt-scrolls along a direct sky bridge to a friendly pastel cloud terminal labeled \"GROK 4.6\"; a chunky CRT monitor robot happily points at a pixel sign reading \"200K,\" surrounded by blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow and scanlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-31T12:12:03.462969+00:00"
+}

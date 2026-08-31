@@ -11,14 +11,22 @@ export async function getStripeGiftCardGateStatus(
     buyerKey: string,
     now = Date.now(),
 ): Promise<StripeNewCardGateStatus> {
-    const row = await db
-        .prepare(
-            `SELECT COUNT(DISTINCT card_fingerprint) AS count
+    const [, countResult] = await db.batch([
+        db
+            .prepare(
+                `DELETE FROM stripe_gift_card_fingerprint_attempt
+                 WHERE created_at < ?`,
+            )
+            .bind(now - STRIPE_NEW_CARD_WINDOW_MS),
+        db
+            .prepare(
+                `SELECT COUNT(DISTINCT card_fingerprint) AS count
              FROM stripe_gift_card_fingerprint_attempt
              WHERE buyer_key = ? AND created_at >= ?`,
-        )
-        .bind(buyerKey, now - STRIPE_NEW_CARD_WINDOW_MS)
-        .first<{ count: number | null }>();
+            )
+            .bind(buyerKey, now - STRIPE_NEW_CARD_WINDOW_MS),
+    ]);
+    const row = countResult.results[0] as { count: number | null } | undefined;
     const distinctFailedCardCount24h = Number(row?.count ?? 0);
 
     return {
@@ -72,9 +80,16 @@ export async function consumePollenGiftRateLimit(
 ): Promise<{ allowed: boolean; retryAfterSeconds: number }> {
     const now = input.now ?? Date.now();
     const cutoff = now - input.windowMs;
-    const row = await db
-        .prepare(
-            `INSERT INTO pollen_gift_rate_limit (
+    const [, rateLimitResult] = await db.batch([
+        db
+            .prepare(
+                `DELETE FROM pollen_gift_rate_limit
+                 WHERE window_started_at < ?`,
+            )
+            .bind(now - STRIPE_NEW_CARD_WINDOW_MS),
+        db
+            .prepare(
+                `INSERT INTO pollen_gift_rate_limit (
                 key, window_started_at, attempts
              ) VALUES (?, ?, 1)
              ON CONFLICT(key) DO UPDATE SET
@@ -87,9 +102,12 @@ export async function consumePollenGiftRateLimit(
                     ELSE window_started_at
                 END
              RETURNING attempts, window_started_at AS windowStartedAt`,
-        )
-        .bind(input.key, now, cutoff, cutoff)
-        .first<{ attempts: number; windowStartedAt: number }>();
+            )
+            .bind(input.key, now, cutoff, cutoff),
+    ]);
+    const row = rateLimitResult.results[0] as
+        | { attempts: number; windowStartedAt: number }
+        | undefined;
 
     if (!row) throw new Error("Gift rate limit update failed");
     const retryAfterMs = Math.max(

@@ -131,7 +131,7 @@ test("anonymous gift checkout preserves the Stripe purchase contract", async ({
     expect(body.billing_address_collection).toBe("required");
     expect(body["name_collection[individual][enabled]"]).toBe("true");
     expect(body["name_collection[individual][optional]"]).toBe("false");
-    expect(body["phone_number_collection[enabled]"]).toBe("true");
+    expect(body["phone_number_collection[enabled]"]).toBeUndefined();
     expect(body["automatic_tax[enabled]"]).toBe("true");
     expect(body["tax_id_collection[enabled]"]).toBe("true");
     expect(body["invoice_creation[enabled]"]).toBe("true");
@@ -269,8 +269,16 @@ test("gift checkout blocks a buyer after four distinct failed cards", async ({
     expect(buyerKey).toBeTruthy();
     if (!buyerKey) throw new Error("Expected hashed buyer key");
 
+    await env.DB.prepare(
+        `INSERT INTO pollen_gift_rate_limit (
+            key, window_started_at, attempts
+         ) VALUES (?, ?, ?)`,
+    )
+        .bind("stale-gift-limit", Date.now() - 25 * 60 * 60 * 1000, 1)
+        .run();
+
     await env.DB.batch(
-        Array.from({ length: 4 }, (_, index) =>
+        Array.from({ length: 5 }, (_, index) =>
             env.DB.prepare(
                 `INSERT INTO stripe_gift_card_fingerprint_attempt (
                     event_id, buyer_key, card_fingerprint, created_at
@@ -279,7 +287,7 @@ test("gift checkout blocks a buyer after four distinct failed cards", async ({
                 `evt_failed_${index}`,
                 buyerKey,
                 `fingerprint_${index}`,
-                Date.now(),
+                index === 4 ? Date.now() - 25 * 60 * 60 * 1000 : Date.now(),
             ),
         ),
     );
@@ -299,6 +307,22 @@ test("gift checkout blocks a buyer after four distinct failed cards", async ({
             (request) => request.path === "/v1/checkout/sessions",
         ),
     ).toBe(false);
+    const expiredRows = await env.DB.batch([
+        env.DB.prepare(
+            `SELECT COUNT(*) AS count
+             FROM stripe_gift_card_fingerprint_attempt
+             WHERE event_id = 'evt_failed_4'`,
+        ),
+        env.DB.prepare(
+            `SELECT COUNT(*) AS count
+             FROM pollen_gift_rate_limit
+             WHERE key = 'stale-gift-limit'`,
+        ),
+    ]);
+    expect(expiredRows.map((result) => result.results[0])).toEqual([
+        { count: 0 },
+        { count: 0 },
+    ]);
 });
 
 test("failed gift card fingerprints are recorded against the anonymous buyer", async ({

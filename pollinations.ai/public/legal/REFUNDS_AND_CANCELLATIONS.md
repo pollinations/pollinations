@@ -1,6 +1,6 @@
 # Refunds & Cancellations
 
-**Updated: 2026-08-27**
+**Updated: 2026-08-31**
 
 ## Refunds & Cancellations (digital API services & Pollen)
 
@@ -19,7 +19,7 @@ Your wallet may include:
 
 All sales are final except where required by law or expressly approved by us. Our API is a digital service delivered immediately after purchase. Once Pollen is spent on API usage, that usage cannot be returned.
 
-Paid Pollen packs/top-ups and gift codes are non-refundable once provisioned, including unused Paid Pollen balance or a redeemed gift code. We do not guarantee refunds because you changed your mind, stopped using the Service, disliked an output, chose the wrong model, authorized an app you no longer want to use, shared a gift code with the wrong person, or did not use the full balance.
+Paid Pollen packs/top-ups are non-refundable once provisioned, including unused Paid Pollen balance. An unredeemed gift code may be cancelled or refunded where required by law or expressly approved by us; once redeemed, the gift is non-refundable except where required by law. We do not guarantee refunds because you changed your mind, stopped using the Service, disliked an output, chose the wrong model, authorized an app you no longer want to use, shared a gift code with the wrong person, or did not use the full balance.
 
 Used Pollen cannot be refunded or clawed back. Quest Pollen, free or promotional grants, quest or other rewards, and developer earnings have no cash value and are not refundable.
 

@@ -171,7 +171,6 @@ export const pollenGiftRoutes = new Hono<PollenGiftEnv>()
                     name_collection: {
                         individual: { enabled: true, optional: false },
                     },
-                    phone_number_collection: { enabled: true },
                     tax_id_collection: { enabled: true },
                     payment_intent_data: { metadata: paymentMetadata },
                     invoice_creation: {

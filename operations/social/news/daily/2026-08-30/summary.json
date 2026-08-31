@@ -1,0 +1,27 @@
+{
+  "date": "2026-08-30",
+  "period_start": "2026-08-30",
+  "period_end": "2026-08-30",
+  "title": "Community embedding models join the standard API",
+  "summary": "Embeddings became a first-class community API, Floret learned the full media catalog, and a new app turns prompts into illustrated stories.\n\nCommunity model owners can now register embedding models for discovery in Pollinations catalogs, and developers can call them through the familiar OpenAI-compatible POST /v1/embeddings endpoint. Dashboard, Account API, and polli CLI support arrived together, with shared fallbacks, rate limits, and token handling already wired in.\n\nFloret now discovers supported text, image, video, audio, transcription, and audio-transform models directly from the live catalog. Its new general-purpose media tools return publicly usable image and video URLs, while streamed tool progress stays where it belongs: in OpenAI-compatible tool-call deltas, not masquerading as assistant prose.\n\nAI Story & Image Studio joined the community app garden at adventuretreehouse.com, generating short stories and matching illustrations together through Pollinations text and image APIs. The README also received its daily news and star-history refresh, because even a garden needs a reasonably current signpost.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 13406,
+      "date": "2026-08-30"
+    },
+    {
+      "number": 14106,
+      "date": "2026-08-30"
+    },
+    {
+      "number": 14128,
+      "date": "2026-08-30"
+    },
+    {
+      "number": 14138,
+      "date": "2026-08-30"
+    }
+  ],
+  "generated_at": "2026-08-31T06:38:13.255746+00:00"
+}

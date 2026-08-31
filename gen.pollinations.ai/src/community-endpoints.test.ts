@@ -46,8 +46,10 @@ import {
     normalizeCommunityProviderUrl,
     PROMPT_AGENT_BASE_URL_PLACEHOLDER,
     type PromptAgentListingPayload,
+    type ProxyListingPayload,
     parseCommunityModelId,
     parseListingPayload,
+    resolveEffectiveProxyListing,
     validateCommunityEndpointUrl,
 } from "@shared/community-endpoints.ts";
 import {
@@ -489,6 +491,64 @@ async function createCommunityFallbackPair({
 }
 
 describe("community endpoint helpers", () => {
+    it("resolves pending visibility and pricing as one effective listing", () => {
+        const current: ProxyListingPayload = {
+            bearerTokenCiphertext: "current-credential",
+            paidOnly: false,
+            modality: "text",
+            imagePricing: "request",
+            inputModalities: ["text"],
+            perUserRpm: null,
+            fallbacks: ["owner/current-fallback"],
+            prices: communityEndpointPrices({ promptTextPrice: 0.1 }),
+        };
+        const pending: ProxyListingPayload = {
+            ...current,
+            bearerTokenCiphertext: "stale-credential",
+            paidOnly: true,
+            fallbacks: ["owner/stale-fallback"],
+            prices: communityEndpointPrices({ promptTextPrice: 0.2 }),
+        };
+        const pendingAt = new Date(0);
+        const state = {
+            visibility: "private" as const,
+            payload: current,
+            pendingVisibility: "public" as const,
+            pendingPayload: pending,
+            pendingAt,
+        };
+
+        const queued = resolveEffectiveProxyListing(
+            state,
+            COMMUNITY_ENDPOINT_CHANGE_DELAY_MS - 1,
+        );
+        expect(queued).toMatchObject({
+            pendingReady: false,
+            visibility: "private",
+            payload: current,
+            pending: { visibility: "public", payload: pending },
+        });
+        expect(queued.pending?.effectiveAt.getTime()).toBe(
+            COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
+        );
+
+        const effective = resolveEffectiveProxyListing(
+            state,
+            COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
+        );
+        expect(effective).toMatchObject({
+            pendingReady: true,
+            visibility: "public",
+            pending: null,
+            payload: {
+                bearerTokenCiphertext: "current-credential",
+                paidOnly: true,
+                fallbacks: ["owner/current-fallback"],
+                prices: { promptTextPrice: 0.2 },
+            },
+        });
+    });
+
     it("parses stored proxy payloads into the canonical schema", () => {
         const payload = parseListingPayload(
             "proxy",

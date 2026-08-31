@@ -678,6 +678,44 @@ export function applyPendingProxyPricing(
         : current;
 }
 
+export function resolveEffectiveProxyListing(
+    state: {
+        visibility: CommunityEndpointVisibility;
+        payload: ProxyListingPayload;
+        pendingVisibility: CommunityEndpointVisibility | null;
+        pendingPayload: ProxyListingPayload | null;
+        pendingAt: Date | null;
+    },
+    now = Date.now(),
+) {
+    const pendingAt = state.pendingAt;
+    const pendingReady = pendingCommunityEndpointChangeIsReady(pendingAt, now);
+    const hasPending =
+        pendingAt !== null &&
+        (state.pendingVisibility !== null || state.pendingPayload !== null);
+    return {
+        pendingReady,
+        visibility:
+            pendingReady && state.pendingVisibility
+                ? state.pendingVisibility
+                : state.visibility,
+        payload: pendingReady
+            ? applyPendingProxyPricing(state.payload, state.pendingPayload)
+            : state.payload,
+        pending:
+            !pendingReady && hasPending
+                ? {
+                      effectiveAt: new Date(
+                          pendingAt.getTime() +
+                              COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
+                      ),
+                      visibility: state.pendingVisibility,
+                      payload: state.pendingPayload,
+                  }
+                : null,
+    };
+}
+
 type CommunityEndpointRuntimeBase = {
     id: string;
     ownerUserId: string;

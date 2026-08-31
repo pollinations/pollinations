@@ -13,6 +13,7 @@ import {
 import { createMessageTransform } from "./transforms/createMessageTransform.js";
 import { createReasoningEffortTransform } from "./transforms/createReasoningEffortTransform.ts";
 import { createSystemPromptTransform } from "./transforms/createSystemPromptTransform.js";
+import { inputAudioToFireworks } from "./transforms/inputAudioToFireworks.js";
 import { pipe } from "./transforms/pipe.js";
 import { removeToolsForJsonResponse } from "./transforms/removeToolsForJsonResponse.ts";
 import { sanitizeToolSchemas } from "./transforms/sanitizeToolSchemas.js";
@@ -50,6 +51,39 @@ const grokTransform: TransformFn = (messages, options) =>
     usesGrokReasoning(options)
         ? stripCacheControl(messages, options)
         : pipe(stripCacheControl, stripReasoning)(messages, options);
+
+const grok46AzureTransform: TransformFn = (messages, options) => {
+    const unsupported = [
+        options.frequency_penalty !== undefined &&
+        options.frequency_penalty !== null &&
+        options.frequency_penalty !== 0
+            ? "frequency_penalty"
+            : undefined,
+        options.presence_penalty !== undefined &&
+        options.presence_penalty !== null &&
+        options.presence_penalty !== 0
+            ? "presence_penalty"
+            : undefined,
+        options.logprobs === true ? "logprobs" : undefined,
+        options.top_logprobs !== undefined ? "top_logprobs" : undefined,
+    ].filter(Boolean);
+    if (unsupported.length > 0) {
+        const error = new Error(
+            `Grok 4.6 on Azure does not support: ${unsupported.join(", ")}`,
+        ) as Error & { status: number };
+        error.status = 400;
+        throw error;
+    }
+
+    const {
+        frequency_penalty: _frequencyPenalty,
+        presence_penalty: _presencePenalty,
+        logprobs: _logprobs,
+        top_logprobs: _topLogprobs,
+        ...supportedOptions
+    } = options;
+    return stripCacheControl(messages, supportedOptions);
+};
 
 const models: ModelDefinition[] = [
     {
@@ -210,8 +244,8 @@ const models: ModelDefinition[] = [
     },
     {
         name: "grok-4.6",
-        config: portkeyConfig["x-ai/grok-4.6"],
-        transform: stripCacheControl,
+        config: portkeyConfig["grok-4.6"],
+        transform: grok46AzureTransform,
     },
     {
         name: "openai-audio",
@@ -368,6 +402,15 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["thinkingmachines/inkling-small"],
     },
     {
+        name: "thinkingmachines/inkling",
+        config: portkeyConfig["accounts/fireworks/models/inkling"],
+        transform: pipe(
+            stripCacheControl,
+            inputAudioToFireworks,
+            mandatoryReasoning,
+        ),
+    },
+    {
         name: "nemotron",
         config: portkeyConfig["nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B"],
         transform: createReasoningEffortTransform("toggle"),
@@ -422,9 +465,9 @@ const models: ModelDefinition[] = [
     },
     {
         name: "z-ai/glm-5.3-flash",
-        config: portkeyConfig["z-ai/glm-5.3-flash"],
+        config: portkeyConfig["accounts/fireworks/models/glm-5p3-flash"],
         // Reasoning is mandatory; off requests keep the upstream default.
-        transform: mandatoryReasoning,
+        transform: pipe(stripCacheControl, mandatoryReasoning),
     },
     {
         name: "minimax-m2.7",

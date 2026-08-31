@@ -230,7 +230,6 @@ Only the names are changing. Model behavior and pricing stay the same.
 | GPT Image 1.5 | `gptimage-large` | `openai/gpt-image-1.5` |
 | GPT Image 2 | `gpt-image-2` | `openai/gpt-image-2` |
 | GPT Live Transcribe | `gpt-live-transcribe` | `openai/gpt-live-transcribe` |
-| GPT Realtime 2 | `gpt-realtime-2` | `openai/gpt-realtime-2` |
 | GPT Realtime 2.1 | `gpt-realtime-2.1` | `openai/gpt-realtime-2.1` |
 | GPT Realtime 2.1 Mini | `gpt-realtime-2.1-mini` | `openai/gpt-realtime-2.1-mini` |
 | GPT Transcribe | `gpt-transcribe` | `openai/gpt-transcribe` |
@@ -246,6 +245,8 @@ Only the names are changing. Model behavior and pricing stay the same.
 | Text Embedding 3 Large | `openai-3-large` | `openai/text-embedding-3-large` |
 | Text Embedding 3 Small | `openai-3-small` | `openai/text-embedding-3-small` |
 | Whisper Large V3 | `whisper` | `openai/whisper-large-v3` |
+
+GPT Realtime 2 retired on August 31, 2026. `gpt-realtime-2` remains a compatibility alias for GPT Realtime 2.1; it will not receive a separate namespaced ID.
 
 ## Perplexity
 

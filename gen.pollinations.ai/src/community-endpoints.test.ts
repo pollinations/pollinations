@@ -935,40 +935,37 @@ describe("community endpoint helpers", () => {
             };
         }
 
-        it.each([200, 500])(
-            "bounds %i embedding response bodies before buffering",
-            async (status) => {
-                vi.stubGlobal(
-                    "fetch",
-                    vi.fn(
-                        async () =>
-                            new Response("{}", {
-                                status,
-                                headers: {
-                                    "content-length": String(
-                                        4 * 1024 * 1024 + 1,
-                                    ),
-                                },
-                            }),
-                    ),
-                );
+        it.each([
+            200, 500,
+        ])("bounds %i embedding response bodies before buffering", async (status) => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(
+                    async () =>
+                        new Response("{}", {
+                            status,
+                            headers: {
+                                "content-length": String(4 * 1024 * 1024 + 1),
+                            },
+                        }),
+                ),
+            );
 
-                await expect(
-                    generateCommunityEmbeddings(
-                        await embeddingEndpoint(),
-                        {
-                            model: "owner/embed",
-                            input: "sprout",
-                            encoding_format: "float",
-                        },
-                        "owner/embed",
-                        secret,
-                    ),
-                ).rejects.toThrow(
-                    "Community embedding endpoint response is too large",
-                );
-            },
-        );
+            await expect(
+                generateCommunityEmbeddings(
+                    await embeddingEndpoint(),
+                    {
+                        model: "owner/embed",
+                        input: "sprout",
+                        encoding_format: "float",
+                    },
+                    "owner/embed",
+                    secret,
+                ),
+            ).rejects.toThrow(
+                "Community embedding endpoint response is too large",
+            );
+        });
 
         it("rejects inflated publisher token usage at request time", async () => {
             vi.stubGlobal(

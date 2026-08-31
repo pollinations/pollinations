@@ -1,5 +1,5 @@
 import { PolliProvider } from "@pollinations/sdk/react";
-import { ContentHeader, ExternalLinkButton } from "@pollinations/ui";
+import { ContentHeader } from "@pollinations/ui";
 import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
 import { createFileRoute } from "@tanstack/react-router";
 import { ENTER_URL, POLLI_APP_KEY } from "../config";
@@ -15,15 +15,19 @@ export const Route = createFileRoute("/play")({
 /**
  * Play controls, including the signed-in profile, use the shared UI treatment.
  */
-function SignInAction() {
+function AccountAction() {
     return (
-        <AppUserMenu
-            dashboardHref={`${ENTER_URL}/keys`}
-            labels={{
-                topUpAccount: "Manage access",
-                logout: "Disconnect",
-            }}
-        />
+        <div className="self-start">
+            <AppUserMenu
+                dashboardHref={`${ENTER_URL}/keys`}
+                triggerVariant="action"
+                labels={{
+                    authorize: "Log in or register",
+                    topUpAccount: "Manage access",
+                    logout: "Disconnect",
+                }}
+            />
+        </div>
     );
 }
 
@@ -64,15 +68,9 @@ function PlayPage() {
                     }
                     variant="page"
                 />
-                <ExternalLinkButton
-                    href={`${ENTER_URL}/keys`}
-                    appearance="raised"
-                    className="self-start whitespace-nowrap"
-                >
-                    Get an API key
-                </ExternalLinkButton>
+                <AccountAction />
             </HeroScene>
-            <Playground toolbarAction={<SignInAction />} />
+            <Playground />
         </PolliProvider>
     );
 }

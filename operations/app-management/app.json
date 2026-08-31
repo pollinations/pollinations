@@ -23,7 +23,7 @@
     "emoji": "🎬",
     "name": "Automated Video App",
     "url": "https://automatedvideoapp.com",
-    "description": "**Resubmission of #13411, with the callback issue fixed.** That submission was closed because the app sent a redirect_uri that was not registered on the App Key. The cause: the connect page built the ",
+    "description": "Turn any topic or script into a narrated, captioned video, then edit it scene by scene or drive the whole thing from Claude. AI stills and AI video are generated through Pollinations on the user's own key.",
     "language": "en",
     "category": "video_audio",
     "platform": "web",
@@ -36,7 +36,7 @@
     "submittedDate": "2026-08-28",
     "issueUrl": "https://github.com/pollinations/pollinations/issues/14077",
     "approvedDate": "2026-08-28",
-    "byop": false,
+    "byop": true,
     "requests24h": 109
   },
   {

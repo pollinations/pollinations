@@ -280,7 +280,7 @@ test.each([
 });
 
 test.each([
-    "qwen-vision-pro",
+    "gpt-5.6-sol",
 ])("rejects model %s with unsupported billing", async (model) => {
     const app = createAnonymousX402Routes(x402Env as CloudflareBindings);
     const response = await app.request(

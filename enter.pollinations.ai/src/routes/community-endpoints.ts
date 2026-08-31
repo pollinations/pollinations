@@ -1,5 +1,4 @@
 import {
-    applyPendingProxyPricing,
     type CommunityEndpointVisibility,
     communityModelId,
     type EndpointAgentListingPayload,
@@ -10,6 +9,7 @@ import {
     type ProxyListingPayload,
     parseListingPayload,
     pendingCommunityEndpointChangeIsReady,
+    resolveEffectiveProxyListing,
     validateCommunityEndpointUrl,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
@@ -382,15 +382,16 @@ export const communityEndpointsRoutes = new Hono<Env>()
             if (!currentPayload) {
                 throw new Error(`Invalid proxy payload for ${endpoint.id}`);
             }
-            const pendingPayload = pendingCommunityEndpointChangeIsReady(
-                endpoint.pendingAt,
-            )
-                ? parseListingPayload("proxy", endpoint.pendingPayload)
-                : null;
-            const endpointPayload = applyPendingProxyPricing(
-                currentPayload,
-                pendingPayload,
-            );
+            const endpointPayload = resolveEffectiveProxyListing({
+                visibility: endpoint.visibility,
+                payload: currentPayload,
+                pendingVisibility: endpoint.pendingVisibility,
+                pendingPayload: parseListingPayload(
+                    "proxy",
+                    endpoint.pendingPayload,
+                ),
+                pendingAt: endpoint.pendingAt,
+            }).payload;
             const primary: FallbackPrimary = {
                 modelId: communityModelId(ownerGithubUsername, endpoint.name),
                 ownerUserId: user.id,
@@ -826,13 +827,16 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 if (!current) {
                     throw new Error(`Invalid proxy payload for ${endpoint.id}`);
                 }
-                const maturedPending = pendingReady
-                    ? parseListingPayload("proxy", endpoint.pendingPayload)
-                    : null;
-                const stored = applyPendingProxyPricing(
-                    current,
-                    maturedPending,
-                );
+                const stored = resolveEffectiveProxyListing({
+                    visibility: endpoint.visibility,
+                    payload: current,
+                    pendingVisibility: endpoint.pendingVisibility,
+                    pendingPayload: parseListingPayload(
+                        "proxy",
+                        endpoint.pendingPayload,
+                    ),
+                    pendingAt: endpoint.pendingAt,
+                }).payload;
                 const queued = parseListingPayload("proxy", pendingPayload);
                 const targetBase = queued ?? stored;
                 const targetVisibility = pendingVisibility ?? nextVisibility;

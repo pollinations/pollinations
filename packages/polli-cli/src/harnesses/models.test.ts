@@ -22,6 +22,64 @@ afterEach(() => {
 });
 
 describe("fetchHarnessModels", () => {
+    it("requires text-only or text-and-image input modalities", async () => {
+        const accepted = [
+            {
+                ...response.data[0],
+                id: "text-only",
+                input_modalities: ["text"],
+            },
+            {
+                ...response.data[0],
+                id: "text-and-image",
+                input_modalities: ["text", "image"],
+            },
+        ];
+        const rejected = [
+            {
+                ...response.data[0],
+                id: "image-only",
+                input_modalities: ["image"],
+            },
+            {
+                ...response.data[0],
+                id: "text-and-audio",
+                input_modalities: ["text", "audio"],
+            },
+            {
+                ...response.data[0],
+                id: "text-and-video",
+                input_modalities: ["text", "video"],
+            },
+            {
+                ...response.data[0],
+                id: "unknown-modality",
+                input_modalities: ["text", "unknown"],
+            },
+            {
+                ...response.data[0],
+                id: "non-string-modality",
+                input_modalities: ["text", 42],
+            },
+        ];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => ({
+                ok: true,
+                json: async () => ({ data: [...accepted, ...rejected] }),
+            })),
+        );
+
+        await expect(fetchHarnessModels()).resolves.toEqual([
+            { id: "text-only", contextWindow: 100, input: ["text"] },
+            {
+                id: "text-and-image",
+                contextWindow: 100,
+                input: ["text", "image"],
+            },
+        ]);
+    });
+
     it("accepts slash-containing IDs and rejects unsafe IDs", async () => {
         const valid = {
             ...response.data[0],

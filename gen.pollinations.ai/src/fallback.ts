@@ -252,6 +252,7 @@ function isUsableCommunityFallback(
     const primary = from.communityEndpoint;
     const candidate = target.communityEndpoint;
     if (!primary || !candidate) return false;
+    if (primary.modality !== candidate.modality) return false;
     if (usesAgentRunToken(candidate)) return false;
     if (primary.imagePricing !== candidate.imagePricing) return false;
     if (!isCommunityFallbackBalanceAllowed(primary, candidate)) return false;

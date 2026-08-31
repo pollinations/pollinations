@@ -7,6 +7,17 @@ import {
 import type { Logger } from "@logtape/logtape";
 import { verifyAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import { COMMUNITY_MODEL_ALLOWED_GITHUB_IDS } from "@shared/auth/github-id-list.ts";
+import { getUserBalance } from "@shared/billing/balance.ts";
+import {
+    communityAudioTranscriptionsUrl,
+    communityChatCompletionsUrl,
+    communityEmbeddingsUrl,
+    communityImageEditsUrl,
+    communityImageGenerationsUrl,
+    communityOpenAIBaseUrl,
+    normalizeCommunityAssetUrl,
+    validateCommunityEndpointUrl,
+} from "@shared/community-endpoint-urls.ts";
 import {
     COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
@@ -14,16 +25,11 @@ import {
     type CommunityEndpointModality,
     type CommunityEndpointPrices,
     type CommunityEndpointRuntime,
-    communityAudioTranscriptionsUrl,
-    communityChatCompletionsUrl,
     communityEndpointPriceFieldsForModality,
     communityEndpointPrices,
-    communityEndpointTitle,
-    communityImageEditsUrl,
-    communityImageGenerationsUrl,
+    communityEndpointSupportedEndpoints,
     communityModelDefinition,
     communityModelId,
-    communityOpenAIBaseUrl,
     communityPriceDefinition,
     type EndpointAgentCommunityEndpointRuntime,
     isCommunityEndpointOwnerAllowed,
@@ -33,10 +39,9 @@ import {
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MAX_COMMUNITY_PRICE_PER_SECOND,
     MAX_COMMUNITY_PRICE_PER_TOKEN,
+    MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
-    normalizeCommunityAssetUrl,
-    normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
     normalizeCommunityEndpointImagePricing,
     normalizeCommunityEndpointInputModalities,
@@ -44,7 +49,10 @@ import {
     normalizeCommunityProviderUrl,
     PROMPT_AGENT_BASE_URL_PLACEHOLDER,
     type PromptAgentListingPayload,
+    type ProxyListingPayload,
     parseCommunityModelId,
+    parseListingPayload,
+    resolveEffectiveProxyListing,
 } from "@shared/community-endpoints.ts";
 import {
     communityEndpoint as communityEndpointTable,
@@ -79,26 +87,26 @@ import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
-import { withInlineGenerationCoordinator } from "../test/helpers/inline-generation-coordinator.ts";
-import { callCommunityTranscriptionEndpoint } from "./audio/communityEndpoint.ts";
+import { callCommunityTranscriptionEndpoint } from "../src/audio/communityEndpoint.ts";
+import { getCommunityModelRegistryEntries } from "../src/community-models.ts";
 import {
-    communityImageSupportedEndpoints,
-    communityTranscriptionSupportedEndpoints,
-    getCommunityModelRegistryEntries,
-} from "./community-models.ts";
-import { callCommunityImageEndpoint } from "./image/communityEndpoint.ts";
-import worker from "./index.ts";
+    callCommunityImageEndpoint,
+    callCommunityVideoEndpoint,
+} from "../src/image/communityEndpoint.ts";
+import worker from "../src/index.ts";
 import {
     getGenerationModelRegistry,
     resetGenerationModelRegistryCache,
-} from "./model-registry.ts";
-import { communityEndpointGatewayContext } from "./text/communityEndpoint.ts";
+} from "../src/model-registry.ts";
+import { communityEndpointGatewayContext } from "../src/text/communityEndpoint.ts";
+import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
 
 const db = drizzle(env.DB);
 
 type CommunityEndpointInsert = typeof communityEndpointTable.$inferInsert;
-type CommunityEndpointFixture = CommunityEndpointInsert &
+type CommunityEndpointFixture = Omit<CommunityEndpointInsert, "title"> &
     Partial<CommunityEndpointPrices> & {
+        title?: string;
         modality?: CommunityEndpointModality;
         imagePricing?: CommunityEndpointImagePricing;
         inputModalities?: ModelInputModality[] | null;
@@ -138,6 +146,7 @@ function insertCommunityEndpoints(
             completionReasoningPrice: _completionReasoningPrice,
             completionAudioPrice: _completionAudioPrice,
             completionImagePrice: _completionImagePrice,
+            completionVideoPrice: _completionVideoPrice,
             ...listing
         } = row;
         const modality = normalizeCommunityEndpointModality(rawModality);
@@ -169,6 +178,7 @@ function insertCommunityEndpoints(
                     };
         return {
             ...listing,
+            title: row.title ?? row.name,
             type,
             baseUrl:
                 type === "prompt_agent"
@@ -199,6 +209,12 @@ const TEST_PNG_BYTES = [137, 80, 78, 71, 13, 10, 26, 10];
 const TEST_INVALID_IMAGE_BASE64 = "bm90IGFuIGltYWdl";
 const TEST_COMMUNITY_IMAGE_URL = "http://api.example.com/assets/image.png";
 const TEST_INPUT_IMAGE_URL = "https://input.example.com/source.png";
+const TEST_MP4_BASE64 = "AAAAFGZ0eXBpc29tAAAAAGlzb20AAAAJbWRhdAA=";
+const TEST_BARE_MP4_BASE64 = "AAAAFGZ0eXBpc29tAAAAAGlzb20=";
+const TEST_MP4_BYTES = [
+    0, 0, 0, 20, 102, 116, 121, 112, 105, 115, 111, 109, 0, 0, 0, 0, 105, 115,
+    111, 109, 0, 0, 0, 9, 109, 100, 97, 116, 0,
+];
 
 function isPortkeyChatCompletionsRequest(request: Request): boolean {
     return new URL(request.url).pathname === "/v1/chat/completions";
@@ -477,6 +493,127 @@ async function createCommunityFallbackPair({
 }
 
 describe("community endpoint helpers", () => {
+    it("resolves pending visibility and pricing as one effective listing", () => {
+        const current: ProxyListingPayload = {
+            bearerTokenCiphertext: "current-credential",
+            paidOnly: false,
+            modality: "text",
+            imagePricing: "request",
+            inputModalities: ["text"],
+            perUserRpm: null,
+            fallbacks: ["owner/current-fallback"],
+            prices: communityEndpointPrices({ promptTextPrice: 0.1 }),
+        };
+        const pending: ProxyListingPayload = {
+            ...current,
+            bearerTokenCiphertext: "stale-credential",
+            paidOnly: true,
+            fallbacks: ["owner/stale-fallback"],
+            prices: communityEndpointPrices({ promptTextPrice: 0.2 }),
+        };
+        const pendingAt = new Date(0);
+        const state = {
+            visibility: "private" as const,
+            payload: current,
+            pendingVisibility: "public" as const,
+            pendingPayload: pending,
+            pendingAt,
+        };
+
+        const queued = resolveEffectiveProxyListing(
+            state,
+            COMMUNITY_ENDPOINT_CHANGE_DELAY_MS - 1,
+        );
+        expect(queued).toMatchObject({
+            pendingReady: false,
+            visibility: "private",
+            payload: current,
+            pending: { visibility: "public", payload: pending },
+        });
+        expect(queued.pending?.effectiveAt.getTime()).toBe(
+            COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
+        );
+
+        const effective = resolveEffectiveProxyListing(
+            state,
+            COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
+        );
+        expect(effective).toMatchObject({
+            pendingReady: true,
+            visibility: "public",
+            pending: null,
+            payload: {
+                bearerTokenCiphertext: "current-credential",
+                paidOnly: true,
+                fallbacks: ["owner/current-fallback"],
+                prices: { promptTextPrice: 0.2 },
+            },
+        });
+    });
+
+    it("parses stored proxy payloads into the canonical schema", () => {
+        const payload = parseListingPayload(
+            "proxy",
+            JSON.stringify({
+                bearerTokenCiphertext: "ciphertext",
+                modality: "image",
+                imagePricing: "request",
+                inputModalities: ["image", "image"],
+                perUserRpm: null,
+                fallbacks: ["owner/model"],
+                prices: { completionImagePrice: 0.2 },
+            }),
+        );
+
+        expect(payload).toMatchObject({
+            bearerTokenCiphertext: "ciphertext",
+            paidOnly: false,
+            modality: "image",
+            imagePricing: "request",
+            inputModalities: ["image"],
+            perUserRpm: null,
+            fallbacks: ["owner/model"],
+            prices: {
+                promptTextPrice: 0,
+                completionImagePrice: 0.2,
+                completionVideoPrice: 0,
+            },
+        });
+    });
+
+    it("rejects stored payloads that do not match their listing schema", () => {
+        expect(parseListingPayload("proxy", "not json")).toBeNull();
+        expect(
+            parseListingPayload("proxy", JSON.stringify({ prices: {} })),
+        ).toBeNull();
+        expect(
+            parseListingPayload(
+                "prompt_agent",
+                JSON.stringify({ systemPrompt: "Missing base model" }),
+            ),
+        ).toBeNull();
+        expect(
+            parseListingPayload(
+                "endpoint_agent",
+                JSON.stringify({ perUserRpm: -1 }),
+            ),
+        ).toBeNull();
+        expect(
+            parseListingPayload(
+                "proxy",
+                JSON.stringify({
+                    bearerTokenCiphertext: "ciphertext",
+                    modality: "image",
+                    imagePricing: "request",
+                    inputModalities: ["unsupported"],
+                    perUserRpm: null,
+                    fallbacks: [],
+                    prices: {},
+                }),
+            ),
+        ).toBeNull();
+    });
+
     it("checks the community endpoint owner GitHub ID allowlist", () => {
         expect(
             isCommunityEndpointOwnerAllowed({
@@ -537,17 +674,14 @@ describe("community endpoint helpers", () => {
         expect(parseCommunityModelId("openai")).toBeNull();
     });
 
-    it("normalizes OpenAI-compatible endpoint URLs", () => {
-        expect(
-            normalizeCommunityEndpointBaseUrl("https://api.example.com/v1/"),
-        ).toBe("https://api.example.com/v1");
-        expect(
-            normalizeCommunityEndpointBaseUrl(
-                "https://api.example.com/v1?ignored=1#section",
-            ),
-        ).toBe("https://api.example.com/v1");
+    it("validates endpoint URLs without rewriting them", () => {
+        const endpoint = "https://api.example.com/v1/?version=1";
+        expect(validateCommunityEndpointUrl(endpoint)).toBe(endpoint);
         expect(communityChatCompletionsUrl("https://api.example.com/v1")).toBe(
             "https://api.example.com/v1/chat/completions",
+        );
+        expect(communityChatCompletionsUrl(endpoint)).toBe(
+            "https://api.example.com/v1/chat/completions?version=1",
         );
         expect(communityImageGenerationsUrl("https://api.example.com/v1")).toBe(
             "https://api.example.com/v1/images/generations",
@@ -557,14 +691,14 @@ describe("community endpoint helpers", () => {
         );
         expect(
             communityChatCompletionsUrl(
-                "https://api.example.com/v1/chat/completions",
+                "https://api.example.com/v1/chat/completions/?version=1",
             ),
-        ).toBe("https://api.example.com/v1/chat/completions");
+        ).toBe("https://api.example.com/v1/chat/completions/?version=1");
         expect(
             communityImageGenerationsUrl(
-                "https://api.example.com/v1/images/generations",
+                "https://api.example.com/v1/images/generations?version=1",
             ),
-        ).toBe("https://api.example.com/v1/images/generations");
+        ).toBe("https://api.example.com/v1/images/generations?version=1");
         expect(
             communityImageEditsUrl(
                 "https://api.example.com/v1/images/generations",
@@ -594,11 +728,22 @@ describe("community endpoint helpers", () => {
             ),
         ).toThrow("HTTP image URL must use the endpoint host");
         expect(() =>
-            normalizeCommunityEndpointBaseUrl("http://api.example.com/v1"),
+            validateCommunityEndpointUrl("http://api.example.com/v1"),
         ).toThrow("Endpoint URL must use https");
         expect(() =>
-            normalizeCommunityEndpointBaseUrl("https://localhost/v1"),
+            validateCommunityEndpointUrl("https://localhost/v1"),
         ).toThrow("Endpoint URL cannot target a private host");
+        expect(() =>
+            validateCommunityEndpointUrl(" https://api.example.com/v1 "),
+        ).toThrow("Endpoint URL cannot include surrounding whitespace");
+        expect(() =>
+            validateCommunityEndpointUrl(`${endpoint}#section`),
+        ).toThrow("Endpoint URL cannot include a fragment");
+        expect(() =>
+            validateCommunityEndpointUrl(
+                "https://user:password@api.example.com/generate",
+            ),
+        ).toThrow("Endpoint URL cannot include credentials");
     });
 
     it("derives the OpenAI-compatible audio transcription URL", () => {
@@ -613,8 +758,23 @@ describe("community endpoint helpers", () => {
     });
 
     it("restricts community transcription models to the transcription endpoint", () => {
-        expect(communityTranscriptionSupportedEndpoints()).toEqual([
+        const definition = communityModelDefinition({
+            modelId: "voodoohop/transcription",
+            title: "Transcription",
+            description: null,
+            modality: "transcription",
+            ...communityEndpointPrices({}),
+        });
+        expect(definition.supportedEndpoints).toEqual([
             "/v1/audio/transcriptions",
+        ]);
+    });
+
+    it("advertises community videos on the existing public media routes", () => {
+        expect(communityEndpointSupportedEndpoints("video", ["text"])).toEqual([
+            "/v1/images/generations",
+            "/image/{prompt}",
+            "/video/{prompt}",
         ]);
     });
 
@@ -630,9 +790,10 @@ describe("community endpoint helpers", () => {
         ).toThrow("Provider URL cannot include credentials");
     });
 
-    it("uses the community endpoint description as the model title", () => {
+    it("uses the required community endpoint title", () => {
         const modelDefinition = communityModelDefinition({
             modelId: "voodoohop/openai",
+            title: "OpenAI Community",
             description: "OpenAI via community endpoint",
             ...communityEndpointPrices({
                 promptTextPrice: 0.1,
@@ -640,7 +801,7 @@ describe("community endpoint helpers", () => {
             }),
         });
 
-        expect(modelDefinition.title).toBe("OpenAI via community endpoint");
+        expect(modelDefinition.title).toBe("OpenAI Community");
         expect(modelDefinition.aliases).toEqual(["community/voodoohop/openai"]);
         expect(modelDefinition.description).toBe(
             "OpenAI via community endpoint",
@@ -653,6 +814,7 @@ describe("community endpoint helpers", () => {
         expect(
             communityModelDefinition({
                 modelId: "voodoohop/openai",
+                title: "OpenAI",
                 description: null,
                 ...prices,
             }).paidOnly,
@@ -661,6 +823,7 @@ describe("community endpoint helpers", () => {
         expect(
             communityModelDefinition({
                 modelId: "voodoohop/openai",
+                title: "OpenAI",
                 description: null,
                 paidOnly: true,
                 ...prices,
@@ -697,28 +860,11 @@ describe("community endpoint helpers", () => {
         expect(modelDefinition.brandUrl).toBe("https://example.com/");
     });
 
-    it("falls back to the model name when title and description are unset", () => {
-        expect(
-            communityEndpointTitle({
-                modelId: "voodoohop/openai",
-                title: null,
-                description: null,
-            }),
-        ).toBe("openai");
-        // Whitespace-only titles are treated as unset rather than rendering blank.
-        expect(
-            communityEndpointTitle({
-                modelId: "voodoohop/openai",
-                title: "   ",
-                description: "Community endpoint",
-            }),
-        ).toBe("Community endpoint");
-    });
-
     it("builds community image models with one fixed per-image price", () => {
         const modelId = "voodoohop/flux";
         const definition = communityModelDefinition({
             modelId,
+            title: "Community Image",
             description: "Community image model",
             modality: "image",
             ...communityEndpointPrices({
@@ -744,18 +890,19 @@ describe("community endpoint helpers", () => {
     });
 
     it("advertises image edits only for models with image input", () => {
-        expect(communityImageSupportedEndpoints(["text"])).not.toContain(
-            "/v1/images/edits",
-        );
-        expect(communityImageSupportedEndpoints(["text", "image"])).toContain(
-            "/v1/images/edits",
-        );
+        expect(
+            communityEndpointSupportedEndpoints("image", ["text"]),
+        ).not.toContain("/v1/images/edits");
+        expect(
+            communityEndpointSupportedEndpoints("image", ["text", "image"]),
+        ).toContain("/v1/images/edits");
     });
 
     it("builds token-priced community image models when the probe detected usage", () => {
         const modelId = "voodoohop/gptimage";
         const definition = communityModelDefinition({
             modelId,
+            title: "GPT Image",
             description: "Token-priced image model",
             modality: "image",
             imagePricing: "tokens",
@@ -790,6 +937,70 @@ describe("community endpoint helpers", () => {
         ).toBeCloseTo(0.000005 * 100 + 0.00004 * 1000, 10);
     });
 
+    it("builds community video models billed per generated second", () => {
+        const modelId = "voodoohop/video";
+        const definition = communityModelDefinition({
+            modelId,
+            title: "Community Video",
+            description: "Community video model",
+            modality: "video",
+            inputModalities: ["text", "image", "audio", "video"],
+            ...communityEndpointPrices({ completionVideoPrice: 0.08 }),
+        });
+
+        expect(definition).toMatchObject({
+            category: "video",
+            inputModalities: ["text", "image", "audio", "video"],
+            outputModalities: ["video"],
+            cost: { completionVideoSeconds: 0.08 },
+        });
+        expect(definition).not.toHaveProperty("videoCapabilities");
+        expect(
+            calculateUsageBilling({
+                model: modelId,
+                usage: { completionVideoSeconds: 4.5 },
+                servedBy: definition,
+            }).price.totalPrice,
+        ).toBeCloseTo(0.36, 10);
+    });
+
+    it("builds token-priced community embedding models", () => {
+        const modelId = "voodoohop/bge";
+        const definition = communityModelDefinition({
+            modelId,
+            title: "Community Embedding",
+            description: "Community embedding model",
+            modality: "embedding",
+            ...communityEndpointPrices({
+                promptTextPrice: 0.00001,
+            }),
+        });
+
+        expect(definition).toMatchObject({
+            category: "embedding",
+            inputModalities: ["text"],
+            outputModalities: ["embedding"],
+            cost: { promptTextTokens: 0.00001 },
+        });
+        expect(definition).not.toHaveProperty("flatRate");
+        expect(
+            calculateUsageBilling({
+                model: modelId,
+                usage: { promptTextTokens: 1000 },
+                servedBy: definition,
+            }).price.totalPrice,
+        ).toBeCloseTo(0.00001 * 1000, 10);
+    });
+
+    it("builds the community embeddings upstream URL from the endpoint base URL", () => {
+        expect(communityEmbeddingsUrl("https://example.com/v1")).toBe(
+            "https://example.com/v1/embeddings",
+        );
+        expect(
+            communityEmbeddingsUrl("https://example.com/v1/embeddings"),
+        ).toBe("https://example.com/v1/embeddings");
+    });
+
     it("keeps zero prices as explicit zero rates in the price definition", () => {
         const definition = communityPriceDefinition(
             communityEndpointPrices({ promptTextPrice: 0.5 }),
@@ -798,6 +1009,7 @@ describe("community endpoint helpers", () => {
 
         expect(definition.promptTextTokens).toBe(0.5);
         expect(definition.completionTextTokens).toBe(0);
+        expect(definition).not.toHaveProperty("completionVideoSeconds");
         // Every usage type gets an explicit rate, so billing never treats an
         // intentionally-free bucket as a missing conversion rate.
         expect(Object.keys(definition)).toHaveLength(
@@ -808,6 +1020,7 @@ describe("community endpoint helpers", () => {
     it('defaults input modalities to ["text"] when not declared', () => {
         const definition = communityModelDefinition({
             modelId: "voodoohop/openai",
+            title: "OpenAI Community",
             description: "OpenAI via community endpoint",
             ...communityEndpointPrices({
                 promptTextPrice: 0.1,
@@ -821,6 +1034,7 @@ describe("community endpoint helpers", () => {
     it("preserves explicitly declared input modalities", () => {
         const definition = communityModelDefinition({
             modelId: "marcosfrgames08/glm-4.6v-flash",
+            title: "GLM Vision",
             description: "Vision model",
             inputModalities: ["image", "video"],
             ...communityEndpointPrices({
@@ -835,6 +1049,7 @@ describe("community endpoint helpers", () => {
     it("maps owner-declared catalog metadata onto text models", () => {
         const definition = communityModelDefinition({
             modelId: "voodoohop/openai",
+            title: "OpenAI Community",
             description: "OpenAI via community endpoint",
             advertised: {
                 capabilities: ["tool_calling", "reasoning"],
@@ -853,6 +1068,7 @@ describe("community endpoint helpers", () => {
     it("does not advertise text metadata after a model changes modality", () => {
         const definition = communityModelDefinition({
             modelId: "voodoohop/gptimage",
+            title: "GPT Image",
             description: "Image model",
             modality: "image",
             advertised: {
@@ -870,6 +1086,7 @@ describe("community endpoint helpers", () => {
     it("filters inputs that image endpoints cannot accept", () => {
         const definition = communityModelDefinition({
             modelId: "voodoohop/gptimage",
+            title: "GPT Image",
             description: "Image model",
             modality: "image",
             inputModalities: ["text", "audio"],
@@ -886,6 +1103,7 @@ describe("community endpoint helpers", () => {
         const modelId = "voodoohop/whisper";
         const definition = communityModelDefinition({
             modelId,
+            title: "Community Transcription",
             description: "Community transcription model",
             modality: "transcription",
             ...communityEndpointPrices({ promptAudioPrice: 0.0000445 }),
@@ -1175,6 +1393,242 @@ describe("community endpoint helpers", () => {
                 message: expect.stringContaining(
                     "Image edits are not supported",
                 ),
+            });
+        });
+    });
+
+    describe("community video endpoint billing", () => {
+        const secret = "test-secret";
+
+        async function videoEndpoint(): Promise<CommunityEndpointRuntime> {
+            return {
+                type: "proxy",
+                id: "community-video-endpoint-id",
+                ownerUserId: "owner-id",
+                modelId: "voodoohop/video",
+                name: "video",
+                title: "Video",
+                description: null,
+                modality: "video",
+                imagePricing: "request",
+                inputModalities: ["text"],
+                baseUrl: "https://api.example.com/generate-video",
+                upstreamModel: "video-1",
+                visibility: "public",
+                paidOnly: false,
+                perUserRpm: null,
+                fallbacks: [],
+                hiddenAt: null,
+                hiddenReason: null,
+                bearerTokenCiphertext: await encryptSecret(
+                    "sk_saved_token",
+                    secret,
+                ),
+                ...communityEndpointPrices({ completionVideoPrice: 0.08 }),
+            };
+        }
+
+        it("calls the configured URL and bills the requested duration", async () => {
+            const fetchMock = vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                expect(request.url).toBe(
+                    "https://api.example.com/generate-video",
+                );
+                expect(request.headers.get("authorization")).toBe(
+                    "Bearer sk_saved_token",
+                );
+                await expect(request.json()).resolves.toEqual({
+                    prompt: "a sprout",
+                    duration: 4,
+                    image: [
+                        "https://media.example.com/start.jpg",
+                        "https://media.example.com/end.jpg",
+                    ],
+                    reference_images: ["https://media.example.com/style.jpg"],
+                    reference_videos: ["https://media.example.com/motion.mp4"],
+                    reference_audios: ["https://media.example.com/audio.mp3"],
+                });
+                return Response.json({
+                    data: [{ b64_json: TEST_MP4_BASE64 }],
+                });
+            });
+            vi.stubGlobal("fetch", fetchMock);
+
+            const result = await callCommunityVideoEndpoint(
+                await videoEndpoint(),
+                "a sprout",
+                {
+                    duration: 4,
+                    image: [
+                        "https://media.example.com/start.jpg",
+                        "https://media.example.com/end.jpg",
+                    ],
+                    reference_images: ["https://media.example.com/style.jpg"],
+                    reference_videos: ["https://media.example.com/motion.mp4"],
+                    reference_audios: ["https://media.example.com/audio.mp3"],
+                },
+                secret,
+            );
+
+            expect(result.mimeType).toBe("video/mp4");
+            expect(result.durationSeconds).toBe(4);
+            expect(result.trackingData.usage).toEqual({
+                completionVideoSeconds: 4,
+            });
+            expect(Array.from(result.buffer)).toEqual(TEST_MP4_BYTES);
+        });
+
+        it("downloads URL responses and still validates the MP4 payload", async () => {
+            const fetchMock = vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                if (request.url.endsWith("/generate-video")) {
+                    await expect(request.json()).resolves.toEqual({
+                        prompt: "a sprout",
+                        duration: 3,
+                    });
+                    return Response.json({
+                        data: [
+                            {
+                                url: "https://api.example.com/assets/clip.mp4",
+                            },
+                        ],
+                    });
+                }
+                expect(request.url).toBe(
+                    "https://api.example.com/assets/clip.mp4",
+                );
+                expect(request.redirect).toBe("manual");
+                return new Response(new Uint8Array(TEST_MP4_BYTES), {
+                    headers: { "Content-Type": "video/mp4" },
+                });
+            });
+            vi.stubGlobal("fetch", fetchMock);
+
+            const result = await callCommunityVideoEndpoint(
+                await videoEndpoint(),
+                "a sprout",
+                { duration: 3 },
+                secret,
+            );
+
+            expect(result.durationSeconds).toBe(3);
+            expect(Array.from(result.buffer)).toEqual(TEST_MP4_BYTES);
+            expect(fetchMock).toHaveBeenCalledTimes(2);
+        });
+
+        it("maps URL response stream failures to a provider error", async () => {
+            const fetchMock = vi.fn(async (input) => {
+                const url = String(input);
+                if (url.endsWith("/generate-video")) {
+                    return Response.json({
+                        data: [
+                            {
+                                url: "https://api.example.com/assets/clip.mp4",
+                            },
+                        ],
+                    });
+                }
+                return new Response(
+                    new ReadableStream({
+                        start(controller) {
+                            controller.error(
+                                new Error("upstream stream failed"),
+                            );
+                        },
+                    }),
+                );
+            });
+            vi.stubGlobal("fetch", fetchMock);
+
+            await expect(
+                callCommunityVideoEndpoint(
+                    await videoEndpoint(),
+                    "a sprout",
+                    { duration: 3 },
+                    secret,
+                ),
+            ).rejects.toMatchObject({
+                status: 502,
+                message: "Endpoint video could not be read",
+            });
+        });
+
+        it("rejects a non-MP4 payload", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({
+                        data: [{ b64_json: TEST_INVALID_IMAGE_BASE64 }],
+                    }),
+                ),
+            );
+
+            await expect(
+                callCommunityVideoEndpoint(
+                    await videoEndpoint(),
+                    "a sprout",
+                    { duration: 2 },
+                    secret,
+                ),
+            ).rejects.toMatchObject({ status: 502 });
+        });
+
+        it("rejects an MP4 brand header without media boxes", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({
+                        data: [{ b64_json: TEST_BARE_MP4_BASE64 }],
+                    }),
+                ),
+            );
+
+            await expect(
+                callCommunityVideoEndpoint(
+                    await videoEndpoint(),
+                    "a sprout",
+                    { duration: 2 },
+                    secret,
+                ),
+            ).rejects.toMatchObject({ status: 502 });
+        });
+
+        it("requires a request duration before calling the endpoint", async () => {
+            const fetchMock = vi.fn();
+            vi.stubGlobal("fetch", fetchMock);
+
+            await expect(
+                callCommunityVideoEndpoint(
+                    await videoEndpoint(),
+                    "a sprout",
+                    {},
+                    secret,
+                ),
+            ).rejects.toMatchObject({ status: 400 });
+            expect(fetchMock).not.toHaveBeenCalled();
+        });
+
+        it("preserves upstream video failures", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json(
+                        { error: { message: "GPU unavailable" } },
+                        { status: 503 },
+                    ),
+                ),
+            );
+
+            await expect(
+                callCommunityVideoEndpoint(
+                    await videoEndpoint(),
+                    "a sprout",
+                    { duration: 3 },
+                    secret,
+                ),
+            ).rejects.toMatchObject({
+                status: 503,
+                message: expect.stringContaining("GPU unavailable"),
             });
         });
     });
@@ -2250,6 +2704,7 @@ fixtureTest(
             ownerUserId,
             visibility: "public",
             name: modelName,
+            title: "Public community model",
             description: "Public community model",
             perUserRpm: 0.5,
             baseUrl: "https://api.example.com/v1",
@@ -3343,6 +3798,7 @@ fixtureTest(
             }
 
             if (isCommunityImageGenerationsRequest(request)) {
+                expect(new URL(request.url).search).toBe("?version=1");
                 const body = (await request.clone().json()) as Record<
                     string,
                     unknown
@@ -3389,6 +3845,7 @@ fixtureTest(
             }
 
             if (isCommunityImageEditsRequest(request)) {
+                expect(new URL(request.url).search).toBe("?version=1");
                 expect(request.headers.get("authorization")).toBe(
                     "Bearer sk_image_upstream",
                 );
@@ -3437,7 +3894,7 @@ fixtureTest(
             modality: "image",
             inputModalities: ["text", "image"],
             visibility: "public",
-            baseUrl: "https://api.example.com/v1/images/generations",
+            baseUrl: "https://api.example.com/v1/images/generations?version=1",
             upstreamModel: "gpt-image-1",
             bearerToken: "Bearer sk_image_upstream",
             promptTextPrice: 0.000002,
@@ -3487,7 +3944,7 @@ fixtureTest(
             modelId: communityModelId(ownerGithubUsername, modelName),
             modality: "image",
             inputModalities: ["text", "image"],
-            baseUrl: "https://api.example.com/v1/images/generations",
+            baseUrl: "https://api.example.com/v1/images/generations?version=1",
             upstreamModel: "gpt-image-1",
             promptTextPrice: 0,
             completionImagePrice: 0,
@@ -3798,6 +4255,276 @@ fixtureTest(
 );
 
 fixtureTest(
+    "registers, catalogs, and serves a billed community video model",
+    async () => {
+        const ownerGithubUsername = `video-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `clip-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerUserId = await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: ownerGithubUsername,
+        });
+        const sessionToken = `session-${crypto.randomUUID()}`;
+        await db.insert(sessionTable).values({
+            id: `session-${crypto.randomUUID()}`,
+            token: sessionToken,
+            userId: ownerUserId,
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+        const cookie = await signedSessionCookie(sessionToken);
+        const enterApi = await createEnterCommunityApi();
+        const videoEndpointUrl =
+            "https://api.example.com/generate-video?version=1";
+        let markGenerationStarted!: () => void;
+        const generationStarted = new Promise<void>((resolve) => {
+            markGenerationStarted = resolve;
+        });
+        let releaseGeneration!: () => void;
+        const generationReleased = new Promise<void>((resolve) => {
+            releaseGeneration = resolve;
+        });
+        let generationCalls = 0;
+        const ingestedEvents: Record<string, unknown>[] = [];
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            if (request.url === videoEndpointUrl) {
+                expect(request.headers.get("authorization")).toBe(
+                    "Bearer sk_video_upstream",
+                );
+                const body = (await request.json()) as {
+                    prompt: string;
+                    duration: number;
+                    reference_images?: string[];
+                };
+                const isProbe =
+                    body.prompt ===
+                    "A green sprout gently moving in the breeze.";
+                if (!isProbe) {
+                    generationCalls += 1;
+                    markGenerationStarted();
+                    await generationReleased;
+                }
+                expect(body).toEqual(
+                    isProbe
+                        ? { prompt: body.prompt, duration: 5 }
+                        : {
+                              prompt: "green sprout",
+                              duration: 4,
+                              reference_images: [
+                                  "https://media.example.com/style.jpg",
+                              ],
+                          },
+                );
+                return Response.json({
+                    data: [{ b64_json: TEST_MP4_BASE64 }],
+                });
+            }
+            if (isBillingFetch(request)) {
+                if (new URL(request.url).pathname === "/v0/events") {
+                    ingestedEvents.push(
+                        ...parseIngestedEvents(await request.text()),
+                    );
+                }
+                return Response.json({ data: [] });
+            }
+            throw new Error(`Unexpected fetch: ${request.url}`);
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const probeResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints/test", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Cookie: cookie },
+                body: JSON.stringify({
+                    baseUrl: videoEndpointUrl,
+                    bearerToken: "sk_video_upstream",
+                    modality: "video",
+                }),
+            }),
+        );
+        expect(probeResponse.status).toBe(200);
+        await expect(probeResponse.json()).resolves.toMatchObject({
+            message: "Endpoint responded with playable video",
+            usage: { duration: 5 },
+            billableUsage: { completionVideoSeconds: 5 },
+        });
+
+        const registerResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Cookie: cookie },
+                body: JSON.stringify({
+                    name: modelName,
+                    title: "Community Video",
+                    description: "Synchronous community video endpoint",
+                    modality: "video",
+                    visibility: "public",
+                    baseUrl: videoEndpointUrl,
+                    bearerToken: "sk_video_upstream",
+                    completionVideoPrice: 0.08,
+                }),
+            }),
+        );
+        expect(registerResponse.status).toBe(200);
+        const registered = (await registerResponse.json()) as {
+            id: string;
+            modelId: string;
+            modality: string;
+            completionVideoPrice: number;
+        };
+        expect(registered).toMatchObject({
+            modelId: communityModelId(ownerGithubUsername, modelName),
+            modality: "video",
+            completionVideoPrice: 0,
+        });
+        await maturePendingCommunityEndpoint(registered.id);
+
+        const caller = await createTestApiKey({
+            user: { tierBalance: 100, packBalance: 0 },
+        });
+        const balanceBefore = await getUserBalance(db, caller.userId);
+        const coordinatedEnv = withInlineGenerationCoordinator(env);
+        const generationRequest = () =>
+            new Request(
+                `https://gen.pollinations.ai/video/green%20sprout?model=${encodeURIComponent(registered.modelId)}&duration=4&reference_images=${encodeURIComponent("https://media.example.com/style.jpg")}`,
+                { headers: { Authorization: `Bearer ${caller.key}` } },
+            );
+        const disconnectedContext = createExecutionContext();
+        const abort = new AbortController();
+        const disconnected = Promise.resolve(
+            worker.fetch(
+                new Request(generationRequest(), { signal: abort.signal }),
+                coordinatedEnv,
+                disconnectedContext,
+            ),
+        ).catch(() => null);
+        await generationStarted;
+        abort.abort();
+
+        const rejoinedContext = createExecutionContext();
+        const rejoined = worker.fetch(
+            generationRequest(),
+            coordinatedEnv,
+            rejoinedContext,
+        );
+        releaseGeneration();
+        const generationResponse = await rejoined;
+        expect(generationResponse.status).toBe(200);
+        expect(generationResponse.headers.get("x-cache")).toBe("HIT");
+        expect(generationResponse.headers.get("content-type")).toBe(
+            "video/mp4",
+        );
+        expect(
+            generationResponse.headers.get(
+                USAGE_TYPE_HEADERS.completionVideoSeconds,
+            ),
+        ).toBe("4");
+        expect(
+            Array.from(new Uint8Array(await generationResponse.arrayBuffer())),
+        ).toEqual(TEST_MP4_BYTES);
+        const disconnectedResponse = await disconnected;
+        if (disconnectedResponse) {
+            await disconnectedResponse.arrayBuffer();
+        }
+        await Promise.all([
+            waitOnExecutionContext(disconnectedContext),
+            waitOnExecutionContext(rejoinedContext),
+        ]);
+
+        const cachedContext = createExecutionContext();
+        const cachedResponse = await worker.fetch(
+            generationRequest(),
+            coordinatedEnv,
+            cachedContext,
+        );
+        expect(cachedResponse.status).toBe(200);
+        expect(cachedResponse.headers.get("x-cache")).toBe("HIT");
+        expect(
+            Array.from(new Uint8Array(await cachedResponse.arrayBuffer())),
+        ).toEqual(TEST_MP4_BYTES);
+        await waitOnExecutionContext(cachedContext);
+
+        expect(generationCalls).toBe(1);
+        const balanceAfter = await getUserBalance(db, caller.userId);
+        expect(
+            balanceBefore.tierBalance - balanceAfter.tierBalance,
+        ).toBeCloseTo(0.32, 10);
+        await vi.waitFor(() =>
+            expect(
+                ingestedEvents.filter(
+                    (event) =>
+                        event.modelUsed === registered.modelId &&
+                        event.isBilledUsage === true,
+                ),
+            ).toHaveLength(1),
+        );
+
+        const invalidDurationResponse = await fetchGen(
+            new Request(
+                `https://gen.pollinations.ai/video/green%20sprout?model=${encodeURIComponent(registered.modelId)}&duration=0`,
+                { headers: { Authorization: `Bearer ${caller.key}` } },
+            ),
+        );
+        expect(invalidDurationResponse.status).toBe(400);
+
+        const catalogResponse = await fetchGen(
+            "https://gen.pollinations.ai/video/models",
+        );
+        expect(catalogResponse.status).toBe(200);
+        const catalog = (await catalogResponse.json()) as {
+            name: string;
+            category: string;
+            output_modalities?: string[];
+            pricing: Record<string, string>;
+        }[];
+        expect(
+            catalog.find((model) => model.name === registered.modelId),
+        ).toMatchObject({
+            category: "video",
+            output_modalities: ["video"],
+            pricing: {
+                currency: "pollen",
+                completionVideoSeconds: "0.08",
+            },
+        });
+
+        const openaiCatalogResponse = await fetchGen(
+            "https://gen.pollinations.ai/v1/models",
+        );
+        expect(openaiCatalogResponse.status).toBe(200);
+        const openaiCatalog = (await openaiCatalogResponse.json()) as {
+            data: { id: string; supported_endpoints?: string[] }[];
+        };
+        expect(
+            openaiCatalog.data.find((model) => model.id === registered.modelId)
+                ?.supported_endpoints,
+        ).toEqual(communityEndpointSupportedEndpoints("video", ["text"]));
+
+        const excessivePriceResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/community-endpoints/${registered.id}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: cookie,
+                    },
+                    body: JSON.stringify({
+                        completionVideoPrice:
+                            MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND + 0.01,
+                    }),
+                },
+            ),
+        );
+        expect(excessivePriceResponse.status).toBe(400);
+    },
+);
+
+fixtureTest(
     "registers an OpenAI-compatible transcription endpoint and bills it through transcription APIs",
     async ({ apiKey }) => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
@@ -4024,6 +4751,198 @@ fixtureTest(
         expect(
             fetchMock.mock.calls.filter(
                 ([input]) => new Request(input).url === transcriptionUrl,
+            ),
+        ).toHaveLength(2);
+    },
+);
+
+fixtureTest(
+    "registers an OpenAI-compatible embedding endpoint and bills it through embeddings APIs",
+    async ({ apiKey }) => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `embed-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerUserId = await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: ownerGithubUsername,
+        });
+        const sessionToken = `session-${crypto.randomUUID()}`;
+        await db.insert(sessionTable).values({
+            id: `session-${crypto.randomUUID()}`,
+            token: sessionToken,
+            userId: ownerUserId,
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const enterApi = await createEnterCommunityApi();
+        const embeddingUrl = "https://api.example.com/v1/embeddings";
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            if (request.url === embeddingUrl) {
+                expect(request.headers.get("authorization")).toBe(
+                    "Bearer sk_embedding_upstream",
+                );
+                return Response.json({
+                    object: "list",
+                    data: [
+                        {
+                            object: "embedding",
+                            index: 0,
+                            embedding: Array.from({ length: 4 }, () =>
+                                Math.random(),
+                            ),
+                        },
+                    ],
+                    model: "text-embedding-3-small",
+                    usage: { prompt_tokens: 12, total_tokens: 12 },
+                });
+            }
+            if (isBillingFetch(request)) {
+                return Response.json({ data: [] });
+            }
+            throw new Error(`Unexpected fetch: ${request.url}`);
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const registrationPayload = {
+            name: modelName,
+            title: "Community Embedding Endpoint",
+            description: "OpenAI-compatible embedding endpoint",
+            modality: "embedding",
+            inputModalities: ["text"],
+            visibility: "public",
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "text-embedding-3-small",
+            bearerToken: "Bearer sk_embedding_upstream",
+            promptTextPrice: 0.00001,
+        };
+        const registerResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: await signedSessionCookie(sessionToken),
+                },
+                body: JSON.stringify(registrationPayload),
+            }),
+        );
+        expect(registerResponse.status).toBe(200);
+        const registered = (await registerResponse.json()) as {
+            id: string;
+            modelId: string;
+            modality: string;
+            inputModalities: string[];
+            baseUrl: string;
+            upstreamModel: string;
+            promptTextPrice: number;
+        };
+        expect(registered).toMatchObject({
+            modelId: communityModelId(ownerGithubUsername, modelName),
+            modality: "embedding",
+            inputModalities: ["text"],
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "text-embedding-3-small",
+            visibility: "private",
+            pending: {
+                visibility: "public",
+            },
+        });
+        await maturePendingCommunityEndpoint(registered.id);
+
+        const testResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/community-endpoints/test", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: await signedSessionCookie(sessionToken),
+                },
+                body: JSON.stringify({
+                    baseUrl: registered.baseUrl,
+                    bearerToken: "Bearer sk_embedding_upstream",
+                    model: registered.upstreamModel,
+                    modality: "embedding",
+                }),
+            }),
+        );
+        expect(testResponse.status).toBe(200);
+        await expect(testResponse.json()).resolves.toMatchObject({
+            message: "Endpoint responded with embedding data",
+            usage: { prompt_tokens: 12 },
+            billableUsage: { promptTextTokens: 12 },
+        });
+
+        const embeddingsResponse = await fetchGen(
+            new Request("https://gen.pollinations.ai/v1/embeddings", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${apiKey}`,
+                },
+                body: JSON.stringify({
+                    model: registered.modelId,
+                    input: "A simple green sprout.",
+                }),
+            }),
+        );
+        const embeddingsBody = await embeddingsResponse.json();
+        expect(embeddingsResponse.status).toBe(200);
+        expect(embeddingsBody).toMatchObject({
+            data: expect.arrayContaining([
+                expect.objectContaining({
+                    embedding: expect.arrayContaining([expect.any(Number)]),
+                }),
+            ]),
+            model: registered.modelId,
+        });
+        expect(embeddingsResponse.headers.get("x-model-used")).toBe(
+            registered.modelId,
+        );
+        expect(
+            embeddingsResponse.headers.get("x-usage-prompt-text-tokens"),
+        ).toBe("12");
+
+        const openaiModelsResponse = await fetchGen(
+            "https://gen.pollinations.ai/v1/models",
+        );
+        expect(openaiModelsResponse.status).toBe(200);
+        const openaiModels = (await openaiModelsResponse.json()) as {
+            data: {
+                id: string;
+                input_modalities?: string[];
+                supported_endpoints?: string[];
+            }[];
+        };
+        const listedModel = openaiModels.data.find(
+            (model) => model.id === registered.modelId,
+        );
+        expect(listedModel?.input_modalities).toEqual(["text"]);
+        expect(listedModel?.supported_endpoints).toEqual(
+            expect.arrayContaining(["/v1/embeddings"]),
+        );
+
+        const embeddingModelsResponse = await fetchGen(
+            "https://gen.pollinations.ai/embeddings/models",
+        );
+        expect(embeddingModelsResponse.status).toBe(200);
+        const embeddingModels =
+            (await embeddingModelsResponse.json()) as Array<{
+                name: string;
+            }>;
+        const listedEmbeddingModel = embeddingModels.find(
+            (model) => model.name === registered.modelId,
+        );
+        expect(listedEmbeddingModel).toMatchObject({
+            name: registered.modelId,
+            category: "embedding",
+            community: true,
+            pricing: { promptTextTokens: "0.00001" },
+        });
+        expect(
+            fetchMock.mock.calls.filter(
+                ([input]) => new Request(input).url === embeddingUrl,
             ),
         ).toHaveLength(2);
     },
@@ -5627,7 +6546,6 @@ fixtureTest(
         // Different modes: comparing per-image against per-token prices is
         // meaningless, so the link is dropped rather than billed across units.
         expect(fallbackIds(id("image-request-primary"))).toBeUndefined();
-
         // The declared list is kept in order, and only what this owner
         // declared: a target's own list is never appended.
         expect(fallbackIds(id("multi-primary"))).toEqual([

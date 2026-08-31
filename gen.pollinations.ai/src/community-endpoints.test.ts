@@ -2578,6 +2578,7 @@ fixtureTest(
             ownerUserId,
             visibility: "public",
             name: modelName,
+            title: "Public community model",
             description: "Public community model",
             perUserRpm: 0.5,
             baseUrl: "https://api.example.com/v1",

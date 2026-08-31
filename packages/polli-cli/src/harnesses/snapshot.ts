@@ -177,13 +177,23 @@ const parsePersistedSnapshot = (
             "metadata",
         ]);
     const legacySchema = exactKeys(parsed, ["complete", "files"]);
-    if (!currentSchema && !legacySchema) {
+    const legacyMetadataSchema = exactKeys(parsed, [
+        "complete",
+        "files",
+        "metadata",
+    ]);
+    if (!currentSchema && !legacySchema && !legacyMetadataSchema) {
         throw new Error(`Invalid harness snapshot ${path}: unexpected schema`);
     }
-    if (legacySchema) {
+    if (legacySchema || legacyMetadataSchema) {
         if (typeof parsed.complete !== "boolean" || !isRecord(parsed.files)) {
             throw new Error(
                 `Invalid harness snapshot ${path}: invalid legacy schema`,
+            );
+        }
+        if (legacyMetadataSchema && !isRecord(parsed.metadata)) {
+            throw new Error(
+                `Invalid harness snapshot ${path}: metadata must be an object`,
             );
         }
         return parseFiles(
@@ -193,6 +203,7 @@ const parsePersistedSnapshot = (
             false,
             parsed.complete,
             false,
+            legacyMetadataSchema ? parsed.metadata : undefined,
         );
     }
     if (parsed.version !== SNAPSHOT_VERSION) {

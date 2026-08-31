@@ -162,6 +162,101 @@ describe("harness snapshots", () => {
         expect(readFileSync(target, "utf8")).toBe(before);
     });
 
+    it("preserves the legacy OpenClaw metadata and canonicalizes on apply", () => {
+        const before = "legacy before\n";
+        const after = "legacy after\n";
+        mkdirSync(join(home, "agent"), { recursive: true });
+        writeFileSync(target, after);
+        writeTextAtomic(
+            harnessSnapshotPath(ctx, "test", managed()),
+            JSON.stringify({
+                complete: true,
+                files: {
+                    [target]: {
+                        before,
+                        afterHash: createHash("sha256")
+                            .update(after)
+                            .digest("hex"),
+                    },
+                },
+                metadata: { openclaw: { provider: true } },
+            }),
+        );
+
+        expect(loadHarnessSnapshot(ctx, "test", managed())).toMatchObject({
+            metadata: { openclaw: { provider: true } },
+        });
+        applyWithSnapshot(ctx, "test", managed(), () =>
+            writeTextAtomic(target, "canonicalized\n"),
+        );
+
+        const persisted = JSON.parse(
+            readFileSync(harnessSnapshotPath(ctx, "test", managed()), "utf8"),
+        );
+        expect(persisted).toMatchObject({
+            version: 1,
+            complete: true,
+            modified: false,
+            metadata: { openclaw: { provider: true } },
+        });
+        expect(persisted.files[target]).toMatchObject({
+            beforeEncoding: "base64",
+            before: Buffer.from(before).toString("base64"),
+        });
+    });
+
+    it("rejects malformed legacy metadata and restricted legacy shapes", () => {
+        const snapshotPath = harnessSnapshotPath(ctx, "test", managed());
+        const file = {
+            [target]: {
+                before: null,
+                afterHash: null,
+            },
+        };
+        for (const metadata of ["not-an-object", [], null]) {
+            writeTextAtomic(
+                snapshotPath,
+                JSON.stringify({ complete: false, files: file, metadata }),
+            );
+            expect(() => loadHarnessSnapshot(ctx, "test", managed())).toThrow(
+                /metadata must be an object|unexpected schema/,
+            );
+        }
+
+        writeTextAtomic(
+            snapshotPath,
+            JSON.stringify({
+                complete: false,
+                files: file,
+                metadata: {},
+                extra: true,
+            }),
+        );
+        expect(() => loadHarnessSnapshot(ctx, "test", managed())).toThrow(
+            /unexpected schema/,
+        );
+    });
+
+    it("rejects legacy metadata snapshots with tampered managed paths", () => {
+        writeTextAtomic(
+            harnessSnapshotPath(ctx, "test", managed()),
+            JSON.stringify({
+                complete: false,
+                files: {
+                    [join(home, "tampered.json")]: {
+                        before: null,
+                        afterHash: null,
+                    },
+                },
+                metadata: { openclaw: { provider: true } },
+            }),
+        );
+
+        expect(() => loadHarnessSnapshot(ctx, "test", managed())).toThrow(
+            /managed paths changed/,
+        );
+    });
+
     it("reads the Prime transitional integrity schema and restores it", () => {
         const before = "prime before\n";
         const after = "prime after\n";

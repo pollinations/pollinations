@@ -43,6 +43,7 @@ vi.mock("../lib/api.js", () => ({
                         tools: true,
                         context_length: 1048576,
                     },
+                    { id: "perplexity-fast" },
                 ],
             };
         }
@@ -139,6 +140,9 @@ describe("openclaw lifecycle", () => {
                 (m: { id: string }) => m.id,
             ),
         ).toEqual(["kimi", "deepseek"]);
+        expect(
+            config.models.providers.pollinations.models[0],
+        ).not.toHaveProperty("maxTokens");
         expect(config.env.vars.POLLI_OPENCLAW_API_KEY).toBe(settings.apiKey);
         expect(config.agents.defaults.model.primary).toBe("pollinations/kimi");
         expect(config.tools.web.search).toEqual({
@@ -242,14 +246,39 @@ describe("openclaw lifecycle", () => {
         });
     });
 
-    it("reports false when the keyed catalog no longer contains the model", async () => {
+    it("accepts a restricted key only when it includes both owned models", async () => {
+        configureOpenclaw(ctx, settings);
+        mockedGen.mockResolvedValueOnce({
+            valid: true,
+            type: "secret",
+            permissions: { models: ["kimi", "perplexity-fast"] },
+        });
+        await expect(openclaw.status(ctx)).resolves.toMatchObject({
+            configured: true,
+            model: "kimi",
+        });
+    });
+
+    it("reports false when the keyed catalog no longer contains the search model", async () => {
         configureOpenclaw(ctx, settings);
         mockedGen.mockResolvedValueOnce({
             valid: true,
             type: "secret",
             permissions: { models: null },
         });
-        mockedGen.mockResolvedValueOnce({ data: [] });
+        mockedGen.mockResolvedValueOnce({
+            data: [
+                {
+                    id: "kimi",
+                    input_modalities: ["text"],
+                    output_modalities: ["text"],
+                    supported_endpoints: ["/v1/chat/completions"],
+                    tools: true,
+                    context_length: 262000,
+                },
+            ],
+        });
+        mockedGen.mockResolvedValueOnce({ data: [{ id: "other-model" }] });
         await expect(openclaw.status(ctx)).resolves.toMatchObject({
             configured: false,
         });

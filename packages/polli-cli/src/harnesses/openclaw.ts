@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { accessSync, constants, existsSync, statSync } from "node:fs";
 import { delimiter, dirname, join } from "node:path";
+import { gen } from "../lib/api.js";
 import { BASE_URL } from "../lib/config.js";
 import { readTextIfExists, resolveHarnessPath, writeTextAtomic } from "./fs.js";
 import {
@@ -243,8 +244,41 @@ const modelConfig = (model: HarnessModel): JsonObject => ({
     ...(model.reasoning ? { reasoning: true } : {}),
     input: model.input,
     contextWindow: model.contextWindow,
-    maxTokens: 8192,
 });
+
+const keyAllowsModels = (
+    permissions: { models?: string[] | null } | null | undefined,
+    modelIds: string[],
+) =>
+    permissions?.models === null ||
+    permissions?.models === undefined ||
+    modelIds.every((id) => permissions.models?.includes(id));
+
+const searchModelIsVisible = async (apiKey: string): Promise<boolean> => {
+    const { data } = await gen<{ data: unknown[] }>("/v1/models", { apiKey });
+    return (
+        Array.isArray(data) &&
+        data.some((model) => isRecord(model) && model.id === SEARCH_MODEL)
+    );
+};
+
+const assertOpenclawKeySupportsModels = async (
+    apiKey: string,
+    primaryModel: string,
+) => {
+    const info = await inspectHarnessKey(apiKey);
+    if (
+        !info ||
+        !keyAllowsModels(info.permissions, [primaryModel, SEARCH_MODEL])
+    ) {
+        throw new Error("Pollinations key cannot access the OpenClaw models");
+    }
+    if (!(await searchModelIsVisible(apiKey))) {
+        throw new Error(
+            `Pollinations model "${SEARCH_MODEL}" is not available for this key`,
+        );
+    }
+};
 
 const searchConfig = (): JsonObject => ({
     provider: "perplexity",
@@ -547,20 +581,16 @@ const liveStatus = async (ctx: HarnessContext): Promise<HarnessResult> => {
     try {
         const info = await inspectHarnessKey(key);
         if (!info) return { ...structural, configured: false };
-        const permittedModels = info.permissions?.models;
         if (
-            Array.isArray(permittedModels) &&
-            !permittedModels.includes(structural.model)
+            !keyAllowsModels(info.permissions, [structural.model, SEARCH_MODEL])
         ) {
             return { ...structural, configured: false };
         }
         const models = await fetchHarnessModels(key);
-        return {
-            ...structural,
-            configured: models.some(
-                (candidate) => candidate.id === structural.model,
-            ),
-        };
+        return models.some((candidate) => candidate.id === structural.model) &&
+            (await searchModelIsVisible(key))
+            ? structural
+            : { ...structural, configured: false };
     } catch {
         return { ...structural, configured: false };
     }
@@ -749,13 +779,15 @@ export const openclaw: HarnessAdapter = {
                 browser: options.browser,
                 beforeCreate: async (accountKey) => {
                     const keyedModels = await fetchHarnessModels(accountKey);
-                    selectModel(options.model, keyedModels);
+                    const model = selectModel(options.model, keyedModels);
+                    await assertOpenclawKeySupportsModels(accountKey, model);
                 },
             },
         );
         return withHarnessKeyLease(lease, async (apiKey) => {
             const models = await fetchHarnessModels(apiKey);
             const model = selectModel(options.model, models);
+            await assertOpenclawKeySupportsModels(apiKey, model);
             return configureOpenclaw(ctx, {
                 apiKey,
                 model,

@@ -191,12 +191,13 @@ export function DevKit() {
 
     return (
         <section className="flex flex-col gap-10">
-            <FeatureGroup
-                eyebrow="Start free"
-                title="Make your first API call"
-                description="Earn Pollen through Quests, then make your first API call."
-            >
-                <div className="grid items-center gap-6 px-1 sm:grid-cols-[auto_1fr] lg:grid-cols-[auto_1fr_auto]">
+            <Surface variant="card" className="flex flex-col gap-6 p-5 sm:p-6">
+                <ContentHeader
+                    eyebrow="Start free"
+                    title="Make your first API call"
+                    subtitle="Earn Pollen through Quests, then make your first API call."
+                />
+                <div className="grid items-center gap-6 sm:grid-cols-[auto_1fr] lg:grid-cols-[auto_1fr_auto]">
                     <div className="flex size-12 items-center justify-center rounded-xl bg-theme-bg-active text-theme-text-strong">
                         <SproutIcon className="size-7" />
                     </div>
@@ -228,7 +229,7 @@ export function DevKit() {
                         </ExternalLinkButton>
                     </div>
                 </div>
-            </FeatureGroup>
+            </Surface>
 
             <FeatureGroup
                 eyebrow="Build"

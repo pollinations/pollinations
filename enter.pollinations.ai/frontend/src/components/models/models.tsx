@@ -65,8 +65,12 @@ const COMMUNITY_SECTION_ORDER: SectionType[] = [
     "all",
     "text",
     "image",
+    "video",
+    "audio",
+    "embedding",
     "agent",
 ];
+
 const SCOPE_ORDER: ModelScope[] = ["pollinations", "community"];
 
 const MODEL_SLUG_LIST_URL =

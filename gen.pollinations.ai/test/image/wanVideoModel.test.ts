@@ -7,6 +7,9 @@ import {
 } from "../../src/image/models/wanVideoModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
 
+const REF_IMAGE_URL = "https://media.pollinations.ai/ref-style.png";
+const REF_VIDEO_URL = "https://media.pollinations.ai/ref-motion.mp4";
+
 const REPLICATE_PREDICTIONS =
     /^https:\/\/api\.replicate\.com\/v1\/models\/(.+)\/predictions$/;
 const VIDEO_URL = "https://video.example.com/wan-output.mp4";
@@ -253,5 +256,90 @@ describe("wanVideoModel image-to-video routing", () => {
         expect(calls[0].input.resolution).toBe("480p");
         expect(calls[0].input.image as string).toMatch(EXPECTED_DATA_URI);
         expect(calls[0].input.last_image as string).toMatch(EXPECTED_DATA_URI);
+    });
+});
+
+describe("wanVideoModel reference-to-video routing", () => {
+    it("wan-pro R2V routes to wan-2.7-r2v and passes reference_images", async () => {
+        setReplicateEnv();
+        const calls: ReplicateCall[] = [];
+        mockReplicateFetch(calls, 5);
+
+        const result = await callWanProAPI("cinematic style", {
+            ...baseParams,
+            reference_images: [REF_IMAGE_URL],
+        });
+
+        expect(calls).toHaveLength(1);
+        expect(calls[0].model).toBe("wan-video/wan-2.7-r2v");
+        expect(calls[0].input.reference_images).toEqual([REF_IMAGE_URL]);
+        expect(calls[0].input.resolution).toBe("720p");
+        expect(calls[0].input.duration).toBe(5);
+        expect(result.trackingData).toEqual({
+            actualModel: "wan-pro",
+            usage: { completionVideoSeconds: 5 },
+        });
+    });
+
+    it("wan-pro R2V passes reference_videos alongside reference_images", async () => {
+        setReplicateEnv();
+        const calls: ReplicateCall[] = [];
+        mockReplicateFetch(calls, 7);
+
+        await callWanProAPI("match this motion", {
+            ...baseParams,
+            reference_images: [REF_IMAGE_URL],
+            reference_videos: [REF_VIDEO_URL],
+            duration: 7,
+        });
+
+        expect(calls[0].model).toBe("wan-video/wan-2.7-r2v");
+        expect(calls[0].input.reference_images).toEqual([REF_IMAGE_URL]);
+        expect(calls[0].input.reference_videos).toEqual([REF_VIDEO_URL]);
+        expect(calls[0].input.duration).toBe(7);
+    });
+
+    it("wan-pro R2V clamps duration to 10s maximum", async () => {
+        setReplicateEnv();
+        const calls: ReplicateCall[] = [];
+        mockReplicateFetch(calls, 10);
+
+        await callWanProAPI("cinematic style", {
+            ...baseParams,
+            reference_images: [REF_IMAGE_URL],
+            duration: 15, // above R2V ceiling
+        });
+
+        expect(calls[0].model).toBe("wan-video/wan-2.7-r2v");
+        expect(calls[0].input.duration).toBe(10);
+    });
+
+    it("wan-pro R2V at 1080p uses the 1080p resolution", async () => {
+        setReplicateEnv();
+        const calls: ReplicateCall[] = [];
+        mockReplicateFetch(calls, 5);
+
+        await callWanProAPI("cinematic style", {
+            ...baseParams,
+            resolution: "1080p",
+            reference_images: [REF_IMAGE_URL],
+        });
+
+        expect(calls[0].model).toBe("wan-video/wan-2.7-r2v");
+        expect(calls[0].input.resolution).toBe("1080p");
+    });
+
+    it("wan-pro rejects frame + reference combination with 400", async () => {
+        setReplicateEnv();
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+        await expect(
+            callWanProAPI("cinematic style", {
+                ...baseParams,
+                image: [INPUT_IMAGE_URL],
+                reference_images: [REF_IMAGE_URL],
+            }),
+        ).rejects.toMatchObject({ status: 400 });
+        expect(fetchSpy).not.toHaveBeenCalled();
     });
 });

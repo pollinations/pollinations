@@ -3,7 +3,12 @@ import { parseEnv } from "node:util";
 import { isMap, isSeq, parseDocument, Scalar } from "yaml";
 import polliSkill from "../../SKILL.md?raw";
 import { BASE_URL } from "../lib/config.js";
-import { readTextIfExists, removeIfExists, writeTextAtomic } from "./fs.js";
+import {
+    commandExists,
+    readTextIfExists,
+    removeIfExists,
+    writeTextAtomic,
+} from "./fs.js";
 import { resolveHarnessKey } from "./keys.js";
 import { fetchHarnessModels } from "./models.js";
 import {
@@ -289,6 +294,11 @@ export const dsh: HarnessAdapter = {
         "Changes apply on the next request. Start DeepSeek Harness with: npx @deepseek-ai/dsh web",
 
     async on(ctx, options) {
+        if (!commandExists("npx", ctx.env)) {
+            throw new Error(
+                "DeepSeek Harness requires npx. Install Node.js, then run: npx @deepseek-ai/dsh web",
+            );
+        }
         const model = options.model ?? DEFAULT_MODEL;
         const models = await fetchHarnessModels();
         if (!models.some((candidate) => candidate.id === model)) {

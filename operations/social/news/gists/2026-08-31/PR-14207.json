@@ -1,0 +1,35 @@
+{
+  "pr_number": 14207,
+  "title": "refactor: remove stale text provider transforms",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14207",
+  "merged_at": "2026-08-31T18:27:28Z",
+  "labels": [],
+  "pr_body_excerpt": "- Forwards `cache_control` unchanged instead of silently stripping user input. Fireworks Kimi/GLM directly return 400 for that field; this is the intentional thin-proxy behavior, not a Portkey issue.\n- Stops rewriting OpenRouter tool schemas, tool/JSON combinations, and `logit_bias`; direct provider probes accept the original values.\n- Leaves Vertex image URLs untouched while retaining required Bedrock inlining and direct-Vertex schema sanitization.\n- Deletes two transforms and 131 net lines.\n- Passes 92 focused tests, Gen typecheck, Biome, and direct Fireworks probes.\n\nFireworks prompt caching is automatic and does not use Anthropic `cache_control`: https://docs.fireworks.ai/guides/prompt-caching",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Hands Off the Payload",
+    "blurb": "The text gateway has stopped gardening everybody’s requests. Your tool schemas, JSON settings, logit bias, cache controls, and Vertex image URLs can now travel with fewer mysterious detours.",
+    "summary": "Removed stale text-provider transforms so `cache_control`, OpenRouter tool schemas and tool/JSON combinations, `logit_bias`, and Vertex image URLs pass through unchanged, while Bedrock image inlining and direct-Vertex schema sanitization remain in place.",
+    "impact": "Developers get behavior closer to sending requests directly to providers: accepted fields stay intact, and unsupported fields such as Fireworks Kimi/GLM `cache_control` receive the provider’s own clear 400 response.",
+    "keywords": [
+      "text-api",
+      "providers",
+      "OpenRouter",
+      "Fireworks",
+      "Vertex",
+      "tool-calling",
+      "request-passthrough"
+    ],
+    "visual_concept": "Depict a cozy API garden where Polli acts as a careful mail carrier, sending intact request parcels labeled with tiny tool, JSON, image-link, and bias symbols through several friendly provider mailboxes instead of trimming them. Keep one small Bedrock station gently converting an image URL into an inline picture and one Vertex station tidying a schema sheet, showing that only the genuinely required transformations remain.",
+    "image_prompt": "A cozy pixel art API garden at dusk: Polli, the cute yellow-and-dark-brown striped bee with black oval eyes, pink rectangular blush, light blue wings, and a tiny postal cap, carefully carries intact glowing request envelopes marked with simple tool, JSON, image-link, and bias icons between friendly retro provider terminals; a small Bedrock terminal gently inlines an image card while a Vertex terminal tidies one schema page, with flowers and code-plants growing around the cables. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, warm lighting, subtle CRT glow, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-31/PR-14207.jpg",
+    "prompt": "A cozy pixel art API garden at dusk: Polli, the cute yellow-and-dark-brown striped bee with black oval eyes, pink rectangular blush, light blue wings, and a tiny postal cap, carefully carries intact glowing request envelopes marked with simple tool, JSON, image-link, and bias icons between friendly retro provider terminals; a small Bedrock terminal gently inlines an image card while a Vertex terminal tidies one schema page, with flowers and code-plants growing around the cables. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, warm lighting, subtle CRT glow, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-31T18:28:49.929585+00:00"
+}

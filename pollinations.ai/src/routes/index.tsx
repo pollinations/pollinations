@@ -1,8 +1,9 @@
-import { ContentHeader, ExternalLinkButton, StatList } from "@pollinations/ui";
+import { ContentHeader, ExternalLinkButton } from "@pollinations/ui";
 import { createFileRoute } from "@tanstack/react-router";
 import { compact, usePlatformStats } from "../data/publicStats";
 import { routeHead } from "../routeMeta";
 import { DevKit } from "../ui/home/DevKit";
+import { HeroStats } from "../ui/home/HeroStats";
 import { LiveApps } from "../ui/home/LiveApps";
 import { MoneyMoves } from "../ui/home/MoneyMoves";
 import { OnTheWay } from "../ui/home/OnTheWay";
@@ -73,7 +74,7 @@ function HelloPage() {
                         Read the docs
                     </ExternalLinkButton>
                 </div>
-                <StatList stats={stats} />
+                <HeroStats stats={stats} />
             </HeroScene>
 
             <DevKit />

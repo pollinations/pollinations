@@ -48,11 +48,6 @@ export {
 } from "./compositions/PeriodPicker.tsx";
 export { Section, type SectionProps } from "./compositions/Section.tsx";
 export { StatCard, type StatCardProps } from "./compositions/StatCard.tsx";
-export {
-    StatList,
-    type StatListItem,
-    type StatListProps,
-} from "./compositions/StatList.tsx";
 export { cn } from "./lib/cn-app.ts";
 export {
     currentPeriod,

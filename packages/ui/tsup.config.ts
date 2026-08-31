@@ -28,6 +28,7 @@ export default defineConfig([
             "!licenses/**",
             "!styles.css",
             "!app.css",
+            "!theme.css",
             "!index.browser.min.js",
             "!index.browser.min.js.map",
         ],

@@ -1,0 +1,34 @@
+{
+  "pr_number": 14043,
+  "title": "feat: list MCP servers and pricing alongside models",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14043",
+  "merged_at": "2026-08-31T20:02:10Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds an MCPs tab to the official model catalog\n- Lists registry-backed descriptions, environment-specific endpoints, and Pollen rates\n- Reuses model billing-adjustment metadata and pricing rows for MCP tools\n- Exposes the same billing details from `GET /mcp`\n- Keeps MCPs separate from model API responses and model sorting",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The toolbox gets a shelf",
+    "blurb": "The model catalog now has a proper corner for MCP servers. Their endpoints, descriptions, and Pollen rates have stopped hiding in the shed.",
+    "summary": "Added an MCP Servers tab to the official catalog and a GET /mcp endpoint that expose registry descriptions, environment-specific endpoints, Pollen rates, and shared billing-adjustment details without mixing MCPs into model responses or sorting.",
+    "impact": "Developers can now browse available MCP tools and their exact connection and pricing details in the catalog or via GET /mcp before putting them to work.",
+    "keywords": [
+      "mcp",
+      "model catalog",
+      "pricing",
+      "pollen",
+      "api",
+      "registry"
+    ],
+    "visual_concept": "Depict the model catalog as a cozy garden library with a newly opened MCP toolbox shelf: labeled tool cards show a plug icon, endpoint paths, and tiny Pollen price badges. Polli, wearing a tiny librarian visor, is filing MCP cards beside a retro CRT robot that happily displays an organized catalog; code-plants and flowers make the technical directory feel alive.",
+    "image_prompt": "A cozy pixel art garden-library scene where a cute CRT monitor robot proudly opens a new catalog tab labeled “MCP SERVERS,” showing chunky tool cards with tiny endpoint lines and Pollen price badges, while code-plants sprout from flower pots around the shelf. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny librarian visor and files a card into the new shelf. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-31/PR-14043.jpg",
+    "prompt": "A cozy pixel art garden-library scene where a cute CRT monitor robot proudly opens a new catalog tab labeled “MCP SERVERS,” showing chunky tool cards with tiny endpoint lines and Pollen price badges, while code-plants sprout from flower pots around the shelf. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny librarian visor and files a card into the new shelf. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-31T20:03:15.562943+00:00"
+}

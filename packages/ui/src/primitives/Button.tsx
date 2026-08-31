@@ -1,4 +1,4 @@
-import type { PropsWithChildren } from "react";
+import type { PropsWithChildren, MouseEvent as ReactMouseEvent } from "react";
 import { cn } from "../lib/cn.ts";
 
 /** Semantic soft-fill roles. Label recipes live on Chip. */
@@ -23,7 +23,7 @@ const appearanceClasses: Record<ButtonAppearance, string> = {
     pill: "polli:rounded-full",
     raised:
         "polli:rounded-xl polli:border-r-[3px] polli:border-b-[3px] polli:border-solid " +
-        "polli:border-brand-dark/20 polli:hover:border-brand-dark/45",
+        "polli:border-theme-text-strong/20 polli:hover:border-theme-text-strong/45",
 };
 
 // Cascade-driven base — reads [data-theme] vars.
@@ -92,10 +92,35 @@ export function Button<T extends React.ElementType = "button">({
     ...buttonProps
 }: ButtonProps<T>) {
     const Component: React.ElementType = as || "button";
+    const isButton = Component === "button";
+    const isAnchor = Component === "a";
+    const buttonType = (
+        buttonProps as {
+            type?: "button" | "submit" | "reset";
+        }
+    ).type;
+    const onClick = (
+        buttonProps as {
+            onClick?: (event: ReactMouseEvent) => void;
+        }
+    ).onClick;
+    const handleClick = disabled
+        ? (event: ReactMouseEvent) => {
+              event.preventDefault();
+              event.stopPropagation();
+          }
+        : onClick;
 
     return (
         <Component
+            {...buttonProps}
             data-intent={intent}
+            {...(isButton ? { type: buttonType ?? "button", disabled } : {})}
+            {...(!isButton && disabled
+                ? { "aria-disabled": true, tabIndex: -1 }
+                : {})}
+            {...(isAnchor && disabled ? { href: undefined } : {})}
+            onClick={handleClick}
             className={buttonClasses({
                 intent,
                 appearance,
@@ -103,8 +128,6 @@ export function Button<T extends React.ElementType = "button">({
                 className,
                 disabled,
             })}
-            disabled={disabled}
-            {...buttonProps}
         >
             {children}
         </Component>

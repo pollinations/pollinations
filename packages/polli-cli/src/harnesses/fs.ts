@@ -9,7 +9,19 @@ import {
     unlinkSync,
     writeFileSync,
 } from "node:fs";
-import { basename, dirname, join } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
+
+/** Resolve an explicit harness path while allowing only the safe home forms. */
+export const resolveHarnessPath = (
+    configured: string,
+    home: string,
+): string => {
+    if (configured === "~") return home;
+    if (configured.startsWith("~/") || configured.startsWith("~\\")) {
+        return join(home, configured.slice(2));
+    }
+    return resolve(configured);
+};
 
 export const readTextIfExists = (path: string): string | null =>
     existsSync(path) ? readFileSync(path, "utf-8") : null;

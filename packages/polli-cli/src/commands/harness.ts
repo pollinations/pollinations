@@ -16,7 +16,10 @@ const OFF_MESSAGES = {
     unchanged: "was not connected; nothing changed.",
 };
 
-const runOn = async (harness: HarnessAdapter, options: HarnessOnOptions) => {
+export const runOn = async (
+    harness: HarnessAdapter,
+    options: HarnessOnOptions,
+) => {
     try {
         const result = await harness.on(context(), options);
         if (!result.configured) {
@@ -66,7 +69,10 @@ const withOnOptions = (command: Command, supportsMcp: boolean) => {
     return command;
 };
 
-const mergeOnOptions = (parent: Command, child: Command): HarnessOnOptions => {
+export const mergeOnOptions = (
+    parent: Command,
+    child: Command,
+): HarnessOnOptions => {
     const keys = new Set([
         ...Object.keys(parent.opts()),
         ...Object.keys(child.opts()),
@@ -75,15 +81,17 @@ const mergeOnOptions = (parent: Command, child: Command): HarnessOnOptions => {
     for (const key of keys) {
         const childSource = child.getOptionValueSource(key);
         const parentSource = parent.getOptionValueSource(key);
-        const source =
-            childSource !== undefined && childSource !== "default"
-                ? child
-                : parentSource !== undefined && parentSource !== "default"
-                  ? parent
-                  : childSource === "default"
-                    ? child
-                    : parent;
-        const value = source.opts()[key];
+        // Explicit child flags win, then explicit parent flags; Commander’s
+        // defaults fill the remaining gaps without masking either flag.
+        const childIsExplicit =
+            childSource !== undefined && childSource !== "default";
+        const parentIsExplicit =
+            parentSource !== undefined && parentSource !== "default";
+        let value: unknown;
+        if (childIsExplicit) value = child.opts()[key];
+        else if (parentIsExplicit) value = parent.opts()[key];
+        else if (childSource === "default") value = child.opts()[key];
+        else value = parent.opts()[key];
         if (value !== undefined) merged[key] = value;
     }
     return merged as HarnessOnOptions;

@@ -19,7 +19,7 @@ polli harness <harness> off
 - `status` shows whether the harness is ready to use Pollinations.
 - `off` removes only the Pollinations setup and preserves unrelated configuration.
 
-If Polli is not installed yet, run the first setup through `npx @pollinations/cli`. Login uses the browser device flow by default. Each harness receives its own API key instead of reusing the account key stored by `polli auth login`.
+If Polli is not installed yet, run the first setup through `npx @pollinations/cli`. Login uses the browser device flow by default; the account key used to mint a harness key needs `account:keys`. Each harness receives its own uniquely named `polli-harness-<id>-*` API key instead of reusing the account key stored by `polli auth login`.
 
 ## Harnesses
 
@@ -52,11 +52,13 @@ polli harness prime off
 
 Prime Agent reads global configuration from `~/.prime/agent` by default. Set
 `PRIME_AGENT_CODING_AGENT_DIR` to use another official config directory. The
-adapter writes `models.json`, `settings.json`, and `skills/polli/SKILL.md`,
+adapter writes the provider/model metadata to `models.json`, plus
+`settings.json` and `skills/polli/SKILL.md`,
 and stores a private reversible snapshot under `~/.pollinations/harnesses/`.
 It discovers live Pollinations text models that support tools, sets both
 `defaultProvider` and `defaultModel`, and reuses or creates the dedicated
-`polli-harness-prime` key without printing it. If Prime Agent is missing, `on`
+`polli-harness-prime-*` key without printing it. The account key used to mint it
+needs `account:keys`. If Prime Agent is missing, `on`
 prints the official install command:
 
 ```bash
@@ -71,3 +73,7 @@ shell installer into PowerShell or Command Prompt.
 files after `on`, it surgically removes only Pollinations-owned provider,
 default, and skill entries; Prime sessions, memories, and unrelated settings
 remain in place.
+
+Pi's native integration keeps its dedicated credential in `auth.json`, while
+Prime Agent keeps its Pollinations provider, models, and credential in
+`models.json`.

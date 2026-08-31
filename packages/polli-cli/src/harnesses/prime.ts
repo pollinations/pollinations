@@ -1,9 +1,14 @@
 import { createHash } from "node:crypto";
 import { accessSync, constants, existsSync, statSync } from "node:fs";
-import { delimiter, dirname, join, resolve } from "node:path";
+import { delimiter, dirname, join } from "node:path";
 import polliSkill from "../../SKILL.md?raw";
 import { BASE_URL } from "../lib/config.js";
-import { readTextIfExists, removeIfExists, writeTextAtomic } from "./fs.js";
+import {
+    readTextIfExists,
+    removeIfExists,
+    resolveHarnessPath,
+    writeTextAtomic,
+} from "./fs.js";
 import {
     inspectHarnessKey,
     isSecretHarnessKey,
@@ -424,9 +429,7 @@ const status = async (ctx: HarnessContext): Promise<HarnessResult> => {
         if (!isSecretHarnessKey(key)) return { ...result, configured: false };
         const keyInfo = await inspectHarnessKey(key);
         if (!keyInfo) return { ...result, configured: false };
-        const allowedModels = (
-            keyInfo as { permissions?: { models?: unknown } }
-        ).permissions?.models;
+        const allowedModels = keyInfo.permissions?.models;
         if (
             Array.isArray(allowedModels) &&
             typeof result.model === "string" &&
@@ -602,11 +605,7 @@ const stripConfig = (
 export const primeHome = (ctx: HarnessContext): string => {
     const configured = ctx.env[PRIME_AGENT_DIR_ENV];
     if (!configured?.trim()) return join(ctx.home, ".prime", "agent");
-    if (configured === "~") return ctx.home;
-    if (configured.startsWith("~/") || configured.startsWith("~\\")) {
-        return join(ctx.home, configured.slice(2));
-    }
-    return resolve(configured);
+    return resolveHarnessPath(configured, ctx.home);
 };
 
 const modelsPath = (ctx: HarnessContext) => join(primeHome(ctx), "models.json");

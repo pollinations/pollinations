@@ -142,15 +142,19 @@ polli harness prime off
 ```
 
 The DSH adapter configures the Pollinations provider, hosted Pollinations MCP,
-and Polli CLI skill globally under `$DSH_HOME` (default `~/.dsh`).
+and Polli CLI skill globally under `$DSH_HOME` (default `~/.dsh`). Its child key
+is uniquely named `polli-harness-dsh-*`.
 
 The Prime Agent adapter uses `~/.prime/agent` (or
 `PRIME_AGENT_CODING_AGENT_DIR`) and writes only its official `models.json`,
 `settings.json`, and `skills/polli/SKILL.md` files. It discovers live
 tool-capable text models, sets Prime's `defaultProvider`/`defaultModel`, and
-uses a dedicated `polli-harness-prime` key without printing it. If Prime Agent
+uses a dedicated uniquely named `polli-harness-prime-*` key without printing it.
+The account key used to mint a harness key needs `account:keys`. If Prime Agent
 is missing, `on` prints the official install command. `off` restores untouched
 files byte-for-byte or removes only Pollinations-owned entries after edits.
+For comparison, Pi stores its dedicated credential in native `auth.json`,
+whereas Prime stores its provider, models, and credential in `models.json`.
 
 See [Coding Harnesses](https://github.com/pollinations/pollinations/blob/main/CODING_HARNESSES.md) for what each profile changes and how to add one.
 

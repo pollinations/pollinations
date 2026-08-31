@@ -13,16 +13,24 @@ export const normalizeSecretKey = (key: unknown): string | null => {
 export const isSecretHarnessKey = (key: unknown): key is string =>
     normalizeSecretKey(key) !== null;
 
+export interface InspectHarnessKeyResponse {
+    valid: boolean;
+    type?: string;
+    permissions?: {
+        models?: string[] | null;
+        account?: string[] | null;
+    } | null;
+}
+
 // gen's response cache can answer an unauthenticated prompt, so a chat
 // completion proves nothing — check the key itself.
-export const inspectHarnessKey = async (key: string) => {
+export const inspectHarnessKey = async (
+    key: string,
+): Promise<InspectHarnessKeyResponse | null> => {
     const normalized = normalizeSecretKey(key);
     if (!normalized) return null;
     try {
-        const info = await gen<{
-            valid: boolean;
-            type?: string;
-        }>("/account/key", {
+        const info = await gen<InspectHarnessKeyResponse>("/account/key", {
             apiKey: normalized,
         });
         if (info.valid !== true || (info.type && info.type !== "secret")) {

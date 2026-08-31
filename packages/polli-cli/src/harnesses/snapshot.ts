@@ -58,8 +58,13 @@ const sha256 = (content: string) =>
 const contentHash = (content: string | null) =>
     content === null ? null : sha256(content);
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-    typeof value === "object" && value !== null && !Array.isArray(value);
+const isRecord = (value: unknown): value is Record<string, unknown> => {
+    if (typeof value !== "object" || value === null || Array.isArray(value)) {
+        return false;
+    }
+    const prototype = Object.getPrototypeOf(value);
+    return prototype === Object.prototype || prototype === null;
+};
 
 const exactKeys = (value: Record<string, unknown>, keys: string[]) => {
     const actual = Object.keys(value).sort();
@@ -177,11 +182,20 @@ const parsePersistedSnapshot = (
             "metadata",
         ]);
     const legacySchema = exactKeys(parsed, ["complete", "files"]);
-    if (!currentSchema && !legacySchema) {
+    const legacyMetadataSchema = exactKeys(parsed, [
+        "complete",
+        "files",
+        "metadata",
+    ]);
+    if (!currentSchema && !legacySchema && !legacyMetadataSchema) {
         throw new Error(`Invalid harness snapshot ${path}: unexpected schema`);
     }
-    if (legacySchema) {
-        if (typeof parsed.complete !== "boolean" || !isRecord(parsed.files)) {
+    if (legacySchema || legacyMetadataSchema) {
+        if (
+            typeof parsed.complete !== "boolean" ||
+            !isRecord(parsed.files) ||
+            (legacyMetadataSchema && !isRecord(parsed.metadata))
+        ) {
             throw new Error(
                 `Invalid harness snapshot ${path}: invalid legacy schema`,
             );
@@ -193,6 +207,7 @@ const parsePersistedSnapshot = (
             false,
             parsed.complete,
             false,
+            legacyMetadataSchema ? parsed.metadata : undefined,
         );
     }
     if (parsed.version !== SNAPSHOT_VERSION) {

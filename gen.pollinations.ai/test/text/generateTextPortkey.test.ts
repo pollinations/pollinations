@@ -200,17 +200,17 @@ describe("generateTextPortkey", () => {
         expect(completion.choices?.[0]?.message?.content).toBe("ok");
     });
 
-    it("normalizes options once before the provider pipeline", async () => {
+    it("preserves numeric options through the provider pipeline", async () => {
         const fetcher = vi.fn(
             async (_input: RequestInfo | URL, init?: RequestInit) => {
                 expect(JSON.parse(String(init?.body))).toMatchObject({
                     model: "provider-model",
                     stream: false,
-                    temperature: 3,
-                    top_p: 0,
-                    presence_penalty: 2,
-                    frequency_penalty: -2,
-                    seed: 4,
+                    temperature: 4,
+                    top_p: -1,
+                    presence_penalty: 3,
+                    frequency_penalty: -3,
+                    seed: 4.9,
                     response_format: { type: "json_object" },
                 });
                 return Response.json({

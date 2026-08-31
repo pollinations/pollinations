@@ -31,7 +31,7 @@ const OPENAI_REALTIME_COST = {
 export const REALTIME_SERVICES = {
     [DEFAULT_REALTIME_MODEL]: {
         ...OPENAI_REALTIME_BASE,
-        aliases: ["openai/gpt-realtime-2.1"],
+        aliases: ["openai/gpt-realtime-2.1", "gpt-realtime-2"],
         addedDate: new Date("2026-07-16").getTime(),
         cost: OPENAI_REALTIME_COST,
         billing: OPENAI_REALTIME_CACHE_BILLING,
@@ -70,16 +70,6 @@ export const REALTIME_SERVICES = {
             "marin",
             "cedar",
         ],
-    },
-    "gpt-realtime-2": {
-        ...OPENAI_REALTIME_BASE,
-        aliases: ["openai/gpt-realtime-2"],
-        addedDate: new Date("2026-05-23").getTime(),
-        cost: OPENAI_REALTIME_COST,
-        billing: OPENAI_REALTIME_CACHE_BILLING,
-        title: "GPT Realtime 2",
-        description: "Live voice conversations with instant, reasoned replies",
-        contextLength: 128000,
     },
     "scribe-realtime": {
         aliases: ["elevenlabs/scribe-v2-realtime"],

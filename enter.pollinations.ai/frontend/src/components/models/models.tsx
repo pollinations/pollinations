@@ -252,6 +252,7 @@ export const Models: FC = () => {
         activeScope === "community"
             ? getAvailableModelSections(scopedModels)
             : POLLINATIONS_SECTION_ORDER;
+
     const hasAgents = scopedModels.some((model) => model.agent);
     const scopeLabel = SCOPE_LABELS[activeScope];
     const searchLabel = SEARCH_LABELS[activeTab];
@@ -326,7 +327,7 @@ export const Models: FC = () => {
         void navigate({
             search: (previous) => ({
                 ...previous,
-                sort: sort === "newest" ? undefined : sort,
+                sort: sort === "popular" ? undefined : sort,
             }),
         });
     };

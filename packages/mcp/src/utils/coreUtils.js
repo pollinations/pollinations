@@ -1,16 +1,14 @@
 import { getAuthHeaders } from "./authUtils.js";
 
 const DEFAULT_API_BASE_URL = "https://gen.pollinations.ai";
-const MEDIA_UPLOAD_URL = "https://media.pollinations.ai/upload";
 const configuredApiBaseUrl =
     typeof process !== "undefined"
         ? process.env?.POLLINATIONS_BASE_URL?.trim()
         : undefined;
 
-const API_BASE_URL = (configuredApiBaseUrl || DEFAULT_API_BASE_URL).replace(
-    /\/+$/,
-    "",
-);
+export const API_BASE_URL = (
+    configuredApiBaseUrl || DEFAULT_API_BASE_URL
+).replace(/\/+$/, "");
 
 export function validateApiBaseUrl() {
     let url;
@@ -21,193 +19,82 @@ export function validateApiBaseUrl() {
             "Invalid POLLINATIONS_BASE_URL: expected an absolute HTTP(S) URL.",
         );
     }
-    if (!["http:", "https:"].includes(url.protocol)) {
+    if (
+        !["http:", "https:"].includes(url.protocol) ||
+        url.username ||
+        url.password ||
+        url.search ||
+        url.hash
+    ) {
         throw new Error(
-            "Invalid POLLINATIONS_BASE_URL: expected an absolute HTTP(S) URL.",
-        );
-    }
-    if (url.username || url.password) {
-        throw new Error(
-            "Invalid POLLINATIONS_BASE_URL: credentials in the URL are not supported.",
-        );
-    }
-    if (url.search || url.hash) {
-        throw new Error(
-            "Invalid POLLINATIONS_BASE_URL: query strings and fragments are not supported.",
+            "Invalid POLLINATIONS_BASE_URL: expected an HTTP(S) origin without credentials, query, or fragment.",
         );
     }
     return API_BASE_URL;
 }
 
-function createApiUrl(path) {
-    const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-    return new URL(`${API_BASE_URL}${normalizedPath}`);
-}
-
-/**
- * @param {Array} content - Array of content objects (text, image, etc.)
- * @returns {Object} - MCP response object
- */
 export function createMCPResponse(content) {
     return { content };
 }
 
-/**
- * @param {string|Object} text - Text content or object to stringify
- * @param {boolean} [stringify=false] - Whether to stringify the text if it's an object
- * @returns {Object} - Text content object
- */
-export function createTextContent(text, stringify = false) {
+export function createTextContent(value, stringify = false) {
     return {
         type: "text",
-        text: stringify ? JSON.stringify(text, null, 2) : text,
+        text: stringify ? JSON.stringify(value, null, 2) : value,
     };
 }
 
-/**
- * @param {string} path - URL path (will be appended to API_BASE_URL)
- * @param {Object} params - Query parameters
- * @returns {string} - Complete URL
- */
 export function buildUrl(path, params = {}) {
-    const url = createApiUrl(path);
-    Object.entries(params).forEach(([key, value]) => {
+    const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+    const url = new URL(`${API_BASE_URL}${normalizedPath}`);
+    for (const [key, value] of Object.entries(params)) {
         if (value !== undefined && value !== null) {
             url.searchParams.set(
                 key,
                 Array.isArray(value) ? value.join("|") : String(value),
             );
         }
-    });
+    }
     return url.toString();
 }
 
-/**
- * @param {string} url - URL to fetch
- * @param {Object} options - Fetch options
- * @returns {Promise<Response>} - Fetch response
- */
 export async function fetchWithAuth(url, options = {}, context) {
-    const headers = {
-        ...options.headers,
-        ...getAuthHeaders(context),
-    };
-    return fetch(url, { ...options, headers });
+    const { timeoutMs = 30000, ...fetchOptions } = options;
+    return fetch(url, {
+        ...fetchOptions,
+        headers: {
+            ...fetchOptions.headers,
+            ...getAuthHeaders(context),
+        },
+        signal: fetchOptions.signal || AbortSignal.timeout(timeoutMs),
+    });
 }
 
 export async function fetchResponseWithAuth(url, options = {}, context) {
     const response = await fetchWithAuth(url, options, context);
     if (!response.ok) {
-        const errorText = await response.text().catch(() => "Unknown error");
-        throw new Error(parseApiError(response.status, errorText));
+        const body = await response.text().catch(() => response.statusText);
+        throw new Error(`Request failed (${response.status}): ${body}`);
     }
     return response;
 }
 
-/**
- * @param {string} url - URL to fetch
- * @param {Object} options - Fetch options
- * @returns {Promise<Object>} - Parsed JSON response
- */
 export async function fetchJsonWithAuth(url, options = {}, context) {
-    const response = await fetchResponseWithAuth(url, options, context);
-    return response.json();
+    return (await fetchResponseWithAuth(url, options, context)).json();
 }
 
-/**
- * POST a chat-completion request body to /v1/chat/completions.
- * Strips null/undefined keys, maps errors, and parses the JSON response.
- *
- * @param {Object} body - Request body (null/undefined fields are stripped)
- * @returns {Promise<Object>} - Parsed chat-completion response
- */
 export async function postChatCompletion(body, context) {
-    const cleanedBody = {};
-    for (const [key, value] of Object.entries(body)) {
-        if (value !== undefined && value !== null) {
-            cleanedBody[key] = value;
-        }
-    }
-
     return fetchJsonWithAuth(
         buildUrl("/v1/chat/completions"),
         {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(cleanedBody),
+            body: JSON.stringify(body),
         },
         context,
     );
 }
 
-/**
- * @param {string} url - URL to fetch
- * @param {Object} options - Fetch options
- * @returns {Promise<{contentType: string, mediaUrl: string}>} - Content type and uploaded public URL
- */
-export async function fetchAndUploadMedia(url, options = {}, context) {
-    const response = await fetchResponseWithAuth(url, options, context);
-    const contentType =
-        response.headers.get("content-type") || "application/octet-stream";
-    const form = new FormData();
-    form.append(
-        "file",
-        new Blob([await response.arrayBuffer()], { type: contentType }),
-        "generation",
-    );
-    const upload = await fetchResponseWithAuth(
-        MEDIA_UPLOAD_URL,
-        { method: "POST", body: form },
-        context,
-    );
-    const result = await upload.json();
-    if (!result?.url) throw new Error("Media upload returned no URL");
-    return { contentType, mediaUrl: result.url };
-}
-
-/**
- * @param {number} status - HTTP status code
- * @param {string} errorText - Raw error text from response
- * @returns {string} - User-friendly error message
- */
-export function parseApiError(status, errorText) {
-    let parsed = null;
-    try {
-        parsed = JSON.parse(errorText);
-    } catch {}
-    const errorMessage =
-        parsed?.error?.message || parsed?.message || parsed?.error || errorText;
-    switch (status) {
-        case 400:
-            if (
-                errorMessage.toLowerCase().includes("content moderation") ||
-                errorMessage.toLowerCase().includes("safety") ||
-                errorMessage.toLowerCase().includes("blocked")
-            ) {
-                return `Content blocked by safety filters. Try rephrasing your prompt or disable 'safe' mode if appropriate.`;
-            }
-            if (errorMessage.toLowerCase().includes("invalid model")) {
-                return `Invalid model specified. Use listModels to see available options.`;
-            }
-            return `Bad request: ${errorMessage}`;
-        case 401:
-            return `Authentication failed. Please set a valid API key using setApiKey. Get your key at https://enter.pollinations.ai/keys`;
-        case 403:
-            return `Access forbidden. Your API key may not have permission for this operation.`;
-        case 404:
-            return `Resource not found. The requested endpoint or model may not exist.`;
-        case 429:
-            return (
-                `Rate limited. You're making too many requests. ` +
-                `If using pk_ (publishable) key, consider upgrading to sk_ (secret) key for higher limits.`
-            );
-        case 500:
-            return `Server error: ${errorMessage}. Please try again later.`;
-        case 502:
-        case 503:
-        case 504:
-            return `Service temporarily unavailable. Please try again in a few moments.`;
-        default:
-            return `Request failed (${status}): ${errorMessage}`;
-    }
+export function arrayBufferToBase64(buffer) {
+    return Buffer.from(buffer).toString("base64");
 }

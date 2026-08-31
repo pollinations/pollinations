@@ -2,240 +2,160 @@
 import assert from "node:assert/strict";
 import http from "node:http";
 import path from "node:path";
-/**
- * End-to-end smoke test for the Pollinations MCP server.
- *
- * Spawns the server over stdio and tests tool/model listing without external
- * network access.
- * With a sk_ key from env, also exercises a small live slice.
- *
- *   POLLINATIONS_API_KEY=sk_xxx npm run test
- */
 import { fileURLToPath } from "node:url";
 import { Client } from "@modelcontextprotocol/client";
 import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
 import { fetchWithAuth } from "./src/utils/coreUtils.js";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const KEY = process.env.POLLINATIONS_API_KEY;
-const BASE_URL = process.env.POLLINATIONS_BASE_URL;
+const directory = path.dirname(fileURLToPath(import.meta.url));
+const apiKey = process.env.POLLINATIONS_API_KEY;
+let testBaseUrl = process.env.POLLINATIONS_BASE_URL;
+let offlineServer;
 
-let offlineRegistryServer;
-let testBaseUrl = BASE_URL;
-if (!KEY) {
-    offlineRegistryServer = http.createServer((req, res) => {
-        if (
-            req.url !== "/api/text/models" ||
-            req.headers.authorization !== undefined
-        ) {
-            res.writeHead(404);
-            res.end();
+if (!apiKey) {
+    offlineServer = http.createServer((request, response) => {
+        if (request.url !== "/api/models") {
+            response.writeHead(404).end();
             return;
         }
-        res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify([{ name: "offline-test" }]));
+        response.writeHead(200, { "Content-Type": "application/json" });
+        response.end(JSON.stringify([{ name: "offline-test" }]));
     });
     await new Promise((resolve) =>
-        offlineRegistryServer.listen(0, "127.0.0.1", resolve),
+        offlineServer.listen(0, "127.0.0.1", resolve),
     );
-    const address = offlineRegistryServer.address();
-    testBaseUrl = `http://127.0.0.1:${address.port}/api`;
+    testBaseUrl = `http://127.0.0.1:${offlineServer.address().port}/api`;
 }
 
-const EXPECTED_TOOLS = [
-    "clearApiKey",
+const expectedTools = [
+    "chatCompletion",
     "createEmbeddings",
     "generate3D",
     "generateAudio",
     "generateImage",
-    "generateText",
     "generateVideo",
     "getBalance",
-    "getKeyInfo",
     "getModelStatus",
+    "getUsage",
     "listModels",
-    "setApiKey",
+    "textToSpeech",
     "transcribeAudio",
 ];
 
-const createTransport = () =>
-    new StdioClientTransport({
+function transport() {
+    return new StdioClientTransport({
         command: "node",
-        args: [path.join(__dirname, "pollinations-mcp.js")],
-        env: testBaseUrl ? { POLLINATIONS_BASE_URL: testBaseUrl } : undefined,
+        args: [path.join(directory, "src/index.js")],
+        env: {
+            ...process.env,
+            ...(testBaseUrl ? { POLLINATIONS_BASE_URL: testBaseUrl } : {}),
+            ...(apiKey ? { POLLINATIONS_API_KEY: apiKey } : {}),
+        },
     });
+}
 
-async function connectClient(options = {}) {
+async function connect(options = {}) {
     const client = new Client(
         { name: "mcp-smoke-test", version: "0.0.1" },
         { capabilities: {}, ...options },
     );
-    await client.connect(createTransport());
+    await client.connect(transport());
     return client;
 }
 
 const results = [];
-let modernTools;
-const trim = (s, n = 200) => {
-    const str = typeof s === "string" ? s : JSON.stringify(s);
-    return str.length > n ? `${str.slice(0, n)}…` : str;
-};
-
-async function step(name, fn) {
+async function step(name, run) {
     try {
-        const detail = await fn();
-        console.log(`[PASS] ${name}${detail ? ` — ${trim(detail)}` : ""}`);
+        await run();
+        console.log(`[PASS] ${name}`);
         results.push(true);
-    } catch (e) {
-        console.log(`[FAIL] ${name} — ${e.message}`);
+    } catch (error) {
+        console.log(`[FAIL] ${name} — ${error.message}`);
         results.push(false);
     }
 }
 
-async function call(name, args = {}) {
-    const res = await client.callTool({ name, arguments: args });
-    if (res.isError) {
-        throw new Error(res.content?.[0]?.text || "tool error");
-    }
-    return res.content?.[0]?.text;
-}
-
-const client = await connectClient({
-    versionNegotiation: { mode: "auto" },
+const modern = await connect({ versionNegotiation: { mode: "auto" } });
+let modernTools;
+await step("modern protocol and complete tool surface", async () => {
+    assert.equal(modern.getProtocolEra(), "modern");
+    modernTools = (await modern.listTools()).tools;
+    assert.deepEqual(modernTools.map(({ name }) => name).sort(), expectedTools);
 });
 
-await step("modern protocol negotiation", () => {
-    const era = client.getProtocolEra();
-    if (era !== "modern") throw new Error(`expected modern, received ${era}`);
-    return era;
-});
-
-await step("modern listTools", async () => {
-    const { tools } = await client.listTools();
-    modernTools = tools;
-    const actual = tools.map(({ name }) => name).sort();
-    if (JSON.stringify(actual) !== JSON.stringify(EXPECTED_TOOLS)) {
-        throw new Error(`unexpected tools: ${actual.join(", ")}`);
-    }
-    return `${tools.length} tools`;
-});
-
-await step("model discovery guidance", () => {
-    const instructions = client.getInstructions();
-    assert.match(
-        instructions,
-        /Never decide that a requested model is unavailable based on prior knowledge/,
-    );
-    assert.match(
-        instructions,
-        /call listModels with the relevant modality first/,
-    );
-
+await step("thin-proxy guidance", () => {
+    assert.match(modern.getInstructions(), /Gen owns model aliases, defaults/);
     const tools = new Map(modernTools.map((tool) => [tool.name, tool]));
-    assert.match(
-        tools.get("listModels").description,
-        /before claiming that a named model or agent is unavailable/,
-    );
-    assert.match(
-        tools.get("listModels").inputSchema.properties.agent.description,
-        /True for agents only/,
-    );
-    assert.match(
-        tools.get("generateText").description,
-        /any text model or agent in the live Pollinations registry/,
-    );
-    assert.match(
-        tools.get("generateImage").description,
-        /any image model in the live Pollinations registry/,
-    );
-    assert.match(
-        tools.get("generateText").inputSchema.properties.model.description,
-        /Canonical text model or agent name returned by listModels/,
-    );
-    assert.match(
-        tools.get("generateImage").inputSchema.properties.model.description,
-        /Canonical image model name or alias returned by listModels/,
-    );
-    return "instructions and tool descriptions";
+    assert.match(tools.get("listModels").description, /raw live Gen registry/);
+    assert.match(tools.get("chatCompletion").description, /raw JSON response/);
 });
 
-await step("listModels (unauthenticated)", () =>
-    call("listModels", { type: "text" }),
-);
-
-const legacyClient = await connectClient();
-await step("legacy protocol fallback", async () => {
-    const era = legacyClient.getProtocolEra();
-    if (era !== "legacy") throw new Error(`expected legacy, received ${era}`);
-    const { tools } = await legacyClient.listTools();
-    const actual = tools.map(({ name }) => name).sort();
-    if (JSON.stringify(actual) !== JSON.stringify(EXPECTED_TOOLS)) {
-        throw new Error(`unexpected tools: ${actual.join(", ")}`);
-    }
-    assert.deepEqual(tools, modernTools);
-    return `${era}, ${tools.length} tools`;
+await step("raw model discovery", async () => {
+    const result = await modern.callTool({
+        name: "listModels",
+        arguments: {},
+    });
+    assert.match(result.content[0].text, /offline-test|openai/);
 });
-await legacyClient.close();
 
-if (!KEY) {
-    await step("fetchWithAuth respects caller cancellation", async () => {
+const legacy = await connect();
+await step("legacy protocol and identical tools", async () => {
+    assert.equal(legacy.getProtocolEra(), "legacy");
+    assert.deepEqual((await legacy.listTools()).tools, modernTools);
+});
+await legacy.close();
+
+if (!apiKey) {
+    await step("caller cancellation", async () => {
         const controller = new AbortController();
         controller.abort();
-
-        try {
-            await fetchWithAuth(`${testBaseUrl}/text/models`, {
+        await assert.rejects(
+            fetchWithAuth(`${testBaseUrl}/models`, {
                 signal: controller.signal,
-            });
-        } catch (error) {
-            if (error.name === "AbortError") return "aborted";
-            throw error;
-        }
-        throw new Error("request ignored the caller's abort signal");
+            }),
+            { name: "AbortError" },
+        );
     });
-
-    console.log(
-        "\nSkipping live calls — set POLLINATIONS_API_KEY=sk_… to exercise the full path.",
-    );
+    console.log("Skipping live generation calls; set POLLINATIONS_API_KEY.");
 } else {
-    await step("setApiKey", () => call("setApiKey", { key: KEY }));
-    await step("getKeyInfo", () => call("getKeyInfo"));
-    await step("generateText", async () => {
-        const out = await call("generateText", {
-            messages: [{ role: "user", content: "Reply with exactly: pong" }],
-            model: "openai-fast",
+    await step("live chat", async () => {
+        const result = await modern.callTool({
+            name: "chatCompletion",
+            arguments: {
+                model: "openai-fast",
+                messages: [
+                    { role: "user", content: "Reply with exactly: pong" },
+                ],
+            },
         });
-        if (!/pong/i.test(out)) throw new Error(`unexpected: ${trim(out)}`);
-        return out;
+        assert.match(result.content[0].text, /pong/i);
     });
-    await step("generateImage (url)", async () => {
-        const result = await client.callTool({
+    await step("live image URL", async () => {
+        const result = await modern.callTool({
             name: "generateImage",
             arguments: {
                 prompt: "a small red apple",
                 model: "flux",
-                size: "256x256",
+                width: 256,
+                height: 256,
             },
         });
-        if (result.isError) {
-            throw new Error(result.content?.[0]?.text || "tool error");
-        }
-        const link = result.content?.find(
-            (part) => part.type === "resource_link",
-        );
-        if (!link || !/pollinations\.ai/.test(link.uri)) {
-            throw new Error(`no resource link: ${trim(result.content)}`);
-        }
-        return link.uri;
+        assert.match(result.content[0].text, /pollinations\.ai\/image\//);
     });
-    await step("getBalance", () => call("getBalance"));
-    await step("clearApiKey", () => call("clearApiKey"));
+    await step("live balance", async () => {
+        const result = await modern.callTool({
+            name: "getBalance",
+            arguments: {},
+        });
+        assert.match(result.content[0].text, /balance/i);
+    });
 }
 
-await client.close();
-if (offlineRegistryServer) {
-    await new Promise((resolve) => offlineRegistryServer.close(resolve));
+await modern.close();
+if (offlineServer) {
+    await new Promise((resolve) => offlineServer.close(resolve));
 }
 
 const passed = results.filter(Boolean).length;
-console.log(`\n${passed}/${results.length} passed`);
+console.log(`${passed}/${results.length} passed`);
 process.exit(passed === results.length ? 0 : 1);

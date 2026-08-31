@@ -26,8 +26,12 @@ test("transcribes public audio through the Pollinations API", async (t) => {
             assert.equal(init.headers.Authorization, "Bearer sk_test");
             assert.equal(init.body.get("model"), "gpt-transcribe");
             assert.equal(init.body.get("language"), "en");
+            assert.equal(init.body.get("speakers_expected"), "2");
             assert.equal(init.body.get("file").size, 3);
-            return Response.json({ text: "Hello from the recording." });
+            return Response.json({
+                text: "Hello from the recording.",
+                provider_extension: { speakers: 2 },
+            });
         }
         throw new Error(`Unexpected URL: ${url}`);
     };
@@ -37,12 +41,25 @@ test("transcribes public audio through the Pollinations API", async (t) => {
             source: SOURCE,
             model: "gpt-transcribe",
             language: "en",
+            speakers_expected: 2,
         },
         CONTEXT,
     );
 
     assert.deepEqual(result, {
-        content: [{ type: "text", text: "Hello from the recording." }],
+        content: [
+            {
+                type: "text",
+                text: JSON.stringify(
+                    {
+                        text: "Hello from the recording.",
+                        provider_extension: { speakers: 2 },
+                    },
+                    null,
+                    2,
+                ),
+            },
+        ],
     });
     assert.equal(calls.length, 2);
 });

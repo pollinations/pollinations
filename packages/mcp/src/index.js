@@ -1,6 +1,4 @@
-/**
- * pollinations.ai MCP stdio entry point
- */
+#!/usr/bin/env node
 
 import { createRequire } from "node:module";
 import { pathToFileURL } from "node:url";
@@ -31,18 +29,11 @@ export async function startMcpServer() {
         process.on("SIGTERM", () => process.exit(0));
         process.stdin.on("close", () => process.exit(0));
 
-        serveStdio(
-            () =>
-                buildServer({
-                    apiBaseUrl,
-                    version: SERVER_VERSION,
-                }),
-            {
-                onerror: (error) => {
-                    console.error(`Server error: ${error.message}`);
-                },
+        serveStdio(() => buildServer({ apiBaseUrl, version: SERVER_VERSION }), {
+            onerror: (error) => {
+                console.error(`Server error: ${error.message}`);
             },
-        );
+        });
 
         console.error(
             `Pollinations MCP Server v${SERVER_VERSION} running on stdio`,

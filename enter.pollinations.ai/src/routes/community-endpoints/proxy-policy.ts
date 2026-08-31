@@ -1,6 +1,6 @@
 import {
-    COMMUNITY_ENDPOINT_INPUT_MODALITIES,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
+    COMMUNITY_MODALITY_SPEC,
     type CommunityEndpointAdvertised,
     type CommunityEndpointImagePricing,
     type CommunityEndpointModality,
@@ -14,6 +14,7 @@ import {
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MAX_COMMUNITY_PRICE_PER_SECOND,
     MAX_COMMUNITY_PRICE_PER_TOKEN,
+    MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND,
     normalizeCommunityEndpointInputModalities,
     type ProxyListingPayload,
 } from "@shared/community-endpoints.ts";
@@ -39,6 +40,10 @@ const PRICE_LIMIT_BY_UNIT = {
     second: {
         maximum: MAX_COMMUNITY_PRICE_PER_SECOND,
         label: `${MAX_COMMUNITY_PRICE_PER_SECOND} Pollen per second`,
+    },
+    video_second: {
+        maximum: MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND,
+        label: `${MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND} Pollen per second`,
     },
     token: {
         maximum: MAX_COMMUNITY_PRICE_PER_TOKEN,
@@ -71,7 +76,7 @@ function assertInputModalities(
     modality: CommunityEndpointModality,
     inputModalities: readonly string[],
 ): void {
-    const permitted = COMMUNITY_ENDPOINT_INPUT_MODALITIES[modality];
+    const permitted = COMMUNITY_MODALITY_SPEC[modality].inputModalities;
     const unsupported = inputModalities.find(
         (input) => !(permitted as readonly string[]).includes(input),
     );

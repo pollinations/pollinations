@@ -8,7 +8,7 @@ allowed-tools: Bash(polli *)
 
 Thin wrapper around `gen.pollinations.ai`. Generates images, text, audio, video; transcribes speech; manages API keys, usage, quests, agents, and invite-only my-models.
 
-Install: `npm i -g @pollinations/cli@latest` (provides the `polli` binary).
+If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides the `polli` binary).
 
 ## When to use this skill
 
@@ -43,6 +43,7 @@ Install: `npm i -g @pollinations/cli@latest` (provides the `polli` binary).
 | List your quests + claim state | `polli quests` (filters: `--open --claimable --claimed --coming-soon`) |
 | Manage prompt agents | `polli agents list` |
 | Manage invite-only community models | `polli my-models list` |
+| Connect a coding harness to Pollinations | `polli harness <dsh\|opencode\|pi> on` (available adapters: `polli harness --help`) |
 | Machine-readable output | append `--json` to any command |
 
 ## Setup
@@ -202,6 +203,23 @@ polli keys create --name "my-app" --type publishable --redirect-uri https://app.
 polli keys revoke <id>                                             # id comes from `keys list --json`
 ```
 `--permissions <perms...>` scopes what the new key can do on the account (e.g. `profile usage` lets it call `polli --key <new> usage`). **Without `--permissions`, new scoped keys can generate media but cannot read account state** — `polli --key <new> usage` will 403. `"keys"` is auto-stripped from the list so a scoped key can never mint further keys. Existing keys with `account:keys` can manage my-models where that invite-only feature is enabled, but still need `account:usage` for read-only account state. Publishable app keys default developer earnings off; pass `--earnings` to enable them. To inspect a specific key other than the current one, use `polli keys list --json | jq '.[] | select(.id == "<id>")'`. `keys info` is intentionally scoped to the caller's own key.
+
+### Connect a coding harness
+```bash
+polli harness --help                # supported harnesses
+polli harness dsh on                # login if needed, mint key "polli-harness-dsh", write provider + default model
+polli harness dsh on --model kimi   # any tool-calling text model from `polli models`
+polli harness dsh on --no-mcp       # configure the provider and skill without MCP tools
+polli harness dsh off               # restore the config backed up before "on"
+polli harness opencode on           # enable the Pollinations OpenCode plugin
+polli harness opencode off          # remove the plugin setup and stored key
+polli harness pi on                 # login if needed, mint key "polli-harness-pi", configure Pi with Pollinations
+polli harness pi on --model kimi    # any tool-calling text model from `polli models`
+polli harness pi off                # restore the Pi config backed up before "on"
+```
+Each adapter checks that its harness can be launched before login, key creation, or configuration. DSH's official launch uses `npx`, so its adapter checks for `npx`; OpenCode and Pi require their installed commands.
+
+The DSH adapter globally configures the Pollinations provider, hosted Pollinations MCP, and this skill under `$DSH_HOME` (default `~/.dsh`). OpenCode enables the existing Pollinations plugin and stores its dedicated key in the plugin config. Pi writes `~/.pi/agent/models.json`, `auth.json`, and `settings.json`, and installs this skill under `~/.pi/agent/skills/polli/`. Guide: `polli docs` section "Coding Harnesses".
 
 ### Read API docs
 ```bash

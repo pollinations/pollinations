@@ -992,6 +992,11 @@ const CURATED_BODIES: Record<string, Json> = {
     postAccountMyModelsByIdUpdate: {
         description: "Updated model description",
     },
+    postAccountMyModelsEndpointAgents: {
+        name: "my-agent",
+        title: "My Agent",
+        baseUrl: "https://agent.example.com/v1",
+    },
     postAccountAgents: {
         name: "my-agent",
         title: "My Agent",

@@ -30,6 +30,7 @@ import {
     useRef,
     useState,
 } from "react";
+import { McpServerList } from "./mcp-server-list.tsx";
 import {
     type ApiModelInfo,
     fetchModelCatalog,
@@ -40,7 +41,11 @@ import {
     matchesModelQuery,
     parseModelQuery,
 } from "./model-query.ts";
-import type { ModelScope, ModelSort } from "./model-search.ts";
+import {
+    getAvailableModelSections,
+    type ModelScope,
+    type ModelSort,
+} from "./model-search.ts";
 import { sortModels } from "./model-sort.ts";
 import {
     type SectionType,
@@ -59,17 +64,11 @@ const POLLINATIONS_SECTION_ORDER: SectionType[] = [
     "audio",
     "realtime",
     "embedding",
+    "mcp",
 ];
 
-const COMMUNITY_SECTION_ORDER: SectionType[] = [
-    "all",
-    "text",
-    "image",
-    "agent",
-];
 const SCOPE_ORDER: ModelScope[] = ["pollinations", "community"];
 
-const MODEL_SLUG_ANNOUNCEMENT_URL = "/news#canonical-model-slugs";
 const MODEL_SLUG_LIST_URL =
     "https://github.com/pollinations/pollinations/blob/main/MODEL_SLUGS.md";
 
@@ -83,6 +82,11 @@ const SORT_OPTIONS: Array<{
     label: string;
     accessibleLabel: string;
 }> = [
+    {
+        value: "popular",
+        label: "Popular",
+        accessibleLabel: "Most popular",
+    },
     { value: "newest", label: "Newest", accessibleLabel: "Newest" },
     { value: "oldest", label: "Oldest", accessibleLabel: "Oldest" },
     {
@@ -123,6 +127,7 @@ const SEARCH_LABELS: Record<SectionType, string> = {
     text: "text",
     embedding: "embedding",
     agent: "agent",
+    mcp: "MCP server",
 };
 
 function categorizeModels(
@@ -138,6 +143,7 @@ function categorizeModels(
         text: [],
         embedding: [],
         agent: [],
+        mcp: [],
     };
 
     for (const model of models) {
@@ -182,7 +188,7 @@ export const Models: FC = () => {
     const modelSearch = useSearch({ from: "/_dashboard/models" });
     const activeScope = modelSearch.scope ?? "pollinations";
     const activeTab = modelSearch.category ?? "all";
-    const activeSort = modelSearch.sort ?? "newest";
+    const activeSort = modelSearch.sort ?? "popular";
     const urlSearch = modelSearch.q ?? "";
     const [search, setSearch] = useState(urlSearch);
     const [searchFocused, setSearchFocused] = useState(false);
@@ -215,8 +221,11 @@ export const Models: FC = () => {
         [parsedQuery, query, scopedModels],
     );
     const searchOptions = useMemo(
-        () => getModelQuerySuggestions(search, scopedModels),
-        [search, scopedModels],
+        () =>
+            activeTab === "mcp"
+                ? []
+                : getModelQuerySuggestions(search, scopedModels),
+        [activeTab, search, scopedModels],
     );
 
     useEffect(() => {
@@ -248,15 +257,18 @@ export const Models: FC = () => {
     );
     const sectionOrder =
         activeScope === "community"
-            ? COMMUNITY_SECTION_ORDER
+            ? getAvailableModelSections(scopedModels)
             : POLLINATIONS_SECTION_ORDER;
+
     const hasAgents = scopedModels.some((model) => model.agent);
     const scopeLabel = SCOPE_LABELS[activeScope];
     const searchLabel = SEARCH_LABELS[activeTab];
     const searchTarget =
-        activeTab === "all"
-            ? `${scopeLabel} models`
-            : `${scopeLabel} ${searchLabel} models`;
+        activeTab === "mcp"
+            ? "MCP servers"
+            : activeTab === "all"
+              ? `${scopeLabel} models`
+              : `${scopeLabel} ${searchLabel} models`;
 
     const pushSearch = useCallback(
         (nextSearch: string) => {
@@ -308,9 +320,9 @@ export const Models: FC = () => {
                 scope: scope === "pollinations" ? undefined : scope,
                 category:
                     scope === "community"
-                        ? previous.category === "text" ||
-                          previous.category === "image" ||
-                          previous.category === "agent"
+                        ? getAvailableModelSections(
+                              allModels.filter((model) => model.community),
+                          ).includes(previous.category ?? "all")
                             ? previous.category
                             : undefined
                         : previous.category === "agent"
@@ -324,17 +336,17 @@ export const Models: FC = () => {
         void navigate({
             search: (previous) => ({
                 ...previous,
-                sort: sort === "newest" ? undefined : sort,
+                sort: sort === "popular" ? undefined : sort,
             }),
         });
     };
 
     const activeSortLabel =
         SORT_OPTIONS.find(({ value }) => value === activeSort)?.label ??
-        "Newest";
+        "Popular";
     const activeSortAccessibleLabel =
         SORT_OPTIONS.find(({ value }) => value === activeSort)
-            ?.accessibleLabel ?? "Newest";
+            ?.accessibleLabel ?? "Most popular";
 
     return (
         <div className="flex flex-col gap-6">
@@ -371,17 +383,17 @@ export const Models: FC = () => {
                     </div>
                     <div className="mb-1.5 flex items-center gap-2 text-base font-bold text-theme-text-strong">
                         <BeakerIcon className="h-4 w-4 shrink-0" />
-                        <span>Publisher-qualified IDs are available now</span>
+                        <span>
+                            We're standardizing model IDs on September 7
+                        </span>
                     </div>
-                    You can adopt them today. On September 7,
-                    publisher-qualified IDs become the canonical model IDs, and
-                    current IDs become aliases.{" "}
-                    <a
-                        href={MODEL_SLUG_ANNOUNCEMENT_URL}
-                        className="font-semibold text-theme-text-soft hover:text-theme-text-strong hover:underline"
-                    >
-                        Learn more →
-                    </a>
+                    Model IDs will use the publisher and official model name—for
+                    example, <code className="font-semibold">flux</code> →{" "}
+                    <code className="font-semibold">
+                        black-forest-labs/flux.1-schnell
+                    </code>
+                    . You can use the new IDs now. Existing IDs will keep
+                    working.
                     <a
                         href={MODEL_SLUG_LIST_URL}
                         className="mt-2 flex w-fit items-center gap-1.5 font-semibold text-theme-text-soft hover:text-theme-text-strong hover:underline"
@@ -468,56 +480,60 @@ export const Models: FC = () => {
                                 />
                             </div>
                         </div>
-                        <Dropdown
-                            align="end"
-                            className="w-max p-2"
-                            trigger={(open) => (
-                                <Button
-                                    type="button"
-                                    size="md"
-                                    aria-label={`Sort models by ${activeSortAccessibleLabel}`}
-                                    className="shrink-0 justify-end gap-2"
-                                >
-                                    <span className="text-right">
-                                        {activeSortLabel}
-                                    </span>
-                                    <ChevronIcon expanded={open} />
-                                </Button>
-                            )}
-                        >
-                            {(close) => (
-                                <div
-                                    role="menu"
-                                    aria-label="Sort models"
-                                    onKeyDown={handleSortMenuKeyDown}
-                                    className="flex flex-col gap-1"
-                                >
-                                    {SORT_OPTIONS.map((option) => (
-                                        <DropdownItem
-                                            key={option.value}
-                                            role="menuitemradio"
-                                            aria-label={option.accessibleLabel}
-                                            aria-checked={
-                                                activeSort === option.value
-                                            }
-                                            onClick={() => {
-                                                setActiveSort(option.value);
-                                                close();
-                                            }}
-                                            className={
-                                                activeSort === option.value
-                                                    ? "justify-end bg-theme-bg-active text-right text-theme-text-strong"
-                                                    : "justify-end text-right"
-                                            }
-                                        >
-                                            <span className="flex-1 text-right">
-                                                {option.label}
-                                            </span>
-                                        </DropdownItem>
-                                    ))}
-                                </div>
-                            )}
-                        </Dropdown>
+                        {activeTab !== "mcp" && (
+                            <Dropdown
+                                align="end"
+                                className="w-max p-2"
+                                trigger={(open) => (
+                                    <Button
+                                        type="button"
+                                        size="md"
+                                        aria-label={`Sort models by ${activeSortAccessibleLabel}`}
+                                        className="shrink-0 justify-end gap-2"
+                                    >
+                                        <span className="text-right">
+                                            {activeSortLabel}
+                                        </span>
+                                        <ChevronIcon expanded={open} />
+                                    </Button>
+                                )}
+                            >
+                                {(close) => (
+                                    <div
+                                        role="menu"
+                                        aria-label="Sort models"
+                                        onKeyDown={handleSortMenuKeyDown}
+                                        className="flex flex-col gap-1"
+                                    >
+                                        {SORT_OPTIONS.map((option) => (
+                                            <DropdownItem
+                                                key={option.value}
+                                                role="menuitemradio"
+                                                aria-label={
+                                                    option.accessibleLabel
+                                                }
+                                                aria-checked={
+                                                    activeSort === option.value
+                                                }
+                                                onClick={() => {
+                                                    setActiveSort(option.value);
+                                                    close();
+                                                }}
+                                                className={
+                                                    activeSort === option.value
+                                                        ? "justify-end bg-theme-bg-active text-right text-theme-text-strong"
+                                                        : "justify-end text-right"
+                                                }
+                                            >
+                                                <span className="flex-1 text-right">
+                                                    {option.label}
+                                                </span>
+                                            </DropdownItem>
+                                        ))}
+                                    </div>
+                                )}
+                            </Dropdown>
+                        )}
                     </div>
                 </div>
                 {activeScope === "community" && (
@@ -551,12 +567,14 @@ export const Models: FC = () => {
                         </p>
                     </Alert>
                 )}
-                {catalogError && (
+                {catalogError && activeTab !== "mcp" && (
                     <Alert intent="danger" className="mb-4">
                         {catalogError}
                     </Alert>
                 )}
-                {query && sectionModels[activeTab].length === 0 ? (
+                {activeTab === "mcp" ? (
+                    <McpServerList query={query} />
+                ) : query && sectionModels[activeTab].length === 0 ? (
                     <p className="py-8 text-center text-sm text-theme-text-muted">
                         No {searchTarget.toLowerCase()} match “{search.trim()}”.
                     </p>
@@ -577,46 +595,49 @@ export const Models: FC = () => {
                         />
                     </div>
                 )}
-                <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
-                    {activeTab === "agent" && (
+                {activeTab !== "mcp" && (
+                    <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
+                        {activeTab === "agent" && (
+                            <p className="flex items-start gap-1.5">
+                                <BotIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                                <span>
+                                    <strong>agent pricing</strong> — listed
+                                    rates are for the agent&apos;s base model
+                                    running its saved instructions.
+                                </span>
+                            </p>
+                        )}
                         <p className="flex items-start gap-1.5">
-                            <BotIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <SparklesIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
-                                <strong>agent pricing</strong> — listed rates
-                                are for the agent&apos;s base model running its
-                                saved instructions.
+                                <strong>/gen</strong> — flat rate per image or
+                                audio generation.
                             </span>
                         </p>
-                    )}
-                    <p className="flex items-start gap-1.5">
-                        <SparklesIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <span>
-                            <strong>/gen</strong> — flat rate per image or audio
-                            generation.
-                        </span>
-                    </p>
-                    <p className="flex items-start gap-1.5">
-                        <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <span>
-                            <strong>/K · /M</strong> — rates per thousand or
-                            million tokens.
-                        </span>
-                    </p>
-                    <p className="flex items-start gap-1.5">
-                        <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <span>
-                            <strong>/sec</strong> — per second of video/audio;
-                            TTS is estimated from text length.
-                        </span>
-                    </p>
-                    <p className="flex items-start gap-1.5">
-                        <UsageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <span>
-                            <strong>requests /pollen</strong> — estimated from
-                            the median observed cost over the last 7 days.
-                        </span>
-                    </p>
-                </div>
+                        <p className="flex items-start gap-1.5">
+                            <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>
+                                <strong>/K · /M</strong> — rates per thousand or
+                                million tokens.
+                            </span>
+                        </p>
+                        <p className="flex items-start gap-1.5">
+                            <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>
+                                <strong>/sec</strong> — per second of
+                                video/audio; TTS is estimated from text length.
+                            </span>
+                        </p>
+                        <p className="flex items-start gap-1.5">
+                            <UsageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>
+                                <strong>requests /pollen</strong> — estimated
+                                from the median observed cost over the last 7
+                                days.
+                            </span>
+                        </p>
+                    </div>
+                )}
             </Section>
         </div>
     );

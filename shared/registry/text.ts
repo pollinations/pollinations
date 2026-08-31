@@ -591,20 +591,22 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-05-19").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // OpenRouter promotional rates through 2026-08-27 for the pinned
-        // google-vertex/global route.
+        // Standard OpenRouter rates for the pinned google-vertex/global route
+        // after the 50%-off launch promo ended 2026-08-27. These mirror
+        // Google's promotional pricing through 2026-12-31; list rates double
+        // on 2027-01-01 and need another update then.
         cost: {
-            promptTextTokens: perMillion(0.375),
-            promptCachedTokens: perMillion(0.0375),
-            promptCacheWriteTokens: perMillion(0.375),
-            promptAudioTokens: perMillion(0.375),
-            promptImageTokens: perMillion(0.375),
-            promptVideoTokens: perMillion(0.375),
-            completionTextTokens: perMillion(1.875),
+            promptTextTokens: perMillion(0.75),
+            promptCachedTokens: perMillion(0.075),
+            promptCacheWriteTokens: perMillion(0.75),
+            promptAudioTokens: perMillion(0.75),
+            promptImageTokens: perMillion(0.75),
+            promptVideoTokens: perMillion(0.75),
+            completionTextTokens: perMillion(3.75),
         },
         billing: openRouterGeminiBilling({
             searchCostPerThousandRequests: 14,
-            storageCostPerMillionTokenHours: 0.25,
+            storageCostPerMillionTokenHours: 0.5,
         }),
         title: "Gemini 3.7 Flash",
         description:
@@ -854,37 +856,20 @@ export const TEXT_SERVICES = {
     },
     "grok-4.6": {
         aliases: ["grok-4.5", "grok-4-5", "x-ai/grok-4.6"],
-        provider: "openrouter",
+        provider: "azure",
         brand: "xAI",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
-        // OpenRouter's min_prompt_tokens override applies from 200K total
-        // prompt tokens.
+        priceMultiplier: 0.75,
+        // Provisional Azure sheet pending an exact public or account meter.
+        // The direct route reports image tokens separately from text tokens.
         cost: {
             promptTextTokens: perMillion(2),
             promptCachedTokens: perMillion(0.5),
+            promptImageTokens: perMillion(2),
             completionTextTokens: perMillion(6),
         },
-        ...defineCostVariants(
-            {
-                long_context: {
-                    promptTextTokens: perMillion(4),
-                    promptCachedTokens: perMillion(1),
-                    completionTextTokens: perMillion(12),
-                },
-            },
-            longContextAtLeast(200_000),
-            {
-                long_context: {
-                    label: "Long context (200K+)",
-                    description:
-                        "At least 200,000 prompt tokens; the higher rates apply to the whole request.",
-                },
-            },
-            "<200K context",
-        ),
         title: "Grok 4.6",
         description: "Frontier reasoning for coding and knowledge work",
         inputModalities: ["text", "image"],
@@ -892,7 +877,8 @@ export const TEXT_SERVICES = {
         maxReferenceImages: 10,
         tools: true,
         reasoning: true,
-        contextLength: 500000,
+        // Azure's Global Standard deployment is capped at 200K context.
+        contextLength: 200000,
         isSpecialized: false,
     },
     "gemini-search": {
@@ -1430,6 +1416,32 @@ export const TEXT_SERVICES = {
         contextLength: 524288,
         isSpecialized: false,
     },
+    "thinkingmachines/inkling": {
+        aliases: [],
+        provider: "fireworks",
+        brand: "Thinking Machines",
+        category: "text",
+        addedDate: new Date("2026-08-30").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // Fireworks standard serverless rates (2026-08-30).
+        cost: {
+            promptTextTokens: perMillion(1),
+            promptCachedTokens: perMillion(0.17),
+            promptAudioTokens: perMillion(1),
+            promptImageTokens: perMillion(1),
+            completionTextTokens: perMillion(4.05),
+        },
+        title: "Inkling",
+        description:
+            "Flagship million-token multimodal reasoning for agents, coding, visual analysis and audio understanding",
+        inputModalities: ["text", "image", "audio"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
     "nemotron": {
         aliases: [
             "nemotron-3-ultra",
@@ -1674,12 +1686,13 @@ export const TEXT_SERVICES = {
     },
     "glm-5.3": {
         aliases: ["z-ai/glm-5.3"],
-        provider: "openrouter",
+        provider: "fireworks",
         brand: "Z.ai",
         category: "text",
         addedDate: new Date("2026-08-19").getTime(),
-        paidOnly: true,
+        paidOnly: false,
         priceMultiplier: 1,
+        // Fireworks standard serverless rates (2026-08-29).
         cost: {
             promptTextTokens: perMillion(1.4),
             promptCachedTokens: perMillion(0.26),
@@ -1697,18 +1710,18 @@ export const TEXT_SERVICES = {
     },
     "z-ai/glm-5.3-flash": {
         aliases: [],
-        provider: "openrouter",
+        provider: "fireworks",
         brand: "Z.ai",
         category: "text",
         addedDate: new Date("2026-08-27").getTime(),
-        paidOnly: true,
+        paidOnly: false,
         priceMultiplier: 1,
+        // Fireworks standard serverless rates (2026-08-29).
         cost: {
-            // OpenRouter Z.AI FP8 route rates (2026-08-27).
-            promptTextTokens: perMillion(0.075),
-            promptCachedTokens: perMillion(0.015),
-            promptImageTokens: perMillion(0.075),
-            completionTextTokens: perMillion(0.25),
+            promptTextTokens: perMillion(0.15),
+            promptCachedTokens: perMillion(0.029),
+            promptImageTokens: perMillion(0.15),
+            completionTextTokens: perMillion(0.5),
         },
         title: "Z.ai GLM-5.3 Flash",
         description:

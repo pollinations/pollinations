@@ -8,6 +8,7 @@ import {
     MODEL_INPUT_MODALITIES,
     type ModelDefinition,
     type ModelInputModality,
+    type ModelOutputModality,
     type PriceDefinition,
 } from "./registry/registry.ts";
 import {
@@ -285,7 +286,7 @@ export type CommunityEndpointPriceField =
 type CommunityModalitySpec = {
     category: Category;
     inputModalities: readonly ModelInputModality[];
-    outputModalities: readonly string[];
+    outputModalities: readonly ModelOutputModality[];
     supportedEndpoints: readonly string[];
     // Specialized categories such as transcription must reject sibling routes
     // unless the route explicitly opts into this endpoint list.

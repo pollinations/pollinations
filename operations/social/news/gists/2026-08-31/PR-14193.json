@@ -1,0 +1,34 @@
+{
+  "pr_number": 14193,
+  "title": "fix: make availability KPI trends legible",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14193",
+  "merged_at": "2026-08-31T13:00:51Z",
+  "labels": [],
+  "pr_body_excerpt": "- Shows normalized 5xx errors per 1,000 valid requests as the primary health view\n- Keeps precise service and community-model availability percentages\n- Preserves raw 5xx counts and corrects lower-is-better trend coloring\n- Adds focused KPI coverage for formatting and missing data\n\nTests: `npm test -- --run test/kpis.test.js`; `npm run build`",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The charts learned context",
+    "blurb": "Availability KPIs now lead with normalized 5xx errors per 1,000 valid requests, because a raw error count without traffic context is just a number having a bad day.",
+    "summary": "The operations KPI dashboard now presents normalized 5xx errors per 1,000 valid requests as its primary health signal, retains precise service and community-model availability percentages and raw error counts, and correctly colors lower-is-better trends.",
+    "impact": "Operators can compare service health across changing traffic levels more clearly, with reliable trend colors and safer handling of missing KPI data.",
+    "keywords": [
+      "kpi",
+      "availability",
+      "5xx-errors",
+      "observability",
+      "dashboard",
+      "formatting"
+    ],
+    "visual_concept": "A cozy operations garden where Polli helps a CRT-monitor robot read a health chart: a small, clearly labeled normalized-error gauge sits beside precise availability percentage flowers, while downward trend arrows glow reassuringly. Code-plants and a few tiny missing-data placeholders communicate observability and resilient formatting.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-monitoring shed: the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings wears tiny analyst glasses while pointing at a CRT robot's readable chart showing “5XX / 1K” and a gentle downward green trend arrow; code-plants bloom around precise availability gauges. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-31/PR-14193.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-monitoring shed: the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings wears tiny analyst glasses while pointing at a CRT robot's readable chart showing “5XX / 1K” and a gentle downward green trend arrow; code-plants bloom around precise availability gauges. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-31T13:01:51.035465+00:00"
+}

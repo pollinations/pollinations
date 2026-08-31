@@ -120,3 +120,22 @@ it("carries arbitrary public pricing variants and adjustments into the UI", () =
         ],
     });
 });
+
+it("adds rolling user counts from public model stats", () => {
+    const [model] = getModelPricesFromCatalog(
+        [{ name: "popular-model", category: "text" }],
+        {
+            "popular-model": {
+                avgCost: 0,
+                requestCount: 100,
+                userCount: 12,
+            },
+        },
+    );
+
+    expect(model).toMatchObject({
+        name: "popular-model",
+        users7d: 12,
+    });
+    expect(model.realAvgCost).toBeUndefined();
+});

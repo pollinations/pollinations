@@ -91,4 +91,9 @@ export type ModelPrice = {
     priceAdjustments?: ModelPriceAdjustment[];
     // Real usage data from Tinybird (rolling 7-day average)
     realAvgCost?: number;
+    users7d?: number;
+    contextLength?: number;
+    minDuration?: number;
+    maxDuration?: number;
+    allowedDurations?: number[];
 };

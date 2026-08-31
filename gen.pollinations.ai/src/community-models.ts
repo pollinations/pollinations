@@ -5,6 +5,7 @@ import {
     communityEndpointPrices,
     communityModelDefinition,
     communityModelId,
+    effectiveCommunityEndpointVisibility,
     parseListingPayload,
     pendingCommunityEndpointChangeIsReady,
     usesAgentRunToken,
@@ -33,6 +34,14 @@ export function communityTextSupportedEndpoints(): string[] {
 
 export function communityTranscriptionSupportedEndpoints(): string[] {
     return ["/v1/audio/transcriptions"];
+}
+
+export function communityVideoSupportedEndpoints(): string[] {
+    return ["/v1/images/generations", "/image/{prompt}", "/video/{prompt}"];
+}
+
+export function communityEmbeddingSupportedEndpoints(): string[] {
+    return ["/v1/embeddings"];
 }
 
 export function communityImageSupportedEndpoints(
@@ -99,10 +108,11 @@ export async function getCommunityModelRegistryEntries(
         const pendingReady = pendingCommunityEndpointChangeIsReady(
             row.pendingAt,
         );
-        const effectiveVisibility =
-            pendingReady && row.pendingVisibility
-                ? row.pendingVisibility
-                : row.visibility;
+        const effectiveVisibility = effectiveCommunityEndpointVisibility(
+            row.visibility,
+            row.pendingVisibility,
+            row.pendingAt,
+        );
         const baseUrl =
             row.type === "prompt_agent"
                 ? env.AGENT_RUNTIME_BASE_URL

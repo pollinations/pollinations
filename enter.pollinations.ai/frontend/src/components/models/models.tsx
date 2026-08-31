@@ -40,7 +40,11 @@ import {
     matchesModelQuery,
     parseModelQuery,
 } from "./model-query.ts";
-import type { ModelScope, ModelSort } from "./model-search.ts";
+import {
+    getAvailableModelSections,
+    type ModelScope,
+    type ModelSort,
+} from "./model-search.ts";
 import { sortModels } from "./model-sort.ts";
 import {
     type SectionType,
@@ -61,15 +65,8 @@ const POLLINATIONS_SECTION_ORDER: SectionType[] = [
     "embedding",
 ];
 
-const COMMUNITY_SECTION_ORDER: SectionType[] = [
-    "all",
-    "text",
-    "image",
-    "agent",
-];
 const SCOPE_ORDER: ModelScope[] = ["pollinations", "community"];
 
-const MODEL_SLUG_ANNOUNCEMENT_URL = "/news#canonical-model-slugs";
 const MODEL_SLUG_LIST_URL =
     "https://github.com/pollinations/pollinations/blob/main/MODEL_SLUGS.md";
 
@@ -83,6 +80,11 @@ const SORT_OPTIONS: Array<{
     label: string;
     accessibleLabel: string;
 }> = [
+    {
+        value: "popular",
+        label: "Popular",
+        accessibleLabel: "Most popular",
+    },
     { value: "newest", label: "Newest", accessibleLabel: "Newest" },
     { value: "oldest", label: "Oldest", accessibleLabel: "Oldest" },
     {
@@ -182,7 +184,7 @@ export const Models: FC = () => {
     const modelSearch = useSearch({ from: "/_dashboard/models" });
     const activeScope = modelSearch.scope ?? "pollinations";
     const activeTab = modelSearch.category ?? "all";
-    const activeSort = modelSearch.sort ?? "newest";
+    const activeSort = modelSearch.sort ?? "popular";
     const urlSearch = modelSearch.q ?? "";
     const [search, setSearch] = useState(urlSearch);
     const [searchFocused, setSearchFocused] = useState(false);
@@ -248,7 +250,7 @@ export const Models: FC = () => {
     );
     const sectionOrder =
         activeScope === "community"
-            ? COMMUNITY_SECTION_ORDER
+            ? getAvailableModelSections(scopedModels)
             : POLLINATIONS_SECTION_ORDER;
     const hasAgents = scopedModels.some((model) => model.agent);
     const scopeLabel = SCOPE_LABELS[activeScope];
@@ -308,9 +310,9 @@ export const Models: FC = () => {
                 scope: scope === "pollinations" ? undefined : scope,
                 category:
                     scope === "community"
-                        ? previous.category === "text" ||
-                          previous.category === "image" ||
-                          previous.category === "agent"
+                        ? getAvailableModelSections(
+                              allModels.filter((model) => model.community),
+                          ).includes(previous.category ?? "all")
                             ? previous.category
                             : undefined
                         : previous.category === "agent"
@@ -331,10 +333,10 @@ export const Models: FC = () => {
 
     const activeSortLabel =
         SORT_OPTIONS.find(({ value }) => value === activeSort)?.label ??
-        "Newest";
+        "Popular";
     const activeSortAccessibleLabel =
         SORT_OPTIONS.find(({ value }) => value === activeSort)
-            ?.accessibleLabel ?? "Newest";
+            ?.accessibleLabel ?? "Most popular";
 
     return (
         <div className="flex flex-col gap-6">
@@ -371,17 +373,17 @@ export const Models: FC = () => {
                     </div>
                     <div className="mb-1.5 flex items-center gap-2 text-base font-bold text-theme-text-strong">
                         <BeakerIcon className="h-4 w-4 shrink-0" />
-                        <span>Publisher-qualified IDs are available now</span>
+                        <span>
+                            We're standardizing model IDs on September 7
+                        </span>
                     </div>
-                    You can adopt them today. On September 7,
-                    publisher-qualified IDs become the canonical model IDs, and
-                    current IDs become aliases.{" "}
-                    <a
-                        href={MODEL_SLUG_ANNOUNCEMENT_URL}
-                        className="font-semibold text-theme-text-soft hover:text-theme-text-strong hover:underline"
-                    >
-                        Learn more →
-                    </a>
+                    Model IDs will use the publisher and official model name—for
+                    example, <code className="font-semibold">flux</code> →{" "}
+                    <code className="font-semibold">
+                        black-forest-labs/flux.1-schnell
+                    </code>
+                    . You can use the new IDs now. Existing IDs will keep
+                    working.
                     <a
                         href={MODEL_SLUG_LIST_URL}
                         className="mt-2 flex w-fit items-center gap-1.5 font-semibold text-theme-text-soft hover:text-theme-text-strong hover:underline"

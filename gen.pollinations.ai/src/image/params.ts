@@ -56,6 +56,12 @@ const referenceUrl = z.string().superRefine((value, ctx) => {
 
 const referenceUrls = z.preprocess(parseReferenceUrls, z.array(referenceUrl));
 
+export const CommunityReferenceParamsSchema = z.object({
+    reference_images: referenceUrls.optional(),
+    reference_videos: referenceUrls.optional(),
+    reference_audios: referenceUrls.optional(),
+});
+
 function adjustImageSizeForModel(
     model: ImageModelName,
     width?: number,
@@ -112,10 +118,10 @@ export const ImageParamsSchema = z
             .catch("balanced"),
         guidance_scale: z.coerce.number().optional().catch(undefined),
         // Video-specific parameters - pass through to backend, let provider validate
-        duration: z.coerce.number().optional(),
+        duration: z.coerce.number().finite().positive().optional(),
         fps: z.coerce.number().optional(),
         resolution: z
-            .enum(["1k", "2k", "480p", "720p", "768p", "1080p"])
+            .enum(["1k", "2k", "360p", "480p", "720p", "768p", "1080p", "4k"])
             .optional(),
         aspectRatio: z
             .enum([
@@ -201,6 +207,27 @@ export const ImageParamsSchema = z
                     code: z.ZodIssueCode.custom,
                     path: ["fps"],
                     message: "minimax-h3 outputs 24 FPS.",
+                });
+            }
+        }
+        if (data.model === "google/gemini-omni-1.1-flash") {
+            if (
+                data.aspectRatio !== undefined &&
+                !["16:9", "9:16"].includes(data.aspectRatio)
+            ) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["aspectRatio"],
+                    message:
+                        "google/gemini-omni-1.1-flash supports 16:9 or 9:16.",
+                });
+            }
+            if (data.fps !== undefined && data.fps !== 24) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["fps"],
+                    message:
+                        "google/gemini-omni-1.1-flash outputs video at 24 FPS.",
                 });
             }
         }

@@ -74,6 +74,17 @@ export function CommunityEndpointCard({
                                 Agent
                             </Chip>
                         )}
+                        {endpoint.pending && (
+                            <Chip
+                                intent="neutral"
+                                size="sm"
+                                title={`Changes queued — effective ${new Date(
+                                    endpoint.pending.effectiveAt,
+                                ).toLocaleString()}`}
+                            >
+                                Changes queued
+                            </Chip>
+                        )}
                     </div>
                     {endpoint.description && (
                         <p className="mt-1 text-sm text-theme-text-muted">
@@ -152,11 +163,14 @@ export function CommunityEndpointCard({
                                 value={endpoint.modality}
                             />
                         )}
-                        <CommunityDetailRow
-                            icon={<TerminalIcon className="h-3.5 w-3.5" />}
-                            label="Upstream model"
-                            value={endpoint.upstreamModel}
-                        />
+                        {(endpoint.type !== "proxy" ||
+                            endpoint.modality !== "video") && (
+                            <CommunityDetailRow
+                                icon={<TerminalIcon className="h-3.5 w-3.5" />}
+                                label="Upstream model"
+                                value={endpoint.upstreamModel}
+                            />
+                        )}
                         {endpoint.perUserRpm !== null && (
                             <CommunityDetailRow
                                 icon={<TerminalIcon className="h-3.5 w-3.5" />}
@@ -294,7 +308,8 @@ function communityPriceGroups(
                 unit:
                     field.priceUnit === "million"
                         ? "token"
-                        : field.priceUnit === "second"
+                        : field.priceUnit === "second" ||
+                            field.priceUnit === "video_second"
                           ? "second"
                           : "request",
             },
@@ -324,5 +339,6 @@ function communityPriceKind(usageType: string): PriceKind {
     if (usageType === "promptAudioTokens") return "audioIn";
     if (usageType === "completionAudioTokens") return "audioOut";
     if (usageType.includes("Image")) return "image";
+    if (usageType.includes("Video")) return "video";
     return "text";
 }

@@ -12,9 +12,11 @@ import {
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MAX_COMMUNITY_PRICE_PER_SECOND,
+    MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     normalizeCommunityEndpointAdvertised,
     normalizeCommunityEndpointInputModalities,
+    normalizeCommunityEndpointModality,
 } from "@shared/community-endpoints.ts";
 import type { McpServerId } from "@shared/registry/mcp.ts";
 import type { ModelInputModality, Usage } from "@shared/registry/registry.ts";
@@ -50,6 +52,13 @@ export type CommunityProviderProfile = {
     url: string | null;
 };
 
+type PendingCommunityEndpointChange = Partial<CommunityEndpointPrices> & {
+    effectiveAt: string;
+    visibility?: "public";
+    paidOnly?: boolean;
+    imagePricing?: CommunityEndpointImagePricing;
+};
+
 type CommunityEndpointBase = {
     id: string;
     modelId: string;
@@ -62,6 +71,7 @@ type CommunityEndpointBase = {
     // private → owner-only, shown only to the owner, no owner-set price;
     // public → globally listed + billed to callers.
     visibility: CommunityEndpointVisibility;
+    pending: PendingCommunityEndpointChange | null;
     hidden: boolean;
     hiddenReason: string | null;
     hiddenAt: string | null;
@@ -122,16 +132,22 @@ export function publicCommunityFallbackOptions(
                 !model.agent &&
                 (model.type === "text" ||
                     model.type === "image" ||
-                    model.type === "audio"),
+                    model.type === "video" ||
+                    model.type === "audio" ||
+                    model.type === "embedding"),
         )
         .map((model) => ({
             modelId: model.name,
             modality:
                 model.type === "image"
                     ? "image"
-                    : model.type === "audio"
-                      ? "transcription"
-                      : "text",
+                    : model.type === "video"
+                      ? "video"
+                      : model.type === "audio"
+                        ? "transcription"
+                        : model.type === "embedding"
+                          ? "embedding"
+                          : "text",
         }));
 }
 
@@ -293,9 +309,11 @@ export function isValidPriceInput(
     const maximum =
         priceUnit === "image"
             ? MAX_COMMUNITY_PRICE_PER_IMAGE
-            : priceUnit === "second"
-              ? MAX_COMMUNITY_PRICE_PER_SECOND
-              : MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS;
+            : priceUnit === "video_second"
+              ? MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND
+              : priceUnit === "second"
+                ? MAX_COMMUNITY_PRICE_PER_SECOND
+                : MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS;
     return (
         Number.isFinite(parsed) &&
         parsed >= 0 &&
@@ -307,50 +325,51 @@ export function isValidPriceInput(
 }
 
 export function endpointToForm(endpoint: EditableEndpoint): EndpointFormState {
+    const pending = endpoint.pending;
+    const visibility = pending?.visibility ?? endpoint.visibility;
     if (endpoint.type === "endpoint_agent") {
         return {
             ...emptyForm,
             name: endpoint.name,
             title: endpoint.title,
             description: endpoint.description ?? "",
-            visibility: endpoint.visibility,
+            visibility,
             perUserRpm: endpoint.perUserRpm?.toString() ?? "",
             baseUrl: endpoint.baseUrl,
             upstreamModel: endpoint.upstreamModel,
         };
     }
+    const imagePricing = pending?.imagePricing ?? endpoint.imagePricing;
     const fields = new Map(
         communityEndpointPriceFieldsForModality(
             endpoint.modality,
-            endpoint.imagePricing,
+            imagePricing,
         ).map((field) => [field.key, field]),
     );
     return {
         modality: endpoint.modality,
-        imagePricing: endpoint.imagePricing,
+        imagePricing,
         inputModalities: endpoint.inputModalities,
         capabilities: endpoint.advertised.capabilities ?? [],
         contextLength: endpoint.advertised.contextLength?.toString() ?? "",
         name: endpoint.name,
         title: endpoint.title,
         description: endpoint.description ?? "",
-        visibility: endpoint.visibility,
+        visibility,
         perUserRpm: endpoint.perUserRpm?.toString() ?? "",
         baseUrl: endpoint.baseUrl,
         upstreamModel: endpoint.upstreamModel,
         bearerToken: "",
-        paidOnly: endpoint.paidOnly,
+        paidOnly: pending?.paidOnly ?? endpoint.paidOnly,
         fallbacks: endpoint.fallbacks ?? [],
         ...(Object.fromEntries(
             COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => {
                 const modalityField = fields.get(field.key);
+                const value = pending?.[field.key] ?? endpoint[field.key];
                 return [
                     field.key,
                     modalityField
-                        ? storedPriceToFormValue(
-                              endpoint[field.key],
-                              modalityField.priceUnit,
-                          )
+                        ? storedPriceToFormValue(value, modalityField.priceUnit)
                         : "",
                 ];
             }),
@@ -393,7 +412,8 @@ function formPricesToPayload(
                 const unit =
                     modalityField.priceUnit === "image"
                         ? "image"
-                        : modalityField.priceUnit === "second"
+                        : modalityField.priceUnit === "second" ||
+                            modalityField.priceUnit === "video_second"
                           ? "second"
                           : "1M units";
                 throw new Error(
@@ -491,7 +511,7 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
             },
             modality,
         ),
-        baseUrl: form.baseUrl.trim(),
+        baseUrl: form.baseUrl,
         upstreamModel: form.upstreamModel.trim() || form.name.trim(),
         paidOnly: form.visibility === "public" ? form.paidOnly : false,
         // Private models carry no public pricing, so their fallbacks cannot be
@@ -526,12 +546,7 @@ export function nextFormState(
     value: string,
 ): EndpointFormState {
     if (key === "modality") {
-        const modality =
-            value === "image"
-                ? "image"
-                : value === "transcription"
-                  ? "transcription"
-                  : "text";
+        const modality = normalizeCommunityEndpointModality(value);
         return {
             ...current,
             modality,

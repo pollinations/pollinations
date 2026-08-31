@@ -90,29 +90,28 @@ describe("OpenRouter Gemini routing", () => {
         ]);
     });
 
-    it.each(routes.map(([model]) => model))(
-        "preserves tools with structured output for %s",
-        async (model) => {
-            const transform = findModelByName(model)?.transform;
-            if (!transform) throw new Error(`${model} transform missing`);
-            const tools = [
-                {
-                    type: "function",
-                    function: {
-                        name: "lookup",
-                        parameters: { type: "object", properties: {} },
-                    },
+    it.each(
+        routes.map(([model]) => model),
+    )("preserves tools with structured output for %s", async (model) => {
+        const transform = findModelByName(model)?.transform;
+        if (!transform) throw new Error(`${model} transform missing`);
+        const tools = [
+            {
+                type: "function",
+                function: {
+                    name: "lookup",
+                    parameters: { type: "object", properties: {} },
                 },
-            ];
+            },
+        ];
 
-            const { options } = await transform([], {
-                tools,
-                response_format: { type: "json_object" },
-            });
+        const { options } = await transform([], {
+            tools,
+            response_format: { type: "json_object" },
+        });
 
-            expect(options.tools).toEqual(tools);
-        },
-    );
+        expect(options.tools).toEqual(tools);
+    });
 });
 
 describe("Vertex Gemini Search routing", () => {

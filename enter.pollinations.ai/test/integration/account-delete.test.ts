@@ -46,6 +46,7 @@ describe("POST /api/auth/delete-user", () => {
             id: "test-community-model",
             ownerUserId: user.id,
             name: "test-model",
+            title: "Test model",
             type: "endpoint_agent",
             baseUrl: "https://agent.example.com/v1",
             upstreamModel: "openai-fast",

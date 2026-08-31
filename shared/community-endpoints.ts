@@ -698,9 +698,7 @@ type CommunityEndpointRuntimeBase = {
     ownerUserId: string;
     modelId: string;
     name: string;
-    // Null on rows created before titles existed; read paths go through
-    // communityEndpointTitle() rather than using this directly.
-    title: string | null;
+    title: string;
     description: string | null;
     providerName?: string | null;
     providerUrl?: string | null;
@@ -764,7 +762,7 @@ export type CommunityModelDefinitionInput = {
     modelId: string;
     addedDate?: number;
     perUserRpm?: number | null;
-    title?: string | null;
+    title: string;
     description: string | null;
     providerName?: string | null;
     providerUrl?: string | null;
@@ -1203,24 +1201,6 @@ export function communityPriceDefinition(
     return pricing;
 }
 
-// Titles became a required field after these rows were created, so older
-// endpoints have no stored title. Fall back to what the catalog showed before
-// the column existed (description, then the model slug) so `/models` output is
-// unchanged for un-backfilled rows.
-export function communityEndpointTitle(endpoint: {
-    modelId: string;
-    title?: string | null;
-    description?: string | null;
-}): string {
-    const title = endpoint.title?.trim();
-    if (title) return title;
-    const description = endpoint.description?.trim();
-    if (description) return description;
-    return (
-        parseCommunityModelId(endpoint.modelId)?.modelName ?? endpoint.modelId
-    );
-}
-
 export function communityModelDefinition(
     endpoint: CommunityModelDefinitionInput,
 ): ModelDefinition {
@@ -1258,7 +1238,7 @@ export function communityModelDefinition(
         cost: communityPriceDefinition(endpoint, modality, imagePricing),
         priceMultiplier: 1,
         addedDate: endpoint.addedDate ?? 0,
-        title: communityEndpointTitle(endpoint),
+        title: endpoint.title,
         description: description || undefined,
         inputModalities,
         outputModalities: [...spec.outputModalities],

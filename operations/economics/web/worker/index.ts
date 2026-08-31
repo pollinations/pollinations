@@ -14,7 +14,6 @@ const POLLEN_UPSTREAM_PIPES = new Set([
 
 interface Env {
     ASSETS: Pick<Fetcher, "fetch">;
-    POLLINATIONS_AUTH_ALLOWED_EMAILS: string;
     POLLINATIONS_AUTH_BASE_URL?: string;
     POLLINATIONS_AUTH_SESSION_SECRET: string;
     POLLINATIONS_OAUTH_CLIENT_ID: string;
@@ -27,7 +26,6 @@ function auth(env: Env) {
     return createPollinationsAuth({
         clientId: env.POLLINATIONS_OAUTH_CLIENT_ID,
         sessionSecret: env.POLLINATIONS_AUTH_SESSION_SECRET,
-        allowedEmails: env.POLLINATIONS_AUTH_ALLOWED_EMAILS,
         baseUrl: env.POLLINATIONS_AUTH_BASE_URL,
     });
 }

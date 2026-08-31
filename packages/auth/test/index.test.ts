@@ -4,7 +4,6 @@ import { createPollinationsAuth } from "../src/index";
 const config = {
     clientId: "pk_internal_tools",
     sessionSecret: "test-session-secret-at-least-32-characters",
-    allowedEmails: "alice@example.com, BOB@example.com ",
 };
 
 function cookieFrom(response: Response, name: string) {
@@ -32,13 +31,14 @@ async function begin(auth: ReturnType<typeof createPollinationsAuth>) {
     return { response, location, flow };
 }
 
-function allowedUserUpstream() {
+function adminUserUpstream() {
     return vi.fn(async (input: RequestInfo | URL) =>
         String(input).endsWith("/api/oauth/token")
             ? Response.json({ access_token: "oauth_login" })
             : Response.json({
                   sub: "user-1",
                   email: "alice@example.com",
+                  role: "admin",
                   preferred_username: "alice",
               }),
     );
@@ -111,7 +111,7 @@ describe("Pollinations OAuth", () => {
     it("rejects return paths that resolve outside the app origin", async () => {
         const auth = createPollinationsAuth({
             ...config,
-            fetch: allowedUserUpstream(),
+            fetch: adminUserUpstream(),
         });
         const maliciousPaths = [
             String.raw`/\evil.example`,
@@ -154,7 +154,7 @@ describe("Pollinations OAuth", () => {
         }
     });
 
-    it("exchanges the code and creates an allowlisted session", async () => {
+    it("exchanges the code and creates an admin session", async () => {
         const upstream = vi
             .fn()
             .mockResolvedValueOnce(
@@ -164,6 +164,7 @@ describe("Pollinations OAuth", () => {
                 Response.json({
                     sub: "user-1",
                     email: "ALICE@example.com",
+                    role: "admin",
                     preferred_username: "alice",
                 }),
             );
@@ -209,14 +210,18 @@ describe("Pollinations OAuth", () => {
         expect(sessionResponse?.headers.get("Cache-Control")).toBe("no-store");
     });
 
-    it("denies users outside the email allowlist", async () => {
+    it("denies users without the database admin role", async () => {
         const upstream = vi
             .fn()
             .mockResolvedValueOnce(
                 Response.json({ access_token: "oauth_login" }),
             )
             .mockResolvedValueOnce(
-                Response.json({ sub: "user-2", email: "mallory@example.com" }),
+                Response.json({
+                    sub: "user-2",
+                    email: "alice@example.com",
+                    role: "user",
+                }),
             );
         const auth = createPollinationsAuth({ ...config, fetch: upstream });
         const { location, flow } = await begin(auth);
@@ -268,7 +273,7 @@ describe("Pollinations OAuth", () => {
     it("rejects a tampered session signature", async () => {
         const auth = createPollinationsAuth({
             ...config,
-            fetch: allowedUserUpstream(),
+            fetch: adminUserUpstream(),
         });
         const session = await authenticatedSession(auth);
 
@@ -288,7 +293,7 @@ describe("Pollinations OAuth", () => {
         vi.setSystemTime(new Date("2026-08-29T10:00:00Z"));
         const auth = createPollinationsAuth({
             ...config,
-            fetch: allowedUserUpstream(),
+            fetch: adminUserUpstream(),
         });
         const session = await authenticatedSession(auth);
         vi.advanceTimersByTime(43_201_000);
@@ -305,7 +310,7 @@ describe("Pollinations OAuth", () => {
     it("rejects a valid session on a different origin", async () => {
         const auth = createPollinationsAuth({
             ...config,
-            fetch: allowedUserUpstream(),
+            fetch: adminUserUpstream(),
         });
         const session = await authenticatedSession(auth);
 
@@ -338,7 +343,11 @@ describe("Pollinations OAuth", () => {
                 Response.json({ access_token: "oauth_login" }),
             )
             .mockResolvedValueOnce(
-                Response.json({ sub: "user-1", email: "alice@example.com" }),
+                Response.json({
+                    sub: "user-1",
+                    email: "alice@example.com",
+                    role: "admin",
+                }),
             );
         const auth = createPollinationsAuth({ ...config, fetch: upstream });
         const login = await auth.handle(

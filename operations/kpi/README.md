@@ -26,8 +26,8 @@ npm run decrypt-vars          # Worker configuration → .dev.vars (needs the ag
 npm run dev                   # http://127.0.0.1:3456
 ```
 
-`POLLINATIONS_AUTH_ALLOWED_EMAILS` is a comma-separated, case-insensitive email
-allowlist shared by the three internal apps. An empty allowlist denies everyone.
+Access is limited to Pollinations accounts whose Better Auth database role
+includes `admin`, shared by the three internal apps.
 
 ## Deploy
 

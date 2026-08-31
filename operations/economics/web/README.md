@@ -21,7 +21,8 @@ Auth uses Pollinations OAuth backed by the Cloudflare Worker. For local developm
 the OAuth configuration and the staging-only Tinybird reader are assembled from
 `../secrets/web.json` and `../secrets/web.dev.json` into the ignored `.dev.vars`
 file. Production deployment continues to use `../secrets/web.json`. No secret is
-bundled or stored in the browser.
+bundled or stored in the browser. Access requires the `admin` role on the
+Pollinations account in the Better Auth database.
 
 ## Fixtures Mode
 

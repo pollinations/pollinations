@@ -370,6 +370,8 @@ describe("POST /api/oauth/code (consent-side code creation)", () => {
         mocks,
     }) => {
         await mocks.enable("tinybird", "github");
+        const db = drizzle(env.DB, { schema });
+        await db.update(schema.user).set({ role: "admin" });
 
         const createRes = await SELF.fetch(`${BASE}/api/api-keys`, {
             method: "POST",
@@ -444,6 +446,7 @@ describe("POST /api/oauth/code (consent-side code creation)", () => {
         const profile = (await loginUserinfo.json()) as Record<string, unknown>;
         expect(profile.sub).toBeTruthy();
         expect(profile.email).toBeTruthy();
+        expect(profile.role).toBe("admin");
         expect(profile).toHaveProperty("preferred_username");
 
         const replay = await SELF.fetch(`${BASE}/api/oauth/userinfo`, {

@@ -283,6 +283,7 @@ export const oauthRoutes = new Hono<Env>()
                 c.env,
                 stored.userId,
                 true,
+                true,
             );
             return c.json(profile);
         },

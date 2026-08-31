@@ -11,7 +11,6 @@ const env = {
             ),
         ),
     },
-    POLLINATIONS_AUTH_ALLOWED_EMAILS: "alice@example.com,bob@example.com",
     POLLINATIONS_AUTH_SESSION_SECRET:
         "test-session-secret-at-least-32-characters",
     POLLINATIONS_OAUTH_CLIENT_ID: "pk_internal_tools",
@@ -29,10 +28,7 @@ function request(path: string, init?: RequestInit) {
     );
 }
 
-function upstream(options?: {
-    email?: string;
-    tinybird?: { data: unknown[] };
-}) {
+function upstream(options?: { role?: string; tinybird?: { data: unknown[] } }) {
     const mock = vi.fn(async (input: RequestInfo | URL) => {
         const url = String(input);
         if (url.endsWith("/api/oauth/token")) {
@@ -41,7 +37,8 @@ function upstream(options?: {
         if (url.endsWith("/api/oauth/userinfo")) {
             return Response.json({
                 sub: "user-1",
-                email: options?.email || "alice@example.com",
+                email: "alice@example.com",
+                role: options?.role || "admin",
             });
         }
         return Response.json(options?.tinybird || { data: [] });
@@ -108,7 +105,7 @@ describe("economics Worker auth", () => {
         expect(mock).not.toHaveBeenCalled();
     });
 
-    it("creates a session for an allowlisted Pollinations account", async () => {
+    it("creates a session for a Pollinations database admin", async () => {
         const cookie = await authenticatedCookie();
         const response = await request("/assets/index.js", {
             headers: { Cookie: cookie },
@@ -119,8 +116,8 @@ describe("economics Worker auth", () => {
         await expect(response.text()).resolves.toBe("private asset");
     });
 
-    it("rejects a Pollinations account outside the allowlist", async () => {
-        upstream({ email: "mallory@example.com" });
+    it("rejects a Pollinations account without the admin role", async () => {
+        upstream({ role: "user" });
         const login = await request("/auth/login");
         const location = new URL(login.headers.get("Location") || "");
         const flow = cookieFrom(login, "pollinations_oauth_flow");
@@ -146,7 +143,7 @@ describe("economics Worker auth", () => {
         expect(mock).not.toHaveBeenCalled();
     });
 
-    it("forwards an authenticated allowlisted pipe with the read token", async () => {
+    it("forwards an authenticated pipe with the read token", async () => {
         const mock = upstream({
             tinybird: { data: [{ entry_id: "cloud-1" }] },
         });

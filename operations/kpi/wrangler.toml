@@ -22,7 +22,6 @@ GITHUB_REPO = "pollinations/pollinations"
 
 # Secrets:
 # - TINYBIRD_READ_TOKEN (read-only, in secrets/env.json)
-# - POLLINATIONS_AUTH_ALLOWED_EMAILS
 # - POLLINATIONS_AUTH_SESSION_SECRET
 # - POLLINATIONS_OAUTH_CLIENT_ID
 # - GITHUB_TOKEN (optional, for higher API rate limits)

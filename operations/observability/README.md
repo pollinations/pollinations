@@ -72,9 +72,11 @@ Secrets are stored in `.env` locally and as Worker secrets in production.
 | `TINYBIRD_READ_TOKEN` | Read token for the `pollinations_enter` Tinybird workspace |
 | `TINYBIRD_LEGACY_READ_TOKEN` | Read token for the legacy `pollinations_ai` workspace |
 | `DISCORD_WEBHOOK_URL` | Discord webhook for alerts |
-| `POLLINATIONS_AUTH_ALLOWED_EMAILS` | Comma-separated, case-insensitive login allowlist |
 | `POLLINATIONS_AUTH_SESSION_SECRET` | Signs the Worker's private session cookie |
 | `POLLINATIONS_OAUTH_CLIENT_ID` | Publishable `pk_` OAuth client ID |
+
+Dashboard access requires the `admin` role on the Pollinations account in the
+Better Auth database.
 
 `CLOUDFLARE_TUNNEL_TOKEN` is only used by the legacy DigitalOcean deployment.
 

@@ -340,7 +340,8 @@ export async function exchangeDeviceCode(
  * name/email are PII gated behind the `profile` scope, same as
  * GET /api/account/profile: sessions always see them, API keys only when
  * they carry account:profile. sub/picture/preferred_username (public GitHub
- * identity) are always returned.
+ * identity) are always returned. The database role is returned only to the
+ * short-lived account-login flow used by internal applications.
  */
 export async function handleUserinfo(c: AuthedContext) {
     const user = c.var.auth.requireUser();
@@ -355,6 +356,7 @@ export async function getUserinfoForUser(
     env: Env["Bindings"],
     userId: string,
     includeProfilePII: boolean,
+    includeRole = false,
 ) {
     const db = drizzle(env.DB, { schema });
     const row = await db.query.user.findFirst({
@@ -365,6 +367,7 @@ export async function getUserinfoForUser(
             email: true,
             image: true,
             githubUsername: true,
+            role: true,
         },
     });
     if (!row) {
@@ -373,6 +376,7 @@ export async function getUserinfoForUser(
     return {
         sub: row.id,
         ...(includeProfilePII && { name: row.name, email: row.email }),
+        ...(includeRole && { role: row.role ?? "user" }),
         picture: row.image,
         preferred_username: row.githubUsername,
     };

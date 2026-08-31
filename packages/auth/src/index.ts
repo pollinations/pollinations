@@ -19,9 +19,14 @@ export type PollinationsUser = {
     preferred_username?: string;
 };
 
+type Userinfo = PollinationsUser & {
+    role?: string;
+};
+
 type Session = PollinationsUser & {
     aud: string;
     exp: number;
+    role: string;
 };
 
 type Flow = {
@@ -33,7 +38,6 @@ type Flow = {
 export type PollinationsAuthConfig = {
     clientId: string;
     sessionSecret: string;
-    allowedEmails: string;
     baseUrl?: string;
     fetch?: typeof fetch;
 };
@@ -157,13 +161,6 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
         );
     }
 
-    const allowedEmails = new Set(
-        config.allowedEmails.split(",").map(normalizeEmail).filter(Boolean),
-    );
-    if (allowedEmails.size === 0) {
-        throw new Error("POLLINATIONS_AUTH_ALLOWED_EMAILS must not be empty");
-    }
-
     const requestFetch = config.fetch ?? fetch;
     const authBaseUrl = new URL(config.baseUrl ?? DEFAULT_AUTH_BASE_URL);
     const authorizeUrl = new URL("/authorize", authBaseUrl);
@@ -171,8 +168,13 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
     const userinfoUrl = new URL("/api/oauth/userinfo", authBaseUrl).toString();
     const key = hmacKey(config.sessionSecret);
 
-    function isAllowedUser(user: Pick<PollinationsUser, "email">) {
-        return allowedEmails.has(normalizeEmail(user.email));
+    function isAdmin(user: Pick<Userinfo, "role">): user is { role: string } {
+        return (
+            user.role
+                ?.split(",")
+                .map((role) => role.trim())
+                .includes("admin") === true
+        );
     }
 
     async function sign(payload: string) {
@@ -285,13 +287,8 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
         });
         const user = (await userResponse
             .json()
-            .catch(() => null)) as PollinationsUser | null;
-        if (
-            !userResponse.ok ||
-            !user?.sub ||
-            !user.email ||
-            !isAllowedUser(user)
-        ) {
+            .catch(() => null)) as Userinfo | null;
+        if (!userResponse.ok || !user?.sub || !user.email || !isAdmin(user)) {
             return authError("Forbidden", 403, clearFlow);
         }
 
@@ -336,11 +333,11 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
                 session.aud !== new URL(request.url).origin ||
                 !Number.isInteger(session.exp) ||
                 session.exp <= Math.floor(Date.now() / 1000) ||
-                !isAllowedUser(session)
+                !isAdmin(session)
             ) {
                 return null;
             }
-            const { aud: _aud, exp: _exp, ...user } = session;
+            const { aud: _aud, exp: _exp, role: _role, ...user } = session;
             return user;
         } catch {
             return null;

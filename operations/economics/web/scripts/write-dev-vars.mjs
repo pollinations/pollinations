@@ -9,7 +9,6 @@ function required(name) {
 const target = new URL("../.dev.vars", import.meta.url);
 const temporary = new URL("../.dev.vars.tmp", import.meta.url);
 const contents = [
-    `POLLINATIONS_AUTH_ALLOWED_EMAILS=${JSON.stringify(required("POLLINATIONS_AUTH_ALLOWED_EMAILS"))}`,
     `POLLINATIONS_AUTH_SESSION_SECRET=${JSON.stringify(required("POLLINATIONS_AUTH_SESSION_SECRET"))}`,
     `POLLINATIONS_OAUTH_CLIENT_ID=${JSON.stringify(required("POLLINATIONS_OAUTH_CLIENT_ID"))}`,
     `TINYBIRD_ECONOMICS_READ_TOKEN=${JSON.stringify(required("TINYBIRD_ECONOMICS_READ_TOKEN"))}`,

@@ -268,13 +268,22 @@ export function conversationForRequest(
 function mediaKind(
     url: string,
     isImageSyntax: boolean,
+    label: string,
 ): RenderedMedia["kind"] | null {
     if (isImageSyntax) return "image";
     try {
-        const pathExtension = extension(new URL(url).pathname);
+        const parsedUrl = new URL(url);
+        const pathExtension = extension(parsedUrl.pathname);
         for (const [kind, extensions] of Object.entries(FILE_EXTENSIONS)) {
             if (extensions.has(pathExtension))
                 return kind as RenderedMedia["kind"];
+        }
+        if (parsedUrl.hostname === "media.pollinations.ai") {
+            const hint = label.toLowerCase();
+            if (/\b(video|clip|movie)\b/.test(hint)) return "video";
+            if (/\b(audio|sound|music|voice|speech)\b/.test(hint))
+                return "audio";
+            if (/\b(image|photo|picture)\b/.test(hint)) return "image";
         }
     } catch {
         return null;
@@ -292,7 +301,7 @@ export function extractStreamedMedia(markdown: string): {
     const displayMarkdown = markdown.replace(
         linkPattern,
         (source, imageMarker: string, label: string, url: string) => {
-            const kind = mediaKind(url, imageMarker === "!");
+            const kind = mediaKind(url, imageMarker === "!", label);
             if (!kind) return source;
             if (!seen.has(url)) {
                 seen.add(url);

@@ -246,6 +246,37 @@ describe("openclaw lifecycle", () => {
         });
     });
 
+    it("refuses a primary-only key during setup before rewriting config", async () => {
+        configureOpenclaw(ctx, settings);
+        const original = readFileSync(configFile(), "utf8");
+        const executableDir = mkdtempSync(join(tmpdir(), "openclaw-bin-"));
+        const executable = join(executableDir, "openclaw");
+        writeFileSync(executable, "");
+        chmodSync(executable, 0o755);
+        ctx.env.PATH = executableDir;
+        const catalog = {
+            id: "kimi",
+            input_modalities: ["text"],
+            output_modalities: ["text"],
+            supported_endpoints: ["/v1/chat/completions"],
+            tools: true,
+            context_length: 262000,
+        };
+        const restricted = {
+            valid: true,
+            type: "secret",
+            permissions: { models: ["kimi"] },
+        };
+        mockedGen
+            .mockResolvedValueOnce({ data: [catalog] })
+            .mockResolvedValueOnce(restricted)
+            .mockResolvedValueOnce({ data: [catalog] })
+            .mockResolvedValueOnce(restricted);
+        await expect(openclaw.on(ctx, {})).rejects.toThrow(/cannot access/);
+        expect(readFileSync(configFile(), "utf8")).toBe(original);
+        rmSync(executableDir, { recursive: true, force: true });
+    });
+
     it("accepts a restricted key only when it includes both owned models", async () => {
         configureOpenclaw(ctx, settings);
         mockedGen.mockResolvedValueOnce({

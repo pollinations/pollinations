@@ -101,11 +101,24 @@ export function createDeepInfraModelConfig(
 export function createOpenRouterModelConfig(
     overrides: ModelOverride = {},
 ): ProviderConfig {
-    return createOpenAICompatibleConfig(
-        "https://openrouter.ai/api/v1",
-        process.env.OPENROUTER_API_KEY,
-        overrides,
-    );
+    return {
+        provider: "openrouter",
+        directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
+        authKey: process.env.OPENROUTER_API_KEY,
+        ...overrides,
+    };
+}
+
+export function createAlibabaModelConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return {
+        provider: "openai",
+        directEndpoint:
+            "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
+        authKey: process.env.DASHSCOPE_API_KEY,
+        ...overrides,
+    };
 }
 
 export function createVercelAIGatewayModelConfig(

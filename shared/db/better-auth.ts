@@ -204,9 +204,7 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
-  // Nullable: rows predating titles fall back to communityEndpointTitle().
-  // Required on create, so only the pre-existing backlog is null.
-  title: text("title"),
+  title: text("title").notNull(),
   description: text("description"),
   // What this listing IS to callers, and the only thing deciding whether a
   // call is sent a run token that spends the caller's balance.
@@ -229,6 +227,14 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   visibility: text("visibility", { enum: ["private", "public"] })
     .default("private")
     .notNull(),
+  // A public price change or private-to-public transition becomes effective
+  // 12 hours after it is submitted. The pending payload is only meaningful
+  // for proxy listings; visibility applies to every listing type.
+  pendingPayload: text("pending_payload"),
+  pendingVisibility: text("pending_visibility", {
+    enum: ["private", "public"],
+  }),
+  pendingAt: integer("pending_at", { mode: "timestamp" }),
   hiddenAt: integer("hidden_at", { mode: "timestamp" }),
   hiddenReason: text("hidden_reason"),
   hiddenBy: text("hidden_by"),

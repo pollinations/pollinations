@@ -1,6 +1,7 @@
 import { type CallToolResult, createMCPClient } from "@ai-sdk/mcp";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { getLogger } from "@logtape/logtape";
+import type { McpServerId } from "@shared/registry/mcp.ts";
 import {
     APICallError,
     type FinishReason,
@@ -13,11 +14,11 @@ import type { PromptAgentConfig } from "./prompt-agent.ts";
 
 const log = getLogger(["enter", "prompt-agent-runtime"]);
 
-// Use z.any() for messages instead of z.custom() to allow JSON Schema generation.
-// Actual runtime validation is handled by the ai package internally.
 export const PromptAgentRequestSchema = z
     .object({
-        messages: z.array(z.any()).optional().default([]),
+        // z.custom() accepts the same inputs, but cannot be represented in the
+        // OpenAPI JSON Schema generated for the account service.
+        messages: z.array(z.unknown()).optional().default([]),
         stream: z.boolean().optional().default(false),
     })
     .passthrough();
@@ -32,7 +33,6 @@ type PromptAgentRuntime = {
     config: PromptAgentConfig;
     apiKey: string;
     genBaseUrl: string;
-    pollinationsMcpUrl: string;
 };
 
 type McpClient = Awaited<ReturnType<typeof createMCPClient>>;
@@ -74,7 +74,8 @@ function agentErrorResponse(error: unknown): Response {
     );
 }
 
-async function loadPollinationsTools(
+async function loadMcpTools(
+    serverId: McpServerId,
     url: string,
     apiKey: string,
     signal: AbortSignal,
@@ -94,7 +95,7 @@ async function loadPollinationsTools(
 
     try {
         client = await createMCPClient({
-            clientName: "pollinations-prompt-agent",
+            clientName: `pollinations-prompt-agent-${serverId}`,
             initializationOptions: {
                 signal,
                 timeout: MCP_INITIALIZATION_TIMEOUT_MS,
@@ -113,17 +114,17 @@ async function loadPollinationsTools(
             },
         });
         for (const [name, definition] of Object.entries(await client.tools())) {
-            tools[`mcp__pollinations__${name}`] = definition;
+            tools[`mcp__${serverId}__${name}`] = definition;
         }
         log.info("MCP_SERVER_LOADED: name={name} url={url} tools={tools}", {
-            name: "pollinations",
+            name: serverId,
             url,
             tools: Object.keys(tools).length,
         });
     } catch (error) {
         // Tool availability is recoverable; the base model can still answer.
         log.error("MCP_SERVER_FAILED: name={name} url={url} error={error}", {
-            name: "pollinations",
+            name: serverId,
             url,
             error: error instanceof Error ? error.message : String(error),
         });
@@ -133,16 +134,24 @@ async function loadPollinationsTools(
 }
 
 async function createAgent(runtime: PromptAgentRuntime, signal: AbortSignal) {
-    const { tools, close } = runtime.config.mcpServers.includes("pollinations")
-        ? await loadPollinationsTools(
-              runtime.pollinationsMcpUrl,
-              runtime.apiKey,
-              signal,
-          )
-        : {
-              tools: {} as Record<string, McpTool>,
-              close: async () => {},
-          };
+    const genBaseUrl = runtime.genBaseUrl.replace(/\/$/, "");
+    const loadedServers = await Promise.all(
+        runtime.config.mcpServers.map((serverId) =>
+            loadMcpTools(
+                serverId,
+                `${genBaseUrl}/mcp/${serverId}`,
+                runtime.apiKey,
+                signal,
+            ),
+        ),
+    );
+    const tools: Record<string, McpTool> = {};
+    for (const server of loadedServers) {
+        Object.assign(tools, server.tools);
+    }
+    const close = async () => {
+        await Promise.all(loadedServers.map((server) => server.close()));
+    };
     const toolCallCounts: ToolCallCounts = {};
     let toolCalls = 0;
     for (const [name, tool] of Object.entries(tools)) {
@@ -165,7 +174,7 @@ async function createAgent(runtime: PromptAgentRuntime, signal: AbortSignal) {
     const pollinations = createOpenAICompatible({
         name: "pollinations",
         apiKey: runtime.apiKey,
-        baseURL: `${runtime.genBaseUrl.replace(/\/$/, "")}/v1`,
+        baseURL: `${genBaseUrl}/v1`,
     });
 
     const agent = new ToolLoopAgent({
@@ -381,7 +390,7 @@ function toolDetailsContent(
     output: string,
     hasContent: boolean,
 ): string {
-    const name = part.toolName.replace(/^mcp__pollinations__/, "");
+    const name = part.toolName.replace(/^mcp__[^_]+__/, "");
     const argumentsJson = JSON.stringify(part.input ?? {});
     return (
         (hasContent ? "\n\n" : "") +
@@ -574,7 +583,9 @@ export async function handlePromptAgentRequest(
     signal: AbortSignal,
     runtime: PromptAgentRuntime,
 ): Promise<Response> {
-    const messages = Array.isArray(body.messages) ? body.messages : [];
+    const messages = (
+        Array.isArray(body.messages) ? body.messages : []
+    ) as ModelMessage[];
     const id = `chatcmpl-${crypto.randomUUID()}`;
     const created = Math.floor(Date.now() / 1000);
     try {

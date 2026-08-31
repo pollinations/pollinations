@@ -906,7 +906,12 @@ describe("API Key Management", () => {
         }) => {
             const created = await createApiKeyViaApi(sessionToken, {
                 name: "key-with-alias-and-unknown-model",
-                allowedModels: ["flux", "nanobanana2", "retired-model"],
+                allowedModels: [
+                    "flux",
+                    "nanobanana2",
+                    "gpt-realtime-2",
+                    "retired-model",
+                ],
             });
 
             const response = await SELF.fetch(
@@ -924,6 +929,7 @@ describe("API Key Management", () => {
             expect(listed?.permissions?.models).toEqual([
                 "flux",
                 "nanobanana-2",
+                "gpt-realtime-2.1",
             ]);
 
             const db = drizzle(env.DB, { schema });
@@ -933,6 +939,7 @@ describe("API Key Management", () => {
             expect(JSON.parse(stored?.permissions ?? "{}").models).toEqual([
                 "flux",
                 "nanobanana-2",
+                "gpt-realtime-2.1",
                 "retired-model",
             ]);
         });
@@ -971,6 +978,7 @@ describe("API Key Management", () => {
                     id: "owner-private-model",
                     ownerUserId,
                     name: "private-model",
+                    title: "Owner private model",
                     baseUrl: "https://owner.example.com/v1",
                     upstreamModel: "private-model",
                     payload: JSON.stringify({
@@ -990,6 +998,7 @@ describe("API Key Management", () => {
                     id: "other-private-model",
                     ownerUserId: "other-model-owner-id",
                     name: "private-model",
+                    title: "Other private model",
                     baseUrl: "https://other.example.com/v1",
                     upstreamModel: "private-model",
                     payload: JSON.stringify({

@@ -86,7 +86,7 @@ export interface ChatCompletion {
     stream?: boolean;
     responseStream?: ReadableStream | null;
     requestData?: unknown;
-    /** Portkey fallback target that served the call, e.g. "config.targets[1]". */
+    /** Worker fallback candidate that served the call. */
     fallbackTarget?: string;
     /** Internal URL of the gateway request that produced this completion. */
     upstreamRequestUrl?: URL;
@@ -152,7 +152,6 @@ export interface RequestData {
 /** Configuration for the generic OpenAI client. */
 export interface OpenAIClientConfig {
     endpoint: string | ((model: string, options: TransformOptions) => string);
-    defaultOptions?: Record<string, unknown>;
     additionalHeaders?: Record<string, string>;
     fetcher?: (input: string, init?: RequestInit) => Promise<Response>;
 }

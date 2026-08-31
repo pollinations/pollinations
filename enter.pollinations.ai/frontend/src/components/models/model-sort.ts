@@ -11,11 +11,11 @@ const compareKnownValues = (
     return direction === "asc" ? a - b : b - a;
 };
 
-const getAverageCost = (model: ModelPrice): number | undefined => {
-    if (model.free) return 0;
-    return model.realAvgCost && model.realAvgCost > 0
-        ? model.realAvgCost
-        : undefined;
+// Same order as calculatePerPollen: a measured cost beats a declared free
+// price, so an agent sorts by what its run actually spends, not as free.
+const getObservedCost = (model: ModelPrice): number | undefined => {
+    if (model.realAvgCost && model.realAvgCost > 0) return model.realAvgCost;
+    return model.free ? 0 : undefined;
 };
 
 const getTitle = (model: ModelPrice): string => model.displayName ?? model.name;
@@ -43,20 +43,22 @@ export function sortModels(
 ): ModelPrice[] {
     return [...models].sort((a, b) => {
         switch (sort) {
+            case "popular":
+                return compareKnownValues(a.users7d, b.users7d, "desc");
             case "newest":
                 return compareKnownValues(a.addedDate, b.addedDate, "desc");
             case "oldest":
                 return compareKnownValues(a.addedDate, b.addedDate, "asc");
             case "price-low":
                 return compareKnownValues(
-                    getAverageCost(a),
-                    getAverageCost(b),
+                    getObservedCost(a),
+                    getObservedCost(b),
                     "asc",
                 );
             case "price-high":
                 return compareKnownValues(
-                    getAverageCost(a),
-                    getAverageCost(b),
+                    getObservedCost(a),
+                    getObservedCost(b),
                     "desc",
                 );
             case "title":

@@ -369,7 +369,7 @@ export function CommunityEndpoints({
                                         }
                                     />
                                 </FieldStack>
-                                <FieldStack label="Website">
+                                <FieldStack label="Website or privacy notice">
                                     <Input
                                         type="url"
                                         name="community-provider-url"
@@ -398,7 +398,11 @@ export function CommunityEndpoints({
                         </form>
                         <p className="mt-4 flex items-start gap-1.5 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
                             <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                            <span>Shown on all your public deployments.</span>
+                            <span>
+                                Shown on all your public deployments. Keep it
+                                current so callers can review who operates the
+                                endpoint and how request content is handled.
+                            </span>
                         </p>
                     </Section>
                 )}

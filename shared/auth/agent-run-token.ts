@@ -9,7 +9,12 @@ const MAX_CLOCK_SKEW_SECONDS = 5;
 
 export type AgentRunClaims = {
     parentApiKeyId: string;
-    runId: string;
+    // The request_id of the call that minted this token, so its generations can
+    // be grouped. The agent's steps arrive as separate requests, each minting
+    // its own id, and this token is the only thing that crosses that hop. Keep
+    // it in the signature: the agent holds the token, so a header carrying the
+    // same id would be a value the agent gets to choose.
+    parentRequestId: string;
     managedAgentId?: string;
     issuedAt: number;
     expiresAt: number;
@@ -24,7 +29,7 @@ function signingKey(secret: string): Uint8Array {
 export async function signAgentRunToken(opts: {
     secret: string;
     parentApiKeyId: string;
-    runId: string;
+    parentRequestId: string;
     managedAgentId?: string;
     expiresIn?: number;
     now?: number;
@@ -37,13 +42,14 @@ export async function signAgentRunToken(opts: {
 
     const token = await new SignJWT({
         version: 1,
+        parentRequestId: opts.parentRequestId,
         ...(opts.managedAgentId ? { managedAgentId: opts.managedAgentId } : {}),
     })
         .setProtectedHeader({ alg: "HS256", typ: "JWT" })
         .setIssuer(AGENT_RUN_TOKEN_ISSUER)
         .setAudience(AGENT_RUN_TOKEN_AUDIENCE)
         .setSubject(opts.parentApiKeyId)
-        .setJti(opts.runId)
+        .setJti(crypto.randomUUID())
         .setIssuedAt(issuedAt)
         .setExpirationTime(issuedAt + expiresIn)
         .sign(signingKey(opts.secret));
@@ -83,6 +89,8 @@ export async function verifyAgentRunToken(
         !payload.jti ||
         typeof payload.iat !== "number" ||
         typeof payload.exp !== "number" ||
+        typeof payload.parentRequestId !== "string" ||
+        !payload.parentRequestId ||
         (payload.managedAgentId !== undefined &&
             (typeof payload.managedAgentId !== "string" ||
                 !payload.managedAgentId))
@@ -92,7 +100,7 @@ export async function verifyAgentRunToken(
 
     return {
         parentApiKeyId: payload.sub,
-        runId: payload.jti,
+        parentRequestId: payload.parentRequestId,
         ...(typeof payload.managedAgentId === "string"
             ? { managedAgentId: payload.managedAgentId }
             : {}),

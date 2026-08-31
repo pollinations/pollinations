@@ -9,6 +9,10 @@ All calls go through `https://gen.pollinations.ai` by default. Set `POLLINATIONS
 For Streamable HTTP clients, connect to `https://mcp.pollinations.ai` and send
 your API key as `Authorization: Bearer YOUR_KEY`.
 
+Other Pollinations-hosted MCP servers are listed at
+[`https://gen.pollinations.ai/mcp`](https://gen.pollinations.ai/mcp). Connect to
+an entry's URL with the same authorization header.
+
 The server can only use models and account features allowed by that key's
 permissions, and it cannot spend beyond the key's budget. Configure both in
 [API key settings](https://enter.pollinations.ai/keys); see
@@ -75,11 +79,12 @@ Use `generateText` with the appropriate model and message content for simple tex
 
 ### Audio
 
-| Tool            | API route      | Description                      |
-| --------------- | -------------- | -------------------------------- |
-| `generateAudio` | `/audio/{text}` | Generate speech, music, or sound |
+| Tool              | API route                 | Description                            |
+| ----------------- | ------------------------- | -------------------------------------- |
+| `generateAudio`   | `/audio/{text}`           | Generate speech, music, or sound       |
+| `transcribeAudio` | `/v1/audio/transcriptions` | Transcribe audio from a public HTTPS URL |
 
-`generateAudio` returns an unlisted media resource link. Call `listModels` with `type=audio` for model and voice metadata.
+`generateAudio` returns an unlisted media resource link. `transcribeAudio` accepts a directly accessible audio URL and returns text. Call `listModels` with `type=audio` for live model and voice metadata.
 
 ### Discovery
 

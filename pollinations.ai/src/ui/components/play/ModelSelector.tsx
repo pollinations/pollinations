@@ -1,4 +1,4 @@
-import { memo, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { PLAY_PAGE } from "../../../copy/content/play";
 import type { Model } from "../../../hooks/useModelList";
 import { usePageCopy } from "../../../hooks/usePageCopy";
@@ -71,6 +71,15 @@ export const ModelSelector = memo(function ModelSelector({
     const { copy } = usePageCopy(PLAY_PAGE);
     const [activeCategory, setActiveCategory] =
         useState<ModelCategory>("image");
+
+    // Keep the visible category tab on the selected model (e.g. when
+    // preselected via /play?model=<id>).
+    useEffect(() => {
+        const selected = models.find((m) => m.id === selectedModel);
+        if (selected) {
+            setActiveCategory(getModelCategory(selected));
+        }
+    }, [models, selectedModel]);
 
     const categories: { key: ModelCategory; label: string }[] = [
         { key: "image", label: copy.imageLabel },

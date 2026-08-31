@@ -156,20 +156,20 @@ export const KPIS = [
                 lowerIsBetter: true,
                 calc: (w) => failuresPerThousand(w.availability),
                 tooltip:
-                    "5xx / (2xx + 5xx) × 1,000. A normalized failure rate that stays comparable as traffic changes. User errors (4xx) are excluded.",
+                    "Non-community 5xx / (2xx + 5xx) × 1,000. A normalized failure rate that stays comparable as traffic changes. Community models have a separate KPI; user errors (4xx) are excluded.",
             },
             {
                 name: "Service availability",
                 format: "percentPrecise",
                 tooltip:
-                    "2xx / (2xx + 5xx) × 100. User errors (4xx) are excluded because they do not indicate service downtime.",
+                    "Non-community 2xx / (2xx + 5xx) × 100. Community models have a separate availability KPI; user errors (4xx) are excluded because they do not indicate service downtime.",
             },
             {
                 name: "5xx errors",
                 lowerIsBetter: true,
                 calc: (w) => w.serverErrors5xx,
                 tooltip:
-                    "Server errors behind the availability figure. 90% availability reads mild; the same week in raw failed requests does not.",
+                    "Non-community server errors behind the availability figure. Community-model errors are excluded and reported separately.",
             },
         ],
     },

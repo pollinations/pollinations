@@ -1,0 +1,33 @@
+{
+  "pr_number": 14208,
+  "title": "refactor: preserve text request inputs",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14208",
+  "merged_at": "2026-08-31T18:32:58Z",
+  "labels": [],
+  "pr_body_excerpt": "- Preserves empty and whitespace-only user content instead of injecting a synthetic prompt.\n- Forwards numeric generation options unchanged instead of clamping or rounding them silently.\n- Keeps OpenAI-compatible POST validation at the request boundary; legacy simple-text inputs are accepted or rejected by the selected provider.\n- Removes 32 net lines.\n- Passes 22 focused tests, Gen typecheck, Biome, and diff checks.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "No more imaginary prompts",
+    "blurb": "The text gateway has stopped helpfully inventing words on your behalf. Empty space remains empty space, and generation settings arrive exactly as sent.",
+    "summary": "Text request normalization now preserves empty and whitespace-only content, forwards numeric generation options without silent clamping or rounding, and leaves legacy simple-text validation to the selected provider while retaining OpenAI-compatible POST validation at the gateway boundary.",
+    "impact": "Developers can send intentional blank content and precise numeric settings through the text API, with providers receiving the original request values instead of rewritten substitutes.",
+    "keywords": [
+      "text-api",
+      "request-validation",
+      "OpenAI-compatibility",
+      "generation-options",
+      "providers"
+    ],
+    "visual_concept": "Depict a cozy retro text terminal where an intentionally blank message card and several precisely labeled number dials travel untouched along a garden-like API conveyor. Polli, wearing tiny librarian glasses, carefully preserves the blank card while a code-plant grows beside the terminal, representing inputs reaching the selected provider unchanged.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with black oval eyes, bright pink rectangular cheek blushes, a happy smile, light blue rounded wings, and tiny librarian glasses, carefully carrying a blank message card past a retro terminal with unaltered numeric dials; lime green (#ecf874) code-plants and small flowers grow around the request path. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text on the terminal: \"AS SENT\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-31/PR-14208.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with black oval eyes, bright pink rectangular cheek blushes, a happy smile, light blue rounded wings, and tiny librarian glasses, carefully carrying a blank message card past a retro terminal with unaltered numeric dials; lime green (#ecf874) code-plants and small flowers grow around the request path. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text on the terminal: \"AS SENT\"."
+  },
+  "generated_at": "2026-08-31T18:34:01.796027+00:00"
+}

@@ -1,0 +1,33 @@
+{
+  "pr_number": 14161,
+  "title": "Modify app description and update 'byop' status",
+  "author": "gggff123",
+  "url": "https://github.com/pollinations/pollinations/pull/14161",
+  "merged_at": "2026-08-31T12:34:49Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes Automated video app as requested by @achmez in #14077",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The app garden got labels",
+    "blurb": "The Automated Video app got its little signpost refreshed and its BYOP status brought back in line. Even garden directories need occasional weeding.",
+    "summary": "Updated the Automated Video app entry in operations/app-management/app.json, including its description and BYOP status, so the app directory reflects its current setup.",
+    "impact": "Users browsing the app directory will see clearer Automated Video app information and an accurate BYOP availability status.",
+    "keywords": [
+      "automated-video",
+      "app-directory",
+      "byop",
+      "community-apps",
+      "metadata"
+    ],
+    "visual_concept": "Depict Polli as a friendly app-garden caretaker replacing the sign on a small automated video workstation, with a retro monitor showing a simple film strip and a neatly updated BYOP badge. Use code-plants and flowers to represent the managed app directory.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny gardener hat, carefully updating a sign beside a retro video-editing monitor with a small film strip icon and a pixel badge reading “BYOP.” Code-plants and flowers grow around the workstation against a prominent soft lime green (#ecf874), mint, lavender, and warm cream gradient; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-31/PR-14161.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny gardener hat, carefully updating a sign beside a retro video-editing monitor with a small film strip icon and a pixel badge reading “BYOP.” Code-plants and flowers grow around the workstation against a prominent soft lime green (#ecf874), mint, lavender, and warm cream gradient; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-08-31T12:35:52.700524+00:00"
+}

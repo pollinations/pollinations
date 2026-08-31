@@ -5,7 +5,10 @@ import {
     type ServerType,
 } from "./availableServers.ts";
 import { getImageEnv } from "./env.ts";
-import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
+import {
+    callAzureFlux2,
+    callAzureFluxKontext,
+} from "./models/azureFluxKontextModel.js";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
 import {
     callIdeogramBalancedAPI,
@@ -746,6 +749,17 @@ const generateImage = async (
                     "Azure Flux Kontext generation failed:",
                     error.message,
                 );
+                await logGptImageError(prompt, safeParams, userInfo, error);
+                throw error;
+            }
+        }
+
+        case "flux-2-pro":
+        case "flux-2-flex": {
+            try {
+                return await callAzureFlux2(prompt, safeParams, userInfo);
+            } catch (error) {
+                logError("Azure FLUX.2 generation failed:", error.message);
                 await logGptImageError(prompt, safeParams, userInfo, error);
                 throw error;
             }

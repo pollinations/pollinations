@@ -15,44 +15,10 @@ import {
     type ModelInfo,
     modelInfoFromDefinition,
 } from "@shared/registry/model-info.ts";
-import type {
-    ModelDefinition,
-    ModelInputModality,
-} from "@shared/registry/registry.ts";
+import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { eq, isNotNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { AgentCatalogConfig } from "./agent-catalog.ts";
-
-const COMMUNITY_TEXT_ENDPOINTS = [
-    "/v1/chat/completions",
-    "/text",
-    "/text/{prompt}",
-];
-export function communityTextSupportedEndpoints(): string[] {
-    return COMMUNITY_TEXT_ENDPOINTS;
-}
-
-export function communityTranscriptionSupportedEndpoints(): string[] {
-    return ["/v1/audio/transcriptions"];
-}
-
-export function communityVideoSupportedEndpoints(): string[] {
-    return ["/v1/images/generations", "/image/{prompt}", "/video/{prompt}"];
-}
-
-export function communityEmbeddingSupportedEndpoints(): string[] {
-    return ["/v1/embeddings"];
-}
-
-export function communityImageSupportedEndpoints(
-    inputModalities: readonly ModelInputModality[] = ["text"],
-): string[] {
-    return [
-        "/v1/images/generations",
-        ...(inputModalities.includes("image") ? ["/v1/images/edits"] : []),
-        "/image/{prompt}",
-    ];
-}
 
 export type CommunityModelRegistryEntry = {
     id: string;

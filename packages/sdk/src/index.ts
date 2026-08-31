@@ -128,6 +128,8 @@ export type {
     // Models
     ModelCategory,
     ModelInfo,
+    ModelInputModality,
+    ModelOutputModality,
     // Config
     PollinationsConfig,
     // Errors
@@ -151,6 +153,7 @@ export type {
     UsageRecord,
     UsageResponse,
     UserInfo,
+    VideoCapability,
     VideoContentPart,
     VideoGenerateOptions,
     // Video

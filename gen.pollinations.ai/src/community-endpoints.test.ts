@@ -19,6 +19,7 @@ import {
     communityEmbeddingsUrl,
     communityEndpointPriceFieldsForModality,
     communityEndpointPrices,
+    communityEndpointSupportedEndpoints,
     communityImageEditsUrl,
     communityImageGenerationsUrl,
     communityModelDefinition,
@@ -82,12 +83,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
 import { withInlineGenerationCoordinator } from "../test/helpers/inline-generation-coordinator.ts";
 import { callCommunityTranscriptionEndpoint } from "./audio/communityEndpoint.ts";
-import {
-    communityImageSupportedEndpoints,
-    communityTranscriptionSupportedEndpoints,
-    communityVideoSupportedEndpoints,
-    getCommunityModelRegistryEntries,
-} from "./community-models.ts";
+import { getCommunityModelRegistryEntries } from "./community-models.ts";
 import {
     callCommunityImageEndpoint,
     callCommunityVideoEndpoint,
@@ -635,13 +631,20 @@ describe("community endpoint helpers", () => {
     });
 
     it("restricts community transcription models to the transcription endpoint", () => {
-        expect(communityTranscriptionSupportedEndpoints()).toEqual([
+        const definition = communityModelDefinition({
+            modelId: "voodoohop/transcription",
+            title: "Transcription",
+            description: null,
+            modality: "transcription",
+            ...communityEndpointPrices({}),
+        });
+        expect(definition.supportedEndpoints).toEqual([
             "/v1/audio/transcriptions",
         ]);
     });
 
     it("advertises community videos on the existing public media routes", () => {
-        expect(communityVideoSupportedEndpoints()).toEqual([
+        expect(communityEndpointSupportedEndpoints("video", ["text"])).toEqual([
             "/v1/images/generations",
             "/image/{prompt}",
             "/video/{prompt}",
@@ -760,12 +763,12 @@ describe("community endpoint helpers", () => {
     });
 
     it("advertises image edits only for models with image input", () => {
-        expect(communityImageSupportedEndpoints(["text"])).not.toContain(
-            "/v1/images/edits",
-        );
-        expect(communityImageSupportedEndpoints(["text", "image"])).toContain(
-            "/v1/images/edits",
-        );
+        expect(
+            communityEndpointSupportedEndpoints("image", ["text"]),
+        ).not.toContain("/v1/images/edits");
+        expect(
+            communityEndpointSupportedEndpoints("image", ["text", "image"]),
+        ).toContain("/v1/images/edits");
     });
 
     it("builds token-priced community image models when the probe detected usage", () => {
@@ -4287,7 +4290,7 @@ fixtureTest(
         expect(
             openaiCatalog.data.find((model) => model.id === registered.modelId)
                 ?.supported_endpoints,
-        ).toEqual(communityVideoSupportedEndpoints());
+        ).toEqual(communityEndpointSupportedEndpoints("video", ["text"]));
 
         const excessivePriceResponse = await fetchEnterApi(
             enterApi,

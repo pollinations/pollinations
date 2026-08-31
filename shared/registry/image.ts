@@ -62,7 +62,7 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 1, // Azure FLUX.1 Kontext edit route forwards one input image.
     },
     "flux-2-pro": {
-        aliases: [],
+        aliases: ["black-forest-labs/flux.2-pro"],
         provider: "azure",
         brand: "Black Forest Labs",
         category: "image",
@@ -100,7 +100,7 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 2, // Pollinations latency cap; larger Azure edits exceeded 120 seconds.
     },
     "flux-2-flex": {
-        aliases: [],
+        aliases: ["black-forest-labs/flux.2-flex"],
         provider: "azure",
         brand: "Black Forest Labs",
         category: "image",

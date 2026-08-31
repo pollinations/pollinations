@@ -8,7 +8,6 @@ export interface ChatMessage {
 
 export interface CallerMetadata {
     id: string;
-    requestId: string;
 }
 
 export interface ChatCompletionRequest {

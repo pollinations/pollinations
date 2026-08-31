@@ -1,4 +1,4 @@
-import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
+import { randomUUID, timingSafeEqual } from "node:crypto";
 import type { HumanGateway, HumanReply } from "./discord.js";
 import type { ConversationStore } from "./store.js";
 import {
@@ -32,10 +32,6 @@ interface HumanServiceOptions {
 
 export class HumanService {
     readonly #options: HumanServiceOptions;
-    readonly #initialRequests = new Map<
-        string,
-        Promise<ChatCompletionResponse>
-    >();
 
     constructor(options: HumanServiceOptions) {
         this.#options = options;
@@ -58,25 +54,16 @@ export class HumanService {
     async complete(input: unknown): Promise<ChatCompletionResponse> {
         const request = parseRequest(input);
         const callerId = request._pollinations?.caller?.id;
-        const requestId = request._pollinations?.caller?.requestId;
-        if (!callerId || !requestId) {
+        if (!callerId) {
             throw new HttpError(400, "Trusted caller metadata is required");
         }
 
         if (!request.conversation_id) {
-            const transcriptHash = createHash("sha256")
-                .update(JSON.stringify(request.messages))
-                .digest("hex");
-            const key = `${callerId}:${transcriptHash}`;
-            const inFlight = this.#initialRequests.get(key);
-            if (inFlight) return inFlight;
-            const completion = this.#createInitialCompletion(
-                request,
-                callerId,
-                transcriptHash,
-            ).finally(() => this.#initialRequests.delete(key));
-            this.#initialRequests.set(key, completion);
-            return completion;
+            const threadId = await this.#options.gateway.createThread(
+                `human-${randomUUID().slice(0, 12)}`,
+            );
+            const conversation = this.#options.store.create(callerId, threadId);
+            return this.#completeConversation(request, conversation, false);
         }
 
         const conversation = this.#existingConversation(
@@ -84,18 +71,6 @@ export class HumanService {
             request.conversation_id,
         );
         return this.#completeConversation(request, conversation, true);
-    }
-
-    async #createInitialCompletion(
-        request: ChatCompletionRequest,
-        callerId: string,
-        transcriptHash: string,
-    ): Promise<ChatCompletionResponse> {
-        const threadId = await this.#options.gateway.createThread(
-            `human-${transcriptHash.slice(0, 12)}`,
-        );
-        const conversation = this.#options.store.create(callerId, threadId);
-        return this.#completeConversation(request, conversation, false);
     }
 
     async #completeConversation(

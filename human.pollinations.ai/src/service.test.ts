@@ -28,7 +28,7 @@ const baseRequest = (
     model: "humans",
     messages: [{ role: "user", content: "Hello humans" }],
     _pollinations: {
-        caller: { id: "opaque-caller", requestId: "request-one" },
+        caller: { id: "opaque-caller" },
     },
     ...overrides,
 });
@@ -114,29 +114,10 @@ describe("HumanService", () => {
             service.complete({
                 ...baseRequest({ conversation_id: first.conversation_id }),
                 _pollinations: {
-                    caller: {
-                        id: "different-caller",
-                        requestId: "request-two",
-                    },
+                    caller: { id: "different-caller" },
                 },
             }),
         ).rejects.toMatchObject({ status: 404 });
-    });
-
-    it("coalesces initial retries even when request IDs differ", async () => {
-        const second = baseRequest({
-            _pollinations: {
-                caller: { id: "opaque-caller", requestId: "request-two" },
-            },
-        });
-        const [left, right] = await Promise.all([
-            service.complete(baseRequest()),
-            service.complete(second),
-        ]);
-        expect(left.conversation_id).toBe(right.conversation_id);
-        expect(left.id).toBe(right.id);
-        expect(gateway.threads).toBe(1);
-        expect(gateway.asks).toHaveLength(1);
     });
 
     it("truncates output according to the smallest completion limit", async () => {

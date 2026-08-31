@@ -215,7 +215,6 @@ describe("human responder identity", () => {
                 expect(body._pollinations).toEqual({
                     caller: {
                         id: expect.stringMatching(/^hc_/),
-                        requestId: "human-request-id",
                     },
                 });
                 expect(JSON.stringify(body._pollinations)).not.toContain(

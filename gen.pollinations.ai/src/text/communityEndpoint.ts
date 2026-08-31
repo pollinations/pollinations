@@ -114,7 +114,6 @@ export async function communityEndpointGatewayContext({
         trustedHumanMetadata = {
             caller: {
                 id: await humanCallerId(secret, endpoint.id, callerUserId),
-                requestId: parentRequestId,
             },
         };
     }

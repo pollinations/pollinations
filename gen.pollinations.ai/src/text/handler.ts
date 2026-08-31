@@ -145,6 +145,15 @@ function withGatewayContext(c: TextContext, requestData: RequestData) {
     };
 }
 
+function usesHumanResponders(
+    candidate: Pick<FallbackCandidate, "communityEndpoint">,
+): boolean {
+    return (
+        candidate.communityEndpoint?.type === "proxy" &&
+        candidate.communityEndpoint.humanResponders === true
+    );
+}
+
 /**
  * `servedModelId` is our id for the model that ran, and it wins over the name
  * the provider reports for itself. A community endpoint answers with its
@@ -398,10 +407,7 @@ async function generateTextResponse(
             return normalization.errorResponse;
         }
         const normalizedRequestData = normalization.requestData;
-        const requestedHumanResponders =
-            c.var.model.communityEndpoint?.type === "proxy" &&
-            c.var.model.communityEndpoint.humanResponders;
-        if (requestedHumanResponders && normalizedRequestData.stream) {
+        if (usesHumanResponders(c.var.model) && normalizedRequestData.stream) {
             throw new HTTPException(400, {
                 message: "Human responder models do not support streaming",
             });
@@ -415,10 +421,10 @@ async function generateTextResponse(
         } = await withModelFallback(
             candidates,
             async (attempt) => {
-                const attemptUsesHumans =
-                    attempt.communityEndpoint?.type === "proxy" &&
-                    attempt.communityEndpoint.humanResponders;
-                if (attemptUsesHumans && normalizedRequestData.stream) {
+                if (
+                    usesHumanResponders(attempt) &&
+                    normalizedRequestData.stream
+                ) {
                     throw new HTTPException(400, {
                         message:
                             "Human responder models do not support streaming",
@@ -437,10 +443,7 @@ async function generateTextResponse(
         );
         let publicCompletion = completion;
         let responderUserId: string | undefined;
-        if (
-            candidate.communityEndpoint?.type === "proxy" &&
-            candidate.communityEndpoint.humanResponders
-        ) {
+        if (usesHumanResponders(candidate)) {
             const protectedCompletion = await protectHumanResponderCompletion(
                 c,
                 completion,

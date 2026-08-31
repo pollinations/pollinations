@@ -1,0 +1,35 @@
+{
+  "pr_number": 14183,
+  "title": "refactor: resolve effective community listing state",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14183",
+  "merged_at": "2026-08-31T20:38:24Z",
+  "labels": [],
+  "pr_body_excerpt": "- Resolves matured visibility and pricing changes as one effective proxy-listing state\n- Reuses that state in catalog generation, account responses, updates, and fallback validation\n- Preserves newer credentials and fallback settings when delayed pricing matures\n- Tests the delay boundary and existing account/API behavior",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The listings remember",
+    "blurb": "Community model listings now resolve their grown-up visibility and pricing changes in one place. Polli kept the fresh credentials and fallback settings safely in the hive instead of letting a delayed price update shuffle them away.",
+    "summary": "Community proxy listings now compute matured visibility and pricing changes as one effective state, reused by catalogs, account responses, update handling, and fallback validation while preserving newer credentials and fallback settings.",
+    "impact": "Users and API clients get consistent community model listings at the pricing-delay boundary, without newer credentials or fallback configuration being overwritten by a maturing update.",
+    "keywords": [
+      "community-models",
+      "proxy-listings",
+      "pricing",
+      "visibility",
+      "credentials",
+      "fallbacks",
+      "api"
+    ],
+    "visual_concept": "Depict a cozy community-model garden where one central listing card blooms into its final visibility-and-price state while attached key and fallback-setting tags remain safely pinned in place. Polli, wearing a tiny librarian visor, carefully organizes the card beside a retro terminal; small code-plants and a clock at the delay boundary represent the newly unified effective-state logic.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wearing a tiny librarian visor as she tends a lime green (#ecf874) community-model garden; she carefully pins credential keys and fallback tags onto one blooming proxy-listing card beside a retro terminal and a small clock, with code-plants growing around it. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) details, pixel-font text: \"EFFECTIVE STATE\", nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-31/PR-14183.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wearing a tiny librarian visor as she tends a lime green (#ecf874) community-model garden; she carefully pins credential keys and fallback tags onto one blooming proxy-listing card beside a retro terminal and a small clock, with code-plants growing around it. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) details, pixel-font text: \"EFFECTIVE STATE\", nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-08-31T20:40:02.870795+00:00"
+}

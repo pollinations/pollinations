@@ -856,37 +856,20 @@ export const TEXT_SERVICES = {
     },
     "grok-4.6": {
         aliases: ["grok-4.5", "grok-4-5", "x-ai/grok-4.6"],
-        provider: "openrouter",
+        provider: "azure",
         brand: "xAI",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
-        // OpenRouter's min_prompt_tokens override applies from 200K total
-        // prompt tokens.
+        priceMultiplier: 0.75,
+        // Provisional Azure sheet pending an exact public or account meter.
+        // The direct route reports image tokens separately from text tokens.
         cost: {
             promptTextTokens: perMillion(2),
             promptCachedTokens: perMillion(0.5),
+            promptImageTokens: perMillion(2),
             completionTextTokens: perMillion(6),
         },
-        ...defineCostVariants(
-            {
-                long_context: {
-                    promptTextTokens: perMillion(4),
-                    promptCachedTokens: perMillion(1),
-                    completionTextTokens: perMillion(12),
-                },
-            },
-            longContextAtLeast(200_000),
-            {
-                long_context: {
-                    label: "Long context (200K+)",
-                    description:
-                        "At least 200,000 prompt tokens; the higher rates apply to the whole request.",
-                },
-            },
-            "<200K context",
-        ),
         title: "Grok 4.6",
         description: "Frontier reasoning for coding and knowledge work",
         inputModalities: ["text", "image"],
@@ -894,7 +877,8 @@ export const TEXT_SERVICES = {
         maxReferenceImages: 10,
         tools: true,
         reasoning: true,
-        contextLength: 500000,
+        // Azure's Global Standard deployment is capped at 200K context.
+        contextLength: 200000,
         isSpecialized: false,
     },
     "gemini-search": {

@@ -140,6 +140,14 @@ export const portkeyConfig: PortkeyConfigMap = {
             process.env.AZURE_MYCELI_PROD_API_KEY,
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4.3/chat/completions?api-version=2024-12-01-preview",
         ),
+    "grok-4.6": () => ({
+        provider: "openai",
+        directEndpoint:
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4.6/chat/completions?api-version=2024-12-01-preview",
+        directAuthHeader: "api-key",
+        authKey: process.env.AZURE_MYCELI_PROD_API_KEY,
+        model: "grok-4.6",
+    }),
 
     // -- Azure (Myceli Prod — eastus, Cohere) --------------------------------
     "Cohere-command-a-plus-05-2026": () =>
@@ -149,16 +157,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         ),
 
     // -- OpenRouter (frontier models) ----------------------------------------
-    "x-ai/grok-4.6": () =>
-        createOpenRouterModelConfig({
-            model: "x-ai/grok-4.6",
-            defaultOptions: {
-                provider: {
-                    only: ["xai/zdr"],
-                    allow_fallbacks: false,
-                },
-            },
-        }),
     "xiaomi/mimo-v2.5": createPinnedOpenRouterConfig(
         "xiaomi/mimo-v2.5",
         "xiaomi/fp8",

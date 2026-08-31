@@ -220,18 +220,18 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
-    it("pins Grok 4.6 to xAI ZDR on OpenRouter without fallback", () => {
+    it("routes Grok 4.6 directly to its Azure deployment", () => {
         const result = resolveModelConfig(messages, { model: "grok-4.6" });
 
-        expect(result.options.model).toBe("x-ai/grok-4.6");
+        expect(result.options.model).toBe("grok-4.6");
         expect(result.options.modelConfig).toMatchObject({
-            provider: "openrouter",
-            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
+            provider: "openai",
+            directEndpoint:
+                "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4.6/chat/completions?api-version=2024-12-01-preview",
+            directAuthHeader: "api-key",
+            model: "grok-4.6",
         });
-        expect(result.options.provider).toEqual({
-            only: ["xai/zdr"],
-            allow_fallbacks: false,
-        });
+        expect(result.options.provider).toBeUndefined();
     });
 
     it("routes GLM-5.3 directly to Fireworks without fallback", () => {

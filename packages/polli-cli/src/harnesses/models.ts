@@ -5,6 +5,7 @@ interface CatalogModel {
     id: string;
     input_modalities?: string[];
     output_modalities?: string[];
+    supported_endpoints?: string[];
     tools?: boolean;
     context_length?: number;
     agent?: unknown;
@@ -22,6 +23,7 @@ export const fetchHarnessModels = async (): Promise<HarnessModel[]> => {
             (m) =>
                 m.tools === true &&
                 m.output_modalities?.includes("text") &&
+                m.supported_endpoints?.includes("/v1/chat/completions") &&
                 m.context_length &&
                 !m.agent &&
                 !m.id.includes("/"),

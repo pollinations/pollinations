@@ -40,6 +40,217 @@ afterEach(() => {
 });
 
 describe("GenerationCoordinator", () => {
+    it("expires only final payment responses by alarm", async () => {
+        const stub = env.GENERATION_COORDINATOR.getByName(
+            `payment-${crypto.randomUUID()}`,
+        );
+        const now = Date.now();
+        vi.spyOn(Date, "now").mockReturnValue(now);
+
+        const result = await runInDurableObject(
+            stub,
+            async (coordinator, state) => {
+                expect(
+                    await coordinator.startPaymentOperation(
+                        "fingerprint",
+                        "payment",
+                        "proof",
+                        "claim",
+                        now + 360_000,
+                    ),
+                ).toEqual({ status: "owner" });
+                const response = {
+                    status: 200,
+                    statusText: "OK",
+                    headers: [["payment-response", "receipt"]] as [
+                        string,
+                        string,
+                    ][],
+                    body: new TextEncoder().encode("complete"),
+                };
+                expect(
+                    await coordinator.completePaymentOperation(
+                        "fingerprint",
+                        "payment",
+                        "proof",
+                        "claim",
+                        response,
+                        now + 30 * 24 * 60 * 60 * 1000,
+                    ),
+                ).toBe(true);
+                const expiresAt = now + 30 * 24 * 60 * 60 * 1000;
+                expect(
+                    await coordinator.completeFinalPaymentOperation(
+                        "fingerprint",
+                        "payment",
+                        "proof",
+                        response,
+                        expiresAt,
+                    ),
+                ).toBe(true);
+                expect(await state.storage.getAlarm()).toBe(expiresAt);
+
+                vi.spyOn(Date, "now").mockReturnValue(expiresAt + 1);
+                await coordinator.alarm();
+                return {
+                    operation: await state.storage.get("payment-operation"),
+                    body: await state.storage.get("payment-body:0"),
+                    alarm: await state.storage.getAlarm(),
+                };
+            },
+        );
+
+        expect(result).toEqual({
+            operation: undefined,
+            body: undefined,
+            alarm: null,
+        });
+    });
+
+    it("expires generated payment responses and all body chunks", async () => {
+        const stub = env.GENERATION_COORDINATOR.getByName(
+            `generated-payment-${crypto.randomUUID()}`,
+        );
+        const now = Date.now();
+        const expiresAt = now + 30 * 24 * 60 * 60 * 1000;
+        vi.spyOn(Date, "now").mockReturnValue(now);
+
+        const result = await runInDurableObject(
+            stub,
+            async (coordinator, state) => {
+                await coordinator.startPaymentOperation(
+                    "fingerprint",
+                    "payment",
+                    "proof",
+                    "claim",
+                    now + 360_000,
+                );
+                expect(
+                    await coordinator.completePaymentOperation(
+                        "fingerprint",
+                        "payment",
+                        "proof",
+                        "claim",
+                        {
+                            status: 200,
+                            statusText: "OK",
+                            headers: [],
+                            body: new Uint8Array(1_000_001),
+                        },
+                        expiresAt,
+                    ),
+                ).toBe(true);
+                expect(await state.storage.getAlarm()).toBe(expiresAt);
+
+                vi.spyOn(Date, "now").mockReturnValue(expiresAt + 1);
+                await coordinator.alarm();
+                return {
+                    operation: await state.storage.get("payment-operation"),
+                    first: await state.storage.get("payment-body:0"),
+                    second: await state.storage.get("payment-body:1"),
+                    alarm: await state.storage.getAlarm(),
+                };
+            },
+        );
+
+        expect(result).toEqual({
+            operation: undefined,
+            first: undefined,
+            second: undefined,
+            alarm: null,
+        });
+    });
+
+    it("accepts identical concurrent finalization without replacing a conflicting receipt", async () => {
+        const stub = env.GENERATION_COORDINATOR.getByName(
+            `final-payment-${crypto.randomUUID()}`,
+        );
+        const now = Date.now();
+        const expiresAt = now + 30 * 24 * 60 * 60 * 1000;
+        const generated = {
+            status: 200,
+            statusText: "OK",
+            headers: [] as [string, string][],
+            body: new TextEncoder().encode("complete"),
+        };
+        const final = {
+            ...generated,
+            headers: [["payment-response", "receipt-1"]] as [string, string][],
+        };
+
+        const result = await runInDurableObject(stub, async (coordinator) => {
+            await coordinator.startPaymentOperation(
+                "fingerprint",
+                "payment",
+                "proof",
+                "claim",
+                now + 360_000,
+            );
+            await coordinator.completePaymentOperation(
+                "fingerprint",
+                "payment",
+                "proof",
+                "claim",
+                generated,
+                expiresAt,
+            );
+
+            const identical = await Promise.all([
+                coordinator.completeFinalPaymentOperation(
+                    "fingerprint",
+                    "payment",
+                    "proof",
+                    final,
+                    expiresAt,
+                ),
+                coordinator.completeFinalPaymentOperation(
+                    "fingerprint",
+                    "payment",
+                    "proof",
+                    final,
+                    expiresAt + 1,
+                ),
+            ]);
+            const conflicting = await coordinator.completeFinalPaymentOperation(
+                "fingerprint",
+                "payment",
+                "proof",
+                {
+                    ...final,
+                    headers: [["payment-response", "receipt-2"]],
+                },
+                expiresAt + 2,
+            );
+            const stored = await coordinator.getFinalPaymentOperation(
+                "fingerprint",
+                "payment",
+                "proof",
+            );
+            return {
+                identical,
+                conflicting,
+                stored:
+                    stored.status === "final"
+                        ? {
+                              headers: stored.response.headers,
+                              body: new TextDecoder().decode(
+                                  stored.response.body,
+                              ),
+                          }
+                        : stored,
+            };
+        });
+
+        expect(result).toEqual({
+            identical: [true, true],
+            conflicting: false,
+            stored: {
+                headers: [["payment-response", "receipt-1"]],
+                body: "complete",
+            },
+        });
+    });
+
     it("returns an existing cached generation without scheduling work", async () => {
         const key = `cached-${crypto.randomUUID()}`;
         await env.TEXT_BUCKET.put(key, "cached");

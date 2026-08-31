@@ -64,16 +64,16 @@ POLLINATIONS_PROVIDER=$(cat <<'EOF'
   "models": [
     {
       "id": "kimi",
-      "name": "Kimi K2.5 — 256K context, vision, tools, reasoning",
+      "name": "Kimi K2.6 — 262K context, vision, tools, reasoning",
       "reasoning": true,
       "input": ["text", "image"],
       "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
-      "contextWindow": 256000,
+      "contextWindow": 262000,
       "maxTokens": 8192
     },
     {
       "id": "kimi-code",
-      "name": "Kimi Code — Agentic coding, vision, reasoning",
+      "name": "Kimi K2.7 Code — Agentic coding, vision, reasoning",
       "reasoning": true,
       "input": ["text", "image"],
       "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
@@ -82,7 +82,7 @@ POLLINATIONS_PROVIDER=$(cat <<'EOF'
     },
     {
       "id": "deepseek",
-      "name": "DeepSeek — Fast reasoning & tool calling",
+      "name": "DeepSeek V4 Flash — Quest model, fast reasoning & tool calling",
       "reasoning": true,
       "input": ["text"],
       "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
@@ -91,7 +91,7 @@ POLLINATIONS_PROVIDER=$(cat <<'EOF'
     },
     {
       "id": "deepseek-pro",
-      "name": "DeepSeek Pro — Advanced reasoning & coding",
+      "name": "DeepSeek V4 Pro — Quest model, advanced reasoning & coding",
       "reasoning": true,
       "input": ["text"],
       "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
@@ -126,8 +126,8 @@ POLLINATIONS_PROVIDER=$(cat <<'EOF'
       "maxTokens": 8192
     },
     {
-      "id": "claude-opus-4.6",
-      "name": "Claude Opus 4.6 — Deep reasoning and tool calling",
+      "id": "claude-large",
+      "name": "Claude Opus 5 — Paid, deep reasoning and tool calling",
       "reasoning": false,
       "input": ["text", "image"],
       "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
@@ -135,12 +135,30 @@ POLLINATIONS_PROVIDER=$(cat <<'EOF'
       "maxTokens": 8192
     },
     {
-      "id": "gemini-large",
-      "name": "Gemini Large — 1M context, reasoning, web search",
+      "id": "gpt-5.6-luna",
+      "name": "GPT-5.6 Luna — Quest model, fast reasoning",
       "reasoning": true,
-      "input": ["text", "image"],
+      "input": ["text"],
       "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
-      "contextWindow": 1000000,
+      "contextWindow": 272000,
+      "maxTokens": 8192
+    },
+    {
+      "id": "gpt-5.6-sol",
+      "name": "GPT-5.6 Sol — Quest model, premium reasoning",
+      "reasoning": true,
+      "input": ["text"],
+      "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
+      "contextWindow": 272000,
+      "maxTokens": 8192
+    },
+    {
+      "id": "gpt-5.6-terra",
+      "name": "GPT-5.6 Terra — Quest model, higher-capability reasoning",
+      "reasoning": true,
+      "input": ["text"],
+      "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
+      "contextWindow": 272000,
       "maxTokens": 8192
     }
   ]

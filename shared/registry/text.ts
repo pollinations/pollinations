@@ -1700,18 +1700,18 @@ export const TEXT_SERVICES = {
     },
     "z-ai/glm-5.3-flash": {
         aliases: [],
-        provider: "openrouter",
+        provider: "fireworks",
         brand: "Z.ai",
         category: "text",
         addedDate: new Date("2026-08-27").getTime(),
-        paidOnly: true,
+        paidOnly: false,
         priceMultiplier: 1,
+        // Fireworks standard serverless rates (2026-08-29).
         cost: {
-            // OpenRouter Z.AI FP8 route rates (2026-08-27).
-            promptTextTokens: perMillion(0.075),
-            promptCachedTokens: perMillion(0.015),
-            promptImageTokens: perMillion(0.075),
-            completionTextTokens: perMillion(0.25),
+            promptTextTokens: perMillion(0.15),
+            promptCachedTokens: perMillion(0.029),
+            promptImageTokens: perMillion(0.15),
+            completionTextTokens: perMillion(0.5),
         },
         title: "Z.ai GLM-5.3 Flash",
         description:

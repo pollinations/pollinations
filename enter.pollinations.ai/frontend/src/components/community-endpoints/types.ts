@@ -12,6 +12,7 @@ import {
     MAX_COMMUNITY_PRICE_PER_IMAGE,
     MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MAX_COMMUNITY_PRICE_PER_SECOND,
+    MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     normalizeCommunityEndpointAdvertised,
     normalizeCommunityEndpointInputModalities,
@@ -131,6 +132,8 @@ export function publicCommunityFallbackOptions(
                 !model.agent &&
                 (model.type === "text" ||
                     model.type === "image" ||
+                    model.type === "video" ||
+                    model.type === "audio" ||
                     model.type === "embedding"),
         )
         .map((model) => ({
@@ -138,9 +141,13 @@ export function publicCommunityFallbackOptions(
             modality:
                 model.type === "image"
                     ? "image"
-                    : model.type === "embedding"
-                      ? "embedding"
-                      : "text",
+                    : model.type === "video"
+                      ? "video"
+                      : model.type === "audio"
+                        ? "transcription"
+                        : model.type === "embedding"
+                          ? "embedding"
+                          : "text",
         }));
 }
 
@@ -302,9 +309,11 @@ export function isValidPriceInput(
     const maximum =
         priceUnit === "image"
             ? MAX_COMMUNITY_PRICE_PER_IMAGE
-            : priceUnit === "second"
-              ? MAX_COMMUNITY_PRICE_PER_SECOND
-              : MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS;
+            : priceUnit === "video_second"
+              ? MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND
+              : priceUnit === "second"
+                ? MAX_COMMUNITY_PRICE_PER_SECOND
+                : MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS;
     return (
         Number.isFinite(parsed) &&
         parsed >= 0 &&
@@ -403,7 +412,8 @@ function formPricesToPayload(
                 const unit =
                     modalityField.priceUnit === "image"
                         ? "image"
-                        : modalityField.priceUnit === "second"
+                        : modalityField.priceUnit === "second" ||
+                            modalityField.priceUnit === "video_second"
                           ? "second"
                           : "1M units";
                 throw new Error(
@@ -501,7 +511,7 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
             },
             modality,
         ),
-        baseUrl: form.baseUrl.trim(),
+        baseUrl: form.baseUrl,
         upstreamModel: form.upstreamModel.trim() || form.name.trim(),
         paidOnly: form.visibility === "public" ? form.paidOnly : false,
         // Private models carry no public pricing, so their fallbacks cannot be

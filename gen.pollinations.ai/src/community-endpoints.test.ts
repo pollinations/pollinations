@@ -7,6 +7,7 @@ import {
 import type { Logger } from "@logtape/logtape";
 import { verifyAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import { COMMUNITY_MODEL_ALLOWED_GITHUB_IDS } from "@shared/auth/github-id-list.ts";
+import { getUserBalance } from "@shared/billing/balance.ts";
 import {
     COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
@@ -4128,7 +4129,7 @@ fixtureTest(
 
 fixtureTest(
     "registers, catalogs, and serves a billed community video model",
-    async ({ apiKey }) => {
+    async () => {
         const ownerGithubUsername = `video-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `clip-${crypto.randomUUID().slice(0, 8)}`;
         const ownerUserId = await createTestUser({
@@ -4148,6 +4149,16 @@ fixtureTest(
         const enterApi = await createEnterCommunityApi();
         const videoEndpointUrl =
             "https://api.example.com/generate-video?version=1";
+        let markGenerationStarted!: () => void;
+        const generationStarted = new Promise<void>((resolve) => {
+            markGenerationStarted = resolve;
+        });
+        let releaseGeneration!: () => void;
+        const generationReleased = new Promise<void>((resolve) => {
+            releaseGeneration = resolve;
+        });
+        let generationCalls = 0;
+        const ingestedEvents: Record<string, unknown>[] = [];
         const fetchMock = vi.fn(async (input, init) => {
             const request = new Request(input, init);
             if (request.url === videoEndpointUrl) {
@@ -4162,6 +4173,11 @@ fixtureTest(
                 const isProbe =
                     body.prompt ===
                     "A green sprout gently moving in the breeze.";
+                if (!isProbe) {
+                    generationCalls += 1;
+                    markGenerationStarted();
+                    await generationReleased;
+                }
                 expect(body).toEqual(
                     isProbe
                         ? { prompt: body.prompt, duration: 5 }
@@ -4177,7 +4193,14 @@ fixtureTest(
                     data: [{ b64_json: TEST_MP4_BASE64 }],
                 });
             }
-            if (isBillingFetch(request)) return Response.json({ data: [] });
+            if (isBillingFetch(request)) {
+                if (new URL(request.url).pathname === "/v0/events") {
+                    ingestedEvents.push(
+                        ...parseIngestedEvents(await request.text()),
+                    );
+                }
+                return Response.json({ data: [] });
+            }
             throw new Error(`Unexpected fetch: ${request.url}`);
         });
         vi.stubGlobal("fetch", fetchMock);
@@ -4232,13 +4255,38 @@ fixtureTest(
         });
         await maturePendingCommunityEndpoint(registered.id);
 
-        const generationResponse = await fetchGen(
+        const caller = await createTestApiKey({
+            user: { tierBalance: 100, packBalance: 0 },
+        });
+        const balanceBefore = await getUserBalance(db, caller.userId);
+        const coordinatedEnv = withInlineGenerationCoordinator(env);
+        const generationRequest = () =>
             new Request(
                 `https://gen.pollinations.ai/video/green%20sprout?model=${encodeURIComponent(registered.modelId)}&duration=4&reference_images=${encodeURIComponent("https://media.example.com/style.jpg")}`,
-                { headers: { Authorization: `Bearer ${apiKey}` } },
+                { headers: { Authorization: `Bearer ${caller.key}` } },
+            );
+        const disconnectedContext = createExecutionContext();
+        const abort = new AbortController();
+        const disconnected = Promise.resolve(
+            worker.fetch(
+                new Request(generationRequest(), { signal: abort.signal }),
+                coordinatedEnv,
+                disconnectedContext,
             ),
+        ).catch(() => null);
+        await generationStarted;
+        abort.abort();
+
+        const rejoinedContext = createExecutionContext();
+        const rejoined = worker.fetch(
+            generationRequest(),
+            coordinatedEnv,
+            rejoinedContext,
         );
+        releaseGeneration();
+        const generationResponse = await rejoined;
         expect(generationResponse.status).toBe(200);
+        expect(generationResponse.headers.get("x-cache")).toBe("HIT");
         expect(generationResponse.headers.get("content-type")).toBe(
             "video/mp4",
         );
@@ -4250,11 +4298,47 @@ fixtureTest(
         expect(
             Array.from(new Uint8Array(await generationResponse.arrayBuffer())),
         ).toEqual(TEST_MP4_BYTES);
+        const disconnectedResponse = await disconnected;
+        if (disconnectedResponse) {
+            await disconnectedResponse.arrayBuffer();
+        }
+        await Promise.all([
+            waitOnExecutionContext(disconnectedContext),
+            waitOnExecutionContext(rejoinedContext),
+        ]);
+
+        const cachedContext = createExecutionContext();
+        const cachedResponse = await worker.fetch(
+            generationRequest(),
+            coordinatedEnv,
+            cachedContext,
+        );
+        expect(cachedResponse.status).toBe(200);
+        expect(cachedResponse.headers.get("x-cache")).toBe("HIT");
+        expect(
+            Array.from(new Uint8Array(await cachedResponse.arrayBuffer())),
+        ).toEqual(TEST_MP4_BYTES);
+        await waitOnExecutionContext(cachedContext);
+
+        expect(generationCalls).toBe(1);
+        const balanceAfter = await getUserBalance(db, caller.userId);
+        expect(
+            balanceBefore.tierBalance - balanceAfter.tierBalance,
+        ).toBeCloseTo(0.32, 10);
+        await vi.waitFor(() =>
+            expect(
+                ingestedEvents.filter(
+                    (event) =>
+                        event.modelUsed === registered.modelId &&
+                        event.isBilledUsage === true,
+                ),
+            ).toHaveLength(1),
+        );
 
         const invalidDurationResponse = await fetchGen(
             new Request(
                 `https://gen.pollinations.ai/video/green%20sprout?model=${encodeURIComponent(registered.modelId)}&duration=0`,
-                { headers: { Authorization: `Bearer ${apiKey}` } },
+                { headers: { Authorization: `Bearer ${caller.key}` } },
             ),
         );
         expect(invalidDurationResponse.status).toBe(400);

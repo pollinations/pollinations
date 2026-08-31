@@ -2,7 +2,6 @@ import { env, SELF } from "cloudflare:test";
 import { createHmac } from "node:crypto";
 import { hashIp } from "@shared/client-ip.ts";
 import {
-    hashPollenGiftCode,
     normalizePollenGiftCode,
     POLLEN_GIFT_AMOUNTS,
     POLLEN_GIFT_PURPOSE,
@@ -11,12 +10,7 @@ import {
     calculateServiceFeeCents,
     SERVICE_FEE_NAME,
 } from "@shared/pollen-packs.ts";
-import type Stripe from "stripe";
 import { expect } from "vitest";
-import {
-    recordPollenGiftRefund,
-    redeemPollenGift,
-} from "../../src/services/pollen-gifts.ts";
 import { POLLEN_GIFT_BUYER_KEY_METADATA } from "../../src/utils/pollen-gift-security.ts";
 import { STRIPE_NEW_CARD_GATE_METADATA } from "../../src/utils/stripe-card-gate.ts";
 import { test } from "../fixtures.ts";
@@ -45,41 +39,6 @@ async function postSignedStripeWebhook(
         },
         body: payload,
     });
-}
-
-async function insertRedeemedGift({
-    giftId,
-    paymentIntentId,
-    userId,
-    pollenAmount,
-}: {
-    giftId: string;
-    paymentIntentId: string;
-    userId: string;
-    pollenAmount: number;
-}): Promise<number> {
-    const faceValueCents = pollenAmount * 100;
-    const serviceFeeCents = calculateServiceFeeCents(faceValueCents);
-    const paidAmountCents = faceValueCents + serviceFeeCents;
-    const now = Date.now();
-    await env.DB.prepare(
-        `INSERT INTO pollen_gift_code (
-            id, code_hash, pollen_amount, status, stripe_checkout_session_id,
-            stripe_payment_intent_id, redeemer_user_id, created_at, redeemed_at
-        ) VALUES (?, ?, ?, 'redeemed', ?, ?, ?, ?, ?)`,
-    )
-        .bind(
-            giftId,
-            `hash_${giftId}`,
-            pollenAmount,
-            `cs_${giftId}`,
-            paymentIntentId,
-            userId,
-            now,
-            now,
-        )
-        .run();
-    return paidAmountCents;
 }
 
 test("anonymous gift checkout preserves the Stripe purchase contract", async ({
@@ -587,136 +546,6 @@ test("paid gift activation is idempotent and redemption is authenticated and sin
     });
 });
 
-test("a refund before fulfillment stays revoked", async ({ mocks }) => {
-    await mocks.enable("stripe", "tinybird");
-    const amount = 20;
-    const checkoutResponse = await SELF.fetch(`${giftBase}/checkout`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount }),
-    });
-    expect(checkoutResponse.status).toBe(200);
-    const checkoutRequest = mocks.stripe.state.requests.find(
-        (request) => request.path === "/v1/checkout/sessions",
-    );
-    const giftId = checkoutRequest?.body["metadata[giftId]"];
-    const checkoutSessionId = mocks.stripe.state.checkoutSessions[0]?.id;
-    if (!giftId || !checkoutSessionId) {
-        throw new Error("Expected pending gift checkout");
-    }
-
-    const paymentIntentId = "pi_refund_before_fulfillment";
-    mocks.stripe.state.paymentIntents.push({
-        id: paymentIntentId,
-        object: "payment_intent",
-        status: "succeeded",
-        metadata: { purpose: POLLEN_GIFT_PURPOSE, giftId },
-    });
-    const refund = {
-        id: "re_before_fulfillment",
-        object: "refund",
-        amount: 100,
-        currency: "usd",
-        payment_intent: paymentIntentId,
-        metadata: {},
-    };
-    const refundResponse = await postSignedStripeWebhook({
-        id: "evt_refund_before_fulfillment",
-        type: "refund.created",
-        created: 100,
-        livemode: false,
-        data: { object: { ...refund, status: "succeeded" } },
-    });
-    expect(refundResponse.status).toBe(200);
-
-    const totalCents = amount * 100 + calculateServiceFeeCents(amount * 100);
-    const fulfillmentResponse = await postSignedStripeWebhook({
-        id: "evt_checkout_after_refund",
-        type: "checkout.session.completed",
-        created: 101,
-        livemode: false,
-        data: {
-            object: {
-                id: checkoutSessionId,
-                object: "checkout.session",
-                metadata: {
-                    purpose: POLLEN_GIFT_PURPOSE,
-                    giftId,
-                    pollenAmount: String(amount),
-                },
-                payment_status: "paid",
-                amount_total: totalCents,
-                currency: "usd",
-                payment_intent: paymentIntentId,
-                invoice: "in_after_refund",
-            },
-        },
-    });
-    expect(fulfillmentResponse.status).toBe(200);
-
-    const gift = await env.DB.prepare(
-        `SELECT status, stripe_payment_intent_id AS stripePaymentIntentId
-         FROM pollen_gift_code WHERE id = ?`,
-    )
-        .bind(giftId)
-        .first<{ status: string; stripePaymentIntentId: string }>();
-    expect(gift).toEqual({
-        status: "refunded",
-        stripePaymentIntentId: paymentIntentId,
-    });
-
-    const failedRefundResponse = await postSignedStripeWebhook({
-        id: "evt_refund_failed_after_fulfillment",
-        type: "refund.failed",
-        created: 102,
-        livemode: false,
-        data: { object: { ...refund, status: "failed" } },
-    });
-    expect(failedRefundResponse.status).toBe(200);
-
-    const finalGift = await env.DB.prepare(
-        "SELECT status FROM pollen_gift_code WHERE id = ?",
-    )
-        .bind(giftId)
-        .first<{ status: string }>();
-    expect(finalGift?.status).toBe("refunded");
-});
-
-test("stale gift payment metadata is acknowledged without webhook retries", async ({
-    mocks,
-}) => {
-    await mocks.enable("stripe", "tinybird");
-    const paymentIntentId = "pi_unlinked_gift";
-    mocks.stripe.state.paymentIntents.push({
-        id: paymentIntentId,
-        object: "payment_intent",
-        status: "succeeded",
-        metadata: {
-            purpose: POLLEN_GIFT_PURPOSE,
-            giftId: "gift_that_no_longer_exists",
-        },
-    });
-
-    const response = await postSignedStripeWebhook({
-        id: "evt_unlinked_gift_refund",
-        type: "refund.created",
-        created: 200,
-        livemode: false,
-        data: {
-            object: {
-                id: "re_unlinked_gift",
-                object: "refund",
-                amount: 2_000,
-                currency: "usd",
-                status: "succeeded",
-                payment_intent: paymentIntentId,
-                metadata: {},
-            },
-        },
-    });
-    expect(response.status).toBe(200);
-});
-
 test("expired Checkout Session voids a pending gift", async ({ mocks }) => {
     await mocks.enable("stripe", "tinybird");
 
@@ -764,130 +593,4 @@ test("expired Checkout Session voids a pending gift", async ({ mocks }) => {
         .bind(giftId)
         .first<{ status: string }>();
     expect(gift?.status).toBe("voided");
-});
-
-test("a full refund reverses redeemed Pollen exactly once", async ({
-    mocks,
-    sessionToken,
-}) => {
-    void sessionToken;
-    await mocks.enable("tinybird");
-
-    const user = await env.DB.prepare("SELECT id FROM user LIMIT 1").first<{
-        id: string;
-    }>();
-    expect(user).toBeTruthy();
-    if (!user) throw new Error("Expected seeded test user");
-    await env.DB.prepare("UPDATE user SET pack_balance = 100 WHERE id = ?")
-        .bind(user.id)
-        .run();
-
-    const giftId = "gift_refund_once";
-    const paymentIntentId = "pi_gift_refund_once";
-    const pollenAmount = 20;
-    const paidAmountCents = await insertRedeemedGift({
-        giftId,
-        paymentIntentId,
-        userId: user.id,
-        pollenAmount,
-    });
-    const refund = {
-        id: "re_gift_full",
-        object: "refund",
-        amount: paidAmountCents,
-        currency: "usd",
-        status: "succeeded",
-        payment_intent: paymentIntentId,
-        metadata: {},
-    };
-
-    for (const eventId of ["evt_gift_refund", "evt_gift_refund_retry"]) {
-        const response = await postSignedStripeWebhook({
-            id: eventId,
-            type: "refund.created",
-            created: Math.floor(Date.now() / 1000),
-            livemode: false,
-            data: { object: refund },
-        });
-        expect(response.status).toBe(200);
-    }
-
-    const gift = await env.DB.prepare(
-        "SELECT status FROM pollen_gift_code WHERE id = ?",
-    )
-        .bind(giftId)
-        .first<{ status: string }>();
-    expect(gift?.status).toBe("refunded");
-    const balance = await env.DB.prepare(
-        "SELECT pack_balance AS packBalance FROM user WHERE id = ?",
-    )
-        .bind(user.id)
-        .first<{ packBalance: number }>();
-    expect(balance?.packBalance).toBe(100 - pollenAmount);
-});
-
-test("redemption racing a refund never leaves spendable Pollen", async ({
-    sessionToken,
-}) => {
-    void sessionToken;
-    const user = await env.DB.prepare("SELECT id FROM user LIMIT 1").first<{
-        id: string;
-    }>();
-    if (!user) throw new Error("Expected seeded test user");
-    await env.DB.prepare("UPDATE user SET pack_balance = 100 WHERE id = ?")
-        .bind(user.id)
-        .run();
-
-    const giftId = "gift_refund_redemption_race";
-    const paymentIntentId = "pi_gift_refund_redemption_race";
-    const code = "POLLEN-AAAAA-AAAAA-AAAAA-AAAAA-AAAAA-A";
-    const pollenAmount = 20;
-    const faceValueCents = pollenAmount * 100;
-    const serviceFeeCents = calculateServiceFeeCents(faceValueCents);
-    const paidAmountCents = faceValueCents + serviceFeeCents;
-    const now = Date.now();
-    await env.DB.prepare(
-        `INSERT INTO pollen_gift_code (
-            id, code_hash, pollen_amount, status, stripe_checkout_session_id,
-            stripe_payment_intent_id, created_at
-        ) VALUES (?, ?, ?, 'active', ?, ?, ?)`,
-    )
-        .bind(
-            giftId,
-            await hashPollenGiftCode(code),
-            pollenAmount,
-            `cs_${giftId}`,
-            paymentIntentId,
-            now,
-        )
-        .run();
-
-    const refund = {
-        id: "re_gift_redemption_race",
-        object: "refund",
-        amount: paidAmountCents,
-        currency: "usd",
-        status: "succeeded",
-        payment_intent: paymentIntentId,
-        metadata: {},
-    } as Stripe.Refund;
-    const [, giftRelated] = await Promise.all([
-        redeemPollenGift(env.DB, { code, userId: user.id }),
-        recordPollenGiftRefund(env.DB, refund),
-    ]);
-
-    expect(giftRelated).toBe(true);
-    const gift = await env.DB.prepare(
-        "SELECT status FROM pollen_gift_code WHERE id = ?",
-    )
-        .bind(giftId)
-        .first<{ status: string }>();
-    expect(gift?.status).toBe("refunded");
-
-    const balance = await env.DB.prepare(
-        "SELECT pack_balance AS packBalance FROM user WHERE id = ?",
-    )
-        .bind(user.id)
-        .first<{ packBalance: number }>();
-    expect(balance?.packBalance).toBe(100);
 });

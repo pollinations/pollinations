@@ -345,7 +345,7 @@ export const pollenGiftCode = sqliteTable("pollen_gift_code", {
   codeHash: text("code_hash").notNull().unique(),
   pollenAmount: integer("pollen_amount").notNull(),
   status: text("status", {
-    enum: ["pending", "active", "redeemed", "voided", "refunded"],
+    enum: ["pending", "active", "redeemed", "voided"],
   }).default("pending").notNull(),
   stripeCheckoutSessionId: text("stripe_checkout_session_id").unique(),
   stripePaymentIntentId: text("stripe_payment_intent_id").unique(),

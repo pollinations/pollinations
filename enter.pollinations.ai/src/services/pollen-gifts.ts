@@ -9,12 +9,7 @@ import type Stripe from "stripe";
 import { isUniqueConstraintError } from "../utils/d1.ts";
 import { getStripeId } from "../utils/stripe.ts";
 
-export type PollenGiftStatus =
-    | "pending"
-    | "active"
-    | "redeemed"
-    | "voided"
-    | "refunded";
+export type PollenGiftStatus = "pending" | "active" | "redeemed" | "voided";
 
 type PollenGiftRow = {
     id: string;
@@ -243,85 +238,6 @@ export async function redeemPollenGift(
     };
 }
 
-export async function recordPollenGiftRefund(
-    db: D1Database,
-    refund: Stripe.Refund,
-    giftIdHint?: string,
-): Promise<boolean> {
-    const paymentIntentId = getStripeId(refund.payment_intent);
-    if (!paymentIntentId) return false;
-    const gift = await resolvePollenGiftForPaymentEvent(
-        db,
-        paymentIntentId,
-        giftIdHint,
-    );
-    if (!gift) return false;
-
-    if (refund.status !== "succeeded") return true;
-
-    // The first update handles unused gifts. The second and third atomically
-    // revoke a redeemed gift and remove its credit exactly once.
-    await db.batch([
-        db
-            .prepare(
-                `UPDATE pollen_gift_code
-                 SET status = 'refunded'
-                 WHERE id = ? AND status IN ('pending', 'active', 'voided')`,
-            )
-            .bind(gift.id),
-        db
-            .prepare(
-                `UPDATE pollen_gift_code
-                 SET status = 'refunded'
-                 WHERE id = ? AND status = 'redeemed'
-                   AND redeemer_user_id IS NOT NULL`,
-            )
-            .bind(gift.id),
-        db
-            .prepare(
-                `UPDATE user
-                 SET pack_balance = ROUND(
-                     COALESCE(pack_balance, 0) - (
-                         SELECT pollen_amount FROM pollen_gift_code WHERE id = ?
-                     ),
-                     ${POLLEN_BILLING_PRECISION}
-                 )
-                 WHERE id = (
-                     SELECT redeemer_user_id FROM pollen_gift_code WHERE id = ?
-                 ) AND changes() = 1`,
-            )
-            .bind(gift.id, gift.id),
-    ]);
-    return true;
-}
-
-async function resolvePollenGiftForPaymentEvent(
-    db: D1Database,
-    paymentIntentId: string,
-    giftIdHint?: string,
-): Promise<PollenGiftRow | null> {
-    const linked = await loadPollenGiftByPaymentIntent(db, paymentIntentId);
-    if (linked || !giftIdHint) return linked;
-
-    const hinted = await loadPollenGiftById(db, giftIdHint);
-    if (!hinted) return null;
-    if (
-        hinted.stripePaymentIntentId &&
-        hinted.stripePaymentIntentId !== paymentIntentId
-    ) {
-        return null;
-    }
-    await db
-        .prepare(
-            `UPDATE pollen_gift_code
-             SET stripe_payment_intent_id = ?
-             WHERE id = ? AND stripe_payment_intent_id IS NULL`,
-        )
-        .bind(paymentIntentId, giftIdHint)
-        .run();
-    return await loadPollenGiftById(db, giftIdHint);
-}
-
 export async function canRevealPollenGiftCode(
     db: D1Database,
     input: { giftId: string; checkoutSessionId: string },
@@ -354,16 +270,6 @@ async function loadPollenGiftByCodeHash(
     return await db
         .prepare(`${POLLEN_GIFT_SELECT} WHERE code_hash = ?`)
         .bind(codeHash)
-        .first<PollenGiftRow>();
-}
-
-async function loadPollenGiftByPaymentIntent(
-    db: D1Database,
-    paymentIntentId: string,
-): Promise<PollenGiftRow | null> {
-    return await db
-        .prepare(`${POLLEN_GIFT_SELECT} WHERE stripe_payment_intent_id = ?`)
-        .bind(paymentIntentId)
         .first<PollenGiftRow>();
 }
 

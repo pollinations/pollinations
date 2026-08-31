@@ -10,7 +10,6 @@ import type { Env } from "../env.ts";
 import {
     fulfillPollenGiftCheckout,
     isPollenGiftCheckoutSession,
-    recordPollenGiftRefund,
     voidPendingPollenGiftCheckout,
 } from "../services/pollen-gifts.ts";
 import { isUniqueConstraintError } from "../utils/d1.ts";
@@ -95,15 +94,6 @@ function stripePayloadForTinybird(
                         ? { pollenAmount: metadata.pollenAmount }
                         : {}),
                 },
-            },
-        };
-    } else if (giftRelated && event.type.startsWith("refund.")) {
-        const refund = event.data.object as Stripe.Refund;
-        sanitized.data = {
-            object: {
-                id: refund.id,
-                reason: refund.reason,
-                metadata: { purpose: POLLEN_GIFT_PURPOSE },
             },
         };
     }
@@ -254,40 +244,6 @@ async function fetchChargeForPaymentIntent(
         );
         return null;
     }
-}
-
-async function pollenGiftIdFromPaymentIntent(
-    stripe: Stripe,
-    paymentIntent: string | Stripe.PaymentIntent | null,
-): Promise<string | null> {
-    if (!paymentIntent) return null;
-    const resolved =
-        typeof paymentIntent === "string"
-            ? await stripe.paymentIntents.retrieve(paymentIntent)
-            : paymentIntent;
-    if (!hasPollenGiftPurpose(resolved.metadata)) return null;
-    return resolved.metadata.giftId || null;
-}
-
-async function linkPollenGiftPaymentEvent({
-    stripe,
-    paymentIntent,
-    label,
-    handle,
-}: {
-    stripe: Stripe;
-    paymentIntent: string | Stripe.PaymentIntent | null;
-    label: string;
-    handle: (giftIdHint?: string) => Promise<boolean>;
-}): Promise<boolean> {
-    if (await handle()) return true;
-
-    const giftId = await pollenGiftIdFromPaymentIntent(stripe, paymentIntent);
-    if (!giftId) return false;
-
-    const linked = await handle(giftId);
-    if (!linked) console.error(`${label} could not be linked`);
-    return linked;
 }
 
 function readPresentment(session: Stripe.Checkout.Session): {
@@ -934,13 +890,6 @@ export const stripeWebhooksRoutes = new Hono<Env>()
             case "refund.updated":
             case "refund.failed": {
                 const refund = event.data.object as Stripe.Refund;
-                const giftRelated = await linkPollenGiftPaymentEvent({
-                    stripe,
-                    paymentIntent: refund.payment_intent,
-                    label: `Gift refund ${refund.id}`,
-                    handle: (giftIdHint) =>
-                        recordPollenGiftRefund(c.env.DB, refund, giftIdHint),
-                });
                 console.log(`Refund ${event.type}: ${refund.id}`);
                 c.executionCtx.waitUntil(
                     sendStripeEventToTinybird(c.env, {
@@ -948,16 +897,14 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                         eventId: event.id,
                         sessionId:
                             refund.payment_intent?.toString() || refund.id,
-                        userId: giftRelated
-                            ? ""
-                            : refund.metadata?.userId || "",
+                        userId: refund.metadata?.userId || "",
                         amountCents: refund.amount || 0,
                         currency: refund.currency || "usd",
                         paymentStatus: refund.status || "unknown",
                         paymentMethod: "refund",
                         customerEmail: "",
                         livemode: event.livemode,
-                        payload: stripePayloadForTinybird(event, giftRelated),
+                        payload: event,
                     }).catch((err) =>
                         console.error("TinyBird Stripe send failed:", err),
                     ),

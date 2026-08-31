@@ -69,8 +69,8 @@ const providerEntry = (models: HarnessModel[], apiKey: string) => ({
 });
 
 const readKey = (ctx: HarnessContext) => {
-    const provider = readJsonIfExists<OpenClawConfig>(configPath(ctx))
-        ?.models?.providers?.[PROVIDER] as { apiKey?: string } | undefined;
+    const provider = readJsonIfExists<OpenClawConfig>(configPath(ctx))?.models
+        ?.providers?.[PROVIDER] as { apiKey?: string } | undefined;
     return provider?.apiKey ?? null;
 };
 

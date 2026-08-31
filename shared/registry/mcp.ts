@@ -1,4 +1,3 @@
-import type { TinybirdEventType } from "../schemas/generation-event.ts";
 import {
     type BillingRateDefinition,
     type PublicPriceInfo,
@@ -40,7 +39,6 @@ export type McpServerDefinition = McpServerDefinitionBase &
         | {
               billing: "usage_receipt";
               provider: string;
-              eventType: TinybirdEventType;
           }
     );
 
@@ -72,7 +70,6 @@ export const MCP_SERVERS = [
         binding: "FFMPEG_MCP",
         billing: "usage_receipt",
         provider: "cloudflare",
-        eventType: "tool.media",
         pricing: {
             rates: [
                 {
@@ -98,7 +95,6 @@ export const MCP_SERVERS = [
         binding: "EXA_MCP",
         billing: "usage_receipt",
         provider: "exa",
-        eventType: "tool.search",
         pricing: {
             rates: [
                 {

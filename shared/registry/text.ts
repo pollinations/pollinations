@@ -860,8 +860,8 @@ export const TEXT_SERVICES = {
         brand: "xAI",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
-        paidOnly: false,
-        priceMultiplier: 1,
+        paidOnly: true,
+        priceMultiplier: 0.75,
         // Provisional Azure sheet pending an exact public or account meter.
         // The direct route reports image tokens separately from text tokens.
         cost: {

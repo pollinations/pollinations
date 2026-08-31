@@ -157,7 +157,6 @@ test("GPT-5.5 is available without paid-only gating", () => {
 test("Azure models use the approved public-price multipliers", () => {
     const azureMultiplierOverrides = new Map<string, number>([
         ["gpt-5.6-sol", 1 / 3],
-        ["grok-4.6", 1],
     ]);
 
     for (const model of getModels()) {
@@ -187,8 +186,8 @@ test("Grok 4.6 uses the public Azure route contract", () => {
     const definition = getRegistryModelDefinition("grok-4.6");
 
     expect(definition.provider).toBe("azure");
-    expect(definition.paidOnly).toBe(false);
-    expect(definition.priceMultiplier).toBe(1);
+    expect(definition.paidOnly).toBe(true);
+    expect(definition.priceMultiplier).toBe(0.75);
     expect(definition.contextLength).toBe(200000);
     expect(definition.cost).toMatchObject({
         promptTextTokens: 2 / 1e6,

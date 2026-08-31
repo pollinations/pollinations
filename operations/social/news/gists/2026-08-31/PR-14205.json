@@ -1,0 +1,34 @@
+{
+  "pr_number": 14205,
+  "title": "refactor: simplify Inkling audio adapter",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14205",
+  "merged_at": "2026-08-31T16:36:04Z",
+  "labels": [],
+  "pr_body_excerpt": "- Keeps the public OpenAI `input_audio` shape and only converts it to Fireworks `audio_url`.\n- Forwards base64 bytes unchanged; only maps the Opus format label to its Ogg container MIME type.\n- Removes local base64/container validation and raw PCM16-to-WAV transcoding, leaving unsupported-format errors to Fireworks.\n- Verified the exact Fireworks Inkling route with WAV, MP3, FLAC, and Ogg/Opus; all returned 200.\n\nTests: focused Vitest, Gen TypeScript typecheck, Biome, and local `/v1/chat/completions` audio requests.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Audio takes the scenic route",
+    "blurb": "Inkling audio now travels with fewer homemade checkpoints. Polli stopped repacking sound files and lets Fireworks read the originals as nature intended.",
+    "summary": "Simplified the Inkling audio adapter so OpenAI-style input_audio is forwarded as Fireworks audio_url data unchanged, mapping only Opus to its Ogg MIME type and supporting verified WAV, MP3, FLAC, and Ogg/Opus requests.",
+    "impact": "Developers can send common audio formats to /v1/chat/completions with less local conversion logic, while Fireworks handles format validation directly.",
+    "keywords": [
+      "inkling",
+      "audio",
+      "fireworks",
+      "openai-compatibility",
+      "chat-completions",
+      "opus"
+    ],
+    "visual_concept": "Depict a cozy audio delivery route: Polli carries several clearly distinct sound parcels—a WAV cassette, MP3 music note, FLAC file, and Ogg/Opus disc—straight into a warmly glowing retro Fireworks-style audio terminal, bypassing an unnecessary maze of converters. Small code-plants and flowers reinforce that a simpler adapter path lets more audio formats grow naturally.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, black antennae, oval eyes, bright pink rectangular cheek blushes, a happy smile, and rounded light-blue translucent wings, wearing tiny studio headphones as she flies WAV, MP3, FLAC, and Ogg/Opus audio parcels directly into a glowing retro terminal; an unused little converter maze sits peacefully beside blooming code-plants and lime green (#ecf874) flower pots. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle pixel-font text: \"AUDIO IN\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-08-31/PR-14205.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, black antennae, oval eyes, bright pink rectangular cheek blushes, a happy smile, and rounded light-blue translucent wings, wearing tiny studio headphones as she flies WAV, MP3, FLAC, and Ogg/Opus audio parcels directly into a glowing retro terminal; an unused little converter maze sits peacefully beside blooming code-plants and lime green (#ecf874) flower pots. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle pixel-font text: \"AUDIO IN\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-08-31T16:37:02.199035+00:00"
+}

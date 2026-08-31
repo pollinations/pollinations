@@ -1200,7 +1200,7 @@ export function Chat() {
     return (
         <section className="min-w-0" aria-label={`${assistantName} chat`}>
             <div className="play-chat-window flex min-h-0 flex-col">
-                <div className="px-3 pt-4 pb-3 sm:px-5">
+                <div className="pt-4 pb-3">
                     <AgentPicker
                         agents={agents}
                         selectedAgentId={selectedAgent?.id ?? null}
@@ -1211,7 +1211,7 @@ export function Chat() {
                 </div>
                 <ScrollArea
                     ref={transcriptRef}
-                    className="play-chat-transcript min-h-0 flex-1 px-3 py-4 sm:px-5"
+                    className="play-chat-transcript min-h-0 flex-1 py-3"
                     aria-label="Conversation"
                     aria-live="polite"
                     aria-busy={sending}
@@ -1252,7 +1252,7 @@ export function Chat() {
                 </ScrollArea>
                 <form
                     onSubmit={submit}
-                    className="relative flex shrink-0 flex-col gap-3 p-3 sm:p-4"
+                    className="relative flex shrink-0 flex-col gap-3 pt-3"
                 >
                     {catalog.error && (
                         <Alert intent="warning" title="Agent list unavailable">
@@ -1459,7 +1459,7 @@ export function Chat() {
                 </form>
             </div>
             {advancedOpen && selectedAgent?.id === FLORET_MODEL_ID && (
-                <div className="px-3 pb-3 sm:px-4 sm:pb-4">
+                <div>
                     <RoutingPanel
                         selection={routing}
                         choices={modelChoices}

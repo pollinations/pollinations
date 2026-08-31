@@ -175,7 +175,7 @@
 }
 
 .play-chat-window {
-    height: 50rem;
+    height: min(50rem, 72dvh);
 }
 
 .play-chat-transcript {
@@ -246,7 +246,7 @@
 
 @media (max-width: 639px) {
     .play-chat-window {
-        height: 44rem;
+        height: min(44rem, 74dvh);
     }
 
     .play-chat-transcript {

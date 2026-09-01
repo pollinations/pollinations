@@ -54,7 +54,7 @@ const SOCIAL = [
     },
     {
         href: "https://x.com/pollinations_ai",
-        label: "Twitter",
+        label: "X",
         Icon: XSocialIcon,
     },
     {
@@ -103,6 +103,8 @@ function MenuUtilities({
             <DropdownItem
                 as="a"
                 href={EXTERNAL[1].href}
+                target="_blank"
+                rel="noopener noreferrer"
                 onClick={close}
                 className="site-drawer-social-link site-external-link"
             >
@@ -117,6 +119,8 @@ function MenuUtilities({
             <DropdownItem
                 as="a"
                 href={EXTERNAL[2].href}
+                target="_blank"
+                rel="noopener noreferrer"
                 onClick={close}
                 className="site-drawer-social-link site-external-link"
             >
@@ -130,25 +134,23 @@ function MenuUtilities({
                     </Chip>
                 )}
             </DropdownItem>
-            <footer className="mt-1 flex items-center gap-3 px-2 py-2">
-                <div className="flex items-center gap-2">
-                    {SOCIAL.map(({ href, label, Icon }) => (
-                        <Button
-                            key={href}
-                            as="a"
-                            href={href}
-                            size="sm"
-                            aria-label={label}
-                            title={label}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={close}
-                            className="site-external-link h-8 w-8 shrink-0 p-0"
-                        >
-                            <Icon className="h-4 w-4" />
-                        </Button>
-                    ))}
-                </div>
+            <footer className="mt-1 flex items-center gap-2 border-t border-theme-text-strong/10 px-2 pt-2">
+                {SOCIAL.map(({ href, label, Icon }) => (
+                    <Button
+                        key={href}
+                        as="a"
+                        href={href}
+                        size="sm"
+                        aria-label={label}
+                        title={label}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={close}
+                        className="site-external-link h-8 w-8 shrink-0 p-0"
+                    >
+                        <Icon className="h-4 w-4" />
+                    </Button>
+                ))}
             </footer>
         </>
     );
@@ -276,10 +278,10 @@ export function SiteHeader() {
                             onOpenChange={setMobileMenuOpen}
                             ariaLabel="Site navigation"
                             side="right"
-                            contentClassName="w-[min(18rem,78vw)] bg-surface-opaque"
+                            contentClassName="w-[min(18.75rem,78vw)]"
                         >
-                            <div className="flex min-h-0 flex-1 flex-col">
-                                <div className="flex justify-end pb-2 pl-4 pr-8 pt-6">
+                            <div className="flex min-h-0 flex-1 flex-col gap-3 p-3.5 pt-5">
+                                <div className="flex shrink-0 justify-end">
                                     <Button
                                         aria-label="Close menu"
                                         onClick={() => setMobileMenuOpen(false)}
@@ -295,9 +297,15 @@ export function SiteHeader() {
                                 </div>
                                 <nav
                                     id="mobile-site-menu"
-                                    className="flex min-h-0 flex-1 flex-col gap-1 overflow-x-hidden overflow-y-auto p-2"
+                                    className="flex min-h-0 flex-1 flex-col gap-3 overflow-x-hidden overflow-y-auto"
                                 >
-                                    <div className="flex flex-col gap-1 pl-2 pr-6">
+                                    <div
+                                        className={`site-drawer-card rounded-[18px] bg-surface-opaque p-2.5 shadow-well ${
+                                            mobileMenuOpen
+                                                ? "site-drawer-card-enter"
+                                                : ""
+                                        }`}
+                                    >
                                         {NAV.map((item) => {
                                             const active = isCurrent(
                                                 item.to,
@@ -314,22 +322,30 @@ export function SiteHeader() {
                                                     onClick={() =>
                                                         setMobileMenuOpen(false)
                                                     }
-                                                    className="site-primary-nav-button w-full justify-start"
+                                                    className="site-primary-nav-button w-full justify-start px-4"
                                                 >
                                                     {item.label}
                                                 </TabButton>
                                             );
                                         })}
                                     </div>
-                                    <div className="mt-3 flex flex-col gap-2 py-1 pl-2 pr-6">
+                                    <div
+                                        className={`site-drawer-card site-drawer-card-delay-1 grid grid-cols-2 gap-2 rounded-[18px] bg-surface-opaque p-2.5 shadow-well ${
+                                            mobileMenuOpen
+                                                ? "site-drawer-card-enter"
+                                                : ""
+                                        }`}
+                                    >
                                         <Button
                                             as="a"
                                             href={EXTERNAL[0].href}
-                                            size="lg"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            size="md"
                                             onClick={() =>
                                                 setMobileMenuOpen(false)
                                             }
-                                            className="w-full justify-start gap-2"
+                                            className="w-full gap-2 px-3"
                                         >
                                             <BookIcon className="h-4 w-4 shrink-0" />
                                             {EXTERNAL[0].label}
@@ -337,17 +353,25 @@ export function SiteHeader() {
                                         <Button
                                             as="a"
                                             href="https://enter.pollinations.ai"
-                                            size="lg"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            size="md"
                                             onClick={() =>
                                                 setMobileMenuOpen(false)
                                             }
-                                            className="w-full justify-start gap-2"
+                                            className="w-full gap-2 px-3"
                                         >
                                             <LogInIcon className="h-4 w-4 shrink-0" />
                                             Login
                                         </Button>
                                     </div>
-                                    <div className="-mx-2 mt-auto flex flex-col gap-1 bg-theme-bg-subtle px-2 pb-2 pt-3">
+                                    <div
+                                        className={`site-drawer-card site-drawer-card-delay-2 mt-auto flex flex-col gap-0.5 rounded-[18px] bg-surface-opaque p-2.5 shadow-well ${
+                                            mobileMenuOpen
+                                                ? "site-drawer-card-enter"
+                                                : ""
+                                        }`}
+                                    >
                                         <MenuUtilities
                                             close={() =>
                                                 setMobileMenuOpen(false)
@@ -358,7 +382,7 @@ export function SiteHeader() {
                                             discordOnline={discordOnline}
                                         />
                                     </div>
-                                    <div className="-mx-2 -mb-2 flex items-center justify-between gap-3 bg-surface-opaque px-4 py-3 text-xs text-theme-text-muted">
+                                    <div className="flex shrink-0 items-center justify-between gap-3 px-1.5 pt-0.5 text-xs text-theme-text-muted">
                                         <div className="flex items-center gap-2">
                                             {LEGAL.map((item) => (
                                                 <Link

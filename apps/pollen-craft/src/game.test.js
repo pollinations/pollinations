@@ -464,6 +464,7 @@ test("recipe-expression names are rejected while ordinary plus names remain vali
         "Result + suffix",
         "Result+suffix",
         "Input => Result",
+        "Input --!> Result",
         "Input → Result",
         "Input\nResult",
         "Input\r",

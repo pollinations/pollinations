@@ -124,7 +124,7 @@ export function isCanonicalPairKey(key) {
 function isRecipeExpressionName(name) {
     return (
         /[\r\n]/u.test(name) ||
-        /(?:=|<\s*[-=]+\s*|[-=]+\s*>|[\u2190-\u21ff\u2794-\u27be\u27f0-\u27ff\u2900-\u297f\u2b00-\u2bff\u{1f800}-\u{1f8ff}])/u.test(
+        /(?:=|<\s*[-=]+\s*|[-=]+\s*!?\s*>|[\u2190-\u21ff\u2794-\u27be\u27f0-\u27ff\u2900-\u297f\u2b00-\u2bff\u{1f800}-\u{1f8ff}])/u.test(
             name,
         ) ||
         /[\p{L}\p{N}]\s*\+\s*[\p{L}\p{N}]/u.test(name)

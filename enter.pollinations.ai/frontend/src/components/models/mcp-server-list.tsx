@@ -68,7 +68,7 @@ export const McpServerList: FC<{ query: string }> = ({ query }) => {
                                         Billing
                                     </p>
                                     {pricing.rates.length > 0 && (
-                                        <div className="grid w-fit grid-cols-[auto_auto_auto] gap-x-2">
+                                        <div className="grid w-full max-w-[19.5rem] grid-cols-[6.5rem_9ch_minmax(0,1fr)] gap-x-2 min-[480px]:grid-cols-[8rem_9ch_5.5rem]">
                                             <UsagePriceRows
                                                 adjustments={pricing.rates}
                                                 align="left"

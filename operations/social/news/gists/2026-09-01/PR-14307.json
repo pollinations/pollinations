@@ -1,0 +1,34 @@
+{
+  "pr_number": 14307,
+  "title": "fix: handle upstream Cloudflare timeouts",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14307",
+  "merged_at": "2026-09-01T20:19:24Z",
+  "labels": [],
+  "pr_body_excerpt": "- Maps upstream Cloudflare 524 responses to the standard 502 error envelope\n- Tries declared model fallbacks after an upstream 524\n- Keeps the existing 300-second durable-generation contract\n- Covers status mapping, fallback selection, and the community image fallback route\n\nFixes #14300",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Timeouts Find Another Flower",
+    "blurb": "When an upstream Cloudflare 524 lingers too long, the hive now sends the request toward its declared fallback models. The 300-second durable-generation promise remains intact; the error handling just grew better hiking boots.",
+    "summary": "Cloudflare upstream 524 timeouts are now normalized into the standard 502 error envelope, and image requests try their declared model fallbacks while preserving the existing 300-second durable-generation contract.",
+    "impact": "When an upstream image provider times out, users get consistent 502 responses and eligible requests can continue through configured fallback models instead of ending at the first stalled route.",
+    "keywords": [
+      "cloudflare",
+      "timeouts",
+      "fallbacks",
+      "image-generation",
+      "error-handling",
+      "durable-generation"
+    ],
+    "visual_concept": "Depict a cozy garden path where a stalled Cloudflare-shaped rain cloud blocks one route to a glowing image-generation greenhouse, while Polli follows a clearly marked alternate path to a healthy fallback flower. A small CRT monitor robot can hold a pixel sign reading \"502 → FALLBACK,\" making the status normalization and automatic rerouting legible; include code-plants and a 300-second sand timer to represent the preserved durable-generation window.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a happy smile, and rounded light-blue translucent wings, wearing a tiny raincoat and following a lime green (#ecf874) garden detour around a sleepy Cloudflare-shaped storm cloud toward a glowing fallback code-flower greenhouse; a cute chunky CRT-monitor robot holds a pixel sign reading \"502 → FALLBACK\" beside a 300-second sand timer and sprouting code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, subtle CRT glow, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-01/PR-14307.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a happy smile, and rounded light-blue translucent wings, wearing a tiny raincoat and following a lime green (#ecf874) garden detour around a sleepy Cloudflare-shaped storm cloud toward a glowing fallback code-flower greenhouse; a cute chunky CRT-monitor robot holds a pixel sign reading \"502 → FALLBACK\" beside a 300-second sand timer and sprouting code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, subtle CRT glow, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-01T20:20:31.332418+00:00"
+}

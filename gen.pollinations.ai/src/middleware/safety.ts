@@ -19,6 +19,7 @@ import {
     resolveBedrockGuardrailEnv,
 } from "@/utils/bedrock-guardrail.ts";
 import { classifyTriggers } from "@/utils/safety-features.ts";
+import { getRequiredSafetyFeatures } from "./model.ts";
 
 type SafetyContext = Context<Env>;
 type ChatBody = CreateChatCompletionRequest & Record<string, unknown>;
@@ -47,6 +48,9 @@ export async function applySafetyToTexts(
 ): Promise<string[]> {
     const safeValue = resolveSafeValue(c, bodySafe);
     const features = getRequestFeatures(safeValue);
+    for (const feature of getRequiredSafetyFeatures(c.var.model)) {
+        features.add(feature);
+    }
     if (features.size === 0) return texts;
 
     const guardrailInputs = selectGuardrailInputs(texts);

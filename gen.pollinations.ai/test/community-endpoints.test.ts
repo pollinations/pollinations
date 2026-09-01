@@ -5149,12 +5149,14 @@ fixtureTest(
             hidden: true,
             hiddenReason: "was failing",
         });
+        const elapsedDelayAt = new Date(
+            Date.now() - COMMUNITY_ENDPOINT_CHANGE_DELAY_MS - 1,
+        );
         await db
             .update(communityEndpointTable)
             .set({
-                pendingAt: new Date(
-                    Date.now() - COMMUNITY_ENDPOINT_CHANGE_DELAY_MS - 1,
-                ),
+                pendingAt: elapsedDelayAt,
+                hiddenAt: elapsedDelayAt,
             })
             .where(eq(communityEndpointTable.id, createdId));
 
@@ -5688,6 +5690,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     const promptAgent = {
         systemPrompt: "You are a terse SQL tutor.",
         baseModel: "openai-fast",
+        requiredSafetyFeatures: ["sexual"],
         mcpServers: ["pollinations"],
     };
     const createAgentResponse = await fetchEnterApi(
@@ -5735,7 +5738,12 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     expect(storedAgent.id).toBe(agent.id);
     expect(storedAgent.baseUrl).toBe(PROMPT_AGENT_BASE_URL_PLACEHOLDER);
     expect(storedAgent.upstreamModel).toBe(agent.id);
-    expect(JSON.parse(storedAgent.payload)).toEqual(promptAgent);
+    expect(storedAgent.requiredSafetyFeatures).toEqual(["sexual"]);
+    expect(JSON.parse(storedAgent.payload)).toEqual({
+        systemPrompt: promptAgent.systemPrompt,
+        baseModel: promptAgent.baseModel,
+        mcpServers: promptAgent.mcpServers,
+    });
     const partialUpdateResponse = await fetchEnterApi(
         enterApi,
         new Request(`https://enter.test/api/account/agents/${agent.id}`, {
@@ -5780,8 +5788,10 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         .select()
         .from(communityEndpointTable)
         .where(eq(communityEndpointTable.id, agent.id));
+    expect(agentAfterPromptUpdate.requiredSafetyFeatures).toEqual(["sexual"]);
     expect(JSON.parse(agentAfterPromptUpdate.payload)).toEqual({
-        ...promptAgent,
+        baseModel: promptAgent.baseModel,
+        mcpServers: promptAgent.mcpServers,
         systemPrompt: "You are an editable SQL tutor.",
     });
     const listResponse = await fetchEnterApi(
@@ -5882,6 +5892,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         promptTextTokens: 0,
         completionTextTokens: 0,
     });
+    expect(registryEntry.definition.requiredSafetyFeatures).toEqual(["sexual"]);
     const gatewayContext = await communityEndpointGatewayContext({
         endpoint: registryEntry.communityEndpoint,
         modelDefinition: registryEntry.definition,
@@ -5933,6 +5944,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
                     baseUrl: "https://updated-agent.example.com/v1",
                     upstreamModel: "updated-endpoint-agent",
                     perUserRpm: 7,
+                    requiredSafetyFeatures: ["violence"],
                 }),
             },
         ),
@@ -5946,6 +5958,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         baseUrl: "https://updated-agent.example.com/v1",
         upstreamModel: "updated-endpoint-agent",
         perUserRpm: 7,
+        requiredSafetyFeatures: ["violence"],
     });
     expect(endpointAgentResponse).not.toHaveProperty("agentId");
     expect(endpointAgentResponse).not.toHaveProperty("modality");
@@ -5975,7 +5988,11 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         baseUrl: "https://updated-agent.example.com/v1",
         upstreamModel: "updated-endpoint-agent",
         perUserRpm: 7,
+        requiredSafetyFeatures: ["violence"],
     });
+    expect(
+        endpointAgentRegistryEntry?.definition.requiredSafetyFeatures,
+    ).toEqual(["violence"]);
     expect(endpointAgentRegistryEntry?.communityEndpoint).not.toHaveProperty(
         "bearerTokenCiphertext",
     );

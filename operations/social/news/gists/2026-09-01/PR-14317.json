@@ -1,0 +1,34 @@
+{
+  "pr_number": 14317,
+  "title": "refactor: harden model fallback routing",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14317",
+  "merged_at": "2026-09-01T21:52:41Z",
+  "labels": [],
+  "pr_body_excerpt": "- Marks generated provider routes as internal fallback-only models\n- Keeps fallback routes out of catalogs, docs, and API-key model lists\n- Retries every upstream 5xx while preserving caller, moderation, and total-timeout exclusions\n- Covers internal Z-Image fallback routing and direct-call rejection",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The backup hive got quieter",
+    "blurb": "Fallback routes now do their useful work behind the petals instead of appearing as mystery models in every catalog. The hive also gives upstream 5xx errors another polite knock before moving on.",
+    "summary": "Hardened fallback routing by marking generated provider routes as internal-only, hiding them from catalogs, docs, and API-key model lists, and retrying all upstream 5xx responses while retaining caller, moderation, and total-timeout exclusions.",
+    "impact": "Developers get cleaner public model lists while requests gain more resilient routing, including covered Z-Image fallback behavior and rejection of direct calls to internal fallback models.",
+    "keywords": [
+      "fallback-routing",
+      "model-registry",
+      "retries",
+      "5xx",
+      "z-image",
+      "api-reliability"
+    ],
+    "visual_concept": "A cozy garden switchboard represents internal fallback routing: visible flower-labeled model paths lead into a retro terminal, while discreet underground vine paths automatically route around a rainy 5xx sign. Polli, wearing a tiny network technician cap, adjusts the routing panel as the CRT Monitor Robot happily watches the hidden backup path keep the code-plants watered.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny network technician cap while adjusting a retro garden routing terminal; hidden vine-like fallback cables quietly route around a small pixel sign reading “5XX,” keeping code-plants blooming, while a cute CRT monitor robot looks on. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, chunky retro sprites, warm lighting, subtle CRT glow, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-01/PR-14317.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny network technician cap while adjusting a retro garden routing terminal; hidden vine-like fallback cables quietly route around a small pixel sign reading “5XX,” keeping code-plants blooming, while a cute CRT monitor robot looks on. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, chunky retro sprites, warm lighting, subtle CRT glow, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-01T21:53:58.846019+00:00"
+}

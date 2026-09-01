@@ -18,7 +18,7 @@ Committed (source of truth — edit here, then deploy):
   or better in the freshest 24h/48h window with at least 20 requests are
   protected from a delayed hide after a fix or new fallback.
 - `community-monitor.service` + `loop.sh` — the deployed systemd path. Each
-  cycle gets a fresh Claude process and systemd starts the next one 30 minutes
+  cycle gets a fresh Claude process and systemd starts the next one 60 minutes
   after completion. Headless cycles cannot be remote-controlled; a separate
   persistent `claude --remote-control community-monitor` session runs alongside
   as a phone-accessible console.
@@ -107,9 +107,11 @@ unauthenticated `GET https://gen.pollinations.ai/models` catalog (no
 D1/wrangler access needed on the box):
 
 - Every listed community text model gets exactly one cache-busted chat request
-  per cycle. Coverage matters more than synthetic volume; additional requests
-  can consume a meaningful share of low-capacity provider quotas and make a
-  sweep outlive the monitor cycle.
+  per cycle. Text probes omit `max_tokens` so reasoning models can finish, and
+  pass only when the unique marker appears in final completion content after
+  any reasoning wrapper. Coverage matters more than synthetic volume;
+  additional requests can consume a meaningful share of low-capacity provider
+  quotas and make a sweep outlive the monitor cycle.
 - Community image models use a separate low-load schedule: exactly one
   `POST /v1/images/generations` probe per model every four hours, with a
   cache-busted prompt, the model's default image dimensions, and `b64_json`

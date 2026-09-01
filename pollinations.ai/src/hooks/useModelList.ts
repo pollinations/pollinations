@@ -19,7 +19,6 @@ export interface Model {
     outputModalities?: string[];
     voices?: string[];
     paid_only?: boolean;
-    /** True for community-provided models (as opposed to official/first-party models). */
     community?: boolean;
 }
 

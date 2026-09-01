@@ -200,6 +200,54 @@ describe("generateTextPortkey", () => {
         expect(completion.choices?.[0]?.message?.content).toBe("ok");
     });
 
+    it("preserves numeric options through the provider pipeline", async () => {
+        const fetcher = vi.fn(
+            async (_input: RequestInfo | URL, init?: RequestInit) => {
+                expect(JSON.parse(String(init?.body))).toMatchObject({
+                    model: "provider-model",
+                    stream: false,
+                    temperature: 4,
+                    top_p: -1,
+                    presence_penalty: 3,
+                    frequency_penalty: -3,
+                    seed: 4.9,
+                    response_format: { type: "json_object" },
+                });
+                return Response.json({
+                    model: "provider-model",
+                    choices: [
+                        {
+                            index: 0,
+                            message: { role: "assistant", content: "ok" },
+                            finish_reason: "stop",
+                        },
+                    ],
+                });
+            },
+        );
+
+        await generateTextPortkey(
+            [{ role: "user", content: "hello" }],
+            {
+                model: "provider-model",
+                modelConfig: {
+                    provider: "openai",
+                    model: "provider-model",
+                },
+                portkeyGatewayUrl: "https://portkey.test",
+                temperature: 4,
+                top_p: -1,
+                presence_penalty: 3,
+                frequency_penalty: -3,
+                seed: 4.9,
+                jsonMode: true,
+            },
+            fetcher,
+        );
+
+        expect(fetcher).toHaveBeenCalledOnce();
+    });
+
     it("preserves seeded GPT-5.6 requests on Chat Completions", async () => {
         const fetcher = vi.fn(
             async (_input: RequestInfo | URL, init?: RequestInit) => {

@@ -1,5 +1,6 @@
 import googleCloudAuth from "../auth/googleCloudAuth.js";
 import {
+    createAlibabaModelConfig,
     createAzureModelConfig,
     createBedrockNativeConfig,
     createDeepInfraModelConfig,
@@ -17,6 +18,24 @@ import {
 
 type PortkeyConfigFactory = () => Record<string, unknown>;
 type PortkeyConfigMap = Record<string, PortkeyConfigFactory>;
+
+function createPinnedOpenRouterConfig(
+    model: string,
+    providerTag: string,
+    maxTokens?: number,
+): PortkeyConfigFactory {
+    return () =>
+        createOpenRouterModelConfig({
+            model,
+            defaultOptions: {
+                ...(maxTokens === undefined ? {} : { max_tokens: maxTokens }),
+                provider: {
+                    only: [providerTag],
+                    allow_fallbacks: false,
+                },
+            },
+        });
+}
 
 /** Creates a direct Vertex AI config for Gemini models. */
 function createVertexGeminiConfig(
@@ -38,16 +57,7 @@ function createPinnedOpenRouterGeminiConfig(
     modelId: string,
     providerTag: string,
 ): PortkeyConfigFactory {
-    return () =>
-        createOpenRouterModelConfig({
-            model: `google/${modelId}`,
-            defaultOptions: {
-                provider: {
-                    only: [providerTag],
-                    allow_fallbacks: false,
-                },
-            },
-        });
+    return createPinnedOpenRouterConfig(`google/${modelId}`, providerTag);
 }
 
 // =============================================================================
@@ -130,6 +140,14 @@ export const portkeyConfig: PortkeyConfigMap = {
             process.env.AZURE_MYCELI_PROD_API_KEY,
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4.3/chat/completions?api-version=2024-12-01-preview",
         ),
+    "grok-4.6": () => ({
+        provider: "openai",
+        directEndpoint:
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4.6/chat/completions?api-version=2024-12-01-preview",
+        directAuthHeader: "api-key",
+        authKey: process.env.AZURE_MYCELI_PROD_API_KEY,
+        model: "grok-4.6",
+    }),
 
     // -- Azure (Myceli Prod — eastus, Cohere) --------------------------------
     "Cohere-command-a-plus-05-2026": () =>
@@ -139,40 +157,14 @@ export const portkeyConfig: PortkeyConfigMap = {
         ),
 
     // -- OpenRouter (frontier models) ----------------------------------------
-    "x-ai/grok-4.6": () =>
-        createOpenRouterModelConfig({
-            model: "x-ai/grok-4.6",
-            defaultOptions: {
-                provider: {
-                    only: ["xai/zdr"],
-                    allow_fallbacks: false,
-                },
-            },
-        }),
-    // GLM-5.3 is a mandatory-reasoning model (see registry entry), making it
-    // just as exposed to the blank-answer/billed-tokens bug as the Qwen
-    // models above if z-ai/fp8's own max_tokens default is ever too low.
-    "z-ai/glm-5.3": () =>
-        createOpenRouterModelConfig({
-            model: "z-ai/glm-5.3",
-            defaultOptions: {
-                max_tokens: 64000,
-                provider: {
-                    only: ["z-ai/fp8"],
-                    allow_fallbacks: false,
-                },
-            },
-        }),
-    "xiaomi/mimo-v2.5": () =>
-        createOpenRouterModelConfig({
-            model: "xiaomi/mimo-v2.5",
-            defaultOptions: { provider: { sort: "price" } },
-        }),
-    "xiaomi/mimo-v2.5-pro": () =>
-        createOpenRouterModelConfig({
-            model: "xiaomi/mimo-v2.5-pro",
-            defaultOptions: { provider: { sort: "price" } },
-        }),
+    "xiaomi/mimo-v2.5": createPinnedOpenRouterConfig(
+        "xiaomi/mimo-v2.5",
+        "xiaomi/fp8",
+    ),
+    "xiaomi/mimo-v2.5-pro": createPinnedOpenRouterConfig(
+        "xiaomi/mimo-v2.5-pro",
+        "xiaomi/fp8",
+    ),
     // Reasoning models: explicit max_tokens default below. Without one, the
     // upstream provider's own default applies (Chutes AI defaults to 1024),
     // which reasoning models can burn entirely on their internal thinking
@@ -266,17 +258,15 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // -- OpenRouter (Gemma) ---------------------------------------------------
-    // Moved off DeepInfra: OpenRouter serves the same SKU ~cheaper ($0.06/$0.33
-    // posted vs $0.07/$0.34) and is credit-eligible.
-    "google/gemma-4-26b-a4b-it": () =>
-        createOpenRouterModelConfig({
-            model: "google/gemma-4-26b-a4b-it",
-        }),
-    "google/gemma-4-31b-it": () =>
-        createOpenRouterModelConfig({
-            model: "google/gemma-4-31b-it",
-            defaultOptions: { provider: { sort: "price" } },
-        }),
+    // Novita preserves remote image URLs; NextBit rejects that public input form.
+    "google/gemma-4-26b-a4b-it": createPinnedOpenRouterConfig(
+        "google/gemma-4-26b-a4b-it",
+        "novita/bf16",
+    ),
+    "google/gemma-4-31b-it": createPinnedOpenRouterConfig(
+        "google/gemma-4-31b-it",
+        "novita/bf16",
+    ),
 
     // -- OpenRouter (Inception Labs) -----------------------------------------
     "mercury-2": () =>
@@ -322,17 +312,21 @@ export const portkeyConfig: PortkeyConfigMap = {
     // Moved off Azure: Mistral Small was Marketplace SaaS pass-through on
     // Azure (not credit-eligible). Bumped the 2503 alias from 3.1 → 3.2 since
     // OpenRouter 3.2 is ~37% cheaper than the Azure 3.1 we were paying.
-    "mistral-small-2503": () =>
-        createOpenRouterModelConfig({
-            model: "mistralai/mistral-small-3.2-24b-instruct",
-        }),
-    // No provider pin (no `only`/`sort`) — the widest-risk case for the
-    // blank-answer/billed-tokens bug, since OpenRouter can route this to any
-    // provider at any time, including ones with a low max_tokens default.
+    "mistral-small-2503": createPinnedOpenRouterConfig(
+        "mistralai/mistral-small-3.2-24b-instruct",
+        "deepinfra/fp8",
+    ),
     "mistral-small-2603": () =>
         createOpenRouterModelConfig({
             model: "mistralai/mistral-small-2603",
-            defaultOptions: { max_tokens: 64000 },
+            defaultOptions: {
+                max_tokens: 64000,
+                provider: {
+                    only: ["mistral"],
+                    ignore: ["mistral/zdr", "mistral/us", "mistral/eu"],
+                    allow_fallbacks: false,
+                },
+            },
         }),
 
     // -- Azure (Myceli Prod — eastus, Mistral Large) -------------------------
@@ -433,6 +427,16 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/glm-5p2",
         }),
+    "accounts/fireworks/models/glm-5p3": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/glm-5p3",
+            defaultOptions: { max_tokens: 64000 },
+        }),
+    "accounts/fireworks/models/glm-5p3-flash": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/glm-5p3-flash",
+            defaultOptions: { max_tokens: 64000 },
+        }),
     "accounts/fireworks/models/minimax-m2p7": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/minimax-m2p7",
@@ -448,6 +452,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b",
+        }),
+    "accounts/fireworks/models/inkling": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/inkling",
         }),
 
     // -- Vercel AI Gateway (Meta) --------------------------------------------
@@ -470,23 +478,24 @@ export const portkeyConfig: PortkeyConfigMap = {
         ),
     // Llama 4 Scout is Marketplace SaaS pass-through on Azure (not
     // credit-eligible). OpenRouter is the cheapest provider with the same SKU.
-    "Llama-4-Scout-17B-16E-Instruct": () =>
-        createOpenRouterModelConfig({
-            model: "meta-llama/llama-4-scout",
-        }),
+    "Llama-4-Scout-17B-16E-Instruct": createPinnedOpenRouterConfig(
+        "meta-llama/llama-4-scout",
+        "deepinfra/fp8",
+    ),
 
     // -- OpenRouter (Qwen Coder, Qwen VL) -------------------------------------
-    // Moved off Alibaba DashScope: OpenRouter serves the same SKU far cheaper
-    // ($0.11/$0.80 vs DashScope's $0.30/$1.50 per 1M tokens).
-    "qwen/qwen3-coder-next": () =>
-        createOpenRouterModelConfig({ model: "qwen/qwen3-coder-next" }),
-    "qwen/qwen3-vl-30b-a3b-instruct": () =>
-        createOpenRouterModelConfig({
-            model: "qwen/qwen3-vl-30b-a3b-instruct",
-        }),
-    "qwen/qwen3-vl-235b-a22b-thinking": () =>
-        createOpenRouterModelConfig({
-            model: "qwen/qwen3-vl-235b-a22b-thinking",
+    // Exact provider pins keep OpenRouter routing and billing deterministic.
+    "qwen/qwen3-coder-next": createPinnedOpenRouterConfig(
+        "qwen/qwen3-coder-next",
+        "parasail/bf16",
+    ),
+    "qwen/qwen3-vl-30b-a3b-instruct": createPinnedOpenRouterConfig(
+        "qwen/qwen3-vl-30b-a3b-instruct",
+        "alibaba",
+    ),
+    "qwen3-vl-235b-a22b-thinking": () =>
+        createAlibabaModelConfig({
+            model: "qwen3-vl-235b-a22b-thinking",
         }),
 
     // -- OpenRouter (StepFun) -------------------------------------------------

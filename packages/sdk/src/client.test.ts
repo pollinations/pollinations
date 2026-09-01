@@ -435,6 +435,195 @@ describe("Pollinations seed handling", () => {
     });
 });
 
+describe("Pollinations simple text facade", () => {
+    it("maps every simple text option to one canonical chat request", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValue(
+            makeResponse({ choices: [{ message: { content: "ok" } }] }),
+        );
+
+        await expect(
+            client.text("hello", {
+                systemPrompt: "be concise",
+                model: "openai",
+                temperature: 0.5,
+                maxTokens: 42,
+                frequencyPenalty: 0.25,
+                presencePenalty: -0.25,
+                seed: -1,
+                json: true,
+                private: true,
+            }),
+        ).resolves.toBe("ok");
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(bodyOf(fetchMock.mock.calls[0])).toEqual({
+            messages: [
+                { role: "system", content: "be concise" },
+                { role: "user", content: "hello" },
+            ],
+            model: "openai",
+            temperature: 0.5,
+            max_tokens: 42,
+            frequency_penalty: 0.25,
+            presence_penalty: -0.25,
+            seed: -1,
+            private: true,
+            stream: false,
+            response_format: { type: "json_object" },
+        });
+    });
+
+    it("streams only text deltas through the canonical chat parser", async () => {
+        const client = newClient();
+        const stream = [
+            'data: {"choices":[{"delta":{"role":"assistant"}}]}',
+            'data: {"choices":[{"delta":{"content":"hello"}}]}',
+            'data: {"choices":[{"delta":{"content":""}}]}',
+            "data: [DONE]",
+            "",
+        ].join("\n");
+        fetchMock.mockResolvedValue(
+            makeResponse(stream, {
+                kind: "stream",
+                contentType: "text/event-stream",
+            }),
+        );
+
+        const chunks: string[] = [];
+        for await (const chunk of client.textStream("hello", {
+            json: true,
+            private: true,
+        })) {
+            chunks.push(chunk);
+        }
+
+        expect(chunks).toEqual(["hello"]);
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(bodyOf(fetchMock.mock.calls[0])).toMatchObject({
+            messages: [{ role: "user", content: "hello" }],
+            stream: true,
+            private: true,
+            response_format: { type: "json_object" },
+        });
+    });
+
+    it("surfaces streamed API errors instead of yielding invalid chunks", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse(
+                [
+                    'data: {"error":{"message":"Upstream model unavailable"}}',
+                    "data: [DONE]",
+                    "",
+                ].join("\n"),
+                {
+                    kind: "stream",
+                    contentType: "text/event-stream",
+                },
+            ),
+        );
+
+        const consume = async () => {
+            for await (const _chunk of newClient().chatStream([
+                { role: "user", content: "hello" },
+            ])) {
+                // Consume the stream.
+            }
+        };
+
+        await expect(consume()).rejects.toMatchObject({
+            name: "PollinationsError",
+            code: "STREAM_ERROR",
+            status: 502,
+            message: "Upstream model unavailable",
+        });
+    });
+
+    it("rejects malformed stream events without choices", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse(
+                [
+                    'data: {"provider_metadata":{"status":"ok"}}',
+                    "data: [DONE]",
+                    "",
+                ].join("\n"),
+                {
+                    kind: "stream",
+                    contentType: "text/event-stream",
+                },
+            ),
+        );
+
+        const consume = async () => {
+            for await (const _chunk of newClient().chatStream([
+                { role: "user", content: "hello" },
+            ])) {
+                // Consume the stream.
+            }
+        };
+
+        await expect(consume()).rejects.toMatchObject({
+            name: "PollinationsError",
+            code: "MALFORMED_STREAM",
+            status: 502,
+        });
+    });
+
+    it("rejects invalid JSON in a stream", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse("data: [invalid-json]\n\n", {
+                kind: "stream",
+                contentType: "text/event-stream",
+            }),
+        );
+
+        const consume = async () => {
+            for await (const _chunk of newClient().chatStream([
+                { role: "user", content: "hello" },
+            ])) {
+                // Consume the stream.
+            }
+        };
+
+        await expect(consume()).rejects.toMatchObject({
+            name: "PollinationsError",
+            code: "MALFORMED_STREAM",
+            status: 502,
+        });
+    });
+
+    it("reports malformed provider data appended after DONE", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse(
+                [
+                    'data: {"choices":[]}',
+                    "data: [DONE]",
+                    'data: {"provider_metadata":{"private":true}}',
+                    "",
+                ].join("\n"),
+                {
+                    kind: "stream",
+                    contentType: "text/event-stream",
+                },
+            ),
+        );
+
+        const consume = async () => {
+            for await (const _chunk of newClient().chatStream([
+                { role: "user", content: "hello" },
+            ])) {
+                // Consume the stream.
+            }
+        };
+
+        await expect(consume()).rejects.toMatchObject({
+            name: "PollinationsError",
+            code: "MALFORMED_STREAM",
+            status: 502,
+        });
+    });
+});
+
 describe("Pollinations.imageEdit — response resolution (characterization)", () => {
     it("returns the resolved image item for a normal url response", async () => {
         const client = newClient();
@@ -531,6 +720,34 @@ describe("Pollinations model discovery", () => {
         await expect(client.models()).resolves.toEqual(models);
         expect(fetchMock.mock.calls[0]?.[0]).toBe(
             "https://example.test/models",
+        );
+    });
+});
+
+describe("Pollinations.accountQuests", () => {
+    it("fetches the quest catalog and returns it typed", async () => {
+        const client = newClient();
+        const questsResponse = {
+            quests: [
+                {
+                    id: "quest-sdk-methods",
+                    title: "Ship an SDK method",
+                    description: "Add a new account method to the SDK",
+                    category: "sdk",
+                    state: "available",
+                    status: "open",
+                    rewardAmount: 5,
+                    balanceBucket: "tier",
+                    url: null,
+                    reward: null,
+                },
+            ],
+        };
+        fetchMock.mockResolvedValueOnce(makeResponse(questsResponse));
+
+        await expect(client.accountQuests()).resolves.toEqual(questsResponse);
+        expect(fetchMock.mock.calls[0]?.[0]).toBe(
+            "https://example.test/account/quests",
         );
     });
 });

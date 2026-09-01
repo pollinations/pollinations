@@ -1,6 +1,7 @@
 import { type CallToolResult, createMCPClient } from "@ai-sdk/mcp";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { getLogger } from "@logtape/logtape";
+import type { McpServerId } from "@shared/registry/mcp.ts";
 import {
     APICallError,
     type FinishReason,
@@ -32,7 +33,6 @@ type PromptAgentRuntime = {
     config: PromptAgentConfig;
     apiKey: string;
     genBaseUrl: string;
-    pollinationsMcpUrl: string;
 };
 
 type McpClient = Awaited<ReturnType<typeof createMCPClient>>;
@@ -74,7 +74,8 @@ function agentErrorResponse(error: unknown): Response {
     );
 }
 
-async function loadPollinationsTools(
+async function loadMcpTools(
+    serverId: McpServerId,
     url: string,
     apiKey: string,
     signal: AbortSignal,
@@ -94,7 +95,7 @@ async function loadPollinationsTools(
 
     try {
         client = await createMCPClient({
-            clientName: "pollinations-prompt-agent",
+            clientName: `pollinations-prompt-agent-${serverId}`,
             initializationOptions: {
                 signal,
                 timeout: MCP_INITIALIZATION_TIMEOUT_MS,
@@ -113,17 +114,17 @@ async function loadPollinationsTools(
             },
         });
         for (const [name, definition] of Object.entries(await client.tools())) {
-            tools[`mcp__pollinations__${name}`] = definition;
+            tools[`mcp__${serverId}__${name}`] = definition;
         }
         log.info("MCP_SERVER_LOADED: name={name} url={url} tools={tools}", {
-            name: "pollinations",
+            name: serverId,
             url,
             tools: Object.keys(tools).length,
         });
     } catch (error) {
         // Tool availability is recoverable; the base model can still answer.
         log.error("MCP_SERVER_FAILED: name={name} url={url} error={error}", {
-            name: "pollinations",
+            name: serverId,
             url,
             error: error instanceof Error ? error.message : String(error),
         });
@@ -133,16 +134,24 @@ async function loadPollinationsTools(
 }
 
 async function createAgent(runtime: PromptAgentRuntime, signal: AbortSignal) {
-    const { tools, close } = runtime.config.mcpServers.includes("pollinations")
-        ? await loadPollinationsTools(
-              runtime.pollinationsMcpUrl,
-              runtime.apiKey,
-              signal,
-          )
-        : {
-              tools: {} as Record<string, McpTool>,
-              close: async () => {},
-          };
+    const genBaseUrl = runtime.genBaseUrl.replace(/\/$/, "");
+    const loadedServers = await Promise.all(
+        runtime.config.mcpServers.map((serverId) =>
+            loadMcpTools(
+                serverId,
+                `${genBaseUrl}/mcp/${serverId}`,
+                runtime.apiKey,
+                signal,
+            ),
+        ),
+    );
+    const tools: Record<string, McpTool> = {};
+    for (const server of loadedServers) {
+        Object.assign(tools, server.tools);
+    }
+    const close = async () => {
+        await Promise.all(loadedServers.map((server) => server.close()));
+    };
     const toolCallCounts: ToolCallCounts = {};
     let toolCalls = 0;
     for (const [name, tool] of Object.entries(tools)) {
@@ -165,7 +174,7 @@ async function createAgent(runtime: PromptAgentRuntime, signal: AbortSignal) {
     const pollinations = createOpenAICompatible({
         name: "pollinations",
         apiKey: runtime.apiKey,
-        baseURL: `${runtime.genBaseUrl.replace(/\/$/, "")}/v1`,
+        baseURL: `${genBaseUrl}/v1`,
     });
 
     const agent = new ToolLoopAgent({
@@ -381,7 +390,7 @@ function toolDetailsContent(
     output: string,
     hasContent: boolean,
 ): string {
-    const name = part.toolName.replace(/^mcp__pollinations__/, "");
+    const name = part.toolName.replace(/^mcp__[^_]+__/, "");
     const argumentsJson = JSON.stringify(part.input ?? {});
     return (
         (hasContent ? "\n\n" : "") +
@@ -429,8 +438,12 @@ async function runAgent(
                 }
             }
         }
+        const finalContent = limited
+            ? `${content}\n\n${STEP_LIMIT_MESSAGE}`
+            : content;
+        if (!finalContent.trim()) throw new Error("Agent produced no response");
         return {
-            content: limited ? `${content}\n\n${STEP_LIMIT_MESSAGE}` : content,
+            content: finalContent,
             finishReason: limited
                 ? "length"
                 : openAIFinishReason(result.finishReason),
@@ -471,7 +484,7 @@ async function streamAgent(
                 for await (const part of result.fullStream) {
                     if (part.type === "error") throw part.error;
                     if (part.type === "text-delta") {
-                        hasContent ||= part.text.length > 0;
+                        hasContent ||= part.text.trim().length > 0;
                         send(
                             contentChunk(
                                 id,
@@ -533,6 +546,9 @@ async function streamAgent(
                         ),
                     );
                 }
+                if (!hasContent && !limited) {
+                    throw new Error("Agent produced no response");
+                }
                 send({
                     id,
                     object: "chat.completion.chunk",
@@ -551,7 +567,33 @@ async function streamAgent(
                 });
                 controller.enqueue(encoder.encode("data: [DONE]\n\n"));
             } catch (error) {
-                send({ error: { message: agentErrorMessage(error) } });
+                const content =
+                    (hasContent ? "\n\n" : "") +
+                    '<details type="error" done="true">\n' +
+                    "<summary>Agent Failed</summary>\n" +
+                    `${escapeHtml(agentErrorMessage(error))}\n` +
+                    "</details>";
+                send(
+                    contentChunk(
+                        id,
+                        created,
+                        runtime.config.baseModel,
+                        content,
+                    ),
+                );
+                send({
+                    id,
+                    object: "chat.completion.chunk",
+                    created,
+                    model: runtime.config.baseModel,
+                    choices: [
+                        {
+                            index: 0,
+                            delta: {},
+                            finish_reason: "stop",
+                        },
+                    ],
+                });
                 controller.enqueue(encoder.encode("data: [DONE]\n\n"));
             } finally {
                 await close().catch((error) => console.error(error));

@@ -87,7 +87,7 @@ function toResponse(row: AgentRow, baseUrl: string) {
     return {
         id: row.id,
         name: row.name,
-        title: row.title ?? row.name,
+        title: row.title,
         description: row.description,
         visibility: row.visibility,
         baseUrl,
@@ -155,7 +155,7 @@ export const agentsRoutes = new Hono<Env>()
     .get(
         "/",
         describeRoute({
-            tags: ["👤 Account"],
+            tags: ["🤖 Community Agents"],
             summary: "List Agents",
             description:
                 "List prompt agents owned by the authenticated account. API keys require `account:keys`.",
@@ -193,7 +193,7 @@ export const agentsRoutes = new Hono<Env>()
     .get(
         "/:id",
         describeRoute({
-            tags: ["👤 Account"],
+            tags: ["🤖 Community Agents"],
             summary: "Get Agent",
             description:
                 "Get an agent owned by the authenticated account. API keys require `account:keys`.",
@@ -226,7 +226,7 @@ export const agentsRoutes = new Hono<Env>()
     .post(
         "/",
         describeRoute({
-            tags: ["👤 Account"],
+            tags: ["🤖 Community Agents"],
             summary: "Create Agent",
             description:
                 "Create and list a prompt agent in one operation. API keys require `account:keys`.",
@@ -280,7 +280,7 @@ export const agentsRoutes = new Hono<Env>()
     .patch(
         "/:id",
         describeRoute({
-            tags: ["👤 Account"],
+            tags: ["🤖 Community Agents"],
             summary: "Update Agent",
             description:
                 "Replace an agent configuration and listing in one operation. API keys require `account:keys`.",
@@ -337,7 +337,7 @@ export const agentsRoutes = new Hono<Env>()
     .delete(
         "/:id",
         describeRoute({
-            tags: ["👤 Account"],
+            tags: ["🤖 Community Agents"],
             summary: "Delete Agent",
             description:
                 "Delete an agent and its model listing. API keys require `account:keys`.",

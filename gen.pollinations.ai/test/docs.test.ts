@@ -81,6 +81,8 @@ describe("docs routes", () => {
             info: { title: "Enter", version: "0.0.0" },
             tags: [
                 { name: "👤 Account" },
+                { name: "🧩 Community Models" },
+                { name: "🤖 Community Agents" },
                 { name: "✨ Quests" },
                 { name: "Customer" },
             ],
@@ -101,23 +103,23 @@ describe("docs routes", () => {
                 },
                 "/api/account/my-models": {
                     get: {
-                        tags: ["👤 Account"],
+                        tags: ["🧩 Community Models"],
                         description:
                             "List invite-only community text models. API keys require `account:keys`.",
                     },
                 },
                 "/api/account/my-models/{id}/update": {
-                    post: { tags: ["👤 Account"] },
+                    post: { tags: ["🧩 Community Models"] },
                 },
                 "/api/account/agents": {
                     get: {
-                        tags: ["👤 Account"],
+                        tags: ["🤖 Community Agents"],
                         description:
                             "List managed agents. API keys require `account:keys`.",
                     },
                 },
                 "/api/account/agents/{id}": {
-                    patch: { tags: ["👤 Account"] },
+                    patch: { tags: ["🤖 Community Agents"] },
                 },
                 "/api/quests/catalog": {
                     get: { tags: ["✨ Quests"], security: [] },
@@ -151,6 +153,7 @@ describe("docs routes", () => {
             info: { description: string };
             paths: Record<string, unknown>;
             servers: { url: string }[];
+            "x-tagGroups": { name: string; tags: string[] }[];
             tags: { name: string; description?: string }[];
             components: { schemas: Record<string, unknown> };
         };
@@ -222,15 +225,45 @@ describe("docs routes", () => {
         expect(schema.paths["/{id}/metadata"]).toBeDefined();
         expect(schema.paths["/media"]).toBeDefined();
         expect(schema.paths["/media/{id}"]).toBeDefined();
-        // BYOP, CLI, MCP are surfaced as plain tags in the Integrations group;
-        // the drawer icons are presentation, not part of the OpenAPI names.
-        expect(schema.tags.map((tag) => tag.name)).toContain("BYOP");
+        const integrations = schema["x-tagGroups"].find(
+            (group) => group.name === "Integrations",
+        );
+        const resources = schema["x-tagGroups"].find(
+            (group) => group.name === "Resources",
+        );
+        expect(integrations?.tags).toContain("Publish a Model");
+        expect(integrations?.tags).not.toContain("Community Models");
+        expect(resources?.tags).toContain("Community Models");
+        expect(resources?.tags).not.toContain("Publish a Model");
+        expect(integrations?.tags).toContain("Publish an Agent");
+        expect(integrations?.tags).toContain("Coding Harnesses");
+        expect(integrations?.tags).not.toContain("Community Agents");
+        expect(resources?.tags).toContain("Community Agents");
+        expect(resources?.tags).not.toContain("Publish an Agent");
+        expect(schema.tags.map((tag) => tag.name)).toContain(
+            "Connect User Wallets",
+        );
+        expect(schema.tags.map((tag) => tag.name)).toContain("Publish a Model");
+        expect(schema.tags.map((tag) => tag.name)).toContain(
+            "Community Models",
+        );
+        expect(schema.tags.map((tag) => tag.name)).toContain(
+            "Publish an Agent",
+        );
+        expect(schema.tags.map((tag) => tag.name)).toContain(
+            "Community Agents",
+        );
         expect(schema.tags.map((tag) => tag.name)).toContain("CLI");
-        expect(schema.tags.map((tag) => tag.name)).toContain("MCP Server");
+        expect(
+            schema.tags.find((tag) => tag.name === "Coding Harnesses")
+                ?.description,
+        ).toContain("polli harness dsh on");
+        expect(schema.tags.map((tag) => tag.name)).toContain("MCP Servers");
         expect(schema.tags.map((tag) => tag.name)).toContain("Quests");
         expect(schema.tags.map((tag) => tag.name)).toContain("Media Storage");
         expect(schema.tags.map((tag) => tag.name)).toContain("Account");
         expect(schema.tags.map((tag) => tag.name)).not.toContain("🌸 BYOP");
+        expect(schema.tags.map((tag) => tag.name)).not.toContain("BYOP");
         expect(schema.tags.map((tag) => tag.name)).not.toContain("👤 Account");
         expect(schema.tags.map((tag) => tag.name)).not.toContain("✨ Quests");
         expect(schema.tags.map((tag) => tag.name)).not.toContain("Customer");
@@ -285,11 +318,13 @@ describe("docs routes", () => {
             schema.paths["/account/my-models"] as Record<string, unknown>
         )?.get as Record<string, unknown> | undefined;
         expect(myModelsGet?.description).toContain("account:keys");
+        expect(myModelsGet?.tags).toEqual(["Community Models"]);
 
         const agentsGet = (
             schema.paths["/account/agents"] as Record<string, unknown>
         )?.get as Record<string, unknown> | undefined;
         expect(agentsGet?.description).toContain("account:keys");
+        expect(agentsGet?.tags).toEqual(["Community Agents"]);
 
         // The catalog is unauthenticated → marked public (security: []).
         const questsCatalogGet = (
@@ -354,6 +389,8 @@ describe("docs routes", () => {
             'property="og:image" content="https://gen.pollinations.ai/og-image.png"',
         );
         expect(html).toContain('rel="manifest" href="/manifest.webmanifest"');
+        expect(html).toContain("window.location.hash === '#tag/byop'");
+        expect(html).toContain("#tag/connect-user-wallets");
     });
 
     it("serves the OpenAPI schema as YAML when ?format=yaml", async () => {
@@ -397,7 +434,43 @@ describe("docs routes", () => {
             ctx,
         );
         expect(mcpRes.status).toBe(301);
-        expect(mcpRes.headers.get("Location")).toBe("/docs#tag/mcp-server");
+        expect(mcpRes.headers.get("Location")).toBe("/docs#tag/mcp-servers");
+
+        const agentsRes = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs/guides/agents", {
+                redirect: "manual",
+            }),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        expect(agentsRes.status).toBe(301);
+        expect(agentsRes.headers.get("Location")).toBe(
+            "/docs#tag/publish-an-agent",
+        );
+
+        const modelsRes = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs/guides/models", {
+                redirect: "manual",
+            }),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        expect(modelsRes.status).toBe(301);
+        expect(modelsRes.headers.get("Location")).toBe(
+            "/docs#tag/publish-a-model",
+        );
+
+        const walletRes = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs/guides/byop", {
+                redirect: "manual",
+            }),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        expect(walletRes.status).toBe(301);
+        expect(walletRes.headers.get("Location")).toBe(
+            "/docs#tag/connect-user-wallets",
+        );
 
         const missingRes = await worker.fetch(
             new Request("https://gen.pollinations.ai/docs/guides/notexist"),
@@ -430,7 +503,7 @@ describe("docs routes", () => {
         expect(realtimeSection).toContain("`GET /realtime`");
         expect(realtimeSection).toContain("`GET /v1/realtime`");
         expect(apiBody).not.toContain("/v1/audio/transcriptions/realtime");
-        expect(apiBody).not.toContain("## BYOP");
+        expect(apiBody).not.toContain("## Connect User Wallets");
 
         const byopRes = await worker.fetch(
             new Request(
@@ -440,7 +513,70 @@ describe("docs routes", () => {
             ctx,
         );
         expect(byopRes.status).toBe(200);
-        expect(await byopRes.text()).toContain("## BYOP");
+        expect(await byopRes.text()).toContain("## Connect User Wallets");
+
+        const modelsRes = await worker.fetch(
+            new Request(
+                "https://gen.pollinations.ai/docs/llm.txt?section=publish-a-model",
+            ),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        expect(modelsRes.status).toBe(200);
+        const modelsBody = await modelsRes.text();
+        expect(modelsBody).toContain("## Publish a Model");
+        expect(modelsBody).toContain("/account/my-models");
+
+        const agentsRes = await worker.fetch(
+            new Request(
+                "https://gen.pollinations.ai/docs/llm.txt?section=publish-an-agent",
+            ),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        expect(agentsRes.status).toBe(200);
+        const agentsBody = await agentsRes.text();
+        expect(agentsBody).toContain("## Publish an Agent");
+        expect(agentsBody).toContain("/account/agents");
+
+        const mcpRes = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs/llm.txt?section=mcp"),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        expect(mcpRes.status).toBe(200);
+        const mcpBody = await mcpRes.text();
+        expect(mcpBody).toContain("## MCP Servers");
+        expect(mcpBody).toContain(
+            "https://gen.pollinations.ai/mcp/pollinations",
+        );
+        expect(mcpBody).toContain("https://gen.pollinations.ai/mcp/ffmpeg");
+        expect(mcpBody).toContain("https://gen.pollinations.ai/mcp/exa");
+        expect(mcpBody).toContain("### Pollinations MCP");
+        expect(mcpBody).toContain("### FFmpeg MCP");
+        expect(mcpBody).toContain("### Exa Search MCP");
+        expect(mcpBody).toContain("https://enter.pollinations.ai/my-models");
+        expect(mcpBody).not.toContain("## Other built-in MCPs");
+        expect(mcpBody).toContain("`generateImage`");
+        expect(mcpBody).toContain("`runFfmpeg`");
+        expect(mcpBody).toContain("`web_search_exa`");
+        expect(mcpBody).not.toContain("mcp.pollinations.ai");
+        expect(mcpBody).toContain("Streamable HTTP");
+        expect(mcpBody).not.toContain("stdio");
+        expect(mcpBody).not.toContain("npx @pollinations/mcp");
+        expect(mcpBody).not.toContain("## Text");
+
+        const harnessRes = await worker.fetch(
+            new Request(
+                "https://gen.pollinations.ai/docs/llm.txt?section=coding-harnesses",
+            ),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        expect(harnessRes.status).toBe(200);
+        const harnessBody = await harnessRes.text();
+        expect(harnessBody).toContain("## Coding Harnesses");
+        expect(harnessBody).toContain("polli harness dsh on");
 
         const badRes = await worker.fetch(
             new Request("https://gen.pollinations.ai/docs/llm.txt?section=bad"),

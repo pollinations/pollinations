@@ -1,10 +1,10 @@
-import { memo, useMemo, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { PLAY_PAGE } from "../../../copy/content/play";
 import type { Model } from "../../../hooks/useModelList";
 import { useModelUptime } from "../../../hooks/useModelUptime";
 import { usePageCopy } from "../../../hooks/usePageCopy";
 import { Button } from "../ui/button";
-import { UptimeDots } from "./UptimeDots";
+import { UptimeDot } from "./UptimeDot";
 
 type ModelCategory = "image" | "text" | "audio" | "video";
 
@@ -74,14 +74,16 @@ export const ModelSelector = memo(function ModelSelector({
     const [activeCategory, setActiveCategory] =
         useState<ModelCategory>("image");
 
-    // Uptime dots only apply to community models, so skip the fetch
-    // entirely when the picker has none loaded (e.g. still loading, or a
-    // deployment with no community providers).
-    const hasCommunityModels = useMemo(
-        () => models.some((m) => m.community),
-        [models],
-    );
-    const { getUptime } = useModelUptime(hasCommunityModels);
+    const getUptime = useModelUptime(models.some((model) => model.community));
+
+    // Keep the visible category tab on the selected model (e.g. when
+    // preselected via /play?model=<id>).
+    useEffect(() => {
+        const selected = models.find((m) => m.id === selectedModel);
+        if (selected) {
+            setActiveCategory(getModelCategory(selected));
+        }
+    }, [models, selectedModel]);
 
     const categories: { key: ModelCategory; label: string }[] = [
         { key: "image", label: copy.imageLabel },
@@ -162,10 +164,7 @@ export const ModelSelector = memo(function ModelSelector({
                                       style={{ borderColor }}
                                   >
                                       {m.community && (
-                                          <UptimeDots
-                                              status={getUptime(m)}
-                                              className="mr-1.5"
-                                          />
+                                          <UptimeDot status={getUptime(m)} />
                                       )}
                                       {m.title}
                                       {isPaidOnly && (

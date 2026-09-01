@@ -1,4 +1,5 @@
-import { Chip, FieldStack, Switch, Textarea } from "@pollinations/ui";
+import { Alert, Chip, FieldStack, Switch, Textarea } from "@pollinations/ui";
+import { MCP_SERVERS } from "@shared/registry/mcp.ts";
 import { BaseModelInput } from "./base-model-input.tsx";
 import type { AgentFormState } from "./types.ts";
 
@@ -32,6 +33,11 @@ export function PromptAgentFields({
                 />
             </FieldStack>
 
+            <Alert intent="warning" title="Public instructions are not secret">
+                Users may infer or extract these instructions. Do not include
+                credentials, personal data, or confidential information.
+            </Alert>
+
             <FieldStack
                 label="Base model"
                 helper="Pick a Pollinations text model or type any model ID. Accepted inputs are inherited from this model."
@@ -44,56 +50,56 @@ export function PromptAgentFields({
                 />
             </FieldStack>
 
-            <div className="space-y-2">
-                <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-medium">
-                                Pollinations MCP
-                            </span>
-                            <Chip size="sm" intent="neutral">
-                                Built-in
-                            </Chip>
+            <div className="space-y-3">
+                {MCP_SERVERS.map((server) => {
+                    const selected = form.mcpServers.includes(server.id);
+                    return (
+                        <div
+                            key={server.id}
+                            className="flex items-start justify-between gap-3"
+                        >
+                            <div className="space-y-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <span className="font-medium">
+                                        {server.name} MCP
+                                    </span>
+                                    <Chip size="sm" intent="neutral">
+                                        Built-in
+                                    </Chip>
+                                </div>
+                                <p className="text-xs text-theme-text-muted">
+                                    {server.description}
+                                </p>
+                            </div>
+                            <Switch
+                                checked={selected}
+                                disabled={disabled}
+                                ariaLabel={`Allow ${server.name} tools`}
+                                onChange={(value) =>
+                                    onChange(
+                                        "mcpServers",
+                                        value
+                                            ? [...form.mcpServers, server.id]
+                                            : form.mcpServers.filter(
+                                                  (id) => id !== server.id,
+                                              ),
+                                    )
+                                }
+                            />
                         </div>
-                        <p className="text-xs text-theme-text-muted">
-                            Allow the agent to call Pollinations generation and
-                            model-discovery tools.
-                        </p>
-                    </div>
-                    <Switch
-                        checked={form.mcpServers.includes("pollinations")}
-                        disabled={disabled}
-                        ariaLabel="Allow Pollinations tools"
-                        onChange={(value) =>
-                            onChange(
-                                "mcpServers",
-                                value ? ["pollinations"] : [],
-                            )
-                        }
-                    />
-                </div>
-                <p className="break-all font-mono text-xs text-theme-text-muted">
-                    https://mcp.pollinations.ai
-                </p>
+                    );
+                })}
                 <p className="text-xs text-theme-text-muted">
-                    Uses the caller's Pollinations API access.{" "}
+                    Uses the caller's Pollinations API access. See the{" "}
                     <a
-                        href="https://gen.pollinations.ai/docs#tag/mcp-server"
+                        href="https://gen.pollinations.ai/docs#tag/mcp-servers"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="underline decoration-current/40 underline-offset-2 hover:text-theme-text-soft"
                     >
                         API docs
                     </a>
-                    {" · "}
-                    <a
-                        href="https://github.com/pollinations/pollinations/tree/main/packages/mcp"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="underline decoration-current/40 underline-offset-2 hover:text-theme-text-soft"
-                    >
-                        GitHub
-                    </a>
+                    .
                 </p>
             </div>
         </div>

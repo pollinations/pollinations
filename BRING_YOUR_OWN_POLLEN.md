@@ -1,4 +1,6 @@
-BYOP (Bring Your Own Pollen) lets your users authorize your app to spend their own Pollen on Pollinations requests. Your publishable App Key (`pk_...`) identifies the app; after approval, Pollinations returns a scoped user key (`sk_...`) for API calls.
+# Connect User Wallets
+
+Connect User Wallets—also called BYOP (Bring Your Own Pollen)—lets your users authorize your app to spend their own Pollen on Pollinations requests. Your publishable App Key (`pk_...`) identifies the app; after approval, Pollinations returns a scoped user key (`sk_...`) for API calls.
 
 Users stay in control of their balance, budgets, and revocation; your app never has to pay for their usage.
 
@@ -144,8 +146,8 @@ fetch('https://gen.pollinations.ai/v1/chat/completions', {
 });
 ```
 
-See `apps/oauth-client-demo/` for a zero-dependency server-backed reference
-client and `apps/oauth-test/` for a browser-only reference.
+Examples: [browser-only](https://github.com/pollinations/pollinations/tree/main/apps/oauth-client-demo) ·
+[existing user database](https://github.com/pollinations/pollinations/tree/main/apps/oauth-account-linking-demo)
 
 ## ⚙️ Legacy Web Apps (Fragment Flow)
 

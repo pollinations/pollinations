@@ -187,20 +187,6 @@ export const ImageParamsSchema = z
                 });
             }
         }
-        // Reject frame + reference combinations for video models
-        if (data.image.length > 0) {
-            const hasRefs =
-                (data.reference_images?.length ?? 0) > 0 ||
-                (data.reference_videos?.length ?? 0) > 0 ||
-                (data.reference_audios?.length ?? 0) > 0;
-            if (hasRefs) {
-                ctx.addIssue({
-                    code: z.ZodIssueCode.custom,
-                    message:
-                        "Cannot combine frame images (image[]) with reference media (reference_images/reference_videos/reference_audios). Use one or the other.",
-                });
-            }
-        }
         if (data.model === "minimax-h3") {
             if (data.duration !== undefined && data.duration !== 5) {
                 ctx.addIssue({

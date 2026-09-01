@@ -47,7 +47,9 @@ type AgentFields = Pick<
 
 export type AgentFormState = AgentFields;
 
-export type AgentPayload = AgentFields;
+export type AgentPayload = Omit<AgentFields, "requiredSafetyFeatures"> & {
+    requiredSafetyFeatures?: SafetyFeature[];
+};
 
 export type CommunityProviderProfile = {
     name: string | null;
@@ -485,7 +487,9 @@ export function toAgentPayload(form: AgentFormState): AgentPayload {
     return {
         systemPrompt,
         baseModel,
-        requiredSafetyFeatures: form.requiredSafetyFeatures,
+        ...(form.requiredSafetyFeatures.length
+            ? { requiredSafetyFeatures: form.requiredSafetyFeatures }
+            : {}),
         mcpServers: form.mcpServers,
     };
 }

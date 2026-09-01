@@ -1,4 +1,4 @@
-import { Section } from "@pollinations/ui";
+import { Button, Section, Surface } from "@pollinations/ui";
 import {
     getPollenPackByAmount,
     getPollenPackByKey,
@@ -6,21 +6,50 @@ import {
     POLLEN_PACKS,
     type PollenPackKey,
 } from "@shared/pollen-packs.ts";
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { BuyPollenPanel, PollenBalance } from "../components/pollen";
+import {
+    createFileRoute,
+    Link,
+    redirect,
+    useNavigate,
+} from "@tanstack/react-router";
+import {
+    BuyPollenPanel,
+    GiftPollenPanel,
+    PollenBalance,
+} from "../components/pollen";
+import { AutoTopUpPanel } from "../components/pollen/auto-top-up-panel.tsx";
 import { Route as DashboardRoute } from "./_dashboard.tsx";
 
+type PollenSearch = {
+    pack?: PollenPackKey;
+    mode?: "gift";
+    success?: boolean;
+    canceled?: boolean;
+    session_id?: string;
+};
+
 export const Route = createFileRoute("/_dashboard/pollen")({
-    validateSearch: (
-        search: Record<string, unknown>,
-    ): { pack?: PollenPackKey } => ({
+    validateSearch: (search: Record<string, unknown>): PollenSearch => ({
         pack:
             typeof search.pack === "string" && isPollenPackKey(search.pack)
                 ? search.pack
                 : undefined,
+        mode: search.mode === "gift" ? "gift" : undefined,
+        success:
+            search.success === true || search.success === "true"
+                ? true
+                : undefined,
+        canceled:
+            search.canceled === true || search.canceled === "true"
+                ? true
+                : undefined,
+        session_id:
+            typeof search.session_id === "string"
+                ? search.session_id
+                : undefined,
     }),
-    beforeLoad: ({ context, location }) => {
-        if (!context.user) {
+    beforeLoad: ({ context, location, search }) => {
+        if (!context.user && search.pack) {
             throw redirect({
                 to: "/sign-in",
                 search: { next: location.href },
@@ -31,34 +60,107 @@ export const Route = createFileRoute("/_dashboard/pollen")({
 });
 
 function PollenPage() {
-    const { pack } = Route.useSearch();
+    const { pack, mode, success, canceled, session_id } = Route.useSearch();
     const navigate = useNavigate({ from: "/pollen" });
-    const { tierBalance, packBalance, paidWeek, tierWeek, billingState } =
+    const { user, tierBalance, packBalance, paidWeek, tierWeek, billingState } =
         DashboardRoute.useLoaderData();
     const selectedPack = getPollenPackByKey(pack ?? "p5") ?? POLLEN_PACKS[0];
+    const isGiftMode = !user || mode === "gift";
 
     function selectPack(amount: number): void {
         const selected = getPollenPackByAmount(amount);
         if (selected) void navigate({ search: { pack: selected.packKey } });
     }
 
+    function selectMode(nextMode: "self" | "gift"): void {
+        void navigate({
+            search: {
+                pack,
+                mode: nextMode === "gift" ? "gift" : undefined,
+            },
+        });
+    }
+
     return (
         <div className="flex flex-col gap-6">
-            <Section title="Wallet" framed>
-                <PollenBalance
-                    tierBalance={tierBalance}
-                    packBalance={packBalance}
-                    paidWeek={paidWeek}
-                    tierWeek={tierWeek}
-                />
-            </Section>
-            <Section title="Top-up" framed id="buy-pollen">
-                <BuyPollenPanel
-                    initialBillingState={billingState}
-                    selectedPackAmount={selectedPack?.amountUsd ?? 5}
-                    onSelectedPackAmountChange={selectPack}
-                />
+            {user && (
+                <Section title="Wallet" framed>
+                    <PollenBalance
+                        tierBalance={tierBalance}
+                        packBalance={packBalance}
+                        paidWeek={paidWeek}
+                        tierWeek={tierWeek}
+                    />
+                </Section>
+            )}
+            <Section
+                title={user ? "Top-up" : "Gift Pollen"}
+                intro={
+                    user ? undefined : (
+                        <span className="flex flex-col gap-1">
+                            <span>
+                                Buy Pollen for someone else. No account is
+                                needed to purchase.
+                            </span>
+                            <span>
+                                Shown on screen after payment and in your Stripe
+                                invoice email.
+                            </span>
+                        </span>
+                    )
+                }
+                framed
+                id="buy-pollen"
+            >
+                {isGiftMode ? (
+                    <GiftPollenPanel
+                        success={success}
+                        canceled={canceled}
+                        sessionId={session_id}
+                        onBuyForSelf={
+                            user ? () => selectMode("self") : undefined
+                        }
+                        autoTopUpPanel={
+                            user ? (
+                                <Surface>
+                                    <AutoTopUpPanel
+                                        initialBillingState={billingState}
+                                    />
+                                </Surface>
+                            ) : undefined
+                        }
+                        redeemCard={user ? <RedeemGiftCard /> : undefined}
+                    />
+                ) : (
+                    <BuyPollenPanel
+                        initialBillingState={billingState}
+                        selectedPackAmount={selectedPack?.amountUsd ?? 5}
+                        onSelectedPackAmountChange={selectPack}
+                        onBuyAsGift={() => selectMode("gift")}
+                        redeemCard={<RedeemGiftCard />}
+                    />
+                )}
             </Section>
         </div>
+    );
+}
+
+function RedeemGiftCard() {
+    return (
+        <Surface className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <p className="font-semibold text-theme-text-strong">
+                    Have a gift code?
+                </p>
+                <p className="mt-1 text-sm text-theme-text-muted">
+                    Redeem it into your Paid Pollen balance.
+                </p>
+            </div>
+            <div data-theme="accent" className="shrink-0">
+                <Button as={Link} to="/redeem" className="w-full sm:w-auto">
+                    Redeem gift code
+                </Button>
+            </div>
+        </Surface>
     );
 }

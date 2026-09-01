@@ -7,6 +7,7 @@ import { customerRoutes } from "./routes/customer.ts";
 import { deviceRoutes } from "./routes/device.ts";
 import { modelStatsRoutes } from "./routes/model-stats.ts";
 import { oauthRoutes } from "./routes/oauth.ts";
+import { pollenGiftRoutes } from "./routes/pollen-gifts.ts";
 import { questsRoutes } from "./routes/quests.ts";
 import { referralRoutes } from "./routes/referral.ts";
 import { statusNoticeRoutes } from "./routes/status-notice.ts";
@@ -23,6 +24,7 @@ export const frontendApi = new Hono<Env>()
     .route("/model-stats", modelStatsRoutes)
     .route("/referral", referralRoutes)
     .route("/status-notice", statusNoticeRoutes)
-    .route("/quests", questsRoutes);
+    .route("/quests", questsRoutes)
+    .route("/pollen-gifts", pollenGiftRoutes);
 
 export type FrontendApiRoutes = typeof frontendApi;

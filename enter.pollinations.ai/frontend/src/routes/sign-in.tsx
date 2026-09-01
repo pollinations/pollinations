@@ -22,7 +22,9 @@ function parseNext(value: unknown): string | undefined {
     }
 
     const url = new URL(value, "https://enter.pollinations.ai");
-    if (!isDashboardPath(url.pathname)) return undefined;
+    if (url.pathname !== "/redeem" && !isDashboardPath(url.pathname)) {
+        return undefined;
+    }
     return `${url.pathname}${url.search}${url.hash}`;
 }
 

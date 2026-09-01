@@ -338,6 +338,64 @@ export const deviceCode = sqliteTable("device_code", {
   index("idx_device_code_user_code").on(table.userCode),
 ]);
 
+export const pollenGiftCode = sqliteTable("pollen_gift_code", {
+  id: text("id").primaryKey(),
+  codeHash: text("code_hash").notNull().unique(),
+  pollenAmount: integer("pollen_amount").notNull(),
+  status: text("status", {
+    enum: ["pending", "active", "redeemed", "voided"],
+  }).default("pending").notNull(),
+  stripeCheckoutSessionId: text("stripe_checkout_session_id").unique(),
+  stripePaymentIntentId: text("stripe_payment_intent_id").unique(),
+  redeemerUserId: text("redeemer_user_id").references(() => user.id, {
+    onDelete: "set null",
+  }),
+  createdAt: integer("created_at", { mode: "timestamp_ms" })
+    .defaultNow()
+    .notNull(),
+  redeemedAt: integer("redeemed_at", { mode: "timestamp_ms" }),
+}, (table) => [
+  index("idx_pollen_gift_code_redeemer_user_id").on(table.redeemerUserId),
+]);
+
+export const stripeGiftCardFingerprintAttempt = sqliteTable(
+  "stripe_gift_card_fingerprint_attempt",
+  {
+    eventId: text("event_id").primaryKey(),
+    buyerKey: text("buyer_key").notNull(),
+    cardFingerprint: text("card_fingerprint").notNull(),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("idx_stripe_gift_card_attempt_buyer_created").on(
+      table.buyerKey,
+      table.createdAt,
+    ),
+  ],
+);
+
+export const pollenGiftRateLimit = sqliteTable("pollen_gift_rate_limit", {
+  key: text("key").primaryKey(),
+  windowStartedAt: integer("window_started_at", { mode: "timestamp_ms" })
+    .notNull(),
+  attempts: integer("attempts").notNull(),
+});
+
+export const pollenGiftPaymentLoss = sqliteTable(
+  "pollen_gift_payment_loss",
+  {
+    key: text("key").primaryKey(),
+    paymentIntentId: text("payment_intent_id").notNull(),
+    kind: text("kind", { enum: ["refund", "dispute"] }).notNull(),
+    active: integer("active", { mode: "boolean" }).default(true).notNull(),
+  },
+  (table) => [
+    index("idx_pollen_gift_payment_loss_intent").on(table.paymentIntentId),
+  ],
+);
+
 export const stripeCheckoutCredits = sqliteTable("stripe_checkout_credits", {
   sessionId: text("session_id").primaryKey(),
   eventId: text("event_id").notNull(),

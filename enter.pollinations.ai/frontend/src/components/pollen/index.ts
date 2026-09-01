@@ -1,3 +1,4 @@
+export { GiftPollenPanel } from "./gift-pollen-panel.tsx";
 export { LastEventsPanel } from "./last-events-panel.tsx";
 export {
     BuyPollenPanel,

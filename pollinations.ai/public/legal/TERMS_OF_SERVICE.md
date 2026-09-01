@@ -1,6 +1,10 @@
 # Terms of Service
 
-**Updated: 2026-08-22**
+**Updated: 2026-08-28**
+
+_2026-08-28 — Clarified gift-code delivery, redemption finality, and payment reversals._
+
+_2026-08-27 — Added single-use Pollen gift codes that can be purchased without an account and given to another person before redemption._
 
 _2026-07-02 — Pollen purchases now include a service fee shown before payment, and prices are shown exclusive of tax; applicable VAT or similar taxes are added at checkout._
 
@@ -71,7 +75,9 @@ If you publish an externally hosted community model, you are responsible for the
 
 Fees are per plan/order/invoice; currency is by default USD. Pollen purchases, including auto top-up charges, include a service fee shown before payment.
 
-**Pollen.** "Pollen" is an in-service credit used only to pay for Pollinations API usage. Pollen is not legal tender, e-money, cryptocurrency, a deposit, a bank account balance, or stored value outside the Service. Pollen is not transferable, withdrawable, or redeemable for cash except where required by law or expressly approved by us as a refund under these Terms.
+**Pollen.** "Pollen" is an in-service credit used only to pay for Pollinations API usage. Pollen is not legal tender, e-money, cryptocurrency, a deposit, a bank account balance, or stored value outside the Service. Once credited to a wallet, Pollen is not transferable, withdrawable, or redeemable for cash except where required by law or expressly approved by us as a refund under these Terms.
+
+**Gift codes.** A purchaser may buy a single-use code and give the unredeemed code to another person. The code becomes active only after payment is confirmed and adds its stated amount to the redeemer's Paid Pollen balance. Gift codes do not expire before redemption; after redemption, the credited Pollen is subject to the wallet-inactivity rule below. Each code can be redeemed once and only for its full value. Once redeemed, the gift is non-refundable and cannot be moved to another wallet, transferred, withdrawn, or exchanged for cash, except where required by law. Treat the code like a bearer credential: anyone who has it may redeem it. If the underlying payment is refunded, disputed, reversed, or fraudulent, we may invalidate the code or reverse its associated Pollen as described in the Refunds & Cancellations Policy.
 
 **Balances.** Your wallet may include:
 
@@ -88,11 +94,11 @@ Fees are per plan/order/invoice; currency is by default USD. Pollen purchases, i
 
 Developer earnings are credited as Pollen to the developer wallet in the same balance type the user paid from. They are not cash payouts and are not transferable, withdrawable, or redeemable outside the Service. We may review and adjust developer earnings for refunds, chargebacks, fraud, abuse, pricing errors, self-crediting (using your own app to inflate your earnings), or other billing corrections.
 
-**Taxes.** Prices for Pollen purchases are shown exclusive of tax. Applicable VAT or similar transaction taxes are calculated and added at checkout based on your billing details. Estonian standard VAT is 24% where applicable. For eligible EU B2B customers with a valid VAT ID, reverse-charge rules may apply.
+**Taxes.** Prices for Pollen purchases are shown exclusive of tax. Applicable VAT or similar transaction taxes are calculated and added at checkout based on the purchaser's billing details, including for gift codes. Estonian standard VAT is 24% where applicable. For eligible EU B2B customers with a valid VAT ID, reverse-charge rules may apply.
 
-**Payments.** Payments are processed by Stripe Payments Europe, Limited. Stripe sends purchase invoices by email.
+**Payments.** Payments are processed by Stripe Payments Europe, Limited. Stripe sends purchase invoices by email; a gift purchase invoice includes the gift code and redemption address. After a successful gift payment, the code is also displayed on the confirmation page.
 
-**No late payments.** All Pollen is prepaid: there are no invoices, due dates, or late fees. The only way a balance can go below zero is when final usage on a request exceeds the pre-flight estimate; that negative balance clears automatically through later credits to that balance or future top-ups, as described under Request billing above. We may refuse new paid-model requests until a negative Paid Pollen balance is covered.
+**No late payments.** All Pollen is prepaid: there are no invoices, due dates, or late fees. A balance can go below zero when final usage on a request exceeds the pre-flight estimate or when Pollen tied to a refund, chargeback, or payment dispute is reversed after use. A negative balance clears through later credits to that balance or future top-ups. We may refuse new paid-model requests until a negative Paid Pollen balance is covered.
 
 **Price changes.** Prices, model costs, and Pollen rates may change at any time without notice; what's shown at top-up or in the pre-flight estimate is what applies to that transaction. If a change materially raises the cost of models you actively use, you may request a refund of unused Paid Pollen balance within 14 days.
 

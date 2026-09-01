@@ -9,6 +9,12 @@ export const createStripeClient = (env: CloudflareBindings): Stripe => {
     });
 };
 
+export function getStripeId(
+    value: string | { id?: string } | null | undefined,
+): string | null {
+    return typeof value === "string" ? value : (value?.id ?? null);
+}
+
 /**
  * Verify Stripe webhook signature
  */

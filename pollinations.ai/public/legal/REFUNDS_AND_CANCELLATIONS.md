@@ -1,14 +1,14 @@
 # Refunds & Cancellations
 
-**Updated: 2026-07-02**
+**Updated: 2026-08-31**
 
 ## Refunds & Cancellations (digital API services & Pollen)
 
-**Scope.** This policy applies to paid Pollen packs/top-ups used to call the Pollinations API and to any paid subscriptions we may introduce in the future.
+**Scope.** This policy applies to paid Pollen packs/top-ups, Pollen gift codes, and any paid subscriptions we may introduce in the future.
 
 ## 1) Pollen Is Digital API Credit
 
-Pollen is an in-service credit used only for Pollinations API usage. It is not legal tender, e-money, cryptocurrency, a deposit, a bank account balance, or stored value outside the Service. Pollen is not transferable, withdrawable, or redeemable for cash except where required by law or expressly approved by us as a refund.
+Pollen is an in-service credit used only for Pollinations API usage. It is not legal tender, e-money, cryptocurrency, a deposit, a bank account balance, or stored value outside the Service. An unredeemed single-use gift code may be given to another person; after redemption, Pollen is not transferable, withdrawable, or redeemable for cash except where required by law or expressly approved by us as a refund.
 
 Your wallet may include:
 
@@ -19,7 +19,7 @@ Your wallet may include:
 
 All sales are final except where required by law or expressly approved by us. Our API is a digital service delivered immediately after purchase. Once Pollen is spent on API usage, that usage cannot be returned.
 
-Paid Pollen packs/top-ups are non-refundable once provisioned, including unused Paid Pollen balance. We do not guarantee refunds because you changed your mind, stopped using the Service, disliked an output, chose the wrong model, authorized an app you no longer want to use, or did not use the full balance.
+Paid Pollen packs/top-ups are non-refundable once provisioned, including unused Paid Pollen balance. An unredeemed gift code may be cancelled or refunded where required by law or expressly approved by us; once redeemed, the gift is non-refundable except where required by law. We do not guarantee refunds because you changed your mind, stopped using the Service, disliked an output, chose the wrong model, authorized an app you no longer want to use, shared a gift code with the wrong person, or did not use the full balance.
 
 Used Pollen cannot be refunded or clawed back. Quest Pollen, free or promotional grants, quest or other rewards, and developer earnings have no cash value and are not refundable.
 
@@ -29,10 +29,10 @@ We may review refund requests for unused Paid Pollen balance in these cases:
 
 - A refund is required by law.
 - A duplicate or unauthorized charge is proven.
-- We fail to provision paid Pollen after payment.
+- We fail to provision paid Pollen or activate a gift code after payment.
 - A material, documented technical fault prevents any meaningful use within a reasonable start period, and you contact us promptly before substantial use.
 
-Approval is discretionary except where required by law. On any approved refund, associated Pollen, credits, benefits, and developer earnings may be reversed or adjusted. See Terms §6 for developer-earnings reversibility.
+Approval is discretionary except where required by law. On any approved refund, an associated gift code may be invalidated and associated Pollen, credits, benefits, and developer earnings may be reversed or adjusted. See Terms §6 for developer-earnings reversibility.
 
 ## 4) EU/EEA Consumer Withdrawal
 
@@ -59,4 +59,4 @@ If you provide a valid VAT ID or purchase for business use, consumer withdrawal 
 
 ## 8) How to Request Review
 
-Email billing@pollinations.ai with your order ID, account email, and a short description of the issue. We aim to review within 5-10 business days. Approved refunds return to the original payment method subject to payment-network timelines. A refund of a full purchase includes that purchase's service fee and tax; partial refunds are prorated on the amount paid. Business days are calculated in EET/EEST (Tallinn).
+Email billing@pollinations.ai with your order ID, buyer or account email, and a short description of the issue. We aim to review within 5-10 business days. Approved refunds return to the original payment method subject to payment-network timelines. A refund of a full purchase includes that purchase's service fee and tax; partial refunds are prorated on the amount paid. Business days are calculated in EET/EEST (Tallinn).

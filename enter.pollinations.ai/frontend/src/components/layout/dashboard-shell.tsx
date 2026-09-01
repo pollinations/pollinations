@@ -49,6 +49,7 @@ type DashboardNavItem = {
     to: DashboardPath;
     label: string;
     icon: ComponentType<{ className?: string }>;
+    badge?: string;
 };
 
 const brandWordmarkMask: CSSProperties = {
@@ -434,13 +435,13 @@ const DashboardRail: FC<DashboardRailProps> = ({
                         onClick={onNavigate}
                     >
                         {item.label}
-                        {(item.id === "my-models" || item.id === "quests") && (
+                        {item.badge && (
                             <Chip
                                 intent="neutral"
                                 size="sm"
                                 className="ml-auto bg-transparent text-theme-text-soft"
                             >
-                                {item.id === "quests" ? "3 new!" : "New!"}
+                                {item.badge}
                             </Chip>
                         )}
                     </NavItem>

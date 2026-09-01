@@ -1,10 +1,9 @@
 import {
     calculateServiceFeeCents,
+    createServiceFeeLineItem,
     describePollenPack,
     getPollenPackByKey,
     POLLEN_PACKS,
-    SERVICE_FEE_NAME,
-    SERVICE_FEE_TAX_CODE,
 } from "@shared/pollen-packs.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import type { Context } from "hono";
@@ -131,18 +130,7 @@ export const stripeRoutes = new Hono<Env>()
                         },
                         quantity: 1,
                     },
-                    {
-                        price_data: {
-                            currency: "usd",
-                            unit_amount: serviceFeeCents,
-                            tax_behavior: "exclusive",
-                            product_data: {
-                                name: SERVICE_FEE_NAME,
-                                tax_code: SERVICE_FEE_TAX_CODE,
-                            },
-                        },
-                        quantity: 1,
-                    },
+                    createServiceFeeLineItem(serviceFeeCents),
                 ],
                 adaptive_pricing: { enabled: true },
                 // Enable discount/promotion codes

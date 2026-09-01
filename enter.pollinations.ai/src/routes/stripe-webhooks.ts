@@ -1,17 +1,49 @@
 import { POLLEN_BILLING_PRECISION } from "@shared/billing/precision.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
+import { POLLEN_GIFT_PURPOSE } from "@shared/pollen-gifts.ts";
 import { getPollenPackByKey } from "@shared/pollen-packs.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import type Stripe from "stripe";
 import type { Env } from "../env.ts";
-import { createStripeClient, verifyWebhookSignature } from "../utils/stripe.ts";
+import {
+    fulfillPollenGiftCheckout,
+    isPollenGiftCheckoutSession,
+    setPollenGiftPaymentLoss,
+    voidPendingPollenGiftCheckout,
+    voidRefundedPollenGift,
+} from "../services/pollen-gifts.ts";
+import {
+    POLLEN_GIFT_BUYER_KEY_METADATA,
+    recordStripeGiftCardFingerprintAttempt,
+} from "../utils/pollen-gift-security.ts";
+import {
+    createStripeClient,
+    getStripeId,
+    verifyWebhookSignature,
+} from "../utils/stripe.ts";
 import {
     creditAutoTopUpInvoice,
     markAutoTopUpInvoiceFailed,
 } from "../utils/stripe-billing/index.ts";
 import { recordStripeCardFingerprintAttempt } from "../utils/stripe-card-gate.ts";
+
+type SanitizedStripeEvent = Pick<
+    Stripe.Event,
+    "id" | "type" | "created" | "livemode"
+> & {
+    data?: {
+        object: {
+            id?: string;
+            reason?: string | null;
+            metadata?: {
+                purpose: string;
+                pollenAmount?: string;
+            };
+        };
+    };
+};
 
 interface StripeEventData {
     eventType: string;
@@ -34,7 +66,65 @@ interface StripeEventData {
     riskScore?: number;
     customerEmail: string;
     livemode: boolean;
-    payload: Stripe.Event;
+    payload: Stripe.Event | SanitizedStripeEvent;
+}
+
+function hasPollenGiftPurpose(
+    metadata: Stripe.Metadata | null | undefined,
+): boolean {
+    return metadata?.purpose === POLLEN_GIFT_PURPOSE;
+}
+
+async function getDisputePaymentIntentId(
+    stripe: Stripe,
+    dispute: Stripe.Dispute,
+): Promise<string | null> {
+    const directId = getStripeId(dispute.payment_intent);
+    if (directId) return directId;
+
+    const chargeId = getStripeId(dispute.charge);
+    if (!chargeId) return null;
+    const charge = await stripe.charges.retrieve(chargeId);
+    return getStripeId(charge.payment_intent);
+}
+
+function disputeKeepsPaymentLost(
+    eventType: Stripe.Event.Type,
+    status: Stripe.Dispute.Status,
+): boolean {
+    if (eventType === "charge.dispute.funds_reinstated") return false;
+    if (eventType !== "charge.dispute.closed") return true;
+    return !["won", "warning_closed", "prevented"].includes(status);
+}
+
+function stripePayloadForTinybird(
+    event: Stripe.Event,
+    giftRelated: boolean,
+): Stripe.Event | SanitizedStripeEvent {
+    if (!giftRelated) return event;
+
+    const sanitized: SanitizedStripeEvent = {
+        id: event.id,
+        type: event.type,
+        created: event.created,
+        livemode: event.livemode,
+    };
+    const metadata = (
+        event.data.object as { metadata?: Stripe.Metadata | null }
+    ).metadata;
+    if (hasPollenGiftPurpose(metadata)) {
+        sanitized.data = {
+            object: {
+                metadata: {
+                    purpose: POLLEN_GIFT_PURPOSE,
+                    ...(metadata?.pollenAmount
+                        ? { pollenAmount: metadata.pollenAmount }
+                        : {}),
+                },
+            },
+        };
+    }
+    return sanitized;
 }
 
 type ChargeSnapshot = {
@@ -106,17 +196,31 @@ async function recordFailedCardFingerprintFromCharge({
     charge,
     snapshot,
     fallbackUserId = "",
+    fallbackGiftBuyerKey = "",
 }: {
     env: CloudflareBindings;
     event: Stripe.Event;
     charge: Stripe.Charge | null | undefined;
     snapshot: ChargeSnapshot;
     fallbackUserId?: string;
+    fallbackGiftBuyerKey?: string;
 }): Promise<void> {
     if (!charge || !snapshot.cardFingerprint) return;
+    const giftBuyerKey =
+        charge.metadata?.[POLLEN_GIFT_BUYER_KEY_METADATA] ||
+        fallbackGiftBuyerKey;
     const userId = readUserIdFromMetadata(charge.metadata) || fallbackUserId;
 
     try {
+        if (giftBuyerKey) {
+            await recordStripeGiftCardFingerprintAttempt(env.DB, {
+                eventId: event.id,
+                buyerKey: giftBuyerKey,
+                cardFingerprint: snapshot.cardFingerprint,
+                createdAt: event.created ? event.created * 1000 : Date.now(),
+            });
+            return;
+        }
         await recordStripeCardFingerprintAttempt(env.DB, {
             eventId: event.id,
             userId,
@@ -190,10 +294,7 @@ function readPresentment(session: Stripe.Checkout.Session): {
 type CheckoutSessionResult = {
     success: boolean;
     message: string;
-    pollenCredited?: number;
     duplicate?: boolean;
-    presentmentCurrency?: string;
-    presentmentAmount?: number;
 };
 
 function isUniqueConstraintError(error: unknown): boolean {
@@ -329,11 +430,13 @@ function checkoutSessionEventData(
         amount: number;
     },
 ): StripeEventData {
+    const giftRelated = isPollenGiftCheckoutSession(session);
+
     return {
         eventType: event.type,
         eventId: event.id,
         sessionId: session.id,
-        userId: session.metadata?.userId || "",
+        userId: giftRelated ? "" : session.metadata?.userId || "",
         amountCents: session.amount_total || 0,
         currency: session.currency || "usd",
         paymentStatus,
@@ -341,9 +444,9 @@ function checkoutSessionEventData(
         paymentMethodsOffered,
         presentmentCurrency: presentment?.currency ?? "",
         presentmentAmount: presentment?.amount ?? 0,
-        customerEmail: session.customer_email || "",
+        customerEmail: giftRelated ? "" : session.customer_email || "",
         livemode: event.livemode,
-        payload: event,
+        payload: stripePayloadForTinybird(event, giftRelated),
     };
 }
 
@@ -364,6 +467,7 @@ function emitCheckoutSessionAnalytics(
     failureLabel: string,
 ): void {
     if (result.success && session.metadata) {
+        const presentment = readPresentment(session);
         c.executionCtx.waitUntil(
             sendStripeEventToTinybird(
                 c.env,
@@ -373,8 +477,8 @@ function emitCheckoutSessionAnalytics(
                     session.payment_status || "unknown",
                     (session.payment_method_types ?? []).join(","),
                     {
-                        currency: result.presentmentCurrency ?? "",
-                        amount: result.presentmentAmount ?? 0,
+                        currency: presentment.presentmentCurrency,
+                        amount: presentment.presentmentAmount,
                     },
                 ),
             ).catch((err) =>
@@ -410,6 +514,7 @@ function emitPaymentIntentAnalytics(
         recordFailedCardFingerprint?: boolean;
     },
 ): void {
+    const giftRelated = hasPollenGiftPurpose(paymentIntent.metadata);
     const methodsOffered = (paymentIntent.payment_method_types ?? []).join(",");
 
     c.executionCtx.waitUntil(
@@ -426,13 +531,17 @@ function emitPaymentIntentAnalytics(
                     charge,
                     snapshot,
                     fallbackUserId: paymentIntent.metadata?.userId || "",
+                    fallbackGiftBuyerKey:
+                        paymentIntent.metadata?.[
+                            POLLEN_GIFT_BUYER_KEY_METADATA
+                        ] || "",
                 });
             }
             await sendStripeEventToTinybird(c.env, {
                 eventType: event.type,
                 eventId: event.id,
                 sessionId: paymentIntent.id,
-                userId: paymentIntent.metadata?.userId || "",
+                userId: giftRelated ? "" : paymentIntent.metadata?.userId || "",
                 amountCents: paymentIntent.amount || 0,
                 currency: paymentIntent.currency || "usd",
                 paymentStatus,
@@ -445,24 +554,26 @@ function emitPaymentIntentAnalytics(
                 cardNetwork: snapshot.cardNetwork,
                 riskLevel: snapshot.riskLevel,
                 riskScore: snapshot.riskScore,
-                customerEmail,
+                customerEmail: giftRelated ? "" : customerEmail,
                 livemode: event.livemode,
-                payload: event,
+                payload: stripePayloadForTinybird(event, giftRelated),
             });
         })().catch((err) => console.error("TinyBird Stripe send failed:", err)),
     );
 }
 
 /**
- * Handle successful checkout session completion.
- * Credits pollen to user's packBalance and persists observability fields.
- * Pollen amount is derived from the selected pack metadata.
+ * Fulfill either a gift or a regular Pollen checkout.
  */
-const handleCheckoutSessionCompleted = async (
+const fulfillCheckoutSession = async (
     event: Stripe.Event,
     session: Stripe.Checkout.Session,
     env: CloudflareBindings,
 ): Promise<CheckoutSessionResult> => {
+    if (isPollenGiftCheckoutSession(session)) {
+        return fulfillPollenGiftCheckout(env.DB, session);
+    }
+
     const metadata = session.metadata;
 
     if (!metadata?.userId) {
@@ -546,9 +657,6 @@ const handleCheckoutSessionCompleted = async (
     return {
         success: true,
         message: `Credited ${pack.amountUsd} pollen to user ${userId}`,
-        pollenCredited: pack.amountUsd,
-        presentmentCurrency: presentment.presentmentCurrency,
-        presentmentAmount: presentment.presentmentAmount,
     };
 };
 
@@ -607,13 +715,16 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                 // happens via checkout.session.completed; successful cards
                 // don't feed the failed-card gate ledger.
                 const charge = event.data.object as Stripe.Charge;
+                const giftRelated = hasPollenGiftPurpose(charge.metadata);
                 const snapshot = snapshotFromCharge(charge);
                 c.executionCtx.waitUntil(
                     sendStripeEventToTinybird(c.env, {
                         eventType: event.type,
                         eventId: event.id,
                         sessionId: charge.id,
-                        userId: charge.metadata?.userId || "",
+                        userId: giftRelated
+                            ? ""
+                            : charge.metadata?.userId || "",
                         amountCents: charge.amount || 0,
                         currency: charge.currency || "usd",
                         paymentStatus: charge.status || "succeeded",
@@ -625,12 +736,13 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                         cardNetwork: snapshot.cardNetwork,
                         riskLevel: snapshot.riskLevel,
                         riskScore: snapshot.riskScore,
-                        customerEmail:
-                            charge.billing_details?.email ||
-                            charge.receipt_email ||
-                            "",
+                        customerEmail: giftRelated
+                            ? ""
+                            : charge.billing_details?.email ||
+                              charge.receipt_email ||
+                              "",
                         livemode: event.livemode,
-                        payload: event,
+                        payload: stripePayloadForTinybird(event, giftRelated),
                     }).catch((err) =>
                         console.error("TinyBird Stripe send failed:", err),
                     ),
@@ -642,7 +754,7 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                 const session = event.data.object as Stripe.Checkout.Session;
 
                 if (session.payment_status === "paid") {
-                    const result = await handleCheckoutSessionCompleted(
+                    const result = await fulfillCheckoutSession(
                         event,
                         session,
                         c.env,
@@ -670,7 +782,7 @@ export const stripeWebhooksRoutes = new Hono<Env>()
             case "checkout.session.async_payment_succeeded": {
                 const session = event.data.object as Stripe.Checkout.Session;
 
-                const result = await handleCheckoutSessionCompleted(
+                const result = await fulfillCheckoutSession(
                     event,
                     session,
                     c.env,
@@ -692,6 +804,7 @@ export const stripeWebhooksRoutes = new Hono<Env>()
 
             case "checkout.session.async_payment_failed": {
                 const session = event.data.object as Stripe.Checkout.Session;
+                await voidPendingPollenGiftCheckout(c.env.DB, session);
                 console.log(`Async payment failed for session ${session.id}`);
                 c.executionCtx.waitUntil(
                     sendStripeEventToTinybird(
@@ -711,6 +824,7 @@ export const stripeWebhooksRoutes = new Hono<Env>()
 
             case "checkout.session.expired": {
                 const session = event.data.object as Stripe.Checkout.Session;
+                await voidPendingPollenGiftCheckout(c.env.DB, session);
                 console.log(`Checkout session expired: ${session.id}`);
                 c.executionCtx.waitUntil(
                     sendStripeEventToTinybird(
@@ -801,6 +915,7 @@ export const stripeWebhooksRoutes = new Hono<Env>()
             case "refund.updated":
             case "refund.failed": {
                 const refund = event.data.object as Stripe.Refund;
+                await voidRefundedPollenGift(c.env.DB, refund);
                 console.log(`Refund ${event.type}: ${refund.id}`);
                 c.executionCtx.waitUntil(
                     sendStripeEventToTinybird(c.env, {
@@ -820,6 +935,29 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                         console.error("TinyBird Stripe send failed:", err),
                     ),
                 );
+                break;
+            }
+
+            case "charge.dispute.created":
+            case "charge.dispute.funds_withdrawn":
+            case "charge.dispute.funds_reinstated":
+            case "charge.dispute.closed": {
+                const dispute = event.data.object as Stripe.Dispute;
+                const paymentIntentId = await getDisputePaymentIntentId(
+                    stripe,
+                    dispute,
+                );
+                if (!paymentIntentId) {
+                    console.warn(
+                        `Could not resolve PaymentIntent for dispute ${dispute.id}`,
+                    );
+                    break;
+                }
+                await setPollenGiftPaymentLoss(c.env.DB, {
+                    paymentIntentId,
+                    kind: "dispute",
+                    active: disputeKeepsPaymentLost(event.type, dispute.status),
+                });
                 break;
             }
 

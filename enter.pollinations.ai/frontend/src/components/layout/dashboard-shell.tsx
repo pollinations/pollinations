@@ -256,8 +256,8 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             ),
         },
         {
-            label: "MCP Server",
-            href: `${genDocsUrl()}#tag/mcp-server`,
+            label: "MCP Servers",
+            href: `${genDocsUrl()}#tag/mcp-servers`,
             icon: (
                 <McpIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />
             ),

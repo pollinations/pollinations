@@ -775,8 +775,15 @@ const IMAGE_BASE_SERVICES = {
         description: "Keyframe-controlled video with sound at 720p or 1080p",
         inputModalities: ["text", "image"],
         outputModalities: ["video", "audio"],
-        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        videoCapabilities: [
+            "start_frame",
+            "end_frame",
+            "audio_output",
+            "reference_images",
+            "reference_videos",
+        ],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
+        maxReferenceVideos: 1, // R2V mode accepts one reference video.
         minDuration: 2,
         maxDuration: 15,
         defaultDuration: 5,
@@ -823,8 +830,15 @@ const IMAGE_BASE_SERVICES = {
             "Five-second video from text or a start image with optional audio at 480p, 720p, or 1080p",
         inputModalities: ["text", "image"],
         outputModalities: ["video", "audio"],
-        videoCapabilities: ["start_frame", "audio_output"],
+        videoCapabilities: [
+            "start_frame",
+            "audio_output",
+            "reference_images",
+            "reference_videos",
+            "reference_audios",
+        ],
         maxReferenceImages: 1, // Video keyframe slots: start only.
+        maxReferenceVideos: 1, // R2V mode accepts one reference video.
         minDuration: 5,
         maxDuration: 5,
         defaultDuration: 5,

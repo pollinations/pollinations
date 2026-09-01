@@ -29,24 +29,30 @@ import {
 const logOps = debug("pollinations:wan:ops");
 const logError = debug("pollinations:wan:error");
 
+type WanMode = "t2v" | "i2v" | "r2v";
+
 interface WanVariantConfig {
     t2vModel: string;
     i2vModel: string;
+    r2vModel?: string;
     trackingName: string;
     displayName: string;
     predictionDeadlineMinutes?: number;
+    r2vMaxDuration?: number;
     /**
      * Build the Replicate input for the chosen mode. `frames` holds the
      * already-downloaded data URIs: frames[0] = first frame, frames[1] = last.
+     * `references` holds reference media URLs for R2V mode.
      */
     buildInput(
-        mode: "t2v" | "i2v",
+        mode: WanMode,
         prompt: string,
         safeParams: ImageParams,
         frames: string[],
+        references: { images: string[]; videos: string[] },
     ): Record<string, unknown>;
     /** Resolve the duration to request AND bill (seconds). */
-    resolveDuration(safeParams: ImageParams): number;
+    resolveDuration(safeParams: ImageParams, mode: WanMode): number;
 }
 
 // wan-2.2-fast: aspect_ratio enum is landscape/portrait only.
@@ -59,6 +65,7 @@ const WAN_FAST_FIXED_SECONDS = 5;
 const WAN_26_DURATIONS = [5, 10, 15] as const;
 const WAN_PRO_MIN_DURATION = 2;
 const WAN_PRO_MAX_DURATION = 15;
+const WAN_PRO_R2V_MAX_DURATION = 10;
 const WAN_PRO_PREDICTION_DEADLINE_MINUTES = 15;
 
 /** Pick the supported aspect ratio closest to the request. */
@@ -154,7 +161,7 @@ const WAN_26_CONFIG: WanVariantConfig = {
 };
 
 // Wan 2.7 uses one public model for both supported resolutions. The upstream
-// still has separate T2V and I2V routes, selected from the input frames.
+// still has separate T2V, I2V, and R2V routes, selected from the input.
 function makeWan27Config(
     resolution: "720p" | "1080p",
     trackingName: string,
@@ -162,16 +169,37 @@ function makeWan27Config(
     return {
         t2vModel: "wan-video/wan-2.7-t2v",
         i2vModel: "wan-video/wan-2.7-i2v",
+        r2vModel: "wan-video/wan-2.7-r2v",
+        r2vMaxDuration: WAN_PRO_R2V_MAX_DURATION,
         trackingName,
         displayName: `Wan 2.7${resolution === "1080p" ? " 1080p" : ""}`,
         predictionDeadlineMinutes: WAN_PRO_PREDICTION_DEADLINE_MINUTES,
-        resolveDuration: (p) =>
-            Math.max(
+        resolveDuration: (p, mode) => {
+            const max =
+                mode === "r2v"
+                    ? WAN_PRO_R2V_MAX_DURATION
+                    : WAN_PRO_MAX_DURATION;
+            return Math.max(
                 WAN_PRO_MIN_DURATION,
-                Math.min(WAN_PRO_MAX_DURATION, Math.floor(p.duration ?? 5)),
-            ),
-        buildInput(mode, prompt, safeParams, frames) {
-            const duration = this.resolveDuration(safeParams);
+                Math.min(max, Math.floor(p.duration ?? 5)),
+            );
+        },
+        buildInput(mode, prompt, safeParams, frames, references) {
+            const duration = this.resolveDuration(safeParams, mode);
+            if (mode === "r2v") {
+                return withSeed(
+                    {
+                        prompt,
+                        image: references.images[0],
+                        resolution,
+                        duration,
+                        ...(references.videos.length
+                            ? { reference_videos: references.videos }
+                            : {}),
+                    },
+                    safeParams,
+                );
+            }
             if (mode === "i2v") {
                 return withSeed(
                     {
@@ -206,18 +234,40 @@ async function generateWanVideo(
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> {
     const images = safeParams.image ?? [];
-    const mode: "t2v" | "i2v" = images.length > 0 ? "i2v" : "t2v";
-    const model = mode === "i2v" ? config.i2vModel : config.t2vModel;
+    const refImages = safeParams.reference_images ?? [];
+    const refVideos = safeParams.reference_videos ?? [];
+    const hasReferences = refImages.length > 0 || refVideos.length > 0;
+
+    const mode: WanMode =
+        images.length > 0
+            ? "i2v"
+            : hasReferences && config.r2vModel
+              ? "r2v"
+              : "t2v";
+
+    const model =
+        mode === "r2v"
+            ? (config.r2vModel ?? config.i2vModel)
+            : mode === "i2v"
+              ? config.i2vModel
+              : config.t2vModel;
 
     const frames =
         images.length > 0 ? await Promise.all(images.map(toDataUri)) : [];
-    const input = config.buildInput(mode, prompt, safeParams, frames);
-    const requestedDuration = config.resolveDuration(safeParams);
+    const references = { images: refImages, videos: refVideos };
+    const input = config.buildInput(
+        mode,
+        prompt,
+        safeParams,
+        frames,
+        references,
+    );
+    const requestedDuration = config.resolveDuration(safeParams, mode);
 
     logOps(`${config.displayName} (${mode}) input:`, {
         ...input,
         prompt: prompt.slice(0, 80),
-        image: input.image ? "[data uri]" : undefined,
+        image: input.image ? "[data uri or ref]" : undefined,
         first_frame: input.first_frame ? "[data uri]" : undefined,
         last_image: input.last_image ? "[data uri]" : undefined,
         last_frame: input.last_frame ? "[data uri]" : undefined,

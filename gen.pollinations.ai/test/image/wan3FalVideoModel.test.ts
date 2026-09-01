@@ -7,6 +7,8 @@ const TEXT_ENDPOINT =
     "https://queue.fal.run/alibaba/wan-3.0-prime/text-to-video";
 const IMAGE_ENDPOINT =
     "https://queue.fal.run/alibaba/wan-3.0-prime/image-to-video";
+const REFERENCE_ENDPOINT =
+    "https://queue.fal.run/alibaba/wan-3.0-prime/reference-to-video";
 const STATUS_URL =
     "https://queue.fal.run/alibaba/wan-3.0-prime/requests/test/status";
 const RESULT_URL = "https://queue.fal.run/alibaba/wan-3.0-prime/requests/test";
@@ -51,7 +53,11 @@ function mockFalFetch(
                       >)
                     : undefined,
             });
-            if (href === TEXT_ENDPOINT || href === IMAGE_ENDPOINT) {
+            if (
+                href === TEXT_ENDPOINT ||
+                href === IMAGE_ENDPOINT ||
+                href === REFERENCE_ENDPOINT
+            ) {
                 return Response.json({
                     status_url: STATUS_URL,
                     response_url: RESULT_URL,
@@ -158,5 +164,59 @@ describe("Wan 3.0 Prime via Fal", () => {
             }),
         ).rejects.toMatchObject({ status: 400 });
         expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it("routes reference images to the reference-to-video endpoint", async () => {
+        const requests: ProviderRequest[] = [];
+        mockFalFetch(requests);
+
+        const result = await callWan3FalAPI("a serene landscape", {
+            ...baseParams,
+            reference_images: ["https://example.com/ref.png"],
+        });
+
+        expect(requests[0].url).toBe(REFERENCE_ENDPOINT);
+        expect(requests[0].body).toMatchObject({
+            prompt: "a serene landscape",
+            reference_images: ["https://example.com/ref.png"],
+            aspect_ratio: "adaptive",
+        });
+        expect(result.trackingData.actualModel).toBe("wan-3.0");
+    });
+
+    it("routes reference videos and audio to the reference-to-video endpoint", async () => {
+        const requests: ProviderRequest[] = [];
+        mockFalFetch(requests);
+
+        await callWan3FalAPI("a music video", {
+            ...baseParams,
+            reference_videos: ["https://example.com/ref.mp4"],
+            reference_audios: ["https://example.com/ref.mp3"],
+        });
+
+        expect(requests[0].url).toBe(REFERENCE_ENDPOINT);
+        expect(requests[0].body).toMatchObject({
+            reference_videos: ["https://example.com/ref.mp4"],
+            reference_audios: ["https://example.com/ref.mp3"],
+        });
+    });
+
+    it("forwards image[1] as end_image_url in image-to-video mode", async () => {
+        const requests: ProviderRequest[] = [];
+        mockFalFetch(requests);
+
+        await callWan3FalAPI("a cat walking", {
+            ...baseParams,
+            image: [
+                "https://example.com/start.png",
+                "https://example.com/end.png",
+            ],
+        });
+
+        expect(requests[0].url).toBe(IMAGE_ENDPOINT);
+        expect(requests[0].body).toMatchObject({
+            start_image_url: "https://example.com/start.png",
+            end_image_url: "https://example.com/end.png",
+        });
     });
 });

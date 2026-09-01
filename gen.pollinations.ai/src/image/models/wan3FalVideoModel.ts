@@ -10,6 +10,8 @@ const WAN_3_TEXT_ENDPOINT =
     "https://queue.fal.run/alibaba/wan-3.0-prime/text-to-video";
 const WAN_3_IMAGE_ENDPOINT =
     "https://queue.fal.run/alibaba/wan-3.0-prime/image-to-video";
+const WAN_3_REFERENCE_ENDPOINT =
+    "https://queue.fal.run/alibaba/wan-3.0-prime/reference-to-video";
 const WAN_3_DURATION_SECONDS = 5;
 const WAN_3_TIMEOUT_MS = 5 * 60 * 1000;
 const WAN_3_POLL_INTERVAL_MS = 2_000;
@@ -61,29 +63,51 @@ export async function callWan3FalAPI(
     }
 
     const startImage = safeParams.image[0];
-    const endpoint = startImage ? WAN_3_IMAGE_ENDPOINT : WAN_3_TEXT_ENDPOINT;
+    const endImage = safeParams.image[1];
+    const refImages = safeParams.reference_images ?? [];
+    const refVideos = safeParams.reference_videos ?? [];
+    const refAudios = safeParams.reference_audios ?? [];
+    const hasReferences =
+        refImages.length > 0 || refVideos.length > 0 || refAudios.length > 0;
+
+    const endpoint = hasReferences
+        ? WAN_3_REFERENCE_ENDPOINT
+        : startImage
+          ? WAN_3_IMAGE_ENDPOINT
+          : WAN_3_TEXT_ENDPOINT;
     const deadline = Date.now() + WAN_3_TIMEOUT_MS;
     const authorization = { Authorization: `Key ${apiKey}` };
+
+    const body: Record<string, unknown> = {
+        prompt,
+        resolution: safeParams.resolution ?? "480p",
+        aspect_ratio: startImage
+            ? "adaptive"
+            : closestRatioLogSpace(
+                  safeParams.width,
+                  safeParams.height,
+                  WAN_3_ASPECT_RATIOS,
+              ),
+        duration,
+        audio: safeParams.audio,
+        enable_prompt_expansion: true,
+        enable_safety_checker: true,
+        seed: safeParams.seed,
+        ...(startImage ? { start_image_url: startImage } : {}),
+        ...(endImage ? { end_image_url: endImage } : {}),
+    };
+
+    if (hasReferences) {
+        if (refImages.length > 0) body.reference_images = refImages;
+        if (refVideos.length > 0) body.reference_videos = refVideos;
+        if (refAudios.length > 0) body.reference_audios = refAudios;
+        body.aspect_ratio = "adaptive";
+    }
+
     const submissionResponse = await fetchUpstream(endpoint, {
         method: "POST",
         headers: { ...authorization, "Content-Type": "application/json" },
-        body: JSON.stringify({
-            prompt,
-            resolution: safeParams.resolution ?? "480p",
-            aspect_ratio: startImage
-                ? "adaptive"
-                : closestRatioLogSpace(
-                      safeParams.width,
-                      safeParams.height,
-                      WAN_3_ASPECT_RATIOS,
-                  ),
-            duration,
-            audio: safeParams.audio,
-            enable_prompt_expansion: true,
-            enable_safety_checker: true,
-            seed: safeParams.seed,
-            ...(startImage ? { start_image_url: startImage } : {}),
-        }),
+        body: JSON.stringify(body),
         signal: AbortSignal.timeout(remainingTime(deadline)),
         errorLabel: "Wan 3.0 submission failed",
     });

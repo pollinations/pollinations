@@ -436,21 +436,23 @@ export const Models: FC = () => {
                                 );
                             })}
                         </div>
-                        {activePrimaryTab === "models" && (
+                        {activePrimaryTab !== "mcp" && (
                             <div className="flex w-full flex-wrap items-center justify-between gap-2">
-                                <div className="flex flex-wrap gap-1.5">
-                                    {MODEL_SECTION_ORDER.map((section) => (
-                                        <TabButton
-                                            key={section}
-                                            active={activeTab === section}
-                                            onClick={() =>
-                                                setActiveTab(section)
-                                            }
-                                        >
-                                            {sectionLabels[section]}
-                                        </TabButton>
-                                    ))}
-                                </div>
+                                {activePrimaryTab === "models" && (
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {MODEL_SECTION_ORDER.map((section) => (
+                                            <TabButton
+                                                key={section}
+                                                active={activeTab === section}
+                                                onClick={() =>
+                                                    setActiveTab(section)
+                                                }
+                                            >
+                                                {sectionLabels[section]}
+                                            </TabButton>
+                                        ))}
+                                    </div>
+                                )}
                                 <div className="flex items-center gap-2 text-sm text-theme-text-muted">
                                     <span className="inline-flex items-center gap-1.5">
                                         Community
@@ -459,12 +461,18 @@ export const Models: FC = () => {
                                         </Chip>
                                     </span>
                                     <Switch
-                                        checked={includeCommunity}
-                                        onChange={setIncludeCommunity}
-                                        ariaLabel={
+                                        checked={
+                                            activePrimaryTab === "agent" ||
                                             includeCommunity
-                                                ? "Hide community models"
-                                                : "Include community models"
+                                        }
+                                        onChange={setIncludeCommunity}
+                                        disabled={activePrimaryTab === "agent"}
+                                        ariaLabel={
+                                            activePrimaryTab === "agent"
+                                                ? "All agents are community models for now"
+                                                : includeCommunity
+                                                  ? "Hide community models"
+                                                  : "Include community models"
                                         }
                                     />
                                 </div>

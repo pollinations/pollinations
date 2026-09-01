@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-08-31",
+  "period_start": "2026-08-31",
+  "period_end": "2026-08-31",
+  "generated_at": "2026-09-01T06:31:29.452077+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-08-31/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped: community video models, Inkling via Fireworks, Grok 4.6, and Azure FLUX.2 are in the catalog.\n\nModel listings now sort by popularity and expose MCP servers/pricing. Polli CLI learned Pi + OpenCode. Also fixed several states that had become interpretive art."
+}

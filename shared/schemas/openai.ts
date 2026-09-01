@@ -125,9 +125,7 @@ const ChatCompletionRequestMessageContentPartSchema = z
         ChatCompletionRequestMessageContentPartAudioSchema,
         ChatCompletionRequestMessageContentPartFileSchema,
         // Allow any other content types for provider-specific extensions
-        z
-            .object({ type: z.string() })
-            .passthrough(),
+        z.object({ type: z.string() }).passthrough(),
     ])
     .meta({ $id: "MessageContentPart" });
 
@@ -305,29 +303,17 @@ export const CreateChatCompletionRequestSchema = z
                 format: z.enum(["wav", "mp3", "flac", "opus", "pcm16"]),
             })
             .optional(),
-        frequency_penalty: z
-            .number()
-            .min(-2)
-            .max(2)
-            .nullable()
-            .optional()
-            .default(0),
+        frequency_penalty: z.number().min(-2).max(2).nullable().optional(),
         repetition_penalty: z.number().min(0).max(2).nullable().optional(),
         logit_bias: z
             .record(z.string(), z.number().int())
             .nullable()
             .optional()
             .default(null),
-        logprobs: z.boolean().nullable().optional().default(false),
+        logprobs: z.boolean().nullable().optional(),
         top_logprobs: z.number().int().min(0).max(20).nullable().optional(),
         max_tokens: z.number().int().min(0).nullable().optional(),
-        presence_penalty: z
-            .number()
-            .min(-2)
-            .max(2)
-            .nullable()
-            .optional()
-            .default(0),
+        presence_penalty: z.number().min(-2).max(2).nullable().optional(),
         response_format: ResponseFormatUnionSchema.optional(),
         seed: z.number().int().min(-1).max(2147483647).nullable().optional(),
         stop: z
@@ -415,9 +401,7 @@ const ChatCompletionMessageContentBlockSchema = z.union([
     ChatCompletionMessageContentPartThinkingSchema,
     ChatCompletionMessageContentPartRedactedThinkingSchema,
     // Allow any other content types for provider-specific extensions (video, audio, file, etc.)
-    z
-        .object({ type: z.string() })
-        .passthrough(),
+    z.object({ type: z.string() }).passthrough(),
 ]);
 
 const ChatCompletionResponseMessageSchema = z.object({

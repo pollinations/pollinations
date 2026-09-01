@@ -204,9 +204,7 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
-  // Nullable: rows predating titles fall back to communityEndpointTitle().
-  // Required on create, so only the pre-existing backlog is null.
-  title: text("title"),
+  title: text("title").notNull(),
   description: text("description"),
   // What this listing IS to callers, and the only thing deciding whether a
   // call is sent a run token that spends the caller's balance.

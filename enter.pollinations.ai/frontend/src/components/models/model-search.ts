@@ -8,6 +8,7 @@ export const MODEL_CATEGORIES = [
     "text",
     "embedding",
     "agent",
+    "mcp",
 ] as const;
 
 export type ModelCategory = (typeof MODEL_CATEGORIES)[number];
@@ -16,6 +17,7 @@ export const MODEL_SCOPES = ["pollinations", "community"] as const;
 export type ModelScope = (typeof MODEL_SCOPES)[number];
 
 export const MODEL_SORTS = [
+    "popular",
     "newest",
     "oldest",
     "price-low",
@@ -79,17 +81,17 @@ export function validateModelSearch(
     const category = includes(MODEL_CATEGORIES, search.category)
         ? search.category
         : "all";
-    const sort = includes(MODEL_SORTS, search.sort) ? search.sort : "newest";
+    const sort = includes(MODEL_SORTS, search.sort) ? search.sort : "popular";
     const query = typeof search.q === "string" ? search.q.trim() : "";
 
     return {
         scope: scope === "community" ? scope : undefined,
         category:
             category !== "all" &&
-            (scope === "community" || category !== "agent")
+            category !== (scope === "community" ? "mcp" : "agent")
                 ? category
                 : undefined,
         q: query || undefined,
-        sort: sort === "newest" ? undefined : sort,
+        sort: sort === "popular" ? undefined : sort,
     };
 }

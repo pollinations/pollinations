@@ -3,12 +3,39 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 let server: Server;
 let resolveHarnessKey: typeof import("./keys.js").resolveHarnessKey;
+let fetchHarnessModels: typeof import("./models.js").fetchHarnessModels;
 const requests: string[] = [];
 const previousBaseUrl = process.env.POLLINATIONS_BASE_URL;
 
 beforeAll(async () => {
     server = createServer((request, response) => {
         requests.push(`${request.method} ${request.url}`);
+        if (request.url === "/v1/models") {
+            response.writeHead(200, { "Content-Type": "application/json" });
+            response.end(
+                JSON.stringify({
+                    data: [
+                        {
+                            id: "chat",
+                            input_modalities: ["text"],
+                            output_modalities: ["text"],
+                            supported_endpoints: ["/v1/chat/completions"],
+                            tools: true,
+                            context_length: 100,
+                        },
+                        {
+                            id: "realtime",
+                            input_modalities: ["text"],
+                            output_modalities: ["text"],
+                            supported_endpoints: ["/v1/realtime"],
+                            tools: true,
+                            context_length: 100,
+                        },
+                    ],
+                }),
+            );
+            return;
+        }
         response.writeHead(503, { "Content-Type": "application/json" });
         response.end('{"error":"temporarily unavailable"}');
     });
@@ -20,6 +47,7 @@ beforeAll(async () => {
         throw new Error("No test port");
     process.env.POLLINATIONS_BASE_URL = `http://127.0.0.1:${address.port}`;
     ({ resolveHarnessKey } = await import("./keys.js"));
+    ({ fetchHarnessModels } = await import("./models.js"));
 });
 
 afterAll(async () => {
@@ -43,5 +71,13 @@ describe("harness keys", () => {
             ),
         ).rejects.toMatchObject({ status: 503 });
         expect(requests).toEqual(["GET /account/key"]);
+    });
+});
+
+describe("harness models", () => {
+    it("only includes models supporting chat completions", async () => {
+        await expect(fetchHarnessModels()).resolves.toEqual([
+            { id: "chat", contextWindow: 100, input: ["text"] },
+        ]);
     });
 });

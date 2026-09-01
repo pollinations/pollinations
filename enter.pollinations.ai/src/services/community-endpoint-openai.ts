@@ -1,20 +1,24 @@
 import {
-    COMMUNITY_ENDPOINT_TIMEOUT_MS,
-    type CommunityEndpointImagePricing,
     communityAudioTranscriptionsUrl,
     communityChatCompletionsUrl,
     communityEmbeddingsUrl,
-    communityEndpointErrorDetail,
     communityImageEditsUrl,
     communityImageGenerationsUrl,
     communityOpenAIBaseUrl,
+} from "@shared/community-endpoint-urls.ts";
+import {
+    COMMUNITY_ENDPOINT_TIMEOUT_MS,
+    type CommunityEndpointImagePricing,
+    communityEndpointErrorDetail,
     communityTranscriptionSeconds,
+    normalizeCommunityEndpointBearerToken,
+} from "@shared/community-endpoints.ts";
+import {
     decodeCommunityBase64,
     firstCommunityImageBytes,
     firstCommunityVideoBytes,
     MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
-    normalizeCommunityEndpointBearerToken,
-} from "@shared/community-endpoints.ts";
+} from "@shared/community-media.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
 import type { ModelInputModality, Usage } from "@shared/registry/registry.ts";
 import {

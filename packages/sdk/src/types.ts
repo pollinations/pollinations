@@ -843,6 +843,7 @@ export const MODEL_CATEGORIES = [
     "video",
     "text",
     "audio",
+    "3d",
     "embedding",
     "realtime",
 ] as const;
@@ -850,11 +851,26 @@ export const MODEL_CATEGORIES = [
 /** Model category */
 export type ModelCategory = (typeof MODEL_CATEGORIES)[number];
 
+/** Inputs accepted by a model */
+export type ModelInputModality = "text" | "image" | "audio" | "video";
+
+/** Outputs produced by a model */
+export type ModelOutputModality =
+    | "text"
+    | "image"
+    | "audio"
+    | "video"
+    | "embedding"
+    | "3d";
+
 /** Per-model video frame-control capabilities (video models only) */
 export type VideoCapability =
     | "start_frame"
     | "end_frame"
     | "keyframes"
+    | "reference_images"
+    | "reference_videos"
+    | "reference_audios"
     | "audio_output";
 
 /** Per-model agentic/text capabilities */
@@ -880,8 +896,8 @@ export interface ModelInfo {
     community?: boolean;
     agent?: boolean;
     base_model?: string;
-    input_modalities?: string[];
-    output_modalities?: string[];
+    input_modalities?: ModelInputModality[];
+    output_modalities?: ModelOutputModality[];
     video_capabilities?: VideoCapability[];
     min_duration?: number;
     max_duration?: number;

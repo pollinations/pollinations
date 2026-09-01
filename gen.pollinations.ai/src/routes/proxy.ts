@@ -40,6 +40,7 @@ import {
     getImageModelIds,
     getVideoModelIds,
 } from "@shared/registry/image.ts";
+import { ModelInfoSchema } from "@shared/registry/model-info.ts";
 import {
     DEFAULT_3D_MODEL,
     getModel3dModelIds,
@@ -102,6 +103,10 @@ import {
     textBodyLimit,
 } from "./generation-handlers.ts";
 import { handleRealtimeWebSocket } from "./realtime.ts";
+
+const ModelInfoListSchema = z.array(ModelInfoSchema).meta({
+    description: "List of models with pricing and metadata",
+});
 
 // Build dynamic model lists from registry for use in API descriptions
 const imageModelNames = getImageModelIds()
@@ -474,12 +479,7 @@ export const proxyRoutes = new Hono<Env>()
                     description: "Success",
                     content: {
                         "application/json": {
-                            schema: resolver(
-                                z.array(z.any()).meta({
-                                    description:
-                                        "List of models with pricing and metadata",
-                                }),
-                            ),
+                            schema: resolver(ModelInfoListSchema),
                         },
                     },
                 },
@@ -500,12 +500,7 @@ export const proxyRoutes = new Hono<Env>()
                     description: "Success",
                     content: {
                         "application/json": {
-                            schema: resolver(
-                                z.array(z.any()).meta({
-                                    description:
-                                        "List of models with pricing and metadata",
-                                }),
-                            ),
+                            schema: resolver(ModelInfoListSchema),
                         },
                     },
                 },
@@ -520,18 +515,13 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Image & Video Models",
             description:
-                "Returns all available image and video generation models with pricing, capabilities, and metadata. Video models are included here — check the `outputModalities` field to distinguish image vs video models. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
+                "Returns all available image and video generation models with pricing, capabilities, and metadata. Video models are included here — check the `output_modalities` field to distinguish image vs video models. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
             responses: {
                 200: {
                     description: "Success",
                     content: {
                         "application/json": {
-                            schema: resolver(
-                                z.array(z.any()).meta({
-                                    description:
-                                        "List of models with pricing and metadata",
-                                }),
-                            ),
+                            schema: resolver(ModelInfoListSchema),
                         },
                     },
                 },
@@ -552,12 +542,7 @@ export const proxyRoutes = new Hono<Env>()
                     description: "Success",
                     content: {
                         "application/json": {
-                            schema: resolver(
-                                z.array(z.any()).meta({
-                                    description:
-                                        "List of models with pricing and metadata",
-                                }),
-                            ),
+                            schema: resolver(ModelInfoListSchema),
                         },
                     },
                 },
@@ -578,12 +563,7 @@ export const proxyRoutes = new Hono<Env>()
                     description: "Success",
                     content: {
                         "application/json": {
-                            schema: resolver(
-                                z.array(z.any()).meta({
-                                    description:
-                                        "List of models with pricing and metadata",
-                                }),
-                            ),
+                            schema: resolver(ModelInfoListSchema),
                         },
                     },
                 },
@@ -606,12 +586,7 @@ export const proxyRoutes = new Hono<Env>()
                     description: "Success",
                     content: {
                         "application/json": {
-                            schema: resolver(
-                                z.array(z.any()).meta({
-                                    description:
-                                        "List of models with pricing and metadata",
-                                }),
-                            ),
+                            schema: resolver(ModelInfoListSchema),
                         },
                     },
                 },
@@ -634,12 +609,7 @@ export const proxyRoutes = new Hono<Env>()
                     description: "Success",
                     content: {
                         "application/json": {
-                            schema: resolver(
-                                z.array(z.any()).meta({
-                                    description:
-                                        "List of embedding models with pricing and metadata",
-                                }),
-                            ),
+                            schema: resolver(ModelInfoListSchema),
                         },
                     },
                 },

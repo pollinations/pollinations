@@ -1,5 +1,4 @@
 import {
-    applyPendingProxyPricing,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     type CommunityEndpointImagePricing,
     type CommunityEndpointModality,
@@ -11,7 +10,7 @@ import {
     normalizeCommunityEndpointInputModalities,
     parseCommunityModelId,
     parseListingPayload,
-    pendingCommunityEndpointChangeIsReady,
+    resolveEffectiveProxyListing,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import type { ModelInputModality } from "@shared/registry/registry.ts";
@@ -84,12 +83,13 @@ export function fallbackTargetRejection(
     if (!currentPayload) {
         return `Fallback target ${modelId} has invalid configuration`;
     }
-    const pendingPayload = pendingCommunityEndpointChangeIsReady(
-        target.pendingAt,
-    )
-        ? parseListingPayload("proxy", target.pendingPayload)
-        : null;
-    const payload = applyPendingProxyPricing(currentPayload, pendingPayload);
+    const payload = resolveEffectiveProxyListing({
+        visibility: target.visibility,
+        payload: currentPayload,
+        pendingVisibility: target.pendingVisibility,
+        pendingPayload: parseListingPayload("proxy", target.pendingPayload),
+        pendingAt: target.pendingAt,
+    }).payload;
     if (payload.modality !== primary.modality) {
         return `Fallback target ${modelId} is a ${payload.modality} model, not ${primary.modality}`;
     }

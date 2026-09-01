@@ -74,20 +74,10 @@ with another endpoint from the table to use FFmpeg or Exa Search.
 The Pollinations server exposes the main Pollinations API as agent-friendly
 tools.
 
-### Discover models
-
 | Tool | Purpose |
 | --- | --- |
 | `listModels` | List live models, aliases, capabilities, voices, endpoints, and pricing |
 | `getModelStatus` | Inspect recent requests, errors, and latency for a model |
-
-Use `listModels` before choosing a model or voice. The registry is live, so
-clients should not rely on a hardcoded model list.
-
-### Generate and transform
-
-| Tool | Purpose |
-| --- | --- |
 | `generateText` | Generate text, use search-capable models, process multimodal input, or call a listed agent |
 | `generateImage` | Generate or edit images |
 | `generateVideo` | Generate video |
@@ -95,16 +85,14 @@ clients should not rely on a hardcoded model list.
 | `transcribeAudio` | Transcribe audio from a public HTTPS URL |
 | `generate3D` | Generate a GLB 3D model |
 | `createEmbeddings` | Create text or multimodal embeddings |
+| `getBalance` | Check the remaining Pollen balance; requires `account:usage` permission |
+
+Use `listModels` before choosing a model or voice. The registry is live, so
+clients should not rely on a hardcoded model list.
 
 Generated media is uploaded unlisted to `media.pollinations.ai` and returned as
 an MCP resource link, so binary data does not consume model context. Anyone
 with the link can access it, and it expires after 30 days.
-
-### Account
-
-| Tool | Purpose |
-| --- | --- |
-| `getBalance` | Check the remaining Pollen balance; requires `account:usage` permission |
 
 ## FFmpeg MCP
 

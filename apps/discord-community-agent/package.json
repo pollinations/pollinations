@@ -1,0 +1,18 @@
+{
+    "name": "discord-community-agent",
+    "version": "0.1.0",
+    "private": true,
+    "description": "Discord adapter for a Pollinations Community Agent with BYOP device authorization",
+    "type": "module",
+    "scripts": {
+        "register": "node register.js",
+        "start": "node bot.js",
+        "test": "node --test test/"
+    },
+    "dependencies": {
+        "discord.js": "^14.19.2"
+    },
+    "engines": {
+        "node": ">=20"
+    }
+}

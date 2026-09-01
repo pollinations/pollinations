@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import hashlib
 import hmac
 import json
 import re
@@ -21,6 +20,7 @@ from ..utils.uuid import uuid4_hex
 
 _URL = re.compile(r"https?://\S+", re.IGNORECASE)
 _MENTION = re.compile(r"<[@#][!&]?\d+>")
+_WEB_SEARCH_CONTEXT = re.compile(r"^\s*<details><summary>Web search:", re.IGNORECASE)
 _MAX_DISCORD_CONTENT = 1_900
 
 
@@ -105,11 +105,13 @@ class HumanService:
         await self.database.execute("PRAGMA journal_mode = WAL")
         await self.database.execute(
             """
-            CREATE TABLE IF NOT EXISTS human_history (
+            CREATE TABLE IF NOT EXISTS human_conversation_history (
                 caller_id TEXT NOT NULL,
-                history_hash TEXT NOT NULL,
+                transcript TEXT NOT NULL,
                 thread_id INTEGER NOT NULL,
-                PRIMARY KEY (caller_id, history_hash)
+                message_count INTEGER NOT NULL,
+                updated_at REAL NOT NULL,
+                PRIMARY KEY (caller_id, transcript)
             ) STRICT
             """
         )
@@ -138,12 +140,13 @@ class HumanService:
         if not self.database:
             raise RuntimeError("Human model is not configured")
 
-        thread_id = await self._thread_id_for_history(caller_id, messages[:-1]) if len(messages) > 1 else None
-        if thread_id is not None:
-            prompt = [messages[-1]]
-        else:
+        match = await self._thread_for_messages(caller_id, messages)
+        if match is None:
             thread_id = await self.gateway.create_thread()
             prompt = messages
+        else:
+            thread_id, prompt_start = match
+            prompt = messages[prompt_start:]
 
         reply = await self.gateway.ask(thread_id, prompt, self.response_timeout)
 
@@ -153,14 +156,19 @@ class HumanService:
         prompt_tokens = count_prompt_tokens(messages)
         await self.database.execute(
             """
-            INSERT INTO human_history (caller_id, history_hash, thread_id)
-            VALUES (?, ?, ?)
-            ON CONFLICT (caller_id, history_hash) DO UPDATE SET thread_id = excluded.thread_id
+            INSERT INTO human_conversation_history
+                (caller_id, transcript, thread_id, message_count, updated_at)
+            VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT (caller_id, transcript) DO UPDATE SET
+                thread_id = excluded.thread_id,
+                updated_at = excluded.updated_at
             """,
             (
                 caller_id,
-                transcript_hash([*messages, {"role": "assistant", "content": answer}]),
+                serialize_identity([*messages, {"role": "assistant", "content": answer}]),
                 thread_id,
+                len(conversation_identity(messages)) + 1,
+                time.time(),
             ),
         )
         await self.database.commit()
@@ -183,14 +191,26 @@ class HumanService:
             },
         }
 
-    async def _thread_id_for_history(self, caller_id: str, messages: list[dict]) -> int | None:
+    async def _thread_for_messages(self, caller_id: str, messages: list[dict]) -> tuple[int, int] | None:
         assert self.database
+        identity = conversation_identity(messages)
+        if not identity:
+            return None
+
         async with self.database.execute(
-            "SELECT thread_id FROM human_history WHERE caller_id = ? AND history_hash = ?",
-            (caller_id, transcript_hash(messages)),
+            """
+            SELECT thread_id, transcript
+            FROM human_conversation_history
+            WHERE caller_id = ? AND message_count < ?
+            ORDER BY message_count DESC, updated_at DESC
+            """,
+            (caller_id, len(identity)),
         ) as cursor:
-            row = await cursor.fetchone()
-        return int(row[0]) if row else None
+            async for thread_id, transcript in cursor:
+                stored = json.loads(transcript)
+                if identity[: len(stored)] == stored:
+                    return int(thread_id), identity_source_end(messages, len(stored))
+        return None
 
 
 def harden_content(content: str) -> str:
@@ -210,10 +230,31 @@ def count_prompt_tokens(messages: list[dict]) -> int:
     )
 
 
-def transcript_hash(messages: list[dict]) -> str:
-    transcript = [[message["role"], message["content"]] for message in messages]
-    serialized = json.dumps(transcript, ensure_ascii=False, separators=(",", ":"))
-    return hashlib.sha256(serialized.encode()).hexdigest()
+def conversation_identity(messages: list[dict]) -> list[list[str]]:
+    identity = []
+    for message in messages:
+        role = message["role"]
+        content = message["content"].replace("\r\n", "\n").strip()
+        if role not in {"assistant", "user"} or not content:
+            continue
+        if role == "user" and _WEB_SEARCH_CONTEXT.match(content):
+            continue
+        identity.append([role, content])
+    return identity
+
+
+def identity_source_end(messages: list[dict], identity_length: int) -> int:
+    seen = 0
+    for index, message in enumerate(messages):
+        if conversation_identity([message]):
+            seen += 1
+            if seen == identity_length:
+                return index + 1
+    return 0
+
+
+def serialize_identity(messages: list[dict]) -> str:
+    return json.dumps(conversation_identity(messages), ensure_ascii=False, separators=(",", ":"))
 
 
 def truncate_tokens(text: str, limit: int | None) -> tuple[str, int, bool]:

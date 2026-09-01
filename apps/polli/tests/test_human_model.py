@@ -4,7 +4,14 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-from src.api.humans import HumanService, format_transcript, harden_content, stream_completion, truncate_tokens
+from src.api.humans import (
+    HumanService,
+    conversation_identity,
+    format_transcript,
+    harden_content,
+    stream_completion,
+    truncate_tokens,
+)
 
 
 class FakeGateway:
@@ -39,9 +46,13 @@ class HumanModelTests(unittest.IsolatedAsyncioTestCase):
         self.temporary_directory.cleanup()
 
     async def test_returns_response_and_reuses_caller_history(self):
+        search_context = "<details><summary>Web search: Hello humans</summary>generated context"
         first = await self.service.complete(
             caller_id="caller-a",
-            messages=[{"role": "user", "content": "Hello humans"}],
+            messages=[
+                {"role": "user", "content": search_context},
+                {"role": "user", "content": "Hello humans"},
+            ],
             max_tokens=None,
             max_completion_tokens=None,
         )
@@ -52,14 +63,22 @@ class HumanModelTests(unittest.IsolatedAsyncioTestCase):
             caller_id="caller-a",
             messages=[
                 {"role": "user", "content": "Hello humans"},
+                {"role": "user", "content": search_context},
                 {"role": "assistant", "content": "A human answer"},
+                {"role": "user", "content": "An unanswered prompt"},
                 {"role": "user", "content": "Continue"},
             ],
             max_tokens=None,
             max_completion_tokens=None,
         )
         self.assertEqual(self.gateway.thread_count, 1)
-        self.assertEqual(self.gateway.asks[1][1], [{"role": "user", "content": "Continue"}])
+        self.assertEqual(
+            self.gateway.asks[1][1],
+            [
+                {"role": "user", "content": "An unanswered prompt"},
+                {"role": "user", "content": "Continue"},
+            ],
+        )
 
         await self.service.complete(
             caller_id="caller-b",
@@ -102,6 +121,19 @@ class HumanRequestTests(unittest.TestCase):
 
     def test_truncates_cl100k_tokens(self):
         self.assertEqual(truncate_tokens("hello world", 1), ("hello", 1, True))
+
+    def test_conversation_identity_ignores_volatile_context(self):
+        self.assertEqual(
+            conversation_identity(
+                [
+                    {"role": "system", "content": "Changing instructions"},
+                    {"role": "user", "content": "Hello"},
+                    {"role": "user", "content": "<details><summary>Web search: Hello</summary>results"},
+                    {"role": "assistant", "content": "Hi there"},
+                ]
+            ),
+            [["user", "Hello"], ["assistant", "Hi there"]],
+        )
 
     def test_wraps_completed_reply_as_openai_stream(self):
         completion = {

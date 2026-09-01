@@ -8,7 +8,7 @@ import { LiveApps } from "../ui/home/LiveApps";
 import { MoneyMoves } from "../ui/home/MoneyMoves";
 import { OnTheWay } from "../ui/home/OnTheWay";
 import { StartBuilding } from "../ui/home/StartBuilding";
-import { HeroScene } from "../ui/site/HeroScene";
+import { HeroScene, postHeroSpacingClassName } from "../ui/site/HeroScene";
 
 export const Route = createFileRoute("/")({
     head: () => routeHead("/"),
@@ -77,7 +77,7 @@ function HelloPage() {
                 <HeroStats stats={stats} />
             </HeroScene>
 
-            <DevKit />
+            <DevKit className={postHeroSpacingClassName} />
             {/* Dark panel is inset inside the cream sheet, not a sibling of
                 it — it reads as a band within the page, not a new section. */}
             <MoneyMoves />

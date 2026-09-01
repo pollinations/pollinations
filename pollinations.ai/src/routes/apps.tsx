@@ -5,6 +5,7 @@ import {
     Chip,
     ClockIcon,
     ContentHeader,
+    cn,
     Dropdown,
     Input,
     MultiSelect,
@@ -28,7 +29,7 @@ import SPOTLIGHT from "../data/spotlight.json";
 import { routeHead } from "../routeMeta";
 import { AppCarousel } from "../ui/apps/AppCarousel";
 import { AppRow } from "../ui/apps/cards";
-import { HeroScene } from "../ui/site/HeroScene";
+import { HeroScene, postHeroSpacingClassName } from "../ui/site/HeroScene";
 import {
     APP_CATEGORIES,
     APP_PLATFORMS,
@@ -214,11 +215,19 @@ function AppsPage() {
                 </div>
             </HeroScene>
 
-            <div className="-mt-5 sm:-mt-8">
-                <AppCarousel apps={spotlight} />
-            </div>
+            {spotlight.length > 0 && (
+                <AppCarousel
+                    apps={spotlight}
+                    className={postHeroSpacingClassName}
+                />
+            )}
 
-            <section className="flex flex-col gap-5">
+            <section
+                className={cn(
+                    "flex flex-col gap-5",
+                    spotlight.length === 0 && postHeroSpacingClassName,
+                )}
+            >
                 <ContentHeader
                     eyebrow="Directory"
                     title="Browse them all"

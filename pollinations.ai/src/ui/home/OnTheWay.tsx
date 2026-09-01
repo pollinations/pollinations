@@ -27,7 +27,7 @@ export function OnTheWay() {
                 title={`${UPCOMING.length} things we’re building.`}
             />
             {/* Dashed and unlifted on purpose: nothing here is clickable yet. */}
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(260px,100%),1fr))] gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 {UPCOMING.map((item) => (
                     <div
                         key={item.title}

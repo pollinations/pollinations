@@ -10,6 +10,8 @@ const WAN_3_TEXT_ENDPOINT =
     "https://queue.fal.run/alibaba/wan-3.0-prime/text-to-video";
 const WAN_3_IMAGE_ENDPOINT =
     "https://queue.fal.run/alibaba/wan-3.0-prime/image-to-video";
+const WAN_3_REFERENCE_ENDPOINT =
+    "https://queue.fal.run/alibaba/wan-3.0-prime/reference-to-video";
 const WAN_3_DURATION_SECONDS = 5;
 const WAN_3_TIMEOUT_MS = 5 * 60 * 1000;
 const WAN_3_POLL_INTERVAL_MS = 2_000;
@@ -61,7 +63,23 @@ export async function callWan3FalAPI(
     }
 
     const startImage = safeParams.image[0];
-    const endpoint = startImage ? WAN_3_IMAGE_ENDPOINT : WAN_3_TEXT_ENDPOINT;
+    const endImage = safeParams.image[1];
+    const hasReferences = Boolean(
+        safeParams.reference_images?.length ||
+            safeParams.reference_videos?.length ||
+            safeParams.reference_audios?.length,
+    );
+    if (hasReferences && safeParams.image.length > 0) {
+        throw new HttpError(
+            "Wan 3.0 cannot combine frame images with reference media.",
+            400,
+        );
+    }
+    const endpoint = hasReferences
+        ? WAN_3_REFERENCE_ENDPOINT
+        : startImage
+          ? WAN_3_IMAGE_ENDPOINT
+          : WAN_3_TEXT_ENDPOINT;
     const deadline = Date.now() + WAN_3_TIMEOUT_MS;
     const authorization = { Authorization: `Key ${apiKey}` };
     const submissionResponse = await fetchUpstream(endpoint, {
@@ -70,19 +88,32 @@ export async function callWan3FalAPI(
         body: JSON.stringify({
             prompt,
             resolution: safeParams.resolution ?? "480p",
-            aspect_ratio: startImage
-                ? "adaptive"
-                : closestRatioLogSpace(
-                      safeParams.width,
-                      safeParams.height,
-                      WAN_3_ASPECT_RATIOS,
-                  ),
+            aspect_ratio:
+                startImage || hasReferences
+                    ? "adaptive"
+                    : closestRatioLogSpace(
+                          safeParams.width,
+                          safeParams.height,
+                          WAN_3_ASPECT_RATIOS,
+                      ),
             duration,
             audio: safeParams.audio,
             enable_prompt_expansion: true,
             enable_safety_checker: true,
             seed: safeParams.seed,
-            ...(startImage ? { start_image_url: startImage } : {}),
+            ...(startImage
+                ? {
+                      start_image_url: startImage,
+                      ...(endImage ? { end_image_url: endImage } : {}),
+                  }
+                : {}),
+            ...(hasReferences
+                ? {
+                      reference_image_urls: safeParams.reference_images ?? [],
+                      reference_video_urls: safeParams.reference_videos ?? [],
+                      reference_audio_urls: safeParams.reference_audios ?? [],
+                  }
+                : {}),
         }),
         signal: AbortSignal.timeout(remainingTime(deadline)),
         errorLabel: "Wan 3.0 submission failed",

@@ -7,6 +7,8 @@ const TEXT_ENDPOINT =
     "https://queue.fal.run/alibaba/wan-3.0-prime/text-to-video";
 const IMAGE_ENDPOINT =
     "https://queue.fal.run/alibaba/wan-3.0-prime/image-to-video";
+const REFERENCE_ENDPOINT =
+    "https://queue.fal.run/alibaba/wan-3.0-prime/reference-to-video";
 const STATUS_URL =
     "https://queue.fal.run/alibaba/wan-3.0-prime/requests/test/status";
 const RESULT_URL = "https://queue.fal.run/alibaba/wan-3.0-prime/requests/test";
@@ -51,7 +53,11 @@ function mockFalFetch(
                       >)
                     : undefined,
             });
-            if (href === TEXT_ENDPOINT || href === IMAGE_ENDPOINT) {
+            if (
+                href === TEXT_ENDPOINT ||
+                href === IMAGE_ENDPOINT ||
+                href === REFERENCE_ENDPOINT
+            ) {
                 return Response.json({
                     status_url: STATUS_URL,
                     response_url: RESULT_URL,
@@ -155,6 +161,61 @@ describe("Wan 3.0 Prime via Fal", () => {
             callWan3FalAPI("a sailboat crossing a calm bay", {
                 ...baseParams,
                 duration: 4,
+            }),
+        ).rejects.toMatchObject({ status: 400 });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+});
+
+describe("Wan 3.0 Prime reference and end-frame routing", () => {
+    it("routes reference media to the reference-to-video endpoint", async () => {
+        const requests: ProviderRequest[] = [];
+        mockFalFetch(requests);
+
+        await callWan3FalAPI("the subject in Image 1 walks past Video 1", {
+            ...baseParams,
+            reference_images: ["https://media.example.com/ref.png"],
+            reference_videos: ["https://media.example.com/clip.mp4"],
+            reference_audios: ["https://media.example.com/voice.mp3"],
+        });
+
+        expect(requests[0].url).toBe(REFERENCE_ENDPOINT);
+        expect(requests[0].body).toMatchObject({
+            aspect_ratio: "adaptive",
+            reference_image_urls: ["https://media.example.com/ref.png"],
+            reference_video_urls: ["https://media.example.com/clip.mp4"],
+            reference_audio_urls: ["https://media.example.com/voice.mp3"],
+        });
+        expect(requests[0].body).not.toHaveProperty("start_image_url");
+    });
+
+    it("forwards image[1] as the end frame on image-to-video", async () => {
+        const requests: ProviderRequest[] = [];
+        mockFalFetch(requests);
+
+        await callWan3FalAPI("morph between the frames", {
+            ...baseParams,
+            image: [
+                "https://media.example.com/start.png",
+                "https://media.example.com/end.png",
+            ],
+        });
+
+        expect(requests[0].url).toBe(IMAGE_ENDPOINT);
+        expect(requests[0].body).toMatchObject({
+            start_image_url: "https://media.example.com/start.png",
+            end_image_url: "https://media.example.com/end.png",
+        });
+    });
+
+    it("rejects frame images combined with reference media before any fetch", async () => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+        await expect(
+            callWan3FalAPI("ambiguous request", {
+                ...baseParams,
+                image: ["https://media.example.com/start.png"],
+                reference_images: ["https://media.example.com/ref.png"],
             }),
         ).rejects.toMatchObject({ status: 400 });
         expect(fetchSpy).not.toHaveBeenCalled();

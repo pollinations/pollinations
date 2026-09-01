@@ -772,10 +772,17 @@ const IMAGE_BASE_SERVICES = {
         ),
         resolutions: ["720p", "1080p"],
         title: "Wan 2.7",
-        description: "Keyframe-controlled video with sound at 720p or 1080p",
+        description:
+            "Keyframe- or reference-controlled video with sound at 720p or 1080p",
         inputModalities: ["text", "image"],
         outputModalities: ["video", "audio"],
-        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        videoCapabilities: [
+            "start_frame",
+            "end_frame",
+            "audio_output",
+            "reference_images",
+            "reference_videos",
+        ],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
         minDuration: 2,
         maxDuration: 15,
@@ -820,11 +827,18 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["480p", "720p", "1080p"],
         title: "Wan 3.0",
         description:
-            "Five-second video from text or a start image with optional audio at 480p, 720p, or 1080p",
+            "Five-second video from text, start and end frames, or reference media with optional audio at 480p, 720p, or 1080p",
         inputModalities: ["text", "image"],
         outputModalities: ["video", "audio"],
-        videoCapabilities: ["start_frame", "audio_output"],
-        maxReferenceImages: 1, // Video keyframe slots: start only.
+        videoCapabilities: [
+            "start_frame",
+            "end_frame",
+            "audio_output",
+            "reference_images",
+            "reference_videos",
+            "reference_audios",
+        ],
+        maxReferenceImages: 2, // Video keyframe slots: start + end.
         minDuration: 5,
         maxDuration: 5,
         defaultDuration: 5,

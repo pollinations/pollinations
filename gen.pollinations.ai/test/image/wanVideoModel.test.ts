@@ -255,3 +255,101 @@ describe("wanVideoModel image-to-video routing", () => {
         expect(calls[0].input.last_image as string).toMatch(EXPECTED_DATA_URI);
     });
 });
+
+describe("wanVideoModel reference-to-video routing", () => {
+    const REF_IMAGE = "https://img.example.com/character.png";
+    const REF_VIDEO = "https://vid.example.com/motion.mp4";
+
+    it("wan-pro routes reference images to wan-2.7-r2v with url passthrough", async () => {
+        setReplicateEnv();
+        const calls: ReplicateCall[] = [];
+        mockReplicateFetch(calls, 5);
+
+        const result = await callWanProAPI("the subject turns to the camera", {
+            ...baseParams,
+            reference_images: [REF_IMAGE],
+        });
+
+        expect(calls[0].model).toBe("wan-video/wan-2.7-r2v");
+        expect(calls[0].input.reference_images).toEqual([REF_IMAGE]);
+        expect(calls[0].input.reference_videos).toEqual([]);
+        expect(calls[0].input.first_frame).toBeUndefined();
+        expect(calls[0].input.duration).toBe(5);
+        expect(calls[0].input.resolution).toBe("720p");
+        expect(result.trackingData).toEqual({
+            actualModel: "wan-pro",
+            usage: { completionVideoSeconds: 5 },
+        });
+    });
+
+    it("clamps wan-pro R2V duration to the 10-second upstream maximum", async () => {
+        setReplicateEnv();
+        const calls: ReplicateCall[] = [];
+        mockReplicateFetch(calls, 10);
+
+        await callWanProAPI("the subject turns to the camera", {
+            ...baseParams,
+            duration: 12,
+            reference_videos: [REF_VIDEO],
+        });
+
+        expect(calls[0].model).toBe("wan-video/wan-2.7-r2v");
+        expect(calls[0].input.duration).toBe(10);
+        expect(calls[0].input.reference_videos).toEqual([REF_VIDEO]);
+    });
+
+    it("keeps wan-pro T2V durations above the R2V cap", async () => {
+        setReplicateEnv();
+        const calls: ReplicateCall[] = [];
+        mockReplicateFetch(calls, 12);
+
+        await callWanProAPI("a calm ocean at sunset", {
+            ...baseParams,
+            duration: 12,
+        });
+
+        expect(calls[0].model).toBe("wan-video/wan-2.7-t2v");
+        expect(calls[0].input.duration).toBe(12);
+    });
+
+    it("rejects frame images combined with reference media", async () => {
+        setReplicateEnv();
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+        await expect(
+            callWanProAPI("ambiguous request", {
+                ...baseParams,
+                image: [INPUT_IMAGE_URL],
+                reference_images: [REF_IMAGE],
+            }),
+        ).rejects.toMatchObject({ status: 400 });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it("rejects reference media on variants without an R2V upstream", async () => {
+        setReplicateEnv();
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+        await expect(
+            callWanAPI("a cat walking", {
+                ...baseParams,
+                model: "wan",
+                reference_images: [REF_IMAGE],
+            }),
+        ).rejects.toMatchObject({ status: 400 });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it("rejects reference audio on wan-pro (Replicate R2V has no audio input)", async () => {
+        setReplicateEnv();
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+        await expect(
+            callWanProAPI("the subject speaks", {
+                ...baseParams,
+                reference_audios: ["https://aud.example.com/voice.mp3"],
+            }),
+        ).rejects.toMatchObject({ status: 400 });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+});

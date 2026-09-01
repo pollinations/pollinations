@@ -1,10 +1,10 @@
 import { env } from "cloudflare:test";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { CommunityModelEnv } from "./community-models.ts";
+import type { CommunityModelEnv } from "../src/community-models.ts";
 import {
     getGenerationModelRegistry,
     resetGenerationModelRegistryCache,
-} from "./model-registry.ts";
+} from "../src/model-registry.ts";
 
 afterEach(() => {
     resetGenerationModelRegistryCache();

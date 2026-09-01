@@ -1,8 +1,12 @@
 import { join, resolve } from "node:path";
 import polliSkill from "../../SKILL.md?raw";
 import { BASE_URL } from "../lib/config.js";
-import { readTextIfExists, removeIfExists, writeTextAtomic } from "./fs.js";
-import { readJsonIfExists, writeJsonAtomic } from "./json-config.js";
+import {
+    commandExists,
+    readTextIfExists,
+    removeIfExists,
+    writeTextAtomic,
+} from "./fs.js";
 import { resolveHarnessKey } from "./keys.js";
 import { fetchHarnessModels } from "./models.js";
 import {
@@ -21,12 +25,8 @@ const ID = "pi";
 const LABEL = "Pi";
 const PROVIDER = "pollinations";
 const DEFAULT_MODEL = "deepseek";
-const MAX_TOKENS = 16384;
 
-/**
- * Pi resolves its agent dir from PI_CODING_AGENT_DIR, tilde included.
- */
-export const piAgentDir = (ctx: HarnessContext) => {
+export const piAgentDir = (ctx: HarnessContext): string => {
     const configured = ctx.env.PI_CODING_AGENT_DIR;
     if (!configured?.trim()) return join(ctx.home, ".pi", "agent");
     const expanded =
@@ -37,163 +37,185 @@ export const piAgentDir = (ctx: HarnessContext) => {
               : configured;
     return resolve(expanded);
 };
+
 const modelsPath = (ctx: HarnessContext) =>
     join(piAgentDir(ctx), "models.json");
 const authPath = (ctx: HarnessContext) => join(piAgentDir(ctx), "auth.json");
 const settingsPath = (ctx: HarnessContext) =>
     join(piAgentDir(ctx), "settings.json");
-const skillPath = (ctx: HarnessContext) =>
+// Pi auto-discovers SKILL.md files from ~/.pi/agent/skills/ subdirectories.
+const skillFile = (ctx: HarnessContext) =>
     join(piAgentDir(ctx), "skills", "polli", "SKILL.md");
 
 const files = (ctx: HarnessContext) => [
     modelsPath(ctx),
     authPath(ctx),
     settingsPath(ctx),
-    skillPath(ctx),
+    skillFile(ctx),
 ];
 
-// Compat flags shared with the dsh provider block: gen.pollinations.ai/v1
-// speaks standard completions without store/developer-role/strict-mode extras.
-const compat = {
-    supportsStore: false,
-    supportsDeveloperRole: false,
-    supportsReasoningEffort: true,
-    supportsUsageInStreaming: true,
-    supportsStrictMode: false,
-    maxTokensField: "max_tokens",
+const loadJson = (path: string): Record<string, unknown> => {
+    const text = readTextIfExists(path);
+    if (!text?.trim()) return {};
+    return JSON.parse(text) as Record<string, unknown>;
 };
 
-const providerEntry = (models: HarnessModel[]) => ({
+const saveJson = (path: string, data: Record<string, unknown>) => {
+    writeTextAtomic(path, `${JSON.stringify(data, null, 2)}\n`, 0o600);
+};
+
+const readKey = (ctx: HarnessContext): string | null => {
+    const auth = loadJson(authPath(ctx));
+    const entry = auth[PROVIDER];
+    if (!entry || typeof entry !== "object") return null;
+    const key = (entry as Record<string, unknown>).key;
+    return typeof key === "string" && key ? key : null;
+};
+
+const providerConfig = (models: HarnessModel[]) => ({
     baseUrl: `${BASE_URL}/v1`,
     api: "openai-completions",
-    compat,
+    // Pi validates custom providers before resolving their auth.json entry.
+    apiKey: PROVIDER,
+    compat: {
+        supportsStore: false,
+        supportsDeveloperRole: false,
+        supportsReasoningEffort: true,
+        supportsUsageInStreaming: true,
+        supportsStrictMode: false,
+        maxTokensField: "max_tokens",
+    },
     models: models.map((model) => ({
         id: model.id,
         name: model.id,
-        reasoning: false,
-        input: model.input,
         contextWindow: model.contextWindow,
-        maxTokens: MAX_TOKENS,
+        input: model.input,
     })),
 });
 
-interface PiModels {
-    providers?: Record<string, unknown>;
-    [key: string]: unknown;
-}
-
-type PiAuth = Record<string, { type?: string; key?: string }>;
-
 interface PiSettings {
-    defaultProvider?: string;
-    defaultModel?: string;
-    [key: string]: unknown;
+    apiKey: string;
+    model: string;
+    models: HarnessModel[];
 }
 
-const readKey = (ctx: HarnessContext) => {
-    const auth = readJsonIfExists<PiAuth>(authPath(ctx));
-    const credential = auth?.[PROVIDER];
-    return credential?.type === "api_key" && credential.key
-        ? credential.key
-        : null;
-};
+const writeConfig = (ctx: HarnessContext, settings: PiSettings) => {
+    // models.json: merge providers.pollinations (preserve existing providers)
+    const modelsData = loadJson(modelsPath(ctx));
+    const providers =
+        (modelsData.providers as Record<string, unknown> | undefined) ?? {};
+    modelsData.providers = {
+        ...providers,
+        [PROVIDER]: providerConfig(settings.models),
+    };
+    saveJson(modelsPath(ctx), modelsData);
 
-const writeAuth = (ctx: HarnessContext, apiKey: string) => {
-    const auth = readJsonIfExists<PiAuth>(authPath(ctx)) ?? {};
-    auth[PROVIDER] = { type: "api_key", key: apiKey };
-    writeJsonAtomic(authPath(ctx), auth);
-};
+    // auth.json: store API key under the provider name
+    const auth = loadJson(authPath(ctx));
+    auth[PROVIDER] = { type: "api_key", key: settings.apiKey };
+    saveJson(authPath(ctx), auth);
 
-const deleteAuth = (ctx: HarnessContext) => {
-    const auth = readJsonIfExists<PiAuth>(authPath(ctx));
-    if (!auth || !(PROVIDER in auth)) return false;
-    delete auth[PROVIDER];
-    if (Object.keys(auth).length === 0) removeIfExists(authPath(ctx));
-    else writeJsonAtomic(authPath(ctx), auth);
-    return true;
-};
+    // settings.json: set startup defaults (preserve other settings)
+    const piSettings = loadJson(settingsPath(ctx));
+    piSettings.defaultProvider = PROVIDER;
+    piSettings.defaultModel = settings.model;
+    saveJson(settingsPath(ctx), piSettings);
 
-const writeConfig = (
-    ctx: HarnessContext,
-    models: HarnessModel[],
-    apiKey: string,
-    model: string,
-) => {
-    const doc = readJsonIfExists<PiModels>(modelsPath(ctx)) ?? {};
-    const providers = (doc.providers ?? {}) as Record<string, unknown>;
-    providers[PROVIDER] = providerEntry(models);
-    doc.providers = providers;
-    writeJsonAtomic(modelsPath(ctx), doc);
-    writeAuth(ctx, apiKey);
-
-    const settings = readJsonIfExists<PiSettings>(settingsPath(ctx)) ?? {};
-    settings.defaultProvider = PROVIDER;
-    settings.defaultModel = model;
-    writeJsonAtomic(settingsPath(ctx), settings);
-
-    if (readTextIfExists(skillPath(ctx)) === null) {
-        writeTextAtomic(skillPath(ctx), polliSkill, 0o600);
+    // skill file — Pi auto-discovers SKILL.md files under ~/.pi/agent/skills/
+    if (readTextIfExists(skillFile(ctx)) === null) {
+        writeTextAtomic(skillFile(ctx), polliSkill, 0o600);
     }
 };
 
-const stripConfig = (ctx: HarnessContext) => {
+const stripConfig = (ctx: HarnessContext): boolean => {
     let changed = false;
-    const doc = readJsonIfExists<PiModels>(modelsPath(ctx));
-    if (doc?.providers && PROVIDER in doc.providers) {
-        delete doc.providers[PROVIDER];
-        if (Object.keys(doc.providers).length === 0) delete doc.providers;
-        writeJsonAtomic(modelsPath(ctx), doc);
-        changed = true;
-    }
-    changed = deleteAuth(ctx) || changed;
 
-    const settings = readJsonIfExists<PiSettings>(settingsPath(ctx));
-    if (settings && settings.defaultProvider === PROVIDER) {
-        delete settings.defaultProvider;
-        delete settings.defaultModel;
-        writeJsonAtomic(settingsPath(ctx), settings);
-        changed = true;
+    const modelsText = readTextIfExists(modelsPath(ctx));
+    if (modelsText?.trim()) {
+        const data = JSON.parse(modelsText) as Record<string, unknown>;
+        if (
+            data.providers &&
+            typeof data.providers === "object" &&
+            PROVIDER in (data.providers as Record<string, unknown>)
+        ) {
+            delete (data.providers as Record<string, unknown>)[PROVIDER];
+            saveJson(modelsPath(ctx), data);
+            changed = true;
+        }
     }
 
-    if (readTextIfExists(skillPath(ctx)) === polliSkill) {
-        removeIfExists(skillPath(ctx));
+    const authText = readTextIfExists(authPath(ctx));
+    if (authText?.trim()) {
+        const data = JSON.parse(authText) as Record<string, unknown>;
+        if (PROVIDER in data) {
+            delete data[PROVIDER];
+            saveJson(authPath(ctx), data);
+            changed = true;
+        }
+    }
+
+    const settingsText = readTextIfExists(settingsPath(ctx));
+    if (settingsText?.trim()) {
+        const data = JSON.parse(settingsText) as Record<string, unknown>;
+        if (data.defaultProvider === PROVIDER) {
+            delete data.defaultProvider;
+            delete data.defaultModel;
+            saveJson(settingsPath(ctx), data);
+            changed = true;
+        }
+    }
+
+    if (readTextIfExists(skillFile(ctx)) === polliSkill) {
+        removeIfExists(skillFile(ctx));
         changed = true;
     }
+
     return changed;
 };
 
 const result = (ctx: HarnessContext): HarnessResult => {
-    const doc = readJsonIfExists<PiModels>(modelsPath(ctx));
-    const provider = doc?.providers?.[PROVIDER] as
-        | { baseUrl?: string; api?: string }
+    const modelsData = loadJson(modelsPath(ctx));
+    const authData = loadJson(authPath(ctx));
+    const settingsData = loadJson(settingsPath(ctx));
+
+    const providers = modelsData.providers as
+        | Record<string, unknown>
         | undefined;
-    const settings = readJsonIfExists<PiSettings>(settingsPath(ctx));
+    const provider = providers?.[PROVIDER] as
+        | Record<string, unknown>
+        | undefined;
+    const hasProvider = provider?.apiKey === PROVIDER;
+
+    const authEntry = authData[PROVIDER] as Record<string, unknown> | undefined;
+    const hasKey =
+        authEntry?.type === "api_key" &&
+        typeof authEntry.key === "string" &&
+        !!authEntry.key;
+
+    const hasDefaultProvider = settingsData.defaultProvider === PROVIDER;
     const model =
-        settings?.defaultProvider === PROVIDER
-            ? settings.defaultModel
+        typeof settingsData.defaultModel === "string"
+            ? settingsData.defaultModel
             : undefined;
+
     return {
         harness: ID,
         label: LABEL,
         configured:
-            provider?.baseUrl === `${BASE_URL}/v1` &&
-            provider?.api === "openai-completions" &&
-            readKey(ctx) !== null &&
-            readTextIfExists(skillPath(ctx)) !== null,
-        model: typeof model === "string" ? model : undefined,
+            hasProvider &&
+            hasKey &&
+            hasDefaultProvider &&
+            readTextIfExists(skillFile(ctx)) !== null,
+        model,
         files: files(ctx),
     };
 };
 
 export const configurePi = (
     ctx: HarnessContext,
-    models: HarnessModel[],
-    apiKey: string,
-    model: string,
+    settings: PiSettings,
 ): HarnessResult => {
-    applyWithSnapshot(ctx, ID, files(ctx), () =>
-        writeConfig(ctx, models, apiKey, model),
-    );
+    applyWithSnapshot(ctx, ID, files(ctx), () => writeConfig(ctx, settings));
     return result(ctx);
 };
 
@@ -210,11 +232,15 @@ export const disablePi = (ctx: HarnessContext): HarnessResult => {
 export const pi: HarnessAdapter = {
     id: ID,
     label: LABEL,
-    description: "Add Pollinations as a custom provider in Pi",
-    restartHint:
-        "Models reload when you open /model. Start Pi with: npx @earendil-works/pi-coding-agent",
+    description: "Configure Pi as a Pollinations provider",
+    restartHint: "Changes apply on the next Pi session. Start Pi with: pi",
 
     async on(ctx, options) {
+        if (!commandExists("pi", ctx.env)) {
+            throw new Error(
+                "Pi was not found. Install it first: npm install -g --ignore-scripts @earendil-works/pi-coding-agent",
+            );
+        }
         const model = options.model ?? DEFAULT_MODEL;
         const models = await fetchHarnessModels();
         if (!models.some((candidate) => candidate.id === model)) {
@@ -227,7 +253,7 @@ export const pi: HarnessAdapter = {
             { id: ID, label: LABEL, existingKey: readKey(ctx) },
             { browser: options.browser },
         );
-        return configurePi(ctx, models, apiKey, model);
+        return configurePi(ctx, { apiKey, model, models });
     },
 
     off: disablePi,

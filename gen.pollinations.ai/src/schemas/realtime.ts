@@ -1,13 +1,19 @@
 import {
     DEFAULT_REALTIME_MODEL,
     REALTIME_MODEL_NAMES,
+    REALTIME_SERVICES,
 } from "@shared/registry/realtime.ts";
 import { z } from "zod";
+
+const VALID_REALTIME_MODELS = [
+    ...REALTIME_MODEL_NAMES,
+    ...Object.values(REALTIME_SERVICES).flatMap((service) => service.aliases),
+] as const;
 
 export const RealtimeRequestQueryParamsSchema = z
     .object({
         model: z
-            .enum(REALTIME_MODEL_NAMES as [string, ...string[]])
+            .enum(VALID_REALTIME_MODELS as unknown as [string, ...string[]])
             .optional()
             .default(DEFAULT_REALTIME_MODEL)
             .meta({

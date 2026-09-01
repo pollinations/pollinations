@@ -2,7 +2,7 @@
   "name": "pollinations-mcp",
   "main": "worker.js",
   "compatibility_date": "2026-08-14",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "routes": [
     {
       "pattern": "mcp.myceli.ai",

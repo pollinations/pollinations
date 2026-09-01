@@ -14,6 +14,7 @@ describe("modelBody", () => {
                     imagePricing: "request",
                     inputModalities: "text,image",
                     fallbacks: "owner/backup, owner/secondary",
+                    requiredSafety: "sexual,violence",
                     completionImagePrice: "0.01",
                 },
                 true,
@@ -27,6 +28,7 @@ describe("modelBody", () => {
             imagePricing: "request",
             inputModalities: ["text", "image"],
             fallbacks: ["owner/backup", "owner/secondary"],
+            requiredSafetyFeatures: ["sexual", "violence"],
             completionImagePrice: 0.01,
         });
     });

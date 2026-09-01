@@ -162,7 +162,7 @@ export const MCP_SERVERS = [
         billing: "usage_receipt",
         provider: "composio",
         userScoped: true,
-        accountPath: "/account#connected-apps",
+        accountPath: "/account#connectors",
         pricing: COMPOSIO_MCP_PRICING,
     },
 ] as const satisfies readonly McpServerDefinition[];

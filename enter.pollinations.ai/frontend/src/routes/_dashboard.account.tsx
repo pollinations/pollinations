@@ -260,7 +260,7 @@ function AccountPage() {
                 </Section>
             )}
 
-            <div id="connected-apps" className="scroll-mt-6">
+            <div id="connectors" className="scroll-mt-6">
                 <ConnectedApps />
             </div>
 

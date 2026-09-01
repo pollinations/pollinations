@@ -81,7 +81,7 @@ export function PromptAgentFields({
                                         <InlineLink
                                             href={`${config.baseUrl}${server.accountPath}`}
                                         >
-                                            Browse and connect apps
+                                            Manage connectors
                                         </InlineLink>
                                     )}
                                 </p>

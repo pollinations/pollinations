@@ -185,13 +185,13 @@ export function ConnectedApps() {
     );
     const resultsSummary = submittedSearch
         ? `${availableToolkits.length} ${availableToolkits.length === 1 ? "result" : "results"} for “${submittedSearch}”.`
-        : `Showing ${availableToolkits.length} popular apps. Search to find more.`;
+        : `Showing ${availableToolkits.length} popular connectors. Search to find more.`;
 
     return (
-        <Section title="Connected apps" framed>
+        <Section title="Connectors" framed>
             <Text size="sm" tone="muted">
-                Agents can show you a sign-in link when they need an app. You
-                can also connect one here first. Composio stores the
+                Agents can show you a sign-in link when they need access to an
+                app. You can also connect one here first. Composio stores the
                 credentials; agents never see them.
             </Text>
 
@@ -235,7 +235,10 @@ export function ConnectedApps() {
                 onSubmit={(event) => void handleSearch(event)}
                 className="flex items-end gap-2"
             >
-                <FieldStack label="Search all apps" className="min-w-0 flex-1">
+                <FieldStack
+                    label="Search connectors"
+                    className="min-w-0 flex-1"
+                >
                     <Input
                         value={search}
                         placeholder="Search Gmail, Slack, Notion…"
@@ -256,14 +259,14 @@ export function ConnectedApps() {
                             <Text tone="strong" weight="semibold">
                                 {submittedSearch
                                     ? "Search results"
-                                    : "Popular apps"}
+                                    : "Popular connectors"}
                             </Text>
                             <Text size="sm" tone="muted">
                                 {resultsSummary}
                             </Text>
                         </div>
                         <InlineLink href="https://composio.dev/toolkits">
-                            View all supported apps
+                            View all connectors
                         </InlineLink>
                     </div>
 
@@ -292,7 +295,7 @@ export function ConnectedApps() {
                         </div>
                     ) : (
                         <Text size="sm" tone="muted">
-                            No apps found. Try another search.
+                            No connectors found. Try another search.
                         </Text>
                     )}
                 </div>

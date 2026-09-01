@@ -68,6 +68,21 @@ test("retrieve matches the list entry exactly (shared mapper)", async () => {
     expect(retrieved).toEqual(listed);
 });
 
+test("advertises direct Responses support through supported_endpoints", async () => {
+    const supported = await fetchWorker("/v1/models/qwen-large");
+    expect(supported.status).toBe(200);
+    await expect(supported.json()).resolves.toMatchObject({
+        supported_endpoints: expect.arrayContaining(["/v1/responses"]),
+    });
+
+    const unsupported = await fetchWorker("/v1/models/claude");
+    expect(unsupported.status).toBe(200);
+    const unsupportedBody = (await unsupported.json()) as {
+        supported_endpoints?: string[];
+    };
+    expect(unsupportedBody.supported_endpoints).not.toContain("/v1/responses");
+});
+
 test("returns 404 for an unknown model", async () => {
     const response = await fetchWorker("/v1/models/does-not-exist-xyz");
     expect(response.status).toBe(404);

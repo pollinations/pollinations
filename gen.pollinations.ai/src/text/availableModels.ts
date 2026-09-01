@@ -478,3 +478,13 @@ export function findModelByName(modelName: string): ModelDefinition | null {
         return null;
     }
 }
+
+/** Whether the resolved model config has a verified direct Responses route. */
+export function supportsDirectResponses(modelName: string): boolean {
+    const model = findModelByName(modelName);
+    if (!model) return false;
+    return (
+        typeof model.config({ model: model.name }).responsesEndpoint ===
+        "string"
+    );
+}

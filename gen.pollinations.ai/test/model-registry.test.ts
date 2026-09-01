@@ -5,6 +5,7 @@ import {
     getGenerationModelRegistry,
     resetGenerationModelRegistryCache,
 } from "../src/model-registry.ts";
+import { availableModels } from "../src/text/availableModels.ts";
 
 afterEach(() => {
     resetGenerationModelRegistryCache();
@@ -40,6 +41,36 @@ function skewedDbBinding(): CloudflareBindings["DB"] {
 }
 
 describe("getGenerationModelRegistry", () => {
+    it("advertises every configured direct Responses model", async () => {
+        const configured = availableModels
+            .filter(
+                (model) =>
+                    typeof model.config({ model: model.name })
+                        .responsesEndpoint === "string",
+            )
+            .map((model) => model.name)
+            .sort();
+
+        const registry = await getGenerationModelRegistry(env);
+        const advertised = registry
+            .visibleEntries()
+            .filter(
+                (entry) =>
+                    !entry.communityEndpoint &&
+                    entry.supportedEndpoints.includes("/v1/responses"),
+            )
+            .map((entry) => entry.id)
+            .sort();
+
+        expect(configured).toHaveLength(42);
+        expect(advertised).toEqual(configured);
+        for (const model of advertised) {
+            expect(registry.resolve(model)?.info.supported_endpoints).toContain(
+                "/v1/responses",
+            );
+        }
+    });
+
     it("serves static models when the community catalog query fails", async () => {
         const consoleError = vi
             .spyOn(console, "error")

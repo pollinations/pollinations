@@ -577,8 +577,8 @@ const models: ModelDefinition[] = [
         transform: stripReasoning,
     },
     {
-        name: "llama-scout-openrouter-vertex",
-        config: portkeyConfig["llama-scout-openrouter-vertex"],
+        name: "llama-scout-openrouter-deepinfra",
+        config: portkeyConfig["llama-scout-openrouter-deepinfra"],
         transform: stripReasoning,
     },
     {

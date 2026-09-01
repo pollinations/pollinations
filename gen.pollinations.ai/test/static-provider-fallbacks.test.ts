@@ -27,9 +27,9 @@ const OPENROUTER_ROUTES = [
         "google-vertex/global",
     ],
     [
-        "llama-scout-openrouter-vertex",
+        "llama-scout-openrouter-deepinfra",
         "meta-llama/llama-4-scout",
-        "google-vertex/us-east5",
+        "deepinfra/fp8",
     ],
     ["grok-openrouter-xai-zdr", "x-ai/grok-4.20", "xai/zdr"],
     ["grok-large-openrouter-xai-zdr", "x-ai/grok-4.3", "xai/zdr"],

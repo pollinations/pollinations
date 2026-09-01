@@ -107,13 +107,13 @@ export const TEXT_FALLBACKS = {
         },
     },
     "llama-scout": {
-        "llama-scout-openrouter-vertex": {
+        "llama-scout-openrouter-deepinfra": {
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
-                promptTextTokens: perMillion(0.25),
-                promptImageTokens: perMillion(0.25),
-                completionTextTokens: perMillion(0.7),
+                promptTextTokens: perMillion(0.1),
+                promptImageTokens: perMillion(0.1),
+                completionTextTokens: perMillion(0.3),
             },
         },
     },

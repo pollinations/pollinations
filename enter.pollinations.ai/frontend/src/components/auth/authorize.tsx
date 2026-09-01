@@ -1,4 +1,5 @@
 import {
+    Alert,
     Button,
     Collapsible,
     cn,
@@ -630,6 +631,33 @@ export function Authorize() {
                                 redirectHostname={redirectHostname}
                             />
                         </div>
+
+                        {totalBalance === 0 && (
+                            <div className="px-4 pt-4">
+                                <Alert intent="info">
+                                    You don&apos;t have any Pollen yet. Earn
+                                    some through{" "}
+                                    <a
+                                        href={`${config.baseUrl}/quests`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="font-medium underline hover:no-underline"
+                                    >
+                                        Quests
+                                    </a>{" "}
+                                    or{" "}
+                                    <a
+                                        href={`${config.baseUrl}/pollen#buy-pollen`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="font-medium underline hover:no-underline"
+                                    >
+                                        top up
+                                    </a>{" "}
+                                    before using this app.
+                                </Alert>
+                            </div>
+                        )}
 
                         <div className="p-4">
                             <p className="font-body text-xs font-semibold text-theme-text-soft tracking-wide mb-3">

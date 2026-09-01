@@ -95,73 +95,28 @@ describe("model categories", () => {
         ]);
     });
 
-    it("accepts every model category independently of scope", () => {
+    it("defaults to community models and accepts categories independently", () => {
         expect(validateModelSearch({ scope: "community" })).toEqual({
-            scope: "community",
+            scope: undefined,
             category: undefined,
             q: undefined,
             sort: undefined,
         });
+        for (const category of [
+            "image",
+            "video",
+            "audio",
+            "embedding",
+            "agent",
+            "mcp",
+        ] as const) {
+            expect(validateModelSearch({ category }).category).toBe(category);
+        }
         expect(
-            validateModelSearch({ scope: "community", category: "image" }),
+            validateModelSearch({ scope: "pollinations", category: "image" }),
         ).toEqual({
-            scope: "community",
+            scope: "pollinations",
             category: "image",
-            q: undefined,
-            sort: undefined,
-        });
-        expect(
-            validateModelSearch({ scope: "community", category: "agent" }),
-        ).toEqual({
-            scope: "community",
-            category: "agent",
-            q: undefined,
-            sort: undefined,
-        });
-        expect(
-            validateModelSearch({ scope: "community", category: "video" }),
-        ).toEqual({
-            scope: "community",
-            category: "video",
-            q: undefined,
-            sort: undefined,
-        });
-        expect(
-            validateModelSearch({ scope: "community", category: "audio" }),
-        ).toEqual({
-            scope: "community",
-            category: "audio",
-            q: undefined,
-            sort: undefined,
-        });
-        expect(
-            validateModelSearch({
-                scope: "community",
-                category: "embedding",
-            }),
-        ).toEqual({
-            scope: "community",
-            category: "embedding",
-            q: undefined,
-            sort: undefined,
-        });
-        expect(validateModelSearch({ category: "agent" })).toEqual({
-            scope: undefined,
-            category: "agent",
-            q: undefined,
-            sort: undefined,
-        });
-        expect(validateModelSearch({ category: "mcp" })).toEqual({
-            scope: undefined,
-            category: "mcp",
-            q: undefined,
-            sort: undefined,
-        });
-        expect(
-            validateModelSearch({ scope: "community", category: "mcp" }),
-        ).toEqual({
-            scope: "community",
-            category: "mcp",
             q: undefined,
             sort: undefined,
         });

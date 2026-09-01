@@ -196,7 +196,7 @@ function handleSortMenuKeyDown(event: KeyboardEvent<HTMLDivElement>) {
 export const Models: FC = () => {
     const navigate = useNavigate({ from: "/models" });
     const modelSearch = useSearch({ from: "/_dashboard/models" });
-    const activeScope = modelSearch.scope ?? "pollinations";
+    const activeScope = modelSearch.scope ?? "community";
     const activeTab = modelSearch.category ?? "all";
     const activePrimaryTab: PrimaryTab =
         activeTab === "agent"
@@ -342,7 +342,7 @@ export const Models: FC = () => {
         void navigate({
             search: (previous) => ({
                 ...previous,
-                scope: include ? "community" : undefined,
+                scope: include ? undefined : "pollinations",
             }),
         });
     };

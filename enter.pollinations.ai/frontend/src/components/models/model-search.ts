@@ -47,7 +47,7 @@ export function validateModelSearch(
 ): ModelSearch {
     const scope = includes(MODEL_SCOPES, search.scope)
         ? search.scope
-        : "pollinations";
+        : "community";
     const category = includes(MODEL_CATEGORIES, search.category)
         ? search.category
         : "all";
@@ -55,7 +55,7 @@ export function validateModelSearch(
     const query = typeof search.q === "string" ? search.q.trim() : "";
 
     return {
-        scope: scope === "community" ? scope : undefined,
+        scope: scope === "pollinations" ? scope : undefined,
         category: category === "all" ? undefined : category,
         q: query || undefined,
         sort: sort === "popular" ? undefined : sort,

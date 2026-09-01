@@ -36,6 +36,7 @@ import COMMUNITY_MODELS_MD from "../../../BRING_YOUR_OWN_MODEL.md?raw";
 import BYOP_MD from "../../../BRING_YOUR_OWN_POLLEN.md?raw";
 import AGENTS_MD from "../../../BUILD_YOUR_OWN_AGENT.md?raw";
 import CODING_HARNESSES_MD from "../../../CODING_HARNESSES.md?raw";
+import MCP_README from "../../../packages/mcp/README.md?raw";
 import CLI_README from "../../../packages/polli-cli/README.md?raw";
 import MODEL3D_GENERATION_MD from "../docs/3d-generation.md?raw";
 import ACCOUNT_MD from "../docs/account.md?raw";
@@ -45,7 +46,6 @@ import EMBEDDINGS_MD from "../docs/embeddings.md?raw";
 import ERRORS_MD from "../docs/errors.md?raw";
 import IMAGE_GENERATION_MD from "../docs/image-generation.md?raw";
 import INTRODUCTION_MD from "../docs/introduction.md?raw";
-import MCP_MD from "../docs/mcp.md?raw";
 import MEDIA_STORAGE_MD from "../docs/media-storage.md?raw";
 import MODELS_MD from "../docs/models.md?raw";
 import PUBLIC_STATS_MD from "../docs/public-stats.md?raw";
@@ -194,7 +194,7 @@ const DOC_TAG_NAV_ICON_HTML: Record<string, string> = Object.fromEntries(
 
 const CLI_DOCS = CLI_README.replace(/^# .*\n+/, "").trim();
 
-const MCP_DOCS = MCP_MD.trim();
+const MCP_DOCS = MCP_README.replace(/^# .*\n+/, "").trim();
 
 // Strip the leading H1/H2 heading line so the markdown can be embedded under
 // a Scalar tag (which already renders its own title) without double headings.

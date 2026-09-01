@@ -1,37 +1,17 @@
 import type { Usage } from "@shared/registry/registry.ts";
 import { responsesUsageToUsage } from "@shared/registry/usage-headers.ts";
-import { ResponseUsageSchema } from "@shared/schemas/openai.ts";
-
-export function getResponsesUsage(value: unknown): Usage | null {
-    if (!value || typeof value !== "object") return null;
-    const usage = (value as { usage?: unknown }).usage;
-    const parsed = ResponseUsageSchema.safeParse(usage);
-    return parsed.success ? responsesUsageToUsage(parsed.data) : null;
-}
+import { ResponseTerminalEventSchema } from "@shared/schemas/openai.ts";
 
 export function getResponsesEventUsage(
     event: unknown,
 ): { model?: string; usage: Usage } | null {
-    if (!event || typeof event !== "object") return null;
-    const responseEvent = event as {
-        type?: unknown;
-        response?: { model?: unknown; usage?: unknown };
-    };
-    if (
-        responseEvent.type !== "response.completed" &&
-        responseEvent.type !== "response.incomplete" &&
-        responseEvent.type !== "response.failed"
-    ) {
-        return null;
-    }
-
-    const parsed = ResponseUsageSchema.safeParse(responseEvent.response?.usage);
+    const parsed = ResponseTerminalEventSchema.safeParse(event);
     if (!parsed.success) return null;
     return {
-        ...(typeof responseEvent.response?.model === "string"
-            ? { model: responseEvent.response.model }
+        ...(parsed.data.response.model
+            ? { model: parsed.data.response.model }
             : {}),
-        usage: responsesUsageToUsage(parsed.data),
+        usage: responsesUsageToUsage(parsed.data.response.usage),
     };
 }
 

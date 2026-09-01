@@ -3,8 +3,12 @@ import {
     buildUsageHeaders,
     FALLBACK_TARGET_HEADER,
     MODEL_USED_HEADER,
+    responsesUsageToUsage,
 } from "@shared/registry/usage-headers.ts";
-import type { CreateResponseRequest } from "@shared/schemas/openai.ts";
+import {
+    type CreateResponseRequest,
+    CreateResponseResponseSchema,
+} from "@shared/schemas/openai.ts";
 import type { Context } from "hono";
 import type { Env } from "@/env.ts";
 import { withSafetyHeaders } from "@/middleware/safety.ts";
@@ -29,7 +33,7 @@ import {
     validateDirectResponsesRequest,
 } from "./request.js";
 import { applySafetyToResponseRequest } from "./safety.js";
-import { getResponsesUsage } from "./tracking.js";
+import { requireResponsesStreamUsage } from "./stream.js";
 
 type ResponsesContext = Context<Env>;
 
@@ -124,31 +128,35 @@ async function handleDirectResponse(
                     cause,
                 });
             }
-            if (
-                !data ||
-                typeof data !== "object" ||
-                (data as { object?: unknown }).object !== "response"
-            ) {
+            const parsed = CreateResponseResponseSchema.safeParse(data);
+            if (!parsed.success) {
                 throw new UpstreamError(502, {
-                    message: "Responses provider returned an invalid response",
+                    message:
+                        "Responses provider returned an invalid response or omitted usage",
                     requestUrl: result.requestUrl,
-                    responseBody: JSON.stringify(data),
                 });
             }
             for (const [name, value] of Object.entries(
                 buildUsageHeaders(
                     candidate.id,
-                    getResponsesUsage(data) ?? undefined,
+                    responsesUsageToUsage(parsed.data.usage),
                 ),
             )) {
                 headers.set(name, value);
             }
         }
 
-        const response = new Response(result.response.body, { headers });
-        if (!request.stream) {
-            c.var.track?.overrideResponseTracking(response.clone());
+        let responseBody = result.response.body;
+        let trackingResponse: Response | undefined;
+        if (request.stream && responseBody) {
+            const [clientBody, trackingBody] = responseBody.tee();
+            responseBody = requireResponsesStreamUsage(clientBody);
+            trackingResponse = new Response(trackingBody, { headers });
         }
+        const response = new Response(responseBody, { headers });
+        c.var.track?.overrideResponseTracking(
+            trackingResponse ?? response.clone(),
+        );
         return response;
     } catch (thrown) {
         throwTextError(thrown as ServiceError);

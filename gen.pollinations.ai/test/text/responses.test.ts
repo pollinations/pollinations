@@ -1,6 +1,7 @@
 import {
     type CreateResponseRequest,
     CreateResponseRequestSchema,
+    CreateResponseResponseSchema,
 } from "@shared/schemas/openai.ts";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -9,6 +10,7 @@ import {
     resolveDirectResponsesTarget,
 } from "@/text/responses/client.ts";
 import { validateDirectResponsesRequest } from "@/text/responses/request.ts";
+import { requireResponsesStreamUsage } from "@/text/responses/stream.ts";
 
 function request(
     overrides: Partial<CreateResponseRequest> = {},
@@ -161,6 +163,18 @@ describe("direct Responses transport", () => {
         expect(fetcher).toHaveBeenCalledOnce();
     });
 
+    it("requires usage in a successful Responses JSON envelope", () => {
+        expect(() =>
+            CreateResponseResponseSchema.parse({
+                id: "resp_without_usage",
+                object: "response",
+                model: "qwen/qwen3.7-plus",
+                status: "completed",
+                output: [],
+            }),
+        ).toThrow();
+    });
+
     it("preserves semantic Responses SSE without a Chat done marker", async () => {
         const upstream =
             'event: response.output_text.delta\ndata: {"type":"response.output_text.delta","delta":"ok"}\n\n' +
@@ -177,5 +191,28 @@ describe("direct Responses transport", () => {
 
         await expect(result.response.text()).resolves.toBe(upstream);
         expect(upstream).not.toContain("[DONE]");
+    });
+
+    it("fails a Responses stream whose terminal event omits usage", async () => {
+        const upstream =
+            'event: response.output_text.delta\ndata: {"type":"response.output_text.delta","delta":"ok"}\n\n' +
+            'event: response.completed\ndata: {"type":"response.completed","response":{"object":"response","model":"qwen/qwen3.7-plus","status":"completed"}}\n\n';
+        const body = new Response(upstream).body;
+        if (!body) throw new Error("expected response body");
+
+        await expect(
+            new Response(requireResponsesStreamUsage(body)).text(),
+        ).rejects.toThrow(/omitted valid terminal usage/);
+    });
+
+    it("fails a Responses stream that ends without a terminal event", async () => {
+        const body = new Response(
+            'event: response.output_text.delta\ndata: {"type":"response.output_text.delta","delta":"ok"}\n\n',
+        ).body;
+        if (!body) throw new Error("expected response body");
+
+        await expect(
+            new Response(requireResponsesStreamUsage(body)).text(),
+        ).rejects.toThrow(/without a terminal usage event/);
     });
 });

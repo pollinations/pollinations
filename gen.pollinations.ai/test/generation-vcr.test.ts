@@ -58,7 +58,8 @@ function createGenerationMocks() {
             body: Record<string, unknown>;
             headers: Record<string, string>;
         }>;
-    } = { requests: [] };
+        omitUsage: boolean;
+    } = { requests: [], omitUsage: false };
     return createFetchMock({
         tinybird: createMockTinybird(),
         portkeyDirect: {
@@ -121,6 +122,9 @@ function createGenerationMocks() {
                             total_tokens: 19,
                         },
                     };
+                    if (responsesState.omitUsage) {
+                        delete (response as { usage?: unknown }).usage;
+                    }
                     if (body.stream) {
                         return new Response(
                             `event: response.output_text.delta\ndata: ${JSON.stringify(
@@ -146,6 +150,7 @@ function createGenerationMocks() {
             },
             reset: () => {
                 responsesState.requests = [];
+                responsesState.omitUsage = false;
             },
         },
         imageBackend: {
@@ -656,6 +661,42 @@ test("direct Responses JSON preserves protocol and bills once", async ({
         tokenCountCompletionText: 4,
         tokenCountCompletionReasoning: 3,
         isBilledUsage: true,
+    });
+});
+
+test("direct Responses JSON rejects a successful envelope without usage", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "responsesDirect");
+    mocks.responsesDirect.state.omitUsage = true;
+
+    const { response, wait } = await fetchWorker("/v1/responses", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "qwen-large",
+            input: "missing usage must fail",
+        }),
+    });
+
+    expect(response.status).toBe(502);
+    await expect(response.json()).resolves.toMatchObject({
+        error: {
+            code: "BAD_GATEWAY",
+            message: expect.stringContaining("omitted usage"),
+        },
+    });
+    await wait();
+
+    expect(mocks.responsesDirect.state.requests).toHaveLength(1);
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        responseStatus: 502,
+        isBilledUsage: false,
     });
 });
 

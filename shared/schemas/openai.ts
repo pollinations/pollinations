@@ -443,7 +443,7 @@ export const CreateResponseResponseSchema = z
             "incomplete",
         ]),
         output: z.array(z.object({ type: z.string() }).passthrough()),
-        usage: ResponseUsageSchema.nullish(),
+        usage: ResponseUsageSchema,
     })
     .passthrough()
     .meta({ $id: "CreateResponseResponse" });
@@ -451,6 +451,22 @@ export const CreateResponseResponseSchema = z
 export type CreateResponseResponse = z.infer<
     typeof CreateResponseResponseSchema
 >;
+
+export const ResponseTerminalEventSchema = z
+    .object({
+        type: z.enum([
+            "response.completed",
+            "response.incomplete",
+            "response.failed",
+        ]),
+        response: z
+            .object({
+                model: z.string().optional(),
+                usage: ResponseUsageSchema,
+            })
+            .passthrough(),
+    })
+    .passthrough();
 
 const ChatCompletionMessageContentBlockSchema = z.union([
     ChatCompletionRequestMessageContentPartTextSchema,

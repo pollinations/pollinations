@@ -7,12 +7,7 @@
  */
 
 import assert from "node:assert/strict";
-import {
-    mkdtempSync,
-    readdirSync,
-    readFileSync,
-    rmSync,
-} from "node:fs";
+import { mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -337,7 +332,10 @@ test("token store encrypts at rest when TOKEN_STORE_SECRET is set", async (t) =>
     assert.equal(reopened.get("discord-user-1"), "sk_secret_user_key");
 
     // No temp files are left behind by the atomic write.
-    assert.deepEqual(readdirSync(dir).filter((f) => f.endsWith(".tmp")), []);
+    assert.deepEqual(
+        readdirSync(dir).filter((f) => f.endsWith(".tmp")),
+        [],
+    );
 });
 
 test("token store without a secret stays plaintext and refuses encrypted files", async (t) => {

@@ -1,0 +1,34 @@
+{
+  "pr_number": 14246,
+  "title": "fix: validate community monitor probes",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14246",
+  "merged_at": "2026-09-01T04:38:38Z",
+  "labels": [],
+  "pr_body_excerpt": "- Omits `max_tokens` from community text probes so reasoning models can finish.\n- Requires the unique marker in final content after reasoning wrappers, rejecting HTTP 200 quota/error responses.\n- Updates the monitor rulebook and runtime documentation; billing flags remain informational.\n\nTests:\n- `node --check operations/community-monitor/probe.mjs`\n- Live targeted probes: Minor/Gemma and reasoning-wrapped Gemma pass; Marcos MiniMax quota text is `INVALID`.\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The canary reads the fine print",
+    "blurb": "The community monitor learned that an HTTP 200 can still be a politely formatted error. Its probes now wait for the actual marker, not just a reassuring envelope.",
+    "summary": "Community text-monitor probes now omit max_tokens so reasoning models can finish, and only pass when their unique marker appears in final content after any reasoning wrappers rather than accepting HTTP 200 quota or error text.",
+    "impact": "Monitoring now distinguishes successful Minor/Gemma-style responses from quota messages such as Marcos MiniMax's, producing more trustworthy availability signals.",
+    "keywords": [
+      "community-monitor",
+      "probes",
+      "reasoning-models",
+      "validation",
+      "quota",
+      "monitoring"
+    ],
+    "visual_concept": "A cozy garden monitoring station represents stricter health checks: Polli inspects a terminal response with a magnifying glass while a small code-plant has separate green VALID and soft-pastel INVALID sprouts. The terminal shows a wrapped reasoning scroll opening into a clearly visible final marker, conveying that the monitor checks the final answer rather than trusting an HTTP status lamp.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing tiny inspector glasses and using a magnifying glass beside a retro monitor in a flower-filled garden shed. The screen glows prominently lime green (#ecf874) and shows a reasoning scroll unfolding into pixel-font text “VALID,” while a small pastel quota-error sprout is labeled “INVALID”; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-01/PR-14246.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing tiny inspector glasses and using a magnifying glass beside a retro monitor in a flower-filled garden shed. The screen glows prominently lime green (#ecf874) and shows a reasoning scroll unfolding into pixel-font text “VALID,” while a small pastel quota-error sprout is labeled “INVALID”; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-09-01T04:39:34.743171+00:00"
+}

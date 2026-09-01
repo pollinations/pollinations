@@ -657,11 +657,7 @@ function MessageCard({
                         </div>
                     )}
                     {message.status === "streaming" && (
-                        <Text
-                            size="sm"
-                            tone="muted"
-                            className={cn(!activity && "animate-pulse")}
-                        >
+                        <Text size="sm" tone="muted" className="animate-pulse">
                             {activity || "Working…"}
                         </Text>
                     )}

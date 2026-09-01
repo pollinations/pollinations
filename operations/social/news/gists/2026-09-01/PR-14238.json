@@ -1,0 +1,33 @@
+{
+  "pr_number": 14238,
+  "title": "fix: require 12 hours before automatic relisting",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14238",
+  "merged_at": "2026-09-01T02:49:29Z",
+  "labels": [],
+  "pr_body_excerpt": "- Require monitor-hidden models to remain hidden for 12 hours before automatic recovery checks\n- Keep recovery proof based on the latest one-hour health window and a fresh passing probe\n- Preserve immediate owner-requested and dashboard relisting",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The garden gets a cooldown",
+    "blurb": "Models now get a proper 12-hour rest after being hidden before the monitor considers reopening the gate. Manual relisting still skips the nap.",
+    "summary": "Updated the community monitor policy so hidden models must remain hidden for 12 hours before automatic recovery checks, while retaining the latest one-hour health window, a fresh passing probe, and immediate manual or dashboard relisting.",
+    "impact": "Automatic relisting now has a longer stability window, helping recovered models return with fresher health evidence while owners can still relist immediately when appropriate.",
+    "keywords": [
+      "community-monitor",
+      "model-health",
+      "relisting",
+      "recovery",
+      "reliability"
+    ],
+    "visual_concept": "A cozy model-health garden uses a 12-hour hourglass as a gentle cooldown gate: Polli tends a resting code-plant beside a monitor showing a healthy green probe. The scene represents patient automatic recovery while preserving a clearly marked manual garden gate for immediate owner relisting.",
+    "image_prompt": "A cozy pixel art garden-monitor scene where Polli, a cute yellow bee mascot with dark brown stripes, black oval eyes, pink rectangular cheek blush, a small smile, light-blue translucent wings, and a tiny gardener scarf, carefully waters a resting code-plant beside a chunky 12-hour hourglass; a retro CRT monitor shows a fresh lime green (#ecf874) health check and a small gate sign reads \"MANUAL OK\". Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, flowers and vines, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-01/PR-14238.jpg",
+    "prompt": "A cozy pixel art garden-monitor scene where Polli, a cute yellow bee mascot with dark brown stripes, black oval eyes, pink rectangular cheek blush, a small smile, light-blue translucent wings, and a tiny gardener scarf, carefully waters a resting code-plant beside a chunky 12-hour hourglass; a retro CRT monitor shows a fresh lime green (#ecf874) health check and a small gate sign reads \"MANUAL OK\". Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, flowers and vines, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-09-01T02:50:42.053501+00:00"
+}

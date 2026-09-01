@@ -329,12 +329,15 @@ export type FallbackAttempt = {
  * Safe for streaming: the clients throw before returning a body, so a failed
  * attempt has sent the caller nothing.
  */
-export async function withModelFallback<T>(
-    candidates: FallbackCandidate[],
-    attempt: (candidate: FallbackCandidate) => Promise<T>,
+export async function withModelFallback<
+    T,
+    Candidate extends FallbackCandidate = FallbackCandidate,
+>(
+    candidates: Candidate[],
+    attempt: (candidate: Candidate) => Promise<T>,
     attempts?: FallbackAttempt[],
-    beforeAttempt?: (candidate: FallbackCandidate) => Promise<void>,
-): Promise<{ result: T; candidate: FallbackCandidate; index: number }> {
+    beforeAttempt?: (candidate: Candidate) => Promise<void>,
+): Promise<{ result: T; candidate: Candidate; index: number }> {
     const allowedStatusCodes = candidates[0]?.definition?.fallbackOnStatusCodes;
     for (const [index, candidate] of candidates.entries()) {
         // Local gates are not upstream failures and must not trigger or be

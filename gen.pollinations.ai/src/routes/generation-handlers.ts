@@ -3,6 +3,7 @@ import {
     type CreateChatCompletionRequest,
     type CreateChatCompletionResponse,
     CreateChatCompletionResponseSchema,
+    type CreateResponseRequest,
 } from "@shared/schemas/openai.ts";
 import { SafeSchema, type SafeValue } from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
@@ -18,6 +19,7 @@ import { handleImagePrompt } from "@/image/handler.ts";
 import {
     applySafety,
     applySafetyToChatRequest,
+    applySafetyToResponseRequest,
     applySafetyToTexts,
     withSafetyHeaders,
 } from "@/middleware/safety.ts";
@@ -26,6 +28,7 @@ import type { CreateEmbeddingRequestSchema } from "@/schemas/embeddings.ts";
 import type { GenerateTextRequestQueryParams } from "@/schemas/text.ts";
 import {
     handleChatCompletionLocal,
+    handleCreateResponseLocal,
     handleSimpleTextLocal,
     handleTextContentLocal,
 } from "@/text/handler.ts";
@@ -217,6 +220,18 @@ export async function generateChatCompletion(
             },
         }),
     );
+}
+
+export async function generateCreateResponse(
+    c: Context<Env>,
+): Promise<Response> {
+    const requestBody = await applySafetyToResponseRequest(c, {
+        ...(c.req.valid("json" as never) as CreateResponseRequest),
+        model: c.var.model.resolved,
+    });
+    const response = await handleCreateResponseLocal(c, requestBody);
+    assertStreamContentType(c, response, c.var.upstreamRequestUrl);
+    return withSafetyHeaders(c, response);
 }
 
 export async function generateTextContent(c: Context<Env>): Promise<Response> {

@@ -6,8 +6,12 @@ import {
     FALLBACK_TARGET_HEADER,
     MODEL_USED_HEADER,
     openaiUsageToUsage,
+    responsesUsageToUsage,
 } from "@shared/registry/usage-headers.ts";
-import type { CreateChatCompletionRequest } from "@shared/schemas/openai.ts";
+import type {
+    CreateChatCompletionRequest,
+    CreateResponseRequest,
+} from "@shared/schemas/openai.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
@@ -15,6 +19,7 @@ import {
     attachFallbackTarget,
     type FallbackCandidate,
     fallbackCandidates,
+    formatFallbackTarget,
     withModelFallback,
 } from "../fallback.ts";
 import { fixWavHeader } from "../routes/audio.js";
@@ -26,6 +31,14 @@ import {
     getChatRequestData,
     getSimpleTextRequestData,
 } from "./requestUtils.js";
+import {
+    callDirectResponses,
+    type DirectResponsesTarget,
+    getResponseUsage,
+    resolveDirectResponsesTarget,
+    responsesInvalidRequest,
+    validateDirectResponsesRequest,
+} from "./responses.js";
 import type {
     ChatCompletion,
     RequestData,
@@ -462,6 +475,129 @@ export async function handleChatCompletionLocal(
     body: CreateChatCompletionRequest,
 ): Promise<Response> {
     return generateTextResponse(c, getChatRequestData(body), false);
+}
+
+type DirectResponsesCandidate = FallbackCandidate & {
+    responsesTarget: DirectResponsesTarget;
+    originalIndex: number;
+};
+
+function directResponsesCandidates(
+    c: TextContext,
+    request: CreateResponseRequest,
+): DirectResponsesCandidate[] {
+    const candidates = fallbackCandidates(c.var.model);
+    const primary = candidates[0];
+    if (!primary || primary.communityEndpoint || primary.entry?.agentConfig) {
+        throw responsesInvalidRequest(
+            `Model ${request.model} does not support the direct Responses API`,
+        );
+    }
+    const primaryTarget = resolveDirectResponsesTarget(
+        primary.id,
+        request,
+        c.env,
+    );
+    if (!primaryTarget) {
+        throw responsesInvalidRequest(
+            `Model ${request.model} does not support the direct Responses API`,
+        );
+    }
+
+    const supported: DirectResponsesCandidate[] = [
+        { ...primary, responsesTarget: primaryTarget, originalIndex: 0 },
+    ];
+    for (let index = 1; index < candidates.length; index += 1) {
+        const candidate = candidates[index];
+        if (candidate.communityEndpoint || candidate.entry?.agentConfig) {
+            continue;
+        }
+        const target = resolveDirectResponsesTarget(
+            candidate.id,
+            request,
+            c.env,
+        );
+        if (!target) continue;
+        supported.push({
+            ...candidate,
+            responsesTarget: target,
+            originalIndex: index,
+        });
+    }
+    return supported;
+}
+
+export async function handleCreateResponseLocal(
+    c: TextContext,
+    request: CreateResponseRequest,
+): Promise<Response> {
+    syncTextEnvironment(c.env);
+    validateDirectResponsesRequest(request);
+
+    try {
+        const { result, candidate } = await withModelFallback(
+            directResponsesCandidates(c, request),
+            (attempt) => callDirectResponses(request, attempt.responsesTarget),
+            c.var.track?.attempts,
+            (attempt) => enforceModelRateLimit(c, attempt),
+        );
+        c.set("upstreamRequestUrl", result.requestUrl);
+
+        const headers = new Headers({
+            "Content-Type": request.stream
+                ? "text/event-stream; charset=utf-8"
+                : "application/json; charset=utf-8",
+            "Cache-Control": request.stream ? "no-cache" : "no-store",
+            [MODEL_USED_HEADER]: candidate.id,
+        });
+        if (candidate.originalIndex > 0) {
+            headers.set(
+                FALLBACK_TARGET_HEADER,
+                formatFallbackTarget(candidate.originalIndex),
+            );
+        }
+
+        if (!request.stream) {
+            let data: unknown;
+            try {
+                data = await result.response.clone().json();
+            } catch (cause) {
+                throw new UpstreamError(502, {
+                    message: "Responses provider returned invalid JSON",
+                    requestUrl: result.requestUrl,
+                    cause,
+                });
+            }
+            if (
+                !data ||
+                typeof data !== "object" ||
+                (data as { object?: unknown }).object !== "response"
+            ) {
+                throw new UpstreamError(502, {
+                    message: "Responses provider returned an invalid response",
+                    requestUrl: result.requestUrl,
+                    responseBody: JSON.stringify(data),
+                });
+            }
+            const usage = getResponseUsage(data);
+            for (const [name, value] of Object.entries(
+                buildUsageHeaders(
+                    candidate.id,
+                    usage ? responsesUsageToUsage(usage) : undefined,
+                ),
+            )) {
+                headers.set(name, value);
+            }
+        }
+
+        const response = new Response(result.response.body, { headers });
+        if (!request.stream) {
+            c.var.track?.overrideResponseTracking(response.clone());
+        }
+        return response;
+    } catch (thrown) {
+        throwTextError(thrown as ServiceError);
+    }
 }
 
 export async function handleTextContentLocal(

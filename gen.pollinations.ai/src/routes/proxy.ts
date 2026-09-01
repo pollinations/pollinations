@@ -50,6 +50,8 @@ import {
     CreateChatCompletionResponseSchema,
     CreateImageRequestSchema,
     CreateImageResponseSchema,
+    CreateResponseRequestSchema,
+    CreateResponseResponseSchema,
     GetModelResponseSchema,
     GetModelsResponseSchema,
 } from "@shared/schemas/openai.ts";
@@ -87,6 +89,7 @@ import {
 import { handleSimpleAudio } from "./audio.ts";
 import {
     generateChatCompletion,
+    generateCreateResponse,
     generateEmbeddingsResponse,
     generateImageVideo,
     generateModel3d,
@@ -179,6 +182,18 @@ const chatCompletionHandlers = factory.createHandlers(
     deduplicateGeneration,
     apiKeyBudgetReservation,
     generateChatCompletion,
+);
+
+const responsesHandlers = factory.createHandlers(
+    textBodyLimit,
+    validator("json", CreateResponseRequestSchema),
+    resolveModel("generate.text"),
+    track("generate.text"),
+    textCache,
+    generationAccess,
+    deduplicateGeneration,
+    apiKeyBudgetReservation,
+    generateCreateResponse,
 );
 
 // Helper to filter models by API key permissions and paid balance.
@@ -633,6 +648,32 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         ...chatCompletionHandlers,
+    )
+    .post(
+        "/v1/responses",
+        describeRoute({
+            tags: ["✍️ Text"],
+            summary: "Create Response",
+            description: [
+                "Generate a stateless response through a model whose configured upstream exposes the OpenAI Responses API.",
+                "",
+                "Requests and streaming events are sent directly to that upstream without conversion to Chat Completions. Models without a verified direct Responses route return an unsupported-model error.",
+                "",
+                "Response storage, previous response IDs, conversations, background execution, encrypted reusable state, and hosted tools are not supported.",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Responses JSON or semantic Responses SSE",
+                    content: {
+                        "application/json": {
+                            schema: resolver(CreateResponseResponseSchema),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500),
+            },
+        }),
+        ...responsesHandlers,
     )
     .post(
         "/v1/embeddings",

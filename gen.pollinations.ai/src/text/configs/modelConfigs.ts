@@ -2,6 +2,7 @@ import googleCloudAuth from "../auth/googleCloudAuth.js";
 import {
     createAlibabaModelConfig,
     createAzureModelConfig,
+    createAzureResponsesModelConfig,
     createBedrockNativeConfig,
     createDeepInfraModelConfig,
     createFireworksModelConfig,
@@ -96,19 +97,22 @@ export const portkeyConfig: PortkeyConfigMap = {
 
     // -- Azure (Myceli Prod — eastus, GPT-5.6) --------------------------------
     "gpt-5.6-sol": () =>
-        createAzureModelConfig(
+        createAzureResponsesModelConfig(
             process.env.AZURE_MYCELI_PROD_API_KEY,
             "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-5.6-sol/chat/completions?api-version=2025-04-01-preview",
+            "AZURE_MYCELI_PROD_API_KEY",
         ),
     "gpt-5.6-terra": () =>
-        createAzureModelConfig(
+        createAzureResponsesModelConfig(
             process.env.AZURE_MYCELI_PROD_API_KEY,
             "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-5.6-terra/chat/completions?api-version=2025-04-01-preview",
+            "AZURE_MYCELI_PROD_API_KEY",
         ),
     "gpt-5.6-luna": () =>
-        createAzureModelConfig(
+        createAzureResponsesModelConfig(
             process.env.AZURE_MYCELI_PROD_API_KEY,
             "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-5.6-luna/chat/completions?api-version=2025-04-01-preview",
+            "AZURE_MYCELI_PROD_API_KEY",
         ),
 
     // -- Azure (Myceli Prod — swedencentral, audio mini) ------------------------

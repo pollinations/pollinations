@@ -41,6 +41,7 @@ import {
     MODEL_USED_HEADER,
     openaiUsageToUsage,
     parseUsageHeaders,
+    responsesUsageToUsage,
     USAGE_MISSING_HEADER,
 } from "@shared/registry/usage-headers.ts";
 import type {
@@ -54,11 +55,11 @@ import {
     usageToEventParams,
 } from "@shared/schemas/generation-event.ts";
 import {
-    type CompletionUsage,
     CompletionUsageSchema,
     type ContentFilterResult,
     ContentFilterResultSchema,
     ContentFilterSeveritySchema,
+    ResponseUsageSchema,
 } from "@shared/schemas/openai.ts";
 import { getRoutePath, removeUnset } from "@shared/util.ts";
 import { eq } from "drizzle-orm";
@@ -766,6 +767,18 @@ function containsFinishReasonError(output: unknown): boolean {
     const events = Array.isArray(streamEvents) ? streamEvents : [output];
     for (const event of events) {
         if (!event || typeof event !== "object") continue;
+        const responseEvent = event as {
+            type?: unknown;
+            status?: unknown;
+            response?: { status?: unknown };
+        };
+        if (
+            responseEvent.type === "response.failed" ||
+            responseEvent.status === "failed" ||
+            responseEvent.response?.status === "failed"
+        ) {
+            return true;
+        }
         const choices = (event as { choices?: unknown }).choices;
         if (!Array.isArray(choices)) continue;
         for (const choice of choices) {
@@ -1177,7 +1190,7 @@ async function extractUsageAndContentFilterResultsStream(
     });
 
     let model: string | undefined;
-    let usage: CompletionUsage | undefined;
+    let usage: Usage | undefined;
     let promptFilterResults: ContentFilterResult = {};
     let completionFilterResults: ContentFilterResult = {};
     const streamEvents: unknown[] = [];
@@ -1208,8 +1221,35 @@ async function extractUsageAndContentFilterResultsStream(
             if (usage) {
                 log.warn("Multiple usage objects found in event stream");
             }
-            usage = parseResult.data?.usage;
+            usage = openaiUsageToUsage(parseResult.data.usage);
             model = parseResult.data?.model;
+        }
+
+        if (event && typeof event === "object") {
+            const responseEvent = event as {
+                type?: unknown;
+                response?: { model?: unknown; usage?: unknown };
+            };
+            if (
+                responseEvent.type === "response.completed" ||
+                responseEvent.type === "response.incomplete" ||
+                responseEvent.type === "response.failed"
+            ) {
+                const responsesUsage = ResponseUsageSchema.safeParse(
+                    responseEvent.response?.usage,
+                );
+                if (responsesUsage.success) {
+                    if (usage) {
+                        log.warn(
+                            "Multiple usage objects found in event stream",
+                        );
+                    }
+                    usage = responsesUsageToUsage(responsesUsage.data);
+                    if (typeof responseEvent.response?.model === "string") {
+                        model = responseEvent.response.model;
+                    }
+                }
+            }
         }
     }
 
@@ -1235,7 +1275,7 @@ async function extractUsageAndContentFilterResultsStream(
     return {
         modelUsage: {
             model: servedModel,
-            usage: openaiUsageToUsage(usage),
+            usage,
             output,
         },
         output,

@@ -40,6 +40,7 @@ const test = baseTest.extend<{
 
 function createGenerationMocks() {
     env.PORTKEY_GATEWAY_URL = "https://portkey.test";
+    env.OPENROUTER_API_KEY = "openrouter-test-key";
     env.REPLICATE_API_TOKEN = "replicate-test-key";
     const portkeyHost = new URL(env.PORTKEY_GATEWAY_URL).host;
     const portkeyState: { requests: Record<string, unknown>[] } = {
@@ -50,6 +51,12 @@ function createGenerationMocks() {
             body: Record<string, unknown>;
             headers: Record<string, string>;
             url: string;
+        }>;
+    } = { requests: [] };
+    const responsesState: {
+        requests: Array<{
+            body: Record<string, unknown>;
+            headers: Record<string, string>;
         }>;
     } = { requests: [] };
     return createFetchMock({
@@ -69,6 +76,76 @@ function createGenerationMocks() {
             },
             reset: () => {
                 portkeyState.requests = [];
+            },
+        },
+        responsesDirect: {
+            state: responsesState,
+            handlerMap: {
+                "openrouter.ai": async (request) => {
+                    const body = (await request.clone().json()) as Record<
+                        string,
+                        unknown
+                    >;
+                    responsesState.requests.push({
+                        body,
+                        headers: Object.fromEntries(request.headers.entries()),
+                    });
+                    const response = {
+                        id: "resp_direct_test",
+                        object: "response",
+                        model: body.model,
+                        status: "completed",
+                        output: [
+                            {
+                                id: "msg_direct_test",
+                                type: "message",
+                                status: "completed",
+                                role: "assistant",
+                                content: [
+                                    {
+                                        type: "output_text",
+                                        text: "direct response",
+                                        annotations: [],
+                                    },
+                                ],
+                            },
+                        ],
+                        usage: {
+                            input_tokens: 12,
+                            input_tokens_details: {
+                                cached_tokens: 2,
+                                cache_write_tokens: 1,
+                            },
+                            output_tokens: 7,
+                            output_tokens_details: { reasoning_tokens: 3 },
+                            total_tokens: 19,
+                        },
+                    };
+                    if (body.stream) {
+                        return new Response(
+                            `event: response.output_text.delta\ndata: ${JSON.stringify(
+                                {
+                                    type: "response.output_text.delta",
+                                    delta: "direct response",
+                                },
+                            )}\n\nevent: response.completed\ndata: ${JSON.stringify(
+                                {
+                                    type: "response.completed",
+                                    response,
+                                },
+                            )}\n\n`,
+                            {
+                                headers: {
+                                    "content-type": "text/event-stream",
+                                },
+                            },
+                        );
+                    }
+                    return Response.json(response);
+                },
+            },
+            reset: () => {
+                responsesState.requests = [];
             },
         },
         imageBackend: {
@@ -505,6 +582,145 @@ test("chat completions use local text generation with VCR-backed Portkey", async
     expect(mocks.tinybird.state.events[0]).not.toHaveProperty(
         "adjustmentUnits",
     );
+});
+
+test("direct Responses JSON preserves protocol and bills once", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "responsesDirect");
+    const { response, wait } = await fetchWorker("/v1/responses", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "qwen-large",
+            input: "direct responses json",
+            text: {
+                format: {
+                    type: "json_schema",
+                    name: "answer",
+                    schema: { type: "object" },
+                },
+            },
+            tools: [
+                {
+                    type: "function",
+                    name: "lookup",
+                    parameters: { type: "object" },
+                },
+            ],
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-model-used")).toBe("qwen-large");
+    expect(response.headers.get("x-usage-prompt-text-tokens")).toBe("9");
+    expect(response.headers.get("x-usage-prompt-cached-tokens")).toBe("2");
+    expect(response.headers.get("x-usage-prompt-cache-write-tokens")).toBe("1");
+    expect(response.headers.get("x-usage-completion-text-tokens")).toBe("4");
+    expect(response.headers.get("x-usage-completion-reasoning-tokens")).toBe(
+        "3",
+    );
+    await expect(response.json()).resolves.toMatchObject({
+        object: "response",
+        status: "completed",
+        output: [{ type: "message" }],
+    });
+    await wait();
+
+    expect(mocks.responsesDirect.state.requests).toHaveLength(1);
+    expect(mocks.responsesDirect.state.requests[0]).toMatchObject({
+        body: {
+            model: "qwen/qwen3.7-plus",
+            input: "direct responses json",
+            store: false,
+            text: { format: { type: "json_schema" } },
+            tools: [{ type: "function", name: "lookup" }],
+        },
+        headers: { authorization: "Bearer openrouter-test-key" },
+    });
+    expect(mocks.responsesDirect.state.requests[0].body).not.toHaveProperty(
+        "messages",
+    );
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        eventType: "generate.text",
+        modelRequested: "qwen-large",
+        modelUsed: "qwen-large",
+        tokenCountPromptText: 9,
+        tokenCountPromptCached: 2,
+        tokenCountPromptCacheWrite: 1,
+        tokenCountCompletionText: 4,
+        tokenCountCompletionReasoning: 3,
+        isBilledUsage: true,
+    });
+});
+
+test("direct Responses SSE is unchanged and terminal usage bills once", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "responsesDirect");
+    const { response, wait } = await fetchWorker("/v1/responses", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "qwen-large",
+            input: "direct responses stream",
+            stream: true,
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    const stream = await response.text();
+    expect(stream).toContain("event: response.output_text.delta");
+    expect(stream).toContain('"type":"response.completed"');
+    expect(stream).not.toContain("[DONE]");
+    await wait();
+
+    expect(mocks.responsesDirect.state.requests).toHaveLength(1);
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        modelUsed: "qwen-large",
+        tokenCountPromptText: 9,
+        tokenCountPromptCached: 2,
+        tokenCountCompletionText: 4,
+        tokenCountCompletionReasoning: 3,
+        isBilledUsage: true,
+    });
+});
+
+test("Responses rejects models without a direct endpoint without calling Chat", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+    const { response, wait } = await fetchWorker("/v1/responses", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "step-flash",
+            input: "must not adapt to chat",
+        }),
+    });
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+        error: {
+            message: expect.stringContaining("direct Responses API"),
+        },
+    });
+    await wait();
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(0);
 });
 
 test("canonical model headers preserve provider-reported payload models", async ({

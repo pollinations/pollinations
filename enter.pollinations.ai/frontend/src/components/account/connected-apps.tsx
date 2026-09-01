@@ -78,6 +78,7 @@ export function ConnectedApps() {
     const [connections, setConnections] = useState<Connection[]>([]);
     const [toolkits, setToolkits] = useState<Toolkit[]>([]);
     const [search, setSearch] = useState("");
+    const [submittedSearch, setSubmittedSearch] = useState("");
     const [pendingId, setPendingId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -110,10 +111,12 @@ export function ConnectedApps() {
 
     async function handleSearch(event: FormEvent) {
         event.preventDefault();
+        const query = search.trim();
+        setSubmittedSearch(query);
         setError(null);
         setLoading(true);
         try {
-            await loadToolkits(search.trim());
+            await loadToolkits(query);
         } catch (searchError) {
             setError(errorMessage(searchError, "Could not search apps."));
         } finally {
@@ -173,49 +176,61 @@ export function ConnectedApps() {
             <Text size="sm" tone="muted">
                 Agents can show you a sign-in link when they need an app. You
                 can also connect one here first. Composio stores the
-                credentials; agents never see them.{" "}
-                <InlineLink href="https://composio.dev/toolkits">
-                    View all supported apps
-                </InlineLink>
-                .
+                credentials; agents never see them.
             </Text>
 
-            {connections.map((connection) => {
-                const toolkit = toolkits.find(
-                    ({ slug }) => slug === connection.toolkit,
-                );
-                return (
-                    <AppCard
-                        key={connection.id}
-                        name={toolkit?.name || readableSlug(connection.toolkit)}
-                        logo={toolkit?.logo || null}
-                        details={
-                            connection.alias ? (
-                                <Text size="sm" tone="muted">
-                                    {connection.alias}
-                                </Text>
-                            ) : undefined
-                        }
-                        action={
-                            <Button
-                                type="button"
-                                disabled={pendingId === connection.id}
-                                onClick={() => void disconnect(connection)}
-                            >
-                                {pendingId === connection.id
-                                    ? "Disconnecting..."
-                                    : "Disconnect"}
-                            </Button>
-                        }
-                    />
-                );
-            })}
+            {connections.length > 0 && (
+                <div className="space-y-2">
+                    <Text tone="strong" weight="semibold">
+                        Connected
+                    </Text>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                        {connections.map((connection) => {
+                            const toolkit = toolkits.find(
+                                ({ slug }) => slug === connection.toolkit,
+                            );
+                            return (
+                                <AppCard
+                                    key={connection.id}
+                                    name={
+                                        toolkit?.name ||
+                                        readableSlug(connection.toolkit)
+                                    }
+                                    logo={toolkit?.logo || null}
+                                    details={
+                                        connection.alias ? (
+                                            <Text size="sm" tone="muted">
+                                                {connection.alias}
+                                            </Text>
+                                        ) : undefined
+                                    }
+                                    action={
+                                        <Button
+                                            type="button"
+                                            disabled={
+                                                pendingId === connection.id
+                                            }
+                                            onClick={() =>
+                                                void disconnect(connection)
+                                            }
+                                        >
+                                            {pendingId === connection.id
+                                                ? "Disconnecting..."
+                                                : "Disconnect"}
+                                        </Button>
+                                    }
+                                />
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
 
             <form
                 onSubmit={(event) => void handleSearch(event)}
                 className="flex items-end gap-2"
             >
-                <FieldStack label="Find an app" className="min-w-0 flex-1">
+                <FieldStack label="Search all apps" className="min-w-0 flex-1">
                     <Input
                         value={search}
                         placeholder="Search Gmail, Slack, Notion…"
@@ -229,34 +244,67 @@ export function ConnectedApps() {
                 </Button>
             </form>
 
-            {!loading &&
-                availableToolkits.map((toolkit) => (
-                    <AppCard
-                        key={toolkit.slug}
-                        name={toolkit.name}
-                        logo={toolkit.logo}
-                        details={
-                            <Text
-                                size="sm"
-                                tone="muted"
-                                className="line-clamp-2"
-                            >
-                                {toolkit.description}
+            {!loading && (
+                <div className="space-y-2">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div>
+                            <Text tone="strong" weight="semibold">
+                                {submittedSearch
+                                    ? "Search results"
+                                    : "Popular apps"}
                             </Text>
-                        }
-                        action={
-                            <Button
-                                type="button"
-                                disabled={pendingId === toolkit.slug}
-                                onClick={() => void connect(toolkit.slug)}
-                            >
-                                {pendingId === toolkit.slug
-                                    ? "Connecting..."
-                                    : "Connect"}
-                            </Button>
-                        }
-                    />
-                ))}
+                            <Text size="sm" tone="muted">
+                                {submittedSearch
+                                    ? `${availableToolkits.length} ${availableToolkits.length === 1 ? "result" : "results"} for “${submittedSearch}”.`
+                                    : `Showing ${availableToolkits.length} popular apps. Search to find more.`}
+                            </Text>
+                        </div>
+                        <InlineLink href="https://composio.dev/toolkits">
+                            View all supported apps
+                        </InlineLink>
+                    </div>
+
+                    {availableToolkits.length > 0 ? (
+                        <div className="grid gap-2 sm:grid-cols-2">
+                            {availableToolkits.map((toolkit) => (
+                                <AppCard
+                                    key={toolkit.slug}
+                                    name={toolkit.name}
+                                    logo={toolkit.logo}
+                                    details={
+                                        <Text
+                                            size="sm"
+                                            tone="muted"
+                                            className="line-clamp-2"
+                                        >
+                                            {toolkit.description}
+                                        </Text>
+                                    }
+                                    action={
+                                        <Button
+                                            type="button"
+                                            disabled={
+                                                pendingId === toolkit.slug
+                                            }
+                                            onClick={() =>
+                                                void connect(toolkit.slug)
+                                            }
+                                        >
+                                            {pendingId === toolkit.slug
+                                                ? "Connecting..."
+                                                : "Connect"}
+                                        </Button>
+                                    }
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <Text size="sm" tone="muted">
+                            No apps found. Try another search.
+                        </Text>
+                    )}
+                </div>
+            )}
 
             {loading && (
                 <Text size="sm" tone="muted">

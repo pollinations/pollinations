@@ -1,0 +1,34 @@
+{
+  "pr_number": 14291,
+  "title": "docs: explain agents and MCP architecture",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/14291",
+  "merged_at": "2026-09-01T20:10:11Z",
+  "labels": [],
+  "pr_body_excerpt": "- Documents current prompt-agent and endpoint-agent request boundaries, `ag_` run-token security, hosted MCP routing, and billing.\n- Adds sequence diagrams for user-to-agent-to-model, agent-to-MCP, and delegated billing flows.\n- Separates shipped behavior from the open restriction, delegation, endpoint-MCP verification, and hosting work.\n- Records the accepted direction and unresolved runtime decisions from #13657 without committing to untested infrastructure.\n- Links the guide from `DEVELOP.md`.\n\nFixes #14169\nRelated: #13657",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A map for the agents",
+    "blurb": "The agent garden has a proper trail map now. Follow a request from user to model to MCP server, with the billing pollen and run tokens labeled along the way.",
+    "summary": "Added AGENTS_AND_MCP.md documenting prompt-agent and endpoint-agent boundaries, ag_ run-token security, hosted MCP routing, delegated billing, and the still-open runtime decisions from #13657.",
+    "impact": "Developers can now trace user-to-agent-to-model and agent-to-MCP flows through sequence diagrams, while clearly seeing which MCP architecture behavior is already shipped versus still being designed.",
+    "keywords": [
+      "documentation",
+      "agents",
+      "MCP",
+      "architecture",
+      "billing",
+      "security"
+    ],
+    "visual_concept": "A cozy architecture map for the agent system: Polli acts as a tiny trail guide, following labeled paths between a user terminal, a prompt-agent garden shed, an endpoint-agent signpost, a hosted MCP bridge, and a glowing model server. Small ag_ token fireflies travel safely along the route, while flowers and code-plants make the technical diagram feel like an inviting garden map.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing tiny cartographer glasses and holding a map through a garden of code-plants linking a retro user terminal, agent signposts, an MCP bridge, and a warm glowing model server; little ag_ token fireflies follow the paths. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, with subtle pixel-font text: \"AGENTS + MCP\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-01/PR-14291.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing tiny cartographer glasses and holding a map through a garden of code-plants linking a retro user terminal, agent signposts, an MCP bridge, and a warm glowing model server; little ag_ token fireflies follow the paths. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, with subtle pixel-font text: \"AGENTS + MCP\"."
+  },
+  "generated_at": "2026-09-01T20:11:22.375433+00:00"
+}

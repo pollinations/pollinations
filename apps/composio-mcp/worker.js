@@ -2,14 +2,13 @@ import { createMcpHandler, McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { withMcpUsageHeaders } from "../../shared/mcp-usage.ts";
 import {
+    COMPOSIO_TOOL_CALL_PRICE,
     MCP_SERVERS,
     MCP_TOOLKIT_HEADER,
-    MCP_USAGE_HEADERS,
     MCP_USER_ID_HEADER,
 } from "../../shared/registry/mcp.ts";
 
 const COMPOSIO_API_URL = "https://backend.composio.dev/api/v3.1";
-const COMPOSIO_TOOL_CALL_PRICE = 0.0005;
 const COMPOSIO_TOOL_CALL_RATE = "composio.tool_call.v1";
 const SPECIALIZED_TOOLKITS = new Set(
     MCP_SERVERS.filter(({ binding }) => binding === "COMPOSIO_MCP")
@@ -67,16 +66,12 @@ async function callComposio(path, env, fetchImpl, init = {}) {
     return body;
 }
 
-function arrayQuery(name, values) {
-    const params = new URLSearchParams();
-    for (const value of values) params.append(name, value);
-    return params;
-}
-
 async function listConnections(userId, env, fetchImpl) {
-    const params = arrayQuery("user_ids", [userId]);
-    params.append("statuses", "ACTIVE");
-    params.set("limit", "100");
+    const params = new URLSearchParams({
+        user_ids: userId,
+        statuses: "ACTIVE",
+        limit: "100",
+    });
     const body = await callComposio(
         `/connected_accounts?${params}`,
         env,
@@ -113,18 +108,12 @@ async function listToolkits(search, env, fetchImpl) {
         }));
 }
 
-async function createConnectionLink(
-    userId,
-    toolkit,
-    callbackUrl,
-    env,
-    fetchImpl,
-) {
-    const session = await callComposio("/tool_router/session", env, fetchImpl, {
+function createSession(userId, toolkits, env, fetchImpl) {
+    return callComposio("/tool_router/session", env, fetchImpl, {
         method: "POST",
         body: JSON.stringify({
             user_id: userId,
-            toolkits: { enabled: [toolkit] },
+            toolkits: { enabled: toolkits },
             manage_connections: { enable: false },
             workbench: {
                 enable: false,
@@ -132,7 +121,17 @@ async function createConnectionLink(
             },
         }),
     });
-    return await callComposio(
+}
+
+async function createConnectionLink(
+    userId,
+    toolkit,
+    callbackUrl,
+    env,
+    fetchImpl,
+) {
+    const session = await createSession(userId, [toolkit], env, fetchImpl);
+    return callComposio(
         `/tool_router/session/${encodeURIComponent(session.session_id)}/link`,
         env,
         fetchImpl,
@@ -147,8 +146,10 @@ async function createConnectionLink(
 }
 
 async function deleteConnection(userId, connectionId, env, fetchImpl) {
-    const params = arrayQuery("user_ids", [userId]);
-    params.append("connected_account_ids", connectionId);
+    const params = new URLSearchParams({
+        user_ids: userId,
+        connected_account_ids: connectionId,
+    });
     const body = await callComposio(
         `/connected_accounts?${params}`,
         env,
@@ -246,13 +247,10 @@ async function runBilled(reportUsage, tool, run) {
     }
 }
 
-function toolName(toolkit, action) {
-    return `${action}_${toolkit.replaceAll("-", "_")}_tool${action === "find" ? "s" : ""}`;
-}
-
 function buildSpecializedServer(userId, toolkit, env, fetchImpl, reportUsage) {
-    const findToolName = toolName(toolkit, "find");
-    const runToolName = toolName(toolkit, "run");
+    const toolNamespace = toolkit.replaceAll("-", "_");
+    const findToolName = `find_${toolNamespace}_tools`;
+    const runToolName = `run_${toolNamespace}_tool`;
     const server = new McpServer(
         { name: `pollinations-${toolkit}-mcp`, version: "0.1.0" },
         {
@@ -331,18 +329,7 @@ async function createRouterSession(userId, env, fetchImpl) {
                 .filter(Boolean),
         ),
     ];
-    return await callComposio("/tool_router/session", env, fetchImpl, {
-        method: "POST",
-        body: JSON.stringify({
-            user_id: userId,
-            toolkits: { enabled: toolkits },
-            manage_connections: { enable: false },
-            workbench: {
-                enable: false,
-                proxy_execution_enabled: false,
-            },
-        }),
-    });
+    return createSession(userId, toolkits, env, fetchImpl);
 }
 
 async function loadRouterSession(userId, sessionId, env, fetchImpl) {
@@ -509,15 +496,6 @@ export function createWorker({ fetchImpl }) {
                     .clone()
                     .json()
                     .catch(() => null);
-                if (request.method === "POST" && Array.isArray(payload)) {
-                    return Response.json(
-                        {
-                            error: "invalid_request",
-                            message: "Batch requests are not supported.",
-                        },
-                        { status: 400 },
-                    );
-                }
                 if (!toolkit) {
                     return await proxyRouter(
                         request,
@@ -551,5 +529,3 @@ export function createWorker({ fetchImpl }) {
         },
     };
 }
-
-export { COMPOSIO_TOOL_CALL_PRICE, MCP_USAGE_HEADERS };

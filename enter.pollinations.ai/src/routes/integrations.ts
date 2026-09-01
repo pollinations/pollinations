@@ -53,7 +53,7 @@ function composioRequest(
     );
 }
 
-async function forward(response: Response): Promise<Response> {
+async function forwardComposioResponse(response: Response): Promise<Response> {
     if (!response.ok) {
         const body = (await response.json().catch(() => null)) as {
             message?: string;
@@ -90,7 +90,8 @@ export const integrationsRoutes = new Hono<Env>()
                 },
             },
         }),
-        async (c) => await forward(await composioRequest(c, "/connections")),
+        async (c) =>
+            forwardComposioResponse(await composioRequest(c, "/connections")),
     )
     .get(
         "/toolkits",
@@ -114,7 +115,9 @@ export const integrationsRoutes = new Hono<Env>()
         async (c) => {
             const search = c.req.valid("query").search;
             const query = search ? `?search=${encodeURIComponent(search)}` : "";
-            return await forward(await composioRequest(c, `/toolkits${query}`));
+            return forwardComposioResponse(
+                await composioRequest(c, `/toolkits${query}`),
+            );
         },
     )
     .post(
@@ -129,8 +132,7 @@ export const integrationsRoutes = new Hono<Env>()
         validator("json", ConnectSchema),
         async (c) => {
             const callbackUrl = new URL("/account", getPublicOrigin(c));
-            callbackUrl.searchParams.set("connected", "true");
-            return await forward(
+            return forwardComposioResponse(
                 await composioRequest(c, "/connections", {
                     method: "POST",
                     body: JSON.stringify({
@@ -149,7 +151,7 @@ export const integrationsRoutes = new Hono<Env>()
             responses: { 204: { description: "App disconnected" } },
         }),
         async (c) =>
-            await forward(
+            forwardComposioResponse(
                 await composioRequest(
                     c,
                     `/connections/${encodeURIComponent(c.req.param("id"))}`,

@@ -6,14 +6,19 @@ import {
     Surface,
     Text,
 } from "@pollinations/ui";
-import { type FormEvent, useCallback, useEffect, useState } from "react";
+import {
+    type FormEvent,
+    type ReactNode,
+    useCallback,
+    useEffect,
+    useState,
+} from "react";
 import { apiClient } from "../../api.ts";
 
 type Connection = {
     id: string;
     toolkit: string;
     alias: string | null;
-    status: string;
 };
 
 type Toolkit = {
@@ -31,11 +36,48 @@ function readableSlug(slug: string): string {
         .join(" ");
 }
 
+function errorMessage(error: unknown, fallback: string): string {
+    return error instanceof Error ? error.message : fallback;
+}
+
+type AppCardProps = {
+    name: string;
+    logo: string | null;
+    details?: ReactNode;
+    action: ReactNode;
+};
+
+function AppCard({ name, logo, details, action }: AppCardProps) {
+    return (
+        <Surface
+            variant="card"
+            className="flex items-center justify-between gap-3"
+        >
+            <div className="flex min-w-0 items-center gap-3">
+                {logo && (
+                    <img
+                        src={logo}
+                        alt=""
+                        className="h-8 w-8 shrink-0 rounded-md"
+                    />
+                )}
+                <div className="min-w-0">
+                    <Text tone="strong" weight="semibold">
+                        {name}
+                    </Text>
+                    {details}
+                </div>
+            </div>
+            {action}
+        </Surface>
+    );
+}
+
 export function ConnectedApps() {
     const [connections, setConnections] = useState<Connection[]>([]);
     const [toolkits, setToolkits] = useState<Toolkit[]>([]);
     const [search, setSearch] = useState("");
-    const [pending, setPending] = useState<string | null>(null);
+    const [pendingId, setPendingId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -59,9 +101,7 @@ export function ConnectedApps() {
         void Promise.all([loadConnections(), loadToolkits()])
             .catch((loadError) =>
                 setError(
-                    loadError instanceof Error
-                        ? loadError.message
-                        : "Could not load connected apps.",
+                    errorMessage(loadError, "Could not load connected apps."),
                 ),
             )
             .finally(() => setLoading(false));
@@ -74,18 +114,14 @@ export function ConnectedApps() {
         try {
             await loadToolkits(search.trim());
         } catch (searchError) {
-            setError(
-                searchError instanceof Error
-                    ? searchError.message
-                    : "Could not search apps.",
-            );
+            setError(errorMessage(searchError, "Could not search apps."));
         } finally {
             setLoading(false);
         }
     }
 
     async function connect(toolkit: string) {
-        setPending(toolkit);
+        setPendingId(toolkit);
         setError(null);
         try {
             const response = await apiClient.account.integrations.$post({
@@ -97,17 +133,13 @@ export function ConnectedApps() {
                     .redirectUrl,
             );
         } catch (connectError) {
-            setError(
-                connectError instanceof Error
-                    ? connectError.message
-                    : "Could not connect this app.",
-            );
-            setPending(null);
+            setError(errorMessage(connectError, "Could not connect this app."));
+            setPendingId(null);
         }
     }
 
     async function disconnect(connection: Connection) {
-        setPending(connection.id);
+        setPendingId(connection.id);
         setError(null);
         try {
             const response = await apiClient.account.integrations[
@@ -121,17 +153,18 @@ export function ConnectedApps() {
             );
         } catch (disconnectError) {
             setError(
-                disconnectError instanceof Error
-                    ? disconnectError.message
-                    : "Could not disconnect this app.",
+                errorMessage(disconnectError, "Could not disconnect this app."),
             );
         } finally {
-            setPending(null);
+            setPendingId(null);
         }
     }
 
     const connectedToolkits = new Set(
         connections.map(({ toolkit }) => toolkit),
+    );
+    const availableToolkits = toolkits.filter(
+        ({ slug }) => !connectedToolkits.has(slug),
     );
 
     return (
@@ -147,41 +180,29 @@ export function ConnectedApps() {
                     ({ slug }) => slug === connection.toolkit,
                 );
                 return (
-                    <Surface
+                    <AppCard
                         key={connection.id}
-                        variant="card"
-                        className="flex items-center justify-between gap-3"
-                    >
-                        <div className="flex min-w-0 items-center gap-3">
-                            {toolkit?.logo && (
-                                <img
-                                    src={toolkit.logo}
-                                    alt=""
-                                    className="h-8 w-8 shrink-0 rounded-md"
-                                />
-                            )}
-                            <div className="min-w-0">
-                                <Text tone="strong" weight="semibold">
-                                    {toolkit?.name ||
-                                        readableSlug(connection.toolkit)}
+                        name={toolkit?.name || readableSlug(connection.toolkit)}
+                        logo={toolkit?.logo || null}
+                        details={
+                            connection.alias ? (
+                                <Text size="sm" tone="muted">
+                                    {connection.alias}
                                 </Text>
-                                {connection.alias && (
-                                    <Text size="sm" tone="muted">
-                                        {connection.alias}
-                                    </Text>
-                                )}
-                            </div>
-                        </div>
-                        <Button
-                            type="button"
-                            disabled={pending === connection.id}
-                            onClick={() => void disconnect(connection)}
-                        >
-                            {pending === connection.id
-                                ? "Disconnecting..."
-                                : "Disconnect"}
-                        </Button>
-                    </Surface>
+                            ) : undefined
+                        }
+                        action={
+                            <Button
+                                type="button"
+                                disabled={pendingId === connection.id}
+                                onClick={() => void disconnect(connection)}
+                            >
+                                {pendingId === connection.id
+                                    ? "Disconnecting..."
+                                    : "Disconnect"}
+                            </Button>
+                        }
+                    />
                 );
             })}
 
@@ -204,46 +225,33 @@ export function ConnectedApps() {
             </form>
 
             {!loading &&
-                toolkits
-                    .filter(({ slug }) => !connectedToolkits.has(slug))
-                    .map((toolkit) => (
-                        <Surface
-                            key={toolkit.slug}
-                            variant="card"
-                            className="flex items-center justify-between gap-3"
-                        >
-                            <div className="flex min-w-0 items-center gap-3">
-                                {toolkit.logo && (
-                                    <img
-                                        src={toolkit.logo}
-                                        alt=""
-                                        className="h-8 w-8 shrink-0 rounded-md"
-                                    />
-                                )}
-                                <div className="min-w-0">
-                                    <Text tone="strong" weight="semibold">
-                                        {toolkit.name}
-                                    </Text>
-                                    <Text
-                                        size="sm"
-                                        tone="muted"
-                                        className="line-clamp-2"
-                                    >
-                                        {toolkit.description}
-                                    </Text>
-                                </div>
-                            </div>
+                availableToolkits.map((toolkit) => (
+                    <AppCard
+                        key={toolkit.slug}
+                        name={toolkit.name}
+                        logo={toolkit.logo}
+                        details={
+                            <Text
+                                size="sm"
+                                tone="muted"
+                                className="line-clamp-2"
+                            >
+                                {toolkit.description}
+                            </Text>
+                        }
+                        action={
                             <Button
                                 type="button"
-                                disabled={pending === toolkit.slug}
+                                disabled={pendingId === toolkit.slug}
                                 onClick={() => void connect(toolkit.slug)}
                             >
-                                {pending === toolkit.slug
+                                {pendingId === toolkit.slug
                                     ? "Connecting..."
                                     : "Connect"}
                             </Button>
-                        </Surface>
-                    ))}
+                        }
+                    />
+                ))}
 
             {loading && (
                 <Text size="sm" tone="muted">

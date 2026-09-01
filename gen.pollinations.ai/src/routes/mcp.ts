@@ -165,7 +165,7 @@ export const mcpRoutes = new Hono<Env>()
     )
     .use("/mcp/:serverId", auth(), frontendKeyRateLimit)
     .all("/mcp/:serverId", async (c) => {
-        c.var.auth.requireUser();
+        const user = c.var.auth.requireUser();
         if (
             c.req.method === "POST" &&
             Array.isArray(
@@ -184,7 +184,6 @@ export const mcpRoutes = new Hono<Env>()
         if (!server) {
             throw new HTTPException(404, { message: "MCP server not found" });
         }
-        const user = c.var.auth.requireUser();
         const binding = c.env[server.binding] as Fetcher;
 
         const startedAt = new Date();
